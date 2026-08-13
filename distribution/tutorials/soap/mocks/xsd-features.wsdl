@@ -1,0 +1,551 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- One operation per XSD feature that wsdl2openapi maps. The operation name says which. -->
+<wsdl:definitions
+        xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+        xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+        xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+        xmlns:tns="https://example.com/xsd-features"
+        xmlns:c="https://example.com/xsd-features/common"
+        targetNamespace="https://example.com/xsd-features">
+
+    <wsdl:types>
+
+        <!-- A second schema document, imported by namespace only, for getImportedType -->
+        <xsd:schema targetNamespace="https://example.com/xsd-features/common">
+            <xsd:complexType name="Address">
+                <xsd:sequence>
+                    <xsd:element name="street" type="xsd:string"/>
+                    <xsd:element name="city" type="xsd:string"/>
+                </xsd:sequence>
+            </xsd:complexType>
+        </xsd:schema>
+
+        <xsd:schema targetNamespace="https://example.com/xsd-features"
+                    xmlns:c="https://example.com/xsd-features/common">
+            <xsd:import namespace="https://example.com/xsd-features/common"/>
+
+            <!-- ── Types shared by several operations ──────────────────── -->
+
+            <xsd:group name="AuditGroup">
+                <xsd:sequence>
+                    <xsd:element name="createdBy" type="xsd:string"/>
+                    <xsd:element name="createdAt" type="xsd:dateTime"/>
+                </xsd:sequence>
+            </xsd:group>
+
+            <xsd:complexType name="OrderBase">
+                <xsd:sequence>
+                    <xsd:element name="orderId" type="xsd:string"/>
+                    <xsd:element name="customer" type="xsd:string"/>
+                </xsd:sequence>
+            </xsd:complexType>
+
+            <xsd:complexType name="PriorityOrder">
+                <xsd:complexContent>
+                    <xsd:extension base="tns:OrderBase">
+                        <xsd:sequence>
+                            <xsd:element name="priority" type="xsd:string"/>
+                        </xsd:sequence>
+                    </xsd:extension>
+                </xsd:complexContent>
+            </xsd:complexType>
+
+            <!-- restricts OrderBase to orderId alone: customer is not part of this type -->
+            <xsd:complexType name="TrimmedOrder">
+                <xsd:complexContent>
+                    <xsd:restriction base="tns:OrderBase">
+                        <xsd:sequence>
+                            <xsd:element name="orderId" type="xsd:string"/>
+                        </xsd:sequence>
+                    </xsd:restriction>
+                </xsd:complexContent>
+            </xsd:complexType>
+
+            <!-- a value with attributes: the value lands under $value -->
+            <xsd:complexType name="Money">
+                <xsd:simpleContent>
+                    <xsd:extension base="xsd:decimal">
+                        <xsd:attribute name="currency" type="xsd:string" use="required"/>
+                    </xsd:extension>
+                </xsd:simpleContent>
+            </xsd:complexType>
+
+            <xsd:simpleType name="CountryCode">
+                <xsd:restriction base="xsd:string">
+                    <xsd:length value="2"/>
+                </xsd:restriction>
+            </xsd:simpleType>
+
+            <xsd:simpleType name="Rating">
+                <xsd:restriction base="xsd:int">
+                    <xsd:minInclusive value="1"/>
+                    <xsd:maxInclusive value="5"/>
+                </xsd:restriction>
+            </xsd:simpleType>
+
+            <xsd:simpleType name="Discount">
+                <xsd:restriction base="xsd:decimal">
+                    <xsd:minExclusive value="0"/>
+                    <xsd:maxExclusive value="100"/>
+                </xsd:restriction>
+            </xsd:simpleType>
+
+            <xsd:simpleType name="Status">
+                <xsd:restriction base="xsd:string">
+                    <xsd:enumeration value="ACTIVE"/>
+                    <xsd:enumeration value="INACTIVE"/>
+                </xsd:restriction>
+            </xsd:simpleType>
+
+            <xsd:simpleType name="PhoneNumber">
+                <xsd:restriction base="xsd:string">
+                    <xsd:pattern value="\+?[0-9]{7,15}"/>
+                </xsd:restriction>
+            </xsd:simpleType>
+
+            <!-- ── getPrimitiveTypes ───────────────────────────────────── -->
+
+            <xsd:element name="getPrimitiveTypes">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="id" type="xsd:int"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="getPrimitiveTypesResponse">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="text" type="xsd:string"/>
+                        <xsd:element name="count" type="xsd:int"/>
+                        <xsd:element name="total" type="xsd:long"/>
+                        <xsd:element name="price" type="xsd:decimal"/>
+                        <xsd:element name="active" type="xsd:boolean"/>
+                        <xsd:element name="created" type="xsd:date"/>
+                        <xsd:element name="updated" type="xsd:dateTime"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+
+            <!-- ── getSequence ─────────────────────────────────────────── -->
+
+            <xsd:element name="getSequence">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="first" type="xsd:string"/>
+                        <xsd:element name="second" type="xsd:string"/>
+                        <xsd:element name="third" type="xsd:string"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="getSequenceResponse">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="status" type="xsd:string"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+
+            <!-- ── getAll ──────────────────────────────────────────────── -->
+
+            <xsd:element name="getAll">
+                <xsd:complexType>
+                    <xsd:all>
+                        <xsd:element name="alpha" type="xsd:string"/>
+                        <xsd:element name="beta" type="xsd:string"/>
+                    </xsd:all>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="getAllResponse">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="status" type="xsd:string"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+
+            <!-- ── getChoice ───────────────────────────────────────────── -->
+
+            <xsd:element name="getChoice">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:choice>
+                            <xsd:element name="byName" type="xsd:string"/>
+                            <xsd:element name="byId" type="xsd:int"/>
+                        </xsd:choice>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="getChoiceResponse">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="status" type="xsd:string"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+
+            <!-- ── getGroupRef ─────────────────────────────────────────── -->
+
+            <xsd:element name="getGroupRef">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="id" type="xsd:int"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="getGroupRefResponse">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="status" type="xsd:string"/>
+                        <xsd:group ref="tns:AuditGroup"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+
+            <!-- ── getArray ────────────────────────────────────────────── -->
+
+            <xsd:element name="getArray">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="id" type="xsd:int"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="getArrayResponse">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="tag" type="xsd:string" minOccurs="0" maxOccurs="unbounded"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+
+            <!-- ── getNillable ─────────────────────────────────────────── -->
+
+            <xsd:element name="getNillable">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="note" type="xsd:string" nillable="true"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="getNillableResponse">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="label" type="xsd:string"/>
+                        <xsd:element name="closedAt" type="xsd:date" nillable="true"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+
+            <!-- ── getAttributes ───────────────────────────────────────── -->
+
+            <xsd:element name="getAttributes">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="id" type="xsd:int"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="getAttributesResponse">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="record">
+                            <xsd:complexType>
+                                <xsd:sequence>
+                                    <xsd:element name="name" type="xsd:string"/>
+                                </xsd:sequence>
+                                <xsd:attribute name="id" type="xsd:string" use="required"/>
+                                <xsd:attribute name="kind" type="xsd:string"/>
+                            </xsd:complexType>
+                        </xsd:element>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+
+            <!-- ── getSimpleContent ────────────────────────────────────── -->
+
+            <xsd:element name="getSimpleContent">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="id" type="xsd:int"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="getSimpleContentResponse">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="price" type="tns:Money"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+
+            <!-- ── getExtension ────────────────────────────────────────── -->
+
+            <xsd:element name="getExtension">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="id" type="xsd:int"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="getExtensionResponse">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="order" type="tns:PriorityOrder"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+
+            <!-- ── getRestriction ──────────────────────────────────────── -->
+
+            <xsd:element name="getRestriction">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="id" type="xsd:int"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="getRestrictionResponse">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="order" type="tns:TrimmedOrder"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+
+            <!-- ── getFacets ───────────────────────────────────────────── -->
+
+            <xsd:element name="getFacets">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="country" type="tns:CountryCode"/>
+                        <xsd:element name="rating" type="tns:Rating"/>
+                        <xsd:element name="discount" type="tns:Discount"/>
+                        <xsd:element name="status" type="tns:Status"/>
+                        <xsd:element name="phone" type="tns:PhoneNumber"/>
+                        <xsd:element name="comment">
+                            <xsd:simpleType>
+                                <xsd:restriction base="xsd:string">
+                                    <xsd:minLength value="5"/>
+                                    <xsd:maxLength value="200"/>
+                                </xsd:restriction>
+                            </xsd:simpleType>
+                        </xsd:element>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="getFacetsResponse">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="status" type="xsd:string"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+
+            <!-- ── getFixedAndDefault ──────────────────────────────────── -->
+
+            <xsd:element name="getFixedAndDefault">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="version" type="xsd:string" fixed="1.0"/>
+                        <xsd:element name="revision" type="xsd:int" fixed="3"/>
+                        <xsd:element name="currency" type="xsd:string" default="EUR"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="getFixedAndDefaultResponse">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="status" type="xsd:string"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+
+            <!-- ── getImportedType ─────────────────────────────────────── -->
+
+            <xsd:element name="getImportedType">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="id" type="xsd:int"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="getImportedTypeResponse">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="address" type="c:Address"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+
+        </xsd:schema>
+    </wsdl:types>
+
+    <wsdl:message name="GetPrimitiveTypesRequest"><wsdl:part name="parameters" element="tns:getPrimitiveTypes"/></wsdl:message>
+    <wsdl:message name="GetPrimitiveTypesResponse"><wsdl:part name="parameters" element="tns:getPrimitiveTypesResponse"/></wsdl:message>
+    <wsdl:message name="GetSequenceRequest"><wsdl:part name="parameters" element="tns:getSequence"/></wsdl:message>
+    <wsdl:message name="GetSequenceResponse"><wsdl:part name="parameters" element="tns:getSequenceResponse"/></wsdl:message>
+    <wsdl:message name="GetAllRequest"><wsdl:part name="parameters" element="tns:getAll"/></wsdl:message>
+    <wsdl:message name="GetAllResponse"><wsdl:part name="parameters" element="tns:getAllResponse"/></wsdl:message>
+    <wsdl:message name="GetChoiceRequest"><wsdl:part name="parameters" element="tns:getChoice"/></wsdl:message>
+    <wsdl:message name="GetChoiceResponse"><wsdl:part name="parameters" element="tns:getChoiceResponse"/></wsdl:message>
+    <wsdl:message name="GetGroupRefRequest"><wsdl:part name="parameters" element="tns:getGroupRef"/></wsdl:message>
+    <wsdl:message name="GetGroupRefResponse"><wsdl:part name="parameters" element="tns:getGroupRefResponse"/></wsdl:message>
+    <wsdl:message name="GetArrayRequest"><wsdl:part name="parameters" element="tns:getArray"/></wsdl:message>
+    <wsdl:message name="GetArrayResponse"><wsdl:part name="parameters" element="tns:getArrayResponse"/></wsdl:message>
+    <wsdl:message name="GetNillableRequest"><wsdl:part name="parameters" element="tns:getNillable"/></wsdl:message>
+    <wsdl:message name="GetNillableResponse"><wsdl:part name="parameters" element="tns:getNillableResponse"/></wsdl:message>
+    <wsdl:message name="GetAttributesRequest"><wsdl:part name="parameters" element="tns:getAttributes"/></wsdl:message>
+    <wsdl:message name="GetAttributesResponse"><wsdl:part name="parameters" element="tns:getAttributesResponse"/></wsdl:message>
+    <wsdl:message name="GetSimpleContentRequest"><wsdl:part name="parameters" element="tns:getSimpleContent"/></wsdl:message>
+    <wsdl:message name="GetSimpleContentResponse"><wsdl:part name="parameters" element="tns:getSimpleContentResponse"/></wsdl:message>
+    <wsdl:message name="GetExtensionRequest"><wsdl:part name="parameters" element="tns:getExtension"/></wsdl:message>
+    <wsdl:message name="GetExtensionResponse"><wsdl:part name="parameters" element="tns:getExtensionResponse"/></wsdl:message>
+    <wsdl:message name="GetRestrictionRequest"><wsdl:part name="parameters" element="tns:getRestriction"/></wsdl:message>
+    <wsdl:message name="GetRestrictionResponse"><wsdl:part name="parameters" element="tns:getRestrictionResponse"/></wsdl:message>
+    <wsdl:message name="GetFacetsRequest"><wsdl:part name="parameters" element="tns:getFacets"/></wsdl:message>
+    <wsdl:message name="GetFacetsResponse"><wsdl:part name="parameters" element="tns:getFacetsResponse"/></wsdl:message>
+    <wsdl:message name="GetFixedAndDefaultRequest"><wsdl:part name="parameters" element="tns:getFixedAndDefault"/></wsdl:message>
+    <wsdl:message name="GetFixedAndDefaultResponse"><wsdl:part name="parameters" element="tns:getFixedAndDefaultResponse"/></wsdl:message>
+    <wsdl:message name="GetImportedTypeRequest"><wsdl:part name="parameters" element="tns:getImportedType"/></wsdl:message>
+    <wsdl:message name="GetImportedTypeResponse"><wsdl:part name="parameters" element="tns:getImportedTypeResponse"/></wsdl:message>
+
+    <wsdl:portType name="XsdFeatures">
+        <wsdl:operation name="getPrimitiveTypes">
+            <wsdl:input message="tns:GetPrimitiveTypesRequest"/>
+            <wsdl:output message="tns:GetPrimitiveTypesResponse"/>
+        </wsdl:operation>
+        <wsdl:operation name="getSequence">
+            <wsdl:input message="tns:GetSequenceRequest"/>
+            <wsdl:output message="tns:GetSequenceResponse"/>
+        </wsdl:operation>
+        <wsdl:operation name="getAll">
+            <wsdl:input message="tns:GetAllRequest"/>
+            <wsdl:output message="tns:GetAllResponse"/>
+        </wsdl:operation>
+        <wsdl:operation name="getChoice">
+            <wsdl:input message="tns:GetChoiceRequest"/>
+            <wsdl:output message="tns:GetChoiceResponse"/>
+        </wsdl:operation>
+        <wsdl:operation name="getGroupRef">
+            <wsdl:input message="tns:GetGroupRefRequest"/>
+            <wsdl:output message="tns:GetGroupRefResponse"/>
+        </wsdl:operation>
+        <wsdl:operation name="getArray">
+            <wsdl:input message="tns:GetArrayRequest"/>
+            <wsdl:output message="tns:GetArrayResponse"/>
+        </wsdl:operation>
+        <wsdl:operation name="getNillable">
+            <wsdl:input message="tns:GetNillableRequest"/>
+            <wsdl:output message="tns:GetNillableResponse"/>
+        </wsdl:operation>
+        <wsdl:operation name="getAttributes">
+            <wsdl:input message="tns:GetAttributesRequest"/>
+            <wsdl:output message="tns:GetAttributesResponse"/>
+        </wsdl:operation>
+        <wsdl:operation name="getSimpleContent">
+            <wsdl:input message="tns:GetSimpleContentRequest"/>
+            <wsdl:output message="tns:GetSimpleContentResponse"/>
+        </wsdl:operation>
+        <wsdl:operation name="getExtension">
+            <wsdl:input message="tns:GetExtensionRequest"/>
+            <wsdl:output message="tns:GetExtensionResponse"/>
+        </wsdl:operation>
+        <wsdl:operation name="getRestriction">
+            <wsdl:input message="tns:GetRestrictionRequest"/>
+            <wsdl:output message="tns:GetRestrictionResponse"/>
+        </wsdl:operation>
+        <wsdl:operation name="getFacets">
+            <wsdl:input message="tns:GetFacetsRequest"/>
+            <wsdl:output message="tns:GetFacetsResponse"/>
+        </wsdl:operation>
+        <wsdl:operation name="getFixedAndDefault">
+            <wsdl:input message="tns:GetFixedAndDefaultRequest"/>
+            <wsdl:output message="tns:GetFixedAndDefaultResponse"/>
+        </wsdl:operation>
+        <wsdl:operation name="getImportedType">
+            <wsdl:input message="tns:GetImportedTypeRequest"/>
+            <wsdl:output message="tns:GetImportedTypeResponse"/>
+        </wsdl:operation>
+    </wsdl:portType>
+
+    <wsdl:binding name="XsdFeaturesSoapBinding" type="tns:XsdFeatures">
+        <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+        <wsdl:operation name="getPrimitiveTypes">
+            <soap:operation soapAction="getPrimitiveTypes"/>
+            <wsdl:input><soap:body use="literal"/></wsdl:input>
+            <wsdl:output><soap:body use="literal"/></wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="getSequence">
+            <soap:operation soapAction="getSequence"/>
+            <wsdl:input><soap:body use="literal"/></wsdl:input>
+            <wsdl:output><soap:body use="literal"/></wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="getAll">
+            <soap:operation soapAction="getAll"/>
+            <wsdl:input><soap:body use="literal"/></wsdl:input>
+            <wsdl:output><soap:body use="literal"/></wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="getChoice">
+            <soap:operation soapAction="getChoice"/>
+            <wsdl:input><soap:body use="literal"/></wsdl:input>
+            <wsdl:output><soap:body use="literal"/></wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="getGroupRef">
+            <soap:operation soapAction="getGroupRef"/>
+            <wsdl:input><soap:body use="literal"/></wsdl:input>
+            <wsdl:output><soap:body use="literal"/></wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="getArray">
+            <soap:operation soapAction="getArray"/>
+            <wsdl:input><soap:body use="literal"/></wsdl:input>
+            <wsdl:output><soap:body use="literal"/></wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="getNillable">
+            <soap:operation soapAction="getNillable"/>
+            <wsdl:input><soap:body use="literal"/></wsdl:input>
+            <wsdl:output><soap:body use="literal"/></wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="getAttributes">
+            <soap:operation soapAction="getAttributes"/>
+            <wsdl:input><soap:body use="literal"/></wsdl:input>
+            <wsdl:output><soap:body use="literal"/></wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="getSimpleContent">
+            <soap:operation soapAction="getSimpleContent"/>
+            <wsdl:input><soap:body use="literal"/></wsdl:input>
+            <wsdl:output><soap:body use="literal"/></wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="getExtension">
+            <soap:operation soapAction="getExtension"/>
+            <wsdl:input><soap:body use="literal"/></wsdl:input>
+            <wsdl:output><soap:body use="literal"/></wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="getRestriction">
+            <soap:operation soapAction="getRestriction"/>
+            <wsdl:input><soap:body use="literal"/></wsdl:input>
+            <wsdl:output><soap:body use="literal"/></wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="getFacets">
+            <soap:operation soapAction="getFacets"/>
+            <wsdl:input><soap:body use="literal"/></wsdl:input>
+            <wsdl:output><soap:body use="literal"/></wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="getFixedAndDefault">
+            <soap:operation soapAction="getFixedAndDefault"/>
+            <wsdl:input><soap:body use="literal"/></wsdl:input>
+            <wsdl:output><soap:body use="literal"/></wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="getImportedType">
+            <soap:operation soapAction="getImportedType"/>
+            <wsdl:input><soap:body use="literal"/></wsdl:input>
+            <wsdl:output><soap:body use="literal"/></wsdl:output>
+        </wsdl:operation>
+    </wsdl:binding>
+
+    <wsdl:service name="XsdFeaturesService">
+        <wsdl:port name="XsdFeaturesPort" binding="tns:XsdFeaturesSoapBinding">
+            <soap:address location="http://localhost:2001/xsd-features"/>
+        </wsdl:port>
+    </wsdl:service>
+
+</wsdl:definitions>

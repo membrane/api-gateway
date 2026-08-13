@@ -37,6 +37,8 @@ import static com.predic8.membrane.core.util.xml.parser.HardenedXmlParser.getIns
  * attributes (e.g. xml:lang) are excluded.
  * An element marked {@code xsi:nil="true"} becomes JSON {@code null}, matching the
  * {@code nullable} that {@code XsdToSchema} derives from {@code nillable="true"}.
+ * An element that has attributes but no child elements becomes an object carrying those attributes
+ * plus its own text value under {@code $value}.
  */
 public class Soap2JsonTransformer {
 
@@ -57,6 +59,15 @@ public class Soap2JsonTransformer {
      * Pass {@code null} to fall back to all-string behaviour.
      */
     public String transform(String soapXml, Schema<?> responseSchema) throws Exception {
+        return transform(soapXml, responseSchema, null);
+    }
+
+    /**
+     * Transforms the SOAP response to JSON. {@code faultDetailSchema} types the content of a SOAP
+     * {@code <detail>} element the same way {@code responseSchema} types a successful response: its
+     * properties are the operation's declared faults, keyed by fault element local name.
+     */
+    public String transform(String soapXml, Schema<?> responseSchema, Schema<?> faultDetailSchema) throws Exception {
         Document doc = getInstance().parse(new InputSource(new StringReader(soapXml)));
 
         Element body = getSoapBody(doc);
@@ -70,7 +81,7 @@ public class Soap2JsonTransformer {
         }
 
         if ("Fault".equals(responseElement.getLocalName())) {
-            throw buildFaultException(responseElement);
+            throw buildFaultException(responseElement, faultDetailSchema);
         }
 
         Map<String, Object> jsonMap = elementToMap(responseElement, responseSchema);
@@ -109,10 +120,7 @@ public class Soap2JsonTransformer {
             // ArraySchema wraps the per-item schema; unwrap it so we type individual instances correctly
             Schema<?> effectiveSchema = child.schema() instanceof ArraySchema as ? as.getItems() : child.schema();
 
-            Object value = isNil(childElement) ? null
-                    : hasChildElements(childElement)
-                    ? elementToMap(childElement, effectiveSchema)
-                    : convertLeaf(childElement.getTextContent(), effectiveSchema);
+            Object value = childValue(childElement, effectiveSchema);
 
             childGroups.computeIfAbsent(child.key(), k -> new ChildGroup(child.schema(), new ArrayList<>()))
                     .values().add(value);
@@ -120,6 +128,34 @@ public class Soap2JsonTransformer {
 
         collapseGroups(childGroups, result);
         return result;
+    }
+
+    /** The JSON value one child element contributes: null if nil, an object if compound, else its text. */
+    private Object childValue(Element element, Schema<?> schema) {
+        if (isNil(element)) return null;
+        if (hasChildElements(element)) return elementToMap(element, schema);
+        return leafValue(element, schema);
+    }
+
+    /**
+     * A leaf element's text value. An element carrying attributes cannot be represented by that
+     * value alone, so it becomes an object holding the attributes plus the value under
+     * {@code $value} — the shape {@code XsdToSchema} publishes for an {@code xsd:simpleContent}
+     * type. Without attributes the value stands on its own, as a plain scalar.
+     */
+    private Object leafValue(Element element, Schema<?> schema) {
+        Map<String, Schema<?>> properties = propertiesOf(schema);
+
+        var attributes = new LinkedHashMap<String, Object>();
+        putAttributes(element, properties, attributes);
+
+        Schema<?> declaredValueSchema = properties.get(VALUE_KEY);
+        Object text = convertLeaf(element.getTextContent(),
+                declaredValueSchema != null ? declaredValueSchema : schema);
+
+        if (attributes.isEmpty()) return text;
+        attributes.put(VALUE_KEY, text);
+        return attributes;
     }
 
     /**
@@ -218,36 +254,39 @@ public class Soap2JsonTransformer {
         return "true".equalsIgnoreCase(value) || "1".equals(value);
     }
 
-    private SoapFaultException buildFaultException(Element fault) {
+    private SoapFaultException buildFaultException(Element fault, Schema<?> faultDetailSchema) {
         String ns = fault.getNamespaceURI();
         if (SOAP12_NS.equals(ns)) {
-            return extractSoap12Fault(fault);
+            return extractSoap12Fault(fault, faultDetailSchema);
         }
-        return extractSoap11Fault(fault);
+        return extractSoap11Fault(fault, faultDetailSchema);
     }
 
-    private SoapFaultException extractSoap11Fault(Element fault) {
-        String code = childText(fault, "faultcode");
-        Element detailEl = childElement(fault, "detail");
+    private SoapFaultException extractSoap11Fault(Element fault, Schema<?> faultDetailSchema) {
         return new SoapFaultException(
-                code,
+                childText(fault, "faultcode"),
                 childText(fault, "faultstring"),
-                (code.endsWith(":Client") || "Client".equals(code)) ? 400 : 500,
-                detailEl != null ? elementToMap(detailEl) : null
+                detailMap(childElement(fault, "detail"), faultDetailSchema)
         );
     }
 
-    private SoapFaultException extractSoap12Fault(Element fault) {
+    private SoapFaultException extractSoap12Fault(Element fault, Schema<?> faultDetailSchema) {
         Element codeEl = childElement(fault, "Code");
-        String code = codeEl != null ? childText(codeEl, "Value") : "";
         Element reasonEl = childElement(fault, "Reason");
-        Element detailEl = childElement(fault, "Detail");
         return new SoapFaultException(
-                code,
+                codeEl != null ? childText(codeEl, "Value") : "",
                 reasonEl != null ? childText(reasonEl, "Text") : "",
-                (code.endsWith(":Sender") || "Sender".equals(code)) ? 400 : 500,
-                detailEl != null ? elementToMap(detailEl) : null
+                detailMap(childElement(fault, "Detail"), faultDetailSchema)
         );
+    }
+
+    /**
+     * The SOAP {@code <detail>} content as a map keyed by the local name of each fault element it
+     * wraps, or null if the fault carries no detail. {@code faultDetailSchema} types the values;
+     * without it, every scalar comes out as a string.
+     */
+    private Map<String, Object> detailMap(Element detailElement, Schema<?> faultDetailSchema) {
+        return detailElement != null ? elementToMap(detailElement, faultDetailSchema) : null;
     }
 
     private String childText(Element parent, String localName) {

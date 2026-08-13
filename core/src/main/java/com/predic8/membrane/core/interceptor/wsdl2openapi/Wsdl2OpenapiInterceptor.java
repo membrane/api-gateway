@@ -30,6 +30,7 @@ import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.wsdl.parser.BindingOperation;
 import com.predic8.membrane.core.util.wsdl.parser.Definitions;
+import com.predic8.membrane.core.util.wsdl.parser.Operation;
 import io.swagger.v3.oas.models.media.Schema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,6 +45,8 @@ import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
 import static com.predic8.membrane.core.interceptor.InterceptorUtil.getInterceptors;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.wsdl2openapi.Wsdl2OpenApiConverter.FAULT_DETAILS_FIELD;
+import static com.predic8.membrane.core.interceptor.wsdl2openapi.Wsdl2OpenApiConverter.OPERATION_ERROR_TYPE;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.camelToKebab;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisherInterceptor.PATH;
 import static com.predic8.membrane.core.resolver.ResolverMap.combine;
@@ -63,6 +66,12 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * </p>
  * <p>
  * The generated OpenAPI document's title is the enclosing <i>api</i>'s <code>name</code>.
+ * </p>
+ * <p>
+ * Errors are returned as problem details documents (RFC 7807) with status code 500. When the service
+ * reports one of the errors the WSDL declares, its content appears under <code>details</code>, keyed
+ * by the name of the declared error. Nothing in the response reveals that a SOAP service is being
+ * called.
  * </p>
  * @yaml <pre><code>
  * api:
@@ -271,7 +280,9 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
 
         try {
             String jsonResponse = new Soap2JsonTransformer()
-                    .transform(exc.getResponse().getBodyAsStringDecoded(), responseSchemaFor(operationName));
+                    .transform(exc.getResponse().getBodyAsStringDecoded(),
+                            responseSchemaFor(operationName),
+                            faultDetailSchemaFor(operationName));
 
             exc.getResponse().setBodyContent(jsonResponse.getBytes(UTF_8));
             exc.getResponse().getHeader().setContentType(APPLICATION_JSON);
@@ -299,22 +310,44 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
 
     /** The schema of the operation's OUTPUT messages; an empty schema if the operation is unknown. */
     private Schema<?> responseSchemaFor(String operationName) {
-        return xsdToSchema.convertMessageParts(definitions.getPortTypes().stream()
-                .flatMap(pt -> pt.getOperations().stream())
-                .filter(op -> operationName.equals(op.getName()))
-                .findFirst()
+        return xsdToSchema.convertMessageParts(operationByName(operationName)
                 .map(op -> op.getMessagesByDirection(OUTPUT))
                 .orElse(List.of()));
     }
 
+    /**
+     * The schema typing the content of a SOAP fault detail: one property per fault the operation
+     * declares. An empty schema for an unknown operation or one that declares no faults, in which
+     * case the detail is still converted, just with every scalar as a string.
+     */
+    private Schema<?> faultDetailSchemaFor(String operationName) {
+        return xsdToSchema.convertFaultDetail(operationByName(operationName)
+                .map(Operation::getFaults)
+                .orElse(List.of()));
+    }
+
+    private Optional<Operation> operationByName(String operationName) {
+        return definitions.getPortTypes().stream()
+                .flatMap(pt -> pt.getOperations().stream())
+                .filter(op -> operationName.equals(op.getName()))
+                .findFirst();
+    }
+
+    /**
+     * A fault becomes a 500: the gateway cannot tell whether the backend rejected the input, broke,
+     * or timed out, so the most generic status is the only honest one. Nothing in the response names
+     * the technology behind the API — the SOAP fault code stays an internal, development-mode aid,
+     * because an operator may not want clients to know a legacy service sits behind the gateway.
+     */
     private Response soapFaultResponse(SoapFaultException fault) {
-        var pd = problemDetails("soap-fault", router.getConfiguration().isProduction())
+        var pd = problemDetails(OPERATION_ERROR_TYPE, router.getConfiguration().isProduction())
                 .component(getDisplayName())
-                .status(fault.getHttpStatus())
+                .status(500)
                 .title(fault.getFaultMessage())
-                .topLevel("faultCode", fault.getFaultCode());
+                .detail("The service could not complete the operation.")
+                .internal("faultCode", fault.getFaultCode());
         if (fault.getSoapDetail() != null) {
-            pd.internal("error", fault.getSoapDetail());
+            pd.topLevel(FAULT_DETAILS_FIELD, fault.getSoapDetail());
         }
         return pd.build();
     }

@@ -28,6 +28,13 @@ class XsdDomUtil {
     /** Prefix marking a JSON property that maps to an XML attribute rather than a child element. */
     static final String ATTRIBUTE_PREFIX = "@";
 
+    /**
+     * The JSON property holding an element's own text value when the element also carries
+     * attributes — an XSD {@code simpleContent} type. Without attributes such an element stays a
+     * plain scalar and this key is not used.
+     */
+    static final String VALUE_KEY = "$value";
+
     /** Namespace of the instance-level attributes, of which {@code xsi:nil} is used here. */
     static final String XSI_NS = "http://www.w3.org/2001/XMLSchema-instance";
 

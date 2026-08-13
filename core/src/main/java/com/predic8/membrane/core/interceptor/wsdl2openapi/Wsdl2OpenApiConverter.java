@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
 import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.wsdl.parser.*;
+import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.Paths;
@@ -34,6 +35,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_PROBLEM_JSON;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.Wsdl2OpenapiInterceptor.extractParamNames;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.camelToKebab;
 import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.INPUT;
@@ -49,6 +51,19 @@ public class Wsdl2OpenApiConverter {
 
     /** Mapping of an operation the configuration says nothing about: POST on its kebab-case name. */
     private static final OperationSettings DEFAULT_SETTINGS = new OperationSettings();
+
+    /**
+     * Problem details subtype for a failed operation. Deliberately says nothing about SOAP: the
+     * {@code type} URI reaches the client, and an operator may not want to advertise that a legacy
+     * service sits behind the API.
+     */
+    static final String OPERATION_ERROR_TYPE = "operation-error";
+
+    /** The problem details member carrying the content of a fault the operation declares. */
+    static final String FAULT_DETAILS_FIELD = "details";
+
+    private static final String PROBLEM_DETAILS_SCHEMA = "ProblemDetails";
+    private static final String PROBLEM_DETAILS_REF = "#/components/schemas/" + PROBLEM_DETAILS_SCHEMA;
 
     private final Definitions definitions;
     private final String basePath;
@@ -92,11 +107,23 @@ public class Wsdl2OpenApiConverter {
         openAPI.setInfo(buildInfo());
         openAPI.setServers(List.of(new Server().url(basePath)));
         openAPI.setPaths(buildPaths());
+        openAPI.setComponents(new Components().addSchemas(PROBLEM_DETAILS_SCHEMA, buildProblemDetailsSchema()));
         var topLevelTags = buildTopLevelTags();
         if (!topLevelTags.isEmpty()) {
             openAPI.setTags(topLevelTags);
         }
         return openAPI;
+    }
+
+    /** RFC 7807 problem details, the shape of every error response this API returns. */
+    private static Schema<?> buildProblemDetailsSchema() {
+        return new ObjectSchema()
+                .description("Problem details as defined by RFC 7807.")
+                .addProperty("type", new StringSchema().description("Identifies the kind of problem."))
+                .addProperty("title", new StringSchema().description("Short summary of the problem."))
+                .addProperty("status", new IntegerSchema().description("The HTTP status code."))
+                .addProperty("detail", new StringSchema().description("Explanation specific to this occurrence."))
+                .addProperty("instance", new StringSchema().description("Identifies this specific occurrence."));
     }
 
     private List<Tag> buildTopLevelTags() {
@@ -277,24 +304,62 @@ public class Wsdl2OpenApiConverter {
 
         return new ApiResponses()
                 .addApiResponse("200", response200)
-                .addApiResponse("500", buildFaultResponse(wsdlOp));
+                .addApiResponse(ApiResponses.DEFAULT, buildErrorResponse(wsdlOp));
     }
 
-    /** The 500 response: the operation's declared faults, combined with oneOf if there is more than one. */
-    private ApiResponse buildFaultResponse(Operation wsdlOp) {
-        List<Schema> faultSchemas = wsdlOp.getFaults().stream()
+    /**
+     * The one error response. Every error the gateway produces — a fault from the service, a request
+     * it could not transform, a method the path does not support — is an RFC 7807 problem details
+     * document with status 500, so a single {@code default} response describes them all. Enumerating
+     * status codes here would be guesswork: other plugins in the API's flow have their own.
+     */
+    private ApiResponse buildErrorResponse(Operation wsdlOp) {
+        return new ApiResponse()
+                .description(errorDescription(wsdlOp))
+                .content(new Content().addMediaType(APPLICATION_PROBLEM_JSON,
+                        new MediaType().schema(errorSchema(wsdlOp))));
+    }
+
+    /**
+     * The problem details schema, extended with the operation's declared faults under
+     * {@code details} when it has any. Only one fault can be present in a response, so the
+     * alternatives are combined with {@code oneOf}, each wrapped in the single-property object
+     * the runtime emits.
+     */
+    private Schema<?> errorSchema(Operation wsdlOp) {
+        List<Schema> faults = wsdlOp.getFaults().stream()
                 .map(fault -> fault.getMessage().getParts())
                 .filter(parts -> !parts.isEmpty())
-                .map(parts -> (Schema) converter.convertParts(parts))
+                .map(parts -> (Schema) new ObjectSchema()
+                        .addProperty(XsdToSchema.faultDetailKey(parts), converter.convertParts(parts)))
                 .toList();
 
-        var response = new ApiResponse().description("Internal server error");
-        if (faultSchemas.isEmpty()) return response;
+        if (faults.isEmpty()) {
+            return problemDetailsRef();
+        }
+        Schema<?> details = faults.size() == 1 ? faults.getFirst() : new ComposedSchema().oneOf(faults);
+        return new ComposedSchema().allOf(List.of(
+                problemDetailsRef(),
+                new ObjectSchema().addProperty(FAULT_DETAILS_FIELD, details)));
+    }
 
-        Schema faultSchema = faultSchemas.size() == 1
-                ? faultSchemas.getFirst()
-                : new ComposedSchema().oneOf(faultSchemas);
-        return response.content(jsonContent(faultSchema));
+    private static Schema<?> problemDetailsRef() {
+        return new Schema<>().$ref(PROBLEM_DETAILS_REF);
+    }
+
+    private String errorDescription(Operation wsdlOp) {
+        var text = new StringBuilder("An error occurred. The response is a problem details document (RFC 7807).");
+        List<String> faultNames = wsdlOp.getFaults().stream()
+                .map(fault -> fault.getMessage().getParts())
+                .filter(parts -> !parts.isEmpty())
+                .map(XsdToSchema::faultDetailKey)
+                .toList();
+        if (!faultNames.isEmpty()) {
+            text.append(" When the service reports one of the errors this operation declares (")
+                .append(String.join(", ", faultNames))
+                .append("), its content appears under `").append(FAULT_DETAILS_FIELD).append("`.");
+        }
+        return text.toString();
     }
 
     private String getServiceName() {

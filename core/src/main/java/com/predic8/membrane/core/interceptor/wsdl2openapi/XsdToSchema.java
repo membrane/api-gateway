@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
 import com.predic8.membrane.core.util.wsdl.parser.Definitions;
 import com.predic8.membrane.core.util.wsdl.parser.Message;
+import com.predic8.membrane.core.util.wsdl.parser.Operation;
 import com.predic8.membrane.core.util.wsdl.parser.Part;
 import io.swagger.v3.oas.models.media.*;
 import org.slf4j.Logger;
@@ -40,8 +41,10 @@ import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.*;
  *   <li>xsd:group references (the referenced group's content model is expanded in place)</li>
  *   <li>xsd:attribute (mapped to a property named "@" + attribute name; required when use="required")</li>
  *   <li>xsd:complexContent/xsd:extension (base type fields are inherited)</li>
- *   <li>xsd:complexContent/xsd:restriction (treated as extension for field inheritance)</li>
- *   <li>xsd:simpleContent (approximated as string)</li>
+ *   <li>xsd:complexContent/xsd:restriction (its own content model only — a restriction inherits
+ *       nothing, so a base field it omits is absent)</li>
+ *   <li>xsd:simpleContent (the base type's value; with attributes, an object holding the value
+ *       under "$value" alongside the "@"-prefixed attributes)</li>
  *   <li>Named and inline xsd:simpleType restrictions (resolved to the base primitive)</li>
  *   <li>xsd:restriction facets: enumeration, pattern, length, minLength, maxLength,
  *       minInclusive, maxInclusive, minExclusive, maxExclusive</li>
@@ -53,19 +56,24 @@ import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.*;
  * <p>The features above are constraints: they describe which messages are valid, and are enforced
  * wherever the generated schema is validated against.
  *
- * <p>{@code default=} and {@code fixed=} values on elements and attributes are also carried over,
- * but as the OpenAPI {@code default} keyword, which is an annotation rather than a constraint. It
- * documents the value for clients, Swagger UI and code generators; it is deliberately neither
- * enforced during validation nor applied to messages during SOAP/JSON conversion. Supplying a
- * missing value is the SOAP service's own responsibility — and in XSD an element's default only
- * applies to an element that is present but empty, never to an absent one, so filling in omitted
- * fields here would not even match what the service does.
+ * <p>{@code default=} on elements and attributes is carried over as the OpenAPI {@code default}
+ * keyword, which is an annotation rather than a constraint: it documents the value for clients,
+ * Swagger UI and code generators, and is deliberately not enforced. {@code fixed=} produces that
+ * same {@code default} plus a single-value {@code enum}, because a fixed declaration does restrict
+ * which values are valid.
+ *
+ * <p>Neither is applied to messages during SOAP/JSON conversion. Supplying a missing value is the
+ * SOAP service's own responsibility — and in XSD an element's default only applies to an element
+ * that is present but empty, never to an absent one, so filling in omitted fields here would not
+ * even match what the service does.
  */
 public class XsdToSchema {
 
     private static final Logger log = LoggerFactory.getLogger(XsdToSchema.class);
 
     private static final String UNBOUNDED = "unbounded";
+    /** The OpenAPI 3.1 way of saying a value may be absent — see {@link #makeNullable}. */
+    private static final String NULL_TYPE = "null";
     /** {@code minOccurs="0"} — the only value that makes an element optional. */
     private static final String MIN_OCCURS_OPTIONAL = "0";
 
@@ -98,6 +106,35 @@ public class XsdToSchema {
     public Schema<?> convertMessageParts(List<Message> messages) {
         if (messages.isEmpty()) return new ObjectSchema();
         return convertParts(messages.getFirst().getParts(), new HashSet<>());
+    }
+
+    /**
+     * The schema of a SOAP {@code <detail>} element carrying one of the operation's declared faults:
+     * an object with one optional property per fault, keyed by the name the fault element appears
+     * under in the detail. Only one property is ever present in a given response, which is why the
+     * published OpenAPI document turns these properties into a {@code oneOf}.
+     * <p>
+     * Returns an empty ObjectSchema when the operation declares no faults.
+     */
+    public Schema<?> convertFaultDetail(List<Operation.Fault> faults) {
+        var visiting = new HashSet<Element>();
+        var schema = new ObjectSchema();
+        for (Operation.Fault fault : faults) {
+            List<Part> parts = fault.getMessage().getParts();
+            if (parts.isEmpty()) continue;
+            schema.addProperty(faultDetailKey(parts), convertParts(parts, visiting));
+        }
+        return schema;
+    }
+
+    /**
+     * The key a fault's content appears under inside the detail element: the local name of its
+     * wrapping XSD element, or the part name for RPC-style parts that only name a type.
+     */
+    static String faultDetailKey(List<Part> parts) {
+        Part part = parts.getFirst();
+        QName elementQName = part.getElementQName();
+        return elementQName != null ? elementQName.getLocalPart() : part.getName();
     }
 
     /**
@@ -176,14 +213,20 @@ public class XsdToSchema {
         Element complexContent = findXsdChild(complexTypeEl, "complexContent");
         if (complexContent != null) {
             Element extension = findXsdChild(complexContent, "extension");
-            if (extension != null) addExtensionFields(extension, objectSchema, ctx);
+            if (extension != null) {
+                addBaseTypeFields(extension, objectSchema, ctx);
+                addDeclaredFields(extension, objectSchema, ctx);
+            }
             Element restriction = findXsdChild(complexContent, "restriction");
-            if (restriction != null) addExtensionFields(restriction, objectSchema, ctx);
+            if (restriction != null) {
+                // a restriction re-declares the content model in full, so nothing is inherited
+                addDeclaredFields(restriction, objectSchema, ctx);
+            }
             return objectSchema;
         }
-        // simpleContent: a complex type whose value is text — approximate as string
-        if (findXsdChild(complexTypeEl, "simpleContent") != null) {
-            return new StringSchema();
+        Element simpleContent = findXsdChild(complexTypeEl, "simpleContent");
+        if (simpleContent != null) {
+            return buildSimpleContentSchema(simpleContent, ctx);
         }
         addAttributeFields(complexTypeEl, objectSchema, ctx);
         return objectSchema;
@@ -277,7 +320,7 @@ public class XsdToSchema {
      */
     private static void addField(ObjectSchema schema, String fieldName, Element declaration, Schema<?> fieldSchema) {
         if ("true".equals(declaration.getAttribute("nillable"))) {
-            fieldSchema.setNullable(true);
+            makeNullable(fieldSchema);
         }
         applyDefaultValue(declaration, fieldSchema);
         schema.addProperty(fieldName, applyMaxOccurs(declaration, fieldSchema));
@@ -292,17 +335,41 @@ public class XsdToSchema {
      * its own type on the way in, and silently drops a literal that does not fit, so a numeric
      * default is emitted unquoted and a malformed one is left out rather than emitted as invalid.
      *
-     * <p>This documents the value and nothing more. It is intentionally not used to fill in a
-     * field a message left out: the SOAP service applies its own defaults, and a gateway that
-     * invented payload values would leave the backend unable to tell a client's explicit choice
-     * from the gateway's guess.
+     * <p>An {@code xsd:fixed} additionally becomes a single-value {@code enum}: unlike a default, it
+     * says the field may hold no other value, which is a constraint and belongs where validation
+     * can see it. The enum item is taken back off the schema after the cast, so it carries the same
+     * type as the default and is skipped entirely when the literal does not fit the type.
+     *
+     * <p>Neither is used to fill in a field a message left out: the SOAP service applies its own
+     * defaults, and a gateway that invented payload values would leave the backend unable to tell a
+     * client's explicit choice from the gateway's guess.
      */
     @SuppressWarnings("unchecked")
     private static void applyDefaultValue(Element declaration, Schema<?> schema) {
-        String value = declaration.getAttribute("default");
-        if (value.isEmpty()) value = declaration.getAttribute("fixed");
+        // XSD does not allow both on one declaration, so whichever is present is the value
+        String fixed = declaration.getAttribute("fixed");
+        String value = fixed.isEmpty() ? declaration.getAttribute("default") : fixed;
         if (value.isEmpty()) return;
-        ((Schema<Object>) schema).setDefault(value);
+
+        var target = (Schema<Object>) schema;
+        target.setDefault(value);
+        if (!fixed.isEmpty() && schema.getDefault() != null) {
+            target.addEnumItemObject(schema.getDefault());
+        }
+    }
+
+    /**
+     * Marks a schema as permitting no value at all. OpenAPI 3.1 — the version this converter emits
+     * — says that by listing {@code "null"} among the type's allowed types; the 3.0 {@code nullable}
+     * keyword is discarded by the 3.1 serializer, so setting it would lose the constraint. The
+     * typed Schema classes already carry their own type in that list; the first branch only covers
+     * a bare {@code Schema} that was given a type but no list.
+     */
+    private static void makeNullable(Schema<?> schema) {
+        if (schema.getTypes() == null && schema.getType() != null) {
+            schema.addType(schema.getType());
+        }
+        schema.addType(NULL_TYPE);
     }
 
     /** Wraps {@code fieldSchema} in an ArraySchema if the declaration allows more than one occurrence. */
@@ -430,26 +497,54 @@ public class XsdToSchema {
     }
 
     /**
-     * Handles {@code <xsd:extension>} and (for field-extraction purposes)
-     * {@code <xsd:restriction>} inside {@code <xsd:complexContent>}.
-     * Merges base type fields into {@code schema} first, then appends extension fields.
+     * Merges the fields of an {@code <xsd:extension>}'s base type into {@code schema}, ahead of the
+     * ones the extension declares itself. Only an extension inherits: an {@code <xsd:restriction>}
+     * states its own content model completely, so a base field it leaves out is not part of the
+     * derived type and must not appear.
      */
-    private void addExtensionFields(Element extension, ObjectSchema schema, XsdContext ctx) {
+    private void addBaseTypeFields(Element extension, ObjectSchema schema, XsdContext ctx) {
         String base = extension.getAttribute("base");
-        if (!base.isEmpty()) {
-            Schema<?> baseSchema = resolveTypeRef(base, extension, ctx);
-            if (baseSchema instanceof ObjectSchema baseObj && baseObj.getProperties() != null) {
-                baseObj.getProperties().forEach(schema::addProperty);
-                if (baseObj.getRequired() != null) {
-                    baseObj.getRequired().forEach(schema::addRequiredItem);
-                }
-            } else if (!(baseSchema instanceof ObjectSchema)) {
-                log.debug("Base type '{}' is not an object schema, skipping field inheritance", base);
+        if (base.isEmpty()) return;
+
+        Schema<?> baseSchema = resolveTypeRef(base, extension, ctx);
+        if (baseSchema instanceof ObjectSchema baseObj && baseObj.getProperties() != null) {
+            baseObj.getProperties().forEach(schema::addProperty);
+            if (baseObj.getRequired() != null) {
+                baseObj.getRequired().forEach(schema::addRequiredItem);
             }
+        } else if (!(baseSchema instanceof ObjectSchema)) {
+            log.debug("Base type '{}' is not an object schema, skipping field inheritance", base);
         }
-        Element particle = firstXsdChild(extension, "sequence", "all", "choice", "group");
+    }
+
+    /** The fields a derivation declares in its own right — its particle and its attributes. */
+    private void addDeclaredFields(Element derivation, ObjectSchema schema, XsdContext ctx) {
+        Element particle = firstXsdChild(derivation, "sequence", "all", "choice", "group");
         if (particle != null) addParticleFields(particle, schema, ctx);
-        addAttributeFields(extension, schema, ctx);
+        addAttributeFields(derivation, schema, ctx);
+    }
+
+    /**
+     * Builds the schema for an {@code <xsd:simpleContent>} type — an element carrying a text value
+     * of its own plus, usually, attributes. Without attributes it is simply that value, so the
+     * schema is the base type. With attributes the value cannot stand alone: it becomes the
+     * {@code $value} property of an object that also holds the {@code @}-prefixed attributes.
+     */
+    private Schema<?> buildSimpleContentSchema(Element simpleContent, XsdContext ctx) {
+        Element derivation = firstXsdChild(simpleContent, "extension", "restriction");
+        if (derivation == null) return new StringSchema();
+
+        Schema<?> valueSchema = resolveTypeRef(derivation.getAttribute("base"), derivation, ctx);
+        // an xsd:restriction may narrow the value with facets; an xsd:extension carries none
+        applyFacets(derivation, valueSchema);
+
+        var schema = new ObjectSchema();
+        addAttributeFields(derivation, schema, ctx);
+        if (schema.getProperties() == null) return valueSchema;
+
+        schema.addProperty(VALUE_KEY, valueSchema);
+        schema.addRequiredItem(VALUE_KEY);
+        return schema;
     }
 
     private Schema<?> buildSimpleTypeSchema(Element simpleTypeEl, XsdContext ctx) {
@@ -482,14 +577,10 @@ public class XsdToSchema {
                 });
                 case "minInclusive" -> parseDecimal(el, value).ifPresent(schema::setMinimum);
                 case "maxInclusive" -> parseDecimal(el, value).ifPresent(schema::setMaximum);
-                case "minExclusive" -> parseDecimal(el, value).ifPresent(min -> {
-                    schema.setMinimum(min);
-                    schema.setExclusiveMinimum(true);
-                });
-                case "maxExclusive" -> parseDecimal(el, value).ifPresent(max -> {
-                    schema.setMaximum(max);
-                    schema.setExclusiveMaximum(true);
-                });
+                // OpenAPI 3.1 carries an exclusive bound as its own numeric keyword, not as
+                // minimum/maximum plus a boolean — that 3.0 form is dropped when serializing 3.1
+                case "minExclusive" -> parseDecimal(el, value).ifPresent(schema::setExclusiveMinimumValue);
+                case "maxExclusive" -> parseDecimal(el, value).ifPresent(schema::setExclusiveMaximumValue);
             }
         }
     }

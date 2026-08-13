@@ -46,6 +46,8 @@ import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.INP
  * JSON keys prefixed with "@" are mapped to XML attributes instead of child elements.
  * A {@code null} value becomes an element marked {@code xsi:nil="true"}, or, for an attribute,
  * no attribute at all.
+ * A {@code $value} key supplies the enclosing element's own text, for an element that carries both
+ * a value and attributes.
  */
 public class Json2SoapTransformer {
 
@@ -152,10 +154,10 @@ public class Json2SoapTransformer {
     /**
      * Every {@code <xsd:element>} declaration in the type's content model, in the order an instance
      * must present them. Nested {@code sequence}/{@code all}/{@code choice} particles and
-     * {@code xsd:group} references are flattened in place, and an inherited content model
-     * ({@code complexContent}) contributes its base type's fields ahead of the derived ones —
-     * mirroring how {@code XsdToSchema} builds the published schema, so the JSON keys this expects
-     * are the ones the OpenAPI document advertises.
+     * {@code xsd:group} references are flattened in place, and an {@code xsd:extension} contributes
+     * its base type's fields ahead of the derived ones (an {@code xsd:restriction} inherits nothing,
+     * since it re-declares the whole model) — mirroring how {@code XsdToSchema} builds the published
+     * schema, so the JSON keys this expects are the ones the OpenAPI document advertises.
      *
      * <p>Each declaration travels with the schema document it was found in, because a base type or
      * group may live in another document whose {@code elementFormDefault} and {@code targetNamespace}
@@ -170,9 +172,9 @@ public class Json2SoapTransformer {
     private void collectComplexTypeFields(ResolvedType type, List<FieldDecl> fields, Set<Element> visiting) {
         if (type == null || !visiting.add(type.complexType())) return;
         try {
-            // xsd:restriction is treated like xsd:extension, as XsdToSchema does for field inheritance
+            // only an xsd:extension inherits — an xsd:restriction states its content model in full
             Element derivation = derivationOf(type.complexType());
-            if (derivation != null) {
+            if (derivation != null && "extension".equals(derivation.getLocalName())) {
                 collectComplexTypeFields(baseTypeOf(derivation, type.schemaRoot()), fields, visiting);
             }
             Element particle = firstXsdChild(derivation != null ? derivation : type.complexType(),
@@ -425,6 +427,11 @@ public class Json2SoapTransformer {
     }
 
     private void emitField(String fieldName, JsonNode fieldValue, Element parent, Document doc, FieldContext context) {
+        if (VALUE_KEY.equals(fieldName)) {
+            // the element's own text, sitting alongside its attributes — an xsd:simpleContent type
+            setLeafValue(parent, fieldValue);
+            return;
+        }
         if (fieldName.startsWith(ATTRIBUTE_PREFIX)) {
             // An XML attribute has no way to say "no value" — a null is an absent attribute
             if (!fieldValue.isNull()) {

@@ -1,0 +1,80 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.5.0.json
+#
+# Tutorial: WSDL to OpenAPI — XSD Features
+#
+# One WSDL operation per XSD construct the converter maps, named after the construct.
+# Some constructs shape the generated OpenAPI, others shape the converted messages.
+#
+# 1.) Start Membrane
+#    Linux/Mac:
+#      ./membrane.sh -c 97-WSDL-XSD-Features.yaml
+#    Windows:
+#      membrane.cmd -c 97-WSDL-XSD-Features.yaml
+#
+# 2.) Read the generated OpenAPI
+#     http://localhost:2000/api-docs                        Swagger UI and the spec index
+#     http://localhost:2000/api-docs/xsd-features-v1-0-0    the spec itself
+#
+#     getFacets            minLength, maxLength, pattern, enum, minimum, maximum,
+#                          exclusiveMinimum, exclusiveMaximum
+#                          xsd:length becomes minLength and maxLength together
+#     getFixedAndDefault   default="EUR"; fixed="1.0" also becomes enum: ["1.0"]
+#     getNillable          type: ["string", "null"] — how OpenAPI 3.1 says nullable
+#     getAttributes        @id in required, @kind optional
+#     getChoice            byName and byId both optional — either may be sent
+#     getRestriction       no "customer" field: the restriction drops it
+#
+# 3.) Call the operations
+#
+#    curl -d '{"id":1}' -H "Content-Type: application/json" localhost:2000/features/get-primitive-types
+#      "count": 42, "price": 9.99, "active": true      numbers and booleans, not strings
+#
+#    curl -d '{"id":1}' -H "Content-Type: application/json" localhost:2000/features/get-array
+#      "tag": [ "java" ]                               one occurrence is still an array
+#
+#    curl -d '{"note":null}' -H "Content-Type: application/json" localhost:2000/features/get-nillable
+#      "closedAt": null                                from <closedAt xsi:nil="true"/>
+#      the request sends <note xsi:nil="true"/>         see the log
+#
+#    curl -d '{"id":1}' -H "Content-Type: application/json" localhost:2000/features/get-simple-content
+#      "price": { "@currency": "EUR", "$value": 9.99 }  a value that also carries attributes
+#
+#    curl -d '{"id":1}' -H "Content-Type: application/json" localhost:2000/features/get-attributes
+#      "record": { "@id": "123", "@kind": "city", "name": "Berlin" }
+#
+#    curl -d '{"id":1}' -H "Content-Type: application/json" localhost:2000/features/get-extension
+#      "order": { "orderId": "A-1", "customer": "Alice", "priority": "high" }
+#
+#    curl -d '{"id":1}' -H "Content-Type: application/json" localhost:2000/features/get-restriction
+#      "order": { "orderId": "A-1" }                   customer is not part of the restricted type
+#
+#    curl -d '{"id":1}' -H "Content-Type: application/json" localhost:2000/features/get-group-ref
+#      "createdBy": "alice"                            the group's fields sit inline
+#
+#    curl -d '{"id":1}' -H "Content-Type: application/json" localhost:2000/features/get-imported-type
+#      "address": { "street": "Main St 1", "city": "Berlin" }   type from the imported namespace
+#
+#    curl -d '{"third":"c","first":"a","second":"b"}' -H "Content-Type: application/json" localhost:2000/features/get-sequence
+#      the SOAP carries first, second, third in XSD order — see the log
+#
+#    curl -d '{"byId":7}' -H "Content-Type: application/json" localhost:2000/features/get-choice
+#      either alternative alone is accepted
+#
+# 4.) Not covered — no OpenAPI equivalent, or not yet mapped:
+#     xsd:union, substitutionGroup, abstract, xsd:any, xsd:attribute ref=,
+#     totalDigits, fractionDigits
+#
+# 5.) Continue with file 98-WSDL-Faults.yaml
+
+api:
+  name: XSD Features
+  path:
+    uri: /features
+  port: 2000
+  flow:
+    - wsdl2openapi:
+        wsdl: mocks/xsd-features.wsdl
+
+---
+include:
+  - mocks/xsd-features-service.apis.yaml

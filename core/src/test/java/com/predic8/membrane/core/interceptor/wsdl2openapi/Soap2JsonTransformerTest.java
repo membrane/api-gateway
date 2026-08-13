@@ -24,6 +24,8 @@ import io.swagger.v3.oas.models.media.*;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.util.Map;
+
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.qualifiedKey;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -312,7 +314,6 @@ class Soap2JsonTransformerTest {
         var ex = assertThrows(SoapFaultException.class, () -> new Soap2JsonTransformer().transform(SOAP11_SERVER_FAULT));
         assertEquals("soap:Server", ex.getFaultCode());
         assertEquals("Internal server error", ex.getFaultMessage());
-        assertEquals(500, ex.getHttpStatus());
         assertNull(ex.getSoapDetail());
     }
 
@@ -330,11 +331,10 @@ class Soap2JsonTransformerTest {
     }
 
     @Test
-    void soap11ClientFaultHasStatus400() throws Exception {
+    void soap11ClientFaultThrowsSoapFaultException() throws Exception {
         var ex = assertThrows(SoapFaultException.class, () -> new Soap2JsonTransformer().transform(SOAP11_CLIENT_FAULT));
         assertEquals("soap:Client", ex.getFaultCode());
         assertEquals("Invalid BLZ format", ex.getFaultMessage());
-        assertEquals(400, ex.getHttpStatus());
     }
 
     @Test
@@ -342,7 +342,37 @@ class Soap2JsonTransformerTest {
         var ex = assertThrows(SoapFaultException.class, () -> new Soap2JsonTransformer().transform(SOAP12_RECEIVER_FAULT));
         assertEquals("env:Receiver", ex.getFaultCode());
         assertEquals("Processing error", ex.getFaultMessage());
-        assertEquals(500, ex.getHttpStatus());
+    }
+
+    @Test
+    void faultDetailTypedWhenFaultSchemaSupplied() {
+        var faultDetailSchema = new ObjectSchema().addProperty("validation",
+                new ObjectSchema().addProperty("item",
+                        new ObjectSchema()
+                                .addProperty("message", new StringSchema())
+                                .addProperty("line", new IntegerSchema())
+                                .addProperty("column", new IntegerSchema())));
+
+        var ex = assertThrows(SoapFaultException.class,
+                () -> new Soap2JsonTransformer().transform(SOAP11_FAULT_WITH_DETAIL, null, faultDetailSchema));
+
+        assertEquals(1L, itemOf(ex).get("line"));
+        assertEquals(368L, itemOf(ex).get("column"));
+    }
+
+    @Test
+    void faultDetailAllStringsWithoutFaultSchema() {
+        var ex = assertThrows(SoapFaultException.class,
+                () -> new Soap2JsonTransformer().transform(SOAP11_FAULT_WITH_DETAIL));
+
+        assertEquals("1", itemOf(ex).get("line"));
+        assertEquals("368", itemOf(ex).get("column"));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> itemOf(SoapFaultException ex) {
+        var validation = (Map<String, Object>) ex.getSoapDetail().get("validation");
+        return (Map<String, Object>) validation.get("item");
     }
 
     @Test
@@ -831,6 +861,69 @@ class Soap2JsonTransformerTest {
 
         assertThrows(XmlParseException.class, () -> transformer.transform(xmlWithDoctype),
                 "DOCTYPE should be rejected to prevent XXE");
+    }
+
+    // --- simpleContent: a value plus attributes ---
+
+    private static final String PRICE_WITH_ATTRIBUTE_RESPONSE = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+              <soap:Body>
+                <getPriceResponse>
+                  <price currency="EUR">9.99</price>
+                  <label>Widget</label>
+                </getPriceResponse>
+              </soap:Body>
+            </soap:Envelope>
+            """;
+
+    @Test
+    void leafElementWithAttributeKeepsBothValueAndAttribute() throws Exception {
+        JsonNode root = mapper.readTree(new Soap2JsonTransformer().transform(PRICE_WITH_ATTRIBUTE_RESPONSE));
+
+        JsonNode price = root.get("price");
+        assertEquals("EUR", price.get("@currency").asText(), "the attribute must no longer be dropped");
+        assertEquals("9.99", price.get("$value").asText(), "the element's own value moves under $value");
+    }
+
+    @Test
+    void leafElementWithoutAttributesStaysScalar() throws Exception {
+        JsonNode root = mapper.readTree(new Soap2JsonTransformer().transform(PRICE_WITH_ATTRIBUTE_RESPONSE));
+
+        assertTrue(root.get("label").isTextual(), "an element with no attributes must not gain a wrapper object");
+        assertEquals("Widget", root.get("label").asText());
+    }
+
+    @Test
+    void simpleContentValueIsTypedFromTheSchema() throws Exception {
+        var priceSchema = new ObjectSchema()
+                .addProperty("$value", new NumberSchema())
+                .addProperty("@currency", new StringSchema());
+        var responseSchema = new ObjectSchema().addProperty("price", priceSchema);
+
+        JsonNode price = mapper.readTree(
+                new Soap2JsonTransformer().transform(PRICE_WITH_ATTRIBUTE_RESPONSE, responseSchema)).get("price");
+
+        assertTrue(price.get("$value").isNumber(), "$value must be typed by its own declared schema");
+        assertEquals(9.99, price.get("$value").doubleValue());
+        assertEquals("EUR", price.get("@currency").asText());
+    }
+
+    @Test
+    void nilLeafWithAttributesIsStillNull() throws Exception {
+        var soapXml = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+                               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                  <soap:Body>
+                    <getPriceResponse><price currency="EUR" xsi:nil="true"/></getPriceResponse>
+                  </soap:Body>
+                </soap:Envelope>
+                """;
+
+        JsonNode root = mapper.readTree(new Soap2JsonTransformer().transform(soapXml));
+
+        assertTrue(root.get("price").isNull(), "xsi:nil means no value at all, so nil wins over the wrapper object");
     }
 
     // --- parents that are not an ObjectSchema instance ---

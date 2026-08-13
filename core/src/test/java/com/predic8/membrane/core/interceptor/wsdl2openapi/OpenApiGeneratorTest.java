@@ -125,11 +125,32 @@ class OpenApiGeneratorTest {
     }
 
     @Test
-    void responsesWith200And500() {
+    void responsesWith200AndDefaultProblemDetails() {
         var yaml = generator(citiesDefinitions, "/");
 
         assertTrue(yaml.contains("\"200\":"));
-        assertTrue(yaml.contains("\"500\":"));
+        assertTrue(yaml.contains("default:"));
+        assertFalse(yaml.contains("\"500\":"), "Errors are described by the default response, not by an explicit status");
+        assertTrue(yaml.contains("application/problem+json:"));
+        assertTrue(yaml.contains("$ref: \"#/components/schemas/ProblemDetails\""));
+    }
+
+    @Test
+    void problemDetailsSchemaIsGeneratedOnce() {
+        var yaml = generator(citiesDefinitions, "/");
+
+        assertEquals(1, yaml.split("ProblemDetails:").length - 1, "One component schema, referenced by every operation");
+        assertTrue(yaml.contains("Problem details as defined by RFC 7807."));
+    }
+
+    @Test
+    void operationWithoutDeclaredFaultsHasNoDetailsMember() {
+        // cities.wsdl declares no wsdl:fault, so the error response is the bare problem details
+        // document — there is no operation-specific fault content to describe.
+        var yaml = generator(citiesDefinitions, "/");
+
+        assertFalse(yaml.contains("details:"), "Nothing to put under details when no fault is declared");
+        assertFalse(yaml.contains("allOf:"));
     }
 
     @Test

@@ -111,7 +111,7 @@ class Wsdl2OpenApiConverterWsdlStyleTest {
         assertTrue(yaml.contains("name:"), "Request body should expose the wrapped element's 'name' field");
         assertTrue(yaml.contains("greeting:"), "Response body should expose the wrapped element's 'greeting' field");
         assertTrue(yaml.contains("\"200\":"), "Should contain a 200 response");
-        assertTrue(yaml.contains("\"500\":"), "Should contain the generic 500 response");
+        assertTrue(yaml.contains("default:"), "Should contain the generic error response");
         assertTrue(yaml.contains("https://github.com/membrane/api-gateway"),
                 "info.description should link to the Membrane GitHub page");
         assertTrue(yaml.contains("https://www.membrane-api.io/?oas=1"),
@@ -284,10 +284,10 @@ class Wsdl2OpenApiConverterWsdlStyleTest {
     }
 
     @Test
-    void multipleFaultsProduceOneOfSchemaOnServerError() throws Exception {
-        // Both wsdl:fault entries surface as SOAP faults, which are always HTTP 500 — so they
-        // share a single "500" response, but its content schema must be a oneOf of both fault
-        // element schemas so each fault's fields are still represented in the OpenAPI doc.
+    void multipleFaultsProduceOneOfSchemaOnErrorResponse() throws Exception {
+        // Every error is a problem details document, so all faults share the single "default"
+        // response. Its details member must be a oneOf of both fault element schemas, so each
+        // fault's fields are still represented in the OpenAPI doc.
         var wsdl = """
                 <definitions xmlns="http://schemas.xmlsoap.org/wsdl/"
                              xmlns:xs="http://www.w3.org/2001/XMLSchema"
@@ -391,9 +391,11 @@ class Wsdl2OpenApiConverterWsdlStyleTest {
         var yaml = new Wsdl2OpenApiConverter(Definitions.parse(new StaticStringResolver(), wsdl), "/").generateYaml();
 
         assertTrue(yaml.contains("cancelled:"), "Normal output message is still converted");
-        assertTrue(yaml.contains("\"500\":"));
-        assertEquals(1, yaml.split("\"500\":").length - 1, "Exactly one 500 response, not one per fault");
+        assertTrue(yaml.contains("default:"));
+        assertEquals(1, yaml.split("default:").length - 1, "Exactly one error response, not one per fault");
         assertTrue(yaml.contains("oneOf:"), "Multiple fault schemas should be combined with oneOf");
+        assertTrue(yaml.contains("OrderNotFoundFault:"), "Fault schemas are keyed by fault element name");
+        assertTrue(yaml.contains("OrderAlreadyShippedFault:"));
         assertTrue(yaml.contains("errorCode:"), "First fault's schema should be represented");
         assertTrue(yaml.contains("invalidField:"), "Second fault's schema should be represented");
     }
@@ -467,9 +469,9 @@ class Wsdl2OpenApiConverterWsdlStyleTest {
 
         var yaml = new Wsdl2OpenApiConverter(Definitions.parse(new StaticStringResolver(), wsdl), "/").generateYaml();
 
-        assertTrue(yaml.contains("\"500\":"), "500 response must be present for the fault");
-        assertTrue(yaml.contains("faultCode:"), "First type-based part must appear in the 500 schema");
-        assertTrue(yaml.contains("faultReason:"), "Second type-based part must appear in the 500 schema");
+        assertTrue(yaml.contains("default:"), "Error response must be present for the fault");
+        assertTrue(yaml.contains("faultCode:"), "First type-based part must appear in the fault schema");
+        assertTrue(yaml.contains("faultReason:"), "Second type-based part must appear in the fault schema");
     }
 
     /** Shared by the two soap:header tests below: one operation, one header part, one body part. */
@@ -658,7 +660,7 @@ class Wsdl2OpenApiConverterWsdlStyleTest {
         assertTrue(yaml.contains("name:"));
         assertTrue(yaml.contains("greeting:"));
         assertTrue(yaml.contains("\"200\":"));
-        assertTrue(yaml.contains("\"500\":"));
+        assertTrue(yaml.contains("default:"));
     }
 
 }

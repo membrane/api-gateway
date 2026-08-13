@@ -463,6 +463,19 @@ class Json2SoapTransformerTest {
     }
 
     @Test
+    void restrictionDoesNotInheritTheBaseTypesFields() throws Exception {
+        var soapBytes = new Json2SoapTransformer(inheritedDefinitions, "trimOrder")
+                .transform("{\"orderId\": \"A-1\"}");
+
+        var children = getChildElements(getFirstChildElement(bodyOf(parseXml(soapBytes))));
+
+        assertEquals(1, children.size(), "the restricted type declares exactly one field");
+        assertEquals("orderId", children.getFirst().getLocalName());
+        assertEquals(BASE_NS, children.getFirst().getNamespaceURI(),
+                "inheriting the base model too would make orderId collide with itself and lose its namespace");
+    }
+
+    @Test
     void fieldsInsideANestedChoiceAreOrderedFromTheXsd() throws Exception {
         var soapBytes = new Json2SoapTransformer(extendedTypesDefinitions, "search")
                 .transform("{\"code\": \"A\", \"byName\": \"Berlin\"}");
@@ -472,6 +485,33 @@ class Json2SoapTransformerTest {
 
         assertEquals(List.of("byName", "code"), children,
                 "an element inside a choice nested in the sequence must take its declared position");
+    }
+
+    // --- $value: an element carrying both a value and attributes ---
+
+    @Test
+    void valueKeyBecomesTheElementsTextAlongsideItsAttributes() throws Exception {
+        var soapBytes = new Json2SoapTransformer(attributesDefinitions, "record")
+                .transform("{\"name\": {\"@lang\": \"de\", \"$value\": \"Berlin\"}}");
+
+        Element nameEl = getFirstChildElement(getFirstChildElement(bodyOf(parseXml(soapBytes))));
+
+        assertEquals("name", nameEl.getLocalName());
+        assertEquals("Berlin", nameEl.getTextContent(), "$value supplies the element's own text");
+        assertEquals("de", nameEl.getAttribute("lang"), "the sibling attribute is still emitted");
+        assertEquals(0, getChildElements(nameEl).size(), "$value must not become a child element");
+    }
+
+    @Test
+    void valueKeyRoundTripsThroughTheSoap2JsonShape() throws Exception {
+        // the exact JSON Soap2JsonTransformer produces for <name lang="de">Berlin</name>
+        var soapBytes = new Json2SoapTransformer(attributesDefinitions, "record")
+                .transform("{\"name\": {\"$value\": \"Berlin\", \"@lang\": \"de\"}}");
+
+        Element nameEl = getFirstChildElement(getFirstChildElement(bodyOf(parseXml(soapBytes))));
+
+        assertEquals("Berlin", nameEl.getTextContent(), "key order must not matter");
+        assertEquals("de", nameEl.getAttribute("lang"));
     }
 
     // --- null values / xsi:nil ---

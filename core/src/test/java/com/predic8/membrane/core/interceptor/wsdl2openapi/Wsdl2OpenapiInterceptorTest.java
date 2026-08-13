@@ -14,8 +14,10 @@
 
 package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.config.Path;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.proxies.ServiceProxy;
@@ -225,6 +227,78 @@ class Wsdl2OpenapiInterceptorTest {
         assertEquals("TestAPI", info.getTitle(), "the OpenAPI title must be the enclosing api's name");
         assertTrue(info.getDescription().startsWith("Custom description."),
                 "the configured description must appear at the start of info.description");
+    }
+
+    /** A SOAP 1.1 fault carrying the cityNotFound detail that cities-with-fault.wsdl declares. */
+    private static final String CITY_NOT_FOUND_FAULT = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+              <soap:Body>
+                <soap:Fault>
+                  <faultcode>soap:Client</faultcode>
+                  <faultstring>City not found</faultstring>
+                  <detail>
+                    <cityNotFound xmlns="https://predic8.de/cities">
+                      <name>Atlantis</name>
+                    </cityNotFound>
+                  </detail>
+                </soap:Fault>
+              </soap:Body>
+            </soap:Envelope>
+            """;
+
+    @Test
+    void declaredFaultBecomesProblemDetailsWithDetailsMember() throws Exception {
+        var response = faultResponse(false);
+
+        assertEquals(500, response.getStatusCode());
+        assertEquals("application/problem+json", response.getHeader().getContentType());
+
+        var body = new ObjectMapper().readTree(response.getBodyAsStringDecoded());
+        assertEquals("City not found", body.get("title").asText());
+        assertEquals(500, body.get("status").asInt());
+        assertEquals("Atlantis", body.at("/details/cityNotFound/name").asText(),
+                "the declared fault's content appears under details, keyed by the fault element name");
+    }
+
+    @Test
+    void faultResponseDoesNotRevealTheSoapBackendInProduction() throws Exception {
+        String body = faultResponse(true).getBodyAsStringDecoded();
+
+        assertFalse(body.contains("faultCode"), "the SOAP fault code is a development-mode aid only");
+        assertFalse(body.toLowerCase().contains("soap"), "nothing may name the technology behind the API");
+        assertTrue(body.contains("Atlantis"), "the declared fault content is part of the contract and stays");
+    }
+
+    @Test
+    void faultCodeIsAvailableAsInternalInformationOutsideProduction() throws Exception {
+        // Internal fields are flattened into the document outside production mode; in production
+        // they are replaced by a log key, which is what keeps the fault code off the wire.
+        var body = new ObjectMapper().readTree(faultResponse(false).getBodyAsStringDecoded());
+
+        assertEquals("soap:Client", body.get("faultCode").asText());
+    }
+
+    /** Runs a declared SOAP fault through handleResponse and returns the client-facing response. */
+    private static Response faultResponse(boolean production) throws Exception {
+        var router = new DummyTestRouter();
+        router.getConfiguration().setProduction(production);
+        var interceptor = wsdl2openapi("classpath:/ws/cities-with-fault.wsdl");
+        var proxy = apiProxyWith(interceptor);
+        interceptor.init(router, proxy);
+
+        var exc = new Exchange(null);
+        exc.setProperty(operationPropertyKey(interceptor), "getCity");
+        exc.setResponse(Response.ok(CITY_NOT_FOUND_FAULT).build());
+
+        assertEquals(Outcome.ABORT, interceptor.handleResponse(exc));
+        return exc.getResponse();
+    }
+
+    private static String operationPropertyKey(Wsdl2OpenapiInterceptor interceptor) throws Exception {
+        Field field = Wsdl2OpenapiInterceptor.class.getDeclaredField("operationPropertyKey");
+        field.setAccessible(true);
+        return (String) field.get(interceptor);
     }
 
     @SuppressWarnings("unchecked")

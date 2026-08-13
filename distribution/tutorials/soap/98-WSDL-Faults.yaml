@@ -1,0 +1,100 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.5.0.json
+#
+# Tutorial: WSDL to OpenAPI — Faults
+#
+# What a SOAP fault becomes for a JSON client. The cancel operation declares two faults with
+# different content models, and the mock returns one or the other depending on the orderId.
+#
+# 1.) Start Membrane
+#    Linux/Mac:
+#      ./membrane.sh -c 98-WSDL-Faults.yaml
+#    Windows:
+#      membrane.cmd -c 98-WSDL-Faults.yaml
+#
+# 2.) Cancel an order that cannot be cancelled in its state
+#
+#    curl -d '{"orderId":"1"}' -H "Content-Type: application/json" localhost:2000/orders/cancel
+#
+#      {
+#        "title" : "Cancellation is not possible in this state",
+#        "type" : "https://membrane-api.io/problems/operation-error",
+#        "status" : 500,
+#        "details" : {
+#          "wrongState" : {
+#            "orderId" : "1",
+#            "currentState" : "SHIPPED",
+#            "message" : "A shipped order cannot be cancelled."
+#          }
+#        },
+#        "detail" : "The service could not complete the operation.",
+#        ...
+#      }
+#
+#     The response is a problem details document (RFC 7807). The content of the declared fault
+#     sits under details, keyed by the name of the fault element.
+#
+# 3.) Cancel an order that does not exist
+#
+#    curl -d '{"orderId":"4711"}' -H "Content-Type: application/json" localhost:2000/orders/cancel
+#
+#      "details" : {
+#        "orderDoesNotExist" : {
+#          "orderId" : "4711"
+#        }
+#      }
+#
+#     The other fault, so a different key and different fields under details.
+#
+# 4.) Both answers have status 500
+#
+#     The backend sends the fault with HTTP status 200 — see the log. The gateway reads the
+#     fault from the SOAP body, not from the status. It answers 500 for every fault, because it
+#     cannot tell whether the input was wrong, the service is broken, or something else failed.
+#
+# 5.) Nothing in the response mentions SOAP
+#
+#     Whoever operates the gateway may not want clients to know that a legacy service is being
+#     called. The faultCode field in the responses above is development-mode information. Put
+#     this at the top of the file, restart, and call the API again:
+#
+#       configuration:
+#         production: true
+#
+#       ---
+#
+#     faultCode is gone, and title no longer carries the message the service sent:
+#
+#       {
+#         "title" : "Internal Server Error",
+#         "type" : "https://membrane-api.io/problems/operation-error",
+#         "status" : 500,
+#         "details" : {
+#           "wrongState" : { "orderId" : "1", "currentState" : "SHIPPED", ... }
+#         },
+#         "detail" : "Internal details are hidden. See server log (key: ...)"
+#       }
+#
+#     details survives, because the faults the WSDL declares are part of the API's contract.
+#     Everything else is diagnostics and moves to the log under that key.
+#
+# 6.) Read the generated OpenAPI
+#     http://localhost:2000/api-docs                     Swagger UI and the spec index
+#     http://localhost:2000/api-docs/order-api-v1-0-0    the spec itself
+#
+#     The operation has a 200 and a default response. The default response describes every
+#     error, always as a problem details document — there is no list of status codes to keep
+#     in sync. The two declared faults appear under details, combined with oneOf: only one of
+#     them can be present in any one response.
+
+api:
+  name: Order API
+  path:
+    uri: /orders
+  port: 2000
+  flow:
+    - wsdl2openapi:
+        wsdl: mocks/order.wsdl
+
+---
+include:
+  - mocks/order.apis.yaml

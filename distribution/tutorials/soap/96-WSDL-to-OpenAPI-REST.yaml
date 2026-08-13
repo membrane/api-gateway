@@ -25,6 +25,8 @@
 #
 # 6.) Delete a partner — ID from URL (DELETE, no body)
 #     curl -X DELETE http://localhost:2000/partners/1
+#
+# 7.) Continue with file 97-WSDL-XSD-Features.yaml
 
 api:
   port: 2000

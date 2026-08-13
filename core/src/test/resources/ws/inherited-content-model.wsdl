@@ -32,6 +32,19 @@
                     </xsd:element>
                 </xsd:sequence>
             </xsd:complexType>
+
+            <!-- restricts OrderBase down to orderId alone: address is not part of this type -->
+            <xsd:complexType name="OrderIdOnly">
+                <xsd:complexContent>
+                    <xsd:restriction base="b:OrderBase">
+                        <xsd:sequence>
+                            <xsd:element name="orderId" type="xsd:string"/>
+                        </xsd:sequence>
+                    </xsd:restriction>
+                </xsd:complexContent>
+            </xsd:complexType>
+
+            <xsd:element name="trimOrder" type="b:OrderIdOnly"/>
         </xsd:schema>
 
         <xsd:schema targetNamespace="https://example.com/inherit-service"
@@ -57,10 +70,16 @@
     <wsdl:message name="PlaceOrderRequest">
         <wsdl:part name="parameters" element="tns:placeOrder"/>
     </wsdl:message>
+    <wsdl:message name="TrimOrderRequest">
+        <wsdl:part name="parameters" element="b:trimOrder"/>
+    </wsdl:message>
 
     <wsdl:portType name="OrderPort">
         <wsdl:operation name="placeOrder">
             <wsdl:input message="tns:PlaceOrderRequest"/>
+        </wsdl:operation>
+        <wsdl:operation name="trimOrder">
+            <wsdl:input message="tns:TrimOrderRequest"/>
         </wsdl:operation>
     </wsdl:portType>
 
@@ -68,6 +87,10 @@
         <s:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
         <wsdl:operation name="placeOrder">
             <s:operation soapAction="placeOrder"/>
+            <wsdl:input><s:body use="literal"/></wsdl:input>
+        </wsdl:operation>
+        <wsdl:operation name="trimOrder">
+            <s:operation soapAction="trimOrder"/>
             <wsdl:input><s:body use="literal"/></wsdl:input>
         </wsdl:operation>
     </wsdl:binding>

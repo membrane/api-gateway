@@ -29,6 +29,7 @@ import java.math.BigDecimal;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.qualifiedKey;
@@ -431,7 +432,7 @@ class XsdToSchemaTest {
     // ── xsd:restriction on complexContent ────────────────────────────────
 
     @Test
-    void complexContentRestrictionExposesBaseTypeFields() {
+    void complexContentRestrictionExposesOnlyItsOwnFields() {
         var schema = convert(converterFor("""
                 <xsd:complexType name="FullAddress">
                   <xsd:sequence>
@@ -455,9 +456,66 @@ class XsdToSchemaTest {
                 <xsd:element name="address" type="tns:ShortAddress"/>
                 """), "address");
 
-        assertNotNull(fieldOf(schema, "street"));
+        assertNull(fieldOf(schema, "street"),
+                "the restriction leaves street out, so it is not part of ShortAddress");
         assertNotNull(fieldOf(schema, "city"));
         assertNotNull(fieldOf(schema, "country"));
+    }
+
+    @Test
+    void complexContentRestrictionKeepsItsOwnAttributes() {
+        var schema = convert(converterFor("""
+                <xsd:complexType name="FullAddress">
+                  <xsd:sequence>
+                    <xsd:element name="street" type="xsd:string"/>
+                    <xsd:element name="city"   type="xsd:string"/>
+                  </xsd:sequence>
+                  <xsd:attribute name="kind" type="xsd:string"/>
+                </xsd:complexType>
+
+                <xsd:complexType name="ShortAddress">
+                  <xsd:complexContent>
+                    <xsd:restriction base="tns:FullAddress">
+                      <xsd:sequence>
+                        <xsd:element name="city" type="xsd:string"/>
+                      </xsd:sequence>
+                      <xsd:attribute name="kind" type="xsd:string" use="required"/>
+                    </xsd:restriction>
+                  </xsd:complexContent>
+                </xsd:complexType>
+
+                <xsd:element name="address" type="tns:ShortAddress"/>
+                """), "address");
+
+        assertNotNull(fieldOf(schema, "@kind"), "an attribute the restriction re-declares is kept");
+        assertTrue(isRequired(schema, "@kind"), "and its own use=required applies");
+        assertNull(fieldOf(schema, "street"));
+    }
+
+    @Test
+    void complexContentExtensionStillInheritsBaseTypeFields() {
+        var schema = convert(converterFor("""
+                <xsd:complexType name="BaseAddress">
+                  <xsd:sequence>
+                    <xsd:element name="street" type="xsd:string"/>
+                  </xsd:sequence>
+                </xsd:complexType>
+
+                <xsd:complexType name="FullAddress">
+                  <xsd:complexContent>
+                    <xsd:extension base="tns:BaseAddress">
+                      <xsd:sequence>
+                        <xsd:element name="city" type="xsd:string"/>
+                      </xsd:sequence>
+                    </xsd:extension>
+                  </xsd:complexContent>
+                </xsd:complexType>
+
+                <xsd:element name="address" type="tns:FullAddress"/>
+                """), "address");
+
+        assertNotNull(fieldOf(schema, "street"), "an extension does inherit, unlike a restriction");
+        assertNotNull(fieldOf(schema, "city"));
     }
 
     // ── xsd:group in particle position ────────────────────────────────────
@@ -682,8 +740,8 @@ class XsdToSchemaTest {
         Schema<?> score = fieldOf(schema, "score");
         assertEquals(new BigDecimal("0"), score.getMinimum());
         assertEquals(new BigDecimal("100"), score.getMaximum());
-        assertNull(score.getExclusiveMinimum(), "an inclusive bound must not be marked exclusive");
-        assertNull(score.getExclusiveMaximum(), "an inclusive bound must not be marked exclusive");
+        assertNull(score.getExclusiveMinimumValue(), "an inclusive bound must not be marked exclusive");
+        assertNull(score.getExclusiveMaximumValue(), "an inclusive bound must not be marked exclusive");
     }
 
     @Test
@@ -703,11 +761,13 @@ class XsdToSchemaTest {
                 </xsd:element>
                 """), "payment");
 
+        // the generated document is OpenAPI 3.1, where an exclusive bound is its own numeric
+        // keyword; the 3.0 minimum-plus-boolean form is silently dropped when serializing 3.1
         Schema<?> amount = fieldOf(schema, "amount");
-        assertEquals(new BigDecimal("0"), amount.getMinimum());
-        assertEquals(new BigDecimal("1000.50"), amount.getMaximum());
-        assertTrue(amount.getExclusiveMinimum());
-        assertTrue(amount.getExclusiveMaximum());
+        assertEquals(new BigDecimal("0"), amount.getExclusiveMinimumValue());
+        assertEquals(new BigDecimal("1000.50"), amount.getExclusiveMaximumValue());
+        assertNull(amount.getMinimum(), "an exclusive bound must not also be emitted as inclusive");
+        assertNull(amount.getMaximum(), "an exclusive bound must not also be emitted as inclusive");
     }
 
     @Test
@@ -767,8 +827,10 @@ class XsdToSchemaTest {
                 </xsd:element>
                 """), "account");
 
-        assertTrue(fieldOf(schema, "closedAt").getNullable());
-        assertNull(fieldOf(schema, "openedAt").getNullable(), "a plain element must not be nullable");
+        // OpenAPI 3.1 lists "null" among the allowed types; the 3.0 nullable flag is not emitted
+        assertEquals(Set.of("string", "null"), fieldOf(schema, "closedAt").getTypes());
+        assertEquals(Set.of("string"), fieldOf(schema, "openedAt").getTypes(),
+                "a plain element keeps its single type");
     }
 
     @Test
@@ -782,8 +844,8 @@ class XsdToSchemaTest {
                 """), "account");
 
         var notes = assertInstanceOf(ArraySchema.class, fieldOf(schema, "note"));
-        assertNull(notes.getNullable(), "nillable describes each occurrence, not the list");
-        assertTrue(notes.getItems().getNullable());
+        assertEquals(Set.of("array"), notes.getTypes(), "nillable describes each occurrence, not the list");
+        assertEquals(Set.of("string", "null"), notes.getItems().getTypes());
     }
 
     // ── default= / fixed= ─────────────────────────────────────────────────
@@ -833,7 +895,7 @@ class XsdToSchemaTest {
     }
 
     @Test
-    void fixedValueTreatedAsDefault() {
+    void fixedValueBecomesBothDefaultAndSingleValueEnum() {
         var schema = convert(converterFor("""
                 <xsd:element name="envelope">
                   <xsd:complexType><xsd:sequence>
@@ -842,7 +904,53 @@ class XsdToSchemaTest {
                 </xsd:element>
                 """), "envelope");
 
-        assertEquals("1.0", fieldOf(schema, "version").getDefault());
+        Schema<?> version = fieldOf(schema, "version");
+        assertEquals("1.0", version.getDefault(), "the value is still documented as the default");
+        assertEquals(List.of("1.0"), version.getEnum(), "fixed also restricts which values are valid");
+    }
+
+    @Test
+    void fixedEnumItemCarriesTheSchemaType() {
+        var schema = convert(converterFor("""
+                <xsd:element name="envelope">
+                  <xsd:complexType><xsd:sequence>
+                    <xsd:element name="revision" type="xsd:int" fixed="3"/>
+                  </xsd:sequence></xsd:complexType>
+                </xsd:element>
+                """), "envelope");
+
+        Schema<?> revision = fieldOf(schema, "revision");
+        assertEquals(List.of(3), revision.getEnum(), "the enum item must be a number, not a quoted string");
+        assertEquals(3, revision.getDefault());
+    }
+
+    @Test
+    void plainDefaultDoesNotRestrictValues() {
+        var schema = convert(converterFor("""
+                <xsd:element name="account">
+                  <xsd:complexType><xsd:sequence>
+                    <xsd:element name="currency" type="xsd:string" default="EUR"/>
+                  </xsd:sequence></xsd:complexType>
+                </xsd:element>
+                """), "account");
+
+        assertNull(fieldOf(schema, "currency").getEnum(),
+                "a default is only a suggestion, so it must not become an enum");
+    }
+
+    @Test
+    void fixedValueThatDoesNotFitTheTypeYieldsNoEnum() {
+        var schema = convert(converterFor("""
+                <xsd:element name="envelope">
+                  <xsd:complexType><xsd:sequence>
+                    <xsd:element name="revision" type="xsd:int" fixed="three"/>
+                  </xsd:sequence></xsd:complexType>
+                </xsd:element>
+                """), "envelope");
+
+        Schema<?> revision = fieldOf(schema, "revision");
+        assertNull(revision.getDefault());
+        assertNull(revision.getEnum(), "an unusable literal must not reach the document in either form");
     }
 
     @Test
@@ -876,6 +984,63 @@ class XsdToSchemaTest {
                 """), "note");
 
         assertInstanceOf(StringSchema.class, schema);
+    }
+
+    @Test
+    void simpleContentWithoutAttributesTakesItsBaseType() {
+        var schema = convert(converterFor("""
+                <xsd:element name="amount">
+                  <xsd:complexType>
+                    <xsd:simpleContent>
+                      <xsd:extension base="xsd:decimal"/>
+                    </xsd:simpleContent>
+                  </xsd:complexType>
+                </xsd:element>
+                """), "amount");
+
+        assertInstanceOf(NumberSchema.class, schema,
+                "the value type must survive, rather than degrading to string");
+    }
+
+    @Test
+    void simpleContentWithAttributesBecomesObjectWithValueProperty() {
+        var schema = convert(converterFor("""
+                <xsd:complexType name="Money">
+                  <xsd:simpleContent>
+                    <xsd:extension base="xsd:decimal">
+                      <xsd:attribute name="currency" type="xsd:string" use="required"/>
+                    </xsd:extension>
+                  </xsd:simpleContent>
+                </xsd:complexType>
+
+                <xsd:element name="price" type="tns:Money"/>
+                """), "price");
+
+        assertInstanceOf(ObjectSchema.class, schema);
+        assertInstanceOf(NumberSchema.class, fieldOf(schema, "$value"), "the text value keeps the base type");
+        assertInstanceOf(StringSchema.class, fieldOf(schema, "@currency"), "the attribute is kept alongside it");
+        assertTrue(isRequired(schema, "$value"), "an element always carries its own value");
+        assertTrue(isRequired(schema, "@currency"), "use=required is still honoured");
+    }
+
+    @Test
+    void simpleContentRestrictionAppliesItsFacetsToTheValue() {
+        var schema = convert(converterFor("""
+                <xsd:complexType name="Code">
+                  <xsd:simpleContent>
+                    <xsd:restriction base="xsd:string">
+                      <xsd:maxLength value="3"/>
+                      <xsd:attribute name="scheme" type="xsd:string"/>
+                    </xsd:restriction>
+                  </xsd:simpleContent>
+                </xsd:complexType>
+
+                <xsd:element name="code" type="tns:Code"/>
+                """), "code");
+
+        assertEquals(3, fieldOf(schema, "$value").getMaxLength(),
+                "a facet on the restriction constrains the value, not the wrapper");
+        assertNotNull(fieldOf(schema, "@scheme"));
     }
 
     // ── Self-referencing types ────────────────────────────────────────────
