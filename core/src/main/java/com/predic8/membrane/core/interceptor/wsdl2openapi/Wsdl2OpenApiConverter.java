@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
 import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.wsdl.parser.*;
+import io.swagger.v3.core.util.Yaml31;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.PathItem;
@@ -41,7 +42,6 @@ import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.came
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.componentName;
 import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.INPUT;
 import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.OUTPUT;
-import static io.swagger.v3.parser.ObjectMapperFactory.createYaml;
 
 /**
  * Generates an OpenAPI 3.1 model from WSDL definitions.
@@ -153,13 +153,14 @@ public class Wsdl2OpenApiConverter {
                 .toList();
     }
 
+    /**
+     * The document as YAML. Serialized by the OpenAPI 3.1 writer rather than a plain object mapper:
+     * that one writes a schema's vendor extensions as the {@code x-} members they are and leaves the
+     * model's internal bookkeeping — {@code exampleSetFlag}, the {@code types} list backing
+     * {@code type} — out of the published document.
+     */
     public String generateYaml() {
-        var openAPI = generate();
-        try {
-            return createYaml().writeValueAsString(openAPI);
-        } catch (Exception e) {
-            throw new RuntimeException("Could not serialize OpenAPI model to YAML", e);
-        }
+        return Yaml31.pretty(generate());
     }
 
     /** CommonMark, per the OpenAPI spec — rendered as-is by Swagger UI, Redoc, etc. */
@@ -174,8 +175,26 @@ public class Wsdl2OpenApiConverter {
     private Info buildInfo() {
         return new Info()
                 .title(title != null ? title : getServiceName())
-                .description(description != null ? description + "\n\n" + DESCRIPTION : DESCRIPTION)
+                .description(infoDescription())
                 .version("1.0.0");
+    }
+
+    /**
+     * What the document says about the API as a whole: the configured description where there is one,
+     * otherwise what the WSDL documents its service — or, where the service documents nothing, its
+     * definitions — with. The generated note about Membrane follows below it.
+     */
+    private String infoDescription() {
+        String text = description != null ? description : wsdlDocumentation();
+        return text != null ? text + "\n\n" + DESCRIPTION : DESCRIPTION;
+    }
+
+    private String wsdlDocumentation() {
+        return definitions.getServices().stream()
+                .map(Service::getDocumentation)
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElseGet(definitions::getDocumentation);
     }
 
     private Paths buildPaths() {
@@ -227,9 +246,11 @@ public class Wsdl2OpenApiConverter {
         var inputParts = getInputParts(wsdlOp);
         var headerParts = findBindingOperation(name).map(this::getHeaderParts).orElse(List.of());
 
+        // No summary: it could only repeat the operation name, which operationId and the path already
+        // carry. What the WSDL documents the operation with goes into description instead.
         var apiOp = new io.swagger.v3.oas.models.Operation()
                 .operationId(name)
-                .summary(name)
+                .description(wsdlOp.getDocumentation())
                 .responses(buildResponses(wsdlOp));
 
         if (settings.getTag() != null) {

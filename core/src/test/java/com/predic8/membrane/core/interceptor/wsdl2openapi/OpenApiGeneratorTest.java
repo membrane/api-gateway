@@ -61,27 +61,27 @@ class OpenApiGeneratorTest {
     void openApiHeader() {
         var yaml = generator(citiesDefinitions, "/purchasing");
 
-        assertTrue(yaml.contains("openapi: \"3.1.2\""), "Should contain openapi version");
+        assertTrue(yaml.contains("openapi: 3.1.2"), "Should contain openapi version");
         assertTrue(yaml.contains("info:"), "Should contain info section");
-        assertTrue(yaml.contains("version: \"1.0.0\""), "Should contain version");
+        assertTrue(yaml.contains("version: 1.0.0"), "Should contain version");
     }
 
     @Test
     void serviceNameUsedAsTitle() {
-        assertTrue(generator(citiesDefinitions, "/purchasing").contains("title: \"CityService\""));
+        assertTrue(generator(citiesDefinitions, "/purchasing").contains("title: CityService"));
     }
 
     @Test
     void serverUrlFromBasePath() {
-        assertTrue(generator(citiesDefinitions, "/purchasing").contains("url: \"/purchasing\""));
+        assertTrue(generator(citiesDefinitions, "/purchasing").contains("url: /purchasing"));
     }
 
     @Test
     void basePathTrailingSlashStripped() {
         var yaml = new Wsdl2OpenApiConverter(citiesDefinitions, "/purchasing/").generateYaml();
 
-        assertTrue(yaml.contains("url: \"/purchasing\""));
-        assertFalse(yaml.contains("url: \"/purchasing/\""));
+        assertTrue(yaml.contains("url: /purchasing"));
+        assertFalse(yaml.contains("url: /purchasing/"));
     }
 
     @ParameterizedTest(name = "{0} → {1}")
@@ -104,7 +104,7 @@ class OpenApiGeneratorTest {
     void rootBasePathStaysASlash() {
         // An api without a path yields basePath "/". Stripping that to "" would leave an empty
         // server url, which Swagger UI resolves against the /api-docs page, not the API root.
-        assertTrue(generator(citiesDefinitions, "/").contains("url: \"/\""));
+        assertTrue(generator(citiesDefinitions, "/").contains("url: /"));
     }
 
     @Test
@@ -122,7 +122,7 @@ class OpenApiGeneratorTest {
 
     @Test
     void operationIdMatchesOriginalCamelCase() {
-        assertTrue(generator(citiesDefinitions, "/").contains("operationId: \"getCity\""));
+        assertTrue(generator(citiesDefinitions, "/").contains("operationId: getCity"));
     }
 
     @Test
@@ -173,7 +173,7 @@ class OpenApiGeneratorTest {
     void blzServiceTitle() {
         var yaml = generator(blzDefinitions, "/blz");
 
-        assertTrue(yaml.contains("title: \"BLZService\""));
+        assertTrue(yaml.contains("title: BLZService"));
         assertTrue(yaml.contains("/get-bank:"));
     }
 
@@ -222,7 +222,7 @@ class OpenApiGeneratorTest {
 
     @Test
     void unboundedElementProducesArraySchema() {
-        assertTrue(generator(extendedDefinitions, "/").contains("type: \"array\""));
+        assertTrue(generator(extendedDefinitions, "/").contains("type: array"));
     }
 
     @Test
@@ -303,7 +303,7 @@ class OpenApiGeneratorTest {
 
         assertTrue(yaml.contains("tags:"), "Should contain tags section");
         assertTrue(yaml.contains("MyService"), "Should contain configured tag value");
-        assertTrue(yaml.contains("- name: \"MyService\""), "Top-level tags section should declare the tag by name");
+        assertTrue(yaml.contains("- name: MyService"), "Top-level tags section should declare the tag by name");
     }
 
     @Test
@@ -437,6 +437,59 @@ class OpenApiGeneratorTest {
     @Test
     void noTagWhenNotConfigured() {
         assertFalse(generator(citiesDefinitions, "/").contains("tags:"), "Should have no tags when none configured");
+    }
+
+    // ── wsdl:documentation / xsd:documentation ────────────────────────────
+
+    @Test
+    void serviceDocumentationBecomesInfoDescription() throws Exception {
+        var openAPI = new Wsdl2OpenApiConverter(documentedDefinitions(), "/").generate();
+
+        assertTrue(openAPI.getInfo().getDescription().startsWith("Answers questions about cities."),
+                "the service's documentation must lead info.description, ahead of the generated note");
+    }
+
+    @Test
+    void definitionsDocumentationUsedWhereTheServiceDocumentsNothing() throws Exception {
+        var openAPI = new Wsdl2OpenApiConverter(blzDefinitions, "/").generate();
+
+        assertTrue(openAPI.getInfo().getDescription().startsWith("BLZService"));
+    }
+
+    @Test
+    void configuredDescriptionWinsOverTheWsdlDocumentation() throws Exception {
+        var openAPI = new Wsdl2OpenApiConverter(documentedDefinitions(), "/", Map.of(), null, "Configured.").generate();
+
+        assertTrue(openAPI.getInfo().getDescription().startsWith("Configured."));
+        assertFalse(openAPI.getInfo().getDescription().contains("Answers questions about cities."));
+    }
+
+    @Test
+    void operationDocumentationBecomesOperationDescription() throws Exception {
+        var operation = new Wsdl2OpenApiConverter(documentedDefinitions(), "/").generate()
+                .getPaths().get("/get-city").getPost();
+
+        assertEquals("Looks a city up by its name.", operation.getDescription());
+        assertNull(operation.getSummary(), "a summary repeating the operation name is noise");
+    }
+
+    @Test
+    void elementDocumentationReachesTheGeneratedYaml() throws Exception {
+        assertTrue(generator(documentedDefinitions(), "/").contains("description: The name of the city to look up."));
+    }
+
+    @Test
+    void documentationOfAFieldSurvivesNextToItsReference() throws Exception {
+        var yaml = generator(documentedDefinitions(), "/");
+
+        assertTrue(yaml.contains("description: Where the city is."),
+                "an element documenting the named type it uses must keep its prose beside the $ref");
+        assertTrue(yaml.contains("description: A point on the globe."),
+                "the named type's own documentation belongs to its component");
+    }
+
+    private static Definitions documentedDefinitions() throws Exception {
+        return Definitions.parse(new ResolverMap(), "classpath:/ws/documented.wsdl");
     }
 
     private static String generator(Definitions defs, String basePath) {

@@ -107,7 +107,7 @@ class Wsdl2OpenApiConverterWsdlStyleTest {
         var yaml = new Wsdl2OpenApiConverter(Definitions.parse(new StaticStringResolver(), GREETING_WSDL), "/").generateYaml();
 
         assertTrue(yaml.contains("/say-hello:"), "Operation name should be mapped to a kebab-case path");
-        assertTrue(yaml.contains("operationId: \"sayHello\""), "operationId should match the WSDL operation name");
+        assertTrue(yaml.contains("operationId: sayHello"), "operationId should match the WSDL operation name");
         assertTrue(yaml.contains("name:"), "Request body should expose the wrapped element's 'name' field");
         assertTrue(yaml.contains("greeting:"), "Response body should expose the wrapped element's 'greeting' field");
         assertTrue(yaml.contains("\"200\":"), "Should contain a 200 response");
@@ -219,7 +219,7 @@ class Wsdl2OpenApiConverterWsdlStyleTest {
         var yaml = new Wsdl2OpenApiConverter(Definitions.parse(new StaticStringResolver(), wsdl), "/").generateYaml();
 
         assertTrue(yaml.contains("/add:"), "Path is still generated regardless of binding style");
-        assertTrue(yaml.contains("operationId: \"add\""));
+        assertTrue(yaml.contains("operationId: add"));
         assertTrue(yaml.contains("augend:"), "Every RPC-style input part should become a request field");
         assertTrue(yaml.contains("addend:"), "Every RPC-style input part should become a request field");
         assertTrue(yaml.contains("sum:"), "The RPC-style output part should become a response field");
@@ -558,8 +558,8 @@ class Wsdl2OpenApiConverterWsdlStyleTest {
         var yaml = new Wsdl2OpenApiConverter(Definitions.parse(new StaticStringResolver(), SECURE_SERVICE_WSDL), "/").generateYaml();
 
         assertTrue(yaml.contains("payload:"), "Body part is still converted");
-        assertTrue(yaml.contains("in: \"header\""), "soap:header part should become an OpenAPI header parameter");
-        assertTrue(yaml.contains("name: \"token\""), "Header parameter should be named after its message part");
+        assertTrue(yaml.contains("in: header"), "soap:header part should become an OpenAPI header parameter");
+        assertTrue(yaml.contains("name: token"), "Header parameter should be named after its message part");
     }
 
     @Test
@@ -574,10 +574,10 @@ class Wsdl2OpenApiConverterWsdlStyleTest {
                 Map.of("doWork", settings)).generateYaml();
 
         assertTrue(yaml.contains("/work/{id}:"), "Templated path should be used as the path key");
-        assertTrue(yaml.contains("in: \"path\""), "Path parameter must not be dropped");
-        assertTrue(yaml.contains("name: \"id\""), "Path parameter should be named after the template variable");
-        assertTrue(yaml.contains("in: \"header\""), "soap:header parameter must still be present");
-        assertTrue(yaml.contains("name: \"token\""), "Header parameter should be named after its message part");
+        assertTrue(yaml.contains("in: path"), "Path parameter must not be dropped");
+        assertTrue(yaml.contains("name: id"), "Path parameter should be named after the template variable");
+        assertTrue(yaml.contains("in: header"), "soap:header parameter must still be present");
+        assertTrue(yaml.contains("name: token"), "Header parameter should be named after its message part");
     }
 
     @Test
@@ -656,7 +656,7 @@ class Wsdl2OpenApiConverterWsdlStyleTest {
         // SOAP 1.2 binding should produce the same output as the equivalent SOAP 1.1 WSDL
         // (see documentLiteralWrappedStyle).
         assertTrue(yaml.contains("/say-hello:"));
-        assertTrue(yaml.contains("operationId: \"sayHello\""));
+        assertTrue(yaml.contains("operationId: sayHello"));
         assertTrue(yaml.contains("name:"));
         assertTrue(yaml.contains("greeting:"));
         assertTrue(yaml.contains("\"200\":"));

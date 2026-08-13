@@ -291,6 +291,10 @@ public class XsdToSchema {
      *              inline type has no name to publish and is unaffected either way
      */
     private Schema<?> convertElementType(Element xsdElement, XsdContext ctx, boolean asRef) {
+        return describedBy(xsdElement, resolveDeclaredType(xsdElement, ctx, asRef));
+    }
+
+    private Schema<?> resolveDeclaredType(Element xsdElement, XsdContext ctx, boolean asRef) {
         Element inlineComplexType = findXsdChild(xsdElement, "complexType");
         if (inlineComplexType != null) {
             return buildObjectSchema(inlineComplexType, ctx);
@@ -307,6 +311,24 @@ public class XsdToSchema {
     }
 
     private Schema<?> buildObjectSchema(Element complexTypeEl, XsdContext ctx) {
+        return describedBy(complexTypeEl, buildObjectSchemaContent(complexTypeEl, ctx));
+    }
+
+    /**
+     * Carries a declaration's {@code xsd:documentation} over as the schema's {@code description}. A
+     * description already on the schema — the documentation of the type an element names, or the note
+     * a choice this converter cannot express leaves behind — is kept as a paragraph of its own, ahead
+     * of which the more specific text goes.
+     */
+    private static <T extends Schema<?>> T describedBy(Element declaration, T schema) {
+        String documentation = documentation(declaration);
+        if (documentation == null) return schema;
+        String existing = schema.getDescription();
+        schema.setDescription(existing == null ? documentation : documentation + "\n\n" + existing);
+        return schema;
+    }
+
+    private Schema<?> buildObjectSchemaContent(Element complexTypeEl, XsdContext ctx) {
         var objectSchema = new ObjectSchema();
 
         Element particle = firstXsdChild(complexTypeEl, "sequence", "all", "choice", "group");
@@ -772,6 +794,10 @@ public class XsdToSchema {
     }
 
     private Schema<?> buildSimpleTypeSchema(Element simpleTypeEl, XsdContext ctx) {
+        return describedBy(simpleTypeEl, buildSimpleTypeContent(simpleTypeEl, ctx));
+    }
+
+    private Schema<?> buildSimpleTypeContent(Element simpleTypeEl, XsdContext ctx) {
         Element restriction = findXsdChild(simpleTypeEl, "restriction");
         if (restriction == null) return new StringSchema();
         String base = restriction.getAttribute("base");

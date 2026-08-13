@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
 import com.predic8.membrane.core.util.wsdl.parser.Definitions;
+import com.predic8.membrane.core.util.wsdl.parser.WSDLParserUtil;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
@@ -90,6 +91,24 @@ class XsdDomUtil {
             if (wanted.contains(el.getLocalName())) return el;
         }
         return null;
+    }
+
+    /**
+     * The prose an XSD declaration documents itself with — the text of its
+     * {@code xsd:annotation/xsd:documentation} — or null where it has none or carries nothing but
+     * whitespace. Several {@code documentation} elements (a schema may carry one per language) are
+     * joined into paragraphs.
+     */
+    static String documentation(Element declaration) {
+        Element annotation = findXsdChild(declaration, "annotation");
+        if (annotation == null) return null;
+        var paragraphs = new ArrayList<String>();
+        for (Element el : xsdChildren(annotation)) {
+            if (!"documentation".equals(el.getLocalName())) continue;
+            String text = WSDLParserUtil.normalizeDocumentation(el.getTextContent());
+            if (text != null) paragraphs.add(text);
+        }
+        return paragraphs.isEmpty() ? null : String.join("\n\n", paragraphs);
     }
 
     /** First xsd: child with given local name and name="..." attribute, or null. */

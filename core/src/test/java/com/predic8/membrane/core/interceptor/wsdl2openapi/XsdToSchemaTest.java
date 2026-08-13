@@ -174,6 +174,91 @@ class XsdToSchemaTest {
         );
     }
 
+    // ── xsd:documentation ─────────────────────────────────────────────────
+
+    @Test
+    void elementAndAttributeDocumentationBecomeDescriptions() {
+        var schema = convert(converterFor("""
+                <xsd:element name="order">
+                  <xsd:annotation><xsd:documentation>An order placed by a customer.</xsd:documentation></xsd:annotation>
+                  <xsd:complexType>
+                    <xsd:sequence>
+                      <xsd:element name="amount" type="xsd:decimal">
+                        <xsd:annotation><xsd:documentation>Total amount in EUR.</xsd:documentation></xsd:annotation>
+                      </xsd:element>
+                    </xsd:sequence>
+                    <xsd:attribute name="id" type="xsd:string">
+                      <xsd:annotation><xsd:documentation>The order number.</xsd:documentation></xsd:annotation>
+                    </xsd:attribute>
+                  </xsd:complexType>
+                </xsd:element>
+                """), "order");
+
+        assertEquals("An order placed by a customer.", schema.getDescription());
+        assertEquals("Total amount in EUR.", fieldOf(schema, "amount").getDescription());
+        assertEquals("The order number.", fieldOf(schema, "@id").getDescription());
+    }
+
+    @Test
+    void namedTypeDocumentationIsDescribedOnTheComponent() {
+        var converter = converterFor("""
+                <xsd:complexType name="Address">
+                  <xsd:annotation><xsd:documentation>A postal address.</xsd:documentation></xsd:annotation>
+                  <xsd:sequence><xsd:element name="city" type="xsd:string"/></xsd:sequence>
+                </xsd:complexType>
+                <xsd:simpleType name="Currency">
+                  <xsd:annotation><xsd:documentation>An ISO 4217 code.</xsd:documentation></xsd:annotation>
+                  <xsd:restriction base="xsd:string"><xsd:enumeration value="EUR"/></xsd:restriction>
+                </xsd:simpleType>
+                <xsd:element name="request">
+                  <xsd:complexType><xsd:sequence>
+                    <xsd:element name="shipTo"   type="tns:Address"/>
+                    <xsd:element name="currency" type="tns:Currency"/>
+                  </xsd:sequence></xsd:complexType>
+                </xsd:element>
+                """);
+
+        var schema = convert(converter, "request");
+
+        assertEquals("A postal address.", fieldOf(converter, schema, "shipTo").getDescription());
+        assertEquals("An ISO 4217 code.", fieldOf(converter, schema, "currency").getDescription());
+    }
+
+    @Test
+    void elementDocumentationPrecedesTheDocumentationOfTheTypeItNames() {
+        var schema = convert(converterFor("""
+                <xsd:element name="request">
+                  <xsd:complexType><xsd:sequence>
+                    <xsd:element name="shipTo">
+                      <xsd:annotation><xsd:documentation>Where the order goes.</xsd:documentation></xsd:annotation>
+                      <xsd:complexType>
+                        <xsd:annotation><xsd:documentation>A postal address.</xsd:documentation></xsd:annotation>
+                        <xsd:sequence><xsd:element name="city" type="xsd:string"/></xsd:sequence>
+                      </xsd:complexType>
+                    </xsd:element>
+                  </xsd:sequence></xsd:complexType>
+                </xsd:element>
+                """), "request");
+
+        assertEquals("Where the order goes.\n\nA postal address.", fieldOf(schema, "shipTo").getDescription());
+    }
+
+    @Test
+    void undocumentedDeclarationHasNoDescription() {
+        var schema = convert(converterFor("""
+                <xsd:element name="request">
+                  <xsd:complexType><xsd:sequence>
+                    <xsd:element name="city" type="xsd:string">
+                      <xsd:annotation><xsd:documentation>   </xsd:documentation></xsd:annotation>
+                    </xsd:element>
+                  </xsd:sequence></xsd:complexType>
+                </xsd:element>
+                """), "request");
+
+        assertNull(schema.getDescription());
+        assertNull(fieldOf(schema, "city").getDescription(), "whitespace-only documentation is no documentation");
+    }
+
     // ── Required and optional fields (minOccurs) ──────────────────────────
 
     @Test

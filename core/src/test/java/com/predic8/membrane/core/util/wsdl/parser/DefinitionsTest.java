@@ -31,6 +31,18 @@ class DefinitionsTest {
     }
 
     @Test
+    void documentationIsReadPerElement() throws Exception {
+        var defs = Definitions.parse(new ResolverMap(), "classpath:/ws/documented.wsdl");
+
+        assertEquals("Documentation of the definitions.", defs.getDocumentation());
+        assertEquals("Answers questions about cities.", defs.getServices().getFirst().getDocumentation());
+        assertEquals("Looks a city up by its name.",
+                defs.getPortTypes().getFirst().getOperations().getFirst().getDocumentation());
+        assertNull(defs.getPortTypes().getFirst().getDocumentation(),
+                "an undocumented element must not inherit the documentation of a descendant");
+    }
+
+    @Test
     void parseWsdlWithMissingImportThrows() {
         var e = assertThrows(WSDLParserException.class,
                 () -> Definitions.parse(new ResolverMap(), "classpath:/ws/missing-import.wsdl"));
