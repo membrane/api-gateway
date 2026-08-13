@@ -36,7 +36,8 @@ public class Wsdl2OpenAPIFaultsTutorialTest extends AbstractSOAPTutorialTest {
     @Test
     void wrongStateFaultAppearsUnderDetails() {
         cancel("1")
-            .body("title", equalTo("Cancellation is not possible in this state"))
+            .body("title", equalTo("Operation failed"))
+            .body("faultMessage", equalTo("Cancellation is not possible in this state"))
             .body("details.wrongState.orderId", equalTo("1"))
             .body("details.wrongState.currentState", equalTo("SHIPPED"))
             .body("details.wrongState.message", equalTo("A shipped order cannot be cancelled."));
@@ -46,7 +47,8 @@ public class Wsdl2OpenAPIFaultsTutorialTest extends AbstractSOAPTutorialTest {
     @Test
     void orderDoesNotExistFaultAppearsUnderDetails() {
         cancel("4711")
-            .body("title", equalTo("Order does not exist"))
+            .body("title", equalTo("Operation failed"))
+            .body("faultMessage", equalTo("Order does not exist"))
             .body("details.orderDoesNotExist.orderId", equalTo("4711"))
             .body("details.orderDoesNotExist.currentState", nullValue())
             .body("details.wrongState", nullValue());

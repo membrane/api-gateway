@@ -31,9 +31,11 @@ import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.wsdl.parser.BindingOperation;
 import com.predic8.membrane.core.util.wsdl.parser.Definitions;
 import com.predic8.membrane.core.util.wsdl.parser.Operation;
+import io.swagger.v3.oas.models.media.ObjectSchema;
 import io.swagger.v3.oas.models.media.Schema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.w3c.dom.DOMException;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -113,6 +115,9 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
 
     private List<RouteEntry> routes = new ArrayList<>();
     private final Map<String, Json2SoapTransformer> requestTransformers = new LinkedHashMap<>();
+    /** Built once per operation in init(): the WSDL does not change, and every response needs them. */
+    private final Map<String, Schema<?>> responseSchemas = new LinkedHashMap<>();
+    private final Map<String, Schema<?>> faultDetailSchemas = new LinkedHashMap<>();
     private OpenAPIPublisherInterceptor publisher;
 
     private final String instanceId = UUID.randomUUID().toString();
@@ -139,6 +144,8 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
         // RuleManager.replaceRule both init, and the clone shares this interceptor.
         routes.clear();
         requestTransformers.clear();
+        responseSchemas.clear();
+        faultDetailSchemas.clear();
 
         definitions = parseWsdl();
         xsdToSchema = new XsdToSchema(definitions);
@@ -147,7 +154,13 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
 
         routes.addAll(buildRoutes(definitions, operationsByName));
         for (RouteEntry route : routes) {
-            requestTransformers.put(route.operationName(), new Json2SoapTransformer(definitions, route.operationName()));
+            String operationName = route.operationName();
+            requestTransformers.put(operationName, new Json2SoapTransformer(definitions, operationName));
+            Optional<Operation> wsdlOp = operationByName(operationName);
+            responseSchemas.put(operationName, xsdToSchema.convertMessageParts(
+                    wsdlOp.map(op -> op.getMessagesByDirection(OUTPUT)).orElse(List.of())));
+            faultDetailSchemas.put(operationName, xsdToSchema.convertFaultDetail(
+                    wsdlOp.map(Operation::getFaults).orElse(List.of())));
         }
 
         publisher = createPublisher();
@@ -310,9 +323,7 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
 
     /** The schema of the operation's OUTPUT messages; an empty schema if the operation is unknown. */
     private Schema<?> responseSchemaFor(String operationName) {
-        return xsdToSchema.convertMessageParts(operationByName(operationName)
-                .map(op -> op.getMessagesByDirection(OUTPUT))
-                .orElse(List.of()));
+        return responseSchemas.getOrDefault(operationName, new ObjectSchema());
     }
 
     /**
@@ -321,9 +332,7 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
      * case the detail is still converted, just with every scalar as a string.
      */
     private Schema<?> faultDetailSchemaFor(String operationName) {
-        return xsdToSchema.convertFaultDetail(operationByName(operationName)
-                .map(Operation::getFaults)
-                .orElse(List.of()));
+        return faultDetailSchemas.getOrDefault(operationName, new ObjectSchema());
     }
 
     private Optional<Operation> operationByName(String operationName) {
@@ -336,16 +345,18 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
     /**
      * A fault becomes a 500: the gateway cannot tell whether the backend rejected the input, broke,
      * or timed out, so the most generic status is the only honest one. Nothing in the response names
-     * the technology behind the API — the SOAP fault code stays an internal, development-mode aid,
-     * because an operator may not want clients to know a legacy service sits behind the gateway.
+     * the technology behind the API — the fault code and the backend's fault message stay internal,
+     * development-mode aids, because an operator may not want clients to know a legacy service sits
+     * behind the gateway, and a faultstring can carry a class name or an internal host name.
      */
     private Response soapFaultResponse(SoapFaultException fault) {
         var pd = problemDetails(OPERATION_ERROR_TYPE, router.getConfiguration().isProduction())
                 .component(getDisplayName())
                 .status(500)
-                .title(fault.getFaultMessage())
+                .title("Operation failed")
                 .detail("The service could not complete the operation.")
-                .internal("faultCode", fault.getFaultCode());
+                .internal("faultCode", fault.getFaultCode())
+                .internal("faultMessage", fault.getFaultMessage());
         if (fault.getSoapDetail() != null) {
             pd.topLevel(FAULT_DETAILS_FIELD, fault.getSoapDetail());
         }
@@ -449,6 +460,17 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
                 exc.setDestinations(List.of(serviceAddress));
             }
 
+        } catch (DOMException e) {
+            // A field name the JSON body carries is not a legal XML name — a client mistake, so a
+            // 400 rather than the 500 any other transformation failure gets.
+            log.debug("Cannot map a field name of the request body to XML for operation {}", operationName, e);
+            user(router.getConfiguration().isProduction(), getDisplayName())
+                    .status(400)
+                    .title("Invalid field name")
+                    .detail("A field name in the request body cannot be mapped to XML.")
+                    .exception(e)
+                    .buildAndSetResponse(exc);
+            return ABORT;
         } catch (Exception e) {
             log.error("Failed to transform JSON to SOAP for operation {}", operationName, e);
             internal(router.getConfiguration().isProduction(), getDisplayName())

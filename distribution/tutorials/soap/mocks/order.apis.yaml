@@ -12,7 +12,7 @@
 #   any other   OrderDoesNotExist fault
 #
 # Both are sent with HTTP status 200: a SOAP fault lives in the body, and many SOAP stacks
-# return it with a 200. The gateway decides the JSON status from the body, not from this one.
+# return it with a 200. The gateway reads the fault from the body and answers 500 either way.
 
 global:
   - beautifier: {}

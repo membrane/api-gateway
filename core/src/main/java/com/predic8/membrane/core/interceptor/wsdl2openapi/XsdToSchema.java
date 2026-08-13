@@ -29,6 +29,8 @@ import java.util.*;
 
 import static com.predic8.membrane.annot.Constants.XSD_NS;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.*;
+import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.TRUE;
 
 /**
  * Converts XSD type definitions embedded in a WSDL to OpenAPI Schema objects.
@@ -348,14 +350,30 @@ public class XsdToSchema {
     private static void applyDefaultValue(Element declaration, Schema<?> schema) {
         // XSD does not allow both on one declaration, so whichever is present is the value
         String fixed = declaration.getAttribute("fixed");
-        String value = fixed.isEmpty() ? declaration.getAttribute("default") : fixed;
-        if (value.isEmpty()) return;
+        String literal = fixed.isEmpty() ? declaration.getAttribute("default") : fixed;
+        if (literal.isEmpty()) return;
+
+        Object value = schema instanceof BooleanSchema ? xsdBoolean(literal) : literal;
+        if (value == null) return;
 
         var target = (Schema<Object>) schema;
         target.setDefault(value);
         if (!fixed.isEmpty() && schema.getDefault() != null) {
             target.addEnumItemObject(schema.getDefault());
         }
+    }
+
+    /**
+     * An {@code xsd:boolean} literal as a Boolean, or null when it is none of the four XSD spells for
+     * one. BooleanSchema would otherwise read the numeric forms {@code 1} and {@code 0} — and any
+     * malformed literal — as {@code false}, turning a correct default into a wrong one.
+     */
+    private static Boolean xsdBoolean(String literal) {
+        return switch (literal) {
+            case "true", "1" -> TRUE;
+            case "false", "0" -> FALSE;
+            default -> null;
+        };
     }
 
     /**

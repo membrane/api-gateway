@@ -16,7 +16,7 @@
 #    curl -d '{"orderId":"1"}' -H "Content-Type: application/json" localhost:2000/orders/cancel
 #
 #      {
-#        "title" : "Cancellation is not possible in this state",
+#        "title" : "Operation failed",
 #        "type" : "https://membrane-api.io/problems/operation-error",
 #        "status" : 500,
 #        "details" : {
@@ -27,11 +27,13 @@
 #          }
 #        },
 #        "detail" : "The service could not complete the operation.",
+#        "faultMessage" : "Cancellation is not possible in this state",
 #        ...
 #      }
 #
 #     The response is a problem details document (RFC 7807). The content of the declared fault
-#     sits under details, keyed by the name of the fault element.
+#     sits under details, keyed by the name of the fault element. title and detail are the same
+#     for every fault: the message the service sent is diagnostics, so it stays in faultMessage.
 #
 # 3.) Cancel an order that does not exist
 #
@@ -54,15 +56,15 @@
 # 5.) Nothing in the response mentions SOAP
 #
 #     Whoever operates the gateway may not want clients to know that a legacy service is being
-#     called. The faultCode field in the responses above is development-mode information. Put
-#     this at the top of the file, restart, and call the API again:
+#     called. The faultCode and faultMessage fields in the responses above are development-mode
+#     information. Put this at the top of the file, restart, and call the API again:
 #
 #       configuration:
 #         production: true
 #
 #       ---
 #
-#     faultCode is gone, and title no longer carries the message the service sent:
+#     Both are gone, and title becomes the generic status text:
 #
 #       {
 #         "title" : "Internal Server Error",

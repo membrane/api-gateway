@@ -881,6 +881,37 @@ class XsdToSchemaTest {
     }
 
     @Test
+    void numericBooleanDefaultsKeepTheirMeaning() {
+        // 1 and 0 are legal xsd:boolean literals; read naively they would both come out false.
+        var schema = convert(converterFor("""
+                <xsd:element name="flags">
+                  <xsd:complexType><xsd:sequence>
+                    <xsd:element name="on"  type="xsd:boolean" default="1"/>
+                    <xsd:element name="off" type="xsd:boolean" default="0"/>
+                  </xsd:sequence></xsd:complexType>
+                </xsd:element>
+                """), "flags");
+
+        assertEquals(true, fieldOf(schema, "on").getDefault());
+        assertEquals(false, fieldOf(schema, "off").getDefault());
+    }
+
+    @Test
+    void booleanDefaultThatIsNoBooleanLiteralIsDropped() {
+        var schema = convert(converterFor("""
+                <xsd:element name="flags">
+                  <xsd:complexType><xsd:sequence>
+                    <xsd:element name="on" type="xsd:boolean" fixed="maybe"/>
+                  </xsd:sequence></xsd:complexType>
+                </xsd:element>
+                """), "flags");
+
+        var field = fieldOf(schema, "on");
+        assertNull(field.getDefault(), "an invalid literal must not be emitted as false");
+        assertNull(field.getEnum(), "and must not restrict the field to a made-up value");
+    }
+
+    @Test
     void defaultValueThatDoesNotFitTheTypeIsDropped() {
         var schema = convert(converterFor("""
                 <xsd:element name="paging">

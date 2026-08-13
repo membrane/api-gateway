@@ -17,6 +17,7 @@ package com.predic8.membrane.core.interceptor.wsdl2openapi;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.config.Path;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
@@ -255,7 +256,8 @@ class Wsdl2OpenapiInterceptorTest {
         assertEquals("application/problem+json", response.getHeader().getContentType());
 
         var body = new ObjectMapper().readTree(response.getBodyAsStringDecoded());
-        assertEquals("City not found", body.get("title").asText());
+        assertEquals("Operation failed", body.get("title").asText(),
+                "the title is fixed: the backend's faultstring may name internals");
         assertEquals(500, body.get("status").asInt());
         assertEquals("Atlantis", body.at("/details/cityNotFound/name").asText(),
                 "the declared fault's content appears under details, keyed by the fault element name");
@@ -266,6 +268,7 @@ class Wsdl2OpenapiInterceptorTest {
         String body = faultResponse(true).getBodyAsStringDecoded();
 
         assertFalse(body.contains("faultCode"), "the SOAP fault code is a development-mode aid only");
+        assertFalse(body.contains("City not found"), "the backend's faultstring must not reach the client");
         assertFalse(body.toLowerCase().contains("soap"), "nothing may name the technology behind the API");
         assertTrue(body.contains("Atlantis"), "the declared fault content is part of the contract and stays");
     }
@@ -277,6 +280,39 @@ class Wsdl2OpenapiInterceptorTest {
         var body = new ObjectMapper().readTree(faultResponse(false).getBodyAsStringDecoded());
 
         assertEquals("soap:Client", body.get("faultCode").asText());
+        assertEquals("City not found", body.get("faultMessage").asText());
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource
+    void fieldNameThatIsNoXmlNameIsAClientError(String body) throws Exception {
+        // The key reaches the DOM as an element or attribute name, which rejects it. That is the
+        // client's mistake, so it must not be reported as a gateway failure.
+        var response = requestResponse(body);
+
+        assertEquals(400, response.getStatusCode());
+        assertTrue(response.getBodyAsStringDecoded().contains("Invalid field name"));
+    }
+
+    static Stream<Arguments> fieldNameThatIsNoXmlNameIsAClientError() {
+        return Stream.of(
+                arguments("{\"a b\": \"x\"}"),   // whitespace in an element name
+                arguments("{\"1\": \"x\"}"),     // element name starting with a digit
+                arguments("{\"@a b\": \"x\"}")   // whitespace in an attribute name
+        );
+    }
+
+    /** Runs a request body through handleRequest on getCity and returns the aborting response. */
+    private static Response requestResponse(String body) throws Exception {
+        var interceptor = wsdl2openapi("classpath:/ws/cities.wsdl");
+        var proxy = apiProxyWith(interceptor);
+        interceptor.init(new DummyTestRouter(), proxy);
+
+        var exc = new Exchange(null);
+        exc.setRequest(new Request.Builder().post("/get-city").body(body).build());
+
+        assertEquals(Outcome.ABORT, interceptor.handleRequest(exc));
+        return exc.getResponse();
     }
 
     /** Runs a declared SOAP fault through handleResponse and returns the client-facing response. */
