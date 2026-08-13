@@ -126,6 +126,56 @@ class Wsdl2OpenapiInterceptorTest {
     }
 
     @Test
+    void aDuplicateQueryParameterIsRejectedWith400() throws Exception {
+        // A duplicate key is a client mistake, so it must not surface as a transformation failure.
+        var settings = new OperationSettings();
+        settings.setMethod("GET");
+        settings.setPath("/cities");
+        var operations = new OperationsConfig();
+        operations.setEntry(Map.of("getCity", settings));
+
+        var interceptor = wsdl2openapi("classpath:/ws/cities.wsdl");
+        interceptor.setOperations(operations);
+        interceptor.init(new DummyTestRouter(), apiProxyWith(interceptor));
+
+        var exc = new Exchange(null);
+        exc.setRequest(new Request.Builder().get("/cities?name=Berlin&name=Bonn").build());
+
+        assertEquals(Outcome.ABORT, interceptor.handleRequest(exc));
+        assertEquals(400, exc.getResponse().getStatusCode());
+    }
+
+    @Test
+    void aResponseFieldOfANamedTypeIsStillTypedAfterTheSoapConversion() throws Exception {
+        var interceptor = wsdl2openapi("classpath:/ws/cross-namespace.wsdl");
+        interceptor.init(new DummyTestRouter(), apiProxyWith(interceptor));
+
+        var exc = new Exchange(null);
+        exc.setProperty(operationPropertyKey(interceptor), "getItem");
+        exc.setResponse(Response.ok("""
+                <?xml version="1.0" encoding="UTF-8"?>
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soap:Body>
+                    <getItemResponse xmlns="https://example.com/service">
+                      <result>
+                        <itemName>Chair</itemName>
+                        <itemCount>3</itemCount>
+                      </result>
+                    </getItemResponse>
+                  </soap:Body>
+                </soap:Envelope>
+                """).build());
+
+        assertEquals(Outcome.CONTINUE, interceptor.handleResponse(exc));
+
+        // ItemType is published as a component and referenced from the response schema, so typing
+        // the value depends on the runtime resolving the very names the document declares.
+        var result = new ObjectMapper().readTree(exc.getResponse().getBodyAsStringDecoded()).get("result");
+        assertTrue(result.get("itemCount").isNumber(), "xsd:int must not arrive as a string: " + result);
+        assertEquals("Chair", result.get("itemName").asText());
+    }
+
+    @Test
     void matchRoutePreservesOperationName() {
         var interceptor = interceptorWith("/api", "get-city", "GET", "GetCity");
         var result = interceptor.matchRoute("/api/get-city", "GET");

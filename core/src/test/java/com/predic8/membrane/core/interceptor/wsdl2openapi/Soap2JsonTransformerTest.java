@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
+import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.VALUE_KEY;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.qualifiedKey;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -230,6 +231,81 @@ class Soap2JsonTransformerTest {
         var amount = root.path("article").path("price").path("amount");
         assertTrue(amount.isNumber(), "amount should be a JSON number");
         assertEquals(12.0, amount.doubleValue(), 0.0001);
+    }
+
+    // --- Named types, reached through a component reference ---
+
+    private static Schema<?> refTo(String componentName) {
+        return new Schema<>().$ref("#/components/schemas/" + componentName);
+    }
+
+    @Test
+    void aLeafTypedByAReferencedComponentIsStillTypedNotStringified() throws Exception {
+        var schema = new ObjectSchema()
+                .addProperty("country", new StringSchema())
+                .addProperty("population", refTo("Population"));
+
+        var json = new Soap2JsonTransformer(Map.of("Population", new IntegerSchema()))
+                .transform(CITIES_SOAP11_RESPONSE, schema);
+
+        assertTrue(mapper.readTree(json).get("population").isNumber(),
+                "a named XSD type is published once and referenced, so the reference has to be followed");
+    }
+
+    @Test
+    void aRepeatedReferencedComponentStaysAnArrayOfTypedObjects() throws Exception {
+        var schema = new ObjectSchema().addProperty("item", new ArraySchema().items(refTo("Item")));
+        var components = Map.<String, Schema<?>>of("Item", new ObjectSchema()
+                .addProperty("name", new StringSchema())
+                .addProperty("count", new IntegerSchema()));
+
+        var soapXml = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soap:Body>
+                    <getItemsResponse>
+                      <item><name>a</name><count>2</count></item>
+                    </getItemsResponse>
+                  </soap:Body>
+                </soap:Envelope>
+                """;
+
+        JsonNode items = mapper.readTree(new Soap2JsonTransformer(components).transform(soapXml, schema)).get("item");
+
+        assertTrue(items.isArray(), "a single occurrence of a repeating field is still an array");
+        assertTrue(items.get(0).get("count").isNumber());
+    }
+
+    @Test
+    void aReferencedSimpleContentComponentKeepsItsValueAndAttributeTypes() throws Exception {
+        var schema = new ObjectSchema().addProperty("price", refTo("Money"));
+        var components = Map.<String, Schema<?>>of("Money", new ObjectSchema()
+                .addProperty(VALUE_KEY, new NumberSchema())
+                .addProperty("@rate", new IntegerSchema()));
+
+        var soapXml = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soap:Body>
+                    <getPriceResponse><price rate="3">12.50</price></getPriceResponse>
+                  </soap:Body>
+                </soap:Envelope>
+                """;
+
+        JsonNode price = mapper.readTree(new Soap2JsonTransformer(components).transform(soapXml, schema)).get("price");
+
+        assertEquals(12.50, price.get(VALUE_KEY).doubleValue(), 0.0001);
+        assertTrue(price.get("@rate").isNumber(), "an attribute of a named type is typed too");
+    }
+
+    @Test
+    void aReferenceToAnUnknownComponentFallsBackToString() throws Exception {
+        var schema = new ObjectSchema().addProperty("population", refTo("NotInTheMap"));
+
+        // A reference nothing answers must cost the value's type, not the whole conversion.
+        var json = new Soap2JsonTransformer(Map.of()).transform(CITIES_SOAP11_RESPONSE, schema);
+
+        assertTrue(mapper.readTree(json).get("population").isTextual());
     }
 
     @Test

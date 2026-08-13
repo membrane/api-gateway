@@ -27,6 +27,7 @@ import javax.xml.namespace.QName;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.predic8.membrane.annot.Constants.XSD_NS;
@@ -59,6 +60,16 @@ import static java.lang.Boolean.TRUE;
  *
  * <p>The features above are constraints: they describe which messages are valid, and are enforced
  * wherever the generated schema is validated against.
+ *
+ * <p>A named {@code xsd:complexType} or {@code xsd:simpleType} is converted once and published as a
+ * {@code components/schemas} entry (see {@link #getComponents()}), which every use site refers to by
+ * {@code $ref}. That keeps the type's name — the one the XSD gave it — in the document and in the
+ * clients generated from it, and lets a self-referential type be expressed at all. Types declared
+ * inline have no name to publish and stay where they are.
+ *
+ * <p>Two use sites resolve a named type in place instead: a declaration that writes onto the schema
+ * (see {@link #mutates}) would otherwise change the type for everyone using it, and the base type of
+ * a derivation is flattened into the derived type rather than referenced.
  *
  * <p>{@code default=} on elements and attributes is carried over as the OpenAPI {@code default}
  * keyword, which is an annotation rather than a constraint: it documents the value for clients,
@@ -95,12 +106,80 @@ public class XsdToSchema {
 
     private final Map<String, List<Element>> schemasByNamespace;
 
+    /** The component name of every named type the schemas declare, keyed by {@link XsdDomUtil#qualifiedKey}. */
+    private final Map<String, String> componentNames;
+
+    /**
+     * The named types reached so far, keyed by component name. Filled as conversion walks the
+     * schemas, so a type no message refers to is not published.
+     */
+    private final Map<String, Schema<?>> components = new LinkedHashMap<>();
+
     XsdToSchema(Map<String, List<Element>> schemasByNamespace) {
+        this(schemasByNamespace, Set.of());
+    }
+
+    XsdToSchema(Map<String, List<Element>> schemasByNamespace, Set<String> reservedComponentNames) {
         this.schemasByNamespace = schemasByNamespace;
+        this.componentNames = buildComponentNames(schemasByNamespace, reservedComponentNames);
     }
 
     public XsdToSchema(Definitions definitions) {
         this(buildSchemaMap(definitions));
+    }
+
+    public XsdToSchema(Definitions definitions, Set<String> reservedComponentNames) {
+        this(buildSchemaMap(definitions), reservedComponentNames);
+    }
+
+    /**
+     * The schemas of the named types reached during conversion, to be published as
+     * {@code components/schemas} of the document the references produced here point into.
+     */
+    Map<String, Schema<?>> getComponents() {
+        return components;
+    }
+
+    /**
+     * The schema of a named type, as a reference to the component it is published as. The component
+     * is built on first use; a type reached again — including one that refers back to itself — yields
+     * the same reference without being built twice, which is what makes a recursive type expressible.
+     *
+     * <p>Falls back to building the type inline when it has no component name, which only a schema
+     * outside the traversed import graph can be.
+     */
+    private Schema<?> componentRef(String namespace, String localName, Supplier<Schema<?>> build) {
+        String name = componentNames.get(qualifiedKey(namespace, localName));
+        if (name == null) {
+            log.debug("No component name for type '{}' in namespace '{}', inlining it", localName, namespace);
+            return build.get();
+        }
+        if (components.containsKey(name)) return refTo(name);
+        // Registered before it is built, so a reference the type makes to itself finds it and stops.
+        components.put(name, new ObjectSchema());
+        components.put(name, build.get());
+        return refTo(name);
+    }
+
+    private static Schema<?> refTo(String componentName) {
+        return new Schema<>().$ref(COMPONENTS_SCHEMAS_PREFIX + componentName);
+    }
+
+    /** The component {@code schema} references, or {@code schema} itself if it references none. */
+    private Schema<?> dereference(Schema<?> schema) {
+        if (schema.get$ref() == null) return schema;
+        return components.getOrDefault(componentName(schema.get$ref()), schema);
+    }
+
+    /**
+     * Whether a declaration modifies the type it names, which rules out referencing a shared
+     * component: nillability and a default or fixed value are written onto the schema itself, and
+     * they belong to this one declaration rather than to every user of the type.
+     */
+    private static boolean mutates(Element declaration) {
+        return "true".equals(declaration.getAttribute("nillable"))
+                || !declaration.getAttribute("default").isEmpty()
+                || !declaration.getAttribute("fixed").isEmpty();
     }
 
     /**
@@ -178,7 +257,10 @@ public class XsdToSchema {
         for (var schemaRoot : roots) {
             Element xsdElement = findXsdChildWithName(schemaRoot, "element", qname.getLocalPart());
             if (xsdElement != null) {
-                return convertElementType(xsdElement, new XsdContext(schemaRoot, visiting));
+                // A message's own schema is built inline even where the element names a type: a
+                // request or response body that is nothing but a reference tells a reader nothing,
+                // and the converter reads the body's fields to derive path and query parameters.
+                return convertElementType(xsdElement, new XsdContext(schemaRoot, visiting), false);
             }
         }
         return new ObjectSchema();
@@ -188,8 +270,11 @@ public class XsdToSchema {
      * Resolves the Schema for an {@code <xsd:element>} node — its inline type
      * or the type referenced by the {@code type} attribute.
      * Does NOT apply maxOccurs wrapping; that is done by addElementField for sequence members.
+     *
+     * @param asRef whether a named type may be represented as a reference to its component; an
+     *              inline type has no name to publish and is unaffected either way
      */
-    private Schema<?> convertElementType(Element xsdElement, XsdContext ctx) {
+    private Schema<?> convertElementType(Element xsdElement, XsdContext ctx, boolean asRef) {
         Element inlineComplexType = findXsdChild(xsdElement, "complexType");
         if (inlineComplexType != null) {
             return buildObjectSchema(inlineComplexType, ctx);
@@ -200,7 +285,7 @@ public class XsdToSchema {
         }
         String typeAttr = xsdElement.getAttribute("type");
         if (!typeAttr.isEmpty()) {
-            return resolveTypeRef(typeAttr, xsdElement, ctx);
+            return resolveTypeRef(typeAttr, xsdElement, ctx, asRef);
         }
         return new ObjectSchema();
     }
@@ -305,7 +390,7 @@ public class XsdToSchema {
             addRefField(el, schema, ctx);
             return;
         }
-        addField(schema, fieldName, el, convertElementType(el, ctx));
+        addField(schema, fieldName, el, convertElementType(el, ctx, !mutates(el)));
     }
 
     /**
@@ -313,7 +398,7 @@ public class XsdToSchema {
      * element and adding it as a property under its declared name.
      */
     private void addRefField(Element refEl, ObjectSchema schema, XsdContext ctx) {
-        resolveRefAlternative(refEl, ctx)
+        resolveRefAlternative(refEl, ctx, !mutates(refEl))
                 .ifPresent(alternative -> addField(schema, alternative.localName(), refEl, alternative.fieldSchema()));
     }
 
@@ -437,7 +522,7 @@ public class XsdToSchema {
             if (fieldName.isEmpty()) continue; // ref= attributes: not supported
 
             String key = attributeKey(fieldName);
-            Schema<?> attributeSchema = convertElementType(el, ctx);
+            Schema<?> attributeSchema = convertElementType(el, ctx, !mutates(el));
             applyDefaultValue(el, attributeSchema);
             schema.addProperty(key, attributeSchema);
             if ("required".equals(el.getAttribute("use"))) {
@@ -473,9 +558,9 @@ public class XsdToSchema {
                     if (!fieldName.isEmpty()) {
                         String ns = ctx.schemaRoot().getAttribute("targetNamespace");
                         alternatives.add(new ChoiceAlternative(fieldName, ns.isEmpty() ? null : ns,
-                                applyMaxOccurs(el, convertElementType(el, ctx))));
+                                applyMaxOccurs(el, convertElementType(el, ctx, true))));
                     } else {
-                        resolveRefAlternative(el, ctx)
+                        resolveRefAlternative(el, ctx, true)
                                 .map(alternative -> alternative.withSchema(applyMaxOccurs(el, alternative.fieldSchema())))
                                 .ifPresent(alternatives::add);
                     }
@@ -522,7 +607,7 @@ public class XsdToSchema {
      * own maxOccurs — so that {@link #addChoiceFields} can detect same-local-name collisions across
      * namespaces first, and {@link #addRefField} can apply minOccurs/maxOccurs itself.
      */
-    private Optional<ChoiceAlternative> resolveRefAlternative(Element refEl, XsdContext ctx) {
+    private Optional<ChoiceAlternative> resolveRefAlternative(Element refEl, XsdContext ctx, boolean asRef) {
         String ref = refEl.getAttribute("ref");
         if (ref.isEmpty()) return Optional.empty();
         String local = localName(ref);
@@ -533,7 +618,8 @@ public class XsdToSchema {
         for (var root : resolveTargetSchemaRoots(refPrefix, refEl, ctx.schemaRoot(), schemasByNamespace)) {
             Element referenced = findXsdChildWithName(root, "element", local);
             if (referenced != null) {
-                return Optional.of(new ChoiceAlternative(local, namespaceURI, convertElementType(referenced, ctx.withRoot(root))));
+                return Optional.of(new ChoiceAlternative(local, namespaceURI,
+                        convertElementType(referenced, ctx.withRoot(root), asRef)));
             }
         }
         return Optional.empty();
@@ -549,7 +635,10 @@ public class XsdToSchema {
         String base = extension.getAttribute("base");
         if (base.isEmpty()) return;
 
-        Schema<?> baseSchema = resolveTypeRef(base, extension, ctx);
+        // The base's fields are copied into the derived type, so the reference has to be followed:
+        // resolving the base inline instead would yield nothing where a type contains the very type
+        // that extends it — legal XSD, and the base is then already being expanded further up.
+        Schema<?> baseSchema = dereference(resolveTypeRef(base, extension, ctx, true));
         if (baseSchema instanceof ObjectSchema baseObj && baseObj.getProperties() != null) {
             baseObj.getProperties().forEach(schema::addProperty);
             if (baseObj.getRequired() != null) {
@@ -577,8 +666,9 @@ public class XsdToSchema {
         Element derivation = firstXsdChild(simpleContent, "extension", "restriction");
         if (derivation == null) return new StringSchema();
 
-        Schema<?> valueSchema = resolveTypeRef(derivation.getAttribute("base"), derivation, ctx);
-        // an xsd:restriction may narrow the value with facets; an xsd:extension carries none
+        // an xsd:restriction may narrow the value with facets; an xsd:extension carries none.
+        // The facets are written onto the base's schema, so it is built inline rather than shared.
+        Schema<?> valueSchema = resolveTypeRef(derivation.getAttribute("base"), derivation, ctx, false);
         applyFacets(derivation, valueSchema);
 
         var schema = new ObjectSchema();
@@ -594,7 +684,8 @@ public class XsdToSchema {
         Element restriction = findXsdChild(simpleTypeEl, "restriction");
         if (restriction == null) return new StringSchema();
         String base = restriction.getAttribute("base");
-        Schema<?> schema = base.isEmpty() ? new StringSchema() : resolveTypeRef(base, restriction, ctx);
+        // inline for the same reason as in buildSimpleContentSchema: applyFacets writes onto it
+        Schema<?> schema = base.isEmpty() ? new StringSchema() : resolveTypeRef(base, restriction, ctx, false);
         applyFacets(restriction, schema);
         return schema;
     }
@@ -677,7 +768,7 @@ public class XsdToSchema {
      * to an OpenAPI schema. Uses the DOM context element for prefix→URI resolution so that
      * cross-namespace references are followed correctly.
      */
-    private Schema<?> resolveTypeRef(String typeRef, Element contextElement, XsdContext ctx) {
+    private Schema<?> resolveTypeRef(String typeRef, Element contextElement, XsdContext ctx, boolean asRef) {
         if (typeRef.isEmpty()) return new StringSchema();
         String prefix = prefix(typeRef);
         String local = localName(typeRef);
@@ -685,25 +776,49 @@ public class XsdToSchema {
         for (var targetRoot : targetRoots) {
             Element complexType = findXsdChildWithName(targetRoot, "complexType", local);
             if (complexType != null) {
-                if (ctx.visiting().contains(complexType)) {
-                    log.debug("Recursive reference to type '{}', returning empty schema", local);
-                    return new ObjectSchema();
+                XsdContext typeCtx = ctx.withRoot(targetRoot);
+                if (asRef) {
+                    return componentRef(targetNamespace(targetRoot), local,
+                            () -> buildObjectSchema(complexType, typeCtx));
                 }
-                ctx.visiting().add(complexType);
-                try {
-                    return buildObjectSchema(complexType, ctx.withRoot(targetRoot));
-                } finally {
-                    ctx.visiting().remove(complexType);
-                }
+                return buildInline(complexType, local, () -> buildObjectSchema(complexType, typeCtx), ctx);
             }
         }
         for (var targetRoot : targetRoots) {
             Element simpleType = findXsdChildWithName(targetRoot, "simpleType", local);
             if (simpleType != null) {
-                return buildSimpleTypeSchema(simpleType, ctx.withRoot(targetRoot));
+                XsdContext typeCtx = ctx.withRoot(targetRoot);
+                if (asRef) {
+                    return componentRef(targetNamespace(targetRoot), local,
+                            () -> buildSimpleTypeSchema(simpleType, typeCtx));
+                }
+                return buildSimpleTypeSchema(simpleType, typeCtx);
             }
         }
         return mapPrimitive(local);
+    }
+
+    /**
+     * Builds a named complexType in place rather than as a reference, for the use sites that go on to
+     * write onto the schema they are given. Recursion has no reference to break the cycle with here,
+     * so a type reached while it is already being expanded yields an empty schema — which a use site
+     * can only run into by being both self-referential and one of those few sites.
+     */
+    private Schema<?> buildInline(Element complexType, String local, Supplier<Schema<?>> build, XsdContext ctx) {
+        if (ctx.visiting().contains(complexType)) {
+            log.debug("Recursive reference to type '{}' from a declaration that modifies it, returning empty schema", local);
+            return new ObjectSchema();
+        }
+        ctx.visiting().add(complexType);
+        try {
+            return build.get();
+        } finally {
+            ctx.visiting().remove(complexType);
+        }
+    }
+
+    private static String targetNamespace(Element schemaRoot) {
+        return schemaRoot.getAttribute("targetNamespace");
     }
 
     /**

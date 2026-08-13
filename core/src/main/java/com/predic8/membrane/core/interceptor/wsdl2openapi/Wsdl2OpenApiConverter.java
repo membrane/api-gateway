@@ -38,6 +38,7 @@ import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_PROBLEM_JSON;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.Wsdl2OpenapiInterceptor.extractParamNames;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.camelToKebab;
+import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.componentName;
 import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.INPUT;
 import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.OUTPUT;
 import static io.swagger.v3.parser.ObjectMapperFactory.createYaml;
@@ -84,7 +85,7 @@ public class Wsdl2OpenApiConverter {
                                   String title, String description) {
         this.definitions = definitions;
         this.basePath = stripTrailingSlash(basePath);
-        this.converter = new XsdToSchema(definitions);
+        this.converter = new XsdToSchema(definitions, Set.of(PROBLEM_DETAILS_SCHEMA));
         this.operations = operations;
         this.title = title;
         this.description = description;
@@ -101,18 +102,35 @@ public class Wsdl2OpenApiConverter {
                 : basePath;
     }
 
+    /**
+     * The converter that produced the document's schemas, so a caller converting messages at runtime
+     * resolves the same components the document publishes.
+     */
+    XsdToSchema getSchemaConverter() {
+        return converter;
+    }
+
     public OpenAPI generate() {
         var openAPI = new OpenAPI();
         openAPI.setOpenapi("3.1.2");
         openAPI.setInfo(buildInfo());
         openAPI.setServers(List.of(new Server().url(basePath)));
+        // Must stay after buildPaths(): converting the paths is what discovers the named XSD types
+        // the components below are collected from.
         openAPI.setPaths(buildPaths());
-        openAPI.setComponents(new Components().addSchemas(PROBLEM_DETAILS_SCHEMA, buildProblemDetailsSchema()));
+        openAPI.setComponents(buildComponents());
         var topLevelTags = buildTopLevelTags();
         if (!topLevelTags.isEmpty()) {
             openAPI.setTags(topLevelTags);
         }
         return openAPI;
+    }
+
+    /** The error shape every operation refers to, plus one entry per named XSD type in use. */
+    private Components buildComponents() {
+        var components = new Components().addSchemas(PROBLEM_DETAILS_SCHEMA, buildProblemDetailsSchema());
+        converter.getComponents().forEach(components::addSchemas);
+        return components;
     }
 
     /** RFC 7807 problem details, the shape of every error response this API returns. */
@@ -294,21 +312,32 @@ public class Wsdl2OpenApiConverter {
      * did not take over becomes a query parameter. Without this the fields would be absent from the
      * document and from the SOAP request, and neither the client nor the operator would be told.
      */
-    private static void addQueryParameters(io.swagger.v3.oas.models.Operation apiOp, String operationName,
-                                           String method, Schema<?> bodySchema) {
+    private void addQueryParameters(io.swagger.v3.oas.models.Operation apiOp, String operationName,
+                                    String method, Schema<?> bodySchema) {
         if (bodySchema.getProperties() == null) return;
         List<String> required = bodySchema.getRequired() != null ? bodySchema.getRequired() : List.of();
         bodySchema.getProperties().forEach((fieldName, fieldSchema) -> {
-            if (!isScalar(fieldSchema)) {
+            // A field of a named XSD type is a reference; whether it fits into a query parameter is
+            // a property of the type it names, so the reference has to be followed to tell.
+            if (!isScalar(deref(fieldSchema))) {
                 throw new ConfigurationException("""
                         Operation '%s' is mapped to %s, which has no request body, but its input field '%s' is \
                         a %s and cannot be carried as a query parameter.
                         Map the operation to POST, or name the field in the path template.""".formatted(
-                        operationName, method, fieldName, describe(fieldSchema)));
+                        operationName, method, fieldName, describe(deref(fieldSchema))));
             }
             apiOp.addParametersItem(new Parameter().name(fieldName).in("query")
                     .required(required.contains(fieldName)).schema(fieldSchema));
         });
+    }
+
+    /**
+     * The component {@code schema} references, or {@code schema} itself if it references none. Used
+     * to inspect a schema's type; the reference itself is what stays in the document.
+     */
+    private Schema<?> deref(Schema<?> schema) {
+        if (schema.get$ref() == null) return schema;
+        return converter.getComponents().getOrDefault(componentName(schema.get$ref()), schema);
     }
 
     /** Only a single value fits into a query parameter the interceptor can put back into the JSON. */

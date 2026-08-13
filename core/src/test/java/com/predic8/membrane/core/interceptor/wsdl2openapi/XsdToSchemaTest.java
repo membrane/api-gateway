@@ -76,6 +76,24 @@ class XsdToSchemaTest {
         return schema.getProperties().get(name);
     }
 
+    /** A field whose type is a named one, resolved through the component it references. */
+    static Schema<?> fieldOf(XsdToSchema converter, Schema<?> schema, String name) {
+        return deref(converter, fieldOf(schema, name));
+    }
+
+    /** The component {@code schema} references, or {@code schema} itself if it references none. */
+    static Schema<?> deref(XsdToSchema converter, Schema<?> schema) {
+        if (schema == null || schema.get$ref() == null) return schema;
+        String name = schema.get$ref().substring(schema.get$ref().lastIndexOf('/') + 1);
+        Schema<?> component = converter.getComponents().get(name);
+        assertNotNull(component, "dangling reference " + schema.get$ref());
+        return component;
+    }
+
+    static void assertRefTo(String componentName, Schema<?> schema) {
+        assertEquals("#/components/schemas/" + componentName, schema.get$ref());
+    }
+
     static boolean isRequired(Schema<?> schema, String name) {
         var req = schema.getRequired();
         return req != null && req.contains(name);
@@ -635,7 +653,7 @@ class XsdToSchemaTest {
 
     @Test
     void namedSimpleTypeRestrictionResolvesToBasePrimitive() {
-        var schema = convert(converterFor("""
+        var converter = converterFor("""
                 <xsd:simpleType name="StatusCode">
                   <xsd:restriction base="xsd:string">
                     <xsd:enumeration value="ACTIVE"/>
@@ -648,15 +666,16 @@ class XsdToSchemaTest {
                     <xsd:element name="status" type="tns:StatusCode"/>
                   </xsd:sequence></xsd:complexType>
                 </xsd:element>
-                """), "account");
+                """);
+                var schema = convert(converter, "account");
 
-        assertInstanceOf(StringSchema.class, fieldOf(schema, "status"));
-        assertEquals(List.of("ACTIVE", "INACTIVE"), fieldOf(schema, "status").getEnum());
+        assertInstanceOf(StringSchema.class, fieldOf(converter, schema, "status"));
+        assertEquals(List.of("ACTIVE", "INACTIVE"), fieldOf(converter, schema, "status").getEnum());
     }
 
     @Test
     void namedSimpleTypePatternPropagatedToSchema() {
-        var schema = convert(converterFor("""
+        var converter = converterFor("""
                 <xsd:simpleType name="PhoneNumber">
                   <xsd:restriction base="xsd:string">
                     <xsd:pattern value="\\+?[0-9]{7,15}"/>
@@ -668,9 +687,10 @@ class XsdToSchemaTest {
                     <xsd:element name="phoneNumber" type="tns:PhoneNumber"/>
                   </xsd:sequence></xsd:complexType>
                 </xsd:element>
-                """), "contact");
+                """);
+                var schema = convert(converter, "contact");
 
-        Schema<?> phoneSchema = fieldOf(schema, "phoneNumber");
+        Schema<?> phoneSchema = fieldOf(converter, schema, "phoneNumber");
         assertInstanceOf(StringSchema.class, phoneSchema);
         assertEquals("^(?:\\+?[0-9]{7,15})$", phoneSchema.getPattern(),
                 "an XSD pattern matches the whole value, a JSON Schema one matches anywhere");
@@ -678,7 +698,7 @@ class XsdToSchemaTest {
 
     @Test
     void severalPatternFacetsBecomeAlternatives() {
-        var schema = convert(converterFor("""
+        var converter = converterFor("""
                 <xsd:simpleType name="Reference">
                   <xsd:restriction base="xsd:string">
                     <xsd:pattern value="[A-Z]{3}"/>
@@ -691,15 +711,16 @@ class XsdToSchemaTest {
                     <xsd:element name="ref" type="tns:Reference"/>
                   </xsd:sequence></xsd:complexType>
                 </xsd:element>
-                """), "doc");
+                """);
+                var schema = convert(converter, "doc");
 
-        assertEquals("^(?:[A-Z]{3}|[0-9]{4})$", fieldOf(schema, "ref").getPattern(),
+        assertEquals("^(?:[A-Z]{3}|[0-9]{4})$", fieldOf(converter, schema, "ref").getPattern(),
                 "in XSD the facets are alternatives, so keeping only the last one would be wrong");
     }
 
     @Test
     void enumerationLiteralsCarryTheTypeOfTheirSchema() {
-        var schema = convert(converterFor("""
+        var converter = converterFor("""
                 <xsd:simpleType name="Rating">
                   <xsd:restriction base="xsd:int">
                     <xsd:enumeration value="1"/>
@@ -726,17 +747,18 @@ class XsdToSchemaTest {
                     <xsd:element name="flag"   type="tns:Flag"/>
                   </xsd:sequence></xsd:complexType>
                 </xsd:element>
-                """), "review");
+                """);
+                var schema = convert(converter, "review");
 
         // Strings here would match no value of an integer, number or boolean field.
-        assertEquals(List.of(1, 5), fieldOf(schema, "rating").getEnum());
-        assertEquals(List.of(new BigDecimal("1.5")), fieldOf(schema, "factor").getEnum());
-        assertEquals(List.of(true), fieldOf(schema, "flag").getEnum());
+        assertEquals(List.of(1, 5), fieldOf(converter, schema, "rating").getEnum());
+        assertEquals(List.of(new BigDecimal("1.5")), fieldOf(converter, schema, "factor").getEnum());
+        assertEquals(List.of(true), fieldOf(converter, schema, "flag").getEnum());
     }
 
     @Test
     void enumerationLiteralThatIsNoValueOfTheTypeIsDropped() {
-        var schema = convert(converterFor("""
+        var converter = converterFor("""
                 <xsd:simpleType name="Rating">
                   <xsd:restriction base="xsd:int">
                     <xsd:enumeration value="1"/>
@@ -749,9 +771,10 @@ class XsdToSchemaTest {
                     <xsd:element name="rating" type="tns:Rating"/>
                   </xsd:sequence></xsd:complexType>
                 </xsd:element>
-                """), "review");
+                """);
+                var schema = convert(converter, "review");
 
-        assertEquals(List.of(1), fieldOf(schema, "rating").getEnum(),
+        assertEquals(List.of(1), fieldOf(converter, schema, "rating").getEnum(),
                 "the unusable literal costs its enum item, not the whole constraint");
     }
 
@@ -759,7 +782,7 @@ class XsdToSchemaTest {
 
     @Test
     void lengthFacetsPropagatedToSchema() {
-        var schema = convert(converterFor("""
+        var converter = converterFor("""
                 <xsd:simpleType name="Iban">
                   <xsd:restriction base="xsd:string">
                     <xsd:minLength value="15"/>
@@ -772,16 +795,17 @@ class XsdToSchemaTest {
                     <xsd:element name="iban" type="tns:Iban"/>
                   </xsd:sequence></xsd:complexType>
                 </xsd:element>
-                """), "account");
+                """);
+                var schema = convert(converter, "account");
 
-        Schema<?> iban = fieldOf(schema, "iban");
+        Schema<?> iban = fieldOf(converter, schema, "iban");
         assertEquals(15, iban.getMinLength());
         assertEquals(34, iban.getMaxLength());
     }
 
     @Test
     void lengthFacetPinsBothBounds() {
-        var schema = convert(converterFor("""
+        var converter = converterFor("""
                 <xsd:simpleType name="CountryCode">
                   <xsd:restriction base="xsd:string">
                     <xsd:length value="2"/>
@@ -793,16 +817,17 @@ class XsdToSchemaTest {
                     <xsd:element name="country" type="tns:CountryCode"/>
                   </xsd:sequence></xsd:complexType>
                 </xsd:element>
-                """), "address");
+                """);
+                var schema = convert(converter, "address");
 
-        Schema<?> country = fieldOf(schema, "country");
+        Schema<?> country = fieldOf(converter, schema, "country");
         assertEquals(2, country.getMinLength());
         assertEquals(2, country.getMaxLength());
     }
 
     @Test
     void inclusiveRangeFacetsPropagatedToSchema() {
-        var schema = convert(converterFor("""
+        var converter = converterFor("""
                 <xsd:simpleType name="Percentage">
                   <xsd:restriction base="xsd:int">
                     <xsd:minInclusive value="0"/>
@@ -815,9 +840,10 @@ class XsdToSchemaTest {
                     <xsd:element name="score" type="tns:Percentage"/>
                   </xsd:sequence></xsd:complexType>
                 </xsd:element>
-                """), "rating");
+                """);
+                var schema = convert(converter, "rating");
 
-        Schema<?> score = fieldOf(schema, "score");
+        Schema<?> score = fieldOf(converter, schema, "score");
         assertEquals(new BigDecimal("0"), score.getMinimum());
         assertEquals(new BigDecimal("100"), score.getMaximum());
         assertNull(score.getExclusiveMinimumValue(), "an inclusive bound must not be marked exclusive");
@@ -826,7 +852,7 @@ class XsdToSchemaTest {
 
     @Test
     void exclusiveRangeFacetsMarkedExclusive() {
-        var schema = convert(converterFor("""
+        var converter = converterFor("""
                 <xsd:simpleType name="PositiveAmount">
                   <xsd:restriction base="xsd:decimal">
                     <xsd:minExclusive value="0"/>
@@ -839,11 +865,12 @@ class XsdToSchemaTest {
                     <xsd:element name="amount" type="tns:PositiveAmount"/>
                   </xsd:sequence></xsd:complexType>
                 </xsd:element>
-                """), "payment");
+                """);
+                var schema = convert(converter, "payment");
 
         // the generated document is OpenAPI 3.1, where an exclusive bound is its own numeric
         // keyword; the 3.0 minimum-plus-boolean form is silently dropped when serializing 3.1
-        Schema<?> amount = fieldOf(schema, "amount");
+        Schema<?> amount = fieldOf(converter, schema, "amount");
         assertEquals(new BigDecimal("0"), amount.getExclusiveMinimumValue());
         assertEquals(new BigDecimal("1000.50"), amount.getExclusiveMaximumValue());
         assertNull(amount.getMinimum(), "an exclusive bound must not also be emitted as inclusive");
@@ -874,7 +901,7 @@ class XsdToSchemaTest {
 
     @Test
     void unparsableFacetValueIsIgnoredWithoutFailingTheConversion() {
-        var schema = convert(converterFor("""
+        var converter = converterFor("""
                 <xsd:simpleType name="Weird">
                   <xsd:restriction base="xsd:int">
                     <xsd:minInclusive value="abc"/>
@@ -887,9 +914,10 @@ class XsdToSchemaTest {
                     <xsd:element name="score" type="tns:Weird"/>
                   </xsd:sequence></xsd:complexType>
                 </xsd:element>
-                """), "rating");
+                """);
+                var schema = convert(converter, "rating");
 
-        Schema<?> score = fieldOf(schema, "score");
+        Schema<?> score = fieldOf(converter, schema, "score");
         assertNull(score.getMinimum(), "the unparsable bound is dropped");
         assertEquals(new BigDecimal("100"), score.getMaximum(), "the valid bound still applies");
     }
@@ -1187,8 +1215,8 @@ class XsdToSchemaTest {
     }
 
     @Test
-    void recursiveReferenceBreaksCycleWithEmptyObjectSchema() {
-        var schema = convert(converterFor("""
+    void recursiveTypeReferencesItselfByRef() {
+        var converter = converterFor("""
                 <xsd:complexType name="TreeNode">
                   <xsd:sequence>
                     <xsd:element name="value"    type="xsd:string"/>
@@ -1197,11 +1225,17 @@ class XsdToSchemaTest {
                 </xsd:complexType>
 
                 <xsd:element name="tree" type="tns:TreeNode"/>
-                """), "tree");
+                """);
+        var schema = convert(converter, "tree");
 
+        // The cycle is what the component is for: the back edge is a reference to the type itself,
+        // so the recursion is expressed rather than truncated to an empty schema.
         var children = (ArraySchema) fieldOf(schema, "children");
-        assertInstanceOf(ObjectSchema.class, children.getItems());
-        assertNull(children.getItems().getProperties());
+        assertRefTo("TreeNode", children.getItems());
+
+        var treeNode = deref(converter, children.getItems());
+        assertInstanceOf(StringSchema.class, fieldOf(treeNode, "value"));
+        assertRefTo("TreeNode", ((ArraySchema) fieldOf(treeNode, "children")).getItems());
     }
 
     // ── xsd:attribute mapping ─────────────────────────────────────────────
@@ -1488,9 +1522,211 @@ class XsdToSchemaTest {
                         """
         ));
 
-        var payload = fieldOf(convert(converter, "request"), "payload");
+        var payload = fieldOf(converter, convert(converter, "request"), "payload");
 
         assertInstanceOf(ObjectSchema.class, payload);
         assertInstanceOf(StringSchema.class, fieldOf(payload, "body"));
+    }
+
+    // ── components/schemas ────────────────────────────────────────────────
+
+    @Test
+    void aNamedTypeIsPublishedOnceAndReferencedFromEveryUseSite() {
+        var converter = converterFor("""
+                <xsd:complexType name="Address">
+                  <xsd:sequence><xsd:element name="street" type="xsd:string"/></xsd:sequence>
+                </xsd:complexType>
+
+                <xsd:element name="order">
+                  <xsd:complexType><xsd:sequence>
+                    <xsd:element name="billing"  type="tns:Address"/>
+                    <xsd:element name="shipping" type="tns:Address"/>
+                  </xsd:sequence></xsd:complexType>
+                </xsd:element>
+                """);
+        var schema = convert(converter, "order");
+
+        assertRefTo("Address", fieldOf(schema, "billing"));
+        assertRefTo("Address", fieldOf(schema, "shipping"));
+        assertEquals(Set.of("Address"), converter.getComponents().keySet());
+        assertInstanceOf(StringSchema.class, fieldOf(converter.getComponents().get("Address"), "street"));
+    }
+
+    @Test
+    void aTypeNoMessageRefersToIsNotPublished() {
+        var converter = converterFor("""
+                <xsd:complexType name="Used">
+                  <xsd:sequence><xsd:element name="a" type="xsd:string"/></xsd:sequence>
+                </xsd:complexType>
+                <xsd:complexType name="Unused">
+                  <xsd:sequence><xsd:element name="b" type="xsd:string"/></xsd:sequence>
+                </xsd:complexType>
+
+                <xsd:element name="request">
+                  <xsd:complexType><xsd:sequence>
+                    <xsd:element name="used" type="tns:Used"/>
+                  </xsd:sequence></xsd:complexType>
+                </xsd:element>
+                """);
+        convert(converter, "request");
+
+        assertEquals(Set.of("Used"), converter.getComponents().keySet());
+    }
+
+    @Test
+    void aMessageSchemaIsBuiltInlineEvenWhereItsElementNamesAType() {
+        var converter = converterFor("""
+                <xsd:complexType name="GetCityRequest">
+                  <xsd:sequence>
+                    <xsd:element name="name" type="xsd:string"/>
+                    <xsd:element name="filter" type="tns:Filter"/>
+                  </xsd:sequence>
+                </xsd:complexType>
+                <xsd:complexType name="Filter">
+                  <xsd:sequence><xsd:element name="minPopulation" type="xsd:int"/></xsd:sequence>
+                </xsd:complexType>
+
+                <xsd:element name="getCity" type="tns:GetCityRequest"/>
+                """);
+        var schema = convert(converter, "getCity");
+
+        // A body that is nothing but a reference says nothing about the message, and the converter
+        // reads its fields to derive path and query parameters.
+        assertNull(schema.get$ref());
+        assertInstanceOf(StringSchema.class, fieldOf(schema, "name"));
+        // The types nested inside it are still shared.
+        assertRefTo("Filter", fieldOf(schema, "filter"));
+    }
+
+    @Test
+    void twoNamespacesDeclaringOneLocalNameKeepTheirOwnComponent() {
+        var schemas = new LinkedHashMap<String, String>();
+        schemas.put(NS, """
+                <xsd:element name="order">
+                  <xsd:complexType><xsd:sequence>
+                    <xsd:element name="billTo"  type="b:Address" xmlns:b="https://billing.example.com"/>
+                    <xsd:element name="shipTo"  type="s:Address" xmlns:s="https://shipping.example.com"/>
+                  </xsd:sequence></xsd:complexType>
+                </xsd:element>
+                """);
+        schemas.put("https://billing.example.com", """
+                <xsd:complexType name="Address">
+                  <xsd:sequence><xsd:element name="invoiceStreet" type="xsd:string"/></xsd:sequence>
+                </xsd:complexType>
+                """);
+        schemas.put("https://shipping.example.com", """
+                <xsd:complexType name="Address">
+                  <xsd:sequence><xsd:element name="deliveryStreet" type="xsd:string"/></xsd:sequence>
+                </xsd:complexType>
+                """);
+        var converter = converterForSchemas(schemas);
+
+        var schema = convert(converter, "order");
+
+        // Sharing one component would publish two different types as the same one.
+        assertRefTo("Address", fieldOf(schema, "billTo"));
+        assertRefTo("shipping.example.com_Address", fieldOf(schema, "shipTo"));
+        assertNotNull(fieldOf(converter, schema, "billTo").getProperties().get("invoiceStreet"));
+        assertNotNull(fieldOf(converter, schema, "shipTo").getProperties().get("deliveryStreet"));
+    }
+
+    @Test
+    void aNillableFieldOfANamedTypeIsInlinedAndLeavesTheComponentAlone() {
+        var converter = converterFor("""
+                <xsd:simpleType name="Status">
+                  <xsd:restriction base="xsd:string"><xsd:enumeration value="ACTIVE"/></xsd:restriction>
+                </xsd:simpleType>
+
+                <xsd:element name="account">
+                  <xsd:complexType><xsd:sequence>
+                    <xsd:element name="status"     type="tns:Status" nillable="true"/>
+                    <xsd:element name="prevStatus" type="tns:Status"/>
+                  </xsd:sequence></xsd:complexType>
+                </xsd:element>
+                """);
+        var schema = convert(converter, "account");
+
+        // Nillability belongs to this one declaration, so it cannot be written onto the shared type.
+        Schema<?> status = fieldOf(schema, "status");
+        assertNull(status.get$ref());
+        assertEquals(List.of("string", "null"), status.getTypes().stream().toList());
+        assertRefTo("Status", fieldOf(schema, "prevStatus"));
+        assertFalse(converter.getComponents().get("Status").getTypes().contains("null"),
+                "the shared type must not have become nullable for everyone");
+    }
+
+    @Test
+    void aFieldWithAFixedValueOfANamedTypeIsInlined() {
+        var converter = converterFor("""
+                <xsd:simpleType name="Currency">
+                  <xsd:restriction base="xsd:string"/>
+                </xsd:simpleType>
+
+                <xsd:element name="payment">
+                  <xsd:complexType><xsd:sequence>
+                    <xsd:element name="currency" type="tns:Currency" fixed="EUR"/>
+                  </xsd:sequence>
+                    <xsd:attribute name="unit" type="tns:Currency" fixed="EUR"/>
+                  </xsd:complexType>
+                </xsd:element>
+                """);
+        var schema = convert(converter, "payment");
+
+        assertEquals("EUR", fieldOf(schema, "currency").getDefault());
+        assertEquals("EUR", fieldOf(schema, "@unit").getDefault(),
+                "an attribute carries a fixed value just as an element does");
+        assertNull(converter.getComponents().get("Currency"),
+                "no use site was left to publish the type for");
+    }
+
+    @Test
+    void anExtensionOfANamedBaseTypeStillInheritsItsFields() {
+        var converter = converterFor("""
+                <xsd:complexType name="OrderBase">
+                  <xsd:sequence><xsd:element name="orderId" type="xsd:string"/></xsd:sequence>
+                </xsd:complexType>
+                <xsd:complexType name="PriorityOrder">
+                  <xsd:complexContent>
+                    <xsd:extension base="tns:OrderBase">
+                      <xsd:sequence><xsd:element name="priority" type="xsd:int"/></xsd:sequence>
+                    </xsd:extension>
+                  </xsd:complexContent>
+                </xsd:complexType>
+
+                <xsd:element name="request">
+                  <xsd:complexType><xsd:sequence>
+                    <xsd:element name="order" type="tns:PriorityOrder"/>
+                  </xsd:sequence></xsd:complexType>
+                </xsd:element>
+                """);
+        var order = fieldOf(converter, convert(converter, "request"), "order");
+
+        // A base type is flattened into the derived type: a reference would carry no fields at all.
+        assertInstanceOf(StringSchema.class, fieldOf(order, "orderId"));
+        assertInstanceOf(IntegerSchema.class, fieldOf(order, "priority"));
+    }
+
+    @Test
+    void aTypeThatContainsTheTypeItExtendsStillInheritsItsFields() {
+        var converter = converterFor("""
+                <xsd:complexType name="Node">
+                  <xsd:sequence><xsd:element name="child" type="tns:SubNode" minOccurs="0"/></xsd:sequence>
+                </xsd:complexType>
+                <xsd:complexType name="SubNode">
+                  <xsd:complexContent>
+                    <xsd:extension base="tns:Node">
+                      <xsd:sequence><xsd:element name="label" type="xsd:string"/></xsd:sequence>
+                    </xsd:extension>
+                  </xsd:complexContent>
+                </xsd:complexType>
+
+                <xsd:element name="root" type="tns:Node"/>
+                """);
+        var subNode = fieldOf(converter, convert(converter, "root"), "child");
+
+        // SubNode reads Node's fields while Node is itself being built, so a half-built Node in the
+        // registry would cost the inherited field.
+        assertInstanceOf(StringSchema.class, fieldOf(subNode, "label"));
+        assertNotNull(fieldOf(subNode, "child"), "the field inherited from the base type");
     }
 }

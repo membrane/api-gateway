@@ -18,7 +18,9 @@ import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.wsdl.parser.Definitions;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.media.IntegerSchema;
 import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.media.StringSchema;
 import io.swagger.v3.oas.models.parameters.Parameter;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -31,6 +33,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.componentName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
@@ -141,10 +145,11 @@ class OpenApiGeneratorTest {
     }
 
     @Test
-    void problemDetailsSchemaIsGeneratedOnce() {
+    void problemDetailsSchemaIsDeclaredOnceAndReferenced() {
         var yaml = generator(citiesDefinitions, "/");
 
-        assertEquals(1, yaml.split("ProblemDetails:").length - 1, "One component schema, referenced by every operation");
+        assertEquals(1, yaml.split("ProblemDetails:").length - 1,
+                "declared once as a component, referenced by every operation");
         assertTrue(yaml.contains("Problem details as defined by RFC 7807."));
     }
 
@@ -240,6 +245,33 @@ class OpenApiGeneratorTest {
 
         assertTrue(yaml.contains("itemName:"), "Should resolve ItemType from the types namespace");
         assertTrue(yaml.contains("itemCount:"), "Should resolve ItemType from the types namespace");
+    }
+
+    @Test
+    void aNamedTypeIsWrittenOutOnceHoweverManyOperationsUseIt() {
+        // ItemType types both the request's 'item' and the response's 'result'. Inlining it at each
+        // use site is what makes a document of a real WSDL unnavigable.
+        var yaml = generator(crossNsDefinitions, "/");
+
+        assertEquals(1, yaml.split("itemName:").length - 1, yaml);
+        assertEquals(1, yaml.split("ItemType:").length - 1, "declared once, under components");
+    }
+
+    @Test
+    void aFieldOfANamedTypeIsReachableFromTheOperationThroughItsComponent() {
+        var api = new Wsdl2OpenApiConverter(crossNsDefinitions, "/").generate();
+
+        var requestBody = api.getPaths().get("/get-item").getPost().getRequestBody()
+                .getContent().get(APPLICATION_JSON).getSchema();
+        Schema<?> item = (Schema<?>) requestBody.getProperties().get("item");
+
+        // The substring assertions elsewhere would also pass if a reference pointed nowhere; this
+        // walks the way a client or a generator does.
+        assertEquals("#/components/schemas/ItemType", item.get$ref());
+        var itemType = api.getComponents().getSchemas().get(componentName(item.get$ref()));
+        assertNotNull(itemType, "the operation references a component the document does not declare");
+        assertInstanceOf(StringSchema.class, itemType.getProperties().get("itemName"));
+        assertInstanceOf(IntegerSchema.class, itemType.getProperties().get("itemCount"));
     }
 
     @Test

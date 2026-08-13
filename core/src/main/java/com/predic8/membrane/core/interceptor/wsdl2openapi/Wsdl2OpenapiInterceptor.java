@@ -156,9 +156,13 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
         faultDetailSchemas.clear();
 
         definitions = parseWsdl();
-        xsdToSchema = new XsdToSchema(definitions);
         operationsByName = operations != null ? operations.getMap() : Map.of();
         initOperationFlows();
+
+        // One converter for the document and the runtime alike: the schemas used to convert a
+        // response refer to the named types by the very names the document publishes them under.
+        var wsdl2OpenApi = new Wsdl2OpenApiConverter(definitions, basePath, operationsByName, apiProxy.getName(), description);
+        xsdToSchema = wsdl2OpenApi.getSchemaConverter();
 
         routes.addAll(buildRoutes(definitions, operationsByName));
         for (RouteEntry route : routes) {
@@ -171,7 +175,7 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
                     wsdlOp.map(Operation::getFaults).orElse(List.of())));
         }
 
-        var openApiModel = new Wsdl2OpenApiConverter(definitions, basePath, operationsByName, apiProxy.getName(), description).generate();
+        var openApiModel = wsdl2OpenApi.generate();
         queryParamNames = collectQueryParamNames(openApiModel);
         publisher = createPublisher(openApiModel);
 
@@ -301,7 +305,7 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
         }
 
         try {
-            String jsonResponse = new Soap2JsonTransformer()
+            String jsonResponse = new Soap2JsonTransformer(xsdToSchema.getComponents())
                     .transform(exc.getResponse().getBodyAsStringDecoded(),
                             responseSchemaFor(operationName),
                             faultDetailSchemaFor(operationName));
@@ -461,9 +465,29 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
     private Map<String, String> declaredQueryParams(Exchange exc, String operationName) throws Exception {
         Set<String> declared = queryParamNames.getOrDefault(operationName, Set.of());
         if (declared.isEmpty()) return Map.of();
-        var params = new LinkedHashMap<>(getParams(router.getConfiguration().getUriFactory(), exc, ERROR));
+        var params = new LinkedHashMap<>(parseQueryParams(exc));
         params.keySet().retainAll(declared);
         return params;
+    }
+
+    /**
+     * Parses the query string, rejecting duplicate keys and malformed pairs. Those are client
+     * mistakes, so the {@link RuntimeException} {@code getParams} raises for them is translated
+     * into a distinct exception instead of ending up as a transformation failure.
+     */
+    private Map<String, String> parseQueryParams(Exchange exc) throws Exception {
+        try {
+            return getParams(router.getConfiguration().getUriFactory(), exc, ERROR);
+        } catch (RuntimeException e) {
+            throw new InvalidQueryStringException(e);
+        }
+    }
+
+    /** A query string with duplicate keys or malformed key/value pairs. */
+    private static class InvalidQueryStringException extends Exception {
+        private InvalidQueryStringException(Throwable cause) {
+            super(cause);
+        }
     }
 
     /** The query parameters the generated document declares, per operation. */
@@ -508,6 +532,15 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
                 exc.setDestinations(List.of(serviceAddress));
             }
 
+        } catch (InvalidQueryStringException e) {
+            log.debug("Cannot parse the query string of the request for operation {}", operationName, e);
+            user(router.getConfiguration().isProduction(), getDisplayName())
+                    .status(400)
+                    .title("Invalid query string")
+                    .detail("The query string could not be parsed. Check for duplicate or malformed parameters.")
+                    .exception(e)
+                    .buildAndSetResponse(exc);
+            return ABORT;
         } catch (DOMException e) {
             // A field name the JSON body carries is not a legal XML name — a client mistake, so a
             // 400 rather than the 500 any other transformation failure gets. Every other DOM error

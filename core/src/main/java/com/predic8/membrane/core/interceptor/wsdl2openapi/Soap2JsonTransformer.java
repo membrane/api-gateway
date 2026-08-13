@@ -45,6 +45,31 @@ public class Soap2JsonTransformer {
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     /**
+     * The named types the schemas refer to, keyed by component name — the same map
+     * {@link XsdToSchema#getComponents()} fills. Empty when the caller has no schemas to resolve
+     * against, in which case a reference is simply left as it is.
+     */
+    private final Map<String, Schema<?>> components;
+
+    public Soap2JsonTransformer() {
+        this(Map.of());
+    }
+
+    public Soap2JsonTransformer(Map<String, Schema<?>> components) {
+        this.components = components;
+    }
+
+    /**
+     * The schema a reference points at, or {@code schema} itself if it is no reference. A named type
+     * is published once and referenced from its use sites, so every step down into a schema has to
+     * follow the reference or lose the type — and with it the value's type and its arrayness.
+     */
+    private Schema<?> resolve(Schema<?> schema) {
+        if (schema == null || schema.get$ref() == null) return schema;
+        return components.getOrDefault(componentName(schema.get$ref()), schema);
+    }
+
+    /**
      * Schema-less fallback: converts the SOAP response structurally, with all scalar
      * values produced as JSON strings. Use when no response schema is available,
      * e.g. for untyped/{@code xsd:any} elements.
@@ -109,7 +134,7 @@ public class Soap2JsonTransformer {
     }
 
     private Map<String, Object> elementToMap(Element element, Schema<?> schema) {
-        Map<String, Schema<?>> properties = propertiesOf(schema);
+        Map<String, Schema<?>> properties = propertiesOf(resolve(schema));
 
         var result = new LinkedHashMap<String, Object>();
         putAttributes(element, properties, result);
@@ -117,12 +142,13 @@ public class Soap2JsonTransformer {
         var childGroups = new LinkedHashMap<String, ChildGroup>();
         for (Element childElement : childElements(element)) {
             ResolvedChild child = resolveChild(properties, childElement);
+            Schema<?> childSchema = resolve(child.schema());
             // ArraySchema wraps the per-item schema; unwrap it so we type individual instances correctly
-            Schema<?> effectiveSchema = child.schema() instanceof ArraySchema as ? as.getItems() : child.schema();
+            Schema<?> effectiveSchema = resolve(childSchema instanceof ArraySchema as ? as.getItems() : childSchema);
 
             Object value = childValue(childElement, effectiveSchema);
 
-            childGroups.computeIfAbsent(child.key(), k -> new ChildGroup(child.schema(), new ArrayList<>()))
+            childGroups.computeIfAbsent(child.key(), k -> new ChildGroup(childSchema, new ArrayList<>()))
                     .values().add(value);
         }
 
@@ -144,14 +170,15 @@ public class Soap2JsonTransformer {
      * type. Without attributes the value stands on its own, as a plain scalar.
      */
     private Object leafValue(Element element, Schema<?> schema) {
-        Map<String, Schema<?>> properties = propertiesOf(schema);
+        Schema<?> resolved = resolve(schema);
+        Map<String, Schema<?>> properties = propertiesOf(resolved);
 
         var attributes = new LinkedHashMap<String, Object>();
         putAttributes(element, properties, attributes);
 
-        Schema<?> declaredValueSchema = properties.get(VALUE_KEY);
+        Schema<?> declaredValueSchema = resolve(properties.get(VALUE_KEY));
         Object text = convertLeaf(element.getTextContent(),
-                declaredValueSchema != null ? declaredValueSchema : schema);
+                declaredValueSchema != null ? declaredValueSchema : resolved);
 
         if (attributes.isEmpty()) return text;
         attributes.put(VALUE_KEY, text);
@@ -188,7 +215,7 @@ public class Soap2JsonTransformer {
                 continue;
             }
             String key = attributeKey(attr.getLocalName());
-            result.put(key, convertLeaf(attr.getNodeValue(), properties.get(key)));
+            result.put(key, convertLeaf(attr.getNodeValue(), resolve(properties.get(key))));
         }
     }
 

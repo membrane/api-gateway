@@ -35,6 +35,14 @@ class XsdDomUtil {
      */
     static final String VALUE_KEY = "$value";
 
+    /** Where a schema reference points: the {@code components/schemas} section of the document. */
+    static final String COMPONENTS_SCHEMAS_PREFIX = "#/components/schemas/";
+
+    /** The component a reference names, e.g. {@code #/components/schemas/Address} -> {@code Address}. */
+    static String componentName(String ref) {
+        return ref.substring(ref.lastIndexOf('/') + 1);
+    }
+
     /** Namespace of the instance-level attributes, of which {@code xsi:nil} is used here. */
     static final String XSI_NS = "http://www.w3.org/2001/XMLSchema-instance";
 
@@ -155,6 +163,84 @@ class XsdDomUtil {
             if (close >= 0) return key.substring(close + 1);
         }
         return key;
+    }
+
+    /**
+     * The component name each named XSD type is published under, keyed by {@link #qualifiedKey}. A
+     * type whose local name is unique keeps it; where several namespaces declare the same local name,
+     * the lexicographically first namespace keeps the bare name and the others are prefixed with a
+     * name derived from their namespace. Names are computed for every declared type up front, so a
+     * name never depends on the order in which types are reached during conversion.
+     *
+     * <p>{@code reserved} names are treated as already taken, which is how a type the WSDL happens to
+     * declare cannot silently overwrite a component the converter contributes itself.
+     */
+    static Map<String, String> buildComponentNames(Map<String, List<Element>> schemasByNamespace, Set<String> reserved) {
+        var namespacesByLocalName = collectNamedTypes(schemasByNamespace);
+        var taken = new HashSet<>(reserved);
+        var names = new LinkedHashMap<String, String>();
+        // Sorted by local name so the residual-collision suffixes below do not depend on map order.
+        new TreeMap<>(namespacesByLocalName).forEach((localName, namespaces) -> {
+            boolean first = true;
+            for (String namespace : namespaces) {
+                String candidate = sanitizeComponentName(first ? localName : nsPrefix(namespace) + "_" + localName);
+                names.put(qualifiedKey(namespace, localName), uniqueName(candidate, taken));
+                first = false;
+            }
+        });
+        return names;
+    }
+
+    /** Local name -> the namespaces declaring a complexType or simpleType of that name, sorted. */
+    private static Map<String, SortedSet<String>> collectNamedTypes(Map<String, List<Element>> schemasByNamespace) {
+        var result = new LinkedHashMap<String, SortedSet<String>>();
+        schemasByNamespace.forEach((namespace, roots) -> {
+            for (Element root : roots) {
+                for (Element child : xsdChildren(root)) {
+                    if (!"complexType".equals(child.getLocalName()) && !"simpleType".equals(child.getLocalName())) continue;
+                    String name = child.getAttribute("name");
+                    // Two roots of one namespace declaring the same name collapse into one entry,
+                    // matching the first-root-wins lookup in XsdToSchema.
+                    if (!name.isEmpty()) result.computeIfAbsent(name, k -> new TreeSet<>()).add(namespace);
+                }
+            }
+        });
+        return result;
+    }
+
+    /** {@code candidate}, suffixed until it is not among {@code taken}; adds the result to {@code taken}. */
+    private static String uniqueName(String candidate, Set<String> taken) {
+        String name = candidate;
+        for (int i = 2; !taken.add(name); i++) {
+            name = candidate + "_" + i;
+        }
+        return name;
+    }
+
+    /**
+     * A name usable in a {@code #/components/schemas/...} reference: everything outside
+     * {@code [A-Za-z0-9._-]} becomes an underscore. An XSD name is an NCName and may contain
+     * characters — Unicode letters above all — that a reference cannot carry.
+     */
+    static String sanitizeComponentName(String name) {
+        String sanitized = name.replaceAll("[^A-Za-z0-9._-]+", "_").replaceAll("^_+|_+$", "");
+        return sanitized.isEmpty() ? "type" : sanitized;
+    }
+
+    /**
+     * A short name for a namespace, used to distinguish types that share a local name: the last
+     * meaningful segment of the URI, e.g. {@code http://example.com/billing} or
+     * {@code urn:example:billing:v1} both yield {@code billing}. A bare version segment is skipped,
+     * because a namespace that ends in one names the version rather than the domain.
+     */
+    static String nsPrefix(String namespace) {
+        String withoutScheme = namespace.replaceFirst("^[A-Za-z][A-Za-z0-9+.-]*:(//)?", "");
+        String path = withoutScheme.split("[?#]")[0];
+        var segments = Arrays.stream(path.split("[/:]")).filter(s -> !s.isEmpty()).toList();
+        for (int i = segments.size() - 1; i >= 0; i--) {
+            if (!segments.get(i).matches("v\\d+")) return segments.get(i);
+        }
+        return path;
     }
 
     /**
