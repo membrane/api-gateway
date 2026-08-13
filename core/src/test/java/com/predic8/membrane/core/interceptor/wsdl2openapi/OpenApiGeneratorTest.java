@@ -22,6 +22,7 @@ import io.swagger.v3.oas.models.media.IntegerSchema;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
 import io.swagger.v3.oas.models.parameters.Parameter;
+import io.swagger.v3.oas.models.tags.Tag;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -319,10 +320,23 @@ class OpenApiGeneratorTest {
 
     @Test
     void pathParameterFieldIsRemovedFromRequestBody() {
-        var op = requestSchemaOf(pathMappedGetCity());
+        // getCity's only input field is carried by the path, so nothing is left for a body.
+        assertNull(pathMappedGetCity().getPaths().get("/cities/{name}").getPut().getRequestBody(),
+                "Field bound to the path parameter must not be repeated in the body");
+    }
 
-        assertNull(op.getProperties().get("name"), "Field bound to the path parameter must not be repeated in the body");
-        assertTrue(op.getRequired() == null || !op.getRequired().contains("name"), "and must not be required there");
+    @Test
+    void fieldsThePathDoesNotCarryStayInTheRequestBody() {
+        // search declares byName, byId and code; only byId is bound to the path.
+        var settings = new OperationSettings();
+        settings.setPath("/search/{byId}");
+        settings.setMethod("PUT");
+        var body = new Wsdl2OpenApiConverter(extendedDefinitions, "/", Map.of("search", settings)).generate()
+                .getPaths().get("/search/{byId}").getPut()
+                .getRequestBody().getContent().get(APPLICATION_JSON).getSchema();
+
+        assertNull(body.getProperties().get("byId"), "the path parameter must not be repeated in the body");
+        assertNotNull(body.getProperties().get("byName"));
     }
 
     @Test
@@ -429,14 +443,38 @@ class OpenApiGeneratorTest {
         return new Wsdl2OpenApiConverter(citiesDefinitions, "/", Map.of("getCity", settings)).generate();
     }
 
-    private static Schema<?> requestSchemaOf(OpenAPI api) {
-        return api.getPaths().get("/cities/{name}").getPut()
-                .getRequestBody().getContent().get("application/json").getSchema();
+    @Test
+    void unconfiguredOperationIsTaggedWithTheServiceName() {
+        var api = new Wsdl2OpenApiConverter(citiesDefinitions, "/").generate();
+
+        assertEquals(List.of("CityService"), api.getPaths().get("/get-city").getPost().getTags(),
+                "without a configured tag every operation would land in the 'default' group of a UI");
+        assertEquals(List.of("CityService"), api.getTags().stream().map(Tag::getName).toList(),
+                "the fallback tag is declared at the top level too");
     }
 
     @Test
-    void noTagWhenNotConfigured() {
-        assertFalse(generator(citiesDefinitions, "/").contains("tags:"), "Should have no tags when none configured");
+    void configuredTagWinsOverTheServiceName() {
+        var settings = new OperationSettings();
+        settings.setTag("MyService");
+        var api = new Wsdl2OpenApiConverter(citiesDefinitions, "/", Map.of("getCity", settings)).generate();
+
+        assertEquals(List.of("MyService"), api.getPaths().get("/get-city").getPost().getTags());
+        assertEquals(List.of("MyService"), api.getTags().stream().map(Tag::getName).toList());
+    }
+
+    @Test
+    void configuredVersionReplacesTheDefault() {
+        var api = new Wsdl2OpenApiConverter(citiesDefinitions, "/", Map.of(), null, null, "2.1.0").generate();
+
+        assertEquals("2.1.0", api.getInfo().getVersion());
+    }
+
+    @Test
+    void versionFallsBackToTheDefaultWhenNotConfigured() {
+        assertEquals(Wsdl2OpenApiConverter.DEFAULT_VERSION,
+                new Wsdl2OpenApiConverter(citiesDefinitions, "/", Map.of(), null, null, null).generate()
+                        .getInfo().getVersion());
     }
 
     // ── wsdl:documentation / xsd:documentation ────────────────────────────

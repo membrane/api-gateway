@@ -63,6 +63,9 @@ public class Wsdl2OpenApiConverter {
     /** The problem details member carrying the content of a fault the operation declares. */
     static final String FAULT_DETAILS_FIELD = "details";
 
+    /** What {@code info.version} says when the plugin is not configured with one. */
+    static final String DEFAULT_VERSION = "1.0.0";
+
     private static final String PROBLEM_DETAILS_SCHEMA = "ProblemDetails";
     private static final String PROBLEM_DETAILS_REF = "#/components/schemas/" + PROBLEM_DETAILS_SCHEMA;
 
@@ -72,6 +75,7 @@ public class Wsdl2OpenApiConverter {
     private final Map<String, OperationSettings> operations;
     private final String title;
     private final String description;
+    private final String version;
 
     public Wsdl2OpenApiConverter(Definitions definitions, String basePath) {
         this(definitions, basePath, Map.of());
@@ -83,12 +87,18 @@ public class Wsdl2OpenApiConverter {
 
     public Wsdl2OpenApiConverter(Definitions definitions, String basePath, Map<String, OperationSettings> operations,
                                   String title, String description) {
+        this(definitions, basePath, operations, title, description, null);
+    }
+
+    public Wsdl2OpenApiConverter(Definitions definitions, String basePath, Map<String, OperationSettings> operations,
+                                  String title, String description, String version) {
         this.definitions = definitions;
         this.basePath = stripTrailingSlash(basePath);
         this.converter = new XsdToSchema(definitions, Set.of(PROBLEM_DETAILS_SCHEMA));
         this.operations = operations;
         this.title = title;
         this.description = description;
+        this.version = version;
     }
 
     /**
@@ -119,7 +129,7 @@ public class Wsdl2OpenApiConverter {
         // the components below are collected from.
         openAPI.setPaths(buildPaths());
         openAPI.setComponents(buildComponents());
-        var topLevelTags = buildTopLevelTags();
+        var topLevelTags = buildTopLevelTags(openAPI.getPaths());
         if (!topLevelTags.isEmpty()) {
             openAPI.setTags(topLevelTags);
         }
@@ -144,10 +154,16 @@ public class Wsdl2OpenApiConverter {
                 .addProperty("instance", new StringSchema().description("Identifies this specific occurrence."));
     }
 
-    private List<Tag> buildTopLevelTags() {
-        return operations.values().stream()
-                .map(OperationSettings::getTag)
-                .filter(Objects::nonNull)
+    /**
+     * Declares the tags the operations carry, in the order the paths use them. Read from the built
+     * paths rather than from the configuration, so the tag an unconfigured operation falls back to
+     * is declared too.
+     */
+    private static List<Tag> buildTopLevelTags(Paths paths) {
+        return paths.values().stream()
+                .flatMap(pathItem -> pathItem.readOperations().stream())
+                .filter(op -> op.getTags() != null)
+                .flatMap(op -> op.getTags().stream())
                 .distinct()
                 .map(name -> new Tag().name(name))
                 .toList();
@@ -176,7 +192,7 @@ public class Wsdl2OpenApiConverter {
         return new Info()
                 .title(title != null ? title : getServiceName())
                 .description(infoDescription())
-                .version("1.0.0");
+                .version(version != null ? version : DEFAULT_VERSION);
     }
 
     /**
@@ -253,9 +269,9 @@ public class Wsdl2OpenApiConverter {
                 .description(wsdlOp.getDocumentation())
                 .responses(buildResponses(wsdlOp));
 
-        if (settings.getTag() != null) {
-            apiOp.addTagsItem(settings.getTag());
-        }
+        // Every operation is tagged: an untagged one would end up in the "default" group of a
+        // documentation UI, and with no tag configured anywhere that is where all of them land.
+        apiOp.addTagsItem(settings.getTag() != null ? settings.getTag() : getServiceName());
 
         List<String> pathParamNames = settings.getPath() == null ? List.of() : extractParamNames(settings.getPath());
         Schema<?> bodySchema = converter.convertParts(getBodyParts(inputParts, headerParts));
@@ -270,12 +286,25 @@ public class Wsdl2OpenApiConverter {
                         .schema(paramSchemas.getOrDefault(p, new StringSchema())))
         );
         if (hasRequestBody(settings.getMethod())) {
-            apiOp.requestBody(buildRequestBody(bodySchema));
+            if (!isEmptySchema(bodySchema)) {
+                apiOp.requestBody(buildRequestBody(bodySchema));
+            }
         } else {
             addQueryParameters(apiOp, name, settings.getMethod(), bodySchema);
         }
         headerParts.stream().map(this::buildHeaderParameter).forEach(apiOp::addParametersItem);
         return apiOp;
+    }
+
+    /**
+     * Whether the operation's input carries nothing: the message has no parts, or the parts resolve
+     * to an empty complex type. Such an operation gets no request body — demanding one would make a
+     * validator reject the empty request a client correctly sends. A reference is never empty: it
+     * names a type the document declares elsewhere.
+     */
+    private static boolean isEmptySchema(Schema<?> schema) {
+        return schema.get$ref() == null
+               && (schema.getProperties() == null || schema.getProperties().isEmpty());
     }
 
     private static boolean hasRequestBody(String method) {

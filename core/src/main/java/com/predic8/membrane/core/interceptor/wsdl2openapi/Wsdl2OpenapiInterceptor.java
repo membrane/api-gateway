@@ -109,6 +109,7 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
 
     private String wsdl;
     private String description;
+    private String version;
     /** The api this plugin lives in. Set by init(), which rejects anything that is not an APIProxy. */
     private APIProxy apiProxy;
     private Definitions definitions;
@@ -161,7 +162,7 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
 
         // One converter for the document and the runtime alike: the schemas used to convert a
         // response refer to the named types by the very names the document publishes them under.
-        var wsdl2OpenApi = new Wsdl2OpenApiConverter(definitions, basePath, operationsByName, apiProxy.getName(), description);
+        var wsdl2OpenApi = new Wsdl2OpenApiConverter(definitions, basePath, operationsByName, apiProxy.getName(), description, version);
         xsdToSchema = wsdl2OpenApi.getSchemaConverter();
 
         routes.addAll(buildRoutes(definitions, operationsByName));
@@ -618,6 +619,20 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
     @MCAttribute
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    /**
+     * @description Version of the generated OpenAPI document.
+     * @default 1.0.0
+     * @example 2.1.0
+     */
+    @MCAttribute
+    public void setVersion(String version) {
+        this.version = version;
     }
 
     public OperationsConfig getOperations() {

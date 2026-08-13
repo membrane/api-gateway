@@ -165,6 +165,28 @@ class Wsdl2OpenApiConverterWsdlStyleTest {
     }
 
     @Test
+    void operationWithAnEmptyInputDeclaresNoRequestBody() throws Exception {
+        // An empty complexType carries no field, so a client correctly sends nothing. Demanding a
+        // request body would make a validator reject exactly that request.
+        // Empties the sayHello element — the first complexType in the WSDL — of its only field.
+        var wsdl = GREETING_WSDL.replaceFirst("(?s)<xs:complexType>.*?</xs:complexType>", "<xs:complexType/>");
+        assertFalse(wsdl.contains("\"name\" type=\"xs:string\""), "the input element must have lost its only field");
+
+        var openAPI = new Wsdl2OpenApiConverter(Definitions.parse(new StaticStringResolver(), wsdl), "/").generate();
+
+        assertNull(openAPI.getPaths().get("/say-hello").getPost().getRequestBody());
+    }
+
+    @Test
+    void operationWithAnInputFieldStillDeclaresARequestBody() throws Exception {
+        var openAPI = new Wsdl2OpenApiConverter(Definitions.parse(new StaticStringResolver(), GREETING_WSDL), "/").generate();
+
+        var requestBody = openAPI.getPaths().get("/say-hello").getPost().getRequestBody();
+        assertNotNull(requestBody);
+        assertTrue(requestBody.getRequired());
+    }
+
+    @Test
     void rpcStylePartsBecomeRequestAndResponseFields() throws Exception {
         // RPC style: message parts reference primitive types directly (type=), not a
         // wrapping XSD element (element=) — there is no <types> section at all. Each part is
