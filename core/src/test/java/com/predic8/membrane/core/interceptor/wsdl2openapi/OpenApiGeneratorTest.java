@@ -298,6 +298,30 @@ class OpenApiGeneratorTest {
         assertEquals("path", op.getParameters().getFirst().getIn());
     }
 
+    @Test
+    void pathParameterTakesTheTypeOfTheInputField() {
+        // searchRequest declares byId as xsd:int, so the parameter must not degrade to a string.
+        var settings = new OperationSettings();
+        settings.setPath("/search/{byId}");
+        settings.setMethod("GET");
+        var api = new Wsdl2OpenApiConverter(extendedDefinitions, "/", Map.of("search", settings)).generate();
+
+        var parameter = api.getPaths().get("/search/{byId}").getGet().getParameters().getFirst();
+        assertEquals("byId", parameter.getName());
+        assertEquals("integer", parameter.getSchema().getType());
+    }
+
+    @Test
+    void pathParameterWithoutMatchingInputFieldFallsBackToString() {
+        var settings = new OperationSettings();
+        settings.setPath("/cities/{unknown}");
+        settings.setMethod("GET");
+        var api = new Wsdl2OpenApiConverter(citiesDefinitions, "/", Map.of("getCity", settings)).generate();
+
+        assertEquals("string", api.getPaths().get("/cities/{unknown}").getGet()
+                .getParameters().getFirst().getSchema().getType());
+    }
+
     private static OpenAPI pathMappedGetCity() {
         var settings = new OperationSettings();
         settings.setPath("/cities/{name}");

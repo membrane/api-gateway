@@ -219,11 +219,19 @@ public class Wsdl2OpenApiConverter {
         }
 
         List<String> pathParamNames = settings.getPath() == null ? List.of() : extractParamNames(settings.getPath());
+        Schema<?> bodySchema = converter.convertParts(getBodyParts(inputParts, headerParts));
+
+        // The path parameters take over the schema of the input fields they carry, and those fields
+        // leave the body: the client puts them in the URL and Wsdl2OpenapiInterceptor merges them
+        // back into the JSON before the SOAP transformation, so asking for them twice would make a
+        // validator reject a correct request.
+        Map<String, Schema> paramSchemas = removeProperties(bodySchema, pathParamNames);
         pathParamNames.forEach(p ->
-                apiOp.addParametersItem(new Parameter().name(p).in("path").required(true).schema(new StringSchema()))
+                apiOp.addParametersItem(new Parameter().name(p).in("path").required(true)
+                        .schema(paramSchemas.getOrDefault(p, new StringSchema())))
         );
         if (hasRequestBody(settings.getMethod())) {
-            apiOp.requestBody(buildRequestBody(getBodyParts(inputParts, headerParts), pathParamNames));
+            apiOp.requestBody(buildRequestBody(bodySchema));
         }
         headerParts.stream().map(this::buildHeaderParameter).forEach(apiOp::addParametersItem);
         return apiOp;
@@ -286,26 +294,29 @@ public class Wsdl2OpenApiConverter {
         return new Parameter().in("header").name(part.getName()).schema(schema);
     }
 
-    private RequestBody buildRequestBody(List<Part> parts, List<String> pathParamNames) {
+    private RequestBody buildRequestBody(Schema<?> schema) {
         return new RequestBody()
                 .required(true)
-                .content(jsonContent(removeProperties(converter.convertParts(parts), pathParamNames)));
+                .content(jsonContent(schema));
     }
 
     /**
-     * Drops the fields bound to path parameters from the request body schema. The client puts them
-     * in the URL and {@code Wsdl2OpenapiInterceptor} merges them back into the JSON before the SOAP
-     * transformation, so keeping them in the body would ask for the same value twice — and make a
-     * validator reject a correct request that omits them.
+     * Removes the named properties from the given schema and returns them, keyed by name. A name the
+     * schema has no property for is absent from the result — the WSDL says nothing about that field,
+     * so the caller decides what to do with it.
      */
-    private static Schema<?> removeProperties(Schema<?> schema, List<String> names) {
-        if (names.isEmpty() || schema.getProperties() == null) return schema;
-        names.forEach(schema.getProperties()::remove);
+    private static Map<String, Schema> removeProperties(Schema<?> schema, List<String> names) {
+        if (names.isEmpty() || schema.getProperties() == null) return Map.of();
+        var removed = new LinkedHashMap<String, Schema>();
+        for (String name : names) {
+            Schema<?> property = schema.getProperties().remove(name);
+            if (property != null) removed.put(name, property);
+        }
         if (schema.getRequired() != null) {
             schema.getRequired().removeAll(names);
             if (schema.getRequired().isEmpty()) schema.setRequired(null);
         }
-        return schema;
+        return removed;
     }
 
     private static Content jsonContent(Schema<?> schema) {
