@@ -99,6 +99,12 @@ class XsdToSchemaTest {
         return req != null && req.contains(name);
     }
 
+    /** The {@code required} lists of a schema's {@code oneOf} branches — the exactly-one-of constraint. */
+    static List<List<String>> oneOfRequired(Schema<?> schema) {
+        assertNotNull(schema.getOneOf(), "no oneOf on " + schema);
+        return schema.getOneOf().stream().map(branch -> (List<String>) branch.getRequired()).toList();
+    }
+
     // ── Unresolvable inputs ───────────────────────────────────────────────
 
     @Test
@@ -125,7 +131,7 @@ class XsdToSchemaTest {
 
     @ParameterizedTest(name = "{0} → {1}")
     @MethodSource
-    void primitiveTypeMapping(String xsdType, Class<?> expectedSchemaClass, String expectedFormat, String expectedDescription) {
+    void primitiveTypeMapping(String xsdType, Class<?> expectedSchemaClass, String expectedFormat, String expectedXsdType) {
         var schema = convert(converterFor("""
                 <xsd:element name="root">
                   <xsd:complexType><xsd:sequence>
@@ -137,25 +143,31 @@ class XsdToSchemaTest {
         var value = fieldOf(schema, "value");
         assertInstanceOf(expectedSchemaClass, value);
         assertEquals(expectedFormat, value.getFormat());
-        assertEquals(expectedDescription, value.getDescription());
+        assertNull(value.getDescription(), "description is reserved for documentation prose");
+        assertEquals(expectedXsdType, xsdTypeOf(value));
+    }
+
+    private static Object xsdTypeOf(Schema<?> schema) {
+        return schema.getExtensions() == null ? null : schema.getExtensions().get(XsdToSchema.XSD_TYPE_EXTENSION);
     }
 
     static Stream<Arguments> primitiveTypeMapping() {
         return Stream.of(
                 arguments("xsd:string",          StringSchema.class,  null,        null),
-                arguments("xsd:normalizedString", StringSchema.class, null,        "xsd:normalizedString"),
-                arguments("xsd:anyURI",           StringSchema.class, null,        "xsd:anyURI"),
+                arguments("xsd:normalizedString", StringSchema.class, null,        "normalizedString"),
+                arguments("xsd:anyURI",           StringSchema.class, "uri",       "anyURI"),
                 arguments("xsd:date",             StringSchema.class, "date",      null),
                 arguments("xsd:dateTime",         StringSchema.class, "date-time", null),
+                arguments("xsd:time",             StringSchema.class, "time",      "time"),
                 arguments("xsd:base64Binary",     StringSchema.class, "byte",      null),
                 arguments("xsd:hexBinary",        StringSchema.class, "binary",    null),
-                arguments("xsd:duration",         StringSchema.class, null,        "xsd:duration"),
-                arguments("xsd:integer",          IntegerSchema.class, null,       "xsd:integer"),
+                arguments("xsd:duration",         StringSchema.class, "duration",  "duration"),
+                arguments("xsd:integer",          IntegerSchema.class, null,       "integer"),
                 arguments("xsd:int",              IntegerSchema.class, "int32",    null),
                 arguments("xsd:long",             IntegerSchema.class, "int64",    null),
-                arguments("xsd:short",            IntegerSchema.class, null,       "xsd:short"),
-                arguments("xsd:unsignedShort",    IntegerSchema.class, null,       "xsd:unsignedShort"),
-                arguments("xsd:decimal",          NumberSchema.class,  null,       "xsd:decimal"),
+                arguments("xsd:short",            IntegerSchema.class, null,       "short"),
+                arguments("xsd:unsignedShort",    IntegerSchema.class, null,       "unsignedShort"),
+                arguments("xsd:decimal",          NumberSchema.class,  "decimal",  "decimal"),
                 arguments("xsd:float",            NumberSchema.class,  "float",    null),
                 arguments("xsd:double",           NumberSchema.class,  "double",   null),
                 arguments("xsd:boolean",          BooleanSchema.class, null,       null)
@@ -333,6 +345,147 @@ class XsdToSchemaTest {
 
         assertFalse(isRequired(schema, "byName"));
         assertFalse(isRequired(schema, "byId"));
+    }
+
+    @Test
+    void choiceRequiresExactlyOneAlternativeThroughOneOf() {
+        var schema = convert(converterFor("""
+                <xsd:element name="searchRequest">
+                  <xsd:complexType><xsd:sequence>
+                    <xsd:choice>
+                      <xsd:element name="byName" type="xsd:string"/>
+                      <xsd:element name="byId"   type="xsd:int"/>
+                    </xsd:choice>
+                  </xsd:sequence></xsd:complexType>
+                </xsd:element>
+                """), "searchRequest");
+
+        // Naming both alternatives satisfies both branches, naming none satisfies neither:
+        // oneOf rejects both cases, which is what xsd:choice means.
+        assertEquals(List.of(List.of("byName"), List.of("byId")), oneOfRequired(schema));
+        assertNull(schema.getDescription(), "an enforced constraint needs no prose");
+    }
+
+    @Test
+    void oneOfBranchesUseTheSameQualifiedKeysAsTheProperties() {
+        var converter = converterForSchemas(Map.of(
+                NS, """
+                        <xsd:import namespace="https://other.example.com"/>
+                        <xsd:element name="request">
+                          <xsd:complexType><xsd:choice>
+                            <xsd:element name="value" type="xsd:string"/>
+                            <xsd:element ref="other:value" xmlns:other="https://other.example.com"/>
+                          </xsd:choice></xsd:complexType>
+                        </xsd:element>
+                        """,
+                "https://other.example.com", """
+                        <xsd:element name="value" type="xsd:int"/>
+                        """
+        ));
+
+        var schema = convert(converter, "request");
+
+        assertEquals(List.of(
+                        List.of(qualifiedKey(NS, "value")),
+                        List.of(qualifiedKey("https://other.example.com", "value"))),
+                oneOfRequired(schema));
+    }
+
+    @Test
+    void nestedAlternativeRequiresItsOwnMandatoryFields() {
+        var schema = convert(converterFor("""
+                <xsd:element name="payload">
+                  <xsd:complexType><xsd:choice>
+                    <xsd:element name="scalar" type="xsd:string"/>
+                    <xsd:sequence>
+                      <xsd:element name="part1" type="xsd:string"/>
+                      <xsd:element name="part2" type="xsd:int"/>
+                    </xsd:sequence>
+                  </xsd:choice></xsd:complexType>
+                </xsd:element>
+                """), "payload");
+
+        // The nested sequence is one alternative: choosing it means supplying all of its fields.
+        assertEquals(List.of(List.of("part1", "part2"), List.of("scalar")), oneOfRequired(schema));
+    }
+
+    @Test
+    void alternativeWithoutMandatoryFieldsFallsBackToADescription() {
+        var schema = convert(converterFor("""
+                <xsd:element name="payload">
+                  <xsd:complexType><xsd:choice>
+                    <xsd:element name="scalar" type="xsd:string"/>
+                    <xsd:sequence>
+                      <xsd:element name="part1" type="xsd:string" minOccurs="0"/>
+                    </xsd:sequence>
+                  </xsd:choice></xsd:complexType>
+                </xsd:element>
+                """), "payload");
+
+        // An all-optional branch would match anything, so oneOf could not tell the alternatives apart.
+        assertNull(schema.getOneOf());
+        assertEquals("Exactly one of: part1, scalar. Not enforced by this schema.", schema.getDescription());
+    }
+
+    @Test
+    void optionalChoiceIsDescribedRatherThanEnforced() {
+        var schema = convert(converterFor("""
+                <xsd:element name="searchRequest">
+                  <xsd:complexType><xsd:sequence>
+                    <xsd:choice minOccurs="0">
+                      <xsd:element name="byName" type="xsd:string"/>
+                      <xsd:element name="byId"   type="xsd:int"/>
+                    </xsd:choice>
+                  </xsd:sequence></xsd:complexType>
+                </xsd:element>
+                """), "searchRequest");
+
+        assertNull(schema.getOneOf(), "an omitted choice is legal, so nothing can be required");
+        assertEquals("Optional choice: at most one of: byName, byId. Not enforced by this schema.",
+                schema.getDescription());
+    }
+
+    @Test
+    void repeatableChoiceIsDescribedRatherThanEnforced() {
+        var schema = convert(converterFor("""
+                <xsd:element name="searchRequest">
+                  <xsd:complexType><xsd:sequence>
+                    <xsd:choice maxOccurs="unbounded">
+                      <xsd:element name="byName" type="xsd:string"/>
+                      <xsd:element name="byId"   type="xsd:int"/>
+                    </xsd:choice>
+                  </xsd:sequence></xsd:complexType>
+                </xsd:element>
+                """), "searchRequest");
+
+        assertNull(schema.getOneOf(), "a repeated choice may name more than one alternative");
+        assertEquals("Repeatable choice: each occurrence is one of: byName, byId. Not enforced by this schema.",
+                schema.getDescription());
+    }
+
+    @Test
+    void twoChoicesInOneContentModelKeepBothConstraints() {
+        var schema = convert(converterFor("""
+                <xsd:element name="request">
+                  <xsd:complexType><xsd:sequence>
+                    <xsd:choice>
+                      <xsd:element name="byName" type="xsd:string"/>
+                      <xsd:element name="byId"   type="xsd:int"/>
+                    </xsd:choice>
+                    <xsd:choice>
+                      <xsd:element name="asJson" type="xsd:boolean"/>
+                      <xsd:element name="asXml"  type="xsd:boolean"/>
+                    </xsd:choice>
+                  </xsd:sequence></xsd:complexType>
+                </xsd:element>
+                """), "request");
+
+        // Both constraints have to hold at once, so neither may displace the other.
+        assertNull(schema.getOneOf());
+        assertEquals(List.of(
+                        List.of(List.of("byName"), List.of("byId")),
+                        List.of(List.of("asJson"), List.of("asXml"))),
+                schema.getAllOf().stream().map(XsdToSchemaTest::oneOfRequired).toList());
     }
 
     @Test

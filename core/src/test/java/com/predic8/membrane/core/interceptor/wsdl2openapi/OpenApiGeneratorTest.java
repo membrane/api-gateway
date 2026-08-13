@@ -232,6 +232,7 @@ class OpenApiGeneratorTest {
 
         assertTrue(yaml.contains("byName:"), "Should contain 'byName' from choice");
         assertTrue(yaml.contains("byId:"), "Should contain 'byId' from choice");
+        assertTrue(yaml.contains("oneOf:"), "Should state that exactly one alternative is expected");
     }
 
     @Test

@@ -21,7 +21,7 @@
 #     getFixedAndDefault   default="EUR"; fixed="1.0" also becomes enum: ["1.0"]
 #     getNillable          type: ["string", "null"] — how OpenAPI 3.1 says nullable
 #     getAttributes        @id in required, @kind optional
-#     getChoice            byName and byId both optional — either may be sent
+#     getChoice            byName and byId both optional, plus oneOf: exactly one of them
 #     getRestriction       no "customer" field: the restriction drops it
 #
 # 3.) Call the operations

@@ -42,7 +42,8 @@ import static java.lang.Boolean.TRUE;
  * <ul>
  *   <li>Inline complexType and type-reference patterns</li>
  *   <li>xsd:sequence, xsd:all (treated identically)</li>
- *   <li>xsd:choice (all alternatives become optional properties)</li>
+ *   <li>xsd:choice (all alternatives become optional properties, plus a sibling {@code oneOf} that
+ *       requires exactly one of them — see {@link #addChoiceFields})</li>
  *   <li>xsd:group references (the referenced group's content model is expanded in place)</li>
  *   <li>xsd:attribute (mapped to a property named "@" + attribute name; required when use="required")</li>
  *   <li>xsd:complexContent/xsd:extension (base type fields are inherited)</li>
@@ -77,6 +78,19 @@ import static java.lang.Boolean.TRUE;
  * same {@code default} plus a single-value {@code enum}, because a fixed declaration does restrict
  * which values are valid.
  *
+ * <p>An XSD primitive becomes the JSON type it corresponds to, plus a {@code format} where one is
+ * conventional ({@code date}, {@code date-time}, {@code uri}, {@code time}, {@code duration},
+ * {@code decimal}, …). Where that pair does not name the XSD type it came from — {@code xsd:token},
+ * the {@code g*} date types, the bounded and unbounded integer types, {@code xsd:decimal} — the
+ * type name is carried in an {@code x-xsd-type} extension, so that a tool reading the document can
+ * recover it. {@code description} is left to the service's own documentation.
+ *
+ * <p>{@code xsd:decimal} is emitted as a JSON {@code number} with {@code format: decimal}. JSON
+ * {@code number} is arbitrary-precision by specification, but most parsers realize it as a double,
+ * so a value beyond double precision may be rounded by tools this document is fed to. That is
+ * accepted here rather than mapped to {@code type: string}, which would keep the precision but
+ * cost every consumer the numeric type and any range facets stated on it.
+ *
  * <p>Neither is applied to messages during SOAP/JSON conversion. Supplying a missing value is the
  * SOAP service's own responsibility — and in XSD an element's default only applies to an element
  * that is present but empty, never to an absent one, so filling in omitted fields here would not
@@ -87,6 +101,8 @@ public class XsdToSchema {
     private static final Logger log = LoggerFactory.getLogger(XsdToSchema.class);
 
     private static final String UNBOUNDED = "unbounded";
+    /** Carries the originating XSD type where {@code type}/{@code format} do not — see {@link #withXsdType}. */
+    static final String XSD_TYPE_EXTENSION = "x-xsd-type";
     /** The OpenAPI 3.1 way of saying a value may be absent — see {@link #makeNullable}. */
     private static final String NULL_TYPE = "null";
     /** {@code minOccurs="0"} — the only value that makes an element optional. */
@@ -538,10 +554,23 @@ public class XsdToSchema {
         }
     }
 
+    /** One alternative of an {@code xsd:choice}: the keys it contributes, and those of them it requires. */
+    private record ChoiceBranch(List<String> propertyKeys, List<String> requiredKeys) {
+        static ChoiceBranch of(String key) {
+            return new ChoiceBranch(List.of(key), List.of(key));
+        }
+    }
+
     /**
-     * Maps choice alternatives to optional properties. All alternatives are present
-     * in the schema but none are added to {@code required}, reflecting that exactly
-     * one is expected at runtime.
+     * Maps choice alternatives to optional properties, plus a sibling {@code oneOf} whose branches
+     * carry nothing but the {@code required} keys of one alternative each. The properties stay flat
+     * — SOAP/JSON conversion looks types and array shapes up there — while the {@code oneOf} states
+     * the constraint the choice actually expresses: a document that names two alternatives satisfies
+     * two branches, and one that names none satisfies no branch, so both are rejected.
+     *
+     * <p>Where that constraint cannot be encoded — an optional or repeatable choice, or an
+     * alternative whose own content is entirely optional and would therefore match anything — the
+     * schema keeps the all-optional shape and states the constraint in its description instead.
      *
      * <p>Direct {@code xsd:element} alternatives are collected first so that same-local-name
      * collisions across namespaces can be detected and keyed with a namespace-qualified key
@@ -551,6 +580,7 @@ public class XsdToSchema {
      */
     private void addChoiceFields(Element choice, ObjectSchema schema, XsdContext ctx) {
         var alternatives = new ArrayList<ChoiceAlternative>();
+        var branches = new ArrayList<ChoiceBranch>();
         for (Element el : xsdChildren(choice)) {
             switch (el.getLocalName()) {
                 case "element" -> {
@@ -565,30 +595,91 @@ public class XsdToSchema {
                                 .ifPresent(alternatives::add);
                     }
                 }
-                case "sequence", "all", "choice", "group" -> addAlternativeFields(el, schema, ctx);
+                case "sequence", "all", "choice", "group" -> branches.add(addAlternativeFields(el, schema, ctx));
             }
         }
 
         var colliding = collidingLocalNames(alternatives);
         for (var alt : alternatives) {
             boolean collides = colliding.contains(alt.localName()) && alt.namespaceURI() != null;
-            schema.addProperty(collides ? qualifiedKey(alt.namespaceURI(), alt.localName()) : alt.localName(), alt.fieldSchema());
-            // intentionally not added to required
+            String key = collides ? qualifiedKey(alt.namespaceURI(), alt.localName()) : alt.localName();
+            schema.addProperty(key, alt.fieldSchema());
+            branches.add(ChoiceBranch.of(key));
         }
+        addExactlyOneConstraint(choice, schema, branches);
     }
 
     /**
      * Expands a choice alternative that is not a direct {@code xsd:element} — a nested particle or
      * an {@code xsd:group} reference — and merges its properties into {@code schema} <em>without</em>
      * its required list: any sibling alternative may be the one chosen at runtime, so nothing a
-     * single branch declares can be globally required.
+     * single branch declares can be globally required. The branch's own keys are returned so that
+     * {@link #addChoiceFields} can require them when this alternative is the one chosen.
      */
-    private void addAlternativeFields(Element particle, ObjectSchema schema, XsdContext ctx) {
+    private ChoiceBranch addAlternativeFields(Element particle, ObjectSchema schema, XsdContext ctx) {
         var branch = new ObjectSchema();
         addParticleFields(particle, branch, ctx);
-        if (branch.getProperties() != null) {
-            branch.getProperties().forEach(schema::addProperty);
+        if (branch.getProperties() == null) {
+            return new ChoiceBranch(List.of(), List.of());
         }
+        branch.getProperties().forEach(schema::addProperty);
+        return new ChoiceBranch(List.copyOf(branch.getProperties().keySet()),
+                branch.getRequired() == null ? List.of() : List.copyOf(branch.getRequired()));
+    }
+
+    /**
+     * States that exactly one of {@code branches} is expected: as a {@code oneOf} of required-key-only
+     * sub-schemas where that holds, and as a description where it does not — see
+     * {@link #addChoiceFields}.
+     */
+    private static void addExactlyOneConstraint(Element choice, ObjectSchema schema, List<ChoiceBranch> branches) {
+        if (branches.isEmpty()) return;
+
+        String maxOccurs = choice.getAttribute("maxOccurs");
+        if (UNBOUNDED.equals(maxOccurs) || isMoreThanOne(maxOccurs)) {
+            describeChoice(schema, "Repeatable choice: each occurrence is one of", branches);
+            return;
+        }
+        if (MIN_OCCURS_OPTIONAL.equals(choice.getAttribute("minOccurs"))) {
+            describeChoice(schema, "Optional choice: at most one of", branches);
+            return;
+        }
+        if (branches.stream().anyMatch(branch -> branch.requiredKeys().isEmpty())) {
+            describeChoice(schema, "Exactly one of", branches);
+            return;
+        }
+        addOneOf(schema, branches.stream()
+                .map(branch -> (Schema) new Schema<>().required(branch.requiredKeys()))
+                .toList());
+    }
+
+    /**
+     * Adds a {@code oneOf} without displacing one a sibling choice already put on the same schema:
+     * two exclusive constraints on one content model both have to hold, which is an {@code allOf}.
+     */
+    @SuppressWarnings("rawtypes")
+    private static void addOneOf(ObjectSchema schema, List<Schema> oneOf) {
+        if (schema.getOneOf() == null && schema.getAllOf() == null) {
+            schema.setOneOf(oneOf);
+            return;
+        }
+        if (schema.getOneOf() != null) {
+            List<Schema> previous = schema.getOneOf();
+            schema.setOneOf(null);
+            schema.addAllOfItem(new ComposedSchema().oneOf(previous));
+        }
+        schema.addAllOfItem(new ComposedSchema().oneOf(oneOf));
+    }
+
+    /** Names the alternatives of a choice whose constraint no keyword of the schema can carry. */
+    private static void describeChoice(ObjectSchema schema, String lead, List<ChoiceBranch> branches) {
+        if (schema.getDescription() != null) return;
+        String alternatives = branches.stream()
+                .filter(branch -> !branch.propertyKeys().isEmpty())
+                .map(branch -> String.join(" + ", branch.propertyKeys()))
+                .collect(Collectors.joining(", "));
+        if (alternatives.isEmpty()) return;
+        schema.setDescription("%s: %s. Not enforced by this schema.".formatted(lead, alternatives));
     }
 
     /** The local names carried by more than one alternative — those need a namespace-qualified key. */
@@ -852,18 +943,21 @@ public class XsdToSchema {
             case "dateTime" -> withFormat(new StringSchema(), "date-time");
             case "base64Binary" -> withFormat(new StringSchema(), "byte");
             case "hexBinary" -> withFormat(new StringSchema(), "binary");
-            case "anyURI", "normalizedString", "token", "language", "time",
-                 "gYear", "gMonth", "gDay", "gYearMonth", "gMonthDay", "duration",
-                 "QName", "NOTATION" -> withDescription(new StringSchema(), localPart);
+            case "anyURI" -> withXsdType(withFormat(new StringSchema(), "uri"), localPart);
+            case "time" -> withXsdType(withFormat(new StringSchema(), "time"), localPart);
+            case "duration" -> withXsdType(withFormat(new StringSchema(), "duration"), localPart);
+            case "normalizedString", "token", "language",
+                 "gYear", "gMonth", "gDay", "gYearMonth", "gMonthDay",
+                 "QName", "NOTATION" -> withXsdType(new StringSchema(), localPart);
             case "int" -> withFormat(new IntegerSchema(), "int32");
             case "long" -> withFormat(new IntegerSchema(), "int64");
             case "integer", "short", "byte",
                  "nonNegativeInteger", "positiveInteger",
                  "nonPositiveInteger", "negativeInteger",
-                 "unsignedInt", "unsignedShort", "unsignedByte", "unsignedLong" -> withDescription(withFormat(new IntegerSchema(), null), localPart);
+                 "unsignedInt", "unsignedShort", "unsignedByte", "unsignedLong" -> withXsdType(withFormat(new IntegerSchema(), null), localPart);
             case "float" -> withFormat(new NumberSchema(), "float");
             case "double" -> withFormat(new NumberSchema(), "double");
-            case "decimal" -> withDescription(new NumberSchema(), localPart);
+            case "decimal" -> withXsdType(withFormat(new NumberSchema(), "decimal"), localPart);
             case "boolean" -> new BooleanSchema();
             default -> {
                 log.debug("Unknown XSD type '{}', defaulting to string", localPart);
@@ -877,8 +971,13 @@ public class XsdToSchema {
         return schema;
     }
 
-    private static <T extends Schema<?>> T withDescription(T schema, String xsdType) {
-        schema.setDescription("xsd:" + xsdType);
+    /**
+     * Records the XSD type a schema came from, for the types whose {@code type}/{@code format} pair
+     * does not name them: an {@code x-xsd-type} extension a tool can read, rather than prose in
+     * {@code description} — which belongs to the service's own documentation.
+     */
+    private static <T extends Schema<?>> T withXsdType(T schema, String xsdType) {
+        schema.addExtension(XSD_TYPE_EXTENSION, xsdType);
         return schema;
     }
 
