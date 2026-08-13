@@ -55,6 +55,7 @@ import static com.predic8.membrane.core.resolver.ResolverMap.combine;
 import static com.predic8.membrane.core.util.wsdl.parser.Definitions.parse;
 import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.OUTPUT;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.w3c.dom.DOMException.INVALID_CHARACTER_ERR;
 
 /**
  * @description <p>
@@ -468,7 +469,9 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
 
         } catch (DOMException e) {
             // A field name the JSON body carries is not a legal XML name — a client mistake, so a
-            // 400 rather than the 500 any other transformation failure gets.
+            // 400 rather than the 500 any other transformation failure gets. Every other DOM error
+            // is the gateway's own problem and takes that generic path.
+            if (e.code != INVALID_CHARACTER_ERR) return transformationFailed(exc, operationName, e);
             log.debug("Cannot map a field name of the request body to XML for operation {}", operationName, e);
             user(router.getConfiguration().isProduction(), getDisplayName())
                     .status(400)
@@ -478,15 +481,19 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
                     .buildAndSetResponse(exc);
             return ABORT;
         } catch (Exception e) {
-            log.error("Failed to transform JSON to SOAP for operation {}", operationName, e);
-            internal(router.getConfiguration().isProduction(), getDisplayName())
-                    .detail("Could not transform JSON request to SOAP")
-                    .exception(e)
-                    .buildAndSetResponse(exc);
-            return ABORT;
+            return transformationFailed(exc, operationName, e);
         }
 
         return CONTINUE;
+    }
+
+    private Outcome transformationFailed(Exchange exc, String operationName, Exception e) {
+        log.error("Failed to transform JSON to SOAP for operation {}", operationName, e);
+        internal(router.getConfiguration().isProduction(), getDisplayName())
+                .detail("Could not transform JSON request to SOAP")
+                .exception(e)
+                .buildAndSetResponse(exc);
+        return ABORT;
     }
 
     private String getSOAPAction(String operationName) {
