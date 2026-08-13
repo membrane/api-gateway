@@ -70,7 +70,12 @@
             </xsd:element>
 
             <xsd:element name="getPartnersRequest">
-                <xsd:complexType/>
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="city" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="kind" type="tns:PartnerKind" minOccurs="0"/>
+                    </xsd:sequence>
+                </xsd:complexType>
             </xsd:element>
 
             <xsd:element name="getPartnersResponse">

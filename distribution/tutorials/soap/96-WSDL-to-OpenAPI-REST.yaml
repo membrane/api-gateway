@@ -3,7 +3,7 @@
 # Tutorial: WSDL to OpenAPI — Exposing SOAP Services as REST APIs
 #
 # Configure each WSDL operation individually and map it to REST
-# endpoints such as GET /partners/{id}.
+# endpoints such as GET /partners/{id} and GET /partners?city=Berlin.
 #
 # 1.) Start Membrane
 #    Linux/Mac:
@@ -14,19 +14,28 @@
 # 2.) List all partners (GET, no body)
 #     curl -v http://localhost:2000/partners
 #
-# 3.) Get a single partner by id (GET, no body)
+# 3.) Filter the list — input fields the path does not carry become query parameters
+#     curl -v "http://localhost:2000/partners?city=Berlin"
+#       only Alice: the city reached the SOAP backend — see the logged message
+#
+#     GET and DELETE have no request body, so the city and kind fields of getPartners are
+#     published as query parameters, keeping their XSD constraints: kind accepts only
+#     PERSON, COMPANY and PUBLIC_AUTHORITY. A field holding more than a single value, such
+#     as the address structure, cannot travel this way — map such an operation to POST.
+#
+# 4.) Get a single partner by id (GET, no body)
 #     curl -v http://localhost:2000/partners/1
 #
-# 4.) Create a partner (POST, body required)
+# 5.) Create a partner (POST, body required)
 #     curl -d @partner.json -H "Content-Type: application/json" http://localhost:2000/partners
 #
-# 5.) Update a partner — ID from URL, fields in body (PUT)
+# 6.) Update a partner — ID from URL, fields in body (PUT)
 #     curl -X PUT -d @partner.json -H "Content-Type: application/json" http://localhost:2000/partners/1
 #
-# 6.) Delete a partner — ID from URL (DELETE, no body)
+# 7.) Delete a partner — ID from URL (DELETE, no body)
 #     curl -X DELETE http://localhost:2000/partners/1
 #
-# 7.) Continue with file 97-WSDL-XSD-Features.yaml
+# 8.) Continue with file 97-WSDL-XSD-Features.yaml
 
 api:
   port: 2000
