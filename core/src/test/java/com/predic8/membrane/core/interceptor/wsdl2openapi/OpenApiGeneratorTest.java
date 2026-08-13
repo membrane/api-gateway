@@ -423,6 +423,18 @@ class OpenApiGeneratorTest {
     }
 
     @Test
+    void complexInputFieldCannotBeCarriedByThePath() {
+        // getItem's only input field is an ItemType structure: a path segment holds a single value.
+        var settings = new OperationSettings();
+        settings.setPath("items/{item}");
+        var e = assertThrows(ConfigurationException.class,
+                () -> new Wsdl2OpenApiConverter(crossNsDefinitions, "/", Map.of("getItem", settings)).generate());
+
+        assertTrue(e.getMessage().contains("getItem"), "Message should name the operation");
+        assertTrue(e.getMessage().contains("'item'"), "Message should name the parameter that cannot be carried");
+    }
+
+    @Test
     void anAttributeBecomesAQueryParameterWithoutTheAtPrefix() {
         // record's input carries the attributes id and type; "@id" would have to be sent as %40id.
         var settings = new OperationSettings();

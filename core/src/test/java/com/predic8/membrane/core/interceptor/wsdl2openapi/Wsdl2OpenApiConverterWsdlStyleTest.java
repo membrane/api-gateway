@@ -573,22 +573,21 @@ class Wsdl2OpenApiConverterWsdlStyleTest {
                 </definitions>""";
 
     @Test
-    void soapHeaderBecomesHeaderParameter() throws Exception {
-        // soap:header binds a message part that travels in the SOAP header, out-of-band from
-        // the body. It should surface as an OpenAPI "in: header" parameter on the operation,
-        // not as a body field, and not be dropped.
+    void soapHeaderPartIsNotPublishedAsAParameter() throws Exception {
+        // A soap:header part travels in the SOAP header, out-of-band from the body. Nothing in this
+        // plugin puts a value there, so the document must not promise a parameter for it — a
+        // parameter the gateway silently discards is worse than one that was never advertised.
         var yaml = new Wsdl2OpenApiConverter(Definitions.parse(new StaticStringResolver(), SECURE_SERVICE_WSDL), "/").generateYaml();
 
         assertTrue(yaml.contains("payload:"), "Body part is still converted");
-        assertTrue(yaml.contains("in: header"), "soap:header part should become an OpenAPI header parameter");
-        assertTrue(yaml.contains("name: token"), "Header parameter should be named after its message part");
+        assertFalse(yaml.contains("in: header"), "an unsupported soap:header part must not become a parameter");
+        assertFalse(yaml.contains("token"), "nothing of the header part may reach the document");
     }
 
     @Test
-    void pathAndHeaderParametersCoexist() throws Exception {
-        // A templated path plus a soap:header yields two parameter sources for the same
-        // operation. Both must end up in the parameter list — a path segment "{id}" without a
-        // declared path parameter is an invalid OpenAPI document.
+    void pathParameterSurvivesAnUnsupportedSoapHeader() throws Exception {
+        // The header part is dropped; the path parameter of the same operation must not be — a path
+        // segment "{id}" without a declared path parameter is an invalid OpenAPI document.
         var settings = new OperationSettings();
         settings.setMethod("GET");
         settings.setPath("work/{id}");
@@ -598,8 +597,7 @@ class Wsdl2OpenApiConverterWsdlStyleTest {
         assertTrue(yaml.contains("/work/{id}:"), "Templated path should be used as the path key");
         assertTrue(yaml.contains("in: path"), "Path parameter must not be dropped");
         assertTrue(yaml.contains("name: id"), "Path parameter should be named after the template variable");
-        assertTrue(yaml.contains("in: header"), "soap:header parameter must still be present");
-        assertTrue(yaml.contains("name: token"), "Header parameter should be named after its message part");
+        assertFalse(yaml.contains("in: header"), "an unsupported soap:header part must not become a parameter");
     }
 
     @Test

@@ -275,6 +275,7 @@ public class Wsdl2OpenApiConverter {
     private io.swagger.v3.oas.models.Operation buildApiOperation(String name, Operation wsdlOp, OperationSettings settings) {
         var inputParts = getInputParts(wsdlOp);
         var headerParts = findBindingOperation(name).map(this::getHeaderParts).orElse(List.of());
+        warnAboutHeaderParts(name, headerParts);
 
         // No summary: it could only repeat the operation name, which operationId and the path already
         // carry. What the WSDL documents the operation with goes into description instead.
@@ -299,9 +300,11 @@ public class Wsdl2OpenApiConverter {
 
         Map<String, Schema> paramSchemas = removeProperties(bodySchema, List.copyOf(pathProperties.values()));
         pathProperties.forEach((paramName, property) -> {
+            Schema<?> paramSchema = paramSchemas.getOrDefault(property, new StringSchema());
+            requirePathCarriable(name, paramName, paramSchema);
             recordUrlParam(name, paramName, property);
             apiOp.addParametersItem(new Parameter().name(paramName).in("path").required(true)
-                    .schema(paramSchemas.getOrDefault(property, new StringSchema())));
+                    .schema(paramSchema));
         });
         if (hasRequestBody(settings.getMethod())) {
             if (!isEmptySchema(bodySchema)) {
@@ -310,8 +313,20 @@ public class Wsdl2OpenApiConverter {
         } else {
             addQueryParameters(apiOp, name, settings.getMethod(), bodySchema);
         }
-        headerParts.stream().map(this::buildHeaderParameter).forEach(apiOp::addParametersItem);
         return apiOp;
+    }
+
+    /**
+     * Tells the operator about the SOAP header parts of an operation, which this plugin does not
+     * support: nothing puts a value into the header of the SOAP request it builds. They are left out
+     * of the document rather than published as header parameters — a parameter the gateway silently
+     * discards is worse than one the document never promised.
+     */
+    private static void warnAboutHeaderParts(String operationName, List<Part> headerParts) {
+        if (headerParts.isEmpty()) return;
+        log.warn("Operation '{}' declares the SOAP header part(s) {}, which are not supported: they are left "
+                 + "out of the generated OpenAPI document and are not sent to the service.",
+                operationName, headerParts.stream().map(Part::getName).toList());
     }
 
     /**
@@ -359,6 +374,11 @@ public class Wsdl2OpenApiConverter {
                 .findFirst();
     }
 
+    /**
+     * The message parts a binding carries in the SOAP header of the operation's input. Not published
+     * as parameters — see {@link #warnAboutHeaderParts} — but needed to keep them out of the request
+     * body, which is not where the service expects them.
+     */
     private List<Part> getHeaderParts(BindingOperation bindingOperation) {
         return bindingOperation.getInputs().stream()
                 .flatMap(input -> input.getHeaders().stream())
@@ -368,11 +388,15 @@ public class Wsdl2OpenApiConverter {
     }
 
     private Part resolveHeaderPart(SoapHeader header) {
-        return definitions.findMessage(WSDLParserUtil.getLocalName(header.getMessage()))
+        Optional<Part> part = definitions.findMessage(WSDLParserUtil.getLocalName(header.getMessage()))
                 .flatMap(message -> message.getParts().stream()
                         .filter(p -> header.getPart().equals(p.getName()))
-                        .findFirst())
-                .orElse(null);
+                        .findFirst());
+        if (part.isEmpty()) {
+            log.debug("soap:header part '{}' of message '{}' could not be resolved, skipping",
+                    header.getPart(), header.getMessage());
+        }
+        return part.orElse(null);
     }
 
     /**
@@ -399,6 +423,21 @@ public class Wsdl2OpenApiConverter {
             apiOp.addParametersItem(new Parameter().name(paramName).in("query")
                     .required(required.contains(fieldName)).schema(fieldSchema));
         });
+    }
+
+    /**
+     * Rejects a path template naming an input field that a path segment cannot carry. A segment holds
+     * a single value, and {@link Wsdl2OpenapiInterceptor} merges it back into the JSON as one, so a
+     * complex or repeating field published this way would yield a request the service rejects — and a
+     * parameter no client can serialize in the first place.
+     */
+    private void requirePathCarriable(String operationName, String paramName, Schema<?> paramSchema) {
+        if (isScalar(deref(paramSchema))) return;
+        throw new ConfigurationException("""
+                Operation '%s' has a path template naming '%s', but that input field is a %s and cannot be \
+                carried in a path segment.
+                Remove it from the path template, and map the operation to POST so that the field is carried \
+                in the request body.""".formatted(operationName, paramName, describe(deref(paramSchema))));
     }
 
     /**
@@ -460,13 +499,6 @@ public class Wsdl2OpenApiConverter {
             case null -> "field of unknown type";
             default -> "complex type";
         };
-    }
-
-    private Parameter buildHeaderParameter(Part part) {
-        var schema = part.getElementQName() != null
-                ? converter.convert(part.getElementQName())
-                : converter.convertType(part.getTypeQName());
-        return new Parameter().in("header").name(part.getName()).schema(schema);
     }
 
     private RequestBody buildRequestBody(Schema<?> schema) {
