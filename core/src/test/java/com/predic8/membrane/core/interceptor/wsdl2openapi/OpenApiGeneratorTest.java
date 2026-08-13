@@ -19,12 +19,15 @@ import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.wsdl.parser.Definitions;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.parameters.Parameter;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -320,6 +323,70 @@ class OpenApiGeneratorTest {
 
         assertEquals("string", api.getPaths().get("/cities/{unknown}").getGet()
                 .getParameters().getFirst().getSchema().getType());
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @ValueSource(strings = {"GET", "DELETE"})
+    void inputFieldsNotInThePathBecomeQueryParameters(String method) {
+        // search declares byName, byId and code; only byId is carried by the path.
+        var op = searchMappedTo(method, "/search/{byId}").getPaths().get("/search/{byId}")
+                .readOperations().getFirst();
+
+        assertNull(op.getRequestBody(), "%s must not declare a request body".formatted(method));
+        var query = op.getParameters().stream().filter(p -> "query".equals(p.getIn())).toList();
+        assertEquals(List.of("byName", "code"), query.stream().map(Parameter::getName).toList());
+        assertEquals("string", query.getFirst().getSchema().getType());
+    }
+
+    @Test
+    void queryParameterIsRequiredWhenTheInputFieldIs() {
+        // getCity declares a mandatory name; search's code is minOccurs="0".
+        var settings = new OperationSettings();
+        settings.setMethod("GET");
+        var mandatory = new Wsdl2OpenApiConverter(citiesDefinitions, "/", Map.of("getCity", settings)).generate()
+                .getPaths().get("/get-city").getGet().getParameters().getFirst();
+        assertEquals("name", mandatory.getName());
+        assertTrue(mandatory.getRequired());
+
+        var optional = byName(queryParametersOf(searchMappedTo("GET", "/search/{byId}"), "/search/{byId}"), "code");
+        assertFalse(optional.getRequired());
+    }
+
+    @Test
+    void postKeepsTheLeftoverFieldsInTheBody() {
+        var op = searchMappedTo("POST", "/search/{byId}").getPaths().get("/search/{byId}").getPost();
+
+        assertTrue(op.getParameters().stream().noneMatch(p -> "query".equals(p.getIn())));
+        assertNotNull(op.getRequestBody().getContent().get("application/json").getSchema()
+                .getProperties().get("byName"));
+    }
+
+    @Test
+    void complexInputFieldCannotBeCarriedByABodylessMethod() {
+        // getItem's only input field is an ItemType structure, so a GET has nowhere to put it.
+        var settings = new OperationSettings();
+        settings.setMethod("GET");
+        var e = assertThrows(ConfigurationException.class,
+                () -> new Wsdl2OpenApiConverter(crossNsDefinitions, "/", Map.of("getItem", settings)).generate());
+
+        assertTrue(e.getMessage().contains("getItem"), "Message should name the operation");
+        assertTrue(e.getMessage().contains("item"), "Message should name the field that cannot be carried");
+    }
+
+    private static OpenAPI searchMappedTo(String method, String path) {
+        var settings = new OperationSettings();
+        settings.setPath(path);
+        settings.setMethod(method);
+        return new Wsdl2OpenApiConverter(extendedDefinitions, "/", Map.of("search", settings)).generate();
+    }
+
+    private static List<Parameter> queryParametersOf(OpenAPI api, String path) {
+        return api.getPaths().get(path).readOperations().getFirst().getParameters().stream()
+                .filter(p -> "query".equals(p.getIn())).toList();
+    }
+
+    private static Parameter byName(List<Parameter> parameters, String name) {
+        return parameters.stream().filter(p -> name.equals(p.getName())).findFirst().orElseThrow();
     }
 
     private static OpenAPI pathMappedGetCity() {

@@ -23,8 +23,10 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.proxies.ServiceProxy;
 import com.predic8.membrane.core.proxies.ServiceProxyKey;
+import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.router.DummyTestRouter;
 import com.predic8.membrane.core.util.ConfigurationException;
+import com.predic8.membrane.core.util.wsdl.parser.Definitions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -33,6 +35,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.Wsdl2OpenapiInterceptor.buildPathPattern;
@@ -66,6 +69,36 @@ class Wsdl2OpenapiInterceptorTest {
         var result = interceptor.matchRoute("/purchasing/get-city", "POST");
         assertTrue(result.isPresent());
         assertEquals("getCity", result.get().operationName());
+    }
+
+    @Test
+    void queryParametersAreMergedIntoTheJsonBody() throws Exception {
+        assertEquals("{\"status\":\"active\",\"id\":\"42\"}",
+                Wsdl2OpenapiInterceptor.mergeUrlParamsIntoJson(null, Map.of("status", "active"), Map.of("id", "42")));
+    }
+
+    @Test
+    void pathParameterWinsOverAQueryParameterOfTheSameName() throws Exception {
+        assertEquals("{\"id\":\"42\"}",
+                Wsdl2OpenapiInterceptor.mergeUrlParamsIntoJson("{\"id\":\"7\"}", Map.of("id", "13"), Map.of("id", "42")));
+    }
+
+    @Test
+    void bodyIsUntouchedWithoutUrlParameters() throws Exception {
+        assertEquals("{\"id\":\"7\"}",
+                Wsdl2OpenapiInterceptor.mergeUrlParamsIntoJson("{\"id\":\"7\"}", Map.of(), Map.of()));
+    }
+
+    @Test
+    void queryParameterNamesAreCollectedPerOperation() throws Exception {
+        var definitions = Definitions.parse(new ResolverMap(), "classpath:/ws/extended-types.wsdl");
+        var settings = new OperationSettings();
+        settings.setMethod("GET");
+        settings.setPath("/search/{byId}");
+        var api = new Wsdl2OpenApiConverter(definitions, "/", Map.of("search", settings)).generate();
+
+        assertEquals(Map.of("search", Set.of("byName", "code")),
+                Wsdl2OpenapiInterceptor.collectQueryParamNames(api));
     }
 
     @Test

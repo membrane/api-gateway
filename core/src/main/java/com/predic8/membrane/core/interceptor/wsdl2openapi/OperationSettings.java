@@ -44,6 +44,10 @@ public class OperationSettings {
 
     /**
      * @description HTTP method exposed for this operation. Defaults to POST.
+     * GET and DELETE have no request body: the input message fields named in the <code>path</code>
+     * template become path parameters, and the remaining fields become query parameters. A field
+     * that carries more than a single value, such as a nested structure or a repeating element,
+     * cannot be passed this way and is rejected at startup — expose such an operation as POST.
      * @example GET
      */
     @MCAttribute

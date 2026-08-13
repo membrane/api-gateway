@@ -232,6 +232,8 @@ public class Wsdl2OpenApiConverter {
         );
         if (hasRequestBody(settings.getMethod())) {
             apiOp.requestBody(buildRequestBody(bodySchema));
+        } else {
+            addQueryParameters(apiOp, name, settings.getMethod(), bodySchema);
         }
         headerParts.stream().map(this::buildHeaderParameter).forEach(apiOp::addParametersItem);
         return apiOp;
@@ -285,6 +287,44 @@ public class Wsdl2OpenApiConverter {
                         .filter(p -> header.getPart().equals(p.getName()))
                         .findFirst())
                 .orElse(null);
+    }
+
+    /**
+     * Carries the input fields a bodyless method has no other place for: everything the path template
+     * did not take over becomes a query parameter. Without this the fields would be absent from the
+     * document and from the SOAP request, and neither the client nor the operator would be told.
+     */
+    private static void addQueryParameters(io.swagger.v3.oas.models.Operation apiOp, String operationName,
+                                           String method, Schema<?> bodySchema) {
+        if (bodySchema.getProperties() == null) return;
+        List<String> required = bodySchema.getRequired() != null ? bodySchema.getRequired() : List.of();
+        bodySchema.getProperties().forEach((fieldName, fieldSchema) -> {
+            if (!isScalar(fieldSchema)) {
+                throw new ConfigurationException("""
+                        Operation '%s' is mapped to %s, which has no request body, but its input field '%s' is \
+                        a %s and cannot be carried as a query parameter.
+                        Map the operation to POST, or name the field in the path template.""".formatted(
+                        operationName, method, fieldName, describe(fieldSchema)));
+            }
+            apiOp.addParametersItem(new Parameter().name(fieldName).in("query")
+                    .required(required.contains(fieldName)).schema(fieldSchema));
+        });
+    }
+
+    /** Only a single value fits into a query parameter the interceptor can put back into the JSON. */
+    private static boolean isScalar(Schema<?> schema) {
+        return switch (schema.getType()) {
+            case "string", "integer", "number", "boolean" -> true;
+            case null, default -> false;
+        };
+    }
+
+    private static String describe(Schema<?> schema) {
+        return switch (schema.getType()) {
+            case "array" -> "repeating field";
+            case null -> "field of unknown type";
+            default -> "complex type";
+        };
     }
 
     private Parameter buildHeaderParameter(Part part) {

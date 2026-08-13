@@ -31,6 +31,7 @@ import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.wsdl.parser.BindingOperation;
 import com.predic8.membrane.core.util.wsdl.parser.Definitions;
 import com.predic8.membrane.core.util.wsdl.parser.Operation;
+import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.ObjectSchema;
 import io.swagger.v3.oas.models.media.Schema;
 import org.slf4j.Logger;
@@ -40,6 +41,7 @@ import org.w3c.dom.DOMException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
@@ -52,6 +54,8 @@ import static com.predic8.membrane.core.interceptor.wsdl2openapi.Wsdl2OpenApiCon
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.camelToKebab;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisherInterceptor.PATH;
 import static com.predic8.membrane.core.resolver.ResolverMap.combine;
+import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
+import static com.predic8.membrane.core.util.URLParamUtil.getParams;
 import static com.predic8.membrane.core.util.wsdl.parser.Definitions.parse;
 import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.OUTPUT;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -116,6 +120,8 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
     record RouteMatch(String operationName, Map<String, String> pathParams) {}
 
     private List<RouteEntry> routes = new ArrayList<>();
+    /** Set from the generated document in init(), so the document stays the single source of truth. */
+    private Map<String, Set<String>> queryParamNames = Map.of();
     private final Map<String, Json2SoapTransformer> requestTransformers = new LinkedHashMap<>();
     /** Built once per operation in init(): the WSDL does not change, and every response needs them. */
     private final Map<String, Schema<?>> responseSchemas = new LinkedHashMap<>();
@@ -165,7 +171,9 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
                     wsdlOp.map(Operation::getFaults).orElse(List.of())));
         }
 
-        publisher = createPublisher();
+        var openApiModel = new Wsdl2OpenApiConverter(definitions, basePath, operationsByName, apiProxy.getName(), description).generate();
+        queryParamNames = collectQueryParamNames(openApiModel);
+        publisher = createPublisher(openApiModel);
 
         registerApiDocsPaths();
 
@@ -233,8 +241,7 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
         return new RouteEntry(buildPathPattern(segment), extractParamNames(segment), method, operationName);
     }
 
-    private OpenAPIPublisherInterceptor createPublisher() {
-        var openApiModel = new Wsdl2OpenApiConverter(definitions, basePath, operationsByName, apiProxy.getName(), description).generate();
+    private OpenAPIPublisherInterceptor createPublisher(OpenAPI openApiModel) {
         var publisherInterceptor = new OpenAPIPublisherInterceptor(new LinkedHashMap<>());
         publisherInterceptor.init(router);
         publisherInterceptor.addRecord(new OpenAPIRecord(openApiModel, new OpenAPISpec()));
@@ -429,18 +436,51 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * Adds the values taken from the URL to the JSON body. They are applied last: the URL selected
-     * the resource, so a body that carries the same field — it is not part of the published request
-     * schema, but nothing stops a client from sending it — must not silently address another one.
+     * Adds the values taken from the URL to the JSON body. Query parameters carry the input fields a
+     * bodyless method has nowhere else to put; the path parameters are applied last, because the URL
+     * path selected the resource and neither the query string nor a body that carries the same field
+     * — it is not part of the published request schema, but nothing stops a client from sending it —
+     * must silently address another one.
      */
-    private String mergePathParamsIntoJson(String existingBody, Map<String, String> pathParams) throws Exception {
-        if (pathParams.isEmpty()) return existingBody;
+    static String mergeUrlParamsIntoJson(String existingBody, Map<String, String> queryParams,
+                                         Map<String, String> pathParams) throws Exception {
+        if (queryParams.isEmpty() && pathParams.isEmpty()) return existingBody;
         var merged = new LinkedHashMap<String, Object>();
         if (existingBody != null && !existingBody.isBlank()) {
             merged.putAll(MAPPER.readValue(existingBody, new TypeReference<Map<String, Object>>() {}));
         }
+        merged.putAll(queryParams);
         merged.putAll(pathParams);
         return MAPPER.writeValueAsString(merged);
+    }
+
+    /**
+     * The query parameters of the request that the operation actually declares. Anything else a
+     * client appends stays out of the SOAP request instead of being sent to the service unchecked.
+     */
+    private Map<String, String> declaredQueryParams(Exchange exc, String operationName) throws Exception {
+        Set<String> declared = queryParamNames.getOrDefault(operationName, Set.of());
+        if (declared.isEmpty()) return Map.of();
+        var params = new LinkedHashMap<>(getParams(router.getConfiguration().getUriFactory(), exc, ERROR));
+        params.keySet().retainAll(declared);
+        return params;
+    }
+
+    /** The query parameters the generated document declares, per operation. */
+    static Map<String, Set<String>> collectQueryParamNames(OpenAPI api) {
+        var result = new LinkedHashMap<String, Set<String>>();
+        if (api.getPaths() == null) return result;
+        api.getPaths().values().stream()
+                .flatMap(pathItem -> pathItem.readOperations().stream())
+                .forEach(op -> {
+                    if (op.getParameters() == null) return;
+                    Set<String> names = op.getParameters().stream()
+                            .filter(p -> "query".equals(p.getIn()))
+                            .map(io.swagger.v3.oas.models.parameters.Parameter::getName)
+                            .collect(Collectors.toCollection(LinkedHashSet::new));
+                    if (!names.isEmpty()) result.put(op.getOperationId(), names);
+                });
+        return result;
     }
 
     private Outcome handleOperation(Exchange exc, String operationName, Map<String, String> pathParams) {
@@ -452,7 +492,8 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
                 if (outcome != CONTINUE) return outcome;
             }
 
-            String jsonBody = mergePathParamsIntoJson(exc.getRequest().getBodyAsStringDecoded(), pathParams);
+            String jsonBody = mergeUrlParamsIntoJson(exc.getRequest().getBodyAsStringDecoded(),
+                    declaredQueryParams(exc, operationName), pathParams);
             byte[] soapRequest = requestTransformers.get(operationName).transform(jsonBody);
 
             exc.getRequest().setBodyContent(soapRequest);
