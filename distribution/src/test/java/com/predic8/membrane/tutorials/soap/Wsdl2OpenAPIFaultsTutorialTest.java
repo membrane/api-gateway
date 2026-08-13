@@ -84,7 +84,8 @@ public class Wsdl2OpenAPIFaultsTutorialTest extends AbstractSOAPTutorialTest {
         .then()
             .statusCode(200)
             .body(containsString("default:"))
-            .body(not(containsString("\"500\":")))
+            // the document is YAML, so a 500 response key could be spelled 500:, "500": or '500':
+            .body(not(matchesPattern("(?s).*[\"']?500[\"']?\\s*:.*")))
             .body(containsString("application/problem+json"))
             .body(containsString("#/components/schemas/ProblemDetails"))
             .body(containsString("oneOf"))

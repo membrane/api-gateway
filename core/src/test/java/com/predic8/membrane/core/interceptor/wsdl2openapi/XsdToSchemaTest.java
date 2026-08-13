@@ -672,7 +672,87 @@ class XsdToSchemaTest {
 
         Schema<?> phoneSchema = fieldOf(schema, "phoneNumber");
         assertInstanceOf(StringSchema.class, phoneSchema);
-        assertEquals("\\+?[0-9]{7,15}", phoneSchema.getPattern());
+        assertEquals("^(?:\\+?[0-9]{7,15})$", phoneSchema.getPattern(),
+                "an XSD pattern matches the whole value, a JSON Schema one matches anywhere");
+    }
+
+    @Test
+    void severalPatternFacetsBecomeAlternatives() {
+        var schema = convert(converterFor("""
+                <xsd:simpleType name="Reference">
+                  <xsd:restriction base="xsd:string">
+                    <xsd:pattern value="[A-Z]{3}"/>
+                    <xsd:pattern value="[0-9]{4}"/>
+                  </xsd:restriction>
+                </xsd:simpleType>
+
+                <xsd:element name="doc">
+                  <xsd:complexType><xsd:sequence>
+                    <xsd:element name="ref" type="tns:Reference"/>
+                  </xsd:sequence></xsd:complexType>
+                </xsd:element>
+                """), "doc");
+
+        assertEquals("^(?:[A-Z]{3}|[0-9]{4})$", fieldOf(schema, "ref").getPattern(),
+                "in XSD the facets are alternatives, so keeping only the last one would be wrong");
+    }
+
+    @Test
+    void enumerationLiteralsCarryTheTypeOfTheirSchema() {
+        var schema = convert(converterFor("""
+                <xsd:simpleType name="Rating">
+                  <xsd:restriction base="xsd:int">
+                    <xsd:enumeration value="1"/>
+                    <xsd:enumeration value="5"/>
+                  </xsd:restriction>
+                </xsd:simpleType>
+
+                <xsd:simpleType name="Factor">
+                  <xsd:restriction base="xsd:decimal">
+                    <xsd:enumeration value="1.5"/>
+                  </xsd:restriction>
+                </xsd:simpleType>
+
+                <xsd:simpleType name="Flag">
+                  <xsd:restriction base="xsd:boolean">
+                    <xsd:enumeration value="1"/>
+                  </xsd:restriction>
+                </xsd:simpleType>
+
+                <xsd:element name="review">
+                  <xsd:complexType><xsd:sequence>
+                    <xsd:element name="rating" type="tns:Rating"/>
+                    <xsd:element name="factor" type="tns:Factor"/>
+                    <xsd:element name="flag"   type="tns:Flag"/>
+                  </xsd:sequence></xsd:complexType>
+                </xsd:element>
+                """), "review");
+
+        // Strings here would match no value of an integer, number or boolean field.
+        assertEquals(List.of(1, 5), fieldOf(schema, "rating").getEnum());
+        assertEquals(List.of(new BigDecimal("1.5")), fieldOf(schema, "factor").getEnum());
+        assertEquals(List.of(true), fieldOf(schema, "flag").getEnum());
+    }
+
+    @Test
+    void enumerationLiteralThatIsNoValueOfTheTypeIsDropped() {
+        var schema = convert(converterFor("""
+                <xsd:simpleType name="Rating">
+                  <xsd:restriction base="xsd:int">
+                    <xsd:enumeration value="1"/>
+                    <xsd:enumeration value="many"/>
+                  </xsd:restriction>
+                </xsd:simpleType>
+
+                <xsd:element name="review">
+                  <xsd:complexType><xsd:sequence>
+                    <xsd:element name="rating" type="tns:Rating"/>
+                  </xsd:sequence></xsd:complexType>
+                </xsd:element>
+                """), "review");
+
+        assertEquals(List.of(1), fieldOf(schema, "rating").getEnum(),
+                "the unusable literal costs its enum item, not the whole constraint");
     }
 
     // ── xsd:restriction facets ────────────────────────────────────────────

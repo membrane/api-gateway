@@ -514,6 +514,25 @@ class Json2SoapTransformerTest {
         assertEquals("de", nameEl.getAttribute("lang"));
     }
 
+    @Test
+    void valueKeyDoesNotDiscardSiblingElements() throws Exception {
+        // Neither order is valid against the XSD, but the two must not disagree: emitting $value by
+        // replacing the element's content would delete whatever an earlier key already produced.
+        Element valueFirst = recordName("{\"name\": {\"$value\": \"Berlin\", \"child\": \"x\"}}");
+        Element childFirst = recordName("{\"name\": {\"child\": \"x\", \"$value\": \"Berlin\"}}");
+
+        assertEquals(1, getChildElements(valueFirst).size());
+        assertEquals(1, getChildElements(childFirst).size(), "the sibling element must survive in either order");
+        assertTrue(valueFirst.getTextContent().contains("Berlin"));
+        assertTrue(childFirst.getTextContent().contains("Berlin"), "and so must the value");
+    }
+
+    /** The {@code name} element of a transformed {@code record} request. */
+    private static Element recordName(String json) throws Exception {
+        var soapBytes = new Json2SoapTransformer(attributesDefinitions, "record").transform(json);
+        return getFirstChildElement(getFirstChildElement(bodyOf(parseXml(soapBytes))));
+    }
+
     // --- null values / xsi:nil ---
 
     private static final String XSI_NS = "http://www.w3.org/2001/XMLSchema-instance";

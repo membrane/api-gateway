@@ -36,7 +36,9 @@
             <xsd:complexType name="OrderBase">
                 <xsd:sequence>
                     <xsd:element name="orderId" type="xsd:string"/>
-                    <xsd:element name="customer" type="xsd:string"/>
+                    <!-- optional in the base so that TrimmedOrder may leave it out: a restriction
+                         cannot drop a particle the base type requires -->
+                    <xsd:element name="customer" type="xsd:string" minOccurs="0"/>
                 </xsd:sequence>
             </xsd:complexType>
 

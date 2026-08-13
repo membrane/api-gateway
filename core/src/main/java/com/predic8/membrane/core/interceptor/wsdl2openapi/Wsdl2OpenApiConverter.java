@@ -336,8 +336,10 @@ public class Wsdl2OpenApiConverter {
     /**
      * The one error response. Every error the gateway produces — a fault from the service, a request
      * it could not transform, a method the path does not support — is an RFC 7807 problem details
-     * document with status 500, so a single {@code default} response describes them all. Enumerating
-     * status codes here would be guesswork: other plugins in the API's flow have their own.
+     * document, so a single {@code default} response describes them all. Their statuses differ: a
+     * fault becomes a 500, a request that cannot be mapped a 400, an unsupported method a 405.
+     * Enumerating them here would still be guesswork, because other plugins in the API's flow have
+     * statuses of their own — which is exactly what {@code default} is for.
      */
     private ApiResponse buildErrorResponse(Operation wsdlOp) {
         return new ApiResponse()

@@ -21,8 +21,10 @@
             <xsd:complexType name="OrderBase">
                 <xsd:sequence>
                     <xsd:element name="orderId" type="xsd:string"/>
-                    <!-- a complex child of the BASE type: descending into it must keep the base's schema -->
-                    <xsd:element name="address">
+                    <!-- a complex child of the BASE type: descending into it must keep the base's schema.
+                         Optional, because OrderIdOnly restricts it away and a restriction cannot drop
+                         a particle the base type requires. -->
+                    <xsd:element name="address" minOccurs="0">
                         <xsd:complexType>
                             <xsd:sequence>
                                 <xsd:element name="street" type="xsd:string"/>

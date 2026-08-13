@@ -25,7 +25,9 @@ import org.w3c.dom.Element;
 
 import javax.xml.namespace.QName;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.predic8.membrane.annot.Constants.XSD_NS;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.*;
@@ -333,14 +335,13 @@ public class XsdToSchema {
 
     /**
      * Copies an {@code xsd:default} — or an {@code xsd:fixed}, the value the declaration pins the
-     * field to — onto the schema. The literal stays a string here; each typed Schema casts it to
-     * its own type on the way in, and silently drops a literal that does not fit, so a numeric
-     * default is emitted unquoted and a malformed one is left out rather than emitted as invalid.
+     * field to — onto the schema, as a value of the field's own type: a numeric default is emitted
+     * unquoted, and one that is no value of that type is left out rather than emitted as invalid.
      *
      * <p>An {@code xsd:fixed} additionally becomes a single-value {@code enum}: unlike a default, it
      * says the field may hold no other value, which is a constraint and belongs where validation
-     * can see it. The enum item is taken back off the schema after the cast, so it carries the same
-     * type as the default and is skipped entirely when the literal does not fit the type.
+     * can see it. It carries the same typed value as the default, and is skipped along with it when
+     * the literal does not fit the type.
      *
      * <p>Neither is used to fill in a field a message left out: the SOAP service applies its own
      * defaults, and a gateway that invented payload values would leave the backend unable to tell a
@@ -353,27 +354,51 @@ public class XsdToSchema {
         String literal = fixed.isEmpty() ? declaration.getAttribute("default") : fixed;
         if (literal.isEmpty()) return;
 
-        Object value = schema instanceof BooleanSchema ? xsdBoolean(literal) : literal;
+        Object value = typedLiteral(schema, literal);
         if (value == null) return;
 
         var target = (Schema<Object>) schema;
         target.setDefault(value);
-        if (!fixed.isEmpty() && schema.getDefault() != null) {
-            target.addEnumItemObject(schema.getDefault());
+        if (!fixed.isEmpty()) {
+            target.addEnumItemObject(value);
         }
     }
 
     /**
-     * An {@code xsd:boolean} literal as a Boolean, or null when it is none of the four XSD spells for
-     * one. BooleanSchema would otherwise read the numeric forms {@code 1} and {@code 0} — and any
-     * malformed literal — as {@code false}, turning a correct default into a wrong one.
+     * An XSD literal as the Java type the schema's own type calls for, or null when it is not a
+     * value of that type at all — which is how a malformed literal costs the annotation or the
+     * constraint it appears in rather than the whole conversion.
+     *
+     * <p>The typed Schema classes do cast a literal themselves, but along their own rules: a numeric
+     * cast goes through a locale-dependent parse, and a boolean one reads every literal that is not
+     * {@code "true"} — including the legal XSD spelling {@code 1} — as {@code false}.
      */
+    private static Object typedLiteral(Schema<?> schema, String literal) {
+        try {
+            return switch (schema) {
+                case BooleanSchema ignored -> xsdBoolean(literal);
+                case IntegerSchema ignored -> integerLiteral(literal);
+                case NumberSchema ignored -> new BigDecimal(literal);
+                default -> literal;
+            };
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    /** The four XSD spellings of a boolean; anything else is not one. */
     private static Boolean xsdBoolean(String literal) {
         return switch (literal) {
             case "true", "1" -> TRUE;
             case "false", "0" -> FALSE;
             default -> null;
         };
+    }
+
+    /** An integer literal as an int where one fits — xsd:integer is unbounded, so BigInteger otherwise. */
+    private static Object integerLiteral(String literal) {
+        var value = new BigInteger(literal);
+        return value.bitLength() < 32 ? value.intValue() : value;
     }
 
     /**
@@ -582,11 +607,14 @@ public class XsdToSchema {
      */
     @SuppressWarnings("unchecked")
     private void applyFacets(Element restriction, Schema<?> schema) {
+        var patterns = new ArrayList<String>();
         for (Element el : xsdChildren(restriction)) {
             String value = el.getAttribute("value");
             switch (el.getLocalName()) {
-                case "enumeration" -> ((Schema<Object>) schema).addEnumItemObject(value);
-                case "pattern"     -> schema.setPattern(value);
+                // A literal is typed like the schema it constrains: an enum of strings would match
+                // no value of an integer or boolean field.
+                case "enumeration" -> addEnumItem((Schema<Object>) schema, el, value);
+                case "pattern"     -> patterns.add(value);
                 case "minLength"   -> parseInteger(el, value).ifPresent(schema::setMinLength);
                 case "maxLength"   -> parseInteger(el, value).ifPresent(schema::setMaxLength);
                 case "length"      -> parseInteger(el, value).ifPresent(length -> {
@@ -601,6 +629,29 @@ public class XsdToSchema {
                 case "maxExclusive" -> parseDecimal(el, value).ifPresent(schema::setExclusiveMaximumValue);
             }
         }
+        if (!patterns.isEmpty()) schema.setPattern(jsonSchemaPattern(patterns));
+    }
+
+    private static void addEnumItem(Schema<Object> schema, Element facet, String literal) {
+        Object value = typedLiteral(schema, literal);
+        if (value == null) {
+            log.debug("Ignoring xsd:enumeration value '{}': not a valid value of the type", literal);
+            return;
+        }
+        schema.addEnumItemObject(value);
+    }
+
+    /**
+     * The JSON Schema equivalent of a restriction's {@code pattern} facets. Two differences to XSD:
+     * an XSD pattern must match the whole value while a JSON Schema one matches anywhere, hence the
+     * anchors; and several pattern facets on one restriction are alternatives, while
+     * {@code pattern} is a single expression, hence the alternation.
+     *
+     * <p>The expressions themselves are copied verbatim. XSD's regular expression dialect is not
+     * ECMA's, so a pattern using a construct only XSD has stays as unusable as it was.
+     */
+    private static String jsonSchemaPattern(List<String> patterns) {
+        return patterns.stream().collect(Collectors.joining("|", "^(?:", ")$"));
     }
 
     private static Optional<Integer> parseInteger(Element facet, String value) {

@@ -474,7 +474,9 @@ public class Json2SoapTransformer {
             element.setAttributeNS(XSI_NS, "xsi:" + NIL_ATTRIBUTE, "true");
             return;
         }
-        element.setTextContent(value.asText());
+        // Appended, not set: setTextContent would drop child elements an earlier key already
+        // produced, making the result depend on the order the JSON happens to list its keys in.
+        element.appendChild(element.getOwnerDocument().createTextNode(value.asText()));
     }
 
     /** The XSD declaration of the named child field, or {@code null} if it cannot be resolved. */

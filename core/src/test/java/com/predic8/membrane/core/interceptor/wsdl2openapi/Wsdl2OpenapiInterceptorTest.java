@@ -302,6 +302,29 @@ class Wsdl2OpenapiInterceptorTest {
         );
     }
 
+    @Test
+    void pathParameterWinsOverTheSameFieldInTheBody() throws Exception {
+        // The URL selected the resource. A body repeating the field — it is not in the published
+        // request schema, but a client can still send it — must not redirect the call elsewhere.
+        var settings = new OperationSettings();
+        settings.setPath("/cities/{name}");
+        settings.setMethod("PUT");
+        var operations = new OperationsConfig();
+        operations.setEntry(Map.of("getCity", settings));
+
+        var interceptor = wsdl2openapi("classpath:/ws/cities.wsdl");
+        interceptor.setOperations(operations);
+        interceptor.init(new DummyTestRouter(), apiProxyWith(interceptor));
+
+        var exc = new Exchange(null);
+        exc.setRequest(new Request.Builder().put("/cities/Berlin").body("{\"name\":\"Atlantis\"}").build());
+
+        assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exc));
+        String soap = exc.getRequest().getBodyAsStringDecoded();
+        assertTrue(soap.contains("Berlin"), "the value from the URL must reach the service: " + soap);
+        assertFalse(soap.contains("Atlantis"), "the value from the body must not: " + soap);
+    }
+
     /** Runs a request body through handleRequest on getCity and returns the aborting response. */
     private static Response requestResponse(String body) throws Exception {
         var interceptor = wsdl2openapi("classpath:/ws/cities.wsdl");

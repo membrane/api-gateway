@@ -70,10 +70,11 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * The generated OpenAPI document's title is the enclosing <i>api</i>'s <code>name</code>.
  * </p>
  * <p>
- * Errors are returned as problem details documents (RFC 7807) with status code 500. When the service
- * reports one of the errors the WSDL declares, its content appears under <code>details</code>, keyed
- * by the name of the declared error. Nothing in the response reveals that a SOAP service is being
- * called.
+ * Errors are returned as problem details documents (RFC 7807). An error the service reports becomes
+ * a 500, and the content of an error the WSDL declares appears under <code>details</code>, keyed by
+ * the name of the declared error. Errors the gateway itself detects carry the status that fits them,
+ * such as 400 for a request it cannot map or 405 for a method the path does not support. Nothing in
+ * the response reveals that a SOAP service is being called.
  * </p>
  * @yaml <pre><code>
  * api:
@@ -426,13 +427,18 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
         return Pattern.compile(sb.toString());
     }
 
+    /**
+     * Adds the values taken from the URL to the JSON body. They are applied last: the URL selected
+     * the resource, so a body that carries the same field — it is not part of the published request
+     * schema, but nothing stops a client from sending it — must not silently address another one.
+     */
     private String mergePathParamsIntoJson(String existingBody, Map<String, String> pathParams) throws Exception {
         if (pathParams.isEmpty()) return existingBody;
-        var merged = new LinkedHashMap<String, Object>(pathParams);
+        var merged = new LinkedHashMap<String, Object>();
         if (existingBody != null && !existingBody.isBlank()) {
-            var parsed = MAPPER.readValue(existingBody, new TypeReference<Map<String, Object>>() {});
-            merged.putAll(parsed);
+            merged.putAll(MAPPER.readValue(existingBody, new TypeReference<Map<String, Object>>() {}));
         }
+        merged.putAll(pathParams);
         return MAPPER.writeValueAsString(merged);
     }
 
