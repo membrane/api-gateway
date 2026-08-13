@@ -433,6 +433,66 @@ class XsdToSchemaTest {
     }
 
     @Test
+    void nillableChoiceAlternativeProducesNullableSchema() {
+        var schema = convert(converterFor("""
+                <xsd:element name="searchRequest">
+                  <xsd:complexType><xsd:choice>
+                    <xsd:element name="byName" type="xsd:string" nillable="true"/>
+                    <xsd:element name="byId"   type="xsd:int"/>
+                  </xsd:choice></xsd:complexType>
+                </xsd:element>
+                """), "searchRequest");
+
+        assertEquals(Set.of("string", "null"), fieldOf(schema, "byName").getTypes(),
+                "an alternative is as nillable as the same declaration in a sequence");
+        assertEquals(Set.of("integer"), fieldOf(schema, "byId").getTypes());
+    }
+
+    @Test
+    void choiceAlternativeKeepsItsDefaultAndFixedValue() {
+        var schema = convert(converterFor("""
+                <xsd:element name="searchRequest">
+                  <xsd:complexType><xsd:choice>
+                    <xsd:element name="byName"  type="xsd:string" default="unknown"/>
+                    <xsd:element name="byLevel" type="xsd:int"    fixed="3"/>
+                  </xsd:choice></xsd:complexType>
+                </xsd:element>
+                """), "searchRequest");
+
+        assertEquals("unknown", fieldOf(schema, "byName").getDefault());
+        var byLevel = fieldOf(schema, "byLevel");
+        assertEquals(3, byLevel.getDefault());
+        assertEquals(List.of(3), byLevel.getEnum(), "a fixed value also restricts which values are valid");
+    }
+
+    @Test
+    void nillableChoiceAlternativeDoesNotMakeTheNamedTypeNullableForEveryoneElse() {
+        var converter = converterFor("""
+                <xsd:complexType name="AddressType"><xsd:sequence>
+                  <xsd:element name="city" type="xsd:string"/>
+                </xsd:sequence></xsd:complexType>
+                <xsd:element name="searchRequest">
+                  <xsd:complexType><xsd:sequence>
+                    <xsd:choice>
+                      <xsd:element name="byAddress" type="tns:AddressType" nillable="true"/>
+                      <xsd:element name="byId"      type="xsd:int"/>
+                    </xsd:choice>
+                    <xsd:element name="shipTo" type="tns:AddressType"/>
+                  </xsd:sequence></xsd:complexType>
+                </xsd:element>
+                """);
+        var schema = convert(converter, "searchRequest");
+
+        // The nillable alternative writes onto the schema it is given, so it has to get one of its
+        // own instead of the shared component every other use site references.
+        assertNull(fieldOf(schema, "byAddress").get$ref(), "a modified type cannot be a reference");
+        assertEquals(Set.of("object", "null"), fieldOf(schema, "byAddress").getTypes());
+        assertRefTo("AddressType", fieldOf(schema, "shipTo"));
+        assertEquals(Set.of("object"), fieldOf(converter, schema, "shipTo").getTypes(),
+                "the shared component is unaffected by the nillable use site");
+    }
+
+    @Test
     void choiceRequiresExactlyOneAlternativeThroughOneOf() {
         var schema = convert(converterFor("""
                 <xsd:element name="searchRequest">

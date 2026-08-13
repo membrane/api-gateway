@@ -48,6 +48,8 @@ public class OperationSettings {
      * template become path parameters, and the remaining fields become query parameters. A field
      * that carries more than a single value, such as a nested structure or a repeating element,
      * cannot be passed this way and is rejected at startup — expose such an operation as POST.
+     * An XSD attribute is addressed by its plain name, without the <code>@</code> the JSON request
+     * body uses for it.
      * @example GET
      */
     @MCAttribute

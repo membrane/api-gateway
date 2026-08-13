@@ -123,6 +123,8 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
     private List<RouteEntry> routes = new ArrayList<>();
     /** Set from the generated document in init(), so the document stays the single source of truth. */
     private Map<String, Set<String>> queryParamNames = Map.of();
+    /** Per operation, the body property a URL parameter fills where its published name differs. */
+    private Map<String, Map<String, String>> urlParamProperties = Map.of();
     private final Map<String, Json2SoapTransformer> requestTransformers = new LinkedHashMap<>();
     /** Built once per operation in init(): the WSDL does not change, and every response needs them. */
     private final Map<String, Schema<?>> responseSchemas = new LinkedHashMap<>();
@@ -178,6 +180,7 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
 
         var openApiModel = wsdl2OpenApi.generate();
         queryParamNames = collectQueryParamNames(openApiModel);
+        urlParamProperties = wsdl2OpenApi.getUrlParamProperties();
         publisher = createPublisher(openApiModel);
 
         registerApiDocsPaths();
@@ -460,6 +463,20 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
     }
 
     /**
+     * Renames the values taken from the URL to the body properties they fill. The two differ for an
+     * XSD attribute: the document publishes it under its plain name, because an {@code @} in a
+     * parameter name would have to be percent-encoded by every client, while the JSON the SOAP
+     * transformation reads expects the {@code "@"}-prefixed property.
+     */
+    private Map<String, String> toBodyProperties(Map<String, String> urlParams, String operationName) {
+        Map<String, String> properties = urlParamProperties.getOrDefault(operationName, Map.of());
+        if (properties.isEmpty() || urlParams.isEmpty()) return urlParams;
+        var renamed = new LinkedHashMap<String, String>();
+        urlParams.forEach((name, value) -> renamed.put(properties.getOrDefault(name, name), value));
+        return renamed;
+    }
+
+    /**
      * The query parameters of the request that the operation actually declares. Anything else a
      * client appends stays out of the SOAP request instead of being sent to the service unchecked.
      */
@@ -518,7 +535,8 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
             }
 
             String jsonBody = mergeUrlParamsIntoJson(exc.getRequest().getBodyAsStringDecoded(),
-                    declaredQueryParams(exc, operationName), pathParams);
+                    toBodyProperties(declaredQueryParams(exc, operationName), operationName),
+                    toBodyProperties(pathParams, operationName));
             byte[] soapRequest = requestTransformers.get(operationName).transform(jsonBody);
 
             exc.getRequest().setBodyContent(soapRequest);

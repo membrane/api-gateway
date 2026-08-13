@@ -146,6 +146,31 @@ class Wsdl2OpenapiInterceptorTest {
     }
 
     @Test
+    void urlParametersAreMappedBackToTheXsdAttributesTheyStandFor() throws Exception {
+        // record's input declares the attributes id and type. Both are published without the "@"
+        // the JSON needs, so the interceptor has to put it back before the SOAP transformation —
+        // one of them through the path, the other through the query string.
+        var settings = new OperationSettings();
+        settings.setMethod("GET");
+        settings.setPath("/records/{id}");
+        var operations = new OperationsConfig();
+        operations.setEntry(Map.of("record", settings));
+
+        var interceptor = wsdl2openapi("classpath:/ws/attributes.wsdl");
+        interceptor.setOperations(operations);
+        interceptor.init(new DummyTestRouter(), apiProxyWith(interceptor));
+
+        var exc = new Exchange(null);
+        exc.setRequest(new Request.Builder().get("/records/42?type=partner&name=Alice").build());
+
+        assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exc));
+        String soap = exc.getRequest().getBodyAsStringDecoded();
+        assertTrue(soap.contains("id=\"42\""), "the path parameter must become the id attribute: " + soap);
+        assertTrue(soap.contains("type=\"partner\""), "the query parameter must become the type attribute: " + soap);
+        assertTrue(soap.contains("<name>Alice</name>"), "an element stays an element: " + soap);
+    }
+
+    @Test
     void aResponseFieldOfANamedTypeIsStillTypedAfterTheSoapConversion() throws Exception {
         var interceptor = wsdl2openapi("classpath:/ws/cross-namespace.wsdl");
         interceptor.init(new DummyTestRouter(), apiProxyWith(interceptor));

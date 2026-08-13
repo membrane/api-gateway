@@ -47,6 +47,7 @@ class OpenApiGeneratorTest {
     static Definitions crossNsDefinitions;
     static Definitions recursiveDefinitions;
     static Definitions articleDefinitions;
+    static Definitions attributeDefinitions;
 
     @BeforeAll
     static void setup() throws Exception {
@@ -56,6 +57,7 @@ class OpenApiGeneratorTest {
         crossNsDefinitions = Definitions.parse(new ResolverMap(), "classpath:/ws/cross-namespace.wsdl");
         recursiveDefinitions = Definitions.parse(new ResolverMap(), "classpath:/ws/recursive-type.wsdl");
         articleDefinitions = Definitions.parse(new ResolverMap(), "classpath:/validation/article-service.wsdl");
+        attributeDefinitions = Definitions.parse(new ResolverMap(), "classpath:/ws/attributes.wsdl");
     }
 
     @Test
@@ -418,6 +420,44 @@ class OpenApiGeneratorTest {
 
         assertTrue(e.getMessage().contains("getItem"), "Message should name the operation");
         assertTrue(e.getMessage().contains("item"), "Message should name the field that cannot be carried");
+    }
+
+    @Test
+    void anAttributeBecomesAQueryParameterWithoutTheAtPrefix() {
+        // record's input carries the attributes id and type; "@id" would have to be sent as %40id.
+        var settings = new OperationSettings();
+        settings.setMethod("GET");
+        var op = new Wsdl2OpenApiConverter(attributeDefinitions, "/", Map.of("record", settings)).generate()
+                .getPaths().get("/record").getGet();
+
+        assertEquals(List.of("name", "id", "type"),
+                op.getParameters().stream().map(Parameter::getName).toList());
+    }
+
+    @Test
+    void anAttributeCanBeCarriedByThePathParameter() {
+        var settings = new OperationSettings();
+        settings.setPath("/records/{id}");
+        settings.setMethod("GET");
+        var converter = new Wsdl2OpenApiConverter(attributeDefinitions, "/", Map.of("record", settings));
+        var op = converter.generate().getPaths().get("/records/{id}").getGet();
+
+        assertEquals("path", byName(op.getParameters(), "id").getIn());
+        // The remaining attribute travels as a query parameter, under its plain name as well.
+        assertEquals(Map.of("record", Map.of("id", "@id", "type", "@type")), converter.getUrlParamProperties(),
+                "the interceptor must be told which body property each parameter fills");
+    }
+
+    @Test
+    void anAttributeClashingWithAnElementOfTheSameNameIsRejected() {
+        // clash's input declares both an element id and an attribute id: one URL name, two fields.
+        var settings = new OperationSettings();
+        settings.setMethod("GET");
+        var e = assertThrows(ConfigurationException.class,
+                () -> new Wsdl2OpenApiConverter(attributeDefinitions, "/", Map.of("clash", settings)).generate());
+
+        assertTrue(e.getMessage().contains("clash"), "Message should name the operation");
+        assertTrue(e.getMessage().contains("'id'"), "Message should name the contested parameter");
     }
 
     private static OpenAPI searchMappedTo(String method, String path) {

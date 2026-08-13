@@ -441,19 +441,31 @@ public class XsdToSchema {
     }
 
     /**
-     * Adds {@code fieldSchema} as a property, applying the declaration's nillable, default/fixed
-     * value, maxOccurs and minOccurs. Nullability and the default value are applied before the
-     * maxOccurs wrapping, because in XSD they describe each occurrence rather than the list.
+     * Adds {@code fieldSchema} as a property, applying everything the declaration says about it —
+     * see {@link #declaredSchema} — plus its minOccurs.
      */
     private static void addField(ObjectSchema schema, String fieldName, Element declaration, Schema<?> fieldSchema) {
+        schema.addProperty(fieldName, declaredSchema(declaration, fieldSchema));
+        if (!MIN_OCCURS_OPTIONAL.equals(declaration.getAttribute("minOccurs"))) {
+            schema.addRequiredItem(fieldName);
+        }
+    }
+
+    /**
+     * The schema of an element declaration as the document publishes it: its type, made nullable
+     * where the declaration is nillable, carrying its default or fixed value, and wrapped in an
+     * array where it may occur more than once. Nullability and the value are applied before that
+     * wrapping, because in XSD they describe each occurrence rather than the list.
+     *
+     * <p>Written onto {@code fieldSchema}, so the caller has to have built the type inline — see
+     * {@link #mutates}.
+     */
+    private static Schema<?> declaredSchema(Element declaration, Schema<?> fieldSchema) {
         if ("true".equals(declaration.getAttribute("nillable"))) {
             makeNullable(fieldSchema);
         }
         applyDefaultValue(declaration, fieldSchema);
-        schema.addProperty(fieldName, applyMaxOccurs(declaration, fieldSchema));
-        if (!MIN_OCCURS_OPTIONAL.equals(declaration.getAttribute("minOccurs"))) {
-            schema.addRequiredItem(fieldName);
-        }
+        return applyMaxOccurs(declaration, fieldSchema);
     }
 
     /**
@@ -610,10 +622,10 @@ public class XsdToSchema {
                     if (!fieldName.isEmpty()) {
                         String ns = ctx.schemaRoot().getAttribute("targetNamespace");
                         alternatives.add(new ChoiceAlternative(fieldName, ns.isEmpty() ? null : ns,
-                                applyMaxOccurs(el, convertElementType(el, ctx, true))));
+                                declaredSchema(el, convertElementType(el, ctx, !mutates(el)))));
                     } else {
-                        resolveRefAlternative(el, ctx, true)
-                                .map(alternative -> alternative.withSchema(applyMaxOccurs(el, alternative.fieldSchema())))
+                        resolveRefAlternative(el, ctx, !mutates(el))
+                                .map(alternative -> alternative.withSchema(declaredSchema(el, alternative.fieldSchema())))
                                 .ifPresent(alternatives::add);
                     }
                 }

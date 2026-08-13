@@ -38,8 +38,7 @@ import java.util.stream.Collectors;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_PROBLEM_JSON;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.Wsdl2OpenapiInterceptor.extractParamNames;
-import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.camelToKebab;
-import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.componentName;
+import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.*;
 import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.INPUT;
 import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.OUTPUT;
 
@@ -76,6 +75,12 @@ public class Wsdl2OpenApiConverter {
     private final String title;
     private final String description;
     private final String version;
+
+    /**
+     * Per operation, the URL parameters published under a name other than the body property they
+     * fill. Filled while the paths are built; see {@link #publishedName}.
+     */
+    private final Map<String, Map<String, String>> urlParamProperties = new LinkedHashMap<>();
 
     public Wsdl2OpenApiConverter(Definitions definitions, String basePath) {
         this(definitions, basePath, Map.of());
@@ -118,6 +123,15 @@ public class Wsdl2OpenApiConverter {
      */
     XsdToSchema getSchemaConverter() {
         return converter;
+    }
+
+    /**
+     * Per operation id, the body property each URL parameter fills, for the parameters whose
+     * published name differs from it. Only meaningful once the document has been generated: building
+     * the paths is what decides how the input fields are carried.
+     */
+    Map<String, Map<String, String>> getUrlParamProperties() {
+        return Map.copyOf(urlParamProperties);
     }
 
     public OpenAPI generate() {
@@ -280,11 +294,15 @@ public class Wsdl2OpenApiConverter {
         // leave the body: the client puts them in the URL and Wsdl2OpenapiInterceptor merges them
         // back into the JSON before the SOAP transformation, so asking for them twice would make a
         // validator reject a correct request.
-        Map<String, Schema> paramSchemas = removeProperties(bodySchema, pathParamNames);
-        pathParamNames.forEach(p ->
-                apiOp.addParametersItem(new Parameter().name(p).in("path").required(true)
-                        .schema(paramSchemas.getOrDefault(p, new StringSchema())))
-        );
+        Map<String, String> pathProperties = new LinkedHashMap<>();
+        pathParamNames.forEach(p -> pathProperties.put(p, resolveProperty(bodySchema, p)));
+
+        Map<String, Schema> paramSchemas = removeProperties(bodySchema, List.copyOf(pathProperties.values()));
+        pathProperties.forEach((paramName, property) -> {
+            recordUrlParam(name, paramName, property);
+            apiOp.addParametersItem(new Parameter().name(paramName).in("path").required(true)
+                    .schema(paramSchemas.getOrDefault(property, new StringSchema())));
+        });
         if (hasRequestBody(settings.getMethod())) {
             if (!isEmptySchema(bodySchema)) {
                 apiOp.requestBody(buildRequestBody(bodySchema));
@@ -376,9 +394,47 @@ public class Wsdl2OpenApiConverter {
                         Map the operation to POST, or name the field in the path template.""".formatted(
                         operationName, method, fieldName, describe(deref(fieldSchema))));
             }
-            apiOp.addParametersItem(new Parameter().name(fieldName).in("query")
+            String paramName = publishedName(operationName, fieldName, bodySchema);
+            recordUrlParam(operationName, paramName, fieldName);
+            apiOp.addParametersItem(new Parameter().name(paramName).in("query")
                     .required(required.contains(fieldName)).schema(fieldSchema));
         });
+    }
+
+    /**
+     * The name a URL parameter carrying {@code property} is published under. An XSD attribute is a
+     * property named {@code "@"} + its name, and an {@code @} in a parameter name has to be
+     * percent-encoded by every client, so an attribute is published under its plain name and
+     * {@link Wsdl2OpenapiInterceptor} puts the prefix back before the SOAP transformation.
+     */
+    private static String publishedName(String operationName, String property, Schema<?> bodySchema) {
+        if (!property.startsWith(ATTRIBUTE_PREFIX)) return property;
+        String plain = property.substring(ATTRIBUTE_PREFIX.length());
+        if (bodySchema.getProperties().containsKey(plain)) {
+            throw new ConfigurationException("""
+                    Operation '%s' has both an element '%s' and an attribute '%s' in its input, which \
+                    would have to share the URL parameter name '%s'.
+                    Map the operation to POST, so that both are carried in the request body.""".formatted(
+                    operationName, plain, plain, plain));
+        }
+        return plain;
+    }
+
+    /**
+     * The body property a URL parameter named {@code paramName} fills: the property of that name, or
+     * the attribute it stands for where the input declares no element of that name (see
+     * {@link #publishedName}).
+     */
+    private static String resolveProperty(Schema<?> bodySchema, String paramName) {
+        if (bodySchema.getProperties() == null || bodySchema.getProperties().containsKey(paramName)) return paramName;
+        String attribute = ATTRIBUTE_PREFIX + paramName;
+        return bodySchema.getProperties().containsKey(attribute) ? attribute : paramName;
+    }
+
+    /** Notes a URL parameter published under a name other than the body property it fills. */
+    private void recordUrlParam(String operationName, String paramName, String property) {
+        if (paramName.equals(property)) return;
+        urlParamProperties.computeIfAbsent(operationName, op -> new LinkedHashMap<>()).put(paramName, property);
     }
 
     /**
