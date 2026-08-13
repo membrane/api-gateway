@@ -218,13 +218,12 @@ public class Wsdl2OpenApiConverter {
             apiOp.addTagsItem(settings.getTag());
         }
 
-        if (settings.getPath() != null) {
-            extractParamNames(settings.getPath()).forEach(p ->
+        List<String> pathParamNames = settings.getPath() == null ? List.of() : extractParamNames(settings.getPath());
+        pathParamNames.forEach(p ->
                 apiOp.addParametersItem(new Parameter().name(p).in("path").required(true).schema(new StringSchema()))
-            );
-        }
+        );
         if (hasRequestBody(settings.getMethod())) {
-            apiOp.requestBody(buildRequestBody(getBodyParts(inputParts, headerParts)));
+            apiOp.requestBody(buildRequestBody(getBodyParts(inputParts, headerParts), pathParamNames));
         }
         headerParts.stream().map(this::buildHeaderParameter).forEach(apiOp::addParametersItem);
         return apiOp;
@@ -287,10 +286,26 @@ public class Wsdl2OpenApiConverter {
         return new Parameter().in("header").name(part.getName()).schema(schema);
     }
 
-    private RequestBody buildRequestBody(List<Part> parts) {
+    private RequestBody buildRequestBody(List<Part> parts, List<String> pathParamNames) {
         return new RequestBody()
                 .required(true)
-                .content(jsonContent(converter.convertParts(parts)));
+                .content(jsonContent(removeProperties(converter.convertParts(parts), pathParamNames)));
+    }
+
+    /**
+     * Drops the fields bound to path parameters from the request body schema. The client puts them
+     * in the URL and {@code Wsdl2OpenapiInterceptor} merges them back into the JSON before the SOAP
+     * transformation, so keeping them in the body would ask for the same value twice — and make a
+     * validator reject a correct request that omits them.
+     */
+    private static Schema<?> removeProperties(Schema<?> schema, List<String> names) {
+        if (names.isEmpty() || schema.getProperties() == null) return schema;
+        names.forEach(schema.getProperties()::remove);
+        if (schema.getRequired() != null) {
+            schema.getRequired().removeAll(names);
+            if (schema.getRequired().isEmpty()) schema.setRequired(null);
+        }
+        return schema;
     }
 
     private static Content jsonContent(Schema<?> schema) {

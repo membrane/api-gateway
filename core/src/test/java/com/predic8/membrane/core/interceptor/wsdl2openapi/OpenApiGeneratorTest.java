@@ -17,6 +17,8 @@ package com.predic8.membrane.core.interceptor.wsdl2openapi;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.wsdl.parser.Definitions;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.media.Schema;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -277,6 +279,35 @@ class OpenApiGeneratorTest {
 
         assertTrue(e.getMessage().contains("getCitty"), "Message should name the unknown operation");
         assertTrue(e.getMessage().contains("getCity"), "Message should list the available operations");
+    }
+
+    @Test
+    void pathParameterFieldIsRemovedFromRequestBody() {
+        var op = requestSchemaOf(pathMappedGetCity());
+
+        assertNull(op.getProperties().get("name"), "Field bound to the path parameter must not be repeated in the body");
+        assertTrue(op.getRequired() == null || !op.getRequired().contains("name"), "and must not be required there");
+    }
+
+    @Test
+    void pathParameterIsStillDeclaredAsParameter() {
+        var op = pathMappedGetCity().getPaths().get("/cities/{name}").getPut();
+
+        assertEquals(1, op.getParameters().size());
+        assertEquals("name", op.getParameters().getFirst().getName());
+        assertEquals("path", op.getParameters().getFirst().getIn());
+    }
+
+    private static OpenAPI pathMappedGetCity() {
+        var settings = new OperationSettings();
+        settings.setPath("/cities/{name}");
+        settings.setMethod("PUT");
+        return new Wsdl2OpenApiConverter(citiesDefinitions, "/", Map.of("getCity", settings)).generate();
+    }
+
+    private static Schema<?> requestSchemaOf(OpenAPI api) {
+        return api.getPaths().get("/cities/{name}").getPut()
+                .getRequestBody().getContent().get("application/json").getSchema();
     }
 
     @Test
