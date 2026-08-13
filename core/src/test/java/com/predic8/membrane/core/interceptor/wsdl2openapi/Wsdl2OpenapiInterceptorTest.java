@@ -102,6 +102,30 @@ class Wsdl2OpenapiInterceptorTest {
     }
 
     @Test
+    void declaredQueryParameterReachesTheSoapRequestAndAnUndeclaredOneDoesNot() throws Exception {
+        // A GET has no body, so the operation's input fields travel as query parameters. Anything
+        // the client appends beyond them must not be forwarded to the service.
+        var settings = new OperationSettings();
+        settings.setMethod("GET");
+        settings.setPath("/cities");
+        var operations = new OperationsConfig();
+        operations.setEntry(Map.of("getCity", settings));
+
+        var interceptor = wsdl2openapi("classpath:/ws/cities.wsdl");
+        interceptor.setOperations(operations);
+        interceptor.init(new DummyTestRouter(), apiProxyWith(interceptor));
+
+        var exc = new Exchange(null);
+        exc.setRequest(new Request.Builder().get("/cities?name=Berlin&bogus=Atlantis").build());
+
+        assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exc));
+        String soap = exc.getRequest().getBodyAsStringDecoded();
+        assertTrue(soap.contains("Berlin"), "the declared query parameter must reach the service: " + soap);
+        assertFalse(soap.contains("bogus"), "an undeclared query parameter must not: " + soap);
+        assertFalse(soap.contains("Atlantis"), "an undeclared query parameter's value must not: " + soap);
+    }
+
+    @Test
     void matchRoutePreservesOperationName() {
         var interceptor = interceptorWith("/api", "get-city", "GET", "GetCity");
         var result = interceptor.matchRoute("/api/get-city", "GET");
