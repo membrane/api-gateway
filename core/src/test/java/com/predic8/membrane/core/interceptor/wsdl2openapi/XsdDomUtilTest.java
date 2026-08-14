@@ -14,6 +14,9 @@
 
 package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
+import io.swagger.v3.oas.models.media.ObjectSchema;
+import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.media.StringSchema;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -71,6 +74,28 @@ class XsdDomUtilTest {
 
     private static Map<String, String> componentNames(Map<String, String> declarationsByNamespace) {
         return buildComponentNames(schemas(declarationsByNamespace), Set.of());
+    }
+
+    /** Parses a standalone {@code xsd:schema} document, so a test can control its xmlns declarations. */
+    private static Element schema(String xml) {
+        try {
+            var factory = DocumentBuilderFactory.newInstance();
+            factory.setNamespaceAware(true);
+            return factory.newDocumentBuilder().parse(new InputSource(new StringReader(xml))).getDocumentElement();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /** The first xsd element of the given local name carrying a {@code ref} attribute. */
+    private static Element refElement(Element schemaRoot, String xsdLocalName) {
+        var found = schemaRoot.getOwnerDocument()
+                .getElementsByTagNameNS("http://www.w3.org/2001/XMLSchema", xsdLocalName);
+        for (int i = 0; i < found.getLength(); i++) {
+            var el = (Element) found.item(i);
+            if (!el.getAttribute("ref").isEmpty()) return el;
+        }
+        throw new AssertionError("no xsd:" + xsdLocalName + " with a ref= in the document");
     }
 
     @Test
@@ -156,6 +181,118 @@ class XsdDomUtilTest {
         assertFalse(names.isEmpty());
         names.values().forEach(name ->
                 assertTrue(name.matches("[a-zA-Z0-9._-]+"), "not usable in a $ref path: " + name));
+    }
+
+    @Test
+    void aReferenceIsResolvedToTheComponentItNames() {
+        var address = new ObjectSchema().addProperty("street", new StringSchema());
+        Map<String, Schema<?>> components = Map.of("Address", address);
+
+        assertSame(address, dereference(components, new Schema<>().$ref(COMPONENTS_SCHEMAS_PREFIX + "Address")));
+    }
+
+    @Test
+    void anUnresolvableOrAbsentReferenceLeavesTheSchemaAsItIs() {
+        var plain = new StringSchema();
+        var dangling = new Schema<>().$ref(COMPONENTS_SCHEMAS_PREFIX + "Missing");
+        Map<String, Schema<?>> components = Map.of("Address", new ObjectSchema());
+
+        // A schema that references nothing is its own answer, and a reference no component answers
+        // has to stay a reference — which is what a caller with no components sees for every one.
+        assertSame(plain, dereference(components, plain));
+        assertSame(dangling, dereference(components, dangling));
+        assertSame(dangling, dereference(Map.of(), dangling));
+        assertNull(dereference(components, null));
+    }
+
+    private static final String BILLING_SCHEMA = """
+            <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                        xmlns:tns="http://example.com/billing"
+                        xmlns:ship="http://example.com/shipping"
+                        targetNamespace="http://example.com/billing">
+              <xsd:group name="AddressBits">
+                <xsd:sequence><xsd:element name="street" type="xsd:string"/></xsd:sequence>
+              </xsd:group>
+              <xsd:element name="invoice">
+                <xsd:complexType><xsd:sequence>
+                  <xsd:group ref="%s"/>
+                  <xsd:element ref="%s"/>
+                </xsd:sequence></xsd:complexType>
+              </xsd:element>
+            </xsd:schema>
+            """;
+
+    private static final String SHIPPING_SCHEMA = """
+            <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" targetNamespace="http://example.com/shipping">
+              <xsd:group name="AddressBits">
+                <xsd:sequence><xsd:element name="country" type="xsd:string"/></xsd:sequence>
+              </xsd:group>
+              <xsd:element name="label" type="xsd:string"/>
+            </xsd:schema>
+            """;
+
+    /** The two schemas above, with the billing document's two references pointed where the test wants. */
+    private static Map<String, List<Element>> twoSchemas(String groupRef, String elementRef) {
+        return Map.of(BILLING, List.of(schema(BILLING_SCHEMA.formatted(groupRef, elementRef))),
+                SHIPPING, List.of(schema(SHIPPING_SCHEMA)));
+    }
+
+    @Test
+    void aGroupReferenceIsResolvedInTheDocumentItsPrefixNames() {
+        var schemas = twoSchemas("ship:AddressBits", "ship:label");
+        Element billing = schemas.get(BILLING).getFirst();
+
+        var group = resolveGroupRef(refElement(billing, "group"), billing, schemas);
+
+        // The shipping group, not the same-named one sitting in the referring document.
+        assertTrue(group.isPresent());
+        assertEquals(SHIPPING, group.get().schemaRoot().getAttribute("targetNamespace"));
+        assertEquals("country", firstXsdChild(groupParticle(group.get().definition()), "element").getAttribute("name"));
+    }
+
+    @Test
+    void anUnresolvableGroupReferenceIsEmpty() {
+        var schemas = twoSchemas("tns:NoSuchGroup", "ship:label");
+        Element billing = schemas.get(BILLING).getFirst();
+
+        assertTrue(resolveGroupRef(refElement(billing, "group"), billing, schemas).isEmpty());
+    }
+
+    @Test
+    void anElementReferenceCarriesItsDeclarationAndTheDocumentHoldingIt() {
+        var schemas = twoSchemas("tns:AddressBits", "ship:label");
+        Element billing = schemas.get(BILLING).getFirst();
+
+        var resolved = resolveElementRef(refElement(billing, "element"), billing, schemas);
+
+        assertTrue(resolved.isPresent());
+        assertEquals("label", resolved.get().localName());
+        assertEquals(SHIPPING, resolved.get().namespaceURI());
+        // The declaration travels with its own document: its type= references resolve against that
+        // one, not against the referring schema.
+        assertEquals("label", resolved.get().declaration().getAttribute("name"));
+        assertEquals(SHIPPING, resolved.get().schemaRoot().getAttribute("targetNamespace"));
+    }
+
+    @Test
+    void anUnresolvableElementReferenceIsEmpty() {
+        var schemas = twoSchemas("tns:AddressBits", "ship:noSuchElement");
+        Element billing = schemas.get(BILLING).getFirst();
+
+        assertTrue(resolveElementRef(refElement(billing, "element"), billing, schemas).isEmpty());
+    }
+
+    @Test
+    void anUnprefixedReferenceMeansTheDocumentsOwnNamespace() {
+        var schemas = twoSchemas("AddressBits", "ship:label");
+        Element billing = schemas.get(BILLING).getFirst();
+        Element groupRef = refElement(billing, "group");
+
+        assertEquals(BILLING, referencedNamespace("AddressBits", groupRef, billing));
+        assertEquals(SHIPPING, referencedNamespace("ship:label", groupRef, billing));
+        // Resolution falls back to the referring document, which is where the unprefixed name lives.
+        assertEquals(BILLING, resolveGroupRef(groupRef, billing, schemas).orElseThrow()
+                .schemaRoot().getAttribute("targetNamespace"));
     }
 
     @ParameterizedTest(name = "{0} → {1}")

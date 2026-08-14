@@ -59,14 +59,9 @@ public class Soap2JsonTransformer {
         this.components = components;
     }
 
-    /**
-     * The schema a reference points at, or {@code schema} itself if it is no reference. A named type
-     * is published once and referenced from its use sites, so every step down into a schema has to
-     * follow the reference or lose the type — and with it the value's type and its arrayness.
-     */
+    /** The schema a reference points at — see {@link XsdDomUtil#dereference}. */
     private Schema<?> resolve(Schema<?> schema) {
-        if (schema == null || schema.get$ref() == null) return schema;
-        return components.getOrDefault(componentName(schema.get$ref()), schema);
+        return dereference(components, schema);
     }
 
     /**

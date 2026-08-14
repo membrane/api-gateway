@@ -31,6 +31,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.predic8.membrane.annot.Constants.XSD_NS;
+import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdContentModel.*;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.*;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
@@ -122,6 +123,9 @@ public class XsdToSchema {
 
     private final Map<String, List<Element>> schemasByNamespace;
 
+    /** Resolves a particle's content model — group references expanded, cycles cut. */
+    private final XsdContentModel contentModel;
+
     /** The component name of every named type the schemas declare, keyed by {@link XsdDomUtil#qualifiedKey}. */
     private final Map<String, String> componentNames;
 
@@ -138,6 +142,7 @@ public class XsdToSchema {
     XsdToSchema(Map<String, List<Element>> schemasByNamespace, Set<String> reservedComponentNames) {
         this.schemasByNamespace = schemasByNamespace;
         this.componentNames = buildComponentNames(schemasByNamespace, reservedComponentNames);
+        this.contentModel = new XsdContentModel(schemasByNamespace);
     }
 
     public XsdToSchema(Definitions definitions) {
@@ -183,8 +188,7 @@ public class XsdToSchema {
 
     /** The component {@code schema} references, or {@code schema} itself if it references none. */
     private Schema<?> dereference(Schema<?> schema) {
-        if (schema.get$ref() == null) return schema;
-        return components.getOrDefault(componentName(schema.get$ref()), schema);
+        return XsdDomUtil.dereference(components, schema);
     }
 
     /**
@@ -331,7 +335,7 @@ public class XsdToSchema {
     private Schema<?> buildObjectSchemaContent(Element complexTypeEl, XsdContext ctx) {
         var objectSchema = new ObjectSchema();
 
-        Element particle = firstXsdChild(complexTypeEl, "sequence", "all", "choice", "group");
+        Element particle = firstParticle(complexTypeEl);
         if (particle != null) {
             addParticleFields(particle, objectSchema, ctx);
             addAttributeFields(complexTypeEl, objectSchema, ctx);
@@ -364,61 +368,24 @@ public class XsdToSchema {
      * {@code <xsd:group ref=.../>} particle into {@code schema}.
      */
     private void addParticleFields(Element particle, ObjectSchema schema, XsdContext ctx) {
-        switch (particle.getLocalName()) {
-            case "choice" -> addChoiceFields(particle, schema, ctx);
-            case "group"  -> addGroupFields(particle, schema, ctx);
-            default       -> addContainerFields(particle, schema, ctx);
-        }
+        ContentNode node = contentModel.nodeOf(particle, ctx.schemaRoot(), ctx.visiting());
+        if (node != null) addNode(node, schema, ctx);
     }
 
     /**
-     * Processes children of {@code <xsd:sequence>} or {@code <xsd:all>}, dispatching
-     * element, choice, nested sequence/all, and group-ref nodes.
+     * Writes one content model node into {@code schema}. A {@code sequence} or {@code all} adds its
+     * children side by side, which is why a nested one is indistinguishable from its parent here; a
+     * {@code choice} is the one particle that means something of its own — see
+     * {@link #addChoiceFields}.
+     *
+     * <p>Each node names the schema document it came from, so a field a group in another document
+     * contributed resolves its type against that document.
      */
-    private void addContainerFields(Element container, ObjectSchema schema, XsdContext ctx) {
-        for (Element el : xsdChildren(container)) {
-            switch (el.getLocalName()) {
-                case "element"          -> addElementField(el, schema, ctx);
-                case "choice"           -> addChoiceFields(el, schema, ctx);
-                case "sequence", "all"  -> addContainerFields(el, schema, ctx);
-                case "group"            -> addGroupFields(el, schema, ctx);
-                // xsd:any: skip - wildcard has no JSON Schema equivalent
-            }
-        }
-    }
-
-    /**
-     * Resolves an {@code <xsd:group ref="prefix:name"/>} by looking up the named group
-     * definition in the schema map and expanding its content model (sequence, all, or choice)
-     * into {@code schema}. A group that transitively references itself is expanded once and
-     * then skipped. Logs a debug message if the group cannot be resolved.
-     */
-    private void addGroupFields(Element groupRef, ObjectSchema schema, XsdContext ctx) {
-        String ref = groupRef.getAttribute("ref");
-        if (ref.isEmpty()) return;
-        String local = localName(ref);
-        for (var root : resolveTargetSchemaRoots(prefix(ref), groupRef, ctx.schemaRoot(), schemasByNamespace)) {
-            Element groupDef = findXsdChildWithName(root, "group", local);
-            if (groupDef != null) {
-                expandGroupDefinition(groupDef, local, schema, ctx.withRoot(root));
-                return;
-            }
-        }
-        log.debug("xsd:group ref='{}' could not be resolved, skipping", ref);
-    }
-
-    /** Expands a resolved {@code <xsd:group name=.../>} definition, guarding against reference cycles. */
-    private void expandGroupDefinition(Element groupDef, String name, ObjectSchema schema, XsdContext ctx) {
-        if (ctx.visiting().contains(groupDef)) {
-            log.debug("Recursive reference to group '{}', skipping", name);
-            return;
-        }
-        ctx.visiting().add(groupDef);
-        try {
-            Element particle = firstXsdChild(groupDef, "sequence", "all", "choice");
-            if (particle != null) addParticleFields(particle, schema, ctx);
-        } finally {
-            ctx.visiting().remove(groupDef);
+    private void addNode(ContentNode node, ObjectSchema schema, XsdContext ctx) {
+        switch (node) {
+            case Field field -> addElementField(field.declaration(), schema, ctx.withRoot(field.schemaRoot()));
+            case Container container when container.isChoice() -> addChoiceFields(container, schema, ctx);
+            case Container container -> container.children().forEach(child -> addNode(child, schema, ctx));
         }
     }
 
@@ -612,24 +579,14 @@ public class XsdToSchema {
      * Every other alternative — a nested particle or a group reference — is expanded by
      * {@link #addAlternativeFields}.
      */
-    private void addChoiceFields(Element choice, ObjectSchema schema, XsdContext ctx) {
+    private void addChoiceFields(Container choice, ObjectSchema schema, XsdContext ctx) {
         var alternatives = new ArrayList<ChoiceAlternative>();
         var branches = new ArrayList<ChoiceBranch>();
-        for (Element el : xsdChildren(choice)) {
-            switch (el.getLocalName()) {
-                case "element" -> {
-                    String fieldName = el.getAttribute("name");
-                    if (!fieldName.isEmpty()) {
-                        String ns = ctx.schemaRoot().getAttribute("targetNamespace");
-                        alternatives.add(new ChoiceAlternative(fieldName, ns.isEmpty() ? null : ns,
-                                declaredSchema(el, convertElementType(el, ctx, !mutates(el)))));
-                    } else {
-                        resolveRefAlternative(el, ctx, !mutates(el))
-                                .map(alternative -> alternative.withSchema(declaredSchema(el, alternative.fieldSchema())))
-                                .ifPresent(alternatives::add);
-                    }
-                }
-                case "sequence", "all", "choice", "group" -> branches.add(addAlternativeFields(el, schema, ctx));
+        for (ContentNode child : choice.children()) {
+            switch (child) {
+                case Field field -> addChoiceAlternative(field, alternatives, ctx);
+                case Container container ->
+                        branches.add(addAlternativeFields(container, schema, ctx.withRoot(container.schemaRoot())));
             }
         }
 
@@ -640,7 +597,28 @@ public class XsdToSchema {
             schema.addProperty(key, alt.fieldSchema());
             branches.add(ChoiceBranch.of(key));
         }
-        addExactlyOneConstraint(choice, schema, branches);
+        addExactlyOneConstraint(choice.declaration(), schema, branches);
+    }
+
+    /**
+     * Collects one direct {@code xsd:element} alternative of a choice. Its schema is built inline
+     * rather than as a reference where the declaration writes onto it, and the namespace it is
+     * addressed under is recorded so that {@link #addChoiceFields} can tell a collision across
+     * namespaces from a plain local name.
+     */
+    private void addChoiceAlternative(Field field, List<ChoiceAlternative> alternatives, XsdContext ctx) {
+        Element el = field.declaration();
+        XsdContext fieldCtx = ctx.withRoot(field.schemaRoot());
+        String fieldName = el.getAttribute("name");
+        if (fieldName.isEmpty()) {
+            resolveRefAlternative(el, fieldCtx, !mutates(el))
+                    .map(alternative -> alternative.withSchema(declaredSchema(el, alternative.fieldSchema())))
+                    .ifPresent(alternatives::add);
+            return;
+        }
+        String ns = field.schemaRoot().getAttribute("targetNamespace");
+        alternatives.add(new ChoiceAlternative(fieldName, ns.isEmpty() ? null : ns,
+                declaredSchema(el, convertElementType(el, fieldCtx, !mutates(el)))));
     }
 
     /**
@@ -650,9 +628,9 @@ public class XsdToSchema {
      * single branch declares can be globally required. The branch's own keys are returned so that
      * {@link #addChoiceFields} can require them when this alternative is the one chosen.
      */
-    private ChoiceBranch addAlternativeFields(Element particle, ObjectSchema schema, XsdContext ctx) {
+    private ChoiceBranch addAlternativeFields(ContentNode particle, ObjectSchema schema, XsdContext ctx) {
         var branch = new ObjectSchema();
-        addParticleFields(particle, branch, ctx);
+        addNode(particle, branch, ctx);
         if (branch.getProperties() == null) {
             return new ChoiceBranch(List.of(), List.of());
         }
@@ -733,21 +711,9 @@ public class XsdToSchema {
      * namespaces first, and {@link #addRefField} can apply minOccurs/maxOccurs itself.
      */
     private Optional<ChoiceAlternative> resolveRefAlternative(Element refEl, XsdContext ctx, boolean asRef) {
-        String ref = refEl.getAttribute("ref");
-        if (ref.isEmpty()) return Optional.empty();
-        String local = localName(ref);
-        String refPrefix = prefix(ref);
-        String namespaceURI = refPrefix.isEmpty()
-                ? ctx.schemaRoot().getAttribute("targetNamespace")
-                : refEl.lookupNamespaceURI(refPrefix);
-        for (var root : resolveTargetSchemaRoots(refPrefix, refEl, ctx.schemaRoot(), schemasByNamespace)) {
-            Element referenced = findXsdChildWithName(root, "element", local);
-            if (referenced != null) {
-                return Optional.of(new ChoiceAlternative(local, namespaceURI,
-                        convertElementType(referenced, ctx.withRoot(root), asRef)));
-            }
-        }
-        return Optional.empty();
+        return resolveElementRef(refEl, ctx.schemaRoot(), schemasByNamespace)
+                .map(resolved -> new ChoiceAlternative(resolved.localName(), resolved.namespaceURI(),
+                        convertElementType(resolved.declaration(), ctx.withRoot(resolved.schemaRoot()), asRef)));
     }
 
     /**
@@ -776,7 +742,7 @@ public class XsdToSchema {
 
     /** The fields a derivation declares in its own right — its particle and its attributes. */
     private void addDeclaredFields(Element derivation, ObjectSchema schema, XsdContext ctx) {
-        Element particle = firstXsdChild(derivation, "sequence", "all", "choice", "group");
+        Element particle = firstParticle(derivation);
         if (particle != null) addParticleFields(particle, schema, ctx);
         addAttributeFields(derivation, schema, ctx);
     }

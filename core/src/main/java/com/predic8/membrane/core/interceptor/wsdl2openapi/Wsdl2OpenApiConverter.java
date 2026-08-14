@@ -477,12 +477,11 @@ public class Wsdl2OpenApiConverter {
     }
 
     /**
-     * The component {@code schema} references, or {@code schema} itself if it references none. Used
-     * to inspect a schema's type; the reference itself is what stays in the document.
+     * The component {@code schema} references — see {@link XsdDomUtil#dereference}. Used to inspect a
+     * schema's type; the reference itself is what stays in the document.
      */
     private Schema<?> deref(Schema<?> schema) {
-        if (schema.get$ref() == null) return schema;
-        return converter.getComponents().getOrDefault(componentName(schema.get$ref()), schema);
+        return dereference(converter.getComponents(), schema);
     }
 
     /** Only a single value fits into a query parameter the interceptor can put back into the JSON. */

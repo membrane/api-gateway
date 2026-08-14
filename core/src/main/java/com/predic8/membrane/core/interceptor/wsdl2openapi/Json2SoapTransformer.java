@@ -36,6 +36,7 @@ import java.util.*;
 
 import static com.predic8.membrane.annot.Constants.SOAP11_NS;
 import static com.predic8.membrane.annot.Constants.SOAP12_NS;
+import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdContentModel.*;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.*;
 import static com.predic8.membrane.core.util.wsdl.parser.Definitions.SOAPVersion.SOAP_11;
 import static com.predic8.membrane.core.util.wsdl.parser.Definitions.SOAPVersion.SOAP_12;
@@ -56,11 +57,13 @@ public class Json2SoapTransformer {
     private final Definitions definitions;
     private final String operationName;
     private final Map<String, List<Element>> schemasByNamespace;
+    private final XsdContentModel contentModel;
 
     public Json2SoapTransformer(Definitions definitions, String operationName) {
         this.definitions = definitions;
         this.operationName = operationName;
         this.schemasByNamespace = buildSchemaMap(definitions);
+        this.contentModel = new XsdContentModel(schemasByNamespace);
     }
 
     public byte[] transform(String jsonBody) throws Exception {
@@ -153,23 +156,25 @@ public class Json2SoapTransformer {
 
     /**
      * Every {@code <xsd:element>} declaration in the type's content model, in the order an instance
-     * must present them. Nested {@code sequence}/{@code all}/{@code choice} particles and
-     * {@code xsd:group} references are flattened in place, and an {@code xsd:extension} contributes
-     * its base type's fields ahead of the derived ones (an {@code xsd:restriction} inherits nothing,
-     * since it re-declares the whole model) — mirroring how {@code XsdToSchema} builds the published
-     * schema, so the JSON keys this expects are the ones the OpenAPI document advertises.
+     * must present them: the particle structure {@link XsdContentModel} resolved, flattened — a
+     * choice is no different here, since the JSON decides which alternative is actually written.
+     *
+     * <p>What this class adds to that walk is inheritance: an {@code xsd:extension} contributes its
+     * base type's fields ahead of the derived ones, while an {@code xsd:restriction} inherits
+     * nothing because it re-declares the whole model. {@link XsdToSchema} inherits the base's
+     * <em>schema</em> instead of re-walking its declarations, which is why that step is not shared.
      *
      * <p>Each declaration travels with the schema document it was found in, because a base type or
      * group may live in another document whose {@code elementFormDefault} and {@code targetNamespace}
      * decide the namespace its locally-declared fields carry.
      */
-    private List<FieldDecl> contentModelFields(ResolvedType type) {
-        var fields = new ArrayList<FieldDecl>();
+    private List<Field> contentModelFields(ResolvedType type) {
+        var fields = new ArrayList<Field>();
         collectComplexTypeFields(type, fields, new HashSet<>());
         return fields;
     }
 
-    private void collectComplexTypeFields(ResolvedType type, List<FieldDecl> fields, Set<Element> visiting) {
+    private void collectComplexTypeFields(ResolvedType type, List<Field> fields, Set<Element> visiting) {
         if (type == null || !visiting.add(type.complexType())) return;
         try {
             // only an xsd:extension inherits — an xsd:restriction states its content model in full
@@ -177,45 +182,14 @@ public class Json2SoapTransformer {
             if (derivation != null && "extension".equals(derivation.getLocalName())) {
                 collectComplexTypeFields(baseTypeOf(derivation, type.schemaRoot()), fields, visiting);
             }
-            Element particle = firstXsdChild(derivation != null ? derivation : type.complexType(),
-                    "sequence", "all", "choice", "group");
-            if (particle != null) collectParticleFields(particle, type.schemaRoot(), fields, visiting);
+            Element particle = firstParticle(derivation != null ? derivation : type.complexType());
+            if (particle == null) return;
+            ContentNode node = contentModel.nodeOf(particle, type.schemaRoot(), visiting);
+            // A choice contributes every alternative: which one a request carries is the client's
+            // choice, and each has to be writable when it is the one present.
+            if (node != null) fields.addAll(fieldsOf(node));
         } finally {
             visiting.remove(type.complexType());
-        }
-    }
-
-    /** Flattens one particle — a {@code sequence}/{@code all}/{@code choice} container or a group reference. */
-    private void collectParticleFields(Element particle, Element schemaRoot, List<FieldDecl> fields, Set<Element> visiting) {
-        if ("group".equals(particle.getLocalName())) {
-            collectGroupFields(particle, schemaRoot, fields, visiting);
-            return;
-        }
-        for (Element el : xsdChildren(particle)) {
-            switch (el.getLocalName()) {
-                case "element" -> fields.add(new FieldDecl(el, schemaRoot));
-                case "sequence", "all", "choice", "group" -> collectParticleFields(el, schemaRoot, fields, visiting);
-                // xsd:any: skip - a wildcard declares no field to bind
-            }
-        }
-    }
-
-    /** Expands an {@code <xsd:group ref=.../>} in place, skipping a group that references itself. */
-    private void collectGroupFields(Element groupRef, Element schemaRoot, List<FieldDecl> fields, Set<Element> visiting) {
-        String ref = groupRef.getAttribute("ref");
-        if (ref.isEmpty()) return;
-        String local = localName(ref);
-        for (var root : resolveTargetSchemaRoots(prefix(ref), groupRef, schemaRoot, schemasByNamespace)) {
-            Element groupDef = findXsdChildWithName(root, "group", local);
-            if (groupDef == null) continue;
-            if (!visiting.add(groupDef)) return;
-            try {
-                Element particle = firstXsdChild(groupDef, "sequence", "all", "choice");
-                if (particle != null) collectParticleFields(particle, root, fields, visiting);
-            } finally {
-                visiting.remove(groupDef);
-            }
-            return;
         }
     }
 
@@ -284,9 +258,6 @@ public class Json2SoapTransformer {
     /** A content-model field: the JSON key addressing it, and the namespace it carries ({@code null} = none). */
     private record FieldBinding(String key, String namespaceURI) {}
 
-    /** An {@code xsd:element} declaration found in a content model, with the schema document holding it. */
-    private record FieldDecl(Element declaration, Element schemaRoot) {}
-
     /** A resolved {@code xsd:complexType} and the schema document it was found in. */
     private record ResolvedType(Element complexType, Element schemaRoot) {}
 
@@ -326,10 +297,8 @@ public class Json2SoapTransformer {
             // a ref= child: the declaration lives in the schema the ref points at
             String ref = el.getAttribute("ref");
             if (ref.isEmpty() || !childLocalName.equals(localName(ref))) continue;
-            for (var root : resolveTargetSchemaRoots(prefix(ref), el, field.schemaRoot(), schemasByNamespace)) {
-                Element referenced = findXsdChildWithName(root, "element", childLocalName);
-                if (referenced != null) return new XsdContext(referenced, root);
-            }
+            var resolved = resolveElementRef(el, field.schemaRoot(), schemasByNamespace);
+            if (resolved.isPresent()) return new XsdContext(resolved.get().declaration(), resolved.get().schemaRoot());
         }
         return null;
     }
@@ -341,7 +310,7 @@ public class Json2SoapTransformer {
      * namespaces) are keyed with a namespace-qualified key ({@link XsdDomUtil#qualifiedKey})
      * instead of silently overwriting each other — mirrors {@code XsdToSchema.addChoiceFields}.
      */
-    private List<FieldBinding> bindFields(List<FieldDecl> fields) {
+    private List<FieldBinding> bindFields(List<Field> fields) {
         var refs = new ArrayList<FieldRef>();
         for (var field : fields) {
             FieldRef ref = fieldRefOf(field);
@@ -368,7 +337,7 @@ public class Json2SoapTransformer {
      * own schema document, so an inherited or grouped-in field follows the
      * {@code elementFormDefault} of the document declaring it rather than the referring one.
      */
-    private static FieldRef fieldRefOf(FieldDecl field) {
+    private static FieldRef fieldRefOf(Field field) {
         Element el = field.declaration();
         String name = el.getAttribute("name");
         if (!name.isEmpty()) {
@@ -377,16 +346,10 @@ public class Json2SoapTransformer {
         }
         String ref = el.getAttribute("ref");
         if (ref.isEmpty()) return null;
+        // Resolved by name alone, not through resolveElementRef: a field must keep its place in the
+        // content model even where the referenced declaration itself is outside the import graph.
         String refNs = referencedNamespace(ref, el, field.schemaRoot());
         return refNs == null || refNs.isEmpty() ? null : new FieldRef(localName(ref), refNs);
-    }
-
-    /** The target namespace of the element a {@code ref="prefix:local"} points at. */
-    private static String referencedNamespace(String ref, Element refEl, Element schemaRoot) {
-        String refPrefix = prefix(ref);
-        return refPrefix.isEmpty()
-                ? schemaRoot.getAttribute("targetNamespace")
-                : refEl.lookupNamespaceURI(refPrefix);
     }
 
     /**

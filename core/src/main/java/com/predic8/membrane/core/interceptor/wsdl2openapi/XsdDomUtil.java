@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
 import com.predic8.membrane.core.util.wsdl.parser.Definitions;
 import com.predic8.membrane.core.util.wsdl.parser.WSDLParserUtil;
+import io.swagger.v3.oas.models.media.Schema;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
@@ -42,6 +43,18 @@ class XsdDomUtil {
     /** The component a reference names, e.g. {@code #/components/schemas/Address} -> {@code Address}. */
     static String componentName(String ref) {
         return ref.substring(ref.lastIndexOf('/') + 1);
+    }
+
+    /**
+     * The component {@code schema} references, or {@code schema} itself if it references none. A
+     * named type is published once and referenced from its use sites, so inspecting a schema's type
+     * — or stepping down into it — has to follow the reference or lose the type and, with it, the
+     * value's arrayness. A reference {@code components} has no entry for stays as it is, which is
+     * what a caller with no components to resolve against sees for every reference.
+     */
+    static Schema<?> dereference(Map<String, Schema<?>> components, Schema<?> schema) {
+        if (schema == null || schema.get$ref() == null) return schema;
+        return components.getOrDefault(componentName(schema.get$ref()), schema);
     }
 
     /** Namespace of the instance-level attributes, of which {@code xsi:nil} is used here. */
@@ -84,6 +97,23 @@ class XsdDomUtil {
         return null;
     }
 
+    /**
+     * The particle carrying the content model of a complexType or of an extension/restriction, or
+     * null where it declares none. A {@code group} here is a reference to a named group, which is a
+     * content model in its own right.
+     */
+    static Element firstParticle(Element parent) {
+        return firstXsdChild(parent, "sequence", "all", "choice", "group");
+    }
+
+    /**
+     * The particle carrying the content model of a named {@code <xsd:group>} definition. A group
+     * definition holds a container directly — unlike a use site, it cannot be a group reference.
+     */
+    static Element groupParticle(Element groupDefinition) {
+        return firstXsdChild(groupDefinition, "sequence", "all", "choice");
+    }
+
     /** First xsd: child whose local name is one of {@code xsdLocalNames}, or null. */
     static Element firstXsdChild(Element parent, String... xsdLocalNames) {
         var wanted = List.of(xsdLocalNames);
@@ -109,6 +139,69 @@ class XsdDomUtil {
             if (text != null) paragraphs.add(text);
         }
         return paragraphs.isEmpty() ? null : String.join("\n\n", paragraphs);
+    }
+
+    /**
+     * The namespace a {@code ref="prefix:local"} points into: the prefix resolved against the
+     * referring declaration, or — where the reference carries no prefix — the target namespace of
+     * the document it appears in.
+     */
+    static String referencedNamespace(String ref, Element refElement, Element schemaRoot) {
+        String refPrefix = prefix(ref);
+        return refPrefix.isEmpty()
+                ? schemaRoot.getAttribute("targetNamespace")
+                : refElement.lookupNamespaceURI(refPrefix);
+    }
+
+    /**
+     * A resolved global {@code <xsd:element>} declaration: the name and namespace it is addressed
+     * by, the declaration itself, and the schema document holding it — which is what the
+     * declaration's own {@code type=} references resolve against, rather than the referrer's.
+     */
+    record ResolvedElement(String localName, String namespaceURI, Element declaration, Element schemaRoot) {}
+
+    /**
+     * The global element an {@code <xsd:element ref="prefix:local"/>} points at, searched across
+     * every schema root of the referenced namespace and answered by the first that declares it.
+     * Empty where the reference names no element the import graph reaches, or carries no
+     * {@code ref} at all.
+     */
+    static Optional<ResolvedElement> resolveElementRef(Element refElement, Element schemaRoot,
+                                                      Map<String, List<Element>> schemasByNamespace) {
+        String ref = refElement.getAttribute("ref");
+        if (ref.isEmpty()) return Optional.empty();
+        String local = localName(ref);
+        String namespaceURI = referencedNamespace(ref, refElement, schemaRoot);
+        for (var root : resolveTargetSchemaRoots(prefix(ref), refElement, schemaRoot, schemasByNamespace)) {
+            Element declaration = findXsdChildWithName(root, "element", local);
+            if (declaration != null) return Optional.of(new ResolvedElement(local, namespaceURI, declaration, root));
+        }
+        return Optional.empty();
+    }
+
+    /** A resolved {@code <xsd:group name=.../>} definition, and the schema document holding it. */
+    record ResolvedGroup(Element definition, Element schemaRoot) {}
+
+    /**
+     * The named group an {@code <xsd:group ref="prefix:name"/>} points at, searched across every
+     * schema root of the referenced namespace and answered by the first that declares it. Empty
+     * where the reference names no group the import graph reaches, or carries no {@code ref} at all.
+     *
+     * <p>The schema document the definition was found in travels with it: the group's own content
+     * model resolves its references against <em>that</em> document, not against the referring one.
+     * Guarding against a group that references itself is left to the caller, which is where the
+     * traversal state lives.
+     */
+    static Optional<ResolvedGroup> resolveGroupRef(Element groupRef, Element schemaRoot,
+                                                   Map<String, List<Element>> schemasByNamespace) {
+        String ref = groupRef.getAttribute("ref");
+        if (ref.isEmpty()) return Optional.empty();
+        String local = localName(ref);
+        for (var root : resolveTargetSchemaRoots(prefix(ref), groupRef, schemaRoot, schemasByNamespace)) {
+            Element definition = findXsdChildWithName(root, "group", local);
+            if (definition != null) return Optional.of(new ResolvedGroup(definition, root));
+        }
+        return Optional.empty();
     }
 
     /** First xsd: child with given local name and name="..." attribute, or null. */
