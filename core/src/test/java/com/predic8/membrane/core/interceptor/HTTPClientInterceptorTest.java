@@ -20,6 +20,7 @@ import com.predic8.membrane.core.lang.ExchangeExpression.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http.client.*;
 import com.predic8.membrane.core.util.*;
 import com.predic8.membrane.core.util.text.*;
@@ -179,6 +180,30 @@ class HTTPClientInterceptorTest {
                 assertTrue(body.contains("socket-timeout"), body);
                 assertTrue(body.contains("waiting for the response"), body);
             }
+        }
+
+        @Test
+        void connectTimeoutYields504NamingTheConnectPhase() throws Exception {
+            // A real dropped SYN is not reproducible here, so the client is made to report one
+            var hci = new HTTPClientInterceptor(new HttpClient() {
+                @Override
+                public void call(Exchange exc) throws Exception {
+                    throw new ConnectTimeoutException("Connecting to example.com:80 timed out after 10000ms.",
+                            new SocketTimeoutException("Connect timed out"));
+                }
+            });
+            hci.init(router);
+
+            var exc = get("http://example.com/").buildExchange();
+            exc.setProxy(new NullProxy());
+            exc.getDestinations().add("http://example.com/");
+
+            hci.handleRequest(exc);
+
+            assertEquals(504, exc.getResponse().getStatusCode());
+            var body = exc.getResponse().getBodyAsStringDecoded();
+            assertTrue(body.contains("connect-timeout"), body);
+            assertTrue(body.contains("no request was sent"), body);
         }
 
         private Exchange callTarget(String url, int soTimeout) throws Exception {

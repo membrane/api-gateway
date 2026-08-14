@@ -127,13 +127,33 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 				con.socket = origSSLProvider.createSocket(con.socket, origHost, origPort, connectTimeout, origSniServername, applicationProtocols);
 			}
 		} catch (SocketTimeoutException e) {
-			throw new ConnectTimeoutException("Connecting to %s:%d timed out after %dms.".formatted(host, port, connectTimeout), e);
+			// The socket can already be open here: a timeout during the proxy handshake or the TLS
+			// wrapping happens after it was connected. Without closing it the descriptor leaks, and a
+			// retried connect attempt would leak one more.
+			ConnectTimeoutException timedOut = new ConnectTimeoutException(
+					"Connecting to %s:%d timed out after %dms.".formatted(host, port, connectTimeout), e);
+			closeSocket(con.socket, timedOut);
+			throw timedOut;
 		}
 
 		log.debug("Opened connection on localPort: {}", con.socket.getLocalPort());
 
 		con.setupStreams();
 		return con;
+	}
+
+	/**
+	 * Closes a socket that is being abandoned because opening the connection failed. A failure to close
+	 * is attached to the original exception rather than replacing it.
+	 */
+	private static void closeSocket(@Nullable Socket socket, Exception cause) {
+		if (socket == null)
+			return;
+		try {
+			socket.close();
+		} catch (IOException closeFailure) {
+			cause.addSuppressed(closeFailure);
+		}
 	}
 
 	private void setupStreams() throws IOException {
