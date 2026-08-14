@@ -32,7 +32,6 @@ import com.predic8.membrane.core.util.wsdl.parser.BindingOperation;
 import com.predic8.membrane.core.util.wsdl.parser.Definitions;
 import com.predic8.membrane.core.util.wsdl.parser.Operation;
 import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.media.ObjectSchema;
 import io.swagger.v3.oas.models.media.Schema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -122,10 +121,21 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
     private Map<String, Set<String>> queryParamNames = Map.of();
     /** Per operation, the body property a URL parameter fills where its published name differs. */
     private Map<String, Map<String, String>> urlParamProperties = Map.of();
-    private final Map<String, Json2SoapTransformer> requestTransformers = new LinkedHashMap<>();
-    /** Built once per operation in init(): the WSDL does not change, and every response needs them. */
-    private final Map<String, Schema<?>> responseSchemas = new LinkedHashMap<>();
-    private final Map<String, Schema<?>> faultDetailSchemas = new LinkedHashMap<>();
+    /**
+     * Everything the runtime needs to serve one operation. Built once per operation in init(): the
+     * WSDL does not change, and every request and response needs all three.
+     *
+     * @param faultDetailSchema types the content of a SOAP fault detail, one property per fault the
+     *                          operation declares; empty for an operation that declares none, in
+     *                          which case the detail is still converted, just with every scalar as
+     *                          a string.
+     */
+    record OperationRuntime(Json2SoapTransformer requestTransformer,
+                            Schema<?> responseSchema,
+                            Schema<?> faultDetailSchema) {}
+
+    /** Replaced wholesale by init(), keyed by operation name — one entry per route. */
+    private Map<String, OperationRuntime> operationRuntimes = Map.of();
     private OpenAPIPublisherInterceptor publisher;
 
     private final String instanceId = UUID.randomUUID().toString();
@@ -142,12 +152,6 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
         apiProxy = validateAndGetApiProxy();
         basePath = getBasePath();
 
-        // init() can run more than once on the same instance: AbstractProxy.clone() and
-        // RuleManager.replaceRule both init, and the clone shares this interceptor.
-        requestTransformers.clear();
-        responseSchemas.clear();
-        faultDetailSchemas.clear();
-
         definitions = parseWsdl();
         operationsByName = operations != null ? operations.getMap() : Map.of();
         initOperationFlows();
@@ -157,16 +161,11 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
         var wsdl2OpenApi = new Wsdl2OpenApiConverter(definitions, basePath, operationsByName, apiProxy.getName(), description, version);
         xsdToSchema = wsdl2OpenApi.getSchemaConverter();
 
+        // init() can run more than once on the same instance: AbstractProxy.clone() and
+        // RuleManager.replaceRule both init, and the clone shares this interceptor. Both the router
+        // and the runtimes are replaced wholesale, so nothing of the previous WSDL can survive.
         operationRouter = new OperationRouter(basePath, buildRoutes(definitions, operationsByName));
-        for (RouteEntry route : operationRouter.getRoutes()) {
-            String operationName = route.operationName();
-            requestTransformers.put(operationName, new Json2SoapTransformer(definitions, operationName));
-            Optional<Operation> wsdlOp = definitions.findOperation(operationName);
-            responseSchemas.put(operationName, xsdToSchema.convertMessageParts(
-                    wsdlOp.map(op -> op.getMessagesByDirection(OUTPUT)).orElse(List.of())));
-            faultDetailSchemas.put(operationName, xsdToSchema.convertFaultDetail(
-                    wsdlOp.map(Operation::getFaults).orElse(List.of())));
-        }
+        operationRuntimes = buildOperationRuntimes(operationRouter.getRoutes());
 
         var openApiModel = wsdl2OpenApi.generate();
         queryParamNames = collectQueryParamNames(openApiModel);
@@ -238,6 +237,22 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
         return new RouteEntry(buildPathPattern(segment), extractParamNames(segment), method, operationName);
     }
 
+    private Map<String, OperationRuntime> buildOperationRuntimes(List<RouteEntry> routes) {
+        var runtimes = new LinkedHashMap<String, OperationRuntime>();
+        for (RouteEntry route : routes) {
+            runtimes.put(route.operationName(), buildOperationRuntime(route.operationName()));
+        }
+        return Map.copyOf(runtimes);
+    }
+
+    private OperationRuntime buildOperationRuntime(String operationName) {
+        Optional<Operation> wsdlOp = definitions.findOperation(operationName);
+        return new OperationRuntime(
+                new Json2SoapTransformer(definitions, operationName),
+                xsdToSchema.convertMessageParts(wsdlOp.map(op -> op.getMessagesByDirection(OUTPUT)).orElse(List.of())),
+                xsdToSchema.convertFaultDetail(wsdlOp.map(Operation::getFaults).orElse(List.of())));
+    }
+
     /** The routes built by the last {@code init()}. */
     OperationRouter getOperationRouter() {
         return operationRouter;
@@ -293,10 +308,13 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
         }
 
         try {
+            // The property is set by the request path of this very instance after a route matched,
+            // so the operation always has a runtime.
+            OperationRuntime runtime = operationRuntimes.get(operationName);
             String jsonResponse = new Soap2JsonTransformer(xsdToSchema.getComponents())
                     .transform(exc.getResponse().getBodyAsStringDecoded(),
-                            responseSchemaFor(operationName),
-                            faultDetailSchemaFor(operationName));
+                            runtime.responseSchema(),
+                            runtime.faultDetailSchema());
 
             exc.getResponse().setBodyContent(jsonResponse.getBytes(UTF_8));
             exc.getResponse().getHeader().setContentType(APPLICATION_JSON);
@@ -320,20 +338,6 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
         }
 
         return CONTINUE;
-    }
-
-    /** The schema of the operation's OUTPUT messages; an empty schema if the operation is unknown. */
-    private Schema<?> responseSchemaFor(String operationName) {
-        return responseSchemas.getOrDefault(operationName, new ObjectSchema());
-    }
-
-    /**
-     * The schema typing the content of a SOAP fault detail: one property per fault the operation
-     * declares. An empty schema for an unknown operation or one that declares no faults, in which
-     * case the detail is still converted, just with every scalar as a string.
-     */
-    private Schema<?> faultDetailSchemaFor(String operationName) {
-        return faultDetailSchemas.getOrDefault(operationName, new ObjectSchema());
     }
 
     /**
@@ -470,7 +474,7 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
             String jsonBody = mergeUrlParamsIntoJson(exc.getRequest().getBodyAsStringDecoded(),
                     toBodyProperties(declaredQueryParams(exc, operationName), operationName),
                     toBodyProperties(pathParams, operationName));
-            byte[] soapRequest = requestTransformers.get(operationName).transform(jsonBody);
+            byte[] soapRequest = operationRuntimes.get(operationName).requestTransformer().transform(jsonBody);
 
             exc.getRequest().setBodyContent(soapRequest);
             exc.getRequest().setMethod("POST");

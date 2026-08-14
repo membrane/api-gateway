@@ -261,6 +261,24 @@ class Wsdl2OpenapiInterceptorTest {
     }
 
     @Test
+    void reInitRebuildsTheOperationRuntimes() throws Exception {
+        var router = new DummyTestRouter();
+        var proxy = apiProxyWith(wsdl2openapi("classpath:/ws/cities.wsdl"));
+        var interceptor = (Wsdl2OpenapiInterceptor) proxy.getFlow().getFirst();
+
+        interceptor.init(router, proxy);
+        interceptor.init(router, proxy);
+
+        // init replaces the runtimes wholesale, so the second one must leave a usable transformer
+        // and response schema behind — not an empty map that fails every request after a reload.
+        var exc = new Exchange(null);
+        exc.setRequest(new Request.Builder().post("/get-city").body("{\"name\":\"Bonn\"}").build());
+        assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exc));
+        assertTrue(exc.getRequest().getBodyAsStringDecoded().contains("Bonn"),
+                "the request transformer must still convert after a re-init: " + exc.getRequest().getBodyAsStringDecoded());
+    }
+
+    @Test
     void titleComesFromTheEnclosingApiNameAndDescriptionIsApplied() throws Exception {
         var router = new DummyTestRouter();
         var interceptor = wsdl2openapi("classpath:/ws/cities.wsdl");
