@@ -20,6 +20,7 @@ import com.predic8.membrane.core.lang.ExchangeExpression.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.transport.http.client.*;
 import com.predic8.membrane.core.util.*;
 import com.predic8.membrane.core.util.text.*;
 import com.predic8.membrane.core.util.text.SerializationUtil.*;
@@ -145,6 +146,56 @@ class HTTPClientInterceptorTest {
         var exc = post("/foo").buildExchange();
         testExpression(SPEL, exc, "${'&?äöü!'}",
                 "%26%3F%C3%A4%C3%B6%C3%BC%21", Serialization.URL);
+    }
+
+    /**
+     * A refused target, a target that never accepts and one that accepts but stays silent used to be
+     * logged and reported alike. They have to stay distinguishable by status, subSee and detail.
+     */
+    @Nested
+    class unreachableTarget {
+
+        @Test
+        void refusedTargetYields502() throws Exception {
+            int freePort;
+            try (var probe = new ServerSocket(0)) {
+                freePort = probe.getLocalPort();
+            } // closed again, so nothing listens on freePort
+
+            var exc = callTarget("http://localhost:" + freePort + "/", 0);
+
+            assertEquals(502, exc.getResponse().getStatusCode());
+            assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("connect"));
+        }
+
+        @Test
+        void silentTargetYields504NamingTheReadPhase() throws Exception {
+            try (var silent = new ServerSocket(0)) {
+                // accepts the connection but never writes a response, so the client hits its read timeout
+                var exc = callTarget("http://localhost:" + silent.getLocalPort() + "/", 250);
+
+                assertEquals(504, exc.getResponse().getStatusCode());
+                var body = exc.getResponse().getBodyAsStringDecoded();
+                assertTrue(body.contains("socket-timeout"), body);
+                assertTrue(body.contains("waiting for the response"), body);
+            }
+        }
+
+        private Exchange callTarget(String url, int soTimeout) throws Exception {
+            var config = new HttpClientConfiguration();
+            config.getConnection().setSoTimeout(soTimeout);
+            // a read timeout must not be retried, so the assertions see the first failure
+            config.getRetryHandler().setRetries(0);
+            hci.setHttpClientConfig(config);
+            hci.init(router);
+
+            var exc = get(url).buildExchange();
+            exc.setProxy(new NullProxy());
+            exc.getDestinations().add(url);
+
+            hci.handleRequest(exc);
+            return exc;
+        }
     }
 
     @Nested

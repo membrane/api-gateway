@@ -102,25 +102,32 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 			sniServername = null;
 		}
 
-		if (sslProvider != null) {
-			if (isNullOrEmpty(localHost))
-				con.socket = sslProvider.createSocket(host, port, connectTimeout, sniServername, applicationProtocols);
-			else
-				con.socket = sslProvider.createSocket(host, port, InetAddress.getByName(localHost), 0,
-						connectTimeout, sniServername, applicationProtocols);
-		} else {
-			if (isNullOrEmpty(localHost)) {
-				con.socket = new Socket();
+		// Everything up to here happens before the first byte of the request is written, so a timeout
+		// in this block means nothing was sent. ConnectTimeoutException carries that fact to the
+		// retry handling, which the JDK's undifferentiated SocketTimeoutException cannot.
+		try {
+			if (sslProvider != null) {
+				if (isNullOrEmpty(localHost))
+					con.socket = sslProvider.createSocket(host, port, connectTimeout, sniServername, applicationProtocols);
+				else
+					con.socket = sslProvider.createSocket(host, port, InetAddress.getByName(localHost), 0,
+							connectTimeout, sniServername, applicationProtocols);
 			} else {
-				con.socket = new Socket();
-				con.socket.bind(new InetSocketAddress(InetAddress.getByName(localHost), 0));
+				if (isNullOrEmpty(localHost)) {
+					con.socket = new Socket();
+				} else {
+					con.socket = new Socket();
+					con.socket.bind(new InetSocketAddress(InetAddress.getByName(localHost), 0));
+				}
+				con.socket.connect(new InetSocketAddress(host, port), connectTimeout);
 			}
-			con.socket.connect(new InetSocketAddress(host, port), connectTimeout);
-		}
 
-		if (proxy != null && origSSLProvider != null) {
-			con.doTunnelHandshake(proxy, con.socket, origHost, origPort);
-			con.socket = origSSLProvider.createSocket(con.socket, origHost, origPort, connectTimeout, origSniServername, applicationProtocols);
+			if (proxy != null && origSSLProvider != null) {
+				con.doTunnelHandshake(proxy, con.socket, origHost, origPort);
+				con.socket = origSSLProvider.createSocket(con.socket, origHost, origPort, connectTimeout, origSniServername, applicationProtocols);
+			}
+		} catch (SocketTimeoutException e) {
+			throw new ConnectTimeoutException("Connecting to %s:%d timed out after %dms.".formatted(host, port, connectTimeout), e);
 		}
 
 		log.debug("Opened connection on localPort: {}", con.socket.getLocalPort());

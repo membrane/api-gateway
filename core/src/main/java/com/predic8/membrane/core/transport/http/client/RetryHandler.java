@@ -43,6 +43,8 @@ import static java.nio.charset.StandardCharsets.*;
  * <p>A retry is triggered for:</p>
  * <ul>
  *   <li>Connection/IO exceptions (timeout, refused, reset...)</li>
+ *   <li>A timeout while the connection was still being established (when
+ *       {@code retryOnConnectTimeout=true}), for any request method</li>
  *   <li>HTTP 408 Request Timeout</li>
  *   <li>HTTP 500, 502, 503, 504, 507 (when {@code failOverOn5XX=true})</li>
  * </ul>
@@ -73,6 +75,12 @@ public class RetryHandler {
      * but only for idempotent methods. POST, PATCH and CONNECT will not be retried.
      */
     private boolean failOverOn5XX = false;
+
+    /**
+     * Retry when establishing the connection timed out. Safe for any request method, because no part
+     * of the request was sent. Unlike a read timeout, this cannot have changed state on the server.
+     */
+    private boolean retryOnConnectTimeout = true;
 
     private static final Set<Integer> RETRYABLE_5XX = Set.of(500, 502, 503, 504, 507);
 
@@ -167,9 +175,17 @@ public class RetryHandler {
             log.debug("Connection to {} refused.", dest);
             return !hasMultipleNodes(exc);
         }
-        // The socket read or connection took too long and exceeded the configured timeout.
-        // No data was received from the server in time.
-        // Causes: Server is overloaded, network latency or drop, TLS handshake took too long
+        // The connection was never established, so nothing was sent and no state was changed on the
+        // server. Retrying is safe for any method. Causes: dropped SYN, host unreachable, a TLS
+        // handshake that did not complete in time. Has to be checked before SocketTimeoutException,
+        // which it extends.
+        if (e instanceof ConnectTimeoutException) {
+            log.debug("Connection to {} timed out before it was established.", dest);
+            return !retryOnConnectTimeout;
+        }
+        // The socket read took too long and exceeded the configured timeout. No data was received
+        // from the server in time, but the request may already have been processed.
+        // Causes: Server is overloaded, network latency or drop
         if (e instanceof SocketTimeoutException) {
             log.debug("Connection to {} timed out.", dest);
             return !isIdempotent(exc.getRequest().getMethod()) || !hasMultipleNodes(exc);
@@ -303,6 +319,23 @@ public class RetryHandler {
         this.failOverOn5XX = failOverOn5XX;
     }
 
+    public boolean isRetryOnConnectTimeout() {
+        return retryOnConnectTimeout;
+    }
+
+    /**
+     * @description If <code>true</code> retry when the connection to the target could not be
+     *              established within the connection timeout. No part of the request has been sent in
+     *              that case, so this applies to every request method, including POST and PATCH. A
+     *              timeout while reading the response is not covered by this and stays restricted to
+     *              idempotent methods. Set to <code>false</code> to fail fast instead.
+     * @default true
+     */
+    @MCAttribute
+    public void setRetryOnConnectTimeout(boolean retryOnConnectTimeout) {
+        this.retryOnConnectTimeout = retryOnConnectTimeout;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
@@ -311,7 +344,8 @@ public class RetryHandler {
         return retries == that.retries &&
                delay == that.delay &&
                Double.compare(backoffMultiplier, that.backoffMultiplier) == 0 &&
-               Objects.equals(failOverOn5XX, that.failOverOn5XX);
+               Objects.equals(failOverOn5XX, that.failOverOn5XX) &&
+               retryOnConnectTimeout == that.retryOnConnectTimeout;
     }
 
     @Override
@@ -320,6 +354,7 @@ public class RetryHandler {
         result = 31 * result + delay;
         result = 31 * result + Double.hashCode(backoffMultiplier);
         result = 31 * result + Boolean.hashCode(failOverOn5XX);
+        result = 31 * result + Boolean.hashCode(retryOnConnectTimeout);
         return result;
     }
 }
