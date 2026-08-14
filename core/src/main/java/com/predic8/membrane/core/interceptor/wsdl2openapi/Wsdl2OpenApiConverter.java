@@ -531,10 +531,28 @@ public class Wsdl2OpenApiConverter {
      * statuses of their own — which is exactly what {@code default} is for.
      */
     private ApiResponse buildErrorResponse(Operation wsdlOp) {
+        // Derived once: the description names the keys the schema publishes, so the two must agree.
+        List<DeclaredFault> faults = declaredFaults(wsdlOp);
         return new ApiResponse()
-                .description(errorDescription(wsdlOp))
+                .description(errorDescription(faults))
                 .content(new Content().addMediaType(APPLICATION_PROBLEM_JSON,
-                        new MediaType().schema(errorSchema(wsdlOp))));
+                        new MediaType().schema(errorSchema(faults))));
+    }
+
+    /** A fault the operation declares: the key its content appears under, and the parts carrying it. */
+    private record DeclaredFault(String detailKey, List<Part> parts) {}
+
+    /**
+     * The faults the operation declares that carry content — one entry per key published under
+     * {@code details}. A fault whose message has no parts says only that it can occur, which the
+     * generic error response already covers.
+     */
+    private static List<DeclaredFault> declaredFaults(Operation wsdlOp) {
+        return wsdlOp.getFaults().stream()
+                .map(fault -> fault.getMessage().getParts())
+                .filter(parts -> !parts.isEmpty())
+                .map(parts -> new DeclaredFault(XsdToSchema.faultDetailKey(parts), parts))
+                .toList();
     }
 
     /**
@@ -543,18 +561,15 @@ public class Wsdl2OpenApiConverter {
      * alternatives are combined with {@code oneOf}, each wrapped in the single-property object
      * the runtime emits.
      */
-    private Schema<?> errorSchema(Operation wsdlOp) {
-        List<Schema> faults = wsdlOp.getFaults().stream()
-                .map(fault -> fault.getMessage().getParts())
-                .filter(parts -> !parts.isEmpty())
-                .map(parts -> (Schema) new ObjectSchema()
-                        .addProperty(XsdToSchema.faultDetailKey(parts), converter.convertParts(parts)))
-                .toList();
-
+    private Schema<?> errorSchema(List<DeclaredFault> faults) {
         if (faults.isEmpty()) {
             return problemDetailsRef();
         }
-        Schema<?> details = faults.size() == 1 ? faults.getFirst() : new ComposedSchema().oneOf(faults);
+        List<Schema> alternatives = faults.stream()
+                .map(fault -> (Schema) new ObjectSchema()
+                        .addProperty(fault.detailKey(), converter.convertParts(fault.parts())))
+                .toList();
+        Schema<?> details = alternatives.size() == 1 ? alternatives.getFirst() : new ComposedSchema().oneOf(alternatives);
         return new ComposedSchema().allOf(List.of(
                 problemDetailsRef(),
                 new ObjectSchema().addProperty(FAULT_DETAILS_FIELD, details)));
@@ -564,16 +579,11 @@ public class Wsdl2OpenApiConverter {
         return new Schema<>().$ref(PROBLEM_DETAILS_REF);
     }
 
-    private String errorDescription(Operation wsdlOp) {
+    private static String errorDescription(List<DeclaredFault> faults) {
         var text = new StringBuilder("An error occurred. The response is a problem details document (RFC 7807).");
-        List<String> faultNames = wsdlOp.getFaults().stream()
-                .map(fault -> fault.getMessage().getParts())
-                .filter(parts -> !parts.isEmpty())
-                .map(XsdToSchema::faultDetailKey)
-                .toList();
-        if (!faultNames.isEmpty()) {
+        if (!faults.isEmpty()) {
             text.append(" When the service reports one of the errors this operation declares (")
-                .append(String.join(", ", faultNames))
+                .append(faults.stream().map(DeclaredFault::detailKey).collect(Collectors.joining(", ")))
                 .append("), its content appears under `").append(FAULT_DETAILS_FIELD).append("`.");
         }
         return text.toString();
