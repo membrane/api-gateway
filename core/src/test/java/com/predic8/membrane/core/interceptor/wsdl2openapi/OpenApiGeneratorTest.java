@@ -36,10 +36,20 @@ import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.componentName;
+import static com.predic8.membrane.core.interceptor.wsdl2openapi.Wsdl2OpenApiConverter.ApiInfo;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 class OpenApiGeneratorTest {
+
+    private static Wsdl2OpenApiConverter converter(Definitions definitions, String basePath) {
+        return converter(definitions, basePath, Map.of());
+    }
+
+    private static Wsdl2OpenApiConverter converter(Definitions definitions, String basePath,
+                                                   Map<String, OperationSettings> operations) {
+        return new Wsdl2OpenApiConverter(definitions, basePath, operations, ApiInfo.NONE);
+    }
 
     static Definitions citiesDefinitions;
     static Definitions blzDefinitions;
@@ -81,7 +91,7 @@ class OpenApiGeneratorTest {
 
     @Test
     void basePathTrailingSlashStripped() {
-        var yaml = new Wsdl2OpenApiConverter(citiesDefinitions, "/purchasing/").generateYaml();
+        var yaml = converter(citiesDefinitions, "/purchasing/").generateYaml();
 
         assertTrue(yaml.contains("url: /purchasing"));
         assertFalse(yaml.contains("url: /purchasing/"));
@@ -168,8 +178,8 @@ class OpenApiGeneratorTest {
 
     @Test
     void allPortTypeOperationsAreGenerated() {
-        assertTrue(new Wsdl2OpenApiConverter(citiesDefinitions, "/").generateYaml().contains("/get-city:"));
-        assertTrue(new Wsdl2OpenApiConverter(blzDefinitions, "/blz").generateYaml().contains("/get-bank:"));
+        assertTrue(converter(citiesDefinitions, "/").generateYaml().contains("/get-city:"));
+        assertTrue(converter(blzDefinitions, "/blz").generateYaml().contains("/get-bank:"));
     }
 
     @Test
@@ -182,7 +192,7 @@ class OpenApiGeneratorTest {
 
     @Test
     void citiesProducesGetCityPath() {
-        var yaml = new Wsdl2OpenApiConverter(citiesDefinitions, "/").generateYaml();
+        var yaml = converter(citiesDefinitions, "/").generateYaml();
 
         assertTrue(yaml.contains("paths:"));
         assertTrue(yaml.contains("/get-city:"));
@@ -263,7 +273,7 @@ class OpenApiGeneratorTest {
 
     @Test
     void aFieldOfANamedTypeIsReachableFromTheOperationThroughItsComponent() {
-        var api = new Wsdl2OpenApiConverter(crossNsDefinitions, "/").generate();
+        var api = converter(crossNsDefinitions, "/").generate();
 
         var requestBody = api.getPaths().get("/get-item").getPost().getRequestBody()
                 .getContent().get(APPLICATION_JSON).getSchema();
@@ -302,7 +312,7 @@ class OpenApiGeneratorTest {
         var settings = new OperationSettings();
         settings.setTag("MyService");
         var ops = Map.of("getCity", settings);
-        var yaml = new Wsdl2OpenApiConverter(citiesDefinitions, "/", ops).generateYaml();
+        var yaml = converter(citiesDefinitions, "/", ops).generateYaml();
 
         assertTrue(yaml.contains("tags:"), "Should contain tags section");
         assertTrue(yaml.contains("MyService"), "Should contain configured tag value");
@@ -314,7 +324,7 @@ class OpenApiGeneratorTest {
         var ops = Map.of("getCitty", new OperationSettings());
 
         var e = assertThrows(ConfigurationException.class,
-                () -> new Wsdl2OpenApiConverter(citiesDefinitions, "/", ops).generate());
+                () -> converter(citiesDefinitions, "/", ops).generate());
 
         assertTrue(e.getMessage().contains("getCitty"), "Message should name the unknown operation");
         assertTrue(e.getMessage().contains("getCity"), "Message should list the available operations");
@@ -333,7 +343,7 @@ class OpenApiGeneratorTest {
         var settings = new OperationSettings();
         settings.setPath("/search/{byId}");
         settings.setMethod("PUT");
-        var body = new Wsdl2OpenApiConverter(extendedDefinitions, "/", Map.of("search", settings)).generate()
+        var body = converter(extendedDefinitions, "/", Map.of("search", settings)).generate()
                 .getPaths().get("/search/{byId}").getPut()
                 .getRequestBody().getContent().get(APPLICATION_JSON).getSchema();
 
@@ -356,7 +366,7 @@ class OpenApiGeneratorTest {
         var settings = new OperationSettings();
         settings.setPath("/search/{byId}");
         settings.setMethod("GET");
-        var api = new Wsdl2OpenApiConverter(extendedDefinitions, "/", Map.of("search", settings)).generate();
+        var api = converter(extendedDefinitions, "/", Map.of("search", settings)).generate();
 
         var parameter = api.getPaths().get("/search/{byId}").getGet().getParameters().getFirst();
         assertEquals("byId", parameter.getName());
@@ -368,7 +378,7 @@ class OpenApiGeneratorTest {
         var settings = new OperationSettings();
         settings.setPath("/cities/{unknown}");
         settings.setMethod("GET");
-        var api = new Wsdl2OpenApiConverter(citiesDefinitions, "/", Map.of("getCity", settings)).generate();
+        var api = converter(citiesDefinitions, "/", Map.of("getCity", settings)).generate();
 
         assertEquals("string", api.getPaths().get("/cities/{unknown}").getGet()
                 .getParameters().getFirst().getSchema().getType());
@@ -392,7 +402,7 @@ class OpenApiGeneratorTest {
         // getCity declares a mandatory name; search's code is minOccurs="0".
         var settings = new OperationSettings();
         settings.setMethod("GET");
-        var mandatory = new Wsdl2OpenApiConverter(citiesDefinitions, "/", Map.of("getCity", settings)).generate()
+        var mandatory = converter(citiesDefinitions, "/", Map.of("getCity", settings)).generate()
                 .getPaths().get("/get-city").getGet().getParameters().getFirst();
         assertEquals("name", mandatory.getName());
         assertTrue(mandatory.getRequired());
@@ -416,7 +426,7 @@ class OpenApiGeneratorTest {
         var settings = new OperationSettings();
         settings.setMethod("GET");
         var e = assertThrows(ConfigurationException.class,
-                () -> new Wsdl2OpenApiConverter(crossNsDefinitions, "/", Map.of("getItem", settings)).generate());
+                () -> converter(crossNsDefinitions, "/", Map.of("getItem", settings)).generate());
 
         assertTrue(e.getMessage().contains("getItem"), "Message should name the operation");
         assertTrue(e.getMessage().contains("item"), "Message should name the field that cannot be carried");
@@ -428,7 +438,7 @@ class OpenApiGeneratorTest {
         var settings = new OperationSettings();
         settings.setPath("items/{item}");
         var e = assertThrows(ConfigurationException.class,
-                () -> new Wsdl2OpenApiConverter(crossNsDefinitions, "/", Map.of("getItem", settings)).generate());
+                () -> converter(crossNsDefinitions, "/", Map.of("getItem", settings)).generate());
 
         assertTrue(e.getMessage().contains("getItem"), "Message should name the operation");
         assertTrue(e.getMessage().contains("'item'"), "Message should name the parameter that cannot be carried");
@@ -439,7 +449,7 @@ class OpenApiGeneratorTest {
         // record's input carries the attributes id and type; "@id" would have to be sent as %40id.
         var settings = new OperationSettings();
         settings.setMethod("GET");
-        var op = new Wsdl2OpenApiConverter(attributeDefinitions, "/", Map.of("record", settings)).generate()
+        var op = converter(attributeDefinitions, "/", Map.of("record", settings)).generate()
                 .getPaths().get("/record").getGet();
 
         assertEquals(List.of("name", "id", "type"),
@@ -451,7 +461,7 @@ class OpenApiGeneratorTest {
         var settings = new OperationSettings();
         settings.setPath("/records/{id}");
         settings.setMethod("GET");
-        var converter = new Wsdl2OpenApiConverter(attributeDefinitions, "/", Map.of("record", settings));
+        var converter = converter(attributeDefinitions, "/", Map.of("record", settings));
         var op = converter.generate().getPaths().get("/records/{id}").getGet();
 
         assertEquals("path", byName(op.getParameters(), "id").getIn());
@@ -466,7 +476,7 @@ class OpenApiGeneratorTest {
         var settings = new OperationSettings();
         settings.setMethod("GET");
         var e = assertThrows(ConfigurationException.class,
-                () -> new Wsdl2OpenApiConverter(attributeDefinitions, "/", Map.of("clash", settings)).generate());
+                () -> converter(attributeDefinitions, "/", Map.of("clash", settings)).generate());
 
         assertTrue(e.getMessage().contains("clash"), "Message should name the operation");
         assertTrue(e.getMessage().contains("'id'"), "Message should name the contested parameter");
@@ -476,7 +486,7 @@ class OpenApiGeneratorTest {
         var settings = new OperationSettings();
         settings.setPath(path);
         settings.setMethod(method);
-        return new Wsdl2OpenApiConverter(extendedDefinitions, "/", Map.of("search", settings)).generate();
+        return converter(extendedDefinitions, "/", Map.of("search", settings)).generate();
     }
 
     private static List<Parameter> queryParametersOf(OpenAPI api, String path) {
@@ -492,12 +502,12 @@ class OpenApiGeneratorTest {
         var settings = new OperationSettings();
         settings.setPath("/cities/{name}");
         settings.setMethod("PUT");
-        return new Wsdl2OpenApiConverter(citiesDefinitions, "/", Map.of("getCity", settings)).generate();
+        return converter(citiesDefinitions, "/", Map.of("getCity", settings)).generate();
     }
 
     @Test
     void unconfiguredOperationIsTaggedWithTheServiceName() {
-        var api = new Wsdl2OpenApiConverter(citiesDefinitions, "/").generate();
+        var api = converter(citiesDefinitions, "/").generate();
 
         assertEquals(List.of("CityService"), api.getPaths().get("/get-city").getPost().getTags(),
                 "without a configured tag every operation would land in the 'default' group of a UI");
@@ -509,7 +519,7 @@ class OpenApiGeneratorTest {
     void configuredTagWinsOverTheServiceName() {
         var settings = new OperationSettings();
         settings.setTag("MyService");
-        var api = new Wsdl2OpenApiConverter(citiesDefinitions, "/", Map.of("getCity", settings)).generate();
+        var api = converter(citiesDefinitions, "/", Map.of("getCity", settings)).generate();
 
         assertEquals(List.of("MyService"), api.getPaths().get("/get-city").getPost().getTags());
         assertEquals(List.of("MyService"), api.getTags().stream().map(Tag::getName).toList());
@@ -517,7 +527,7 @@ class OpenApiGeneratorTest {
 
     @Test
     void configuredVersionReplacesTheDefault() {
-        var api = new Wsdl2OpenApiConverter(citiesDefinitions, "/", Map.of(), null, null, "2.1.0").generate();
+        var api = new Wsdl2OpenApiConverter(citiesDefinitions, "/", Map.of(), new ApiInfo(null, null, "2.1.0")).generate();
 
         assertEquals("2.1.0", api.getInfo().getVersion());
     }
@@ -525,7 +535,7 @@ class OpenApiGeneratorTest {
     @Test
     void versionFallsBackToTheDefaultWhenNotConfigured() {
         assertEquals(Wsdl2OpenApiConverter.DEFAULT_VERSION,
-                new Wsdl2OpenApiConverter(citiesDefinitions, "/", Map.of(), null, null, null).generate()
+                converter(citiesDefinitions, "/").generate()
                         .getInfo().getVersion());
     }
 
@@ -533,7 +543,7 @@ class OpenApiGeneratorTest {
 
     @Test
     void serviceDocumentationBecomesInfoDescription() throws Exception {
-        var openAPI = new Wsdl2OpenApiConverter(documentedDefinitions(), "/").generate();
+        var openAPI = converter(documentedDefinitions(), "/").generate();
 
         assertTrue(openAPI.getInfo().getDescription().startsWith("Answers questions about cities."),
                 "the service's documentation must lead info.description, ahead of the generated note");
@@ -541,14 +551,14 @@ class OpenApiGeneratorTest {
 
     @Test
     void definitionsDocumentationUsedWhereTheServiceDocumentsNothing() throws Exception {
-        var openAPI = new Wsdl2OpenApiConverter(blzDefinitions, "/").generate();
+        var openAPI = converter(blzDefinitions, "/").generate();
 
         assertTrue(openAPI.getInfo().getDescription().startsWith("BLZService"));
     }
 
     @Test
     void configuredDescriptionWinsOverTheWsdlDocumentation() throws Exception {
-        var openAPI = new Wsdl2OpenApiConverter(documentedDefinitions(), "/", Map.of(), null, "Configured.").generate();
+        var openAPI = new Wsdl2OpenApiConverter(documentedDefinitions(), "/", Map.of(), new ApiInfo(null, "Configured.", null)).generate();
 
         assertTrue(openAPI.getInfo().getDescription().startsWith("Configured."));
         assertFalse(openAPI.getInfo().getDescription().contains("Answers questions about cities."));
@@ -556,7 +566,7 @@ class OpenApiGeneratorTest {
 
     @Test
     void operationDocumentationBecomesOperationDescription() throws Exception {
-        var operation = new Wsdl2OpenApiConverter(documentedDefinitions(), "/").generate()
+        var operation = converter(documentedDefinitions(), "/").generate()
                 .getPaths().get("/get-city").getPost();
 
         assertEquals("Looks a city up by its name.", operation.getDescription());
@@ -583,6 +593,6 @@ class OpenApiGeneratorTest {
     }
 
     private static String generator(Definitions defs, String basePath) {
-        return new Wsdl2OpenApiConverter(defs, basePath).generateYaml();
+        return converter(defs, basePath).generateYaml();
     }
 }

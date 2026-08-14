@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import static com.predic8.membrane.core.interceptor.wsdl2openapi.Wsdl2OpenApiConverter.ApiInfo;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.camelToKebab;
 import static com.predic8.membrane.test.TestUtil.getPathFromResource;
 import static org.junit.jupiter.api.Assertions.*;
@@ -69,7 +70,7 @@ class Wsdl2OpenapiInterceptorTest {
         var settings = new OperationSettings();
         settings.setMethod("GET");
         settings.setPath("/search/{byId}");
-        var api = new Wsdl2OpenApiConverter(definitions, "/", Map.of("search", settings)).generate();
+        var api = new Wsdl2OpenApiConverter(definitions, "/", Map.of("search", settings), ApiInfo.NONE).generate();
 
         assertEquals(Map.of("search", Set.of("byName", "code")),
                 Wsdl2OpenapiInterceptor.collectQueryParamNames(api));

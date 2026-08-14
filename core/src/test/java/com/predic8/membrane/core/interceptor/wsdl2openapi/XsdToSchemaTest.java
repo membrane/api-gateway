@@ -62,7 +62,7 @@ class XsdToSchemaTest {
                 var doc = builder.parse(new InputSource(new StringReader(xml)));
                 map.put(ns, List.of(doc.getDocumentElement()));
             }
-            return new XsdToSchema(map);
+            return new XsdToSchema(map, Set.of());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

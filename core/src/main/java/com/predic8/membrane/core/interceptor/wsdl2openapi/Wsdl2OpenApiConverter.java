@@ -72,9 +72,16 @@ public class Wsdl2OpenApiConverter {
     private final String basePath;
     private final XsdToSchema converter;
     private final Map<String, OperationSettings> operations;
-    private final String title;
-    private final String description;
-    private final String version;
+    private final ApiInfo info;
+
+    /**
+     * What the generated document's {@code info} block says, where the plugin is configured with it.
+     * A {@code null} member falls back to what the WSDL says — see {@link #buildInfo()}.
+     */
+    record ApiInfo(String title, String description, String version) {
+        /** Nothing configured: every value comes from the WSDL. */
+        static final ApiInfo NONE = new ApiInfo(null, null, null);
+    }
 
     /**
      * Per operation, the URL parameters published under a name other than the body property they
@@ -82,28 +89,13 @@ public class Wsdl2OpenApiConverter {
      */
     private final Map<String, Map<String, String>> urlParamProperties = new LinkedHashMap<>();
 
-    public Wsdl2OpenApiConverter(Definitions definitions, String basePath) {
-        this(definitions, basePath, Map.of());
-    }
-
-    public Wsdl2OpenApiConverter(Definitions definitions, String basePath, Map<String, OperationSettings> operations) {
-        this(definitions, basePath, operations, null, null);
-    }
-
-    public Wsdl2OpenApiConverter(Definitions definitions, String basePath, Map<String, OperationSettings> operations,
-                                  String title, String description) {
-        this(definitions, basePath, operations, title, description, null);
-    }
-
-    public Wsdl2OpenApiConverter(Definitions definitions, String basePath, Map<String, OperationSettings> operations,
-                                  String title, String description, String version) {
+    public Wsdl2OpenApiConverter(Definitions definitions, String basePath,
+                                 Map<String, OperationSettings> operations, ApiInfo info) {
         this.definitions = definitions;
         this.basePath = stripTrailingSlash(basePath);
         this.converter = new XsdToSchema(definitions, Set.of(PROBLEM_DETAILS_SCHEMA));
         this.operations = operations;
-        this.title = title;
-        this.description = description;
-        this.version = version;
+        this.info = info;
     }
 
     /**
@@ -204,9 +196,9 @@ public class Wsdl2OpenApiConverter {
 
     private Info buildInfo() {
         return new Info()
-                .title(title != null ? title : getServiceName())
+                .title(info.title() != null ? info.title() : getServiceName())
                 .description(infoDescription())
-                .version(version != null ? version : DEFAULT_VERSION);
+                .version(info.version() != null ? info.version() : DEFAULT_VERSION);
     }
 
     /**
@@ -215,7 +207,7 @@ public class Wsdl2OpenApiConverter {
      * definitions — with. The generated note about Membrane follows below it.
      */
     private String infoDescription() {
-        String text = description != null ? description : wsdlDocumentation();
+        String text = info.description() != null ? info.description() : wsdlDocumentation();
         return text != null ? text + "\n\n" + DESCRIPTION : DESCRIPTION;
     }
 

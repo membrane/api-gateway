@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
+import static com.predic8.membrane.core.interceptor.wsdl2openapi.Wsdl2OpenApiConverter.ApiInfo;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -31,6 +32,15 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  */
 class Wsdl2OpenApiConverterWsdlStyleTest {
+
+    private static Wsdl2OpenApiConverter converter(Definitions definitions, String basePath) {
+        return converter(definitions, basePath, Map.of());
+    }
+
+    private static Wsdl2OpenApiConverter converter(Definitions definitions, String basePath,
+                                                   Map<String, OperationSettings> operations) {
+        return new Wsdl2OpenApiConverter(definitions, basePath, operations, ApiInfo.NONE);
+    }
 
     /** Wrapped document style, service name "GreetingService" — shared by the Info-related tests below. */
     private static final String GREETING_WSDL = """
@@ -104,7 +114,7 @@ class Wsdl2OpenApiConverterWsdlStyleTest {
 
     @Test
     void documentLiteralWrappedStyle() throws Exception {
-        var yaml = new Wsdl2OpenApiConverter(Definitions.parse(new StaticStringResolver(), GREETING_WSDL), "/").generateYaml();
+        var yaml = converter(Definitions.parse(new StaticStringResolver(), GREETING_WSDL), "/").generateYaml();
 
         assertTrue(yaml.contains("/say-hello:"), "Operation name should be mapped to a kebab-case path");
         assertTrue(yaml.contains("operationId: sayHello"), "operationId should match the WSDL operation name");
@@ -123,7 +133,7 @@ class Wsdl2OpenApiConverterWsdlStyleTest {
     @Test
     void titleOverrideReplacesServiceName() throws Exception {
         var definitions = Definitions.parse(new StaticStringResolver(), GREETING_WSDL);
-        var openAPI = new Wsdl2OpenApiConverter(definitions, "/", Map.of(), "Custom Title", null).generate();
+        var openAPI = new Wsdl2OpenApiConverter(definitions, "/", Map.of(), new ApiInfo("Custom Title", null, null)).generate();
 
         assertEquals("Custom Title", openAPI.getInfo().getTitle(),
                 "an explicit title must override the WSDL service name");
@@ -132,7 +142,7 @@ class Wsdl2OpenApiConverterWsdlStyleTest {
     @Test
     void noTitleOverrideFallsBackToServiceName() throws Exception {
         var definitions = Definitions.parse(new StaticStringResolver(), GREETING_WSDL);
-        var openAPI = new Wsdl2OpenApiConverter(definitions, "/", Map.of(), null, null).generate();
+        var openAPI = converter(definitions, "/").generate();
 
         assertEquals("GreetingService", openAPI.getInfo().getTitle());
     }
@@ -140,7 +150,7 @@ class Wsdl2OpenApiConverterWsdlStyleTest {
     @Test
     void descriptionAppearsBeforeGeneratedAdText() throws Exception {
         var definitions = Definitions.parse(new StaticStringResolver(), GREETING_WSDL);
-        var openAPI = new Wsdl2OpenApiConverter(definitions, "/", Map.of(), null, "Say hello to the world.").generate();
+        var openAPI = new Wsdl2OpenApiConverter(definitions, "/", Map.of(), new ApiInfo(null, "Say hello to the world.", null)).generate();
 
         String description = openAPI.getInfo().getDescription();
         int userTextIndex = description.indexOf("Say hello to the world.");
@@ -155,8 +165,8 @@ class Wsdl2OpenApiConverterWsdlStyleTest {
     @Test
     void noDescriptionOverrideProducesOnlyGeneratedAdText() throws Exception {
         var definitions = Definitions.parse(new StaticStringResolver(), GREETING_WSDL);
-        var withOverride = new Wsdl2OpenApiConverter(definitions, "/", Map.of(), null, null).generate();
-        var withoutAnyArgs = new Wsdl2OpenApiConverter(definitions, "/").generate();
+        var withOverride = converter(definitions, "/").generate();
+        var withoutAnyArgs = converter(definitions, "/").generate();
 
         assertEquals(withoutAnyArgs.getInfo().getDescription(), withOverride.getInfo().getDescription(),
                 "omitting the description (via either constructor) must produce identical, unchanged ad text");
@@ -172,14 +182,14 @@ class Wsdl2OpenApiConverterWsdlStyleTest {
         var wsdl = GREETING_WSDL.replaceFirst("(?s)<xs:complexType>.*?</xs:complexType>", "<xs:complexType/>");
         assertFalse(wsdl.contains("\"name\" type=\"xs:string\""), "the input element must have lost its only field");
 
-        var openAPI = new Wsdl2OpenApiConverter(Definitions.parse(new StaticStringResolver(), wsdl), "/").generate();
+        var openAPI = converter(Definitions.parse(new StaticStringResolver(), wsdl), "/").generate();
 
         assertNull(openAPI.getPaths().get("/say-hello").getPost().getRequestBody());
     }
 
     @Test
     void operationWithAnInputFieldStillDeclaresARequestBody() throws Exception {
-        var openAPI = new Wsdl2OpenApiConverter(Definitions.parse(new StaticStringResolver(), GREETING_WSDL), "/").generate();
+        var openAPI = converter(Definitions.parse(new StaticStringResolver(), GREETING_WSDL), "/").generate();
 
         var requestBody = openAPI.getPaths().get("/say-hello").getPost().getRequestBody();
         assertNotNull(requestBody);
@@ -238,7 +248,7 @@ class Wsdl2OpenApiConverterWsdlStyleTest {
 
                 </definitions>""";
 
-        var yaml = new Wsdl2OpenApiConverter(Definitions.parse(new StaticStringResolver(), wsdl), "/").generateYaml();
+        var yaml = converter(Definitions.parse(new StaticStringResolver(), wsdl), "/").generateYaml();
 
         assertTrue(yaml.contains("/add:"), "Path is still generated regardless of binding style");
         assertTrue(yaml.contains("operationId: add"));
@@ -298,7 +308,7 @@ class Wsdl2OpenApiConverterWsdlStyleTest {
 
                 </definitions>""";
 
-        var yaml = new Wsdl2OpenApiConverter(Definitions.parse(new StaticStringResolver(), wsdl), "/").generateYaml();
+        var yaml = converter(Definitions.parse(new StaticStringResolver(), wsdl), "/").generateYaml();
 
         assertTrue(yaml.contains("/search:"));
         assertTrue(yaml.contains("query:"), "First bare-style message part should become a request field");
@@ -410,7 +420,7 @@ class Wsdl2OpenApiConverterWsdlStyleTest {
 
                 </definitions>""";
 
-        var yaml = new Wsdl2OpenApiConverter(Definitions.parse(new StaticStringResolver(), wsdl), "/").generateYaml();
+        var yaml = converter(Definitions.parse(new StaticStringResolver(), wsdl), "/").generateYaml();
 
         assertTrue(yaml.contains("cancelled:"), "Normal output message is still converted");
         assertTrue(yaml.contains("default:"));
@@ -489,7 +499,7 @@ class Wsdl2OpenApiConverterWsdlStyleTest {
 
                 </definitions>""";
 
-        var yaml = new Wsdl2OpenApiConverter(Definitions.parse(new StaticStringResolver(), wsdl), "/").generateYaml();
+        var yaml = converter(Definitions.parse(new StaticStringResolver(), wsdl), "/").generateYaml();
 
         assertTrue(yaml.contains("default:"), "Error response must be present for the fault");
         assertTrue(yaml.contains("faultCode:"), "First type-based part must appear in the fault schema");
@@ -577,7 +587,7 @@ class Wsdl2OpenApiConverterWsdlStyleTest {
         // A soap:header part travels in the SOAP header, out-of-band from the body. Nothing in this
         // plugin puts a value there, so the document must not promise a parameter for it — a
         // parameter the gateway silently discards is worse than one that was never advertised.
-        var yaml = new Wsdl2OpenApiConverter(Definitions.parse(new StaticStringResolver(), SECURE_SERVICE_WSDL), "/").generateYaml();
+        var yaml = converter(Definitions.parse(new StaticStringResolver(), SECURE_SERVICE_WSDL), "/").generateYaml();
 
         assertTrue(yaml.contains("payload:"), "Body part is still converted");
         assertFalse(yaml.contains("in: header"), "an unsupported soap:header part must not become a parameter");
@@ -591,8 +601,7 @@ class Wsdl2OpenApiConverterWsdlStyleTest {
         var settings = new OperationSettings();
         settings.setMethod("GET");
         settings.setPath("work/{id}");
-        var yaml = new Wsdl2OpenApiConverter(Definitions.parse(new StaticStringResolver(), SECURE_SERVICE_WSDL), "/",
-                Map.of("doWork", settings)).generateYaml();
+        var yaml = converter(Definitions.parse(new StaticStringResolver(), SECURE_SERVICE_WSDL), "/", Map.of("doWork", settings)).generateYaml();
 
         assertTrue(yaml.contains("/work/{id}:"), "Templated path should be used as the path key");
         assertTrue(yaml.contains("in: path"), "Path parameter must not be dropped");
@@ -670,7 +679,7 @@ class Wsdl2OpenApiConverterWsdlStyleTest {
 
                 </definitions>""";
 
-        var yaml = new Wsdl2OpenApiConverter(Definitions.parse(new StaticStringResolver(), wsdl), "/").generateYaml();
+        var yaml = converter(Definitions.parse(new StaticStringResolver(), wsdl), "/").generateYaml();
 
         // SOAP version only affects the wire envelope, not the JSON/OpenAPI shape, so a
         // SOAP 1.2 binding should produce the same output as the equivalent SOAP 1.1 WSDL

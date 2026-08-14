@@ -135,18 +135,10 @@ public class XsdToSchema {
      */
     private final Map<String, Schema<?>> components = new LinkedHashMap<>();
 
-    XsdToSchema(Map<String, List<Element>> schemasByNamespace) {
-        this(schemasByNamespace, Set.of());
-    }
-
     XsdToSchema(Map<String, List<Element>> schemasByNamespace, Set<String> reservedComponentNames) {
         this.schemasByNamespace = schemasByNamespace;
         this.componentNames = buildComponentNames(schemasByNamespace, reservedComponentNames);
         this.contentModel = new XsdContentModel(schemasByNamespace);
-    }
-
-    public XsdToSchema(Definitions definitions) {
-        this(buildSchemaMap(definitions));
     }
 
     public XsdToSchema(Definitions definitions, Set<String> reservedComponentNames) {

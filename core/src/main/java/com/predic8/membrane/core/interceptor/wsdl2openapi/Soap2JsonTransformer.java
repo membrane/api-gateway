@@ -51,10 +51,7 @@ public class Soap2JsonTransformer {
      */
     private final Map<String, Schema<?>> components;
 
-    public Soap2JsonTransformer() {
-        this(Map.of());
-    }
-
+    /** Pass an empty map where there are no schemas to resolve against. */
     public Soap2JsonTransformer(Map<String, Schema<?>> components) {
         this.components = components;
     }
@@ -65,27 +62,13 @@ public class Soap2JsonTransformer {
     }
 
     /**
-     * Schema-less fallback: converts the SOAP response structurally, with all scalar
-     * values produced as JSON strings. Use when no response schema is available,
-     * e.g. for untyped/{@code xsd:any} elements.
-     */
-    public String transform(String soapXml) throws Exception {
-        return transform(soapXml, null);
-    }
-
-    /**
-     * Transforms the SOAP response to JSON, using {@code responseSchema} to produce
-     * properly typed values (numbers, booleans) rather than always strings.
-     * Pass {@code null} to fall back to all-string behaviour.
-     */
-    public String transform(String soapXml, Schema<?> responseSchema) throws Exception {
-        return transform(soapXml, responseSchema, null);
-    }
-
-    /**
-     * Transforms the SOAP response to JSON. {@code faultDetailSchema} types the content of a SOAP
-     * {@code <detail>} element the same way {@code responseSchema} types a successful response: its
-     * properties are the operation's declared faults, keyed by fault element local name.
+     * Transforms the SOAP response to JSON.
+     * <p>
+     * {@code responseSchema} produces properly typed values (numbers, booleans) rather than always
+     * strings; {@code faultDetailSchema} types the content of a SOAP {@code <detail>} element the
+     * same way, its properties being the operation's declared faults keyed by fault element local
+     * name. Either may be {@code null}, which converts that part structurally with every scalar as
+     * a string — the only thing possible for untyped or {@code xsd:any} content.
      */
     public String transform(String soapXml, Schema<?> responseSchema, Schema<?> faultDetailSchema) throws Exception {
         Document doc = getInstance().parse(new InputSource(new StringReader(soapXml)));
@@ -121,11 +104,6 @@ public class Soap2JsonTransformer {
     private Element getFirstChildElement(Element parent) {
         var children = childElements(parent);
         return children.isEmpty() ? null : children.getFirst();
-    }
-
-    // Used by fault detail extraction (no schema, all strings)
-    private Map<String, Object> elementToMap(Element element) {
-        return elementToMap(element, null);
     }
 
     private Map<String, Object> elementToMap(Element element, Schema<?> schema) {

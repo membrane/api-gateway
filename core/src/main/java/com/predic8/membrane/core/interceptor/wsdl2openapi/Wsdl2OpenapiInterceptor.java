@@ -47,6 +47,7 @@ import static com.predic8.membrane.core.interceptor.InterceptorUtil.getIntercept
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.OperationRouter.*;
+import static com.predic8.membrane.core.interceptor.wsdl2openapi.Wsdl2OpenApiConverter.ApiInfo;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.Wsdl2OpenApiConverter.FAULT_DETAILS_FIELD;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.Wsdl2OpenApiConverter.OPERATION_ERROR_TYPE;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.camelToKebab;
@@ -158,7 +159,8 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
 
         // One converter for the document and the runtime alike: the schemas used to convert a
         // response refer to the named types by the very names the document publishes them under.
-        var wsdl2OpenApi = new Wsdl2OpenApiConverter(definitions, basePath, operationsByName, apiProxy.getName(), description, version);
+        var wsdl2OpenApi = new Wsdl2OpenApiConverter(definitions, basePath, operationsByName,
+                new ApiInfo(apiProxy.getName(), description, version));
         xsdToSchema = wsdl2OpenApi.getSchemaConverter();
 
         // init() can run more than once on the same instance: AbstractProxy.clone() and
