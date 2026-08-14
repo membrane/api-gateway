@@ -91,7 +91,7 @@ public class Soap2JsonTransformer {
         return MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(jsonMap);
     }
 
-    private Element getSoapBody(Document doc) {
+    private static Element getSoapBody(Document doc) {
         Element body = bodyInNamespace(doc, SOAP11_NS);
         return body != null ? body : bodyInNamespace(doc, SOAP12_NS);
     }
@@ -101,7 +101,7 @@ public class Soap2JsonTransformer {
         return bodies.getLength() > 0 ? (Element) bodies.item(0) : null;
     }
 
-    private Element getFirstChildElement(Element parent) {
+    private static Element getFirstChildElement(Element parent) {
         var children = childElements(parent);
         return children.isEmpty() ? null : children.getFirst();
     }
@@ -232,7 +232,7 @@ public class Soap2JsonTransformer {
         return new ResolvedChild(localName, properties.get(localName));
     }
 
-    private Object convertLeaf(String text, Schema<?> schema) {
+    private static Object convertLeaf(String text, Schema<?> schema) {
         return switch (schema) {
             case IntegerSchema ignored -> parseLongOrText(text);
             case NumberSchema ignored -> parseDoubleOrText(text);
@@ -289,19 +289,19 @@ public class Soap2JsonTransformer {
         return detailElement != null ? elementToMap(detailElement, faultDetailSchema) : null;
     }
 
-    private String childText(Element parent, String localName) {
+    private static String childText(Element parent, String localName) {
         Element child = childElement(parent, localName);
         return child != null ? child.getTextContent().trim() : "";
     }
 
-    private Element childElement(Element parent, String localName) {
+    private static Element childElement(Element parent, String localName) {
         for (Element el : childElements(parent)) {
             if (localName.equals(el.getLocalName())) return el;
         }
         return null;
     }
 
-    private boolean hasChildElements(Element element) {
+    private static boolean hasChildElements(Element element) {
         return !childElements(element).isEmpty();
     }
 }
