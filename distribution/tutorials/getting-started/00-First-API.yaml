@@ -25,7 +25,7 @@
 #  3.) Stop Membrane:
 #     Press Ctrl+C in the terminal.
 #
-#  4.) Continue with file 10-Logging.yaml
+#  5.) Continue with file 05-Hot-Reload.yaml
 #
 # Troubleshooting:
 #    Check if your machine can reach the public API:
