@@ -524,8 +524,7 @@ public class XsdToSchema {
 
     /** Wraps {@code fieldSchema} in an ArraySchema if the declaration allows more than one occurrence. */
     private static Schema<?> applyMaxOccurs(Element declaration, Schema<?> fieldSchema) {
-        String maxOccurs = declaration.getAttribute("maxOccurs");
-        if (UNBOUNDED.equals(maxOccurs) || isMoreThanOne(maxOccurs)) {
+        if (allowsMany(declaration.getAttribute("maxOccurs"))) {
             return new ArraySchema().items(fieldSchema);
         }
         return fieldSchema;
@@ -652,8 +651,7 @@ public class XsdToSchema {
     private static void addExactlyOneConstraint(Element choice, ObjectSchema schema, List<ChoiceBranch> branches) {
         if (branches.isEmpty()) return;
 
-        String maxOccurs = choice.getAttribute("maxOccurs");
-        if (UNBOUNDED.equals(maxOccurs) || isMoreThanOne(maxOccurs)) {
+        if (allowsMany(choice.getAttribute("maxOccurs"))) {
             describeChoice(schema, "Repeatable choice: each occurrence is one of", branches);
             return;
         }
@@ -996,7 +994,13 @@ public class XsdToSchema {
     }
 
 
-    private static boolean isMoreThanOne(String maxOccurs) {
+    /**
+     * Whether a declaration permits more than one occurrence — XSD says so either with
+     * {@code maxOccurs="unbounded"} or with an integer above one. Absent, empty or unparseable counts
+     * as a single occurrence, which is the XSD default.
+     */
+    private static boolean allowsMany(String maxOccurs) {
+        if (UNBOUNDED.equals(maxOccurs)) return true;
         if (maxOccurs == null || maxOccurs.isEmpty()) return false;
         try {
             return Integer.parseInt(maxOccurs) > 1;
