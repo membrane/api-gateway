@@ -121,6 +121,11 @@ public class XsdToSchema {
         }
     }
 
+    private enum Kind { COMPLEX, SIMPLE }
+
+    /** A named type declaration, together with the schema document that declares it. */
+    private record NamedType(Element element, Element schemaRoot, Kind kind) {}
+
     private final Map<String, List<Element>> schemasByNamespace;
 
     /** Resolves a particle's content model — group references expanded, cycles cut. */
@@ -857,32 +862,39 @@ public class XsdToSchema {
      */
     private Schema<?> resolveTypeRef(String typeRef, Element contextElement, XsdContext ctx, boolean asRef) {
         if (typeRef.isEmpty()) return new StringSchema();
-        String prefix = prefix(typeRef);
         String local = localName(typeRef);
-        List<Element> targetRoots = resolveTargetSchemaRoots(prefix, contextElement, ctx.schemaRoot(), schemasByNamespace);
-        for (var targetRoot : targetRoots) {
-            Element complexType = findXsdChildWithName(targetRoot, "complexType", local);
-            if (complexType != null) {
-                XsdContext typeCtx = ctx.withRoot(targetRoot);
-                if (asRef) {
-                    return componentRef(targetNamespace(targetRoot), local,
-                            () -> buildObjectSchema(complexType, typeCtx));
-                }
-                return buildInline(complexType, local, () -> buildObjectSchema(complexType, typeCtx), ctx);
-            }
+        var found = findNamedType(
+                resolveTargetSchemaRoots(prefix(typeRef), contextElement, ctx.schemaRoot(), schemasByNamespace), local);
+        if (found.isEmpty()) return mapPrimitive(local);
+
+        NamedType type = found.get();
+        XsdContext typeCtx = ctx.withRoot(type.schemaRoot());
+        Supplier<Schema<?>> build = switch (type.kind()) {
+            case COMPLEX -> () -> buildObjectSchema(type.element(), typeCtx);
+            case SIMPLE -> () -> buildSimpleTypeSchema(type.element(), typeCtx);
+        };
+        if (asRef) {
+            return componentRef(targetNamespace(type.schemaRoot()), local, build);
         }
-        for (var targetRoot : targetRoots) {
-            Element simpleType = findXsdChildWithName(targetRoot, "simpleType", local);
-            if (simpleType != null) {
-                XsdContext typeCtx = ctx.withRoot(targetRoot);
-                if (asRef) {
-                    return componentRef(targetNamespace(targetRoot), local,
-                            () -> buildSimpleTypeSchema(simpleType, typeCtx));
-                }
-                return buildSimpleTypeSchema(simpleType, typeCtx);
-            }
+        // Only a complexType needs the cycle guard: a simpleType cannot expand into itself.
+        return type.kind() == Kind.COMPLEX ? buildInline(type.element(), local, build, ctx) : build.get();
+    }
+
+    /**
+     * The complexType or simpleType named {@code localName} among {@code roots}, and the document it
+     * was found in. Every document is searched for a complexType before any is searched for a
+     * simpleType — the two share a symbol space, so no valid schema declares both under one name.
+     */
+    private static Optional<NamedType> findNamedType(List<Element> roots, String localName) {
+        for (var root : roots) {
+            Element complexType = findXsdChildWithName(root, "complexType", localName);
+            if (complexType != null) return Optional.of(new NamedType(complexType, root, Kind.COMPLEX));
         }
-        return mapPrimitive(local);
+        for (var root : roots) {
+            Element simpleType = findXsdChildWithName(root, "simpleType", localName);
+            if (simpleType != null) return Optional.of(new NamedType(simpleType, root, Kind.SIMPLE));
+        }
+        return Optional.empty();
     }
 
     /**
@@ -918,18 +930,16 @@ public class XsdToSchema {
 
     private Schema<?> convertType(QName qname, Set<Element> visiting) {
         if (qname == null) return new StringSchema();
-        if (XSD_NS.equals(qname.getNamespaceURI())) return mapPrimitive(qname.getLocalPart());
+        String local = qname.getLocalPart();
+        if (XSD_NS.equals(qname.getNamespaceURI())) return mapPrimitive(local);
         List<Element> targetRoots = schemasByNamespace.get(qname.getNamespaceURI());
-        if (targetRoots == null) return mapPrimitive(qname.getLocalPart());
-        for (var root : targetRoots) {
-            Element complexType = findXsdChildWithName(root, "complexType", qname.getLocalPart());
-            if (complexType != null) return buildObjectSchema(complexType, new XsdContext(root, visiting));
-        }
-        for (var root : targetRoots) {
-            Element simpleType = findXsdChildWithName(root, "simpleType", qname.getLocalPart());
-            if (simpleType != null) return buildSimpleTypeSchema(simpleType, new XsdContext(root, visiting));
-        }
-        return mapPrimitive(qname.getLocalPart());
+        if (targetRoots == null) return mapPrimitive(local);
+        return findNamedType(targetRoots, local)
+                .map(type -> switch (type.kind()) {
+                    case COMPLEX -> buildObjectSchema(type.element(), new XsdContext(type.schemaRoot(), visiting));
+                    case SIMPLE -> buildSimpleTypeSchema(type.element(), new XsdContext(type.schemaRoot(), visiting));
+                })
+                .orElseGet(() -> mapPrimitive(local));
     }
 
     private Schema<?> mapPrimitive(String localPart) {
