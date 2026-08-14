@@ -3,6 +3,8 @@
 
 
 PRIO 1:
+- Reference:
+  - configuration/uriFactory is in alphabetic but not order by category
 - When released:
   - Add SqlProtection to README.md
   - Udate OAuth2 sections in README.md
