@@ -1,0 +1,10 @@
+api:
+  port: 2000
+  path:
+    uri: /shop/orders
+  flow:
+    - static:
+        src: '[{"id":1},{"id":2}]'
+        contentType: application/json
+    - return:
+        status: 200

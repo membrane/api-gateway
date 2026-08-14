@@ -279,6 +279,33 @@ class GenericYamlParserIncludeListTest {
         );
     }
 
+    @Test
+    void positional_includes_preserve_document_order() throws Exception {
+        Path fileB = write("pos/fileB.apis.yaml", """
+                api:
+                  port: 1001
+                """);
+        Path fileC = write("pos/fileC.apis.yaml", """
+                api:
+                  port: 1003
+                """);
+
+        // File A: include B -> own API -> include C
+        assertEquals(
+            List.of(1001, 1002, 1003),
+            extractPorts(parseDefinitions("""
+                    include:
+                      - %s
+                    ---
+                    api:
+                      port: 1002
+                    ---
+                    include:
+                      - %s
+                    """.formatted(yamlPath(fileB), yamlPath(fileC))))
+        );
+    }
+
     private List<BeanDefinition> parseDefinitions(String yaml) throws IOException {
         return new GenericYamlParser(K8S_HELPER, yaml, null).getBeanDefinitions();
     }
