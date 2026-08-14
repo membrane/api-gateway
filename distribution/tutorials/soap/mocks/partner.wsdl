@@ -6,16 +6,33 @@
         xmlns:tns="http://example.com/partner"
         targetNamespace="http://example.com/partner">
 
+    <wsdl:documentation>
+        Partner master data of the Example Corp. back office: business partners, the addresses they
+        are reached at, and the operations that read and maintain them.
+    </wsdl:documentation>
+
     <wsdl:types>
         <xsd:schema targetNamespace="http://example.com/partner">
 
             <xsd:simpleType name="PhoneNumber">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        A phone number in international notation: an optional leading plus followed
+                        by 7 to 15 digits. Spaces and dashes are not accepted.
+                    </xsd:documentation>
+                </xsd:annotation>
                 <xsd:restriction base="xsd:string">
                     <xsd:pattern value="\+?[0-9]{7,15}"/>
                 </xsd:restriction>
             </xsd:simpleType>
 
             <xsd:simpleType name="PartnerKind">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        What kind of legal entity a partner is. PERSON is a natural person, COMPANY
+                        a registered business, PUBLIC_AUTHORITY a public body.
+                    </xsd:documentation>
+                </xsd:annotation>
                 <xsd:restriction base="xsd:string">
                     <xsd:enumeration value="PERSON"/>
                     <xsd:enumeration value="COMPANY"/>
@@ -24,112 +41,332 @@
             </xsd:simpleType>
 
             <xsd:complexType name="Address">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        A postal address. Every partner has exactly one; a partner that moves keeps
+                        its id and gets a new address.
+                    </xsd:documentation>
+                </xsd:annotation>
                 <xsd:sequence>
-                    <xsd:element name="street" type="xsd:string"/>
-                    <xsd:element name="houseNumber" type="xsd:string"/>
-                    <xsd:element name="postalCode" type="xsd:string"/>
-                    <xsd:element name="city" type="xsd:string"/>
-                    <xsd:element name="country" type="xsd:string"/>
+                    <xsd:element name="street" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>Street name, without the house number.</xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                    <xsd:element name="houseNumber" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>
+                                House number, as text: it may carry a letter or a range, e.g. "12a".
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                    <xsd:element name="postalCode" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>
+                                Postal code in the format the country uses; not validated here.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                    <xsd:element name="city" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>City or town.</xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                    <xsd:element name="country" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>Country name, spelled out in English.</xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
                 </xsd:sequence>
             </xsd:complexType>
 
             <xsd:complexType name="Partner">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        A business partner with everything the back office keeps about it.
+                    </xsd:documentation>
+                </xsd:annotation>
                 <xsd:sequence>
-                    <xsd:element name="id" type="xsd:long"/>
-                    <xsd:element name="name" type="xsd:string"/>
-                    <xsd:element name="birthDate" type="xsd:date" minOccurs="0"/>
-                    <xsd:element name="phoneNumber" type="tns:PhoneNumber" minOccurs="0"/>
-                    <xsd:element name="kind" type="tns:PartnerKind"/>
-                    <xsd:element name="active" type="xsd:boolean"/>
-                    <xsd:element name="creditLimit" type="xsd:decimal"/>
-                    <xsd:element name="address" type="tns:Address"/>
+                    <xsd:element name="id" type="xsd:long">
+                        <xsd:annotation>
+                            <xsd:documentation>
+                                The partner's number, assigned by the service and never reused.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                    <xsd:element name="name" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>
+                                Full name of the person, or the registered name of the organisation.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                    <xsd:element name="birthDate" type="xsd:date" minOccurs="0">
+                        <xsd:annotation>
+                            <xsd:documentation>
+                                Date of birth. Only a partner of kind PERSON has one.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                    <xsd:element name="phoneNumber" type="tns:PhoneNumber" minOccurs="0">
+                        <xsd:annotation>
+                            <xsd:documentation>
+                                The number the partner is reached at. Absent where none is on record.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                    <xsd:element name="kind" type="tns:PartnerKind">
+                        <xsd:annotation>
+                            <xsd:documentation>What kind of entity this partner is.</xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                    <xsd:element name="active" type="xsd:boolean">
+                        <xsd:annotation>
+                            <xsd:documentation>
+                                Whether business is currently done with this partner. An inactive
+                                partner is kept for its history and cannot be ordered from.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                    <xsd:element name="creditLimit" type="xsd:decimal">
+                        <xsd:annotation>
+                            <xsd:documentation>
+                                The amount in EUR the partner may owe at any one time. Zero means the
+                                partner pays in advance.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                    <xsd:element name="address" type="tns:Address">
+                        <xsd:annotation>
+                            <xsd:documentation>Where the partner is located.</xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
                 </xsd:sequence>
             </xsd:complexType>
 
             <xsd:complexType name="PartnerSummary">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        A partner reduced to what a result list shows: its number and its name.
+                    </xsd:documentation>
+                </xsd:annotation>
                 <xsd:sequence>
-                    <xsd:element name="id" type="xsd:long"/>
-                    <xsd:element name="name" type="xsd:string"/>
+                    <xsd:element name="id" type="xsd:long">
+                        <xsd:annotation>
+                            <xsd:documentation>
+                                The partner's number, to read the full partner with.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                    <xsd:element name="name" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>Name of the partner.</xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
                 </xsd:sequence>
             </xsd:complexType>
 
             <xsd:element name="getPartner">
+                <xsd:annotation>
+                    <xsd:documentation>Names the partner to read.</xsd:documentation>
+                </xsd:annotation>
                 <xsd:complexType>
                     <xsd:sequence>
-                        <xsd:element name="id" type="xsd:long"/>
+                        <xsd:element name="id" type="xsd:long">
+                            <xsd:annotation>
+                                <xsd:documentation>Number of the partner to read.</xsd:documentation>
+                            </xsd:annotation>
+                        </xsd:element>
                     </xsd:sequence>
                 </xsd:complexType>
             </xsd:element>
 
             <xsd:element name="getPartnerResponse">
+                <xsd:annotation>
+                    <xsd:documentation>The partner that was asked for.</xsd:documentation>
+                </xsd:annotation>
                 <xsd:complexType>
                     <xsd:sequence>
-                        <xsd:element name="partner" type="tns:Partner"/>
+                        <xsd:element name="partner" type="tns:Partner">
+                            <xsd:annotation>
+                                <xsd:documentation>The partner, with all its data.</xsd:documentation>
+                            </xsd:annotation>
+                        </xsd:element>
                     </xsd:sequence>
                 </xsd:complexType>
             </xsd:element>
 
             <xsd:element name="getPartners">
-                <xsd:complexType/>
+                <xsd:annotation>
+                    <xsd:documentation>
+                        The search criteria. Both are optional and combine: a request that names
+                        neither returns all partners.
+                    </xsd:documentation>
+                </xsd:annotation>
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="city" type="xsd:string" minOccurs="0">
+                            <xsd:annotation>
+                                <xsd:documentation>
+                                    Only return partners whose address is in this city.
+                                </xsd:documentation>
+                            </xsd:annotation>
+                        </xsd:element>
+                        <xsd:element name="kind" type="tns:PartnerKind" minOccurs="0">
+                            <xsd:annotation>
+                                <xsd:documentation>
+                                    Only return partners of this kind.
+                                </xsd:documentation>
+                            </xsd:annotation>
+                        </xsd:element>
+                    </xsd:sequence>
+                </xsd:complexType>
             </xsd:element>
 
             <xsd:element name="getPartnersResponse">
+                <xsd:annotation>
+                    <xsd:documentation>The partners that matched the search.</xsd:documentation>
+                </xsd:annotation>
                 <xsd:complexType>
                     <xsd:sequence>
                         <xsd:element name="partners" type="tns:PartnerSummary"
-                                     minOccurs="0" maxOccurs="unbounded"/>
+                                     minOccurs="0" maxOccurs="unbounded">
+                            <xsd:annotation>
+                                <xsd:documentation>
+                                    One entry per matching partner; empty where nothing matched.
+                                </xsd:documentation>
+                            </xsd:annotation>
+                        </xsd:element>
                     </xsd:sequence>
                 </xsd:complexType>
             </xsd:element>
 
             <xsd:element name="createPartner">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        The data of the partner to create. The number is assigned by the service, so
+                        it is not part of the request.
+                    </xsd:documentation>
+                </xsd:annotation>
                 <xsd:complexType>
                     <xsd:sequence>
-                        <xsd:element name="name" type="xsd:string"/>
-                        <xsd:element name="birthDate" type="xsd:date"/>
-                        <xsd:element name="kind" type="tns:PartnerKind"/>
-                        <xsd:element name="address" type="tns:Address"/>
+                        <xsd:element name="name" type="xsd:string">
+                            <xsd:annotation>
+                                <xsd:documentation>Name of the new partner.</xsd:documentation>
+                            </xsd:annotation>
+                        </xsd:element>
+                        <xsd:element name="birthDate" type="xsd:date">
+                            <xsd:annotation>
+                                <xsd:documentation>
+                                    Date of birth of the new partner.
+                                </xsd:documentation>
+                            </xsd:annotation>
+                        </xsd:element>
+                        <xsd:element name="kind" type="tns:PartnerKind">
+                            <xsd:annotation>
+                                <xsd:documentation>What kind of entity the new partner is.</xsd:documentation>
+                            </xsd:annotation>
+                        </xsd:element>
+                        <xsd:element name="address" type="tns:Address">
+                            <xsd:annotation>
+                                <xsd:documentation>Where the new partner is located.</xsd:documentation>
+                            </xsd:annotation>
+                        </xsd:element>
                     </xsd:sequence>
                 </xsd:complexType>
             </xsd:element>
 
             <xsd:element name="createPartnerResponse">
+                <xsd:annotation>
+                    <xsd:documentation>What the service made of the new partner.</xsd:documentation>
+                </xsd:annotation>
                 <xsd:complexType>
                     <xsd:sequence>
-                        <xsd:element name="id" type="xsd:long"/>
+                        <xsd:element name="id" type="xsd:long">
+                            <xsd:annotation>
+                                <xsd:documentation>
+                                    The number assigned to the partner just created.
+                                </xsd:documentation>
+                            </xsd:annotation>
+                        </xsd:element>
                     </xsd:sequence>
                 </xsd:complexType>
             </xsd:element>
 
             <xsd:element name="updatePartner">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        The partner to change and its new data. Every field is replaced by what the
+                        request carries, so an omitted field is not kept.
+                    </xsd:documentation>
+                </xsd:annotation>
                 <xsd:complexType>
                     <xsd:sequence>
-                        <xsd:element name="id" type="xsd:long"/>
-                        <xsd:element name="name" type="xsd:string"/>
-                        <xsd:element name="birthDate" type="xsd:date"/>
-                        <xsd:element name="kind" type="tns:PartnerKind"/>
-                        <xsd:element name="address" type="tns:Address"/>
+                        <xsd:element name="id" type="xsd:long">
+                            <xsd:annotation>
+                                <xsd:documentation>Number of the partner to change.</xsd:documentation>
+                            </xsd:annotation>
+                        </xsd:element>
+                        <xsd:element name="name" type="xsd:string">
+                            <xsd:annotation>
+                                <xsd:documentation>The partner's name after the change.</xsd:documentation>
+                            </xsd:annotation>
+                        </xsd:element>
+                        <xsd:element name="birthDate" type="xsd:date">
+                            <xsd:annotation>
+                                <xsd:documentation>The partner's date of birth after the change.</xsd:documentation>
+                            </xsd:annotation>
+                        </xsd:element>
+                        <xsd:element name="kind" type="tns:PartnerKind">
+                            <xsd:annotation>
+                                <xsd:documentation>The partner's kind after the change.</xsd:documentation>
+                            </xsd:annotation>
+                        </xsd:element>
+                        <xsd:element name="address" type="tns:Address">
+                            <xsd:annotation>
+                                <xsd:documentation>The partner's address after the change.</xsd:documentation>
+                            </xsd:annotation>
+                        </xsd:element>
                     </xsd:sequence>
                 </xsd:complexType>
             </xsd:element>
 
             <xsd:element name="updatePartnerResponse">
+                <xsd:annotation>
+                    <xsd:documentation>The partner as it stands after the change.</xsd:documentation>
+                </xsd:annotation>
                 <xsd:complexType>
                     <xsd:sequence>
-                        <xsd:element name="partner" type="tns:Partner"/>
+                        <xsd:element name="partner" type="tns:Partner">
+                            <xsd:annotation>
+                                <xsd:documentation>The updated partner, with all its data.</xsd:documentation>
+                            </xsd:annotation>
+                        </xsd:element>
                     </xsd:sequence>
                 </xsd:complexType>
             </xsd:element>
 
             <xsd:element name="deletePartner">
+                <xsd:annotation>
+                    <xsd:documentation>Names the partner to delete.</xsd:documentation>
+                </xsd:annotation>
                 <xsd:complexType>
                     <xsd:sequence>
-                        <xsd:element name="id" type="xsd:long"/>
+                        <xsd:element name="id" type="xsd:long">
+                            <xsd:annotation>
+                                <xsd:documentation>Number of the partner to delete.</xsd:documentation>
+                            </xsd:annotation>
+                        </xsd:element>
                     </xsd:sequence>
                 </xsd:complexType>
             </xsd:element>
 
             <xsd:element name="deletePartnerResponse">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Empty: a partner that was deleted has nothing left to report.
+                    </xsd:documentation>
+                </xsd:annotation>
                 <xsd:complexType/>
             </xsd:element>
 
@@ -177,23 +414,43 @@
     </wsdl:message>
 
     <wsdl:portType name="PartnerService">
+        <wsdl:documentation>
+            Everything a client can do with partner master data.
+        </wsdl:documentation>
         <wsdl:operation name="getPartner">
+            <wsdl:documentation>
+                Reads one partner by its number. Reports an error where no partner has that number.
+            </wsdl:documentation>
             <wsdl:input message="tns:GetPartnerRequest"/>
             <wsdl:output message="tns:GetPartnerResponse"/>
         </wsdl:operation>
         <wsdl:operation name="getPartners">
+            <wsdl:documentation>
+                Searches partners by city and kind. Both criteria are optional and combine; a
+                request that names neither returns every partner.
+            </wsdl:documentation>
             <wsdl:input message="tns:GetPartnersRequest"/>
             <wsdl:output message="tns:GetPartnersResponse"/>
         </wsdl:operation>
         <wsdl:operation name="createPartner">
+            <wsdl:documentation>
+                Creates a partner and returns the number assigned to it. A partner is created active
+                and without a credit limit.
+            </wsdl:documentation>
             <wsdl:input message="tns:CreatePartnerRequest"/>
             <wsdl:output message="tns:CreatePartnerResponse"/>
         </wsdl:operation>
         <wsdl:operation name="updatePartner">
+            <wsdl:documentation>
+                Replaces the data of an existing partner and returns it as it stands afterwards.
+            </wsdl:documentation>
             <wsdl:input message="tns:UpdatePartnerRequest"/>
             <wsdl:output message="tns:UpdatePartnerResponse"/>
         </wsdl:operation>
         <wsdl:operation name="deletePartner">
+            <wsdl:documentation>
+                Deletes a partner. Deleting a partner that is not there is reported as an error.
+            </wsdl:documentation>
             <wsdl:input message="tns:DeletePartnerRequest"/>
             <wsdl:output message="tns:DeletePartnerResponse"/>
         </wsdl:operation>
@@ -229,6 +486,10 @@
     </wsdl:binding>
 
     <wsdl:service name="PartnerService">
+        <wsdl:documentation>
+            The partner master data service of Example Corp. Reads and maintains business partners
+            and their addresses.
+        </wsdl:documentation>
         <wsdl:port name="PartnerServicePort"
                 binding="tns:PartnerServiceSoapBinding">
             <soap:address location="https://example.com/services/PartnerService"/>
