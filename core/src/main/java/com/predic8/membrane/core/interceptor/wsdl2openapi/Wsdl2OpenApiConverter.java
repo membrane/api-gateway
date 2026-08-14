@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_PROBLEM_JSON;
-import static com.predic8.membrane.core.interceptor.wsdl2openapi.Wsdl2OpenapiInterceptor.extractParamNames;
+import static com.predic8.membrane.core.interceptor.wsdl2openapi.OperationRouter.extractParamNames;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.*;
 import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.INPUT;
 import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.OUTPUT;
@@ -242,14 +242,12 @@ public class Wsdl2OpenApiConverter {
     /** The WSDL's operations across all port types; unnamed ones cannot be mapped to a path. */
     private List<Operation> namedWsdlOperations() {
         var named = new ArrayList<Operation>();
-        for (var portType : definitions.getPortTypes()) {
-            for (var wsdlOp : portType.getOperations()) {
-                if (wsdlOp.getName() == null) {
-                    log.debug("Skipping WSDL operation with null name");
-                    continue;
-                }
-                named.add(wsdlOp);
+        for (var wsdlOp : definitions.getOperations()) {
+            if (wsdlOp.getName() == null) {
+                log.debug("Skipping WSDL operation with null name");
+                continue;
             }
+            named.add(wsdlOp);
         }
         return named;
     }
@@ -274,7 +272,7 @@ public class Wsdl2OpenApiConverter {
 
     private io.swagger.v3.oas.models.Operation buildApiOperation(String name, Operation wsdlOp, OperationSettings settings) {
         var inputParts = getInputParts(wsdlOp);
-        var headerParts = findBindingOperation(name).map(this::getHeaderParts).orElse(List.of());
+        var headerParts = definitions.findBindingOperation(name).map(this::getHeaderParts).orElse(List.of());
         warnAboutHeaderParts(name, headerParts);
 
         // No summary: it could only repeat the operation name, which operationId and the path already
@@ -365,13 +363,6 @@ public class Wsdl2OpenApiConverter {
     private List<Part> getBodyParts(List<Part> inputParts, List<Part> headerParts) {
         var headerPartNames = headerParts.stream().map(Part::getName).collect(Collectors.toSet());
         return inputParts.stream().filter(p -> !headerPartNames.contains(p.getName())).toList();
-    }
-
-    private Optional<BindingOperation> findBindingOperation(String name) {
-        return definitions.getBindings().stream()
-                .flatMap(b -> b.getBindingOperations().stream())
-                .filter(bo -> name.equals(bo.getName()))
-                .findFirst();
     }
 
     /**

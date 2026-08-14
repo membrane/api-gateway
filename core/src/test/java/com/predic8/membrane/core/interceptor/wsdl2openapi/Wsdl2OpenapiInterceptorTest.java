@@ -38,38 +38,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import static com.predic8.membrane.core.interceptor.wsdl2openapi.Wsdl2OpenapiInterceptor.buildPathPattern;
-import static com.predic8.membrane.core.interceptor.wsdl2openapi.Wsdl2OpenapiInterceptor.extractParamNames;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.camelToKebab;
 import static com.predic8.membrane.test.TestUtil.getPathFromResource;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 class Wsdl2OpenapiInterceptorTest {
-
-    private static Wsdl2OpenapiInterceptor interceptorWith(String basePath, String segment, String method, String opName) {
-        return new Wsdl2OpenapiInterceptor(basePath,
-                List.of(new Wsdl2OpenapiInterceptor.RouteEntry(
-                        buildPathPattern(segment),
-                        extractParamNames(segment),
-                        method, opName)));
-    }
-
-    @Test
-    void matchRouteStripsQueryString() {
-        var interceptor = interceptorWith("/purchasing", "get-city", "POST", "getCity");
-        var result = interceptor.matchRoute("/purchasing/get-city?format=json", "POST");
-        assertTrue(result.isPresent());
-        assertEquals("getCity", result.get().operationName());
-    }
-
-    @Test
-    void matchRouteWithoutQueryString() {
-        var interceptor = interceptorWith("/purchasing", "get-city", "POST", "getCity");
-        var result = interceptor.matchRoute("/purchasing/get-city", "POST");
-        assertTrue(result.isPresent());
-        assertEquals("getCity", result.get().operationName());
-    }
 
     @Test
     void queryParametersAreMergedIntoTheJsonBody() throws Exception {
@@ -201,68 +175,6 @@ class Wsdl2OpenapiInterceptorTest {
     }
 
     @Test
-    void matchRoutePreservesOperationName() {
-        var interceptor = interceptorWith("/api", "get-city", "GET", "GetCity");
-        var result = interceptor.matchRoute("/api/get-city", "GET");
-        assertTrue(result.isPresent());
-        assertEquals("GetCity", result.get().operationName());
-    }
-
-    @Test
-    void matchRouteHandlesRegexMetacharsInBasePath() {
-        var interceptor = interceptorWith("/api/v1.0", "get-city", "POST", "getCity");
-        var result = interceptor.matchRoute("/api/v1.0/get-city", "POST");
-        assertTrue(result.isPresent());
-        assertEquals("getCity", result.get().operationName());
-    }
-
-    @Test
-    void matchRouteDistinguishesByMethod() {
-        var interceptor = new Wsdl2OpenapiInterceptor("/", List.of(
-                new Wsdl2OpenapiInterceptor.RouteEntry(buildPathPattern("articles"), extractParamNames("articles"), "GET", "getAll"),
-                new Wsdl2OpenapiInterceptor.RouteEntry(buildPathPattern("articles"), extractParamNames("articles"), "POST", "create")
-        ));
-        assertEquals("getAll", interceptor.matchRoute("/articles", "GET").map(Wsdl2OpenapiInterceptor.RouteMatch::operationName).orElse(null));
-        assertEquals("create", interceptor.matchRoute("/articles", "POST").map(Wsdl2OpenapiInterceptor.RouteMatch::operationName).orElse(null));
-        assertTrue(interceptor.matchRoute("/articles", "DELETE").isEmpty());
-    }
-
-    @Test
-    void matchRouteExtractsPathParam() {
-        var interceptor = interceptorWith("/api", "partners/{id}", "GET", "getPartner");
-        var result = interceptor.matchRoute("/api/partners/42", "GET");
-        assertTrue(result.isPresent());
-        assertEquals("getPartner", result.get().operationName());
-        assertEquals(Map.of("id", "42"), result.get().pathParams());
-    }
-
-    @Test
-    void matchRouteExtractsMultiplePathParams() {
-        var interceptor = interceptorWith("/", "foo/{a}/bar/{b}", "GET", "fooBar");
-        var result = interceptor.matchRoute("/foo/hello/bar/world", "GET");
-        assertTrue(result.isPresent());
-        assertEquals("fooBar", result.get().operationName());
-        assertEquals("hello", result.get().pathParams().get("a"));
-        assertEquals("world", result.get().pathParams().get("b"));
-    }
-
-    @Test
-    void allowedMethodsListsEveryMethodRegisteredForThePath() {
-        var interceptor = new Wsdl2OpenapiInterceptor("/", List.of(
-                new Wsdl2OpenapiInterceptor.RouteEntry(buildPathPattern("partners/{id}"), extractParamNames("partners/{id}"), "GET", "getPartner"),
-                new Wsdl2OpenapiInterceptor.RouteEntry(buildPathPattern("partners/{id}"), extractParamNames("partners/{id}"), "PUT", "updatePartner"),
-                new Wsdl2OpenapiInterceptor.RouteEntry(buildPathPattern("partners"), extractParamNames("partners"), "POST", "createPartner")
-        ));
-
-        // A path mapped for other methods must report them all, so the 405 carries a correct
-        // Allow header instead of the single method of whichever route happened to be found.
-        assertEquals(List.of("GET", "PUT"), interceptor.allowedMethods("/partners/42"));
-        assertEquals(List.of("POST"), interceptor.allowedMethods("/partners"));
-        // An unmapped path has no allowed methods at all — the request must fall through, not 405.
-        assertEquals(List.of(), interceptor.allowedMethods("/unmapped"));
-    }
-
-    @Test
     void twoInstancesInOneFlowAreRejected() {
         var router = new DummyTestRouter();
         var proxy = apiProxyWith(wsdl2openapi("classpath:/ws/cities.wsdl"), wsdl2openapi("classpath:/blz-service.wsdl"));
@@ -286,7 +198,7 @@ class Wsdl2OpenapiInterceptorTest {
 
         interceptor.init(router, proxy);
 
-        assertEquals(List.of("POST"), interceptor.allowedMethods("/get-city"));
+        assertEquals(List.of("POST"), interceptor.getOperationRouter().allowedMethods("/get-city"));
     }
 
     @Test
@@ -332,7 +244,7 @@ class Wsdl2OpenapiInterceptorTest {
     }
 
     @Test
-    void reInitDoesNotAccumulateRoutes() throws Exception {
+    void reInitDoesNotAccumulateRoutes() {
         var router = new DummyTestRouter();
         var proxy = apiProxyWith(wsdl2openapi("classpath:/ws/cities.wsdl"));
         var interceptor = (Wsdl2OpenapiInterceptor) proxy.getFlow().getFirst();
@@ -344,7 +256,8 @@ class Wsdl2OpenapiInterceptorTest {
         interceptor.init(router, proxy);
 
         assertEquals(routesAfterFirstInit, routeCount(interceptor), "Routes must not be registered twice");
-        assertTrue(interceptor.matchRoute("/get-city", "POST").isPresent(), "Route must still match after re-init");
+        assertTrue(interceptor.getOperationRouter().match("/get-city", "POST").isPresent(),
+                "Route must still match after re-init");
     }
 
     @Test
@@ -492,11 +405,8 @@ class Wsdl2OpenapiInterceptorTest {
         return (String) field.get(interceptor);
     }
 
-    @SuppressWarnings("unchecked")
-    private static int routeCount(Wsdl2OpenapiInterceptor interceptor) throws Exception {
-        Field field = Wsdl2OpenapiInterceptor.class.getDeclaredField("routes");
-        field.setAccessible(true);
-        return ((List<Wsdl2OpenapiInterceptor.RouteEntry>) field.get(interceptor)).size();
+    private static int routeCount(Wsdl2OpenapiInterceptor interceptor) {
+        return interceptor.getOperationRouter().getRoutes().size();
     }
 
     private static io.swagger.v3.oas.models.OpenAPI generatedOpenApi(Wsdl2OpenapiInterceptor interceptor) throws Exception {

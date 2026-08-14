@@ -39,8 +39,6 @@ import org.slf4j.LoggerFactory;
 import org.w3c.dom.DOMException;
 
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
@@ -49,6 +47,7 @@ import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
 import static com.predic8.membrane.core.interceptor.InterceptorUtil.getInterceptors;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.wsdl2openapi.OperationRouter.*;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.Wsdl2OpenApiConverter.FAULT_DETAILS_FIELD;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.Wsdl2OpenApiConverter.OPERATION_ERROR_TYPE;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.camelToKebab;
@@ -117,10 +116,8 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
     private String basePath;
     private OperationsConfig operations;
     private Map<String, OperationSettings> operationsByName = Map.of();
-    record RouteEntry(Pattern pathPattern, List<String> paramNames, String method, String operationName) {}
-    record RouteMatch(String operationName, Map<String, String> pathParams) {}
-
-    private List<RouteEntry> routes = new ArrayList<>();
+    /** Replaced wholesale by init(), so a re-init cannot leave routes of the previous WSDL behind. */
+    private OperationRouter operationRouter = new OperationRouter("/", List.of());
     /** Set from the generated document in init(), so the document stays the single source of truth. */
     private Map<String, Set<String>> queryParamNames = Map.of();
     /** Per operation, the body property a URL parameter fills where its published name differs. */
@@ -138,12 +135,6 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
         name = "wsdl2openapi";
     }
 
-    // Package-private — used by tests only
-    Wsdl2OpenapiInterceptor(String basePath, List<RouteEntry> routes) {
-        this.basePath = basePath;
-        this.routes = new ArrayList<>(routes);
-    }
-
     @Override
     public void init() {
         super.init();
@@ -153,7 +144,6 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
 
         // init() can run more than once on the same instance: AbstractProxy.clone() and
         // RuleManager.replaceRule both init, and the clone shares this interceptor.
-        routes.clear();
         requestTransformers.clear();
         responseSchemas.clear();
         faultDetailSchemas.clear();
@@ -167,11 +157,11 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
         var wsdl2OpenApi = new Wsdl2OpenApiConverter(definitions, basePath, operationsByName, apiProxy.getName(), description, version);
         xsdToSchema = wsdl2OpenApi.getSchemaConverter();
 
-        routes.addAll(buildRoutes(definitions, operationsByName));
-        for (RouteEntry route : routes) {
+        operationRouter = new OperationRouter(basePath, buildRoutes(definitions, operationsByName));
+        for (RouteEntry route : operationRouter.getRoutes()) {
             String operationName = route.operationName();
             requestTransformers.put(operationName, new Json2SoapTransformer(definitions, operationName));
-            Optional<Operation> wsdlOp = operationByName(operationName);
+            Optional<Operation> wsdlOp = definitions.findOperation(operationName);
             responseSchemas.put(operationName, xsdToSchema.convertMessageParts(
                     wsdlOp.map(op -> op.getMessagesByDirection(OUTPUT)).orElse(List.of())));
             faultDetailSchemas.put(operationName, xsdToSchema.convertFaultDetail(
@@ -235,8 +225,7 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
 
     /** One route per exposed operation: all of them, or only those named in {@code operationsByName}. */
     static List<RouteEntry> buildRoutes(Definitions definitions, Map<String, OperationSettings> operationsByName) {
-        return definitions.getPortTypes().stream()
-                .flatMap(pt -> pt.getOperations().stream())
+        return definitions.getOperations().stream()
                 .map(op -> op.getName())
                 .filter(name -> operationsByName.isEmpty() || operationsByName.containsKey(name))
                 .map(name -> toRoute(name, operationsByName.get(name)))
@@ -247,6 +236,11 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
         final String segment = (settings != null && settings.getPath() != null) ? settings.getPath() : camelToKebab(operationName);
         final String method = (settings != null) ? settings.getMethod().toUpperCase() : "POST";
         return new RouteEntry(buildPathPattern(segment), extractParamNames(segment), method, operationName);
+    }
+
+    /** The routes built by the last {@code init()}. */
+    OperationRouter getOperationRouter() {
+        return operationRouter;
     }
 
     private OpenAPIPublisherInterceptor createPublisher(OpenAPI openApiModel) {
@@ -264,29 +258,19 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
         }
 
         String uri = exc.getRequest().getUri();
-        var match = matchRoute(uri, exc.getRequest().getMethod());
+        var match = operationRouter.match(uri, exc.getRequest().getMethod());
         if (match.isPresent()) {
             return handleOperation(exc, match.get().operationName(), match.get().pathParams());
         }
 
         // The path is mapped, but not for this method: answer 405 instead of forwarding an
         // untransformed JSON body to the SOAP backend.
-        var allowedMethods = allowedMethods(uri);
+        var allowedMethods = operationRouter.allowedMethods(uri);
         if (!allowedMethods.isEmpty()) {
             return methodNotAllowed(exc, allowedMethods);
         }
 
         return CONTINUE;
-    }
-
-    /** The methods registered for the route(s) matching {@code path}, in declaration order. */
-    List<String> allowedMethods(String path) {
-        String segment = pathSegment(path);
-        return routes.stream()
-                .filter(entry -> entry.pathPattern().matcher(segment).matches())
-                .map(RouteEntry::method)
-                .distinct()
-                .toList();
     }
 
     private Outcome methodNotAllowed(Exchange exc, List<String> allowedMethods) {
@@ -352,13 +336,6 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
         return faultDetailSchemas.getOrDefault(operationName, new ObjectSchema());
     }
 
-    private Optional<Operation> operationByName(String operationName) {
-        return definitions.getPortTypes().stream()
-                .flatMap(pt -> pt.getOperations().stream())
-                .filter(op -> operationName.equals(op.getName()))
-                .findFirst();
-    }
-
     /**
      * A fault becomes a 500: the gateway cannot tell whether the backend rejected the input, broke,
      * or timed out, so the most generic status is the only honest one. Nothing in the response names
@@ -397,50 +374,6 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
             return path.getUri();
         }
         return "/";
-    }
-
-    /** Strips the base path and any query string, leaving the segment the routes are matched against. */
-    private String pathSegment(String path) {
-        String withoutBase = path.replaceFirst("^" + Pattern.quote(basePath), "");
-        if (withoutBase.startsWith("/")) withoutBase = withoutBase.substring(1);
-        return withoutBase.contains("?") ? withoutBase.substring(0, withoutBase.indexOf('?')) : withoutBase;
-    }
-
-    Optional<RouteMatch> matchRoute(String path, String method) {
-        String segment = pathSegment(path);
-        for (var entry : routes) {
-            if (!entry.method().equalsIgnoreCase(method)) continue;
-            Matcher m = entry.pathPattern().matcher(segment);
-            if (m.matches()) {
-                var params = new LinkedHashMap<String, String>();
-                for (int i = 0; i < entry.paramNames().size(); i++) {
-                    params.put(entry.paramNames().get(i), m.group(i + 1));
-                }
-                return Optional.of(new RouteMatch(entry.operationName(), params));
-            }
-        }
-        return Optional.empty();
-    }
-
-    static List<String> extractParamNames(String template) {
-        List<String> names = new ArrayList<>();
-        Matcher m = Pattern.compile("\\{([^}]+)}").matcher(template);
-        while (m.find()) names.add(m.group(1));
-        return names;
-    }
-
-    static Pattern buildPathPattern(String template) {
-        StringBuilder sb = new StringBuilder("^");
-        Matcher m = Pattern.compile("\\{[^}]+}").matcher(template);
-        int last = 0;
-        while (m.find()) {
-            sb.append(Pattern.quote(template.substring(last, m.start())));
-            sb.append("([^/]+)");
-            last = m.end();
-        }
-        sb.append(Pattern.quote(template.substring(last)));
-        sb.append("$");
-        return Pattern.compile(sb.toString());
     }
 
     /**
@@ -590,10 +523,7 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
     }
 
     private String getSOAPAction(String operationName) {
-        return definitions.getBindings().stream()
-                .flatMap(b -> b.getBindingOperations().stream())
-                .filter(op -> op.getName().equals(operationName))
-                .findFirst()
+        return definitions.findBindingOperation(operationName)
                 .map(BindingOperation::getSoapAction)
                 .orElse("");
     }

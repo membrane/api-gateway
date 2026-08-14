@@ -69,7 +69,7 @@ public class Json2SoapTransformer {
     public byte[] transform(String jsonBody) throws Exception {
         JsonNode jsonNode = MAPPER.readTree(jsonBody);
 
-        List<Message> inputMessages = findOperation(operationName).getMessagesByDirection(INPUT);
+        List<Message> inputMessages = findOperation().getMessagesByDirection(INPUT);
         if (inputMessages.isEmpty()) {
             throw new IllegalArgumentException("No input message found for operation: " + operationName);
         }
@@ -87,12 +87,9 @@ public class Json2SoapTransformer {
         return documentToBytes(doc);
     }
 
-    private Operation findOperation(String name) {
-        return definitions.getPortTypes().stream()
-                .flatMap(pt -> pt.getOperations().stream())
-                .filter(op -> name.equals(op.getName()))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Operation not found: " + name));
+    private Operation findOperation() {
+        return definitions.findOperation(operationName)
+                .orElseThrow(() -> new IllegalArgumentException("Operation not found: " + operationName));
     }
 
     /** A freshly created SOAP envelope document, together with its Body element. */
