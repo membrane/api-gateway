@@ -159,6 +159,14 @@ public class XsdToSchema {
     }
 
     /**
+     * The schema documents of the WSDL's whole import graph, by target namespace — resolved once
+     * here so that the runtime transformers do not each walk the graph again.
+     */
+    Map<String, List<Element>> getSchemasByNamespace() {
+        return schemasByNamespace;
+    }
+
+    /**
      * The schema of a named type, as a reference to the component it is published as. The component
      * is built on first use; a type reached again — including one that refers back to itself — yields
      * the same reference without being built twice, which is what makes a recursive type expressible.

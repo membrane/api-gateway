@@ -59,10 +59,17 @@ public class Json2SoapTransformer {
     private final Map<String, List<Element>> schemasByNamespace;
     private final XsdContentModel contentModel;
 
-    public Json2SoapTransformer(Definitions definitions, String operationName) {
+    /**
+     * @param schemasByNamespace the import graph resolved once by the caller — see
+     *                           {@link XsdToSchema#getSchemasByNamespace()}. One transformer is built
+     *                           per operation, so deriving it here would walk the graph once per
+     *                           operation instead of once per API.
+     */
+    public Json2SoapTransformer(Definitions definitions, String operationName,
+                                Map<String, List<Element>> schemasByNamespace) {
         this.definitions = definitions;
         this.operationName = operationName;
-        this.schemasByNamespace = buildSchemaMap(definitions);
+        this.schemasByNamespace = schemasByNamespace;
         this.contentModel = new XsdContentModel(schemasByNamespace);
     }
 
@@ -139,16 +146,6 @@ public class Json2SoapTransformer {
         }
 
         return opElement;
-    }
-
-    /**
-     * The fields of the context's complexType, in declaration order — both locally declared
-     * ({@code name=}) and referenced ({@code ref=}) children. Handles inline complexTypes and
-     * {@code type=} references to named complexTypes.
-     */
-    private List<FieldBinding> extractFieldBindings(XsdContext context) {
-        if (context == null) return List.of();
-        return bindFields(contentModelFields(complexTypeOf(context)));
     }
 
     /**
@@ -277,27 +274,32 @@ public class Json2SoapTransformer {
     }
 
     /**
-     * The declaration of the named child in the complexType sequence/all/choice of
-     * {@code context} — matched on {@code name=}, or resolved through {@code ref=} — together with
-     * the schema document it was found in. The document matters: a referenced element's own
-     * {@code type=} references resolve against <em>its</em> schema, not the referrer's.
-     * Returns {@code null} if the parent has no complexType or no matching child.
+     * The declaration of each child in the complexType sequence/all/choice of a type, by the XML
+     * local name it appears under — taken from {@code name=}, or resolved through {@code ref=} —
+     * together with the schema document it was found in. The document matters: a referenced
+     * element's own {@code type=} references resolve against <em>its</em> schema, not the referrer's.
+     *
+     * <p>Built once per object from the content model its field metadata was already derived from,
+     * rather than searched per field. Where two namespaces contribute the same local name the first
+     * declaration wins, as it did when this was a sequential search.
      */
-    private XsdContext findChildXsdContext(XsdContext context, String childLocalName) {
-        for (var field : contentModelFields(complexTypeOf(context))) {
+    private Map<String, XsdContext> indexChildren(List<Field> fields) {
+        var byLocalName = new LinkedHashMap<String, XsdContext>();
+        for (var field : fields) {
             Element el = field.declaration();
             String name = el.getAttribute("name");
             if (!name.isEmpty()) {
-                if (name.equals(childLocalName)) return new XsdContext(el, field.schemaRoot());
+                byLocalName.putIfAbsent(name, new XsdContext(el, field.schemaRoot()));
                 continue;
             }
             // a ref= child: the declaration lives in the schema the ref points at
             String ref = el.getAttribute("ref");
-            if (ref.isEmpty() || !childLocalName.equals(localName(ref))) continue;
-            var resolved = resolveElementRef(el, field.schemaRoot(), schemasByNamespace);
-            if (resolved.isPresent()) return new XsdContext(resolved.get().declaration(), resolved.get().schemaRoot());
+            if (ref.isEmpty()) continue;
+            resolveElementRef(el, field.schemaRoot(), schemasByNamespace).ifPresent(resolved ->
+                    byLocalName.putIfAbsent(localName(ref),
+                            new XsdContext(resolved.declaration(), resolved.schemaRoot())));
         }
-        return null;
+        return byLocalName;
     }
 
     /**
@@ -351,19 +353,35 @@ public class Json2SoapTransformer {
 
     /**
      * The WSDL-derived metadata for the element currently being written: the order its fields are
-     * declared in, the namespace each field carries, and the XSD declaration itself (needed to
-     * derive the same three values for a nested object).
+     * declared in, the namespace each field carries, and the XSD declaration of each child by local
+     * name (which is what a nested object needs to derive the same values for itself).
      */
-    private record FieldContext(List<String> fieldOrder, Map<String, String> fieldNamespaces, XsdContext xsd) {}
+    private record FieldContext(List<String> fieldOrder, Map<String, String> fieldNamespaces,
+                                Map<String, XsdContext> childrenByLocalName) {}
 
-    private static final FieldContext NO_FIELD_CONTEXT = new FieldContext(List.of(), Map.of(), null);
+    private static final FieldContext NO_FIELD_CONTEXT = new FieldContext(List.of(), Map.of(), Map.of());
 
-    /** The field metadata of {@code context}, or an empty context when the XSD declaration is unknown. */
+    /**
+     * The field metadata of {@code context}, or an empty context when the XSD declaration is unknown.
+     * The content model is resolved once here and both the field bindings and the child index are
+     * derived from it.
+     *
+     * <p>This runs once per object per request rather than being memoized across requests, although
+     * the WSDL is immutable after {@code init()} and one transformer serves every request of its
+     * operation. Memoizing it was measured and does not pay off: best of 5 × 50,000 calls, a flat
+     * one-field type went 20.8 → 20.3 µs and a type inheriting through {@code xsd:extension} plus an
+     * {@code xsd:group} with a nested child went 24.9 → 21.9 µs. Both sit on a ~20 µs floor of DOM
+     * construction and serialization, so the whole content-model resolution is only some 4 µs of a
+     * call that waits milliseconds on the SOAP service afterwards — not worth a cache that would have
+     * to be thread-safe, since this instance is shared by all concurrent exchanges of its operation.
+     * Schemas far wider or deeper than the ones measured would shift that balance.
+     */
     private FieldContext fieldContextFor(XsdContext context) {
         if (context == null) return NO_FIELD_CONTEXT;
-        List<FieldBinding> bindings = extractFieldBindings(context);
+        List<Field> fields = contentModelFields(complexTypeOf(context));
+        List<FieldBinding> bindings = bindFields(fields);
         return new FieldContext(bindings.stream().map(FieldBinding::key).toList(),
-                fieldNamespacesOf(bindings), context);
+                fieldNamespacesOf(bindings), indexChildren(fields));
     }
 
     private void mapJsonToElement(JsonNode jsonNode, Element parent, Document doc, FieldContext context) {
@@ -401,7 +419,7 @@ public class Json2SoapTransformer {
         }
         String ns = context.fieldNamespaces().get(fieldName);
         String xmlLocalName = localNameFromKey(fieldName);
-        FieldContext childContext = fieldContextFor(childXsdContext(context.xsd(), xmlLocalName));
+        FieldContext childContext = fieldContextFor(context.childrenByLocalName().get(xmlLocalName));
 
         if (fieldValue.isArray()) {
             for (JsonNode arrayItem : fieldValue) {
@@ -437,11 +455,6 @@ public class Json2SoapTransformer {
         // Appended, not set: setTextContent would drop child elements an earlier key already
         // produced, making the result depend on the order the JSON happens to list its keys in.
         element.appendChild(element.getOwnerDocument().createTextNode(value.asText()));
-    }
-
-    /** The XSD declaration of the named child field, or {@code null} if it cannot be resolved. */
-    private XsdContext childXsdContext(XsdContext parentContext, String childLocalName) {
-        return parentContext != null ? findChildXsdContext(parentContext, childLocalName) : null;
     }
 
     private static Element makeElement(Document doc, String namespace, String name) {

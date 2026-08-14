@@ -29,9 +29,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.buildSchemaMap;
 import static org.junit.jupiter.api.Assertions.*;
 
 class Json2SoapTransformerTest {
+
+    private static Json2SoapTransformer transformer(Definitions definitions, String operationName) {
+        return new Json2SoapTransformer(definitions, operationName, buildSchemaMap(definitions));
+    }
 
     static Definitions citiesDefinitions;
     static Definitions blzDefinitions;
@@ -66,7 +71,7 @@ class Json2SoapTransformerTest {
 
     @Test
     void refChildIsEmittedInSchemaDeclarationOrder() throws Exception {
-        var soapBytes = new Json2SoapTransformer(refChildDefinitions, "placeOrder").transform(PLACE_ORDER_JSON);
+        var soapBytes = transformer(refChildDefinitions, "placeOrder").transform(PLACE_ORDER_JSON);
 
         Element placeOrderEl = getFirstChildElement(bodyOf(parseXml(soapBytes)));
         var children = getChildElements(placeOrderEl).stream().map(Element::getLocalName).toList();
@@ -83,7 +88,7 @@ class Json2SoapTransformerTest {
      */
     @Test
     void refChildSubtreeKeepsSchemaOrder() throws Exception {
-        var soapBytes = new Json2SoapTransformer(refChildDefinitions, "placeOrder").transform(PLACE_ORDER_JSON);
+        var soapBytes = transformer(refChildDefinitions, "placeOrder").transform(PLACE_ORDER_JSON);
 
         Element placeOrderEl = getFirstChildElement(bodyOf(parseXml(soapBytes)));
         Element shipmentEl = getFirstChildElement(placeOrderEl);
@@ -96,7 +101,7 @@ class Json2SoapTransformerTest {
 
     @Test
     void producesSoap11EnvelopeForCitiesWsdl() throws Exception {
-        var transformer = new Json2SoapTransformer(citiesDefinitions, "getCity");
+        var transformer = transformer(citiesDefinitions, "getCity");
         var soapBytes = transformer.transform("{\"name\": \"Berlin\"}");
 
         Document doc = parseXml(soapBytes);
@@ -108,7 +113,7 @@ class Json2SoapTransformerTest {
 
     @Test
     void usesS11PrefixForSoap11Envelope() throws Exception {
-        var transformer = new Json2SoapTransformer(citiesDefinitions, "getCity");
+        var transformer = transformer(citiesDefinitions, "getCity");
         var soapBytes = transformer.transform("{\"name\": \"Berlin\"}");
 
         Document doc = parseXml(soapBytes);
@@ -119,7 +124,7 @@ class Json2SoapTransformerTest {
 
     @Test
     void soapBodyContainsOperationElement() throws Exception {
-        var transformer = new Json2SoapTransformer(citiesDefinitions, "getCity");
+        var transformer = transformer(citiesDefinitions, "getCity");
         var soapBytes = transformer.transform("{\"name\": \"Berlin\"}");
 
         Document doc = parseXml(soapBytes);
@@ -134,7 +139,7 @@ class Json2SoapTransformerTest {
 
     @Test
     void operationElementHasCorrectNamespace() throws Exception {
-        var transformer = new Json2SoapTransformer(citiesDefinitions, "getCity");
+        var transformer = transformer(citiesDefinitions, "getCity");
         var soapBytes = transformer.transform("{\"name\": \"Berlin\"}");
 
         Document doc = parseXml(soapBytes);
@@ -148,7 +153,7 @@ class Json2SoapTransformerTest {
 
     @Test
     void jsonFieldsMappedToChildElements() throws Exception {
-        var transformer = new Json2SoapTransformer(citiesDefinitions, "getCity");
+        var transformer = transformer(citiesDefinitions, "getCity");
         var soapBytes = transformer.transform("{\"name\": \"Berlin\"}");
 
         Document doc = parseXml(soapBytes);
@@ -163,7 +168,7 @@ class Json2SoapTransformerTest {
 
     @Test
     void multipleJsonFieldsAllMapped() throws Exception {
-        var transformer = new Json2SoapTransformer(blzDefinitions, "getBank");
+        var transformer = transformer(blzDefinitions, "getBank");
         var soapBytes = transformer.transform("{\"blz\": \"12345678\"}");
 
         Document doc = parseXml(soapBytes);
@@ -181,7 +186,7 @@ class Json2SoapTransformerTest {
 
     @Test
     void jsonArrayMapsToRepeatedElements() throws Exception {
-        var transformer = new Json2SoapTransformer(citiesDefinitions, "getCity");
+        var transformer = transformer(citiesDefinitions, "getCity");
         var soapBytes = transformer.transform("{\"name\": [\"Berlin\", \"Paris\"]}");
 
         Document doc = parseXml(soapBytes);
@@ -197,7 +202,7 @@ class Json2SoapTransformerTest {
 
     @Test
     void unknownOperationThrowsIllegalArgumentException() {
-        var transformer = new Json2SoapTransformer(citiesDefinitions, "nonExistentOperation");
+        var transformer = transformer(citiesDefinitions, "nonExistentOperation");
 
         assertThrows(IllegalArgumentException.class, () -> transformer.transform("{\"foo\": \"bar\"}"),
                 "Should throw IllegalArgumentException for unknown operation");
@@ -205,7 +210,7 @@ class Json2SoapTransformerTest {
 
     @Test
     void emptyMessagePartsThrowsIllegalArgumentException() {
-        var transformer = new Json2SoapTransformer(emptyMessageDefinitions, "ping");
+        var transformer = transformer(emptyMessageDefinitions, "ping");
 
         assertThrows(IllegalArgumentException.class, () -> transformer.transform("{}"),
                 "Should throw IllegalArgumentException when input message has no parts");
@@ -213,7 +218,7 @@ class Json2SoapTransformerTest {
 
     @Test
     void emptyJsonObjectProducesOperationElementWithNoChildren() throws Exception {
-        var transformer = new Json2SoapTransformer(citiesDefinitions, "getCity");
+        var transformer = transformer(citiesDefinitions, "getCity");
         var soapBytes = transformer.transform("{}");
 
         Document doc = parseXml(soapBytes);
@@ -227,7 +232,7 @@ class Json2SoapTransformerTest {
 
     @Test
     void outputIsWellFormedXml() throws Exception {
-        var transformer = new Json2SoapTransformer(citiesDefinitions, "getCity");
+        var transformer = transformer(citiesDefinitions, "getCity");
         var soapBytes = transformer.transform("{\"name\": \"Berlin\"}");
 
         assertDoesNotThrow(() -> parseXml(soapBytes), "Output should be well-formed XML");
@@ -236,7 +241,7 @@ class Json2SoapTransformerTest {
     @Test
     void fieldsOrderedAccordingToWsdlSchema() throws Exception {
         // JSON fields are in reverse WSDL order: age, lastName, firstName
-        var transformer = new Json2SoapTransformer(orderingDefinitions, "createPerson");
+        var transformer = transformer(orderingDefinitions, "createPerson");
         var soapBytes = transformer.transform("{\"age\": 30, \"lastName\": \"Doe\", \"firstName\": \"John\"}");
 
         Document doc = parseXml(soapBytes);
@@ -258,7 +263,7 @@ class Json2SoapTransformerTest {
 
     @Test
     void jsonAtPrefixedFieldMappedToXmlAttribute() throws Exception {
-        var transformer = new Json2SoapTransformer(attributesDefinitions, "record");
+        var transformer = transformer(attributesDefinitions, "record");
         var soapBytes = transformer.transform("{\"name\": \"Berlin\", \"@id\": \"123\"}");
 
         Document doc = parseXml(soapBytes);
@@ -275,7 +280,7 @@ class Json2SoapTransformerTest {
 
     @Test
     void multipleAtPrefixedFieldsMappedToMultipleXmlAttributes() throws Exception {
-        var transformer = new Json2SoapTransformer(attributesDefinitions, "record");
+        var transformer = transformer(attributesDefinitions, "record");
         var soapBytes = transformer.transform("{\"name\": \"Berlin\", \"@id\": \"123\", \"@type\": \"city\"}");
 
         Document doc = parseXml(soapBytes);
@@ -291,7 +296,7 @@ class Json2SoapTransformerTest {
 
     @Test
     void missingAtPrefixedFieldProducesNoAttribute() throws Exception {
-        var transformer = new Json2SoapTransformer(attributesDefinitions, "record");
+        var transformer = transformer(attributesDefinitions, "record");
         var soapBytes = transformer.transform("{\"name\": \"Berlin\"}");
 
         Document doc = parseXml(soapBytes);
@@ -304,7 +309,7 @@ class Json2SoapTransformerTest {
 
     @Test
     void choiceRefFromDifferentNamespaceGetsCorrectNamespace() throws Exception {
-        var transformer = new Json2SoapTransformer(crossNamespaceChoiceDefinitions, "processInput");
+        var transformer = transformer(crossNamespaceChoiceDefinitions, "processInput");
         var soapBytes = transformer.transform("{\"numericInput\": 42}");
 
         Document doc = parseXml(soapBytes);
@@ -321,7 +326,7 @@ class Json2SoapTransformerTest {
 
     @Test
     void choiceRefSelectsCorrectAlternativeNamespace() throws Exception {
-        var transformer = new Json2SoapTransformer(crossNamespaceChoiceDefinitions, "processInput");
+        var transformer = transformer(crossNamespaceChoiceDefinitions, "processInput");
         var soapBytes = transformer.transform("{\"textInput\": \"hello\"}");
 
         Document doc = parseXml(soapBytes);
@@ -338,7 +343,7 @@ class Json2SoapTransformerTest {
 
     @Test
     void choiceRefsWithSameLocalNameAreDisambiguatedByQualifiedJsonKey_alternativeA() throws Exception {
-        var transformer = new Json2SoapTransformer(crossNamespaceChoiceDefinitions, "processAmbiguous");
+        var transformer = transformer(crossNamespaceChoiceDefinitions, "processAmbiguous");
         var soapBytes = transformer.transform("{\"{https://example.com/choice-type-a}value\": \"hello\"}");
 
         Document doc = parseXml(soapBytes);
@@ -355,7 +360,7 @@ class Json2SoapTransformerTest {
 
     @Test
     void choiceRefsWithSameLocalNameAreDisambiguatedByQualifiedJsonKey_alternativeB() throws Exception {
-        var transformer = new Json2SoapTransformer(crossNamespaceChoiceDefinitions, "processAmbiguous");
+        var transformer = transformer(crossNamespaceChoiceDefinitions, "processAmbiguous");
         var soapBytes = transformer.transform("{\"{https://example.com/choice-type-b}value\": 42}");
 
         Document doc = parseXml(soapBytes);
@@ -372,7 +377,7 @@ class Json2SoapTransformerTest {
 
     @Test
     void nestedObjectChildrenCarryTargetNamespaceWhenElementFormDefaultIsQualified() throws Exception {
-        var transformer = new Json2SoapTransformer(qualifiedDefinitions, "createOrder");
+        var transformer = transformer(qualifiedDefinitions, "createOrder");
         var soapBytes = transformer.transform(
                 "{\"address\": {\"street\": \"Main St\", \"city\": \"Berlin\"}, \"amount\": 42}");
 
@@ -396,7 +401,7 @@ class Json2SoapTransformerTest {
 
     @Test
     void childElementsInSoapCarryTargetNamespaceWhenElementFormDefaultIsQualified() throws Exception {
-        var transformer = new Json2SoapTransformer(qualifiedDefinitions, "sendMessage");
+        var transformer = transformer(qualifiedDefinitions, "sendMessage");
         var soapBytes = transformer.transform("{\"text\": \"hello\", \"priority\": 1}");
 
         Document doc = parseXml(soapBytes);
@@ -423,7 +428,7 @@ class Json2SoapTransformerTest {
 
     @Test
     void inheritedFieldsPrecedeDerivedOnesInSchemaOrder() throws Exception {
-        var soapBytes = new Json2SoapTransformer(inheritedDefinitions, "placeOrder")
+        var soapBytes = transformer(inheritedDefinitions, "placeOrder")
                 .transform(PRIORITY_ORDER_JSON);
 
         Element placeOrderEl = getFirstChildElement(bodyOf(parseXml(soapBytes)));
@@ -435,7 +440,7 @@ class Json2SoapTransformerTest {
 
     @Test
     void inheritedFieldsCarryTheNamespaceOfTheSchemaDeclaringThem() throws Exception {
-        var soapBytes = new Json2SoapTransformer(inheritedDefinitions, "placeOrder")
+        var soapBytes = transformer(inheritedDefinitions, "placeOrder")
                 .transform(PRIORITY_ORDER_JSON);
 
         var byName = new HashMap<String, String>();
@@ -450,7 +455,7 @@ class Json2SoapTransformerTest {
 
     @Test
     void descendingIntoAnInheritedComplexChildUsesItsOwnSchema() throws Exception {
-        var soapBytes = new Json2SoapTransformer(inheritedDefinitions, "placeOrder")
+        var soapBytes = transformer(inheritedDefinitions, "placeOrder")
                 .transform(PRIORITY_ORDER_JSON);
 
         Element addressEl = getChildElements(getFirstChildElement(bodyOf(parseXml(soapBytes)))).get(1);
@@ -464,7 +469,7 @@ class Json2SoapTransformerTest {
 
     @Test
     void restrictionDoesNotInheritTheBaseTypesFields() throws Exception {
-        var soapBytes = new Json2SoapTransformer(inheritedDefinitions, "trimOrder")
+        var soapBytes = transformer(inheritedDefinitions, "trimOrder")
                 .transform("{\"orderId\": \"A-1\"}");
 
         var children = getChildElements(getFirstChildElement(bodyOf(parseXml(soapBytes))));
@@ -477,7 +482,7 @@ class Json2SoapTransformerTest {
 
     @Test
     void fieldsInsideANestedChoiceAreOrderedFromTheXsd() throws Exception {
-        var soapBytes = new Json2SoapTransformer(extendedTypesDefinitions, "search")
+        var soapBytes = transformer(extendedTypesDefinitions, "search")
                 .transform("{\"code\": \"A\", \"byName\": \"Berlin\"}");
 
         Element searchEl = getFirstChildElement(bodyOf(parseXml(soapBytes)));
@@ -491,7 +496,7 @@ class Json2SoapTransformerTest {
 
     @Test
     void valueKeyBecomesTheElementsTextAlongsideItsAttributes() throws Exception {
-        var soapBytes = new Json2SoapTransformer(attributesDefinitions, "record")
+        var soapBytes = transformer(attributesDefinitions, "record")
                 .transform("{\"name\": {\"@lang\": \"de\", \"$value\": \"Berlin\"}}");
 
         Element nameEl = getFirstChildElement(getFirstChildElement(bodyOf(parseXml(soapBytes))));
@@ -505,7 +510,7 @@ class Json2SoapTransformerTest {
     @Test
     void valueKeyRoundTripsThroughTheSoap2JsonShape() throws Exception {
         // the exact JSON Soap2JsonTransformer produces for <name lang="de">Berlin</name>
-        var soapBytes = new Json2SoapTransformer(attributesDefinitions, "record")
+        var soapBytes = transformer(attributesDefinitions, "record")
                 .transform("{\"name\": {\"$value\": \"Berlin\", \"@lang\": \"de\"}}");
 
         Element nameEl = getFirstChildElement(getFirstChildElement(bodyOf(parseXml(soapBytes))));
@@ -529,7 +534,7 @@ class Json2SoapTransformerTest {
 
     /** The {@code name} element of a transformed {@code record} request. */
     private static Element recordName(String json) throws Exception {
-        var soapBytes = new Json2SoapTransformer(attributesDefinitions, "record").transform(json);
+        var soapBytes = transformer(attributesDefinitions, "record").transform(json);
         return getFirstChildElement(getFirstChildElement(bodyOf(parseXml(soapBytes))));
     }
 
@@ -539,7 +544,7 @@ class Json2SoapTransformerTest {
 
     @Test
     void nullValueBecomesNilElementRatherThanTheTextNull() throws Exception {
-        var soapBytes = new Json2SoapTransformer(attributesDefinitions, "record")
+        var soapBytes = transformer(attributesDefinitions, "record")
                 .transform("{\"name\": null}");
 
         Element nameEl = getFirstChildElement(getFirstChildElement(bodyOf(parseXml(soapBytes))));
@@ -552,7 +557,7 @@ class Json2SoapTransformerTest {
 
     @Test
     void nullAttributeIsOmitted() throws Exception {
-        var soapBytes = new Json2SoapTransformer(attributesDefinitions, "record")
+        var soapBytes = transformer(attributesDefinitions, "record")
                 .transform("{\"name\": \"Berlin\", \"@id\": null, \"@type\": \"city\"}");
 
         Element recordEl = getFirstChildElement(bodyOf(parseXml(soapBytes)));
@@ -563,7 +568,7 @@ class Json2SoapTransformerTest {
 
     @Test
     void nullArrayItemBecomesNilElement() throws Exception {
-        var soapBytes = new Json2SoapTransformer(attributesDefinitions, "record")
+        var soapBytes = transformer(attributesDefinitions, "record")
                 .transform("{\"name\": [\"Berlin\", null, \"Bonn\"]}");
 
         var names = getChildElements(getFirstChildElement(bodyOf(parseXml(soapBytes))));

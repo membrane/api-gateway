@@ -250,7 +250,7 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
     private OperationRuntime buildOperationRuntime(String operationName) {
         Optional<Operation> wsdlOp = definitions.findOperation(operationName);
         return new OperationRuntime(
-                new Json2SoapTransformer(definitions, operationName),
+                new Json2SoapTransformer(definitions, operationName, xsdToSchema.getSchemasByNamespace()),
                 xsdToSchema.convertMessageParts(wsdlOp.map(op -> op.getMessagesByDirection(OUTPUT)).orElse(List.of())),
                 xsdToSchema.convertFaultDetail(wsdlOp.map(Operation::getFaults).orElse(List.of())));
     }
