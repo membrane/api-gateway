@@ -166,7 +166,7 @@
                 </xsd:sequence>
             </xsd:complexType>
 
-            <xsd:element name="getPartnerRequest">
+            <xsd:element name="getPartner">
                 <xsd:annotation>
                     <xsd:documentation>Names the partner to read.</xsd:documentation>
                 </xsd:annotation>
@@ -196,7 +196,7 @@
                 </xsd:complexType>
             </xsd:element>
 
-            <xsd:element name="getPartnersRequest">
+            <xsd:element name="getPartners">
                 <xsd:annotation>
                     <xsd:documentation>
                         The search criteria. Both are optional and combine: a request that names
@@ -241,7 +241,7 @@
                 </xsd:complexType>
             </xsd:element>
 
-            <xsd:element name="createPartnerRequest">
+            <xsd:element name="createPartner">
                 <xsd:annotation>
                     <xsd:documentation>
                         The data of the partner to create. The number is assigned by the service, so
@@ -293,7 +293,7 @@
                 </xsd:complexType>
             </xsd:element>
 
-            <xsd:element name="updatePartnerRequest">
+            <xsd:element name="updatePartner">
                 <xsd:annotation>
                     <xsd:documentation>
                         The partner to change and its new data. Every field is replaced by what the
@@ -346,7 +346,7 @@
                 </xsd:complexType>
             </xsd:element>
 
-            <xsd:element name="deletePartnerRequest">
+            <xsd:element name="deletePartner">
                 <xsd:annotation>
                     <xsd:documentation>Names the partner to delete.</xsd:documentation>
                 </xsd:annotation>
@@ -374,7 +374,7 @@
     </wsdl:types>
 
     <wsdl:message name="GetPartnerRequest">
-        <wsdl:part name="parameters" element="tns:getPartnerRequest"/>
+        <wsdl:part name="parameters" element="tns:getPartner"/>
     </wsdl:message>
 
     <wsdl:message name="GetPartnerResponse">
@@ -382,7 +382,7 @@
     </wsdl:message>
 
     <wsdl:message name="GetPartnersRequest">
-        <wsdl:part name="parameters" element="tns:getPartnersRequest"/>
+        <wsdl:part name="parameters" element="tns:getPartners"/>
     </wsdl:message>
 
     <wsdl:message name="GetPartnersResponse">
@@ -390,7 +390,7 @@
     </wsdl:message>
 
     <wsdl:message name="CreatePartnerRequest">
-        <wsdl:part name="parameters" element="tns:createPartnerRequest"/>
+        <wsdl:part name="parameters" element="tns:createPartner"/>
     </wsdl:message>
 
     <wsdl:message name="CreatePartnerResponse">
@@ -398,7 +398,7 @@
     </wsdl:message>
 
     <wsdl:message name="UpdatePartnerRequest">
-        <wsdl:part name="parameters" element="tns:updatePartnerRequest"/>
+        <wsdl:part name="parameters" element="tns:updatePartner"/>
     </wsdl:message>
 
     <wsdl:message name="UpdatePartnerResponse">
@@ -406,7 +406,7 @@
     </wsdl:message>
 
     <wsdl:message name="DeletePartnerRequest">
-        <wsdl:part name="parameters" element="tns:deletePartnerRequest"/>
+        <wsdl:part name="parameters" element="tns:deletePartner"/>
     </wsdl:message>
 
     <wsdl:message name="DeletePartnerResponse">

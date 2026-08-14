@@ -14,35 +14,23 @@
 
 package com.predic8.membrane.examples.withoutinternet.test;
 
-import com.predic8.membrane.examples.util.*;
-import io.restassured.response.*;
-import org.json.*;
-import org.junit.jupiter.api.*;
-import org.skyscreamer.jsonassert.*;
+import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcase;
+import io.restassured.response.Response;
+import org.json.JSONException;
+import org.junit.jupiter.api.Test;
+import org.skyscreamer.jsonassert.JSONAssert;
 
-import java.io.*;
-
-import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.test.StringAssertions.*;
-import static io.restassured.RestAssured.*;
-import static org.hamcrest.Matchers.*;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.test.StringAssertions.assertContains;
+import static io.restassured.RestAssured.get;
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.equalTo;
 
 public class JavascriptExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
     @Override
     protected String getExampleDirName() {
         return "scripting/javascript";
-    }
-
-    BufferLogger logger;
-
-    @BeforeEach
-    void startMembrane() throws IOException, InterruptedException {
-        logger = new BufferLogger();
-        process = new Process2.Builder().in(baseDir).script("membrane").withWatcher(logger).waitForMembrane().start();
-
-        // Dump HTTP
-        //filters(new RequestLoggingFilter(), new ResponseLoggingFilter());
     }
 
     @Test
