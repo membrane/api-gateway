@@ -105,6 +105,23 @@ class APIProxyKeyComplexMatchTest {
         assertFalse(key.matchesPath("/other"));
     }
 
+    @Test
+    @DisplayName("matchesPath honours the configured path and does not swallow a shared base path (#3173)")
+    void matchesPathDoesNotSwallowSharedBasePath() {
+        // Two APIs share the rewrite base path /jfa/api/ but are told apart by their configured path.
+        var key = new APIProxyKey("", "", 8443, "/jfa/api/housekeeping", "*", null, true) {{
+            addBasePaths(new ArrayList<>(List.of("/jfa/api/")));
+        }};
+
+        assertTrue(key.matchesPath("/jfa/api/housekeeping"));
+        assertTrue(key.matchesPath("/jfa/api/housekeeping/foo"));
+
+        assertFalse(key.matchesPath("/jfa/api/echo"));
+        assertFalse(key.matchesPath("/jfa/api/user"));
+
+        assertTrue(key.matchesPath("/api-docs"));
+    }
+
     private static Stream<Arguments> urls() {
         return Stream.of(
                 of("/api-docs",true),
