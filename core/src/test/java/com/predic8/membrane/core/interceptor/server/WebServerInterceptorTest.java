@@ -15,6 +15,8 @@ package com.predic8.membrane.core.interceptor.server;
 
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
 
@@ -53,6 +55,28 @@ class WebServerInterceptorTest {
         // No index file is set, and no index page is generated, so throw not found.
         // System.out.println("exc.getResponse().getBodyAsStringDecoded() = " + exc.getResponse().getBodyAsStringDecoded());
         assertEquals(404, exc.getResponse().getStatusCode());
+    }
+
+    @Test
+    void errorResponseInDevelopmentIncludesPath() throws Exception {
+        Response response = ws.createResponse(r.getResolverMap(), "file:/nonexistent/path/secret.html");
+        String body = response.getBodyAsStringDecoded();
+        JsonNode json = om.readTree(body);
+        assertEquals(500, response.getStatusCode());
+        assertTrue(json.has("path"), "path field must be present in development mode");
+        assertEquals("file:/nonexistent/path/secret.html", json.get("path").asText());
+    }
+
+    @Test
+    void errorResponseInProductionHidesPath() throws Exception {
+        WebServerInterceptor wsProduction = new WebServerInterceptor(DummyTestRouter.productionRouter()) {{
+            setDocBase(Objects.requireNonNull(this.getClass().getResource("/html/")).toString());
+        }};
+        Response response = wsProduction.createResponse(r.getResolverMap(), "file:/nonexistent/path/secret.html");
+        String body = response.getBodyAsStringDecoded();
+        JsonNode json = om.readTree(body);
+        assertEquals(500, response.getStatusCode());
+        assertFalse(json.has("path"), "path field must be absent in production mode");
     }
 
     @Test

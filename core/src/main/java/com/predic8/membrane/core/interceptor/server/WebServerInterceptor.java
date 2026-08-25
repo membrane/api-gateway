@@ -30,6 +30,7 @@ import java.nio.file.*;
 import java.util.*;
 import java.util.regex.*;
 
+import com.predic8.membrane.core.exceptions.*;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Response.ok;
@@ -247,11 +248,13 @@ public class WebServerInterceptor extends AbstractInterceptor {
         try {
             return createResponseInternal(rr, resPath);
         } catch (Exception e) {
-            return internal(router.getConfiguration().isProduction(), getDisplayName())
+            boolean production = router.getConfiguration().isProduction();
+            ProblemDetails pd = internal(production, getDisplayName())
                     .title("Could not resolve file")
-                    .topLevel("path", resPath)
-                    .exception(e)
-                    .build();
+                    .exception(e);
+            if (!production)
+                pd.topLevel("path", resPath);
+            return pd.build();
         }
     }
 
