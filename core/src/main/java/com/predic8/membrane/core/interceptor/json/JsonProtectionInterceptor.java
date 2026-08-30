@@ -15,8 +15,6 @@
 package com.predic8.membrane.core.interceptor.json;
 
 import com.fasterxml.jackson.core.*;
-import com.fasterxml.jackson.databind.*;
-import com.google.common.io.*;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
@@ -27,11 +25,7 @@ import com.predic8.membrane.core.multipart.MultipartUtil.PartAction;
 import org.slf4j.*;
 
 import java.io.*;
-import java.util.*;
 
-import static com.fasterxml.jackson.core.JsonParser.Feature.*;
-import static com.fasterxml.jackson.core.JsonTokenId.*;
-import static com.fasterxml.jackson.databind.DeserializationFeature.*;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.MimeType.isJson;
 import static com.predic8.membrane.core.interceptor.json.JsonProtectionInterceptor.OtherContentTypes.*;
@@ -82,9 +76,7 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
         REJECT, SKIP
     }
 
-    private final ObjectMapper om = new ObjectMapper()
-            .configure(FAIL_ON_READING_DUP_TREE_KEY, true)
-            .configure(STRICT_DUPLICATE_DETECTION, true);
+    private JsonProtectionScanner scanner;
 
     private Boolean reportError;
     private int maxTokens = 10000;
@@ -105,8 +97,8 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
     @Override
     public void init() {
         super.init();
-        if (maxStringLength < maxKeyLength)
-            maxKeyLength = maxStringLength;
+        scanner = new JsonProtectionScanner(new JsonLimits(maxTokens, maxSize, maxDepth, maxStringLength,
+                maxKeyLength, maxObjectSize, maxArraySize, blockProto));
     }
 
     private boolean shouldProvideDetails() {
@@ -114,48 +106,6 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
             return reportError;
         }
         return !router.getConfiguration().isProduction();
-    }
-
-    private abstract static class Context {
-        public abstract void check(JsonToken jsonToken, JsonParser parser) throws IOException, JsonProtectionException;
-    }
-
-    private class ObjContext extends Context {
-        int n;
-        @Override
-        public void check(JsonToken jsonToken, JsonParser parser) throws JsonProtectionException, IOException {
-            if (jsonToken.id() == ID_END_OBJECT)
-                return;
-            n++;
-            if (n > maxObjectSize)
-                throw new JsonProtectionException("Exceeded maxObjectSize.",
-                                                    parser.currentLocation().getLineNr(),
-                                                    parser.currentLocation().getColumnNr());
-            if (blockProto && "__proto__".equals(parser.currentName()))
-                throw new JsonProtectionException("__proto__ found as key.",
-                        parser.currentLocation().getLineNr(),
-                        parser.currentLocation().getColumnNr());
-            if (parser.currentName().length() > maxKeyLength) {
-                throw new JsonProtectionException("Exceeded maxKeyLength.",
-                                                    parser.currentLocation().getLineNr(),
-                                                    parser.currentLocation().getColumnNr());
-            }
-        }
-    }
-
-    private class ArrContext extends Context {
-        int n;
-
-        @Override
-        public void check(JsonToken jsonToken, JsonParser parser) throws JsonProtectionException {
-            if (jsonToken.id() == ID_END_ARRAY)
-                return;
-            n++;
-            if (n > maxArraySize)
-                throw new JsonProtectionException("Exceeded maxArraySize.",
-                                                    parser.currentLocation().getLineNr(),
-                                                    parser.currentLocation().getColumnNr());
-        }
     }
 
     @Override
@@ -219,7 +169,7 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
             return rejectNonJson(exc, contentType, partName);
         }
         try {
-            parseJson(new CountingInputStream(body));
+            scanner.scan(body);
         } catch (JsonProtectionException e) {
             log.debug(e.getMessage());
             exc.setResponse(createErrorResponse(describe(e.getMessage(), partName), e.getLine(), e.getCol()));
@@ -283,85 +233,6 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
             return pd.build();
         }
         return Response.badRequest().build();
-    }
-
-    private void parseJson(CountingInputStream cis) throws IOException, JsonProtectionException {
-        JsonParser parser = om.createParser(cis);
-        int tokenCount = 0;
-        int depth = 0;
-        List<Context> contexts = new ArrayList<>();
-        Context currentContext = null;
-        while (true) {
-            JsonToken jsonToken = parser.nextValue();
-            if (jsonToken == null)
-                break;
-            tokenCount++;
-            if (tokenCount > maxTokens)
-                throw new JsonProtectionException("Exceeded maxTokens.",
-                                                    parser.currentLocation().getLineNr(),
-                                                    parser.currentLocation().getColumnNr());
-            if (cis.getCount() > maxSize)
-                throw new JsonProtectionException("Exceeded maxSize.",
-                                                    parser.currentLocation().getLineNr(),
-                                                    parser.currentLocation().getColumnNr());
-            if (currentContext != null)
-                currentContext.check(jsonToken, parser);
-            switch (jsonToken.id()) {
-                case ID_START_OBJECT:
-                    depth++;
-                    if (depth > maxDepth)
-                        throw new JsonProtectionException("Exceeded maxDepth.",
-                                                            parser.currentLocation().getLineNr(),
-                                                            parser.currentLocation().getColumnNr());
-                    contexts.add(currentContext = new ObjContext());
-                    break;
-                case ID_START_ARRAY:
-                    depth++;
-                    if (depth > maxDepth)
-                        throw new JsonProtectionException("Exceeded maxDepth.",
-                                                            parser.currentLocation().getLineNr(),
-                                                            parser.currentLocation().getColumnNr());
-                    contexts.add(currentContext = new ArrContext());
-                    break;
-                case ID_END_OBJECT:
-                case ID_END_ARRAY:
-                    depth--;
-                    if (depth < 0)
-                        throw new JsonProtectionException("Invalid JSON Document.",
-                                                            parser.currentLocation().getLineNr(),
-                                                            parser.currentLocation().getColumnNr());
-                    contexts.removeLast();
-                    currentContext = contexts.isEmpty() ? null : contexts.getLast();
-                    break;
-                case ID_STRING:
-                    if (parser.getValueAsString().length() > maxStringLength)
-                        throw new JsonProtectionException("Exceeded maxStringLength.",
-                                                            parser.currentLocation().getLineNr(),
-                                                            parser.currentLocation().getColumnNr());
-                    break;
-                case ID_NUMBER_INT:
-                case ID_NUMBER_FLOAT:
-                case ID_TRUE:
-                case ID_FALSE:
-                case ID_NULL:
-                    break;
-                case ID_NOT_AVAILABLE:
-                case ID_NO_TOKEN:
-                case ID_FIELD_NAME:
-                case ID_EMBEDDED_OBJECT:
-                    throw new JsonProtectionException("Not handled.",
-                                                        parser.currentLocation().getLineNr(),
-                                                        parser.currentLocation().getColumnNr());
-                default:
-                    throw new JsonProtectionException("Not handled (\" + jsonToken.id() + \")",
-                                                        parser.currentLocation().getLineNr(),
-                                                        parser.currentLocation().getColumnNr());
-            }
-        }
-        if (cis.getCount() > maxSize)
-            throw new JsonProtectionException("Exceeded maxSize.",
-                                                parser.currentLocation().getLineNr(),
-                                                parser.currentLocation().getColumnNr());
     }
 
     @SuppressWarnings("unused")
@@ -552,7 +423,7 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
                 ":\"c\"}]}</font> has depth 3.)</li>" +
                 "<li>Limits the maximum string length to " + maxStringLength + ". " +
                 "(<font style=\"font-family: monospace\">{\"a\":\"abc\"}</font> has max string length 3.)</li>" +
-                "<li>Limits the maximum key length to " + maxKeyLength + ". " +
+                "<li>Limits the maximum key length to " + Math.min(maxKeyLength, maxStringLength) + ". " +
                 "(<font style=\"font-family: monospace\">{\"abc\":\"a\"}</font> has key length 3.)</li>" +
                 "<li>Limits the maximum object size to " + maxObjectSize + ". " +
                 "(<font style=\"font-family: monospace\">{\"a\":\"b\",\"c\":\"d\"}</font> has object size 2.)</li>" +
