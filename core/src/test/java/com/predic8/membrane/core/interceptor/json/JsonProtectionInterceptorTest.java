@@ -19,6 +19,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.router.*;
+import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.*;
 
 import static com.google.common.base.Strings.*;
@@ -411,6 +412,39 @@ public class JsonProtectionInterceptorTest {
 
         assertEquals(RETURN, jpiDev.handleRequest(exc));
         assertTrue(parse(exc.getResponse()).getDetail().contains("is not JSON"));
+    }
+
+    // --- XOP / MTOM --------------------------------------------------------------------------
+
+    /**
+     * An XOP message is XML by definition, so jsonProtection never wants it reassembled - it is
+     * traversed as raw parts and handled by the otherContentTypes policy like any other non-JSON.
+     */
+    @Test
+    void xopRequestIsSkippedWhenConfigured() throws Exception {
+        jpiDev.setOtherContentTypes(SKIP);
+
+        assertEquals(CONTINUE, jpiDev.handleRequest(xopExchange()));
+    }
+
+    @Test
+    void xopRequestIsRejectedByDefault() throws Exception {
+        var exc = xopExchange();
+
+        assertEquals(RETURN, jpiDev.handleRequest(exc));
+        assertTrue(parse(exc.getResponse()).getDetail().contains("application/xop+xml"),
+                parse(exc.getResponse()).getDetail());
+    }
+
+    private static Exchange xopExchange() throws Exception {
+        byte[] body = IOUtils.toByteArray(
+                JsonProtectionInterceptorTest.class.getResourceAsStream("/multipart/embedded-byte-array.txt"));
+        return Request.post("/")
+                .contentType("multipart/related; type=\"application/xop+xml\"; "
+                        + "boundary=\"uuid:168683dc-43b3-4e71-8e66-efb633ef406b\"; "
+                        + "start=\"<root.message@cxf.apache.org>\"; start-info=\"text/xml\"")
+                .body(body)
+                .buildExchange();
     }
 
     private void send(String body, Outcome expectOut, Object... parameters) throws Exception {

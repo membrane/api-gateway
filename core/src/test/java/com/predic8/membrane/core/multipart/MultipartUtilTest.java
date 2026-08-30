@@ -292,16 +292,28 @@ class MultipartUtilTest {
         assertEquals("ok", handler.handled.getFirst().getBodyAsString());
     }
 
+    /**
+     * XOP is deliberately not reassembled here: reassembly buffers every attachment plus a
+     * base64-inflated copy before the handler could decide anything, escaping maxPartSize.
+     */
     @Test
-    void xopMessageIsHandedOverAsOneReassembledPart() throws IOException, ParseException {
+    void xopMessageIsTraversedAsRawParts() throws IOException, ParseException {
         var handler = inspectAll();
 
         MultipartUtil.forEachPart(xopResponse(), 1024 * 1024, handler);
 
-        assertEquals(1, handler.handled.size(), "XOP must not be split into raw parts");
-        assertEquals("text/xml", handler.handled.getFirst().getContentType());
-        // The binary part has been inlined as base64 instead of being a separate part.
-        assertFalse(handler.handled.getFirst().getBodyAsString().contains("xop:Include"));
+        assertEquals(2, handler.handled.size());
+        assertEquals("application/xop+xml; charset=UTF-8; type=\"text/xml\";", handler.handled.getFirst().getContentType());
+        assertEquals("application/octet-stream", handler.handled.get(1).getContentType());
+        // The attachment stays a separate part rather than being inlined into the root document.
+        assertTrue(handler.handled.getFirst().getBodyAsString().contains("xop:Include"));
+    }
+
+    @Test
+    void oversizedXopRootIsRejectedRatherThanReassembled() {
+        var e = assertThrows(IOException.class, () -> MultipartUtil.forEachPart(xopResponse(), 8, inspectAll()));
+
+        assertTrue(e.getMessage().contains("maximum size of 8"), e.getMessage());
     }
 
     @Test

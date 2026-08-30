@@ -68,7 +68,10 @@ public class MultipartUtil {
      * at a time. Parts the handler does not want are discarded unread, and a part exceeding
      * {@code maxPartSize} aborts the traversal instead of being buffered whole.
      *
-     * <p>An XOP/MTOM message is reassembled first and passed to the handler as a single part.</p>
+     * <p>XOP/MTOM messages are traversed as their raw parts and are deliberately not reassembled:
+     * reassembly would have to buffer every attachment and a base64-inflated copy of it before the
+     * handler could decide anything. Callers that need the reassembled document (schema validation,
+     * for example) use {@link XOPReconstitutor} directly.</p>
      *
      * <p>Content-Encodings (gzip, deflate, brotli) are decoded; the bodies passed to the handler are
      * the logical content.</p>
@@ -81,13 +84,6 @@ public class MultipartUtil {
      */
     @SuppressWarnings("deprecation")
     public static void forEachPart(Message message, int maxPartSize, PartHandler handler) throws IOException, ParseException {
-        Message reconstituted = reconstituteXOP(message);
-        if (reconstituted != null) {
-            if (handler.decide(reconstituted.getHeader()) == PartAction.INSPECT)
-                handler.handle(new Part(reconstituted.getHeader(), MessageUtil.getContent(reconstituted)));
-            return;
-        }
-
         MultipartStream ms = new MultipartStream(MessageUtil.getContentAsStream(message), boundaryOf(message).getBytes(UTF_8));
         boolean hasNext = ms.skipPreamble();
         while (hasNext) {
@@ -153,18 +149,6 @@ public class MultipartUtil {
     static class PartTooLargeException extends RuntimeException {
         PartTooLargeException(int limit) {
             super("Part exceeds the maximum size of " + limit + " bytes.");
-        }
-    }
-
-    /**
-     * @return the reassembled message of an XOP/MTOM multipart, or null if the message is not one
-     */
-    private static Message reconstituteXOP(Message message) {
-        try {
-            return new XOPReconstitutor().getReconstitutedMessage(message);
-        } catch (Exception e) {
-            // Not a well-formed XOP message; fall back to treating it as ordinary multipart.
-            return null;
         }
     }
 
