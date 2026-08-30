@@ -115,10 +115,9 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
             return CONTINUE;
 
         try {
-            // The common case: a plain body is inspected straight off the body stream, without
-            // buffering it into a byte[] first.
+            // A plain body is inspected straight off the body stream, without buffering it into a byte[].
             if (!MultipartUtil.isMultipart(request))
-                return inspect(exc, request.getHeader().getContentType(), request.getBodyAsStreamDecoded(), Origin.BODY);
+                return inspect(exc, request.getBodyAsStreamDecoded(), Origin.body(request.getHeader()));
 
             return inspectParts(exc, request);
         } catch (Exception e) {
@@ -140,7 +139,7 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
         } catch (MultipartUtil.PartTooLargeException e) {
             // Reported like any other part-level violation, naming the attachment that was too big.
             log.debug(e.getMessage());
-            exc.setResponse(createErrorResponse(Origin.of(e.getPartHeader()).describe(e.getMessage()), null, null));
+            exc.setResponse(createErrorResponse(Origin.part(e.getPartHeader()).describe(e.getMessage()), null, null));
             return RETURN;
         }
         return handler.outcome;
@@ -168,13 +167,13 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
             if (otherContentTypes == SKIP)
                 return PartAction.SKIP;
             // Rejecting needs the header only, so the offending body is never buffered.
-            outcome = rejectNonJson(exc, partHeader.getContentType(), Origin.of(partHeader));
+            outcome = rejectNonJson(exc, Origin.part(partHeader));
             return PartAction.STOP;
         }
 
         @Override
         public void handle(Part part) {
-            outcome = inspect(exc, part.getContentType(), part.getInputStream(), Origin.of(part.getHeader()));
+            outcome = inspect(exc, part.getInputStream(), Origin.part(part.getHeader()));
         }
     }
 
@@ -182,13 +181,15 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
      * Where the inspected content came from. This decides what an absent Content-Type means and how
      * a rejection is worded, so a rejection on a multipart upload can be traced back to one attachment.
      */
-    private record Origin(boolean part, String name) {
+    private record Origin(boolean part, String name, String contentType) {
 
-        private static final Origin BODY = new Origin(false, null);
+        private static Origin body(Header header) {
+            return new Origin(false, null, header.getContentType());
+        }
 
-        private static Origin of(Header partHeader) {
+        private static Origin part(Header partHeader) {
             String name = Part.nameOf(partHeader);
-            return new Origin(true, name != null ? name : Part.contentIDOf(partHeader));
+            return new Origin(true, name != null ? name : Part.contentIDOf(partHeader), partHeader.getContentType());
         }
 
         /**
@@ -196,7 +197,7 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
          * clients that post JSON without declaring it must keep being checked. A MIME part without a
          * Content-Type defaults to text/plain per RFC 2045 and is therefore not JSON.
          */
-        private boolean holdsJson(String contentType) {
+        private boolean holdsJson() {
             if (contentType == null)
                 return !part;
             return isJson(contentType);
@@ -213,11 +214,11 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
     /**
      * Inspects a single content unit: either the whole body or one MIME part.
      */
-    private Outcome inspect(Exchange exc, String contentType, InputStream body, Origin origin) {
-        if (!origin.holdsJson(contentType)) {
+    private Outcome inspect(Exchange exc, InputStream body, Origin origin) {
+        if (!origin.holdsJson()) {
             if (otherContentTypes == SKIP)
                 return CONTINUE;
-            return rejectNonJson(exc, contentType, origin);
+            return rejectNonJson(exc, origin);
         }
         try {
             scanner.scan(body);
@@ -238,9 +239,9 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
         return CONTINUE;
     }
 
-    private Outcome rejectNonJson(Exchange exc, String contentType, Origin origin) {
+    private Outcome rejectNonJson(Exchange exc, Origin origin) {
         String msg = "Content-Type %s is not JSON. Set otherContentTypes to \"skip\" to pass non-JSON content through."
-                .formatted(contentType);
+                .formatted(origin.contentType());
         log.debug(msg);
         exc.setResponse(createErrorResponse(origin.describe(msg), null, null));
         return RETURN;
