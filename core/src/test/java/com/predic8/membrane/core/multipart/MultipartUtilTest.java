@@ -19,7 +19,13 @@ import jakarta.mail.internet.ParseException;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 
+import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.multipart.MultipartUtil.PartAction;
+
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Function;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
@@ -191,45 +197,111 @@ class MultipartUtilTest {
     }
 
     // -------------------------------------------------------------------------
-    // unitsOf(Message)
+    // forEachPart(Message, maxPartSize, PartHandler)
     // -------------------------------------------------------------------------
 
-    @Test
-    void plainBodyIsOneUnit() throws IOException, ParseException {
-        byte[] bytes = "{\"a\":\"b\"}".getBytes(UTF_8);
-        var msg = Response.ok()
-                .header("Content-Type", "application/json")
-                .header("Content-Length", String.valueOf(bytes.length))
-                .body(bytes)
-                .build();
+    /** Records what the traversal offered and what it actually handed over. */
+    private static class RecordingHandler implements MultipartUtil.PartHandler {
+        final List<String> decided = new ArrayList<>();
+        final List<Part> handled = new ArrayList<>();
+        private final Function<Header, PartAction> policy;
 
-        var units = MultipartUtil.unitsOf(msg);
+        RecordingHandler(Function<Header, PartAction> policy) {
+            this.policy = policy;
+        }
 
-        assertEquals(1, units.size());
-        assertEquals("application/json", units.getFirst().getContentType());
-        assertArrayEquals(bytes, units.getFirst().getBody());
+        @Override
+        public PartAction decide(Header partHeader) {
+            decided.add(Part.nameOf(partHeader));
+            return policy.apply(partHeader);
+        }
+
+        @Override
+        public void handle(Part part) {
+            handled.add(part);
+        }
+    }
+
+    private static RecordingHandler inspectAll() {
+        return new RecordingHandler(h -> PartAction.INSPECT);
     }
 
     @Test
-    void multipartBodyIsOneUnitPerPart() throws IOException, ParseException {
-        var units = MultipartUtil.unitsOf(response(multipartBody(
+    void partsAreHandedOverInOrder() throws IOException, ParseException {
+        var handler = inspectAll();
+
+        MultipartUtil.forEachPart(response(multipartBody(
                 formField("username", "alice"),
                 formField("message", "Hello World")
-        )));
+        )), 1024, handler);
 
-        assertEquals(2, units.size());
-        assertEquals("username", units.getFirst().getName());
-        assertEquals("message", units.get(1).getName());
+        assertEquals(List.of("username", "message"), handler.decided);
+        assertEquals("alice", handler.handled.getFirst().getBodyAsString());
+        assertEquals("Hello World", handler.handled.get(1).getBodyAsString());
     }
 
     @Test
-    void xopMessageIsOneReassembledUnit() throws IOException, ParseException {
-        var units = MultipartUtil.unitsOf(xopResponse());
+    void skippedPartIsNeverMaterialisedAndTraversalContinues() throws IOException, ParseException {
+        var handler = new RecordingHandler(h -> "skipme".equals(Part.nameOf(h)) ? PartAction.SKIP : PartAction.INSPECT);
 
-        assertEquals(1, units.size(), "XOP must not be split into raw parts");
-        assertEquals("text/xml", units.getFirst().getContentType());
-        // The binary part has been inlined as base64 instead of being a separate unit.
-        assertFalse(units.getFirst().getBodyAsString().contains("xop:Include"));
+        MultipartUtil.forEachPart(response(multipartBody(
+                formField("skipme", "0123456789"),
+                formField("keepme", "alice")
+        )), 1024, handler);
+
+        assertEquals(List.of("skipme", "keepme"), handler.decided, "both parts must be offered");
+        assertEquals(1, handler.handled.size(), "the skipped part must not be handed over");
+        assertEquals("keepme", handler.handled.getFirst().getName());
+    }
+
+    @Test
+    void stopEndsTraversalWithoutTouchingLaterParts() throws IOException, ParseException {
+        var handler = new RecordingHandler(h -> PartAction.STOP);
+
+        MultipartUtil.forEachPart(response(multipartBody(
+                formField("first", "a"),
+                formField("second", "b")
+        )), 1024, handler);
+
+        assertEquals(List.of("first"), handler.decided);
+        assertTrue(handler.handled.isEmpty());
+    }
+
+    @Test
+    void partExceedingMaxPartSizeIsRejected() {
+        var handler = inspectAll();
+        var msg = response(multipartBody(formField("big", "0123456789")));
+
+        var e = assertThrows(IOException.class, () -> MultipartUtil.forEachPart(msg, 4, handler));
+
+        assertTrue(e.getMessage().contains("maximum size of 4"), e.getMessage());
+        assertTrue(handler.handled.isEmpty(), "an oversized part must not be handed over");
+    }
+
+    @Test
+    void oversizedPartIsNotReadWhenSkipped() throws IOException, ParseException {
+        // The size cap applies only to what is buffered, so a huge skipped part costs nothing.
+        var handler = new RecordingHandler(h -> "huge".equals(Part.nameOf(h)) ? PartAction.SKIP : PartAction.INSPECT);
+
+        MultipartUtil.forEachPart(response(multipartBody(
+                formField("huge", "x".repeat(100_000)),
+                formField("small", "ok")
+        )), 8, handler);
+
+        assertEquals(1, handler.handled.size());
+        assertEquals("ok", handler.handled.getFirst().getBodyAsString());
+    }
+
+    @Test
+    void xopMessageIsHandedOverAsOneReassembledPart() throws IOException, ParseException {
+        var handler = inspectAll();
+
+        MultipartUtil.forEachPart(xopResponse(), 1024 * 1024, handler);
+
+        assertEquals(1, handler.handled.size(), "XOP must not be split into raw parts");
+        assertEquals("text/xml", handler.handled.getFirst().getContentType());
+        // The binary part has been inlined as base64 instead of being a separate part.
+        assertFalse(handler.handled.getFirst().getBodyAsString().contains("xop:Include"));
     }
 
     @Test
@@ -238,7 +310,7 @@ class MultipartUtilTest {
                 "Content-Disposition: form-data; name=\"nested\"" + CRLF
                 + "Content-Type: multipart/mixed; boundary=inner" + CRLF + CRLF + "..."));
 
-        assertThrows(IOException.class, () -> MultipartUtil.unitsOf(msg));
+        assertThrows(IOException.class, () -> MultipartUtil.forEachPart(msg, 1024, inspectAll()));
     }
 
     // -------------------------------------------------------------------------

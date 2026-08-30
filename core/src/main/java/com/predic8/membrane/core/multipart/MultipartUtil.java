@@ -43,35 +43,117 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  */
 public class MultipartUtil {
 
+    /** What {@link PartHandler} wants done with a part, decided from its header alone. */
+    public enum PartAction {
+        /** Buffer the body (bounded) and pass it to {@link PartHandler#handle}. */
+        INSPECT,
+        /** Discard the body without reading it into memory, and continue with the next part. */
+        SKIP,
+        /** Stop the traversal immediately; nothing further is read or buffered. */
+        STOP
+    }
+
     /**
-     * Returns the inspectable documents of a message: one unit for a normal body, one unit per part
-     * for a multipart body, and a single reassembled unit for an XOP/MTOM message.
+     * Decides from a part's header alone whether its body is needed, so that unwanted parts are
+     * never buffered.
+     */
+    public interface PartHandler {
+        PartAction decide(Header partHeader);
+
+        void handle(Part part) throws IOException;
+    }
+
+    /**
+     * Streams the parts of a multipart message to a handler, holding at most one part body in memory
+     * at a time. Parts the handler does not want are discarded unread, and a part exceeding
+     * {@code maxPartSize} aborts the traversal instead of being buffered whole.
      *
-     * <p>Callers that inspect message content (e.g. the protection interceptors) can treat "the whole
-     * body" and "one attachment" with the same code by iterating over the units.</p>
+     * <p>An XOP/MTOM message is reassembled first and passed to the handler as a single part.</p>
      *
-     * <p>Content-Encodings (gzip, deflate, brotli) are decoded; the returned bodies are the logical
-     * content.</p>
+     * <p>Content-Encodings (gzip, deflate, brotli) are decoded; the bodies passed to the handler are
+     * the logical content.</p>
      *
-     * @param message a request or response
-     * @return units in wire order; never null, never empty
-     * @throws IOException    on I/O or parse errors, or if a part is itself multipart
+     * @param message     a multipart request or response
+     * @param maxPartSize maximum number of bytes a single part's body may occupy
+     * @throws IOException    on I/O or parse errors, if a part is itself multipart, or if a part
+     *                        exceeds {@code maxPartSize}
      * @throws ParseException if the Content-Type header cannot be parsed
      */
-    public static List<Part> unitsOf(Message message) throws IOException, ParseException {
+    @SuppressWarnings("deprecation")
+    public static void forEachPart(Message message, int maxPartSize, PartHandler handler) throws IOException, ParseException {
         Message reconstituted = reconstituteXOP(message);
-        if (reconstituted != null)
-            return List.of(new Part(reconstituted.getHeader(), MessageUtil.getContent(reconstituted)));
-
-        if (!isMultipart(message))
-            return List.of(new Part(message.getHeader(), MessageUtil.getContent(message)));
-
-        List<Part> parts = split(message);
-        for (Part part : parts) {
-            if (isMultipart(part.getContentType()))
-                throw new IOException("Nested multipart is not supported: part has Content-Type " + part.getContentType());
+        if (reconstituted != null) {
+            if (handler.decide(reconstituted.getHeader()) == PartAction.INSPECT)
+                handler.handle(new Part(reconstituted.getHeader(), MessageUtil.getContent(reconstituted)));
+            return;
         }
-        return parts;
+
+        MultipartStream ms = new MultipartStream(MessageUtil.getContentAsStream(message), boundaryOf(message).getBytes(UTF_8));
+        boolean hasNext = ms.skipPreamble();
+        while (hasNext) {
+            Header partHeader = new Header(ms.readHeaders());
+            // Everything that can reject a part is decided from its header, before any body byte is buffered.
+            checkSupported(partHeader);
+
+            switch (handler.decide(partHeader)) {
+                case STOP -> {
+                    return;
+                }
+                case SKIP -> ms.discardBodyData();
+                case INSPECT -> {
+                    BoundedOutputStream body = new BoundedOutputStream(maxPartSize);
+                    try {
+                        ms.readBodyData(body);
+                    } catch (PartTooLargeException e) {
+                        throw new IOException(e.getMessage());
+                    }
+                    handler.handle(new Part(partHeader, body.toByteArray()));
+                }
+            }
+            hasNext = ms.readBoundary();
+        }
+    }
+
+    private static void checkSupported(Header partHeader) throws IOException {
+        if (isMultipart(partHeader.getContentType()))
+            throw new IOException("Nested multipart is not supported: part has Content-Type " + partHeader.getContentType());
+        checkContentTransferEncoding(partHeader);
+    }
+
+    /**
+     * Buffers up to a fixed number of bytes and fails as soon as that is exceeded, so an oversized
+     * part stops the read early instead of being materialised in full.
+     */
+    private static class BoundedOutputStream extends ByteArrayOutputStream {
+        private final int limit;
+
+        BoundedOutputStream(int limit) {
+            this.limit = limit;
+        }
+
+        @Override
+        public synchronized void write(int b) {
+            checkRoomFor(1);
+            super.write(b);
+        }
+
+        @Override
+        public synchronized void write(byte[] b, int off, int len) {
+            checkRoomFor(len);
+            super.write(b, off, len);
+        }
+
+        private void checkRoomFor(int additional) {
+            if (size() + additional > limit)
+                throw new PartTooLargeException(limit);
+        }
+    }
+
+    /** Unchecked so it can escape {@link java.io.OutputStream#write}; converted by {@link #forEachPart}. */
+    static class PartTooLargeException extends RuntimeException {
+        PartTooLargeException(int limit) {
+            super("Part exceeds the maximum size of " + limit + " bytes.");
+        }
     }
 
     /**
@@ -114,6 +196,10 @@ public class MultipartUtil {
      * @throws ParseException if the Content-Type header cannot be parsed
      */
     public static List<Part> split(Message message) throws IOException, ParseException {
+        return split(message, boundaryOf(message));
+    }
+
+    private static String boundaryOf(Message message) throws IOException, ParseException {
         var contentType = message.getHeader().getContentTypeObject();
         if (contentType == null) {
             throw new IOException("No Content-Type header");
@@ -122,7 +208,7 @@ public class MultipartUtil {
         if (boundary == null) {
             throw new IOException("No boundary parameter in Content-Type: " + contentType);
         }
-        return split(message, boundary);
+        return boundary;
     }
 
     /**
@@ -143,18 +229,21 @@ public class MultipartUtil {
             Header partHeader = new Header(ms.readHeaders());
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             ms.readBodyData(baos);
-
-            // Only binary-safe encodings are supported; base64/QP would corrupt binary parts
-            String cte = partHeader.getFirstValue("Content-Transfer-Encoding");
-            if (cte != null && !cte.equalsIgnoreCase("binary")
-                    && !cte.equalsIgnoreCase("8bit")
-                    && !cte.equalsIgnoreCase("7bit")) {
-                throw new IOException("Content-Transfer-Encoding '" + cte + "' is not supported.");
-            }
+            checkContentTransferEncoding(partHeader);
 
             result.add(new Part(partHeader, baos.toByteArray()));
             hasNext = ms.readBoundary();
         }
         return result;
+    }
+
+    /** Only binary-safe encodings are supported; base64/QP would corrupt binary parts. */
+    private static void checkContentTransferEncoding(Header partHeader) throws IOException {
+        String cte = partHeader.getFirstValue("Content-Transfer-Encoding");
+        if (cte != null && !cte.equalsIgnoreCase("binary")
+                && !cte.equalsIgnoreCase("8bit")
+                && !cte.equalsIgnoreCase("7bit")) {
+            throw new IOException("Content-Transfer-Encoding '" + cte + "' is not supported.");
+        }
     }
 }

@@ -375,6 +375,44 @@ public class JsonProtectionInterceptorTest {
 
     private static final String BOUNDARY = "----MembraneTestBoundary";
 
+    // --- Bounded buffering -------------------------------------------------------------------
+
+    /** maxSize is per document, so an oversized part must be rejected without being buffered whole. */
+    @Test
+    void firstPartExceedingMaxSizeIsRejected() throws Exception {
+        var exc = multipartExchange(
+                part("first", APPLICATION_JSON, "{\"a\":\"" + repeat("x", 20000) + "\"}"),
+                part("second", APPLICATION_JSON, "{\"a\":\"b\"}"));
+
+        assertEquals(RETURN, jpiDev.handleRequest(exc));
+        assertTrue(parse(exc.getResponse()).getDetail().contains("maximum size"),
+                parse(exc.getResponse()).getDetail());
+    }
+
+    /**
+     * The case that must not buffer: a huge non-JSON part under SKIP is discarded from the stream
+     * without ever being materialised, so maxSize does not apply to it.
+     */
+    @Test
+    void oversizedNonJsonPartIsSkippedWithoutBuffering() throws Exception {
+        jpiDev.setOtherContentTypes(SKIP);
+        var exc = multipartExchange(
+                part("logo", "image/png", repeat("x", 50000)),
+                part("data", APPLICATION_JSON, "{\"a\":\"b\"}"));
+
+        assertEquals(CONTINUE, jpiDev.handleRequest(exc));
+        assertNull(exc.getResponse());
+    }
+
+    /** Rejecting a non-JSON part needs its header only, so its body is never read. */
+    @Test
+    void oversizedNonJsonPartIsRejectedWithoutBuffering() throws Exception {
+        var exc = multipartExchange(part("logo", "image/png", repeat("x", 50000)));
+
+        assertEquals(RETURN, jpiDev.handleRequest(exc));
+        assertTrue(parse(exc.getResponse()).getDetail().contains("is not JSON"));
+    }
+
     private void send(String body, Outcome expectOut, Object... parameters) throws Exception {
         var exc = Request
                 .post("/")

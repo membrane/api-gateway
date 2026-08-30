@@ -23,6 +23,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.multipart.*;
+import com.predic8.membrane.core.multipart.MultipartUtil.PartAction;
 import org.slf4j.*;
 
 import java.io.*;
@@ -169,17 +170,41 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
             if (!MultipartUtil.isMultipart(request))
                 return inspect(exc, request.getHeader().getContentType(), request.getBodyAsStreamDecoded(), null);
 
-            for (Part part : MultipartUtil.unitsOf(request)) {
-                Outcome outcome = inspect(exc, part.getContentType(), part.getInputStream(), partName(part));
-                if (outcome != CONTINUE)
-                    return outcome;
-            }
+            return inspectParts(exc, request);
         } catch (Exception e) {
             log.debug(e.getMessage());
             exc.setResponse(createErrorResponse(e.getMessage(), null, null));
             return RETURN;
         }
-        return CONTINUE;
+    }
+
+    /**
+     * Inspects the JSON parts of a multipart body. Parts that are not JSON are decided from their
+     * header and never buffered, and no part may exceed {@link #maxSize} - so a large upload does not
+     * have to be held in memory to be rejected.
+     */
+    private Outcome inspectParts(Exchange exc, Request request) throws Exception {
+        var outcome = new Outcome[]{CONTINUE};
+        MultipartUtil.forEachPart(request, maxSize, new MultipartUtil.PartHandler() {
+            @Override
+            public PartAction decide(Header partHeader) {
+                if (outcome[0] != CONTINUE)
+                    return PartAction.STOP;
+                if (isJson(partHeader.getContentType()))
+                    return PartAction.INSPECT;
+                if (otherContentTypes == SKIP)
+                    return PartAction.SKIP;
+                // Rejecting needs the header only, so the offending body is never buffered.
+                outcome[0] = rejectNonJson(exc, partHeader.getContentType(), partName(partHeader));
+                return PartAction.STOP;
+            }
+
+            @Override
+            public void handle(Part part) {
+                outcome[0] = inspect(exc, part.getContentType(), part.getInputStream(), partName(part.getHeader()));
+            }
+        });
+        return outcome[0];
     }
 
     /**
@@ -191,11 +216,7 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
         if (!isJsonUnit(contentType, partName)) {
             if (otherContentTypes == SKIP)
                 return CONTINUE;
-            String msg = "Content-Type %s is not JSON. Set otherContentTypes to \"skip\" to pass non-JSON content through."
-                    .formatted(contentType);
-            log.debug(msg);
-            exc.setResponse(createErrorResponse(describe(msg, partName), null, null));
-            return RETURN;
+            return rejectNonJson(exc, contentType, partName);
         }
         try {
             parseJson(new CountingInputStream(body));
@@ -227,8 +248,16 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
         return isJson(contentType);
     }
 
-    private static String partName(Part part) {
-        String name = part.getName() != null ? part.getName() : part.getContentID();
+    private Outcome rejectNonJson(Exchange exc, String contentType, String partName) {
+        String msg = "Content-Type %s is not JSON. Set otherContentTypes to \"skip\" to pass non-JSON content through."
+                .formatted(contentType);
+        log.debug(msg);
+        exc.setResponse(createErrorResponse(describe(msg, partName), null, null));
+        return RETURN;
+    }
+
+    private static String partName(Header partHeader) {
+        String name = Part.nameOf(partHeader) != null ? Part.nameOf(partHeader) : Part.contentIDOf(partHeader);
         return name != null ? name : "";
     }
 
@@ -372,7 +401,10 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description Maximum total size of the JSON document in bytes.
+     * @description Maximum total size of the JSON document in bytes. The limit is per document, so
+     * in a multipart body it applies to each JSON part separately rather than to the whole upload.
+     * To cap the size of the entire request, use the <code>limit</code> plugin with its
+     * <code>maxBodyLength</code> attribute.
      * @default 52428800
      * @param maxSize
      */
