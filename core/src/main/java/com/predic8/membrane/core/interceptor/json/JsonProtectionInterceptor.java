@@ -118,7 +118,7 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
             // The common case: a plain body is inspected straight off the body stream, without
             // buffering it into a byte[] first.
             if (!MultipartUtil.isMultipart(request))
-                return inspect(exc, request.getHeader().getContentType(), request.getBodyAsStreamDecoded(), null);
+                return inspect(exc, request.getHeader().getContentType(), request.getBodyAsStreamDecoded(), Origin.BODY);
 
             return inspectParts(exc, request);
         } catch (Exception e) {
@@ -134,91 +134,109 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
      * have to be held in memory to be rejected.
      */
     private Outcome inspectParts(Exchange exc, Request request) throws Exception {
-        var outcome = new Outcome[]{CONTINUE};
-        MultipartUtil.forEachPart(request, maxSize, new MultipartUtil.PartHandler() {
-            @Override
-            public PartAction decide(Header partHeader) {
-                if (outcome[0] != CONTINUE)
-                    return PartAction.STOP;
-                if (isJson(partHeader.getContentType()))
-                    return PartAction.INSPECT;
-                if (otherContentTypes == SKIP)
-                    return PartAction.SKIP;
-                // Rejecting needs the header only, so the offending body is never buffered.
-                outcome[0] = rejectNonJson(exc, partHeader.getContentType(), partName(partHeader));
-                return PartAction.STOP;
-            }
+        JsonPartHandler handler = new JsonPartHandler(exc);
+        MultipartUtil.forEachPart(request, maxSize, handler);
+        return handler.outcome;
+    }
 
-            @Override
-            public void handle(Part part) {
-                outcome[0] = inspect(exc, part.getContentType(), part.getInputStream(), partName(part.getHeader()));
-            }
-        });
-        return outcome[0];
+    /**
+     * Inspects the JSON parts and remembers the first part that was not accepted. The traversal is
+     * stopped at that part, so nothing after it is read.
+     */
+    private class JsonPartHandler implements MultipartUtil.PartHandler {
+
+        private final Exchange exc;
+        private Outcome outcome = CONTINUE;
+
+        private JsonPartHandler(Exchange exc) {
+            this.exc = exc;
+        }
+
+        @Override
+        public PartAction decide(Header partHeader) {
+            if (outcome != CONTINUE)
+                return PartAction.STOP;
+            if (isJson(partHeader.getContentType()))
+                return PartAction.INSPECT;
+            if (otherContentTypes == SKIP)
+                return PartAction.SKIP;
+            // Rejecting needs the header only, so the offending body is never buffered.
+            outcome = rejectNonJson(exc, partHeader.getContentType(), Origin.of(partHeader));
+            return PartAction.STOP;
+        }
+
+        @Override
+        public void handle(Part part) {
+            outcome = inspect(exc, part.getContentType(), part.getInputStream(), Origin.of(part.getHeader()));
+        }
+    }
+
+    /**
+     * Where the inspected content came from. This decides what an absent Content-Type means and how
+     * a rejection is worded, so a rejection on a multipart upload can be traced back to one attachment.
+     */
+    private record Origin(boolean part, String name) {
+
+        private static final Origin BODY = new Origin(false, null);
+
+        private static Origin of(Header partHeader) {
+            String name = Part.nameOf(partHeader);
+            return new Origin(true, name != null ? name : Part.contentIDOf(partHeader));
+        }
+
+        /**
+         * A whole body without a Content-Type is still parsed, as it was before multipart support:
+         * clients that post JSON without declaring it must keep being checked. A MIME part without a
+         * Content-Type defaults to text/plain per RFC 2045 and is therefore not JSON.
+         */
+        private boolean holdsJson(String contentType) {
+            if (contentType == null)
+                return !part;
+            return isJson(contentType);
+        }
+
+        private String describe(String message) {
+            if (!part)
+                return message;
+            return name == null ? "In one part of the multipart body: " + message
+                                : "In part '%s': %s".formatted(name, message);
+        }
     }
 
     /**
      * Inspects a single content unit: either the whole body or one MIME part.
-     *
-     * @param partName the name of the MIME part, or null if the unit is the whole body
      */
-    private Outcome inspect(Exchange exc, String contentType, InputStream body, String partName) {
-        if (!isJsonUnit(contentType, partName)) {
+    private Outcome inspect(Exchange exc, String contentType, InputStream body, Origin origin) {
+        if (!origin.holdsJson(contentType)) {
             if (otherContentTypes == SKIP)
                 return CONTINUE;
-            return rejectNonJson(exc, contentType, partName);
+            return rejectNonJson(exc, contentType, origin);
         }
         try {
             scanner.scan(body);
         } catch (JsonProtectionException e) {
             log.debug(e.getMessage());
-            exc.setResponse(createErrorResponse(describe(e.getMessage(), partName), e.getLine(), e.getCol()));
+            exc.setResponse(createErrorResponse(origin.describe(e.getMessage()), e.getLine(), e.getCol()));
             return RETURN;
         } catch (JsonParseException e) {
             log.debug(e.getMessage());
-            exc.setResponse(createErrorResponse(describe(e.getMessage(), partName),
+            exc.setResponse(createErrorResponse(origin.describe(e.getMessage()),
                     e.getLocation().getLineNr(), e.getLocation().getColumnNr()));
             return RETURN;
         } catch (Throwable e) {
             log.debug(e.getMessage());
-            exc.setResponse(createErrorResponse(describe(e.getMessage(), partName), null, null));
+            exc.setResponse(createErrorResponse(origin.describe(e.getMessage()), null, null));
             return RETURN;
         }
         return CONTINUE;
     }
 
-    /**
-     * A whole body without a Content-Type is still parsed, as it was before multipart support: clients
-     * that post JSON without declaring it must keep being checked. A MIME part without a Content-Type
-     * defaults to text/plain per RFC 2045 and is therefore not JSON.
-     */
-    private static boolean isJsonUnit(String contentType, String partName) {
-        if (contentType == null)
-            return partName == null;
-        return isJson(contentType);
-    }
-
-    private Outcome rejectNonJson(Exchange exc, String contentType, String partName) {
+    private Outcome rejectNonJson(Exchange exc, String contentType, Origin origin) {
         String msg = "Content-Type %s is not JSON. Set otherContentTypes to \"skip\" to pass non-JSON content through."
                 .formatted(contentType);
         log.debug(msg);
-        exc.setResponse(createErrorResponse(describe(msg, partName), null, null));
+        exc.setResponse(createErrorResponse(origin.describe(msg), null, null));
         return RETURN;
-    }
-
-    private static String partName(Header partHeader) {
-        String name = Part.nameOf(partHeader) != null ? Part.nameOf(partHeader) : Part.contentIDOf(partHeader);
-        return name != null ? name : "";
-    }
-
-    /**
-     * Names the offending part, so a rejection on a multipart upload can be traced back to one attachment.
-     */
-    private static String describe(String message, String partName) {
-        if (partName == null)
-            return message;
-        return partName.isEmpty() ? "In one part of the multipart body: " + message
-                                  : "In part '%s': %s".formatted(partName, message);
     }
 
     private Response createErrorResponse(String msg, Integer line, Integer col) {
