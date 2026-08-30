@@ -290,7 +290,10 @@ public class JsonProtectionInterceptorTest {
         var exc = multipartExchange(part("logo", "image/png", "\u0089PNG"));
 
         assertEquals(RETURN, jpiDev.handleRequest(exc));
-        assertTrue(parse(exc.getResponse()).getDetail().contains("is not JSON"));
+        var detail = parse(exc.getResponse()).getDetail();
+        assertTrue(detail.contains("is not JSON"), detail);
+        // The name comes from the part header alone, since the body of a rejected part is never read.
+        assertTrue(detail.contains("logo"), "should name the offending part: " + detail);
     }
 
     @Test
@@ -324,6 +327,7 @@ public class JsonProtectionInterceptorTest {
         var exc = multipartExchange(part("field", null, deeplyNested()));
 
         assertEquals(CONTINUE, jpiDev.handleRequest(exc));
+        assertNull(exc.getResponse());
     }
 
     @Test
@@ -423,8 +427,10 @@ public class JsonProtectionInterceptorTest {
     @Test
     void xopRequestIsSkippedWhenConfigured() throws Exception {
         jpiDev.setOtherContentTypes(SKIP);
+        var exc = xopExchange();
 
-        assertEquals(CONTINUE, jpiDev.handleRequest(xopExchange()));
+        assertEquals(CONTINUE, jpiDev.handleRequest(exc));
+        assertNull(exc.getResponse());
     }
 
     @Test
