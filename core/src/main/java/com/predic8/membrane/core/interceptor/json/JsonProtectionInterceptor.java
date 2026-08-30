@@ -438,9 +438,9 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
     public String getLongDescription() {
         return """
                 <div>Enforces the following constraints:<br/><ul>\
-                <li>HTTP request body must be well-formed JSON, if the HTTP verb is not\
+                <li>HTTP request body must be well-formed JSON, if the HTTP verb is not \
                 <font style="font-family: monospace">GET</font>.</li>\
-                <li>Limits the maximum number of tokens to %d. (Each string and opening bracket counts\
+                <li>Limits the maximum number of tokens to %d. (Each string and opening bracket counts \
                 as a token: <font style="font-family: monospace">{"a":"b"}</font> counts as 3 tokens)</li>\
                 <li>Forbids duplicate keys. (<font style="font-family: monospace">{"a":"b", "a":"c"}</font> \
                 will be rejected.)</li>\
