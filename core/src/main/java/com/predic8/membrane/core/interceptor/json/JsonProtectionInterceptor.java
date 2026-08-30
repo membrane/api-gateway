@@ -22,6 +22,7 @@ import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.multipart.*;
 import org.slf4j.*;
 
 import java.io.*;
@@ -31,6 +32,8 @@ import static com.fasterxml.jackson.core.JsonParser.Feature.*;
 import static com.fasterxml.jackson.core.JsonTokenId.*;
 import static com.fasterxml.jackson.databind.DeserializationFeature.*;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.http.MimeType.isJson;
+import static com.predic8.membrane.core.interceptor.json.JsonProtectionInterceptor.OtherContentTypes.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static java.util.EnumSet.*;
@@ -44,6 +47,8 @@ import static java.util.EnumSet.*;
  *   <li>Prototype pollution via __proto__ keys in JavaScript backends</li>
  *   <li>Duplicate key attacks</li>
  * </ul>
+ * <p>JSON documents carried inside a multipart body are inspected part by part, so a JSON document
+ * uploaded as an attachment is checked like a plain JSON body.</p>
  *
  * @yaml
  * <pre><code>
@@ -57,6 +62,7 @@ import static java.util.EnumSet.*;
  *     maxSize: 10000
  *     blockProto: true
  *     reportError: true
+ *     otherContentTypes: SKIP
  * </code></pre>
  *
  * @topic 3. Security and Validation
@@ -66,6 +72,14 @@ import static java.util.EnumSet.*;
 public class JsonProtectionInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(JsonProtectionInterceptor.class);
+
+    /**
+     * What to do with content that is not JSON: the whole body of a non-JSON request, or a
+     * non-JSON part of a multipart body.
+     */
+    public enum OtherContentTypes {
+        REJECT, SKIP
+    }
 
     private final ObjectMapper om = new ObjectMapper()
             .configure(FAIL_ON_READING_DUP_TREE_KEY, true)
@@ -80,6 +94,7 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
     private int maxObjectSize = 1000;
     private int maxArraySize = 1000;
     private boolean blockProto = true;
+    private OtherContentTypes otherContentTypes = REJECT;
 
     public JsonProtectionInterceptor() {
         name = "json protection";
@@ -146,22 +161,85 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
     public Outcome handleRequest(Exchange exc) {
         if ("GET".equals(exc.getRequest().getMethod()))
             return CONTINUE;
+
+        Request request = exc.getRequest();
         try {
-            parseJson(new CountingInputStream(exc.getRequest().getBodyAsStreamDecoded()));
-        } catch (JsonProtectionException e) {
-            log.debug(e.getMessage());
-            exc.setResponse(createErrorResponse(e.getMessage(), e.getLine(), e.getCol()));
-            return RETURN;
-        } catch (JsonParseException e) {
-            log.debug(e.getMessage());
-            exc.setResponse(createErrorResponse(e.getMessage(), e.getLocation().getLineNr(), e.getLocation().getColumnNr()));
-            return RETURN;
-        } catch (Throwable e) {
+            // The common case: a plain body is inspected straight off the body stream, without
+            // buffering it into a byte[] first.
+            if (!MultipartUtil.isMultipart(request))
+                return inspect(exc, request.getHeader().getContentType(), request.getBodyAsStreamDecoded(), null);
+
+            for (Part part : MultipartUtil.unitsOf(request)) {
+                Outcome outcome = inspect(exc, part.getContentType(), part.getInputStream(), partName(part));
+                if (outcome != CONTINUE)
+                    return outcome;
+            }
+        } catch (Exception e) {
             log.debug(e.getMessage());
             exc.setResponse(createErrorResponse(e.getMessage(), null, null));
             return RETURN;
         }
         return CONTINUE;
+    }
+
+    /**
+     * Inspects a single content unit: either the whole body or one MIME part.
+     *
+     * @param partName the name of the MIME part, or null if the unit is the whole body
+     */
+    private Outcome inspect(Exchange exc, String contentType, InputStream body, String partName) {
+        if (!isJsonUnit(contentType, partName)) {
+            if (otherContentTypes == SKIP)
+                return CONTINUE;
+            String msg = "Content-Type %s is not JSON. Set otherContentTypes to \"skip\" to pass non-JSON content through."
+                    .formatted(contentType);
+            log.debug(msg);
+            exc.setResponse(createErrorResponse(describe(msg, partName), null, null));
+            return RETURN;
+        }
+        try {
+            parseJson(new CountingInputStream(body));
+        } catch (JsonProtectionException e) {
+            log.debug(e.getMessage());
+            exc.setResponse(createErrorResponse(describe(e.getMessage(), partName), e.getLine(), e.getCol()));
+            return RETURN;
+        } catch (JsonParseException e) {
+            log.debug(e.getMessage());
+            exc.setResponse(createErrorResponse(describe(e.getMessage(), partName),
+                    e.getLocation().getLineNr(), e.getLocation().getColumnNr()));
+            return RETURN;
+        } catch (Throwable e) {
+            log.debug(e.getMessage());
+            exc.setResponse(createErrorResponse(describe(e.getMessage(), partName), null, null));
+            return RETURN;
+        }
+        return CONTINUE;
+    }
+
+    /**
+     * A whole body without a Content-Type is still parsed, as it was before multipart support: clients
+     * that post JSON without declaring it must keep being checked. A MIME part without a Content-Type
+     * defaults to text/plain per RFC 2045 and is therefore not JSON.
+     */
+    private static boolean isJsonUnit(String contentType, String partName) {
+        if (contentType == null)
+            return partName == null;
+        return isJson(contentType);
+    }
+
+    private static String partName(Part part) {
+        String name = part.getName() != null ? part.getName() : part.getContentID();
+        return name != null ? name : "";
+    }
+
+    /**
+     * Names the offending part, so a rejection on a multipart upload can be traced back to one attachment.
+     */
+    private static String describe(String message, String partName) {
+        if (partName == null)
+            return message;
+        return partName.isEmpty() ? "In one part of the multipart body: " + message
+                                  : "In part '%s': %s".formatted(partName, message);
     }
 
     private Response createErrorResponse(String msg, Integer line, Integer col) {
@@ -404,6 +482,23 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
     @MCAttribute
     public void setBlockProto(boolean blockProto) {
         this.blockProto = blockProto;
+    }
+
+    public OtherContentTypes getOtherContentTypes() {
+        return otherContentTypes;
+    }
+
+    /**
+     * @description What to do with content that is not JSON. This applies both to the body of a
+     * non-JSON request and to the individual non-JSON parts of a multipart body, so
+     * <code>skip</code> allows e.g. an image to be uploaded alongside a JSON document.
+     * <p>Values: REJECT, SKIP</p>
+     * @default REJECT
+     * @example SKIP
+     */
+    @MCAttribute
+    public void setOtherContentTypes(OtherContentTypes otherContentTypes) {
+        this.otherContentTypes = otherContentTypes;
     }
 
     @Override

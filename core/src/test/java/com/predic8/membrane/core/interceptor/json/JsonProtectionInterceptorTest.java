@@ -23,6 +23,7 @@ import org.junit.jupiter.api.*;
 
 import static com.google.common.base.Strings.*;
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.interceptor.json.JsonProtectionInterceptor.OtherContentTypes.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.util.ProblemDetailsTestUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -252,6 +253,127 @@ public class JsonProtectionInterceptorTest {
                 16,
                 "__proto__ found as key.");
     }
+
+    // --- Multipart / attachments -------------------------------------------------------------
+
+    @Test
+    void jsonPartOfMultipartIsInspected() throws Exception {
+        var exc = multipartExchange(part("data", APPLICATION_JSON, deeplyNested()));
+
+        assertEquals(RETURN, jpiDev.handleRequest(exc));
+        var pd = parse(exc.getResponse());
+        assertTrue(pd.getDetail().contains("Exceeded maxDepth."), pd.getDetail());
+        assertTrue(pd.getDetail().contains("data"), "should name the offending part: " + pd.getDetail());
+    }
+
+    @Test
+    void benignMultipartPasses() throws Exception {
+        var exc = multipartExchange(part("data", APPLICATION_JSON, "{\"a\":\"b\"}"));
+
+        assertEquals(CONTINUE, jpiDev.handleRequest(exc));
+        assertNull(exc.getResponse());
+    }
+
+    @Test
+    void everyJsonPartIsInspected() throws Exception {
+        var exc = multipartExchange(
+                part("first", APPLICATION_JSON, "{\"a\":\"b\"}"),
+                part("second", APPLICATION_JSON, deeplyNested()));
+
+        assertEquals(RETURN, jpiDev.handleRequest(exc));
+        assertTrue(parse(exc.getResponse()).getDetail().contains("second"));
+    }
+
+    @Test
+    void nonJsonPartIsRejectedByDefault() throws Exception {
+        var exc = multipartExchange(part("logo", "image/png", "\u0089PNG"));
+
+        assertEquals(RETURN, jpiDev.handleRequest(exc));
+        assertTrue(parse(exc.getResponse()).getDetail().contains("is not JSON"));
+    }
+
+    @Test
+    void nonJsonPartIsSkippedWhenConfigured() throws Exception {
+        jpiDev.setOtherContentTypes(SKIP);
+        var exc = multipartExchange(
+                part("logo", "image/png", "\u0089PNG"),
+                part("data", APPLICATION_JSON, "{\"a\":\"b\"}"));
+
+        assertEquals(CONTINUE, jpiDev.handleRequest(exc));
+        assertNull(exc.getResponse());
+    }
+
+    @Test
+    void multipartBodyIsNotModified() throws Exception {
+        jpiDev.setOtherContentTypes(SKIP);
+        var exc = multipartExchange(part("logo", "image/png", "\u0089PNG"));
+        byte[] before = exc.getRequest().getBody().getContent();
+
+        assertEquals(CONTINUE, jpiDev.handleRequest(exc));
+        assertArrayEquals(before, exc.getRequest().getBody().getContent());
+    }
+
+    /**
+     * A part without a Content-Type defaults to text/plain, so it is not JSON - unlike a whole body
+     * without a Content-Type, which is still parsed (see {@link #bodyWithoutContentTypeIsStillParsed()}).
+     */
+    @Test
+    void partWithoutContentTypeIsNotJson() throws Exception {
+        jpiDev.setOtherContentTypes(SKIP);
+        var exc = multipartExchange(part("field", null, deeplyNested()));
+
+        assertEquals(CONTINUE, jpiDev.handleRequest(exc));
+    }
+
+    @Test
+    void bodyWithoutContentTypeIsStillParsed() throws Exception {
+        var exc = Request.post("/").body(deeplyNested()).buildExchange();
+
+        assertEquals(RETURN, jpiDev.handleRequest(exc));
+        assertTrue(parse(exc.getResponse()).getDetail().contains("Exceeded maxDepth."));
+    }
+
+    @Test
+    void nonJsonBodyIsSkippedWhenConfigured() throws Exception {
+        jpiDev.setOtherContentTypes(SKIP);
+        var exc = Request.post("/").contentType("image/png").body("\u0089PNG").buildExchange();
+
+        assertEquals(CONTINUE, jpiDev.handleRequest(exc));
+        assertNull(exc.getResponse());
+    }
+
+    @Test
+    void nestedMultipartIsRejected() throws Exception {
+        var exc = multipartExchange(part("nested", "multipart/mixed; boundary=inner", "..."));
+
+        assertEquals(RETURN, jpiDev.handleRequest(exc));
+        assertTrue(parse(exc.getResponse()).getDetail().contains("Nested multipart"));
+    }
+
+    /** Exceeds the maxDepth of 10 configured in {@link #buildJPI(boolean)}. */
+    private static String deeplyNested() {
+        return repeat("[", 12) + repeat("]", 12);
+    }
+
+    private static String part(String name, String contentType, String body) {
+        return "Content-Disposition: form-data; name=\"" + name + "\"\r\n"
+               + (contentType == null ? "" : "Content-Type: " + contentType + "\r\n")
+               + "\r\n" + body;
+    }
+
+    private static Exchange multipartExchange(String... parts) throws Exception {
+        StringBuilder body = new StringBuilder();
+        for (String part : parts)
+            body.append("--").append(BOUNDARY).append("\r\n").append(part).append("\r\n");
+        body.append("--").append(BOUNDARY).append("--\r\n");
+
+        return Request.post("/")
+                .contentType("multipart/form-data; boundary=" + BOUNDARY)
+                .body(body.toString())
+                .buildExchange();
+    }
+
+    private static final String BOUNDARY = "----MembraneTestBoundary";
 
     private void send(String body, Outcome expectOut, Object... parameters) throws Exception {
         var exc = Request
