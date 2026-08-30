@@ -110,10 +110,10 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) {
-        if ("GET".equals(exc.getRequest().getMethod()))
+        Request request = exc.getRequest();
+        if (request.isGETRequest())
             return CONTINUE;
 
-        Request request = exc.getRequest();
         try {
             // The common case: a plain body is inspected straight off the body stream, without
             // buffering it into a byte[] first.
@@ -429,24 +429,27 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
 
     @Override
     public String getLongDescription() {
-        return "<div>Enforces the following constraints:<br/><ul>" +
-                "<li>HTTP request body must be well-formed JSON, if the HTTP verb is not" +
-                "<font style=\"font-family: monospace\">GET</font>.</li>" +
-                "<li>Limits the maximum number of tokens to " + maxTokens + ". (Each string and opening bracket counts" +
-                "as a token: <font style=\"font-family: monospace\">{\"a\":\"b\"}</font> counts as 3 tokens)</li>" +
-                "<li>Forbids duplicate keys. (<font style=\"font-family: monospace\">{\"a\":\"b\", \"a\":\"c\"}</font> " +
-                "will be rejected.)</li>" +
-                "<li>Limits the total size in bytes of the body to " + maxSize + ".</li>" +
-                "<li>Limits the maximum depth to " + maxDepth + ". (<font style=\"font-family: monospace\">{\"a\":[{\"b\"" +
-                ":\"c\"}]}</font> has depth 3.)</li>" +
-                "<li>Limits the maximum string length to " + maxStringLength + ". " +
-                "(<font style=\"font-family: monospace\">{\"a\":\"abc\"}</font> has max string length 3.)</li>" +
-                "<li>Limits the maximum key length to " + Math.min(maxKeyLength, maxStringLength) + ". " +
-                "(<font style=\"font-family: monospace\">{\"abc\":\"a\"}</font> has key length 3.)</li>" +
-                "<li>Limits the maximum object size to " + maxObjectSize + ". " +
-                "(<font style=\"font-family: monospace\">{\"a\":\"b\",\"c\":\"d\"}</font> has object size 2.)</li>" +
-                "<li>Limits the maximum array size to " + maxArraySize + ". " +
-                "(<font style=\"font-family: monospace\">[\"a\", \"b\"]</font> has array size 2.)</li>" +
-                "</ul></div>";
+        return """
+                <div>Enforces the following constraints:<br/><ul>\
+                <li>HTTP request body must be well-formed JSON, if the HTTP verb is not\
+                <font style="font-family: monospace">GET</font>.</li>\
+                <li>Limits the maximum number of tokens to %d. (Each string and opening bracket counts\
+                as a token: <font style="font-family: monospace">{"a":"b"}</font> counts as 3 tokens)</li>\
+                <li>Forbids duplicate keys. (<font style="font-family: monospace">{"a":"b", "a":"c"}</font> \
+                will be rejected.)</li>\
+                <li>Limits the total size in bytes of the body to %d.</li>\
+                <li>Limits the maximum depth to %d. (<font style="font-family: monospace">{"a":[{"b"\
+                :"c"}]}</font> has depth 3.)</li>\
+                <li>Limits the maximum string length to %d. \
+                (<font style="font-family: monospace">{"a":"abc"}</font> has max string length 3.)</li>\
+                <li>Limits the maximum key length to %d. \
+                (<font style="font-family: monospace">{"abc":"a"}</font> has key length 3.)</li>\
+                <li>Limits the maximum object size to %d. \
+                (<font style="font-family: monospace">{"a":"b","c":"d"}</font> has object size 2.)</li>\
+                <li>Limits the maximum array size to %d. \
+                (<font style="font-family: monospace">["a", "b"]</font> has array size 2.)</li>\
+                </ul></div>"""
+                .formatted(maxTokens, maxSize, maxDepth, maxStringLength,
+                        Math.min(maxKeyLength, maxStringLength), maxObjectSize, maxArraySize);
     }
 }

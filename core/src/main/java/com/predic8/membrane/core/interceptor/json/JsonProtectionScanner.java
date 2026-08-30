@@ -14,9 +14,9 @@
 
 package com.predic8.membrane.core.interceptor.json;
 
+import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.CountingInputStream;
 
 import java.io.IOException;
@@ -26,7 +26,6 @@ import java.util.List;
 
 import static com.fasterxml.jackson.core.JsonParser.Feature.STRICT_DUPLICATE_DETECTION;
 import static com.fasterxml.jackson.core.JsonTokenId.*;
-import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY;
 
 /**
  * Streams a JSON document through a Jackson parser and enforces a set of {@link JsonLimits} on it,
@@ -38,9 +37,8 @@ import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_READ
  */
 public class JsonProtectionScanner {
 
-    private final ObjectMapper om = new ObjectMapper()
-            .configure(FAIL_ON_READING_DUP_TREE_KEY, true)
-            .configure(STRICT_DUPLICATE_DETECTION, true);
+    /** Duplicate keys are an attack in their own right, so the parser rejects them itself. */
+    private final JsonFactory jsonFactory = new JsonFactory().enable(STRICT_DUPLICATE_DETECTION);
 
     private final JsonLimits limits;
 
@@ -57,7 +55,7 @@ public class JsonProtectionScanner {
      */
     public void scan(InputStream body) throws IOException, JsonProtectionException {
         CountingInputStream cis = new CountingInputStream(body);
-        JsonParser parser = om.createParser(cis);
+        JsonParser parser = jsonFactory.createParser(cis);
         int tokenCount = 0;
         List<Context> contexts = new ArrayList<>();
         while (true) {

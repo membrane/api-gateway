@@ -101,7 +101,7 @@ public class MultipartUtil {
                     try {
                         ms.readBodyData(body);
                     } catch (PartTooLargeException e) {
-                        throw new IOException(e.getMessage());
+                        throw new IOException(e.getMessage(), e);
                     }
                     handler.handle(new Part(partHeader, body.toByteArray()));
                 }
