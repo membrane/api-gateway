@@ -19,13 +19,7 @@ import jakarta.mail.internet.ParseException;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.multipart.MultipartUtil.PartAction;
-
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Function;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
@@ -194,135 +188,6 @@ class MultipartUtilTest {
         assertEquals("<a416c16d-a50e-44ca-a6d7-3e8a61480afa-2@cxf.apache.org>", parts.get(1).getContentID());
         assertEquals("application/xop+xml; charset=UTF-8; type=\"text/xml\";", parts.get(0).getContentType());
         assertEquals("application/octet-stream",                      parts.get(1).getContentType());
-    }
-
-    // -------------------------------------------------------------------------
-    // forEachPart(Message, maxPartSize, PartHandler)
-    // -------------------------------------------------------------------------
-
-    /** Records what the traversal offered and what it actually handed over. */
-    private static class RecordingHandler implements MultipartUtil.PartHandler {
-        final List<String> decided = new ArrayList<>();
-        final List<Part> handled = new ArrayList<>();
-        private final Function<Header, PartAction> policy;
-
-        RecordingHandler(Function<Header, PartAction> policy) {
-            this.policy = policy;
-        }
-
-        @Override
-        public PartAction decide(Header partHeader) {
-            decided.add(Part.nameOf(partHeader));
-            return policy.apply(partHeader);
-        }
-
-        @Override
-        public void handle(Part part) {
-            handled.add(part);
-        }
-    }
-
-    private static RecordingHandler inspectAll() {
-        return new RecordingHandler(h -> PartAction.INSPECT);
-    }
-
-    @Test
-    void partsAreHandedOverInOrder() throws IOException, ParseException {
-        var handler = inspectAll();
-
-        MultipartUtil.forEachPart(response(multipartBody(
-                formField("username", "alice"),
-                formField("message", "Hello World")
-        )), 1024, handler);
-
-        assertEquals(List.of("username", "message"), handler.decided);
-        assertEquals("alice", handler.handled.getFirst().getBodyAsString());
-        assertEquals("Hello World", handler.handled.get(1).getBodyAsString());
-    }
-
-    @Test
-    void skippedPartIsNeverMaterialisedAndTraversalContinues() throws IOException, ParseException {
-        var handler = new RecordingHandler(h -> "skipme".equals(Part.nameOf(h)) ? PartAction.SKIP : PartAction.INSPECT);
-
-        MultipartUtil.forEachPart(response(multipartBody(
-                formField("skipme", "0123456789"),
-                formField("keepme", "alice")
-        )), 1024, handler);
-
-        assertEquals(List.of("skipme", "keepme"), handler.decided, "both parts must be offered");
-        assertEquals(1, handler.handled.size(), "the skipped part must not be handed over");
-        assertEquals("keepme", handler.handled.getFirst().getName());
-    }
-
-    @Test
-    void stopEndsTraversalWithoutTouchingLaterParts() throws IOException, ParseException {
-        var handler = new RecordingHandler(h -> PartAction.STOP);
-
-        MultipartUtil.forEachPart(response(multipartBody(
-                formField("first", "a"),
-                formField("second", "b")
-        )), 1024, handler);
-
-        assertEquals(List.of("first"), handler.decided);
-        assertTrue(handler.handled.isEmpty());
-    }
-
-    @Test
-    void partExceedingMaxPartSizeIsRejected() {
-        var handler = inspectAll();
-        var msg = response(multipartBody(formField("big", "0123456789")));
-
-        var e = assertThrows(IOException.class, () -> MultipartUtil.forEachPart(msg, 4, handler));
-
-        assertTrue(e.getMessage().contains("maximum size of 4"), e.getMessage());
-        assertTrue(handler.handled.isEmpty(), "an oversized part must not be handed over");
-    }
-
-    @Test
-    void oversizedPartIsNotReadWhenSkipped() throws IOException, ParseException {
-        // The size cap applies only to what is buffered, so a huge skipped part costs nothing.
-        var handler = new RecordingHandler(h -> "huge".equals(Part.nameOf(h)) ? PartAction.SKIP : PartAction.INSPECT);
-
-        MultipartUtil.forEachPart(response(multipartBody(
-                formField("huge", "x".repeat(100_000)),
-                formField("small", "ok")
-        )), 8, handler);
-
-        assertEquals(1, handler.handled.size());
-        assertEquals("ok", handler.handled.getFirst().getBodyAsString());
-    }
-
-    /**
-     * XOP is deliberately not reassembled here: reassembly buffers every attachment plus a
-     * base64-inflated copy before the handler could decide anything, escaping maxPartSize.
-     */
-    @Test
-    void xopMessageIsTraversedAsRawParts() throws IOException, ParseException {
-        var handler = inspectAll();
-
-        MultipartUtil.forEachPart(xopResponse(), 1024 * 1024, handler);
-
-        assertEquals(2, handler.handled.size());
-        assertEquals("application/xop+xml; charset=UTF-8; type=\"text/xml\";", handler.handled.getFirst().getContentType());
-        assertEquals("application/octet-stream", handler.handled.get(1).getContentType());
-        // The attachment stays a separate part rather than being inlined into the root document.
-        assertTrue(handler.handled.getFirst().getBodyAsString().contains("xop:Include"));
-    }
-
-    @Test
-    void oversizedXopRootIsRejectedRatherThanReassembled() {
-        var e = assertThrows(IOException.class, () -> MultipartUtil.forEachPart(xopResponse(), 8, inspectAll()));
-
-        assertTrue(e.getMessage().contains("maximum size of 8"), e.getMessage());
-    }
-
-    @Test
-    void nestedMultipartThrows() {
-        var msg = response(multipartBody(
-                "Content-Disposition: form-data; name=\"nested\"" + CRLF
-                + "Content-Type: multipart/mixed; boundary=inner" + CRLF + CRLF + "..."));
-
-        assertThrows(IOException.class, () -> MultipartUtil.forEachPart(msg, 1024, inspectAll()));
     }
 
     /** split() shares the traversal with forEachPart(), so it rejects nested multipart alike. */

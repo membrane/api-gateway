@@ -21,7 +21,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.multipart.*;
-import com.predic8.membrane.core.multipart.MultipartUtil.PartAction;
+import com.predic8.membrane.core.multipart.PartScanner.PartAction;
 import org.slf4j.*;
 
 import java.io.*;
@@ -134,8 +134,8 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
     private Outcome inspectParts(Exchange exc, Request request) throws Exception {
         JsonPartHandler handler = new JsonPartHandler(exc);
         try {
-            MultipartUtil.forEachPart(request, maxSize, handler);
-        } catch (MultipartUtil.PartTooLargeException e) {
+            PartScanner.forEachPart(request, maxSize, handler);
+        } catch (PartTooLargeException e) {
             // Reported like any other part-level violation, naming the attachment that was too big.
             exc.setResponse(createErrorResponse(Origin.part(e.getPartHeader()).describe(e.getMessage()), null, null));
             return RETURN;
@@ -147,7 +147,7 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
      * Inspects the JSON parts and remembers the first part that was not accepted. The traversal is
      * stopped at that part, so nothing after it is read.
      */
-    private class JsonPartHandler implements MultipartUtil.PartHandler {
+    private class JsonPartHandler implements PartScanner.PartHandler {
 
         private final Exchange exc;
         private Outcome outcome = CONTINUE;

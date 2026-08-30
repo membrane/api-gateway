@@ -16,17 +16,12 @@ package com.predic8.membrane.core.multipart;
 
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.util.MessageUtil;
 import jakarta.mail.internet.ContentType;
 import jakarta.mail.internet.ParseException;
-import org.apache.commons.fileupload.MultipartStream;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Utility for splitting multipart HTTP messages into their individual {@link Part}s.
@@ -40,141 +35,10 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  *     byte[] body = part.getBody();
  * }
  * }</pre>
+ *
+ * <p>Every part is buffered; see {@link PartScanner} to traverse a message without doing that.</p>
  */
 public class MultipartUtil {
-
-    /** What {@link PartHandler} wants done with a part, decided from its header alone. */
-    public enum PartAction {
-        /** Buffer the body (bounded) and pass it to {@link PartHandler#handle}. */
-        INSPECT,
-        /** Discard the body without reading it into memory, and continue with the next part. */
-        SKIP,
-        /** Stop the traversal immediately; nothing further is read or buffered. */
-        STOP
-    }
-
-    /**
-     * Decides from a part's header alone whether its body is needed, so that unwanted parts are
-     * never buffered.
-     */
-    public interface PartHandler {
-        PartAction decide(Header partHeader);
-
-        void handle(Part part) throws IOException;
-    }
-
-    /**
-     * Streams the parts of a multipart message to a handler, holding at most one part body in memory
-     * at a time. Parts the handler does not want are discarded unread, and a part exceeding
-     * {@code maxPartSize} aborts the traversal instead of being buffered whole.
-     *
-     * <p>XOP/MTOM messages are traversed as their raw parts and are deliberately not reassembled:
-     * reassembly would have to buffer every attachment and a base64-inflated copy of it before the
-     * handler could decide anything. Callers that need the reassembled document (schema validation,
-     * for example) use {@link XOPReconstitutor} directly.</p>
-     *
-     * <p>Content-Encodings (gzip, deflate, brotli) are decoded; the bodies passed to the handler are
-     * the logical content.</p>
-     *
-     * @param message     a multipart request or response
-     * @param maxPartSize maximum number of bytes a single part's body may occupy
-     * @throws IOException    on I/O or parse errors, if a part is itself multipart, or if a part
-     *                        exceeds {@code maxPartSize}
-     * @throws ParseException if the Content-Type header cannot be parsed
-     */
-    public static void forEachPart(Message message, int maxPartSize, PartHandler handler) throws IOException, ParseException {
-        forEachPart(message, boundaryOf(message), maxPartSize, handler);
-    }
-
-    /**
-     * Streams the parts to a handler using an explicit boundary, for callers that know it already.
-     *
-     * @see #forEachPart(Message, int, PartHandler)
-     */
-    @SuppressWarnings("deprecation")
-    public static void forEachPart(Message message, String boundary, int maxPartSize, PartHandler handler) throws IOException {
-        MultipartStream ms = new MultipartStream(MessageUtil.getContentAsStream(message), boundary.getBytes(UTF_8));
-        boolean hasNext = ms.skipPreamble();
-        while (hasNext) {
-            Header partHeader = new Header(ms.readHeaders());
-            // Everything that can reject a part is decided from its header, before any body byte is buffered.
-            checkSupported(partHeader);
-
-            switch (handler.decide(partHeader)) {
-                case STOP -> {
-                    return;
-                }
-                case SKIP -> ms.discardBodyData();
-                case INSPECT -> {
-                    BoundedOutputStream body = new BoundedOutputStream(maxPartSize);
-                    try {
-                        ms.readBodyData(body);
-                    } catch (LimitExceeded e) {
-                        throw new PartTooLargeException(partHeader, maxPartSize, e);
-                    }
-                    handler.handle(new Part(partHeader, body.toByteArray()));
-                }
-            }
-            hasNext = ms.readBoundary();
-        }
-    }
-
-    private static void checkSupported(Header partHeader) throws IOException {
-        if (isMultipart(partHeader.getContentType()))
-            throw new IOException("Nested multipart is not supported: part has Content-Type " + partHeader.getContentType());
-        checkContentTransferEncoding(partHeader);
-    }
-
-    /**
-     * Buffers up to a fixed number of bytes and fails as soon as that is exceeded, so an oversized
-     * part stops the read early instead of being materialised in full.
-     */
-    private static class BoundedOutputStream extends ByteArrayOutputStream {
-        private final int limit;
-
-        BoundedOutputStream(int limit) {
-            this.limit = limit;
-        }
-
-        @Override
-        public synchronized void write(int b) {
-            checkRoomFor(1);
-            super.write(b);
-        }
-
-        @Override
-        public synchronized void write(byte[] b, int off, int len) {
-            checkRoomFor(len);
-            super.write(b, off, len);
-        }
-
-        private void checkRoomFor(int additional) {
-            if (size() + additional > limit)
-                throw new LimitExceeded();
-        }
-    }
-
-    /** Unchecked so it can escape {@link java.io.OutputStream#write}; converted by {@link #forEachPart}. */
-    private static class LimitExceeded extends RuntimeException {
-    }
-
-    /**
-     * Carries the header of the part that was too large, so a caller can report which attachment of
-     * an upload was rejected.
-     */
-    public static class PartTooLargeException extends IOException {
-
-        private final transient Header partHeader;
-
-        private PartTooLargeException(Header partHeader, int limit, Throwable cause) {
-            super("Part exceeds the maximum size of " + limit + " bytes.", cause);
-            this.partHeader = partHeader;
-        }
-
-        public Header getPartHeader() {
-            return partHeader;
-        }
-    }
 
     /**
      * @return whether the message's Content-Type has a primary type of {@code multipart}
@@ -184,7 +48,7 @@ public class MultipartUtil {
         return contentType != null && "multipart".equalsIgnoreCase(contentType.getPrimaryType());
     }
 
-    private static boolean isMultipart(String contentType) {
+    static boolean isMultipart(String contentType) {
         if (contentType == null)
             return false;
         try {
@@ -207,7 +71,7 @@ public class MultipartUtil {
         return split(message, boundaryOf(message));
     }
 
-    private static String boundaryOf(Message message) throws IOException, ParseException {
+    static String boundaryOf(Message message) throws IOException, ParseException {
         var contentType = message.getHeader().getContentTypeObject();
         if (contentType == null) {
             throw new IOException("No Content-Type header");
@@ -222,8 +86,8 @@ public class MultipartUtil {
     /**
      * Splits a multipart message into its individual parts using an explicit boundary.
      *
-     * <p>Buffers every part, so use {@link #forEachPart(Message, int, PartHandler)} when the parts
-     * can be large or when only some of them are needed.</p>
+     * <p>Buffers every part, so use {@link PartScanner#forEachPart} when the parts can be large or
+     * when only some of them are needed.</p>
      *
      * @param message  a request or response with a multipart body
      * @param boundary the MIME boundary string (without leading {@code --})
@@ -233,10 +97,10 @@ public class MultipartUtil {
      */
     public static List<Part> split(Message message, String boundary) throws IOException {
         List<Part> result = new ArrayList<>();
-        forEachPart(message, boundary, Integer.MAX_VALUE, new PartHandler() {
+        PartScanner.forEachPart(message, boundary, Integer.MAX_VALUE, new PartScanner.PartHandler() {
             @Override
-            public PartAction decide(Header partHeader) {
-                return PartAction.INSPECT;
+            public PartScanner.PartAction decide(Header partHeader) {
+                return PartScanner.PartAction.INSPECT;
             }
 
             @Override
@@ -247,13 +111,4 @@ public class MultipartUtil {
         return result;
     }
 
-    /** Only binary-safe encodings are supported; base64/QP would corrupt binary parts. */
-    private static void checkContentTransferEncoding(Header partHeader) throws IOException {
-        String cte = partHeader.getFirstValue("Content-Transfer-Encoding");
-        if (cte != null && !cte.equalsIgnoreCase("binary")
-                && !cte.equalsIgnoreCase("8bit")
-                && !cte.equalsIgnoreCase("7bit")) {
-            throw new IOException("Content-Transfer-Encoding '" + cte + "' is not supported.");
-        }
-    }
 }
