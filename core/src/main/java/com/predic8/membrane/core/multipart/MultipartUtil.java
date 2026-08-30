@@ -82,9 +82,18 @@ public class MultipartUtil {
      *                        exceeds {@code maxPartSize}
      * @throws ParseException if the Content-Type header cannot be parsed
      */
-    @SuppressWarnings("deprecation")
     public static void forEachPart(Message message, int maxPartSize, PartHandler handler) throws IOException, ParseException {
-        MultipartStream ms = new MultipartStream(MessageUtil.getContentAsStream(message), boundaryOf(message).getBytes(UTF_8));
+        forEachPart(message, boundaryOf(message), maxPartSize, handler);
+    }
+
+    /**
+     * Streams the parts to a handler using an explicit boundary, for callers that know it already.
+     *
+     * @see #forEachPart(Message, int, PartHandler)
+     */
+    @SuppressWarnings("deprecation")
+    public static void forEachPart(Message message, String boundary, int maxPartSize, PartHandler handler) throws IOException {
+        MultipartStream ms = new MultipartStream(MessageUtil.getContentAsStream(message), boundary.getBytes(UTF_8));
         boolean hasNext = ms.skipPreamble();
         while (hasNext) {
             Header partHeader = new Header(ms.readHeaders());
@@ -100,8 +109,8 @@ public class MultipartUtil {
                     BoundedOutputStream body = new BoundedOutputStream(maxPartSize);
                     try {
                         ms.readBodyData(body);
-                    } catch (PartTooLargeException e) {
-                        throw new IOException(e.getMessage(), e);
+                    } catch (LimitExceeded e) {
+                        throw new PartTooLargeException(partHeader, maxPartSize, e);
                     }
                     handler.handle(new Part(partHeader, body.toByteArray()));
                 }
@@ -141,14 +150,29 @@ public class MultipartUtil {
 
         private void checkRoomFor(int additional) {
             if (size() + additional > limit)
-                throw new PartTooLargeException(limit);
+                throw new LimitExceeded();
         }
     }
 
     /** Unchecked so it can escape {@link java.io.OutputStream#write}; converted by {@link #forEachPart}. */
-    static class PartTooLargeException extends RuntimeException {
-        PartTooLargeException(int limit) {
-            super("Part exceeds the maximum size of " + limit + " bytes.");
+    private static class LimitExceeded extends RuntimeException {
+    }
+
+    /**
+     * Carries the header of the part that was too large, so a caller can report which attachment of
+     * an upload was rejected.
+     */
+    public static class PartTooLargeException extends IOException {
+
+        private final transient Header partHeader;
+
+        private PartTooLargeException(Header partHeader, int limit, Throwable cause) {
+            super("Part exceeds the maximum size of " + limit + " bytes.", cause);
+            this.partHeader = partHeader;
+        }
+
+        public Header getPartHeader() {
+            return partHeader;
         }
     }
 
@@ -176,7 +200,7 @@ public class MultipartUtil {
      *
      * @param message a request or response whose Content-Type is multipart/*
      * @return parts in wire order; never null, may be empty
-     * @throws IOException    on I/O or parse errors
+     * @throws IOException    on I/O or parse errors, or if a part is itself multipart
      * @throws ParseException if the Content-Type header cannot be parsed
      */
     public static List<Part> split(Message message) throws IOException, ParseException {
@@ -198,26 +222,28 @@ public class MultipartUtil {
     /**
      * Splits a multipart message into its individual parts using an explicit boundary.
      *
+     * <p>Buffers every part, so use {@link #forEachPart(Message, int, PartHandler)} when the parts
+     * can be large or when only some of them are needed.</p>
+     *
      * @param message  a request or response with a multipart body
      * @param boundary the MIME boundary string (without leading {@code --})
      * @return parts in wire order; never null, may be empty
-     * @throws IOException on I/O or unsupported Content-Transfer-Encoding
+     * @throws IOException on I/O errors, on unsupported Content-Transfer-Encoding, or if a part is
+     *                     itself multipart
      */
-    @SuppressWarnings("deprecation")
     public static List<Part> split(Message message, String boundary) throws IOException {
         List<Part> result = new ArrayList<>();
+        forEachPart(message, boundary, Integer.MAX_VALUE, new PartHandler() {
+            @Override
+            public PartAction decide(Header partHeader) {
+                return PartAction.INSPECT;
+            }
 
-        MultipartStream ms = new MultipartStream(MessageUtil.getContentAsStream(message), boundary.getBytes(UTF_8));
-        boolean hasNext = ms.skipPreamble();
-        while (hasNext) {
-            Header partHeader = new Header(ms.readHeaders());
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            ms.readBodyData(baos);
-            checkContentTransferEncoding(partHeader);
-
-            result.add(new Part(partHeader, baos.toByteArray()));
-            hasNext = ms.readBoundary();
-        }
+            @Override
+            public void handle(Part part) {
+                result.add(part);
+            }
+        });
         return result;
     }
 

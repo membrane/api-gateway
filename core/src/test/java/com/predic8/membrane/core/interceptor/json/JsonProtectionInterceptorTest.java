@@ -390,8 +390,9 @@ public class JsonProtectionInterceptorTest {
                 part("second", APPLICATION_JSON, "{\"a\":\"b\"}"));
 
         assertEquals(RETURN, jpiDev.handleRequest(exc));
-        assertTrue(parse(exc.getResponse()).getDetail().contains("maximum size"),
-                parse(exc.getResponse()).getDetail());
+        var detail = parse(exc.getResponse()).getDetail();
+        assertTrue(detail.contains("maximum size"), detail);
+        assertTrue(detail.contains("In part 'first'"), detail);
     }
 
     /**

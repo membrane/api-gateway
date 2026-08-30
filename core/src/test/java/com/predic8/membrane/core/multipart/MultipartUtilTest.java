@@ -325,6 +325,16 @@ class MultipartUtilTest {
         assertThrows(IOException.class, () -> MultipartUtil.forEachPart(msg, 1024, inspectAll()));
     }
 
+    /** split() shares the traversal with forEachPart(), so it rejects nested multipart alike. */
+    @Test
+    void splitRejectsNestedMultipart() {
+        var msg = response(multipartBody(
+                "Content-Disposition: form-data; name=\"nested\"" + CRLF
+                + "Content-Type: multipart/mixed; boundary=inner" + CRLF + CRLF + "..."));
+
+        assertThrows(IOException.class, () -> MultipartUtil.split(msg));
+    }
+
     // -------------------------------------------------------------------------
     // Error cases
     // -------------------------------------------------------------------------

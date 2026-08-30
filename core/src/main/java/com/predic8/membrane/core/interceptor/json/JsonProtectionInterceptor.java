@@ -135,7 +135,14 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
      */
     private Outcome inspectParts(Exchange exc, Request request) throws Exception {
         JsonPartHandler handler = new JsonPartHandler(exc);
-        MultipartUtil.forEachPart(request, maxSize, handler);
+        try {
+            MultipartUtil.forEachPart(request, maxSize, handler);
+        } catch (MultipartUtil.PartTooLargeException e) {
+            // Reported like any other part-level violation, naming the attachment that was too big.
+            log.debug(e.getMessage());
+            exc.setResponse(createErrorResponse(Origin.of(e.getPartHeader()).describe(e.getMessage()), null, null));
+            return RETURN;
+        }
         return handler.outcome;
     }
 
@@ -223,7 +230,7 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
             exc.setResponse(createErrorResponse(origin.describe(e.getMessage()),
                     e.getLocation().getLineNr(), e.getLocation().getColumnNr()));
             return RETURN;
-        } catch (Throwable e) {
+        } catch (Exception e) {
             log.debug(e.getMessage());
             exc.setResponse(createErrorResponse(origin.describe(e.getMessage()), null, null));
             return RETURN;
