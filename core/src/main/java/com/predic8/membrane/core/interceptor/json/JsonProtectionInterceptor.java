@@ -121,7 +121,6 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
 
             return inspectParts(exc, request);
         } catch (Exception e) {
-            log.debug(e.getMessage());
             exc.setResponse(createErrorResponse(e.getMessage(), null, null));
             return RETURN;
         }
@@ -138,7 +137,6 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
             MultipartUtil.forEachPart(request, maxSize, handler);
         } catch (MultipartUtil.PartTooLargeException e) {
             // Reported like any other part-level violation, naming the attachment that was too big.
-            log.debug(e.getMessage());
             exc.setResponse(createErrorResponse(Origin.part(e.getPartHeader()).describe(e.getMessage()), null, null));
             return RETURN;
         }
@@ -223,16 +221,13 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
         try {
             scanner.scan(body);
         } catch (JsonProtectionException e) {
-            log.debug(e.getMessage());
             exc.setResponse(createErrorResponse(origin.describe(e.getMessage()), e.getLine(), e.getCol()));
             return RETURN;
         } catch (JsonParseException e) {
-            log.debug(e.getMessage());
             exc.setResponse(createErrorResponse(origin.describe(e.getMessage()),
                     e.getLocation().getLineNr(), e.getLocation().getColumnNr()));
             return RETURN;
         } catch (Exception e) {
-            log.debug(e.getMessage());
             exc.setResponse(createErrorResponse(origin.describe(e.getMessage()), null, null));
             return RETURN;
         }
@@ -242,14 +237,13 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
     private Outcome rejectNonJson(Exchange exc, Origin origin) {
         String msg = "Content-Type %s is not JSON. Set otherContentTypes to \"skip\" to pass non-JSON content through."
                 .formatted(origin.contentType());
-        log.debug(msg);
         exc.setResponse(createErrorResponse(origin.describe(msg), null, null));
         return RETURN;
     }
 
     private Response createErrorResponse(String msg, Integer line, Integer col) {
+        log.info("JSON protection violation. Line: {}, col: {}, msg: {}", line, col, msg);
         if (shouldProvideDetails()) {
-            log.warn("JSON protection violation. Line: {}, col: {}, msg: {}", line, col, msg);
             ProblemDetails pd = user(false,getDisplayName())
                     .status(400)
                     .title("JSON Protection Violation")
