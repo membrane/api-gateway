@@ -111,10 +111,10 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
     @Override
     public Outcome handleRequest(Exchange exc) {
         Request request = exc.getRequest();
-        if (request.isGETRequest())
-            return CONTINUE;
-
         try {
+            if (request.isBodyEmpty())
+                return CONTINUE;
+
             // A plain body is inspected straight off the body stream, without buffering it into a byte[].
             if (!MultipartUtil.isMultipart(request))
                 return inspect(exc, request.getBodyAsStreamDecoded(), Origin.body(request.getHeader()));
@@ -433,8 +433,7 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
     public String getLongDescription() {
         return """
                 <div>Enforces the following constraints:<br/><ul>\
-                <li>HTTP request body must be well-formed JSON, if the HTTP verb is not \
-                <font style="font-family: monospace">GET</font>.</li>\
+                <li>HTTP request body must be well-formed JSON, unless the body is empty.</li>\
                 <li>Limits the maximum number of tokens to %d. (Each string and opening bracket counts \
                 as a token: <font style="font-family: monospace">{"a":"b"}</font> counts as 3 tokens)</li>\
                 <li>Forbids duplicate keys. (<font style="font-family: monospace">{"a":"b", "a":"c"}</font> \

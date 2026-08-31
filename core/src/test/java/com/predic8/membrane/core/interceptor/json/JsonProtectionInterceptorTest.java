@@ -97,6 +97,14 @@ public class JsonProtectionInterceptorTest {
     }
 
     @Test
+    public void getRequestIsNotScanned() throws Exception {
+        var exc = Request.get("/").buildExchange();
+
+        assertEquals(CONTINUE, jpiProd.handleRequest(exc));
+        assertNull(exc.getResponse());
+    }
+
+    @Test
     public void tooLong() throws Exception {
         send("[" + repeat("\"0123456\",", 1024) + "\"x\"]",
                 RETURN,
