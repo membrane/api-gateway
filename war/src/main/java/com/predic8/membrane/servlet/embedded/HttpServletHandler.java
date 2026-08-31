@@ -89,7 +89,8 @@ class HttpServletHandler extends AbstractHttpHandler {
 		} catch (ReadingBodyException e) {
 			logReadingBodyException(e);
 		} catch (WritingBodyException e) {
-			// writing goes to the servlet output stream, so this is the client's end
+			// Only writeResponse() can throw this here: a failure writing the request body to the target is
+			// swallowed by invokeHandlers() and turned into a 500. So this is always the client's end.
 			if (isPeerDisconnect(e))
 				log.info("Client closed the connection while the response body was being written: {}",
 						concatMessageAndCauseMessages(e));
@@ -113,19 +114,15 @@ class HttpServletHandler extends AbstractHttpHandler {
 			log.error(e.getMessage(), e);
 			return;
 		}
-		if (failedWith(exchange.getResponse(), e))
+		if (e.belongsTo(exchange.getResponse()))
 			log.warn("Server connection to {} closed while the response body was being read: {}",
 					exchange.getDestinations(), concatMessageAndCauseMessages(e));
-		else if (failedWith(exchange.getRequest(), e))
+		else if (e.belongsTo(exchange.getRequest()))
 			log.info("Client closed the connection while its request body was being read: {}",
 					concatMessageAndCauseMessages(e));
 		else
 			log.info("Connection closed while a message body was being read: {}",
 					concatMessageAndCauseMessages(e));
-	}
-
-	private static boolean failedWith(Message message, ReadingBodyException e) {
-		return message != null && message.getBody().getObservedException() == e;
 	}
 
 	protected void writeResponse(Response res) throws Exception {
