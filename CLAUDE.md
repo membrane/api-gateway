@@ -3,6 +3,12 @@
 Membrane API Gateway — a lightweight Java API gateway for REST, GraphQL, and legacy SOAP/WSDL
 services, configurable in YAML or XML. Upstream: https://github.com/membrane/api-gateway
 
+## Git & Commit Policy
+
+- NEVER commit or push unless the user explicitly asks. Stage nothing automatically; report what
+  changed and wait.
+- Use `Closes #<issue>` in commit messages when the work resolves a filed issue.
+
 ## Working principles
 
 Behavioral guidelines to reduce common coding mistakes; they compose with the project-specific
@@ -103,6 +109,15 @@ mvn -pl core -am -DskipTests package   # one module + its dependencies
 - Test observable behavior — inputs/outputs, edge cases (zero/identical values, boundaries), and any documented invariants. Do not write tests for record accessors, generated `equals`/`hashCode`/`toString`, or plain getters/setters — there's no behavior there to break.
 - Test classes mirror the package of the class under test (e.g. `com.predic8.membrane.core.util.URLUtil` → `com.predic8.membrane.core.util.URLUtilTest`).
 - Prefer a few tests that pin down real behavior (known-value checks, symmetry/round-trip properties) over exhaustive trivial cases.
+
+### Membrane Test Environment
+
+- Before running Membrane tests, check that ports 2000/2001/3000/7007/9000 are free
+  (`lsof -i :2000`); an IDE-launched Membrane instance frequently blocks test runs.
+- Integration tests can be flaky for environmental reasons (TIME_WAIT collisions on macOS, accept
+  backlog limits). Triage a failure as environmental before changing product code.
+- Run the targeted package test suite (e.g. wsdl2openapi) after changes rather than the full
+  build; report pass counts.
 
 ## Configuration grammar (annotations)
 
