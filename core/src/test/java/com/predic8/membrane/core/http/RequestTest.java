@@ -368,6 +368,74 @@ public class RequestTest {
                 """, true);
     }
 
+    /**
+     * RFC 9112 6.3: if a Transfer-Encoding is present in a request and "chunked" is not the final
+     * coding, the body length cannot be determined - the request must be rejected rather than read.
+     */
+    @Test
+    void transferEncodingNotEndingInChunkedIsRejected() {
+        assertThrows(MalformedHeaderException.class, () -> readRequest("""
+                POST /products HTTP/1.1
+                Host: example.com
+                Transfer-Encoding: gzip
+
+                """));
+    }
+
+    @Test
+    void transferEncodingNotEndingInChunkedIsRejectedDespiteContentLength() {
+        assertThrows(MalformedHeaderException.class, () -> readRequest("""
+                POST /products HTTP/1.1
+                Host: example.com
+                Transfer-Encoding: gzip
+                Content-Length: 0
+
+                """));
+    }
+
+    @Test
+    void transferEncodingWithChunkedNotFinalIsRejected() {
+        assertThrows(MalformedHeaderException.class, () -> readRequest("""
+                POST /products HTTP/1.1
+                Host: example.com
+                Transfer-Encoding: chunked, gzip
+
+                """));
+    }
+
+    /**
+     * Header.isChunked() only inspects the first Transfer-Encoding field, so a chunked coding
+     * split off into a second field line is not recognized as framing and must be rejected.
+     */
+    @Test
+    void transferEncodingSplitOverSeveralFieldsIsRejected() {
+        assertThrows(MalformedHeaderException.class, () -> readRequest("""
+                POST /products HTTP/1.1
+                Host: example.com
+                Transfer-Encoding: gzip
+                Transfer-Encoding: chunked
+
+                """));
+    }
+
+    @Test
+    void transferEncodingEndingInChunkedIsAccepted() throws Exception {
+        assertInstanceOf(ChunkedBody.class, readRequest("""
+                POST /products HTTP/1.1
+                Host: example.com
+                Transfer-Encoding: gzip, chunked
+
+                0
+
+                """).getBody());
+    }
+
+    private static Request readRequest(String message) throws IOException, EndOfStreamException {
+        Request req = new Request();
+        req.read(convertMessage(message), true);
+        return req;
+    }
+
     @Test
     void getWithoutBody() throws EndOfStreamException, IOException {
         shouldBodyBeRead("""

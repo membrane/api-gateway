@@ -143,6 +143,19 @@ public class Request extends Message {
         return uri;
     }
 
+    /**
+     * Per RFC 9112 &sect;6.3 a request whose <tt>Transfer-Encoding</tt> does not end in
+     * <tt>chunked</tt> has no reliably determinable body length. Reject it before selecting a body,
+     * rather than falling back to reading until EOF, which would hang a keep-alive connection and
+     * open the door to request smuggling.
+     */
+    @Override
+    protected void createBody(InputStream in) throws IOException {
+        if (header.getFirstValue(TRANSFER_ENCODING) != null && !header.isChunked())
+            throw new MalformedHeaderException("Transfer-Encoding does not end in \"chunked\". The body length of the request cannot be determined; rejecting to prevent request smuggling.");
+        super.createBody(in);
+    }
+
     @Override
     public boolean shouldNotContainBody() {
         if (header.hasContentLength())
