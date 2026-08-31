@@ -38,6 +38,7 @@ import static com.predic8.membrane.annot.Constants.CRLF;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_XML;
+import static com.predic8.membrane.core.util.text.StringUtil.maskNonPrintableCharacters;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class Request extends Message {
@@ -151,9 +152,12 @@ public class Request extends Message {
      */
     @Override
     protected void createBody(InputStream in) throws IOException {
-        if (header.getFirstValue(TRANSFER_ENCODING) != null && !header.isChunked()) {
-            log.info("Request {} {} has Transfer-Encoding \"{}\", whose final coding is not \"chunked\". Rejecting to prevent request smuggling.", method, uri, header.getFirstValue(TRANSFER_ENCODING));
-            throw new MalformedHeaderException("Transfer-Encoding does not end in \"chunked\". The body length of the request cannot be determined; rejecting to prevent request smuggling.");
+        final String transferEncoding = header.getFirstValue(TRANSFER_ENCODING);
+        if (transferEncoding != null && !header.isChunked()) {
+            String message = "Transfer-Encoding \"%s\" does not end in \"chunked\". The body length of the request cannot be determined; rejecting to prevent request smuggling."
+                    .formatted(maskNonPrintableCharacters(transferEncoding));
+            log.info(message);
+            throw new MalformedHeaderException(message);
         }
         super.createBody(in);
     }
