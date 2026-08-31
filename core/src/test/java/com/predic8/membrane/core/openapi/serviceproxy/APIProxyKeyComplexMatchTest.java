@@ -122,6 +122,20 @@ class APIProxyKeyComplexMatchTest {
         assertTrue(key.matchesPath("/api-docs"));
     }
 
+    @Test
+    @DisplayName("Api docs paths stay reachable when the key was not built from OpenAPI specs, e.g. wsdl2openapi")
+    void matchesPathAllowsRegisteredApiDocsPaths() {
+        var key = new APIProxyKey("", "", 2000, "/service", "*", null, false) {{
+            addApiDocsPaths(new ArrayList<>(List.of("/api-docs")));
+            addBasePaths(new ArrayList<>(List.of("/service")));
+        }};
+
+        assertTrue(key.matchesPath("/api-docs"));
+        assertTrue(key.matchesPath("/api-docs/ui"));
+        assertTrue(key.matchesPath("/service/get-city"));
+        assertFalse(key.matchesPath("/other"));
+    }
+
     private static Stream<Arguments> urls() {
         return Stream.of(
                 of("/api-docs",true),

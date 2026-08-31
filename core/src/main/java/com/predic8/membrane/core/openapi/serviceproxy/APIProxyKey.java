@@ -123,6 +123,15 @@ public class APIProxyKey extends ServiceProxyKey {
         basePaths.addAll(paths);
     }
 
+    /**
+     * Registers additional paths under which an OpenAPI document is published. Use this instead of
+     * {@link #addBasePaths(ArrayList)} for documentation paths: they stay reachable even when a
+     * custom path is configured.
+     */
+    public void addApiDocsPaths(ArrayList<String> paths) {
+        apiDocsPaths.addAll(paths);
+    }
+
     public String getKeyId() {
         return (
                 getMethod() + "-"
