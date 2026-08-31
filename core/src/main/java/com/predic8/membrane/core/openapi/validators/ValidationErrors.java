@@ -34,6 +34,12 @@ public class ValidationErrors {
         return ve;
     }
 
+    public static ValidationErrors error(ValidationContext ctx, MaskableMessage message) {
+        ValidationErrors ve = new ValidationErrors();
+        ve.add(ctx, message);
+        return ve;
+    }
+
     public List<ValidationError> getErrors() {
         return errors;
     }
@@ -59,6 +65,11 @@ public class ValidationErrors {
         return this;
     }
 
+    public ValidationErrors add(ValidationContext ctx, MaskableMessage message) {
+        errors.add(new ValidationError(ctx, message));
+        return this;
+    }
+
     public int size() {
         return errors.size();
     }
@@ -80,6 +91,10 @@ public class ValidationErrors {
     }
 
     public Map<String,Object> getErrorMessage(Direction direction) {
+        return getErrorMessage(direction, false);
+    }
+
+    public Map<String,Object> getErrorMessage(Direction direction, boolean maskValues) {
 
         var root = new LinkedHashMap<String, Object>();
 
@@ -88,7 +103,7 @@ public class ValidationErrors {
             return root;
         }
 
-        Map<String, List<Map<String, Object>>> m = getValidationErrorsGroupedByLocation(direction);
+        Map<String, List<Map<String, Object>>> m = getValidationErrorsGroupedByLocation(direction, maskValues);
         ValidationContext ctx = errors.getFirst().getContext();
         setFieldIfNotNull(root, "method", ctx.getMethod());
         setFieldIfNotNull(root, "uriTemplate", ctx.getUriTemplate());
@@ -99,11 +114,11 @@ public class ValidationErrors {
         return root;
     }
 
-    private Map<String, List<Map<String, Object>>> getValidationErrorsGroupedByLocation(Direction direction) {
+    private Map<String, List<Map<String, Object>>> getValidationErrorsGroupedByLocation(Direction direction, boolean maskValues) {
         Map<String, List<Map<String, Object>>> m = new HashMap<>();
         errors.forEach(ve -> {
             List<Map<String, Object>> ves = new ArrayList<>();
-            ves.add(ve.getContentMap());
+            ves.add(ve.getContentMap(maskValues));
             m.merge(getLocationFor(direction, ve), ves, (vesOld, vesNew) -> {
                 vesOld.addAll(vesNew);
                 return vesOld;
@@ -125,8 +140,12 @@ public class ValidationErrors {
 
     @Override
     public String toString() {
-        return "ValidationErrors{" +
-                "errors=" + errors +
-                '}';
+        return toString(false);
+    }
+
+    public String toString(boolean maskValues) {
+        StringJoiner joiner = new StringJoiner(", ", "[", "]");
+        errors.forEach(ve -> joiner.add(ve.toString(maskValues)));
+        return "ValidationErrors{errors=" + joiner + '}';
     }
 }

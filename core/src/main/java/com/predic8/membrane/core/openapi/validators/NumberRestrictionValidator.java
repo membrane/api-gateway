@@ -22,6 +22,7 @@ import io.swagger.v3.oas.models.media.*;
 import java.math.*;
 
 import static com.predic8.membrane.core.openapi.util.Utils.*;
+import static com.predic8.membrane.core.openapi.validators.ValidationError.v;
 import static com.predic8.membrane.core.openapi.validators.ValidationErrors.*;
 import static java.lang.String.*;
 import static java.math.BigDecimal.*;
@@ -71,7 +72,7 @@ public class NumberRestrictionValidator {
         BigDecimal multiplesOf = schema.getMultipleOf();
         BigDecimal remainder = value.remainder(multiplesOf).stripTrailingZeros();
         if (remainder.compareTo(ZERO) != 0) {
-            return error(ctx, format("Value %s is not a multiple of %s.", value, multiplesOf));
+            return error(ctx, mask -> format("Value %s is not a multiple of %s.", v(value, mask), multiplesOf));
         }
 
         return null;
@@ -80,10 +81,10 @@ public class NumberRestrictionValidator {
     private ValidationErrors validateExclusiveMaximum(ValidationContext ctx, BigDecimal value) {
         if (schema.getExclusiveMaximumValue() != null) {
             if (schema.getExclusiveMaximumValue().compareTo(value) < 0) {
-                return error(ctx, value + " is greater than the maximum of " + schema.getExclusiveMaximumValue());
+                return error(ctx, mask -> v(value, mask) + " is greater than the maximum of " + schema.getExclusiveMaximumValue());
             }
             if (schema.getExclusiveMaximumValue().compareTo(value) == 0) {
-                return error(ctx, format("The value of %s should be less than the exclusive maximum %s.", value, schema.getExclusiveMaximumValue()));
+                return error(ctx, mask -> format("The value of %s should be less than the exclusive maximum %s.", v(value, mask), schema.getExclusiveMaximumValue()));
             }
         }
         return null;
@@ -92,10 +93,10 @@ public class NumberRestrictionValidator {
     private ValidationErrors validateMaximum(ValidationContext ctx, BigDecimal value) {
         if (schema.getMaximum() != null) {
             if (schema.getMaximum().compareTo(value) < 0) {
-                return error(ctx, value + " is greater than the maximum of " + schema.getMaximum());
+                return error(ctx, mask -> v(value, mask) + " is greater than the maximum of " + schema.getMaximum());
             }
             if (isExclusiveMaximum() && schema.getMaximum().compareTo(value) == 0) {
-                return error(ctx, format("The value of %s should be less than the exclusive maximum %s.", value, schema.getMaximum()));
+                return error(ctx, mask -> format("The value of %s should be less than the exclusive maximum %s.", v(value, mask), schema.getMaximum()));
             }
         }
         return null;
@@ -104,10 +105,10 @@ public class NumberRestrictionValidator {
     private ValidationErrors validateExclusiveMinimum(ValidationContext ctx, BigDecimal value) {
         if (schema.getExclusiveMinimumValue() != null) {
             if (schema.getExclusiveMinimumValue().compareTo(value) > 0) {
-                return error(ctx, value + " is smaller than the minimum of " + schema.getExclusiveMinimumValue());
+                return error(ctx, mask -> v(value, mask) + " is smaller than the minimum of " + schema.getExclusiveMinimumValue());
             }
             if (schema.getExclusiveMinimumValue().compareTo(value) == 0) {
-                return error(ctx, format("The value of %s should be greater than the exclusive minimum %s.", value, schema.getExclusiveMinimumValue()));
+                return error(ctx, mask -> format("The value of %s should be greater than the exclusive minimum %s.", v(value, mask), schema.getExclusiveMinimumValue()));
             }
         }
         return null;
@@ -116,10 +117,10 @@ public class NumberRestrictionValidator {
     private ValidationErrors validateMinimum(ValidationContext ctx, BigDecimal value) {
         if (schema.getMinimum() != null) {
             if (schema.getMinimum().compareTo(value) > 0) {
-                return error(ctx, value + " is smaller than the minimum of " + schema.getMinimum());
+                return error(ctx, mask -> v(value, mask) + " is smaller than the minimum of " + schema.getMinimum());
             }
             if (isExclusiveMinimum() && schema.getMinimum().compareTo(value) == 0) {
-                return error(ctx, format("The value of %s should be greater than the exclusive minimum %s.", value, schema.getMinimum()));
+                return error(ctx, mask -> format("The value of %s should be greater than the exclusive minimum %s.", v(value, mask), schema.getMinimum()));
             }
         }
         return null;

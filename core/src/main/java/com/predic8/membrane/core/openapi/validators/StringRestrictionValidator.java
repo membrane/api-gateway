@@ -19,6 +19,7 @@ package com.predic8.membrane.core.openapi.validators;
 import com.fasterxml.jackson.databind.node.*;
 import io.swagger.v3.oas.models.media.*;
 
+import static com.predic8.membrane.core.openapi.validators.ValidationError.v;
 import static java.lang.String.*;
 
 public class StringRestrictionValidator {
@@ -57,10 +58,10 @@ public class StringRestrictionValidator {
         String str = getStringValue(value);
 
         if (isMaxlenExceeded(str)) {
-            errors.add(new ValidationError(ctx.schemaType("string"), format("The string '%s' is %d characters long. MaxLength of %d is exceeded.", str, str.length(), schema.getMaxLength())));
+            errors.add(new ValidationError(ctx.schemaType("string"), mask -> format("The string '%s' is %d characters long. MaxLength of %d is exceeded.", v(str, mask), str.length(), schema.getMaxLength())));
         }
         if (isMinLenExceeded(str)) {
-            errors.add(new ValidationError(ctx.schemaType("string"), format("The string '%s' is %d characters long. The length of the string is shorter than the minLength of %d.", str, str.length(), schema.getMinLength())));
+            errors.add(new ValidationError(ctx.schemaType("string"), mask -> format("The string '%s' is %d characters long. The length of the string is shorter than the minLength of %d.", v(str, mask), str.length(), schema.getMinLength())));
         }
         return errors;
     }

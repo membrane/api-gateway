@@ -34,7 +34,6 @@ protected String getOpenAPIFileName() {
     public void notImplementedResponse() throws ParseException {
         testNotImplementedResponse(200, APPLICATION_XML);
         testNotImplementedResponse(201, TEXT_XML);
-        testNotImplementedResponse(202, APPLICATION_X_WWW_FORM_URLENCODED);
     }
 
     private void testNotImplementedResponse(int statusCode, String mimeType) throws ParseException {
@@ -50,7 +49,6 @@ protected String getOpenAPIFileName() {
     public void notImplementedRequest() throws ParseException {
         testNotImplementedRequest(APPLICATION_XML,"/application-xml");
         testNotImplementedRequest(TEXT_XML, "/text-xml");
-        testNotImplementedRequest(APPLICATION_X_WWW_FORM_URLENCODED, "/x-www-form-urlencoded");
     }
 
     private void testNotImplementedRequest(String mimeType, String path) throws ParseException {

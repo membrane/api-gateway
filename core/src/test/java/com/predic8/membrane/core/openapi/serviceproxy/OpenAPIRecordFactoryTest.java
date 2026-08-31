@@ -48,6 +48,25 @@ class OpenAPIRecordFactoryTest {
     }
 
     @Test
+    void maskValuesEnumMapsToExtensionBooleans() {
+        assertMaskExtension(OpenAPISpec.MaskValues.NONE, false, false);
+        assertMaskExtension(OpenAPISpec.MaskValues.RESPONSE, true, false);
+        assertMaskExtension(OpenAPISpec.MaskValues.LOG, false, true);
+        assertMaskExtension(OpenAPISpec.MaskValues.BOTH, true, true);
+    }
+
+    private static void assertMaskExtension(OpenAPISpec.MaskValues maskValues, boolean maskResponse, boolean maskLog) {
+        OpenAPISpec spec = new OpenAPISpec();
+        spec.setLocation("customers.yml");
+        spec.setMaskValues(maskValues);
+        OpenAPIRecord rec = factory.create(singletonList(spec)).get("customers-api-v1-0");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> xValidation = (Map<String, Object>) rec.api.getExtensions().get(APIProxy.X_MEMBRANE_VALIDATION);
+        assertEquals(maskResponse, xValidation.get(APIProxy.MASK_VALUES));
+        assertEquals(maskLog, xValidation.get(APIProxy.MASK_VALUES_LOG));
+    }
+
+    @Test
     void readAndParseOpenAPI30() {
         OpenAPISpec spec = new OpenAPISpec();
         spec.setLocation("customers.yml");
