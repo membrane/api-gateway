@@ -14,10 +14,12 @@
 
 package com.predic8.membrane.core.http;
 
-import com.predic8.membrane.core.util.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.util.ByteUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
 
 import static java.lang.System.currentTimeMillis;
 
@@ -84,6 +86,8 @@ public class Body extends AbstractBody {
 	public void discard() {
 		if (read)
 			return;
+		if (observedException != null)
+			return; // see AbstractBody.discard(): best-effort, and the stream is already dead
 		if (wasStreamed())
 			return;
 

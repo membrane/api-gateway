@@ -14,12 +14,15 @@
 
 package com.predic8.membrane.core.http;
 
-import org.slf4j.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.util.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * A HTTP message body (request or response), as it is received or constructed
@@ -43,6 +46,12 @@ import static java.nio.charset.StandardCharsets.*;
  * threads is illegal. Using a Body Stream after the Body as been accessed by
  * someone else (using streams or not) is illegal.
  * <p>
+ * Failing to read a body is terminal: the {@link ReadingBodyException} is recorded (see
+ * {@link #setObservedException(ReadingBodyException)}), the observers are notified via
+ * {@link MessageObserver#bodyError(ReadingBodyException)} and every later access re-throws that same
+ * exception instead of touching the (dead) stream again. This keeps the original cause visible rather
+ * than replacing it with a follow-up error like "stream is closed".
+ * <p>
  * Public instance methods must not throw {@link IOException}s. Throw an
  * unchecked {@link ReadingBodyException} or {@link WritingBodyException} instead.
  * (This is enforced by the BodyDoesntThrowIOExceptionTest .)
@@ -63,6 +72,8 @@ public abstract class AbstractBody {
 		if (read)
 			return;
 
+		throwIfFailed();
+
 		if (wasStreamed)
 			throw new IllegalStateException("Cannot read body after it was streamed.");
 
@@ -78,17 +89,79 @@ public abstract class AbstractBody {
 		markAsRead();
 	}
 
+	/**
+	 * Records that reading the body failed and notifies the observers via
+	 * {@link MessageObserver#bodyError(ReadingBodyException)}.
+	 * <p>
+	 * The first failure wins: the recorded exception is never replaced and the observers are notified
+	 * only once. The returned exception is the one the caller passed in, so that the idiom
+	 * <code>throw setObservedException(new ReadingBodyException(e));</code> keeps throwing the exception
+	 * belonging to the current failure.
+	 */
     protected ReadingBodyException setObservedException(ReadingBodyException e) {
-        return observedException = e;
+        if (observedException != null)
+            return e;
+        observedException = e; // arm the latch before notifying, so a re-entering observer sees the failed state
+        notifyBodyError(e);
+        return e;
     }
 
+	private void notifyBodyError(ReadingBodyException e) {
+		// Copy and clear first: observers may access the list (e.g. ShadowingInterceptor) and this is the
+		// last event fired on them, just as in markAsRead().
+		List<MessageObserver> os = new ArrayList<>(observers);
+		observers.clear();
+		for (MessageObserver observer : os) {
+			try {
+				observer.bodyError(e);
+			} catch (Exception ex) {
+				// must not mask the original exception: Connection.bodyError() may throw
+				e.addSuppressed(ex);
+				log.warn("Observer {} failed while handling a body read error.", observer, ex);
+			}
+		}
+	}
+
+	/**
+	 * @throws ReadingBodyException if reading the body failed earlier. The stream is dead, retrying it
+	 * would only produce a follow-up error hiding the original cause.
+	 */
+	protected void throwIfFailed() {
+		if (observedException != null)
+			throw observedException;
+	}
+
+	/**
+	 * @return whether reading the body failed. In that case {@link #isRead()} stays <code>false</code> and
+	 * accessing the content throws the recorded {@link ReadingBodyException}.
+	 */
+	public boolean hasFailed() {
+		return observedException != null;
+	}
+
+	/**
+	 * @return the exception recorded when reading this body failed, or <code>null</code>. Useful to tell
+	 * which of an exchange's bodies a {@link ReadingBodyException} belongs to.
+	 */
+	public ReadingBodyException getObservedException() {
+		return observedException;
+	}
+
 	public void discard() {
+		if (observedException != null) {
+			// Nothing left to drain and no reason to bother the caller: discard() is a best-effort
+			// operation (see Message.discardBody()).
+			log.debug("Not discarding body: reading it already failed ({}).", observedException.getMessage());
+			return;
+		}
 		read();
 	}
 
 	protected void markAsRead() {
 		if (read)
 			return;
+		if (observedException != null)
+			return; // a failed body never becomes "read"; bodyComplete must not follow bodyError
 
 		read = true;
 
@@ -120,6 +193,7 @@ public abstract class AbstractBody {
 	 * you should therefore use {@link #getContentAsStream()} instead.
 	 */
 	public byte[] getContent() {
+		throwIfFailed();
 		if (wasStreamed)
 			throw new IllegalStateException("Cannot read body after it was streamed.");
 		read();
@@ -132,6 +206,7 @@ public abstract class AbstractBody {
 	}
 
 	public InputStream getContentAsStream() {
+		throwIfFailed();
 		if (wasStreamed)
 			throw new IllegalStateException("Cannot read body after it was streamed.");
 		read();
@@ -139,6 +214,7 @@ public abstract class AbstractBody {
 	}
 
 	public void write(AbstractBodyTransferrer out, boolean retainCopy) {
+		throwIfFailed(); // never (re-)transmit a body whose read failed: that would send a truncated body
 		try {
 			if (!read && !retainCopy) {
 				if (wasStreamed)
@@ -239,6 +315,12 @@ public abstract class AbstractBody {
 	void addObserver(MessageObserver observer) {
 		if (read) {
 			observer.bodyComplete(this);
+			return;
+		}
+		if (observedException != null) {
+			// the terminal event already happened: fire it immediately instead of registering an observer
+			// that would never be called
+			observer.bodyError(observedException);
 			return;
 		}
 		if (wasStreamed)
