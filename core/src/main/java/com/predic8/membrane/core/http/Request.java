@@ -145,13 +145,13 @@ public class Request extends Message {
 
     @Override
     public boolean shouldNotContainBody() {
-        if (methodsWithoutBody.contains(method)) // GET, HEAD, CONNECT
-            return true;
-        if (isHTTP10())
-            return false;
         if (header.hasContentLength())
             return header.getContentLength() == 0;
-        return header.getFirstValue(TRANSFER_ENCODING) == null;
+        if (header.getFirstValue(TRANSFER_ENCODING) != null)
+            return false;
+        if (methodsWithoutBody.contains(method)) // GET, HEAD, CONNECT
+            return true;
+        return !isHTTP10();
     }
 
     /**

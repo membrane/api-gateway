@@ -342,7 +342,38 @@ public class RequestTest {
         shouldBodyBeRead("""
                 OPTIONS /products HTTP/1.1
                 Origin: https://predic8.de
-                
+
+                """, false);
+    }
+
+    @Test
+    void getWithBodyContentLength() throws EndOfStreamException, IOException {
+        shouldBodyBeRead("""
+                GET /products HTTP/1.1
+                Content-Length: 5
+                Origin: https://predic8.de
+
+                Dummy
+                """, true);
+    }
+
+    @Test
+    void getWithBodyChunked() throws EndOfStreamException, IOException {
+        shouldBodyBeRead("""
+                GET /products HTTP/1.1
+                Transfer-Encoding: chunked
+                Origin: https://predic8.de
+
+                Dummy
+                """, true);
+    }
+
+    @Test
+    void getWithoutBody() throws EndOfStreamException, IOException {
+        shouldBodyBeRead("""
+                GET /products HTTP/1.1
+                Origin: https://predic8.de
+
                 """, false);
     }
 
