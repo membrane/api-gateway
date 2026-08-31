@@ -155,6 +155,8 @@ public class APIProxyKey extends ServiceProxyKey {
         if (obj instanceof APIProxyKey other) {
             if (!basePaths.equals(other.basePaths))
                 return false;
+            if (!apiDocsPaths.equals(other.apiDocsPaths))
+                return false;
             return Objects.equals(exchangeExpression, other.exchangeExpression);
         }
         return false;
@@ -176,6 +178,6 @@ public class APIProxyKey extends ServiceProxyKey {
 
     @Override
     public int hashCode() {
-        return super.hashCode() + Objects.hashCode( exchangeExpression.hashCode()) + basePaths.hashCode();
+        return Objects.hash(super.hashCode(), basePaths, apiDocsPaths, exchangeExpression);
     }
 }

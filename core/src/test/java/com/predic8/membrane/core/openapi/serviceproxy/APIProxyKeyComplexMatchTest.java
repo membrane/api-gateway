@@ -136,6 +136,24 @@ class APIProxyKeyComplexMatchTest {
         assertFalse(key.matchesPath("/other"));
     }
 
+    @Test
+    @DisplayName("Keys differing only in their api docs paths are not equal")
+    void keysWithDifferentApiDocsPathsAreNotEqual() {
+        var openAPIKey = new APIProxyKey("", "", 80, "/cities", "*", null, true);
+
+        assertEquals(openAPIKey, new APIProxyKey("", "", 80, "/cities", "*", null, true));
+        assertNotEquals(openAPIKey, new APIProxyKey("", "", 80, "/cities", "*", null, false));
+    }
+
+    @Test
+    @DisplayName("hashCode agrees with equals and works without an expression")
+    void hashCodeWithoutExchangeExpression() {
+        var key = new APIProxyKey("", "", 80, "/cities", "*", null, true);
+
+        assertEquals(key.hashCode(), new APIProxyKey("", "", 80, "/cities", "*", null, true).hashCode());
+        assertNotEquals(key.hashCode(), new APIProxyKey("", "", 80, "/cities", "*", null, false).hashCode());
+    }
+
     private static Stream<Arguments> urls() {
         return Stream.of(
                 of("/api-docs",true),
