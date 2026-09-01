@@ -51,6 +51,17 @@ a default flip made for convenience during trials.
 - Would need a release note and a migration path (e.g. document how to restore strict parsing)
   since it is a behavior change with security relevance, not a bugfix.
 - Does not by itself fix discoverability for *other* onboarding obstacles — only this one.
+- Some existing deployments would fail to *start*, not just parse more permissively: `<call>` is
+  rejected outright when `allowIllegalCharacters` is enabled (`CallInterceptor.init()`,
+  `core/.../interceptor/flow/CallInterceptor.java`), and a `<target>` whose URL contains a
+  `${...}` template marker is rejected too (`Target.init()`, `core/.../proxies/Target.java`).
+  Both throw `ConfigurationException`. Unlike the silent permissiveness above, this is a hard
+  startup failure for any configuration using those features.
+- Assumption: ADR-010 is about the *default* only, so it would change behavior for deployments
+  that never opted in. If its scope is URI parsing alone, then reconciling `<call>` and URL
+  templates with `allowIllegalCharacters` is explicitly out of scope here and needs its own
+  decision — but it still gates option 2, since the default cannot be flipped while those two
+  features refuse to run with the flag on.
 
 ## ADR-009 PasswordDigest Support for wsSecurity UsernameToken Validation
 
