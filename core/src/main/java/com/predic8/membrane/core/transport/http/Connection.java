@@ -102,31 +102,58 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 			sniServername = null;
 		}
 
-		if (sslProvider != null) {
-			if (isNullOrEmpty(localHost))
-				con.socket = sslProvider.createSocket(host, port, connectTimeout, sniServername, applicationProtocols);
-			else
-				con.socket = sslProvider.createSocket(host, port, InetAddress.getByName(localHost), 0,
-						connectTimeout, sniServername, applicationProtocols);
-		} else {
-			if (isNullOrEmpty(localHost)) {
-				con.socket = new Socket();
+		// Everything up to here happens before the first byte of the request is written, so a timeout
+		// in this block means nothing was sent. ConnectTimeoutException carries that fact to the
+		// retry handling, which the JDK's undifferentiated SocketTimeoutException cannot.
+		try {
+			if (sslProvider != null) {
+				if (isNullOrEmpty(localHost))
+					con.socket = sslProvider.createSocket(host, port, connectTimeout, sniServername, applicationProtocols);
+				else
+					con.socket = sslProvider.createSocket(host, port, InetAddress.getByName(localHost), 0,
+							connectTimeout, sniServername, applicationProtocols);
 			} else {
-				con.socket = new Socket();
-				con.socket.bind(new InetSocketAddress(InetAddress.getByName(localHost), 0));
+				if (isNullOrEmpty(localHost)) {
+					con.socket = new Socket();
+				} else {
+					con.socket = new Socket();
+					con.socket.bind(new InetSocketAddress(InetAddress.getByName(localHost), 0));
+				}
+				con.socket.connect(new InetSocketAddress(host, port), connectTimeout);
 			}
-			con.socket.connect(new InetSocketAddress(host, port), connectTimeout);
-		}
 
-		if (proxy != null && origSSLProvider != null) {
-			con.doTunnelHandshake(proxy, con.socket, origHost, origPort);
-			con.socket = origSSLProvider.createSocket(con.socket, origHost, origPort, connectTimeout, origSniServername, applicationProtocols);
+			if (proxy != null && origSSLProvider != null) {
+				con.doTunnelHandshake(proxy, con.socket, origHost, origPort);
+				con.socket = origSSLProvider.createSocket(con.socket, origHost, origPort, connectTimeout, origSniServername, applicationProtocols);
+			}
+		} catch (SocketTimeoutException e) {
+			// The socket can already be open here: a timeout during the proxy handshake or the TLS
+			// wrapping happens after it was connected. Without closing it the descriptor leaks, and a
+			// retried connect attempt would leak one more.
+			ConnectTimeoutException timedOut = new ConnectTimeoutException(
+					"Connecting to %s:%d timed out after %dms.".formatted(host, port, connectTimeout), e);
+			closeSocket(con.socket, timedOut);
+			throw timedOut;
 		}
 
 		log.debug("Opened connection on localPort: {}", con.socket.getLocalPort());
 
 		con.setupStreams();
 		return con;
+	}
+
+	/**
+	 * Closes a socket that is being abandoned because opening the connection failed. A failure to close
+	 * is attached to the original exception rather than replacing it.
+	 */
+	private static void closeSocket(@Nullable Socket socket, Exception cause) {
+		if (socket == null)
+			return;
+		try {
+			socket.close();
+		} catch (IOException closeFailure) {
+			cause.addSuppressed(closeFailure);
+		}
 	}
 
 	private void setupStreams() throws IOException {

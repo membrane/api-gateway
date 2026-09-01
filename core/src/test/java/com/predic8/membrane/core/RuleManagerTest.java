@@ -13,15 +13,26 @@
    limitations under the License. */
 package com.predic8.membrane.core;
 
-import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.router.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.router.DefaultRouter;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.router.TestRouter;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
-import java.net.*;
+import java.net.URISyntaxException;
+import java.net.UnknownHostException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
 
-import static com.predic8.membrane.core.http.Request.*;
-import static com.predic8.membrane.test.TestUtil.*;
+import static com.predic8.membrane.core.http.Request.get;
+import static com.predic8.membrane.core.router.YamlRouterBootstrap.loadIntoRouter;
+import static com.predic8.membrane.test.TestUtil.assembleExchange;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class RuleManagerTest {
@@ -85,6 +96,52 @@ public class RuleManagerTest {
 		manager.addProxy(second, RuleManager.RuleDefinitionSource.MANUAL);
 
 		assertEquals(5, manager.getRules().size());
+	}
+
+	/**
+	 * APIs sharing a port are told apart by their test expression, which only exists after init().
+	 * Deduplicating while the configuration is parsed would therefore throw them away, see
+	 * distribution/tutorials/soap/75-Routing-by-SOAPAction.yaml.
+	 */
+	@Test
+	@DisplayName("APIs on one port that only differ in their test expression all stay registered")
+	void apisDiscriminatedByTestExpressionAreKept(@TempDir Path tempDir) throws Exception {
+		Path config = tempDir.resolve("apis.yaml");
+		Files.writeString(config, """
+				api:
+				  name: get
+				  port: 2000
+				  test: header.SOAPAction == 'get'
+				  flow:
+				    - return:
+				        status: 200
+				---
+				api:
+				  name: create
+				  port: 2000
+				  test: header.SOAPAction == 'create'
+				  flow:
+				    - return:
+				        status: 200
+				---
+				api:
+				  name: fallback
+				  port: 2000
+				  flow:
+				    - return:
+				        status: 404
+				""");
+
+		DefaultRouter yamlRouter = new DefaultRouter();
+		try {
+			loadIntoRouter(yamlRouter, config.toString());
+			yamlRouter.start();
+
+			assertEquals(List.of("get", "create", "fallback"),
+					yamlRouter.getRuleManager().getRules().stream().map(p -> p.getName()).toList());
+		} finally {
+			yamlRouter.stop();
+		}
 	}
 
 	@Test
