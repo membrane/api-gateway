@@ -45,7 +45,7 @@ conventions below.
 
 ### 5. Never push on your own
 - Never run `git push` (or open/merge a PR) without the user explicitly asking for it in that
-  moment. Committing locally is fine; pushing is not the default next step.
+  moment.
 
 ## Modules
 
@@ -113,7 +113,8 @@ mvn -pl core -am -DskipTests package   # one module + its dependencies
 ### Membrane Test Environment
 
 - Before running Membrane tests, check that ports 2000/2001/3000/7007/9000 are free
-  (`lsof -i :2000`); an IDE-launched Membrane instance frequently blocks test runs.
+  (`lsof -nP -iTCP:2000,2001,3000,7007,9000 -sTCP:LISTEN`); an IDE-launched Membrane instance
+  frequently blocks test runs.
 - Integration tests can be flaky for environmental reasons (TIME_WAIT collisions on macOS, accept
   backlog limits). Triage a failure as environmental before changing product code.
 - Run the targeted package test suite (e.g. wsdl2openapi) after changes rather than the full
