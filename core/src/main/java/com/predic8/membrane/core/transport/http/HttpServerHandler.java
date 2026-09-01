@@ -14,20 +14,30 @@
 
 package com.predic8.membrane.core.transport.http;
 
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.TerminateException;
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.transport.http2.*;
-import com.predic8.membrane.core.transport.ssl.*;
-import com.predic8.membrane.core.util.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.transport.http2.Http2ServerHandler;
+import com.predic8.membrane.core.transport.http2.Http2TlsSupport;
+import com.predic8.membrane.core.transport.ssl.SSLProvider;
+import com.predic8.membrane.core.transport.ssl.TLSUnrecognizedNameException;
+import com.predic8.membrane.core.util.DNSCache;
+import com.predic8.membrane.core.util.EndOfStreamException;
+import com.predic8.membrane.core.util.Util;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.net.ssl.*;
+import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.SSLSocket;
 import java.io.*;
-import java.net.*;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.util.Random;
-import java.util.concurrent.atomic.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.predic8.membrane.core.http.Header.CONNECTION;
 import static com.predic8.membrane.core.http.Header.PROXY_CONNECTION;
@@ -150,6 +160,8 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
 
             closeConnections();
 
+            closeTargetConnection(); // orphaned when an exception skipped determineConnectionContinuation()
+
             exchange.detach();
 
             updateThreadName(false);
@@ -248,6 +260,24 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
         exchange = new Exchange(this);
 
         return continueWithConnection(con);
+    }
+
+    /**
+     * Closes the target connection still attached to the abandoned exchange. On the normal path
+     * {@link #determineConnectionContinuation(Connection)} takes it over; when an exception skipped that,
+     * nobody else would ever close it. It must not go back to the pool either: the request body may have
+     * been written to it only partially.
+     */
+    private void closeTargetConnection() {
+        Connection con = exchange.getTargetConnection();
+        if (con == null)
+            return;
+        exchange.setTargetConnection(null);
+        try {
+            con.close();
+        } catch (IOException e) {
+            log.debug("Closing target connection.", e);
+        }
     }
 
     private void closeConnections() {

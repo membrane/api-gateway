@@ -25,4 +25,13 @@ public class ReadingBodyException extends RuntimeException {
     public ReadingBodyException(Exception e) {
         super(e);
     }
+
+    /**
+     * @return whether this exception is the failure recorded on the given message's body. Useful to
+     * tell which end of the exchange the failure belongs to: the client (request body) or the target
+     * server (response body).
+     */
+    public boolean belongsTo(Message message) {
+        return message != null && message.getBody().getObservedException() == this;
+    }
 }

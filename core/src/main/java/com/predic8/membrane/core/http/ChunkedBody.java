@@ -14,17 +14,21 @@
 
 package com.predic8.membrane.core.http;
 
-import com.predic8.membrane.core.util.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.util.ByteUtil;
+import com.predic8.membrane.core.util.EndOfStreamException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.util.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
-import static com.predic8.membrane.core.Constants.*;
-import static com.predic8.membrane.core.http.ChunkedBodyTransferer.*;
+import static com.predic8.membrane.core.Constants.CRLF_BYTES;
+import static com.predic8.membrane.core.http.ChunkedBodyTransferer.ZERO;
 import static com.predic8.membrane.core.util.ByteUtil.readByteArray;
-import static java.lang.Long.*;
-import static java.nio.charset.StandardCharsets.*;
+import static java.lang.Long.toHexString;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Reads the body with "Transfer-Encoding: chunked".
@@ -110,6 +114,7 @@ public class ChunkedBody extends AbstractBody {
 
     @Override
     public void read() {
+        throwIfFailed(); // before the drain below: it would re-read the dead stream
         try {
             if (bodyObserved && !bodyComplete)
                 ByteUtil.readStream(getContentAsStream());
@@ -122,6 +127,7 @@ public class ChunkedBody extends AbstractBody {
 
     @Override
     public void write(AbstractBodyTransferrer out, boolean retainCopy) {
+        throwIfFailed(); // before the drain below: it would re-read the dead stream
         try {
             if (bodyObserved && !bodyComplete)
                 ByteUtil.readStream(getContentAsStream());
@@ -151,6 +157,8 @@ public class ChunkedBody extends AbstractBody {
     public void discard() {
         if (read)
             return;
+        if (observedException != null)
+            return; // see AbstractBody.discard(): best-effort, and the stream is already dead
         if (wasStreamed())
             return;
 
@@ -170,6 +178,7 @@ public class ChunkedBody extends AbstractBody {
     boolean bodyComplete = false;
 
     public InputStream getContentAsStream() {
+        throwIfFailed(); // before chunks.clear() below, which would drop the partially read body
         if (wasStreamed())
             throw new IllegalStateException("Cannot read body after it was streamed.");
         if (!bodyObserved) {
@@ -184,21 +193,29 @@ public class ChunkedBody extends AbstractBody {
             protected Chunk readNextChunk() throws IOException {
                 if (bodyComplete)
                     return null;
-                int chunkSize = readChunkSize(inputStream);
-                if (chunkSize > 0) {
-                    Chunk c = new Chunk(readByteArray(inputStream, chunkSize));
-                    inputStream.read(); // CR
-                    inputStream.read(); // LF
-                    for (MessageObserver observer : observers)
-                        observer.bodyChunk(c);
-                    return c;
+                throwIfFailed();
+                try {
+                    int chunkSize = readChunkSize(inputStream);
+                    if (chunkSize > 0) {
+                        Chunk c = new Chunk(readByteArray(inputStream, chunkSize));
+                        inputStream.read(); // CR
+                        inputStream.read(); // LF
+                        for (MessageObserver observer : observers)
+                            observer.bodyChunk(c);
+                        return c;
+                    }
+                    trailer = readTrailer(inputStream);
+
+                    // After the trailer(0 + CRLF + CRLF) is read we mark the body read
+                    markAsRead();
+
+                    return null;
+                } catch (IOException e) {
+                    // Record the failure (and notify the observers), but keep the InputStream contract:
+                    // callers of read() expect an IOException, not a ReadingBodyException.
+                    setObservedException(new ReadingBodyException(e));
+                    throw e;
                 }
-                trailer = readTrailer(inputStream);
-
-                // After the trailer(0 + CRLF + CRLF) is read we mark the body read
-                markAsRead();
-
-                return null;
             }
         };
     }
