@@ -18,6 +18,8 @@ import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.util.xml.parser.XmlParseException;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class DefinitionsTest {
@@ -28,6 +30,42 @@ class DefinitionsTest {
 
         assertEquals(1, defs.getPortTypes().size());
         assertEquals(3, defs.getPortTypes().getFirst().getOperations().size());
+    }
+
+    @Test
+    void operationsAreFlattenedAcrossPortTypes() throws Exception {
+        var defs = Definitions.parse(new ResolverMap(), "classpath:/validation/ArticleService.wsdl");
+
+        assertEquals(List.of("create", "get", "getAll"), defs.getOperations().stream().map(Operation::getName).toList());
+    }
+
+    @Test
+    void findOperationByName() throws Exception {
+        var defs = Definitions.parse(new ResolverMap(), "classpath:/validation/ArticleService.wsdl");
+
+        assertEquals("get", defs.findOperation("get").orElseThrow().getName());
+        assertTrue(defs.findOperation("doesNotExist").isEmpty());
+        assertTrue(defs.findOperation(null).isEmpty());
+    }
+
+    @Test
+    void findBindingOperationByName() throws Exception {
+        var defs = Definitions.parse(new ResolverMap(), "classpath:/validation/ArticleService.wsdl");
+
+        assertEquals("getAll", defs.findBindingOperation("getAll").orElseThrow().getName());
+        assertTrue(defs.findBindingOperation("doesNotExist").isEmpty());
+    }
+
+    @Test
+    void documentationIsReadPerElement() throws Exception {
+        var defs = Definitions.parse(new ResolverMap(), "classpath:/ws/documented.wsdl");
+
+        assertEquals("Documentation of the definitions.", defs.getDocumentation());
+        assertEquals("Answers questions about cities.", defs.getServices().getFirst().getDocumentation());
+        assertEquals("Looks a city up by its name.",
+                defs.getPortTypes().getFirst().getOperations().getFirst().getDocumentation());
+        assertNull(defs.getPortTypes().getFirst().getDocumentation(),
+                "an undocumented element must not inherit the documentation of a descendant");
     }
 
     @Test

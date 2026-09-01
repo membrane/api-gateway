@@ -69,7 +69,7 @@ public class RuleManager {
     }
 
     public synchronized void addProxyAndOpenPortIfNew(SSLableProxy proxy, RuleDefinitionSource source) throws IOException {
-        if (exists(proxy.getKey()))
+        if (skipDuplicate(proxy))
             return;
 
         router.getTransport().openPort(proxy);
@@ -78,7 +78,7 @@ public class RuleManager {
     }
 
     public synchronized void addProxy(Proxy proxy, RuleDefinitionSource source) {
-        if (exists(proxy.getKey()))
+        if (skipDuplicate(proxy))
             return;
 
         proxies.add(proxy);
@@ -137,6 +137,18 @@ public class RuleManager {
         return builder;
     }
 
+
+    /**
+     * An API whose key is indistinguishable from one that is already registered can never be
+     * reached, so it is dropped. Warn about it: silently ignoring it looks like a lost API.
+     */
+    private boolean skipDuplicate(Proxy proxy) {
+        if (!exists(proxy.getKey()))
+            return false;
+        log.warn("Ignoring API '{}': another API is already configured for {}. Give them different ports, hosts or paths.",
+                proxy.getName(), proxy.getKey());
+        return true;
+    }
 
     public boolean exists(RuleKey key) {
         return getRule(key) != null;
