@@ -18,6 +18,10 @@ import org.junit.jupiter.api.Test;
 
 import java.io.EOFException;
 import java.io.IOException;
+import java.net.BindException;
+import java.net.ConnectException;
+import java.net.NoRouteToHostException;
+import java.net.PortUnreachableException;
 import java.net.SocketException;
 import java.nio.channels.ClosedChannelException;
 
@@ -82,5 +86,30 @@ public class ExceptionUtilTest {
     @Test
     public void nullIsNoClientDisconnect() {
         assertFalse(isPeerDisconnect(null));
+    }
+
+    @Test
+    public void connectExceptionIsNoPeerDisconnect() {
+        // ConnectException extends SocketException, but an unreachable backend is a genuine fault
+        assertFalse(isPeerDisconnect(new ConnectException("Connection refused")));
+        assertFalse(isPeerDisconnect(new ReadingBodyException(
+                new IOException(new ConnectException("Connection refused")))));
+    }
+
+    @Test
+    public void noRouteToHostIsNoPeerDisconnect() {
+        assertFalse(isPeerDisconnect(new NoRouteToHostException("No route to host")));
+        assertFalse(isPeerDisconnect(new ReadingBodyException(new NoRouteToHostException("No route to host"))));
+    }
+
+    @Test
+    public void portUnreachableIsNoPeerDisconnect() {
+        assertFalse(isPeerDisconnect(new PortUnreachableException("ICMP port unreachable")));
+    }
+
+    @Test
+    public void bindExceptionIsNoPeerDisconnect() {
+        assertFalse(isPeerDisconnect(new BindException("Address already in use")));
+        assertFalse(isPeerDisconnect(new ReadingBodyException(new BindException("Address already in use"))));
     }
 }
