@@ -14,22 +14,28 @@
 
 package com.predic8.membrane.core.proxies;
 
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.exchangestore.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.model.*;
-import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.transport.http.*;
-import com.predic8.membrane.core.transport.ssl.*;
-import com.predic8.membrane.core.util.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchangestore.ExchangeStore;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.transport.http.AbstractHttpHandler;
+import com.predic8.membrane.core.transport.http.IpPort;
+import com.predic8.membrane.core.transport.ssl.SSLContext;
+import com.predic8.membrane.core.transport.ssl.SSLContextCollection;
+import com.predic8.membrane.core.transport.ssl.SSLProvider;
+import com.predic8.membrane.core.util.URLUtil;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.io.IOException;
+import java.net.UnknownHostException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Vector;
 
-import static com.predic8.membrane.core.util.URIUtil.*;
+import static com.predic8.membrane.core.util.URIUtil.normalizeSingleDot;
 
 public class RuleManager {
 
@@ -77,10 +83,13 @@ public class RuleManager {
         proxies.add(proxy);
     }
 
+    /**
+     * Called while the configuration is still being parsed, before {@link Proxy#init(Router)} ran.
+     * The key of an API is not complete yet at that point - APIProxy only builds its final key,
+     * including the test expression and the OpenAPI base paths, in init(). Duplicates therefore
+     * cannot be recognized here, see {@link #warnAboutUnreachableProxies()}.
+     */
     public synchronized void addProxy(Proxy proxy, RuleDefinitionSource source) {
-        if (skipDuplicate(proxy))
-            return;
-
         proxies.add(proxy);
     }
 
@@ -139,8 +148,9 @@ public class RuleManager {
 
 
     /**
-     * An API whose key is indistinguishable from one that is already registered can never be
-     * reached, so it is dropped. Warn about it: silently ignoring it looks like a lost API.
+     * An API added at runtime whose key is indistinguishable from one that is already registered
+     * can never be reached, so it is dropped. Warn about it: silently ignoring it looks like a
+     * lost API. Only safe for proxies that are already initialized, see {@link #addProxy(Proxy, RuleDefinitionSource)}.
      */
     private boolean skipDuplicate(Proxy proxy) {
         if (!exists(proxy.getKey()))
@@ -148,6 +158,25 @@ public class RuleManager {
         log.warn("Ignoring API '{}': another API is already configured for {}. Give them different ports, hosts or paths.",
                 proxy.getName(), proxy.getKey());
         return true;
+    }
+
+    /**
+     * Warns about every API that cannot be reached because an earlier one has an indistinguishable
+     * key. Call this after all proxies were initialized: only then are their keys complete. The
+     * APIs are kept - dispatching picks the first match anyway, and dropping one silently changes
+     * a working configuration.
+     */
+    public synchronized void warnAboutUnreachableProxies() {
+        for (int i = 1; i < proxies.size(); i++) {
+            Proxy proxy = proxies.get(i);
+            for (Proxy earlier : proxies.subList(0, i)) {
+                if (earlier.getKey().equals(proxy.getKey())) {
+                    log.warn("API '{}' can never be reached: API '{}' is already configured for {}. Give them different ports, hosts, paths ...",
+                            proxy.getName(), earlier.getName(), proxy.getKey());
+                    break;
+                }
+            }
+        }
     }
 
     public boolean exists(RuleKey key) {
