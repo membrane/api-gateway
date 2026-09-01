@@ -18,20 +18,18 @@ import java.util.Map;
 
 /**
  * Thrown by {@link Soap2JsonTransformer} when the SOAP response body contains a {@code <Fault>} element.
- * Carries the fault code and the HTTP status code implied by the fault type:
- * {@code soap:Client}/{@code env:Sender} 400, everything else 500.
- * {@code soapDetail} holds the content of the SOAP {@code <detail>}/{@code <Detail>} element (may be null).
+ * Carries the fault code, which is diagnostic only and never reaches the client.
+ * {@code soapDetail} holds the content of the SOAP {@code <detail>}/{@code <Detail>} element (may be null),
+ * keyed by the local name of each fault element it contains.
  */
 class SoapFaultException extends Exception {
 
     private final String faultCode;
-    private final int httpStatus;
     private final Map<String, Object> soapDetail;
 
-    SoapFaultException(String faultCode, String faultMessage, int httpStatus, Map<String, Object> soapDetail) {
+    SoapFaultException(String faultCode, String faultMessage, Map<String, Object> soapDetail) {
         super(faultMessage);
         this.faultCode = faultCode;
-        this.httpStatus = httpStatus;
         this.soapDetail = soapDetail;
     }
 
@@ -41,10 +39,6 @@ class SoapFaultException extends Exception {
 
     String getFaultMessage() {
         return getMessage();
-    }
-
-    int getHttpStatus() {
-        return httpStatus;
     }
 
     Map<String, Object> getSoapDetail() {

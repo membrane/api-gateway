@@ -22,8 +22,6 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.proxies.ServiceProxy;
 import com.predic8.membrane.core.proxies.ServiceProxyKey;
 import com.predic8.membrane.core.router.DefaultRouter;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -57,17 +55,17 @@ public class LokiTutorialTest extends AbstractOperationTutorialTest {
     }
 
     /**
-     * Hides {@code AbstractSampleMembraneStartStopTestcase.startMembrane()} so the Loki stand-in
-     * is listening before Membrane starts and no push can be missed.
+     * Brings the Loki stand-in up before Membrane starts, so no push can be missed.
      */
-    @BeforeEach
-    void startMembrane() throws Exception {
+    @Override
+    protected void startMembrane() throws Exception {
         startLokiMock();
-        process = startServiceProxyScript();
+        super.startMembrane();
     }
 
-    @AfterEach
-    void stopLokiMock() {
+    @Override
+    protected void stopMembrane() {
+        super.stopMembrane();
         if (lokiMock != null)
             lokiMock.stop();
     }
