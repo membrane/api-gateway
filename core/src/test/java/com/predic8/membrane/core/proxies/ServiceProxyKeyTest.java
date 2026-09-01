@@ -22,6 +22,27 @@ import static org.junit.jupiter.api.Assertions.*;
 public class ServiceProxyKeyTest {
 
 	@Test
+	@DisplayName("Keys with the same port, host, method and path are equal")
+	void equalsAndHashCodeOnValues() {
+		var key = new ServiceProxyKey("localhost", "GET", "/foo", 2000);
+		var same = new ServiceProxyKey("localhost", "GET", "/foo", 2000);
+
+		assertEquals(key, same);
+		assertEquals(key.hashCode(), same.hashCode());
+	}
+
+	@Test
+	@DisplayName("Port, host, method and path each discriminate")
+	void notEqualOnDifferingValues() {
+		var key = new ServiceProxyKey("localhost", "GET", "/foo", 2000);
+
+		assertNotEquals(key, new ServiceProxyKey("localhost", "GET", "/foo", 3000));
+		assertNotEquals(key, new ServiceProxyKey("other", "GET", "/foo", 2000));
+		assertNotEquals(key, new ServiceProxyKey("localhost", "POST", "/foo", 2000));
+		assertNotEquals(key, new ServiceProxyKey("localhost", "GET", "/bar", 2000));
+	}
+
+	@Test
 	void createHostPatternSimple() {
 		assertEquals("(\\Qmembrane\\E)", ServiceProxyKey.createHostPattern("membrane"));
 	}

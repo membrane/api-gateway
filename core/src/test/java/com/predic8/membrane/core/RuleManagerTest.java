@@ -64,6 +64,30 @@ public class RuleManagerTest {
 	}
 
 	@Test
+	@DisplayName("An API with a key that is already registered is not added")
+	void duplicateKeyIsNotAdded() throws Exception {
+		var duplicate = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3014), "thomas-bayer.com", 80);
+		duplicate.init(router);
+
+		manager.addProxyAndOpenPortIfNew(duplicate);
+
+		assertEquals(4, manager.getRules().size());
+		assertSame(forwardBlz, manager.getRules().get(1));
+	}
+
+	@Test
+	@DisplayName("Internal proxies are told apart by identity, not by their key")
+	void internalProxiesAreNotDeduplicated() {
+		var second = new InternalProxy();
+		second.setName("invoice");
+		second.init(router);
+
+		manager.addProxy(second, RuleManager.RuleDefinitionSource.MANUAL);
+
+		assertEquals(5, manager.getRules().size());
+	}
+
+	@Test
 	void getRules() {
 		assertEquals(4, manager.getRules().size());
 	}

@@ -18,6 +18,26 @@ api:
   name: getPartners
   test: header.SOAPAction == 'getPartners'
   flow:
+    # The optional city filter arrives as a query parameter and reaches the mock inside the SOAP body.
+    - setProperty:
+        name: city
+        value: "${string(//*[local-name()='city'])}"
+        language: xpath
+    - if:
+        test: property.city == 'Berlin'
+        flow:
+          - static:
+              contentType: text/xml
+              src: |
+                <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                  <s11:Body>
+                    <p:getPartnersResponse xmlns:p="http://example.com/partner">
+                      <partners><id>1</id><name>Alice</name></partners>
+                    </p:getPartnersResponse>
+                  </s11:Body>
+                </s11:Envelope>
+          - return:
+              status: 200
     - static:
         contentType: text/xml
         src: |
