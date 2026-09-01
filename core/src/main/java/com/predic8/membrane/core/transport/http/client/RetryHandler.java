@@ -14,22 +14,29 @@
 
 package com.predic8.membrane.core.transport.http.client;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.transport.http.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.transport.http.ConnectTimeoutException;
+import com.predic8.membrane.core.transport.http.EOFWhileReadingFirstLineException;
+import com.predic8.membrane.core.transport.http.NoResponseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.net.ssl.*;
-import java.io.*;
+import javax.net.ssl.SSLHandshakeException;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.net.*;
-import java.nio.*;
-import java.security.cert.*;
-import java.util.*;
+import java.nio.ByteBuffer;
+import java.security.cert.CertificateException;
+import java.util.Objects;
+import java.util.Set;
 
-import static com.predic8.membrane.core.transport.http.HttpClientStatusEventBus.*;
-import static com.predic8.membrane.core.util.HttpUtil.*;
-import static java.lang.Thread.*;
-import static java.nio.charset.StandardCharsets.*;
+import static com.predic8.membrane.core.transport.http.HttpClientStatusEventBus.reportException;
+import static com.predic8.membrane.core.transport.http.HttpClientStatusEventBus.reportStatusCode;
+import static com.predic8.membrane.core.util.HttpUtil.isIdempotent;
+import static java.lang.Thread.sleep;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
 /**
  * <p>Retries a backend request when network-level failures or selected HTTP status codes occur.</p>
@@ -44,7 +51,7 @@ import static java.nio.charset.StandardCharsets.*;
  * <ul>
  *   <li>Connection/IO exceptions (timeout, refused, reset...)</li>
  *   <li>A timeout while the connection was still being established (when
- *       {@code retryOnConnectTimeout=true}), for any request method</li>
+ *       <code>retryOnConnectTimeout=true</code>), for any request method</li>
  *   <li>HTTP 408 Request Timeout</li>
  *   <li>HTTP 500, 502, 503, 504, 507 (when {@code failOverOn5XX=true})</li>
  * </ul>
