@@ -16,6 +16,7 @@ package com.predic8.membrane.core.proxies;
 import com.predic8.membrane.core.exchange.*;
 import org.slf4j.*;
 
+import java.util.*;
 import java.util.regex.*;
 
 public abstract class AbstractRuleKey implements RuleKey {
@@ -55,6 +56,28 @@ public abstract class AbstractRuleKey implements RuleKey {
                 pathPattern = arKey.getPathPattern();
             }
         }
+    }
+
+    /**
+     * Identity of a rule key is its port, ip and path. Subclasses add their own discriminators
+     * (host, method, base paths, ...) on top and must call super.equals() first.
+     */
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (!(obj instanceof AbstractRuleKey other))
+            return false;
+        return port == other.port
+               && pathRegExp == other.pathRegExp
+               && usePathPattern == other.usePathPattern
+               && Objects.equals(ip, other.ip)
+               && Objects.equals(path, other.path);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(port, pathRegExp, usePathPattern, ip, path);
     }
 
     public String getHost() {

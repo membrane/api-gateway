@@ -37,6 +37,13 @@ public class APIProxyKey extends ServiceProxyKey {
     private final ArrayList<String> basePaths = new ArrayList<>();
 
     /**
+     * Paths of the OpenAPIPublisherInterceptor (e.g. /api-docs). These stay reachable even when a
+     * custom path is configured, but - unlike {@link #basePaths} - they must not override the
+     * configured path when discriminating between several APIs sharing the same base path.
+     */
+    private final ArrayList<String> apiDocsPaths = new ArrayList<>();
+
+    /**
      * For complex matches use SpEL
      */
     private ExchangeExpression exchangeExpression;
@@ -63,11 +70,11 @@ public class APIProxyKey extends ServiceProxyKey {
         if (!openAPI)
             return;
 
-        // Add basePaths of OpenAPIPublisherInterceptor to accept them also
-        basePaths.add(PATH);    // new path
-        basePaths.add(PATH_UI); // "
-        basePaths.add("/api-doc");                          // old to stay compatible
-        basePaths.add("/api-doc/ui");                       // "
+        // Add paths of OpenAPIPublisherInterceptor to accept them also
+        apiDocsPaths.add(PATH);    // new path
+        apiDocsPaths.add(PATH_UI); // "
+        apiDocsPaths.add("/api-doc");                          // old to stay compatible
+        apiDocsPaths.add("/api-doc/ui");                       // "
     }
 
     @Override
@@ -80,10 +87,13 @@ public class APIProxyKey extends ServiceProxyKey {
             return false;
         }
 
-        if (basePaths.isEmpty())
+        if (basePaths.isEmpty() && apiDocsPaths.isEmpty())
             return true;
 
         var uri = exc.getRequest().getUri();
+        if (matchesApiDocsPath(uri))
+            return true;
+
         for (String basePath : basePaths) {
             if (!uri.startsWith(basePath))
                 continue;
@@ -91,6 +101,14 @@ public class APIProxyKey extends ServiceProxyKey {
             log.debug("Rule matches {}", uri);
             return true;
 
+        }
+        return false;
+    }
+
+    private boolean matchesApiDocsPath(String path) {
+        for (String apiDocsPath : apiDocsPaths) {
+            if (path.startsWith(apiDocsPath))
+                return true;
         }
         return false;
     }
@@ -103,6 +121,15 @@ public class APIProxyKey extends ServiceProxyKey {
 
     public void addBasePaths(ArrayList<String> paths) {
         basePaths.addAll(paths);
+    }
+
+    /**
+     * Registers additional paths under which an OpenAPI document is published. Use this instead of
+     * {@link #addBasePaths(ArrayList)} for documentation paths: they stay reachable even when a
+     * custom path is configured.
+     */
+    public void addApiDocsPaths(ArrayList<String> paths) {
+        apiDocsPaths.addAll(paths);
     }
 
     public String getKeyId() {
@@ -128,6 +155,8 @@ public class APIProxyKey extends ServiceProxyKey {
         if (obj instanceof APIProxyKey other) {
             if (!basePaths.equals(other.basePaths))
                 return false;
+            if (!apiDocsPaths.equals(other.apiDocsPaths))
+                return false;
             return Objects.equals(exchangeExpression, other.exchangeExpression);
         }
         return false;
@@ -135,10 +164,9 @@ public class APIProxyKey extends ServiceProxyKey {
 
     @Override
     public boolean matchesPath(String path) {
-        for (String basePath : basePaths) {
-            if (path.startsWith(basePath))
-                return true;
-        }
+        // OpenAPI docs stay reachable even when a custom path is configured, see issue #3173.
+        if (matchesApiDocsPath(path))
+            return true;
         try {
             matchTemplate(getPath(), path); // ignore result
             return true;
@@ -150,6 +178,6 @@ public class APIProxyKey extends ServiceProxyKey {
 
     @Override
     public int hashCode() {
-        return super.hashCode() + Objects.hashCode( exchangeExpression.hashCode()) + basePaths.hashCode();
+        return Objects.hash(super.hashCode(), basePaths, apiDocsPaths, exchangeExpression);
     }
 }

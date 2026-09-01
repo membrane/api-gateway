@@ -14,16 +14,23 @@
 
 package com.predic8.membrane.core.interceptor.xmlprotection;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.security;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_FLOW;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
 /**
  * @description Prohibits XML documents to be passed through that look like XML attacks on older parsers. Too many
@@ -38,6 +45,7 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 
     private int maxAttributeCount = 1000;
     private int maxElementNameLength = 1000;
+    private int maxDepth = -1;
     private boolean removeDTD = true;
 
     public XMLProtectionInterceptor() {
@@ -102,7 +110,7 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
         try (ByteArrayOutputStream stream = new ByteArrayOutputStream();
              OutputStreamWriter out = new OutputStreamWriter(stream, charset);
              InputStreamReader in = new InputStreamReader(exc.getRequest().getBodyAsStreamDecoded(), charset)) {
-            XMLProtector protector = new XMLProtector(out, removeDTD, maxElementNameLength, maxAttributeCount);
+            XMLProtector protector = new XMLProtector(out, removeDTD, maxElementNameLength, maxAttributeCount, maxDepth);
             if (!protector.protect(in))
                 return false;
             out.flush(); // ensure all bytes are written before reading
@@ -135,6 +143,20 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 
     public int getMaxElementNameLength() {
         return maxElementNameLength;
+    }
+
+    /**
+     * @description Maximum nesting depth of XML elements. If an incoming request exceeds this limit, it will be
+     * discarded. A value of -1 disables the limit.
+     * @default -1 (unlimited)
+     */
+    @MCAttribute
+    public void setMaxDepth(int maxDepth) {
+        this.maxDepth = maxDepth;
+    }
+
+    public int getMaxDepth() {
+        return maxDepth;
     }
 
     /**
