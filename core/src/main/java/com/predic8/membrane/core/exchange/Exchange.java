@@ -14,18 +14,22 @@
 
 package com.predic8.membrane.core.exchange;
 
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.TerminateException;
+import com.predic8.membrane.core.http.BodyCollectingMessageObserver;
+import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.proxies.Proxy;
-import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.transport.http.*;
-import com.predic8.membrane.core.util.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.proxies.SSLableProxy;
+import com.predic8.membrane.core.transport.http.AbstractHttpHandler;
+import com.predic8.membrane.core.transport.http.Connection;
+import com.predic8.membrane.core.util.HttpUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.net.*;
-import java.util.*;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Map;
 
-import static java.lang.Boolean.TRUE;
 import static java.util.stream.Collectors.toMap;
 
 public class Exchange extends AbstractExchange {
@@ -162,7 +166,16 @@ public class Exchange extends AbstractExchange {
     }
 
     public boolean canKeepConnectionAlive() {
-        return getRequest().isKeepAlive() && getResponse().isKeepAlive();
+        return canKeepAlive(getRequest()) && canKeepAlive(getResponse());
+    }
+
+    /**
+     * A message whose body read failed leaves the connection desynchronized: the rest of the body is
+     * still in the stream and would be parsed as the beginning of the next message. Keep-alive headers
+     * alone are therefore not enough to decide that a connection may be reused.
+     */
+    private static boolean canKeepAlive(Message m) {
+        return m.isKeepAlive() && !m.getBody().hasFailed();
     }
 
     @Override
