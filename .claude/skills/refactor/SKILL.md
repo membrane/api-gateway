@@ -20,9 +20,12 @@ workflow is what keeps it safe.
    catalog entries in one edit, and never mix a refactoring with a behavior change — if you spot a
    bug mid-refactor, note it and finish the refactor first, then fix it as a separate change with
    its own failing test.
-3. **Run the affected tests** after each step, not just at the end — use
-   `test/scripts/run-core-test.sh <FQCN or package>` (see CLAUDE.md; `-Dtest=` does not isolate a
-   class in `core`). Green after every step is the whole safety net.
+3. **Run the affected tests** after each step, not just at the end, with the runner that matches
+   the module you touched (see CLAUDE.md; `-Dtest=`/`-Dit.test=` do not isolate a class here):
+   `core` → `test/scripts/run-core-test.sh <FQCN or package>`; a distribution/tutorial IT → the
+   `run-example-test` skill; `annot`/`war` → plain Maven on that module
+   (`mvn -pl annot test -Duser.language=en -Duser.country=US`). Green after every step is the whole
+   safety net.
 4. **Report** at the end: which refactorings were applied to which methods, what is now testable
    that wasn't, and anything you deliberately left alone.
 
@@ -45,9 +48,11 @@ body doing real work, a nested conditional branch of more than ~3 lines.
 
 - Name the method after **what it answers or produces**, not how — `isExpiredToken`,
   `resolveSchemaFor`, not `doCheck2`.
-- Prefer extracting to a **pure private static** method (params in, value out, no field access) —
-  that's the version you can unit-test directly and the repo's stated preference (CLAUDE.md:
-  "prefer pure methods where practical").
+- Prefer extracting to a **pure static** method (params in, value out, no field access) — the
+  repo's stated preference (CLAUDE.md: "prefer pure methods where practical"). Keep it `private`
+  by default and test it through its caller; a mirrored test class in the same package can only
+  call it directly if you make it package-private, which is a deliberate choice to justify, not
+  the default.
 - If the block reads three fields and writes none, pass them as parameters; if it writes two or
   more locals, the block wants Extract Class instead (below), not a method with out-params.
 - Keep the extracted method small and cohesive; a helper that itself needs a section comment is
@@ -58,6 +63,10 @@ A local that is assigned once from an expression and read later is usually a nam
 method. Replace it with a call to a small query method — that removes the temp *and* makes the
 computation reachable from a test.
 
+- **Only when the expression is pure.** A query is evaluated at every read, so this is not
+  behavior-preserving if the expression has side effects, observes mutable state that changes in
+  between, allocates an object whose identity is compared, or is expensive. In those cases keep the
+  local (call the helper once and assign it) instead.
 - Inline a temp outright only when the expression is short and used once.
 - A variable that gets **reassigned** is the strongest extract signal in this repo: CLAUDE.md says
   reassignment means "extract a helper method instead". Convert accumulate-in-a-loop temps into a
@@ -119,14 +128,19 @@ transposition bugs).
 
 - Java 21. Prefer `record`s for parameter/value objects, pattern-matching `switch` over sealed
   types, `List.of`/`Collections.unmodifiableList` for extracted collection state,
-  `getFirst()` over `.get(0)`.
+  `getFirst()` over `.get(0)` — but note the swap changes the empty-list exception from
+  `IndexOutOfBoundsException` to `NoSuchElementException`, so only do it where the list is
+  guaranteed non-empty or the exception type isn't part of the contract (no test or caller
+  catches it).
 - `final` on extracted fields, parameters, and locals wherever it compiles.
 - SLF4J only; never introduce `System.out` while moving code.
 - Don't reformat lines you didn't otherwise change — a diff full of whitespace hides the real
   refactoring.
 - Every newly extracted method that has real behavior needs at least one test; add it to the
-  existing mirrored test class rather than creating a new one (CLAUDE.md testing rules). Don't
-  write tests for extracted accessors, `record` components, or generated `equals`/`hashCode`.
+  existing mirrored test class rather than creating a new one (CLAUDE.md testing rules). The
+  exemption covers only *plain* accessors — a bare field read/write, `record` components, generated
+  `equals`/`hashCode`/`toString`. An extracted accessor that validates, lazily initializes,
+  computes, logs, or does I/O has behavior and needs a test.
 
 ## When to stop
 

@@ -11,18 +11,23 @@ Membrane config errors surface differently depending on *when* they're thrown, a
 first thing to get right.
 
 **Setter-time** — inside an `@MCAttribute`/`@MCChildElement` setter, during YAML property binding
-(`annot/.../yaml/parsing/binding/PropertyBinder.java`, `populate()`). Any exception thrown here
-gets wrapped into `ConfigurationParsingException` with a `ParsingContext` (source location)
-attached, so `RouterCLI` renders a highlighted `>` YAML snippet pointing at the offending line.
-Reflection wraps the real exception in `InvocationTargetException` first — `PropertyBinder`
-unwraps it before extracting the message, so `cause.getCause()` (not `cause`) carries the real
-message. Example: `WsuTimestampInterceptor.setTtl` (`core/.../soap/wsse/WsuTimestampInterceptor.java`)
+(`annot/.../yaml/parsing/binding/PropertyBinder.java`, `populate()`). That `catch (Throwable cause)`
+re-wraps into `new ConfigurationParsingException(cause.getMessage())` and attaches a
+`ParsingContext` (source location), so `RouterCLI` renders a highlighted `>` YAML snippet pointing
+at the offending line. Mind the message: reflection wraps a setter's own exception in
+`InvocationTargetException`, and `PropertyBinder` does *not* unwrap it, so the message it copies is
+the wrapper's (`null`) — the real text sits in `cause.getCause().getMessage()`. The
+`@MCElement(collapsed=true)` scalar path in `ObjectBinder` does unwrap (`e.getTargetException()`).
+Example: `WsuTimestampInterceptor.setTtl` (`core/.../soap/wsse/WsuTimestampInterceptor.java`)
 catches `DateTimeParseException` from `Duration.parse` and rethrows a `ConfigurationException`
 with a concrete valid-example ("PT5M").
 
-**Init-time** — inside `interceptor.init(Router)`, called by `Router` *after* all YAML parsing has
-finished. No `ParsingContext` exists at this point — full stop, this isn't fixable per-interceptor
-without a cross-cutting change to plumb source location through `Router`/interceptor init.
+**Init-time** — inside `interceptor.init(Router)`, reached via `DefaultRouter.init()` →
+`AbstractRouter.initProxies()` → `proxy.init(this)`, i.e. *after* all YAML parsing has finished.
+The YAML bootstrap does carry a `ParsingContext` into the bean registry, but nothing on this
+`initProxies()` path passes it on, so an interceptor's `init()` has no source location to report —
+not fixable per-interceptor without a cross-cutting change to plumb it through `Router`/interceptor
+init.
 `ConfigurationException` thrown here is caught by
 `SpringConfigurationErrorHandler.handleConfigurationException`
 (`core/.../exceptions/SpringConfigurationErrorHandler.java:128`), which prints a plain
@@ -49,7 +54,8 @@ any request is handled).
 - **Init-time checks**: follow `DigitalSignatureInterceptorTest`'s `initWith(references...)` +
   `assertThrows(RuntimeException.class, () -> initWith(...))` idiom — set the invalid state on a
   fresh interceptor with an otherwise-valid config, assert init throws.
-- **Setter-time message propagation**: see `YAMLParsingErrorTest.attributeSetterExceptionMessageSurfaces`
-  (`annot/src/test/java/.../YAMLParsingErrorTest.java`) for a regression-test template that
-  confirms a setter's real exception message survives the `InvocationTargetException` unwrap
-  instead of coming out `null`.
+- **Setter-time message propagation**: `annot/src/test/java/.../YAMLParsingErrorTest.java` builds
+  ad-hoc `@MCElement` classes and asserts on the rendered error report (see `attribute()`) — use
+  that as the template. There is currently no test covering a setter-thrown exception's message,
+  which is why the `InvocationTargetException` gap above goes unnoticed; add one there if you touch
+  that path.
