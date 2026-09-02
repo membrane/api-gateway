@@ -19,6 +19,7 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.MalformedHeaderException;
 import com.predic8.membrane.core.proxies.AbstractServiceProxy;
+import com.predic8.membrane.core.transport.http.ConnectTimeoutException;
 import com.predic8.membrane.core.transport.http.EOFWhileReadingLineException;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.ProtocolUpgradeDeniedException;
@@ -119,12 +120,21 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
                     .buildAndSetResponse(exc);
             return ABORT;
         } catch (SocketTimeoutException e) {
-            // Details are logged further down in the HTTPClient
-            log.info("Target {} is not reachable.",exc.getDestinations());
+            // Name the phase: a connect timeout means the target never accepted the connection, a read
+            // timeout means it accepted but did not answer. Both used to be logged as
+            // "is not reachable.", which is also what a refused connection logs, so the three were
+            // indistinguishable in the log.
+            boolean whileConnecting = e instanceof ConnectTimeoutException;
+            var msg = "Target %s timed out %s.".formatted(getDestination(exc),
+                    whileConnecting ? "while the connection was being established, no request was sent"
+                                    : "while waiting for the response, the request had already been sent");
+            log.info("{} Reason: {}", msg, e.getMessage());
             internal(router.getConfiguration().isProduction(), getDisplayName())
                     .title("Gateway Timeout")
                     .status(504)
-                    .addSubSee("socket-timeout")
+                    .addSubSee(whileConnecting ? "connect-timeout" : "socket-timeout")
+                    .detail(msg)
+                    .stacktrace(false)
                     .buildAndSetResponse(exc);
             return ABORT;
         } catch (UnknownHostException e) {
