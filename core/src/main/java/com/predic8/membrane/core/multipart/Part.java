@@ -60,7 +60,7 @@ public class Part {
      * Used in MIME multipart/related messages (e.g. SOAP XOP).
      */
     public String getContentID() {
-        return header.getFirstValue("Content-ID");
+        return contentIDOf(header);
     }
 
     /**
@@ -77,7 +77,22 @@ public class Part {
      * Returns {@code null} if not present.
      */
     public String getName() {
-        return extractDispositionParam(NAME_PATTERN);
+        return nameOf(header);
+    }
+
+    /**
+     * Reads the form field name from a part's header alone, for callers that decide what to do with
+     * a part before its body has been read.
+     */
+    public static String nameOf(Header header) {
+        return extractDispositionParam(header, NAME_PATTERN);
+    }
+
+    /**
+     * Reads the {@code Content-ID} from a part's header alone.
+     */
+    public static String contentIDOf(Header header) {
+        return header.getFirstValue("Content-ID");
     }
 
     /**
@@ -125,6 +140,10 @@ public class Part {
     // -------------------------------------------------------------------------
 
     private String extractDispositionParam(Pattern pattern) {
+        return extractDispositionParam(header, pattern);
+    }
+
+    private static String extractDispositionParam(Header header, Pattern pattern) {
         String disposition = header.getFirstValue("Content-Disposition");
         if (disposition == null) return null;
         Matcher m = pattern.matcher(disposition);
