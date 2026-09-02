@@ -189,6 +189,25 @@ class BodyStickyErrorTest {
         assertNull(ok.getObservedException());
     }
 
+    /**
+     * The handlers use belongsTo() to attribute a failure to the client (request body) or the target
+     * server (response body), which decides the log level.
+     */
+    @Test
+    void belongsToIdentifiesTheFailingMessage() {
+        Request request = new Request();
+        request.setBody(body);
+        Response healthy = Response.ok("fine").build();
+
+        ReadingBodyException e = assertThrows(ReadingBodyException.class, body::read);
+
+        assertTrue(e.belongsTo(request));
+        assertFalse(e.belongsTo(healthy));
+        assertFalse(e.belongsTo(null));
+        assertFalse(new ReadingBodyException(new ClosedChannelException()).belongsTo(request),
+                "a re-wrapped exception is not the recorded one");
+    }
+
     private static class RecordingObserver extends AbstractMessageObserver {
         final List<ReadingBodyException> errors = new ArrayList<>();
         int completions;

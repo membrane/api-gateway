@@ -285,12 +285,13 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 	 */
 	@Override
 	public void bodyFailed(ReadingBodyException e) {
+		if (exchange == null)
+			return;
+		// detach before closing: a failing close() must not leave this connection attached to the exchange
+		exchange.setTargetConnection(null);
+		exchange = null;
 		try {
-			if (exchange != null) {
-				close();
-				exchange.setTargetConnection(null);
-				exchange = null;
-			}
+			close();
 		} catch (IOException e2) {
 			throw new RuntimeException(e2);
 		}

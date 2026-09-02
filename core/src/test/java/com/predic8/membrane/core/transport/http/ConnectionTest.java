@@ -15,13 +15,26 @@
 package com.predic8.membrane.core.transport.http;
 
 
-import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.router.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Body;
+import com.predic8.membrane.core.http.ReadingBodyException;
+import com.predic8.membrane.core.http.ThrowingInputStream;
+import com.predic8.membrane.core.proxies.ServiceProxy;
+import com.predic8.membrane.core.proxies.ServiceProxyKey;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.router.TestRouter;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketTimeoutException;
+import java.nio.channels.ClosedChannelException;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -97,5 +110,47 @@ public class ConnectionTest {
 				return;
 			}
 		}
+	}
+
+	/**
+	 * A failed body read leaves the connection desynchronized: the rest of the body is still in the
+	 * stream. Such a connection must be closed and detached rather than go back into the pool.
+	 */
+	@Test
+	void bodyFailedClosesAndDetachesTheConnection() {
+		Exchange exc = new Exchange(null);
+		exc.setTargetConnection(conLocalhost);
+		conLocalhost.setExchange(exc);
+
+		conLocalhost.bodyFailed(new ReadingBodyException(new ClosedChannelException()));
+
+		assertTrue(conLocalhost.isClosed());
+		assertNull(exc.getTargetConnection(), "must be detached, so nothing hands it back to the pool");
+	}
+
+	@Test
+	void bodyFailedIsANoOpWithoutAnExchange() {
+		assertDoesNotThrow(() -> conLocalhost.bodyFailed(new ReadingBodyException(new ClosedChannelException())));
+
+		assertFalse(conLocalhost.isClosed(), "no exchange owns this connection, so it stays usable");
+	}
+
+	/**
+	 * The failure notification arrives through the observer chain: registering the connection on a body
+	 * that then fails must close it, which is how the real response path reaches bodyFailed().
+	 */
+	@Test
+	void failingBodyNotifiesTheConnectionAsObserver() {
+		Exchange exc = new Exchange(null);
+		exc.setTargetConnection(conLocalhost);
+		conLocalhost.setExchange(exc);
+
+		Body body = new Body(ThrowingInputStream.closedChannel("partial"), 1000);
+		body.addObserver(conLocalhost);
+
+		assertThrows(ReadingBodyException.class, body::read);
+
+		assertTrue(conLocalhost.isClosed());
+		assertNull(exc.getTargetConnection());
 	}
 }

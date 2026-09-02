@@ -21,6 +21,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -124,5 +126,33 @@ class ChunkedBodyStickyErrorTest {
         assertThrows(ReadingBodyException.class, body::getContentAsStream);
 
         assertEquals(chunksRead, body.chunks.size());
+    }
+
+    /**
+     * The onMarkedAsRead() hook runs before the observers are notified, so a re-entering observer sees a
+     * consistent body: isRead() and bodyComplete already agree. Notably MessageSnapshot's observer reads
+     * the body again from inside bodyComplete(); the leading bodyComplete check in readNextChunk() then
+     * gives it a clean EOF instead of re-reading the exhausted wire stream.
+     */
+    @Test
+    void observerSeesACompletedBodyWhileBeingNotified() throws IOException {
+        ChunkedBody healthy = new ChunkedBody(new ByteArrayInputStream("7\r\npartial\r\n0\r\n\r\n".getBytes()));
+        List<String> observed = new ArrayList<>();
+        healthy.addObserver(new AbstractMessageObserver() {
+            @Override
+            public void bodyComplete(AbstractBody body) {
+                observed.add("isRead=" + body.isRead() + " bodyComplete=" + healthy.bodyComplete);
+                try {
+                    // re-entrant read, as MessageSnapshot does: must terminate rather than touch the wire
+                    observed.add(new String(healthy.getContentAsStream().readAllBytes()));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
+
+        healthy.read();
+
+        assertEquals(List.of("isRead=true bodyComplete=true", "partial"), observed);
     }
 }
