@@ -76,37 +76,15 @@ mvn -pl core -am -DskipTests package   # one module + its dependencies
   not the whole suite. Never run a full unit test run (`mvn test` / `mvn -pl core -am test`) or
   the full distribution IT suite without asking the user first; these are slow and often fail on
   unrelated/network-dependent tests offline.
-- For a single `core` test class or package, use `test/scripts/run-core-test.sh <FQCN or package>`
-  — it drives `com.predic8.membrane.devtools.SingleTestRunner` (a permanent JUnit Platform
-  Launcher entry point under `core/src/test/java`, so it compiles with the normal test build —
-  no per-run codegen) and matches Surefire's `argLine`/CWD so results agree with a real Maven
-  run. For a single distribution/tutorial IT, use the `run-example-test` skill.
-- **`-Dtest=ClassName` does NOT isolate a class in `core`.** Surefire is bound to
-  `UnitTests.java`, a JUnit Platform `@Suite` with `@SelectPackages("com.predic8")` — the suite
-  engine ignores Surefire's class filter and runs the whole package regardless (including
-  network-dependent tests that fail offline). To run one class fast, use the JUnit Platform
-  Launcher directly (build a classpath with `test-classes` first, then `target/classes`, then
-  deps) rather than `-Dtest`.
-- **Tutorial/example tests are Failsafe ITs that run against the *built* distribution**, not the
-  source tree: `DistributionExtractingTestcase` unzips `distribution/target/membrane-api-gateway-*.zip`
-  and runs the real `membrane.sh` against it. Rebuild first — `mvn clean install -DskipTests` at
-  the repo root — or edits to tutorials/config/`core` are invisible to the test run.
-  `-Dit.test=Foo` does **not** filter (the Failsafe entry point `ExampleTests.java` hardcodes
-  `@SelectPackages`), so a single-test invocation still runs the whole ~6 min suite. Use the
-  `run-example-test` skill for a fast single-test path.
-  `-am` also rebuilds `annot`, where `SpringConfigXSDErrorsTest` asserts English `javac`
-  diagnostics and fails under a non-English JVM locale — `-DskipTests` avoids that.
-- **On macOS, the JVM ignores `LANG`/`LC_ALL`.** If the dev machine's default locale isn't
-  English, pass `-Duser.language=en -Duser.country=US` explicitly — and note the child
-  `membrane.sh` process spawned by distribution ITs only inherits it via `JAVA_OPTS`, not the
-  parent JVM's system properties.
-- **Fixed test ports**: `OAuth2Test` (core) and the security tutorial ITs bind `2000`/`3000`/`7007`.
-  A manually running Membrane instance or an IDE-launched JVM holding one of these ports causes
-  misleading failures (`PortOccupiedException` inside a passing-looking suite, or a bare
-  `TimeoutException` from `waitForMembrane()`). Check `lsof -nP -tiTCP:2000 -sTCP:LISTEN` (and
-  `7007`) before assuming a config regression.
+- **To run tests, use the `test-runner` agent** — it owns this repo's run mechanics: the
+  `-Dtest`/`-Dit.test` suite traps that silently run the wrong scope, `run-core-test.sh` for a
+  single `core` class, rebuilding the distribution zip before tutorial/example ITs, macOS locale
+  flags, and the fixed-port (2000/3000/7007) conflicts that fake a regression. Don't hand-roll
+  the Maven invocation.
 - Every new function or feature must be covered by at least one test — before writing a new test class, check `<module>/src/test/java/<mirrored package>/` for an existing test class covering that production class and add a test method there; only create a new `<ClassName>Test` class if none exists yet.
 - Test observable behavior — inputs/outputs, edge cases (zero/identical values, boundaries), and any documented invariants. Do not write tests for record accessors, generated `equals`/`hashCode`/`toString`, or plain getters/setters — there's no behavior there to break.
+- Test classes and `@Test` methods are package-private, not `public` — JUnit 5 doesn't
+  require `public`, and the existing tests are overwhelmingly package-private.
 - Test classes mirror the package of the class under test (e.g. `com.predic8.membrane.core.util.URLUtil` → `com.predic8.membrane.core.util.URLUtilTest`).
 - Prefer a few tests that pin down real behavior (known-value checks, symmetry/round-trip properties) over exhaustive trivial cases.
 
