@@ -24,6 +24,7 @@ import java.io.OutputStreamWriter;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.predic8.membrane.core.interceptor.xmlprotection.XMLProtectionResult.ACCEPTED;
+import static com.predic8.membrane.core.interceptor.xmlprotection.XMLProtectionResult.REWRITTEN;
 import static com.predic8.membrane.core.interceptor.xmlprotection.XMLProtector.getHeaderAfterRootName;
 import static com.predic8.membrane.core.util.RecordingServerTestUtil.freePort;
 import static com.predic8.membrane.core.util.RecordingServerTestUtil.startRecordingServer;
@@ -102,7 +103,14 @@ class XMLProtectorTest {
 
     @Test
     void invariant() throws Exception {
+        // A document with no DTD to remove is left alone, so the caller may forward it unchanged
         assertEquals(ACCEPTED, runOn("/customer.xml"));
+    }
+
+    @Test
+    void aDtdThatIsKeptDoesNotCountAsARewrite() throws Exception {
+        String xml = "<?xml version='1.0'?><!DOCTYPE foo [<!ELEMENT foo ANY>]><foo/>";
+        assertEquals(ACCEPTED, protect(xml, limits(false)));
     }
 
     @Test
@@ -112,7 +120,8 @@ class XMLProtectorTest {
 
     @Test
     void DTDRemoval() throws Exception {
-        assertEquals(ACCEPTED, runOn("/xml/entity-expansion.lmx"));
+        // REWRITTEN, not ACCEPTED: the caller must forward the copy without the DTD
+        assertEquals(REWRITTEN, runOn("/xml/entity-expansion.lmx"));
         assertTrue(output.length < input.length / 2);
         assertFalse(new String(output, UTF_8).contains("ENTITY"));
     }
@@ -259,7 +268,7 @@ class XMLProtectorTest {
         } finally {
             router.stop();
         }
-        assertEquals(ACCEPTED, result, "XMLProtector should accept the document after stripping the DTD");
+        assertEquals(REWRITTEN, result, "XMLProtector should report the document as rewritten after stripping the DTD");
         assertFalse(new String(output, UTF_8).contains("DOCTYPE"), "DTD must be removed from output");
         assertFalse(received.get(), "XMLProtector must not fetch external DTD");
     }

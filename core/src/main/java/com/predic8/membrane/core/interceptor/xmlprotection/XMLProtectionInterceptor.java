@@ -21,6 +21,7 @@ import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.xmlprotection.XMLProtectionResult.Rejected;
+import com.predic8.membrane.core.interceptor.xmlprotection.XMLProtectionResult.Rewritten;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -110,8 +111,9 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * Scans the body and, unless it is rejected, replaces it with what the protector wrote - the
-     * document minus its DTD.
+     * Scans the body, and replaces it only when the protector actually took something out of it, so
+     * that a document nothing was removed from reaches the backend exactly as the client sent it
+     * rather than as a re-serialised copy.
      */
     private XMLProtectionResult protect(Exchange exc) throws Exception {
         Request request = exc.getRequest();
@@ -123,11 +125,10 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
              InputStreamReader in = new InputStreamReader(request.getBodyAsStreamDecoded(), charset)) {
 
             XMLProtectionResult result = new XMLProtector(out, inputFactory.get(), limits).protect(in);
-            if (result instanceof Rejected)
-                return result;
-
-            out.flush(); // ensure all bytes are written before reading
-            request.setBodyContent(protectedBody.toByteArray()); // Allow the removal of DTDs
+            if (result instanceof Rewritten) {
+                out.flush(); // ensure all bytes are written before reading
+                request.setBodyContent(protectedBody.toByteArray()); // the DTD was removed
+            }
             return result;
         }
     }

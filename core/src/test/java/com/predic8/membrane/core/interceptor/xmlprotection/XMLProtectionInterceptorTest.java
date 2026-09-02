@@ -128,6 +128,18 @@ class XMLProtectionInterceptorTest {
     }
 
     @Test
+    @DisplayName("A document nothing was removed from is forwarded byte for byte")
+    void acceptedDocumentIsNotRewritten() throws Exception {
+        // Single quotes and the spacing survive only if the body is passed through rather than
+        // re-serialised by the XMLEventWriter
+        String body = "<?xml version='1.0'?><foo a='1'  b='2'><bar/></foo>";
+        Exchange exc = xml(body);
+
+        assertEquals(CONTINUE, interceptor().handleRequest(exc));
+        assertEquals(body, exc.getRequest().getBodyAsStringDecoded());
+    }
+
+    @Test
     void keepsDTDWhenRemovalIsSwitchedOff() throws Exception {
         Exchange exc = xml("""
                 <?xml version="1.0"?>

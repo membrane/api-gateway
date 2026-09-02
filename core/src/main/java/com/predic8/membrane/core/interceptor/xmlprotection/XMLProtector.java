@@ -29,6 +29,7 @@ import java.util.regex.Pattern;
 
 import static com.predic8.membrane.core.interceptor.xmlprotection.XMLLimits.exceeds;
 import static com.predic8.membrane.core.interceptor.xmlprotection.XMLProtectionResult.ACCEPTED;
+import static com.predic8.membrane.core.interceptor.xmlprotection.XMLProtectionResult.REWRITTEN;
 
 /**
  * Copies an XML document to a writer, filtering out what looks like an attack on the backend parser:
@@ -42,6 +43,8 @@ import static com.predic8.membrane.core.interceptor.xmlprotection.XMLProtectionR
  * <p>
  * A {@link Rejected} result means the copy stopped mid-document: the {@link OutputStreamWriter} is
  * left at that position, so its content has to be discarded and an error returned to the requestor.
+ * Only a {@link XMLProtectionResult.Rewritten} result obliges the caller to forward what was written
+ * instead of the document it received - nothing else here alters the document.
  * <p>
  * One instance scans one document; it keeps the nesting depth of that document as state.
  */
@@ -76,10 +79,12 @@ public class XMLProtector {
      * violation.
      *
      * @param isr stream with the XML document
-     * @return {@link XMLProtectionResult#ACCEPTED} if the document may be passed on, otherwise
-     * {@link Rejected} naming the violation
+     * @return {@link XMLProtectionResult#REWRITTEN} if a DTD was dropped and only the writer's copy
+     * may be forwarded, {@link XMLProtectionResult#ACCEPTED} if the document may pass as it arrived,
+     * otherwise {@link Rejected} naming the violation
      */
     public XMLProtectionResult protect(InputStreamReader isr) {
+        boolean dtdRemoved = false;
         try {
             XMLEventReader parser = inputFactory.createXMLEventReader(isr);
 
@@ -92,12 +97,13 @@ public class XMLProtector {
 
                 if (limits.removeDTD() && event instanceof DTD) {
                     log.debug("Removed DTD.");
+                    dtdRemoved = true;
                     continue;
                 }
                 writer.add(event);
             }
             writer.flush();
-            return ACCEPTED;
+            return dtdRemoved ? REWRITTEN : ACCEPTED;
         } catch (XMLStreamException e) {
             return notWellFormed(e);
         }

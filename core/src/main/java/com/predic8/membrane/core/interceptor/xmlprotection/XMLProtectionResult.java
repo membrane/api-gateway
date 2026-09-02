@@ -18,13 +18,31 @@ package com.predic8.membrane.core.interceptor.xmlprotection;
  * The outcome of scanning one XML document. A rejection carries the reason it was rejected for, so
  * that every violation - a limit that was exceeded, a DOCTYPE pointing outside the document, or XML
  * that is not well-formed - travels back to the caller on one channel.
+ *
+ * <p>{@link Accepted} and {@link Rewritten} both let the document pass; they differ in which copy of
+ * it the caller has to forward.</p>
  */
 public sealed interface XMLProtectionResult {
 
-    /** The document is within the configured limits and may be passed on. */
+    /** The document is within the configured limits and nothing had to be taken out of it. */
     XMLProtectionResult ACCEPTED = new Accepted();
 
+    /** The document is within the configured limits, but its DTD was dropped on the way through. */
+    XMLProtectionResult REWRITTEN = new Rewritten();
+
+    /**
+     * The document may be passed on as it arrived. What the writer produced is an equivalent
+     * document, not a safer one, so the caller can keep the original bytes rather than forward a
+     * re-serialised copy of them.
+     */
     record Accepted() implements XMLProtectionResult {
+    }
+
+    /**
+     * The document may be passed on, but only as the writer rewrote it: the original still carries
+     * the DTD that was removed.
+     */
+    record Rewritten() implements XMLProtectionResult {
     }
 
     /**
