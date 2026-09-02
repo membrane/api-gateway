@@ -39,7 +39,7 @@ class XMLProtectorTest {
     private boolean runOn(String resource, boolean removeDTD) throws Exception {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         OutputStreamWriter writer = new OutputStreamWriter(baos, UTF_8);
-        XMLProtector xmlProtector = new XMLProtector(writer, removeDTD, 1000, 1000);
+        XMLProtector xmlProtector = new XMLProtector(writer, removeDTD, 1000, 1000, 1000);
         try (var is = this.getClass().getResourceAsStream(resource)) {
             input = is.readAllBytes();
         }
@@ -110,7 +110,7 @@ class XMLProtectorTest {
         // reference to output. It must now throw instead.
         assertThrows(XMLProtectionException.class, () -> {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            var protector = new XMLProtector(new OutputStreamWriter(baos, UTF_8), false, 1000, 1000);
+            var protector = new XMLProtector(new OutputStreamWriter(baos, UTF_8), false, 1000, 1000, 1000);
             String xml = "<?xml version='1.0'?><!DOCTYPE r SYSTEM 'http://127.0.0.1:1/x.dtd'><r/>";
             protector.protect(new InputStreamReader(new ByteArrayInputStream(xml.getBytes(UTF_8)), UTF_8));
         });
@@ -120,7 +120,7 @@ class XMLProtectorTest {
     void allowsDoctypeNameContainingKeywordSubstringWhenNotRemovingDtd() throws Exception {
         // PUBLICATIONS contains "PUBLIC" but is not an external ID keyword — must not be rejected
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        var protector = new XMLProtector(new OutputStreamWriter(baos, UTF_8), false, 1000, 1000);
+        var protector = new XMLProtector(new OutputStreamWriter(baos, UTF_8), false, 1000, 1000, 1000);
         String xml = "<?xml version='1.0'?><!DOCTYPE PUBLICATIONS [<!ELEMENT PUBLICATIONS ANY>]><PUBLICATIONS/>";
         assertTrue(protector.protect(new InputStreamReader(new ByteArrayInputStream(xml.getBytes(UTF_8)), UTF_8)));
     }
@@ -130,7 +130,7 @@ class XMLProtectorTest {
         // The DOCTYPE root name itself may legally be "SYSTEM" or "PUBLIC" — must not be
         // mistaken for an external identifier keyword.
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        var protector = new XMLProtector(new OutputStreamWriter(baos, UTF_8), false, 1000, 1000);
+        var protector = new XMLProtector(new OutputStreamWriter(baos, UTF_8), false, 1000, 1000, 1000);
         String xml = "<?xml version='1.0'?><!DOCTYPE SYSTEM []><SYSTEM/>";
         assertTrue(protector.protect(new InputStreamReader(new ByteArrayInputStream(xml.getBytes(UTF_8)), UTF_8)));
     }
@@ -143,7 +143,7 @@ class XMLProtectorTest {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         boolean result;
         try {
-            var protector = new XMLProtector(new OutputStreamWriter(baos, UTF_8), true, 1000, 1000);
+            var protector = new XMLProtector(new OutputStreamWriter(baos, UTF_8), true, 1000, 1000, 1000);
             String xml = "<?xml version='1.0'?><!DOCTYPE r SYSTEM 'http://127.0.0.1:%d/x.dtd'><r/>".formatted(port);
             result = protector.protect(new InputStreamReader(new ByteArrayInputStream(xml.getBytes(UTF_8)), UTF_8));
         } finally {
@@ -152,6 +152,42 @@ class XMLProtectorTest {
         assertTrue(result, "XMLProtector should succeed after stripping the DTD");
         assertFalse(new String(baos.toByteArray(), UTF_8).contains("DOCTYPE"), "DTD must be removed from output");
         assertFalse(received.get(), "XMLProtector must not fetch external DTD");
+    }
+
+    private static String nested(int depth) {
+        StringBuilder sb = new StringBuilder("<?xml version='1.0'?>");
+        for (int i = 0; i < depth; i++) sb.append("<a>");
+        for (int i = 0; i < depth; i++) sb.append("</a>");
+        return sb.toString();
+    }
+
+    private static boolean protect(String xml, int maxDepth) throws Exception {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        var protector = new XMLProtector(new OutputStreamWriter(baos, UTF_8), true, 1000, 1000, maxDepth);
+        return protector.protect(new InputStreamReader(new ByteArrayInputStream(xml.getBytes(UTF_8)), UTF_8));
+    }
+
+    @Test
+    void tooDeeplyNested() throws Exception {
+        assertFalse(protect(nested(51), 50));
+    }
+
+    @Test
+    void nestingWithinLimit() throws Exception {
+        assertTrue(protect(nested(50), 50));
+    }
+
+    @Test
+    void wideButShallowPasses() throws Exception {
+        StringBuilder sb = new StringBuilder("<?xml version='1.0'?><root>");
+        for (int i = 0; i < 500; i++) sb.append("<a/>");
+        sb.append("</root>");
+        assertTrue(protect(sb.toString(), 50));
+    }
+
+    @Test
+    void unlimitedDepthDisablesCheck() throws Exception {
+        assertTrue(protect(nested(2000), -1));
     }
 
     @Test
