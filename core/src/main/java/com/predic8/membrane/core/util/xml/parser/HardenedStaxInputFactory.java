@@ -42,8 +42,8 @@ public final class HardenedStaxInputFactory {
     private static final String JDK_XML_MAX_ELEMENT_DEPTH = "jdk.xml.maxElementDepth";
     private static final String JDK_XML_MAX_XML_NAME_LIMIT = "jdk.xml.maxXMLNameLimit";
 
-    /** Both JAXP limits read 0 as "no limit", not as "nothing allowed". */
-    private static final int NO_LIMIT = 0;
+    /** The JAXP depth limit reads 0 as "no limit", not as "no element". */
+    private static final int NO_DEPTH_LIMIT = 0;
 
     /** Resolves every external reference to an empty document instead of fetching it. */
     private static final XMLResolver NO_EXTERNAL_ENTITIES =
@@ -63,28 +63,30 @@ public final class HardenedStaxInputFactory {
     }
 
     /**
-     * Returns a hardened factory that still reports {@code DOCTYPE} events and imposes neither a
-     * nesting depth nor an XML name length of its own, for callers that inspect the DTD and cap
-     * size themselves - as {@link com.predic8.membrane.core.interceptor.xmlprotection.XMLProtector}
-     * does, and has to.
+     * Returns a hardened factory that still reports {@code DOCTYPE} events, for callers that inspect
+     * the DTD and enforce their own size limits - as
+     * {@link com.predic8.membrane.core.interceptor.xmlprotection.XMLProtector} does, and has to.
      * <p>
-     * JAXP caps depth at 100 and name length at 1000 by default, and reports an exceeded cap as a
-     * parse error at the same point a caller's own equal cap would fire. Left in place, the JDK
+     * JAXP caps nesting depth at 100 and name length at 1000 by default, and reports an exceeded cap
+     * as a parse error at the same point a caller's own equal cap would fire. Left in place, the JDK
      * limit would both override a caller configured for larger documents and hide the real reason
-     * behind "not well-formed", so both caps are handed to the caller instead. Note that the name
-     * cap also covered attribute names and namespace URIs, which a caller limiting element names
-     * does not replace; the message body itself stays bounded by the {@code limit} plugin.
+     * behind "not well-formed". The depth cap is therefore lifted entirely and belongs to the
+     * caller, while the name cap is handed in: set above the caller's own name limits, it stays a
+     * backstop for the names the caller does not check itself.
      * <p>
      * Unlike {@link #inputFactory()} this creates a fresh instance on every call. Callers that parse
      * repeatedly should hold on to the returned factory - per thread, as factories are not shared
      * across threads here - rather than asking for a new one per message.
+     *
+     * @param maxXMLNameLength longest XML name the parser accepts, or {@code 0} for no cap. Keep it
+     *                         above the caller's own name limits, so that those decide first.
      */
-    public static XMLInputFactory dtdAwareInputFactory() {
+    public static XMLInputFactory dtdAwareInputFactory(int maxXMLNameLength) {
         XMLInputFactory f = harden(XMLInputFactory.newInstance());
         // Support DTDs on purpose, so the caller can detect them in its StAX loop
         f.setProperty(SUPPORT_DTD, TRUE);
-        setIfSupported(f, JDK_XML_MAX_ELEMENT_DEPTH, NO_LIMIT);
-        setIfSupported(f, JDK_XML_MAX_XML_NAME_LIMIT, NO_LIMIT);
+        setIfSupported(f, JDK_XML_MAX_ELEMENT_DEPTH, NO_DEPTH_LIMIT);
+        setIfSupported(f, JDK_XML_MAX_XML_NAME_LIMIT, maxXMLNameLength);
         return f;
     }
 

@@ -34,25 +34,30 @@ import static org.junit.jupiter.api.Assertions.*;
 class XMLProtectorTest {
 
     private static final int NAME_LENGTH_LIMIT = 1000;
+    private static final int ATTRIBUTE_NAME_LENGTH_LIMIT = 1000;
     private static final int ATTRIBUTE_LIMIT = 1000;
     private static final int DEPTH_LIMIT = 1000;
 
     private byte[] input, output;
 
     private static XMLLimits limits(boolean removeDTD) {
-        return new XMLLimits(NAME_LENGTH_LIMIT, ATTRIBUTE_LIMIT, DEPTH_LIMIT, removeDTD);
+        return new XMLLimits(NAME_LENGTH_LIMIT, ATTRIBUTE_NAME_LENGTH_LIMIT, ATTRIBUTE_LIMIT, DEPTH_LIMIT, removeDTD);
     }
 
     private static XMLLimits maxDepth(int maxDepth) {
-        return new XMLLimits(NAME_LENGTH_LIMIT, ATTRIBUTE_LIMIT, maxDepth, true);
+        return new XMLLimits(NAME_LENGTH_LIMIT, ATTRIBUTE_NAME_LENGTH_LIMIT, ATTRIBUTE_LIMIT, maxDepth, true);
     }
 
     private static XMLLimits maxElementNameLength(int maxElementNameLength) {
-        return new XMLLimits(maxElementNameLength, ATTRIBUTE_LIMIT, DEPTH_LIMIT, true);
+        return new XMLLimits(maxElementNameLength, ATTRIBUTE_NAME_LENGTH_LIMIT, ATTRIBUTE_LIMIT, DEPTH_LIMIT, true);
+    }
+
+    private static XMLLimits maxAttributeNameLength(int maxAttributeNameLength) {
+        return new XMLLimits(NAME_LENGTH_LIMIT, maxAttributeNameLength, ATTRIBUTE_LIMIT, DEPTH_LIMIT, true);
     }
 
     private static XMLLimits maxAttributeCount(int maxAttributeCount) {
-        return new XMLLimits(NAME_LENGTH_LIMIT, maxAttributeCount, DEPTH_LIMIT, true);
+        return new XMLLimits(NAME_LENGTH_LIMIT, ATTRIBUTE_NAME_LENGTH_LIMIT, maxAttributeCount, DEPTH_LIMIT, true);
     }
 
     private XMLProtectionResult runOn(String resource) throws Exception {
@@ -76,7 +81,7 @@ class XMLProtectorTest {
     private XMLProtectionResult protect(byte[] xml, XMLLimits limits) throws Exception {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         OutputStreamWriter writer = new OutputStreamWriter(baos, UTF_8);
-        XMLProtectionResult result = new XMLProtector(writer, dtdAwareInputFactory(), limits)
+        XMLProtectionResult result = new XMLProtector(writer, dtdAwareInputFactory(limits.jaxpNameLimit()), limits)
                 .protect(new InputStreamReader(new ByteArrayInputStream(xml), UTF_8));
         writer.flush(); // Flush before calling baos.toByteArray() to avoid truncated output on some JDKs
         output = result instanceof Rejected ? null : baos.toByteArray();
@@ -139,6 +144,62 @@ class XMLProtectorTest {
     void elementNameLimitAboveTheJdkDefaultIsHonoured() throws Exception {
         // The JDK's own jdk.xml.maxXMLNameLimit of 1000 must not silently cap a larger configuration
         assertEquals(ACCEPTED, protect("<%s/>".formatted("a".repeat(1500)), maxElementNameLength(2000)));
+    }
+
+    @Test
+    void elementPrefixCountsTowardsTheNameLength() throws Exception {
+        // The local part is 3 characters; only counting it would let the prefix through unbounded
+        String xml = "<%s:foo xmlns:%s='urn:x'/>".formatted("p".repeat(1500), "p".repeat(1500));
+        assertTrue(reasonOf(protect(xml, maxElementNameLength(1200))).contains("Element name of 1504 characters"));
+    }
+
+    @Test
+    void attributeNameOverLimitIsRejected() throws Exception {
+        String xml = "<foo %s='1'/>".formatted("a".repeat(1500));
+        assertTrue(reasonOf(protect(xml, maxAttributeNameLength(1200)))
+                .contains("Attribute name of 1500 characters"));
+    }
+
+    @Test
+    void attributeNameAtLimitPasses() throws Exception {
+        assertEquals(ACCEPTED, protect("<foo %s='1'/>".formatted("a".repeat(1200)), maxAttributeNameLength(1200)));
+    }
+
+    @Test
+    void attributePrefixCountsTowardsTheNameLength() throws Exception {
+        String prefix = "p".repeat(1500);
+        String xml = "<foo xmlns:%s='urn:x' %s:id='1'/>".formatted(prefix, prefix);
+        assertTrue(reasonOf(protect(xml, maxAttributeNameLength(1200)))
+                .contains("Attribute name of 1503 characters"));
+    }
+
+    @Test
+    void attributeNameLimitAboveTheJdkDefaultIsHonoured() throws Exception {
+        // The JAXP backstop is kept above our own limit, so our limit is the one that decides
+        assertEquals(ACCEPTED, protect("<foo %s='1'/>".formatted("a".repeat(1500)), maxAttributeNameLength(2000)));
+    }
+
+    @Test
+    void unlimitedAttributeNameLengthDisablesCheck() throws Exception {
+        assertEquals(ACCEPTED, protect("<foo %s='1'/>".formatted("a".repeat(5000)), maxAttributeNameLength(-1)));
+    }
+
+    @Test
+    void namespaceUriBeyondTheBackstopIsStillRejected() throws Exception {
+        // A namespace URI is never inspected by XMLProtector - this is the JAXP name cap doing its
+        // backstop job. Derived from the cap, so the test keeps its meaning if the headroom changes.
+        XMLLimits limits = maxAttributeNameLength(1200);
+        String xml = "<foo xmlns='urn:%s'/>".formatted("u".repeat(limits.jaxpNameLimit() + 1));
+
+        assertTrue(reasonOf(protect(xml, limits)).contains("Not well-formed XML"));
+    }
+
+    @Test
+    void namespaceUriWithinTheBackstopIsNotInspected() throws Exception {
+        // The flip side: XMLProtector's own name limits do not apply to namespace URIs, so a URI
+        // far longer than maxAttributeNameLength passes as long as it stays under the cap
+        assertEquals(ACCEPTED, protect("<foo xmlns='urn:%s'/>".formatted("u".repeat(5000)),
+                maxAttributeNameLength(1200)));
     }
 
     @Test

@@ -99,15 +99,15 @@ class XMLProtectionInterceptorTest {
     void undecodableBodyIsReportedAsServerError() throws Exception {
         Exchange exc = post("/")
                 .contentType(APPLICATION_XML)
-                .header("Content-Encoding", "gzip")
-                .body("<foo/>") // announced as gzip, but is not
+                .body("<foo/>") // announced as gzip below, but is not
+                .header("Content-Encoding", "gzip") // after body(), which clears Content-Encoding
                 .buildExchange();
 
         assertEquals(ABORT, interceptor().handleRequest(exc));
         assertEquals(500, exc.getResponse().getStatusCode());
         assertNull(exc.getResponse().getHeader().getFirstValue(X_PROTECTION));
         // Outside production the cause is reported as the "reason" detail rather than a stacktrace
-        assertTrue(bodyOf(exc).contains("Could not decode body stream"), bodyOf(exc));
+        assertTrue(bodyOf(exc).contains("GZIP"), bodyOf(exc));
     }
 
     @Test
@@ -157,6 +157,15 @@ class XMLProtectionInterceptorTest {
 
         assertEquals(ABORT, interceptor(i -> i.setMaxElementNameLength(100)).handleRequest(exc));
         assertRejectedByPolicy(exc);
+    }
+
+    @Test
+    void tooLongAttributeNameIsRejected() throws Exception {
+        Exchange exc = xml("<foo %s=\"1\"/>".formatted("a".repeat(200)));
+
+        assertEquals(ABORT, interceptor(i -> i.setMaxAttributeNameLength(100)).handleRequest(exc));
+        assertRejectedByPolicy(exc);
+        assertTrue(bodyOf(exc).contains("Attribute name of 200 characters"));
     }
 
     @Test

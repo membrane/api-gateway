@@ -21,7 +21,6 @@ import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.xmlprotection.XMLProtectionResult.Rejected;
-import com.predic8.membrane.core.util.xml.parser.HardenedStaxInputFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,6 +34,7 @@ import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_FLOW;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.util.xml.parser.HardenedStaxInputFactory.dtdAwareInputFactory;
 
 /**
  * @description Prohibits XML documents to be passed through that look like XML attacks on older parsers. Too many
@@ -50,6 +50,7 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 
     private int maxAttributeCount = 1000;
     private int maxElementNameLength = 1000;
+    private int maxAttributeNameLength = 1000;
     private int maxDepth = -1;
     private boolean removeDTD = true;
 
@@ -69,8 +70,8 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
     @Override
     public void init() {
         super.init();
-        limits = new XMLLimits(maxElementNameLength, maxAttributeCount, maxDepth, removeDTD);
-        inputFactory = ThreadLocal.withInitial(HardenedStaxInputFactory::dtdAwareInputFactory);
+        limits = new XMLLimits(maxElementNameLength, maxAttributeNameLength, maxAttributeCount, maxDepth, removeDTD);
+        inputFactory = ThreadLocal.withInitial(() -> dtdAwareInputFactory(limits.jaxpNameLimit()));
     }
 
     @Override
@@ -167,7 +168,9 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description If an incoming request exceeds this limit, it will be discarded.
+     * @description Maximum length of an element name, counted as the document spells it, so a
+     * qualified name like <code>ns:order</code> counts its prefix and colon too. If an incoming
+     * request exceeds this limit, it will be discarded. A value of -1 disables the limit.
      * @default 1000
      */
     @MCAttribute
@@ -177,6 +180,21 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 
     public int getMaxElementNameLength() {
         return maxElementNameLength;
+    }
+
+    /**
+     * @description Maximum length of an attribute name, counted as the document spells it, so a
+     * qualified name like <code>ns:id</code> counts its prefix and colon too. If an incoming request
+     * exceeds this limit, it will be discarded. A value of -1 disables the limit.
+     * @default 1000
+     */
+    @MCAttribute
+    public void setMaxAttributeNameLength(int maxAttributeNameLength) {
+        this.maxAttributeNameLength = maxAttributeNameLength;
+    }
+
+    public int getMaxAttributeNameLength() {
+        return maxAttributeNameLength;
     }
 
     /**

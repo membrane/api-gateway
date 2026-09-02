@@ -19,11 +19,9 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.xml.namespace.QName;
 import javax.xml.stream.*;
-import javax.xml.stream.events.DTD;
-import javax.xml.stream.events.EntityDeclaration;
-import javax.xml.stream.events.StartElement;
-import javax.xml.stream.events.XMLEvent;
+import javax.xml.stream.events.*;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.List;
@@ -38,7 +36,8 @@ import static com.predic8.membrane.core.interceptor.xmlprotection.XMLProtectionR
  * <li>DTDs are removed, or make the document fail if removal is switched off.</li>
  * <li>A DOCTYPE that points outside the document - an external entity declaration or an external
  *     subset - makes the document fail; the reference itself is never followed.</li>
- * <li>Element name length, attribute count per element and nesting depth can be limited.</li>
+ * <li>Element and attribute name length, attribute count per element and nesting depth can be
+ *     limited. Names count as the document spells them, {@code prefix:localName}.</li>
  * </ul>
  * <p>
  * A {@link Rejected} result means the copy stopped mid-document: the {@link OutputStreamWriter} is
@@ -124,14 +123,13 @@ public class XMLProtector {
     }
 
     private XMLProtectionResult checkStartElement(StartElement element) {
-        int nameLength = element.getName().getLocalPart().length();
+        int nameLength = nameLengthOf(element.getName());
         if (exceeds(nameLength, limits.maxElementNameLength()))
             return new Rejected("Element name of %d characters exceeds the limit of %d."
                     .formatted(nameLength, limits.maxElementNameLength()));
 
-        if (hasTooManyAttributes(element))
-            return new Rejected("Element %s has more than the %d allowed attributes."
-                    .formatted(element.getName(), limits.maxAttributeCount()));
+        if (checkAttributes(element) instanceof Rejected rejected)
+            return rejected;
 
         if (exceeds(depth, limits.maxDepth()))
             return new Rejected("Element nesting depth %d exceeds the limit of %d."
@@ -141,21 +139,38 @@ public class XMLProtector {
     }
 
     /**
-     * Counts no further than the limit, so an element carrying a million attributes is rejected
-     * without walking all of them.
+     * Walks the attributes once, for their number and their names alike, and no further than the
+     * first violation - so an element carrying a million attributes is rejected without walking all
+     * of them.
      */
-    private boolean hasTooManyAttributes(StartElement element) {
-        if (limits.maxAttributeCount() == XMLLimits.UNLIMITED)
-            return false;
-
+    private XMLProtectionResult checkAttributes(StartElement element) {
         var attributes = element.getAttributes();
         int count = 0;
         while (attributes.hasNext()) {
-            attributes.next();
-            if (++count > limits.maxAttributeCount())
-                return true;
+            Attribute attribute = attributes.next();
+
+            if (exceeds(++count, limits.maxAttributeCount()))
+                return new Rejected("Element %s has more than the %d allowed attributes."
+                        .formatted(element.getName(), limits.maxAttributeCount()));
+
+            int nameLength = nameLengthOf(attribute.getName());
+            if (exceeds(nameLength, limits.maxAttributeNameLength()))
+                return new Rejected("Attribute name of %d characters exceeds the limit of %d."
+                        .formatted(nameLength, limits.maxAttributeNameLength()));
         }
-        return false;
+        return ACCEPTED;
+    }
+
+    /**
+     * The length of the name as the document spells it, {@code prefix:localName} - a prefix is as
+     * attacker-controlled as the local name is, and measuring only the local part would let an
+     * arbitrarily long prefix through.
+     */
+    private static int nameLengthOf(QName name) {
+        int prefixLength = name.getPrefix().length();
+        if (prefixLength == 0)
+            return name.getLocalPart().length();
+        return prefixLength + 1 + name.getLocalPart().length(); // + ':'
     }
 
     /**
