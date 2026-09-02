@@ -335,7 +335,7 @@ public abstract class Message {
 		if (header.hasContentLength())
 			return header.getContentLength() == 0;
 
-		if (getBody().read) {
+		if (getBody().isRead()) {
 			return getBody().getLength() == 0;
         }
 

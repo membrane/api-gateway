@@ -152,30 +152,31 @@ public class ChunkedBody extends AbstractBody {
 
     @Override
     public void read() {
+        throwIfFailed(); // before the drain below: it would re-read the dead stream
         try {
             if (bodyObserved && !bodyComplete)
                 ByteUtil.readStream(getContentAsStream());
             bodyObserved = true;
             super.read();
         } catch (IOException e) {
-            throw new ReadingBodyException(e);
+            throw fail(e);
         }
     }
 
     @Override
     public void write(AbstractBodyTransferer out, boolean retainCopy) {
+        throwIfFailed(); // before the drain below: it would re-read the dead stream
         try {
             if (bodyObserved && !bodyComplete)
                 ByteUtil.readStream(getContentAsStream());
         } catch (IOException e) {
-            throw new ReadingBodyException(e);
+            throw fail(e);
         }
         super.write(out, retainCopy);
     }
 
     @Override
-    protected void markAsRead() {
-        super.markAsRead();
+    protected void onMarkedAsRead() {
         bodyComplete = true;
     }
 
@@ -191,8 +192,10 @@ public class ChunkedBody extends AbstractBody {
 
     @Override
     public void discard() {
-        if (read)
+        if (isRead())
             return;
+        if (hasFailed())
+            return; // see AbstractBody.discard(): best-effort, and the stream is already dead
         if (wasStreamed())
             return;
 
@@ -203,7 +206,7 @@ public class ChunkedBody extends AbstractBody {
             readChunksAndDrop(inputStream);
             trailer = readTrailer(inputStream);
         } catch (IOException e) {
-            throw new ReadingBodyException(e);
+            throw fail(e);
         }
         markAsRead();
     }
@@ -212,6 +215,7 @@ public class ChunkedBody extends AbstractBody {
     boolean bodyComplete = false;
 
     public InputStream getContentAsStream() {
+        throwIfFailed(); // before chunks.clear() below, which would drop the partially read body
         if (wasStreamed())
             throw new IllegalStateException("Cannot read body after it was streamed.");
         if (!bodyObserved) {
@@ -226,21 +230,29 @@ public class ChunkedBody extends AbstractBody {
             protected Chunk readNextChunk() throws IOException {
                 if (bodyComplete)
                     return null;
-                int chunkSize = readChunkSize(inputStream);
-                if (chunkSize > 0) {
-                    Chunk c = new Chunk(readByteArray(inputStream, chunkSize));
-                    inputStream.read(); // CR
-                    inputStream.read(); // LF
-                    for (MessageObserver observer : observers)
-                        observer.bodyChunk(c);
-                    return c;
+                throwIfFailed();
+                try {
+                    int chunkSize = readChunkSize(inputStream);
+                    if (chunkSize > 0) {
+                        Chunk c = new Chunk(readByteArray(inputStream, chunkSize));
+                        inputStream.read(); // CR
+                        inputStream.read(); // LF
+                        for (MessageObserver observer : observers)
+                            observer.bodyChunk(c);
+                        return c;
+                    }
+                    trailer = readTrailer(inputStream);
+
+                    // After the trailer(0 + CRLF + CRLF) is read we mark the body read
+                    markAsRead();
+
+                    return null;
+                } catch (IOException e) {
+                    // Record the failure (and notify the observers), but keep the InputStream contract:
+                    // callers of read() expect an IOException, not a ReadingBodyException.
+                    fail(e);
+                    throw e;
                 }
-                trailer = readTrailer(inputStream);
-
-                // After the trailer(0 + CRLF + CRLF) is read we mark the body read
-                markAsRead();
-
-                return null;
             }
         };
     }
@@ -287,7 +299,7 @@ public class ChunkedBody extends AbstractBody {
             }
             trailer = readTrailer(inputStream);
         } catch (IOException e) { // note that we only want to catch the IOExceptions associated to *reading* the body
-            throw new ReadingBodyException(e);
+            throw fail(e);
         }
         try {
             out.finish(trailer);
@@ -353,11 +365,6 @@ public class ChunkedBody extends AbstractBody {
         if (wasStreamed())
             return lengthStreamed;
         return super.getLength();
-    }
-
-    @Override
-    public boolean isRead() {
-        return super.isRead() && bodyComplete;
     }
 
     @Override

@@ -13,23 +13,26 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.shadowing;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.proxies.AbstractServiceProxy.*;
-import com.predic8.membrane.core.transport.http.*;
-import com.predic8.membrane.core.util.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.proxies.Target;
+import com.predic8.membrane.core.transport.http.HttpClient;
+import com.predic8.membrane.core.util.URIFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
-import java.util.concurrent.*;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
 
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static java.util.concurrent.Executors.*;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static java.util.concurrent.Executors.newCachedThreadPool;
 
 /**
  * @description Clones incoming requests and sends them asynchronously to one or more shadow targets (main exchange continues unchanged).
@@ -66,6 +69,12 @@ public class ShadowingInterceptor extends AbstractInterceptor {
             @Override
             public void bodyComplete(AbstractBody completeBody) {
                 cloneRequestAndSend(completeBody, exc, copiedHeader);
+            }
+
+            @Override
+            public void bodyFailed(ReadingBodyException e) {
+                // the body is incomplete: shadowing it would send a truncated request to the targets
+                log.debug("Not shadowing the request: reading its body failed.", e);
             }
         });
         return CONTINUE;

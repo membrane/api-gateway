@@ -35,6 +35,8 @@ import java.util.Enumeration;
 
 import static com.predic8.membrane.core.exchange.Exchange.HTTP_SERVLET_REQUEST;
 import static com.predic8.membrane.core.http.Header.TRANSFER_ENCODING;
+import static com.predic8.membrane.core.util.ExceptionUtil.concatMessageAndCauseMessages;
+import static com.predic8.membrane.core.util.ExceptionUtil.isPeerDisconnect;
 
 class HttpServletHandler extends AbstractHttpHandler {
 	private static final Logger log = LoggerFactory.getLogger(HttpServletHandler.class);
@@ -85,12 +87,43 @@ class HttpServletHandler extends AbstractHttpHandler {
 		} catch (EOFWhileReadingFirstLineException e) {
 			log.debug("Client connection terminated before line was read. Line so far: ("
 					+ e.getLineSoFar() + ")");
+		} catch (ReadingBodyException e) {
+			logReadingBodyException(e);
+		} catch (WritingBodyException e) {
+			// Only writeResponse() can throw this here: a failure writing the request body to the target is
+			// swallowed by invokeHandlers() and turned into a 500. So this is always the client's end.
+			if (isPeerDisconnect(e))
+				log.info("Client closed the connection while the response body was being written: {}",
+						concatMessageAndCauseMessages(e));
+			else
+				log.error(e.getMessage(), e);
 		} catch (Exception e) {
 			log.error(e.getMessage(), e);
 		} finally {
 			exchange.detach();
 		}
 
+	}
+
+	/**
+	 * Reading a body can fail on either end: the client while its request body is being read, or the
+	 * target server while its response body is being streamed to the client. Attribute the failure to
+	 * the body that actually recorded it.
+	 */
+	private void logReadingBodyException(ReadingBodyException e) {
+		if (!isPeerDisconnect(e)) {
+			log.error(e.getMessage(), e);
+			return;
+		}
+		if (e.belongsTo(exchange.getResponse()))
+			log.warn("Server connection to {} closed while the response body was being read: {}",
+					exchange.getDestinations(), concatMessageAndCauseMessages(e));
+		else if (e.belongsTo(exchange.getRequest()))
+			log.info("Client closed the connection while its request body was being read: {}",
+					concatMessageAndCauseMessages(e));
+		else
+			log.info("Connection closed while a message body was being read: {}",
+					concatMessageAndCauseMessages(e));
 	}
 
 	protected void writeResponse(Response res) throws Exception {

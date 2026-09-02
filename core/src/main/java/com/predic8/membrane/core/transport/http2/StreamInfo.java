@@ -232,7 +232,7 @@ public class StreamInfo {
                 try {
                     df = removeDataFrame();
                 } catch (IOException e) {
-                    throw new ReadingBodyException(e);
+                    throw fail(e);
                 }
                 if (df == null)
                     continue;

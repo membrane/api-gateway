@@ -152,6 +152,16 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
             // respond 400 and close the connection to avoid request smuggling.
             log.debug("Rejecting request with invalid framing: {}", e.getMessage());
             respondWithBadRequestAndClose(e.getMessage());
+        } catch (ReadingBodyException e) {
+            logReadingBodyException(e);
+        } catch (WritingBodyException e) {
+            // Only writing the response to the client can reach this: a failure writing the request body to
+            // the target is swallowed by process() and turned into a 500. So this is always the client's end.
+            if (isPeerDisconnect(e))
+                log.info("Client closed the connection while the response body was being written: {}",
+                        concatMessageAndCauseMessages(e));
+            else
+                log.error("", e);
         } catch (Exception e) {
             log.error("", e);
         } finally {
@@ -165,6 +175,9 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
                 }
 
             closeConnections();
+
+            // the target connection is orphaned when an exception skipped determineConnectionContinuation()
+            exchange.closeTargetConnection();
 
             exchange.detach();
 

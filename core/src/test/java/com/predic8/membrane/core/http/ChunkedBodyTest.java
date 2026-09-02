@@ -333,7 +333,7 @@ public class ChunkedBodyTest {
         assertEquals(0, is.available());
 
         //  0 + CRLF + CRLF is not read yet
-        assertFalse(cb.read);
+        assertFalse(cb.isRead());
 
         if (!(is instanceof BodyInputStream bodyIs)) {
             fail();
@@ -344,7 +344,7 @@ public class ChunkedBodyTest {
         assertNull(bodyIs.readNextChunk());
 
         // Message is now completely read
-        assertTrue(cb.read);
+        assertTrue(cb.isRead());
     }
 
     @Test
@@ -367,7 +367,7 @@ public class ChunkedBodyTest {
         assertNull(bodyIs.readNextChunk());
 
         // Message is now completely read
-        assertTrue(cb.read);
+        assertTrue(cb.isRead());
     }
 
     private static @NotNull ByteArrayInputStream getJSONBodyWithSingleChunk() {
@@ -412,7 +412,7 @@ public class ChunkedBodyTest {
         assertNull(bodyIs.readNextChunk());
 
         // Message is now completely read
-        assertTrue(cb.read);
+        assertTrue(cb.isRead());
     }
 
     @Test
