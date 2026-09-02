@@ -46,6 +46,11 @@ paths:
                   anyOf:
                     - $ref: '#/components/schemas/Address'
                   nullable: true
+                nullableNot:
+                  type: object
+                  not:
+                    $ref: '#/components/schemas/Address'
+                  nullable: true
 components:
   schemas:
     Address:

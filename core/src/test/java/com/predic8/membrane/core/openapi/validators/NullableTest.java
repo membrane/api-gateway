@@ -16,12 +16,13 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Test;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
-import static com.predic8.membrane.core.openapi.model.Request.*;
-import static com.predic8.membrane.core.openapi.util.JsonTestUtil.*;
+import static com.predic8.membrane.core.openapi.model.Request.post;
+import static com.predic8.membrane.core.openapi.util.JsonTestUtil.mapToJson;
 import static org.junit.jupiter.api.Assertions.*;
 
 
@@ -101,6 +102,16 @@ protected String getOpenAPIFileName() {
 
         Map<String,Object> m = new HashMap<>();
         m.put("nullableAnyOf",null);
+
+        ValidationErrors errors = validator.validate(post().path("/composition").body(mapToJson(m)));
+        assertEquals(0,errors.size());
+    }
+
+    @Test
+    void nullableNotNullValid() {
+
+        Map<String,Object> m = new HashMap<>();
+        m.put("nullableNot",null);
 
         ValidationErrors errors = validator.validate(post().path("/composition").body(mapToJson(m)));
         assertEquals(0,errors.size());
