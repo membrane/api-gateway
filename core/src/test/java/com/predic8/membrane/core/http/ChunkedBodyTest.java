@@ -45,6 +45,8 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.ServerSocket;
@@ -53,6 +55,8 @@ import java.net.URL;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
@@ -468,6 +472,66 @@ public class ChunkedBodyTest {
         return new ByteArrayInputStream(chunks().add("""
                 { "foo": 42 }""").add("""
                 { "foo": 43 }""").build());
+    }
+
+    // -------------------------------------------------------------------------
+    // truncated bodies (https://github.com/membrane/api-gateway/issues/3193)
+    // -------------------------------------------------------------------------
+
+    /**
+     * A sender that announces a 7-byte chunk and then disappears. readByteArray() pads the
+     * shortfall with NULs, so the unfinished chunk is handed on as if it were complete and the
+     * failure surfaces only on the next chunk-size line, as "Empty chunk-size field".
+     */
+    @Nested
+    class TruncatedChunk {
+
+        private static final String TRUNCATED = "7" + CRLF + "part";
+
+        private static ChunkedBody truncatedBody() {
+            return new ChunkedBody(new ByteArrayInputStream(TRUNCATED.getBytes()));
+        }
+
+        @Test
+        void isNotDeliveredToTheConsumer() {
+            InputStream in = truncatedBody().getContentAsStream();
+
+            assertThrows(IOException.class, () -> in.readNBytes(7));
+        }
+
+        @Test
+        void isNotPublishedToObservers() {
+            ChunkedBody body = truncatedBody();
+            List<byte[]> published = new ArrayList<>();
+            body.addObserver(new AbstractMessageObserver() {
+                @Override
+                public void bodyChunk(Chunk chunk) {
+                    published.add(chunk.content());
+                }
+            });
+
+            InputStream in = body.getContentAsStream();
+            assertThrows(IOException.class, in::readAllBytes);
+
+            assertEquals(0, published.size(), "a chunk the sender never finished must not reach an observer");
+        }
+
+        @Test
+        void failsWithEndOfStreamNotAnEmptyChunkSize() {
+            ReadingBodyException e = assertThrows(ReadingBodyException.class, truncatedBody()::read);
+
+            assertInstanceOf(EOFException.class, e.getCause());
+        }
+
+        @Test
+        void isNotForwardedDownstream() {
+            ChunkedBody body = truncatedBody();
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+            assertThrows(ReadingBodyException.class, () -> body.write(new ChunkedBodyTransferer(out), false));
+
+            assertEquals(0, out.size(), "no part of an unfinished chunk may reach the peer");
+        }
     }
 
     // -------------------------------------------------------------------------
