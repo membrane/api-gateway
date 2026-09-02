@@ -134,28 +134,6 @@ public class Body extends AbstractBody {
 	}
 
 	@Override
-	protected void writeNotRead(AbstractBodyTransferer out) throws IOException {
-		byte[] buffer = new byte[BUFFER_SIZE];
-
-		long totalLength = 0;
-		int length;
-		chunks.clear();
-		while ((this.length > totalLength || this.length == -1) && (length = inputStream.read(buffer)) > 0) {
-			totalLength += length;
-			out.write(buffer, 0, length);
-			byte[] chunk = new byte[length];
-			System.arraycopy(buffer, 0, chunk, 0, length);
-			Chunk chunk1 = new Chunk(chunk);
-			chunks.add(chunk1);
-			for (MessageObserver observer : observers)
-				observer.bodyChunk(chunk1);
-		}
-
-		out.finish(null);
-		markAsRead();
-	}
-
-	@Override
 	protected void writeStreamed(AbstractBodyTransferer out) {
 		byte[] buffer = new byte[BUFFER_SIZE];
 

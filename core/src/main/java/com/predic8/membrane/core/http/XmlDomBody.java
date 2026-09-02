@@ -274,11 +274,6 @@ public class XmlDomBody extends AbstractBody {
     }
 
     @Override
-    protected void writeNotRead(AbstractBodyTransferer out) throws IOException {
-        writeAlreadyRead(out);
-    }
-
-    @Override
     protected void writeStreamed(AbstractBodyTransferer out) {
         try {
             writeAlreadyRead(out);

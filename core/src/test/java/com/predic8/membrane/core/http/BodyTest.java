@@ -143,7 +143,6 @@ public class BodyTest {
 			@Override public long getLength() { return length; }
 			@Override protected void readLocal() {}
 			@Override protected void writeAlreadyRead(AbstractBodyTransferer out) {}
-			@Override protected void writeNotRead(AbstractBodyTransferer out) {}
 			@Override protected void writeStreamed(AbstractBodyTransferer out) {}
 			@Override protected byte[] getRawLocal() { return new byte[0]; }
 		};
