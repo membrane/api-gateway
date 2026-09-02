@@ -17,11 +17,15 @@ package com.predic8.membrane.core.interceptor.xmlprotection;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.xmlprotection.XMLProtectionResult.Rejected;
+import com.predic8.membrane.core.util.xml.parser.HardenedStaxInputFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.xml.stream.XMLInputFactory;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -42,11 +46,20 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(XMLProtectionInterceptor.class.getName());
     public static final String X_PROTECTION = "X-Protection";
+    private static final String POLICY_VIOLATED = "Content violates XML security policy";
 
     private int maxAttributeCount = 1000;
     private int maxElementNameLength = 1000;
     private int maxDepth = -1;
     private boolean removeDTD = true;
+
+    private XMLLimits limits;
+
+    /**
+     * Hardened parser factories are expensive to build and are not shared between threads, so each
+     * thread keeps the one it built. Created once per interceptor, not once per request.
+     */
+    private ThreadLocal<XMLInputFactory> inputFactory;
 
     public XMLProtectionInterceptor() {
         name = "xml protection";
@@ -54,15 +67,23 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
     }
 
     @Override
+    public void init() {
+        super.init();
+        limits = new XMLLimits(maxElementNameLength, maxAttributeCount, maxDepth, removeDTD);
+        inputFactory = ThreadLocal.withInitial(HardenedStaxInputFactory::dtdAwareInputFactory);
+    }
+
+    @Override
     public Outcome handleRequest(Exchange exc) {
         try {
             return handleInternal(exc);
         } catch (Exception e) {
-            log.error("", e);
+            log.info("Could not inspect the XML body: {}", e.getMessage());
+            log.debug("", e);
             user(router.getConfiguration().isProduction(), getDisplayName())
                     .status(500)
                     .detail("Error inspecting body!")
-                    .exception(e)
+                    .internal("reason", e.getMessage())
                     .buildAndSetResponse(exc);
             return ABORT;
         }
@@ -77,46 +98,59 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
             return CONTINUE;
         }
 
-        if (!exc.getRequest().isXML()) {
-            String msg = "Content-Type %s is not XML.".formatted(exc.getRequest().getHeader().getContentType());
-            log.warn(msg);
-            user(router.getConfiguration().isProduction(), getDisplayName())
-                    .title("Request discarded by xmlProtection")
-                    .status(415)
-                    .detail(msg)
-                    .buildAndSetResponse(exc);
-            return ABORT;
-        }
+        if (!exc.getRequest().isXML())
+            return rejectNonXML(exc);
 
-        if (!protectXML(exc)) {
-            String msg = "Request was rejected by XML protection. Please check XML.";
-            log.warn(msg);
-            security(router.getConfiguration().isProduction(), getDisplayName())
-                    .title("Content violates XML security policy")
-                    .status(400)
-                    .detail(msg)
-                    .buildAndSetResponse(exc);
-            exc.getResponse().getHeader().add(X_PROTECTION, "Content violates XML security policy");
-            return ABORT;
-        }
+        if (protect(exc) instanceof Rejected rejected)
+            return reject(exc, rejected);
+
         log.debug("protected against XML attacks");
         return CONTINUE;
     }
 
-    private boolean protectXML(Exchange exc) throws Exception {
-        var charset = exc.getRequest().getCharsetOrDefault();
+    /**
+     * Scans the body and, unless it is rejected, replaces it with what the protector wrote - the
+     * document minus its DTD.
+     */
+    private XMLProtectionResult protect(Exchange exc) throws Exception {
+        Request request = exc.getRequest();
+        var charset = request.getCharsetOrDefault();
+        ByteArrayOutputStream protectedBody = new ByteArrayOutputStream();
 
         // msg.getBodyAsStreamDecoded() delivers an InputStream from bytes (Chunks) -> close should not be an issue
-        try (ByteArrayOutputStream stream = new ByteArrayOutputStream();
-             OutputStreamWriter out = new OutputStreamWriter(stream, charset);
-             InputStreamReader in = new InputStreamReader(exc.getRequest().getBodyAsStreamDecoded(), charset)) {
-            XMLProtector protector = new XMLProtector(out, removeDTD, maxElementNameLength, maxAttributeCount, maxDepth);
-            if (!protector.protect(in))
-                return false;
+        try (OutputStreamWriter out = new OutputStreamWriter(protectedBody, charset);
+             InputStreamReader in = new InputStreamReader(request.getBodyAsStreamDecoded(), charset)) {
+
+            XMLProtectionResult result = new XMLProtector(out, inputFactory.get(), limits).protect(in);
+            if (result instanceof Rejected)
+                return result;
+
             out.flush(); // ensure all bytes are written before reading
-            exc.getRequest().setBodyContent(stream.toByteArray()); // Allow the removal of DTDs
-            return true;
+            request.setBodyContent(protectedBody.toByteArray()); // Allow the removal of DTDs
+            return result;
         }
+    }
+
+    private Outcome reject(Exchange exc, Rejected rejected) {
+        log.info("Request was rejected by XML protection: {}", rejected.reason());
+        security(router.getConfiguration().isProduction(), getDisplayName())
+                .title(POLICY_VIOLATED)
+                .status(400)
+                .detail(rejected.reason())
+                .buildAndSetResponse(exc);
+        exc.getResponse().getHeader().add(X_PROTECTION, POLICY_VIOLATED);
+        return ABORT;
+    }
+
+    private Outcome rejectNonXML(Exchange exc) {
+        String msg = "Content-Type %s is not XML.".formatted(exc.getRequest().getHeader().getContentType());
+        log.info(msg);
+        user(router.getConfiguration().isProduction(), getDisplayName())
+                .title("Request discarded by xmlProtection")
+                .status(415)
+                .detail(msg)
+                .buildAndSetResponse(exc);
+        return ABORT;
     }
 
     /**

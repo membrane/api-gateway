@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.interceptor.xmlprotection;
 
+import com.predic8.membrane.core.interceptor.xmlprotection.XMLProtectionResult.Rejected;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,80 +24,179 @@ import javax.xml.stream.events.DTD;
 import javax.xml.stream.events.EntityDeclaration;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
-import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.util.function.Predicate;
+import java.util.List;
 import java.util.regex.Pattern;
 
-import static com.predic8.membrane.core.util.CollectionsUtil.count;
-import static com.predic8.membrane.core.util.xml.parser.HardenedStaxInputFactory.JAVAX_XML_STREAM_IS_SUPPORTING_EXTERNAL_ENTITIES;
-import static java.lang.Boolean.FALSE;
-import static java.lang.Boolean.TRUE;
-import static javax.xml.stream.XMLInputFactory.*;
+import static com.predic8.membrane.core.interceptor.xmlprotection.XMLLimits.exceeds;
+import static com.predic8.membrane.core.interceptor.xmlprotection.XMLProtectionResult.ACCEPTED;
 
 /**
- * Filters XML streams, removing potentially malicious elements:
+ * Copies an XML document to a writer, filtering out what looks like an attack on the backend parser:
  * <ul>
- * <li>DTDs can be removed.</li>
- * <li>The length of element names can be limited.</li>
- * <li>The number of attributes per element can be limited.</li>
+ * <li>DTDs are removed, or make the document fail if removal is switched off.</li>
+ * <li>A DOCTYPE that points outside the document - an external entity declaration or an external
+ *     subset - makes the document fail; the reference itself is never followed.</li>
+ * <li>Element name length, attribute count per element and nesting depth can be limited.</li>
  * </ul>
  * <p>
- * If {@link #protect(InputStreamReader)} returns false, an unrecoverable error has
- * occurred (such as not-wellformed XML or an element name length exceeded the limit),
- * the {@link OutputStreamWriter} is left at this position: It should be discarded and
- * an error response should be returned to the requestor.
+ * A {@link Rejected} result means the copy stopped mid-document: the {@link OutputStreamWriter} is
+ * left at that position, so its content has to be discarded and an error returned to the requestor.
+ * <p>
+ * One instance scans one document; it keeps the nesting depth of that document as state.
  */
 public class XMLProtector {
     private static final Logger log = LoggerFactory.getLogger(XMLProtector.class);
+
+    /** Writers are per document, the factory that makes them is not. */
+    private static final XMLOutputFactory OUTPUT_FACTORY = XMLOutputFactory.newInstance();
 
     // Word-bounded so DOCTYPE names that merely contain the keywords (e.g. PUBLICATIONS) don't match
     private static final Pattern EXTERNAL_ID_KEYWORD = Pattern.compile("\\b(?:SYSTEM|PUBLIC)\\b");
 
     private final XMLEventWriter writer;
-    private final int maxAttributeCount;
-    private final int maxElementNameLength;
-    private final int maxDepth;
-    private final boolean removeDTD;
+    private final XMLInputFactory inputFactory;
+    private final XMLLimits limits;
+
+    /** Nesting depth of the element the reader is currently in. */
     private int depth;
 
     /**
-     * Use own XMLInputFactory with settings that might be insecure for other applications.
-     * Creating 1.000.000 XMLInputFactory takes 10s, using ThreadLocal 0s
+     * @param inputFactory a DTD-aware, hardened factory, see
+     *                     {@link com.predic8.membrane.core.util.xml.parser.HardenedStaxInputFactory#dtdAwareInputFactory()}
      */
-    private final ThreadLocal<XMLInputFactory> xmlInputFactoryFactory;
-
-    public XMLProtector(OutputStreamWriter osw, boolean removeDTD, int maxElementNameLength, int maxAttributeCount, int maxDepth) throws Exception {
-        this.writer = XMLOutputFactory.newInstance().createXMLEventWriter(osw);
-        this.removeDTD = removeDTD;
-        this.maxElementNameLength = maxElementNameLength;
-        this.maxAttributeCount = maxAttributeCount;
-        this.maxDepth = maxDepth;
-        xmlInputFactoryFactory = ThreadLocal.withInitial(this::getXmlInputFactory);
+    public XMLProtector(OutputStreamWriter osw, XMLInputFactory inputFactory, XMLLimits limits) throws XMLStreamException {
+        this.writer = OUTPUT_FACTORY.createXMLEventWriter(osw);
+        this.inputFactory = inputFactory;
+        this.limits = limits;
     }
 
-    private static void checkExternalEntities(DTD dtd) throws XMLProtectionException {
-        if (containsExternalEntityReferences(dtd)) {
-            String msg = "Possible attack. External entity found in DTD.";
-            log.info(msg);
-            throw new XMLProtectionException(msg);
+    /**
+     * Copies the document to the writer, dropping the DTD if configured to, and stops at the first
+     * violation.
+     *
+     * @param isr stream with the XML document
+     * @return {@link XMLProtectionResult#ACCEPTED} if the document may be passed on, otherwise
+     * {@link Rejected} naming the violation
+     */
+    public XMLProtectionResult protect(InputStreamReader isr) {
+        try {
+            XMLEventReader parser = inputFactory.createXMLEventReader(isr);
+
+            while (parser.hasNext()) {
+                XMLEvent event = parser.nextEvent();
+                trackDepth(event);
+
+                if (check(event) instanceof Rejected rejected)
+                    return rejected;
+
+                if (limits.removeDTD() && event instanceof DTD) {
+                    log.debug("Removed DTD.");
+                    continue;
+                }
+                writer.add(event);
+            }
+            writer.flush();
+            return ACCEPTED;
+        } catch (XMLStreamException e) {
+            return notWellFormed(e);
         }
     }
 
-    private static void checkExternalSubset(DTD dtd) throws XMLProtectionException {
-        if (hasExternalSubsetReference(dtd)) {
-            String msg = "Possible attack. External DTD subset reference in DOCTYPE declaration.";
-            log.info(msg);
-            log.debug("DTD: {}", dtd.getDocumentTypeDeclaration());
-            throw new XMLProtectionException(msg);
+    /**
+     * Keeps {@link #depth} in step with the reader's position. Separate from {@link #check}, so that
+     * nothing named {@code check...} changes state.
+     */
+    private void trackDepth(XMLEvent event) {
+        if (event.isStartElement())
+            depth++;
+        else if (event.isEndElement())
+            depth--;
+    }
+
+    private XMLProtectionResult check(XMLEvent event) {
+        return switch (event) {
+            case StartElement startElement -> checkStartElement(startElement);
+            case DTD dtd -> checkDtd(dtd);
+            default -> ACCEPTED;
+        };
+    }
+
+    private XMLProtectionResult checkStartElement(StartElement element) {
+        int nameLength = element.getName().getLocalPart().length();
+        if (exceeds(nameLength, limits.maxElementNameLength()))
+            return new Rejected("Element name of %d characters exceeds the limit of %d."
+                    .formatted(nameLength, limits.maxElementNameLength()));
+
+        if (hasTooManyAttributes(element))
+            return new Rejected("Element %s has more than the %d allowed attributes."
+                    .formatted(element.getName(), limits.maxAttributeCount()));
+
+        if (exceeds(depth, limits.maxDepth()))
+            return new Rejected("Element nesting depth %d exceeds the limit of %d."
+                    .formatted(depth, limits.maxDepth()));
+
+        return ACCEPTED;
+    }
+
+    /**
+     * Counts no further than the limit, so an element carrying a million attributes is rejected
+     * without walking all of them.
+     */
+    private boolean hasTooManyAttributes(StartElement element) {
+        if (limits.maxAttributeCount() == XMLLimits.UNLIMITED)
+            return false;
+
+        var attributes = element.getAttributes();
+        int count = 0;
+        while (attributes.hasNext()) {
+            attributes.next();
+            if (++count > limits.maxAttributeCount())
+                return true;
         }
+        return false;
+    }
+
+    /**
+     * A DOCTYPE is only a danger if it points outside the document. An external subset reference is
+     * tolerated while the DTD is being removed: the reference is never resolved and the DOCTYPE does
+     * not reach the backend, so only the attempt is logged.
+     */
+    private XMLProtectionResult checkDtd(DTD dtd) {
+        if (containsExternalEntityReferences(dtd))
+            return new Rejected("External entity declaration in DOCTYPE.");
+
+        if (!hasExternalSubsetReference(dtd))
+            return ACCEPTED;
+
+        if (!limits.removeDTD())
+            return new Rejected("External DTD subset reference in DOCTYPE declaration.");
+
+        log.info("Possible attack. External DTD subset reference in DOCTYPE declaration (DTD removed, request continues).");
+        log.debug("DTD: {}", dtd.getDocumentTypeDeclaration());
+        return ACCEPTED;
+    }
+
+    private static XMLProtectionResult notWellFormed(XMLStreamException e) {
+        Location loc = e.getLocation();
+        return new Rejected("Not well-formed XML at line %d, column %d: %s".formatted(
+                loc != null ? loc.getLineNumber() : -1,
+                loc != null ? loc.getColumnNumber() : -1,
+                e.getMessage()));
+    }
+
+    @SuppressWarnings("unchecked") // DTD.getEntities() is a raw List of EntityDeclaration by contract
+    private static boolean containsExternalEntityReferences(DTD dtd) {
+        List<EntityDeclaration> entities = dtd.getEntities();
+        return entities != null && entities.stream()
+                .anyMatch(entity -> entity.getPublicId() != null || entity.getSystemId() != null);
     }
 
     private static boolean hasExternalSubsetReference(DTD dtd) {
         var decl = dtd.getDocumentTypeDeclaration();
         if (decl == null) return false;
-        // Only inspect the header before the internal subset '[' — SYSTEM/PUBLIC only appear there as keywords
+        // Only inspect the header before the internal subset '[' - SYSTEM/PUBLIC only appear there as keywords
         return EXTERNAL_ID_KEYWORD.matcher(getHeaderAfterRootName(getHeader(decl))).find();
     }
 
@@ -117,131 +217,5 @@ public class XMLProtector {
         while (i < header.length() && Character.isWhitespace(header.charAt(i))) i++;
         while (i < header.length() && !Character.isWhitespace(header.charAt(i))) i++;
         return header.substring(i);
-    }
-
-    private static boolean containsExternalEntityReferences(DTD dtd) {
-        var entities = dtd.getEntities();
-        if (entities == null || entities.isEmpty())
-            return false;
-
-        return entities.stream().anyMatch(isExternalEntity());
-    }
-
-    private static @NotNull Predicate<EntityDeclaration> isExternalEntity() {
-        return ed -> ed.getPublicId() != null || ed.getSystemId() != null;
-    }
-
-    /**
-     * Is XML secure?
-     *
-     * @param isr Stream with XML
-     * @return false if there is any security problem in the XML
-     * @throws XMLProtectionException if there are critical issues like external entity references
-     */
-    public boolean protect(InputStreamReader isr) throws XMLProtectionException {
-        try {
-            XMLEventReader parser = xmlInputFactoryFactory.get().createXMLEventReader(isr);
-
-            while (parser.hasNext()) {
-                XMLEvent event = parser.nextEvent();
-                if (event.isStartElement()) {
-                    StartElement startElement = event.asStartElement();
-                    if (!checkElementNameLength(startElement))
-                        return false;
-                    if (!checkNumberOfAttributes(startElement))
-                        return false;
-                    if (!checkDepth())
-                        return false;
-                }
-                if (event.isEndElement()) {
-                    depth--;
-                }
-                if (event instanceof javax.xml.stream.events.DTD dtd) {
-                    checkExternalEntities(dtd);
-                    if (removeDTD) {
-                        if (hasExternalSubsetReference(dtd)) {
-                            log.info("Possible attack. External DTD subset reference in DOCTYPE declaration (DTD removed, request continues).");
-                            log.debug("DTD: {}", dtd.getDocumentTypeDeclaration());
-                        }
-                        log.debug("removed DTD.");
-                        continue;
-                    }
-                    checkExternalSubset(dtd);
-                }
-                writer.add(event);
-            }
-            writer.flush();
-        } catch (XMLStreamException e) {
-            Location loc = e.getLocation();
-            log.warn("Received not well-formed XML at line {}, column {}: {}",
-                    loc != null ? loc.getLineNumber() : -1,
-                    loc != null ? loc.getColumnNumber() : -1,
-                    e.getMessage());
-            return false;
-        }
-        return true;
-    }
-
-    private boolean checkNumberOfAttributes(StartElement startElement) {
-        if (maxAttributeCount < 0)
-            return true;
-
-        var numberOfAttributes = count(startElement.getAttributes());
-        if (numberOfAttributes > maxAttributeCount) {
-            log.warn("Element {} has {} attributes. Exceeding limit of {}", startElement.getName(), maxAttributeCount, maxAttributeCount);
-            return false;
-        }
-
-        return true;
-    }
-
-    private boolean checkDepth() {
-        depth++;
-        if (maxDepth != -1 && depth > maxDepth) {
-            log.info("Element nesting depth {} exceeds limit of {}", depth, maxDepth);
-            return false;
-        }
-        return true;
-    }
-
-    private boolean checkElementNameLength(StartElement startElement) {
-        var elementLenght = startElement.getName().getLocalPart().length();
-        if (maxElementNameLength != -1 &&
-            elementLenght > maxElementNameLength) {
-            log.warn("Element with {} characters exceeds limit of {}", elementLenght, maxElementNameLength);
-            return false;
-        }
-        return true;
-    }
-
-    private XMLInputFactory getXmlInputFactory() {
-        // Return a new, fully hardened XMLInputFactory instance. That is not shared
-        XMLInputFactory f = XMLInputFactory.newInstance();
-        // hardening
-        f.setProperty(IS_COALESCING, FALSE);
-
-        // Support DTDs on purpose to detect them in the StAX loop!
-        f.setProperty(SUPPORT_DTD, TRUE);
-
-        // Block external DTD fetches while still surfacing the DTD event for removal
-        f.setXMLResolver((publicId, systemId, baseURI, namespace) -> new ByteArrayInputStream(new byte[0]));
-
-        f.setProperty(IS_NAMESPACE_AWARE, TRUE);
-        f.setProperty(IS_REPLACING_ENTITY_REFERENCES, FALSE);
-        // JAXP defaults jdk.xml.maxElementDepth to 100; align it with our own, explicitly
-        // configurable limit so maxDepth=-1 (unlimited) isn't silently overridden by the JDK.
-        try {
-            f.setProperty("jdk.xml.maxElementDepth", maxDepth <= 0 ? 0 : maxDepth);
-        } catch (IllegalArgumentException ignored) {
-        }
-        try {
-            f.setProperty(JAVAX_XML_STREAM_IS_SUPPORTING_EXTERNAL_ENTITIES, FALSE);
-        } catch (IllegalArgumentException ignored) {
-        }
-        try {
-            f.setProperty(IS_VALIDATING, FALSE);
-        } catch (IllegalArgumentException ignored) {
-        }
-        return f;
     }
 }

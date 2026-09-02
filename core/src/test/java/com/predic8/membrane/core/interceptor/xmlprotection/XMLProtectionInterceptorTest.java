@@ -14,114 +14,195 @@
 
 package com.predic8.membrane.core.interceptor.xmlprotection;
 
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.router.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.router.DefaultRouter;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
-import java.net.*;
+import java.util.function.Consumer;
 
-import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_XML;
 import static com.predic8.membrane.core.http.Request.post;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.xmlprotection.XMLProtectionInterceptor.X_PROTECTION;
 import static org.junit.jupiter.api.Assertions.*;
 
 class XMLProtectionInterceptorTest {
-    private static Exchange exc;
-    private static XMLProtectionInterceptor interceptor;
 
-    @BeforeAll
-    static void setUp() throws Exception {
-        exc = new Exchange(null);
-        exc.setRequest(Request.get("/axis2/services/BLZService").build());
-        exc.setOriginalHostHeader("thomas-bayer.com:80");
-
-        interceptor = new XMLProtectionInterceptor();
+    /**
+     * Configuration is read in {@link XMLProtectionInterceptor#init()}, so every test builds and
+     * initialises its own interceptor instead of reconfiguring a shared one.
+     */
+    private static XMLProtectionInterceptor interceptor(Consumer<XMLProtectionInterceptor> configuration) {
+        XMLProtectionInterceptor interceptor = new XMLProtectionInterceptor();
+        configuration.accept(interceptor);
         interceptor.init(new DefaultRouter());
+        return interceptor;
     }
 
-    private void runOn(String resource, boolean expectSuccess) throws Exception {
-        exc.getRequest().getHeader().setContentType(APPLICATION_XML);
-        try (var is = this.getClass().getResourceAsStream(resource)) {
+    private static XMLProtectionInterceptor interceptor() {
+        return interceptor(i -> {
+        });
+    }
+
+    private static Exchange xml(String body) throws Exception {
+        return post("/").contentType(APPLICATION_XML).body(body).buildExchange();
+    }
+
+    private static Exchange xmlFrom(String resource) throws Exception {
+        try (var is = XMLProtectionInterceptorTest.class.getResourceAsStream(resource)) {
             assertNotNull(is, "Test resource not found: " + resource);
-            exc.getRequest().setBodyContent(is.readAllBytes());
+            return post("/").contentType(APPLICATION_XML).body(is.readAllBytes()).buildExchange();
         }
-        Outcome outcome = interceptor.handleRequest(exc);
-        assertEquals(expectSuccess ? CONTINUE : ABORT, outcome);
+    }
+
+    private static String bodyOf(Exchange exc) {
+        return exc.getResponse().getBodyAsStringDecoded();
     }
 
     @Test
-    @DisplayName("Content-Type other than XML should  pass")
-    void noXML() throws URISyntaxException {
-        Exchange exc = post("/foo").contentType(TEXT_XML).body("<foo/>").buildExchange();
-        assertEquals(CONTINUE, interceptor.handleRequest(exc));
+    void wellformedXmlPasses() throws Exception {
+        Exchange exc = xmlFrom("/customer.xml");
+        assertEquals(CONTINUE, interceptor().handleRequest(exc));
     }
 
     @Test
-    void invariant() throws Exception {
-        runOn("/customer.xml", true);
+    void emptyBodyIsNotScanned() throws Exception {
+        Exchange exc = post("/").contentType(APPLICATION_XML).body("").buildExchange();
+        assertEquals(CONTINUE, interceptor().handleRequest(exc));
     }
 
     @Test
-    void notWellformed() throws Exception {
-        runOn("/xml/not-wellformed.xml", false);
+    @DisplayName("A Content-Type other than XML is discarded")
+    void nonXmlContentTypeIsDiscarded() throws Exception {
+        Exchange exc = post("/").contentType(APPLICATION_JSON).body("{\"a\": 1}").buildExchange();
+
+        assertEquals(ABORT, interceptor().handleRequest(exc));
+        assertEquals(415, exc.getResponse().getStatusCode());
+        assertTrue(bodyOf(exc).contains("is not XML"));
     }
 
     @Test
-    void removeDTD() throws Exception {
-        exc.setRequest(post("/").body("""
+    @DisplayName("Malformed XML is a policy violation, reported with the parser's reason")
+    void notWellformedIsRejected() throws Exception {
+        Exchange exc = xmlFrom("/xml/not-wellformed.xml");
+
+        assertEquals(ABORT, interceptor().handleRequest(exc));
+        assertRejectedByPolicy(exc);
+        assertTrue(bodyOf(exc).contains("Not well-formed XML"));
+    }
+
+    @Test
+    @DisplayName("A body that cannot even be decoded is a server error, not a policy violation")
+    void undecodableBodyIsReportedAsServerError() throws Exception {
+        Exchange exc = post("/")
+                .contentType(APPLICATION_XML)
+                .header("Content-Encoding", "gzip")
+                .body("<foo/>") // announced as gzip, but is not
+                .buildExchange();
+
+        assertEquals(ABORT, interceptor().handleRequest(exc));
+        assertEquals(500, exc.getResponse().getStatusCode());
+        assertNull(exc.getResponse().getHeader().getFirstValue(X_PROTECTION));
+        // Outside production the cause is reported as the "reason" detail rather than a stacktrace
+        assertTrue(bodyOf(exc).contains("Could not decode body stream"), bodyOf(exc));
+    }
+
+    @Test
+    void removesDTD() throws Exception {
+        Exchange exc = xml("""
                 <?xml  version="1.0" encoding="ISO-8859-1"?>
                 <!DOCTYPE foo [
                      <!ELEMENT foo ANY >
                    ]>
                 <foo/>
-                """).contentType(APPLICATION_XML).build());
+                """);
 
-        // Should pass
-        assertEquals(CONTINUE, interceptor.handleRequest(exc));
+        assertEquals(CONTINUE, interceptor().handleRequest(exc));
 
-        // Should still contain the XML
+        // Should still contain the XML, but not the DTD
         assertTrue(exc.getRequest().getBodyAsStringDecoded().contains("<foo"));
-
-        // DTD should be removed
         assertFalse(exc.getRequest().getBodyAsStringDecoded().contains("DOCTYPE"));
     }
 
     @Test
-    void tooManyAttributes() throws Exception {
-        Exchange exc = post("/").contentType(APPLICATION_XML).body("""
-                    <foo a="1" b="2" c="3" d="to much"/>""").buildExchange();
+    void keepsDTDWhenRemovalIsSwitchedOff() throws Exception {
+        Exchange exc = xml("""
+                <?xml version="1.0"?>
+                <!DOCTYPE foo [
+                     <!ELEMENT foo ANY >
+                   ]>
+                <foo/>
+                """);
 
-        interceptor.setMaxAttributeCount(4);
-        assertEquals(CONTINUE, interceptor.handleRequest(exc));
-        interceptor.setMaxAttributeCount(3);
-        assertEquals(ABORT, interceptor.handleRequest(exc));
+        assertEquals(CONTINUE, interceptor(i -> i.setRemoveDTD(false)).handleRequest(exc));
+        assertTrue(exc.getRequest().getBodyAsStringDecoded().contains("DOCTYPE"));
     }
 
     @Test
-    void tooDeeplyNested() throws Exception {
-        Exchange exc = post("/").contentType(APPLICATION_XML).body(nested(4)).buildExchange();
+    @DisplayName("An external entity is a security violation, not a gateway error - even while DTDs are being removed")
+    void externalEntityIsRejected() throws Exception {
+        Exchange exc = xmlFrom("/xml/entity-external.xml");
 
-        interceptor.setMaxDepth(4);
-        assertEquals(CONTINUE, interceptor.handleRequest(exc));
-        interceptor.setMaxDepth(3);
-        assertEquals(ABORT, interceptor.handleRequest(exc));
-        interceptor.setMaxDepth(1000);
+        assertEquals(ABORT, interceptor().handleRequest(exc));
+        assertRejectedByPolicy(exc);
+        assertTrue(bodyOf(exc).contains("External entity"));
+    }
+
+    @Test
+    void tooLongElementNameIsRejected() throws Exception {
+        Exchange exc = xmlFrom("/xml/long-element-name.xml");
+
+        assertEquals(ABORT, interceptor(i -> i.setMaxElementNameLength(100)).handleRequest(exc));
+        assertRejectedByPolicy(exc);
+    }
+
+    @Test
+    void attributeCountAtLimitPasses() throws Exception {
+        Exchange exc = xml("""
+                <foo a="1" b="2" c="3" d="to much"/>""");
+
+        assertEquals(CONTINUE, interceptor(i -> i.setMaxAttributeCount(4)).handleRequest(exc));
+    }
+
+    @Test
+    void tooManyAttributesIsRejected() throws Exception {
+        Exchange exc = xml("""
+                <foo a="1" b="2" c="3" d="to much"/>""");
+
+        assertEquals(ABORT, interceptor(i -> i.setMaxAttributeCount(3)).handleRequest(exc));
+        assertRejectedByPolicy(exc);
+    }
+
+    @Test
+    void nestingAtLimitPasses() throws Exception {
+        assertEquals(CONTINUE, interceptor(i -> i.setMaxDepth(4)).handleRequest(xml(nested(4))));
+    }
+
+    @Test
+    void tooDeeplyNestedIsRejected() throws Exception {
+        Exchange exc = xml(nested(4));
+
+        assertEquals(ABORT, interceptor(i -> i.setMaxDepth(3)).handleRequest(exc));
+        assertRejectedByPolicy(exc);
+        assertTrue(bodyOf(exc).contains("nesting depth"));
     }
 
     @Test
     void unlimitedDepthDisablesCheck() throws Exception {
-        Exchange exc = post("/").contentType(APPLICATION_XML).body(nested(2000)).buildExchange();
+        assertEquals(CONTINUE, interceptor(i -> i.setMaxDepth(-1)).handleRequest(xml(nested(2000))));
+    }
 
-        interceptor.setMaxDepth(-1);
-        assertEquals(CONTINUE, interceptor.handleRequest(exc));
-        interceptor.setMaxDepth(1000);
+    private static void assertRejectedByPolicy(Exchange exc) {
+        assertEquals(400, exc.getResponse().getStatusCode());
+        assertEquals("Content violates XML security policy", exc.getResponse().getHeader().getFirstValue(X_PROTECTION));
     }
 
     private static String nested(int depth) {
-        StringBuilder sb = new StringBuilder("<a>");
-        for (int i = 1; i < depth; i++) sb.append("<a>");
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < depth; i++) sb.append("<a>");
         for (int i = 0; i < depth; i++) sb.append("</a>");
         return sb.toString();
     }
