@@ -13,12 +13,12 @@
    limitations under the License. */
 package com.predic8.membrane.core.util;
 
-import org.jetbrains.annotations.*;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
-import java.util.stream.*;
+import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.toSet;
 
 public class CollectionsUtil {
 
@@ -52,19 +52,6 @@ public class CollectionsUtil {
 
     public static @NotNull String join(Set<String> s) {
         return join(s.stream().sorted().toList());
-    }
-
-    /**
-     * @param it Iterator
-     * @return Number of items that Iterator provides
-     */
-    public static int count(Iterator<?> it) {
-        int cnt = 0;
-        while (it.hasNext()) {
-            it.next();
-            cnt++;
-        }
-        return cnt;
     }
 
 }
