@@ -155,4 +155,25 @@ class ChunkedBodyStickyErrorTest {
 
         assertEquals(List.of("isRead=true bodyComplete=true", "partial"), observed);
     }
+
+    /**
+     * The end-to-end shape of the attribution problem: the lazy stream throws the raw IOException (to
+     * honour the InputStream contract), a caller wraps it again, and the handlers must still be able to
+     * tell which end of the exchange died.
+     */
+    @Test
+    void aWrappedFailureFromTheLazyStreamIsStillAttributable() throws IOException {
+        Request request = new Request();
+        request.setBody(body);
+
+        var in = body.getContentAsStream();
+        in.readNBytes(7);
+        IOException fromStream = assertThrows(IOException.class, in::read);
+
+        // as MessageUtil / HttpServerHandler.removeBodyFromBuffer() do
+        ReadingBodyException rewrapped = new ReadingBodyException(fromStream);
+
+        assertNotSame(body.getObservedException(), rewrapped);
+        assertTrue(rewrapped.belongsTo(request));
+    }
 }

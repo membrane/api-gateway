@@ -14,6 +14,8 @@
 
 package com.predic8.membrane.core.http;
 
+import static com.predic8.membrane.core.util.ExceptionUtil.getRootCause;
+
 /**
  * Indicates that an error occurred while reading the body of a message.
  * The 'message' should already be enough to indicate the error.
@@ -29,11 +31,21 @@ public class ReadingBodyException extends RuntimeException {
     }
 
     /**
-     * @return whether this exception is the failure recorded on the given message's body. Useful to
-     * tell which end of the exchange the failure belongs to: the client (request body) or the target
+     * @return whether this exception reports the failure recorded on the given message's body. Useful
+     * to tell which end of the exchange the failure belongs to: the client (request body) or the target
      * server (response body).
+     * <p>
+     * Matches either the recorded exception itself or one wrapping the same root cause. The latter is
+     * needed because {@link ChunkedBody#getContentAsStream()} has to honour the {@link java.io.InputStream}
+     * contract: it records the failure but throws the raw {@link java.io.IOException}, which a caller
+     * may then wrap in a second {@link ReadingBodyException}. That wrapper is not the recorded instance,
+     * yet it carries the very same cause object and reports the very same failure.
      */
     public boolean belongsTo(Message message) {
-        return message != null && message.getBody().getObservedException() == this;
+        if (message == null)
+            return false;
+        ReadingBodyException recorded = message.getBody().getObservedException();
+        return recorded == this
+                || (recorded != null && getRootCause(recorded) == getRootCause(this));
     }
 }

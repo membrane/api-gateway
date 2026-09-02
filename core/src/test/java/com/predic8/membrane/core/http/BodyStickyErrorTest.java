@@ -205,7 +205,26 @@ class BodyStickyErrorTest {
         assertFalse(e.belongsTo(healthy));
         assertFalse(e.belongsTo(null));
         assertFalse(new ReadingBodyException(new ClosedChannelException()).belongsTo(request),
-                "a re-wrapped exception is not the recorded one");
+                "an unrelated failure, despite being of the same type");
+    }
+
+    /**
+     * ChunkedBody's lazy stream records the failure but throws the raw IOException, which a caller may
+     * wrap again. That wrapper is a different object than the recorded exception, yet it reports the
+     * same failure - otherwise the handlers would log "a message body" instead of naming the end that
+     * actually died.
+     */
+    @Test
+    void belongsToMatchesAWrapperAroundTheSameCause() {
+        Request request = new Request();
+        request.setBody(body);
+
+        ReadingBodyException recorded = assertThrows(ReadingBodyException.class, body::read);
+        // as MessageUtil / removeBodyFromBuffer do: wrap the IOException the stream threw
+        ReadingBodyException rewrapped = new ReadingBodyException((Exception) recorded.getCause());
+
+        assertNotSame(recorded, rewrapped);
+        assertTrue(rewrapped.belongsTo(request));
     }
 
     private static class RecordingObserver extends AbstractMessageObserver {
