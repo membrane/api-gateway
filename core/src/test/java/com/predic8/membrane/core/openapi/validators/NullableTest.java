@@ -33,7 +33,7 @@ protected String getOpenAPIFileName() {
     }
 
     @Test
-    public void emailNullValid() {
+    void emailNullValid() {
 
         Map<String,Object> m = new HashMap<>();
         m.put("email",null);
@@ -44,7 +44,7 @@ protected String getOpenAPIFileName() {
     }
 
     @Test
-    public void addressObjectNullValid() {
+    void addressObjectNullValid() {
 
         Map<String,Object> m = new HashMap<>();
         m.put("address",null);
@@ -54,7 +54,7 @@ protected String getOpenAPIFileName() {
     }
 
     @Test
-    public void contactNullableWithoutTypeInvalid() {
+    void contactNullableWithoutTypeInvalid() {
 
         Map<String,Object> m = new HashMap<>();
         m.put("contact",null);
@@ -64,7 +64,7 @@ protected String getOpenAPIFileName() {
     }
 
     @Test
-    public void telefonNotNullableInvalid() {
+    void telefonNotNullableInvalid() {
 
         Map<String,Object> m = new HashMap<>();
         m.put("telefon",null);
@@ -74,5 +74,65 @@ protected String getOpenAPIFileName() {
         ValidationError e = errors.get(0);
         assertEquals("/telefon", e.getContext().getJSONpointer());
         assertTrue(e.getMessage().toLowerCase().contains("null"));
+    }
+
+    @Test
+    void nullableAllOfNullValid() {
+
+        Map<String,Object> m = new HashMap<>();
+        m.put("nullableAllOf",null);
+
+        ValidationErrors errors = validator.validate(post().path("/composition").body(mapToJson(m)));
+        assertEquals(0,errors.size());
+    }
+
+    @Test
+    void nullableOneOfNullValid() {
+
+        Map<String,Object> m = new HashMap<>();
+        m.put("nullableOneOf",null);
+
+        ValidationErrors errors = validator.validate(post().path("/composition").body(mapToJson(m)));
+        assertEquals(0,errors.size());
+    }
+
+    @Test
+    void nullableAnyOfNullValid() {
+
+        Map<String,Object> m = new HashMap<>();
+        m.put("nullableAnyOf",null);
+
+        ValidationErrors errors = validator.validate(post().path("/composition").body(mapToJson(m)));
+        assertEquals(0,errors.size());
+    }
+
+    @Test
+    void nonNullableAllOfNullInvalid() {
+
+        Map<String,Object> m = new HashMap<>();
+        m.put("nonNullableAllOf",null);
+
+        ValidationErrors errors = validator.validate(post().path("/composition").body(mapToJson(m)));
+        assertFalse(errors.isEmpty());
+    }
+
+    @Test
+    void nullableAllOfObjectStillValidated() {
+
+        Map<String,Object> m = new HashMap<>();
+        m.put("nullableAllOf",Map.of("street","Main Street"));
+
+        ValidationErrors errors = validator.validate(post().path("/composition").body(mapToJson(m)));
+        assertFalse(errors.isEmpty());
+    }
+
+    @Test
+    void nullableAllOfValidObjectValid() {
+
+        Map<String,Object> m = new HashMap<>();
+        m.put("nullableAllOf",Map.of("street","Main Street","city","Berlin"));
+
+        ValidationErrors errors = validator.validate(post().path("/composition").body(mapToJson(m)));
+        assertEquals(0,errors.size());
     }
 }
