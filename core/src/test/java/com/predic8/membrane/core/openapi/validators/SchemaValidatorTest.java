@@ -13,16 +13,28 @@
    limitations under the License. */
 package com.predic8.membrane.core.openapi.validators;
 
-import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.node.*;
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.params.*;
-import org.junit.jupiter.params.provider.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.IntNode;
+import com.fasterxml.jackson.databind.node.TextNode;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.SpecVersion;
+import io.swagger.v3.oas.models.media.Schema;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.MethodSource;
 
-import java.io.*;
-import java.util.stream.*;
+import java.io.InputStream;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Stream;
 
-import static com.fasterxml.jackson.databind.node.BooleanNode.*;
+import static com.fasterxml.jackson.databind.node.BooleanNode.TRUE;
+import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.parseOpenAPI;
 import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.*;
 import static java.io.InputStream.nullInputStream;
 import static org.junit.jupiter.api.Assertions.*;
@@ -30,6 +42,8 @@ import static org.junit.jupiter.api.Assertions.*;
 public class SchemaValidatorTest {
 
     private static final ObjectMapper mapper = new ObjectMapper();
+
+    private static final String ADDRESS_REF = "#/components/schemas/Address";
 
     static JsonSchemaValidator arrayValidator;
     static JsonSchemaValidator booleanValidator;
@@ -114,5 +128,63 @@ public class SchemaValidatorTest {
     @Test
     void canValidateWithInputStream() {
         assertNull(objectValidator.canValidate(nullInputStream()));
+    }
+
+    @Nested
+    class HasSiblings {
+
+        @Test
+        void refOnly() {
+            assertFalse(SchemaValidator.hasSiblings(new Schema<>().$ref(ADDRESS_REF)));
+        }
+
+        @Test
+        void emptySchema() {
+            assertFalse(SchemaValidator.hasSiblings(new Schema<>()));
+        }
+
+        @Test
+        void refAndType() {
+            assertTrue(SchemaValidator.hasSiblings(new Schema<>().$ref(ADDRESS_REF).types(Set.of("string"))));
+        }
+
+        @Test
+        void refAndRequired() {
+            assertTrue(SchemaValidator.hasSiblings(new Schema<>().$ref(ADDRESS_REF).required(List.of("zip"))));
+        }
+
+        @Test
+        void refAndReadOnly() {
+            assertTrue(SchemaValidator.hasSiblings(new Schema<>().$ref(ADDRESS_REF).readOnly(true)));
+        }
+
+        /**
+         * A different spec version alone is not a sibling keyword.
+         */
+        @Test
+        void refOnlyWithSpecVersion() {
+            Schema<?> schema = new Schema<>().$ref(ADDRESS_REF);
+            schema.setSpecVersion(SpecVersion.V31);
+            assertFalse(SchemaValidator.hasSiblings(schema));
+        }
+
+        @Test
+        void keywordWithoutRef() {
+            assertTrue(SchemaValidator.hasSiblings(new Schema<>().types(Set.of("string"))));
+        }
+
+        /**
+         * The hand built schemas above have to agree with what the parser produces. The parser uses
+         * Schema subclasses, so a plain $ref must not be mistaken for a schema with siblings.
+         */
+        @ParameterizedTest
+        @CsvSource({"nullableRef,true", "readOnlyRef,true", "extraRequiredRef,true",
+                    "narrowedRef,true", "plainRef,false"})
+        void parsedSchema(String property, boolean expected) {
+            OpenAPI api = parseOpenAPI(getClass().getResourceAsStream("/openapi/specs/oas31/ref-siblings.yaml"));
+            Schema<?> schema = (Schema<?>) api.getPaths().get("/siblings").getPost().getRequestBody()
+                    .getContent().get("application/json").getSchema().getProperties().get(property);
+            assertEquals(expected, SchemaValidator.hasSiblings(schema));
+        }
     }
 }
