@@ -367,10 +367,13 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
      * Makes the OpenAPI document reachable next to the API's own path. Only base paths are added:
      * the key's path itself is never rewritten, so this stays safe when init() runs again on the
      * same proxy (APIProxy rebuilds its key on each init, so the list cannot accumulate either).
+     * PATH goes into the key's api docs paths so that it stays reachable even when the API has a
+     * custom path configured.
      */
     private void registerApiDocsPaths() {
         if (proxy.getKey() instanceof APIProxyKey apiKey) {
-            apiKey.addBasePaths(new ArrayList<>(List.of(PATH, basePath)));
+            apiKey.addApiDocsPaths(new ArrayList<>(List.of(PATH)));
+            apiKey.addBasePaths(new ArrayList<>(List.of(basePath)));
         }
     }
 
