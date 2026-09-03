@@ -171,8 +171,9 @@ public abstract class Message {
 	}
 
 	/**
-	 * Sets the body.
-	 * Does <b>NOT</b> adjust the header fields (<tt>Content-Length</tt> etc.): Use {@link #setBodyContent(byte[])} instead.
+	 * Sets the body, leaving the header alone. The caller is responsible for <tt>Content-Length</tt>,
+	 * <tt>Content-Encoding</tt> and <tt>Transfer-Encoding</tt> still describing the new body — pass it
+	 * to {@link #setBodyContent(AbstractBody)} instead to have that done.
 	 */
 	public void setBody(AbstractBody b) throws ReadingBodyException {
 		discardBody(); // Make sure remaining bytes are read from original body's input stream
@@ -183,11 +184,20 @@ public abstract class Message {
 	 * Sets the body. Also adjusts the header fields (<tt>Content-Length</tt>, <tt>Content-Encoding</tt>, <tt>Transfer-Encoding</tt>).
 	 */
 	public void setBodyContent(byte[] content) throws ReadingBodyException {
-		discardBody(); // Make sure remaining bytes are read from original body's input stream
-		body = new Body(content);
+		setBodyContent(new Body(content));
+	}
+
+	/**
+	 * Sets the body. Also adjusts the header fields (<tt>Content-Length</tt>, <tt>Content-Encoding</tt>, <tt>Transfer-Encoding</tt>).
+	 * <p>
+	 * The body must already be materialized, since its length is written into the header: passing a
+	 * streaming {@link Body} would buffer the whole stream. Use {@link #setBody(AbstractBody)} for those.
+	 */
+	public void setBodyContent(AbstractBody b) throws ReadingBodyException {
+		setBody(b);
 		header.removeFields(CONTENT_ENCODING);
 		header.removeFields(TRANSFER_ENCODING);
-		header.setContentLength(content.length);
+		header.setContentLength(b.getLength());
 	}
 
 	protected void createBody(InputStream in) throws IOException {
@@ -357,6 +367,18 @@ public abstract class Message {
 		if (header.getContentType() == null)
 			return false;
 		return detectEffectiveContentType(this) == HTML;
+	}
+
+	/**
+	 * Whether {@link #getBodyAsStreamDecoded()} yields something other than the body's own bytes:
+	 * a Content-Encoding (gzip, deflate, br) or a multipart body that XOP reassembles.
+	 * <p>
+	 * Deliberately conservative — it asks whether an encoding is present at all rather than
+	 * enumerating the ones currently supported, so that an encoding added later is reported as
+	 * encoded rather than silently treated as plain.
+	 */
+	public boolean isEncoded() {
+		return header.getContentEncoding() != null || header.isMultipart();
 	}
 
 	public boolean isGzip() {

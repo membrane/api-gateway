@@ -16,16 +16,12 @@ package com.predic8.membrane.core.multipart;
 
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.util.MessageUtil;
+import jakarta.mail.internet.ContentType;
 import jakarta.mail.internet.ParseException;
-import org.apache.commons.fileupload.MultipartStream;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Utility for splitting multipart HTTP messages into their individual {@link Part}s.
@@ -39,8 +35,28 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  *     byte[] body = part.getBody();
  * }
  * }</pre>
+ *
+ * <p>Every part is buffered; see {@link PartScanner} to traverse a message without doing that.</p>
  */
 public class MultipartUtil {
+
+    /**
+     * @return whether the message's Content-Type has a primary type of {@code multipart}
+     */
+    public static boolean isMultipart(Message message) throws ParseException {
+        var contentType = message.getHeader().getContentTypeObject();
+        return contentType != null && "multipart".equalsIgnoreCase(contentType.getPrimaryType());
+    }
+
+    static boolean isMultipart(String contentType) {
+        if (contentType == null)
+            return false;
+        try {
+            return "multipart".equalsIgnoreCase(new ContentType(contentType).getPrimaryType());
+        } catch (ParseException e) {
+            return false;
+        }
+    }
 
     /**
      * Splits a multipart message into its individual parts.
@@ -48,10 +64,14 @@ public class MultipartUtil {
      *
      * @param message a request or response whose Content-Type is multipart/*
      * @return parts in wire order; never null, may be empty
-     * @throws IOException    on I/O or parse errors
+     * @throws IOException    on I/O or parse errors, or if a part is itself multipart
      * @throws ParseException if the Content-Type header cannot be parsed
      */
     public static List<Part> split(Message message) throws IOException, ParseException {
+        return split(message, boundaryOf(message));
+    }
+
+    static String boundaryOf(Message message) throws IOException, ParseException {
         var contentType = message.getHeader().getContentTypeObject();
         if (contentType == null) {
             throw new IOException("No Content-Type header");
@@ -60,39 +80,35 @@ public class MultipartUtil {
         if (boundary == null) {
             throw new IOException("No boundary parameter in Content-Type: " + contentType);
         }
-        return split(message, boundary);
+        return boundary;
     }
 
     /**
      * Splits a multipart message into its individual parts using an explicit boundary.
      *
+     * <p>Buffers every part, so use {@link PartScanner#forEachPart} when the parts can be large or
+     * when only some of them are needed.</p>
+     *
      * @param message  a request or response with a multipart body
      * @param boundary the MIME boundary string (without leading {@code --})
      * @return parts in wire order; never null, may be empty
-     * @throws IOException on I/O or unsupported Content-Transfer-Encoding
+     * @throws IOException on I/O errors, on unsupported Content-Transfer-Encoding, or if a part is
+     *                     itself multipart
      */
-    @SuppressWarnings("deprecation")
     public static List<Part> split(Message message, String boundary) throws IOException {
         List<Part> result = new ArrayList<>();
-
-        MultipartStream ms = new MultipartStream(MessageUtil.getContentAsStream(message), boundary.getBytes(UTF_8));
-        boolean hasNext = ms.skipPreamble();
-        while (hasNext) {
-            Header partHeader = new Header(ms.readHeaders());
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            ms.readBodyData(baos);
-
-            // Only binary-safe encodings are supported; base64/QP would corrupt binary parts
-            String cte = partHeader.getFirstValue("Content-Transfer-Encoding");
-            if (cte != null && !cte.equalsIgnoreCase("binary")
-                    && !cte.equalsIgnoreCase("8bit")
-                    && !cte.equalsIgnoreCase("7bit")) {
-                throw new IOException("Content-Transfer-Encoding '" + cte + "' is not supported.");
+        PartScanner.forEachPart(message, boundary, Integer.MAX_VALUE, new PartScanner.PartHandler() {
+            @Override
+            public PartScanner.PartAction decide(Header partHeader) {
+                return PartScanner.PartAction.INSPECT;
             }
 
-            result.add(new Part(partHeader, baos.toByteArray()));
-            hasNext = ms.readBoundary();
-        }
+            @Override
+            public void handle(Part part) {
+                result.add(part);
+            }
+        });
         return result;
     }
+
 }

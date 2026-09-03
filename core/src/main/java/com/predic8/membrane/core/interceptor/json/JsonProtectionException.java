@@ -14,6 +14,8 @@
 
 package com.predic8.membrane.core.interceptor.json;
 
+import com.fasterxml.jackson.core.JsonParser;
+
 public class JsonProtectionException extends Exception{
     private final String message;
     private final int line;
@@ -23,6 +25,15 @@ public class JsonProtectionException extends Exception{
         this.message = msg;
         this.line = line;
         this.col = col;
+    }
+
+    /**
+     * Creates an exception pointing at the parser's current position, so callers do not have to
+     * unpack the location themselves.
+     */
+    public static JsonProtectionException at(String message, JsonParser parser) {
+        var location = parser.currentLocation();
+        return new JsonProtectionException(message, location.getLineNr(), location.getColumnNr());
     }
 
     @Override

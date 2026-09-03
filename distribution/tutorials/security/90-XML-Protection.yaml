@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=https://www.membrane-api.io/v7.4.0.json
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.5.0.json
 #
 # Tutorial: XML Protection
 #
@@ -10,6 +10,9 @@
 # 2.) DTD Removal
 #     Look at hello-dtd.xml
 #     curl -d @hello-dtd.xml -H "Content-Type: text/xml" localhost:2000
+#
+# 3.) Too deeply nested
+#     curl -d '<a><b><c><d>x</d></c></b></a>' -H "Content-Type: text/xml" localhost:2000
 
 api:
   port: 2000
@@ -17,6 +20,7 @@ api:
     - xmlProtection:
         maxAttributeCount: 3
         maxElementNameLength: 100
+        maxDepth: 3        # Max. nesting depth of XML elements
         removeDTD: true
     - return:
         status: 200

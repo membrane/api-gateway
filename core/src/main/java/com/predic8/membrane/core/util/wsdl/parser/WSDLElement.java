@@ -45,6 +45,22 @@ public class WSDLElement {
         return getAttribute("name");
     }
 
+    /**
+     * The prose of this element's {@code wsdl:documentation} child, or null where it has none or
+     * carries nothing but whitespace. Only the direct child counts: a {@code documentation} further
+     * down documents that descendant rather than this element.
+     */
+    public String getDocumentation() {
+        var children = element.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            var child = children.item(i);
+            if (!isWSDLElementWithName(child, "documentation")) continue;
+            String text = WSDLParserUtil.normalizeDocumentation(child.getTextContent());
+            if (text != null) return text;
+        }
+        return null;
+    }
+
     public Element getDefinitions() {
         return element.getOwnerDocument().getDocumentElement();
     }

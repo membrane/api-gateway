@@ -18,6 +18,7 @@ import com.predic8.membrane.core.resolver.ResolverMap;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
@@ -99,7 +100,9 @@ public class KeyStoreUtil {
             ks = KeyStore.getInstance(type, store.getProvider());
         else
             ks = KeyStore.getInstance(type);
-        ks.load(resourceResolver.resolve(ResolverMap.combine(baseLocation, store.getLocation())), password);
+        try (InputStream in = resourceResolver.resolve(ResolverMap.combine(baseLocation, store.getLocation()))) {
+            ks.load(in, password);
+        }
         return ks;
     }
 

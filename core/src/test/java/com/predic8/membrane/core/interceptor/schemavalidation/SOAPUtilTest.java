@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 
 import javax.xml.namespace.QName;
 import java.io.FileInputStream;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.predic8.membrane.annot.Constants.SoapVersion.SOAP11;
@@ -31,6 +32,7 @@ import static com.predic8.membrane.core.http.Response.ok;
 import static com.predic8.membrane.core.util.RecordingServerTestUtil.freePort;
 import static com.predic8.membrane.core.util.RecordingServerTestUtil.startRecordingServer;
 import static com.predic8.membrane.core.util.SOAPUtil.analyseSOAPMessage;
+import static com.predic8.membrane.core.util.SOAPUtil.extractFaultDetailElements;
 import static org.junit.jupiter.api.Assertions.*;
 
 
@@ -88,6 +90,100 @@ public class SOAPUtilTest {
         assertEquals(new QName(MEMBRANE_NS, "Bar"), result.soapElement());
     }
 
+    /**
+     * The header-skipping test is on the local name alone, so a payload element that happens to be
+     * named <code>Header</code> must not be swallowed by it - that would report a non-empty body as
+     * empty, and WSDLValidator rejects a request whose soapElement is null.
+     */
+    @Test
+    void analyseBodyElementNamedHeader() {
+        SOAPUtil.SOAPAnalysisResult result = analyseSOAPMessage(new XOPReconstitutor(), getMessageFromString("""
+                <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                  <s11:Body>
+                    <ns1:Header xmlns:ns1="http://membrane-api.io/">
+                      <ns1:value>42</ns1:value>
+                    </ns1:Header>
+                  </s11:Body>
+                </s11:Envelope>
+                """));
+        assertTrue(result.isSOAP());
+        assertFalse(result.isFault());
+        assertEquals(SOAP11, result.version());
+        assertEquals(new QName(MEMBRANE_NS, "Header"), result.soapElement());
+    }
+
+    /**
+     * The case the skip must still handle: a real soap:Header ahead of a non-empty Body.
+     */
+    @Test
+    void analyseSOAP11WithHeaderAndNonEmptyBody() {
+        SOAPUtil.SOAPAnalysisResult result = analyseSOAPMessage(new XOPReconstitutor(), getMessageFromString("""
+                <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                  <s11:Header>
+                    <ns1:tracking xmlns:ns1="http://membrane-api.io/">abc</ns1:tracking>
+                  </s11:Header>
+                  <s11:Body>
+                    <ns1:getBank xmlns:ns1="http://thomas-bayer.com/blz/"/>
+                  </s11:Body>
+                </s11:Envelope>
+                """));
+        assertTrue(result.isSOAP());
+        assertFalse(result.isFault());
+        assertEquals(SOAP11, result.version());
+        assertEquals(new QName(TB_NS, "getBank"), result.soapElement());
+    }
+
+    /**
+     * A header-only envelope is not a usable SOAP message: there is no Body, so nothing reports a
+     * payload element.
+     */
+    @Test
+    void analyseEnvelopeWithHeaderButNoBody() {
+        SOAPUtil.SOAPAnalysisResult result = analyseSOAPMessage(new XOPReconstitutor(), getMessageFromString("""
+                <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                  <s11:Header/>
+                </s11:Envelope>
+                """));
+        assertFalse(result.isSOAP());
+    }
+
+    @Test
+    void analyseSOAP12EmptyBody() {
+        SOAPUtil.SOAPAnalysisResult result = analyseSOAPMessage(new XOPReconstitutor(), getMessageFromString("""
+                <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope">
+                  <soap:Header></soap:Header>
+                  <soap:Body></soap:Body>
+                </soap:Envelope>
+                """));
+        assertTrue(result.isSOAP());
+        assertFalse(result.isFault());
+        assertEquals(SOAP12, result.version());
+        // Null soapElement is what WSDLValidator uses to reject an empty body: keep it pinned.
+        assertNull(result.soapElement());
+    }
+
+    @Test
+    void analyseSOAP11EmptyBody() {
+        SOAPUtil.SOAPAnalysisResult result = analyseSOAPMessage(new XOPReconstitutor(), getMessageFromString("""
+                <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                  <s11:Body></s11:Body>
+                </s11:Envelope>
+                """));
+        assertTrue(result.isSOAP());
+        assertFalse(result.isFault());
+        assertEquals(SOAP11, result.version());
+        assertNull(result.soapElement());
+    }
+
+    @Test
+    void analyseEnvelopeWithoutBody() {
+        SOAPUtil.SOAPAnalysisResult result = analyseSOAPMessage(new XOPReconstitutor(), getMessageFromString("""
+                <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                </s11:Envelope>
+                """));
+        assertFalse(result.isSOAP());
+    }
+
     @Test
     void analyseFault11() {
         SOAPUtil.SOAPAnalysisResult result = analyseSOAPMessage(new XOPReconstitutor(), getMessageFromString("""
@@ -123,6 +219,89 @@ public class SOAPUtilTest {
         assertTrue(result.isSOAP());
         assertTrue(result.isFault());
         assertEquals(SOAP11, result.version());
+    }
+
+    /**
+     * createSOAP11Fault's Fault element must carry the SOAP 1.1 envelope namespace, matching the
+     * bundled soap11-fault.xsd - otherwise Membrane-generated faults fail their own structural
+     * validation.
+     */
+    @Test
+    void createSOAP11FaultQualifiesFaultElement() throws Exception {
+        var fault = SOAPUtil.createSOAP11Fault(SOAPUtil.FaultCode.Client, "failed", null)
+                .getElementsByTagNameNS("*", "Fault").item(0);
+        assertEquals("http://schemas.xmlsoap.org/soap/envelope/", fault.getNamespaceURI());
+    }
+
+    @Test
+    void faultDetailEntries() {
+        assertEquals(List.of(new QName(TB_NS, "notFound"), new QName(MEMBRANE_NS, "hint")),
+                extractFaultDetailElements(new XOPReconstitutor(), getMessageFromString("""
+                        <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                          <s11:Body>
+                            <s11:Fault>
+                              <faultcode>Server</faultcode>
+                              <faultstring>Not found</faultstring>
+                              <detail>
+                                <ns1:notFound xmlns:ns1="http://thomas-bayer.com/blz/">
+                                  <nested/>
+                                </ns1:notFound>
+                                <ns2:hint xmlns:ns2="http://membrane-api.io/"/>
+                              </detail>
+                            </s11:Fault>
+                          </s11:Body>
+                        </s11:Envelope>
+                        """), SOAP11));
+    }
+
+    @Test
+    void faultDetailEntriesEmptyWithoutDetail() {
+        assertTrue(extractFaultDetailElements(new XOPReconstitutor(), getMessageFromString("""
+                <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                  <s11:Body>
+                    <s11:Fault>
+                      <faultcode>Server</faultcode>
+                      <faultstring>Not found</faultstring>
+                    </s11:Fault>
+                  </s11:Body>
+                </s11:Envelope>
+                """), SOAP11).isEmpty());
+    }
+
+    /**
+     * Nothing after the closing detail tag may be reported as an entry.
+     */
+    @Test
+    void faultDetailEntriesStopAtEndOfDetail() {
+        assertEquals(List.of(new QName(TB_NS, "notFound")),
+                extractFaultDetailElements(new XOPReconstitutor(), getMessageFromString("""
+                        <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                          <s11:Body>
+                            <s11:Fault>
+                              <detail>
+                                <ns1:notFound xmlns:ns1="http://thomas-bayer.com/blz/"/>
+                              </detail>
+                              <faultactor>http://example.com/actor</faultactor>
+                            </s11:Fault>
+                          </s11:Body>
+                        </s11:Envelope>
+                        """), SOAP11));
+    }
+
+    @Test
+    void faultDetailEntriesSoap12() {
+        assertEquals(List.of(new QName(MEMBRANE_NS, "hint")),
+                extractFaultDetailElements(new XOPReconstitutor(), getMessageFromString("""
+                        <s12:Envelope xmlns:s12="http://www.w3.org/2003/05/soap-envelope">
+                          <s12:Body>
+                            <s12:Fault>
+                              <s12:Code><s12:Value>Receiver</s12:Value></s12:Code>
+                              <s12:Reason><s12:Text>Not found</s12:Text></s12:Reason>
+                              <s12:Detail><ns2:hint xmlns:ns2="http://membrane-api.io/"/></s12:Detail>
+                            </s12:Fault>
+                          </s12:Body>
+                        </s12:Envelope>
+                        """), SOAP12));
     }
 
     @Test

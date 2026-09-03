@@ -15,14 +15,8 @@ package com.predic8.membrane.core.util;
 
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.ReadingBodyException;
-import com.predic8.membrane.core.interceptor.schemavalidation.SOAPXMLFilter;
-import com.predic8.membrane.core.util.xml.parser.HardenedSaxParser;
 import org.brotli.dec.BrotliInputStream;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
 
-import javax.xml.transform.Source;
-import javax.xml.transform.sax.SAXSource;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -69,14 +63,6 @@ public class MessageUtil {
 			return msg.getBody().getContent();
 		} catch (IOException e) {
 			throw new ReadingBodyException(e);
-		}
-	}
-	
-	public static Source getSOAPBody(InputStream stream) {
-		try {
-            return new SAXSource(new SOAPXMLFilter(HardenedSaxParser.newSAXParser().getXMLReader()), new InputSource(stream));
-		} catch (SAXException e) {
-			throw new RuntimeException("Error initializing SAXSource", e);
 		}
 	}
 }

@@ -1,0 +1,81 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.5.0.json
+#
+# Tutorial: Production Settings
+#
+# A runnable, checklist-driven example of how to harden a Membrane server for
+# production: a named API with rate limiting, JSON payload protection and a
+# security header, a Prometheus metrics endpoint, and a dedicated health probe
+# on an internal port. The repo-root PRODUCTION.md has the full guide covering
+# JVM, TLS, secrets, logging and rollout.
+#
+# 1.) Start Membrane:
+#       Linux/Mac:  ./membrane.sh -c 70-Production-Settings.yaml
+#       Windows:    membrane.cmd  -c 70-Production-Settings.yaml
+#
+# 2.) Call the hardened API and inspect the security header:
+#       curl -i http://localhost:2000/orders
+#
+#     The response carries:
+#       X-Content-Type-Options: nosniff
+#
+# 3.) Exceed the rate limit (11 calls within a minute) to trigger throttling:
+#       for i in $(seq 1 11); do curl -o /dev/null -s -w "%{http_code}\n" http://localhost:2000/orders; done
+#
+#     The 11th request returns 429 (Too Many Requests).
+#
+# 4.) Check the liveness/readiness probe on the internal port:
+#       curl -i http://localhost:9000/health
+#
+#     Returns 200 — wire this into your orchestrator's probes.
+#
+# 5.) Scrape metrics:
+#       curl http://localhost:2001/metrics | grep membrane_count
+#
+# Production checklist (see PRODUCTION.md for the full explanation):
+#   - Java 21 LTS; pin -Xms/-Xmx (or -XX:MaxRAMPercentage) via JAVA_OPTS
+#   - Single config source (apis.yaml); $schema pinned; every api: named
+#   - Real TLS certs on inbound ssl:; TLS 1.2/1.3 only; rotation automated
+#   - AuthN/AuthZ, CORS, jsonProtection and rateLimiter per API
+#   - Admin console/API bound to an internal-only interface
+#   - Prometheus metrics + OpenTelemetry tracing wired to your stack
+#   - Production log4j2.xml: INFO level, rotation, secrets redacted
+#   - >=2 instances behind a load balancer with backend health monitoring
+#   - Runs as non-root; only the required ports exposed
+
+api:
+  name: Orders API
+  port: 2000
+  path:
+    uri: /orders
+  flow:
+    - rateLimiter:
+        requestLimit: 10
+        requestLimitDuration: PT1M
+    - jsonProtection: {}
+    - setHeader:
+        name: X-Content-Type-Options
+        value: nosniff
+    - static:
+        src: '{"orders":[]}'
+        contentType: application/json
+    - return:
+        status: 200
+
+---
+api:
+  name: Metrics Endpoint for Scraping
+  port: 2001
+  path:
+    uri: /metrics
+  flow:
+    - prometheus: {}
+
+---
+api:
+  name: Health
+  port: 9000
+  path:
+    uri: /health
+  flow:
+    - return:
+        status: 200
