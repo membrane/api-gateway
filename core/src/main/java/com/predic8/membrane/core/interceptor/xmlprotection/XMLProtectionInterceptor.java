@@ -25,10 +25,11 @@ import com.predic8.membrane.core.interceptor.xmlprotection.XMLProtectionResult.R
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.xml.stream.Location;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
@@ -94,7 +95,7 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
         }
     }
 
-    private Outcome handleInternal(Exchange exc) throws Exception {
+    private Outcome handleInternal(Exchange exc) throws XMLStreamException, IOException {
 
         log.debug("Inspecting XML of content type: {}", exc.getRequest().getHeader().getContentType());
 
@@ -113,19 +114,26 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
         return CONTINUE;
     }
 
+    private XMLProtectionResult protect(Exchange exc) throws XMLStreamException, IOException {
+        final Request request = exc.getRequest();
+        final Charset charset;
+        try {
+            charset = resolveCharset(request);
+        } catch (XMLStreamException e) {
+            // Naming the actual problem, rather than the generic "not well-formed" wording
+            // XMLProtector uses once past the declaration: a broken or unsupported encoding
+            // attribute is not a security concern, so telling the sender what to fix is safe here.
+            return Rejected.at("XML declaration has an invalid or unsupported encoding", e);
+        }
+        return scanAndRewrite(request, charset);
+    }
+
     /**
      * Scans the body, and replaces it only when the protector actually took something out of it, so
      * that a document nothing was removed from reaches the backend exactly as the client sent it
      * rather than as a re-serialised copy.
      */
-    private XMLProtectionResult protect(Exchange exc) throws Exception {
-        Request request = exc.getRequest();
-        Charset charset;
-        try {
-            charset = resolveCharset(request);
-        } catch (XMLStreamException e) {
-            return invalidEncoding(e);
-        }
+    private XMLProtectionResult scanAndRewrite(Request request, Charset charset) throws XMLStreamException, IOException {
         ByteArrayOutputStream protectedBody = new ByteArrayOutputStream();
 
         // msg.getBodyAsStreamDecoded() delivers an InputStream from bytes (Chunks) -> close should not be an issue
@@ -144,28 +152,22 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
     /**
      * The HTTP charset the client declared takes precedence, matching the request as it was
      * labeled. Absent that, the document's own XML declaration decides - probed with a throwaway
-     * {@link javax.xml.stream.XMLStreamReader}, so a document without an explicit {@code encoding}
-     * still resolves to the XML default of UTF-8 rather than a guess that happens to also be UTF-8.
+     * {@link XMLStreamReader}, so a document without an explicit {@code encoding} still resolves to
+     * the XML default of UTF-8 rather than a guess that happens to also be UTF-8.
      */
-    private Charset resolveCharset(Request request) throws Exception {
-        String headerCharset = request.getHeader().getCharset();
+    private Charset resolveCharset(Request request) throws XMLStreamException, IOException {
+        final String headerCharset = request.getHeader().getCharset();
         if (headerCharset != null)
             return Charset.forName(headerCharset);
 
         try (var body = request.getBodyAsStreamDecoded()) {
-            return Charset.forName(inputFactory.get().createXMLStreamReader(body).getEncoding());
+            final XMLStreamReader probe = inputFactory.get().createXMLStreamReader(body);
+            try {
+                return Charset.forName(probe.getEncoding());
+            } finally {
+                probe.close(); // XMLStreamReader is not AutoCloseable; leaves body to the block above
+            }
         }
-    }
-
-    /**
-     * Naming the actual problem, rather than the generic "not well-formed" wording
-     * {@link XMLProtector} uses once past the declaration: a broken or unsupported {@code encoding}
-     * attribute is not a security concern, so telling the sender what to fix is safe here.
-     */
-    private static XMLProtectionResult invalidEncoding(XMLStreamException e) {
-        Location loc = e.getLocation();
-        return new Rejected("XML declaration has an invalid or unsupported encoding at line %d, column %d: %s"
-                .formatted(loc != null ? loc.getLineNumber() : -1, loc != null ? loc.getColumnNumber() : -1, e.getMessage()));
     }
 
     private Outcome reject(Exchange exc, Rejected rejected) {

@@ -14,6 +14,9 @@
 
 package com.predic8.membrane.core.interceptor.xmlprotection;
 
+import javax.xml.stream.Location;
+import javax.xml.stream.XMLStreamException;
+
 /**
  * The outcome of scanning one XML document. A rejection carries the reason it was rejected for, so
  * that every violation - a limit that was exceeded, a DOCTYPE pointing outside the document, or XML
@@ -52,5 +55,20 @@ public sealed interface XMLProtectionResult {
      * @param reason what was violated, for the log and for the error response outside production
      */
     record Rejected(String reason) implements XMLProtectionResult {
+
+        /**
+         * A rejection that names where in the document the parser stopped. A
+         * {@link XMLStreamException} need not carry a {@link Location}, so line and column are
+         * reported as {@code -1} when it does not.
+         *
+         * @param what what was wrong, put in front of the parser's own message
+         */
+        static Rejected at(String what, XMLStreamException e) {
+            Location loc = e.getLocation();
+            return new Rejected("%s at line %d, column %d: %s".formatted(what,
+                    loc != null ? loc.getLineNumber() : -1,
+                    loc != null ? loc.getColumnNumber() : -1,
+                    e.getMessage()));
+        }
     }
 }

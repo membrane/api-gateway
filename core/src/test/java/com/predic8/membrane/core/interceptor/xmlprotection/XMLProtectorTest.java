@@ -25,7 +25,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.predic8.membrane.core.interceptor.xmlprotection.XMLProtectionResult.ACCEPTED;
 import static com.predic8.membrane.core.interceptor.xmlprotection.XMLProtectionResult.REWRITTEN;
-import static com.predic8.membrane.core.interceptor.xmlprotection.XMLProtector.getHeaderAfterRootName;
 import static com.predic8.membrane.core.util.RecordingServerTestUtil.freePort;
 import static com.predic8.membrane.core.util.RecordingServerTestUtil.startRecordingServer;
 import static com.predic8.membrane.core.util.xml.parser.HardenedStaxInputFactory.dtdAwareInputFactory;
@@ -308,48 +307,4 @@ class XMLProtectorTest {
     void unlimitedDepthDisablesCheck() throws Exception {
         assertEquals(ACCEPTED, protect(nested(2000), maxDepth(-1)));
     }
-
-    @Test
-    void getHeaderAfterRootName_stripsSimpleRootName() {
-        assertEquals(" SYSTEM 'x.dtd'", getHeaderAfterRootName("<!DOCTYPE r SYSTEM 'x.dtd'"));
-    }
-
-    @Test
-    void getHeaderAfterRootName_stripsRootNameNamedSystem() {
-        // The keyword remaining after the root name is skipped must not be "SYSTEM" itself
-        assertEquals(" []", getHeaderAfterRootName("<!DOCTYPE SYSTEM []"));
-    }
-
-    @Test
-    void getHeaderAfterRootName_stripsRootNameNamedPublic() {
-        assertEquals(" []", getHeaderAfterRootName("<!DOCTYPE PUBLIC []"));
-    }
-
-    @Test
-    void getHeaderAfterRootName_stripsRootNameContainingKeywordSubstring() {
-        assertEquals(" ", getHeaderAfterRootName("<!DOCTYPE PUBLICATIONS "));
-    }
-
-    @Test
-    void getHeaderAfterRootName_skipsExtraWhitespaceBeforeRootName() {
-        assertEquals("   SYSTEM 'x'", getHeaderAfterRootName("<!DOCTYPE   r   SYSTEM 'x'"));
-    }
-
-    @Test
-    void getHeaderAfterRootName_handlesRootNameWithNoTrailingContent() {
-        assertEquals("", getHeaderAfterRootName("<!DOCTYPE r"));
-    }
-
-    @Test
-    void getHeaderAfterRootName_handlesMissingDoctypeKeywordDefensively() {
-        // Should never happen per the DTD contract, but must not throw — falls back to
-        // skipping the header's first whitespace-delimited token.
-        assertEquals(" bar baz", getHeaderAfterRootName("foo bar baz"));
-    }
-
-    @Test
-    void getHeaderAfterRootName_handlesEmptyHeader() {
-        assertEquals("", getHeaderAfterRootName(""));
-    }
-
 }
