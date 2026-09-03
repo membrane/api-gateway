@@ -27,6 +27,7 @@ import static com.predic8.membrane.core.http.Request.post;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.xmlprotection.XMLProtectionInterceptor.X_PROTECTION;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static org.junit.jupiter.api.Assertions.*;
 
 class XMLProtectionInterceptorTest {
@@ -125,6 +126,26 @@ class XMLProtectionInterceptorTest {
         // Should still contain the XML, but not the DTD
         assertTrue(exc.getRequest().getBodyAsStringDecoded().contains("<foo"));
         assertFalse(exc.getRequest().getBodyAsStringDecoded().contains("DOCTYPE"));
+    }
+
+    @Test
+    @DisplayName("Removing a DTD does not force UTF-8 decoding over the document's own declared encoding")
+    void removesDTDPreservesDeclaredNonUtf8Encoding() throws Exception {
+        String body = """
+                <?xml version="1.0" encoding="ISO-8859-1"?>
+                <!DOCTYPE foo [
+                     <!ELEMENT foo ANY >
+                   ]>
+                <foo>café</foo>
+                """;
+        // No charset in Content-Type - the request declares its encoding only via the XML declaration
+        Exchange exc = post("/").contentType(APPLICATION_XML).body(body.getBytes(ISO_8859_1)).buildExchange();
+
+        assertEquals(CONTINUE, interceptor().handleRequest(exc));
+
+        String result = new String(exc.getRequest().getBodyAsStreamDecoded().readAllBytes(), ISO_8859_1);
+        assertTrue(result.contains("café"), result);
+        assertFalse(result.contains("DOCTYPE"), result);
     }
 
     @Test

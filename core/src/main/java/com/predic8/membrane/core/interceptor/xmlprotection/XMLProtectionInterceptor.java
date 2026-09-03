@@ -29,6 +29,7 @@ import javax.xml.stream.XMLInputFactory;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.nio.charset.Charset;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.security;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
@@ -117,7 +118,7 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
      */
     private XMLProtectionResult protect(Exchange exc) throws Exception {
         Request request = exc.getRequest();
-        var charset = request.getCharsetOrDefault();
+        var charset = resolveCharset(request);
         ByteArrayOutputStream protectedBody = new ByteArrayOutputStream();
 
         // msg.getBodyAsStreamDecoded() delivers an InputStream from bytes (Chunks) -> close should not be an issue
@@ -130,6 +131,22 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
                 request.setBodyContent(protectedBody.toByteArray()); // the DTD was removed
             }
             return result;
+        }
+    }
+
+    /**
+     * The HTTP charset the client declared takes precedence, matching the request as it was
+     * labeled. Absent that, the document's own XML declaration decides - probed with a throwaway
+     * {@link javax.xml.stream.XMLStreamReader}, so a document without an explicit {@code encoding}
+     * still resolves to the XML default of UTF-8 rather than a guess that happens to also be UTF-8.
+     */
+    private Charset resolveCharset(Request request) throws Exception {
+        String headerCharset = request.getHeader().getCharset();
+        if (headerCharset != null)
+            return Charset.forName(headerCharset);
+
+        try (var body = request.getBodyAsStreamDecoded()) {
+            return Charset.forName(inputFactory.get().createXMLStreamReader(body).getEncoding());
         }
     }
 
