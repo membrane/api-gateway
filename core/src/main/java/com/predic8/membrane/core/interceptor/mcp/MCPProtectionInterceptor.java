@@ -36,11 +36,11 @@ import java.util.List;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.Request.METHOD_POST;
 import static com.predic8.membrane.core.http.Response.statusCode;
-import static com.predic8.membrane.core.jsonrpc.JSONRPCRequest.parse;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.jsonrpc.JSONRPCRequest.parse;
 import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.ERR_INVALID_REQUEST;
 import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.error;
 import static com.predic8.membrane.core.mcp.MCPToolsList.METHOD;
@@ -232,10 +232,10 @@ public class MCPProtectionInterceptor extends AbstractInterceptor {
         log.info("Rejected MCP request: {}", error.message());
         if (error.notification()) {
             exc.setResponse(statusCode(error.httpStatus()).bodyEmpty().build());
-            return RETURN;
+            return ABORT;
         }
         exc.setResponse(createErrorResponse(error, addAllowHeader));
-        return RETURN;
+        return ABORT;
     }
 
     private Response createErrorResponse(ValidationError error, boolean addAllowHeader) {

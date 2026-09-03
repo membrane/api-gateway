@@ -38,12 +38,9 @@ import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.MimeType.TEXT_PLAIN;
 import static com.predic8.membrane.core.http.Request.METHOD_GET;
 import static com.predic8.membrane.core.http.Request.METHOD_POST;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
-import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.ERR_INTERNAL_ERROR;
-import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.ERR_INVALID_PARAMS;
-import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.ERR_INVALID_REQUEST;
-import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.ERR_METHOD_NOT_FOUND;
+import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class JsonRPCProtectionInterceptorTest {
@@ -790,7 +787,7 @@ class JsonRPCProtectionInterceptorTest {
                 method,
                 contentType,
                 body,
-                RETURN,
+                ABORT,
                 expectedStatus,
                 expectedJsonRpcCode,
                 expectedMessageSnippet,
@@ -814,7 +811,7 @@ class JsonRPCProtectionInterceptorTest {
                 config,
                 requestBody,
                 responseBody,
-                RETURN,
+                ABORT,
                 500,
                 ERR_INTERNAL_ERROR,
                 expectedMessageSnippet,
@@ -928,7 +925,7 @@ class JsonRPCProtectionInterceptorTest {
                                Object expectedId,
                                boolean batchErrorShape) {
         private boolean expectsRejection() {
-            return expectedOutcome == RETURN;
+            return expectedOutcome == ABORT;
         }
 
         @Override
@@ -948,7 +945,7 @@ class JsonRPCProtectionInterceptorTest {
                                 Object expectedId,
                                 boolean batchErrorShape) {
         private boolean expectsRejection() {
-            return expectedOutcome == RETURN;
+            return expectedOutcome == ABORT;
         }
 
         @Override
