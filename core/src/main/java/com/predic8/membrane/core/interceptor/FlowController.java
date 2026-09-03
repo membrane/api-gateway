@@ -49,6 +49,13 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
  * When {@link Outcome#ABORT} is hit, or an interceptor throws, the chain is walked backwards the
  * same way, calling {@link Interceptor#handleAbort(Exchange)} instead. An exception is turned
  * into an error response first and is kept in the exchange property {@link #ABORTION_REASON}.
+ *
+ * This applies to the response flow as well: an interceptor that returns {@link Outcome#ABORT}
+ * from {@link Interceptor#handleResponse(Exchange)}, or throws there, switches the rest of the
+ * backwards walk to {@link Interceptor#handleAbort(Exchange)}. The interceptor that aborted does
+ * not get its own abort handler called. The whole chain then reports {@link Outcome#ABORT} to its
+ * caller, so an enclosing chain unwinds with abort handlers too, rather than with response
+ * handlers.
  */
 public class FlowController {
 
@@ -69,7 +76,6 @@ public class FlowController {
      * abort flow back.
      */
     public Outcome invokeRequestHandlers(Exchange exchange, List<Interceptor> interceptors) {
-        Flow flow = REQUEST;
         for (int i = 0; i < interceptors.size(); i++) {
             Interceptor interceptor = interceptors.get(i);
             if (!interceptor.handlesRequests())
@@ -79,29 +85,38 @@ public class FlowController {
                 Outcome o = interceptor.handleRequest(exchange);
                 if (o == RETURN) {
                     log.debug("Interceptor returned RETURN. Returning!");
-                    flow = RESPONSE;
-                    invokeResponseHandlers(exchange, interceptors, i);
+                    if (invokeResponseHandlers(exchange, interceptors, i) == ABORT)
+                        return ABORT;
                     return RETURN;
                 }
                 if (o == ABORT) {
                     log.debug("Interceptor returned ABORT. Aborting!");
-                    flow = Flow.ABORT;
                     invokeAbortHandlers(exchange, interceptors, i);
                     return ABORT;
                 }
             } catch (Exception e) {
-                String msg = "Aborting! Exception caused in %s during %s %s flow.".formatted(interceptor.getDisplayName(), exchange.getRequest().getUri(), flow);
-                log.warn(msg, e);
-                internal(router.getConfiguration().isProduction(),interceptor.getDisplayName())
-                        .detail(msg)
-                        .exception(e)
-                        .buildAndSetResponse(exchange);
-                exchange.setProperty(ABORTION_REASON, e);
-                invokeAbortHandlers(exchange, interceptors, i);
-                return ABORT;
+                return abortWithError(exchange, interceptors, i, REQUEST, e);
             }
         }
         return CONTINUE;
+    }
+
+    /**
+     * Turns an exception thrown by the interceptor at the given position into an error response,
+     * records it in the {@link #ABORTION_REASON} property and unwinds the interceptors before it
+     * by calling their {@link Interceptor#handleAbort(Exchange)}.
+     */
+    private Outcome abortWithError(Exchange exchange, List<Interceptor> interceptors, int pos, Flow flow, Exception e) {
+        Interceptor interceptor = interceptors.get(pos);
+        String msg = "Aborting! Exception caused in %s during %s %s flow.".formatted(interceptor.getDisplayName(), exchange.getRequest().getUri(), flow);
+        log.warn(msg, e);
+        internal(router.getConfiguration().isProduction(), interceptor.getDisplayName())
+                .detail(msg)
+                .exception(e)
+                .buildAndSetResponse(exchange);
+        exchange.setProperty(ABORTION_REASON, e);
+        invokeAbortHandlers(exchange, interceptors, pos);
+        return ABORT;
     }
 
     public Outcome invokeResponseHandlers(Exchange exchange, List<Interceptor> interceptors) {
@@ -109,28 +124,30 @@ public class FlowController {
     }
 
     /**
-     * Run interceptors backward from current position.
+     * Run interceptors backward from current position. Once one of them returns
+     * {@link Outcome#ABORT} or throws, the rest of the walk switches to
+     * {@link Interceptor#handleAbort(Exchange)}, unwinding exactly as {@link #invokeAbortHandlers}
+     * does: without looking at the applied flow.
      *
      * @param exchange Exchange
      * @param interceptors List of all interceptors
      * @param pos Position of called interceptors in the interceptors list
      */
     public Outcome invokeResponseHandlers(Exchange exchange, List<Interceptor> interceptors, int pos) {
-        boolean aborted = false;
         for (int i = pos - 1; i >= 0; i--) {
             Interceptor interceptor = interceptors.get(i);
             if (!interceptor.handlesResponses())
                 continue;
-            if (!aborted) {
+            try {
                 if (interceptor.handleResponse(exchange) == ABORT) {
-                    aborted = true;
+                    log.debug("Interceptor returned ABORT. Aborting!");
+                    invokeAbortHandlers(exchange, interceptors, i);
+                    return ABORT;
                 }
-                continue;
+            } catch (Exception e) {
+                return abortWithError(exchange, interceptors, i, RESPONSE, e);
             }
-            interceptor.handleAbort(exchange);
         }
-        if (aborted)
-            return ABORT;
         return CONTINUE;
     }
 
