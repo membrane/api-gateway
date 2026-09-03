@@ -23,7 +23,7 @@ class XMLLimitsTest {
 
     @Test
     void everyNegativeLimitMeansUnlimited() {
-        XMLLimits limits = new XMLLimits(-5, -3, -2, -7, true);
+        XMLLimits limits = new XMLLimits(-5, -3, -2, -7, UNLIMITED, true);
 
         assertEquals(UNLIMITED, limits.maxElementNameLength());
         assertEquals(UNLIMITED, limits.maxAttributeNameLength());
@@ -35,19 +35,19 @@ class XMLLimitsTest {
     void jaxpNameLimitClearsTheLargestNameLimitByTheFullHeadroom() {
         // A cap just above the limit would preempt our own check for every name more than one
         // character too long, turning a named violation back into "not well-formed"
-        assertEquals(2000 + JAXP_NAME_HEADROOM, new XMLLimits(1000, 2000, 1000, 50, true).jaxpNameLimit());
-        assertEquals(2000 + JAXP_NAME_HEADROOM, new XMLLimits(2000, 1000, 1000, 50, true).jaxpNameLimit());
+        assertEquals(2000 + JAXP_NAME_HEADROOM, new XMLLimits(1000, 2000, 1000, 50, UNLIMITED, true).jaxpNameLimit());
+        assertEquals(2000 + JAXP_NAME_HEADROOM, new XMLLimits(2000, 1000, 1000, 50, UNLIMITED, true).jaxpNameLimit());
     }
 
     @Test
     void anUnlimitedNameLengthLeavesTheJaxpCapOpen() {
-        assertEquals(0, new XMLLimits(UNLIMITED, 1000, 1000, 50, true).jaxpNameLimit());
-        assertEquals(0, new XMLLimits(1000, UNLIMITED, 1000, 50, true).jaxpNameLimit());
+        assertEquals(0, new XMLLimits(UNLIMITED, 1000, 1000, 50, UNLIMITED, true).jaxpNameLimit());
+        assertEquals(0, new XMLLimits(1000, UNLIMITED, 1000, 50, UNLIMITED, true).jaxpNameLimit());
     }
 
     @Test
     void aMaximalNameLengthDoesNotOverflowTheJaxpCap() {
-        assertEquals(0, new XMLLimits(Integer.MAX_VALUE, 1000, 1000, 50, true).jaxpNameLimit());
+        assertEquals(0, new XMLLimits(Integer.MAX_VALUE, 1000, 1000, 50, UNLIMITED, true).jaxpNameLimit());
     }
 
     @Test

@@ -35,14 +35,14 @@ import static com.fasterxml.jackson.core.JsonTokenId.*;
  * <p>Stateless with respect to a single document: one instance can scan any number of documents,
  * also concurrently.</p>
  */
-public class JsonProtectionScanner {
+public class JsonProtection {
 
     /** Duplicate keys are an attack in their own right, so the parser rejects them itself. */
     private final JsonFactory jsonFactory = new JsonFactory().enable(STRICT_DUPLICATE_DETECTION);
 
     private final JsonLimits limits;
 
-    public JsonProtectionScanner(JsonLimits limits) {
+    public JsonProtection(JsonLimits limits) {
         this.limits = limits;
     }
 
@@ -84,7 +84,7 @@ public class JsonProtectionScanner {
     }
 
     private void checkSize(CountingInputStream cis, JsonParser parser) throws JsonProtectionException {
-        if (cis.getCount() > limits.maxSize())
+        if (limits.exceedsMaxSize(cis.getCount()))
             throw JsonProtectionException.at("Exceeded maxSize.", parser);
     }
 

@@ -416,6 +416,48 @@ class HeaderTest {
         }
     }
 
+    @Nested
+    @DisplayName("Parsing a header block, as a MIME parser hands it over")
+    class ParsingABlock {
+
+        @Test
+        void fieldsAreReadInOrder() {
+            Header parsed = new Header("Content-Type: image/png\r\nX-Other: value\r\n\r\n");
+
+            assertEquals(2, parsed.getAllHeaderFields().length);
+            assertEquals("image/png", parsed.getContentType());
+            assertEquals("value", parsed.getFirstValue("X-Other"));
+        }
+
+        @Test
+        @DisplayName("A folded field is joined back together instead of throwing")
+        void foldedFieldIsUnfolded() {
+            Header parsed = new Header("X-Folded: first\r\n\tsecond\r\nX-Other: value\r\n\r\n");
+
+            assertEquals(2, parsed.getAllHeaderFields().length);
+            assertEquals("first\tsecond", parsed.getFirstValue("X-Folded"));
+            assertEquals("value", parsed.getFirstValue("X-Other"));
+        }
+
+        @Test
+        void aFoldedFieldCanSpanSeveralLines() {
+            Header parsed = new Header("Content-Disposition: form-data;\r\n name=\"logo\";\r\n filename=\"a.png\"\r\n\r\n");
+
+            assertEquals(1, parsed.getAllHeaderFields().length);
+            assertEquals("form-data; name=\"logo\"; filename=\"a.png\"",
+                    parsed.getFirstValue("Content-Disposition"));
+        }
+
+        @Test
+        @DisplayName("A continuation line before any field belongs to nothing and is dropped")
+        void leadingContinuationIsDropped() {
+            Header parsed = new Header(" orphaned\r\nX-Other: value\r\n\r\n");
+
+            assertEquals(1, parsed.getAllHeaderFields().length);
+            assertEquals("value", parsed.getFirstValue("X-Other"));
+        }
+    }
+
     @Test
     void sanitization() {
         Header h = new Header();

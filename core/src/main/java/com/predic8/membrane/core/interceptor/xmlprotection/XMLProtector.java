@@ -25,9 +25,11 @@ import javax.xml.stream.events.*;
 import java.io.Reader;
 import java.io.Writer;
 import java.nio.charset.Charset;
+import java.util.function.LongSupplier;
 
 import static com.predic8.membrane.core.interceptor.xmlprotection.DoctypeInspector.containsExternalEntityReferences;
 import static com.predic8.membrane.core.interceptor.xmlprotection.DoctypeInspector.hasExternalSubsetReference;
+import static com.predic8.membrane.core.interceptor.xmlprotection.XMLLimits.UNLIMITED;
 import static com.predic8.membrane.core.interceptor.xmlprotection.XMLLimits.exceeds;
 import static com.predic8.membrane.core.interceptor.xmlprotection.XMLProtectionResult.ACCEPTED;
 import static com.predic8.membrane.core.interceptor.xmlprotection.XMLProtectionResult.REWRITTEN;
@@ -38,8 +40,9 @@ import static com.predic8.membrane.core.interceptor.xmlprotection.XMLProtectionR
  * <li>DTDs are removed, or make the document fail if removal is switched off.</li>
  * <li>A DOCTYPE that points outside the document - an external entity declaration or an external
  *     subset - makes the document fail; the reference itself is never followed.</li>
- * <li>Element and attribute name length, attribute count per element and nesting depth can be
- *     limited. Names count as the document spells them, {@code prefix:localName}.</li>
+ * <li>Element and attribute name length, attribute count per element, nesting depth and the size of
+ *     the document can be limited. Names count as the document spells them,
+ *     {@code prefix:localName}.</li>
  * </ul>
  * <p>
  * A {@link Rejected} result means the copy stopped mid-document: the {@link Writer} is left at that
@@ -70,6 +73,7 @@ public class XMLProtector {
     private final XMLInputFactory inputFactory;
     private final XMLLimits limits;
     private final Charset charset;
+    private final LongSupplier bytesRead;
 
     /** Nesting depth of the element the reader is currently in. */
     private int depth;
@@ -79,12 +83,18 @@ public class XMLProtector {
      *                     {@link com.predic8.membrane.core.util.xml.parser.HardenedStaxInputFactory#dtdAwareInputFactory()}
      * @param charset      the charset {@code out} actually encodes with, see
      *                     {@link #withActualEncoding(StartDocument)}
+     * @param bytesRead    how many bytes of the document have been consumed so far, for
+     *                     {@link XMLLimits#maxSize()}. It is read once per event, so the document is
+     *                     stopped while it is being parsed rather than after; it overshoots by
+     *                     whatever the reader has buffered ahead of the parser.
      */
-    public XMLProtector(Writer out, XMLInputFactory inputFactory, XMLLimits limits, Charset charset) throws XMLStreamException {
+    public XMLProtector(Writer out, XMLInputFactory inputFactory, XMLLimits limits, Charset charset,
+                        LongSupplier bytesRead) throws XMLStreamException {
         this.writer = OUTPUT_FACTORY.get().createXMLEventWriter(out);
         this.inputFactory = inputFactory;
         this.limits = limits;
         this.charset = charset;
+        this.bytesRead = bytesRead;
     }
 
     /**
@@ -120,6 +130,10 @@ public class XMLProtector {
             XMLEvent event = parser.nextEvent();
             trackDepth(event);
 
+            Rejected oversized = checkSize();
+            if (oversized != null)
+                return oversized;
+
             Rejected violation = check(event);
             if (violation != null)
                 return violation;
@@ -139,6 +153,17 @@ public class XMLProtector {
         }
         writer.flush();
         return dtdRemoved ? REWRITTEN : ACCEPTED;
+    }
+
+    /**
+     * @return a rejection once the document has grown past {@link XMLLimits#maxSize()}, so an
+     * oversized document is stopped while it is being read rather than after it has been buffered
+     */
+    private @Nullable Rejected checkSize() {
+        int maxSize = limits.maxSize();
+        if (maxSize == UNLIMITED || bytesRead.getAsLong() <= maxSize)
+            return null;
+        return new Rejected("Document exceeds the maximum size of %d bytes.".formatted(maxSize));
     }
 
     /**

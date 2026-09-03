@@ -45,9 +45,12 @@ configuration:
 # Global plugins are applied to all endpoints.
 # Useful for central authentication, logging, or header manipulation.
 global:
-  # jsonProtection and xmlProtection can both be enabled because they detect the message type
-  - jsonProtection: {}
-  - xmlProtection: {}
+  # jsonProtection and xmlProtection can both be enabled: otherContentTypes: SKIP lets each of them
+  # pass on the message types the other one checks, instead of rejecting them.
+  - jsonProtection:
+      otherContentTypes: SKIP
+  - xmlProtection:
+      otherContentTypes: SKIP
   - request:
       - log:
           message: "Path: ${path}"

@@ -430,6 +430,61 @@ public class RequestTest {
                 """).getBody());
     }
 
+    /**
+     * RFC 9112 5.2: a server must reject obsolete line folding or unfold it into the preceding
+     * field. Membrane used to log the continuation line and drop it, forwarding the request with a
+     * header silently truncated - a disagreement between gateway and backend that request
+     * smuggling relies on.
+     */
+    @Test
+    void foldedHeaderLineIsRejected() {
+        assertThrows(MalformedHeaderException.class, () -> readRequest("""
+                POST /products HTTP/1.1
+                Host: example.com
+                X-Folded: first
+                \tsecond
+
+                """));
+    }
+
+    @Test
+    void headerLineWithoutColonIsRejected() {
+        assertThrows(MalformedHeaderException.class, () -> readRequest("""
+                POST /products HTTP/1.1
+                Host: example.com
+                ThisIsNotAFieldLine
+
+                """));
+    }
+
+    /**
+     * A field name is a token and must not be empty, so a line starting with the colon is
+     * malformed. It used to pass as a field with an empty name, because only a missing colon
+     * happened to throw.
+     */
+    @Test
+    void headerLineWithEmptyFieldNameIsRejected() {
+        assertThrows(MalformedHeaderException.class, () -> readRequest("""
+                POST /products HTTP/1.1
+                Host: example.com
+                : value
+
+                """));
+    }
+
+    /**
+     * The message ends up in the 400 response body, so the echoed line must not carry control
+     * characters of the client's choosing.
+     */
+    @Test
+    void rejectionMessageMasksTheOffendingLine() {
+        MalformedHeaderException e = assertThrows(MalformedHeaderException.class, () -> readRequest(
+                "POST /products HTTP/1.1\nHost: example.com\nX-Bad\007Line\n\n"));
+
+        assertTrue(e.getMessage().contains("X-Bad_Line"), e.getMessage());
+        assertFalse(e.getMessage().contains("\007"));
+    }
+
     private static Request readRequest(String message) throws IOException, EndOfStreamException {
         Request req = new Request();
         req.read(convertMessage(message), true);

@@ -26,6 +26,7 @@ import static com.predic8.membrane.core.http.MimeType.APPLICATION_XML;
 import static com.predic8.membrane.core.http.Request.post;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.protection.AbstractBodyProtectionInterceptor.OtherContentTypes.SKIP;
 import static com.predic8.membrane.core.interceptor.xmlprotection.XMLProtectionInterceptor.X_PROTECTION;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -274,6 +275,260 @@ class XMLProtectionInterceptorTest {
     @Test
     void unlimitedDepthDisablesCheck() throws Exception {
         assertEquals(CONTINUE, interceptor(i -> i.setMaxDepth(-1)).handleRequest(xml(nested(2000))));
+    }
+
+    // --- Multipart / attachments -------------------------------------------------------------
+
+    @Test
+    void xmlPartOfMultipartIsInspected() throws Exception {
+        Exchange exc = multipartExchange(part("data", APPLICATION_XML, "<averylongelementname/>"));
+
+        assertEquals(ABORT, interceptor(i -> i.setMaxElementNameLength(5)).handleRequest(exc));
+        assertRejectedByPolicy(exc);
+        assertTrue(bodyOf(exc).contains("Element name"), bodyOf(exc));
+        assertTrue(bodyOf(exc).contains("data"), "should name the offending part: " + bodyOf(exc));
+    }
+
+    @Test
+    void benignMultipartPasses() throws Exception {
+        Exchange exc = multipartExchange(part("data", APPLICATION_XML, "<foo/>"));
+
+        assertEquals(CONTINUE, interceptor().handleRequest(exc));
+        assertNull(exc.getResponse());
+    }
+
+    @Test
+    void everyXmlPartIsInspected() throws Exception {
+        Exchange exc = multipartExchange(
+                part("first", APPLICATION_XML, "<foo/>"),
+                part("second", APPLICATION_XML, "<averylongelementname/>"));
+
+        assertEquals(ABORT, interceptor(i -> i.setMaxElementNameLength(5)).handleRequest(exc));
+        assertTrue(bodyOf(exc).contains("second"), bodyOf(exc));
+    }
+
+    @Test
+    void nonXmlPartIsRejectedByDefault() throws Exception {
+        Exchange exc = multipartExchange(part("logo", "image/png", "PNG"));
+
+        assertEquals(ABORT, interceptor().handleRequest(exc));
+        assertEquals(415, exc.getResponse().getStatusCode());
+        assertTrue(bodyOf(exc).contains("is not XML"), bodyOf(exc));
+        assertTrue(bodyOf(exc).contains("logo"), "should name the offending part: " + bodyOf(exc));
+    }
+
+    @Test
+    void nonXmlPartIsSkippedWhenConfigured() throws Exception {
+        Exchange exc = multipartExchange(
+                part("logo", "image/png", "PNG"),
+                part("data", APPLICATION_XML, "<foo/>"));
+
+        assertEquals(CONTINUE, interceptor(i -> i.setOtherContentTypes(SKIP)).handleRequest(exc));
+        assertNull(exc.getResponse());
+    }
+
+    @Test
+    @DisplayName("A part without a Content-Type defaults to text/plain per RFC 2045 and is therefore not XML")
+    void partWithoutContentTypeIsNotXml() throws Exception {
+        Exchange exc = multipartExchange(part("data", null, "<foo/>"));
+
+        assertEquals(ABORT, interceptor().handleRequest(exc));
+        assertEquals(415, exc.getResponse().getStatusCode());
+    }
+
+    @Test
+    @DisplayName("A body without a Content-Type is still discarded, unlike in jsonProtection")
+    void bodyWithoutContentTypeIsStillRejected() throws Exception {
+        Exchange exc = post("/").body("<foo/>").buildExchange();
+        exc.getRequest().getHeader().removeFields("Content-Type");
+
+        assertEquals(ABORT, interceptor().handleRequest(exc));
+        assertEquals(415, exc.getResponse().getStatusCode());
+    }
+
+    @Test
+    @DisplayName("A multipart body nothing was removed from reaches the backend as the client sent it")
+    void multipartBodyIsNotModifiedWhenNothingIsRewritten() throws Exception {
+        Exchange exc = multipartExchange(part("data", APPLICATION_XML, "<foo  a='1'/>"));
+        byte[] before = exc.getRequest().getBodyAsStreamDecoded().readAllBytes();
+
+        assertEquals(CONTINUE, interceptor().handleRequest(exc));
+        assertArrayEquals(before, exc.getRequest().getBodyAsStreamDecoded().readAllBytes());
+    }
+
+    @Test
+    @DisplayName("A DTD is taken out of an XML part and the rebuilt body keeps every other part intact")
+    void dtdIsStrippedFromAnXmlPart() throws Exception {
+        Exchange exc = multipartExchange(
+                part("logo", "image/png", "PNG-not-really"),
+                part("data", APPLICATION_XML, DTD_DOCUMENT));
+
+        assertEquals(CONTINUE, interceptor(i -> i.setOtherContentTypes(SKIP)).handleRequest(exc));
+
+        String rebuilt = exc.getRequest().getBodyAsStringDecoded();
+        assertFalse(rebuilt.contains("DOCTYPE"), rebuilt);
+        assertTrue(rebuilt.contains("<foo"), rebuilt);
+        assertTrue(rebuilt.contains("PNG-not-really"), "the untouched part must survive: " + rebuilt);
+        assertTrue(rebuilt.contains("name=\"logo\""), "part headers must survive: " + rebuilt);
+        assertEquals(rebuilt.getBytes(UTF_8).length, exc.getRequest().getHeader().getContentLength());
+    }
+
+    /**
+     * The rewritten copy of a part must not be able to introduce the message's own MIME boundary:
+     * the character references below are inert on the wire but become a literal CRLF--boundary once
+     * the protector re-serialises the document, splitting the body for the backend.
+     */
+    @Test
+    void rewrittenPartCannotInjectAMultipartBoundary() throws Exception {
+        Exchange exc = multipartExchange(part("data", APPLICATION_XML,
+                "<?xml version=\"1.0\"?><!DOCTYPE foo [ <!ELEMENT foo ANY > ]><foo>&#xD;&#xA;--"
+                + BOUNDARY + "--</foo>"));
+
+        assertEquals(ABORT, interceptor().handleRequest(exc));
+        assertEquals(400, exc.getResponse().getStatusCode());
+        assertTrue(bodyOf(exc).contains("MIME boundary"), bodyOf(exc));
+    }
+
+    /**
+     * Part headers are copied through as bytes, so neither a raw UTF-8 filename (RFC 7578) nor a
+     * folded continuation line is mangled or made to throw by the rebuild.
+     */
+    @Test
+    void partHeadersSurviveTheRewriteByteForByte() throws Exception {
+        String unusual = "Content-Disposition: form-data; name=\"logo\"; filename=\"Grüße.png\"\r\n"
+                         + "X-Folded: first\r\n\tsecond\r\n"
+                         + "Content-Type: image/png\r\n\r\nPNG";
+        Exchange exc = multipartExchange(unusual, part("data", APPLICATION_XML, DTD_DOCUMENT));
+
+        assertEquals(CONTINUE, interceptor(i -> i.setOtherContentTypes(SKIP)).handleRequest(exc));
+
+        byte[] rebuilt = exc.getRequest().getBodyAsStreamDecoded().readAllBytes();
+        assertTrue(indexOf(rebuilt, unusual.getBytes(UTF_8)) >= 0,
+                "the part must be copied through byte for byte: " + new String(rebuilt, UTF_8));
+    }
+
+    @Test
+    void nestedMultipartIsRejected() throws Exception {
+        Exchange exc = multipartExchange(part("inner", "multipart/mixed; boundary=inner", "whatever"));
+
+        assertEquals(ABORT, interceptor().handleRequest(exc));
+        assertEquals(400, exc.getResponse().getStatusCode());
+        assertTrue(bodyOf(exc).contains("Nested multipart"), bodyOf(exc));
+    }
+
+    // --- Size limit --------------------------------------------------------------------------
+
+    @Test
+    void maxSizeRejectsAnOversizedDocument() throws Exception {
+        Exchange exc = xml("<foo>" + "x".repeat(20000) + "</foo>");
+
+        assertEquals(ABORT, interceptor(i -> i.setMaxSize(500)).handleRequest(exc));
+        assertRejectedByPolicy(exc);
+        assertTrue(bodyOf(exc).contains("maximum size"), bodyOf(exc));
+    }
+
+    @Test
+    void documentAtTheSizeLimitPasses() throws Exception {
+        assertEquals(CONTINUE, interceptor(i -> i.setMaxSize(5000)).handleRequest(xml("<foo/>")));
+    }
+
+    /** maxSize is per document, so an oversized part must be rejected without being buffered whole. */
+    @Test
+    void oversizedPartIsRejected() throws Exception {
+        Exchange exc = multipartExchange(part("data", APPLICATION_XML, "<foo>" + "x".repeat(20000) + "</foo>"));
+
+        assertEquals(ABORT, interceptor(i -> i.setMaxSize(500)).handleRequest(exc));
+        assertEquals(400, exc.getResponse().getStatusCode());
+        assertTrue(bodyOf(exc).contains("maximum size"), bodyOf(exc));
+        assertTrue(bodyOf(exc).contains("data"), bodyOf(exc));
+    }
+
+    /** Skipping a non-XML part needs its header only, so its body is never buffered. */
+    @Test
+    void oversizedNonXmlPartIsSkippedWithoutBuffering() throws Exception {
+        Exchange exc = multipartExchange(part("logo", "image/png", "x".repeat(20000)));
+
+        assertEquals(CONTINUE, interceptor(i -> {
+            i.setOtherContentTypes(SKIP);
+            i.setMaxSize(500);
+        }).handleRequest(exc));
+        assertNull(exc.getResponse());
+    }
+
+    // --- XOP / MTOM --------------------------------------------------------------------------
+
+    /**
+     * An XOP message is traversed as its raw parts rather than reassembled, so the root part is
+     * inspected as the XML it declares itself to be and the binary attachments follow the
+     * otherContentTypes policy.
+     */
+    @Test
+    void xopRootPartIsInspected() throws Exception {
+        assertEquals(ABORT, interceptor(i -> {
+            i.setOtherContentTypes(SKIP);
+            i.setMaxElementNameLength(3);
+        }).handleRequest(xopExchange()));
+    }
+
+    @Test
+    void xopAttachmentIsSkippedWhenConfigured() throws Exception {
+        Exchange exc = xopExchange();
+
+        assertEquals(CONTINUE, interceptor(i -> i.setOtherContentTypes(SKIP)).handleRequest(exc));
+        assertNull(exc.getResponse());
+    }
+
+    @Test
+    void xopAttachmentIsRejectedByDefault() throws Exception {
+        Exchange exc = xopExchange();
+
+        assertEquals(ABORT, interceptor().handleRequest(exc));
+        assertEquals(415, exc.getResponse().getStatusCode());
+    }
+
+    private static Exchange xopExchange() throws Exception {
+        try (var is = XMLProtectionInterceptorTest.class.getResourceAsStream("/multipart/embedded-byte-array.txt")) {
+            assertNotNull(is, "Test resource not found");
+            return post("/")
+                    .contentType("multipart/related; type=\"application/xop+xml\"; "
+                                 + "boundary=\"uuid:168683dc-43b3-4e71-8e66-efb633ef406b\"; "
+                                 + "start=\"<root.message@cxf.apache.org>\"; start-info=\"text/xml\"")
+                    .body(is.readAllBytes())
+                    .buildExchange();
+        }
+    }
+
+    private static final String BOUNDARY = "----MembraneTestBoundary";
+
+    private static final String DTD_DOCUMENT =
+            "<?xml version=\"1.0\"?><!DOCTYPE foo [ <!ELEMENT foo ANY > ]><foo/>";
+
+    private static String part(String name, String contentType, String body) {
+        return "Content-Disposition: form-data; name=\"" + name + "\"\r\n"
+               + (contentType == null ? "" : "Content-Type: " + contentType + "\r\n")
+               + "\r\n" + body;
+    }
+
+    private static Exchange multipartExchange(String... parts) throws Exception {
+        StringBuilder body = new StringBuilder();
+        for (String part : parts)
+            body.append("--").append(BOUNDARY).append("\r\n").append(part).append("\r\n");
+        body.append("--").append(BOUNDARY).append("--\r\n");
+
+        return post("/")
+                .contentType("multipart/form-data; boundary=" + BOUNDARY)
+                .body(body.toString().getBytes(UTF_8))
+                .buildExchange();
+    }
+
+    private static int indexOf(byte[] haystack, byte[] needle) {
+        outer:
+        for (int i = 0; i <= haystack.length - needle.length; i++) {
+            for (int j = 0; j < needle.length; j++)
+                if (haystack[i + j] != needle[j]) continue outer;
+            return i;
+        }
+        return -1;
     }
 
     private static void assertRejectedByPolicy(Exchange exc) {

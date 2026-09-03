@@ -23,6 +23,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.predic8.membrane.core.interceptor.xmlprotection.XMLLimits.UNLIMITED;
 import static com.predic8.membrane.core.interceptor.xmlprotection.XMLProtectionResult.ACCEPTED;
 import static com.predic8.membrane.core.interceptor.xmlprotection.XMLProtectionResult.REWRITTEN;
 import static com.predic8.membrane.core.util.RecordingServerTestUtil.freePort;
@@ -41,23 +42,23 @@ class XMLProtectorTest {
     private byte[] input, output;
 
     private static XMLLimits limits(boolean removeDTD) {
-        return new XMLLimits(NAME_LENGTH_LIMIT, ATTRIBUTE_NAME_LENGTH_LIMIT, ATTRIBUTE_LIMIT, DEPTH_LIMIT, removeDTD);
+        return new XMLLimits(NAME_LENGTH_LIMIT, ATTRIBUTE_NAME_LENGTH_LIMIT, ATTRIBUTE_LIMIT, DEPTH_LIMIT, UNLIMITED, removeDTD);
     }
 
     private static XMLLimits maxDepth(int maxDepth) {
-        return new XMLLimits(NAME_LENGTH_LIMIT, ATTRIBUTE_NAME_LENGTH_LIMIT, ATTRIBUTE_LIMIT, maxDepth, true);
+        return new XMLLimits(NAME_LENGTH_LIMIT, ATTRIBUTE_NAME_LENGTH_LIMIT, ATTRIBUTE_LIMIT, maxDepth, UNLIMITED, true);
     }
 
     private static XMLLimits maxElementNameLength(int maxElementNameLength) {
-        return new XMLLimits(maxElementNameLength, ATTRIBUTE_NAME_LENGTH_LIMIT, ATTRIBUTE_LIMIT, DEPTH_LIMIT, true);
+        return new XMLLimits(maxElementNameLength, ATTRIBUTE_NAME_LENGTH_LIMIT, ATTRIBUTE_LIMIT, DEPTH_LIMIT, UNLIMITED, true);
     }
 
     private static XMLLimits maxAttributeNameLength(int maxAttributeNameLength) {
-        return new XMLLimits(NAME_LENGTH_LIMIT, maxAttributeNameLength, ATTRIBUTE_LIMIT, DEPTH_LIMIT, true);
+        return new XMLLimits(NAME_LENGTH_LIMIT, maxAttributeNameLength, ATTRIBUTE_LIMIT, DEPTH_LIMIT, UNLIMITED, true);
     }
 
     private static XMLLimits maxAttributeCount(int maxAttributeCount) {
-        return new XMLLimits(NAME_LENGTH_LIMIT, ATTRIBUTE_NAME_LENGTH_LIMIT, maxAttributeCount, DEPTH_LIMIT, true);
+        return new XMLLimits(NAME_LENGTH_LIMIT, ATTRIBUTE_NAME_LENGTH_LIMIT, maxAttributeCount, DEPTH_LIMIT, UNLIMITED, true);
     }
 
     private XMLProtectionResult runOn(String resource) throws Exception {
@@ -81,7 +82,7 @@ class XMLProtectorTest {
     private XMLProtectionResult protect(byte[] xml, XMLLimits limits) throws Exception {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         OutputStreamWriter writer = new OutputStreamWriter(baos, UTF_8);
-        XMLProtectionResult result = new XMLProtector(writer, dtdAwareInputFactory(limits.jaxpNameLimit()), limits, UTF_8)
+        XMLProtectionResult result = new XMLProtector(writer, dtdAwareInputFactory(limits.jaxpNameLimit()), limits, UTF_8, () -> 0L)
                 .protect(new InputStreamReader(new ByteArrayInputStream(xml), UTF_8));
         writer.flush(); // Flush before calling baos.toByteArray() to avoid truncated output on some JDKs
         output = result instanceof Rejected ? null : baos.toByteArray();

@@ -14,12 +14,14 @@
 
 package com.predic8.membrane.core.interceptor.xmlprotection;
 
+import com.google.common.io.CountingInputStream;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.protection.AbstractBodyProtectionInterceptor;
+import com.predic8.membrane.core.interceptor.protection.Origin;
 import com.predic8.membrane.core.interceptor.xmlprotection.XMLProtectionResult.Rejected;
 import com.predic8.membrane.core.interceptor.xmlprotection.XMLProtectionResult.Rewritten;
 import org.slf4j.Logger;
@@ -28,26 +30,42 @@ import org.slf4j.LoggerFactory;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
+import java.io.*;
 import java.nio.charset.Charset;
+import java.util.function.Supplier;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.security;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
+import static com.predic8.membrane.core.http.MimeType.isXML;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_FLOW;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.xmlprotection.XMLLimits.UNLIMITED;
 import static com.predic8.membrane.core.util.xml.parser.HardenedStaxInputFactory.dtdAwareInputFactory;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
- * @description Prohibits XML documents to be passed through that look like XML attacks on older parsers. Too many
- * attributes, too long element names are such indications. DTD definitions will simply be removed.
+ * @description <p>Prohibits XML documents to be passed through that look like XML attacks on older parsers. Too many
+ * attributes, too long element names are such indications. DTD definitions will simply be removed.</p>
+ * <p>XML documents carried inside a multipart body are inspected part by part, so a document uploaded
+ * as an attachment is checked like a plain XML body. A part the plugin had to take a DTD out of is
+ * written back into the body; the other parts pass through unchanged.</p>
+ *
+ * @yaml
+ * <pre><code>
+ * - xmlProtection:
+ *     maxAttributeCount: 1000
+ *     maxElementNameLength: 1000
+ *     maxAttributeNameLength: 1000
+ *     maxDepth: 50
+ *     maxSize: 10000000
+ *     removeDTD: true
+ *     otherContentTypes: SKIP
+ * </code></pre>
+ *
  * @topic 3. Security and Validation
  */
 @MCElement(name = "xmlProtection")
-public class XMLProtectionInterceptor extends AbstractInterceptor {
+public class XMLProtectionInterceptor extends AbstractBodyProtectionInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(XMLProtectionInterceptor.class.getName());
     public static final String X_PROTECTION = "X-Protection";
@@ -57,6 +75,7 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
     private int maxElementNameLength = 1000;
     private int maxAttributeNameLength = 1000;
     private int maxDepth = -1;
+    private int maxSize = 100 * 1024 * 1024;
     private boolean removeDTD = true;
 
     private XMLLimits limits;
@@ -75,14 +94,14 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
     @Override
     public void init() {
         super.init();
-        limits = new XMLLimits(maxElementNameLength, maxAttributeNameLength, maxAttributeCount, maxDepth, removeDTD);
+        limits = new XMLLimits(maxElementNameLength, maxAttributeNameLength, maxAttributeCount, maxDepth, maxSize, removeDTD);
         inputFactory = ThreadLocal.withInitial(() -> dtdAwareInputFactory(limits.jaxpNameLimit()));
     }
 
     @Override
     public Outcome handleRequest(Exchange exc) {
         try {
-            return handleInternal(exc);
+            return protect(exc, exc.getRequest());
         } catch (Exception e) {
             log.info("Could not inspect the XML body: {}", e.getMessage());
             log.debug("", e);
@@ -95,99 +114,141 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
         }
     }
 
-    private Outcome handleInternal(Exchange exc) throws XMLStreamException, IOException {
-
-        log.debug("Inspecting XML of content type: {}", exc.getRequest().getHeader().getContentType());
-
-        if (exc.getRequest().isBodyEmpty()) {
-            log.info("body is empty -> request is not scanned");
-            return CONTINUE;
-        }
-
-        if (!exc.getRequest().isXML())
-            return rejectNonXML(exc);
-
-        if (protect(exc) instanceof Rejected rejected)
-            return reject(exc, rejected);
-
-        log.debug("protected against XML attacks");
-        return CONTINUE;
+    @Override
+    protected boolean inspects(String contentType) {
+        return isXML(contentType);
     }
 
-    private XMLProtectionResult protect(Exchange exc) throws XMLStreamException, IOException {
-        final Request request = exc.getRequest();
+    /**
+     * Applied per document, so in a multipart body no single XML part may exceed it. To cap the size
+     * of the entire request, use the <code>limit</code> plugin.
+     */
+    @Override
+    protected int maxDocumentSize() {
+        return limits.maxSize() == UNLIMITED ? Integer.MAX_VALUE : limits.maxSize();
+    }
+
+    /**
+     * A document without a Content-Type is not XML, whether it is a whole body or one part. This
+     * differs from <code>jsonProtection</code>, which parses an undeclared body anyway: rejecting an
+     * undeclared body is what this plugin has always done, and an XML document the sender did not
+     * label is better sent back than guessed at.
+     */
+    @Override
+    protected boolean holdsInspectableContent(Origin origin) {
+        return origin.contentType() != null && inspects(origin.contentType());
+    }
+
+    /**
+     * Resolves the encoding the document is written in before handing it to the protector: a broken
+     * encoding declaration is reported for what it is rather than as malformed XML.
+     */
+    @Override
+    protected Inspection inspectDocument(Exchange exc, Supplier<InputStream> document, Origin origin) {
+        log.debug("Inspecting XML of content type: {}", origin.contentType());
+
         final Charset charset;
         try {
-            charset = resolveCharset(request);
+            charset = resolveCharset(origin.header(), document);
         } catch (XMLStreamException e) {
             // Naming the actual problem, rather than the generic "not well-formed" wording
             // XMLProtector uses once past the declaration: a broken or unsupported encoding
             // attribute is not a security concern, so telling the sender what to fix is safe here.
-            return Rejected.at("XML declaration has an invalid or unsupported encoding", e);
+            return Inspection.failed(reject(exc, Rejected.at("XML declaration has an invalid or unsupported encoding", e), origin));
         }
-        return scanAndRewrite(request, charset);
+        return scanAndRewrite(exc, document.get(), charset, origin);
     }
 
     /**
-     * Scans the body, and replaces it only when the protector actually took something out of it, so
-     * that a document nothing was removed from reaches the backend exactly as the client sent it
-     * rather than as a re-serialised copy.
+     * Scans the document, and hands back the protector's copy of it only when the protector actually
+     * took something out - so a document nothing was removed from reaches the backend exactly as the
+     * client sent it rather than as a re-serialised copy.
      */
-    private XMLProtectionResult scanAndRewrite(Request request, Charset charset) throws XMLStreamException, IOException {
-        ByteArrayOutputStream protectedBody = new ByteArrayOutputStream();
+    private Inspection scanAndRewrite(Exchange exc, InputStream document, Charset charset, Origin origin) {
+        ByteArrayOutputStream protectedDocument = new ByteArrayOutputStream();
+        CountingInputStream counting = new CountingInputStream(document);
 
-        // msg.getBodyAsStreamDecoded() delivers an InputStream from bytes (Chunks) -> close should not be an issue
-        try (OutputStreamWriter out = new OutputStreamWriter(protectedBody, charset);
-             InputStreamReader in = new InputStreamReader(request.getBodyAsStreamDecoded(), charset)) {
+        // The streams read from bytes already held by the message -> closing them is not an issue.
+        try (OutputStreamWriter out = new OutputStreamWriter(protectedDocument, charset);
+             InputStreamReader in = new InputStreamReader(counting, charset)) {
 
-            XMLProtectionResult result = new XMLProtector(out, inputFactory.get(), limits, charset).protect(in);
+            XMLProtectionResult result = new XMLProtector(out, inputFactory.get(), limits, charset, counting::getCount)
+                    .protect(in);
+            if (result instanceof Rejected rejected)
+                return Inspection.failed(reject(exc, rejected, origin));
             if (result instanceof Rewritten) {
                 out.flush(); // ensure all bytes are written before reading
-                request.setBodyContent(protectedBody.toByteArray()); // the DTD was removed
+                return Inspection.rewritten(protectedDocument.toByteArray()); // the DTD was removed
             }
-            return result;
+        } catch (XMLStreamException | IOException e) {
+            return Inspection.failed(rejectUnprocessableBody(exc, origin, e.getMessage()));
         }
+        log.debug("protected against XML attacks");
+        return Inspection.passed();
     }
 
     /**
-     * The HTTP charset the client declared takes precedence, matching the request as it was
+     * The HTTP charset the sender declared takes precedence, matching the document as it was
      * labeled. Absent that, the document's own XML declaration decides - probed with a throwaway
-     * {@link XMLStreamReader}, so a document without an explicit {@code encoding} still resolves to
-     * the XML default of UTF-8 rather than a guess that happens to also be UTF-8.
+     * {@link XMLStreamReader} over a second read of the document, so a document without an explicit
+     * {@code encoding} still resolves to the XML default of UTF-8 rather than a guess that happens to
+     * also be UTF-8.
+     *
+     * @param header the header the document was labeled by: the message's, or the part's
      */
-    private Charset resolveCharset(Request request) throws XMLStreamException, IOException {
-        final String headerCharset = request.getHeader().getCharset();
+    private Charset resolveCharset(Header header, Supplier<InputStream> document) throws XMLStreamException {
+        final String headerCharset = header.getCharset();
         if (headerCharset != null)
             return Charset.forName(headerCharset);
 
-        try (var body = request.getBodyAsStreamDecoded()) {
-            final XMLStreamReader probe = inputFactory.get().createXMLStreamReader(body);
+        try (var probed = document.get()) {
+            final XMLStreamReader probe = inputFactory.get().createXMLStreamReader(probed);
             try {
-                return Charset.forName(probe.getEncoding());
+                // A reader need not report an encoding; the XML default applies when it does not.
+                return probe.getEncoding() != null ? Charset.forName(probe.getEncoding()) : UTF_8;
             } finally {
-                probe.close(); // XMLStreamReader is not AutoCloseable; leaves body to the block above
+                probe.close(); // XMLStreamReader is not AutoCloseable; leaves the stream to the block above
             }
+        } catch (IOException e) {
+            throw new XMLStreamException("Could not read the document to probe its encoding.", e);
         }
     }
 
-    private Outcome reject(Exchange exc, Rejected rejected) {
+    private Outcome reject(Exchange exc, Rejected rejected, Origin origin) {
         log.info("Request was rejected by XML protection: {}", rejected.reason());
         security(router.getConfiguration().isProduction(), getDisplayName())
                 .title(POLICY_VIOLATED)
                 .status(400)
-                .detail(rejected.reason())
+                .detail(origin.describe(rejected.reason()))
                 .buildAndSetResponse(exc);
         exc.getResponse().getHeader().add(X_PROTECTION, POLICY_VIOLATED);
         return ABORT;
     }
 
-    private Outcome rejectNonXML(Exchange exc) {
-        String msg = "Content-Type %s is not XML.".formatted(exc.getRequest().getHeader().getContentType());
+    @Override
+    protected Outcome rejectOtherContentType(Exchange exc, Origin origin) {
+        String msg = "Content-Type %s is not XML. Set otherContentTypes to \"skip\" to pass non-XML content through."
+                .formatted(origin.contentType());
         log.info(msg);
         user(router.getConfiguration().isProduction(), getDisplayName())
                 .title("Request discarded by xmlProtection")
                 .status(415)
-                .detail(msg)
+                .detail(origin.describe(msg))
+                .buildAndSetResponse(exc);
+        return ABORT;
+    }
+
+    /**
+     * A multipart body that cannot be traversed or put back together is the sender's fault, not the
+     * gateway's, so it is a 400 rather than the 500 an unexpected failure gets.
+     */
+    @Override
+    protected Outcome rejectUnprocessableBody(Exchange exc, Origin origin, String reason) {
+        log.info("Request was rejected by XML protection: {}", reason);
+        user(router.getConfiguration().isProduction(), getDisplayName())
+                .title("Request discarded by xmlProtection")
+                .status(400)
+                .detail(origin.describe(reason))
                 .buildAndSetResponse(exc);
         return ABORT;
     }
@@ -247,6 +308,22 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 
     public int getMaxDepth() {
         return maxDepth;
+    }
+
+    /**
+     * @description Maximum size in bytes of a single XML document. The limit is per document, so in a
+     * multipart body it applies to each XML part separately rather than to the whole upload. To cap
+     * the size of the entire request, use the <code>limit</code> plugin with its
+     * <code>maxBodyLength</code> attribute. A value of -1 disables the limit.
+     * @default 104857600
+     */
+    @MCAttribute
+    public void setMaxSize(int maxSize) {
+        this.maxSize = maxSize;
+    }
+
+    public int getMaxSize() {
+        return maxSize;
     }
 
     /**

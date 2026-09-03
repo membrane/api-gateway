@@ -15,8 +15,8 @@
 package com.predic8.membrane.core.interceptor.xmlprotection;
 
 /**
- * What {@link XMLProtector} enforces on a single XML document: the four size limits, and whether a
- * DTD is removed from the document or makes it fail.
+ * What {@link XMLProtector} enforces on a single XML document: the size limits, and whether a DTD is
+ * removed from the document or makes it fail.
  *
  * <p>The two name limits apply to the name as it appears in the document, {@code prefix:localName},
  * because a prefix is as attacker-controlled as the local name is.</p>
@@ -25,7 +25,7 @@ package com.predic8.membrane.core.interceptor.xmlprotection;
  * configured {@code -1} and a configured {@code -5} behave alike.</p>
  */
 public record XMLLimits(int maxElementNameLength, int maxAttributeNameLength, int maxAttributeCount,
-                        int maxDepth, boolean removeDTD) {
+                        int maxDepth, int maxSize, boolean removeDTD) {
 
     public static final int UNLIMITED = -1;
 
@@ -37,6 +37,7 @@ public record XMLLimits(int maxElementNameLength, int maxAttributeNameLength, in
         maxAttributeNameLength = normalize(maxAttributeNameLength);
         maxAttributeCount = normalize(maxAttributeCount);
         maxDepth = normalize(maxDepth);
+        maxSize = normalize(maxSize);
     }
 
     private static int normalize(int limit) {
