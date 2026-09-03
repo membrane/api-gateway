@@ -25,7 +25,9 @@ import com.predic8.membrane.core.interceptor.xmlprotection.XMLProtectionResult.R
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.xml.stream.Location;
 import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamException;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -118,7 +120,12 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
      */
     private XMLProtectionResult protect(Exchange exc) throws Exception {
         Request request = exc.getRequest();
-        var charset = resolveCharset(request);
+        Charset charset;
+        try {
+            charset = resolveCharset(request);
+        } catch (XMLStreamException e) {
+            return invalidEncoding(e);
+        }
         ByteArrayOutputStream protectedBody = new ByteArrayOutputStream();
 
         // msg.getBodyAsStreamDecoded() delivers an InputStream from bytes (Chunks) -> close should not be an issue
@@ -148,6 +155,17 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
         try (var body = request.getBodyAsStreamDecoded()) {
             return Charset.forName(inputFactory.get().createXMLStreamReader(body).getEncoding());
         }
+    }
+
+    /**
+     * Naming the actual problem, rather than the generic "not well-formed" wording
+     * {@link XMLProtector} uses once past the declaration: a broken or unsupported {@code encoding}
+     * attribute is not a security concern, so telling the sender what to fix is safe here.
+     */
+    private static XMLProtectionResult invalidEncoding(XMLStreamException e) {
+        Location loc = e.getLocation();
+        return new Rejected("XML declaration has an invalid or unsupported encoding at line %d, column %d: %s"
+                .formatted(loc != null ? loc.getLineNumber() : -1, loc != null ? loc.getColumnNumber() : -1, e.getMessage()));
     }
 
     private Outcome reject(Exchange exc, Rejected rejected) {

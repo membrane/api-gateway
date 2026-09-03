@@ -96,6 +96,19 @@ class XMLProtectionInterceptorTest {
     }
 
     @Test
+    @DisplayName("A malformed XML declaration hit while probing the encoding is a policy violation naming the encoding, not a server error")
+    void malformedXmlDeclarationIsRejected() throws Exception {
+        Exchange exc = post("/")
+                .contentType(APPLICATION_XML) // no charset - forces the encoding probe to run
+                .body("<?xml version=\"1.0\" encoding=\"not-a-real-charset\"?><foo/>")
+                .buildExchange();
+
+        assertEquals(ABORT, interceptor().handleRequest(exc));
+        assertRejectedByPolicy(exc);
+        assertTrue(bodyOf(exc).contains("invalid or unsupported encoding"), bodyOf(exc));
+    }
+
+    @Test
     @DisplayName("A body that cannot even be decoded is a server error, not a policy violation")
     void undecodableBodyIsReportedAsServerError() throws Exception {
         Exchange exc = post("/")
