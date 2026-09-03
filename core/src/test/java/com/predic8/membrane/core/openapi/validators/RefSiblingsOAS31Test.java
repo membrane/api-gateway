@@ -122,17 +122,32 @@ class RefSiblingsOAS31Test extends AbstractValidatorTest {
     }
 
     /**
-     * Descending into Node stops where it repeats, but the keywords next to that $ref are not
-     * recursive and still have to be applied at the truncation boundary.
+     * Node.next points back at Node, so both the referenced schema and the keywords next to that
+     * $ref apply again at every nested node. The recursion follows the instance, it does not stop
+     * at the first repetition of the schema.
      */
     @Test
-    void siblingIsAppliedWhereRecursionIsTruncated() {
-        Map<String, Object> node = Map.of("id", "1", "next", Map.of("id", "2"));
-        assertEquals(List.of(), messages(validate("nodeRef", node)));
+    void siblingIsAppliedOnEveryLevelOfRecursion() {
+        assertEquals(List.of(), messages(validate("nodeRef", Map.of("id", "1", "next", Map.of("id", "2")))));
 
-        // "next" requires an id next to its $ref, and nothing else is validated at that depth
+        // "next" requires an id next to its $ref
         ValidationError error = single(validate("nodeRef", Map.of("id", "1", "next", Map.of())));
         assertEquals("Required property id is missing.", error.getMessage());
+        assertEquals("REQUEST/BODY#/nodeRef/next/id", error.getContext().getLocationForRequest());
+
+        error = single(validate("nodeRef", Map.of("id", "1", "next", Map.of("id", "2", "next", Map.of()))));
+        assertEquals("Required property id is missing.", error.getMessage());
+        assertEquals("REQUEST/BODY#/nodeRef/next/next/id", error.getContext().getLocationForRequest());
+    }
+
+    /**
+     * Not only the siblings: the referenced schema itself keeps applying below the first
+     * repetition, so Node's own `id: string` is validated at every level.
+     */
+    @Test
+    void refTargetIsAppliedOnEveryLevelOfRecursion() {
+        ValidationError error = single(validate("nodeRef", Map.of("id", "1", "next", Map.of("id", 42))));
+        assertEquals("42 is of type integer which does not match any of [string]", error.getMessage());
         assertEquals("REQUEST/BODY#/nodeRef/next/id", error.getContext().getLocationForRequest());
     }
 

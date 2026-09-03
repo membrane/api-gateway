@@ -43,12 +43,22 @@ public class ValidationContext {
     private int statusCode;
 
     /**
-     * Names of the component schemas whose $ref has already been resolved on the current branch of
-     * the validation. Used solely to break reference cycles; unlike {@link #complexType} it is never
-     * reported to the caller. Immutable and copied on write, so it is scoped to the branch rather
-     * than to the whole validation run.
+     * The component schemas whose $ref has already been resolved on the current branch of the
+     * validation, each paired with the JSON pointer of the value it was resolved for. Used solely
+     * to break reference cycles; unlike {@link #complexType} it is never reported to the caller.
+     * Immutable and copied on write, so it is scoped to the branch rather than to the whole
+     * validation run.
+     * <p>
+     * The pointer is part of the key because a recursive schema is not a cycle: {@code Node.next}
+     * pointing back at {@code Node} has to be validated again for every nested node. Only a
+     * reference that returns to the same schema for the same value cannot make progress.
      */
-    private Set<String> visitedRefs = Set.of();
+    private Set<VisitedRef> visitedRefs = Set.of();
+
+    /**
+     * A resolved $ref, identified by the referenced schema and the value it was resolved for.
+     */
+    private record VisitedRef(String name, String jsonPointer) {}
 
     public enum Content { JSON, XML }
 
@@ -210,16 +220,25 @@ public class ValidationContext {
     }
 
     /**
-     * Marks the component schema {@code name} as resolved on this branch, see {@link #visitedRefs}.
+     * Marks the component schema {@code name} as resolved for the value at the current JSON
+     * pointer, see {@link #visitedRefs}.
      */
     public ValidationContext visitRef(String name) {
         ValidationContext ctx = this.deepCopy();
-        ctx.visitedRefs = Stream.concat(visitedRefs.stream(), Stream.of(name)).collect(toUnmodifiableSet());
+        ctx.visitedRefs = Stream.concat(visitedRefs.stream(), Stream.of(visitedRef(name))).collect(toUnmodifiableSet());
         return ctx;
     }
 
+    /**
+     * @return whether {@code name} has already been resolved for the value at the current JSON
+     * pointer, which means resolving it again cannot make progress
+     */
     public boolean hasVisited(String name) {
-        return visitedRefs.contains(name);
+        return visitedRefs.contains(visitedRef(name));
+    }
+
+    private VisitedRef visitedRef(String name) {
+        return new VisitedRef(name, jsonPointer);
     }
 
     public ValidationContext content(Content content) {

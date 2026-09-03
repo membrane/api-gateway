@@ -112,8 +112,11 @@ public class SchemaValidator implements JsonSchemaValidator {
                 ? validateKeywords(ctx.visitRef(name), schema, obj, value)
                 : null;
 
-        // Already on this branch: stop descending instead of recursing forever. Recursive
-        // schemas are legal, so the truncated branch contributes no errors.
+        // This schema was already resolved for this very value, so resolving it again cannot make
+        // progress: stop descending instead of recursing forever. A recursive schema that follows
+        // the instance (Node.next -> Node) reaches a new value on every level and is validated
+        // there; only a cycle that closes on the same value is truncated, and it contributes no
+        // errors.
         if (ctx.hasVisited(name))
             return errors.add(siblingErrors);
 
