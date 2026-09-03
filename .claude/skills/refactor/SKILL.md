@@ -20,14 +20,13 @@ workflow is what keeps it safe.
    catalog entries in one edit, and never mix a refactoring with a behavior change — if you spot a
    bug mid-refactor, note it and finish the refactor first, then fix it as a separate change with
    its own failing test.
-3. **Run the affected tests** after each step, not just at the end, with the runner that matches
-   the module you touched (see CLAUDE.md; `-Dtest=`/`-Dit.test=` do not isolate a class here):
-   `core` → `test/scripts/run-core-test.sh <FQCN or package>`; a distribution/tutorial IT → the
-   `run-example-test` skill; `annot`/`war` → plain Maven on that module
-   (`mvn -pl annot test -Duser.language=en -Duser.country=US`). Green after every step is the
-   safety net for behavior, but a sequential test run does not establish thread safety: a
-   refactoring that changes what is shared between threads needs a targeted concurrent test
-   (below).
+3. **Run the affected tests** after each step, not just at the end, and delegate the run to the
+   `test-runner` agent (CLAUDE.md) instead of hand-rolling Maven — it picks the runner for what
+   you touched (a `core` class or package, a distribution/tutorial IT, or a module-wide run for
+   `annot`; `war` has no tests of its own) and knows the traps that make a hand-rolled command
+   silently run the wrong scope. Green after every step is the safety net for behavior, but a
+   sequential test run does not establish thread safety: a refactoring that changes what is
+   shared between threads needs a targeted concurrent test (below).
 4. **Report** at the end: which refactorings were applied to which methods, what is now testable
    that wasn't, whether anything you moved changed what is shared between threads, and anything
    you deliberately left alone.
