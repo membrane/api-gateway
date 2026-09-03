@@ -110,6 +110,11 @@ public class SchemaValidator implements JsonSchemaValidator {
                 throw new RuntimeException("Should not happen!");
         }
 
+        // A nullable schema accepts null itself, so validation stops here instead of descending into
+        // allOf/anyOf/oneOf/not subschemas, which are typically not nullable and would reject it. See #3119.
+        if ((value == null || value instanceof NullNode) && isNullable())
+            return errors;
+
         if (schema.getAllOf() != null)
             errors.add(new AllOfValidator(api, schema).validate(ctx, obj));
 
@@ -126,9 +131,6 @@ public class SchemaValidator implements JsonSchemaValidator {
 
         if (schema.getNot() != null)
             errors.add(new NotValidator(api, schema).validate(ctx, obj));
-
-        if ((value == null || value instanceof NullNode) && isNullable())
-            return errors;
 
         errors.add(new NumberRestrictionValidator(schema).validate(ctx, value));
         errors.add(validateByType(ctx, value));

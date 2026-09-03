@@ -98,4 +98,31 @@ class XMLProtectionInterceptorTest {
         interceptor.setMaxAttributeCount(3);
         assertEquals(ABORT, interceptor.handleRequest(exc));
     }
+
+    @Test
+    void tooDeeplyNested() throws Exception {
+        Exchange exc = post("/").contentType(APPLICATION_XML).body(nested(4)).buildExchange();
+
+        interceptor.setMaxDepth(4);
+        assertEquals(CONTINUE, interceptor.handleRequest(exc));
+        interceptor.setMaxDepth(3);
+        assertEquals(ABORT, interceptor.handleRequest(exc));
+        interceptor.setMaxDepth(1000);
+    }
+
+    @Test
+    void unlimitedDepthDisablesCheck() throws Exception {
+        Exchange exc = post("/").contentType(APPLICATION_XML).body(nested(2000)).buildExchange();
+
+        interceptor.setMaxDepth(-1);
+        assertEquals(CONTINUE, interceptor.handleRequest(exc));
+        interceptor.setMaxDepth(1000);
+    }
+
+    private static String nested(int depth) {
+        StringBuilder sb = new StringBuilder("<a>");
+        for (int i = 1; i < depth; i++) sb.append("<a>");
+        for (int i = 0; i < depth; i++) sb.append("</a>");
+        return sb.toString();
+    }
 }

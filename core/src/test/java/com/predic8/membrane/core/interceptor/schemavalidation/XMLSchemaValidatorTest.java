@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.schemavalidation;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.HeaderName;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.router.TestRouter;
 import org.junit.jupiter.api.BeforeEach;
@@ -69,6 +70,8 @@ class XMLSchemaValidatorTest {
         assertEquals(APPLICATION_PROBLEM_JSON, exc.getResponse().getHeader().getContentType());
         assertEquals(400,exc.getResponse().getStatusCode());
         assertEquals(REQUEST.name(), exc.getResponse().getHeader().getFirstValue(VALIDATION_ERROR_SOURCE));
+        assertEquals(1, exc.getResponse().getHeader().getValues(new HeaderName(VALIDATION_ERROR_SOURCE)).size(),
+                "the flow marker must be set exactly once");
         JsonNode jn = om.readTree(exc.getResponse().getBodyAsStreamDecoded());
 
         assertEquals("XML message validation failed", jn.get("title").asText());

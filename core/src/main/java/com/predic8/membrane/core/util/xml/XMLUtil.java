@@ -104,11 +104,19 @@ public class XMLUtil {
 
     /**
      * For XML processing sometimes an InputSource is needed.
+     * Passes the body as a byte stream so the parser can determine the encoding
+     * itself (from the message's charset or, failing that, the XML declaration/BOM)
+     * instead of it being pre-decoded with the JVM default charset.
      * @param msg Message with body
      * @return InputSource of the message body
      */
     public static @NotNull InputSource getInputSource(Message msg) {
-        return new InputSource(new InputStreamReader(msg.getBodyAsStreamDecoded()));
+        InputSource source = new InputSource(msg.getBodyAsStreamDecoded());
+        String charset = msg.getHeader().getCharset();
+        if (charset != null) {
+            source.setEncoding(charset);
+        }
+        return source;
     }
 
     public static void mapToXml(Document doc, Element parent, Map<String, Object> map) {

@@ -19,10 +19,12 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.router.*;
+import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.*;
 
 import static com.google.common.base.Strings.*;
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.interceptor.json.JsonProtectionInterceptor.OtherContentTypes.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.util.ProblemDetailsTestUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -92,6 +94,14 @@ public class JsonProtectionInterceptorTest {
     @Test
     public void empty() throws Exception {
         send("", CONTINUE);
+    }
+
+    @Test
+    public void getRequestIsNotScanned() throws Exception {
+        var exc = Request.get("/").buildExchange();
+
+        assertEquals(CONTINUE, jpiProd.handleRequest(exc));
+        assertNull(exc.getResponse());
     }
 
     @Test
@@ -251,6 +261,205 @@ public class JsonProtectionInterceptorTest {
                 1,
                 16,
                 "__proto__ found as key.");
+    }
+
+    // --- Multipart / attachments -------------------------------------------------------------
+
+    @Test
+    void jsonPartOfMultipartIsInspected() throws Exception {
+        var exc = multipartExchange(part("data", APPLICATION_JSON, deeplyNested()));
+
+        assertEquals(RETURN, jpiDev.handleRequest(exc));
+        var pd = parse(exc.getResponse());
+        assertTrue(pd.getDetail().contains("Exceeded maxDepth."), pd.getDetail());
+        assertTrue(pd.getDetail().contains("data"), "should name the offending part: " + pd.getDetail());
+    }
+
+    @Test
+    void benignMultipartPasses() throws Exception {
+        var exc = multipartExchange(part("data", APPLICATION_JSON, "{\"a\":\"b\"}"));
+
+        assertEquals(CONTINUE, jpiDev.handleRequest(exc));
+        assertNull(exc.getResponse());
+    }
+
+    @Test
+    void everyJsonPartIsInspected() throws Exception {
+        var exc = multipartExchange(
+                part("first", APPLICATION_JSON, "{\"a\":\"b\"}"),
+                part("second", APPLICATION_JSON, deeplyNested()));
+
+        assertEquals(RETURN, jpiDev.handleRequest(exc));
+        assertTrue(parse(exc.getResponse()).getDetail().contains("second"));
+    }
+
+    @Test
+    void nonJsonPartIsRejectedByDefault() throws Exception {
+        var exc = multipartExchange(part("logo", "image/png", "\u0089PNG"));
+
+        assertEquals(RETURN, jpiDev.handleRequest(exc));
+        var detail = parse(exc.getResponse()).getDetail();
+        assertTrue(detail.contains("is not JSON"), detail);
+        // The name comes from the part header alone, since the body of a rejected part is never read.
+        assertTrue(detail.contains("logo"), "should name the offending part: " + detail);
+    }
+
+    @Test
+    void nonJsonPartIsSkippedWhenConfigured() throws Exception {
+        jpiDev.setOtherContentTypes(SKIP);
+        var exc = multipartExchange(
+                part("logo", "image/png", "\u0089PNG"),
+                part("data", APPLICATION_JSON, "{\"a\":\"b\"}"));
+
+        assertEquals(CONTINUE, jpiDev.handleRequest(exc));
+        assertNull(exc.getResponse());
+    }
+
+    @Test
+    void multipartBodyIsNotModified() throws Exception {
+        jpiDev.setOtherContentTypes(SKIP);
+        var exc = multipartExchange(part("logo", "image/png", "\u0089PNG"));
+        byte[] before = exc.getRequest().getBody().getContent();
+
+        assertEquals(CONTINUE, jpiDev.handleRequest(exc));
+        assertArrayEquals(before, exc.getRequest().getBody().getContent());
+    }
+
+    /**
+     * A part without a Content-Type defaults to text/plain, so it is not JSON - unlike a whole body
+     * without a Content-Type, which is still parsed (see {@link #bodyWithoutContentTypeIsStillParsed()}).
+     */
+    @Test
+    void partWithoutContentTypeIsNotJson() throws Exception {
+        jpiDev.setOtherContentTypes(SKIP);
+        var exc = multipartExchange(part("field", null, deeplyNested()));
+
+        assertEquals(CONTINUE, jpiDev.handleRequest(exc));
+        assertNull(exc.getResponse());
+    }
+
+    @Test
+    void bodyWithoutContentTypeIsStillParsed() throws Exception {
+        var exc = Request.post("/").body(deeplyNested()).buildExchange();
+
+        assertEquals(RETURN, jpiDev.handleRequest(exc));
+        assertTrue(parse(exc.getResponse()).getDetail().contains("Exceeded maxDepth."));
+    }
+
+    @Test
+    void nonJsonBodyIsSkippedWhenConfigured() throws Exception {
+        jpiDev.setOtherContentTypes(SKIP);
+        var exc = Request.post("/").contentType("image/png").body("\u0089PNG").buildExchange();
+
+        assertEquals(CONTINUE, jpiDev.handleRequest(exc));
+        assertNull(exc.getResponse());
+    }
+
+    @Test
+    void nestedMultipartIsRejected() throws Exception {
+        var exc = multipartExchange(part("nested", "multipart/mixed; boundary=inner", "..."));
+
+        assertEquals(RETURN, jpiDev.handleRequest(exc));
+        assertTrue(parse(exc.getResponse()).getDetail().contains("Nested multipart"));
+    }
+
+    /** Exceeds the maxDepth of 10 configured in {@link #buildJPI(boolean)}. */
+    private static String deeplyNested() {
+        return repeat("[", 12) + repeat("]", 12);
+    }
+
+    private static String part(String name, String contentType, String body) {
+        return "Content-Disposition: form-data; name=\"" + name + "\"\r\n"
+               + (contentType == null ? "" : "Content-Type: " + contentType + "\r\n")
+               + "\r\n" + body;
+    }
+
+    private static Exchange multipartExchange(String... parts) throws Exception {
+        StringBuilder body = new StringBuilder();
+        for (String part : parts)
+            body.append("--").append(BOUNDARY).append("\r\n").append(part).append("\r\n");
+        body.append("--").append(BOUNDARY).append("--\r\n");
+
+        return Request.post("/")
+                .contentType("multipart/form-data; boundary=" + BOUNDARY)
+                .body(body.toString())
+                .buildExchange();
+    }
+
+    private static final String BOUNDARY = "----MembraneTestBoundary";
+
+    // --- Bounded buffering -------------------------------------------------------------------
+
+    /** maxSize is per document, so an oversized part must be rejected without being buffered whole. */
+    @Test
+    void firstPartExceedingMaxSizeIsRejected() throws Exception {
+        var exc = multipartExchange(
+                part("first", APPLICATION_JSON, "{\"a\":\"" + repeat("x", 20000) + "\"}"),
+                part("second", APPLICATION_JSON, "{\"a\":\"b\"}"));
+
+        assertEquals(RETURN, jpiDev.handleRequest(exc));
+        var detail = parse(exc.getResponse()).getDetail();
+        assertTrue(detail.contains("maximum size"), detail);
+        assertTrue(detail.contains("In part 'first'"), detail);
+    }
+
+    /**
+     * The case that must not buffer: a huge non-JSON part under SKIP is discarded from the stream
+     * without ever being materialised, so maxSize does not apply to it.
+     */
+    @Test
+    void oversizedNonJsonPartIsSkippedWithoutBuffering() throws Exception {
+        jpiDev.setOtherContentTypes(SKIP);
+        var exc = multipartExchange(
+                part("logo", "image/png", repeat("x", 50000)),
+                part("data", APPLICATION_JSON, "{\"a\":\"b\"}"));
+
+        assertEquals(CONTINUE, jpiDev.handleRequest(exc));
+        assertNull(exc.getResponse());
+    }
+
+    /** Rejecting a non-JSON part needs its header only, so its body is never read. */
+    @Test
+    void oversizedNonJsonPartIsRejectedWithoutBuffering() throws Exception {
+        var exc = multipartExchange(part("logo", "image/png", repeat("x", 50000)));
+
+        assertEquals(RETURN, jpiDev.handleRequest(exc));
+        assertTrue(parse(exc.getResponse()).getDetail().contains("is not JSON"));
+    }
+
+    // --- XOP / MTOM --------------------------------------------------------------------------
+
+    /**
+     * An XOP message is XML by definition, so jsonProtection never wants it reassembled - it is
+     * traversed as raw parts and handled by the otherContentTypes policy like any other non-JSON.
+     */
+    @Test
+    void xopRequestIsSkippedWhenConfigured() throws Exception {
+        jpiDev.setOtherContentTypes(SKIP);
+        var exc = xopExchange();
+
+        assertEquals(CONTINUE, jpiDev.handleRequest(exc));
+        assertNull(exc.getResponse());
+    }
+
+    @Test
+    void xopRequestIsRejectedByDefault() throws Exception {
+        var exc = xopExchange();
+
+        assertEquals(RETURN, jpiDev.handleRequest(exc));
+        assertTrue(parse(exc.getResponse()).getDetail().contains("application/xop+xml"),
+                parse(exc.getResponse()).getDetail());
+    }
+
+    private static Exchange xopExchange() throws Exception {
+        byte[] body = IOUtils.toByteArray(
+                JsonProtectionInterceptorTest.class.getResourceAsStream("/multipart/embedded-byte-array.txt"));
+        return Request.post("/")
+                .contentType("multipart/related; type=\"application/xop+xml\"; "
+                        + "boundary=\"uuid:168683dc-43b3-4e71-8e66-efb633ef406b\"; "
+                        + "start=\"<root.message@cxf.apache.org>\"; start-info=\"text/xml\"")
+                .body(body)
+                .buildExchange();
     }
 
     private void send(String body, Outcome expectOut, Object... parameters) throws Exception {

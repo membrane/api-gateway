@@ -14,19 +14,25 @@
 
 package com.predic8.membrane.core.http;
 
-import com.predic8.membrane.core.util.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.util.EndOfStreamException;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
-import java.io.*;
-import java.net.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URISyntaxException;
 
-import static com.predic8.membrane.annot.Constants.*;
-import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.annot.Constants.CRLF;
+import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
 import static com.predic8.membrane.core.http.Request.*;
-import static com.predic8.membrane.core.util.HttpTestUtil.*;
-import static com.predic8.membrane.core.util.StringTestUtil.*;
-import static com.predic8.membrane.test.TestUtil.*;
-import static java.nio.charset.StandardCharsets.*;
+import static com.predic8.membrane.core.util.HttpTestUtil.convertMessage;
+import static com.predic8.membrane.core.util.StringTestUtil.inputStreamFrom;
+import static com.predic8.membrane.test.TestUtil.getResourceAsStream;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class RequestTest {
@@ -336,7 +342,106 @@ public class RequestTest {
         shouldBodyBeRead("""
                 OPTIONS /products HTTP/1.1
                 Origin: https://predic8.de
-                
+
+                """, false);
+    }
+
+    @Test
+    void getWithBodyContentLength() throws EndOfStreamException, IOException {
+        shouldBodyBeRead("""
+                GET /products HTTP/1.1
+                Content-Length: 5
+                Origin: https://predic8.de
+
+                Dummy
+                """, true);
+    }
+
+    @Test
+    void getWithBodyChunked() throws EndOfStreamException, IOException {
+        shouldBodyBeRead("""
+                GET /products HTTP/1.1
+                Transfer-Encoding: chunked
+                Origin: https://predic8.de
+
+                Dummy
+                """, true);
+    }
+
+    /**
+     * RFC 9112 6.3: if a Transfer-Encoding is present in a request and "chunked" is not the final
+     * coding, the body length cannot be determined - the request must be rejected rather than read.
+     */
+    @Test
+    void transferEncodingNotEndingInChunkedIsRejected() {
+        assertThrows(MalformedHeaderException.class, () -> readRequest("""
+                POST /products HTTP/1.1
+                Host: example.com
+                Transfer-Encoding: gzip
+
+                """));
+    }
+
+    @Test
+    void transferEncodingNotEndingInChunkedIsRejectedDespiteContentLength() {
+        assertThrows(MalformedHeaderException.class, () -> readRequest("""
+                POST /products HTTP/1.1
+                Host: example.com
+                Transfer-Encoding: gzip
+                Content-Length: 0
+
+                """));
+    }
+
+    @Test
+    void transferEncodingWithChunkedNotFinalIsRejected() {
+        assertThrows(MalformedHeaderException.class, () -> readRequest("""
+                POST /products HTTP/1.1
+                Host: example.com
+                Transfer-Encoding: chunked, gzip
+
+                """));
+    }
+
+    /**
+     * Header.isChunked() only inspects the first Transfer-Encoding field, so a chunked coding
+     * split off into a second field line is not recognized as framing and must be rejected.
+     */
+    @Test
+    void transferEncodingSplitOverSeveralFieldsIsRejected() {
+        assertThrows(MalformedHeaderException.class, () -> readRequest("""
+                POST /products HTTP/1.1
+                Host: example.com
+                Transfer-Encoding: gzip
+                Transfer-Encoding: chunked
+
+                """));
+    }
+
+    @Test
+    void transferEncodingEndingInChunkedIsAccepted() throws Exception {
+        assertInstanceOf(ChunkedBody.class, readRequest("""
+                POST /products HTTP/1.1
+                Host: example.com
+                Transfer-Encoding: gzip, chunked
+
+                0
+
+                """).getBody());
+    }
+
+    private static Request readRequest(String message) throws IOException, EndOfStreamException {
+        Request req = new Request();
+        req.read(convertMessage(message), true);
+        return req;
+    }
+
+    @Test
+    void getWithoutBody() throws EndOfStreamException, IOException {
+        shouldBodyBeRead("""
+                GET /products HTTP/1.1
+                Origin: https://predic8.de
+
                 """, false);
     }
 
@@ -361,6 +466,15 @@ public class RequestTest {
         assertTrue(post("/foo").contentType(TEXT_XML).build().isXML());
         assertTrue(post("/foo").contentType("text/xml; charset=utf-8").build().isXML());
         assertTrue(post("/foo").header("Content-Type", "text/xml; charset=utf-8").build().isXML());
+    }
+
+    @Test
+    void isEncoded() throws URISyntaxException {
+        assertFalse(post("/foo").contentType(TEXT_XML).build().isEncoded());
+        assertTrue(post("/foo").header("Content-Encoding", "gzip").build().isEncoded());
+        // Not one of the codecs MessageUtil can decode, but still not plain bytes.
+        assertTrue(post("/foo").header("Content-Encoding", "zstd").build().isEncoded());
+        assertTrue(post("/foo").contentType("multipart/related; boundary=b").build().isEncoded());
     }
 
     @Nested

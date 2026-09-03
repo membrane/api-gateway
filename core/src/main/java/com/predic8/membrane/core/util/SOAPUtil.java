@@ -17,12 +17,17 @@ package com.predic8.membrane.core.util;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.schemavalidation.FaultDetailXMLFilter;
+import com.predic8.membrane.core.interceptor.schemavalidation.SOAPXMLFilter;
 import com.predic8.membrane.core.multipart.XOPReconstitutor;
+import com.predic8.membrane.core.util.xml.parser.HardenedSaxParser;
 import com.predic8.membrane.core.util.xml.parser.HardenedStaxInputFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -31,6 +36,11 @@ import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
+import javax.xml.transform.Source;
+import javax.xml.transform.sax.SAXSource;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import static com.predic8.membrane.annot.Constants.*;
@@ -85,7 +95,7 @@ public class SOAPUtil {
         Element body = doc.createElementNS(SOAP11_NS, "soap:Body");
         env.appendChild(body);
 
-        Element fault = doc.createElement("Fault");
+        Element fault = doc.createElementNS(SOAP11_NS, "soap:Fault");
         body.appendChild(fault);
 
         Element faultCode = doc.createElement("faultcode");
@@ -131,7 +141,10 @@ public class SOAPUtil {
                         return NO_SOAP_RESULT;
                     }
 
-                    if ("Header".equals(name.getLocalPart())) {
+                    // Only before the Body opens: this test is on the local name alone, so inside the
+                    // Body (state 2) it would swallow a payload element that happens to be named
+                    // "Header" and report a non-empty body as empty.
+                    if (state < 2 && "Header".equals(name.getLocalPart())) {
                         // skip header
                         readUntilEndTag(parser);
                         continue;
@@ -168,8 +181,18 @@ public class SOAPUtil {
                         return NO_SOAP_RESULT;
                     }
                 }
-                if (event.isEndElement())
-                    return NO_SOAP_RESULT;
+                if (event.isEndElement()) {
+                    if (state < 2) {
+                        // Closed before a Body ever opened, e.g. an envelope carrying only a header.
+                        return NO_SOAP_RESULT;
+                    }
+                    // Specifically </Body>, not just any end element at this state: reaching it means
+                    // the Body held no element at all, which is reported with a null soapElement.
+                    // Anything else keeps the scan going rather than being read as an empty body.
+                    if ("Body".equals(event.asEndElement().getName().getLocalPart())) {
+                        return new SOAPAnalysisResult(true, false, version, null);
+                    }
+                }
             }
         } catch (Exception e) {
             log.info("Error parsing SOAP message: {}", e.getMessage());
@@ -194,6 +217,76 @@ public class SOAPUtil {
 
     public static boolean isSOAP11Element(QName name) {
         return SOAP11_NS.equals(name.getNamespaceURI());
+    }
+
+    /**
+     * Extracts the QNames of the detail entries - the direct children of a SOAP fault's
+     * {@code detail} (SOAP 1.1, unqualified) or {@code Detail} (SOAP 1.2,
+     * {@link com.predic8.membrane.annot.Constants#SOAP12_NS}) element. Descendants below the
+     * entries themselves are not reported.
+     *
+     * @return the detail entries in document order; empty if the fault carries no detail, the
+     *         detail element is empty, or the message could not be parsed.
+     */
+    public static List<QName> extractFaultDetailElements(XOPReconstitutor xopr, Message msg, SoapVersion version) {
+        var entries = new ArrayList<QName>();
+        try {
+            var parser = HardenedStaxInputFactory.inputFactory().createXMLEventReader(xopr.reconstituteIfNecessary(msg));
+            int depth = -1; // -1 outside detail, 0 on the detail element, n when n levels inside it
+            while (parser.hasNext()) {
+                var event = parser.nextEvent();
+                if (event.isStartElement()) {
+                    var name = ((StartElement) event).getName();
+                    if (depth < 0) {
+                        if (isDetailElement(name, version))
+                            depth = 0;
+                        continue;
+                    }
+                    if (++depth == 1)
+                        entries.add(name);
+                    continue;
+                }
+                if (event.isEndElement() && depth >= 0) {
+                    if (depth == 0)
+                        return entries; // detail closed
+                    depth--;
+                }
+            }
+        } catch (Exception e) {
+            log.debug("Could not extract fault detail elements: {}", e.getMessage());
+        }
+        return entries;
+    }
+
+    private static boolean isDetailElement(QName name, SoapVersion version) {
+        return switch (version) {
+            case SOAP11 -> "detail".equals(name.getLocalPart()) && name.getNamespaceURI().isEmpty();
+            case SOAP12 -> "Detail".equals(name.getLocalPart()) && SOAP12_NS.equals(name.getNamespaceURI());
+            default -> false;
+        };
+    }
+
+    /**
+     * Strips the SOAP envelope so that only the payload below {@code <soap:Body>} is passed on.
+     */
+    public static Source getSOAPBody(InputStream stream) {
+        try {
+            return new SAXSource(new SOAPXMLFilter(HardenedSaxParser.newSAXParser().getXMLReader()), new InputSource(stream));
+        } catch (SAXException e) {
+            throw new RuntimeException("Error initializing SAXSource", e);
+        }
+    }
+
+    /**
+     * Narrows a SOAP fault message down to the content of its {@code detail}/{@code Detail}
+     * element, for schema-validating a fault's payload separately from its envelope structure.
+     */
+    public static Source getFaultDetailBody(InputStream stream, SoapVersion version) {
+        try {
+            return new SAXSource(new FaultDetailXMLFilter(HardenedSaxParser.newSAXParser().getXMLReader(), version), new InputSource(stream));
+        } catch (SAXException e) {
+            throw new RuntimeException("Error initializing SAXSource", e);
+        }
     }
 
     private static void readUntilEndTag(XMLEventReader parser) throws XMLStreamException {

@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
+import static com.predic8.membrane.core.interceptor.wsdl2openapi.Wsdl2OpenApiConverter.ApiInfo;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -31,6 +32,15 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  */
 class Wsdl2OpenApiConverterWsdlStyleTest {
+
+    private static Wsdl2OpenApiConverter converter(Definitions definitions, String basePath) {
+        return converter(definitions, basePath, Map.of());
+    }
+
+    private static Wsdl2OpenApiConverter converter(Definitions definitions, String basePath,
+                                                   Map<String, OperationSettings> operations) {
+        return new Wsdl2OpenApiConverter(definitions, basePath, operations, ApiInfo.NONE);
+    }
 
     /** Wrapped document style, service name "GreetingService" — shared by the Info-related tests below. */
     private static final String GREETING_WSDL = """
@@ -104,14 +114,14 @@ class Wsdl2OpenApiConverterWsdlStyleTest {
 
     @Test
     void documentLiteralWrappedStyle() throws Exception {
-        var yaml = new Wsdl2OpenApiConverter(Definitions.parse(new StaticStringResolver(), GREETING_WSDL), "/").generateYaml();
+        var yaml = converter(Definitions.parse(new StaticStringResolver(), GREETING_WSDL), "/").generateYaml();
 
         assertTrue(yaml.contains("/say-hello:"), "Operation name should be mapped to a kebab-case path");
-        assertTrue(yaml.contains("operationId: \"sayHello\""), "operationId should match the WSDL operation name");
+        assertTrue(yaml.contains("operationId: sayHello"), "operationId should match the WSDL operation name");
         assertTrue(yaml.contains("name:"), "Request body should expose the wrapped element's 'name' field");
         assertTrue(yaml.contains("greeting:"), "Response body should expose the wrapped element's 'greeting' field");
         assertTrue(yaml.contains("\"200\":"), "Should contain a 200 response");
-        assertTrue(yaml.contains("\"500\":"), "Should contain the generic 500 response");
+        assertTrue(yaml.contains("default:"), "Should contain the generic error response");
         assertTrue(yaml.contains("https://github.com/membrane/api-gateway"),
                 "info.description should link to the Membrane GitHub page");
         assertTrue(yaml.contains("https://www.membrane-api.io/?oas=1"),
@@ -123,7 +133,7 @@ class Wsdl2OpenApiConverterWsdlStyleTest {
     @Test
     void titleOverrideReplacesServiceName() throws Exception {
         var definitions = Definitions.parse(new StaticStringResolver(), GREETING_WSDL);
-        var openAPI = new Wsdl2OpenApiConverter(definitions, "/", Map.of(), "Custom Title", null).generate();
+        var openAPI = new Wsdl2OpenApiConverter(definitions, "/", Map.of(), new ApiInfo("Custom Title", null, null)).generate();
 
         assertEquals("Custom Title", openAPI.getInfo().getTitle(),
                 "an explicit title must override the WSDL service name");
@@ -132,7 +142,7 @@ class Wsdl2OpenApiConverterWsdlStyleTest {
     @Test
     void noTitleOverrideFallsBackToServiceName() throws Exception {
         var definitions = Definitions.parse(new StaticStringResolver(), GREETING_WSDL);
-        var openAPI = new Wsdl2OpenApiConverter(definitions, "/", Map.of(), null, null).generate();
+        var openAPI = converter(definitions, "/").generate();
 
         assertEquals("GreetingService", openAPI.getInfo().getTitle());
     }
@@ -140,7 +150,7 @@ class Wsdl2OpenApiConverterWsdlStyleTest {
     @Test
     void descriptionAppearsBeforeGeneratedAdText() throws Exception {
         var definitions = Definitions.parse(new StaticStringResolver(), GREETING_WSDL);
-        var openAPI = new Wsdl2OpenApiConverter(definitions, "/", Map.of(), null, "Say hello to the world.").generate();
+        var openAPI = new Wsdl2OpenApiConverter(definitions, "/", Map.of(), new ApiInfo(null, "Say hello to the world.", null)).generate();
 
         String description = openAPI.getInfo().getDescription();
         int userTextIndex = description.indexOf("Say hello to the world.");
@@ -155,13 +165,35 @@ class Wsdl2OpenApiConverterWsdlStyleTest {
     @Test
     void noDescriptionOverrideProducesOnlyGeneratedAdText() throws Exception {
         var definitions = Definitions.parse(new StaticStringResolver(), GREETING_WSDL);
-        var withOverride = new Wsdl2OpenApiConverter(definitions, "/", Map.of(), null, null).generate();
-        var withoutAnyArgs = new Wsdl2OpenApiConverter(definitions, "/").generate();
+        var withOverride = converter(definitions, "/").generate();
+        var withoutAnyArgs = converter(definitions, "/").generate();
 
         assertEquals(withoutAnyArgs.getInfo().getDescription(), withOverride.getInfo().getDescription(),
                 "omitting the description (via either constructor) must produce identical, unchanged ad text");
         assertFalse(withOverride.getInfo().getDescription().contains("\n\n\n"),
                 "no accidental extra blank line when there is no user description to separate from the ad");
+    }
+
+    @Test
+    void operationWithAnEmptyInputDeclaresNoRequestBody() throws Exception {
+        // An empty complexType carries no field, so a client correctly sends nothing. Demanding a
+        // request body would make a validator reject exactly that request.
+        // Empties the sayHello element — the first complexType in the WSDL — of its only field.
+        var wsdl = GREETING_WSDL.replaceFirst("(?s)<xs:complexType>.*?</xs:complexType>", "<xs:complexType/>");
+        assertFalse(wsdl.contains("\"name\" type=\"xs:string\""), "the input element must have lost its only field");
+
+        var openAPI = converter(Definitions.parse(new StaticStringResolver(), wsdl), "/").generate();
+
+        assertNull(openAPI.getPaths().get("/say-hello").getPost().getRequestBody());
+    }
+
+    @Test
+    void operationWithAnInputFieldStillDeclaresARequestBody() throws Exception {
+        var openAPI = converter(Definitions.parse(new StaticStringResolver(), GREETING_WSDL), "/").generate();
+
+        var requestBody = openAPI.getPaths().get("/say-hello").getPost().getRequestBody();
+        assertNotNull(requestBody);
+        assertTrue(requestBody.getRequired());
     }
 
     @Test
@@ -216,10 +248,10 @@ class Wsdl2OpenApiConverterWsdlStyleTest {
 
                 </definitions>""";
 
-        var yaml = new Wsdl2OpenApiConverter(Definitions.parse(new StaticStringResolver(), wsdl), "/").generateYaml();
+        var yaml = converter(Definitions.parse(new StaticStringResolver(), wsdl), "/").generateYaml();
 
         assertTrue(yaml.contains("/add:"), "Path is still generated regardless of binding style");
-        assertTrue(yaml.contains("operationId: \"add\""));
+        assertTrue(yaml.contains("operationId: add"));
         assertTrue(yaml.contains("augend:"), "Every RPC-style input part should become a request field");
         assertTrue(yaml.contains("addend:"), "Every RPC-style input part should become a request field");
         assertTrue(yaml.contains("sum:"), "The RPC-style output part should become a response field");
@@ -276,7 +308,7 @@ class Wsdl2OpenApiConverterWsdlStyleTest {
 
                 </definitions>""";
 
-        var yaml = new Wsdl2OpenApiConverter(Definitions.parse(new StaticStringResolver(), wsdl), "/").generateYaml();
+        var yaml = converter(Definitions.parse(new StaticStringResolver(), wsdl), "/").generateYaml();
 
         assertTrue(yaml.contains("/search:"));
         assertTrue(yaml.contains("query:"), "First bare-style message part should become a request field");
@@ -284,10 +316,10 @@ class Wsdl2OpenApiConverterWsdlStyleTest {
     }
 
     @Test
-    void multipleFaultsProduceOneOfSchemaOnServerError() throws Exception {
-        // Both wsdl:fault entries surface as SOAP faults, which are always HTTP 500 — so they
-        // share a single "500" response, but its content schema must be a oneOf of both fault
-        // element schemas so each fault's fields are still represented in the OpenAPI doc.
+    void multipleFaultsProduceOneOfSchemaOnErrorResponse() throws Exception {
+        // Every error is a problem details document, so all faults share the single "default"
+        // response. Its details member must be a oneOf of both fault element schemas, so each
+        // fault's fields are still represented in the OpenAPI doc.
         var wsdl = """
                 <definitions xmlns="http://schemas.xmlsoap.org/wsdl/"
                              xmlns:xs="http://www.w3.org/2001/XMLSchema"
@@ -388,12 +420,14 @@ class Wsdl2OpenApiConverterWsdlStyleTest {
 
                 </definitions>""";
 
-        var yaml = new Wsdl2OpenApiConverter(Definitions.parse(new StaticStringResolver(), wsdl), "/").generateYaml();
+        var yaml = converter(Definitions.parse(new StaticStringResolver(), wsdl), "/").generateYaml();
 
         assertTrue(yaml.contains("cancelled:"), "Normal output message is still converted");
-        assertTrue(yaml.contains("\"500\":"));
-        assertEquals(1, yaml.split("\"500\":").length - 1, "Exactly one 500 response, not one per fault");
+        assertTrue(yaml.contains("default:"));
+        assertEquals(1, yaml.split("default:").length - 1, "Exactly one error response, not one per fault");
         assertTrue(yaml.contains("oneOf:"), "Multiple fault schemas should be combined with oneOf");
+        assertTrue(yaml.contains("OrderNotFoundFault:"), "Fault schemas are keyed by fault element name");
+        assertTrue(yaml.contains("OrderAlreadyShippedFault:"));
         assertTrue(yaml.contains("errorCode:"), "First fault's schema should be represented");
         assertTrue(yaml.contains("invalidField:"), "Second fault's schema should be represented");
     }
@@ -465,11 +499,11 @@ class Wsdl2OpenApiConverterWsdlStyleTest {
 
                 </definitions>""";
 
-        var yaml = new Wsdl2OpenApiConverter(Definitions.parse(new StaticStringResolver(), wsdl), "/").generateYaml();
+        var yaml = converter(Definitions.parse(new StaticStringResolver(), wsdl), "/").generateYaml();
 
-        assertTrue(yaml.contains("\"500\":"), "500 response must be present for the fault");
-        assertTrue(yaml.contains("faultCode:"), "First type-based part must appear in the 500 schema");
-        assertTrue(yaml.contains("faultReason:"), "Second type-based part must appear in the 500 schema");
+        assertTrue(yaml.contains("default:"), "Error response must be present for the fault");
+        assertTrue(yaml.contains("faultCode:"), "First type-based part must appear in the fault schema");
+        assertTrue(yaml.contains("faultReason:"), "Second type-based part must appear in the fault schema");
     }
 
     /** Shared by the two soap:header tests below: one operation, one header part, one body part. */
@@ -549,33 +583,30 @@ class Wsdl2OpenApiConverterWsdlStyleTest {
                 </definitions>""";
 
     @Test
-    void soapHeaderBecomesHeaderParameter() throws Exception {
-        // soap:header binds a message part that travels in the SOAP header, out-of-band from
-        // the body. It should surface as an OpenAPI "in: header" parameter on the operation,
-        // not as a body field, and not be dropped.
-        var yaml = new Wsdl2OpenApiConverter(Definitions.parse(new StaticStringResolver(), SECURE_SERVICE_WSDL), "/").generateYaml();
+    void soapHeaderPartIsNotPublishedAsAParameter() throws Exception {
+        // A soap:header part travels in the SOAP header, out-of-band from the body. Nothing in this
+        // plugin puts a value there, so the document must not promise a parameter for it — a
+        // parameter the gateway silently discards is worse than one that was never advertised.
+        var yaml = converter(Definitions.parse(new StaticStringResolver(), SECURE_SERVICE_WSDL), "/").generateYaml();
 
         assertTrue(yaml.contains("payload:"), "Body part is still converted");
-        assertTrue(yaml.contains("in: \"header\""), "soap:header part should become an OpenAPI header parameter");
-        assertTrue(yaml.contains("name: \"token\""), "Header parameter should be named after its message part");
+        assertFalse(yaml.contains("in: header"), "an unsupported soap:header part must not become a parameter");
+        assertFalse(yaml.contains("token"), "nothing of the header part may reach the document");
     }
 
     @Test
-    void pathAndHeaderParametersCoexist() throws Exception {
-        // A templated path plus a soap:header yields two parameter sources for the same
-        // operation. Both must end up in the parameter list — a path segment "{id}" without a
-        // declared path parameter is an invalid OpenAPI document.
+    void pathParameterSurvivesAnUnsupportedSoapHeader() throws Exception {
+        // The header part is dropped; the path parameter of the same operation must not be — a path
+        // segment "{id}" without a declared path parameter is an invalid OpenAPI document.
         var settings = new OperationSettings();
         settings.setMethod("GET");
         settings.setPath("work/{id}");
-        var yaml = new Wsdl2OpenApiConverter(Definitions.parse(new StaticStringResolver(), SECURE_SERVICE_WSDL), "/",
-                Map.of("doWork", settings)).generateYaml();
+        var yaml = converter(Definitions.parse(new StaticStringResolver(), SECURE_SERVICE_WSDL), "/", Map.of("doWork", settings)).generateYaml();
 
         assertTrue(yaml.contains("/work/{id}:"), "Templated path should be used as the path key");
-        assertTrue(yaml.contains("in: \"path\""), "Path parameter must not be dropped");
-        assertTrue(yaml.contains("name: \"id\""), "Path parameter should be named after the template variable");
-        assertTrue(yaml.contains("in: \"header\""), "soap:header parameter must still be present");
-        assertTrue(yaml.contains("name: \"token\""), "Header parameter should be named after its message part");
+        assertTrue(yaml.contains("in: path"), "Path parameter must not be dropped");
+        assertTrue(yaml.contains("name: id"), "Path parameter should be named after the template variable");
+        assertFalse(yaml.contains("in: header"), "an unsupported soap:header part must not become a parameter");
     }
 
     @Test
@@ -648,17 +679,17 @@ class Wsdl2OpenApiConverterWsdlStyleTest {
 
                 </definitions>""";
 
-        var yaml = new Wsdl2OpenApiConverter(Definitions.parse(new StaticStringResolver(), wsdl), "/").generateYaml();
+        var yaml = converter(Definitions.parse(new StaticStringResolver(), wsdl), "/").generateYaml();
 
         // SOAP version only affects the wire envelope, not the JSON/OpenAPI shape, so a
         // SOAP 1.2 binding should produce the same output as the equivalent SOAP 1.1 WSDL
         // (see documentLiteralWrappedStyle).
         assertTrue(yaml.contains("/say-hello:"));
-        assertTrue(yaml.contains("operationId: \"sayHello\""));
+        assertTrue(yaml.contains("operationId: sayHello"));
         assertTrue(yaml.contains("name:"));
         assertTrue(yaml.contains("greeting:"));
         assertTrue(yaml.contains("\"200\":"));
-        assertTrue(yaml.contains("\"500\":"));
+        assertTrue(yaml.contains("default:"));
     }
 
 }
