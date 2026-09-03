@@ -13,44 +13,42 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.Interceptor.*;
-import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.transport.http.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.Interceptor.Flow;
+import com.predic8.membrane.core.router.Router;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.List;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
-import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
- * Controls the flow of an exchange through a chain of interceptors.
- * <p>
- * In the trivial setup, an exchange passes through two chains until it hits
- * RETURN: The main chain owned by the Transport (containing the
- * RuleMatching, Dispatching, UserFeature and HttpClient-Interceptors) and the
- * inner chain owned by the UserFeatureInterceptor (containing any interceptor
- * configured in proxies.xml).
- * <p>
- * The {@link HTTPClientInterceptor}, the last interceptor in the main chain,
- * always returns {@link Outcome#RETURN} or {@link Outcome#ABORT}, never
- * {@link Outcome#CONTINUE}.
- * <p>
- * Any chain is followed using {@link Interceptor#handleRequest(Exchange)} until
- * it hits {@link Outcome#RETURN} or {@link Outcome#ABORT}. As the chain is
- * followed, every interceptor (except those with {@link Flow#REQUEST}) are
- * added to the exchange's stack.
- * <p>
- * When {@link Outcome#RETURN} is hit, the exchange's interceptor stack is
- * unwound and {@link Interceptor#handleResponse(Exchange)} is called for every
- * interceptor on it.
- * <p>
- * When {@link Outcome#ABORT} is hit, handling is aborted: An
- * {@link AbortException} is thrown. The stack is unwound calling
- * {@link Interceptor#handleAbort(Exchange)} on each interceptor on it.
+ * Controls the flow of an exchange through a chain of interceptors. What the outcomes mean and
+ * when an interceptor should return which is documented on {@link Interceptor} and
+ * {@link Outcome}.
+ *
+ * In the trivial setup, an exchange passes through two chains until it hits RETURN: the main
+ * chain owned by the Transport (rule matching, dispatching, the UserFeatureInterceptor and the
+ * HTTP client, among others) and the inner chain owned by the UserFeatureInterceptor, holding
+ * the interceptors configured for the matched proxy.
+ *
+ * The {@link HTTPClientInterceptor}, the last interceptor in the main chain, always returns
+ * {@link Outcome#RETURN} or {@link Outcome#ABORT}, never {@link Outcome#CONTINUE}.
+ *
+ * A chain is followed calling {@link Interceptor#handleRequest(Exchange)} on every interceptor
+ * that {@link Interceptor#handlesRequests()}, until one of them does not return
+ * {@link Outcome#CONTINUE}. The position it stopped at is the index the flow is reversed from.
+ *
+ * When {@link Outcome#RETURN} is hit, the chain is walked backwards from that position, calling
+ * {@link Interceptor#handleResponse(Exchange)} on the interceptors before it.
+ *
+ * When {@link Outcome#ABORT} is hit, or an interceptor throws, the chain is walked backwards the
+ * same way, calling {@link Interceptor#handleAbort(Exchange)} instead. An exception is turned
+ * into an error response first and is kept in the exchange property {@link #ABORTION_REASON}.
  */
 public class FlowController {
 
