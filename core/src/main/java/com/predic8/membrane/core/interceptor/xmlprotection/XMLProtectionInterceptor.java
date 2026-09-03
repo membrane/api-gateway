@@ -140,7 +140,7 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
         try (OutputStreamWriter out = new OutputStreamWriter(protectedBody, charset);
              InputStreamReader in = new InputStreamReader(request.getBodyAsStreamDecoded(), charset)) {
 
-            XMLProtectionResult result = new XMLProtector(out, inputFactory.get(), limits).protect(in);
+            XMLProtectionResult result = new XMLProtector(out, inputFactory.get(), limits, charset).protect(in);
             if (result instanceof Rewritten) {
                 out.flush(); // ensure all bytes are written before reading
                 request.setBodyContent(protectedBody.toByteArray()); // the DTD was removed

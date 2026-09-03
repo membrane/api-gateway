@@ -28,6 +28,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.xmlprotection.XMLProtectionInterceptor.X_PROTECTION;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
 class XMLProtectionInterceptorTest {
@@ -159,6 +160,31 @@ class XMLProtectionInterceptorTest {
         String result = new String(exc.getRequest().getBodyAsStreamDecoded().readAllBytes(), ISO_8859_1);
         assertTrue(result.contains("café"), result);
         assertFalse(result.contains("DOCTYPE"), result);
+    }
+
+    @Test
+    @DisplayName("A rewritten document's XML declaration matches the charset it was actually written in, not the one the document declared")
+    void rewrittenDeclarationMatchesActualCharsetNotDeclaredOne() throws Exception {
+        // The HTTP charset (UTF-8) takes precedence over the document's own declared encoding
+        // (ISO-8859-1) per resolveCharset() - the bytes below are UTF-8 despite what the declaration says.
+        String body = """
+                <?xml version="1.0" encoding="ISO-8859-1"?>
+                <!DOCTYPE foo [
+                     <!ELEMENT foo ANY >
+                   ]>
+                <foo>café</foo>
+                """;
+        Exchange exc = post("/")
+                .contentType("application/xml; charset=UTF-8")
+                .body(body.getBytes(UTF_8))
+                .buildExchange();
+
+        assertEquals(CONTINUE, interceptor().handleRequest(exc));
+
+        String result = new String(exc.getRequest().getBodyAsStreamDecoded().readAllBytes(), UTF_8);
+        assertTrue(result.contains("café"), result);
+        assertTrue(result.contains("encoding=\"UTF-8\""), result);
+        assertFalse(result.contains("ISO-8859-1"), result);
     }
 
     @Test

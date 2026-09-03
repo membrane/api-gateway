@@ -81,7 +81,7 @@ class XMLProtectorTest {
     private XMLProtectionResult protect(byte[] xml, XMLLimits limits) throws Exception {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         OutputStreamWriter writer = new OutputStreamWriter(baos, UTF_8);
-        XMLProtectionResult result = new XMLProtector(writer, dtdAwareInputFactory(limits.jaxpNameLimit()), limits)
+        XMLProtectionResult result = new XMLProtector(writer, dtdAwareInputFactory(limits.jaxpNameLimit()), limits, UTF_8)
                 .protect(new InputStreamReader(new ByteArrayInputStream(xml), UTF_8));
         writer.flush(); // Flush before calling baos.toByteArray() to avoid truncated output on some JDKs
         output = result instanceof Rejected ? null : baos.toByteArray();

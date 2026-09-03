@@ -21,12 +21,10 @@ import org.slf4j.LoggerFactory;
 
 import javax.xml.namespace.QName;
 import javax.xml.stream.*;
-import javax.xml.stream.events.Attribute;
-import javax.xml.stream.events.DTD;
-import javax.xml.stream.events.StartElement;
-import javax.xml.stream.events.XMLEvent;
+import javax.xml.stream.events.*;
 import java.io.Reader;
 import java.io.Writer;
+import java.nio.charset.Charset;
 
 import static com.predic8.membrane.core.interceptor.xmlprotection.DoctypeInspector.containsExternalEntityReferences;
 import static com.predic8.membrane.core.interceptor.xmlprotection.DoctypeInspector.hasExternalSubsetReference;
@@ -66,10 +64,12 @@ public class XMLProtector {
      */
     private static final ThreadLocal<XMLOutputFactory> OUTPUT_FACTORY =
             ThreadLocal.withInitial(XMLOutputFactory::newInstance);
+    private static final XMLEventFactory EVENT_FACTORY = XMLEventFactory.newFactory();
 
     private final XMLEventWriter writer;
     private final XMLInputFactory inputFactory;
     private final XMLLimits limits;
+    private final Charset charset;
 
     /** Nesting depth of the element the reader is currently in. */
     private int depth;
@@ -77,11 +77,14 @@ public class XMLProtector {
     /**
      * @param inputFactory a DTD-aware, hardened factory, see
      *                     {@link com.predic8.membrane.core.util.xml.parser.HardenedStaxInputFactory#dtdAwareInputFactory()}
+     * @param charset      the charset {@code out} actually encodes with, see
+     *                     {@link #withActualEncoding(StartDocument)}
      */
-    public XMLProtector(Writer out, XMLInputFactory inputFactory, XMLLimits limits) throws XMLStreamException {
+    public XMLProtector(Writer out, XMLInputFactory inputFactory, XMLLimits limits, Charset charset) throws XMLStreamException {
         this.writer = OUTPUT_FACTORY.get().createXMLEventWriter(out);
         this.inputFactory = inputFactory;
         this.limits = limits;
+        this.charset = charset;
     }
 
     /**
@@ -126,10 +129,30 @@ public class XMLProtector {
                 dtdRemoved = true;
                 continue;
             }
+
+            if (event instanceof StartDocument startDocument) {
+                writer.add(withActualEncoding(startDocument));
+                continue;
+            }
+
             writer.add(event);
         }
         writer.flush();
         return dtdRemoved ? REWRITTEN : ACCEPTED;
+    }
+
+    /**
+     * The document's own XML declaration can name an encoding different from {@link #charset} - the
+     * one {@code out} was actually opened with, chosen by {@code XMLProtectionInterceptor} from the
+     * HTTP {@code Content-Type} charset when the client sent one. Forwarding the parsed
+     * {@link StartDocument} event as is would then relabel the rewritten copy with an encoding it was
+     * never written in, so the declaration is rebuilt to name {@link #charset} instead.
+     */
+    private XMLEvent withActualEncoding(StartDocument original) {
+        String version = original.getVersion() != null ? original.getVersion() : "1.0";
+        if (original.standaloneSet())
+            return EVENT_FACTORY.createStartDocument(charset.name(), version, original.isStandalone());
+        return EVENT_FACTORY.createStartDocument(charset.name(), version);
     }
 
     /**
