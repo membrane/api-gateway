@@ -25,7 +25,9 @@ workflow is what keeps it safe.
    `core` → `test/scripts/run-core-test.sh <FQCN or package>`; a distribution/tutorial IT → the
    `run-example-test` skill; `annot`/`war` → plain Maven on that module
    (`mvn -pl annot test -Duser.language=en -Duser.country=US`). Green after every step is the
-   safety net for everything except thread safety, which no test here can see (below).
+   safety net for behavior, but a sequential test run does not establish thread safety: a
+   refactoring that changes what is shared between threads needs a targeted concurrent test
+   (below).
 4. **Report** at the end: which refactorings were applied to which methods, what is now testable
    that wasn't, whether anything you moved changed what is shared between threads, and anything
    you deliberately left alone.
@@ -48,7 +50,10 @@ instance on its own thread — so per-request state in a field is corrupted by n
 ever raced on. A refactoring that moves state out of a local and onto the object therefore changes
 behavior invisibly: parallel execution is commented out in
 `core/src/test/resources/junit-platform.properties`, so every unit test runs single-threaded and
-step 3's green says nothing here. This is the one regression you have to catch by reading the diff.
+an ordinary sequential test run does not establish thread safety. Catch it by reading the diff, and
+when a refactoring changes what is shared between threads, cover it with a targeted concurrent test
+(drive the refactored code from several threads — `ExecutorService` plus a `CountDownLatch` to
+start them together — and assert each thread's own result).
 
 **Preserve what is shared.** Locals, parameters and return values are per-request; fields on an
 interceptor are per-server. Never convert the first into the second to shorten a signature. Real
