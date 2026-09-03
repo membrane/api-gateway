@@ -25,8 +25,9 @@ public enum Outcome {
 	CONTINUE,
 
 	/**
-	 * Do not continue the interceptor chain, but start normal response handling: flow is reversed and
-	 * interceptors are invoked on the way back and given a chance to handle the response (in reverse order).
+	 * Do not continue the interceptor chain, but start normal response handling: flow is reversed
+	 * and the interceptors are invoked in reverse order on the way back and given a chance to handle
+	 * the response.
 	 *
 	 * Returned when the interceptor has answered the request itself and that is one of its
 	 * regular results rather than a failure: a cache hit or a mock response. The response has to be set on the exchange.

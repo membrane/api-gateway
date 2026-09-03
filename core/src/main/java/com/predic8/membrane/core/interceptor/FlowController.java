@@ -84,13 +84,13 @@ public class FlowController {
             try {
                 Outcome o = interceptor.handleRequest(exchange);
                 if (o == RETURN) {
-                    log.debug("Interceptor returned RETURN. Returning!");
+                    log.debug("Interceptor {} returned RETURN. Returning!", interceptor.getDisplayName());
                     if (invokeResponseHandlers(exchange, interceptors, i) == ABORT)
                         return ABORT;
                     return RETURN;
                 }
                 if (o == ABORT) {
-                    log.debug("Interceptor returned ABORT. Aborting!");
+                    log.debug("Interceptor {} returned ABORT. Aborting!", interceptor.getDisplayName());
                     invokeAbortHandlers(exchange, interceptors, i);
                     return ABORT;
                 }
@@ -140,7 +140,7 @@ public class FlowController {
                 continue;
             try {
                 if (interceptor.handleResponse(exchange) == ABORT) {
-                    log.debug("Interceptor returned ABORT. Aborting!");
+                    log.debug("Interceptor {} returned ABORT. Aborting!", interceptor.getDisplayName());
                     invokeAbortHandlers(exchange, interceptors, i);
                     return ABORT;
                 }

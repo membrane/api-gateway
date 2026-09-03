@@ -124,29 +124,23 @@ class FlowControllerTest {
     }
 
     private Probe probe(String name) {
-        return new Probe(name, CONTINUE, null, false);
+        return new Probe(name);
     }
 
     private Probe returningInRequest(String name) {
-        return new Probe(name, RETURN, null, false);
+        return new Probe(name).requestOutcome(RETURN);
     }
 
     private Probe abortingInResponse(String name) {
-        return new Probe(name, CONTINUE, null, false) {
-            @Override
-            public Outcome handleResponse(Exchange exc) {
-                calls.add(getDisplayName() + ":response");
-                return ABORT;
-            }
-        };
+        return new Probe(name).responseOutcome(ABORT);
     }
 
     private Probe throwingInResponse(String name, RuntimeException failure) {
-        return new Probe(name, CONTINUE, failure, false);
+        return new Probe(name).responseFailure(failure);
     }
 
     private Probe failingInAbort(String name) {
-        return new Probe(name, CONTINUE, null, true);
+        return new Probe(name).failInAbort();
     }
 
     /**
@@ -154,15 +148,33 @@ class FlowControllerTest {
      */
     private class Probe extends AbstractInterceptor {
 
-        private final RuntimeException responseFailure;
-        private final Outcome requestOutcome;
-        private final boolean failInAbort;
+        private Outcome requestOutcome = CONTINUE;
+        private Outcome responseOutcome = CONTINUE;
+        private RuntimeException responseFailure;
+        private boolean failInAbort;
 
-        private Probe(String name, Outcome requestOutcome, RuntimeException responseFailure, boolean failInAbort) {
-            this.requestOutcome = requestOutcome;
-            this.responseFailure = responseFailure;
-            this.failInAbort = failInAbort;
+        private Probe(String name) {
             setDisplayName(name);
+        }
+
+        private Probe requestOutcome(Outcome outcome) {
+            requestOutcome = outcome;
+            return this;
+        }
+
+        private Probe responseOutcome(Outcome outcome) {
+            responseOutcome = outcome;
+            return this;
+        }
+
+        private Probe responseFailure(RuntimeException failure) {
+            responseFailure = failure;
+            return this;
+        }
+
+        private Probe failInAbort() {
+            failInAbort = true;
+            return this;
         }
 
         @Override
@@ -176,7 +188,7 @@ class FlowControllerTest {
             calls.add(getDisplayName() + ":response");
             if (responseFailure != null)
                 throw responseFailure;
-            return CONTINUE;
+            return responseOutcome;
         }
 
         @Override
