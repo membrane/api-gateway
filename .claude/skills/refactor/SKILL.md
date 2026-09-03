@@ -24,10 +24,11 @@ workflow is what keeps it safe.
    the module you touched (see CLAUDE.md; `-Dtest=`/`-Dit.test=` do not isolate a class here):
    `core` → `test/scripts/run-core-test.sh <FQCN or package>`; a distribution/tutorial IT → the
    `run-example-test` skill; `annot`/`war` → plain Maven on that module
-   (`mvn -pl annot test -Duser.language=en -Duser.country=US`). Green after every step is the whole
-   safety net.
+   (`mvn -pl annot test -Duser.language=en -Duser.country=US`). Green after every step is the
+   safety net for everything except thread safety, which no test here can see (below).
 4. **Report** at the end: which refactorings were applied to which methods, what is now testable
-   that wasn't, and anything you deliberately left alone.
+   that wasn't, whether anything you moved changed what is shared between threads, and anything
+   you deliberately left alone.
 
 ## Scope discipline
 
@@ -39,6 +40,46 @@ workflow is what keeps it safe.
 - Delete what your change orphaned (now-unused imports, fields, private methods). Leave
   pre-existing dead code alone.
 
+## Thread safety
+
+One interceptor instance serves every request thread (`Interceptor` javadoc: "Interceptor
+implementations need to be thread safe"), and `<call>`/internal routing re-enters that same
+instance on its own thread — so per-request state in a field is corrupted by nesting before it is
+ever raced on. A refactoring that moves state out of a local and onto the object therefore changes
+behavior invisibly: parallel execution is commented out in
+`core/src/test/resources/junit-platform.properties`, so every unit test runs single-threaded and
+step 3's green says nothing here. This is the one regression you have to catch by reading the diff.
+
+**Preserve what is shared.** Locals, parameters and return values are per-request; fields on an
+interceptor are per-server. Never convert the first into the second to shorten a signature. Real
+per-request state goes on the `Exchange` (`ProtocolHandler` javadoc), never into a field — see the
+standing reminder at `REST2SOAPInterceptor.java:183`, "Determine SOAP version per-request; do not
+cache in instance state".
+
+Scan your own diff for these, each a race until you can argue otherwise:
+
+- **A new field** on an interceptor that a request path writes.
+- **Extract Class whose result becomes a field.** Anything holding per-message state is built per
+  call — `XMLProtector` wraps one message's writer. Only a stateless or immutable helper may be
+  held as a field.
+- **Lazy initialization or a cache** introduced by Replace Temp with Query. Config-derived values
+  are computed in `init()`, which is guaranteed to run before any port opens — prefer that (the
+  `config-error-handling` skill), and keep it idempotent: `RuleReinitializer` can re-run it.
+- **`static` mutable state.** `static final` is safe for primitives, `String` and `List.of(...)`;
+  it is a race for `SimpleDateFormat`, `Matcher`, `MessageDigest`, `DocumentBuilder`, `Transformer`
+  and the StAX/DOM/XPath factories. The repo's three sanctioned answers: build it per call, a
+  `static final ThreadLocal` (`HardenedStaxInputFactory`, `XPathUtil`), or a pool
+  (`XSLTTransformer`).
+- **Deleting `volatile`, `synchronized`, `Atomic*`, `ThreadLocal` or a concurrent collection**
+  because it reads as redundant — assume it is load-bearing until `git log -S` says otherwise.
+- **Handing a body or an `Exchange` to another thread** — `AbstractBody`: "Accessing the body from
+  multiple threads is illegal."
+
+`final` and CLAUDE.md's immutable-by-default rule are doing concurrency work here, not just style
+work: a `final` field is safely published, a `record` parameter object is shareable by
+construction. A race you *find* is a bug, not a refactoring — note it and fix it separately
+(step 2).
+
 ## Catalog
 
 ### Extract Method — the default move
@@ -48,13 +89,10 @@ body doing real work, a nested conditional branch of more than ~3 lines.
 
 - Name the method after **what it answers or produces**, not how — `isExpiredToken`,
   `resolveSchemaFor`, not `doCheck2`.
-- Prefer extracting to a **pure static** method (params in, value out, no field access) — the
-  repo's stated preference (CLAUDE.md: "prefer pure methods where practical"). Keep it `private`
-  by default and test it through its caller; a mirrored test class in the same package can only
-  call it directly if you make it package-private, which is a deliberate choice to justify, not
-  the default.
 - If the block reads three fields and writes none, pass them as parameters; if it writes two or
-  more locals, the block wants Extract Class instead (below), not a method with out-params.
+  more locals, the block wants Extract Class instead (below), not a method with out-params. Either
+  way the extracted method takes what it needs as parameters — a new field to dodge a parameter is
+  shared state (see Thread safety).
 - Keep the extracted method small and cohesive; a helper that itself needs a section comment is
   not done being extracted.
 
@@ -66,8 +104,9 @@ computation reachable from a test.
 - **Only when the expression is pure.** A query is evaluated at every read, so this is not
   behavior-preserving if the expression has side effects, observes mutable state that changes in
   between, allocates an object whose identity is compared, or is expensive. In those cases keep the
-  local (call the helper once and assign it) instead.
-- Inline a temp outright only when the expression is short and used once.
+  local (call the helper once and assign it) instead. On a shared interceptor "changes in between"
+  includes another thread changing it, so a query reading a mutable field is not pure.
+- Inline a temp outright only when the expression is short
 - A variable that gets **reassigned** is the strongest extract signal in this repo: CLAUDE.md says
   reassignment means "extract a helper method instead". Convert accumulate-in-a-loop temps into a
   helper returning the value, and make the remaining locals `final`.
@@ -91,15 +130,20 @@ CLAUDE.md forbids speculative abstraction. Introduce one only when a concrete pr
 
 - **Extract Class** — a class holding two clusters of fields that don't talk to each other, or a
   method needing 4+ locals to survive extraction. Move the cluster and the methods that use it.
+  Decide the new object's lifetime explicitly: per call (the default for anything stateful) or a
+  field (only if stateless or immutable).
 - **Replace Conditional with Polymorphism / sealed switch** — a `switch` or `if/else` chain on a
   type tag repeated in more than one method. This repo prefers pattern matching over sealed types
   and records to hand-rolled hierarchies (CLAUDE.md code style) — prefer a `switch` over a sealed
   interface before inventing an abstract base class.
 - **Introduce Parameter Object / Value Object** — see long parameter lists below.
 - **Replace Magic Literal with Constant** — a literal appearing twice, or once with non-obvious
-  meaning.
+  meaning. `static final` only for immutable values: a shared `SimpleDateFormat` or `Matcher` is a
+  race, not a constant.
 - Do **not** introduce an interface with a single implementation, a factory for a constructor
   call, or a strategy for a two-branch conditional.
+
+When you think an abstraction is worth it, ask.
 
 ### Move Method — feature envy
 A method that calls more methods/fields of another object than of its own belongs on that other
@@ -122,6 +166,8 @@ transposition bugs).
   methods.
 - Several parameters that are all fields of the caller → the method probably wants to move to the
   caller's class (feature envy, above).
+- Promoting parameters to fields is **not** a way to shorten a signature — on an interceptor that
+  turns per-request state into per-server state (see Thread safety).
 - Don't abbreviate parameter names in public interfaces (`docs/CONVENTIONS.md`).
 
 ## Repo-specific constraints
@@ -147,3 +193,5 @@ transposition bugs).
 Stop when the named smell is gone. Resist the pull to keep going: a refactor that touches twice
 the files the user expected is a worse outcome than one that leaves a second smell for later.
 Name the leftovers in your report instead of fixing them.
+
+

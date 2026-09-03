@@ -139,6 +139,7 @@ example/tutorial discovery and scaffolding.
 - Prefer pure methods where practical: same input → same output, minimal side effects; push I/O and mutation to the edges of a call chain.
 - Prefer `final` fields, parameters, and locals; a variable that must be reassigned is a signal to extract a helper method instead.
 - Treat data as immutable by default — prefer immutable collections (`List.of`, `Collections.unmodifiableList`) or defensive copies over mutating a caller-owned array/collection in place.
+- Interceptors must be thread safe (`Interceptor` javadoc): one instance per config element serves every request thread, and `<call>`/internal routing can re-enter it on its own thread. Keep per-request state in locals or on the `Exchange`; fields hold configuration, written before `init()` and read-only afterwards.
 - Use Streams only where they read more clearly than an equivalent loop; don't force a stream onto logic a plain loop expresses better.
 - Model control flow declaratively where it fits: pattern matching (`switch` over sealed types/records, pattern `instanceof`) over long `if`/`else` chains.
 - No hidden side effects in getter-like methods — anything that mutates state, logs, or does I/O should be named and called out explicitly, not buried in a computation.
