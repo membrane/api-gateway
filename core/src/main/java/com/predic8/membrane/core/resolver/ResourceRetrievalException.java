@@ -14,7 +14,8 @@
 
 package com.predic8.membrane.core.resolver;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.Serial;
 
 public class ResourceRetrievalException extends IOException {
 	@Serial
@@ -36,6 +37,15 @@ public class ResourceRetrievalException extends IOException {
 
 	public ResourceRetrievalException(String url, Exception e) {
 		super(e);
+		this.url = url;
+	}
+
+	/**
+	 * @param reason why the resource could not be retrieved; becomes the first part of
+	 *               {@link #getMessage()}
+	 */
+	public ResourceRetrievalException(String url, String reason) {
+		super(reason);
 		this.url = url;
 	}
 
