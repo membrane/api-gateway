@@ -14,21 +14,26 @@
 
 package com.predic8.membrane.core.resolver;
 
-import com.google.common.collect.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
+import com.google.common.collect.Lists;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.interceptor.InternalRoutingInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.RuleMatchingInterceptor;
+import com.predic8.membrane.core.proxies.AbstractProxy;
+import com.predic8.membrane.core.proxies.InternalProxy;
 import com.predic8.membrane.core.proxies.Proxy;
-import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.util.functionalInterfaces.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.util.functionalInterfaces.ExceptionThrowingConsumer;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
-import java.util.stream.*;
+import java.io.InputStream;
+import java.net.URI;
+import java.util.List;
+
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 
 public class RuleResolver implements SchemaResolver {
 
@@ -40,18 +45,24 @@ public class RuleResolver implements SchemaResolver {
         this.router = router;
     }
 
+    /**
+     * Resolves an <code>internal://proxyName/path</code> URL by running the named proxy's flow and
+     * returning the body of the response it produced. The flow has to answer the request itself,
+     * for example with a <code>static</code> or <code>template</code> plugin: no call to the
+     * proxy's target is made here.
+     */
     @Override
-    public InputStream resolve(String urlString) {
+    public InputStream resolve(String urlString) throws ResourceRetrievalException {
         log.debug("Resolving from {}", urlString);
         URI uri = URI.create(urlString);
         String proxyName = uri.getHost();
         Proxy proxy = router.getRuleManager().getRuleByName(proxyName,Proxy.class);
 
         if (proxy == null)
-            throw new RuntimeException("Rule with name '%s' not found".formatted(proxyName));
+            throw new ResourceRetrievalException(urlString, "Proxy with name '%s' not found".formatted(proxyName));
 
         if (!proxy.isActive())
-            throw new RuntimeException("Rule with name '%s' not active".formatted(proxyName));
+            throw new ResourceRetrievalException(urlString, "Proxy with name '%s' not active".formatted(proxyName));
 
         if (proxy instanceof InternalProxy ip) {
             log.debug("Resolving from internal proxy {}",ip);
@@ -65,33 +76,27 @@ public class RuleResolver implements SchemaResolver {
                 isri.handleRequest(exc);
             } catch (Exception e) {
                 log.debug("", e);
-                throw new RuntimeException(e);
+                throw new ResourceRetrievalException(urlString, e);
             }
         }
 
         if (!(proxy instanceof AbstractProxy p))
-            throw new RuntimeException("Rule with name '" + proxyName + "' is not of type AbstractProxy");
+            throw new ResourceRetrievalException(urlString, "Proxy with name '%s' is not of type AbstractProxy".formatted(proxyName));
         try {
-            String pathAndQuery = getPathAndQuery(uri); // url.substring(8).split("/", 2)[1];
-            Exchange exchange = new Request.Builder().get(pathAndQuery).buildExchange();
+            Exchange exchange = new Request.Builder().get(getPathAndQuery(uri)).buildExchange();
             RuleMatchingInterceptor.assignRule(exchange, p);
-            List<Interceptor> additionalInterceptors = new ArrayList<>();
 
-            if (p instanceof AbstractServiceProxy asp) {
-                exchange.setDestinations(Stream.of(toUrl(asp.getTargetSSL() != null ? "https" : "http", asp.getHost(), asp.getTargetPort()).toString() + pathAndQuery).collect(Collectors.toList()));
-                exchange.getRequest().getHeader().setHost(asp.getHost());
+            Outcome outcome = router.getFlowController().invokeRequestHandlers(exchange, p.getFlow());
+            if (outcome == ABORT)
+                throw new ResourceRetrievalException(urlString, "The flow of proxy '%s' aborted".formatted(proxyName));
+            if (exchange.getResponse() == null)
+                throw new ResourceRetrievalException(urlString, "The flow of proxy '%s' returned %s without producing a response".formatted(proxyName, outcome));
 
-                HTTPClientInterceptor httpClientInterceptor = new HTTPClientInterceptor();
-                httpClientInterceptor.init(router);
-                additionalInterceptors.add(httpClientInterceptor);
-            }
-
-            additionalInterceptors.clear(); // TODO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-            router.getFlowController().invokeRequestHandlers(exchange, Stream.concat(p.getFlow().stream(), additionalInterceptors.stream()).toList());
             return exchange.getResponse().getBodyAsStream();
+        } catch (ResourceRetrievalException e) {
+            throw e;
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new ResourceRetrievalException(urlString, e);
         }
     }
 
@@ -107,14 +112,6 @@ public class RuleResolver implements SchemaResolver {
         if (!uri.getScheme().equals("internal"))
             throw new RuntimeException("Not a service URL!");
         return uri.getHost();
-    }
-
-    public URL toUrl(String scheme, String host, int port) {
-        try {
-            return new URL(scheme + "://" + host + ":" + port);
-        } catch (MalformedURLException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     @Override
