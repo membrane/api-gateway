@@ -50,8 +50,25 @@ public interface MessageObserver {
 	 * {@link Message#addObserver(MessageObserver)}), as the body may have
 	 * already been fully received when registering the observer.
 	 * <p>
-	 * This is the last event that will be fired on any MessageObserver.
+	 * This is the last event that will be fired on any MessageObserver, unless reading the body fails,
+	 * in which case {@link #bodyFailed(ReadingBodyException)} is fired instead. The two are mutually
+	 * exclusive.
 	 */
     void bodyComplete(AbstractBody body);
+
+	/**
+	 * Notification that reading the body failed and no {@link #bodyComplete(AbstractBody)} will follow.
+	 * <p>
+	 * Like {@link #bodyComplete(AbstractBody)} this may run instantaneously during
+	 * {@link AbstractBody#addObserver(MessageObserver)}, when the body has already failed.
+	 * <p>
+	 * Defaults to doing nothing: only observers that hold a resource for the duration of the body (an
+	 * open stream, a pooled connection, a buffer) need to act on it.
+	 *
+	 * @param e the recorded failure
+	 */
+	default void bodyFailed(ReadingBodyException e) {
+		// most observers have nothing to release
+	}
 
 }

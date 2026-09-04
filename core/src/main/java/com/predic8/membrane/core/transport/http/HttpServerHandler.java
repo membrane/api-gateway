@@ -152,6 +152,10 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
             // respond 400 and close the connection to avoid request smuggling.
             log.debug("Rejecting request with invalid framing: {}", e.getMessage());
             respondWithBadRequestAndClose(e.getMessage());
+        } catch (ReadingBodyException e) {
+            logReadingBodyException(e);
+        } catch (WritingBodyException e) {
+            logWritingBodyException(e);
         } catch (Exception e) {
             log.error("", e);
         } finally {
@@ -165,6 +169,9 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
                 }
 
             closeConnections();
+
+            // the target connection is orphaned when an exception skipped determineConnectionContinuation()
+            exchange.closeTargetConnection();
 
             exchange.detach();
 

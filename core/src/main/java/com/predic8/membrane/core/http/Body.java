@@ -84,8 +84,10 @@ public class Body extends AbstractBody {
 	}
 
 	public void discard() {
-		if (read)
+		if (isRead())
 			return;
+		if (hasFailed())
+			return; // see AbstractBody.discard(): best-effort, and the stream is already dead
 		if (wasStreamed())
 			return;
 
@@ -95,7 +97,7 @@ public class Body extends AbstractBody {
         try {
             skipBodyContent();
         } catch (IOException e) {
-            throw new ReadingBodyException(e);
+            throw fail(e);
         }
     }
 
@@ -145,7 +147,7 @@ public class Body extends AbstractBody {
                 if (!((this.length > totalLength || this.length == -1) && (length = inputStream.read(buffer)) > 0))
                     break;
             } catch (IOException e) {
-                throw new ReadingBodyException(e);
+                throw fail(e);
             }
             totalLength += length;
 			streamedLength += length;

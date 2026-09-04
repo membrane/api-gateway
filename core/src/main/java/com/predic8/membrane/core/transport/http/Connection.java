@@ -13,23 +13,27 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.http;
 
-import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.transport.http.client.*;
-import com.predic8.membrane.core.transport.ssl.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.transport.http.client.ProxyConfiguration;
+import com.predic8.membrane.core.transport.ssl.SSLProvider;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
-import javax.net.ssl.*;
+import javax.net.ssl.SSLSocket;
 import java.io.*;
-import java.net.*;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.util.Random;
 
-import static com.predic8.membrane.annot.Constants.*;
+import static com.predic8.membrane.annot.Constants.USERAGENT;
 import static com.predic8.membrane.core.transport.http.ByteStreamLogging.wrapConnectionInputStream;
 import static com.predic8.membrane.core.transport.http.ByteStreamLogging.wrapConnectionOutputStream;
-import static com.predic8.membrane.core.util.text.TextUtil.*;
+import static com.predic8.membrane.core.util.text.TextUtil.isNullOrEmpty;
 
 /**
  * A {@link Connection} is an outbound TCP/IP (with or without TLS) connection, possibly managed
@@ -268,6 +272,29 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 	@Override
 	public void bodyRequested(AbstractBody body) {
 		// do nothing
+	}
+
+	/**
+	 * A failed body read leaves this connection desynchronized: the rest of the body is still in the
+	 * stream and would be parsed as the beginning of the next message. Close it rather than letting it
+	 * go back into the pool.
+	 * <p>
+	 * {@link HttpServerHandler} closes an orphaned target connection as well, but only for exchanges
+	 * that reach its {@code finally}; connections obtained directly via {@link ConnectionFactory} have
+	 * no such backstop.
+	 */
+	@Override
+	public void bodyFailed(ReadingBodyException e) {
+		if (exchange == null)
+			return;
+		// detach before closing: a failing close() must not leave this connection attached to the exchange
+		exchange.setTargetConnection(null);
+		exchange = null;
+		try {
+			close();
+		} catch (IOException e2) {
+			throw new RuntimeException(e2);
+		}
 	}
 
 	@Override
