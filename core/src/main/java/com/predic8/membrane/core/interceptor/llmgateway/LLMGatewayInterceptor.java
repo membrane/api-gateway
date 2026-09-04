@@ -130,6 +130,12 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
             return CONTINUE;
         }
 
+        // Everything below reads and rewrites the model input, so it has to be parseable.
+        if (mir.getJson() == null) {
+            exc.setResponse(errorCreator.invalidRequestError("Expected a JSON request body."));
+            return RETURN;
+        }
+
         var outcome = policies.handleRequest(mir, exc);
         if (outcome != CONTINUE) {
             return outcome;

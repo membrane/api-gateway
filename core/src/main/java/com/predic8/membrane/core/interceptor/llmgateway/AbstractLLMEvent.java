@@ -48,6 +48,7 @@ public abstract class AbstractLLMEvent {
         var opt = JsonUtil.getJsonObject(sse.data());
         if (opt.isEmpty()) {
             log.info("Unknown event format: {}", sse.data());
+            return null;
         }
 
         var json = opt.get();

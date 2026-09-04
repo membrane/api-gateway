@@ -58,6 +58,9 @@ public class AbstractModelInputRequest extends BaseLLMRequest implements ModelIn
                     }
                 }
                 body = exchange.getRequest().getBody();
+                // The model input is in the parts, not in JSON. An empty object keeps the
+                // accessors below working; getBody() returns the original multipart body.
+                json = om.createObjectNode();
             } catch (IOException | ParseException e) {
                 throw new RuntimeException(e);
             }

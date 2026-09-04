@@ -14,8 +14,10 @@
 
 package com.predic8.membrane.core.interceptor.llmgateway.provider.chatcompletions;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.llmgateway.AbstractLLMEvent;
+import com.predic8.membrane.core.interceptor.llmgateway.ChatCompletionEvent;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.AbstractLLMResponse;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMResponse;
 import com.predic8.membrane.core.interceptor.llmgateway.store.Usage;
@@ -56,14 +58,26 @@ public class ChatCompletionsResponse extends AbstractLLMResponse {
     }
 
     @Override
-    protected void processTerminalEvent(SSEParser.SSEEvent terminal) {
-        postProcessor.accept(ChatCompletionsResponse.this);
-    }
-
-    @Override
     public void process(SSEParser.SSEEvent e) {
         log.debug("Data: {}", e.data());
         var event = AbstractLLMEvent.create(e);
         log.debug("Event: {}", event);
+        captureUsage(event);
+    }
+
+    /**
+     * While streaming, the usage is delivered in a chunk of its own with an empty choices array.
+     * {@link ChatCompletionsRequest} asks the provider for it by setting
+     * {@code stream_options.include_usage}. The terminal <code>[DONE]</code> event carries no JSON,
+     * so this is the only place the usage can be picked up.
+     */
+    private void captureUsage(AbstractLLMEvent event) {
+        if (!(event instanceof ChatCompletionEvent))
+            return;
+        if (!(event.getJson() instanceof ObjectNode chunk))
+            return;
+        if (!chunk.path("usage").isObject())
+            return;
+        json = chunk;
     }
 }

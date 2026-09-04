@@ -18,6 +18,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.AbstractBody;
 import com.predic8.membrane.core.http.AbstractMessageObserver;
 import com.predic8.membrane.core.http.Chunk;
 import com.predic8.membrane.core.util.http.SSEParser;
@@ -34,6 +35,8 @@ public abstract class AbstractLLMResponse extends AbstractLLMMessage implements 
     protected ObjectNode json;
     protected Consumer<LLMResponse> postProcessor;
 
+    private boolean finished;
+
     public AbstractLLMResponse(Exchange exchange, Consumer<LLMResponse> postProcessor) {
         super(exchange);
         this.postProcessor = postProcessor;
@@ -43,12 +46,23 @@ public abstract class AbstractLLMResponse extends AbstractLLMMessage implements 
 
             log.debug("Streaming response.");
 
+            // The body arrives chunk by chunk. Subclasses fill this in from the events they see,
+            // so it stays empty rather than null until then.
+            json = JsonNodeFactory.instance.objectNode();
+
             var parser = new SSEParser(getTerminalEvents());
 
             msg.getBody().addObserver(new AbstractMessageObserver() {
                 @Override
                 public void bodyChunk(Chunk chunk) {
                     processChunk(chunk, parser);
+                }
+
+                @Override
+                public void bodyComplete(AbstractBody body) {
+                    // Not every stream has a terminal event: Gemini sends unnamed data events, so
+                    // the end of the body is the only end-of-stream signal there is.
+                    finish(parser);
                 }
             });
         } else {
@@ -63,19 +77,26 @@ public abstract class AbstractLLMResponse extends AbstractLLMMessage implements 
         if (!parser.parse(chunk)) {
             return;
         }
+        finish(parser);
+    }
 
-        // Now all chunks are parsed
-
+    /**
+     * Hands the events collected so far to the subclass and reports the response to the post
+     * processor, at most once per response.
+     */
+    private void finish(SSEParser parser) {
         var events = parser.getEvents();
-        var terminal = parser.getTerminalEvent();
+
+        if (finished || events.isEmpty())
+            return;
+        finished = true;
 
         log.debug("Events: {}", events.size());
         events.forEach(this::process);
 
-        terminal.ifPresent(event -> {
-            processTerminalEvent(event);
-            postProcessor.accept(AbstractLLMResponse.this);
-        });
+        parser.getTerminalEvent().ifPresent(this::processTerminalEvent);
+
+        postProcessor.accept(this);
     }
 
     protected void processTerminalEvent(SSEParser.SSEEvent terminal) {}
