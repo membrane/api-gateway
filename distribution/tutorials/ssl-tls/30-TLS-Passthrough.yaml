@@ -60,7 +60,7 @@
 sslProxy:
   host: api.predic8.de
   port: 8443
-  sslInterceptors:
+  interceptors:
     # Logs each forwarded connection; without it a passthrough leaves no trace
     - sslLog: {}
   target:
@@ -71,7 +71,7 @@ sslProxy:
 sslProxy:
   host: www.membrane-api.io
   port: 8443
-  sslInterceptors:
+  interceptors:
     - sslLog: {}
   target:
     host: www.membrane-api.io

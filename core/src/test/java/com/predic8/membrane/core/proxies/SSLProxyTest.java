@@ -169,20 +169,20 @@ class SSLProxyTest {
         };
     }
 
-    private int startRouterWithSSLProxy(SSLInterceptor... sslInterceptors) throws IOException {
+    private int startRouterWithSSLProxy(SSLInterceptor... interceptors) throws IOException {
         int port = freePort();
         router = new TestRouter();
-        router.add(createSSLProxy(port, sslInterceptors));
+        router.add(createSSLProxy(port, interceptors));
         router.start();
         return port;
     }
 
-    private SSLProxy createSSLProxy(int port, SSLInterceptor... sslInterceptors) {
+    private SSLProxy createSSLProxy(int port, SSLInterceptor... interceptors) {
         SSLProxy sslProxy = new SSLProxy();
         sslProxy.setHost(SNI_HOST);
         sslProxy.setPort(port);
         sslProxy.setUseAsDefault(false);
-        sslProxy.setSslInterceptors(List.of(sslInterceptors));
+        sslProxy.setInterceptors(List.of(interceptors));
         SSLProxy.Target target = new SSLProxy.Target();
         target.setHost(backend.getInetAddress().getHostAddress());
         target.setPort(backend.getLocalPort());
