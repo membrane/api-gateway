@@ -37,7 +37,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
  * sslProxy:
  *   host: api.example.com
  *   port: 8443
- *   sslInterceptors:
+ *   interceptors:
  *     - sslLog: {}
  *   target:
  *     host: api.example.com
