@@ -165,8 +165,6 @@ public abstract class AbstractBody {
 
 	protected abstract void writeAlreadyRead(AbstractBodyTransferer out) throws IOException;
 
-	protected abstract void writeNotRead(AbstractBodyTransferer out) throws IOException;
-
 	/**
 	 * Is called when there are no observers that need to read the body. Streams the body without reading it
 	 */

@@ -32,7 +32,7 @@ public class JsonProtectionScannerTest {
     private static final JsonLimits LIMITS =
             new JsonLimits(4096, 10240, 10, 20, 10, 10, 2048, true);
 
-    private static final JsonProtectionScanner scanner = new JsonProtectionScanner(LIMITS);
+    private static final JsonProtection scanner = new JsonProtection(LIMITS);
 
     @Test
     void wellFormedDocumentWithinLimitsPasses() throws Exception {
@@ -75,7 +75,7 @@ public class JsonProtectionScannerTest {
     @Test
     void maxTokensIsExceeded() {
         // Room in the array so that only the token count can trip.
-        JsonProtectionScanner s = new JsonProtectionScanner(
+        JsonProtection s = new JsonProtection(
                 new JsonLimits(4096, 10240, 10, 20, 10, 10, 100000, true));
         var e = assertThrows(JsonProtectionException.class,
                 () -> s.scan(stream("[" + repeat("1,", 4096) + "1]")));
@@ -85,7 +85,7 @@ public class JsonProtectionScannerTest {
     @Test
     void maxSizeIsExceeded() {
         // Few tokens, but a lot of bytes: only maxSize can catch this.
-        JsonProtectionScanner tiny = new JsonProtectionScanner(
+        JsonProtection tiny = new JsonProtection(
                 new JsonLimits(4096, 32, 10, 262144, 256, 10, 2048, true));
         var e = assertThrows(JsonProtectionException.class,
                 () -> tiny.scan(stream("{\"a\":\"" + repeat("x", 200) + "\"}")));
@@ -96,7 +96,7 @@ public class JsonProtectionScannerTest {
     void protoKeyIsBlockedOnlyWhileBlockProtoIsOn() throws Exception {
         assertEquals("__proto__ found as key.", violation("{\"__proto__\":1}"));
 
-        JsonProtectionScanner permissive = new JsonProtectionScanner(
+        JsonProtection permissive = new JsonProtection(
                 new JsonLimits(4096, 10240, 10, 20, 10, 10, 2048, false));
         permissive.scan(stream("{\"__proto__\":1}"));
     }

@@ -246,26 +246,6 @@ public class ChunkedBody extends AbstractBody {
     }
 
     @Override
-    protected void writeNotRead(AbstractBodyTransferer out) throws IOException {
-        log.debug("writeNotReadChunked");
-        int chunkSize;
-        while ((chunkSize = readChunkSize(inputStream)) > 0) {
-            Chunk chunk = new Chunk(readByteArray(inputStream, chunkSize));
-            out.write(chunk);
-            chunks.add(chunk);
-            for (MessageObserver observer : observers)
-                observer.bodyChunk(chunk);
-            //noinspection ResultOfMethodCallIgnored
-            inputStream.read(); // CR
-            //noinspection ResultOfMethodCallIgnored
-            inputStream.read(); // LF
-        }
-        trailer = readTrailer(inputStream);
-        out.finish(trailer);
-        markAsRead();
-    }
-
-    @Override
     protected void writeStreamed(AbstractBodyTransferer out) {
         log.debug("writeStreamed");
         int chunkSize;

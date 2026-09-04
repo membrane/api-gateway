@@ -1,4 +1,4 @@
-/* Copyright 2023 predic8 GmbH, www.predic8.com
+/* Copyright 2026 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -12,10 +12,15 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.interceptor.xmlprotection;
+package com.predic8.membrane.tutorials.ssl_tls;
 
-public class XMLProtectionException extends Exception {
-    public XMLProtectionException(String message) {
-        super(message);
+import com.predic8.membrane.tutorials.AbstractMembraneTutorialTest;
+
+public abstract class AbstractSslTlsTutorialTest extends AbstractMembraneTutorialTest {
+
+    @Override
+    protected String getTutorialDir() {
+        return "ssl-tls";
     }
+
 }

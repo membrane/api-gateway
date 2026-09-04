@@ -127,10 +127,6 @@ public class ServerSentEventsDemoStreamInterceptor extends AbstractInterceptor {
         }
 
         @Override
-        protected void writeNotRead(AbstractBodyTransferer out) {
-        }
-
-        @Override
         protected void writeStreamed(AbstractBodyTransferer out) {
 
         }

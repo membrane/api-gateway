@@ -39,11 +39,6 @@ public class EmptyBody extends AbstractBody {
 	}
 
 	@Override
-	protected void writeNotRead(AbstractBodyTransferer out) {
-		//ignore
-	}
-
-	@Override
 	protected void writeStreamed(AbstractBodyTransferer out) {
 		//ignore
 	}
