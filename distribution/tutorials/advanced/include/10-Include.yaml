@@ -1,0 +1,53 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.3.1.json
+#
+# Tutorial: Includes
+#
+# Large gateway configs become hard to maintain in a single file.
+# Use include to split config across multiple files. E.g. each team can own
+# and version their API definitions independently.
+#
+# This config mixes an inline API with a list of includes:
+#   - /health                     — inline, owned by the gateway team
+#   - external/shop.apis.yaml     — the shop team's config (include)
+#   - external/fallback.apis.yaml — a shared fallback (include)
+#
+# The shop team's file itself includes shop-orders.apis.yaml which has a transitive
+# include.
+#
+# 1.) Start Membrane:
+#     ./membrane.sh -c 10-Include.yaml
+#
+# 2.) Health check (inline):
+#     curl -i http://localhost:2000/health
+#     → 200  {"status":"up"}
+#
+# 3.) Shop root (from external/shop.apis.yaml):
+#     curl -i http://localhost:2000/shop
+#     → 200  {"status":"open"}
+#
+# 4.) Orders (included transitively via external/shop.apis.yaml):
+#     curl -i http://localhost:2000/shop/orders
+#     → 200  [{"id":1},{"id":2}]
+#
+# 5.) Unknown path (from external/fallback.apis.yaml):
+#     curl -i http://localhost:2000/unknown
+#     → 404
+#
+# Continue with file 20-Positional-Include.yaml
+
+# Inline API owned by the gateway team
+api:
+  port: 2000
+  path:
+    uri: /health
+  flow:
+    - static:
+        src: '{"status":"up"}'
+        contentType: application/json
+    - return:
+        status: 200
+
+---
+include:
+  - ./external/shop.apis.yaml
+  - ./external/fallback.apis.yaml

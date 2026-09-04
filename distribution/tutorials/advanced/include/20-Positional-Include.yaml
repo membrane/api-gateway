@@ -1,0 +1,71 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.3.1.json
+#
+# Tutorial: Positional Includes
+#
+# Each include is expanded in-place.
+# The document order determines which API is registered first and therefore
+# which route wins when a request could match more than one API.
+#
+# This config registers four groups in order:
+#   1. /shop/orders/{id}  (inline — specific order route)
+#   2. /shop/orders       (from external/shop-orders.apis.yaml — order list)
+#   3. /shop              (inline — shop root)
+#   4. Fallback 404       (from external/fallback.apis.yaml — catches everything else)
+#
+# Register more specific paths first: /shop/orders/{id} before /shop/orders,
+# and both before /shop. The fallback must always be last or it swallows
+# every route that follows it.
+#
+# 1.) Start Membrane:
+#     ./membrane.sh -c 20-Positional-Include.yaml
+#
+# 2.) Specific order route (inline, registered first):
+#     curl -i http://localhost:2000/shop/orders/42
+#     → 200  {"orderId":"42","status":"shipped"}
+#
+# 3.) Order list route (from include, registered second):
+#     curl -i http://localhost:2000/shop/orders
+#     → 200  [{"id":1},{"id":2}]
+#
+# 4.) Shop root (inline, registered third):
+#     curl -i http://localhost:2000/shop
+#     → 200  {"status":"open"}
+#
+# 5.) Unknown path (fallback include, registered last):
+#     curl -i http://localhost:2000/unknown
+#     → 404
+
+# specific order route (highest priority, inline)
+api:
+  port: 2000
+  path:
+    uri: /shop/orders/{id}
+  flow:
+    - static:
+        src: '{"orderId":"42","status":"shipped"}'
+        contentType: application/json
+    - return:
+        status: 200
+
+---
+# order list (second priority, from include)
+include:
+  - ./external/shop-orders.apis.yaml
+
+---
+# shop root (third priority, inline)
+api:
+  port: 2000
+  path:
+    uri: /shop
+  flow:
+    - static:
+        src: '{"status":"open"}'
+        contentType: application/json
+    - return:
+        status: 200
+
+---
+# fallback (lowest priority and catches everything else)
+include:
+  - ./external/fallback.apis.yaml
