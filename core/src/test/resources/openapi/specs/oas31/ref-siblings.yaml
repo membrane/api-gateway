@@ -1,0 +1,62 @@
+openapi: '3.1.0'
+info:
+  title: Ref Siblings Test API
+  version: '1.0'
+paths:
+  /siblings:
+    post:
+      responses:
+        '200':
+          description: OK
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nullableRef:
+                  $ref: '#/components/schemas/Address'
+                  type:
+                    - object
+                    - "null"
+                readOnlyRef:
+                  $ref: '#/components/schemas/Address'
+                  readOnly: true
+                extraRequiredRef:
+                  $ref: '#/components/schemas/Address'
+                  required:
+                    - zip
+                duplicateRequiredRef:
+                  $ref: '#/components/schemas/Address'
+                  required:
+                    - city
+                nodeRef:
+                  $ref: '#/components/schemas/Node'
+                plainRef:
+                  $ref: '#/components/schemas/Address'
+                narrowedRef:
+                  $ref: '#/components/schemas/AnyValue'
+                  type: string
+components:
+  schemas:
+    AnyValue:
+      description: no type, so only a keyword next to the $ref constrains the value
+    Node:
+      type: object
+      properties:
+        id:
+          type: string
+        next:
+          $ref: '#/components/schemas/Node'
+          required:
+            - id
+    Address:
+      type: object
+      required:
+        - street
+        - city
+      properties:
+        street:
+          type: string
+        city:
+          type: string

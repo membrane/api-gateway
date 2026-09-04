@@ -122,6 +122,17 @@ paths:
             schema:
               $ref: "#/components/schemas/RefAllOfXmlType"
 
+  /composition-ref-recursive:
+    post:
+      responses:
+        '200':
+          description: OK
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefRecursiveNode"
+
 components:
   schemas:
     Address:
@@ -167,6 +178,14 @@ components:
     RefNotType:
       not:
         type: object
+    RefRecursiveNode:
+      type: object
+      required: [ id ]
+      properties:
+        id:
+          type: string
+        next:
+          $ref: "#/components/schemas/RefRecursiveNode"
     RefCycleA:
       type: object
       allOf:
