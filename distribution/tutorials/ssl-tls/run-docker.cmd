@@ -1,5 +1,5 @@
 @echo off
-setlocal enabledelayedexpansion
+setlocal EnableExtensions DisableDelayedExpansion
 
 set "DIR=%~dp0"
 set "IMAGE=predic8/membrane:7.5.0"
@@ -10,6 +10,7 @@ set "CLEANUP_CMD=docker rm -f %CID% >nul 2>nul"
 
 docker cp "%DIR%." "%CID%:/opt/membrane/" >nul
 docker start -a "%CID%"
+set "STATUS=%ERRORLEVEL%"
 
 %CLEANUP_CMD%
-endlocal
+endlocal & exit /b %STATUS%
