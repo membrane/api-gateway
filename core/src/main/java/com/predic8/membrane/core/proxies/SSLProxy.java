@@ -15,25 +15,34 @@ limitations under the License. */
 package com.predic8.membrane.core.proxies;
 
 import com.google.common.base.Objects;
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.config.security.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.sslinterceptor.*;
-import com.predic8.membrane.core.stats.*;
-import com.predic8.membrane.core.transport.http.*;
-import com.predic8.membrane.core.transport.http.client.*;
-import com.predic8.membrane.core.transport.http.streampump.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.Required;
+import com.predic8.membrane.core.config.security.SSLParser;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.sslinterceptor.SSLInterceptor;
+import com.predic8.membrane.core.stats.RuleStatisticCollector;
+import com.predic8.membrane.core.transport.http.Connection;
+import com.predic8.membrane.core.transport.http.ConnectionManager;
+import com.predic8.membrane.core.transport.http.client.ConnectionConfiguration;
+import com.predic8.membrane.core.transport.http.streampump.StreamPump;
 import com.predic8.membrane.core.transport.ssl.*;
-import com.predic8.membrane.core.util.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.util.DNSCache;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.net.SocketException;
+import java.util.ArrayList;
+import java.util.List;
 
-import static com.predic8.membrane.core.interceptor.FlowController.*;
+import static com.predic8.membrane.core.interceptor.FlowController.ABORTION_REASON;
 import static com.predic8.membrane.core.util.BeanDefinitionBasePathUtil.resolveBaseLocation;
 
 /**
@@ -295,7 +304,6 @@ public class SSLProxy implements Proxy {
         return (error != null ? error : TLSError.internal_error).getCode();
     }
 
-    // TODO ?
     private class SSLProxyKey implements RuleKey {
         @Override
         public int getPort() {

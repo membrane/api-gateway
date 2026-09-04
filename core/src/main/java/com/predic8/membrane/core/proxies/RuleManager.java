@@ -122,9 +122,9 @@ public class RuleManager {
         for (Proxy proxy : proxies) {
             switch (proxy) {
                 case SSLProxy sslp:
-                    SSLContextCollection.Builder builder = getOrCreateBuilder(sslp, sslContextBuilders);
-                    builder.useCollection();
-                    builder.add(sslp.getSslInboundContext());
+                    getOrCreateBuilder(sslp, sslContextBuilders)
+                            .useCollection()
+                            .add(sslp.getSslInboundContext());
                     break;
                 case SSLableProxy sslap:
                     SSLContext sslContext = sslap.getSslInboundContext();
