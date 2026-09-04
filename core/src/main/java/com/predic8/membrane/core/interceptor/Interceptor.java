@@ -155,8 +155,8 @@ public interface Interceptor {
 
 	/**
 	 * Called instead of {@link #handleResponse(Exchange)} once handling of the exchange has been
-	 * given up: an interceptor later in the request flow returned {@link Outcome#ABORT} or threw
-	 * an exception, or an interceptor in the response flow returned {@link Outcome#ABORT}.
+	 * given up: an interceptor later in the request flow, or one in the response flow, returned
+	 * {@link Outcome#ABORT} or threw an exception.
 	 *
 	 * handleAbort is called in the reverse order of the chain (as handleResponse is) and never on
 	 * the interceptor that aborted, because both flows reverse at the position before it. It is
