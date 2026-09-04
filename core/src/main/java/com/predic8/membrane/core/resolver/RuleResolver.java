@@ -17,11 +17,9 @@ package com.predic8.membrane.core.resolver;
 import com.google.common.collect.Lists;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.interceptor.InternalRoutingInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.RuleMatchingInterceptor;
 import com.predic8.membrane.core.proxies.AbstractProxy;
-import com.predic8.membrane.core.proxies.InternalProxy;
 import com.predic8.membrane.core.proxies.Proxy;
 import com.predic8.membrane.core.router.Router;
 import com.predic8.membrane.core.util.functionalInterfaces.ExceptionThrowingConsumer;
@@ -63,22 +61,6 @@ public class RuleResolver implements SchemaResolver {
 
         if (!proxy.isActive())
             throw new ResourceRetrievalException(urlString, "Proxy with name '%s' not active".formatted(proxyName));
-
-        if (proxy instanceof InternalProxy ip) {
-            log.debug("Resolving from internal proxy {}",ip);
-            try {
-                Exchange exc = Request.get("?wsdl").buildExchange();
-                exc.getDestinations().clear();
-                exc.getDestinations().add(urlString);
-                exc.setProxy(proxy);
-                InternalRoutingInterceptor isri = new InternalRoutingInterceptor();
-                isri.init(router);
-                isri.handleRequest(exc);
-            } catch (Exception e) {
-                log.debug("", e);
-                throw new ResourceRetrievalException(urlString, e);
-            }
-        }
 
         if (!(proxy instanceof AbstractProxy p))
             throw new ResourceRetrievalException(urlString, "Proxy with name '%s' is not of type AbstractProxy".formatted(proxyName));

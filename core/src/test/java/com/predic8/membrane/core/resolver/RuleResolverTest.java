@@ -13,10 +13,15 @@
    limitations under the License. */
 package com.predic8.membrane.core.resolver;
 
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.flow.ReturnInterceptor;
 import com.predic8.membrane.core.interceptor.flow.invocation.testinterceptors.AbortFlowTestInterceptor;
 import com.predic8.membrane.core.interceptor.templating.StaticInterceptor;
+import com.predic8.membrane.core.proxies.InternalProxy;
 import com.predic8.membrane.core.proxies.ServiceProxy;
 import com.predic8.membrane.core.proxies.ServiceProxyKey;
 import com.predic8.membrane.core.router.TestRouter;
@@ -29,6 +34,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static org.junit.jupiter.api.Assertions.*;
 
 class RuleResolverTest {
@@ -104,6 +110,37 @@ class RuleResolverTest {
 
         var e = assertThrows(ResourceRetrievalException.class, () -> router.getResolverMap().resolve(WSDL_URL));
         assertTrue(e.getMessage().contains("not active"), e.getMessage());
+    }
+
+    /**
+     * A flow can set the response without returning. The document is resolved all the same.
+     */
+    @Test
+    void resolvesTheDocumentOfAFlowThatDidNotReturn() throws Exception {
+        addProxy(new AbstractInterceptor() {
+            @Override
+            public Outcome handleRequest(Exchange exc) {
+                exc.setResponse(Response.ok("<definitions/>").build());
+                return CONTINUE;
+            }
+        });
+
+        try (InputStream is = router.getResolverMap().resolve(WSDL_URL)) {
+            assertEquals("<definitions/>", new String(is.readAllBytes(), StandardCharsets.UTF_8));
+        }
+    }
+
+    @Test
+    void resolvesThroughAnInternalProxy() throws Exception {
+        InternalProxy proxy = new InternalProxy();
+        proxy.setName("doc");
+        proxy.getFlow().addAll(List.of(staticText("<definitions/>"), new ReturnInterceptor()));
+        router.add(proxy);
+        proxy.init(router);
+
+        try (InputStream is = router.getResolverMap().resolve(WSDL_URL)) {
+            assertEquals("<definitions/>", new String(is.readAllBytes(), StandardCharsets.UTF_8));
+        }
     }
 
     private void addProxy(Interceptor... flow) {
