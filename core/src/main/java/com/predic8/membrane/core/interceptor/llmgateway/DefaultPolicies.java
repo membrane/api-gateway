@@ -20,15 +20,14 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMErrorCreator;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.ModelInputRequest;
-import com.predic8.membrane.core.interceptor.llmgateway.provider.openai.OrganizationRequest;
 import com.predic8.membrane.core.util.ConfigurationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 
 /**
  * @description LLM Gateway policies for token usage and model restrictions.
@@ -50,10 +49,6 @@ public class DefaultPolicies implements Policies {
 
     public Outcome handleRequest(ModelInputRequest mir, Exchange exc) {
 
-        if (mir instanceof OrganizationRequest) {
-            return CONTINUE;
-        }
-
         var outcome = checkTokenLimits(mir, exc);
         if (outcome != CONTINUE) {
             return outcome;
@@ -65,7 +60,7 @@ public class DefaultPolicies implements Policies {
         var model = mir.getModel();
         if (models != null && !models.contains(model)) {
             exc.setResponse(errorCreator.modelNotAllowed(model, models));
-            return RETURN;
+            return ABORT;
         }
         return CONTINUE;
     }
@@ -89,7 +84,7 @@ public class DefaultPolicies implements Policies {
             if (inputTokens > maxInputTokens) {
                 log.info("Input tokens {} exceed the limit of {}.", inputTokens, maxInputTokens);
                 exc.setResponse(errorCreator.inputTokensExceeded(maxInputTokens, inputTokens));
-                return RETURN;
+                return ABORT;
             }
         }
         return CONTINUE;

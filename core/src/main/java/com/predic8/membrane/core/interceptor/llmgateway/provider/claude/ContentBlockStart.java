@@ -22,9 +22,8 @@ public class ContentBlockStart {
 
     public static ContentBlockStart from(ObjectNode on) {
         var cbs = new ContentBlockStart();
-        var cb = (ObjectNode) on.path("content_block");
 
-        if ("tool_use".equals(cb.path("type").asText())) {
+        if (on.path("content_block") instanceof ObjectNode cb && "tool_use".equals(cb.path("type").asText())) {
             cbs.toolUse = ToolUse.from(cb);
         }
 

@@ -47,6 +47,11 @@ public class AiApiUser {
 
     /**
      * Checks if the user has enough tokens to make the request.
+     * <p>
+     * The check is advisory: it reads the usage of the period without reserving anything, so
+     * requests running at the same time can each be told there is budget left and together overshoot
+     * it. What they actually used is settled by {@link #addTokensUsedInPeriod(Usage)} once the
+     * responses arrive, and the next request sees it.
      *
      * @param tokensNeededForRequest The number of tokens that the user needs to make the request
      * @return The estimated number of tokens that the user has left after this request

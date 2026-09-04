@@ -26,12 +26,13 @@ import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMRequest;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.ModelInputRequest;
 import com.predic8.membrane.core.interceptor.llmgateway.store.AiApiStore;
 import com.predic8.membrane.core.interceptor.llmgateway.store.AiApiUser;
+import com.predic8.membrane.core.interceptor.llmgateway.store.AiApiUserStore;
 import com.predic8.membrane.core.util.ConfigurationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 
 /**
  * @description Gateway in front of an LLM provider's chat API (OpenAI, Anthropic/Claude, or Google Gemini). It can
@@ -45,7 +46,8 @@ import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
  *   claude | openai | google              # the provider (required)
  *   [ policies: ... ]                     # token limits, model rules
  *   [ systemPrompt: ... ]
- *   [ simpleStore | jdbcAiApiUsageStore ] # enables per-user auth and limits
+ *   [ simpleStore ]                       # per-user auth and limits
+ *   [ jdbcAiApiUsageStore ]               # records usage in a database
  * </pre>
  * @topic 10. AI
  * @yaml
@@ -102,15 +104,15 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
             llmReq = provider.getLLMRequest(exc);
         } catch (Exception e) {
             exc.setResponse(errorCreator.invalidRequestError("Error parsing request: " + e.getMessage()));
-            return RETURN;
+            return ABORT;
         }
 
         AiApiUser user = null;
-        if (store != null) {
-            var opt = store.getUser(llmReq.getApiKey());
+        if (store instanceof AiApiUserStore userStore) {
+            var opt = userStore.getUser(llmReq.getApiKey());
             if (opt.isEmpty()) {
                 exc.setResponse(errorCreator.authenticationFailed());
-                return RETURN;
+                return ABORT;
             }
             user = opt.get();
             log.debug("User: {}", user);
@@ -133,7 +135,7 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
         // Everything below reads and rewrites the model input, so it has to be parseable.
         if (mir.getJson() == null) {
             exc.setResponse(errorCreator.invalidRequestError("Expected a JSON request body."));
-            return RETURN;
+            return ABORT;
         }
 
         var outcome = policies.handleRequest(mir, exc);
@@ -150,7 +152,7 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
 
         // Check store limits
         if (checkStoreLimits(exc, mir, user) != CONTINUE) {
-            return RETURN;
+            return ABORT;
         }
 
         exc.getRequest().setBodyContent(mir.getBody().getContent());
@@ -160,20 +162,31 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
     private Outcome checkStoreLimits(Exchange exc, ModelInputRequest mir, AiApiUser user) {
         long inputTokens = mir.estimateInputTokens();
         log.debug("Estimated input tokens: {}", inputTokens);
-        if (store != null) {
+        if (store instanceof AiApiUserStore userStore) {
             var effectiveMaxTokens = computeEffectiveMaxOutputTokens(mir.getRequestedMaxOutputTokens(), policies.getMaxOutputTokens());
-            var remaining = store.checkLimit(user, inputTokens, effectiveMaxTokens);
+            var remaining = userStore.checkLimit(user, inputTokens, effectiveMaxTokens);
             log.debug("User {} has {} remaining tokens left", user, remaining);
             if (remaining <= 0) {
                 log.info("Token limit exceeded. Remaining: {} input: {} maxOutput: {}", remaining, inputTokens, effectiveMaxTokens);
-                exc.setResponse(errorCreator.tokenLimitExceeded(inputTokens + effectiveMaxTokens, remaining, store.getRemainingResetTime()));
-                return RETURN;
+                exc.setResponse(errorCreator.tokenLimitExceeded(inputTokens + effectiveMaxTokens, remaining, userStore.getRemainingResetTime()));
+                return ABORT;
             }
         }
         return CONTINUE;
     }
 
+    /**
+     * How many output tokens to reserve against the user's budget: the lower of what the client
+     * asked for and what the policies allow. Zero means unlimited on either side, so it must not
+     * win the comparison.
+     *
+     * @param requestedMaxOutputTokens as asked for by the client, 0 or less if it did not ask
+     * @param maxOutputTokens          as configured in the policies, 0 if unlimited
+     * @return the number of output tokens to reserve, 0 if neither side gives a limit
+     */
     long computeEffectiveMaxOutputTokens(long requestedMaxOutputTokens, long maxOutputTokens) {
+        if (maxOutputTokens <= 0)
+            return Math.max(requestedMaxOutputTokens, 0);
         if (requestedMaxOutputTokens <= 0)
             return maxOutputTokens;
         return Math.min(requestedMaxOutputTokens, maxOutputTokens);
@@ -211,8 +224,9 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description Backing store that makes the gateway stateful: it authenticates clients by their API key, enforces
-     * per-user token limits, and records usage. Omit it to run the gateway statelessly.
+     * @description Backing store that makes the gateway stateful. A <code>simpleStore</code> authenticates clients by
+     * their API key, enforces per-user token limits and records their usage; a <code>jdbcAiApiUsageStore</code> only
+     * records usage and leaves requests ungated. Omit it to run the gateway statelessly.
      */
     @MCChildElement(allowForeign = true, order = 30)
     public void setAiStore(AiApiStore store) {

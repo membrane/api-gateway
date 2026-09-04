@@ -25,12 +25,12 @@ public class ChatCompletionEvent extends AbstractLLMEvent {
     public ChatCompletionEvent(JsonNode json) {
         super(json);
 
-        parseChoices(json);
-
+        // Walking the choices produces log output and nothing else
+        if (log.isDebugEnabled())
+            logChoices(json);
     }
 
-
-    private static void parseChoices(JsonNode json) {
+    private static void logChoices(JsonNode json) {
         for (JsonNode choice : json.path("choices")) {
 
             JsonNode delta = choice.path("delta");

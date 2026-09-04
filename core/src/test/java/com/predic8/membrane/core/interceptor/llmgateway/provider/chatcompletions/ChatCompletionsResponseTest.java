@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.interceptor.llmgateway.provider.chatcompletions;
 
+import com.predic8.membrane.core.http.ChunkedBody;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMResponse;
 import com.predic8.membrane.core.interceptor.llmgateway.store.Usage;
@@ -24,6 +25,7 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.predic8.membrane.core.http.ChunksBuilder.chunks;
 import static com.predic8.membrane.core.http.Header.CONTENT_TYPE;
 import static com.predic8.membrane.core.http.Request.post;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -104,6 +106,29 @@ class ChatCompletionsResponseTest {
 
         assertEquals(1, processed.size());
         assertEquals(new Usage(5, 6, 11), processed.getFirst().getUsage());
+    }
+
+    /**
+     * The events of a stream are processed as their chunks arrive, not collected and handled at the
+     * end, so arriving in several chunks must make no difference to what is reported.
+     */
+    @Test
+    void streamSplitAcrossChunksIsReportedOnce() throws URISyntaxException {
+        var exchange = post("http://localhost/v1/chat/completions").json("{}").buildExchange();
+        var response = Response.ok().header(CONTENT_TYPE, "text/event-stream").build();
+        response.setBody(new ChunkedBody(new ByteArrayInputStream(chunks()
+                .add("data: {\"object\":\"chat.completion.chunk\",\"choices\":[{\"delta\":{\"content\":\"Hi\"}}]}\n\n")
+                .add("data: {\"object\":\"chat.completion.chunk\",\"choices\":[],\"usage\":{\"prompt_tokens\":11,\"completion_tokens\":7,\"total_tokens\":18}}\n\n")
+                .add("data: [DONE]\n\n")
+                .build())));
+        exchange.setResponse(response);
+
+        new ChatCompletionsResponse(exchange, processed::add);
+
+        response.getBody().read();
+
+        assertEquals(1, processed.size());
+        assertEquals(new Usage(11, 7, 18), processed.getFirst().getUsage());
     }
 
     /**

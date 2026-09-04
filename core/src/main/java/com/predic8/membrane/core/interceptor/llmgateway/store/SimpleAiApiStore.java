@@ -17,15 +17,19 @@ package com.predic8.membrane.core.interceptor.llmgateway.store;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.util.ConfigurationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.concurrent.GuardedBy;
+import java.security.MessageDigest;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.time.Instant.now;
 
 /**
@@ -33,7 +37,7 @@ import static java.time.Instant.now;
  * be configured in the configuration file.
  */
 @MCElement(name="simpleStore",component = false, id="simple-ai-api-store")
-public class SimpleAiApiStore implements AiApiStore {
+public class SimpleAiApiStore implements AiApiUserStore {
 
     private static final Logger log = LoggerFactory.getLogger(SimpleAiApiStore.class);
 
@@ -50,6 +54,18 @@ public class SimpleAiApiStore implements AiApiStore {
     private long limitResetPeriod = 60;
 
     @Override
+    public void init(Router router) {
+        synchronized (lock) {
+            for (AiApiUser user : users) {
+                if (user.getApiKey() == null)
+                    throw new ConfigurationException(
+                            "The user %s of a simpleStore has no apiKey. Every user needs one to authenticate at the gateway."
+                                    .formatted(user.getName()));
+            }
+        }
+    }
+
+    @Override
     public void store(AiApiUser user, Usage usage) {
         if (logUsage)
             log.info("user: {} {}", user.getName(), usage.toString());
@@ -58,9 +74,19 @@ public class SimpleAiApiStore implements AiApiStore {
 
     @Override
     public Optional<AiApiUser> getUser(String token) {
+        if (token == null)
+            return Optional.empty();
         synchronized (lock) {
-            return users.stream().filter(u -> u.getApiKey().equals(token)).findFirst();
+            return users.stream().filter(u -> matches(token, u.getApiKey())).findFirst();
         }
+    }
+
+    /**
+     * Compares the presented key against the configured one without returning early on the first
+     * differing byte, so the comparison does not leak how much of a guessed key was right.
+     */
+    private static boolean matches(String token, String apiKey) {
+        return MessageDigest.isEqual(token.getBytes(UTF_8), apiKey.getBytes(UTF_8));
     }
 
     @Override
@@ -122,6 +148,12 @@ public class SimpleAiApiStore implements AiApiStore {
         return logUsage;
     }
 
+    /**
+     * @description Whether the token usage of every request is written to the log.
+     * @default true
+     * @param logUsage true to log the usage of each request
+     */
+    @MCAttribute
     public void setLogUsage(boolean logUsage) {
         this.logUsage = logUsage;
     }

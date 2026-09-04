@@ -16,7 +16,7 @@ package com.predic8.membrane.core.interceptor.llmgateway.provider;
 
 import com.predic8.membrane.core.exchange.Exchange;
 
-public class AbstractLLMMessage {
+public abstract class AbstractLLMMessage {
 
     protected final Exchange exchange;
 

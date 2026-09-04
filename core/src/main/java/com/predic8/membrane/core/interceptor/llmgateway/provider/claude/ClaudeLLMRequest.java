@@ -33,10 +33,21 @@ public class ClaudeLLMRequest extends AbstractModelInputRequest implements Model
 
     public static final String X_API_KEY = "x-api-key";
 
+    private static final String ACCEPT_ENCODING = "Accept-Encoding";
+    private static final String IDENTITY = "identity";
+
     public ClaudeLLMRequest(Exchange exchange) throws IOException {
         super(exchange);
 
-        exchange.getRequest().getHeader().setValue( "Accept-Encoding","identity");
+        askForAnUncompressedResponse();
+    }
+
+    /**
+     * The streamed response is parsed as SSE text chunk by chunk, which only works while it is not
+     * compressed, so the gateway asks Anthropic not to encode it.
+     */
+    private void askForAnUncompressedResponse() {
+        exchange.getRequest().getHeader().setValue(ACCEPT_ENCODING, IDENTITY);
     }
 
     public void setMaxOutputTokens(int maxOutputTokens) {

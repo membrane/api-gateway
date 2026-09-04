@@ -35,6 +35,7 @@ public abstract class AbstractLLMResponse extends AbstractLLMMessage implements 
     protected ObjectNode json;
     protected Consumer<LLMResponse> postProcessor;
 
+    private boolean sawEvents;
     private boolean finished;
 
     public AbstractLLMResponse(Exchange exchange, Consumer<LLMResponse> postProcessor) {
@@ -62,6 +63,7 @@ public abstract class AbstractLLMResponse extends AbstractLLMMessage implements 
                 public void bodyComplete(AbstractBody body) {
                     // Not every stream has a terminal event: Gemini sends unnamed data events, so
                     // the end of the body is the only end-of-stream signal there is.
+                    processPending(parser);
                     finish(parser);
                 }
             });
@@ -73,26 +75,36 @@ public abstract class AbstractLLMResponse extends AbstractLLMMessage implements 
     }
 
     protected void processChunk(Chunk chunk, SSEParser parser) {
-        // Wait for terminal chunk
-        if (!parser.parse(chunk)) {
-            return;
-        }
-        finish(parser);
+        boolean terminalReached = parser.parse(chunk);
+
+        processPending(parser);
+
+        if (terminalReached)
+            finish(parser);
     }
 
     /**
-     * Hands the events collected so far to the subclass and reports the response to the post
-     * processor, at most once per response.
+     * Hands the events of this chunk to the subclass and forgets them, so that a long stream is not
+     * held in memory as a whole.
      */
-    private void finish(SSEParser parser) {
-        var events = parser.getEvents();
-
-        if (finished || events.isEmpty())
+    private void processPending(SSEParser parser) {
+        var events = parser.drainEvents();
+        if (events.isEmpty())
             return;
-        finished = true;
 
         log.debug("Events: {}", events.size());
         events.forEach(this::process);
+        sawEvents = true;
+    }
+
+    /**
+     * Reports the response to the post processor, at most once and only for a stream that actually
+     * delivered something.
+     */
+    private void finish(SSEParser parser) {
+        if (finished || !sawEvents)
+            return;
+        finished = true;
 
         parser.getTerminalEvent().ifPresent(this::processTerminalEvent);
 

@@ -16,9 +16,10 @@ package com.predic8.membrane.core.interceptor.llmgateway.store;
 
 import com.predic8.membrane.core.router.Router;
 
-import java.util.Optional;
-
 /**
+ * Records what the LLM API was used for. A store that also authenticates clients and enforces
+ * their token limits implements {@link AiApiUserStore}.
+ *
  * @TODO
  * - Store .status, .error, .model, .stop_reason
  */
@@ -27,17 +28,9 @@ public interface AiApiStore {
     default void init(Router router) {
     }
 
-    void store(AiApiUser user, Usage usage);
-
-    Optional<AiApiUser> getUser(String token);
-
     /**
-     * Checks if the user has enough tokens to make the request.
-     * @param user The user to check
-     * @return Estimated number of tokens that the user has left after this request
+     * @param user the request was attributed to, null if the store does not authenticate
      */
-    long checkLimit(AiApiUser user, long inputTokens, long outputTokens);
-
-    long getRemainingResetTime();
+    void store(AiApiUser user, Usage usage);
 }
 

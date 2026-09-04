@@ -31,9 +31,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
-public class AbstractModelInputRequest extends BaseLLMRequest implements ModelInputRequest {
+public abstract class AbstractModelInputRequest extends BaseLLMRequest implements ModelInputRequest {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractModelInputRequest.class);
 
@@ -136,9 +134,7 @@ public class AbstractModelInputRequest extends BaseLLMRequest implements ModelIn
         if (body != null)
             return body;
         try {
-            return new Body(om
-                    .writerWithDefaultPrettyPrinter()
-                    .writeValueAsString(json).getBytes(UTF_8));
+            return new Body(om.writeValueAsBytes(json));
         } catch (JsonProcessingException e) {
             log.info("Could not serialize JSON: {}", e.getMessage());
             throw new RuntimeException("Could not serialize JSON: " + e.getMessage());
