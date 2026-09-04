@@ -89,4 +89,4 @@ api:
 #
 # NOTE: This tutorial is intentionally kept simple. In production, run all
 # endpoints behind TLS. Otherwise, the login credentials and bearer tokens are
-# transmitted in plain text. See 10-TLS-Termination.yaml for how to enable TLS.
+# transmitted in plain text. See ../ssl-tls/10-TLS-Termination.yaml for how to enable TLS.
