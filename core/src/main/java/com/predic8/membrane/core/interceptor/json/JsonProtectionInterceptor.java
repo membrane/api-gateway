@@ -14,24 +14,26 @@
 
 package com.predic8.membrane.core.interceptor.json;
 
-import com.fasterxml.jackson.core.*;
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exceptions.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.multipart.*;
-import com.predic8.membrane.core.multipart.PartScanner.PartAction;
-import org.slf4j.*;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exceptions.ProblemDetails;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.protection.AbstractBodyProtectionInterceptor;
+import com.predic8.membrane.core.interceptor.protection.Origin;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.InputStream;
+import java.util.function.Supplier;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
 import static com.predic8.membrane.core.http.MimeType.isJson;
-import static com.predic8.membrane.core.interceptor.json.JsonProtectionInterceptor.OtherContentTypes.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static java.util.EnumSet.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static java.util.EnumSet.of;
 
 /**
  * @description <p>Enforces restrictions on JSON request bodies to protect against JSON-based attacks and resource exhaustion.
@@ -40,7 +42,7 @@ import static java.util.EnumSet.*;
  *   <li>Deeply nested JSON structures (billion laughs attack)</li>
  *   <li>Memory exhaustion from oversized payloads</li>
  *   <li>Prototype pollution via __proto__ keys in JavaScript backends</li>
- *   <li>Duplicate key attacks</li>
+ *   <li>Duplicate key attacks ({"foo": 1, "foo": 2})</li>
  * </ul>
  * <p>JSON documents carried inside a multipart body are inspected part by part, so a JSON document
  * uploaded as an attachment is checked like a plain JSON body.</p>
@@ -64,30 +66,22 @@ import static java.util.EnumSet.*;
  */
 @SuppressWarnings("unused")
 @MCElement(name = "jsonProtection")
-public class JsonProtectionInterceptor extends AbstractInterceptor {
+public class JsonProtectionInterceptor extends AbstractBodyProtectionInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(JsonProtectionInterceptor.class);
 
-    /**
-     * What to do with content that is not JSON: the whole body of a non-JSON request, or a
-     * non-JSON part of a multipart body.
-     */
-    public enum OtherContentTypes {
-        REJECT, SKIP
-    }
-
-    private JsonProtectionScanner scanner;
+    private JsonProtection scanner;
+    private JsonLimits limits;
 
     private Boolean reportError;
     private int maxTokens = 10000;
-    private int maxSize = 50 * 1024 * 1024;
+    private int maxSize = 100 * 1024 * 1024;
     private int maxDepth = 50;
     private int maxStringLength = 262144;
     private int maxKeyLength = 256;
     private int maxObjectSize = 1000;
     private int maxArraySize = 1000;
     private boolean blockProto = true;
-    private OtherContentTypes otherContentTypes = REJECT;
 
     public JsonProtectionInterceptor() {
         name = "json protection";
@@ -97,8 +91,9 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
     @Override
     public void init() {
         super.init();
-        scanner = new JsonProtectionScanner(new JsonLimits(maxTokens, maxSize, maxDepth, maxStringLength,
-                maxKeyLength, maxObjectSize, maxArraySize, blockProto));
+        limits = new JsonLimits(maxTokens, maxSize, maxDepth, maxStringLength,
+                maxKeyLength, maxObjectSize, maxArraySize, blockProto);
+        scanner = new JsonProtection(limits);
     }
 
     private boolean shouldProvideDetails() {
@@ -110,135 +105,63 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) {
-        Request request = exc.getRequest();
         try {
-            if (request.isBodyEmpty())
-                return CONTINUE;
-
-            // A plain body is inspected straight off the body stream, without buffering it into a byte[].
-            if (!MultipartUtil.isMultipart(request))
-                return inspect(exc, request.getBodyAsStreamDecoded(), Origin.body(request.getHeader()));
-
-            return inspectParts(exc, request);
+            return protect(exc, exc.getRequest());
         } catch (Exception e) {
             exc.setResponse(createErrorResponse(e.getMessage(), null, null));
-            return RETURN;
+            return ABORT;
         }
     }
 
-    /**
-     * Inspects the JSON parts of a multipart body. Parts that are not JSON are decided from their
-     * header and never buffered, and no part may exceed {@link #maxSize} - so a large upload does not
-     * have to be held in memory to be rejected.
-     */
-    private Outcome inspectParts(Exchange exc, Request request) throws Exception {
-        JsonPartHandler handler = new JsonPartHandler(exc);
-        try {
-            PartScanner.forEachPart(request, maxSize, handler);
-        } catch (PartTooLargeException e) {
-            // Reported like any other part-level violation, naming the attachment that was too big.
-            exc.setResponse(createErrorResponse(Origin.part(e.getPartHeader()).describe(e.getMessage()), null, null));
-            return RETURN;
-        }
-        return handler.outcome;
+    @Override
+    protected boolean inspects(String contentType) {
+        return isJson(contentType);
     }
 
     /**
-     * Inspects the JSON parts and remembers the first part that was not accepted. The traversal is
-     * stopped at that part, so nothing after it is read.
+     * Applied per document, so in a multipart body no single JSON part may exceed it - a large upload
+     * does not have to be held in memory to be rejected.
      */
-    private class JsonPartHandler implements PartScanner.PartHandler {
-
-        private final Exchange exc;
-        private Outcome outcome = CONTINUE;
-
-        private JsonPartHandler(Exchange exc) {
-            this.exc = exc;
-        }
-
-        @Override
-        public PartAction decide(Header partHeader) {
-            if (outcome != CONTINUE)
-                return PartAction.STOP;
-            if (isJson(partHeader.getContentType()))
-                return PartAction.INSPECT;
-            if (otherContentTypes == SKIP)
-                return PartAction.SKIP;
-            // Rejecting needs the header only, so the offending body is never buffered.
-            outcome = rejectNonJson(exc, Origin.part(partHeader));
-            return PartAction.STOP;
-        }
-
-        @Override
-        public void handle(Part part) {
-            outcome = inspect(exc, part.getInputStream(), Origin.part(part.getHeader()));
-        }
-    }
-
-    /**
-     * Where the inspected content came from. This decides what an absent Content-Type means and how
-     * a rejection is worded, so a rejection on a multipart upload can be traced back to one attachment.
-     */
-    private record Origin(boolean part, String name, String contentType) {
-
-        private static Origin body(Header header) {
-            return new Origin(false, null, header.getContentType());
-        }
-
-        private static Origin part(Header partHeader) {
-            String name = Part.nameOf(partHeader);
-            return new Origin(true, name != null ? name : Part.contentIDOf(partHeader), partHeader.getContentType());
-        }
-
-        /**
-         * A whole body without a Content-Type is still parsed, as it was before multipart support:
-         * clients that post JSON without declaring it must keep being checked. A MIME part without a
-         * Content-Type defaults to text/plain per RFC 2045 and is therefore not JSON.
-         */
-        private boolean holdsJson() {
-            if (contentType == null)
-                return !part;
-            return isJson(contentType);
-        }
-
-        private String describe(String message) {
-            if (!part)
-                return message;
-            return name == null ? "In one part of the multipart body: " + message
-                                : "In part '%s': %s".formatted(name, message);
-        }
+    @Override
+    protected int maxDocumentSize() {
+        return limits.sizeCeiling();
     }
 
     /**
      * Inspects a single content unit: either the whole body or one MIME part.
      */
-    private Outcome inspect(Exchange exc, InputStream body, Origin origin) {
-        if (!origin.holdsJson()) {
-            if (otherContentTypes == SKIP)
-                return CONTINUE;
-            return rejectNonJson(exc, origin);
-        }
+    @Override
+    protected Inspection inspectDocument(Exchange exc, Supplier<InputStream> document, Origin origin) {
         try {
-            scanner.scan(body);
+            scanner.scan(document.get());
         } catch (JsonProtectionException e) {
-            exc.setResponse(createErrorResponse(origin.describe(e.getMessage()), e.getLine(), e.getCol()));
-            return RETURN;
+            return reject(exc, origin.describe(e.getMessage()), e.getLine(), e.getCol());
         } catch (JsonParseException e) {
-            exc.setResponse(createErrorResponse(origin.describe(e.getMessage()),
-                    e.getLocation().getLineNr(), e.getLocation().getColumnNr()));
-            return RETURN;
+            return reject(exc, origin.describe(e.getMessage()),
+                    e.getLocation().getLineNr(), e.getLocation().getColumnNr());
         } catch (Exception e) {
-            exc.setResponse(createErrorResponse(origin.describe(e.getMessage()), null, null));
-            return RETURN;
+            return reject(exc, origin.describe(e.getMessage()), null, null);
         }
-        return CONTINUE;
+        return Inspection.passed();
     }
 
-    private Outcome rejectNonJson(Exchange exc, Origin origin) {
+    private Inspection reject(Exchange exc, String msg, Integer line, Integer col) {
+        exc.setResponse(createErrorResponse(msg, line, col));
+        return Inspection.failed(ABORT);
+    }
+
+    @Override
+    protected Outcome rejectOtherContentType(Exchange exc, Origin origin) {
         String msg = "Content-Type %s is not JSON. Set otherContentTypes to \"skip\" to pass non-JSON content through."
                 .formatted(origin.contentType());
         exc.setResponse(createErrorResponse(origin.describe(msg), null, null));
-        return RETURN;
+        return ABORT;
+    }
+
+    @Override
+    protected Outcome rejectUnprocessableBody(Exchange exc, Origin origin, String reason) {
+        exc.setResponse(createErrorResponse(origin.describe(reason), null, null));
+        return ABORT;
     }
 
     private Response createErrorResponse(String msg, Integer line, Integer col) {
@@ -295,8 +218,8 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
      * @description Maximum total size of the JSON document in bytes. The limit is per document, so
      * in a multipart body it applies to each JSON part separately rather than to the whole upload.
      * To cap the size of the entire request, use the <code>limit</code> plugin with its
-     * <code>maxBodyLength</code> attribute.
-     * @default 52428800
+     * <code>maxBodyLength</code> attribute. A value of <code>-1</code> disables the limit.
+     * @default 104857600
      * @param maxSize
      */
     @MCAttribute
@@ -405,23 +328,6 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
     @MCAttribute
     public void setBlockProto(boolean blockProto) {
         this.blockProto = blockProto;
-    }
-
-    public OtherContentTypes getOtherContentTypes() {
-        return otherContentTypes;
-    }
-
-    /**
-     * @description What to do with content that is not JSON. This applies both to the body of a
-     * non-JSON request and to the individual non-JSON parts of a multipart body, so
-     * <code>skip</code> allows e.g. an image to be uploaded alongside a JSON document.
-     * <p>Values: REJECT, SKIP</p>
-     * @default REJECT
-     * @example SKIP
-     */
-    @MCAttribute
-    public void setOtherContentTypes(OtherContentTypes otherContentTypes) {
-        this.otherContentTypes = otherContentTypes;
     }
 
     @Override
