@@ -78,9 +78,11 @@ public class DynamicRegistration {
             throw new RuntimeException("Registration interceptorchain (request) had a problem");
 
         client.call(exc);
-        Response response = exc.getResponse();
 
-        router.getFlowController().invokeResponseHandlers(exc, interceptors);
+        if (router.getFlowController().invokeResponseHandlers(exc, interceptors) != CONTINUE)
+            throw new RuntimeException("Registration interceptorchain (response) had a problem");
+
+        Response response = exc.getResponse();
 
         if (response.getStatusCode() < 200 || response.getStatusCode() > 201)
             throw new RuntimeException("Registration endpoint didn't return successful: " + response.getStatusMessage());
