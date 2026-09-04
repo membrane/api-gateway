@@ -205,26 +205,6 @@ public class StreamInfo {
         }
 
         @Override
-        protected void writeNotRead(AbstractBodyTransferer out) throws IOException {
-            chunks.clear();
-            while (true) {
-                DataFrame df = removeDataFrame();
-                if (df == null)
-                    continue;
-                int len = df.getDataLength();
-                if (len > 0)
-                    out.write(df.getContent(), df.getDataStartIndex(), len);
-                chunks.add(new Chunk(createByteArray(df)));
-
-                if (df.isEndStream())
-                    break;
-            }
-
-            out.finish(trailer);
-            markAsRead();
-        }
-
-        @Override
         protected void writeStreamed(AbstractBodyTransferer out) {
             chunks.clear();
             while (true) {
