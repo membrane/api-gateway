@@ -1,0 +1,78 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.5.0.json
+#
+# Tutorial: TLS Passthrough
+#
+# Membrane forwards the encrypted connection to the backend without terminating TLS.
+# The TLS session ends at the backend, so the client sees the backend's certificate.
+# Both proxies below share one port: the gateway picks the backend from the hostname
+# in the TLS SNI extension.
+#
+# 1.) Start Membrane:
+#
+#       ./membrane.sh -c 30-TLS-Passthrough.yaml
+#
+# 2.) Call the first backend. --resolve sends the request to your local gateway
+#     while keeping api.predic8.de as the TLS server name, -v shows the
+#     certificate the gateway handed through:
+#
+#       curl -v --resolve api.predic8.de:8443:127.0.0.1 https://api.predic8.de:8443/shop/v2/products
+#
+#       * Server certificate:
+#       *  subject: CN=api.predic8.de
+#       *  subjectAltName: host "api.predic8.de" matched cert's "api.predic8.de"
+#       *  SSL certificate verify ok.
+#
+#     The certificate belongs to api.predic8.de and verifies - no -k needed.
+#     Membrane has no certificate of its own here; it never terminated the connection.
+#
+#     In production you do not need --resolve: point a DNS record (or an
+#     /etc/hosts entry) for that hostname at the gateway. --resolve does the same
+#     for a single call.
+#
+# 3.) Call the second backend - same port, different server name, and therefore a
+#     different certificate:
+#
+#       curl -v --resolve www.membrane-api.io:8443:127.0.0.1 https://www.membrane-api.io:8443/robots.txt
+#
+#       * Server certificate:
+#       *  subject: CN=www.membrane-api.io
+#       *  subjectAltName: host "www.membrane-api.io" matched cert's "www.membrane-api.io"
+#       *  SSL certificate verify ok.
+#
+#     Both calls went to the same port, yet each got the certificate of a different
+#     backend: the "subject:" line in the -v output tells you which sslProxy handled
+#     the connection. The responses are otherwise indistinguishable from direct calls.
+#
+# 4.) The gateway itself can tell you the same thing. The sslLog element below logs
+#     every connection a proxy forwards; check the terminal running Membrane:
+#
+#       INFO ... SSLLogInterceptor - api.predic8.de:8443: TLS connection
+#                from 127.0.0.1:56441 to api.predic8.de:443
+#       INFO ... SSLLogInterceptor - www.membrane-api.io:8443: TLS connection
+#                from 127.0.0.1:56443 to www.membrane-api.io:443
+#
+#     Remove sslLog and the connections pass through unobserved: Membrane never
+#     decrypts them, so there is nothing else it could report.
+#
+# NOTE: Membrane cannot inspect or modify this traffic - it never sees the plaintext.
+#       Use an api with ssl (10-TLS-Termination.yaml) when you need to look inside.
+
+sslProxy:
+  host: api.predic8.de
+  port: 8443
+  sslInterceptors:
+    # Logs each forwarded connection; without it a passthrough leaves no trace
+    - sslLog: {}
+  target:
+    host: api.predic8.de
+    port: 443
+
+---
+sslProxy:
+  host: www.membrane-api.io
+  port: 8443
+  sslInterceptors:
+    - sslLog: {}
+  target:
+    host: www.membrane-api.io
+    port: 443

@@ -15,29 +15,56 @@ limitations under the License. */
 package com.predic8.membrane.core.proxies;
 
 import com.google.common.base.Objects;
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.config.security.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.sslinterceptor.*;
-import com.predic8.membrane.core.stats.*;
-import com.predic8.membrane.core.transport.http.*;
-import com.predic8.membrane.core.transport.http.client.*;
-import com.predic8.membrane.core.transport.http.streampump.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.Required;
+import com.predic8.membrane.core.config.security.SSLParser;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.sslinterceptor.SSLInterceptor;
+import com.predic8.membrane.core.stats.RuleStatisticCollector;
+import com.predic8.membrane.core.transport.http.Connection;
+import com.predic8.membrane.core.transport.http.ConnectionManager;
+import com.predic8.membrane.core.transport.http.client.ConnectionConfiguration;
+import com.predic8.membrane.core.transport.http.streampump.StreamPump;
 import com.predic8.membrane.core.transport.ssl.*;
-import com.predic8.membrane.core.util.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.util.DNSCache;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.net.SocketException;
+import java.util.ArrayList;
+import java.util.List;
 
-import static com.predic8.membrane.core.interceptor.FlowController.*;
+import static com.predic8.membrane.core.interceptor.FlowController.ABORTION_REASON;
 import static com.predic8.membrane.core.util.BeanDefinitionBasePathUtil.resolveBaseLocation;
 
 /**
- * Proxies SSL connections to a target server without decrypting the traffic.
+ * @description Forwards TLS connections to a backend without terminating them. Membrane does not
+ * decrypt the traffic and can therefore neither inspect nor modify it: the TLS session ends at the
+ * backend and the client sees the backend's certificate. Use it in front of services that have to
+ * keep an end-to-end encrypted connection to their clients.
+ * <p>Several sslProxy elements can share one port. The server name the client sends in the TLS SNI
+ * extension selects the one that handles a connection, so every backend needs its own hostname.
+ * Clients that send no server name reach the first proxy on that port with
+ * <code>useAsDefault</code> enabled.</p>
+ * <p>See tutorials/ssl-tls/30-TLS-Passthrough.yaml.</p>
+ * @topic 1. Proxies and Flow
+ * @yaml
+ * <pre><code>
+ * sslProxy:
+ *   host: api.example.com
+ *   port: 8443
+ *   target:
+ *     host: api.example.com
+ *     port: 443
+ * </code></pre>
  */
 @MCElement(name = "sslProxy", topLevel = true, component = false)
 public class SSLProxy implements Proxy {
@@ -53,11 +80,17 @@ public class SSLProxy implements Proxy {
         return connectionConfiguration;
     }
 
+    /**
+     * @description Timeouts, keep-alive and local address of the connections opened to the target.
+     */
     @MCChildElement(order = 0)
     public void setConnectionConfiguration(ConnectionConfiguration connectionConfiguration) {
         this.connectionConfiguration = connectionConfiguration;
     }
 
+    /**
+     * @description Address of the backend an sslProxy forwards to.
+     */
     @MCElement(id = "sslProxy-target", name = "target", component = false)
     public static class Target {
         private int port = -1;
@@ -67,6 +100,11 @@ public class SSLProxy implements Proxy {
             return port;
         }
 
+        /**
+         * @description Port on the backend the connection is forwarded to.
+         * @default the port the sslProxy listens on
+         * @example 443
+         */
         @MCAttribute
         public void setPort(int port) {
             this.port = port;
@@ -76,6 +114,10 @@ public class SSLProxy implements Proxy {
             return host;
         }
 
+        /**
+         * @description Hostname or IP address of the backend.
+         * @example api.example.com
+         */
         @MCAttribute
         public void setHost(String host) {
             this.host = host;
@@ -86,6 +128,9 @@ public class SSLProxy implements Proxy {
         return target;
     }
 
+    /**
+     * @description Backend the encrypted connection is forwarded to.
+     */
     @Required
     @MCChildElement(order = 100)
     public void setTarget(SSLProxy.Target target) {
@@ -106,6 +151,10 @@ public class SSLProxy implements Proxy {
         return sslInterceptors;
     }
 
+    /**
+     * @description Plugins that inspect a connection before it is forwarded and can reject it.
+     *              They only see the data of the TLS handshake, never the encrypted payload.
+     */
     @MCChildElement(allowForeign = true, order = 50)
     public void setSslInterceptors(List<SSLInterceptor> sslInterceptors) {
         this.sslInterceptors = sslInterceptors;
@@ -117,6 +166,10 @@ public class SSLProxy implements Proxy {
         return port;
     }
 
+    /**
+     * @description Port the gateway accepts TLS connections on.
+     * @example 8443
+     */
     @MCAttribute
     public void setPort(int port) {
         this.port = port;
@@ -144,6 +197,13 @@ public class SSLProxy implements Proxy {
         return host;
     }
 
+    /**
+     * @description Restricts this proxy to connections whose TLS server name (SNI) matches one of
+     *              the given hostnames. Separate multiple hostnames with spaces. The asterisk
+     *              <code>*</code> matches any number of characters, including zero, for basic globbing.
+     * @example api.example.com
+     */
+    @Required
     @MCAttribute
     public void setHost(String host) {
         this.host = host;
@@ -151,7 +211,7 @@ public class SSLProxy implements Proxy {
 
     @Override
     public RuleKey getKey() {
-        return new MyRuleKey();
+        return new SSLProxyKey();
     }
 
     @Override
@@ -221,12 +281,30 @@ public class SSLProxy implements Proxy {
         return "";
     }
 
+    /**
+     * The port connections are forwarded to: the one configured on the target, or the port this
+     * proxy listens on when the target does not name one.
+     */
+    public int getTargetPort() {
+        int targetPort = target.getPort();
+        return targetPort != -1 ? targetPort : getPort();
+    }
+
     private String getBeanBaseLocation() {
         return resolveBaseLocation(this, router);
     }
 
-    // TODO ?
-    private class MyRuleKey implements RuleKey {
+    /**
+     * An {@link SSLInterceptor} that rejects a connection is expected to set the alert it wants the
+     * client to see. If it did not - or if it aborted by throwing - fall back to internal_error
+     * instead of failing with a NullPointerException while assembling the alert.
+     */
+    private static byte alertCode(SSLExchange exc) {
+        TLSError error = exc.getError();
+        return (error != null ? error : TLSError.internal_error).getCode();
+    }
+
+    private class SSLProxyKey implements RuleKey {
         @Override
         public int getPort() {
             return port;
@@ -309,7 +387,7 @@ public class SSLProxy implements Proxy {
 
         @Override
         public boolean equals(Object obj) {
-            if (!(obj instanceof MyRuleKey other))
+            if (!(obj instanceof SSLProxyKey other))
                 return false;
             return Objects.equal(getHost(), other.getHost()) && getPort() == other.getPort();
         }
@@ -354,26 +432,20 @@ public class SSLProxy implements Proxy {
             if (!cont) {
                 if (exc.getProperty(ABORTION_REASON) != null && exc.getProperty(ABORTION_REASON) instanceof Throwable)
                     log.error("", (Throwable) exc.getProperty(ABORTION_REASON));
-                byte error = exc.getError().getCode();
-
-                byte[] alert_unrecognized_name = {21 /* alert */, 3, 1 /* TLS 1.0 */, 0, 2 /* length: 2 bytes */,
-                        2 /* fatal */, error};
+                byte[] alert = {21 /* alert */, 3, 1 /* TLS 1.0 */, 0, 2 /* length: 2 bytes */,
+                        2 /* fatal */, alertCode(exc)};
 
                 try (socket) {
-                    socket.getOutputStream().write(alert_unrecognized_name);
+                    socket.getOutputStream().write(alert);
                 }
 
                 throw new SocketException("not continuing");
             }
 
-            int port = target.getPort();
-            if (port == -1)
-                port = getPort();
-
             StreamPump.StreamPumpStats streamPumpStats = router.getStatistics().getStreamPumpStats();
             String protocol = "SSL";
 
-            Connection con = cm.getConnection(target.getHost(), port, connectionConfiguration.getLocalAddr(), null, connectionConfiguration.getTimeout());
+            Connection con = cm.getConnection(target.getHost(), getTargetPort(), connectionConfiguration.getLocalAddr(), null, connectionConfiguration.getTimeout());
 
             con.out.write(buffer, 0, position);
             con.out.flush();
