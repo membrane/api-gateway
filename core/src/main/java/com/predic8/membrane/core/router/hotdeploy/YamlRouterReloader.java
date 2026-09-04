@@ -72,7 +72,7 @@ public final class YamlRouterReloader implements ConfigurationReloader {
             YamlConfigurationSource reloadedSource = loadSnapshotIntoRouter(router, validatedSource);
             router.start();
             setSource(reloadedSource);
-            log.info("Configuration Reloaded.");
+            log.info("Configuration reloaded.");
             return true;
         } catch (Exception e) {
             logReloadFailure(e);

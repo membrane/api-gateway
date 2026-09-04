@@ -43,6 +43,9 @@ PRIO 3:
 
 ## Membrane 8.0.0 (Java 25)
 
+- Log harmonization:
+  - Decide if log message start with uppercase or lowercase.
+     - e.g.:  Error loading log configuration., Started 1 API:, Closing server port:, listening at '*:2000'
 - Upgrade baseline to Java 25
   - Bump `javac.source`/`javac.target` from 21 to 25 in the root pom.xml
   - Simplify `Util.createNewThreadPool()`: the reflective lookup of `Executors.newVirtualThreadPerTaskExecutor` and the `--enable-preview` handling are leftovers from the Java 19/20 preview era; call it directly and drop the `-Dmembrane.virtualthreads` fallback (or keep the flag as a plain if).

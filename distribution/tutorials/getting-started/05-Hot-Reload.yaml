@@ -1,0 +1,39 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.3.1.json
+#
+# Tutorial: Hot Reload
+#
+# Membrane watches your YAML file and reloads the configuration automatically
+# whenever you save a change. No restart needed.
+#
+# 1.) Start Membrane:
+#    Linux/Mac:
+#      ./membrane.sh -c 05-Hot-Reload.yaml
+#    Windows:
+#      membrane.cmd -c 05-Hot-Reload.yaml
+#
+# 2.) Call the API:
+#
+#      curl http://localhost:2000
+#
+#    You should see a list of public APIs from api.predic8.de.
+#
+# 3.) While Membrane is still running, open this file in a text editor.
+#    Change the url below from https://api.predic8.de to https://httpbin.org
+#    and save the file.
+#    The console shows "Configuration Changed" within a second.
+#
+# 4.) Call the API again:
+#
+#      curl http://localhost:2000
+#
+#    The response now comes from httpbin.org. No restart was needed.
+#
+# 5.) Stop Membrane:
+#    Press Ctrl+C in the terminal.
+#
+# 6.) Continue with file 10-Logging.yaml
+
+api:
+  port: 2000
+  target:
+    url: https://api.predic8.de
