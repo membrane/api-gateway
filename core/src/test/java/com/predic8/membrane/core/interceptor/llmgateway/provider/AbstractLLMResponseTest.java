@@ -18,6 +18,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.ChunkedBody;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.llmgateway.store.Usage;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.net.URISyntaxException;
@@ -29,6 +30,7 @@ import static com.predic8.membrane.core.http.Header.CONTENT_TYPE;
 import static com.predic8.membrane.core.http.Request.post;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * What every provider's response has to do with a body, streamed or not: report the usage to the
@@ -44,9 +46,18 @@ public abstract class AbstractLLMResponseTest {
     protected abstract String url();
 
     /**
-     * Registers the response under test on the exchange, reporting to {@link #processed}.
+     * The response under test, reporting to {@link #processed}. Not started yet.
      */
-    protected abstract LLMResponse newResponse(Exchange exchange);
+    protected abstract AbstractLLMResponse createResponse(Exchange exchange);
+
+    /**
+     * Registers the response under test on the exchange, the way its provider does.
+     */
+    protected LLMResponse newResponse(Exchange exchange) {
+        var response = createResponse(exchange);
+        response.start();
+        return response;
+    }
 
     /**
      * Registers the response on a streamed body and then reads it, the way the exchange would.
@@ -86,6 +97,18 @@ public abstract class AbstractLLMResponseTest {
         var exchange = post(url()).json("{}").buildExchange();
         exchange.setResponse(Response.ok().json(json).build());
         return exchange;
+    }
+
+    /**
+     * Construction alone does nothing: the response only reaches the body once it is started, so it
+     * cannot be handed to another thread before its subclass has finished initialising.
+     */
+    @Test
+    void aResponseThatWasNotStartedReportsNothing() throws URISyntaxException {
+        createResponse(withJsonResponse("""
+                {"usage":{"input_tokens":1,"output_tokens":1}}"""));
+
+        assertTrue(processed.isEmpty());
     }
 
     protected void assertUsage(Usage expected) {

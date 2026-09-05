@@ -28,22 +28,35 @@ import com.predic8.membrane.core.util.json.JsonUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 public abstract class AbstractLLMResponse extends AbstractLLMMessage implements LLMResponse {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractLLMResponse.class);
 
-    protected ObjectNode json;
-    protected Consumer<LLMResponse> postProcessor;
+    /**
+     * Written while the body arrives and read once it is through. Both can happen on different
+     * threads, so the state a response accumulates is published for every reader.
+     */
+    protected volatile ObjectNode json;
 
-    private boolean sawEvents;
-    private boolean finished;
+    protected final Consumer<LLMResponse> postProcessor;
 
-    public AbstractLLMResponse(Exchange exchange, Consumer<LLMResponse> postProcessor) {
+    private volatile boolean sawEvents;
+    private final AtomicBoolean finished = new AtomicBoolean();
+
+    protected AbstractLLMResponse(Exchange exchange, Consumer<LLMResponse> postProcessor) {
         super(exchange);
         this.postProcessor = postProcessor;
+    }
 
+    /**
+     * Starts reading the response. Kept out of the constructor: it hands this response to the body
+     * as an observer, and a reference that escapes a constructor can reach another thread before the
+     * subclass has finished initialising. Call it once, right after construction.
+     */
+    public final void start() {
         var response = exchange.getResponse();
         if (response.isStream()) {
             observeStream(response);
@@ -115,9 +128,14 @@ public abstract class AbstractLLMResponse extends AbstractLLMMessage implements 
      * delivered something.
      */
     private void finish(SSEParser parser) {
-        if (finished || !sawEvents)
+        if (!sawEvents)
             return;
-        finished = true;
+
+        // The terminal event and the end of the body both end a stream, and they can arrive on
+        // different threads. Whoever gets here first reports, the other one drops out: reporting
+        // twice would bill the usage twice.
+        if (!finished.compareAndSet(false, true))
+            return;
 
         parser.getTerminalEvent().ifPresent(this::processTerminalEvent);
 

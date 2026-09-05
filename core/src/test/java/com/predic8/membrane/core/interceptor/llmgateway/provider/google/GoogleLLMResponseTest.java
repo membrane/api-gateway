@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.interceptor.llmgateway.provider.google;
 
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.llmgateway.provider.AbstractLLMResponse;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.AbstractLLMResponseTest;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMResponse;
 import com.predic8.membrane.core.interceptor.llmgateway.store.Usage;
@@ -30,7 +31,7 @@ class GoogleLLMResponseTest extends AbstractLLMResponseTest {
     }
 
     @Override
-    protected LLMResponse newResponse(Exchange exchange) {
+    protected AbstractLLMResponse createResponse(Exchange exchange) {
         return new GoogleLLMResponse(exchange, processed::add);
     }
 

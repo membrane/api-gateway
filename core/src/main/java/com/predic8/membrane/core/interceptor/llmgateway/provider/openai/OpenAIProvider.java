@@ -27,6 +27,8 @@ import com.predic8.membrane.core.interceptor.llmgateway.provider.chatcompletions
 import java.io.IOException;
 import java.util.function.Consumer;
 
+import static com.predic8.membrane.core.interceptor.llmgateway.provider.LLMProvider.started;
+
 /**
  * @description OpenAI provider configuration
  * Use to configure a LLM gateway to use the OpenAI API
@@ -50,9 +52,9 @@ public class OpenAIProvider implements LLMProvider {
     public LLMResponse getLLMResponse(Exchange exchange, Consumer<LLMResponse> postProcessor) {
         var uri = exchange.getRequest().getUri();
         if (uri.startsWith("/v1/responses")) {
-            return new OpenAiLLMResponsesResponse(exchange,postProcessor);
+            return started(new OpenAiLLMResponsesResponse(exchange, postProcessor));
         }
-        return new ChatCompletionsResponse(exchange, postProcessor);
+        return started(new ChatCompletionsResponse(exchange, postProcessor));
     }
 
     @Override

@@ -17,6 +17,7 @@ package com.predic8.membrane.core.interceptor.llmgateway.provider.chatcompletion
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.AbstractMessageObserver;
 import com.predic8.membrane.core.http.Chunk;
+import com.predic8.membrane.core.interceptor.llmgateway.provider.AbstractLLMResponse;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.AbstractLLMResponseTest;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMResponse;
 import com.predic8.membrane.core.interceptor.llmgateway.store.Usage;
@@ -57,7 +58,7 @@ class ChatCompletionsResponseTest extends AbstractLLMResponseTest {
     }
 
     @Override
-    protected LLMResponse newResponse(Exchange exchange) {
+    protected AbstractLLMResponse createResponse(Exchange exchange) {
         return new ChatCompletionsResponse(exchange, processed::add);
     }
 
@@ -145,6 +146,7 @@ class ChatCompletionsResponseTest extends AbstractLLMResponseTest {
                 super.process(event);
             }
         };
+        llmResponse.start();
 
         var eventsPerChunk = new ArrayList<Integer>();
         exchange.getResponse().getBody().addObserver(new AbstractMessageObserver() {

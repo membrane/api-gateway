@@ -29,11 +29,11 @@ public class ClaudeLLMResponse extends AbstractLLMResponse {
 
     private static final Logger log = LoggerFactory.getLogger(ClaudeLLMResponse.class);
 
-    private Usage usage;
+    private volatile Usage usage;
 
     private final StringBuffer inputJson = new StringBuffer();
 
-    private String tool;
+    private volatile String tool;
 
     public ClaudeLLMResponse(Exchange exchange, Consumer<LLMResponse> postProcessor) {
         super(exchange,postProcessor);

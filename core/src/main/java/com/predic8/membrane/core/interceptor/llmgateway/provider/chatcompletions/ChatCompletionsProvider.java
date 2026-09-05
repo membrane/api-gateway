@@ -24,6 +24,8 @@ import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMResponse;
 import java.io.IOException;
 import java.util.function.Consumer;
 
+import static com.predic8.membrane.core.interceptor.llmgateway.provider.LLMProvider.started;
+
 /**
  * @description
  * OpenAI Chat Completions API compatible provider.
@@ -53,7 +55,7 @@ public class ChatCompletionsProvider implements LLMProvider {
 
     @Override
     public LLMResponse getLLMResponse(Exchange request, Consumer<LLMResponse> postProcessor) {
-        return new ChatCompletionsResponse(request, postProcessor);
+        return started(new ChatCompletionsResponse(request, postProcessor));
     }
 
     @Override

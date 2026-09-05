@@ -24,6 +24,8 @@ import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMResponse;
 import java.io.IOException;
 import java.util.function.Consumer;
 
+import static com.predic8.membrane.core.interceptor.llmgateway.provider.LLMProvider.started;
+
 /**
  * @description (Experimental)Google AI provider configuration
  * Use to configure a LLM gateway to use the Google LLM API
@@ -38,7 +40,7 @@ public class GoogleProvider implements LLMProvider {
 
     @Override
     public LLMResponse getLLMResponse(Exchange request, Consumer<LLMResponse> postProcessor) {
-        return new GoogleLLMResponse(request, postProcessor);
+        return started(new GoogleLLMResponse(request, postProcessor));
     }
 
     @Override
