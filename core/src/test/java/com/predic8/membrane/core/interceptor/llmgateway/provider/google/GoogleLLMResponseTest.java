@@ -14,26 +14,25 @@
 
 package com.predic8.membrane.core.interceptor.llmgateway.provider.google;
 
-import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.llmgateway.provider.AbstractLLMResponseTest;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMResponse;
 import com.predic8.membrane.core.interceptor.llmgateway.store.Usage;
 import org.junit.jupiter.api.Test;
 
-import java.io.ByteArrayInputStream;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.List;
 
-import static com.predic8.membrane.core.http.Header.CONTENT_TYPE;
-import static com.predic8.membrane.core.http.Request.post;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+class GoogleLLMResponseTest extends AbstractLLMResponseTest {
 
-class GoogleLLMResponseTest {
+    @Override
+    protected String url() {
+        return "http://localhost/v1beta/models/gemini-2.5-pro:streamGenerateContent";
+    }
 
-    private static final String URL = "http://localhost/v1beta/models/gemini-2.5-pro:streamGenerateContent";
-
-    private final List<LLMResponse> processed = new ArrayList<>();
+    @Override
+    protected LLMResponse newResponse(Exchange exchange) {
+        return new GoogleLLMResponse(exchange, processed::add);
+    }
 
     /**
      * The Gemini stream has no terminal event, so the usage is only complete once the body ends.
@@ -47,8 +46,7 @@ class GoogleLLMResponseTest {
 
                 """);
 
-        assertEquals(1, processed.size());
-        assertEquals(new Usage(11, 7, 18), processed.getFirst().getUsage());
+        assertUsage(new Usage(11, 7, 18));
     }
 
     @Test
@@ -58,31 +56,14 @@ class GoogleLLMResponseTest {
 
                 """);
 
-        assertEquals(1, processed.size());
-        assertEquals(new Usage(10, 12, 22), processed.getFirst().getUsage());
+        assertUsage(new Usage(10, 12, 22));
     }
 
     @Test
     void usageOfNonStreamedResponseIsReportedOnce() throws URISyntaxException {
-        var exchange = post(URL).json("{}").buildExchange();
-        exchange.setResponse(Response.ok().json("""
-                {"usageMetadata":{"promptTokenCount":5,"candidatesTokenCount":6,"totalTokenCount":11}}""").build());
+        newResponse(withJsonResponse("""
+                {"usageMetadata":{"promptTokenCount":5,"candidatesTokenCount":6,"totalTokenCount":11}}"""));
 
-        new GoogleLLMResponse(exchange, processed::add);
-
-        assertEquals(1, processed.size());
-        assertEquals(new Usage(5, 6, 11), processed.getFirst().getUsage());
-    }
-
-    private void stream(String sse) throws URISyntaxException {
-        var exchange = post(URL).json("{}").buildExchange();
-        exchange.setResponse(Response.ok()
-                .header(CONTENT_TYPE, "text/event-stream")
-                .body(new ByteArrayInputStream(sse.getBytes(UTF_8)), false)
-                .build());
-
-        new GoogleLLMResponse(exchange, processed::add);
-
-        exchange.getResponse().getBody().read();
+        assertUsage(new Usage(5, 6, 11));
     }
 }

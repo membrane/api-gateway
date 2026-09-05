@@ -17,6 +17,8 @@ package com.predic8.membrane.core.interceptor.llmgateway.provider.claude;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.predic8.membrane.core.util.json.JsonUtil;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -32,25 +34,21 @@ class ContentBlockStartTest {
         assertEquals("get_weather", cbs.getToolUse().getName());
     }
 
-    @Test
-    void textBlockHasNoToolUse() {
-        var cbs = ContentBlockStart.from(json("""
-                {"type":"content_block_start","index":0,
-                 "content_block":{"type":"text","text":""}}"""));
-
-        assertNull(cbs.getToolUse());
-    }
-
-    @Test
-    void eventWithoutContentBlockHasNoToolUse() {
-        assertNull(ContentBlockStart.from(json("""
-                {"type":"content_block_start","index":0}""")).getToolUse());
-    }
-
-    @Test
-    void nullContentBlockHasNoToolUse() {
-        assertNull(ContentBlockStart.from(json("""
-                {"type":"content_block_start","content_block":null}""")).getToolUse());
+    /**
+     * A block of another type, an event without a content block, and one whose content block is
+     * null.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {
+            """
+            {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}""",
+            """
+            {"type":"content_block_start","index":0}""",
+            """
+            {"type":"content_block_start","content_block":null}"""
+    })
+    void blockThatStartsNoToolUseHasNoToolUse(String event) {
+        assertNull(ContentBlockStart.from(json(event)).getToolUse());
     }
 
     private static ObjectNode json(String json) {

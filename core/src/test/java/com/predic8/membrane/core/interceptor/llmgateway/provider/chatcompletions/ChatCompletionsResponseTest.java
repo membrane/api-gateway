@@ -17,27 +17,49 @@ package com.predic8.membrane.core.interceptor.llmgateway.provider.chatcompletion
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.AbstractMessageObserver;
 import com.predic8.membrane.core.http.Chunk;
-import com.predic8.membrane.core.http.ChunkedBody;
-import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.llmgateway.provider.AbstractLLMResponseTest;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMResponse;
 import com.predic8.membrane.core.interceptor.llmgateway.store.Usage;
 import com.predic8.membrane.core.util.http.SSEParser;
 import org.junit.jupiter.api.Test;
 
-import java.io.ByteArrayInputStream;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.predic8.membrane.core.http.ChunksBuilder.chunks;
-import static com.predic8.membrane.core.http.Header.CONTENT_TYPE;
-import static com.predic8.membrane.core.http.Request.post;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-class ChatCompletionsResponseTest {
+class ChatCompletionsResponseTest extends AbstractLLMResponseTest {
 
-    private final List<LLMResponse> processed = new ArrayList<>();
+    private static final String HI_CHUNK = """
+            data: {"object":"chat.completion.chunk","choices":[{"delta":{"content":"Hi"}}]}
+
+            """;
+
+    private static final String THERE_CHUNK = """
+            data: {"object":"chat.completion.chunk","choices":[{"delta":{"content":" there"}}]}
+
+            """;
+
+    private static final String USAGE_CHUNK = """
+            data: {"object":"chat.completion.chunk","choices":[],"usage":{"prompt_tokens":11,"completion_tokens":7,"total_tokens":18}}
+
+            """;
+
+    private static final String DONE = """
+            data: [DONE]
+
+            """;
+
+    @Override
+    protected String url() {
+        return "http://localhost/v1/chat/completions";
+    }
+
+    @Override
+    protected LLMResponse newResponse(Exchange exchange) {
+        return new ChatCompletionsResponse(exchange, processed::add);
+    }
 
     /**
      * The usage arrives in a chunk of its own with an empty choices array, requested by
@@ -45,30 +67,16 @@ class ChatCompletionsResponseTest {
      */
     @Test
     void usageOfStreamedResponseIsReportedExactlyOnce() throws URISyntaxException {
-        stream("""
-                data: {"object":"chat.completion.chunk","choices":[{"delta":{"content":"Hi"}}]}
+        stream(HI_CHUNK + USAGE_CHUNK + DONE);
 
-                data: {"object":"chat.completion.chunk","choices":[],"usage":{"prompt_tokens":11,"completion_tokens":7,"total_tokens":18}}
-
-                data: [DONE]
-
-                """);
-
-        assertEquals(1, processed.size());
-        assertEquals(new Usage(11, 7, 18), processed.getFirst().getUsage());
+        assertUsage(new Usage(11, 7, 18));
     }
 
     @Test
     void streamWithoutUsageChunkReportsNoTokens() throws URISyntaxException {
-        stream("""
-                data: {"object":"chat.completion.chunk","choices":[{"delta":{"content":"Hi"}}]}
+        stream(HI_CHUNK + DONE);
 
-                data: [DONE]
-
-                """);
-
-        assertEquals(1, processed.size());
-        assertEquals(new Usage(0, 0, 0), processed.getFirst().getUsage());
+        assertUsage(new Usage(0, 0, 0));
     }
 
     @Test
@@ -78,12 +86,9 @@ class ChatCompletionsResponseTest {
 
                 data: {"object":"chat.completion.chunk","choices":[],"usage":{"prompt_tokens":3,"completion_tokens":4,"total_tokens":7}}
 
-                data: [DONE]
+                """ + DONE);
 
-                """);
-
-        assertEquals(1, processed.size());
-        assertEquals(new Usage(3, 4, 7), processed.getFirst().getUsage());
+        assertUsage(new Usage(3, 4, 7));
     }
 
     /**
@@ -96,20 +101,15 @@ class ChatCompletionsResponseTest {
 
                 """);
 
-        assertEquals(1, processed.size());
-        assertEquals(new Usage(3, 4, 7), processed.getFirst().getUsage());
+        assertUsage(new Usage(3, 4, 7));
     }
 
     @Test
     void usageOfNonStreamedResponseIsReportedOnce() throws URISyntaxException {
-        var exchange = post("http://localhost/v1/chat/completions").json("{}").buildExchange();
-        exchange.setResponse(Response.ok().json("""
-                {"usage":{"prompt_tokens":5,"completion_tokens":6,"total_tokens":11}}""").build());
+        newResponse(withJsonResponse("""
+                {"usage":{"prompt_tokens":5,"completion_tokens":6,"total_tokens":11}}"""));
 
-        new ChatCompletionsResponse(exchange, processed::add);
-
-        assertEquals(1, processed.size());
-        assertEquals(new Usage(5, 6, 11), processed.getFirst().getUsage());
+        assertUsage(new Usage(5, 6, 11));
     }
 
     /**
@@ -118,17 +118,13 @@ class ChatCompletionsResponseTest {
      */
     @Test
     void streamSplitAcrossChunksIsReportedOnce() throws URISyntaxException {
-        var exchange = chunked(
-                "data: {\"object\":\"chat.completion.chunk\",\"choices\":[{\"delta\":{\"content\":\"Hi\"}}]}\n\n",
-                "data: {\"object\":\"chat.completion.chunk\",\"choices\":[],\"usage\":{\"prompt_tokens\":11,\"completion_tokens\":7,\"total_tokens\":18}}\n\n",
-                "data: [DONE]\n\n");
+        var exchange = chunked(HI_CHUNK, USAGE_CHUNK, DONE);
 
-        new ChatCompletionsResponse(exchange, processed::add);
+        newResponse(exchange);
 
         exchange.getResponse().getBody().read();
 
-        assertEquals(1, processed.size());
-        assertEquals(new Usage(11, 7, 18), processed.getFirst().getUsage());
+        assertUsage(new Usage(11, 7, 18));
     }
 
     /**
@@ -138,10 +134,7 @@ class ChatCompletionsResponseTest {
      */
     @Test
     void eventsAreProcessedWhileTheStreamIsStillArriving() throws URISyntaxException {
-        var exchange = chunked(
-                "data: {\"object\":\"chat.completion.chunk\",\"choices\":[{\"delta\":{\"content\":\"Hi\"}}]}\n\n",
-                "data: {\"object\":\"chat.completion.chunk\",\"choices\":[{\"delta\":{\"content\":\" there\"}}]}\n\n",
-                "data: [DONE]\n\n");
+        var exchange = chunked(HI_CHUNK, THERE_CHUNK, DONE);
 
         var llmResponse = new ChatCompletionsResponse(exchange, processed::add) {
             int eventCount;
@@ -164,36 +157,5 @@ class ChatCompletionsResponseTest {
         exchange.getResponse().getBody().read();
 
         assertEquals(List.of(1, 2, 3), eventsPerChunk);
-    }
-
-    /**
-     * An exchange whose response body delivers the given SSE text one chunk at a time.
-     */
-    private static Exchange chunked(String... sseChunks) throws URISyntaxException {
-        var builder = chunks();
-        for (var chunk : sseChunks)
-            builder.add(chunk);
-
-        var response = Response.ok().header(CONTENT_TYPE, "text/event-stream").build();
-        response.setBody(new ChunkedBody(new ByteArrayInputStream(builder.build())));
-
-        var exchange = post("http://localhost/v1/chat/completions").json("{}").buildExchange();
-        exchange.setResponse(response);
-        return exchange;
-    }
-
-    /**
-     * Registers the response on a streamed body and then reads it, the way the exchange would.
-     */
-    private void stream(String sse) throws URISyntaxException {
-        var exchange = post("http://localhost/v1/chat/completions").json("{}").buildExchange();
-        exchange.setResponse(Response.ok()
-                .header(CONTENT_TYPE, "text/event-stream")
-                .body(new ByteArrayInputStream(sse.getBytes(UTF_8)), false)
-                .build());
-
-        new ChatCompletionsResponse(exchange, processed::add);
-
-        exchange.getResponse().getBody().read();
     }
 }

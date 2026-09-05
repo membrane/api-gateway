@@ -14,15 +14,18 @@
 
 package com.predic8.membrane.core.interceptor.llmgateway;
 
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.chatcompletions.ChatCompletionsProvider;
 import com.predic8.membrane.core.interceptor.llmgateway.store.AiApiUser;
-import com.predic8.membrane.core.interceptor.llmgateway.store.SimpleAiApiStore;
 import com.predic8.membrane.core.openapi.validators.MultipartBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,10 +35,17 @@ import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.http.Request.post;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.llmgateway.store.AiApiStoreFixtures.initializedStoreWith;
+import static com.predic8.membrane.core.interceptor.llmgateway.store.AiApiStoreFixtures.user;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 class LLMGatewayInterceptorTest {
+
+    private static final String CHAT_COMPLETIONS = "http://localhost/v1/chat/completions";
+
+    private static final String CHAT_REQUEST = """
+            {"model":"gpt-4o","messages":[{"role":"user","content":"Hi"}]}""";
 
     private LLMGatewayInterceptor interceptor;
 
@@ -48,7 +58,7 @@ class LLMGatewayInterceptorTest {
 
     @Test
     void postWithNonJsonBodyIsRejected() throws Exception {
-        var exchange = post("http://localhost/v1/chat/completions")
+        var exchange = post(CHAT_COMPLETIONS)
                 .header(CONTENT_TYPE, "text/plain")
                 .body("hello")
                 .buildExchange();
@@ -59,12 +69,7 @@ class LLMGatewayInterceptorTest {
 
     @Test
     void postWithJsonBodyIsForwarded() throws Exception {
-        var exchange = post("http://localhost/v1/chat/completions")
-                .json("""
-                        {"model":"gpt-4o","messages":[{"role":"user","content":"Hi"}]}""")
-                .buildExchange();
-
-        assertEquals(CONTINUE, interceptor.handleRequest(exchange));
+        assertEquals(CONTINUE, interceptor.handleRequest(chatCompletionExchange(null)));
     }
 
     /**
@@ -91,35 +96,25 @@ class LLMGatewayInterceptorTest {
      * Zero means unlimited, on the client's side as well as the policies', so it must not win the
      * comparison and leave the output tokens unreserved.
      */
-    @Nested
-    class EffectiveMaxOutputTokens {
+    @ParameterizedTest(name = "client={0}, policy={1} -> {2}")
+    @CsvSource({
+            "4000, 200, 200",   // the policy caps what the client asked for
+            " 100, 200, 100",   // the client asks for less than the policy allows
+            "4000,   0, 4000",  // without a policy limit the client's request is reserved
+            "  -1, 200, 200",   // the client asked for nothing, so the policy limit is reserved
+            "   0, 200, 200",
+            "  -1,   0, 0",     // neither side gives a limit
+            "   0,   0, 0"
+    })
+    void effectiveMaxOutputTokens(long requested, long policyLimit, long expected) {
+        assertEquals(expected, interceptor.computeEffectiveMaxOutputTokens(requested, policyLimit));
+    }
 
-        @Test
-        void policyCapsWhatTheClientAskedFor() {
-            assertEquals(200, interceptor.computeEffectiveMaxOutputTokens(4000, 200));
-        }
-
-        @Test
-        void clientAsksForLessThanThePolicyAllows() {
-            assertEquals(100, interceptor.computeEffectiveMaxOutputTokens(100, 200));
-        }
-
-        @Test
-        void withoutAPolicyLimitTheClientsRequestIsReserved() {
-            assertEquals(4000, interceptor.computeEffectiveMaxOutputTokens(4000, 0));
-        }
-
-        @Test
-        void clientAskedForNothingSoThePolicyLimitIsReserved() {
-            assertEquals(200, interceptor.computeEffectiveMaxOutputTokens(-1, 200));
-            assertEquals(200, interceptor.computeEffectiveMaxOutputTokens(0, 200));
-        }
-
-        @Test
-        void neitherSideGivesALimit() {
-            assertEquals(0, interceptor.computeEffectiveMaxOutputTokens(-1, 0));
-            assertEquals(0, interceptor.computeEffectiveMaxOutputTokens(0, 0));
-        }
+    private static Exchange chatCompletionExchange(String apiKey) throws URISyntaxException {
+        var request = post(CHAT_COMPLETIONS).json(CHAT_REQUEST);
+        if (apiKey != null)
+            request.header(AUTHORIZATION, "Bearer " + apiKey);
+        return request.buildExchange();
     }
 
     /**
@@ -130,19 +125,14 @@ class LLMGatewayInterceptorTest {
 
         @BeforeEach
         void useUserStore() {
-            var alice = new AiApiUser();
-            alice.setName("Alice");
-            alice.setApiKey("key-a");
-
-            var store = new SimpleAiApiStore();
-            store.setUsers(List.of(alice));
-            interceptor.setAiStore(store);
+            interceptor.setAiStore(initializedStoreWith(user("Alice", "key-a", 0)));
+            // The outer setUp() initialized the interceptor with the store it had then.
             interceptor.init();
         }
 
         @Test
         void unknownApiKeyIsRejected() throws Exception {
-            var exchange = post("http://localhost/v1/chat/completions")
+            var exchange = post(CHAT_COMPLETIONS)
                     .header(AUTHORIZATION, "Bearer key-x")
                     .json("{}")
                     .buildExchange();
@@ -153,13 +143,7 @@ class LLMGatewayInterceptorTest {
 
         @Test
         void knownApiKeyIsForwarded() throws Exception {
-            var exchange = post("http://localhost/v1/chat/completions")
-                    .header(AUTHORIZATION, "Bearer key-a")
-                    .json("""
-                            {"model":"gpt-4o","messages":[{"role":"user","content":"Hi"}]}""")
-                    .buildExchange();
-
-            assertEquals(CONTINUE, interceptor.handleRequest(exchange));
+            assertEquals(CONTINUE, interceptor.handleRequest(chatCompletionExchange("key-a")));
         }
     }
 
@@ -175,22 +159,18 @@ class LLMGatewayInterceptorTest {
         @BeforeEach
         void useRecordingStore() {
             interceptor.setAiStore((user, usage) -> recorded.add(user));
+            // The outer setUp() initialized the interceptor with the store it had then.
             interceptor.init();
         }
 
         @Test
         void requestIsNotRejected() throws Exception {
-            var exchange = post("http://localhost/v1/chat/completions")
-                    .json("""
-                            {"model":"gpt-4o","messages":[{"role":"user","content":"Hi"}]}""")
-                    .buildExchange();
-
-            assertEquals(CONTINUE, interceptor.handleRequest(exchange));
+            assertEquals(CONTINUE, interceptor.handleRequest(chatCompletionExchange(null)));
         }
 
         @Test
         void usageIsRecordedWithoutAUser() throws Exception {
-            var exchange = post("http://localhost/v1/chat/completions").json("{}").buildExchange();
+            var exchange = post(CHAT_COMPLETIONS).json("{}").buildExchange();
             exchange.setResponse(Response.ok().json("""
                     {"usage":{"prompt_tokens":5,"completion_tokens":6,"total_tokens":11}}""").build());
 

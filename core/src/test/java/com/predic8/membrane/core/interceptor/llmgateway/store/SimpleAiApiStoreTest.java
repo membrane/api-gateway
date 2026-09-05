@@ -17,8 +17,7 @@ package com.predic8.membrane.core.interceptor.llmgateway.store;
 import com.predic8.membrane.core.util.ConfigurationException;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
-
+import static com.predic8.membrane.core.interceptor.llmgateway.store.AiApiStoreFixtures.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class SimpleAiApiStoreTest {
@@ -47,16 +46,14 @@ class SimpleAiApiStoreTest {
 
     @Test
     void userIsFoundByApiKey() {
-        var store = storeWith(user("Alice", "key-a", 0), user("Bob", "key-b", 0));
-        store.init(null);
+        var store = initializedStoreWith(user("Alice", "key-a", 0), user("Bob", "key-b", 0));
 
         assertEquals("Bob", store.getUser("key-b").orElseThrow().getName());
     }
 
     @Test
     void unknownApiKeyHasNoUser() {
-        var store = storeWith(user("Alice", "key-a", 0));
-        store.init(null);
+        var store = initializedStoreWith(user("Alice", "key-a", 0));
 
         assertTrue(store.getUser("key-x").isEmpty());
     }
@@ -66,8 +63,7 @@ class SimpleAiApiStoreTest {
      */
     @Test
     void missingApiKeyHasNoUser() {
-        var store = storeWith(user("Alice", "key-a", 0));
-        store.init(null);
+        var store = initializedStoreWith(user("Alice", "key-a", 0));
 
         assertTrue(store.getUser(null).isEmpty());
     }
@@ -75,8 +71,7 @@ class SimpleAiApiStoreTest {
     @Test
     void tokensLeftAreReducedByWhatTheRequestNeeds() {
         var alice = user("Alice", "key-a", 1000);
-        var store = storeWith(alice);
-        store.init(null);
+        var store = initializedStoreWith(alice);
 
         assertEquals(700, store.checkLimit(alice, 200, 100));
     }
@@ -84,23 +79,8 @@ class SimpleAiApiStoreTest {
     @Test
     void userWithoutTokenBudgetIsUnlimited() {
         var alice = user("Alice", "key-a", 0);
-        var store = storeWith(alice);
-        store.init(null);
+        var store = initializedStoreWith(alice);
 
         assertEquals(Long.MAX_VALUE, store.checkLimit(alice, 200, 100));
-    }
-
-    private static SimpleAiApiStore storeWith(AiApiUser... users) {
-        var store = new SimpleAiApiStore();
-        store.setUsers(List.of(users));
-        return store;
-    }
-
-    private static AiApiUser user(String name, String apiKey, long tokens) {
-        var user = new AiApiUser();
-        user.setName(name);
-        user.setApiKey(apiKey);
-        user.setTokens(tokens);
-        return user;
     }
 }

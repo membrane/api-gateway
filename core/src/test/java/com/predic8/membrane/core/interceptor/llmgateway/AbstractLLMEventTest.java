@@ -16,25 +16,25 @@ package com.predic8.membrane.core.interceptor.llmgateway;
 
 import com.predic8.membrane.core.util.http.SSEParser.SSEEvent;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class AbstractLLMEventTest {
 
-    @Test
-    void nonJsonDataYieldsNoEvent() {
-        assertNull(AbstractLLMEvent.create(new SSEEvent("message", "not json at all")));
-    }
-
-    @Test
-    void jsonArrayYieldsNoEvent() {
-        assertNull(AbstractLLMEvent.create(new SSEEvent("message", "[1,2,3]")));
-    }
-
-    @Test
-    void unrecognizedJsonObjectYieldsNoEvent() {
-        assertNull(AbstractLLMEvent.create(new SSEEvent("message", """
-                {"object":"something.else"}""")));
+    /**
+     * Data that is not JSON, not a JSON object, or an object of no known type.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "not json at all",
+            "[1,2,3]",
+            """
+            {"object":"something.else"}"""
+    })
+    void unknownDataYieldsNoEvent(String data) {
+        assertNull(AbstractLLMEvent.create(new SSEEvent("message", data)));
     }
 
     @Test
