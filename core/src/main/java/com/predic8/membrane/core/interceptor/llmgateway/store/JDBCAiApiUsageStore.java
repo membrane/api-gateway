@@ -21,9 +21,10 @@ import com.predic8.membrane.core.util.jdbc.AbstractJdbcSupport;
 import java.sql.SQLException;
 
 /**
- * @description Records the token usage of every request in a database table (experimental). It neither
- * authenticates clients nor enforces token limits, so use it where the gateway should only account for
- * what was used.
+ * @description Records the token usage of every request in a database table (experimental). It neither authenticates
+ * clients nor enforces token limits, so use it where the gateway should only account for what was used. The table
+ * <code>ai_api_usage</code> is created at startup if it does not exist, and usage that cannot be attributed to a user
+ * is recorded as <code>anonymous</code>.
  */
 @MCElement(name = "jdbcAiApiUsageStore")
 public class JDBCAiApiUsageStore extends AbstractJdbcSupport implements AiApiStore {

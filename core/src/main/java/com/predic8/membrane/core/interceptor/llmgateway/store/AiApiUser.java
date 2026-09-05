@@ -67,8 +67,8 @@ public class AiApiUser {
     }
 
     /**
-     * @param name of the user
-     * @description Name of the API user, group or cost center.
+     * @description Name of the api user, group or cost center. Used to attribute the recorded usage.
+     * @example alice
      */
     @MCAttribute()
     public void setName(String name) {
@@ -80,9 +80,9 @@ public class AiApiUser {
     }
 
     /**
-     * @description API key to authenticate the user at the llm gateway
-     * @default (not set)
-     * @param apikey to authenticate the user
+     * @description The api key the client sends to authenticate as this user. It is the key of the gateway, not the key
+     * of the provider, and it is required.
+     * @example abc123
      */
     @MCAttribute()
     public void setApiKey(String apikey) {
@@ -95,9 +95,10 @@ public class AiApiUser {
     }
 
     /**
-     * @description Number of tokens that the user has available within the current period.
+     * @description Number of tokens the user may spend within the current period. Input and the reserved output of a
+     * request count against it, and the period is set by <code>limitResetPeriod</code> of the store.
      * @default 0 (no limit)
-     * @param tokens available tokens
+     * @example 10000
      */
     @MCAttribute
     public void setTokens(long tokens) {

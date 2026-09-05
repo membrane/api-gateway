@@ -30,8 +30,22 @@ import java.util.function.Consumer;
 import static com.predic8.membrane.core.interceptor.llmgateway.provider.LLMProvider.started;
 
 /**
- * @description OpenAI provider configuration
- * Use to configure a LLM gateway to use the OpenAI API
+ * @description Talks to the OpenAI API. Both the Responses API under <code>/v1/responses</code> and the Chat Completions API under
+ * <code>/v1/chat/completions</code> are supported, and the endpoint the client calls decides which one is used. The
+ * api key travels as a Bearer token in the <code>Authorization</code> header. See
+ * tutorials/ai/llm-gateway/openai/10-Basic-LLM-Gateway.yaml.
+ * @yaml
+ * <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - llmGateway:
+ *         openai: {}
+ *         policies:
+ *           maxOutputTokens: 200
+ *   target:
+ *     url: https://api.openai.com
+ * </code></pre>
  */
 @MCElement( name="openai")
 public class OpenAIProvider implements LLMProvider {

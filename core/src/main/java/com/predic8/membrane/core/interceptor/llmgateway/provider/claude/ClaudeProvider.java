@@ -27,8 +27,21 @@ import java.util.function.Consumer;
 import static com.predic8.membrane.core.interceptor.llmgateway.provider.LLMProvider.started;
 
 /**
- * @description (Experimental) Anthropic Claude provider configuration
- * Use to configure a LLM gateway to use the anthropic API
+ * @description (Experimental) Talks to the Anthropic Claude Messages API under <code>/v1/messages</code>. The api key travels in the
+ * <code>x-api-key</code> header, and the system prompt in the top level <code>system</code> field. See
+ * tutorials/ai/llm-gateway/claude/10-Basic-LLM-Gateway.yaml.
+ * @yaml
+ * <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - llmGateway:
+ *         claude: {}
+ *         policies:
+ *           maxOutputTokens: 200
+ *   target:
+ *     url: https://api.anthropic.com
+ * </code></pre>
  */
 @MCElement( name="claude")
 public class ClaudeProvider implements LLMProvider {

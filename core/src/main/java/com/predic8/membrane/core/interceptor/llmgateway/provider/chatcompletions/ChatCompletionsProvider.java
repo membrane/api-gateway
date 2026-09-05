@@ -27,24 +27,23 @@ import java.util.function.Consumer;
 import static com.predic8.membrane.core.interceptor.llmgateway.provider.LLMProvider.started;
 
 /**
- * @description
- * OpenAI Chat Completions API compatible provider.
- * Can be used for the following providers:
- * <ul>
- *  <li>Azure OpenAI</li>
- *   <li>Google Gemini (OpenAI compatible endpoint)</li>
- *   <li>TogetherAI</li>
- *   <li>Fireworks AI</li>
- *   <li>DeepSeek AI</li>
- *   <li>OpenRouter</li>
- *   <li>Mistral AI</li>
- *   <li>DeepInfra</li>
- *   <li>SiliconFlow</li>
- *   <li>NVIDIA NIM</li>
- *   <li>ML Studio</li>
- *   <li>vLLM</li>
- *   <li>Ollama</li>
- * </ul>
+ * @description Talks to any service that serves the OpenAI Chat Completions API, so that a gateway can front a provider
+ * Membrane has no element of its own for. The api key travels as a Bearer token in the <code>Authorization</code>
+ * header, and the target url decides which service is called. Known to work with Azure OpenAI, the OpenAI compatible
+ * endpoint of Google Gemini, TogetherAI, Fireworks AI, DeepSeek AI, OpenRouter, Mistral AI, DeepInfra, SiliconFlow,
+ * NVIDIA NIM, ML Studio, vLLM and Ollama.
+ * @yaml
+ * <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - llmGateway:
+ *         chatCompletions: {}
+ *         policies:
+ *           maxOutputTokens: 200
+ *   target:
+ *     url: http://localhost:11434
+ * </code></pre>
  */
 @MCElement(name = "chatCompletions")
 public class ChatCompletionsProvider implements LLMProvider {
