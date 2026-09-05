@@ -11,6 +11,7 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
+
 package com.predic8.membrane.core.interceptor.llmgateway.provider.claude;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -40,11 +41,8 @@ public record MessageDelta(String stopReason,
         var cacheCreationInputTokens = u.path("cache_creation_input_tokens").asInt(0);
         var cacheReadInputTokens = u.path("cache_read_input_tokens").asInt(0);
 
-        // Cache tokens are billable according to Claude's pricing model
-        var effectiveInputTokens = inputTokens + cacheCreationInputTokens + cacheReadInputTokens;
-
         return new MessageDelta(stopReason, inputTokens, outputTokens,
                 cacheCreationInputTokens, cacheReadInputTokens,
-                new Usage(effectiveInputTokens, outputTokens, effectiveInputTokens + outputTokens));
+                ClaudeUsage.from(u));
     }
 }

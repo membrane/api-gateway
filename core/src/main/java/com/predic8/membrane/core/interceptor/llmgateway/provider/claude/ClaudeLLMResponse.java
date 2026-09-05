@@ -35,6 +35,12 @@ public class ClaudeLLMResponse extends AbstractLLMResponse {
 
     private volatile String tool;
 
+    /**
+     * Anthropic reports the input of a streamed answer once in message_start and the output as it
+     * grows in message_delta, so the two have to be put back together.
+     */
+    private volatile int inputTokensOfStream;
+
     public ClaudeLLMResponse(Exchange exchange, Consumer<LLMResponse> postProcessor) {
         super(exchange,postProcessor);
     }
@@ -49,6 +55,8 @@ public class ClaudeLLMResponse extends AbstractLLMResponse {
         log.debug("Event: {}", event);
 
         switch (event.name()) {
+            case "message_start" -> inputTokensOfStream =
+                    ClaudeUsage.effectiveInputTokens(event.json().path("message").path("usage"));
             case "content_block_start" -> {
                 var cbs = ContentBlockStart.from(event.json());
                 if (cbs.toolUse() != null) {
@@ -59,7 +67,7 @@ public class ClaudeLLMResponse extends AbstractLLMResponse {
                 var md = MessageDelta.from(event.json());
                 log.debug("Message delta: {}", md);
                 if (md.usage() != null) {
-                    usage = md.usage();
+                    usage = withInputOfStream(md.usage());
                     if (tool != null)
                         log.debug("Tool {} with {}", tool, inputJson);
                 }
@@ -74,8 +82,18 @@ public class ClaudeLLMResponse extends AbstractLLMResponse {
         }
     }
 
+    /**
+     * message_delta carries the output and, depending on the model, nothing about the input. What
+     * message_start reported then stands.
+     */
+    private Usage withInputOfStream(Usage delta) {
+        if (delta.inputTokens() > 0)
+            return delta;
+        return new Usage(inputTokensOfStream, delta.outputTokens(), inputTokensOfStream + delta.outputTokens());
+    }
+
     Usage extractUsage() {
-        return usageFrom(json.path("usage"));
+        return ClaudeUsage.from(json.path("usage"));
     }
 
     @Override

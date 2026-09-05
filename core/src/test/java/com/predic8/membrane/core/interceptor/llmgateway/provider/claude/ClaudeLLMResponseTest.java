@@ -72,11 +72,83 @@ class ClaudeLLMResponseTest extends AbstractLLMResponseTest {
         assertUsage(new Usage(15, 5, 20));
     }
 
+    /**
+     * Anthropic reports the input of a streamed answer in message_start and the output in
+     * message_delta, so neither event alone is the usage of the response.
+     */
+    @Test
+    void inputOfStreamedResponseIsTakenFromMessageStart() throws URISyntaxException {
+        stream("""
+                event: message_start
+                data: {"type":"message_start","message":{"id":"msg_1","usage":{"input_tokens":25,"output_tokens":1}}}
+
+                event: message_delta
+                data: {"type":"message_delta","delta":{"stop_reason":"end_turn"},"usage":{"output_tokens":15}}
+
+                event: message_stop
+                data: {"type":"message_stop"}
+
+                """);
+
+        assertUsage(new Usage(25, 15, 40));
+    }
+
+    /**
+     * Cache tokens are billed, so the input reported by message_start includes them.
+     */
+    @Test
+    void cacheTokensOfMessageStartCountAsInput() throws URISyntaxException {
+        stream("""
+                event: message_start
+                data: {"type":"message_start","message":{"usage":{"input_tokens":10,"cache_creation_input_tokens":100,"cache_read_input_tokens":50}}}
+
+                event: message_delta
+                data: {"type":"message_delta","delta":{"stop_reason":"end_turn"},"usage":{"output_tokens":15}}
+
+                event: message_stop
+                data: {"type":"message_stop"}
+
+                """);
+
+        assertUsage(new Usage(160, 15, 175));
+    }
+
+    /**
+     * A model that repeats the input in message_delta wins over what message_start reported.
+     */
+    @Test
+    void inputOfMessageDeltaWinsOverMessageStart() throws URISyntaxException {
+        stream("""
+                event: message_start
+                data: {"type":"message_start","message":{"usage":{"input_tokens":25}}}
+
+                event: message_delta
+                data: {"type":"message_delta","delta":{"stop_reason":"end_turn"},"usage":{"input_tokens":30,"output_tokens":15}}
+
+                event: message_stop
+                data: {"type":"message_stop"}
+
+                """);
+
+        assertUsage(new Usage(30, 15, 45));
+    }
+
     @Test
     void usageOfNonStreamedResponseIsReportedOnce() throws URISyntaxException {
         newResponse(withJsonResponse("""
                 {"usage":{"input_tokens":5,"output_tokens":6}}"""));
 
         assertUsage(new Usage(5, 6, 11));
+    }
+
+    /**
+     * The cache tokens of a complete response are billed the same way as those of a streamed one.
+     */
+    @Test
+    void cacheTokensOfNonStreamedResponseCountAsInput() throws URISyntaxException {
+        newResponse(withJsonResponse("""
+                {"usage":{"input_tokens":10,"cache_creation_input_tokens":100,"cache_read_input_tokens":50,"output_tokens":6}}"""));
+
+        assertUsage(new Usage(160, 6, 166));
     }
 }
