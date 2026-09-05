@@ -33,7 +33,7 @@ class SSEParserTest {
                 
                 """)));
 
-        var events = parser.getEvents();
+        var events = parser.drainEvents();
 
         assertEquals(1, events.size());
         assertEquals("message", events.getFirst().name());
@@ -52,7 +52,7 @@ class SSEParserTest {
                 
                 """));
 
-        assertEquals("first\nsecond", parser.getEvents().getFirst().data());
+        assertEquals("first\nsecond", parser.drainEvents().getFirst().data());
     }
 
     @Test
@@ -71,7 +71,7 @@ class SSEParserTest {
                 
                 """)));
 
-        var event = parser.getEvents().getFirst();
+        var event = parser.drainEvents().getFirst();
 
         assertEquals("message", event.name());
         assertEquals("hello", event.data());
@@ -110,8 +110,10 @@ class SSEParserTest {
                 
                 """)));
 
-        assertEquals(1, parser.getEvents().size());
-        assertEquals("done", parser.getEvents().getFirst().name());
+        var events = parser.drainEvents();
+
+        assertEquals(1, events.size());
+        assertEquals("done", events.getFirst().name());
     }
 
     @Test
@@ -127,7 +129,7 @@ class SSEParserTest {
                 
                 """));
 
-        var event = parser.getEvents().getFirst();
+        var event = parser.drainEvents().getFirst();
 
         assertEquals("message", event.name());
         assertEquals("hello", event.data());
@@ -139,7 +141,7 @@ class SSEParserTest {
 
         parser.parse(chunk("event: message\r\ndata: hello\r\n\r\n"));
 
-        var event = parser.getEvents().getFirst();
+        var event = parser.drainEvents().getFirst();
 
         assertEquals("message", event.name());
         assertEquals("hello", event.data());
@@ -156,7 +158,38 @@ class SSEParserTest {
                 """));
 
         assertThrows(UnsupportedOperationException.class,
-                () -> parser.getEvents().add(new SSEParser.SSEEvent("x", "y")));
+                () -> parser.drainEvents().add(new SSEParser.SSEEvent("x", "y")));
+    }
+
+    /**
+     * A stream is consumed as it arrives, so what was handed out is not kept around.
+     */
+    @Test
+    void drainedEventsAreNotHandedOutTwice() {
+        var parser = new SSEParser(Set.of("done"));
+
+        parser.parse(chunk("""
+                event: message
+                data: hello
+
+                """));
+
+        assertEquals(1, parser.drainEvents().size());
+        assertTrue(parser.drainEvents().isEmpty());
+    }
+
+    @Test
+    void terminalEventIsStillAvailableAfterDraining() {
+        var parser = new SSEParser(Set.of("done"));
+
+        parser.parse(chunk("""
+                event: done
+                data: final
+
+                """));
+        parser.drainEvents();
+
+        assertEquals("done", parser.getTerminalEvent().orElseThrow().name());
     }
 
     private static Chunk chunk(String content) {

@@ -20,18 +20,43 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMErrorCreator;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.ModelInputRequest;
-import com.predic8.membrane.core.interceptor.llmgateway.provider.openai.OrganizationRequest;
 import com.predic8.membrane.core.util.ConfigurationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 
 /**
- * @description LLM Gateway policies for token usage and model restrictions.
+ * @description Limits what a client may ask of the model: how large the input may be, how much the model may generate,
+ * and which models it may use. A request over the input limit or for a model that is not allowed is rejected with an
+ * error in the format of the configured provider; the output limit is written into the request instead of rejecting it.
+ * See tutorials/ai/llm-gateway/openai/10-Basic-LLM-Gateway.yaml.
+ * <pre>
+ * policies:
+ *   [ maxInputTokens: &lt;count&gt; ]
+ *   [ maxOutputTokens: &lt;count&gt; ]
+ *   [ models: ]
+ *     - &lt;model&gt;
+ *     ...
+ * </pre>
+ * @yaml
+ * <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - llmGateway:
+ *         openai: {}
+ *         policies:
+ *           maxInputTokens: 100
+ *           maxOutputTokens: 200
+ *           models:
+ *             - gpt-5-mini
+ *   target:
+ *     url: https://api.openai.com
+ * </code></pre>
  */
 @MCElement(name = "policies", id = "llm-gateway-policies")
 public class DefaultPolicies implements Policies {
@@ -50,10 +75,6 @@ public class DefaultPolicies implements Policies {
 
     public Outcome handleRequest(ModelInputRequest mir, Exchange exc) {
 
-        if (mir instanceof OrganizationRequest) {
-            return CONTINUE;
-        }
-
         var outcome = checkTokenLimits(mir, exc);
         if (outcome != CONTINUE) {
             return outcome;
@@ -65,7 +86,7 @@ public class DefaultPolicies implements Policies {
         var model = mir.getModel();
         if (models != null && !models.contains(model)) {
             exc.setResponse(errorCreator.modelNotAllowed(model, models));
-            return RETURN;
+            return ABORT;
         }
         return CONTINUE;
     }
@@ -89,7 +110,7 @@ public class DefaultPolicies implements Policies {
             if (inputTokens > maxInputTokens) {
                 log.info("Input tokens {} exceed the limit of {}.", inputTokens, maxInputTokens);
                 exc.setResponse(errorCreator.inputTokensExceeded(maxInputTokens, inputTokens));
-                return RETURN;
+                return ABORT;
             }
         }
         return CONTINUE;
@@ -100,9 +121,9 @@ public class DefaultPolicies implements Policies {
     }
 
     /**
-     * @param models List of models that can be used by the gateway.
-     * @description Restricts the models that can be used by the gateway.
-     * @default null (no restriction)
+     * @description The models the gateway accepts. A request asking for any other model is rejected.
+     * @default (no restriction)
+     * @example gpt-5-mini
      */
     @MCAttribute
     public void setModels(List<String> models) {
@@ -115,10 +136,10 @@ public class DefaultPolicies implements Policies {
     }
 
     /**
-     * @param maxOutputTokens Maximum number of tokens the LLM should use to generate a response.
-     * @description Maximum number of tokens the LLM should use to generate a response. This is just a hint that the gateway
-     * sends to the LLM provider. The provider may use a different limit.
+     * @description Caps how many tokens the model may generate. The gateway lowers the limit a client asked for and
+     * sets one where the client asked for none, but the provider decides what it honours.
      * @default 0 (unlimited)
+     * @example 200
      */
     @MCAttribute
     public void setMaxOutputTokens(int maxOutputTokens) {
@@ -133,9 +154,10 @@ public class DefaultPolicies implements Policies {
     }
 
     /**
-     * @param maxInputTokens Maximum number of tokens that a request can use.
-     * @description Restricts token usage for the input. The size of the input is estimated by gateway based on the request size.
-     * Actual token usage may be deviate from this value.
+     * @description Rejects a request whose input exceeds this number of tokens. The gateway estimates the input from
+     * the size of the request before it is forwarded, so the number the provider counts may differ.
+     * @default 0 (unlimited)
+     * @example 100
      */
     @MCAttribute
     public void setMaxInputTokens(int maxInputTokens) {

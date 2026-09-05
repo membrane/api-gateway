@@ -16,6 +16,8 @@ package com.predic8.membrane.core.interceptor.llmgateway.provider;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.util.Collection;
+
 public abstract class AbstractLLMErrorCreator implements LLMErrorCreator {
 
     private static final ObjectMapper om = new ObjectMapper();
@@ -32,6 +34,25 @@ public abstract class AbstractLLMErrorCreator implements LLMErrorCreator {
 
     public String envelope(String message, String type, String param, String code) {
         return createJson(new ErrorEnvelope(new ErrorBody(message,type,param,code)));
+    }
+
+    /**
+     * Every provider rejects a model the same way, only the envelope around it differs.
+     */
+    protected static String modelNotAllowedMessage(String model, Collection<String> allowedModels) {
+        return "Model '%s' is not allowed. Allowed models: %s.".formatted(model, String.join(", ", allowedModels));
+    }
+
+    /**
+     * What is left of the budget is reported as zero once it is used up: the client has no use for
+     * the overdraft.
+     */
+    protected static String tokenLimitMessage(long tokenRequired, long tokenRemaining, long tokenResetInSeconds) {
+        return """
+                Token rate limit exceeded.
+                Request requires %d tokens but only %d remain.
+                Retry after %d seconds.
+                """.formatted(tokenRequired, Math.max(0, tokenRemaining), tokenResetInSeconds).trim();
     }
 
     private record ErrorEnvelope(ErrorBody error) {

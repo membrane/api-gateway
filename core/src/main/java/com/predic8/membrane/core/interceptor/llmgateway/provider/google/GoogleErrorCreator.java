@@ -27,49 +27,39 @@ public class GoogleErrorCreator extends AbstractLLMErrorCreator {
     @Override
     public Response invalidRequestError(String message) {
         return badRequest().json(
-                envelope(400, message, "INVALID_ARGUMENT")
+                googleEnvelope(400, message, "INVALID_ARGUMENT")
         ).build();
     }
 
+    @Override
     public Response tokenLimitExceeded(long tokenRequired,
                                        long tokenRemaining,
                                        long tokenResetInSeconds) {
 
-        var visibleRemaining = Math.max(0, tokenRemaining);
-
         return statusCode(429).json(
-                envelope(
+                googleEnvelope(
                         429,
-                        """
-                        Token rate limit exceeded.
-                        Request requires %d tokens but only %d remain.
-                        Retry after %d seconds.
-                        """
-                                .formatted(tokenRequired, visibleRemaining, tokenResetInSeconds)
-                                .trim(),
+                        tokenLimitMessage(tokenRequired, tokenRemaining, tokenResetInSeconds),
                         "RESOURCE_EXHAUSTED"
                 )
         ).build();
     }
 
+    @Override
     public Response modelNotAllowed(String model,
                                     Collection<String> allowedModels) {
 
         return badRequest().json(
-                envelope(
-                        400,
-                        "Model '%s' is not allowed. Allowed models: %s."
-                                .formatted(model, String.join(", ", allowedModels)),
-                        "INVALID_ARGUMENT"
-                )
+                googleEnvelope(400, modelNotAllowedMessage(model, allowedModels), "INVALID_ARGUMENT")
         ).build();
     }
 
+    @Override
     public Response authenticationFailed() {
         return unauthorized()
                 .header(WWW_AUTHENTICATE, "Bearer")
                 .json(
-                        envelope(
+                        googleEnvelope(
                                 401,
                                 "Invalid API key.",
                                 "UNAUTHENTICATED"
@@ -77,11 +67,12 @@ public class GoogleErrorCreator extends AbstractLLMErrorCreator {
                 ).build();
     }
 
+    @Override
     public Response inputTokensExceeded(long maxTokens,
                                         long estimatedTokens) {
 
         return badRequest().json(
-                envelope(
+                googleEnvelope(
                         400,
                         """
                         The input token count (%d) exceeds the maximum allowed (%d).
@@ -93,19 +84,19 @@ public class GoogleErrorCreator extends AbstractLLMErrorCreator {
         ).build();
     }
 
-    private String envelope(int code,
-                            String message,
-                            String status) {
+    private String googleEnvelope(int code,
+                                  String message,
+                                  String status) {
 
-        return createJson(new ErrorEnvelope(
-                new ErrorBody(code, message, status)
+        return createJson(new GoogleErrorEnvelope(
+                new GoogleErrorBody(code, message, status)
         ));
     }
 
-    private record ErrorEnvelope(ErrorBody error) {
+    private record GoogleErrorEnvelope(GoogleErrorBody error) {
     }
 
-    private record ErrorBody(
+    private record GoogleErrorBody(
             int code,
             String message,
             String status

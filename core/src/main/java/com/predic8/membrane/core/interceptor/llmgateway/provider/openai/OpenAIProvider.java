@@ -16,8 +16,9 @@ package com.predic8.membrane.core.interceptor.llmgateway.provider.openai;
 
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.llmgateway.provider.AbstractLLMProvider;
+import com.predic8.membrane.core.interceptor.llmgateway.provider.BaseLLMRequest;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMErrorCreator;
+import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMProvider;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMRequest;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMResponse;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.chatcompletions.ChatCompletionsErrorCreator;
@@ -26,12 +27,28 @@ import com.predic8.membrane.core.interceptor.llmgateway.provider.chatcompletions
 import java.io.IOException;
 import java.util.function.Consumer;
 
+import static com.predic8.membrane.core.interceptor.llmgateway.provider.LLMProvider.started;
+
 /**
- * @description OpenAI provider configuration
- * Use to configure a LLM gateway to use the OpenAI API
+ * @description Talks to the OpenAI API. Both the Responses API under <code>/v1/responses</code> and the Chat Completions API under
+ * <code>/v1/chat/completions</code> are supported, and the endpoint the client calls decides which one is used. The
+ * api key travels as a Bearer token in the <code>Authorization</code> header. See
+ * tutorials/ai/llm-gateway/openai/10-Basic-LLM-Gateway.yaml.
+ * @yaml
+ * <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - llmGateway:
+ *         openai: {}
+ *         policies:
+ *           maxOutputTokens: 200
+ *   target:
+ *     url: https://api.openai.com
+ * </code></pre>
  */
 @MCElement( name="openai")
-public class OpenAIProvider extends AbstractLLMProvider {
+public class OpenAIProvider implements LLMProvider {
 
     @Override
     public LLMRequest getLLMRequest(Exchange exchange) throws IOException {
@@ -42,16 +59,16 @@ public class OpenAIProvider extends AbstractLLMProvider {
         if (uri.startsWith("/v1/responses")) {
             return new OpenAiLLMResponsesRequest(exchange);
         }
-        return super.getLLMRequest(exchange);
+        return new BaseLLMRequest(exchange);
     }
 
     @Override
     public LLMResponse getLLMResponse(Exchange exchange, Consumer<LLMResponse> postProcessor) {
         var uri = exchange.getRequest().getUri();
         if (uri.startsWith("/v1/responses")) {
-            return new OpenAiLLMResponsesResponse(exchange,postProcessor);
+            return started(new OpenAiLLMResponsesResponse(exchange, postProcessor));
         }
-        return new ChatCompletionsResponse(exchange, postProcessor);
+        return started(new ChatCompletionsResponse(exchange, postProcessor));
     }
 
     @Override

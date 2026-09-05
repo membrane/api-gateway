@@ -11,77 +11,40 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-
 package com.predic8.membrane.core.interceptor.llmgateway.provider.claude;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.predic8.membrane.core.interceptor.llmgateway.store.Usage;
 
-public class MessageDelta {
-
-    private String stopReason;
-    private int inputTokens;
-    private int outputTokens;
-    private int cacheCreationInputTokens;
-    private int cacheReadInputTokens;
-
-    private Usage usage;
+/**
+ * The {@code message_delta} event, which carries the usage of a streamed answer. The usage is null
+ * until the event that reports it arrives.
+ */
+public record MessageDelta(String stopReason,
+                           int inputTokens,
+                           int outputTokens,
+                           int cacheCreationInputTokens,
+                           int cacheReadInputTokens,
+                           Usage usage) {
 
     public static MessageDelta from(ObjectNode on) {
-        var md = new MessageDelta();
+        var stopReason = on.path("delta").path("stop_reason").asText(null);
 
-        JsonNode delta = on.path("delta");
-        md.stopReason = delta.path("stop_reason").asText(null);
-
-        JsonNode u = on.path("usage");
-        if (u.isObject()) {
-            md.inputTokens = u.path("input_tokens").asInt(0);
-            md.outputTokens = u.path("output_tokens").asInt(0);
-            md.cacheCreationInputTokens = u.path("cache_creation_input_tokens").asInt(0);
-            md.cacheReadInputTokens = u.path("cache_read_input_tokens").asInt(0);
-
-            // Cache tokens (cache_creation_input_tokens and cache_read_input_tokens) are billable according to Claude's pricing model
-            int effectiveInputTokens = md.inputTokens + md.cacheCreationInputTokens + md.cacheReadInputTokens;
-            md.usage = new Usage(effectiveInputTokens,md.outputTokens, effectiveInputTokens + md.outputTokens);
-
+        var u = on.path("usage");
+        if (!u.isObject()) {
+            return new MessageDelta(stopReason, 0, 0, 0, 0, null);
         }
 
-        return md;
-    }
+        var inputTokens = u.path("input_tokens").asInt(0);
+        var outputTokens = u.path("output_tokens").asInt(0);
+        var cacheCreationInputTokens = u.path("cache_creation_input_tokens").asInt(0);
+        var cacheReadInputTokens = u.path("cache_read_input_tokens").asInt(0);
 
-    public String getStopReason() {
-        return stopReason;
-    }
+        // Cache tokens are billable according to Claude's pricing model
+        var effectiveInputTokens = inputTokens + cacheCreationInputTokens + cacheReadInputTokens;
 
-    public int getInputTokens() {
-        return inputTokens;
-    }
-
-    public int getOutputTokens() {
-        return outputTokens;
-    }
-
-    public int getCacheCreationInputTokens() {
-        return cacheCreationInputTokens;
-    }
-
-    public int getCacheReadInputTokens() {
-        return cacheReadInputTokens;
-    }
-
-    public Usage getUsage() {
-        return usage;
-    }
-
-    @Override
-    public String toString() {
-        return "MessageDelta{" +
-                "stopReason='" + stopReason + '\'' +
-                ", inputTokens=" + inputTokens +
-                ", outputTokens=" + outputTokens +
-                ", cacheCreationInputTokens=" + cacheCreationInputTokens +
-                ", cacheReadInputTokens=" + cacheReadInputTokens +
-                '}';
+        return new MessageDelta(stopReason, inputTokens, outputTokens,
+                cacheCreationInputTokens, cacheReadInputTokens,
+                new Usage(effectiveInputTokens, outputTokens, effectiveInputTokens + outputTokens));
     }
 }

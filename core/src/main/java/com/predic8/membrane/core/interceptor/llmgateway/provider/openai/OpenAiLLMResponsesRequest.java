@@ -65,9 +65,7 @@ public class OpenAiLLMResponsesRequest extends AbstractOpenAiLLMRequest {
 
     @Override
     public long getRequestedMaxOutputTokens() {
-        if (json.has("max_output_tokens"))
-            return json.get("max_output_tokens").asLong();
-        return -1;
+        return json.path("max_output_tokens").asLong(0);
     }
 
     @Override

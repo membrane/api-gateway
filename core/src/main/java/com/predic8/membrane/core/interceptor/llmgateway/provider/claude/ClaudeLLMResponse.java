@@ -14,7 +14,6 @@
 
 package com.predic8.membrane.core.interceptor.llmgateway.provider.claude;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.AbstractLLMResponse;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMResponse;
@@ -30,11 +29,11 @@ public class ClaudeLLMResponse extends AbstractLLMResponse {
 
     private static final Logger log = LoggerFactory.getLogger(ClaudeLLMResponse.class);
 
-    private Usage usage;
+    private volatile Usage usage;
 
     private final StringBuffer inputJson = new StringBuffer();
 
-    private String tool;
+    private volatile String tool;
 
     public ClaudeLLMResponse(Exchange exchange, Consumer<LLMResponse> postProcessor) {
         super(exchange,postProcessor);
@@ -49,46 +48,34 @@ public class ClaudeLLMResponse extends AbstractLLMResponse {
     public void process(SSEEvent event) {
         log.debug("Event: {}", event);
 
-        if ("content_block_start".equals(event.name())) {
-            var cbs = ContentBlockStart.from(event.json());
-            if (cbs.getToolUse() != null) {
-                tool = cbs.getToolUse().getName();
+        switch (event.name()) {
+            case "content_block_start" -> {
+                var cbs = ContentBlockStart.from(event.json());
+                if (cbs.toolUse() != null) {
+                    tool = cbs.toolUse().name();
+                }
             }
-        }
-        if ("message_delta".equals(event.name())) {
-            var md = MessageDelta.from(event.json());
-            log.debug("Message delta: {}", md);
-            if (md.getUsage() != null) {
-                usage = md.getUsage();
-                if (tool != null)
-                    log.debug("Tool {} with {}", tool, inputJson.toString());
+            case "message_delta" -> {
+                var md = MessageDelta.from(event.json());
+                log.debug("Message delta: {}", md);
+                if (md.usage() != null) {
+                    usage = md.usage();
+                    if (tool != null)
+                        log.debug("Tool {} with {}", tool, inputJson);
+                }
             }
-        }
-        if ("content_block_delta".equals(event.name())) {
-            var cbd = ContentBlockDelta.from(event.json());
-            if (cbd.isInputJsonDelta()) {
-                inputJson.append(cbd.getPartialJson());
+            case "content_block_delta" -> {
+                var cbd = ContentBlockDelta.from(event.json());
+                if (cbd.isInputJsonDelta()) {
+                    inputJson.append(cbd.partialJson());
+                }
             }
+            case null, default -> log.debug("Ignoring event {}", event.name());
         }
     }
 
     Usage extractUsage() {
-
-        var usage = json.path("usage");
-
-        var inputTokens = getInputTokens(usage);
-        var outputTokens = getOutputTokens(usage);
-        var totalTokens = inputTokens + outputTokens;
-        return new Usage(inputTokens, outputTokens, totalTokens);
-
-    }
-
-    protected static int getOutputTokens(JsonNode usage) {
-        return usage.path("output_tokens").asInt(0);
-    }
-
-    protected static int getInputTokens(JsonNode usage) {
-        return usage.path("input_tokens").asInt(0);
+        return usageFrom(json.path("usage"));
     }
 
     @Override

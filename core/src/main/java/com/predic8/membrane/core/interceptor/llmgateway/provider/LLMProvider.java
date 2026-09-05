@@ -21,6 +21,15 @@ import java.util.function.Consumer;
 
 public interface LLMProvider {
 
+    /**
+     * Hands a freshly built response to its body. Reading is started outside the constructor, so
+     * every provider has to do this before returning the response.
+     */
+    static <T extends AbstractLLMResponse> T started(T response) {
+        response.start();
+        return response;
+    }
+
     LLMRequest getLLMRequest(Exchange request) throws IOException;
     LLMResponse getLLMResponse(Exchange request, Consumer<LLMResponse> postProcessor);
     LLMErrorCreator getErrorCreator();

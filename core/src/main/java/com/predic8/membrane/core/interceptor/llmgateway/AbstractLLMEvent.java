@@ -15,7 +15,6 @@
 package com.predic8.membrane.core.interceptor.llmgateway;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.util.http.SSEParser;
 import com.predic8.membrane.core.util.json.JsonUtil;
 import org.slf4j.Logger;
@@ -24,8 +23,6 @@ import org.slf4j.LoggerFactory;
 public abstract class AbstractLLMEvent {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractLLMEvent.class);
-
-    protected static final ObjectMapper om = new ObjectMapper();
 
     protected final JsonNode json;
 
@@ -48,6 +45,7 @@ public abstract class AbstractLLMEvent {
         var opt = JsonUtil.getJsonObject(sse.data());
         if (opt.isEmpty()) {
             log.info("Unknown event format: {}", sse.data());
+            return null;
         }
 
         var json = opt.get();

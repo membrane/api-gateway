@@ -17,23 +17,60 @@ package com.predic8.membrane.core.interceptor.llmgateway.store;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.util.ConfigurationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.concurrent.GuardedBy;
+import java.security.MessageDigest;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.time.Instant.now;
 
 /**
- * @description Simple store for the LLM Gateway that stores limits in memory. Users and keys can
- * be configured in the configuration file.
+ * @description Authenticates clients of the LLM Gateway by their api key and enforces a token limit per user, with the
+ * users configured inline and their usage kept in memory. A request whose key is unknown is rejected; a user who has
+ * spent the tokens of the current period is rejected until the period resets. Usage counts are lost on restart, so
+ * this fits a small, fixed set of clients rather than a large or changing one. See
+ * tutorials/ai/llm-gateway/openai/20-Sharing-API-Keys.yaml.
+ * <pre>
+ * simpleStore:
+ *   users:
+ *     - name: &lt;name&gt;
+ *       apiKey: &lt;key&gt;
+ *       [ tokens: &lt;limit&gt; ]
+ *     ...
+ *   [ limitResetPeriod: &lt;seconds&gt; ]
+ *   [ logUsage: true | false ]
+ * </pre>
+ * @yaml
+ * <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - llmGateway:
+ *         apiKey: sk-...
+ *         openai: {}
+ *         simpleStore:
+ *           users:
+ *             - name: alice
+ *               apiKey: abc123
+ *               tokens: 500
+ *             - name: bob
+ *               apiKey: qwertz
+ *               tokens: 10000
+ *           limitResetPeriod: 60
+ *   target:
+ *     url: https://api.openai.com
+ * </code></pre>
  */
 @MCElement(name="simpleStore",component = false, id="simple-ai-api-store")
-public class SimpleAiApiStore implements AiApiStore {
+public class SimpleAiApiStore implements AiApiUserStore {
 
     private static final Logger log = LoggerFactory.getLogger(SimpleAiApiStore.class);
 
@@ -50,6 +87,22 @@ public class SimpleAiApiStore implements AiApiStore {
     private long limitResetPeriod = 60;
 
     @Override
+    public void init(Router router) {
+        synchronized (lock) {
+            for (AiApiUser user : users) {
+                if (user.getApiKey() == null)
+                    throw new ConfigurationException(
+                            "The %s of a simpleStore has no apiKey. Every user needs one to authenticate at the gateway."
+                                    .formatted(describe(user)));
+            }
+        }
+    }
+
+    private static String describe(AiApiUser user) {
+        return user.getName() == null ? "unnamed user" : "user " + user.getName();
+    }
+
+    @Override
     public void store(AiApiUser user, Usage usage) {
         if (logUsage)
             log.info("user: {} {}", user.getName(), usage.toString());
@@ -58,9 +111,20 @@ public class SimpleAiApiStore implements AiApiStore {
 
     @Override
     public Optional<AiApiUser> getUser(String token) {
+        if (token == null)
+            return Optional.empty();
         synchronized (lock) {
-            return users.stream().filter(u -> u.getApiKey().equals(token)).findFirst();
+            return users.stream().filter(u -> matches(token, u.getApiKey())).findFirst();
         }
+    }
+
+    /**
+     * Compares two keys of the same length without returning early on the first differing byte, so
+     * the comparison does not leak how much of a guessed key was right. The length itself is not
+     * hidden: keys of differing length are rejected immediately.
+     */
+    private static boolean matches(String token, String apiKey) {
+        return MessageDigest.isEqual(token.getBytes(UTF_8), apiKey.getBytes(UTF_8));
     }
 
     @Override
@@ -89,8 +153,8 @@ public class SimpleAiApiStore implements AiApiStore {
 
 
     /**
-     * List of users that can be used for authentication.
-     * @param users User list
+     * @description The users the gateway accepts, each with the api key it authenticates by and its token limit. A
+     * user without an api key is a configuration error and fails the startup.
      */
     @MCChildElement(allowForeign = true,order = 10)
     public void setUsers(List<AiApiUser> users) {
@@ -110,8 +174,10 @@ public class SimpleAiApiStore implements AiApiStore {
     }
 
     /**
-     * @description The period in seconds after which the token limit is reset.
-     * @param limitResetPeriod in seconds, e.g. 3600 for 1 hour
+     * @description The period in seconds after which the tokens used by every user are set back to zero and their full
+     * limit is available again.
+     * @default 60
+     * @example 3600
      */
     @MCAttribute
     public void setLimitResetPeriod(long limitResetPeriod) {
@@ -122,6 +188,12 @@ public class SimpleAiApiStore implements AiApiStore {
         return logUsage;
     }
 
+    /**
+     * @description Whether the token usage of every request is written to the log.
+     * @default true
+     * @example false
+     */
+    @MCAttribute
     public void setLogUsage(boolean logUsage) {
         this.logUsage = logUsage;
     }
