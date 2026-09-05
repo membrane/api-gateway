@@ -32,37 +32,34 @@ public class ChatCompletionEvent extends AbstractLLMEvent {
 
     private static void logChoices(JsonNode json) {
         for (JsonNode choice : json.path("choices")) {
+            logChoice(choice);
+        }
+    }
 
-            JsonNode delta = choice.path("delta");
+    private static void logChoice(JsonNode choice) {
+        var delta = choice.path("delta");
 
-            if (delta.has("content")) {
-                log.debug("Content delta: {}",
-                        delta.path("content").asText());
-            }
+        if (delta.has("content")) {
+            log.debug("Content delta: {}", delta.path("content").asText());
+        }
 
-            if (delta.has("tool_calls")) {
+        for (JsonNode toolCall : delta.path("tool_calls")) {
+            logToolCall(toolCall.path("function"));
+        }
 
-                for (JsonNode tc : delta.path("tool_calls")) {
+        var finishReason = choice.path("finish_reason").asText(null);
+        if (finishReason != null && !"null".equals(finishReason)) {
+            log.debug("Finish reason: {}", finishReason);
+        }
+    }
 
-                    JsonNode fn = tc.path("function");
+    private static void logToolCall(JsonNode function) {
+        if (function.has("name")) {
+            log.debug("Tool call name delta: {}", function.path("name").asText());
+        }
 
-                    if (fn.has("name")) {
-                        log.debug("Tool call name delta: {}",
-                                fn.path("name").asText());
-                    }
-
-                    if (fn.has("arguments")) {
-                        log.debug("Tool call arguments delta: {}",
-                                fn.path("arguments").asText());
-                    }
-                }
-            }
-
-            String finishReason = choice.path("finish_reason").asText(null);
-
-            if (finishReason != null && !"null".equals(finishReason)) {
-                log.debug("Finish reason: {}", finishReason);
-            }
+        if (function.has("arguments")) {
+            log.debug("Tool call arguments delta: {}", function.path("arguments").asText());
         }
     }
 

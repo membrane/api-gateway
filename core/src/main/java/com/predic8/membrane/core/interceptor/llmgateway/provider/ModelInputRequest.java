@@ -24,8 +24,8 @@ public interface ModelInputRequest extends JSONMessage {
 
     /**
      * The max number of tokens that the model is allowed to generate as specified by the client.
-     * @return The max number of tokens that the model is allowed to generate. Zero or less if the
-     *         client did not ask for a limit.
+     * @return The max number of tokens that the model is allowed to generate. Zero if the client did
+     *         not ask for a limit.
      */
     long getRequestedMaxOutputTokens();
 

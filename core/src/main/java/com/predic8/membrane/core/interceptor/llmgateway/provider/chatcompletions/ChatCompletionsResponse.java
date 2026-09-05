@@ -38,18 +38,7 @@ public class ChatCompletionsResponse extends AbstractLLMResponse {
 
     @Override
     public Usage getUsage() {
-
-        var usage = json.path("usage");
-
-        var inputTokens = usage.path("prompt_tokens").asInt(0);
-        var outputTokens = usage.path("completion_tokens").asInt(0);
-        var totalTokens = usage.path("total_tokens").asInt(inputTokens + outputTokens);
-
-        return new Usage(
-                inputTokens,
-                outputTokens,
-                totalTokens
-        );
+        return usageFrom(json.path("usage"));
     }
 
     @Override

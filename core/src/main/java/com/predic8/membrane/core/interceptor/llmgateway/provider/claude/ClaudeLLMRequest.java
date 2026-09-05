@@ -17,7 +17,6 @@ package com.predic8.membrane.core.interceptor.llmgateway.provider.claude;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.AbstractModelInputRequest;
-import com.predic8.membrane.core.interceptor.llmgateway.provider.ModelInputRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,7 +28,7 @@ import static com.predic8.membrane.core.http.Header.ACCEPT_ENCODING;
 /**
  * system field for system prompt
  */
-public class ClaudeLLMRequest extends AbstractModelInputRequest implements ModelInputRequest {
+public class ClaudeLLMRequest extends AbstractModelInputRequest {
 
     private static final Logger log = LoggerFactory.getLogger(ClaudeLLMRequest.class);
 
@@ -124,14 +123,13 @@ public class ClaudeLLMRequest extends AbstractModelInputRequest implements Model
     }
 
     @Override
-    public String getApiKey() {
-        return exchange.getRequest().getHeader().getFirstValue(X_API_KEY);
+    protected String apiKeyHeaderName() {
+        return X_API_KEY;
     }
 
     @Override
-    public void setApiKey(String apiKey) {
-        exchange.getRequest().getHeader().removeFields(X_API_KEY);
-        exchange.getRequest().getHeader().add(X_API_KEY, apiKey);
+    protected boolean apiKeyIsBearer() {
+        return false;
     }
 
     /**

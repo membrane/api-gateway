@@ -14,11 +14,12 @@
 
 package com.predic8.membrane.core.interceptor.llmgateway.provider.openai;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.AbstractModelInputRequest;
 
 import java.io.IOException;
+
+import static com.predic8.membrane.core.interceptor.llmgateway.provider.TokenEstimator.*;
 
 public abstract class AbstractOpenAiLLMRequest extends AbstractModelInputRequest {
 
@@ -31,7 +32,7 @@ public abstract class AbstractOpenAiLLMRequest extends AbstractModelInputRequest
 
         long chars = countText(json.path("input"));
 
-        chars += estimateChatCompletitions();
+        chars += estimateChatCompletions();
 
         // system instructions: "system" (chat completions) or "instructions" (responses API)
         chars += countText(json.path("system"));
@@ -41,11 +42,10 @@ public abstract class AbstractOpenAiLLMRequest extends AbstractModelInputRequest
         chars += countJsonSize(json.path("tools"));
         chars += countJsonSize(json.path("functions"));
 
-        // safety margin for JSON structure and tokenizer variance
-        return Math.max(1, Math.round(chars / 4.0 * 1.15));
+        return charsToTokens(chars);
     }
 
-    private long estimateChatCompletitions() {
+    private long estimateChatCompletions() {
         long chars = 0;
         // Chat Completions API
         var messages = json.path("messages");
@@ -57,48 +57,5 @@ public abstract class AbstractOpenAiLLMRequest extends AbstractModelInputRequest
             }
         }
         return chars;
-    }
-
-    private long countText(JsonNode node) {
-        if (node == null || node.isMissingNode() || node.isNull()) {
-            return 0;
-        }
-
-        if (node.isTextual()) {
-            return node.asText().length();
-        }
-
-        if (node.isArray()) {
-            long chars = 0;
-            for (JsonNode child : node) {
-                chars += countText(child);
-            }
-            return chars;
-        }
-
-        if (node.isObject()) {
-
-            // OpenAI content blocks:
-            // { "type": "text", "text": "..." }
-            long chars = 0;
-
-            var text = node.get("text");
-            if (text != null && text.isTextual()) {
-                chars += text.asText().length();
-            }
-
-            chars += countText(node.get("content"));
-
-            return chars;
-        }
-
-        return 0;
-    }
-
-    private long countJsonSize(JsonNode node) {
-        if (node == null || node.isMissingNode() || node.isNull()) {
-            return 0;
-        }
-        return node.toString().length();
     }
 }

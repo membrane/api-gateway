@@ -22,28 +22,48 @@ public class BaseLLMRequest extends AbstractLLMMessage implements LLMRequest {
 
     public static final String BEARER_PREFIX = "Bearer";
 
-    protected BaseLLMRequest(Exchange exchange) {
+    public BaseLLMRequest(Exchange exchange) {
         super(exchange);
     }
 
-    @Override
-    public void setApiKey(String apiKey) {
-        exchange.getRequest().getHeader().removeFields(AUTHORIZATION);
-        exchange.getRequest().getHeader().add(AUTHORIZATION, "Bearer " + apiKey);
+    /**
+     * The header the provider expects its api key in. Overridden by providers that use a key header
+     * of their own instead of {@code Authorization}.
+     */
+    protected String apiKeyHeaderName() {
+        return AUTHORIZATION;
+    }
+
+    /**
+     * Whether the key is carried as a {@code Bearer} token or as the plain header value.
+     */
+    protected boolean apiKeyIsBearer() {
+        return true;
     }
 
     @Override
-    public String getApiKey() {
-        var ah = exchange.getRequest().getHeader().getAuthorization();
-        if (ah == null) {
+    public final void setApiKey(String apiKey) {
+        var header = exchange.getRequest().getHeader();
+        header.removeFields(apiKeyHeaderName());
+        header.add(apiKeyHeaderName(), apiKeyIsBearer() ? BEARER_PREFIX + " " + apiKey : apiKey);
+    }
+
+    @Override
+    public final String getApiKey() {
+        var value = exchange.getRequest().getHeader().getFirstValue(apiKeyHeaderName());
+        if (value == null) {
             return null;
         }
 
-        if (!ah.regionMatches(true, 0, BEARER_PREFIX, 0, BEARER_PREFIX.length())) {
+        if (!apiKeyIsBearer()) {
+            return value;
+        }
+
+        if (!value.regionMatches(true, 0, BEARER_PREFIX, 0, BEARER_PREFIX.length())) {
             return null;
         }
 
-        var token = ah.substring(BEARER_PREFIX.length()).trim();
+        var token = value.substring(BEARER_PREFIX.length()).trim();
 
         return token.isEmpty() ? null : token;
     }

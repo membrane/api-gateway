@@ -46,11 +46,7 @@ public class OpenAiLLMResponsesResponse extends AbstractLLMResponse {
             usage = json.path("response").path("usage");
         }
 
-        var inputTokens = getInputTokens(usage);
-        var outputTokens = getOutputTokens(usage);
-        var totalTokens = usage.path("total_tokens").asInt(inputTokens + outputTokens);
-        return new Usage(inputTokens, outputTokens, totalTokens);
-
+        return usageFrom(usage);
     }
 
     @Override

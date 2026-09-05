@@ -31,7 +31,7 @@ class ContentBlockStartTest {
                 {"type":"content_block_start","index":1,
                  "content_block":{"type":"tool_use","id":"tu_1","name":"get_weather"}}"""));
 
-        assertEquals("get_weather", cbs.getToolUse().getName());
+        assertEquals("get_weather", cbs.toolUse().name());
     }
 
     /**
@@ -48,7 +48,7 @@ class ContentBlockStartTest {
             {"type":"content_block_start","content_block":null}"""
     })
     void blockThatStartsNoToolUseHasNoToolUse(String event) {
-        assertNull(ContentBlockStart.from(json(event)).getToolUse());
+        assertNull(ContentBlockStart.from(json(event)).toolUse());
     }
 
     private static ObjectNode json(String json) {

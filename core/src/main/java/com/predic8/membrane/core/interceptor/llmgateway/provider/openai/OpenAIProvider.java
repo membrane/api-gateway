@@ -16,8 +16,9 @@ package com.predic8.membrane.core.interceptor.llmgateway.provider.openai;
 
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.llmgateway.provider.AbstractLLMProvider;
+import com.predic8.membrane.core.interceptor.llmgateway.provider.BaseLLMRequest;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMErrorCreator;
+import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMProvider;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMRequest;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMResponse;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.chatcompletions.ChatCompletionsErrorCreator;
@@ -31,7 +32,7 @@ import java.util.function.Consumer;
  * Use to configure a LLM gateway to use the OpenAI API
  */
 @MCElement( name="openai")
-public class OpenAIProvider extends AbstractLLMProvider {
+public class OpenAIProvider implements LLMProvider {
 
     @Override
     public LLMRequest getLLMRequest(Exchange exchange) throws IOException {
@@ -42,7 +43,7 @@ public class OpenAIProvider extends AbstractLLMProvider {
         if (uri.startsWith("/v1/responses")) {
             return new OpenAiLLMResponsesRequest(exchange);
         }
-        return super.getLLMRequest(exchange);
+        return new BaseLLMRequest(exchange);
     }
 
     @Override

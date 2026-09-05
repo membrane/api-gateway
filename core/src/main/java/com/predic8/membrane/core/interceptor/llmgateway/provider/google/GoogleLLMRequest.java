@@ -18,12 +18,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.AbstractModelInputRequest;
-import com.predic8.membrane.core.interceptor.llmgateway.provider.ModelInputRequest;
 
 import java.io.IOException;
 import java.util.List;
 
-public class GoogleLLMRequest extends AbstractModelInputRequest implements ModelInputRequest {
+import static com.predic8.membrane.core.interceptor.llmgateway.provider.TokenEstimator.charsToTokens;
+import static com.predic8.membrane.core.interceptor.llmgateway.provider.TokenEstimator.countText;
+
+public class GoogleLLMRequest extends AbstractModelInputRequest {
 
     /**
      * x-goog-api-key is correct it is not google
@@ -66,14 +68,13 @@ public class GoogleLLMRequest extends AbstractModelInputRequest implements Model
     }
 
     @Override
-    public String getApiKey() {
-        return exchange.getRequest().getHeader().getFirstValue(X_GOOG_API_KEY);
+    protected String apiKeyHeaderName() {
+        return X_GOOG_API_KEY;
     }
 
     @Override
-    public void setApiKey(String apiKey) {
-        exchange.getRequest().getHeader().removeFields(X_GOOG_API_KEY);
-        exchange.getRequest().getHeader().add(X_GOOG_API_KEY, apiKey);
+    protected boolean apiKeyIsBearer() {
+        return false;
     }
 
     @Override
@@ -97,8 +98,7 @@ public class GoogleLLMRequest extends AbstractModelInputRequest implements Model
             }
         }
 
-        // Safety margin for JSON structure, roles, metadata, etc.
-        return Math.max(1, Math.round(chars / 4.0 * 1.15));
+        return charsToTokens(chars);
     }
 
     /**
@@ -142,42 +142,6 @@ public class GoogleLLMRequest extends AbstractModelInputRequest implements Model
     @Override
     public void removeSystemPrompt() {
         json.remove("systemInstruction");
-    }
-
-    private long countText(JsonNode node) {
-        if (node == null || node.isMissingNode() || node.isNull()) {
-            return 0;
-        }
-
-        if (node.isTextual()) {
-            return node.asText().length();
-        }
-
-        if (node.isObject()) {
-            long chars = 0;
-
-            JsonNode text = node.get("text");
-            if (text != null && text.isTextual()) {
-                chars += text.asText().length();
-            }
-
-            JsonNode parts = node.get("parts");
-            if (parts != null) {
-                chars += countText(parts);
-            }
-
-            return chars;
-        }
-
-        if (node.isArray()) {
-            long chars = 0;
-            for (JsonNode child : node) {
-                chars += countText(child);
-            }
-            return chars;
-        }
-
-        return 0;
     }
 
     @Override

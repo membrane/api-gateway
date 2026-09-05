@@ -20,20 +20,7 @@ public abstract class AbstractLLMMessage {
 
     protected final Exchange exchange;
 
-    public enum API { COMPLETIONS, NORMAL }
-
-    protected API api;
-
     protected AbstractLLMMessage(Exchange exchange) {
         this.exchange = exchange;
-        api = getAPI(exchange);
-    }
-
-    protected API getAPI(Exchange exchange) {
-        if (exchange.getRequest().getUri().contains("/chat/completions")) {
-            return API.COMPLETIONS;
-        } else {
-            return API.NORMAL;
-        }
     }
 }

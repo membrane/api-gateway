@@ -109,12 +109,12 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
 
         AiApiUser user = null;
         if (store instanceof AiApiUserStore userStore) {
-            var opt = userStore.getUser(llmReq.getApiKey());
-            if (opt.isEmpty()) {
+            var authenticated = userStore.getUser(llmReq.getApiKey());
+            if (authenticated.isEmpty()) {
                 exc.setResponse(errorCreator.authenticationFailed());
                 return ABORT;
             }
-            user = opt.get();
+            user = authenticated.get();
             log.debug("User: {}", user);
             exc.setProperty(MEMBRANE_AI_USER, user);
         }
@@ -131,6 +131,15 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
         if (!(llmReq instanceof ModelInputRequest mir)) {
             return CONTINUE;
         }
+
+        return rewriteModelInput(exc, mir, user);
+    }
+
+    /**
+     * Applies everything that reads or changes what is asked of the model: the policies, the system
+     * prompt and the token budget of the user. The rewritten input replaces the request body.
+     */
+    private Outcome rewriteModelInput(Exchange exc, ModelInputRequest mir, AiApiUser user) {
 
         // Everything below reads and rewrites the model input, so it has to be parseable.
         if (mir.getJson() == null) {

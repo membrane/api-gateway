@@ -21,6 +21,8 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.AbstractBody;
 import com.predic8.membrane.core.http.AbstractMessageObserver;
 import com.predic8.membrane.core.http.Chunk;
+import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.interceptor.llmgateway.store.Usage;
 import com.predic8.membrane.core.util.http.SSEParser;
 import com.predic8.membrane.core.util.json.JsonUtil;
 import org.slf4j.Logger;
@@ -41,37 +43,48 @@ public abstract class AbstractLLMResponse extends AbstractLLMMessage implements 
     public AbstractLLMResponse(Exchange exchange, Consumer<LLMResponse> postProcessor) {
         super(exchange);
         this.postProcessor = postProcessor;
-        var msg = exchange.getResponse();
 
-        if (msg.isStream()) {
-
-            log.debug("Streaming response.");
-
-            // The body arrives chunk by chunk. Subclasses fill this in from the events they see,
-            // so it stays empty rather than null until then.
-            json = JsonNodeFactory.instance.objectNode();
-
-            var parser = new SSEParser(getTerminalEvents());
-
-            msg.getBody().addObserver(new AbstractMessageObserver() {
-                @Override
-                public void bodyChunk(Chunk chunk) {
-                    processChunk(chunk, parser);
-                }
-
-                @Override
-                public void bodyComplete(AbstractBody body) {
-                    // Not every stream has a terminal event: Gemini sends unnamed data events, so
-                    // the end of the body is the only end-of-stream signal there is.
-                    processPending(parser);
-                    finish(parser);
-                }
-            });
+        var response = exchange.getResponse();
+        if (response.isStream()) {
+            observeStream(response);
         } else {
-            json = JsonUtil.getJsonObject(exchange.getResponse())
-                    .orElse(JsonNodeFactory.instance.objectNode().put("error", "No JSON object response from model."));
-            postProcessor.accept(this);
+            readCompleteBody(response);
         }
+    }
+
+    /**
+     * The body arrives chunk by chunk, so the events are read as they come in and the response is
+     * only reported once the stream has delivered what it has.
+     */
+    private void observeStream(Message response) {
+        log.debug("Streaming response.");
+
+        // Subclasses fill this in from the events they see, so it stays empty rather than null
+        // until then.
+        json = JsonNodeFactory.instance.objectNode();
+
+        var parser = new SSEParser(getTerminalEvents());
+
+        response.getBody().addObserver(new AbstractMessageObserver() {
+            @Override
+            public void bodyChunk(Chunk chunk) {
+                processChunk(chunk, parser);
+            }
+
+            @Override
+            public void bodyComplete(AbstractBody body) {
+                // Not every stream has a terminal event: Gemini sends unnamed data events, so
+                // the end of the body is the only end-of-stream signal there is.
+                processPending(parser);
+                finish(parser);
+            }
+        });
+    }
+
+    private void readCompleteBody(Message response) {
+        json = JsonUtil.getJsonObject(response)
+                .orElse(JsonNodeFactory.instance.objectNode().put("error", "No JSON object response from model."));
+        postProcessor.accept(this);
     }
 
     protected void processChunk(Chunk chunk, SSEParser parser) {
@@ -116,6 +129,16 @@ public abstract class AbstractLLMResponse extends AbstractLLMMessage implements 
     @Override
     public boolean isError() {
         return json.get("error") != null && !json.get("error").isNull();
+    }
+
+    /**
+     * The usage as the OpenAI style providers report it, whichever of the two spellings they use.
+     * The total is what the provider says, or the sum if it does not say.
+     */
+    protected static Usage usageFrom(JsonNode usage) {
+        var inputTokens = getInputTokens(usage);
+        var outputTokens = getOutputTokens(usage);
+        return new Usage(inputTokens, outputTokens, usage.path("total_tokens").asInt(inputTokens + outputTokens));
     }
 
     protected static int getOutputTokens(JsonNode usage) {

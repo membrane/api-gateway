@@ -47,32 +47,43 @@ public abstract class AbstractModelInputRequest extends BaseLLMRequest implement
         super(exchange);
 
         if (exchange.getRequest().getHeader().isMultipart()) {
-            try {
-                for (var part : MultipartUtil.split(exchange.getRequest())) {
-                    log.info("Part: name={} type={} size={}", part.getName(), part.getContentType(), part.getBody().length);
-                    if ("model".equals(part.getName())) {
-                        log.info("Model: {}", part.getBodyAsString());
-                        model = part.getBodyAsString();
-                    }
-                }
-                body = exchange.getRequest().getBody();
-                // The model input is in the parts, not in JSON. An empty object keeps the
-                // accessors below working; getBody() returns the original multipart body.
-                json = om.createObjectNode();
-            } catch (IOException | ParseException e) {
-                throw new RuntimeException(e);
-            }
+            readMultipart(exchange);
             return;
         }
 
-        if (exchange.getRequest().isJSON()) {
-            json = JsonUtil.getJsonObject(exchange.getRequest()).orElseThrow(() -> new RuntimeException("Cannot parse input as JSON message."));
+        readJson(exchange);
+    }
+
+    /**
+     * A multipart request keeps the model input in its parts, not in JSON. An empty object keeps the
+     * accessors working, and {@link #getBody()} hands back the original body untouched.
+     */
+    private void readMultipart(Exchange exchange) throws IOException {
+        try {
+            for (var part : MultipartUtil.split(exchange.getRequest())) {
+                log.info("Part: name={} type={} size={}", part.getName(), part.getContentType(), part.getBody().length);
+                if ("model".equals(part.getName())) {
+                    log.info("Model: {}", part.getBodyAsString());
+                    model = part.getBodyAsString();
+                }
+            }
+        } catch (ParseException e) {
+            throw new IOException("Cannot parse the multipart request.", e);
+        }
+        body = exchange.getRequest().getBody();
+        json = om.createObjectNode();
+    }
+
+    private void readJson(Exchange exchange) {
+        if (!exchange.getRequest().isJSON()) {
+            return;
         }
 
-        if (json != null) {
-            if (json.has("model")) {
-                model = json.path("model").asText();
-            }
+        json = JsonUtil.getJsonObject(exchange.getRequest())
+                .orElseThrow(() -> new RuntimeException("Cannot parse input as JSON message."));
+
+        if (json.has("model")) {
+            model = json.path("model").asText();
         }
     }
 
@@ -116,7 +127,7 @@ public abstract class AbstractModelInputRequest extends BaseLLMRequest implement
 
     @Override
     public long getRequestedMaxOutputTokens() {
-        return -1;
+        return 0;
     }
 
     @Override
