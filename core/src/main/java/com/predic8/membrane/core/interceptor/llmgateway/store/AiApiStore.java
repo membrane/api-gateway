@@ -19,10 +19,8 @@ import com.predic8.membrane.core.router.Router;
 /**
  * Records what the LLM API was used for. A store that also authenticates clients and enforces
  * their token limits implements {@link AiApiUserStore}.
- *
- * @TODO
- * - Store .status, .error, .model, .stop_reason
  */
+// @TODO Store .status, .error, .model, .stop_reason
 public interface AiApiStore {
 
     default void init(Router router) {
@@ -33,4 +31,3 @@ public interface AiApiStore {
      */
     void store(AiApiUser user, Usage usage);
 }
-

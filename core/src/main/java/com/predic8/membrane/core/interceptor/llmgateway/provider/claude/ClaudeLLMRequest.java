@@ -24,6 +24,8 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.List;
 
+import static com.predic8.membrane.core.http.Header.ACCEPT_ENCODING;
+
 /**
  * system field for system prompt
  */
@@ -33,7 +35,6 @@ public class ClaudeLLMRequest extends AbstractModelInputRequest implements Model
 
     public static final String X_API_KEY = "x-api-key";
 
-    private static final String ACCEPT_ENCODING = "Accept-Encoding";
     private static final String IDENTITY = "identity";
 
     public ClaudeLLMRequest(Exchange exchange) throws IOException {

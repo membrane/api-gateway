@@ -24,6 +24,13 @@ import java.util.Optional;
 public interface AiApiUserStore extends AiApiStore {
 
     /**
+     * Every request of an authenticating store belongs to a user, so unlike
+     * {@link AiApiStore#store(AiApiUser, Usage)} this one is never handed a null user.
+     */
+    @Override
+    void store(AiApiUser user, Usage usage);
+
+    /**
      * @param token the API key sent by the client
      * @return the user that key belongs to, empty if it belongs to none
      */

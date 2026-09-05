@@ -59,10 +59,14 @@ public class SimpleAiApiStore implements AiApiUserStore {
             for (AiApiUser user : users) {
                 if (user.getApiKey() == null)
                     throw new ConfigurationException(
-                            "The user %s of a simpleStore has no apiKey. Every user needs one to authenticate at the gateway."
-                                    .formatted(user.getName()));
+                            "The %s of a simpleStore has no apiKey. Every user needs one to authenticate at the gateway."
+                                    .formatted(describe(user)));
             }
         }
+    }
+
+    private static String describe(AiApiUser user) {
+        return user.getName() == null ? "unnamed user" : "user " + user.getName();
     }
 
     @Override
@@ -82,8 +86,9 @@ public class SimpleAiApiStore implements AiApiUserStore {
     }
 
     /**
-     * Compares the presented key against the configured one without returning early on the first
-     * differing byte, so the comparison does not leak how much of a guessed key was right.
+     * Compares two keys of the same length without returning early on the first differing byte, so
+     * the comparison does not leak how much of a guessed key was right. The length itself is not
+     * hidden: keys of differing length are rejected immediately.
      */
     private static boolean matches(String token, String apiKey) {
         return MessageDigest.isEqual(token.getBytes(UTF_8), apiKey.getBytes(UTF_8));

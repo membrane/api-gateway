@@ -14,10 +14,14 @@
 
 package com.predic8.membrane.core.interceptor.llmgateway.provider.chatcompletions;
 
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.AbstractMessageObserver;
+import com.predic8.membrane.core.http.Chunk;
 import com.predic8.membrane.core.http.ChunkedBody;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMResponse;
 import com.predic8.membrane.core.interceptor.llmgateway.store.Usage;
+import com.predic8.membrane.core.util.http.SSEParser;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
@@ -114,21 +118,68 @@ class ChatCompletionsResponseTest {
      */
     @Test
     void streamSplitAcrossChunksIsReportedOnce() throws URISyntaxException {
-        var exchange = post("http://localhost/v1/chat/completions").json("{}").buildExchange();
-        var response = Response.ok().header(CONTENT_TYPE, "text/event-stream").build();
-        response.setBody(new ChunkedBody(new ByteArrayInputStream(chunks()
-                .add("data: {\"object\":\"chat.completion.chunk\",\"choices\":[{\"delta\":{\"content\":\"Hi\"}}]}\n\n")
-                .add("data: {\"object\":\"chat.completion.chunk\",\"choices\":[],\"usage\":{\"prompt_tokens\":11,\"completion_tokens\":7,\"total_tokens\":18}}\n\n")
-                .add("data: [DONE]\n\n")
-                .build())));
-        exchange.setResponse(response);
+        var exchange = chunked(
+                "data: {\"object\":\"chat.completion.chunk\",\"choices\":[{\"delta\":{\"content\":\"Hi\"}}]}\n\n",
+                "data: {\"object\":\"chat.completion.chunk\",\"choices\":[],\"usage\":{\"prompt_tokens\":11,\"completion_tokens\":7,\"total_tokens\":18}}\n\n",
+                "data: [DONE]\n\n");
 
         new ChatCompletionsResponse(exchange, processed::add);
 
-        response.getBody().read();
+        exchange.getResponse().getBody().read();
 
         assertEquals(1, processed.size());
         assertEquals(new Usage(11, 7, 18), processed.getFirst().getUsage());
+    }
+
+    /**
+     * The events of a chunk are handed to the subclass while the body is still arriving, so that a
+     * long stream is not held in memory as a whole. The count is read from an observer registered
+     * after the response, which therefore sees each chunk once the response has handled it.
+     */
+    @Test
+    void eventsAreProcessedWhileTheStreamIsStillArriving() throws URISyntaxException {
+        var exchange = chunked(
+                "data: {\"object\":\"chat.completion.chunk\",\"choices\":[{\"delta\":{\"content\":\"Hi\"}}]}\n\n",
+                "data: {\"object\":\"chat.completion.chunk\",\"choices\":[{\"delta\":{\"content\":\" there\"}}]}\n\n",
+                "data: [DONE]\n\n");
+
+        var llmResponse = new ChatCompletionsResponse(exchange, processed::add) {
+            int eventCount;
+
+            @Override
+            public void process(SSEParser.SSEEvent event) {
+                eventCount++;
+                super.process(event);
+            }
+        };
+
+        var eventsPerChunk = new ArrayList<Integer>();
+        exchange.getResponse().getBody().addObserver(new AbstractMessageObserver() {
+            @Override
+            public void bodyChunk(Chunk chunk) {
+                eventsPerChunk.add(llmResponse.eventCount);
+            }
+        });
+
+        exchange.getResponse().getBody().read();
+
+        assertEquals(List.of(1, 2, 3), eventsPerChunk);
+    }
+
+    /**
+     * An exchange whose response body delivers the given SSE text one chunk at a time.
+     */
+    private static Exchange chunked(String... sseChunks) throws URISyntaxException {
+        var builder = chunks();
+        for (var chunk : sseChunks)
+            builder.add(chunk);
+
+        var response = Response.ok().header(CONTENT_TYPE, "text/event-stream").build();
+        response.setBody(new ChunkedBody(new ByteArrayInputStream(builder.build())));
+
+        var exchange = post("http://localhost/v1/chat/completions").json("{}").buildExchange();
+        exchange.setResponse(response);
+        return exchange;
     }
 
     /**

@@ -150,9 +150,9 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
             }
         }
 
-        // Check store limits
-        if (checkStoreLimits(exc, mir, user) != CONTINUE) {
-            return ABORT;
+        outcome = checkStoreLimits(exc, mir, user);
+        if (outcome != CONTINUE) {
+            return outcome;
         }
 
         exc.getRequest().setBodyContent(mir.getBody().getContent());
@@ -226,7 +226,8 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
     /**
      * @description Backing store that makes the gateway stateful. A <code>simpleStore</code> authenticates clients by
      * their API key, enforces per-user token limits and records their usage; a <code>jdbcAiApiUsageStore</code> only
-     * records usage and leaves requests ungated. Omit it to run the gateway statelessly.
+     * records usage and leaves requests ungated. Only one store can be configured, so authenticating and recording to
+     * a database at the same time is not supported. Omit the store to run the gateway statelessly.
      */
     @MCChildElement(allowForeign = true, order = 30)
     public void setAiStore(AiApiStore store) {

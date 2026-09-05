@@ -33,6 +33,18 @@ class SimpleAiApiStoreTest {
         assertTrue(e.getMessage().contains("apiKey"));
     }
 
+    /**
+     * The name is optional, so the message has to work without one.
+     */
+    @Test
+    void unnamedUserWithoutApiKeyIsRejectedAtStartup() {
+        var store = storeWith(user(null, null, 0));
+
+        var e = assertThrows(ConfigurationException.class, () -> store.init(null));
+
+        assertTrue(e.getMessage().contains("unnamed user"));
+    }
+
     @Test
     void userIsFoundByApiKey() {
         var store = storeWith(user("Alice", "key-a", 0), user("Bob", "key-b", 0));
