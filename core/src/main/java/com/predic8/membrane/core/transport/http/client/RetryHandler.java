@@ -39,25 +39,27 @@ import static java.lang.Thread.sleep;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
 /**
- * <p>Retries a backend request when network-level failures or selected HTTP status codes occur.</p>
- *
- * <p>The handler performs the initial call and, on failure, up to {@link #retries} additional attempts.
- * Waiting time before hitting the <em>same</em> node grows exponentially by
- * {@code delay backoffMultiplier}. If several backend nodes are configured, the next retry is
- * immediately directed to the next node (fail-over)  - the sleep is only applied between consecutive
- * attempts to the <strong>same</strong> destination.</p>
- *
- * <p>A retry is triggered for:</p>
- * <ul>
- *   <li>Connection/IO exceptions (timeout, refused, reset...)</li>
- *   <li>A timeout while the connection was still being established (when
- *       <code>retryOnConnectTimeout=true</code>), for any request method</li>
- *   <li>HTTP 408 Request Timeout</li>
- *   <li>HTTP 500, 502, 503, 504, 507 (when {@code failOverOn5XX=true})</li>
- * </ul>
- * <p>
- * Non-idempotent methods (POST, PATCH) are <em>not</em> repeated if the request might already have
- * reached the server.</p>
+ * @description Retries a request to the backend when the connection fails or the server answers with a
+ *              status code that is worth another attempt. The initial call is followed by a
+ *              configurable number of further attempts.
+ *              <p>
+ *              With several backend nodes each attempt goes to the next node, so a failing node is
+ *              skipped straight away. The delay applies only between consecutive attempts to the same
+ *              node, where it grows exponentially.
+ *              </p>
+ *              <p>
+ *              A retry follows a connection or IO error and HTTP 408, and optionally HTTP 500, 502,
+ *              503, 504 and 507. Methods that are not idempotent, such as POST and PATCH, are not
+ *              repeated once the request may have reached the server.
+ *              </p>
+ * @yaml <pre><code>
+ * configuration:
+ *   httpClientConfig:
+ *     retries:
+ *       retries: 3
+ *       delay: 500
+ *       failOverOn5XX: true
+ * </code></pre>
  */
 @MCElement(name = "retries")
 public class RetryHandler {

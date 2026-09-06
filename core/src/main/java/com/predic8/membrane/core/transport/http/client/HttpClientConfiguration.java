@@ -13,37 +13,35 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.http.client;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.config.security.*;
-import com.predic8.membrane.core.config.spring.*;
-import org.springframework.beans.*;
-import org.springframework.context.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.config.security.SSLParser;
+import com.predic8.membrane.core.config.spring.BaseLocationApplicationContext;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 
-import java.security.*;
-import java.util.*;
+import java.security.InvalidParameterException;
+import java.util.Objects;
 
 /**
- * @description Configuration container for Membrane's HTTP client.
- * Allows defining proxy, connection, authentication, TLS, and retry behavior.
- * Can be used as a reusable bean and referenced via &lt;spring:bean&gt;.
- * Most of its sub-elements are optional.
- * @yaml <pre><code>
- * httpClientConfig:
- *   adjustHostHeader: true
- *   connection:
- *     timeout: 10000
- *   proxy:
- *     host: proxy.example.com
- *     port: 3128
- *   authentication:
- *     type: basic
- *     user: user
- *     password: pass
- *   ssl:
- *     keystoreLocation: classpath:client.jks
- *     keystorePassword: secret
- * </code></pre>
+ * @description Settings the HTTP client uses for calls to a backend: socket timeouts, an upstream
+ *              proxy, credentials, TLS and retry behavior. Every part is optional and falls back to
+ *              its defaults when omitted. Configure it once globally, or on a single plugin that
+ *              calls a backend.
  * @topic 7. Transports and Clients
+ * @yaml <pre><code>
+ * configuration:
+ *   httpClientConfig:
+ *     connection:
+ *       timeout: 5000
+ *     proxy:
+ *       host: proxy.example.com
+ *       port: 3128
+ *     retries:
+ *       retries: 3
+ * </code></pre>
  */
 @MCElement(name = "httpClientConfig")
 public class HttpClientConfiguration implements ApplicationContextAware {
@@ -95,8 +93,7 @@ public class HttpClientConfiguration implements ApplicationContextAware {
     }
 
     /**
-     * @description Connection-related configuration such as timeouts and connection pooling.
-     * Cannot be null.
+     * @description Socket timeouts and the local network interface used for outgoing connections.
      */
     @MCChildElement(order = 1)
     public void setConnection(ConnectionConfiguration connection) {
@@ -110,7 +107,7 @@ public class HttpClientConfiguration implements ApplicationContextAware {
     }
 
     /**
-     * @description Optional proxy configuration for outbound connections.
+     * @description Upstream HTTP proxy that outgoing requests are routed through.
      */
     @MCChildElement(order = 2)
     public void setProxy(ProxyConfiguration proxy) {
@@ -122,7 +119,7 @@ public class HttpClientConfiguration implements ApplicationContextAware {
     }
 
     /**
-     * @description Optional authentication mechanism (e.g., basic auth).
+     * @description Credentials sent as HTTP Basic Authentication with every outgoing request.
      */
     @MCChildElement(order = 3)
     public void setAuthentication(AuthenticationConfiguration authentication) {
@@ -134,8 +131,8 @@ public class HttpClientConfiguration implements ApplicationContextAware {
     }
 
     /**
-     * @description SSL/TLS configuration for secure connections.
-     * Accepts both standard and external SSL configurations.
+     * @description TLS settings for outgoing HTTPS connections, such as the trust store that validates
+     * the backend certificate and a key store holding a client certificate.
      */
     @MCChildElement(order = 4, allowForeign = true)
     public void setSslParser(SSLParser sslParser) {
@@ -161,9 +158,10 @@ public class HttpClientConfiguration implements ApplicationContextAware {
     }
 
     /**
-     * @description Enables experimental support for HTTP/2.
-     * When true, HTTP/2 connections are attempted when possible.
+     * @description Negotiates HTTP/2 over TLS when the backend offers it and falls back to HTTP/1.1
+     * otherwise. Experimental.
      * @default false
+     * @example true
      */
     @MCAttribute
     public void setUseExperimentalHttp2(boolean useExperimentalHttp2) {
@@ -175,8 +173,7 @@ public class HttpClientConfiguration implements ApplicationContextAware {
     }
 
     /**
-     * @description Advanced configuration for retry behavior.
-     * Allows detailed retry logic beyond the simple maxRetries setting.
+     * @description How often and how quickly a failed call to the backend is repeated.
      */
     @MCChildElement
     public void setRetryHandler(RetryHandler retryHandler) {
@@ -188,9 +185,10 @@ public class HttpClientConfiguration implements ApplicationContextAware {
     }
 
     /**
-     * @description Whether to automatically rewrite the Host header to match the target address.
-     * This is useful when routing requests to internal systems where the Host header must match the backend.
+     * @description Rewrites the Host header to the address of the backend. Set to <code>false</code> to
+     * forward the Host header the client sent, e.g. when the backend serves virtual hosts under that name.
      * @default true
+     * @example false
      */
     @MCAttribute
     public void setAdjustHostHeader(boolean adjustHostHeader) {

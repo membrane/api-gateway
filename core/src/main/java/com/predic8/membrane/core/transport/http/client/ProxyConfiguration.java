@@ -14,11 +14,12 @@
 
 package com.predic8.membrane.core.transport.http.client;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.config.security.*;
-import com.predic8.membrane.core.util.security.BasicAuthenticationUtil;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.config.security.SSLParser;
 
-import java.util.*;
+import java.util.Objects;
 
 import static com.predic8.membrane.core.util.security.BasicAuthenticationUtil.createAuthorizationHeader;
 
@@ -42,8 +43,6 @@ import static com.predic8.membrane.core.util.security.BasicAuthenticationUtil.cr
  *       username: alice
  *       password: secret
  * </code></pre>
- *
- * @topic 4. Transports and Clients
  */
 @MCElement(name="proxy", component =false, id="proxy-configuration")
 public class ProxyConfiguration {
