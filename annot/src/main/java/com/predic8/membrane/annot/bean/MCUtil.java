@@ -14,22 +14,19 @@
 package com.predic8.membrane.annot.bean;
 
 import com.predic8.membrane.annot.*;
-import org.slf4j.*;
-import org.springframework.beans.*;
-import org.springframework.context.support.*;
-import org.springframework.core.io.*;
+import org.springframework.beans.BeanWrapperImpl;
 
-import javax.xml.stream.*;
-import java.io.*;
-import java.lang.reflect.*;
-import java.security.*;
+import javax.xml.stream.XMLOutputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamWriter;
+import java.io.StringWriter;
+import java.lang.reflect.Method;
+import java.security.InvalidParameterException;
 import java.util.*;
 
-import static java.nio.charset.StandardCharsets.*;
-
 /**
- * A utility class to deeply-clone/serizalize/deserialize {@link MCElement}-annotatated objects
- * (from/to a Spring-based XML configuration file).
+ * A utility class to deeply-clone/serialize {@link MCElement}-annotatated objects
+ * (to a Spring-based XML configuration file).
  * <p>
  * The serialization process may fail: This occurs when non-{@link MCElement}-annotated objects are contained
  * in the object tree. This is, for example, the case in the JDBC logging example, where the DataSource is a
@@ -38,8 +35,6 @@ import static java.nio.charset.StandardCharsets.*;
  * In case of a serialization failure, the resuling XML cannot be used to reconstruct the object tree.
  */
 public class MCUtil {
-
-	private static final Logger log = LoggerFactory.getLogger(MCUtil.class.getName());
 
 	private static final XMLOutputFactory xmlOutputFactory = XMLOutputFactory.newFactory();
 
@@ -101,64 +96,6 @@ public class MCUtil {
 			return (T) dst.getRootInstance();
 		} catch (Exception e) {
 			throw new RuntimeException(e);
-		}
-	}
-
-	@SuppressWarnings("unchecked")
-	public static <T> T fromXML(Class<T> clazz, final String xml) {
-		final String MAGIC = "magic.xml";
-
-		FileSystemXmlApplicationContext fsxacApplicationContext = new FileSystemXmlApplicationContextExtension(MAGIC, xml);
-		fsxacApplicationContext.setConfigLocation(MAGIC);
-
-		try {
-			fsxacApplicationContext.refresh();
-		} catch (RuntimeException e) {
-			log.error(e.getMessage(), e);
-			System.err.println(xml);
-			throw e;
-		}
-
-		Object bean = null;
-
-		if (fsxacApplicationContext.containsBean("main")) {
-			bean = fsxacApplicationContext.getBean("main");
-		} else {
-			Collection<T> beans = fsxacApplicationContext.getBeansOfType(clazz).values();
-			if (beans.size() > 1)
-				throw new InvalidParameterException("There is more than one bean of type '" + clazz.getName() + "'.");
-			bean = beans.iterator().next();
-		}
-
-		if (bean == null)
-			throw new InvalidParameterException("Did not find bean with ID 'main'.");
-
-		if (!clazz.isAssignableFrom(bean.getClass()))
-			throw new InvalidParameterException("Bean 'main' is not a " + clazz.getName() + " .");
-
-		return (T) bean;
-	}
-
-	private static final class FileSystemXmlApplicationContextExtension extends FileSystemXmlApplicationContext {
-		private final String MAGIC;
-		private final String xml;
-
-		private FileSystemXmlApplicationContextExtension(String MAGIC, String xml) {
-			this.MAGIC = MAGIC;
-			this.xml = xml;
-		}
-
-		@Override
-		public Resource getResource(String location) {
-			if (MAGIC.equals(location)) {
-				return new FileSystemResource(MAGIC) {
-					@Override
-					public InputStream getInputStream() {
-						return new ByteArrayInputStream(xml.getBytes(UTF_8));
-					}
-				};
-			}
-			return super.getResource(location);
 		}
 	}
 
