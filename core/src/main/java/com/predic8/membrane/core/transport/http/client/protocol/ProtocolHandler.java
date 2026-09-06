@@ -33,7 +33,9 @@ import com.predic8.membrane.core.transport.http.ProtocolUpgradeDeniedException;
  *     <li>{@link #handle(Exchange, ConnectionFactory.OutgoingConnectionType, HostColonPort)} - Full I/O conversation.</li>
  *     <li>{@link #checkUpgradeResponse(Exchange)} - Inspect upstream response (e.g. {@code 101 Switching Protocols}).</li>
  *     <li>{@link #cleanup(Exchange)} - Hand the target connection over for reuse; only after a
- *         successful exchange.</li>
+ *         successful exchange, and only for a plain HTTP/1 response that can be pooled. CONNECT
+ *         exchanges and upgraded protocols are excluded: their connection is either forwarded by
+ *         {@code StreamPump} or pooled by the protocol itself (e.g. {@code Http2ClientPool}).</li>
  * </ol>
  *
  * <h2>Thread-Safety & State</h2>
@@ -102,7 +104,9 @@ public interface ProtocolHandler {
      * Called only after {@link #handle(Exchange, ConnectionFactory.OutgoingConnectionType, HostColonPort)}
      * completed, so implementations may rely on a response being present. An exchange that failed does
      * not reach this method: its target connection must be closed rather than pooled, which
-     * {@code HttpServerHandler} does when it finishes the exchange.
+     * {@code HttpServerHandler} does when it finishes the exchange. Implementations must not pool the
+     * connection of a CONNECT exchange or of a protocol upgrade - it is handed over to {@code StreamPump}
+     * or to the protocol's own pool - so those cases return without registering anything.
      *
      * @param exchange current exchange
      */
