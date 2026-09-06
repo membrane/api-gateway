@@ -14,18 +14,30 @@
 
 package com.predic8.membrane.core.transport.http.client;
 
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.transport.http.*;
-import org.jetbrains.annotations.*;
-import org.junit.jupiter.api.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.transport.http.ConnectTimeoutException;
+import com.predic8.membrane.core.transport.http.HttpClientStatusEventBus;
+import com.predic8.membrane.core.transport.http.HttpClientStatusEventListener;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.net.*;
-import java.util.*;
+import java.net.ConnectException;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-import static com.predic8.membrane.core.http.Request.*;
-import static com.predic8.membrane.core.http.Response.*;
+import static com.predic8.membrane.core.http.Request.get;
+import static com.predic8.membrane.core.http.Request.post;
+import static com.predic8.membrane.core.http.Response.ok;
 import static org.junit.jupiter.api.Assertions.*;
 
 class RetryHandlerTest {
@@ -40,6 +52,14 @@ class RetryHandlerTest {
         rh.setRetries(2);
     }
 
+
+    @Test
+    void retryPossibleOnlyWhenAnAttemptFollowsTheInitialCall() {
+        rh.setRetries(0);
+        assertFalse(rh.isRetryPossible());
+        rh.setRetries(1);
+        assertTrue(rh.isRetryPossible());
+    }
 
     @Test
     void noRetries() throws Exception {

@@ -67,7 +67,7 @@ public class Http1ProtocolHandler extends AbstractProtocolHandler {
 
         trace(exchange.getRequest());
 
-        exchange.getRequest().write(ct.con().out, configuration.getRetryHandler().getRetries() > 1);
+        exchange.getRequest().write(ct.con().out, retainBodyForRetry());
 
         // TODO only for HTTP1 ?
         exchange.setTimeReqSent(currentTimeMillis());
@@ -87,6 +87,15 @@ public class Http1ProtocolHandler extends AbstractProtocolHandler {
 
         // Only HTTP 1?
         checkUpgradeResponse(exchange);
+    }
+
+    /**
+     * A body that is only streamed through cannot be sent a second time, so it has to be retained
+     * whenever the {@link com.predic8.membrane.core.transport.http.client.RetryHandler} may replay
+     * the request.
+     */
+    private boolean retainBodyForRetry() {
+        return configuration.getRetryHandler().isRetryPossible();
     }
 
     @Override
@@ -149,7 +158,7 @@ public class Http1ProtocolHandler extends AbstractProtocolHandler {
         Response response = exchange.getResponse();
         if (response.getStatusCode() != 100)
             return;
-        exchange.getRequest().getBody().write(getBodyTransferer(exchange, c), configuration.getRetryHandler().getRetries() > 1);
+        exchange.getRequest().getBody().write(getBodyTransferer(exchange, c), retainBodyForRetry());
         c.out.flush();
         response.read(c.in, !exchange.getRequest().isHEADRequest());
     }
@@ -163,7 +172,7 @@ public class Http1ProtocolHandler extends AbstractProtocolHandler {
             return null;
 
         if (configuration.getProxy() != null) {
-            exchange.getRequest().write(ct.con().out, configuration.getRetryHandler().getRetries() > 1);
+            exchange.getRequest().write(ct.con().out, retainBodyForRetry());
             Response response = fromStream(ct.con().in, false);
             if (response.getStatusCode() > 299) {
                 log.debug("Status code response? on CONNECT request: {}", response.getStatusCode());

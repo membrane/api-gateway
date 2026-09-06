@@ -92,6 +92,17 @@ public class RetryHandler {
     private static final Set<Integer> RETRYABLE_5XX = Set.of(500, 502, 503, 504, 507);
 
     /**
+     * Whether {@link #executeWithRetries(Exchange, RetryableCall)} can send the request more than once.
+     * Callers writing the request to the wire have to retain the body in that case, otherwise the
+     * replay has nothing left to send.
+     *
+     * @return true if at least one retry attempt follows the initial call
+     */
+    public boolean isRetryPossible() {
+        return retries > 0;
+    }
+
+    /**
      * Execute the given {@link RetryableCall} applying the retry logic configured in this handler.
      *
      * @param exc  current exchange

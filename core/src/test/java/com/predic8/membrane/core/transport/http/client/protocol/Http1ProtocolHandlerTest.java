@@ -14,24 +14,32 @@
 
 package com.predic8.membrane.core.transport.http.client.protocol;
 
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.transport.http.*;
-import com.predic8.membrane.core.transport.http.ConnectionFactory.*;
-import com.predic8.membrane.core.transport.http.client.*;
-import org.jetbrains.annotations.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.transport.http.Connection;
+import com.predic8.membrane.core.transport.http.ConnectionFactory.OutgoingConnectionType;
+import com.predic8.membrane.core.transport.http.HostColonPort;
+import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
-import java.io.*;
-import java.net.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.Socket;
 
-import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.Header.EXPECT;
 import static com.predic8.membrane.core.http.Request.*;
-import static com.predic8.membrane.core.http.Response.*;
-import static com.predic8.membrane.core.transport.http.client.protocol.AbstractProtocolHandler.*;
-import static java.nio.charset.StandardCharsets.*;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static com.predic8.membrane.core.http.Response.continue100;
+import static com.predic8.membrane.core.transport.http.client.protocol.AbstractProtocolHandler.UPGRADED_PROTOCOL;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class Http1ProtocolHandlerTest {
 
@@ -86,61 +94,113 @@ class Http1ProtocolHandlerTest {
             assertTrue(sent.contains("hello"), "body must be streamed after 100‑Continue");
         }
 
-        private static @NotNull ByteArrayInputStream getInputStreamFor(String s) {
-            return new ByteArrayInputStream(s.getBytes(ISO_8859_1));
+    }
+
+    @Nested
+    class retryBodyRetention {
+
+        private static final String RESPONSE = "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n";
+
+        /**
+         * With retries=1 the RetryHandler still performs a second attempt, so the request body has to
+         * be retained for the replay.
+         */
+        @Test
+        void bodyIsReplayedWhenOneRetryIsConfigured() throws Exception {
+            Http1ProtocolHandler handler = handlerWithRetries(1);
+            Exchange exc = streamedPostExchange("hello");
+
+            assertTrue(sendOnFreshConnection(handler, exc).contains("hello"), "body on first attempt");
+            assertTrue(sendOnFreshConnection(handler, exc).contains("hello"), "body on the retry");
         }
 
-        private static @NotNull OutgoingConnectionType getConnectionType(InputStream respIn, CollectingOutputStream wire) throws Exception {
-            return new OutgoingConnectionType(getConnectionMock(respIn, wire), false, null, null, "");
+        @Test
+        void bodyIsReplayedWithDefaultRetries() throws Exception {
+            Http1ProtocolHandler handler = handlerWithRetries(2);
+            Exchange exc = streamedPostExchange("hello");
+
+            assertTrue(sendOnFreshConnection(handler, exc).contains("hello"), "body on first attempt");
+            assertTrue(sendOnFreshConnection(handler, exc).contains("hello"), "body on the retry");
         }
 
-        private static @NotNull Socket getSocketMock(InputStream respIn, CollectingOutputStream wire) throws Exception {
-            Socket sock = mock(Socket.class);
-            when(sock.getInputStream()).thenReturn(respIn);
-            when(sock.getOutputStream()).thenReturn(wire);
-            return sock;
-        }
-
-        private static @NotNull Connection getConnectionMock(InputStream respIn, CollectingOutputStream wire) throws Exception {
-            Connection con = mock(Connection.class);
-            con.in = respIn;
-            con.out = wire;
-            con.socket = getSocketMock(respIn, wire);
-            return con;
+        private static Http1ProtocolHandler handlerWithRetries(int retries) {
+            HttpClientConfiguration configuration = new HttpClientConfiguration();
+            configuration.getRetryHandler().setRetries(retries);
+            return new Http1ProtocolHandler(configuration, null);
         }
 
         /**
-         * Collects every byte the handler writes; close() is a harmless no‑op. (JDK 21‑safe)
+         * A body that is still unread and backed by a stream - the case where the retainBody flag decides
+         * whether the body survives the first write.
          */
-        private static final class CollectingOutputStream extends OutputStream {
-            private final ByteArrayOutputStream buf = new ByteArrayOutputStream();
-
-            @Override
-            public void write(int b) {
-                buf.write(b);
-            }
-
-            @Override
-            public void write(byte[] b, int o, int l) {
-                buf.write(b, o, l);
-            }
-
-            @Override
-            public void write(byte[] b) {
-                buf.write(b, 0, b.length);
-            }
-
-            @Override
-            public void flush() { /* ignore */ }
-
-            @Override
-            public void close() { /* ignore */ }
-
-            byte[] toByteArray() {
-                return buf.toByteArray();
-            }
+        private static Exchange streamedPostExchange(String body) throws Exception {
+            byte[] payload = body.getBytes(ISO_8859_1);
+            return post("/foo").body(payload.length, new ByteArrayInputStream(payload)).buildExchange();
         }
 
+        /**
+         * Runs one attempt against a fresh connection and returns everything written to the wire.
+         */
+        private static String sendOnFreshConnection(Http1ProtocolHandler handler, Exchange exc) throws Exception {
+            CollectingOutputStream wire = new CollectingOutputStream();
+            handler.handle(exc, getConnectionType(getInputStreamFor(RESPONSE), wire), new HostColonPort("localhost", 8080));
+            return new String(wire.toByteArray(), ISO_8859_1);
+        }
+    }
+
+    private static @NotNull ByteArrayInputStream getInputStreamFor(String s) {
+        return new ByteArrayInputStream(s.getBytes(ISO_8859_1));
+    }
+
+    private static @NotNull OutgoingConnectionType getConnectionType(InputStream respIn, CollectingOutputStream wire) throws Exception {
+        return new OutgoingConnectionType(getConnectionMock(respIn, wire), false, null, null, "");
+    }
+
+    private static @NotNull Socket getSocketMock(InputStream respIn, CollectingOutputStream wire) throws Exception {
+        Socket sock = mock(Socket.class);
+        when(sock.getInputStream()).thenReturn(respIn);
+        when(sock.getOutputStream()).thenReturn(wire);
+        return sock;
+    }
+
+    private static @NotNull Connection getConnectionMock(InputStream respIn, CollectingOutputStream wire) throws Exception {
+        Connection con = mock(Connection.class);
+        con.in = respIn;
+        con.out = wire;
+        con.socket = getSocketMock(respIn, wire);
+        return con;
+    }
+
+    /**
+     * Collects every byte the handler writes; close() is a harmless no‑op. (JDK 21‑safe)
+     */
+    private static final class CollectingOutputStream extends OutputStream {
+        private final ByteArrayOutputStream buf = new ByteArrayOutputStream();
+
+        @Override
+        public void write(int b) {
+            buf.write(b);
+        }
+
+        @Override
+        public void write(byte[] b, int o, int l) {
+            buf.write(b, o, l);
+        }
+
+        @Override
+        public void write(byte[] b) {
+            buf.write(b, 0, b.length);
+        }
+
+        @Override
+        public void flush() { /* ignore */ }
+
+        @Override
+        public void close() { /* ignore */ }
+
+        byte[] toByteArray() {
+            return buf.toByteArray();
+        }
     }
 
 
