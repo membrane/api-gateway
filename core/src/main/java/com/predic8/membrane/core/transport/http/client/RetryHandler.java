@@ -210,9 +210,12 @@ public class RetryHandler {
         }
         // Low-level TCP error, e.g., during write or read.
         if (e instanceof SocketException) {
-            if (e.getMessage().contains("abort")) {
+            // A SocketException does not always carry a message, e.g. when the socket was closed while
+            // it was read. Such a case falls through to the "unknown condition" branch below.
+            String message = Objects.requireNonNullElse(e.getMessage(), "");
+            if (message.contains("abort")) {
                 log.debug("Connection to {} was aborted externally.", dest);
-            } else if (e.getMessage().contains("reset")) {
+            } else if (message.contains("reset")) {
                 log.debug("Connection to {} was reset externally.", dest);
             } else {
                 logException(exc, attempt, e);

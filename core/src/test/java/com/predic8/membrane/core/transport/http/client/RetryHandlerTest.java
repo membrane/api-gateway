@@ -110,6 +110,17 @@ class RetryHandlerTest {
             assertEquals(exception, listener.exceptions.get("/foo"));
         }
 
+        /**
+         * A SocketException does not necessarily carry a message, e.g. when the socket was closed
+         * while it was being read.
+         */
+        @Test
+        void socketExceptionWithoutMessage() {
+            RetryableExchangeCallMock mock = new RetryableExchangeCallMock(new SocketException());
+            assertThrows(SocketException.class, () -> rh.executeWithRetries(get("/foo").buildExchange(), mock));
+            assertEquals(3, mock.attempts);
+        }
+
         @Test
         void socketExceptionPost() {
             RetryableExchangeCallMock mock = new RetryableExchangeCallMock(new SocketException("Problem!"));

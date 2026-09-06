@@ -87,15 +87,6 @@ public class Http1ProtocolHandler extends AbstractProtocolHandler {
         checkUpgradeResponse(exchange);
     }
 
-    /**
-     * A body that is only streamed through cannot be sent a second time, so it has to be retained
-     * whenever the {@link com.predic8.membrane.core.transport.http.client.RetryHandler} may replay
-     * the request.
-     */
-    private boolean retainBodyForRetry() {
-        return configuration.getRetryHandler().isRetryPossible();
-    }
-
     @Override
     public void checkUpgradeResponse(Exchange exchange) {
         if (isUpgradeToResponse(exchange.getResponse(), WEBSOCKET) &&

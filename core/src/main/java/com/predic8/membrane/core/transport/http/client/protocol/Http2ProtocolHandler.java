@@ -14,15 +14,18 @@
 
 package com.predic8.membrane.core.transport.http.client.protocol;
 
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.transport.http.*;
-import com.predic8.membrane.core.transport.http.client.*;
-import com.predic8.membrane.core.transport.http2.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.transport.http.Connection;
+import com.predic8.membrane.core.transport.http.ConnectionFactory;
+import com.predic8.membrane.core.transport.http.HostColonPort;
+import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
+import com.predic8.membrane.core.transport.http2.Http2Client;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static com.predic8.membrane.core.exchange.Exchange.*;
+import static com.predic8.membrane.core.exchange.Exchange.ALLOW_H2;
 import static com.predic8.membrane.core.http.Header.*;
-import static java.lang.Boolean.*;
+import static java.lang.Boolean.TRUE;
 
 public class Http2ProtocolHandler extends AbstractProtocolHandler {
 
@@ -57,7 +60,7 @@ public class Http2ProtocolHandler extends AbstractProtocolHandler {
                     connectionFactory.getProxySSLContext(),
                     h2c);
         }
-        exchange.setResponse(h2c.doCall(exchange));
+        exchange.setResponse(h2c.doCall(exchange, retainBodyForRetry()));
         exchange.setProperty(HTTP2_PROTOCOL, true);
     }
 

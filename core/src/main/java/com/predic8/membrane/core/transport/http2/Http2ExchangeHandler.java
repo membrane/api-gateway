@@ -198,13 +198,17 @@ public class Http2ExchangeHandler implements Runnable {
     protected void writeResponse(Response res) throws Exception {
         sender.send(streamId, (encoder, peerSettings) -> createHeadersFrames(res, res.getHeader(), streamId, encoder, peerSettings, false));
 
-        writeMessageBody(streamId, streamInfo, sender, peerSettings, peerFlowControl, res);
+        writeMessageBody(streamId, streamInfo, sender, peerSettings, peerFlowControl, res, false);
 
         exchange.setTimeResSent(System.currentTimeMillis());
         exchange.collectStatistics();
     }
 
-    public static void writeMessageBody(final int streamId, final StreamInfo streamInfo, final FrameSender sender, final Settings peerSettings, final PeerFlowControl peerFlowControl, Message res) {
+    /**
+     * @param retainCopy whether the body has to survive this write, because the caller may send the
+     *                   message again. Only the client (request) path can retry.
+     */
+    public static void writeMessageBody(final int streamId, final StreamInfo streamInfo, final FrameSender sender, final Settings peerSettings, final PeerFlowControl peerFlowControl, Message res, boolean retainCopy) {
         res.getBody().write(new AbstractBodyTransferer() {
             @Override
             public void write(byte[] content, int i, int length) {
@@ -264,7 +268,7 @@ public class Http2ExchangeHandler implements Runnable {
                     sender.send(frame);
                 }
             }
-        }, false);
+        }, retainCopy);
 
     }
 
