@@ -116,8 +116,9 @@ public class HelpReference {
 		xew.writeStartElement("namespace");
 		xew.writeAttribute("package", main.getAnnotation().outputPackage());
 		xew.writeAttribute("targetNamespace", main.getAnnotation().targetNamespace());
-		main.getIis().sort(comparing((ElementInfo o) -> o.getAnnotation().name()).thenComparing(o -> o.getElement().getQualifiedName().toString()));
-		for (ElementInfo ei : main.getIis())
+		List<ElementInfo> iis = new ArrayList<>(main.getIis());
+		iis.sort(comparing((ElementInfo o) -> o.getAnnotation().name()).thenComparing(o -> o.getElement().getQualifiedName().toString()));
+		for (ElementInfo ei : iis)
 			handle(m, main, ei);
 		xew.writeEndElement();
 	}
@@ -138,12 +139,11 @@ public class HelpReference {
 
 		handleDoc(ei);
 
-		List<AttributeInfo> ais = ei.getAis();
-		ais.sort(comparing(AttributeInfo::getXMLName));
+		List<AttributeInfo> ais = ei.getAis().stream()
+				.filter(ai -> !ai.getXMLName().equals("id"))
+				.sorted(comparing(AttributeInfo::getXMLName))
+				.toList();
 		OtherAttributesInfo oai = ei.getOai();
-
-		if (ais.size() > 0 && ais.get(0).getXMLName().equals("id"))
-			ais.remove(0);
 
 		if (ais.size() > 0 || oai != null) {
 			xew.writeStartElement("attributes");
