@@ -22,7 +22,6 @@ import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
-import java.security.InvalidParameterException;
 import java.util.Objects;
 
 /**
@@ -97,8 +96,6 @@ public class HttpClientConfiguration implements ApplicationContextAware {
      */
     @MCChildElement(order = 1)
     public void setConnection(ConnectionConfiguration connection) {
-        if (connection == null)
-            throw new InvalidParameterException("'connection' parameter cannot be null.");
         this.connection = connection;
     }
 
