@@ -220,6 +220,7 @@ public class Http2ClientServerTest {
                 .buildExchange();
         hc.call(e);
 
+        assertNotNull(e.getProperty(Http2ProtocolHandler.HTTP2_PROTOCOL));
         assertEquals(502, e.getResponse().getStatusCode());
         assertEquals(List.of("hello", "hello"), received, "both attempts must carry the body");
     }
