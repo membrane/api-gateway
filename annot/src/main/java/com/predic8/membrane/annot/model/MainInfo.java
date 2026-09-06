@@ -13,15 +13,14 @@
    limitations under the License. */
 package com.predic8.membrane.annot.model;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import com.predic8.membrane.annot.MCMain;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
-
-import com.predic8.membrane.annot.MCMain;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Mirrors {@link MCMain}.
@@ -31,10 +30,10 @@ public class MainInfo {
 	private MCMain annotation;
 
 	private List<ElementInfo> iis = new ArrayList<>();
-	private Map<TypeElement, ChildElementDeclarationInfo> childElementDeclarations = new HashMap<>();
-	private Map<TypeElement, ElementInfo> elements = new HashMap<>();
-	private Map<String, ElementInfo> globals = new HashMap<>();
-	private Map<String, ElementInfo> ids = new HashMap<>();
+	private Map<TypeElement, ChildElementDeclarationInfo> childElementDeclarations = new LinkedHashMap<>();
+	private Map<TypeElement, ElementInfo> elements = new LinkedHashMap<>();
+	private Map<String, ElementInfo> globals = new LinkedHashMap<>();
+	private Map<String, ElementInfo> ids = new LinkedHashMap<>();
 
 	public List<Element> getInterceptorElements() {
 		ArrayList<Element> res = new ArrayList<>(getIis().size());

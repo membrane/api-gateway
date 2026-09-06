@@ -14,25 +14,33 @@
 package com.predic8.membrane.annot;
 
 import com.predic8.membrane.annot.generator.*;
-import com.predic8.membrane.annot.generator.kubernetes.*;
+import com.predic8.membrane.annot.generator.kubernetes.KubernetesBootstrapper;
 import com.predic8.membrane.annot.model.*;
 
-import javax.annotation.processing.*;
-import javax.lang.model.*;
+import javax.annotation.processing.AbstractProcessor;
+import javax.annotation.processing.RoundEnvironment;
+import javax.annotation.processing.SupportedAnnotationTypes;
+import javax.lang.model.SourceVersion;
 import javax.lang.model.element.*;
-import javax.lang.model.type.*;
-import javax.tools.Diagnostic.*;
-import javax.tools.*;
-import java.io.*;
-import java.lang.annotation.*;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeKind;
+import javax.lang.model.type.TypeMirror;
+import javax.tools.Diagnostic.Kind;
+import javax.tools.FileObject;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.lang.annotation.Annotation;
 import java.util.*;
-import java.util.Map.*;
-import java.util.stream.*;
+import java.util.Map.Entry;
+import java.util.stream.Stream;
 
-import static java.util.function.Function.*;
-import static java.util.stream.Collectors.*;
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.counting;
+import static java.util.stream.Collectors.groupingBy;
 import static javax.tools.Diagnostic.Kind.ERROR;
-import static javax.tools.StandardLocation.*;
+import static javax.tools.StandardLocation.CLASS_OUTPUT;
 
 /**
  * The annotation processor for the annotations defining Membrane's configuration language ({@link MCMain} and others).
@@ -159,6 +167,16 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
         return result;
     }
 
+    /**
+     * Orders elements by qualified name, so that the generated XSD, JSON schema and parsers do not depend
+     * on the hash-based iteration order of the annotation cache.
+     */
+    private static List<Element> sortedByQualifiedName(Set<? extends Element> elements) {
+        List<Element> sorted = new ArrayList<>(elements);
+        sorted.sort(Comparator.comparing(e -> ((TypeElement) e).getQualifiedName().toString()));
+        return sorted;
+    }
+
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         // An instance is create per compiler call and not kept for the next incremental compilation.
@@ -189,7 +207,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 
                 Model m = new Model();
 
-                Set<? extends Element> mcmains = getCachedElementsAnnotatedWith(roundEnv, MCMain.class);
+                List<Element> mcmains = sortedByQualifiedName(getCachedElementsAnnotatedWith(roundEnv, MCMain.class));
                 if (mcmains.isEmpty()) {
                     processingEnv.getMessager().printMessage(Kind.WARNING, "@MCMain was nowhere found.");
                     return true;
@@ -201,7 +219,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
                     m.getMains().add(main);
                 }
 
-                for (Element e : getCachedElementsAnnotatedWith(roundEnv, MCElement.class)) {
+                for (Element e : sortedByQualifiedName(getCachedElementsAnnotatedWith(roundEnv, MCElement.class))) {
                     ElementInfo ii = new ElementInfo();
                     ii.setElement((TypeElement) e);
                     ii.setAnnotation(e.getAnnotation(MCElement.class));
