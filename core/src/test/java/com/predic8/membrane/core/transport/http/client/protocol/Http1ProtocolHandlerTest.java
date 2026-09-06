@@ -38,8 +38,7 @@ import static com.predic8.membrane.core.http.Response.continue100;
 import static com.predic8.membrane.core.transport.http.client.protocol.AbstractProtocolHandler.UPGRADED_PROTOCOL;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 class Http1ProtocolHandlerTest {
 
@@ -65,31 +64,37 @@ class Http1ProtocolHandlerTest {
 
         @Test
         void connectThroughProxyAccepted() throws Exception {
-            Exchange exc = sendConnectThroughProxy("HTTP/1.1 200 Connection established\r\n\r\n");
+            OutgoingConnectionType ct = getConnectionType(
+                    getInputStreamFor("HTTP/1.1 200 Connection established\r\n\r\n"), new CollectingOutputStream());
+            Exchange exc = sendConnectThroughProxy(ct);
 
             assertEquals(200, exc.getResponse().getStatusCode());
             assertEquals(METHOD_CONNECT, exc.getProperty(UPGRADED_PROTOCOL, String.class));
+            // The connection is handed over to the stream pump, so it must stay open.
+            verify(ct.con(), never()).close();
         }
 
         /**
-         * A proxy refusing the tunnel must not be reported to the client as a working tunnel.
+         * A proxy refusing the tunnel must not be reported to the client as a working tunnel. As no
+         * tunnel is set up, nothing downstream owns the connection to the proxy - it has to be closed here.
          */
         @Test
         void connectThroughProxyRejected() throws Exception {
-            Exchange exc = sendConnectThroughProxy("HTTP/1.1 403 Forbidden\r\nContent-Length: 0\r\n\r\n");
+            OutgoingConnectionType ct = getConnectionType(
+                    getInputStreamFor("HTTP/1.1 403 Forbidden\r\nContent-Length: 0\r\n\r\n"), new CollectingOutputStream());
+            Exchange exc = sendConnectThroughProxy(ct);
 
             assertEquals(502, exc.getResponse().getStatusCode());
             assertNull(exc.getProperty(UPGRADED_PROTOCOL, String.class), "no tunnel was established");
+            verify(ct.con()).close();
         }
 
-        private static Exchange sendConnectThroughProxy(String proxyResponse) throws Exception {
+        private static Exchange sendConnectThroughProxy(OutgoingConnectionType ct) throws Exception {
             HttpClientConfiguration configuration = new HttpClientConfiguration();
             configuration.setProxy(new ProxyConfiguration());
 
             Exchange exc = connect("/foo").buildExchange();
-            new Http1ProtocolHandler(configuration, null).handle(exc,
-                    getConnectionType(getInputStreamFor(proxyResponse), new CollectingOutputStream()),
-                    new HostColonPort("localhost", 8080));
+            new Http1ProtocolHandler(configuration, null).handle(exc, ct, new HostColonPort("localhost", 8080));
             return exc;
         }
     }

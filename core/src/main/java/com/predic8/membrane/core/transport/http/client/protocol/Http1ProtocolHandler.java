@@ -176,7 +176,9 @@ public class Http1ProtocolHandler extends AbstractProtocolHandler {
                         .detail("Could not connect to proxy server")
                         .topLevel("proxy-status", response.getStatusCode())
                         .buildAndSetResponse(exchange);
-                // No tunnel was established: do not mark the exchange as upgraded.
+                // No tunnel was established: do not mark the exchange as upgraded and
+                // close the connection to the proxy, as nobody else will.
+                ct.con().close();
                 return true;
             }
         }
