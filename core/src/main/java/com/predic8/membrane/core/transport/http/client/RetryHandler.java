@@ -149,6 +149,10 @@ public class RetryHandler {
 
         if (exceptionInLastCall != null)
             throw exceptionInLastCall;
+
+        // Every attempt returned a retryable status. The response of the last one is what the caller
+        // gets, so that is the status to report.
+        reportStatusCode(exc, getDestination(exc, retries), getStatusCode(exc));
     }
 
     private static int getStatusCode(Exchange exc) {

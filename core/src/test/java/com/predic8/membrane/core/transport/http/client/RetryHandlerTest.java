@@ -94,6 +94,25 @@ class RetryHandlerTest {
         assertEquals(200, listener.statusCodes.get("/foo"));
     }
 
+    /**
+     * The response of the last attempt is what the caller gets, so it has to reach the event bus even
+     * though every attempt was retryable.
+     */
+    @Test
+    void statusIsReportedWhenRetriesAreExhausted() throws Exception {
+        rh.setFailOverOn5XX(true);
+        rh.setDelay(1);
+        RetryableExchangeCallMock mock = new RetryableExchangeCallMock(504);
+        Exchange exc = get("/foo").buildExchange();
+        exc.setDestinations(List.of("http://node1.example.com/"));
+        HttpClientStatusEventListenerMock listener = registerHttpClientStatusEventBus(exc);
+
+        rh.executeWithRetries(exc, mock);
+
+        assertEquals(3, mock.attempts);
+        assertEquals(504, listener.statusCodes.get("http://node1.example.com/"));
+    }
+
     @Nested
     class ExceptionIsThrown {
 
