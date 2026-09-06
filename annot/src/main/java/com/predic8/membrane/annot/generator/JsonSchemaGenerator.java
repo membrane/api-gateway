@@ -27,7 +27,10 @@ import javax.lang.model.element.TypeElement;
 import javax.tools.FileObject;
 import java.io.BufferedWriter;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static com.predic8.membrane.annot.Constants.JSON_SCHEMA_VERSION;
 import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaFactory.*;
@@ -162,9 +165,10 @@ public class JsonSchemaGenerator extends AbstractGrammar {
 
         String previousSourceType = noEnvelopeParserSourceByDefName.putIfAbsent(defName, sourceType);
         if (previousSourceType != null && !previousSourceType.equals(sourceType)) {
-            throw new IllegalStateException(
+            throw new ProcessingException(
                     "Conflicting noEnvelope parser definition '%s': %s vs %s"
-                            .formatted(defName, previousSourceType, sourceType)
+                            .formatted(defName, previousSourceType, sourceType),
+                    childSpec.getE()
             );
         }
 
@@ -424,11 +428,12 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         if (decl != null) {
             return decl;
         }
-        throw new IllegalStateException(
+        throw new ProcessingException(
                 "Missing child element declaration for child property '%s' (type: %s)."
                         .formatted(childSpec.getPropertyName(), childSpec.getTypeDeclaration() == null
                                 ? "<null>"
-                                : childSpec.getTypeDeclaration().getQualifiedName().toString())
+                                : childSpec.getTypeDeclaration().getQualifiedName().toString()),
+                childSpec.getE()
         );
     }
 
