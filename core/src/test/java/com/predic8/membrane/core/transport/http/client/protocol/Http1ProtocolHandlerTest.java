@@ -127,7 +127,7 @@ class Http1ProtocolHandlerTest {
     }
 
     @Nested
-    class retryBodyRetention {
+    class RetryBodyRetention {
 
         private static final String RESPONSE = "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n";
 

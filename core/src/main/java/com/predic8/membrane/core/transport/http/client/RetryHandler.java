@@ -61,7 +61,7 @@ import static java.nio.charset.StandardCharsets.ISO_8859_1;
  *       failOverOn5XX: true
  * </code></pre>
  */
-@MCElement(name = "retries")
+@MCElement(name = "retries", component = false)
 public class RetryHandler {
 
     private static final Logger log = LoggerFactory.getLogger(RetryHandler.class);
@@ -231,7 +231,7 @@ public class RetryHandler {
                 log.debug("Connection to {} was reset externally.", dest);
             } else {
                 logException(exc, attempt, e);
-                log.info(e.getMessage(), e); // Unknown condition => log stacktrace
+                log.info("Unexpected SocketException: {}", e.getMessage(), e); // Unknown condition => log stacktrace
             }
             return !isIdempotent(exc.getRequest().getMethod());
         }
