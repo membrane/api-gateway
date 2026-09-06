@@ -219,7 +219,7 @@ public class RetryHandler {
                 log.debug("Connection to {} was reset externally.", dest);
             } else {
                 logException(exc, attempt, e);
-                log.info(e., e); // Unknown condition => log stacktrace
+                log.info(e.getMessage(), e); // Unknown condition => log stacktrace
             }
             return !isIdempotent(exc.getRequest().getMethod());
         }
