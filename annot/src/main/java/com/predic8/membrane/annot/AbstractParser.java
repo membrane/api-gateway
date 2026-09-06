@@ -14,12 +14,9 @@
 
 package com.predic8.membrane.annot;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
-
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinitionHolder;
 import org.springframework.beans.factory.config.RuntimeBeanNameReference;
@@ -28,11 +25,11 @@ import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.xml.AbstractSingleBeanDefinitionParser;
 import org.springframework.beans.factory.xml.BeanDefinitionParserDelegate;
 import org.springframework.beans.factory.xml.ParserContext;
-import org.w3c.dom.Attr;
-import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
+import org.w3c.dom.*;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 
 import static java.util.List.of;
 
@@ -42,17 +39,8 @@ public abstract class AbstractParser extends AbstractSingleBeanDefinitionParser 
 
 	private static final String MEMBRANE_PROXIES_NAMESPACE = "http://membrane-soa.org/proxies/1/";
 
-    private boolean inlined = false;
-
-	public BeanDefinition parse(Element e) {
-		inlined = true;
-		BeanDefinitionBuilder builder = BeanDefinitionBuilder.rootBeanDefinition(getBeanClass(e));
-		doParse(e, builder);
-		return builder.getBeanDefinition();
-	}
-
 	protected void setIdIfNeeded(Element element, ParserContext parserContext, String defaultId) {
-		if ( !isInlined() && !element.hasAttribute("id") ) {
+		if (!element.hasAttribute("id")) {
 			Set<String> names = new HashSet<>(of(parserContext.getRegistry().getBeanDefinitionNames()));
 			for (int i = 0; ; i++) {
 				String id = defaultId + (i == 0 ? "" : i);
@@ -62,10 +50,6 @@ public abstract class AbstractParser extends AbstractSingleBeanDefinitionParser 
 				}
 			}
 		}
-	}
-
-	protected boolean isInlined() {
-		return inlined ;
 	}
 
 	protected void setProperty(String prop, Element e, BeanDefinitionBuilder builder) {

@@ -49,9 +49,6 @@ import static javax.tools.StandardLocation.CLASS_OUTPUT;
  * <li>validates the correct usage of the annotations (not everything is checked, though)</li>
  * <li>generates the XML schema file for the declared namespace</li>
  * <li>generates parser classes for Spring-based deployments</li>
- * <li>generates parser classes for Blueprint-based deployments (if
- * org.apache.aries.blueprint:blueprint-parser and org.apache.aries.blueprint:org.apache.aries.blueprint.api
- * are present on the classpath)</li>
  * <li>generates the documentation of the language as an XML file
  * (if the MEMBRANE_GENERATE_DOC_DIR environment variable is set), based on the annotations and javadoc.</li>
  * </ul>
@@ -593,10 +590,6 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
         new HelpReference(processingEnv).writeHelp(m);
         new NamespaceInfo(processingEnv).writeInfo(m);
         new YamlDocsGenerator(processingEnv).write(m);
-        if (processingEnv.getElementUtils().getTypeElement("org.apache.aries.blueprint.ParserContext") != null) {
-            new BlueprintParsers(processingEnv).writeParserDefinitior(m);
-            new BlueprintParsers(processingEnv).writeParsers(m);
-        }
     }
 
     private void validateEnumAttribute(AttributeInfo ai) {

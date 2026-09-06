@@ -34,7 +34,7 @@ import static org.mockito.Mockito.*;
 
 /**
  * {@link HelpReference} only reports on the {@link Model}; the generators running after it
- * (NamespaceInfo, YamlDocsGenerator, BlueprintParsers) read the same instance, so it must not
+ * (NamespaceInfo, YamlDocsGenerator) read the same instance, so it must not
  * reorder or remove anything.
  */
 class HelpReferenceTest {
