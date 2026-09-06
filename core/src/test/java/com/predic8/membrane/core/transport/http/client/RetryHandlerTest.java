@@ -113,6 +113,30 @@ class RetryHandlerTest {
         assertEquals(504, listener.statusCodes.get("http://node1.example.com/"));
     }
 
+    /**
+     * The last attempt decides: when it answered with a response, an exception from an earlier attempt
+     * is no longer the outcome of the call.
+     */
+    @Test
+    void responseOfLastAttemptWinsOverEarlierException() throws Exception {
+        rh.setFailOverOn5XX(true);
+        rh.setRetries(1);
+        rh.setDelay(1);
+        Exchange exc = get("/foo").buildExchange();
+        exc.setDestinations(List.of("http://node1.example.com/"));
+        HttpClientStatusEventListenerMock listener = registerHttpClientStatusEventBus(exc);
+
+        rh.executeWithRetries(exc, (e, dest, attempt) -> {
+            if (attempt == 0)
+                throw new SocketException("reset");
+            e.setResponse(Response.statusCode(503).build());
+            return false;
+        });
+
+        assertEquals(503, exc.getResponse().getStatusCode());
+        assertEquals(503, listener.statusCodes.get("http://node1.example.com/"));
+    }
+
     @Nested
     class ExceptionIsThrown {
 

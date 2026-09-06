@@ -127,6 +127,12 @@ public class RetryHandler {
                     reportStatusCode(exc, dest, statusCode);
                     return;
                 }
+                // This attempt answered with a response rather than an exception, so an exception from
+                // an earlier attempt is no longer the outcome of the last call. E.g.:
+                // 1. attempt #0 fails with a SocketException, which is retryable for a GET
+                // 2. attempt #1 answers 503
+                // The caller gets the 503 of the last attempt, not the exception of the first one.
+                exceptionInLastCall = null;
             } catch (Exception e) {
                 reportException(exc, e, dest);
                 log.debug("Exception in retry #{}", attempt, e);
@@ -150,8 +156,8 @@ public class RetryHandler {
         if (exceptionInLastCall != null)
             throw exceptionInLastCall;
 
-        // Every attempt returned a retryable status. The response of the last one is what the caller
-        // gets, so that is the status to report.
+        // The last attempt returned a retryable status. Its response is what the caller gets, so that
+        // is the status to report.
         reportStatusCode(exc, getDestination(exc, retries), getStatusCode(exc));
     }
 
