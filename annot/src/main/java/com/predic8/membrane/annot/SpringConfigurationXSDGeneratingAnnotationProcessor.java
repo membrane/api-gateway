@@ -128,10 +128,10 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
             try (BufferedWriter bw = new BufferedWriter(o.openWriter())) {
                 bw.write("1\n");
 
-                for (Entry<Class<? extends Annotation>, HashSet<Element>> e : cache.entrySet()) {
+                for (Entry<Class<? extends Annotation>, HashSet<Element>> e : sortedByAnnotationName(cache)) {
                     bw.write(e.getKey().getName());
                     bw.write("\n");
-                    for (Element f : e.getValue()) {
+                    for (Element f : sortedByQualifiedName(e.getValue())) {
                         bw.write(" ");
                         bw.write(((TypeElement) f).getQualifiedName().toString());
                         bw.write("\n");
@@ -165,12 +165,23 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
     }
 
     /**
-     * Orders elements by qualified name, so that the generated XSD, JSON schema and parsers do not depend
-     * on the hash-based iteration order of the annotation cache.
+     * Orders elements by qualified name, so that the generated XSD, JSON schema, parsers and the
+     * cache file do not depend on the hash-based iteration order of the annotation cache.
      */
     private static List<Element> sortedByQualifiedName(Set<? extends Element> elements) {
         List<Element> sorted = new ArrayList<>(elements);
         sorted.sort(Comparator.comparing(e -> ((TypeElement) e).getQualifiedName().toString()));
+        return sorted;
+    }
+
+    /**
+     * The cache's own key order is hash-based too, so the annotation classes are sorted by name
+     * before being written.
+     */
+    private static List<Entry<Class<? extends Annotation>, HashSet<Element>>> sortedByAnnotationName(
+            Map<Class<? extends Annotation>, HashSet<Element>> cache) {
+        List<Entry<Class<? extends Annotation>, HashSet<Element>>> sorted = new ArrayList<>(cache.entrySet());
+        sorted.sort(Comparator.comparing(e -> e.getKey().getName()));
         return sorted;
     }
 
