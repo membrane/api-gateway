@@ -52,7 +52,7 @@ jobs:
         run: |
           set -euo pipefail
           RELEASE_TAG="${INPUT_TAG:-$REF_NAME}"
-          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?([+][0-9A-Za-z.-]+)?$ ]]; then
             echo "::error::'$RELEASE_TAG' is not a release tag. Dispatch this workflow on the tag, or pass the 'tag' input (e.g. v7.4.0)."
             exit 1
           fi
