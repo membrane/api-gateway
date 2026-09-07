@@ -19,9 +19,16 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
+import static org.apache.commons.cli.Option.builder;
 import static org.apache.commons.lang3.StringUtils.trim;
 
 public class CliCommand {
+
+    /**
+     * Registered on every command, so that no command can forget to support {@code -h}.
+     */
+    private static final Option HELP = builder("h").longOpt("help").desc("Display this text").build();
+
     private final String name;
     private final String description;
     private final List<Pair<String, String>> examples;
@@ -34,7 +41,7 @@ public class CliCommand {
         this.name = name;
         this.description = description;
         this.subcommands = new LinkedHashMap<>();
-        this.options = new Options();
+        this.options = new Options().addOption(HELP);
         this.examples = new ArrayList<>();
     }
 
@@ -66,10 +73,24 @@ public class CliCommand {
         try {
             commandLine = new DefaultParser().parse(options, args, true);
         } catch (MissingOptionException e) {
-            throw new MissingRequiredOptionException(e.getMessage(), this);
+            // Asking for help must work even when required options are missing.
+            commandLine = new DefaultParser().parse(optionsWithoutRequired(), args, true);
+            if (!isOptionSet(HELP.getOpt())) {
+                throw new MissingRequiredOptionException(e.getMessage(), this);
+            }
         }
 
         return this;
+    }
+
+    private Options optionsWithoutRequired() {
+        Options relaxed = new Options();
+        for (Option option : options.getOptions()) {
+            Option copy = (Option) option.clone();
+            copy.setRequired(false);
+            relaxed.addOption(copy);
+        }
+        return relaxed;
     }
 
     private static boolean isCommand(String[] args) {
@@ -141,6 +162,7 @@ public class CliCommand {
 
     public void setOptions(Options options) {
         this.options = options;
+        this.options.addOption(HELP);
     }
 
     public boolean isOptionSet(String opt) {

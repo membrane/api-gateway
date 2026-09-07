@@ -131,17 +131,34 @@ public class CliCommandTest {
     }
 
     @Test
-    void shouldPrintSubHelpWithoutOptions() throws ParseException {
+    void shouldPrintSubHelpOfCommandWithoutOwnOptions() throws ParseException {
         ByteArrayOutputStream outContent = new ByteArrayOutputStream();
         System.setOut(new PrintStream(outContent));
 
         rootCommand.parse(new String[]{"without"}).printHelp();
         String output = outContent.toString();
 
-        assertFalse(output.contains("options"));
-        assertTrue(output.contains("usage: root without"));
+        assertTrue(output.contains("usage: root without [options]"));
+        assertTrue(output.contains("--help"));
 
         System.setOut(System.out);
+    }
+
+    /**
+     * Every command supports -h, even one that declares no options of its own, see issue #3222.
+     */
+    @Test
+    void shouldParseHelpOnCommandWithoutOwnOptions() throws ParseException {
+        assertTrue(rootCommand.parse(new String[]{"without", "-h"}).isOptionSet("h"));
+        assertTrue(rootCommand.parse(new String[]{"without", "--help"}).isOptionSet("h"));
+    }
+
+    /**
+     * Asking for help must not be refused because a required option is missing, see issue #3222.
+     */
+    @Test
+    void shouldParseHelpWhenRequiredOptionIsMissing() throws ParseException {
+        assertTrue(rootCommand.parse(new String[]{"required", "-h"}).isOptionSet("h"));
     }
 
     @Test
