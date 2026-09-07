@@ -14,13 +14,18 @@
 
 package com.predic8.membrane.core.transport.http.client;
 
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.router.*;
-import org.jetbrains.annotations.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.interceptor.HTTPClientInterceptor;
+import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.proxies.Proxy;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.router.RouterXmlBootstrap;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * Base for refactorings of the HttpClientConfiguration and Router.
@@ -54,7 +59,7 @@ class HttpClientConfigurationTest {
             	<router>
             
                     <httpClientConfig useExperimentalHttp2="true">
-                        <proxy id="myhost">
+                        <proxy id="myhost" host="proxy.example.com" port="3128">
             
                         </proxy>
                     </httpClientConfig>
@@ -76,7 +81,7 @@ class HttpClientConfigurationTest {
             					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
             
                 <httpClientConfig useExperimentalHttp2="true">
-                    <proxy id="myhost"/>
+                    <proxy id="myhost" host="proxy.example.com" port="3128"/>
                 </httpClientConfig>
             
                 <httpClient>

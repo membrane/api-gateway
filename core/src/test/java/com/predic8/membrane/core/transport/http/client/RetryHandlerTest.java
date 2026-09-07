@@ -69,6 +69,21 @@ class RetryHandlerTest {
         assertEquals(1, mock.attempts);
     }
 
+    /**
+     * A negative configuration value is clamped, so only the initial call is made instead of the
+     * destination lookup running off the end of the attempt count.
+     */
+    @Test
+    void negativeRetriesDisableRetrying() throws Exception {
+        rh.setRetries(-1);
+        assertEquals(0, rh.getRetries());
+        assertFalse(rh.isRetryPossible());
+
+        RetryableExchangeCallMock mock = new RetryableExchangeCallMock(504);
+        rh.executeWithRetries(get("/foo").buildExchange(), mock);
+        assertEquals(1, mock.attempts);
+    }
+
     @Test
     void tenRetries() throws Exception {
         rh.setRetries(10);

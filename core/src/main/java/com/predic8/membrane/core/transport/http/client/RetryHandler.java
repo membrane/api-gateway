@@ -44,8 +44,9 @@ import static java.nio.charset.StandardCharsets.ISO_8859_1;
  *              configurable number of further attempts.
  *              <p>
  *              With several backend nodes each attempt goes to the next node, so a failing node is
- *              skipped straight away. The delay applies only between consecutive attempts to the same
- *              node, where it grows exponentially.
+ *              skipped straight away. The delay applies only to a target with a single node, where it
+ *              grows exponentially between attempts. Attempts spread over several nodes follow each
+ *              other without a delay.
  *              </p>
  *              <p>
  *              A retry follows a connection or IO error and HTTP 408, and optionally HTTP 500, 502,
@@ -69,8 +70,8 @@ public class RetryHandler {
     private int retries = 2;
 
     /**
-     * Initial delay before the 1st retry (ms).  Multiplied by {@link #backoffMultiplier} for each
-     * further attempt to the same backend.
+     * Initial delay before the 1st retry (ms). Multiplied by {@link #backoffMultiplier} for each
+     * further attempt. Only applied when the target has a single node.
      */
     private int delay = 100;
 
@@ -284,7 +285,7 @@ public class RetryHandler {
     }
 
     private void delayBetweenCalls(Exchange exc, double delay) throws InterruptedException {
-        //as documented above, the sleep timeout is only applied between successive calls to the SAME destination.
+        // As documented above, the delay is only applied to a target with a single destination.
         if (exc.getDestinations().size() == 1) {
             log.debug("Waiting {} ms before next try", delay);
             sleep((long) delay);
@@ -301,17 +302,20 @@ public class RetryHandler {
     }
 
     /**
-     * @description Number of <em>additional</em> retry attempts after the initial call.
+     * @description Number of <em>additional</em> retry attempts after the initial call. A value of 0 or
+     *              less disables retries, so only the initial call is made.
      * @default 2
      * @example 5
      */
     @MCAttribute
     public void setRetries(int retries) {
-        this.retries = retries;
+        this.retries = Math.max(0, retries);
     }
 
     /**
-     * @description Initial delay in milliseconds before retrying the same node.
+     * @description Initial delay in milliseconds before the next attempt. Only applied when the
+     *              target has a single node; with several nodes the attempts follow each other
+     *              without a delay.
      * @default 100
      * @example 1000
      */
