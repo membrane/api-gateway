@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.cli.util;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.predic8.membrane.core.cli.InvalidOptionValueException;
 import com.predic8.membrane.core.cli.MembraneCommandLine;
 import org.jose4j.jwk.RsaJsonWebKey;
 import org.jose4j.lang.JoseException;
@@ -29,7 +30,7 @@ import java.security.SecureRandom;
 import java.util.Map;
 
 import static java.lang.System.exit;
-import static java.nio.file.Files.writeString;
+import static java.nio.file.Files.*;
 import static java.nio.file.Paths.get;
 import static org.jose4j.jwk.JsonWebKey.OutputControlLevel.INCLUDE_PRIVATE;
 import static org.jose4j.jwk.JsonWebKey.OutputControlLevel.PUBLIC_ONLY;
@@ -73,7 +74,8 @@ public class JwkGenerator {
         }
     }
 
-    public static void privateJWKtoPublic(String input, String output) {
+    public static void privateJWKtoPublic(String input, String output, boolean overwrite) {
+        checkFiles(input, output, overwrite);
         try {
             Map map = new ObjectMapper().readValue(new File(input), Map.class);
             RsaJsonWebKey rsa = new RsaJsonWebKey(map);
@@ -81,6 +83,36 @@ public class JwkGenerator {
         } catch (IOException | JoseException e) {
             log.error(e.getMessage());
             exit(1);
+        }
+    }
+
+    /**
+     * Guards the conversion against destroying key material: writing the public JWK onto the input
+     * file silently discarded the private key components (see issue #3219).
+     *
+     * @throws InvalidOptionValueException if the input does not exist, or if the output is the input
+     *                                     file or an existing file the user did not allow to replace
+     */
+    static void checkFiles(String input, String output, boolean overwrite) {
+        Path in = get(input);
+        Path out = get(output);
+        if (!isRegularFile(in))
+            throw new InvalidOptionValueException("Invalid value for -i: '%s' is not a file.".formatted(input));
+        if (!exists(out))
+            return;
+        if (pointToSameFile(in, out))
+            throw new InvalidOptionValueException("Invalid value for -o: '%s' is the input file. Converting it in place would destroy the private key.".formatted(output));
+        if (!overwrite)
+            throw new InvalidOptionValueException("Output file (%s) already exists. Use -overwrite to replace it.".formatted(output));
+    }
+
+    private static boolean pointToSameFile(Path in, Path out) {
+        try {
+            return isSameFile(in, out);
+        } catch (IOException e) {
+            // Cannot tell the files apart: treat them as different and let the conversion report the real error.
+            log.debug("Could not compare input {} and output {}.", in, out, e);
+            return false;
         }
     }
 

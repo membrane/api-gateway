@@ -64,6 +64,31 @@ class MembraneCommandLineTest {
     }
 
     /**
+     * private-jwk-to-public relied on a runtime null check and printed its own error instead of the
+     * help text when a file was missing, see issue #3219.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"-i", "-o"})
+    void privateJwkToPublicRequiresBothFiles(String option) {
+        MembraneCommandLine cl = new MembraneCommandLine();
+
+        assertThrows(MissingRequiredOptionException.class,
+                () -> cl.parse(new String[]{"private-jwk-to-public", option, "key.json"}));
+    }
+
+    /**
+     * Replacing an existing output file needs -overwrite, as it does for generate-jwk, see issue #3219.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"-overwrite", "--overwrite"})
+    void privateJwkToPublicAcceptsOverwriteInBothSpellings(String spelling) throws Exception {
+        MembraneCommandLine cl = new MembraneCommandLine();
+        cl.parse(new String[]{"private-jwk-to-public", spelling, "-i", "key.json", "-o", "public.json"});
+
+        assertTrue(cl.getCommand().isOptionSet("overwrite"));
+    }
+
+    /**
      * The argon2id password must reach the hash byte-for-byte; trimming it made two different
      * passwords produce one identical PCH, see issue #3220.
      */

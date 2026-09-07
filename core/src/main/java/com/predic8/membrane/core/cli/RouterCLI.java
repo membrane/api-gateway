@@ -107,15 +107,10 @@ public class RouterCLI {
     }
 
     private static void privateJwkToPublic(MembraneCommandLine commandLine) {
-        String input = commandLine.getCommand().getTrimmedOptionValue("i");
-        String output = commandLine.getCommand().getTrimmedOptionValue("o");
-        if (input == null || output == null) {
-            log.error("Both input (-i) and output (-o) files must be specified.");
-            System.exit(1);
-        }
         privateJWKtoPublic(
-                input,
-                output);
+                commandLine.getCommand().getTrimmedOptionValue("i"),
+                commandLine.getCommand().getTrimmedOptionValue("o"),
+                commandLine.getCommand().isOptionSet("overwrite"));
         System.exit(0);
     }
 

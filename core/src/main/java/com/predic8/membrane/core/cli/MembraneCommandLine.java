@@ -64,8 +64,9 @@ public class MembraneCommandLine {
             }});
 
             addSubcommand(new CliCommand("private-jwk-to-public", "Convert a private JWK to a public JWK.") {{
-                addOption(builder("i").longOpt("input").argName("file").hasArg().desc("Input file (JWK, private).").build());
-                addOption(builder("o").longOpt("output").argName("file").hasArg().desc("Output file (JWK, public).").build());
+                addOption(builder("i").longOpt("input").argName("file").hasArg().required().desc("Input file (JWK, private).").build());
+                addOption(builder("o").longOpt("output").argName("file").hasArg().required().desc("Output file (JWK, public).").build());
+                addOption(builder("overwrite").longOpt("overwrite").desc("Overwrite the output file, if it exists.").build());
             }});
 
             addSubcommand(new CliCommand("argon2id", "Computes an Argon2id hash value.") {{
