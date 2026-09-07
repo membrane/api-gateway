@@ -25,13 +25,24 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.nio.channels.SeekableByteChannel;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Path;
+import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.PosixFilePermission;
 import java.security.SecureRandom;
 import java.util.Map;
+import java.util.Set;
 
 import static java.lang.System.exit;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.nio.file.FileSystems.getDefault;
 import static java.nio.file.Files.*;
 import static java.nio.file.Paths.get;
+import static java.nio.file.StandardOpenOption.*;
+import static java.nio.file.attribute.PosixFilePermissions.asFileAttribute;
+import static java.nio.file.attribute.PosixFilePermissions.fromString;
 import static org.jose4j.jwk.JsonWebKey.OutputControlLevel.INCLUDE_PRIVATE;
 import static org.jose4j.jwk.JsonWebKey.OutputControlLevel.PUBLIC_ONLY;
 import static org.jose4j.jwk.RsaJwkGenerator.generateJwk;
@@ -39,12 +50,23 @@ import static org.jose4j.jwk.RsaJwkGenerator.generateJwk;
 public class JwkGenerator {
     private static final Logger log = LoggerFactory.getLogger(JwkGenerator.class);
 
+    /**
+     * Other users must not be able to read a private key.
+     */
+    private static final Set<PosixFilePermission> OWNER_ONLY = fromString("rw-------");
+
+    /**
+     * Windows cannot express {@link #OWNER_ONLY}; there the key file keeps the platform default.
+     */
+    private static final boolean POSIX_PERMISSIONS = getDefault().supportedFileAttributeViews().contains("posix");
+
     public static void generateJWK(MembraneCommandLine commandLine) {
         int bits = commandLine.getCommand().getIntOptionValue("b", 2048, 2048, 16384);
+        boolean overwrite = commandLine.getCommand().isOptionSet("overwrite");
 
         // -o is a required option, so the value is always there.
         Path output = get(commandLine.getCommand().getTrimmedOptionValue("o"));
-        checkOutput(output, commandLine.getCommand().isOptionSet("overwrite"));
+        checkOutput(output, overwrite);
 
         RsaJsonWebKey rsaJsonWebKey;
         try {
@@ -57,7 +79,7 @@ public class JwkGenerator {
         rsaJsonWebKey.setAlgorithm("RS256");
 
         try {
-            writeString(output, rsaJsonWebKey.toJson(INCLUDE_PRIVATE));
+            writePrivateJwk(output, rsaJsonWebKey.toJson(INCLUDE_PRIVATE), overwrite);
         } catch (IOException e) {
             log.error(e.getMessage());
             exit(1);
@@ -69,7 +91,7 @@ public class JwkGenerator {
         try {
             Map map = new ObjectMapper().readValue(new File(input), Map.class);
             RsaJsonWebKey rsa = new RsaJsonWebKey(map);
-            writeString(get(output), rsa.toJson(PUBLIC_ONLY));
+            writePublicJwk(get(output), rsa.toJson(PUBLIC_ONLY), overwrite);
         } catch (IOException | JoseException e) {
             log.error(e.getMessage());
             exit(1);
@@ -111,6 +133,56 @@ public class JwkGenerator {
             log.debug("Could not compare input {} and output {}.", in, out, e);
             return false;
         }
+    }
+
+    /**
+     * Restricts the key file to its owner, which also tightens a laxer file replaced with
+     * -overwrite. Called before any key material reaches the file.
+     */
+    private static void writePrivateJwk(Path output, String jwk, boolean overwrite) throws IOException {
+        try (SeekableByteChannel channel = openOutput(output, overwrite, ownerOnlyAttributes())) {
+            if (POSIX_PERMISSIONS)
+                setPosixFilePermissions(output, OWNER_ONLY);
+            writeFully(channel, jwk);
+        }
+    }
+
+    private static void writePublicJwk(Path output, String jwk, boolean overwrite) throws IOException {
+        try (SeekableByteChannel channel = openOutput(output, overwrite)) {
+            writeFully(channel, jwk);
+        }
+    }
+
+    /**
+     * Reserves the output file in one step. {@link #checkOutput} runs long before the key is written -
+     * generating a 16384 bit key takes a while - so creating the file exclusively is what actually keeps
+     * the command from truncating a file it never inspected. It also refuses a dangling symbolic link
+     * planted at the path, which {@code exists()} does not report.
+     *
+     * @throws InvalidOptionValueException if the path was taken after {@link #checkOutput} ran
+     */
+    private static SeekableByteChannel openOutput(Path output, boolean overwrite, FileAttribute<?>... attributes) throws IOException {
+        try {
+            return newByteChannel(output, overwrite ? Set.of(CREATE, WRITE, TRUNCATE_EXISTING) : Set.of(CREATE_NEW, WRITE), attributes);
+        } catch (FileAlreadyExistsException e) {
+            throw new InvalidOptionValueException("Output file (%s) could not be created: the path is already taken.".formatted(output));
+        }
+    }
+
+    /**
+     * @return {@link #OWNER_ONLY} to create the file with, or nothing where the file system has no
+     * POSIX permissions
+     */
+    private static FileAttribute<?>[] ownerOnlyAttributes() {
+        if (!POSIX_PERMISSIONS)
+            return new FileAttribute<?>[0];
+        return new FileAttribute<?>[]{asFileAttribute(OWNER_ONLY)};
+    }
+
+    private static void writeFully(SeekableByteChannel channel, String content) throws IOException {
+        ByteBuffer buffer = UTF_8.encode(content);
+        while (buffer.hasRemaining())
+            channel.write(buffer);
     }
 
 }

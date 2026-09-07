@@ -18,6 +18,7 @@ import com.predic8.membrane.core.cli.MembraneCommandLine;
 import org.jose4j.lang.JoseException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
@@ -25,9 +26,12 @@ import java.nio.file.Path;
 
 import static com.predic8.membrane.core.cli.util.JwkGenerator.*;
 import static java.nio.file.Files.*;
+import static java.nio.file.attribute.PosixFilePermissions.fromString;
 import static org.jose4j.jwk.JsonWebKey.OutputControlLevel.INCLUDE_PRIVATE;
 import static org.jose4j.jwk.RsaJwkGenerator.generateJwk;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.condition.OS.LINUX;
+import static org.junit.jupiter.api.condition.OS.MAC;
 
 class JwkGeneratorTest {
 
@@ -122,5 +126,68 @@ class JwkGeneratorTest {
             assertFalse(readString(output).contains(privateComponent), privateComponent + " leaked into the public JWK");
         }
         assertTrue(readString(output).contains("\"n\""));
+    }
+
+    /**
+     * The generated file holds the private key components, so it must not be readable by other users.
+     */
+    @Test
+    @EnabledOnOs({LINUX, MAC})
+    void generateJwkRestrictsTheKeyFileToItsOwner() throws Exception {
+        Path output = dir.resolve("generated.json");
+        MembraneCommandLine cl = new MembraneCommandLine();
+        cl.parse(new String[]{"generate-jwk", "-o", output.toString()});
+
+        generateJWK(cl);
+
+        assertEquals(fromString("rw-------"), getPosixFilePermissions(output));
+    }
+
+    /**
+     * Replacing a world-readable file must not leave the private key world-readable.
+     */
+    @Test
+    @EnabledOnOs({LINUX, MAC})
+    void generateJwkRestrictsAFileItReplaces() throws Exception {
+        Path output = dir.resolve("stale.json");
+        writeString(output, "{}");
+        setPosixFilePermissions(output, fromString("rw-r--r--"));
+        MembraneCommandLine cl = new MembraneCommandLine();
+        cl.parse(new String[]{"generate-jwk", "-o", output.toString(), "-overwrite"});
+
+        generateJWK(cl);
+
+        assertEquals(fromString("rw-------"), getPosixFilePermissions(output));
+        assertTrue(readString(output).contains("\"d\""));
+    }
+
+    /**
+     * A dangling symbolic link at the output path passes the existence check - {@code exists()} follows
+     * the link and finds nothing - so only creating the file exclusively keeps the private key from being
+     * written through the link to wherever it points.
+     */
+    @Test
+    @EnabledOnOs({LINUX, MAC})
+    void generateJwkDoesNotWriteThroughADanglingSymbolicLink() throws Exception {
+        Path elsewhere = dir.resolve("elsewhere.json");
+        Path output = createSymbolicLink(dir.resolve("link.json"), elsewhere);
+        MembraneCommandLine cl = new MembraneCommandLine();
+        cl.parse(new String[]{"generate-jwk", "-o", output.toString()});
+
+        assertEquals("Output file (%s) could not be created: the path is already taken.".formatted(output),
+                assertThrows(InvalidOptionValueException.class, () -> generateJWK(cl)).getMessage());
+        assertFalse(exists(elsewhere));
+    }
+
+    @Test
+    @EnabledOnOs({LINUX, MAC})
+    void privateJwkToPublicDoesNotWriteThroughADanglingSymbolicLink() throws IOException {
+        Path elsewhere = dir.resolve("elsewhere.json");
+        Path output = createSymbolicLink(dir.resolve("link.json"), elsewhere);
+
+        assertEquals("Output file (%s) could not be created: the path is already taken.".formatted(output),
+                assertThrows(InvalidOptionValueException.class,
+                        () -> privateJWKtoPublic(privateJwk.toString(), output.toString(), false)).getMessage());
+        assertFalse(exists(elsewhere));
     }
 }
