@@ -100,6 +100,37 @@ public class CliCommandTest {
         assertEquals("Unknown command: unknown", exception.getMessage());
     }
 
+    /**
+     * An unknown option used to stop the parser: everything behind it was silently dropped, so
+     * <code>--zzz -a value</code> started without the requested value, see issue #3218.
+     */
+    @Test
+    void shouldThrowParseExceptionForUnknownOption() {
+        assertEquals("Unknown option: -q",
+                assertThrows(CommandParseException.class, () -> rootCommand.parse(new String[]{"-q"})).getMessage());
+    }
+
+    @Test
+    void shouldNotDiscardOptionsFollowingAnUnknownOption() {
+        assertEquals("Unknown option: --zzz",
+                assertThrows(CommandParseException.class, () -> rootCommand.parse(new String[]{"--zzz", "-a", "value"})).getMessage());
+    }
+
+    @Test
+    void shouldReportUnknownOptionOnTheFailingSubcommand() {
+        CommandParseException exception = assertThrows(CommandParseException.class, () ->
+                rootCommand.parse(new String[]{"sub", "--nope"})
+        );
+        assertEquals("Unknown option: --nope", exception.getMessage());
+        assertEquals("sub", exception.getCommand().getName());
+    }
+
+    @Test
+    void shouldThrowParseExceptionForUnexpectedArgument() {
+        assertEquals("Unexpected argument: extra",
+                assertThrows(CommandParseException.class, () -> rootCommand.parse(new String[]{"-a", "value", "extra"})).getMessage());
+    }
+
     @Test
     void shouldReturnFullCommandPath() throws ParseException {
         CliCommand cmd = rootCommand.parse(new String[]{"sub"});

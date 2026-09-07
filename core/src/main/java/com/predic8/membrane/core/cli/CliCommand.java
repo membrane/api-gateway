@@ -71,16 +71,30 @@ public class CliCommand {
         }
 
         try {
-            commandLine = new DefaultParser().parse(options, args, true);
+            commandLine = new DefaultParser().parse(options, args);
+        } catch (UnrecognizedOptionException e) {
+            throw new CommandParseException("Unknown option: " + e.getOption(), this);
         } catch (MissingOptionException e) {
             // Asking for help must work even when required options are missing.
-            commandLine = new DefaultParser().parse(optionsWithoutRequired(), args, true);
+            commandLine = new DefaultParser().parse(optionsWithoutRequired(), args);
             if (!isOptionSet(HELP.getOpt())) {
                 throw new MissingRequiredOptionException(e.getMessage(), this);
             }
         }
+        rejectUnexpectedArguments();
 
         return this;
+    }
+
+    /**
+     * Everything the parser could not assign to an option is an error: nothing reads
+     * {@link CommandLine#getArgList()}, so leftovers would be dropped without a word, see issue #3218.
+     */
+    private void rejectUnexpectedArguments() throws CommandParseException {
+        List<String> leftovers = commandLine.getArgList();
+        if (!leftovers.isEmpty()) {
+            throw new CommandParseException("Unexpected argument: " + String.join(" ", leftovers), this);
+        }
     }
 
     private Options optionsWithoutRequired() {

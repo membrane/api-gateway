@@ -308,6 +308,10 @@ public class RouterCLI {
         } catch (MissingRequiredOptionException e) {
             e.getCommand().printHelp();
             System.exit(1);
+        } catch (CommandParseException e) {
+            System.err.println(e.getMessage());
+            e.getCommand().printHelp();
+            System.exit(1);
         } catch (ParseException e) {
             System.err.println("Error parsing commandline " + e.getMessage());
             cl.getRootNamespace().printHelp();

@@ -89,6 +89,32 @@ class MembraneCommandLineTest {
     }
 
     /**
+     * A typo in front of the configuration option silently discarded it, so Membrane fell back to
+     * config discovery and could start with a different configuration, see issue #3218.
+     */
+    @Test
+    void unknownRootOptionDoesNotDiscardConfigOption() {
+        MembraneCommandLine cl = new MembraneCommandLine();
+
+        assertEquals("Unknown option: --overwrite",
+                assertThrows(CommandParseException.class,
+                        () -> cl.parse(new String[]{"--overwrite", "-c", "t.apis.yaml"})).getMessage());
+    }
+
+    /**
+     * The dropped tokens made an unknown option look like a missing required one, see issue #3218.
+     */
+    @Test
+    void unknownSubcommandOptionIsReportedInsteadOfMissingRequiredOption() {
+        MembraneCommandLine cl = new MembraneCommandLine();
+
+        CommandParseException exception = assertThrows(CommandParseException.class,
+                () -> cl.parse(new String[]{"generate-jwk", "--foo", "-o", "key.json"}));
+        assertEquals("Unknown option: --foo", exception.getMessage());
+        assertEquals("generate-jwk", exception.getCommand().getName());
+    }
+
+    /**
      * The argon2id password must reach the hash byte-for-byte; trimming it made two different
      * passwords produce one identical PCH, see issue #3220.
      */
