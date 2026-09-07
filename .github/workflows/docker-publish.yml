@@ -9,7 +9,18 @@ on:
   release:
     types: [published]
   workflow_dispatch:
-    
+    inputs:
+      tag:
+        description: "Release tag to build, e.g. v7.4.0. Required unless the workflow is run on the tag itself."
+        type: string
+        required: false
+        default: ''
+      latest:
+        description: "Also push the 'latest' Docker tag"
+        type: boolean
+        required: false
+        default: false
+
 env:
   REGISTRY: docker.io
   IMAGE_NAME: predic8/membrane
@@ -29,16 +40,30 @@ jobs:
     steps:
 #      - name: Dump context
 #        uses: crazy-max/ghaction-dump-context@v2
-      - uses: bhowell2/github-substring-action@1.0.2
+
+      # The release tag can come from the 'tag' input (when dispatched from a
+      # branch, e.g. by the Create Release workflow) or from the ref the
+      # workflow runs on (when triggered by a release, or dispatched on a tag).
+      - name: Resolve release tag
         id: release_version
-        with:
-          value: "${{ github.ref_name }}"
-          index_of_str: "v"
-          output_name: tag
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          RELEASE_TAG="${INPUT_TAG:-$REF_NAME}"
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+[.][0-9]+[.][0-9]+ ]]; then
+            echo "::error::'$RELEASE_TAG' is not a release tag. Dispatch this workflow on the tag, or pass the 'tag' input (e.g. v7.4.0)."
+            exit 1
+          fi
+          echo "release_tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+          echo "tag=${RELEASE_TAG#v}" >> "$GITHUB_OUTPUT"
+          echo "Building Docker image for release $RELEASE_TAG"
+
       - name: Checkout repository
         uses: actions/checkout@v7
         with:
-          ref: ${{ github.ref }}
+          ref: refs/tags/${{ steps.release_version.outputs.release_tag }}
           persist-credentials: false
 
       # Install the cosign tool except on PR
@@ -69,21 +94,29 @@ jobs:
 
       # Extract metadata (tags, labels) for Docker
       # https://github.com/docker/metadata-action
+      # 'latest' follows the release for a real release, and the 'latest' input
+      # for a manual run. Without the explicit event check a manual run would
+      # always push 'latest', because github.event.release is empty there.
+      # 'flavor: latest=false' is required as well: metadata-action defaults to
+      # 'latest=auto', which adds 'latest' for any semver version regardless of
+      # the enable= condition on the raw tag below.
       - name: Extract Docker metadata
         id: meta
         uses: docker/metadata-action@v4
         with:
           images: "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
+          flavor: |
+            latest=false
           tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
-            type=raw,value=latest,enable=${{ ! github.event.release.prerelease }}
+            type=semver,pattern={{version}},value=${{ steps.release_version.outputs.release_tag }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ steps.release_version.outputs.release_tag }}
+            type=semver,pattern={{major}},value=${{ steps.release_version.outputs.release_tag }}
+            type=raw,value=latest,enable=${{ (github.event_name == 'workflow_dispatch' && inputs.latest) || (github.event_name == 'release' && ! github.event.release.prerelease) }}
             type=sha,enable=false
 
       - uses: robinraju/release-downloader@v1.8
         with:
-          tag: "${{ github.ref_name }}"
+          tag: "${{ steps.release_version.outputs.release_tag }}"
           fileName: "membrane-api-gateway-${{ steps.release_version.outputs.tag }}.zip"
           out-file-path: "distribution/docker/release-bin"
           extract: false
