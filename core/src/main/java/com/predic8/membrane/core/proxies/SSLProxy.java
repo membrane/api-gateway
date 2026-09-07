@@ -74,7 +74,7 @@ public class SSLProxy implements Proxy {
     private ConnectionConfiguration connectionConfiguration = new ConnectionConfiguration();
     private final RuleStatisticCollector ruleStatisticCollector = new RuleStatisticCollector();
     private boolean useAsDefault = true;
-    private List<SSLInterceptor> sslInterceptors = new ArrayList<>();
+    private List<SSLInterceptor> interceptors = new ArrayList<>();
 
     public ConnectionConfiguration getConnectionConfiguration() {
         return connectionConfiguration;
@@ -147,8 +147,8 @@ public class SSLProxy implements Proxy {
 
     }
 
-    public List<SSLInterceptor> getSslInterceptors() {
-        return sslInterceptors;
+    public List<SSLInterceptor> getInterceptors() {
+        return interceptors;
     }
 
     /**
@@ -156,8 +156,8 @@ public class SSLProxy implements Proxy {
      *              They only see the data of the TLS handshake, never the encrypted payload.
      */
     @MCChildElement(allowForeign = true, order = 50)
-    public void setSslInterceptors(List<SSLInterceptor> sslInterceptors) {
-        this.sslInterceptors = sslInterceptors;
+    public void setInterceptors(List<SSLInterceptor> interceptors) {
+        this.interceptors = interceptors;
     }
 
     int port;
@@ -250,7 +250,7 @@ public class SSLProxy implements Proxy {
     public void init(Router router) {
         this.router = router;
         cm = new ConnectionManager(connectionConfiguration.getKeepAliveTimeout(), router.getTimerManager());
-        for (SSLInterceptor i : sslInterceptors)
+        for (SSLInterceptor i : interceptors)
             i.init(router);
     }
 
@@ -417,7 +417,7 @@ public class SSLProxy implements Proxy {
 
             boolean cont = true;
             try {
-                for (SSLInterceptor interceptor : sslInterceptors) {
+                for (SSLInterceptor interceptor : interceptors) {
                     Outcome o = interceptor.handleRequest(exc);
                     if (o != Outcome.CONTINUE) {
                         cont = false;
