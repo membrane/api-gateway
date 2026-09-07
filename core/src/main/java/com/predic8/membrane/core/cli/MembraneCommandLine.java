@@ -70,7 +70,7 @@ public class MembraneCommandLine {
 
             addSubcommand(new CliCommand("argon2id", "Computes an Argon2id hash value.") {{
                 addOption(builder("pass").longOpt("password").argName("password").hasArg().desc("Password to hash.").build());
-                addOption(builder("v").longOpt("version").argName("version").hasArg().desc("Version (decimal, default: 19).").build());
+                addOption(builder("v").longOpt("version").argName("version").hasArg().desc("Version (decimal, 16 or 19, default: 19).").build());
                 addOption(builder("s").longOpt("salt").argName("salt").hasArg().desc("Salt to hash with (hex string, default: random 16 bytes).").build());
                 addOption(builder("i").longOpt("iterations").argName("iterations").hasArg().desc("Number of iterations (default: 3).").build());
                 addOption(builder("m").longOpt("memory").argName("memory").hasArg().desc("Memory in KiB (default: 65536).").build());

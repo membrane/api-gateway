@@ -124,7 +124,7 @@ public class RouterCLI {
             String password = commandLine.getCommand().getOptionValue("pass");
             String salt = commandLine.getCommand().getOptionValue("s");
 
-            int v = commandLine.getCommand().getIntOptionValue("v", 19, 16, 19); // Argon2 only defines 0x10 and 0x13
+            int v = getArgon2Version(commandLine);
             int i = commandLine.getCommand().getIntOptionValue("i", 3, 1, MAX_VALUE);
             int m = commandLine.getCommand().getIntOptionValue("m", 65536, 1, MAX_VALUE);
             int p = commandLine.getCommand().getIntOptionValue("p", 1, 1, MAX_VALUE);
@@ -149,6 +149,16 @@ public class RouterCLI {
             System.exit(1);
         }
         System.exit(0);
+    }
+
+    /**
+     * Argon2 defines only the versions 0x10 (16) and 0x13 (19); Bouncy Castle rejects any other value.
+     */
+    static int getArgon2Version(MembraneCommandLine commandLine) {
+        int version = commandLine.getCommand().getIntOptionValue("v", 19, 16, 19);
+        if (version != 16 && version != 19)
+            throw new InvalidOptionValueException("Invalid value for -v: %d is not a supported Argon2 version. Use 16 (0x10) or 19 (0x13).".formatted(version));
+        return version;
     }
 
     private static void dryRun(MembraneCommandLine commandLine) {

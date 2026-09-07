@@ -20,6 +20,8 @@ import org.apache.commons.cli.ParseException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.Logger;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.time.Duration;
 
@@ -53,6 +55,37 @@ class RouterCLITest {
 
         assertEquals("Invalid value for -l: the OpenAPI location must not be empty.",
                 assertThrows(InvalidOptionValueException.class, () -> RouterCLI.getLocation(cl)).getMessage());
+    }
+
+    /**
+     * Argon2 defines only 0x10 and 0x13, so the range 16..19 wrongly accepted 17 and 18. Bouncy
+     * Castle then threw "unknown Argon2 version" - after the password prompt had already run.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"17", "18"})
+    void argon2VersionRejectsUndefinedVersions(String version) throws ParseException {
+        MembraneCommandLine cl = new MembraneCommandLine();
+        cl.parse(new String[]{"argon2id", "-v", version});
+
+        assertEquals("Invalid value for -v: %s is not a supported Argon2 version. Use 16 (0x10) or 19 (0x13).".formatted(version),
+                assertThrows(InvalidOptionValueException.class, () -> RouterCLI.getArgon2Version(cl)).getMessage());
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {16, 19})
+    void argon2VersionAcceptsDefinedVersions(int version) throws ParseException {
+        MembraneCommandLine cl = new MembraneCommandLine();
+        cl.parse(new String[]{"argon2id", "-v", String.valueOf(version)});
+
+        assertEquals(version, RouterCLI.getArgon2Version(cl));
+    }
+
+    @Test
+    void argon2VersionDefaultsTo19() throws ParseException {
+        MembraneCommandLine cl = new MembraneCommandLine();
+        cl.parse(new String[]{"argon2id"});
+
+        assertEquals(19, RouterCLI.getArgon2Version(cl));
     }
 
     /**
