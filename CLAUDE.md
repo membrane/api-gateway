@@ -5,47 +5,20 @@ services, configurable in YAML or XML. Upstream: https://github.com/membrane/api
 
 ## Git & Commit Policy
 
-- NEVER commit or push unless the user explicitly asks. Stage nothing automatically; report what
-  changed and wait.
+- NEVER commit, push, or open/merge a PR unless the user explicitly asks for it in that moment.
+  Stage nothing automatically; report what changed and wait.
 - Use `Closes #<issue>` in commit messages when the work resolves a filed issue.
+- Never commit customer-derived artifacts — real customer names, WSDLs, XML, or sample payloads,
+  not even as test fixtures. Generate synthetic equivalents (`example.com`-style) or reuse
+  existing generic fixtures.
 
 ## Working principles
 
-Behavioral guidelines to reduce common coding mistakes; they compose with the project-specific
-conventions below.
-**Tradeoff:** these bias toward caution over speed. For trivial tasks, use judgment.
-
-### 1. Think before coding
-**Don't assume silently. Surface tradeoffs.**
-- State assumptions explicitly rather than picking one silently.
-- If multiple reasonable interpretations exist, name them instead of just choosing.
-- Ask before proceeding only on judgment calls with real cost to being wrong (data model, auth,
-  hard-to-undo changes). For everything else, state your assumption and proceed — don't stall on
-  low-stakes ambiguity.
-- If a simpler approach exists, say so, even if it means pushing back.
-
-### 2. Simplicity first
-**No speculative abstraction.**
-- No features, flexibility, or config beyond what was asked.
-- No abstractions for single-use code.
-- If it could be a third of the length, rewrite it shorter.
-
-### 3. Surgical changes
-**Touch only what you must.**
-- Don't "improve," reformat, or refactor adjacent code, even if it's messy.
-- Match existing style even where you'd choose differently.
-- Remove imports/vars/functions your change made unused; leave pre-existing dead code alone
-  (mention it, don't touch it).
-- Every changed line should trace to the request.
-
-### 4. Verify before declaring done
+- Don't refactor, reformat, or "improve" adjacent code, even if it's messy. Remove
+  imports/vars/methods your change made unused; leave pre-existing dead code alone (mention it,
+  don't touch it).
 - For bug fixes: reproduce with a failing test first, then fix.
-- For new logic: add tests for the cases that matter (invalid input, edge cases), not exhaustive
-  coverage.
-
-### 5. Never push on your own
-- Never run `git push` (or open/merge a PR) without the user explicitly asking for it in that
-  moment.
+- If a simpler approach than the one requested exists, say so, even if it means pushing back.
 
 ## Modules
 
@@ -72,31 +45,25 @@ mvn -pl core -am -DskipTests package   # one module + its dependencies
 
 ## Testing
 
-- **Default to running only the tests affected by a change** — the class(es)/package(s) touched,
-  not the whole suite. Never run a full unit test run (`mvn test` / `mvn -pl core -am test`) or
-  the full distribution IT suite without asking the user first; these are slow and often fail on
-  unrelated/network-dependent tests offline.
 - **To run tests, use the `test-runner` agent** — it owns this repo's run mechanics: the
   `-Dtest`/`-Dit.test` suite traps that silently run the wrong scope, `run-core-test.sh` for a
   single `core` class, rebuilding the distribution zip before tutorial/example ITs, macOS locale
   flags, and the fixed-port (2000/3000/7007) conflicts that fake a regression. Don't hand-roll
   the Maven invocation.
-- Every new function or feature must be covered by at least one test — before writing a new test class, check `<module>/src/test/java/<mirrored package>/` for an existing test class covering that production class and add a test method there; only create a new `<ClassName>Test` class if none exists yet.
-- Test observable behavior — inputs/outputs, edge cases (zero/identical values, boundaries), and any documented invariants. Do not write tests for record accessors, generated `equals`/`hashCode`/`toString`, or plain getters/setters — there's no behavior there to break.
-- Test classes and `@Test` methods are package-private, not `public` — JUnit 5 doesn't
-  require `public`, and the existing tests are overwhelmingly package-private.
-- Test classes mirror the package of the class under test (e.g. `com.predic8.membrane.core.util.URLUtil` → `com.predic8.membrane.core.util.URLUtilTest`).
-- Prefer a few tests that pin down real behavior (known-value checks, symmetry/round-trip properties) over exhaustive trivial cases.
-
-### Membrane Test Environment
-
+- **Run only the tests affected by a change** — the class(es)/package(s) touched, and report pass
+  counts. Never run a full unit test run (`mvn test` / `mvn -pl core -am test`) or the full
+  distribution IT suite without asking first; these are slow and often fail on
+  unrelated/network-dependent tests offline.
+- Every new function or feature needs at least one test. Before writing a new test class, check
+  `<module>/src/test/java/<mirrored package>/` for an existing test class covering that
+  production class and add a method there; only create `<ClassName>Test` if none exists.
+- Test classes mirror the package of the class under test (`…core.util.URLUtil` →
+  `…core.util.URLUtilTest`) and are package-private, as are `@Test` methods.
 - Before running Membrane tests, check that ports 2000/2001/3000/7007/9000 are free
   (`lsof -nP -iTCP:2000,2001,3000,7007,9000 -sTCP:LISTEN`); an IDE-launched Membrane instance
   frequently blocks test runs.
 - Integration tests can be flaky for environmental reasons (TIME_WAIT collisions on macOS, accept
   backlog limits). Triage a failure as environmental before changing product code.
-- Run the targeted package test suite (e.g. wsdl2openapi) after changes rather than the full
-  build; report pass counts.
 
 ## Configuration grammar (annotations)
 
@@ -128,26 +95,18 @@ example/tutorial discovery and scaffolding.
 
 ## Code style
 
+- Interceptors must be thread safe (`Interceptor` javadoc): one instance per config element serves
+  every request thread, and `<call>`/internal routing can re-enter it on its own thread. Keep
+  per-request state in locals or on the `Exchange`; fields hold configuration, written before
+  `init()` and read-only afterwards.
 - Don't abbreviate parameter names in public interfaces (private methods: fine) — `docs/CONVENTIONS.md`.
 - Prefer `SequencedCollection.getFirst()` over `.get(0)`; custom list-like wrappers (e.g.
   `ValidationErrors`) should expose a delegating `getFirst()`.
+- Prefer `final` fields, parameters, and locals, and immutable data (`List.of`,
+  `Collections.unmodifiableList`, defensive copies) over mutating caller-owned collections.
 - SLF4J everywhere; no `System.out` in production code.
 - Attack/validation-detection log lines (e.g. XXE/DOCTYPE detection) are intentionally `info`,
   not `warn` — that's an ops-tunable level, not a severity bug to flag in review.
-- Prefer pure methods where practical: same input → same output, minimal side effects; push I/O and mutation to the edges of a call chain.
-- Prefer `final` fields, parameters, and locals; a variable that must be reassigned is a signal to extract a helper method instead.
-- Treat data as immutable by default — prefer immutable collections (`List.of`, `Collections.unmodifiableList`) or defensive copies over mutating a caller-owned array/collection in place.
-- Interceptors must be thread safe (`Interceptor` javadoc): one instance per config element serves every request thread, and `<call>`/internal routing can re-enter it on its own thread. Keep per-request state in locals or on the `Exchange`; fields hold configuration, written before `init()` and read-only afterwards.
-- Use Streams only where they read more clearly than an equivalent loop; don't force a stream onto logic a plain loop expresses better.
-- Model control flow declaratively where it fits: pattern matching (`switch` over sealed types/records, pattern `instanceof`) over long `if`/`else` chains.
-- No hidden side effects in getter-like methods — anything that mutates state, logs, or does I/O should be named and called out explicitly, not buried in a computation.
-- Keep methods small and cohesive with a single responsibility; make result and exception behavior explicit — return a value (or `Optional`) for expected outcomes, reserve exceptions for actual failures, and declare checked exceptions rather than swallowing them.
-
-## Git hygiene
-
-Never commit customer-derived artifacts — real customer names, WSDLs, XML, or sample payloads —
-even as test fixtures. Generate synthetic equivalents (`example.com`-style) or reuse existing
-generic fixtures instead.
 
 ## Release notes
 
