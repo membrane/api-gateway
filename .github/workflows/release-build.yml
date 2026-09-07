@@ -13,8 +13,6 @@ on:
 permissions:
   contents: write
   pull-requests: write
-  # Needed to start the 'Build Docker Image' workflow via workflow_dispatch.
-  actions: write
 
 jobs:
   build-release:
@@ -103,13 +101,34 @@ jobs:
           artifacts: "core/target/classes/com/predic8/membrane/core/config/json/membrane.schema.json,distribution/target/membrane-api-gateway-${{ steps.get_version.outputs.VERSION }}.zip,distribution/target/membrane-api-gateway-${{ steps.get_version.outputs.VERSION }}.zip.asc"
           token: ${{ github.token }}
 
-      # A release created with the default GITHUB_TOKEN does not fire the
-      # 'release: published' event: GitHub suppresses workflow triggering for
-      # events created by GITHUB_TOKEN, so the Docker build never started.
-      # workflow_dispatch is explicitly exempt from that restriction, so the
-      # build is kicked off here instead. It is dispatched on the base branch
-      # (the tag has no workflow file of its own for older releases) and gets
-      # the release tag passed as an input.
+  trigger-website:
+    needs: build-release
+    uses: ./.github/workflows/trigger-website-pipeline.yml
+    with:
+      version: ${{ needs.build-release.outputs.version }}
+    secrets: inherit
+
+  # A release created with the default GITHUB_TOKEN does not fire the
+  # 'release: published' event: GitHub suppresses workflow triggering for
+  # events created by GITHUB_TOKEN, so the Docker build never started.
+  # workflow_dispatch is explicitly exempt from that restriction, so the build
+  # is kicked off here instead.
+  #
+  # Dispatched on the base branch rather than on the tag, because release-pr.yml
+  # creates a branch AND a tag named v<version>, so '--ref v<version>' would be
+  # ambiguous; the tag is passed as an input instead.
+  #
+  # Its own job on purpose: a dispatch that fails -- against a branch whose
+  # docker-publish.yml predates the 'tag' input the API rejects it with 422 --
+  # must not fail the release itself or block the jobs beside it. It also keeps
+  # 'actions: write' off the Maven steps in build-release.
+  trigger-docker:
+    needs: build-release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write
+    steps:
       - name: Trigger Docker image build
         shell: bash
         env:
@@ -124,10 +143,3 @@ jobs:
             --ref "$BASE_REF" \
             --field tag="$RELEASE_TAG" \
             --field latest=false
-
-  trigger-website:
-    needs: build-release
-    uses: ./.github/workflows/trigger-website-pipeline.yml
-    with:
-      version: ${{ needs.build-release.outputs.version }}
-    secrets: inherit
