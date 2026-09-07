@@ -23,8 +23,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.time.Duration;
 
+import static com.predic8.membrane.core.util.NetworkUtil.getFreePortEqualAbove;
 import static org.junit.jupiter.api.Assertions.*;
 
 class RouterCLITest {
@@ -86,6 +89,30 @@ class RouterCLITest {
         cl.parse(new String[]{"argon2id"});
 
         assertEquals(19, RouterCLI.getArgon2Version(cl));
+    }
+
+    /**
+     * <code>oas -l ...</code> opened the port before init() had created the transport, so the
+     * subcommand always died with a NullPointerException. Starting the router must open the port
+     * and leave the router running, see issue #3216.
+     */
+    @Test
+    void initRouterByOpenApiSpecStartsRouter() throws Exception {
+        int port = getFreePortEqualAbove(3000);
+        MembraneCommandLine cl = new MembraneCommandLine();
+        cl.parse(new String[]{"oas", "-l", "src/test/resources/configuration/openapi/simple.oas.yml", "-p", String.valueOf(port)});
+
+        Router router = RouterCLI.initRouterByOpenApiSpec(cl);
+        try {
+            assertTrue(router.isRunning());
+            assertDoesNotThrow(() -> {
+                try (Socket socket = new Socket()) {
+                    socket.connect(new InetSocketAddress("localhost", port), 2000);
+                }
+            });
+        } finally {
+            router.stop();
+        }
     }
 
     /**
