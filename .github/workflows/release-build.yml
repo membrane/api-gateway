@@ -13,6 +13,8 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  # Needed to start the 'Build Docker Image' workflow via workflow_dispatch.
+  actions: write
 
 jobs:
   build-release:
@@ -109,6 +111,28 @@ jobs:
           bodyFile: "distribution/release-notes/${{ steps.get_version.outputs.VERSION }}.md"
           artifacts: "core/target/classes/com/predic8/membrane/core/config/json/membrane.schema.json,distribution/target/membrane-api-gateway-${{ steps.get_version.outputs.VERSION }}.zip,distribution/target/membrane-api-gateway-${{ steps.get_version.outputs.VERSION }}.zip.asc"
           token: ${{ github.token }}
+
+      # A release created with the default GITHUB_TOKEN does not fire the
+      # 'release: published' event: GitHub suppresses workflow triggering for
+      # events created by GITHUB_TOKEN, so the Docker build never started.
+      # workflow_dispatch is explicitly exempt from that restriction, so the
+      # build is kicked off here instead. It is dispatched on the base branch
+      # (the tag has no workflow file of its own for older releases) and gets
+      # the release tag passed as an input.
+      - name: Trigger Docker image build
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          BASE_REF: ${{ github.base_ref }}
+          RELEASE_TAG: ${{ github.head_ref }}
+        run: |
+          set -euo pipefail
+          gh workflow run docker-publish.yml \
+            --repo "$REPO" \
+            --ref "$BASE_REF" \
+            --field tag="$RELEASE_TAG" \
+            --field latest=false
 
       - name: Trigger website pipeline on GitLab
         shell: bash
