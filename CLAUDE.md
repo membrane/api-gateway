@@ -102,8 +102,10 @@ example/tutorial discovery and scaffolding.
 - Don't abbreviate parameter names in public interfaces (private methods: fine) — `docs/CONVENTIONS.md`.
 - Prefer `SequencedCollection.getFirst()` over `.get(0)`; custom list-like wrappers (e.g.
   `ValidationErrors`) should expose a delegating `getFirst()`.
-- Prefer `final` fields, parameters, and locals, and immutable data (`List.of`,
-  `Collections.unmodifiableList`, defensive copies) over mutating caller-owned collections.
+- Prefer `final` fields, parameters, and locals, and immutable data over mutating caller-owned
+  collections: `List.of` or `List.copyOf` for an immutable snapshot;
+  `Collections.unmodifiableList` only as a read-only *view* — it still reflects later changes to
+  the backing list, so use it when that live behaviour is intended, not as a defensive copy.
 - SLF4J everywhere; no `System.out` in production code.
 - Attack/validation-detection log lines (e.g. XXE/DOCTYPE detection) are intentionally `info`,
   not `warn` — that's an ops-tunable level, not a severity bug to flag in review.
