@@ -60,7 +60,7 @@ public class MembraneCommandLine {
             addSubcommand(new CliCommand("generate-jwk", "Generate a JSON Web Key and write it to a file") {{
                 addOption(builder("o").longOpt("output").argName("file").hasArg().required().desc("Output file for JWK").build());
                 addOption(builder("b").longOpt("bits").argName("bitlength").hasArg().desc("Key length in bits (2048-16384, default: 2048)").build());
-                addOption(builder("overwrite").desc("Overwrite the output file, if it exists.").build());
+                addOption(builder("overwrite").longOpt("overwrite").desc("Overwrite the output file, if it exists.").build());
             }});
 
             addSubcommand(new CliCommand("private-jwk-to-public", "Convert a private JWK to a public JWK.") {{
