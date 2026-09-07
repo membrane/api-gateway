@@ -96,11 +96,16 @@ jobs:
       # 'latest' follows the release for a real release, and the 'latest' input
       # for a manual run. Without the explicit event check a manual run would
       # always push 'latest', because github.event.release is empty there.
+      # 'flavor: latest=false' is required as well: metadata-action defaults to
+      # 'latest=auto', which adds 'latest' for any semver version regardless of
+      # the enable= condition on the raw tag below.
       - name: Extract Docker metadata
         id: meta
         uses: docker/metadata-action@v4
         with:
           images: "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
+          flavor: |
+            latest=false
           tags: |
             type=semver,pattern={{version}},value=${{ steps.release_version.outputs.release_tag }}
             type=semver,pattern={{major}}.{{minor}},value=${{ steps.release_version.outputs.release_tag }}
