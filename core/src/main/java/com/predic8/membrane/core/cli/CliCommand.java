@@ -15,7 +15,7 @@ package com.predic8.membrane.core.cli;
 
 import com.predic8.membrane.core.util.Pair;
 import org.apache.commons.cli.*;
-import org.jetbrains.annotations.*;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
@@ -149,6 +149,28 @@ public class CliCommand {
 
     public String getOptionValue(String opt) {
         return commandLine != null ? trim(commandLine.getOptionValue(opt)) : null;
+    }
+
+    /**
+     * Returns the value of a numeric option, or {@code defaultValue} if the option is not set.
+     *
+     * @throws InvalidOptionValueException if the value is not a number or outside minimum..maximum
+     */
+    public int getIntOptionValue(String option, int defaultValue, int minimum, int maximum) {
+        String value = getOptionValue(option);
+        if (value == null) {
+            return defaultValue;
+        }
+        long parsed;
+        try {
+            parsed = Long.parseLong(value);
+        } catch (NumberFormatException e) {
+            throw new InvalidOptionValueException("Invalid value for -%s: '%s' is not a number.".formatted(option, value));
+        }
+        if (parsed < minimum || parsed > maximum) {
+            throw new InvalidOptionValueException("Invalid value for -%s: %d must be between %d and %d.".formatted(option, parsed, minimum, maximum));
+        }
+        return (int) parsed;
     }
 
     public String getName() {

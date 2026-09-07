@@ -28,7 +28,6 @@ import java.nio.file.Path;
 import java.security.SecureRandom;
 import java.util.Map;
 
-import static java.lang.Integer.parseInt;
 import static java.lang.System.exit;
 import static java.nio.file.Files.writeString;
 import static java.nio.file.Paths.get;
@@ -40,11 +39,7 @@ public class JwkGenerator {
     private static final Logger log = LoggerFactory.getLogger(JwkGenerator.class);
 
     public static void generateJWK(MembraneCommandLine commandLine) {
-        int bits = 2048;
-        String bitsArg = commandLine.getCommand().getOptionValue("b");
-        if (bitsArg != null) {
-            bits = parseInt(bitsArg);
-        }
+        int bits = commandLine.getCommand().getIntOptionValue("b", 2048, 2048, 16384);
 
         boolean overwrite = commandLine.getCommand().isOptionSet("overwrite");
         String outputFile = commandLine.getCommand().getOptionValue("o");

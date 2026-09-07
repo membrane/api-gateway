@@ -16,14 +16,14 @@ package com.predic8.membrane.core.cli;
 
 import com.predic8.membrane.core.router.Router;
 import com.predic8.membrane.test.TestAppender;
+import org.apache.commons.cli.ParseException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.Logger;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class RouterCLITest {
 
@@ -40,6 +40,19 @@ class RouterCLITest {
     void verifyYamlConfiguration() {
         assertDoesNotThrow(() ->
                 RouterCLI.verifyConfiguration("src/test/resources/configuration/dry-run.apis.yaml"));
+    }
+
+    /**
+     * <code>oas -l ""</code> passes commons-cli's required check (it only guarantees presence) and
+     * used to end in a message-less RuntimeException, see issue #3224.
+     */
+    @Test
+    void getLocationRejectsEmptyLocation() throws ParseException {
+        MembraneCommandLine cl = new MembraneCommandLine();
+        cl.parse(new String[]{"oas", "-l", ""});
+
+        assertEquals("Invalid value for -l: the OpenAPI location must not be empty.",
+                assertThrows(InvalidOptionValueException.class, () -> RouterCLI.getLocation(cl)).getMessage());
     }
 
     /**

@@ -150,4 +150,46 @@ public class CliCommandTest {
         assertFalse(result.isOptionSet("a"));
         assertNull(result.getOptionValue("a"));
     }
+
+    @Test
+    void getIntOptionValueReturnsDefaultWhenOptionNotSet() throws ParseException {
+        assertEquals(2048, rootCommand.parse(new String[]{}).getIntOptionValue("a", 2048, 2048, 16384));
+    }
+
+    @Test
+    void getIntOptionValueParsesNumber() throws ParseException {
+        assertEquals(4096, rootCommand.parse(new String[]{"-a", "4096"}).getIntOptionValue("a", 2048, 2048, 16384));
+    }
+
+    @Test
+    void getIntOptionValueAcceptsRangeBoundaries() throws ParseException {
+        assertEquals(2048, rootCommand.parse(new String[]{"-a", "2048"}).getIntOptionValue("a", 4096, 2048, 16384));
+        assertEquals(16384, rootCommand.parse(new String[]{"-a", "16384"}).getIntOptionValue("a", 4096, 2048, 16384));
+    }
+
+    @Test
+    void getIntOptionValueRejectsNonNumber() throws ParseException {
+        CliCommand cmd = rootCommand.parse(new String[]{"-a", "abc"});
+        assertEquals("Invalid value for -a: 'abc' is not a number.",
+                assertThrows(InvalidOptionValueException.class, () -> cmd.getIntOptionValue("a", 2048, 2048, 16384)).getMessage());
+    }
+
+    @Test
+    void getIntOptionValueRejectsEmptyValue() throws ParseException {
+        CliCommand cmd = rootCommand.parse(new String[]{"-a", ""});
+        assertEquals("Invalid value for -a: '' is not a number.",
+                assertThrows(InvalidOptionValueException.class, () -> cmd.getIntOptionValue("a", 2048, 2048, 16384)).getMessage());
+    }
+
+    @Test
+    void getIntOptionValueRejectsValueOutOfRange() throws ParseException {
+        CliCommand tooSmall = rootCommand.parse(new String[]{"-a", "1024"});
+        assertEquals("Invalid value for -a: 1024 must be between 2048 and 16384.",
+                assertThrows(InvalidOptionValueException.class, () -> tooSmall.getIntOptionValue("a", 2048, 2048, 16384)).getMessage());
+
+        // Beyond Integer.MAX_VALUE it must still be reported as out of range, not as "not a number".
+        CliCommand tooLarge = rootCommand.parse(new String[]{"-a", "99999999999"});
+        assertEquals("Invalid value for -a: 99999999999 must be between 2048 and 16384.",
+                assertThrows(InvalidOptionValueException.class, () -> tooLarge.getIntOptionValue("a", 2048, 2048, 16384)).getMessage());
+    }
 }

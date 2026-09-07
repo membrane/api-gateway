@@ -55,7 +55,7 @@ import static com.predic8.membrane.core.util.ExceptionUtil.concatMessageAndCause
 import static com.predic8.membrane.core.util.OSUtil.fixBackslashes;
 import static com.predic8.membrane.core.util.URIUtil.pathFromFileURI;
 import static com.predic8.membrane.core.util.text.TerminalColors.*;
-import static java.lang.Integer.parseInt;
+import static java.lang.Integer.MAX_VALUE;
 import static org.apache.commons.lang3.exception.ExceptionUtils.getMessage;
 import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCauseMessage;
 
@@ -66,6 +66,9 @@ public class RouterCLI {
     public static void main(String[] args) {
         try {
             start(args);
+        } catch (InvalidOptionValueException e) {
+            System.err.println(e.getMessage());
+            System.exit(1);
         } catch (ExitException ignored) {
             // Nothing logged on purpose. The exception is just to trigger exit at one place.
             // Do logging where the exception is thrown.
@@ -119,16 +122,12 @@ public class RouterCLI {
     private static void argon2id(MembraneCommandLine commandLine) {
         try {
             String password = commandLine.getCommand().getOptionValue("pass");
-            String version = commandLine.getCommand().getOptionValue("v");
             String salt = commandLine.getCommand().getOptionValue("s");
-            String iterations = commandLine.getCommand().getOptionValue("i");
-            String memory = commandLine.getCommand().getOptionValue("m");
-            String parallelism = commandLine.getCommand().getOptionValue("p");
 
-            int v = version == null ? 19 : Integer.parseInt(version);
-            int i = iterations == null ? 3 : Integer.parseInt(iterations);
-            int m = memory == null ? 65536 : Integer.parseInt(memory);
-            int p = parallelism == null ? 1 : Integer.parseInt(parallelism);
+            int v = commandLine.getCommand().getIntOptionValue("v", 19, 16, 19); // Argon2 only defines 0x10 and 0x13
+            int i = commandLine.getCommand().getIntOptionValue("i", 3, 1, MAX_VALUE);
+            int m = commandLine.getCommand().getIntOptionValue("m", 65536, 1, MAX_VALUE);
+            int p = commandLine.getCommand().getIntOptionValue("p", 1, 1, MAX_VALUE);
             if (password == null) {
                 System.out.println("Enter password to hash:");
                 Scanner s = new Scanner(System.in);
@@ -142,6 +141,9 @@ public class RouterCLI {
             }
 
             System.out.println(buildArgon2idPCH(password.getBytes(StandardCharsets.UTF_8), s, v, i, m, p));
+        } catch (InvalidOptionValueException e) {
+            System.err.println(e.getMessage());
+            System.exit(1);
         } catch (Exception e) {
             System.err.println(getExceptionMessageWithCauses(e));
             System.exit(1);
@@ -208,6 +210,8 @@ public class RouterCLI {
             log.error("{}", "%s%s%s\n%s".formatted(RED(), e.getMessage(), RESET(), report));
         } catch (ExitException ignored) {
             // do nothing
+        } catch (InvalidOptionValueException e) {
+            System.err.println(e.getMessage());
         } catch (Exception ex) {
             SpringConfigurationErrorHandler.handleRootCause(ex, log);
         }
@@ -253,8 +257,7 @@ public class RouterCLI {
 
     private static @NotNull APIProxy getApiProxy(MembraneCommandLine commandLine) throws IOException {
         APIProxy api = new APIProxy();
-        api.setPort(commandLine.getCommand().isOptionSet("p") ?
-                parseInt(commandLine.getCommand().getOptionValue("p")) : 2000);
+        api.setPort(commandLine.getCommand().getIntOptionValue("p", 2000, 1, 65535));
         api.setOpenapi(List.of(getOpenAPISpec(commandLine)));
         return api;
     }
@@ -270,10 +273,11 @@ public class RouterCLI {
         return spec;
     }
 
-    private static String getLocation(MembraneCommandLine commandLine) throws IOException {
+    static String getLocation(MembraneCommandLine commandLine) throws IOException {
         String location = commandLine.getCommand().getOptionValue("l");
 
-        if (location == null || location.isEmpty()) throw new RuntimeException(); // unreachable
+        if (location == null || location.isEmpty())
+            throw new InvalidOptionValueException("Invalid value for -l: the OpenAPI location must not be empty.");
         if (location.startsWith("http://") || location.startsWith("https://")) return location;
 
         File locFile = new File(location);
