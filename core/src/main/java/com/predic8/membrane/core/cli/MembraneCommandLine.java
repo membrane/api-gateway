@@ -92,8 +92,4 @@ public class MembraneCommandLine {
     public CliCommand getCommand() {
         return currentNamespace;
     }
-
-    public boolean noCommand() {
-        return currentNamespace == rootNamespace;
-    }
 }

@@ -85,8 +85,7 @@ public class RouterCLI {
             System.exit(0);
         }
 
-        // Dry run
-        if (commandLine.noCommand() && commandLine.getCommand().isOptionSet("t")) {
+        if (isDryRun(commandLine)) {
             dryRun(commandLine);
         }
 
@@ -105,6 +104,15 @@ public class RouterCLI {
 
         if (getRouter(commandLine) instanceof DefaultRouter dr)
             dr.waitFor();
+    }
+
+    /**
+     * The {@code start} command is documented as behaving exactly like the command being omitted, so
+     * {@code -t} must terminate after verifying the configuration there too, see issue #3217. Only the
+     * root command and {@code start} declare {@code -t}, so the option alone decides.
+     */
+    static boolean isDryRun(MembraneCommandLine commandLine) {
+        return commandLine.getCommand().isOptionSet("t");
     }
 
     private static void privateJwkToPublic(MembraneCommandLine commandLine) {

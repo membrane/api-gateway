@@ -116,6 +116,28 @@ class RouterCLITest {
     }
 
     /**
+     * <code>start</code> is documented as "Same function as command omitted", but <code>-t</code> was
+     * gated on no command being given, so <code>start -t</code> parsed the option and then started the
+     * gateway for real instead of only verifying the configuration, see issue #3217.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"-t", "--test"})
+    void startWithTestOptionIsADryRun(String spelling) throws ParseException {
+        MembraneCommandLine cl = new MembraneCommandLine();
+        cl.parse(new String[]{"start", spelling, "src/test/resources/configuration/dry-run.apis.yaml"});
+
+        assertTrue(RouterCLI.isDryRun(cl));
+    }
+
+    @Test
+    void startWithoutTestOptionIsNoDryRun() throws ParseException {
+        MembraneCommandLine cl = new MembraneCommandLine();
+        cl.parse(new String[]{"start", "-c", "src/test/resources/configuration/dry-run.apis.yaml"});
+
+        assertFalse(RouterCLI.isDryRun(cl));
+    }
+
+    /**
      * Tests if the basepath is set on the configuration object. If not the resolving of
      * the openapi file in the config will fail.
      */
