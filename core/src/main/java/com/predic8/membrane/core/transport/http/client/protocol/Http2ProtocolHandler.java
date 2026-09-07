@@ -40,9 +40,14 @@ public class Http2ProtocolHandler extends AbstractProtocolHandler {
         super(configuration,connectionFactory);
     }
 
+    /**
+     * Upgrade tokens are case-insensitive, so a client sending <code>Upgrade: H2C</code> has to reach
+     * this handler as well - otherwise no handler matches and the request is denied instead of being
+     * downgraded by {@link #checkUpgradeRequest(Exchange)}.
+     */
     @Override
     public boolean canHandle(Exchange exchange, String protocol) {
-        return HTTP2_CLEAR_PROTOCOL.equals(protocol) || HTTP2_PROTOCOL.equals(protocol);
+        return HTTP2_CLEAR_PROTOCOL.equalsIgnoreCase(protocol) || HTTP2_PROTOCOL.equalsIgnoreCase(protocol);
     }
 
     @Override
