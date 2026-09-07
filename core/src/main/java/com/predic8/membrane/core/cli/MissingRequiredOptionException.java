@@ -13,17 +13,13 @@
    limitations under the License. */
 package com.predic8.membrane.core.cli;
 
-import org.apache.commons.cli.MissingOptionException;
-
-public class MissingRequiredOptionException extends MissingOptionException {
-    private final CliCommand command;
+/**
+ * Signals that a required option was not given. Reported like any other
+ * {@link CommandParseException}: with the message and the help of the affected command.
+ */
+public class MissingRequiredOptionException extends CommandParseException {
 
     public MissingRequiredOptionException(String message, CliCommand command) {
-        super(message);
-        this.command = command;
-    }
-
-    public CliCommand getCommand() {
-      return command;
+        super(message, command);
     }
 }

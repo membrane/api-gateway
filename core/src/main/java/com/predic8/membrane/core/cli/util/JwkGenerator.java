@@ -42,14 +42,9 @@ public class JwkGenerator {
     public static void generateJWK(MembraneCommandLine commandLine) {
         int bits = commandLine.getCommand().getIntOptionValue("b", 2048, 2048, 16384);
 
-        boolean overwrite = commandLine.getCommand().isOptionSet("overwrite");
-        String outputFile = commandLine.getCommand().getTrimmedOptionValue("o");
-
-        if (outputFile == null) {
-            log.error("Missing required option: -o <output file>");
-            commandLine.getCommand().printHelp();
-            exit(1);
-        }
+        // -o is a required option, so the value is always there.
+        Path output = get(commandLine.getCommand().getTrimmedOptionValue("o"));
+        checkOutput(output, commandLine.getCommand().isOptionSet("overwrite"));
 
         RsaJsonWebKey rsaJsonWebKey;
         try {
@@ -61,13 +56,8 @@ public class JwkGenerator {
         rsaJsonWebKey.setUse("sig");
         rsaJsonWebKey.setAlgorithm("RS256");
 
-        Path path = get(outputFile);
-        if (path.toFile().exists() && !overwrite) {
-            log.error("Output file ({}) already exists.", outputFile);
-            exit(1);
-        }
         try {
-            writeString(path, rsaJsonWebKey.toJson(INCLUDE_PRIVATE));
+            writeString(output, rsaJsonWebKey.toJson(INCLUDE_PRIVATE));
         } catch (IOException e) {
             log.error(e.getMessage());
             exit(1);
@@ -102,7 +92,14 @@ public class JwkGenerator {
             return;
         if (pointToSameFile(in, out))
             throw new InvalidOptionValueException("Invalid value for -o: '%s' is the input file. Converting it in place would destroy the private key.".formatted(output));
-        if (!overwrite)
+        checkOutput(out, overwrite);
+    }
+
+    /**
+     * @throws InvalidOptionValueException if the output exists and the user did not allow to replace it
+     */
+    static void checkOutput(Path output, boolean overwrite) {
+        if (exists(output) && !overwrite)
             throw new InvalidOptionValueException("Output file (%s) already exists. Use -overwrite to replace it.".formatted(output));
     }
 

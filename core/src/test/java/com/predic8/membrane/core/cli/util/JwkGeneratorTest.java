@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.cli.util;
 
 import com.predic8.membrane.core.cli.InvalidOptionValueException;
+import com.predic8.membrane.core.cli.MembraneCommandLine;
 import org.jose4j.lang.JoseException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,8 +23,7 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.IOException;
 import java.nio.file.Path;
 
-import static com.predic8.membrane.core.cli.util.JwkGenerator.checkFiles;
-import static com.predic8.membrane.core.cli.util.JwkGenerator.privateJWKtoPublic;
+import static com.predic8.membrane.core.cli.util.JwkGenerator.*;
 import static java.nio.file.Files.*;
 import static org.jose4j.jwk.JsonWebKey.OutputControlLevel.INCLUDE_PRIVATE;
 import static org.jose4j.jwk.RsaJwkGenerator.generateJwk;
@@ -93,6 +93,21 @@ class JwkGeneratorTest {
         assertEquals("Invalid value for -i: '%s' is not a file.".formatted(missing),
                 assertThrows(InvalidOptionValueException.class,
                         () -> checkFiles(missing.toString(), dir.resolve("public.json").toString(), false)).getMessage());
+    }
+
+    /**
+     * generate-jwk reports an existing output file the same way private-jwk-to-public does, and says
+     * which flag replaces it. It must do so before spending time on generating a key.
+     */
+    @Test
+    void generateJwkRefusesToReplaceExistingOutputWithoutOverwrite() throws Exception {
+        MembraneCommandLine cl = new MembraneCommandLine();
+        cl.parse(new String[]{"generate-jwk", "-o", privateJwk.toString()});
+
+        String before = readString(privateJwk);
+        assertEquals("Output file (%s) already exists. Use -overwrite to replace it.".formatted(privateJwk),
+                assertThrows(InvalidOptionValueException.class, () -> generateJWK(cl)).getMessage());
+        assertEquals(before, readString(privateJwk));
     }
 
     @Test

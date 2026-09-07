@@ -63,9 +63,10 @@ class RouterCLITest {
     /**
      * Argon2 defines only 0x10 and 0x13, so the range 16..19 wrongly accepted 17 and 18. Bouncy
      * Castle then threw "unknown Argon2 version" - after the password prompt had already run.
+     * Every unsupported value gets the same message, whether it is inside that range or not.
      */
     @ParameterizedTest
-    @ValueSource(strings = {"17", "18"})
+    @ValueSource(strings = {"0", "17", "18", "20", "-1"})
     void argon2VersionRejectsUndefinedVersions(String version) throws ParseException {
         MembraneCommandLine cl = new MembraneCommandLine();
         cl.parse(new String[]{"argon2id", "-v", version});

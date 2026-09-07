@@ -48,8 +48,10 @@ public class SingleTestRunner {
         launcher.execute(discoveryRequest);
 
         TestExecutionSummary summary = listener.getSummary();
-        summary.printTo(new PrintWriter(System.out));
-        summary.printFailuresTo(new PrintWriter(System.out), 100);
+        // Autoflush: without it the buffered summary is lost when main() calls System.exit().
+        PrintWriter out = new PrintWriter(System.out, true);
+        summary.printTo(out);
+        summary.printFailuresTo(out, 100);
         return isFailure(summary) ? 1 : 0;
     }
 

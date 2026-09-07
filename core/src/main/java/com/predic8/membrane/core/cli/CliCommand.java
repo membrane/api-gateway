@@ -17,17 +17,16 @@ import com.predic8.membrane.core.util.Pair;
 import org.apache.commons.cli.*;
 import org.jetbrains.annotations.NotNull;
 
+import java.math.BigInteger;
 import java.util.*;
 
+import static java.math.BigInteger.valueOf;
 import static org.apache.commons.cli.Option.builder;
 import static org.apache.commons.lang3.StringUtils.trim;
 
 public class CliCommand {
 
-    /**
-     * Registered on every command, so that no command can forget to support {@code -h}.
-     */
-    private static final Option HELP = builder("h").longOpt("help").desc("Display this text").build();
+    private static final String HELP_OPTION = "h";
 
     private final String name;
     private final String description;
@@ -41,7 +40,7 @@ public class CliCommand {
         this.name = name;
         this.description = description;
         this.subcommands = new LinkedHashMap<>();
-        this.options = new Options().addOption(HELP);
+        this.options = withHelp(new Options());
         this.examples = new ArrayList<>();
     }
 
@@ -67,7 +66,7 @@ public class CliCommand {
             if (hasSubcommand(cmd)) {
                 return subcommands.get(cmd).parse(Arrays.copyOfRange(args, 1, args.length));
             }
-            throw new ParseException("Unknown command: " + cmd);
+            throw new CommandParseException("Unknown command: " + cmd, this);
         }
 
         try {
@@ -77,7 +76,7 @@ public class CliCommand {
         } catch (MissingOptionException e) {
             // Asking for help must work even when required options are missing.
             commandLine = new DefaultParser().parse(optionsWithoutRequired(), args);
-            if (!isOptionSet(HELP.getOpt())) {
+            if (!isOptionSet(HELP_OPTION)) {
                 throw new MissingRequiredOptionException(e.getMessage(), this);
             }
         }
@@ -95,6 +94,16 @@ public class CliCommand {
         if (!leftovers.isEmpty()) {
             throw new CommandParseException("Unexpected argument: " + String.join(" ", leftovers), this);
         }
+    }
+
+    /**
+     * Returns a copy of {@code source} that also carries {@code -h}, so that no command can forget
+     * to support it. A copy, because {@code source} may be owned - and shared - by the caller.
+     */
+    private static Options withHelp(Options source) {
+        Options copy = new Options().addOption(builder(HELP_OPTION).longOpt("help").desc("Display this text").build());
+        source.getOptions().forEach(copy::addOption);
+        return copy;
     }
 
     private Options optionsWithoutRequired() {
@@ -175,8 +184,7 @@ public class CliCommand {
     }
 
     public void setOptions(Options options) {
-        this.options = options;
-        this.options.addOption(HELP);
+        this.options = withHelp(options);
     }
 
     public boolean isOptionSet(String opt) {
@@ -202,20 +210,27 @@ public class CliCommand {
      * @throws InvalidOptionValueException if the value is not a number or outside minimum..maximum
      */
     public int getIntOptionValue(String option, int defaultValue, int minimum, int maximum) {
-        String value = getTrimmedOptionValue(option);
+        final String value = getTrimmedOptionValue(option);
         if (value == null) {
             return defaultValue;
         }
-        long parsed;
+        final BigInteger parsed = parseNumber(option, value);
+        if (parsed.compareTo(valueOf(minimum)) < 0 || parsed.compareTo(valueOf(maximum)) > 0) {
+            throw new InvalidOptionValueException("Invalid value for -%s: %d must be between %d and %d.".formatted(option, parsed, minimum, maximum));
+        }
+        return parsed.intValueExact();
+    }
+
+    /**
+     * Parses without a width limit, so that a value too large for an {@code int} is reported as out
+     * of range rather than as not being a number.
+     */
+    private static BigInteger parseNumber(String option, String value) {
         try {
-            parsed = Long.parseLong(value);
+            return new BigInteger(value);
         } catch (NumberFormatException e) {
             throw new InvalidOptionValueException("Invalid value for -%s: '%s' is not a number.".formatted(option, value));
         }
-        if (parsed < minimum || parsed > maximum) {
-            throw new InvalidOptionValueException("Invalid value for -%s: %d must be between %d and %d.".formatted(option, parsed, minimum, maximum));
-        }
-        return (int) parsed;
     }
 
     public String getName() {

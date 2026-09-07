@@ -57,6 +57,7 @@ import static com.predic8.membrane.core.util.OSUtil.fixBackslashes;
 import static com.predic8.membrane.core.util.URIUtil.pathFromFileURI;
 import static com.predic8.membrane.core.util.text.TerminalColors.*;
 import static java.lang.Integer.MAX_VALUE;
+import static java.lang.Integer.MIN_VALUE;
 import static org.apache.commons.lang3.exception.ExceptionUtils.getMessage;
 import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCauseMessage;
 
@@ -68,13 +69,21 @@ public class RouterCLI {
         try {
             start(args);
         } catch (InvalidOptionValueException e) {
-            System.err.println(e.getMessage());
-            System.exit(1);
+            fail(e.getMessage());
         } catch (ExitException ignored) {
             // Nothing logged on purpose. The exception is just to trigger exit at one place.
             // Do logging where the exception is thrown.
             System.exit(1);
         }
+    }
+
+    /**
+     * Reports a usage error to the user and terminates. Not for internal failures: those belong in
+     * the log, together with their stack trace.
+     */
+    private static void fail(String message) {
+        System.err.println(message);
+        System.exit(1);
     }
 
     private static void start(String[] args) {
@@ -146,11 +155,9 @@ public class RouterCLI {
 
             System.out.println(buildArgon2idPCH(password.getBytes(StandardCharsets.UTF_8), s, v, i, m, p));
         } catch (InvalidOptionValueException e) {
-            System.err.println(e.getMessage());
-            System.exit(1);
+            fail(e.getMessage());
         } catch (Exception e) {
-            System.err.println(getExceptionMessageWithCauses(e));
-            System.exit(1);
+            fail(getExceptionMessageWithCauses(e));
         }
         System.exit(0);
     }
@@ -159,7 +166,7 @@ public class RouterCLI {
      * Argon2 defines only the versions 0x10 (16) and 0x13 (19); Bouncy Castle rejects any other value.
      */
     static int getArgon2Version(MembraneCommandLine commandLine) {
-        int version = commandLine.getCommand().getIntOptionValue("v", 19, 16, 19);
+        int version = commandLine.getCommand().getIntOptionValue("v", 19, MIN_VALUE, MAX_VALUE);
         if (version != 16 && version != 19)
             throw new InvalidOptionValueException("Invalid value for -v: %d is not a supported Argon2 version. Use 16 (0x10) or 19 (0x13).".formatted(version));
         return version;
@@ -225,7 +232,7 @@ public class RouterCLI {
         } catch (ExitException ignored) {
             // do nothing
         } catch (InvalidOptionValueException e) {
-            System.err.println(e.getMessage());
+            fail(e.getMessage());
         } catch (Exception ex) {
             SpringConfigurationErrorHandler.handleRootCause(ex, log);
         }
@@ -314,9 +321,6 @@ public class RouterCLI {
 
         try {
             cl.parse(args);
-        } catch (MissingRequiredOptionException e) {
-            e.getCommand().printHelp();
-            System.exit(1);
         } catch (CommandParseException e) {
             System.err.println(e.getMessage());
             e.getCommand().printHelp();
