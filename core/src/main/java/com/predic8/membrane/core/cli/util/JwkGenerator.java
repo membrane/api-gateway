@@ -42,7 +42,7 @@ public class JwkGenerator {
         int bits = commandLine.getCommand().getIntOptionValue("b", 2048, 2048, 16384);
 
         boolean overwrite = commandLine.getCommand().isOptionSet("overwrite");
-        String outputFile = commandLine.getCommand().getOptionValue("o");
+        String outputFile = commandLine.getCommand().getTrimmedOptionValue("o");
 
         if (outputFile == null) {
             log.error("Missing required option: -o <output file>");

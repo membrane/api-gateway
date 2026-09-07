@@ -170,7 +170,16 @@ public class CliCommand {
     }
 
     public String getOptionValue(String opt) {
-        return commandLine != null ? trim(commandLine.getOptionValue(opt)) : null;
+        return commandLine != null ? commandLine.getOptionValue(opt) : null;
+    }
+
+    /**
+     * Returns the value of an option with surrounding whitespace removed. Only for file locations
+     * and the like; values carrying a secret must be read with {@link #getOptionValue(String)},
+     * byte-for-byte.
+     */
+    public String getTrimmedOptionValue(String opt) {
+        return trim(getOptionValue(opt));
     }
 
     /**
@@ -179,7 +188,7 @@ public class CliCommand {
      * @throws InvalidOptionValueException if the value is not a number or outside minimum..maximum
      */
     public int getIntOptionValue(String option, int defaultValue, int minimum, int maximum) {
-        String value = getOptionValue(option);
+        String value = getTrimmedOptionValue(option);
         if (value == null) {
             return defaultValue;
         }

@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.cli;
 
 import org.apache.commons.cli.Option;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -60,5 +61,17 @@ class MembraneCommandLineTest {
         for (Option option : cl.getCommand().getOptions().getOptions()) {
             assertNotNull(option.getLongOpt(), "-" + option.getOpt() + " of " + command + " has no long option");
         }
+    }
+
+    /**
+     * The argon2id password must reach the hash byte-for-byte; trimming it made two different
+     * passwords produce one identical PCH, see issue #3220.
+     */
+    @Test
+    void argon2idPasswordKeepsSurroundingWhitespace() throws Exception {
+        MembraneCommandLine cl = new MembraneCommandLine();
+        cl.parse(new String[]{"argon2id", "-pass", "  abc  "});
+
+        assertEquals("  abc  ", cl.getCommand().getOptionValue("pass"));
     }
 }

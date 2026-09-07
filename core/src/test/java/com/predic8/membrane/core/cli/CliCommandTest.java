@@ -168,6 +168,23 @@ public class CliCommandTest {
         assertNull(result.getOptionValue("a"));
     }
 
+    /**
+     * Option values must reach their consumer byte-for-byte: trimming them silently hashed a
+     * different argon2id password than the one given, see issue #3220.
+     */
+    @Test
+    void getOptionValuePreservesSurroundingWhitespace() throws ParseException {
+        assertEquals("  value  ", rootCommand.parse(new String[]{"-a", "  value  "}).getOptionValue("a"));
+    }
+
+    @Test
+    void getTrimmedOptionValueRemovesSurroundingWhitespace() throws ParseException {
+        CliCommand result = rootCommand.parse(new String[]{"-a", "  value  "});
+
+        assertEquals("value", result.getTrimmedOptionValue("a"));
+        assertNull(result.getTrimmedOptionValue("b"));
+    }
+
     @Test
     void getIntOptionValueReturnsDefaultWhenOptionNotSet() throws ParseException {
         assertEquals(2048, rootCommand.parse(new String[]{}).getIntOptionValue("a", 2048, 2048, 16384));
@@ -176,6 +193,11 @@ public class CliCommandTest {
     @Test
     void getIntOptionValueParsesNumber() throws ParseException {
         assertEquals(4096, rootCommand.parse(new String[]{"-a", "4096"}).getIntOptionValue("a", 2048, 2048, 16384));
+    }
+
+    @Test
+    void getIntOptionValueAcceptsPaddedNumber() throws ParseException {
+        assertEquals(4096, rootCommand.parse(new String[]{"-a", " 4096 "}).getIntOptionValue("a", 2048, 2048, 16384));
     }
 
     @Test

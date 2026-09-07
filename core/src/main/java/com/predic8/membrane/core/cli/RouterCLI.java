@@ -107,8 +107,8 @@ public class RouterCLI {
     }
 
     private static void privateJwkToPublic(MembraneCommandLine commandLine) {
-        String input = commandLine.getCommand().getOptionValue("i");
-        String output = commandLine.getCommand().getOptionValue("o");
+        String input = commandLine.getCommand().getTrimmedOptionValue("i");
+        String output = commandLine.getCommand().getTrimmedOptionValue("o");
         if (input == null || output == null) {
             log.error("Both input (-i) and output (-o) files must be specified.");
             System.exit(1);
@@ -122,7 +122,7 @@ public class RouterCLI {
     private static void argon2id(MembraneCommandLine commandLine) {
         try {
             String password = commandLine.getCommand().getOptionValue("pass");
-            String salt = commandLine.getCommand().getOptionValue("s");
+            String salt = commandLine.getCommand().getTrimmedOptionValue("s");
 
             int v = getArgon2Version(commandLine);
             int i = commandLine.getCommand().getIntOptionValue("i", 3, 1, MAX_VALUE);
@@ -253,7 +253,7 @@ public class RouterCLI {
     }
 
     private static Router initRouterByYAML(MembraneCommandLine commandLine, String option) throws Exception {
-        return initRouterByYAML(commandLine.getCommand().getOptionValue(option));
+        return initRouterByYAML(commandLine.getCommand().getTrimmedOptionValue(option));
     }
 
     static Router initRouterByYAML(String location) throws Exception {
@@ -284,7 +284,7 @@ public class RouterCLI {
     }
 
     static String getLocation(MembraneCommandLine commandLine) throws IOException {
-        String location = commandLine.getCommand().getOptionValue("l");
+        String location = commandLine.getCommand().getTrimmedOptionValue("l");
 
         if (location == null || location.isEmpty())
             throw new InvalidOptionValueException("Invalid value for -l: the OpenAPI location must not be empty.");
@@ -389,8 +389,8 @@ public class RouterCLI {
 
     private static String getConfiguration(MembraneCommandLine cl) {
         return cl.getCommand().isOptionSet("c") ?
-                cl.getCommand().getOptionValue("c") :
-                cl.getCommand().getOptionValue("t");
+                cl.getCommand().getTrimmedOptionValue("c") :
+                cl.getCommand().getTrimmedOptionValue("t");
     }
 
     private static boolean hasConfiguration(MembraneCommandLine cl) {
