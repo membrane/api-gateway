@@ -16,22 +16,16 @@ package com.predic8.membrane.core.interceptor.llmgateway.provider.claude;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-public class ContentBlockStart {
-
-    private ToolUse toolUse;
+/**
+ * The {@code content_block_start} event. Only a block that starts a tool call carries a {@link ToolUse},
+ * for any other block type it is null.
+ */
+public record ContentBlockStart(ToolUse toolUse) {
 
     public static ContentBlockStart from(ObjectNode on) {
-        var cbs = new ContentBlockStart();
-        var cb = (ObjectNode) on.path("content_block");
-
-        if ("tool_use".equals(cb.path("type").asText())) {
-            cbs.toolUse = ToolUse.from(cb);
+        if (on.path("content_block") instanceof ObjectNode cb && "tool_use".equals(cb.path("type").asText())) {
+            return new ContentBlockStart(ToolUse.from(cb));
         }
-
-        return cbs;
-    }
-
-    public ToolUse getToolUse() {
-        return toolUse;
+        return new ContentBlockStart(null);
     }
 }

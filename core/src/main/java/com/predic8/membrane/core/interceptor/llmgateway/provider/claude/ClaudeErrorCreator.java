@@ -15,8 +15,7 @@
 package com.predic8.membrane.core.interceptor.llmgateway.provider.claude;
 
 import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMErrorCreator;
-import com.predic8.membrane.core.interceptor.llmgateway.provider.claude.ClaudeErrorResponse.ClaudeError;
+import com.predic8.membrane.core.interceptor.llmgateway.provider.AbstractLLMErrorCreator;
 
 import java.util.Collection;
 import java.util.UUID;
@@ -24,7 +23,7 @@ import java.util.UUID;
 import static com.predic8.membrane.core.http.Header.WWW_AUTHENTICATE;
 import static com.predic8.membrane.core.http.Response.*;
 
-public class ClaudeErrorCreator implements LLMErrorCreator {
+public class ClaudeErrorCreator extends AbstractLLMErrorCreator {
 
     private static final String INVALID_REQUEST_ERROR = "invalid_request_error";
     private static final String AUTHENTICATION_ERROR = "authentication_error";
@@ -39,28 +38,15 @@ public class ClaudeErrorCreator implements LLMErrorCreator {
 
     @Override
     public Response tokenLimitExceeded(long tokenRequired, long tokenRemaining, long tokenResetInSeconds) {
-        long visibleRemaining = Math.max(0, tokenRemaining);
-
         return statusCode(429)
-                .json(error(
-                        RATE_LIMIT_ERROR,
-                        """
-                        Token rate limit exceeded.
-                        Request requires %d tokens but only %d remain.
-                        Retry after %d seconds.
-                        """.formatted(tokenRequired, visibleRemaining, tokenResetInSeconds).trim()
-                ))
+                .json(error(RATE_LIMIT_ERROR, tokenLimitMessage(tokenRequired, tokenRemaining, tokenResetInSeconds)))
                 .build();
     }
 
     @Override
     public Response modelNotAllowed(String model, Collection<String> allowedModels) {
         return badRequest()
-                .json(error(
-                        INVALID_REQUEST_ERROR,
-                        "Model '%s' is not allowed. Allowed models: %s."
-                                .formatted(model, String.join(", ", allowedModels))
-                ))
+                .json(error(INVALID_REQUEST_ERROR, modelNotAllowedMessage(model, allowedModels)))
                 .build();
     }
 
@@ -86,14 +72,6 @@ public class ClaudeErrorCreator implements LLMErrorCreator {
     }
 
     private String error(String type, String message) {
-        return ClaudeErrorResponse.builder()
-                .type("error")
-                .error(
-                        ClaudeError.builder()
-                                .type(type)
-                                .message(message)
-                )
-                .requestId("membrane_" + UUID.randomUUID())
-                .toJson();
+        return createJson(ClaudeErrorResponse.of(type, message, "membrane_" + UUID.randomUUID()));
     }
 }

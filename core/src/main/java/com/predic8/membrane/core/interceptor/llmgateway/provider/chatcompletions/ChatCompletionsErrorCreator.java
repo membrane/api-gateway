@@ -37,10 +37,10 @@ public class ChatCompletionsErrorCreator extends AbstractLLMErrorCreator {
                                 "token_limit_exceeded")).build();
     }
 
+    @Override
     public Response modelNotAllowed(String model, Collection<String> allowedModels) {
         return badRequest().json(envelope(
-                        "Model '%s' is not allowed. Allowed models: %s."
-                                .formatted(model, String.join(", ", allowedModels)),
+                        modelNotAllowedMessage(model, allowedModels),
                         "invalid_request_error",
                         null,
                         "model_not_allowed")).build();
