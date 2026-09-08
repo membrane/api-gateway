@@ -18,36 +18,39 @@ import org.slf4j.LoggerFactory;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXParseException;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class SchemaValidatorErrorHandler implements ErrorHandler {
 
 	private static final Logger log = LoggerFactory.getLogger(SchemaValidatorErrorHandler.class.getName());
 
-	private Exception exception;
+	private final List<Exception> exceptions = new ArrayList<>();
 
 	// Errors are collected here and only reported by AbstractXMLSchemaValidator once the message
 	// has failed *all* embedded schemas. Logging here would emit spurious "Error:" lines for a
 	// perfectly valid message that simply matches a different embedded schema of the same WSDL.
 	public void error(SAXParseException e) {
-		exception = e;
+		exceptions.add(e);
 	}
 
 	public void fatalError(SAXParseException e) {
-		exception = e;
+		exceptions.add(e);
 	}
 
 	public void warning(SAXParseException e) {
 		log.debug("Warning: {}", e.getMessage());
 	}
 
-	public Exception getException() {
-		return exception;
+	public List<Exception> getExceptions() {
+		return exceptions;
 	}
 
 	public boolean noErrors() {
-		return exception == null;
+		return exceptions.isEmpty();
 	}
 
 	public void reset() {
-		exception = null;
+		exceptions.clear();
 	}
 }

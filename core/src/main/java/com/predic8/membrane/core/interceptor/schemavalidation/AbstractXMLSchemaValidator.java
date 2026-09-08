@@ -216,7 +216,7 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
             if (handler.noErrors()) {
                 return true;
             }
-            exceptions.add(handler.getException());
+            exceptions.addAll(handler.getExceptions());
             return false;
         } finally {
             handler.reset();
