@@ -33,13 +33,14 @@ import static java.nio.charset.StandardCharsets.*;
 import static java.util.stream.Collectors.*;
 import static org.apache.commons.text.StringEscapeUtils.*;
 
-public class BrowserMock implements Function<Exchange, Exchange> {
+public class BrowserMock implements Function<Exchange, Exchange>, AutoCloseable {
 
     public static final Pattern INPUT_PATTERN = Pattern.compile("<input type=\"hidden\" name=\"([-a-zA-Z0-9&;_]*)\" value=\"([-a-zA-Z ._~=0-9&/;]*)\"/>");
     public static final Pattern FORM_PATTERN = Pattern.compile("<form method=\"post\" action=\"([a-z:/0-9]*)\"");
     final Logger LOG = LoggerFactory.getLogger(BrowserMock.class);
     final Map<String, Map<String, String>> cookie = new HashMap<>();
-    final Function<Exchange, Exchange> cookieHandlingHttpClient = exc -> cookieManager(httpClient(), exc);
+    final HttpClient httpClient = new HttpClient(getHttpClientConfiguration());
+    final Function<Exchange, Exchange> cookieHandlingHttpClient = exc -> cookieManager(this::call, exc);
     final Function<Exchange, Exchange> cookieHandlingRedirectingHttpClient = outerExc -> handleFormPost(innerExc -> handleRedirect(cookieHandlingHttpClient, innerExc, new ArrayList<>()), outerExc);
 
     /**
@@ -350,20 +351,18 @@ public class BrowserMock implements Function<Exchange, Exchange> {
         return location;
     }
 
-    private Function<Exchange, Exchange> httpClient() {
-        return new Function<>() {
-            final HttpClient httpClient = new HttpClient(getHttpClientConfiguration());
+    private Exchange call(Exchange exchange) {
+        try {
+            ConnectRetry.call(httpClient, exchange);
+            return exchange;
+        } catch (Exception e) {
+            throw new RuntimeException("while calling " + exchange.getOriginalRelativeURI(), e);
+        }
+    }
 
-            @Override
-            public Exchange apply(Exchange exchange) {
-                try {
-                    ConnectRetry.call(httpClient, exchange);
-                    return exchange;
-                } catch (Exception e) {
-                    throw new RuntimeException("while calling " + exchange.getOriginalRelativeURI(), e);
-                }
-            }
-        };
+    @Override
+    public void close() {
+        httpClient.close();
     }
 
     private static @NotNull HttpClientConfiguration getHttpClientConfiguration() {

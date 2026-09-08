@@ -44,6 +44,7 @@ public abstract class OAuth2ResourceB2CTestSetup {
 
     @AfterEach
     void done() {
+        browser.close();
         mockAuthorizationServer.stop();
         b2cMembrane.stop();
     }

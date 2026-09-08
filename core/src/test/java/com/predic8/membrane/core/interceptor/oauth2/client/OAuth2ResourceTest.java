@@ -83,6 +83,7 @@ public abstract class OAuth2ResourceTest {
 
     @AfterEach
     public void done() {
+        browser.close();
         if (mockAuthServer != null)
             mockAuthServer.stop();
         if (oauth2Resource != null)
