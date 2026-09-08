@@ -78,9 +78,12 @@ public class HotReloadTutorialTest extends DistributionExtractingTestcase {
         // The hot deployment thread polls once a second; give it a few rounds to pick up the change.
         String body = null;
         for (int i = 0; i < 10 && (body == null || !body.contains("apibin")); i++) {
-            Thread.sleep(1000);
+            Thread.sleep(100*i);
             try {
-                body = given().when().get("http://localhost:2000").then().extract().body().asString();
+                var response = given().when().get("http://localhost:2000").then().extract().response();
+                if (response.statusCode() == 200)
+                    body = response.asString();
+
             } catch (Exception ignoredWhileRouterRestarts) {
                 // the router briefly stops and restarts its listener while reloading
             }
