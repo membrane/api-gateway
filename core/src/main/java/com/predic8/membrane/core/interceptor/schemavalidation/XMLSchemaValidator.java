@@ -48,7 +48,6 @@ public class XMLSchemaValidator extends AbstractXMLSchemaValidator {
 
     public XMLSchemaValidator(ResolverMap resourceResolver, String location, ValidatorInterceptor.FailureHandler failureHandler) {
         super(resourceResolver, location, failureHandler);
-        init(); // Better to call in Interceptor?
     }
 
     @Override
