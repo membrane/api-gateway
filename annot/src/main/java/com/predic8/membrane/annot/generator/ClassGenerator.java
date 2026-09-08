@@ -9,6 +9,8 @@ import javax.annotation.processing.ProcessingEnvironment;
 import java.io.IOException;
 import java.io.Writer;
 
+import static com.predic8.membrane.annot.generator.util.FilerUtil.isAlreadyCreated;
+
 public abstract class ClassGenerator {
 
     public static final String COPYRIGHT = """
@@ -35,9 +37,11 @@ public abstract class ClassGenerator {
     }
 
     /**
-     * @return true if the file was written, false if it already existed
+     * @return true if a file was written, false if all of them already existed. The processor uses
+     *         this to re-enter itself in a later round, once the newly generated classes exist.
      */
     public boolean writeJava(Model m) throws IOException {
+        boolean wroteAny = false;
         for (MainInfo main : m.getMains()) {
             try {
                 try (Writer w = processingEnv.getFiler().createSourceFile(getFileName(main)).openWriter()) {
@@ -45,17 +49,13 @@ public abstract class ClassGenerator {
                     w.write(getPackage(main));
                     w.write(getClassImpl());
                 }
-                return true;
+                wroteAny = true;
             } catch (FilerException e) {
-                String msg = e.getMessage();
-                if (msg != null && (msg.contains("Source file already created")
-                        || msg.contains("Attempt to recreate a file for"))) {
-                    return false;
-                }
-                throw e;
+                if (!isAlreadyCreated(e))
+                    throw e;
             }
         }
-        return false;
+        return wroteAny;
     }
 
     private @NotNull String getFileName(MainInfo main) {

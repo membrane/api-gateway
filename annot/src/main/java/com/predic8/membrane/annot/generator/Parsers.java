@@ -13,14 +13,20 @@
    limitations under the License. */
 package com.predic8.membrane.annot.generator;
 
-import com.predic8.membrane.annot.*;
+import com.predic8.membrane.annot.AnnotUtils;
 import com.predic8.membrane.annot.model.*;
 
-import javax.annotation.processing.*;
-import javax.lang.model.element.*;
-import javax.tools.*;
-import java.io.*;
-import java.util.*;
+import javax.annotation.processing.FilerException;
+import javax.annotation.processing.ProcessingEnvironment;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.TypeElement;
+import javax.tools.FileObject;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import static com.predic8.membrane.annot.generator.util.FilerUtil.isAlreadyCreated;
 
 public class Parsers {
 
@@ -86,9 +92,8 @@ public class Parsers {
                                     """);
                 }
 			} catch (FilerException e) {
-				if (e.getMessage().contains("Source file already created"))
-					return;
-				throw e;
+				if (!isAlreadyCreated(e))
+					throw e;
 			}
 		}
 	}
@@ -205,9 +210,8 @@ public class Parsers {
                                 "}\r\n");
                     }
 				} catch (FilerException e) {
-					if (e.getMessage().contains("Source file already created"))
-						return;
-					throw e;
+					if (!isAlreadyCreated(e))
+						throw e;
 				}
 
 			}
