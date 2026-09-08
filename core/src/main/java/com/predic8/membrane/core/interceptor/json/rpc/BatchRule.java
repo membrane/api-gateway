@@ -26,7 +26,7 @@ public class BatchRule {
 
     private boolean enabled = true;
 
-    private Integer maxSize = 100;
+    private int maxSize = 100;
 
     /**
      * @description Enables or disables JSON-RPC batch requests.
@@ -43,14 +43,14 @@ public class BatchRule {
      * @example 50
      */
     @MCAttribute
-    public void setMaxSize(Integer maxSize) {
-        if (maxSize == null || maxSize < 1) {
+    public void setMaxSize(int maxSize) {
+        if (maxSize < 1) {
             throw new ConfigurationException("batch maxSize must be greater than 0");
         }
         this.maxSize = maxSize;
     }
 
-    public Integer getMaxSize() {
+    public int getMaxSize() {
         return maxSize;
     }
 
