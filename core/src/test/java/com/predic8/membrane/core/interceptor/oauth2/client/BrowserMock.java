@@ -357,7 +357,7 @@ public class BrowserMock implements Function<Exchange, Exchange> {
             @Override
             public Exchange apply(Exchange exchange) {
                 try {
-                    httpClient.call(exchange);
+                    ConnectRetry.call(httpClient, exchange);
                     return exchange;
                 } catch (Exception e) {
                     throw new RuntimeException("while calling " + exchange.getOriginalRelativeURI(), e);

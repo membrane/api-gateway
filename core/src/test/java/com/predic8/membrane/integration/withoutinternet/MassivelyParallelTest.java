@@ -56,6 +56,8 @@ class MassivelyParallelTest {
         server = new TestRouter();
         server.add(createServiceProxy());
         server.getTransport().setConcurrentConnectionLimitPerIp(CONCURRENT_THREADS);
+        // Do not bother raising this to cover CONCURRENT_THREADS: Windows caps the effective backlog at 200
+        // whatever is requested. The refused connects that causes are retried, see ConnectRetry.
         server.getTransport().setBacklog(CONCURRENT_THREADS);
         server.getTransport().setSocketTimeout(10000);
         server.start();
@@ -94,12 +96,13 @@ class MassivelyParallelTest {
         assertEquals(CONCURRENT_THREADS, paths.size());
     }
 
-    private void runInParallel(Consumer<CountDownLatch> job, int threadCount) {
+    private void runInParallel(Consumer<CountDownLatch> job, int threadCount) throws Exception {
         try (ExecutorService es = Executors.newVirtualThreadPerTaskExecutor()) {
             CountDownLatch cdl = new CountDownLatch(threadCount);
+            List<Future<?>> results = new ArrayList<>();
             try {
                 for (int i = 0; i < threadCount; i++) {
-                    es.submit(() -> job.accept(cdl));
+                    results.add(es.submit(() -> job.accept(cdl)));
                 }
                 es.shutdown();
                 if (!es.awaitTermination(120, SECONDS)) {
@@ -111,6 +114,10 @@ class MassivelyParallelTest {
                 es.shutdownNow();
                 fail("Interrupted while waiting for tasks to complete");
             }
+            // Without this a failing worker is lost in its Future and the test only reports a count mismatch.
+            for (Future<?> result : results) {
+                result.get();
+            }
         }
     }
 
@@ -121,7 +128,7 @@ class MassivelyParallelTest {
 
             var uuid = UUID.randomUUID().toString();
             var exchange = get("http://localhost:3067/api/" + uuid).buildExchange();
-            client.call(exchange);
+            ConnectRetry.call(client, exchange);
 
             assertEquals(200, exchange.getResponse().getStatusCode());
             var body = exchange.getResponse().getBodyAsStringDecoded();

@@ -22,6 +22,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
 
 import static com.predic8.membrane.core.http.Request.get;
+import static java.util.Collections.synchronizedList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public abstract class OAuth2ResourceB2CIntegrationTest extends OAuth2ResourceB2CTestSetup {
@@ -36,9 +37,13 @@ public abstract class OAuth2ResourceB2CIntegrationTest extends OAuth2ResourceB2C
         assertEquals("/init", body2.get("path"));
 
         Set<String> accessTokens = new HashSet<>();
-        runInParallel((cdl) -> parallelTestWorker(cdl, accessTokens), tc.limit);
+        List<Throwable> failures = synchronizedList(new ArrayList<>());
+        runInParallel((cdl) -> parallelTestWorker(cdl, accessTokens, failures), tc.limit);
+        if (!failures.isEmpty()) {
+            throw new AssertionError(failures.size() + " of " + tc.limit + " workers failed", failures.getFirst());
+        }
         synchronized (accessTokens) {
-            assertEquals(accessTokens.size(), tc.limit);
+            assertEquals(tc.limit, accessTokens.size());
         }
     }
 
@@ -58,7 +63,7 @@ public abstract class OAuth2ResourceB2CIntegrationTest extends OAuth2ResourceB2C
         });
     }
 
-    private void parallelTestWorker(CountDownLatch cdl, Set<String> accessTokens) {
+    private void parallelTestWorker(CountDownLatch cdl, Set<String> accessTokens, List<Throwable> failures) {
         try {
             cdl.countDown();
             cdl.await();
@@ -72,8 +77,10 @@ public abstract class OAuth2ResourceB2CIntegrationTest extends OAuth2ResourceB2C
             synchronized (accessTokens) {
                 accessTokens.add((String) body.get("accessToken"));
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (Throwable t) {
+            // Collected instead of printed, so that the failure carries its cause instead of only a count.
+            // Throwable, not Exception: a failing assertEquals in a worker thread would otherwise be lost.
+            failures.add(t);
         }
     }
 }
