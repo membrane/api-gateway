@@ -20,7 +20,7 @@ Use the 'apis.yaml' file to configure your APIs. The 'apis.yaml' has precedence 
 You can remove the inactive XML file in case you do not want to use the YAML configuration.
 
 ```
-rm proxies.xml.inactive
+rm proxies.inactive.xml
 ```
 
 

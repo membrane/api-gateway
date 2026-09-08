@@ -13,9 +13,9 @@ Lightweight **API Gateway** for **REST**, **GraphQL** and **legacy Web Services*
 
 Built on the **Java platform**, Membrane integrates seamlessly with enterprise technologies while delivering high performance and scalability. In load tests on a MacBook Pro, Membrane processed more than 40,000 requests per second, supported up to 20,000 concurrent clients, and hosted over 100,000 APIs on a single instance.
 
-The examples below demonstrate how to address a wide range of requirements using simple configurations.
+Here are some configuration snippets showing how easy it is to set up an API Gateway with Membrane.
 
-**Forwarding Requests from Port 2000 to a Backend:** 
+**Forwarding Requests from Port 2000 to a Backend:**
 
 ```yaml
 api:
@@ -24,7 +24,7 @@ api:
     url: https://api.predic8.de
 ```
 
-**Path Rewriting with an URI Template:**
+**Path Rewriting with a URI Template:**
 ```yaml
 api:
   port: 2000
@@ -34,13 +34,13 @@ api:
     url: https://api.predic8.de/shop/v2/products/${pathParam.id}
 ```
 
-**Deploy OpenAPI and enable Request Validation:** 
+**Deploy OpenAPI and enable Request Validation:**
 ```yaml
 api:
   port: 2000
   openapi:
     - location: "fruitshop-api.yml"
-      validateRequests: yes
+      validateRequests: true
 ```
 
 **Issue JSON Web Tokens:**
@@ -102,7 +102,6 @@ Meet other Membrane users **online** to discuss API gateway configuration, opera
 
 ### Upcoming Topics
 
-- **August 26, 2026** Building an LLM Gateway
 - **September 30, 2026** Legacy Integration with XML, SOAP, and WSDL
 - **October 28, 2026** Authentication with JSON Web Tokens (JWT)
 - **November 25, 2026** MCP and AI Tool Integration
@@ -145,16 +144,16 @@ Meet other Membrane users **online** to discuss API gateway configuration, opera
 
 - Streams HTTP traffic for low-latency, non-blocking processing.
 - Reuses TCP connections via HTTP Keep-Alive to reduce request overhead.
-- Lightweight distribution (~55MB) compared to other Java-based gateways.
+- Lightweight distribution (~55 MB) compared to other Java-based gateways.
 - Low memory footprint, ideal for containers and cloud-native environments.
 - Java-based, yet competitive with C/C++ gateways in performance.
 
 # Content
 
 1. [Getting Started](#1-getting-started)
-    - [Java](#java)
+    - [Java](#java-standalone)
     - [Docker](#docker)
-2. [Basics](#2-basics) Routing, rewriting
+2. [Basics](#2-basics)
     - [API Definition and Configuration](#api-definition-and-configuration)
     - [Simple REST and HTTP Forwarding APIs](#simple-rest-and-http-forwarding-apis)
 3. [OpenAPI Support](#3-openapi-support)
@@ -167,121 +166,107 @@ Meet other Membrane users **online** to discuss API gateway configuration, opera
     - [Short Circuit](#short-circuit)
     - [URL Rewriting](#url-rewriting)
 6. [Scripting](#6-scripting)
-    - With [Groovy](#groovy-scripts) and [Javascript](#javascript-scripts)
+    - With [Groovy](#groovy-scripts) and [JavaScript](#javascript-scripts)
     - [Creating Responses with Groovy](#creating-responses-with-groovy)
 7. [Message Transformation](#7-message-transformation)
     - [Manipulating](#manipulating-http-headers) and [removing](#removing-http-headers) HTTP Headers
     - [Create JSON from Query Parameters](#create-json-from-query-parameters)
     - [Transform JSON into TEXT, JSON or XML with Templates](#transform-json-into-text-json-or-xml-with-templates)
     - [Transform XML into Text or JSON](#transform-xml-into-text-or-json)
-    - [Complex Transformations using Javascript or Groovy](#complex-transformations-using-javascript-or-groovy)
+    - [Complex Transformations Using JavaScript or Groovy](#complex-transformations-using-javascript-or-groovy)
     - [Transformation with Computations](#transformation-with-computations)
     - [JSON and XML Beautifier](#json-and-xml-beautifier)
 8. [Conditionals with if](#8-conditionals-with-if)
 9. [Security](#9-security)
     - [API Keys](#api-keys) and [Basic Authentication](#basic-authentication)
     - [SSL/TLS](#ssltls)
-    - [JSON Web Tokens](#json-web-tokens) JWT
+    - [JSON Web Tokens](#json-web-tokens)
     - [OAuth2](#oauth2)
-    - [Secure APIs with OAuth2](#secure-apis-with-oauth2)
-        - [Membrane as Authorization Server](#membrane-as-authorization-server)
-        - [XML and JSON Protection](#xml-and-json-protection)
-10. [Traffic Control](#10-traffic-control) Rate limiting, Load balancing
+    - [XML and JSON Protection](#xml-and-json-protection)
+10. [Traffic Control](#10-traffic-control)
     - [Rate Limiting](#rate-limiting)
     - [Load Balancing](#load-balancing)
-11. [Legacy Web Services](#11-legacy-web-services-soap) SOAP and WSDL
-    - [API configuration from WSDL](#api-configuration-from-wsdl)
+11. [Legacy Web Services](#11-legacy-web-services-soap)
+    - [API Configuration from WSDL](#api-configuration-from-wsdl)
     - [Message Validation against WSDL and XSD](#message-validation-against-wsdl-and-xsd)
-12. [Operation](#12-operation)
+12. [Other Protocols](#12-other-protocols)
+    - [JSON-RPC](#json-rpc)
+    - [WebSockets](#websockets)
+13. [Operation](#13-operation)
     - [Logging](#log-http)
     - [Monitoring with Prometheus and Grafana](#monitoring-with-prometheus-and-grafana)
     - [OpenTelemetry](#opentelemetry-integration)
-13. [Community and Enterprise Support](#13-community-and-enterprise-support)
+14. [Community and Enterprise Support](#14-community-and-enterprise-support)
 
-# Installation
+# 1. Getting Started
 
-You can run Membrane as Docker container, standalone Java application or install it on Linux as RPM.
+You can run Membrane as a Docker container or a standalone Java application, or install it on Linux as an RPM.
 
-## Java
+## Java Standalone
 
-1. **Download and extract**
-    - [Download a release](https://github.com/membrane/api-gateway/releases) and unzip it.
+Recommended for development and testing.
+
+1. **Download and Extract**
+    - [Download Membrane](https://github.com/membrane/api-gateway/releases) and unzip it.
+    - [Install Java](https://adoptium.net/temurin/releases) 21 or newer if you don't have it already.
 2. **Start the Gateway**
-    - Open a terminal in the extracted folder.
-    - Make sure Java 21 or newer is installed:
-    ```bash
-    java -version
-    ```
-    - Start:
+    - Open a terminal in the extracted folder and start Membrane:
         - **Linux/Mac:** `./membrane.sh`
         - **Windows:** `membrane.cmd`
 3. **Access the Gateway**
     - Open [http://localhost:2000](http://localhost:2000)
 4. **Change the Configuration**
 
-   Modify the preconfigured APIs or add APIs by editing the `proxies.xml` file in the `conf` folder.
+   Take a look at the `apis.yaml` file in the `conf` folder. There you can modify and create APIs.
 
 ## Docker
 
+Recommended for operation in production.
+
 1. **Start a Membrane container**
    ```bash
-   docker run -p 2000:2000 predic8/membrane
+   docker run -it --rm -p 2000:2000 predic8/membrane
    ```
 2. **Access the Gateway**
 
    Test an API by opening [http://localhost:2000](http://localhost:2000).
 
 3. **Change the Configuration**
-   - Download [proxies.xml](https://raw.githubusercontent.com/membrane/api-gateway/master/distribution/router/conf/proxies.xml) or:
+   - Download [apis.yaml](https://raw.githubusercontent.com/membrane/api-gateway/master/distribution/router/conf/apis.yaml)
 
-     ```bash
-     wget https://raw.githubusercontent.com/membrane/api-gateway/master/distribution/router/conf/proxies.xml
-     ```
-   
    - Bind the configuration file to the container.
 
-     **Mac/Linux:**
+     **Linux/Mac:**
      ```bash
-     docker run -v "$(pwd)/proxies.xml:/opt/membrane/conf/proxies.xml" -p 2000:2000 predic8/membrane
+     docker run -it --rm -v "$(pwd)/apis.yaml:/opt/membrane/conf/apis.yaml" -p 2000:2000 predic8/membrane
      ```  
 
      **Windows:**
      ```bash
-     docker run -v %cd%\proxies.xml:/opt/membrane/conf/proxies.xml -p 2000:2000 predic8/membrane
+     docker run -v %cd%\apis.yaml:/opt/membrane/conf/apis.yaml -p 2000:2000 predic8/membrane
      ```
 
-     You can now edit `proxies.xml` and restart the container to apply the changes.
-
+     You can now edit `apis.yaml` and restart the container to apply the changes.
 
 For detailed Docker setup instructions, see the [Membrane Deployment Guide](https://membrane-api.io/deployment/#docker).
 
-## 1. Getting Started
-
-### Explore and Experiment
-- Try the code snippets on this page.
-- Run the samples in the [examples](distribution/examples#working-api-gateway-examples) folder of the distribution.
-
-### Dive into Tutorials
-- Follow the [REST API Tutorial](https://membrane-api.io/tutorials/rest/) to learn about deploying and securing APIs.
-- Check out the [SOAP API Tutorial](https://membrane-api.io/tutorials/soap/) for legacy web service integration.
-
-### Documentation
-
-- Read the [API Gateway eBook](https://www.membrane-api.io/api-gateway-ebook.html)
-- Look at the [documentation](https://www.membrane-api.io).
-- Browse the [reference](https://www.membrane-api.io/docs/)
+## Explore and Experiment
+- Try the code snippets further down on this page.
+- Follow the [Tutorials](https://www.membrane-api.io/api-gateway-tutorial.html).
+- Read the free [API Gateway eBook](https://www.membrane-api.io/api-gateway-ebook.html)
+- Look at the [documentation](https://www.membrane-api.io) and browse the [reference](https://www.membrane-api.io/docs/)
 - Try the recipes from the [cookbook](https://www.membrane-api.io/api-gateway-cookbook.html)
 
 # 2. Basics
 
 ### API Definition and Configuration
 
-To define new APIs or modify the existing configuration, edit the `proxies.xml` file located in the `conf` folder. This file serves as the central configuration point for managing API behavior and routing rules.
+To define new APIs or modify the existing configuration, edit the `apis.yaml` file located in the `conf` folder. This file serves as the central configuration point for managing API behavior and routing rules.
 
 ### Using Samples
-Explore and copy the sample snippets below into the `proxies.xml` file and modify them to suit your needs. Then save or restart the gateway to apply the changes. Usually a save will trigger a reload automatically.
+Explore and copy the sample snippets below into the `apis.yaml` file and modify them to suit your needs. Then save or restart the gateway to apply the changes. Usually a save will trigger a reload automatically.
 
-For even more samples have a look at the `examples` folder. 
+More samples are in the `tutorials` folder.
 
 
 ## Simple REST and HTTP Forwarding APIs
@@ -299,15 +284,15 @@ api:
 ```
 
 ### Testing the Configuration
-After modifying and saving the `proxies.xml` file, open [http://localhost:2000/shop/v2/](http://localhost:2000/shop/v2/)
+After modifying and saving the `apis.yaml` file, open [http://localhost:2000/shop/v2/](http://localhost:2000/shop/v2/)
 
 
-## 3. OpenAPI Support
+# 3. OpenAPI Support
 
 Membrane natively supports OpenAPI, allowing you to easily configure the gateway with OpenAPI documents and automatically validate both requests and responses.
 
 ### Deploy APIs with OpenAPI
-Membrane allows you to configure APIs directly from OpenAPI documents in the `proxies.xml` file. Backend addresses and other details are automatically derived from the OpenAPI description.
+Membrane allows you to configure APIs directly from OpenAPI documents in the `apis.yaml` file. Backend addresses and other details are automatically derived from the OpenAPI description.
 
 #### Example Configuration
 The snippet below shows how to deploy an API using an OpenAPI (`openapi/fruitshop-v2-2-0.oas.yml`) with request validation enabled:
@@ -344,7 +329,7 @@ See the [OpenAPI 3.2 tutorial](distribution/tutorials/openapi/v32) for a self-te
 ### Learn More
 For additional details and a working example, check out the [OpenAPI Example](distribution/examples/openapi).
 
-## 4. AI and LLM Gateway
+# 4. AI and LLM Gateway
 
 Membrane can act as a gateway in front of Large Language Models and Model Context Protocol (MCP) servers.
 
@@ -404,8 +389,8 @@ api:
 
 See the [MCP protection tutorial](distribution/tutorials/ai/mcp/20-MCP-Protection.yaml).
 
-## 5. Routing
-Membrane provides versatile routing with a fallthrough mechanism that applies only the first matching API rule, ensuring precise and efficient routing based on path, HTTP method, or hostname or many other criterias.
+# 5. Routing
+Membrane provides versatile routing with a fallthrough mechanism that applies only the first matching API rule, ensuring precise and efficient routing based on path, HTTP method, hostname, and many other criteria.
 
 ### Example: Advanced Routing
 
@@ -457,13 +442,13 @@ api:
 
 ### Configuration Options
 
-| Option   | Description                                                                  |
-|----------|------------------------------------------------------------------------------|
-| `port`   | port Membrane listens for incoming connections.                              |
-| `method` | - HTTP method (e.g., `GET`, `POST`, `DELETE`).<br>- `*` matches any method.  |
-| `host`   | - Hostname e.g. `api.predic8.de`<br> - Supports basic globbing with `*`      |
-| `test` | - Custom script e.g. `$pathParam.id == '42'`, `$header.contentType == '...'` |
-| `path`   | - Request path<br>- Regular expressions can be used with `isRegExp="true"`   |
+| Option   | Description                                                    |
+|----------|----------------------------------------------------------------|
+| `port`   | where to listen for incoming connections.                      |
+| `method` | HTTP method (e.g. `GET`, `POST`, `QUERY`).                    |
+| `host`   | Hostname e.g. `api.predic8.de`                                 |
+| `test` | Custom script: `header['content-type'].startsWith('text/plain')` |
+| `path`   | Request path                                                   |
 
 For more routing options, see the [Membrane API documentation](https://www.membrane-api.io/docs/current/api.html).
 
@@ -488,7 +473,7 @@ api:
 ```
 
 #### Example: Blocking Specific Paths
-Block paths (e.g., `/nothing`) while allowing other calls to pass through.
+Block paths (e.g. `/nothing`) while allowing other calls to pass through.
 
 **Routing Note:** APIs are matched from top to bottom. When multiple APIs share the same port, place the APIs with stricter routing conditions higher in the configuration.
 
@@ -515,7 +500,7 @@ api:
 
 ### URL Rewriting
 
-The URLs of request can be rewritten dynamically before forwarding them to the backend. This is useful for restructuring API paths or managing legacy endpoints.
+The URLs of requests can be rewritten dynamically before forwarding them to the backend. This is useful for restructuring API paths or managing legacy endpoints.
 
 #### Example
 The following configuration rewrites requests starting with `/fruitshop` to `/shop/v2`, preserving the remainder of the path:
@@ -543,9 +528,7 @@ https://api.predic8.de/shop/v2/products/4
 
 # 6. Scripting
 
-Membrane has powerful scripting features that allow to modify the desired of an API using Groovy or Javascript. 
-
-#### Use Cases
+A small script can modify the behavior of an API. Scripting makes it possible to support almost any API use case, such as:
 
 - **Custom Responses**: Tailor responses dynamically based on client requests or internal logic.
 - **Mocking APIs**: Simulate API behavior during testing or development phases.
@@ -554,7 +537,7 @@ Membrane has powerful scripting features that allow to modify the desired of an 
 
 ### Groovy Scripts
 
-The following API executes a Groovy script during the request and the response. 
+The following API executes a Groovy script during the request and the response.
 
 ```yaml
 api:
@@ -568,7 +551,7 @@ api:
     url: https://api.predic8.de
 ```
 
-After invoking [http://localhost:2000](http://localhost:2000) you can see the following output in the console where you have started Membrane:
+After invoking [http://localhost:2000](http://localhost:2000) you can see the following output in the console where you started Membrane:
 
 ```text
 I'm executed in the REQUEST flow
@@ -583,13 +566,13 @@ Content-Length: 390
 Content-Type: application/json
 ```
 
-#### Dynamically Route to random Target 
+#### Dynamically Route to Random Target
 
-You can realize a load balancer by setting the destination randomly.  
+You can implement a load balancer by setting the destination randomly.
 
 ```yaml
 api:
-  port: 2013
+  port: 2000
   flow:
     - groovy:
         src: |
@@ -642,7 +625,7 @@ X-Foo: bar
 }
 ```  
 
-#### Learn More about the Groovy Plugin
+#### Learn More About the Groovy Plugin
 For more information about using Groovy with Membrane, refer to:
 
 - [Groovy Plugin Reference](https://www.membrane-api.io/docs/current/groovy.html).
@@ -661,42 +644,21 @@ api:
   flow:
     - javascript:
         src: |
-          console.log("------------ Headers: -------------");
-          var fields = header.getAllHeaderFields();
-          for (var i = 0; i < fields.length; i++) {
-            console.log(fields[i]);
+          for (var entry of header.entrySet()) {
+            console.log(entry.getKey() + ": " + entry.getValue());
           }
   target:
     url: https://api.predic8.de
-```  
-
-The `CONTINUE` keyword ensures that the request continues processing and is forwarded to the target URL.
-
-When a JavaScript script returns a `Response` object as the last line of code, the request flow is interrupted, and the response is sent back to the client. This allows for creating custom responses dynamically.
-
-The following example generates a JSON response and sends it directly to the client:
-
-```yaml
-api:
-  port: 2000
-  flow:
-    - javascript:
-        src: |
-          var body = JSON.stringify({
-            foo: 7,
-            bar: 42
-          });
-          Response.ok(body).contentType("application/json").build();
 ```
 
 #### Learn More
 For more details about using JavaScript with Membrane, check the [JavaScript Plugin documentation](https://www.membrane-api.io/docs/current/javascript.html).
 
-## 7. Message Transformation
+# 7. Message Transformation
 
 ### Manipulating HTTP Headers
 
-You can modify HTTP headers in requests or responses using Membrane's `setHeader` and `headerFilter` feature. This is particularly useful for enabling CORS or adding custom headers.
+You can modify HTTP headers in requests or responses using Membrane's `setHeader` and `headerFilter` features. This is particularly useful for enabling CORS or adding custom headers.
 
 #### Example: Adding CORS Headers
 The following configuration adds `CORS` headers to the responses received from the backend:
@@ -718,7 +680,7 @@ api:
 
 ### Example: Setting Headers from JSON Body Content
 
-Membrane allows dynamic extraction of values from the JSON body of a request or response and uses them to set HTTP headers. 
+Membrane can extract values from the JSON body of a request or response and use them to set HTTP headers.
 
 #### Example Configuration
 The following example extracts the `id` and `name` fields from a JSON body and sets them as custom headers in the response:
@@ -742,10 +704,7 @@ api:
 
 ### Removing HTTP Headers
 
-You can easily remove specific HTTP headers from requests or responses (or both) using the `headerFilter` element. This is useful for cleaning up headers or meeting security requirements.
-
-#### Example: Header Filtering
-The following configuration demonstrates how to manage headers:
+You can easily remove specific HTTP headers using the `headerFilter` element. This is useful for cleaning up headers or meeting security requirements.
 
 ```yaml
 api:
@@ -757,12 +716,7 @@ api:
             - exclude: "X-.*"
   target:
     url: https://www.predic8.de
-```  
-
-- **`<include>`:** Specifies headers to retain.
-- **`<exclude>`:** Defines headers to remove. Wildcards can be used for patterns.
-
-The first matching rule will be acted upon by the filter.
+```
 
 ### Create JSON from Query Parameters
 
@@ -857,9 +811,9 @@ api:
 
 See: [message-transformation examples](./distribution/examples/message-transformation)
 
-## Complex Transformations using Javascript or Groovy
+## Complex Transformations Using JavaScript or Groovy
 
-Use the Javascript or Groovy plugin for more powerful yet simple transformations.
+Use the JavaScript or Groovy plugin for more powerful yet simple transformations.
 
 ```yaml
 api:
@@ -910,7 +864,7 @@ api:
         status: 200
 ```
 
-See [examples/javascript](distribution/examples/scripting/javascript) for a detailed explanation. The same transformation can also be realized with [Groovy](distribution/examples/scripting/groovy)
+See [examples/javascript](distribution/examples/scripting/javascript) for a detailed explanation. The same transformation can also be implemented with [Groovy](distribution/examples/scripting/groovy).
 
 ## JSON and XML Beautifier
 
@@ -1081,7 +1035,7 @@ For a full walkthrough of the authorization code flow, see the OAuth2 Authorizat
 
 ## Basic Authentication
 
-Sometimes the old basic authentication is enough to provide basic security.
+Sometimes plain HTTP Basic Authentication is enough.
 
 ```yaml
 api:
@@ -1099,7 +1053,7 @@ api:
 
 ## SSL/TLS
 
-TLS is the base for secure API communication.
+TLS is the basis for secure API communication.
 
 The first example shows TLS being used for connections from the API Gateway to the backend:
 
@@ -1157,15 +1111,7 @@ See [XML Protection Reference](https://www.membrane-api.io/docs/current/xmlProte
 
 #### JSON Protection
 
-The `jsonProtection` plugin safeguards APIs from JSON-based vulnerabilities by setting limits on:
-
-- **Depth**: Prevents overly nested JSON structures.
-- **Key Length**: Restricts excessively long keys.
-- **Object Size**: Maximum number of fields in a JSON object.
-- **String Length**: Controls maximum length of string values.
-- **...**
-
-**Example:**
+The `jsonProtection` plugin safeguards APIs from JSON-based vulnerabilities by enforcing limits and checking for common JSON attacks.
 
 ```yaml
 global:
@@ -1190,9 +1136,9 @@ global:
       requestLimitDuration: PT1H
 ```
 
-## Load balancing
+## Load Balancing
 
-Distribute workload to multiple backend nodes. [See the example](distribution/examples/loadbalancing)
+Distribute workload across multiple backend nodes. [See the example](distribution/examples/loadbalancing)
 
 ```yaml
 api:
@@ -1210,30 +1156,11 @@ api:
                 port: 4000
 ```
 
-# Websockets
-
-Route and intercept WebSocket traffic:
-
-```yaml
-api:
-  port: 2000
-  flow:
-    - webSocket:
-        url: http://my.websocket.server:1234
-        flow:
-          - wsLog: {}
-  target:
-    host: localhost
-    port: 8080
-```
-
-See [documentation](https://www.membrane-soa.org/service-proxy-doc/4.8/websocket-routing-intercepting.html)
-
 # 11. Legacy Web Services (SOAP)
 
 Integrate legacy services.
 
-## API configuration from WSDL
+## API Configuration from WSDL
 
 Membrane reads the WSDL and automatically generates a SOAP proxy.
 
@@ -1250,7 +1177,7 @@ After startup, Membrane exposes:
 
 ## Message Validation against WSDL and XSD
 
-The _validator_ checks SOAP messages against a WSDL document including referenced XSD schemas.
+The `validator` checks SOAP messages against a WSDL document including referenced XSD schemas.
 
 ```yaml
 soapProxy:
@@ -1261,12 +1188,63 @@ soapProxy:
     - validator: {}
 ```
 
-# 12. Operation
+# 12. Other Protocols
+
+## JSON-RPC
+
+Secure APIs from JSON-RPC attacks by controlling batching and validating parameters and return values.
+
+```yaml
+api:
+  port: 2000
+  flow:
+      - jsonRPCProtection:
+          batch:
+            enabled: true
+            maxSize: 10 
+          methods:
+            - allow: '^get.*' 
+            - deny: '.*' 
+          schemaValidation:
+            methods:
+              'getPerson':
+                params:
+                  schema:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                response:
+                  location: person.schema.json
+  target:
+    url: http://localhost:2001
+```
+
+See the [JSON-RPC Protection Tutorial](distribution/tutorials/security/json-rpc/20-JSON-RPC-Protection-with-Schema-Validation.yaml).
+
+## WebSockets
+
+Route and intercept WebSocket traffic:
+
+```yaml
+api:
+  port: 2000
+  flow:
+    - webSocket:
+        url: http://my.websocket.server:1234
+        flow:
+          - wsLog: {}
+  target:
+    host: localhost
+    port: 8080
+```
+
+# 13. Operation
 
 ## Log HTTP
 
-Log data about requests and responses to a file or [database](distribution/examples/logging/jdbc-database) as [CSV](distribution/examples/logging/csv)
-or [JSON](distribution/examples/logging/json) file.
+Log request and response data to a file or a [database](distribution/examples/logging/jdbc-database), as [CSV](distribution/examples/logging/csv)
+or [JSON](distribution/examples/logging/json).
 
 ```yaml
 api:
@@ -1294,9 +1272,9 @@ api:
     - prometheus: {}
 ```
 
-![Grafana Dashborad for Membrane API Gateway](/docs/images/membrane-grafana-dashboard.png)
+![Grafana Dashboard for Membrane API Gateway](/docs/images/membrane-grafana-dashboard.png)
 Grafana dashboard from Membrane metrics.
- 
+
 See [Prometheus and Grafana example](distribution/examples/monitoring-tracing/prometheus-grafana).
 
 ### OpenTelemetry Integration
@@ -1324,14 +1302,14 @@ api:
 
 For a working example and detailed setup, see the [OpenTelemetry Example](./distribution/examples/monitoring-tracing/opentelemetry).
 
-# 13. Community and Enterprise Support
+# 14. Community and Enterprise Support
 
 ## Community Support
 
-To get support from our community, please post your questions to our [Discussions](https://github.com/membrane/api-gateway/discussions) page @GitHub.
+To get support from our community, post your questions to our [Discussions](https://github.com/membrane/api-gateway/discussions) page @GitHub.
 
 If you find a bug, please report it using [GitHub Issues](https://github.com/membrane/api-gateway/issues). Please provide a minimal example that reproduces the issue and the version of Membrane you are using.
 
-## Enterprise-grade Support
+## Enterprise-Grade Support
 
 See [commercial support options and pricing](https://www.membrane-api.io/api-gateway-pricing.html).
