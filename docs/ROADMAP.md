@@ -43,6 +43,8 @@ PRIO 3:
 
 ## Membrane 8.0.0 (Java 25)
 
+- Remove proxies.inactive.xml from conf Folder
+  - Also README.md in conf
 - Upgrade baseline to Java 25
   - Bump `javac.source`/`javac.target` from 21 to 25 in the root pom.xml
   - Simplify `Util.createNewThreadPool()`: the reflective lookup of `Executors.newVirtualThreadPerTaskExecutor` and the `--enable-preview` handling are leftovers from the Java 19/20 preview era; call it directly and drop the `-Dmembrane.virtualthreads` fallback (or keep the flag as a plain if).
