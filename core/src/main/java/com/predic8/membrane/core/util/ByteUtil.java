@@ -25,6 +25,14 @@ public class ByteUtil {
 
 	private static final Logger log = LoggerFactory.getLogger(ByteUtil.class.getName());
 
+	/**
+	 * Reads exactly <code>length</code> bytes, or fails.
+	 *
+	 * @param length how many bytes to read, or a negative value to read until the end of the stream
+	 * @throws EOFException if the stream ends before <code>length</code> bytes were read. The
+	 *         remainder of the buffer would otherwise still be zero and therefore indistinguishable
+	 *         from real content, letting a truncated message body pass as complete.
+	 */
 	public static byte[] readByteArray(InputStream in, int length) throws IOException {
 		if (length < 0)
 			return in.readAllBytes();
@@ -35,6 +43,8 @@ public class ByteUtil {
 		while (offset < length && (count = in.read(content, offset, length - offset)) >= 0) {
 			offset += count;
 		}
+		if (offset < length)
+			throw new EOFException("Stream ended after %d of %d expected bytes.".formatted(offset, length));
 		return content;
 	}
 

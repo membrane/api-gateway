@@ -85,7 +85,14 @@ public abstract class Store {
 	}
 
 	/**
-	 * @description Keystore type (e.g., <code>PKCS12</code>, <code>JKS</code>).
+	 * @description Keystore type (e.g., <code>PKCS12</code>, <code>JKS</code>), or
+	 * <code>PEM</code> to load <code>location</code> as one or more bare X.509 certificates
+	 * (<code>.cer</code>/<code>.crt</code>/<code>.pem</code>) instead of a keystore container.
+	 * <code>PEM</code> only makes sense for a <code>truststore</code>, since a bare certificate
+	 * carries no private key. <code>location</code> may hold more than one certificate - either
+	 * PEM blocks or DER certificates concatenated back to back - and every one of them becomes a
+	 * separate trust anchor; this is how to trust a CA chain (root plus intermediates) when the
+	 * peer's messages only ever carry its leaf certificate.
 	 */
 	@MCAttribute
 	public void setType(String type) {

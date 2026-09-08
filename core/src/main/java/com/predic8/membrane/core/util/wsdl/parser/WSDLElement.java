@@ -14,15 +14,19 @@
 
 package com.predic8.membrane.core.util.wsdl.parser;
 
-import org.jetbrains.annotations.*;
-import org.w3c.dom.*;
+import org.jetbrains.annotations.NotNull;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
-import javax.xml.namespace.*;
-import java.util.*;
-import java.util.function.*;
+import javax.xml.namespace.QName;
+import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.function.BiPredicate;
 
 import static com.predic8.membrane.annot.Constants.*;
-import static org.w3c.dom.Node.*;
+import static org.w3c.dom.Node.ELEMENT_NODE;
 
 public class WSDLElement {
 
@@ -39,6 +43,22 @@ public class WSDLElement {
 
     public String getName() {
         return getAttribute("name");
+    }
+
+    /**
+     * The prose of this element's {@code wsdl:documentation} child, or null where it has none or
+     * carries nothing but whitespace. Only the direct child counts: a {@code documentation} further
+     * down documents that descendant rather than this element.
+     */
+    public String getDocumentation() {
+        var children = element.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            var child = children.item(i);
+            if (!isWSDLElementWithName(child, "documentation")) continue;
+            String text = WSDLParserUtil.normalizeDocumentation(child.getTextContent());
+            if (text != null) return text;
+        }
+        return null;
     }
 
     public Element getDefinitions() {
@@ -87,6 +107,9 @@ public class WSDLElement {
                 try {
                     result.add(clazz.getConstructor(WSDLParserContext.class, Node.class).newInstance(ctx, child));
                 } catch (Exception e) {
+                    // A parser error carries its own message, e.g. the location it could not resolve.
+                    if (e instanceof InvocationTargetException ite && ite.getCause() instanceof WSDLParserException cause)
+                        throw cause;
                     throw new RuntimeException("Failed to instantiate " + clazz.getSimpleName() + " for element: " + name, e);
                 }
             }

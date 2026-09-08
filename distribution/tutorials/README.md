@@ -35,6 +35,12 @@ Run and observe Membrane in production.
 Expose Membrane as an MCP server for AI clients, inspect recent API traffic, restrict MCP tools, and protect the endpoint with an API key.
 
 
+## [SSL/TLS](ssl-tls)
+
+Terminate TLS with your own certificate, share one TLS configuration between several APIs, or
+forward encrypted connections to the backend untouched and route them by their TLS server name.
+
+
 ## [Security](security)
 
 Issue signed JSON Web Tokens and protect an API by validating them. Covers the OAuth2 client-credentials flow, Bearer tokens, and signature/expiry/audience checks.
@@ -43,6 +49,11 @@ Issue signed JSON Web Tokens and protect an API by validating them. Covers the O
 ## [SOAP Web Services (Legacy)](soap)
 
 If you need to integrate legacy SOAP Web Services, this tutorial provides examples and practical guidance.
+
+
+## [Web Services Security](web-services-security)
+
+Secure SOAP messages with WS-Security: add and validate a `wsse:UsernameToken`, a `wsu:Timestamp`, and a `ds:Signature`.
 
 
 ## [OpenAPI](openapi)

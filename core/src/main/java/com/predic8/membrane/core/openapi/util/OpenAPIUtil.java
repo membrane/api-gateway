@@ -21,7 +21,6 @@ import io.swagger.v3.core.util.*;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.media.*;
 import io.swagger.v3.oas.models.parameters.*;
-import io.swagger.v3.parser.ObjectMapperFactory;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
@@ -38,7 +37,7 @@ public class OpenAPIUtil {
 
     private static final Logger log = LoggerFactory.getLogger(OpenAPIUtil.class.getName());
 
-    private static final ObjectMapper omYaml = ObjectMapperFactory.createYaml();
+    private static final ObjectMapper omYaml = OpenAPIYamlLimits.createYamlMapper();
 
     public static String getIdFromAPI(OpenAPI api) {
         if (api.getInfo().getExtensions() != null) {

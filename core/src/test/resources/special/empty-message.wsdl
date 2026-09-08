@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://schemas.xmlsoap.org/wsdl/"
+             xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+             xmlns:tns="https://example.com/empty-message"
+             xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+             targetNamespace="https://example.com/empty-message"
+             name="EmptyMessageService">
+
+  <types>
+    <xsd:schema targetNamespace="https://example.com/empty-message"/>
+  </types>
+
+  <!-- Input message intentionally has no parts -->
+  <message name="pingRequest"/>
+
+  <message name="pingResponse"/>
+
+  <portType name="EmptyMessagePortType">
+    <operation name="ping">
+      <input message="tns:pingRequest"/>
+      <output message="tns:pingResponse"/>
+    </operation>
+  </portType>
+
+  <binding name="EmptyMessageBinding" type="tns:EmptyMessagePortType">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <operation name="ping">
+      <soap:operation soapAction="ping"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+  </binding>
+
+  <service name="EmptyMessageService">
+    <port name="EmptyMessagePort" binding="tns:EmptyMessageBinding">
+      <soap:address location="http://example.com/empty-message"/>
+    </port>
+  </service>
+</definitions>

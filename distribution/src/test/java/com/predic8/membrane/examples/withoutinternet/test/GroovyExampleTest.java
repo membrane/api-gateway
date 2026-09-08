@@ -15,15 +15,10 @@
 package com.predic8.membrane.examples.withoutinternet.test;
 
 import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcase;
-import com.predic8.membrane.examples.util.BufferLogger;
-import com.predic8.membrane.examples.util.Process2;
 import io.restassured.response.Response;
 import org.json.JSONException;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.skyscreamer.jsonassert.JSONAssert;
-
-import java.io.IOException;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.test.StringAssertions.assertContains;
@@ -37,17 +32,6 @@ public class GroovyExampleTest extends AbstractSampleMembraneStartStopTestcase {
     @Override
     protected String getExampleDirName() {
         return "scripting/groovy";
-    }
-
-    BufferLogger logger;
-
-    @BeforeEach
-    void startMembrane() throws IOException, InterruptedException {
-        logger = new BufferLogger();
-        process = new Process2.Builder().in(baseDir).script("membrane").withWatcher(logger).waitForMembrane().start();
-
-        // Dump HTTP
-        //filters(new RequestLoggingFilter(), new ResponseLoggingFilter());
     }
 
     @Test

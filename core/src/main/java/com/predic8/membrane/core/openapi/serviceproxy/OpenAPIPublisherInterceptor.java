@@ -107,6 +107,16 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
         this.apis = apis;
     }
 
+    /**
+     * Adds a record under an id derived from the OpenAPI document. The id is computed here rather
+     * than passed in, so that every insertion into {@code apis} goes through the same collision
+     * policy as {@link OpenAPIRecordFactory}: a colliding document is kept under a suffixed id
+     * instead of silently replacing the record already registered.
+     */
+    public void addRecord(OpenAPIRecord record) {
+        apis.put(OpenAPIRecordFactory.getUniqueId(apis, record), record);
+    }
+
     public void init() {
         super.init();
         if (apis == null) {

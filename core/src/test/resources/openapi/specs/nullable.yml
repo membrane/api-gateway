@@ -27,3 +27,39 @@ paths:
                 address:
                   type: object
                   nullable: true
+                nullableAllOf:
+                  type: object
+                  allOf:
+                    - $ref: '#/components/schemas/Address'
+                  nullable: true
+                nonNullableAllOf:
+                  type: object
+                  allOf:
+                    - $ref: '#/components/schemas/Address'
+                nullableOneOf:
+                  type: object
+                  oneOf:
+                    - $ref: '#/components/schemas/Address'
+                  nullable: true
+                nullableAnyOf:
+                  type: object
+                  anyOf:
+                    - $ref: '#/components/schemas/Address'
+                  nullable: true
+                nullableNot:
+                  type: object
+                  not:
+                    $ref: '#/components/schemas/Address'
+                  nullable: true
+components:
+  schemas:
+    Address:
+      type: object
+      required:
+        - street
+        - city
+      properties:
+        street:
+          type: string
+        city:
+          type: string

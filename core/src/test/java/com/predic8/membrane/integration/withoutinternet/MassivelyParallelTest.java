@@ -55,10 +55,10 @@ class MassivelyParallelTest {
         client = new HttpClient();
         server = new TestRouter();
         server.add(createServiceProxy());
-        server.start();
         server.getTransport().setConcurrentConnectionLimitPerIp(CONCURRENT_THREADS);
         server.getTransport().setBacklog(CONCURRENT_THREADS);
         server.getTransport().setSocketTimeout(10000);
+        server.start();
     }
 
     private static ServiceProxy createServiceProxy() {

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  The wsdl:fault's message declares no part at all, so the fault's detail content cannot be
+  validated. WSDLValidator rejects such a WSDL at startup rather than silently skipping fault
+  validation.
+-->
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:tns="http://example.com/svc"
+                  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                  xmlns:s="http://schemas.xmlsoap.org/wsdl/soap/"
+                  targetNamespace="http://example.com/svc" name="svc">
+    <wsdl:types>
+        <xsd:schema targetNamespace="http://example.com/svc">
+            <xsd:element name="lookup" type="xsd:string"/>
+            <xsd:element name="lookupResponse" type="xsd:string"/>
+        </xsd:schema>
+    </wsdl:types>
+    <wsdl:message name="LookupRequest">
+        <wsdl:part name="parameters" element="tns:lookup"/>
+    </wsdl:message>
+    <wsdl:message name="LookupResponse">
+        <wsdl:part name="parameters" element="tns:lookupResponse"/>
+    </wsdl:message>
+    <wsdl:message name="NotFoundFault"/>
+    <wsdl:portType name="SvcPort">
+        <wsdl:operation name="lookup">
+            <wsdl:input message="tns:LookupRequest"/>
+            <wsdl:output message="tns:LookupResponse"/>
+            <wsdl:fault name="NotFoundFault" message="tns:NotFoundFault"/>
+        </wsdl:operation>
+    </wsdl:portType>
+    <wsdl:binding name="SvcBinding" type="tns:SvcPort">
+        <s:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+        <wsdl:operation name="lookup">
+            <s:operation soapAction="http://example.com/svc/lookup"/>
+            <wsdl:input>
+                <s:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <s:body use="literal"/>
+            </wsdl:output>
+            <wsdl:fault name="NotFoundFault">
+                <s:fault use="literal" name="NotFoundFault"/>
+            </wsdl:fault>
+        </wsdl:operation>
+    </wsdl:binding>
+    <wsdl:service name="SvcService">
+        <wsdl:port name="SvcPort" binding="tns:SvcBinding">
+            <s:address location="http://localhost:2001/svc"/>
+        </wsdl:port>
+    </wsdl:service>
+</wsdl:definitions>

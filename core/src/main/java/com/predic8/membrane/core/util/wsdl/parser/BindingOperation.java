@@ -14,7 +14,9 @@
 
 package com.predic8.membrane.core.util.wsdl.parser;
 
-import org.w3c.dom.*;
+import org.w3c.dom.Node;
+
+import java.util.List;
 
 public class BindingOperation extends WSDLElement{
 
@@ -26,5 +28,9 @@ public class BindingOperation extends WSDLElement{
         return  instantiateChild("operation",ProtocolOperation.class).orElseThrow(() ->
             new WSDLParserException("No operation found for binding operation: " + getName())
         ).getSoapAction();
+    }
+
+    public List<BindingOperationMessage> getInputs() {
+        return instantiateWSDLChildren("input", BindingOperationMessage.class);
     }
 }

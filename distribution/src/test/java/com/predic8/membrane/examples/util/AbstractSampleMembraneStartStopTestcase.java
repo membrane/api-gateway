@@ -14,22 +14,68 @@
 
 package com.predic8.membrane.examples.util;
 
-import org.junit.jupiter.api.*;
-
-import java.io.*;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 
 public abstract class AbstractSampleMembraneStartStopTestcase extends DistributionExtractingTestcase {
 
     protected Process2 process;
 
+    /**
+     * Console output of the running gateway. Recreated with every gateway start.
+     */
+    protected BufferLogger logger;
+
+    /**
+     * Whether every {@code @Test} needs its own gateway process.
+     * <p>
+     * Defaults to <code>false</code>: one gateway is started per test class. Starting one per
+     * test method costs ~800ms each and leaves a server side TIME_WAIT entry on the fixed
+     * tutorial ports for every connection of the killed process, which on macOS accumulates
+     * until new outbound connects draw a colliding 4-tuple and have their SYN dropped.
+     * <p>
+     * Override and return <code>true</code> for tests that assert on startup output, patch the
+     * configuration before startup, or otherwise depend on a pristine gateway.
+     */
+    protected boolean restartForEachTest() {
+        return false;
+    }
+
+    @BeforeAll
+    void startMembraneForClass() throws Exception {
+        if (!restartForEachTest())
+            startMembrane();
+    }
+
+    @AfterAll
+    void stopMembraneAfterClass() {
+        if (!restartForEachTest())
+            stopMembrane();
+    }
+
     @BeforeEach
-    void startMembrane() throws IOException, InterruptedException {
-        process = startServiceProxyScript();
+    void startMembraneForTest() throws Exception {
+        if (restartForEachTest())
+            startMembrane();
     }
 
     @AfterEach
-    void stopMembrane() {
-        if (process != null)
+    void stopMembraneAfterTest() {
+        if (restartForEachTest())
+            stopMembrane();
+    }
+
+    protected void startMembrane() throws Exception {
+        logger = new BufferLogger();
+        process = startServiceProxyScript(logger);
+    }
+
+    protected void stopMembrane() {
+        if (process != null) {
             process.killScript();
+            process = null;
+        }
     }
 }

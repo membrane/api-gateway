@@ -18,7 +18,11 @@ package com.predic8.membrane.core.openapi.validators;
 
 import com.predic8.membrane.core.openapi.model.Request;
 
+import java.util.Set;
+import java.util.stream.Stream;
+
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
+import static java.util.stream.Collectors.toUnmodifiableSet;
 
 public class ValidationContext {
 
@@ -37,6 +41,24 @@ public class ValidationContext {
     private ValidatedEntityType validatedEntityType;
     private String validatedEntity;
     private int statusCode;
+
+    /**
+     * The component schemas whose $ref has already been resolved on the current branch of the
+     * validation, each paired with the JSON pointer of the value it was resolved for. Used solely
+     * to break reference cycles; unlike {@link #complexType} it is never reported to the caller.
+     * Immutable and copied on write, so it is scoped to the branch rather than to the whole
+     * validation run.
+     * <p>
+     * The pointer is part of the key because a recursive schema is not a cycle: {@code Node.next}
+     * pointing back at {@code Node} has to be validated again for every nested node. Only a
+     * reference that returns to the same schema for the same value cannot make progress.
+     */
+    private Set<VisitedRef> visitedRefs = Set.of();
+
+    /**
+     * A resolved $ref, identified by the referenced schema and the value it was resolved for.
+     */
+    private record VisitedRef(String name, String jsonPointer) {}
 
     public enum Content { JSON, XML }
 
@@ -61,6 +83,8 @@ public class ValidationContext {
         this.validatedEntity = ctx.validatedEntity;
         this.statusCode = ctx.statusCode;
         this.parameter = ctx.parameter;
+        this.visitedRefs = ctx.visitedRefs;
+        this.content = ctx.content;
     }
 
     public ValidationContext() {
@@ -193,6 +217,28 @@ public class ValidationContext {
         ValidationContext ctx = this.deepCopy();
         ctx.complexType = type;
         return ctx;
+    }
+
+    /**
+     * Marks the component schema {@code name} as resolved for the value at the current JSON
+     * pointer, see {@link #visitedRefs}.
+     */
+    public ValidationContext visitRef(String name) {
+        ValidationContext ctx = this.deepCopy();
+        ctx.visitedRefs = Stream.concat(visitedRefs.stream(), Stream.of(visitedRef(name))).collect(toUnmodifiableSet());
+        return ctx;
+    }
+
+    /**
+     * @return whether {@code name} has already been resolved for the value at the current JSON
+     * pointer, which means resolving it again cannot make progress
+     */
+    public boolean hasVisited(String name) {
+        return visitedRefs.contains(visitedRef(name));
+    }
+
+    private VisitedRef visitedRef(String name) {
+        return new VisitedRef(name, jsonPointer);
     }
 
     public ValidationContext content(Content content) {

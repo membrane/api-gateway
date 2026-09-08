@@ -147,6 +147,7 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
             mainComponents.init();
 
             initProxies();
+            getRuleManager().warnAboutUnreachableProxies(); // keys are only complete after init
 
             initialized = true;
             reinitializer = new RuleReinitializer(this); // Bean

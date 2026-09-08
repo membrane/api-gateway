@@ -143,7 +143,6 @@ public class BodyTest {
 			@Override public long getLength() { return length; }
 			@Override protected void readLocal() {}
 			@Override protected void writeAlreadyRead(AbstractBodyTransferer out) {}
-			@Override protected void writeNotRead(AbstractBodyTransferer out) {}
 			@Override protected void writeStreamed(AbstractBodyTransferer out) {}
 			@Override protected byte[] getRawLocal() { return new byte[0]; }
 		};
@@ -156,6 +155,32 @@ public class BodyTest {
 		assertFalse(unchunkedBody.hasRelevantObservers());
 		unchunkedBody.addObserver(new AbstractMessageObserver() {});
 		assertTrue(unchunkedBody.hasRelevantObservers());
+	}
+
+	/**
+	 * A sender that announces Content-Length: 7 and then delivers 4 bytes must not produce a body
+	 * that claims to be complete. readByteArray() pads the shortfall with NULs, so the truncated
+	 * upload is reported as fully read and forwarded to the backend.
+	 * See <a href="https://github.com/membrane/api-gateway/issues/3193">#3193</a>.
+	 */
+	@Test
+	void truncatedContentLengthBodyFailsInsteadOfBeingZeroPadded() {
+		Body truncated = new Body(new ByteArrayInputStream("part".getBytes()), 7);
+
+		ReadingBodyException e = assertThrows(ReadingBodyException.class, truncated::read);
+
+		assertInstanceOf(EOFException.class, e.getCause());
+		assertFalse(truncated.isRead());
+	}
+
+	@Test
+	void completeContentLengthBodyIsStillRead() {
+		Body complete = new Body(new ByteArrayInputStream("payload".getBytes()), 7);
+
+		complete.read();
+
+		assertTrue(complete.isRead());
+		assertArrayEquals("payload".getBytes(), complete.getContent());
 	}
 
 	private static class NonRelevantObserver extends AbstractMessageObserver implements NonRelevantBodyObserver {}

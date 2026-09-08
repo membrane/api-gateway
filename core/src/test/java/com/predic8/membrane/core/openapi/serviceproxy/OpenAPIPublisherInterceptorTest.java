@@ -32,13 +32,11 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_PROBLEM_JSON;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.getApi;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class OpenAPIPublisherInterceptorTest {
@@ -70,6 +68,23 @@ public class OpenAPIPublisherInterceptorTest {
         get.setRequest(new Request.Builder().method("GET").build());
         get.setProxy(new NullProxy());
         get.setOriginalHostHeader("api.predic8.de:80");
+    }
+
+    @Test
+    void addRecordKeepsBothDocumentsOnIdCollision() {
+        // The id is derived from title + version, so two documents can collide. addRecord must
+        // apply the same policy as OpenAPIRecordFactory (suffix the id) instead of replacing the
+        // record already registered — the map can be an APIProxy's live apiRecords.
+        var publisher = new OpenAPIPublisherInterceptor(new LinkedHashMap<>());
+        var first = new OpenAPIRecord(getApi(this, "/openapi/specs/customers.yml"), new OpenAPISpec());
+        var second = new OpenAPIRecord(getApi(this, "/openapi/specs/customers.yml"), new OpenAPISpec());
+
+        publisher.addRecord(first);
+        publisher.addRecord(second);
+
+        assertEquals(2, publisher.apis.size());
+        assertSame(first, publisher.apis.get("customers-api-v1-0"));
+        assertSame(second, publisher.apis.get("customers-api-v1-0-0"));
     }
 
     @Test

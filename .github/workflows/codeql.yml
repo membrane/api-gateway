@@ -30,7 +30,7 @@ jobs:
       with:
         persist-credentials: false
     - name: Setup Java JDK
-      uses: actions/setup-java@v3
+      uses: actions/setup-java@v6
       with:
         distribution: 'temurin'
         java-version: 21
@@ -46,7 +46,7 @@ jobs:
     # Autobuild attempts to build any compiled languages  (C/C++, C#, Go, or Java).
     # If this step fails, then you should remove it and run the build manually (see below)
 #    - name: Autobuild
-#      uses: github/codeql-action/autobuild@v2
+#      uses: github/codeql-action/autobuild@v3
 
     # ℹ️ Command-line programs to run using the OS shell.
     # 📚 See https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepsrun

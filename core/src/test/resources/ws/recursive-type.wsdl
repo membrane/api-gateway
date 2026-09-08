@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://schemas.xmlsoap.org/wsdl/"
+             xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+             xmlns:tns="https://example.com/recursive"
+             xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+             targetNamespace="https://example.com/recursive"
+             name="RecursiveService">
+
+  <types>
+    <xsd:schema targetNamespace="https://example.com/recursive">
+
+      <!-- Self-referencing: TreeNode.children is of type TreeNode -->
+      <xsd:complexType name="TreeNode">
+        <xsd:sequence>
+          <xsd:element name="value" type="xsd:string"/>
+          <xsd:element name="children" type="tns:TreeNode" minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:element name="processTreeRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="root" type="tns:TreeNode"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="processTreeResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="result" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+    </xsd:schema>
+  </types>
+
+  <message name="processTreeRequest">
+    <part name="parameters" element="tns:processTreeRequest"/>
+  </message>
+
+  <message name="processTreeResponse">
+    <part name="parameters" element="tns:processTreeResponse"/>
+  </message>
+
+  <portType name="RecursivePortType">
+    <operation name="processTree">
+      <input message="tns:processTreeRequest"/>
+      <output message="tns:processTreeResponse"/>
+    </operation>
+  </portType>
+
+  <binding name="RecursiveBinding" type="tns:RecursivePortType">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <operation name="processTree">
+      <soap:operation soapAction="processTree"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+  </binding>
+
+  <service name="RecursiveService">
+    <port name="RecursivePort" binding="tns:RecursiveBinding">
+      <soap:address location="http://example.com/recursive"/>
+    </port>
+  </service>
+</definitions>
