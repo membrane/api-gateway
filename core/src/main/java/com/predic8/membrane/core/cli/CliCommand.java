@@ -15,13 +15,19 @@ package com.predic8.membrane.core.cli;
 
 import com.predic8.membrane.core.util.Pair;
 import org.apache.commons.cli.*;
-import org.jetbrains.annotations.*;
+import org.jetbrains.annotations.NotNull;
 
+import java.math.BigInteger;
 import java.util.*;
 
+import static java.math.BigInteger.valueOf;
+import static org.apache.commons.cli.Option.builder;
 import static org.apache.commons.lang3.StringUtils.trim;
 
 public class CliCommand {
+
+    private static final String HELP_OPTION = "h";
+
     private final String name;
     private final String description;
     private final List<Pair<String, String>> examples;
@@ -34,7 +40,7 @@ public class CliCommand {
         this.name = name;
         this.description = description;
         this.subcommands = new LinkedHashMap<>();
-        this.options = new Options();
+        this.options = withHelp(new Options());
         this.examples = new ArrayList<>();
     }
 
@@ -60,16 +66,54 @@ public class CliCommand {
             if (hasSubcommand(cmd)) {
                 return subcommands.get(cmd).parse(Arrays.copyOfRange(args, 1, args.length));
             }
-            throw new ParseException("Unknown command: " + cmd);
+            throw new CommandParseException("Unknown command: " + cmd, this);
         }
 
         try {
-            commandLine = new DefaultParser().parse(options, args, true);
+            commandLine = new DefaultParser().parse(options, args);
+        } catch (UnrecognizedOptionException e) {
+            throw new CommandParseException("Unknown option: " + e.getOption(), this);
         } catch (MissingOptionException e) {
-            throw new MissingRequiredOptionException(e.getMessage(), this);
+            // Asking for help must work even when required options are missing.
+            commandLine = new DefaultParser().parse(optionsWithoutRequired(), args);
+            if (!isOptionSet(HELP_OPTION)) {
+                throw new MissingRequiredOptionException(e.getMessage(), this);
+            }
         }
+        rejectUnexpectedArguments();
 
         return this;
+    }
+
+    /**
+     * Everything the parser could not assign to an option is an error: nothing reads
+     * {@link CommandLine#getArgList()}, so leftovers would be dropped without a word, see issue #3218.
+     */
+    private void rejectUnexpectedArguments() throws CommandParseException {
+        List<String> leftovers = commandLine.getArgList();
+        if (!leftovers.isEmpty()) {
+            throw new CommandParseException("Unexpected argument: " + String.join(" ", leftovers), this);
+        }
+    }
+
+    /**
+     * Returns a copy of {@code source} that also carries {@code -h}, so that no command can forget
+     * to support it. A copy, because {@code source} may be owned - and shared - by the caller.
+     */
+    private static Options withHelp(Options source) {
+        Options copy = new Options().addOption(builder(HELP_OPTION).longOpt("help").desc("Display this text").build());
+        source.getOptions().forEach(copy::addOption);
+        return copy;
+    }
+
+    private Options optionsWithoutRequired() {
+        Options relaxed = new Options();
+        for (Option option : options.getOptions()) {
+            Option copy = (Option) option.clone();
+            copy.setRequired(false);
+            relaxed.addOption(copy);
+        }
+        return relaxed;
     }
 
     private static boolean isCommand(String[] args) {
@@ -140,7 +184,7 @@ public class CliCommand {
     }
 
     public void setOptions(Options options) {
-        this.options = options;
+        this.options = withHelp(options);
     }
 
     public boolean isOptionSet(String opt) {
@@ -148,7 +192,45 @@ public class CliCommand {
     }
 
     public String getOptionValue(String opt) {
-        return commandLine != null ? trim(commandLine.getOptionValue(opt)) : null;
+        return commandLine != null ? commandLine.getOptionValue(opt) : null;
+    }
+
+    /**
+     * Returns the value of an option with surrounding whitespace removed. Only for file locations
+     * and the like; values carrying a secret must be read with {@link #getOptionValue(String)},
+     * byte-for-byte.
+     */
+    public String getTrimmedOptionValue(String opt) {
+        return trim(getOptionValue(opt));
+    }
+
+    /**
+     * Returns the value of a numeric option, or {@code defaultValue} if the option is not set.
+     *
+     * @throws InvalidOptionValueException if the value is not a number or outside minimum..maximum
+     */
+    public int getIntOptionValue(String option, int defaultValue, int minimum, int maximum) {
+        final String value = getTrimmedOptionValue(option);
+        if (value == null) {
+            return defaultValue;
+        }
+        final BigInteger parsed = parseNumber(option, value);
+        if (parsed.compareTo(valueOf(minimum)) < 0 || parsed.compareTo(valueOf(maximum)) > 0) {
+            throw new InvalidOptionValueException("Invalid value for -%s: %d must be between %d and %d.".formatted(option, parsed, minimum, maximum));
+        }
+        return parsed.intValueExact();
+    }
+
+    /**
+     * Parses without a width limit, so that a value too large for an {@code int} is reported as out
+     * of range rather than as not being a number.
+     */
+    private static BigInteger parseNumber(String option, String value) {
+        try {
+            return new BigInteger(value);
+        } catch (NumberFormatException e) {
+            throw new InvalidOptionValueException("Invalid value for -%s: '%s' is not a number.".formatted(option, value));
+        }
     }
 
     public String getName() {

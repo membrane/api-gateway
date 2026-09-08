@@ -13,11 +13,14 @@
    limitations under the License. */
 package com.predic8.membrane.core.cli;
 
-import org.apache.commons.cli.MissingOptionException;
 import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
@@ -26,7 +29,18 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class CliCommandTest {
 
+    /**
+     * Kept before any test redirects it: {@code System.setOut(System.out)} restores nothing once the
+     * redirect is in place, and every later print would go to the discarded buffer.
+     */
+    private static final PrintStream STDOUT = System.out;
+
     private static CliCommand rootCommand;
+
+    @AfterEach
+    void restoreStdout() {
+        System.setOut(STDOUT);
+    }
 
     @BeforeAll
     static void setUp() {
@@ -89,15 +103,64 @@ public class CliCommandTest {
 
     @Test
     void shouldThrowErrorForMissingRequiredOption() {
-        assertThrows(MissingOptionException.class, () -> rootCommand.parse(new String[]{"required"}));
+        MissingRequiredOptionException exception = assertThrows(MissingRequiredOptionException.class,
+                () -> rootCommand.parse(new String[]{"required"}));
+
+        assertEquals("Missing required option: z", exception.getMessage());
+        assertEquals("required", exception.getCommand().getName());
     }
 
     @Test
     void shouldThrowParseExceptionForUnknownSubcommand() {
-        ParseException exception = assertThrows(ParseException.class, () ->
+        CommandParseException exception = assertThrows(CommandParseException.class, () ->
                 rootCommand.parse(new String[]{"unknown"})
         );
         assertEquals("Unknown command: unknown", exception.getMessage());
+        assertEquals("root", exception.getCommand().getName());
+    }
+
+    /**
+     * An unknown command behind a valid one must be reported with the help of that command, not with
+     * the help of the root command.
+     */
+    @Test
+    void shouldReportUnknownCommandOnTheFailingSubcommand() {
+        CommandParseException exception = assertThrows(CommandParseException.class, () ->
+                rootCommand.parse(new String[]{"sub", "extra", "-x", "value"})
+        );
+        assertEquals("Unknown command: extra", exception.getMessage());
+        assertEquals("sub", exception.getCommand().getName());
+    }
+
+    /**
+     * An unknown option used to stop the parser: everything behind it was silently dropped, so
+     * <code>--zzz -a value</code> started without the requested value, see issue #3218.
+     */
+    @Test
+    void shouldThrowParseExceptionForUnknownOption() {
+        assertEquals("Unknown option: -q",
+                assertThrows(CommandParseException.class, () -> rootCommand.parse(new String[]{"-q"})).getMessage());
+    }
+
+    @Test
+    void shouldNotDiscardOptionsFollowingAnUnknownOption() {
+        assertEquals("Unknown option: --zzz",
+                assertThrows(CommandParseException.class, () -> rootCommand.parse(new String[]{"--zzz", "-a", "value"})).getMessage());
+    }
+
+    @Test
+    void shouldReportUnknownOptionOnTheFailingSubcommand() {
+        CommandParseException exception = assertThrows(CommandParseException.class, () ->
+                rootCommand.parse(new String[]{"sub", "--nope"})
+        );
+        assertEquals("Unknown option: --nope", exception.getMessage());
+        assertEquals("sub", exception.getCommand().getName());
+    }
+
+    @Test
+    void shouldThrowParseExceptionForUnexpectedArgument() {
+        assertEquals("Unexpected argument: extra",
+                assertThrows(CommandParseException.class, () -> rootCommand.parse(new String[]{"-a", "value", "extra"})).getMessage());
     }
 
     @Test
@@ -117,8 +180,6 @@ public class CliCommandTest {
         assertTrue(output.contains("sub - Sub command"));
         assertTrue(output.contains("Example Number 1"));
         assertTrue(output.contains("Example Number 2"));
-
-        System.setOut(System.out);
     }
 
     @Test
@@ -131,17 +192,47 @@ public class CliCommandTest {
     }
 
     @Test
-    void shouldPrintSubHelpWithoutOptions() throws ParseException {
+    void shouldPrintSubHelpOfCommandWithoutOwnOptions() throws ParseException {
         ByteArrayOutputStream outContent = new ByteArrayOutputStream();
         System.setOut(new PrintStream(outContent));
 
         rootCommand.parse(new String[]{"without"}).printHelp();
         String output = outContent.toString();
 
-        assertFalse(output.contains("options"));
-        assertTrue(output.contains("usage: root without"));
+        assertTrue(output.contains("usage: root without [options]"));
+        assertTrue(output.contains("--help"));
+    }
 
-        System.setOut(System.out);
+    /**
+     * Every command supports -h, even one that declares no options of its own, see issue #3222.
+     */
+    @Test
+    void shouldParseHelpOnCommandWithoutOwnOptions() throws ParseException {
+        assertTrue(rootCommand.parse(new String[]{"without", "-h"}).isOptionSet("h"));
+        assertTrue(rootCommand.parse(new String[]{"without", "--help"}).isOptionSet("h"));
+    }
+
+    /**
+     * Asking for help must not be refused because a required option is missing, see issue #3222.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"-h", "--help"})
+    void shouldParseHelpWhenRequiredOptionIsMissing(String spelling) throws ParseException {
+        assertTrue(rootCommand.parse(new String[]{"required", spelling}).isOptionSet("h"));
+    }
+
+    /**
+     * Adding {@code -h} must not write into the {@link Options} the caller passed in: the same
+     * instance is handed to more than one command.
+     */
+    @Test
+    void setOptionsDoesNotModifyTheGivenOptions() {
+        Options given = new Options().addOption(Option.builder("k").desc("Flag K").build());
+
+        new CliCommand("copy", "Command with options set from outside").setOptions(given);
+
+        assertEquals(1, given.getOptions().size());
+        assertFalse(given.hasShortOption("h"));
     }
 
     @Test
@@ -149,5 +240,77 @@ public class CliCommandTest {
         CliCommand result = rootCommand.parse(new String[]{});
         assertFalse(result.isOptionSet("a"));
         assertNull(result.getOptionValue("a"));
+    }
+
+    /**
+     * Option values must reach their consumer byte-for-byte: trimming them silently hashed a
+     * different argon2id password than the one given, see issue #3220.
+     */
+    @Test
+    void getOptionValuePreservesSurroundingWhitespace() throws ParseException {
+        assertEquals("  value  ", rootCommand.parse(new String[]{"-a", "  value  "}).getOptionValue("a"));
+    }
+
+    @Test
+    void getTrimmedOptionValueRemovesSurroundingWhitespace() throws ParseException {
+        CliCommand result = rootCommand.parse(new String[]{"-a", "  value  "});
+
+        assertEquals("value", result.getTrimmedOptionValue("a"));
+        assertNull(result.getTrimmedOptionValue("b"));
+    }
+
+    @Test
+    void getIntOptionValueReturnsDefaultWhenOptionNotSet() throws ParseException {
+        assertEquals(2048, rootCommand.parse(new String[]{}).getIntOptionValue("a", 2048, 2048, 16384));
+    }
+
+    @Test
+    void getIntOptionValueParsesNumber() throws ParseException {
+        assertEquals(4096, rootCommand.parse(new String[]{"-a", "4096"}).getIntOptionValue("a", 2048, 2048, 16384));
+    }
+
+    @Test
+    void getIntOptionValueAcceptsPaddedNumber() throws ParseException {
+        assertEquals(4096, rootCommand.parse(new String[]{"-a", " 4096 "}).getIntOptionValue("a", 2048, 2048, 16384));
+    }
+
+    @Test
+    void getIntOptionValueAcceptsRangeBoundaries() throws ParseException {
+        assertEquals(2048, rootCommand.parse(new String[]{"-a", "2048"}).getIntOptionValue("a", 4096, 2048, 16384));
+        assertEquals(16384, rootCommand.parse(new String[]{"-a", "16384"}).getIntOptionValue("a", 4096, 2048, 16384));
+    }
+
+    @Test
+    void getIntOptionValueRejectsNonNumber() throws ParseException {
+        CliCommand cmd = rootCommand.parse(new String[]{"-a", "abc"});
+        assertEquals("Invalid value for -a: 'abc' is not a number.",
+                assertThrows(InvalidOptionValueException.class, () -> cmd.getIntOptionValue("a", 2048, 2048, 16384)).getMessage());
+    }
+
+    @Test
+    void getIntOptionValueRejectsEmptyValue() throws ParseException {
+        CliCommand cmd = rootCommand.parse(new String[]{"-a", ""});
+        assertEquals("Invalid value for -a: '' is not a number.",
+                assertThrows(InvalidOptionValueException.class, () -> cmd.getIntOptionValue("a", 2048, 2048, 16384)).getMessage());
+    }
+
+    @Test
+    void getIntOptionValueRejectsValueOutOfRange() throws ParseException {
+        CliCommand tooSmall = rootCommand.parse(new String[]{"-a", "1024"});
+        assertEquals("Invalid value for -a: 1024 must be between 2048 and 16384.",
+                assertThrows(InvalidOptionValueException.class, () -> tooSmall.getIntOptionValue("a", 2048, 2048, 16384)).getMessage());
+    }
+
+    /**
+     * However far beyond Integer.MAX_VALUE the value is, it stays an out of range number and must not
+     * be reported as not being a number.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"99999999999", "99999999999999999999999999999999"})
+    void getIntOptionValueRejectsValueTooLargeForAnInt(String value) throws ParseException {
+        CliCommand cmd = rootCommand.parse(new String[]{"-a", value});
+
+        assertEquals("Invalid value for -a: %s must be between 2048 and 16384.".formatted(value),
+                assertThrows(InvalidOptionValueException.class, () -> cmd.getIntOptionValue("a", 2048, 2048, 16384)).getMessage());
     }
 }

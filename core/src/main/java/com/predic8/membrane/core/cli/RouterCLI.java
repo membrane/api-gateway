@@ -50,12 +50,14 @@ import static com.predic8.membrane.core.interceptor.authentication.SecurityUtils
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.YES;
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.isOpenAPIMisplacedError;
 import static com.predic8.membrane.core.proxies.ApiInfo.logInfosAboutStartedProxies;
+import static com.predic8.membrane.core.proxies.RuleManager.RuleDefinitionSource.MANUAL;
 import static com.predic8.membrane.core.router.YamlRouterBootstrap.loadIntoRouter;
 import static com.predic8.membrane.core.util.ExceptionUtil.concatMessageAndCauseMessages;
 import static com.predic8.membrane.core.util.OSUtil.fixBackslashes;
 import static com.predic8.membrane.core.util.URIUtil.pathFromFileURI;
 import static com.predic8.membrane.core.util.text.TerminalColors.*;
-import static java.lang.Integer.parseInt;
+import static java.lang.Integer.MAX_VALUE;
+import static java.lang.Integer.MIN_VALUE;
 import static org.apache.commons.lang3.exception.ExceptionUtils.getMessage;
 import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCauseMessage;
 
@@ -66,11 +68,22 @@ public class RouterCLI {
     public static void main(String[] args) {
         try {
             start(args);
+        } catch (InvalidOptionValueException e) {
+            fail(e.getMessage());
         } catch (ExitException ignored) {
             // Nothing logged on purpose. The exception is just to trigger exit at one place.
             // Do logging where the exception is thrown.
             System.exit(1);
         }
+    }
+
+    /**
+     * Reports a usage error to the user and terminates. Not for internal failures: those belong in
+     * the log, together with their stack trace.
+     */
+    private static void fail(String message) {
+        System.err.println(message);
+        System.exit(1);
     }
 
     private static void start(String[] args) {
@@ -81,8 +94,7 @@ public class RouterCLI {
             System.exit(0);
         }
 
-        // Dry run
-        if (commandLine.noCommand() && commandLine.getCommand().isOptionSet("t")) {
+        if (isDryRun(commandLine)) {
             dryRun(commandLine);
         }
 
@@ -103,32 +115,32 @@ public class RouterCLI {
             dr.waitFor();
     }
 
+    /**
+     * The {@code start} command is documented as behaving exactly like the command being omitted, so
+     * {@code -t} must terminate after verifying the configuration there too, see issue #3217. Only the
+     * root command and {@code start} declare {@code -t}, so the option alone decides.
+     */
+    static boolean isDryRun(MembraneCommandLine commandLine) {
+        return commandLine.getCommand().isOptionSet("t");
+    }
+
     private static void privateJwkToPublic(MembraneCommandLine commandLine) {
-        String input = commandLine.getCommand().getOptionValue("i");
-        String output = commandLine.getCommand().getOptionValue("o");
-        if (input == null || output == null) {
-            log.error("Both input (-i) and output (-o) files must be specified.");
-            System.exit(1);
-        }
         privateJWKtoPublic(
-                input,
-                output);
+                commandLine.getCommand().getTrimmedOptionValue("i"),
+                commandLine.getCommand().getTrimmedOptionValue("o"),
+                commandLine.getCommand().isOptionSet("overwrite"));
         System.exit(0);
     }
 
     private static void argon2id(MembraneCommandLine commandLine) {
         try {
             String password = commandLine.getCommand().getOptionValue("pass");
-            String version = commandLine.getCommand().getOptionValue("v");
-            String salt = commandLine.getCommand().getOptionValue("s");
-            String iterations = commandLine.getCommand().getOptionValue("i");
-            String memory = commandLine.getCommand().getOptionValue("m");
-            String parallelism = commandLine.getCommand().getOptionValue("p");
+            String salt = commandLine.getCommand().getTrimmedOptionValue("s");
 
-            int v = version == null ? 19 : Integer.parseInt(version);
-            int i = iterations == null ? 3 : Integer.parseInt(iterations);
-            int m = memory == null ? 65536 : Integer.parseInt(memory);
-            int p = parallelism == null ? 1 : Integer.parseInt(parallelism);
+            int v = getArgon2Version(commandLine);
+            int i = commandLine.getCommand().getIntOptionValue("i", 3, 1, MAX_VALUE);
+            int m = commandLine.getCommand().getIntOptionValue("m", 65536, 1, MAX_VALUE);
+            int p = commandLine.getCommand().getIntOptionValue("p", 1, 1, MAX_VALUE);
             if (password == null) {
                 System.out.println("Enter password to hash:");
                 Scanner s = new Scanner(System.in);
@@ -142,11 +154,22 @@ public class RouterCLI {
             }
 
             System.out.println(buildArgon2idPCH(password.getBytes(StandardCharsets.UTF_8), s, v, i, m, p));
+        } catch (InvalidOptionValueException e) {
+            fail(e.getMessage());
         } catch (Exception e) {
-            System.err.println(getExceptionMessageWithCauses(e));
-            System.exit(1);
+            fail(getExceptionMessageWithCauses(e));
         }
         System.exit(0);
+    }
+
+    /**
+     * Argon2 defines only the versions 0x10 (16) and 0x13 (19); Bouncy Castle rejects any other value.
+     */
+    static int getArgon2Version(MembraneCommandLine commandLine) {
+        int version = commandLine.getCommand().getIntOptionValue("v", 19, MIN_VALUE, MAX_VALUE);
+        if (version != 16 && version != 19)
+            throw new InvalidOptionValueException("Invalid value for -v: %d is not a supported Argon2 version. Use 16 (0x10) or 19 (0x13).".formatted(version));
+        return version;
     }
 
     private static void dryRun(MembraneCommandLine commandLine) {
@@ -208,6 +231,8 @@ public class RouterCLI {
             log.error("{}", "%s%s%s\n%s".formatted(RED(), e.getMessage(), RESET(), report));
         } catch (ExitException ignored) {
             // do nothing
+        } catch (InvalidOptionValueException e) {
+            fail(e.getMessage());
         } catch (Exception ex) {
             SpringConfigurationErrorHandler.handleRootCause(ex, log);
         }
@@ -229,17 +254,17 @@ public class RouterCLI {
         throw new RuntimeException("Unsupported file extension.");
     }
 
-    private static Router initRouterByOpenApiSpec(MembraneCommandLine commandLine) throws Exception {
+    static Router initRouterByOpenApiSpec(MembraneCommandLine commandLine) throws Exception {
         var router = new DefaultRouter();
-        router.getRuleManager().addProxyAndOpenPortIfNew(getApiProxy(commandLine));
-        router.init();
+        router.getRuleManager().addProxy(getApiProxy(commandLine), MANUAL);
+        router.start();
         logInfosAboutStartedProxies(router.getRuleManager());
         logStartupMessage();
         return router;
     }
 
     private static Router initRouterByYAML(MembraneCommandLine commandLine, String option) throws Exception {
-        return initRouterByYAML(commandLine.getCommand().getOptionValue(option));
+        return initRouterByYAML(commandLine.getCommand().getTrimmedOptionValue(option));
     }
 
     static Router initRouterByYAML(String location) throws Exception {
@@ -253,8 +278,7 @@ public class RouterCLI {
 
     private static @NotNull APIProxy getApiProxy(MembraneCommandLine commandLine) throws IOException {
         APIProxy api = new APIProxy();
-        api.setPort(commandLine.getCommand().isOptionSet("p") ?
-                parseInt(commandLine.getCommand().getOptionValue("p")) : 2000);
+        api.setPort(commandLine.getCommand().getIntOptionValue("p", 2000, 1, 65535));
         api.setOpenapi(List.of(getOpenAPISpec(commandLine)));
         return api;
     }
@@ -270,10 +294,11 @@ public class RouterCLI {
         return spec;
     }
 
-    private static String getLocation(MembraneCommandLine commandLine) throws IOException {
-        String location = commandLine.getCommand().getOptionValue("l");
+    static String getLocation(MembraneCommandLine commandLine) throws IOException {
+        String location = commandLine.getCommand().getTrimmedOptionValue("l");
 
-        if (location == null || location.isEmpty()) throw new RuntimeException(); // unreachable
+        if (location == null || location.isEmpty())
+            throw new InvalidOptionValueException("Invalid value for -l: the OpenAPI location must not be empty.");
         if (location.startsWith("http://") || location.startsWith("https://")) return location;
 
         File locFile = new File(location);
@@ -296,7 +321,8 @@ public class RouterCLI {
 
         try {
             cl.parse(args);
-        } catch (MissingRequiredOptionException e) {
+        } catch (CommandParseException e) {
+            System.err.println(e.getMessage());
             e.getCommand().printHelp();
             System.exit(1);
         } catch (ParseException e) {
@@ -375,8 +401,8 @@ public class RouterCLI {
 
     private static String getConfiguration(MembraneCommandLine cl) {
         return cl.getCommand().isOptionSet("c") ?
-                cl.getCommand().getOptionValue("c") :
-                cl.getCommand().getOptionValue("t");
+                cl.getCommand().getTrimmedOptionValue("c") :
+                cl.getCommand().getTrimmedOptionValue("t");
     }
 
     private static boolean hasConfiguration(MembraneCommandLine cl) {

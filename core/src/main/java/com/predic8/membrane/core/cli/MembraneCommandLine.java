@@ -13,11 +13,12 @@
    limitations under the License. */
 package com.predic8.membrane.core.cli;
 
-import org.apache.commons.cli.*;
-import org.jetbrains.annotations.*;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
+import org.jetbrains.annotations.NotNull;
 
 import static com.predic8.membrane.core.util.OSUtil.isWindows;
-import static org.apache.commons.cli.Option.*;
+import static org.apache.commons.cli.Option.builder;
 
 public class MembraneCommandLine {
     private final CliCommand rootNamespace;
@@ -28,8 +29,7 @@ public class MembraneCommandLine {
     }
 
     private static Options getRootOptions() {
-        return new Options().addOption(builder("h").longOpt("help").desc("Display this text").build())
-                .addOption(builder("c").longOpt("config").argName("apis.yaml or proxies.xml").hasArg().desc("Location of the configuration file").build())
+        return new Options().addOption(builder("c").longOpt("config").argName("apis.yaml or proxies.xml").hasArg().desc("Location of the configuration file").build())
                 .addOption(builder("t").longOpt("test").argName("apis.yaml or proxies.xml").hasArg().desc("Verifies configuration file and terminates").build());
     }
 
@@ -50,9 +50,8 @@ public class MembraneCommandLine {
             }});
 
             addSubcommand(new CliCommand("oas", "Use a single OpenAPI document to configure and start gateway") {{
-                addOption(builder("h").longOpt("help").desc("Display this text").build())
-                        .addOption(builder("l").longOpt("location").argName("OpenAPI location").hasArg().required().desc("(Required) Set URL or path to an OpenAPI document").build())
-                        .addOption(builder("p").longOpt("port").argName("API port").hasArg().desc("Listen port").build())
+                addOption(builder("l").longOpt("location").argName("OpenAPI location").hasArg().required().desc("(Required) Set URL or path to an OpenAPI document").build())
+                        .addOption(builder("p").longOpt("port").argName("API port").hasArg().desc("Listen port (1-65535, default: 2000)").build())
                         .addOption(builder("v").longOpt("validate-requests").desc("Validate requests against OpenAPI").build())
                         .addOption(builder("V").longOpt("validate-responses").desc("Validate responses against OpenAPI").build());
 
@@ -60,18 +59,19 @@ public class MembraneCommandLine {
 
             addSubcommand(new CliCommand("generate-jwk", "Generate a JSON Web Key and write it to a file") {{
                 addOption(builder("o").longOpt("output").argName("file").hasArg().required().desc("Output file for JWK").build());
-                addOption(builder("b").longOpt("bits").argName("bitlength").hasArg().desc("Key length in bits (default: 2048)").build());
-                addOption(builder("overwrite").desc("Overwrite the output file, if it exists.").build());
+                addOption(builder("b").longOpt("bits").argName("bitlength").hasArg().desc("Key length in bits (2048-16384, default: 2048)").build());
+                addOption(builder("overwrite").longOpt("overwrite").desc("Overwrite the output file, if it exists.").build());
             }});
 
             addSubcommand(new CliCommand("private-jwk-to-public", "Convert a private JWK to a public JWK.") {{
-                addOption(builder("i").longOpt("input").argName("file").hasArg().desc("Input file (JWK, private).").build());
-                addOption(builder("o").longOpt("output").argName("file").hasArg().desc("Output file (JWK, public).").build());
+                addOption(builder("i").longOpt("input").argName("file").hasArg().required().desc("Input file (JWK, private).").build());
+                addOption(builder("o").longOpt("output").argName("file").hasArg().required().desc("Output file (JWK, public).").build());
+                addOption(builder("overwrite").longOpt("overwrite").desc("Overwrite the output file, if it exists.").build());
             }});
 
             addSubcommand(new CliCommand("argon2id", "Computes an Argon2id hash value.") {{
                 addOption(builder("pass").longOpt("password").argName("password").hasArg().desc("Password to hash.").build());
-                addOption(builder("v").longOpt("version").argName("version").hasArg().desc("Version (decimal, default: 19).").build());
+                addOption(builder("v").longOpt("version").argName("version").hasArg().desc("Version (decimal, 16 or 19, default: 19).").build());
                 addOption(builder("s").longOpt("salt").argName("salt").hasArg().desc("Salt to hash with (hex string, default: random 16 bytes).").build());
                 addOption(builder("i").longOpt("iterations").argName("iterations").hasArg().desc("Number of iterations (default: 3).").build());
                 addOption(builder("m").longOpt("memory").argName("memory").hasArg().desc("Memory in KiB (default: 65536).").build());
@@ -91,9 +91,5 @@ public class MembraneCommandLine {
 
     public CliCommand getCommand() {
         return currentNamespace;
-    }
-
-    public boolean noCommand() {
-        return currentNamespace == rootNamespace;
     }
 }

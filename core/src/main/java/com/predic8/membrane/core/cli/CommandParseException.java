@@ -1,4 +1,4 @@
-/* Copyright 2024 predic8 GmbH, www.predic8.com
+/* Copyright 2026 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -13,13 +13,21 @@
    limitations under the License. */
 package com.predic8.membrane.core.cli;
 
-/**
- * Signals that a required option was not given. Reported like any other
- * {@link CommandParseException}: with the message and the help of the affected command.
- */
-public class MissingRequiredOptionException extends CommandParseException {
+import org.apache.commons.cli.ParseException;
 
-    public MissingRequiredOptionException(String message, CliCommand command) {
-        super(message, command);
+/**
+ * A command line error that knows the command it occurred in, so that the help of that command can
+ * be printed instead of the help of the root command.
+ */
+public class CommandParseException extends ParseException {
+    private final CliCommand command;
+
+    public CommandParseException(String message, CliCommand command) {
+        super(message);
+        this.command = command;
+    }
+
+    public CliCommand getCommand() {
+        return command;
     }
 }
