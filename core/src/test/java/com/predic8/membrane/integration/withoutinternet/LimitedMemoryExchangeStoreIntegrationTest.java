@@ -14,27 +14,35 @@
 
 package com.predic8.membrane.integration.withoutinternet;
 
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.exchangestore.*;
-import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.exchange.AbstractExchange;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchangestore.LimitedMemoryExchangeStore;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.flow.*;
+import com.predic8.membrane.core.interceptor.flow.RequestInterceptor;
+import com.predic8.membrane.core.interceptor.flow.ResponseInterceptor;
 import com.predic8.membrane.core.interceptor.templating.StaticInterceptor;
-import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.transport.http.*;
-import com.predic8.membrane.core.transport.http.client.*;
-import com.predic8.membrane.integration.withinternet.*;
-import org.jetbrains.annotations.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.proxies.ServiceProxy;
+import com.predic8.membrane.core.proxies.ServiceProxyKey;
+import com.predic8.membrane.core.router.DefaultRouter;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.transport.http.HttpClient;
+import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
+import com.predic8.membrane.integration.withinternet.LargeBodyTest;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import java.net.*;
-import java.util.concurrent.atomic.*;
+import java.net.URISyntaxException;
+import java.util.concurrent.atomic.AtomicReference;
 
-import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.http.Request.*;
-import static java.lang.Integer.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static com.predic8.membrane.core.http.Header.CHUNKED;
+import static com.predic8.membrane.core.http.Header.TRANSFER_ENCODING;
+import static com.predic8.membrane.core.http.Request.Builder;
+import static com.predic8.membrane.core.http.Request.post;
+import static java.lang.Integer.MAX_VALUE;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class LimitedMemoryExchangeStoreIntegrationTest {
     private static LimitedMemoryExchangeStore lmes;
@@ -48,9 +56,9 @@ public class LimitedMemoryExchangeStoreIntegrationTest {
         lmes = new LimitedMemoryExchangeStore();
         lmes.setMaxSize(500_000);
         lmes.removeAllExchanges((AbstractExchange[]) lmes.getAllExchanges());
-        // streaming only works for maxRetries = 1
+        // streaming only works when no retry can happen, i.e. retries = 0
         hcc = new HttpClientConfiguration();
-        hcc.getRetryHandler().setRetries(1);
+        hcc.getRetryHandler().setRetries(0);
 
         ServiceProxy proxy = getServiceProxy(3045, "localhost", 80);
         var ri = new RequestInterceptor();
