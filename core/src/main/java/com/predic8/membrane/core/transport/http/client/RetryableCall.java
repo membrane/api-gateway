@@ -14,38 +14,28 @@
 
 package com.predic8.membrane.core.transport.http.client;
 
-import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.exchange.Exchange;
 
 /**
- * Functional interface for operations that support retry logic.
- * Used internally by the HTTP client to wrap logic that may be retried (e.g. outbound HTTP requests).
- * Implementations return {@code true} if the operation succeeded and no retry is needed.
- * Returning {@code false} or throwing an exception indicates failure, which may trigger a retry
- * depending on the configured {@code maxRetries}.
- *
- * This interface is typically used by {@link RetryHandler}.
- *
+ * One attempt of {@link RetryHandler#executeWithRetries(Exchange, RetryableCall)} - the call to the
+ * backend that the handler repeats when it fails.
+ * <p>
+ * Returning {@code true} ends the sequence at once, which the HTTP client uses for an exchange that
+ * turned into a tunnel and has no response to inspect. Returning {@code false} hands the response set
+ * on the exchange back to the handler, which decides from its status code whether to try again. An
+ * exception is retried or rethrown according to the retry policy.
  */
 @FunctionalInterface
 public interface RetryableCall {
 
     /**
-     * Executes the operation for a given retry attempt.
+     * Runs a single attempt.
      *
-     * @param attempt the current attempt count, starting at 0
-     * @return true if successful and no retry is needed
-     * @throws Exception if the call fails (retryable or not)
-     */
-
-    /**
-     * Executes the actual retryable operation (e.g., an HTTP call).
-     * This method is called once per attempt.
-     *
-     * @param exc the current exchange object
-     * @param dest the destination URI or identifier of the target
-     * @param attempt the current retry attempt (starting at 0)
-     * @return true if the operation succeeded and no further retries are necessary
-     * @throws Exception if the operation fails; may be retried depending on retry policy
+     * @param exc the current exchange; the implementation sets the response on it
+     * @param dest the destination this attempt is sent to
+     * @param attempt zero-based number of this attempt
+     * @return true to end the sequence without inspecting a response
+     * @throws Exception if the attempt fails; the retry policy decides whether it is repeated
      */
     boolean execute(Exchange exc, String dest, int attempt) throws Exception;
 }

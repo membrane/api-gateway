@@ -94,6 +94,7 @@ public class Header {
     public static final String PROXY_AUTHORIZATION = "Proxy-Authorization";
     public static final String SOAP_ACTION = "SOAPAction";
     public static final String ACCEPT = "Accept";
+    public static final String ACCEPT_ENCODING = "Accept-Encoding";
     public static final String LOCATION = "Location";
     public static final String AUTHORIZATION = "Authorization";
     public static final String SET_COOKIE = "Set-Cookie";

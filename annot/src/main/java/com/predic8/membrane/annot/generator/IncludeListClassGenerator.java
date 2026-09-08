@@ -38,7 +38,8 @@ public class IncludeListClassGenerator extends ClassGenerator {
                 
                 /**
                  * @description <p>
-                 * Includes additional YAML configuration files before parsing the current file's own configuration.
+                 * Includes additional YAML configuration files. Each <code>include:</code> is expanded in-place at that position,
+                 * so the proxy/API registration order matches the document order in the file.
                  * </p>
                  * <p>
                  * Include entries are resolved in the order they are listed. If an entry points to a directory,
@@ -47,10 +48,20 @@ public class IncludeListClassGenerator extends ClassGenerator {
                  * Directory includes are not watched for YAML hot deployment; adding or removing files there does not
                  * trigger a reload automatically.
                  * </p>
+                 * <p>
+                 * Multiple <code>include:</code> documents may appear at different positions to control routing
+                 * priority: included APIs listed earlier take priority over those listed later, and their position
+                 * relative to inline APIs in the same file is preserved.
+                 * </p>
                  * @yaml <pre><code>
                  * include:
-                 *   - ./apis/demo.apis.yaml
-                 *   - ../shared/apis
+                 *   - ./apis/high-priority.apis.yaml
+                 * ---
+                 * api:
+                 *   port: 8080
+                 * ---
+                 * include:
+                 *   - ./apis/low-priority.apis.yaml
                  * </code></pre>
                  */
                 @MCElement(name = "include", topLevel = true, noEnvelope = true, component = false)

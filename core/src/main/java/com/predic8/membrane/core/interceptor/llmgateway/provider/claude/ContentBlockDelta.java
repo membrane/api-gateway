@@ -14,40 +14,23 @@
 
 package com.predic8.membrane.core.interceptor.llmgateway.provider.claude;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-public class ContentBlockDelta {
-
-    private int index;
-    private String deltaType;
-    private String partialJson;
+/**
+ * The {@code content_block_delta} event, one piece of a content block. The arguments of a tool call
+ * arrive as {@code input_json_delta} fragments that only make up a JSON document together.
+ */
+public record ContentBlockDelta(int index, String deltaType, String partialJson) {
 
     public static ContentBlockDelta from(ObjectNode on) {
-        var cbd = new ContentBlockDelta();
-
-        cbd.index = on.path("index").asInt();
-
-        JsonNode delta = on.path("delta");
-        cbd.deltaType = delta.path("type").asText(null);
-        cbd.partialJson = delta.path("partial_json").asText("");
-
-        return cbd;
+        var delta = on.path("delta");
+        return new ContentBlockDelta(
+                on.path("index").asInt(),
+                delta.path("type").asText(null),
+                delta.path("partial_json").asText(""));
     }
 
     public boolean isInputJsonDelta() {
         return "input_json_delta".equals(deltaType);
-    }
-
-    public int getIndex() {
-        return index;
-    }
-
-    public String getDeltaType() {
-        return deltaType;
-    }
-
-    public String getPartialJson() {
-        return partialJson;
     }
 }

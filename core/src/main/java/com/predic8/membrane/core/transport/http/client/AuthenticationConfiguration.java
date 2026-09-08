@@ -13,24 +13,15 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.http.client;
 
-import com.predic8.membrane.annot.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.Required;
 
-import java.util.*;
+import java.util.Objects;
 
 /**
- * @description Configuration for basic HTTP authentication.
- *              This element can be used to configure credentials for outbound requests requiring HTTP Basic Auth.
- *              Typically used within &lt;httpClientConfig&gt;.
- *
- *              XML Example:
- *              &lt;authentication username="user" password="secret"/&gt;
- *
- *              YAML (experimental):
- *              authentication:
- *                username: user
- *                password: secret
- *
- * @topic 4. Transports and Clients
+ * @description Credentials for HTTP Basic Authentication. An Authorization header built from them is
+ *              added to every request the HTTP client sends to the backend.
  */
 @MCElement(name="authentication", component =false)
 public class AuthenticationConfiguration {
