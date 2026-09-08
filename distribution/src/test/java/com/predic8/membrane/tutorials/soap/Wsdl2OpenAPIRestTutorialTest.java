@@ -18,8 +18,7 @@ import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.*;
 
 public class Wsdl2OpenAPIRestTutorialTest extends AbstractSOAPTutorialTest {
 
@@ -41,6 +40,53 @@ public class Wsdl2OpenAPIRestTutorialTest extends AbstractSOAPTutorialTest {
             .body("partners[0].name", equalTo("Alice"))
             .body("partners[1].name", equalTo("Bob"))
             .body("partners[2].name", equalTo("Carol"));
+        // @formatter:on
+    }
+
+    /**
+     * Step 3 of the tutorial: getPartners is mapped to GET, so its city field is published as a
+     * query parameter. One partner comes back only if the value reached the SOAP backend.
+     */
+    @Test
+    void queryParameterReachesTheSoapBackend() {
+        // @formatter:off
+        given()
+        .when()
+            .get("http://localhost:2000/partners?city=Berlin")
+        .then()
+            .statusCode(200)
+            .contentType(JSON)
+            .body("partners", hasSize(1))
+            .body("partners[0].name", equalTo("Alice"));
+        // @formatter:on
+    }
+
+    @Test
+    void undeclaredQueryParameterIsNotPassedOn() {
+        // @formatter:off
+        given()
+        .when()
+            .get("http://localhost:2000/partners?nonsense=Berlin")
+        .then()
+            .statusCode(200)
+            .contentType(JSON)
+            .body("partners", hasSize(3));
+        // @formatter:on
+    }
+
+    @Test
+    void specDeclaresTheQueryParametersWithTheirXsdConstraints() {
+        String specPath = given().when().get("http://localhost:2000/api-docs")
+                .jsonPath().getString("values().openapi_link[0]");
+
+        // @formatter:off
+        given()
+        .when()
+            .get("http://localhost:2000" + specPath)
+        .then()
+            .statusCode(200)
+            .body(containsString("in: \"query\""))
+            .body(containsString("PUBLIC_AUTHORITY"));   // the PartnerKind enum survives the mapping
         // @formatter:on
     }
 

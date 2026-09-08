@@ -84,8 +84,10 @@ public class Body extends AbstractBody {
 	}
 
 	public void discard() {
-		if (read)
+		if (isRead())
 			return;
+		if (hasFailed())
+			return; // see AbstractBody.discard(): best-effort, and the stream is already dead
 		if (wasStreamed())
 			return;
 
@@ -95,7 +97,7 @@ public class Body extends AbstractBody {
         try {
             skipBodyContent();
         } catch (IOException e) {
-            throw new ReadingBodyException(e);
+            throw fail(e);
         }
     }
 
@@ -134,28 +136,6 @@ public class Body extends AbstractBody {
 	}
 
 	@Override
-	protected void writeNotRead(AbstractBodyTransferer out) throws IOException {
-		byte[] buffer = new byte[BUFFER_SIZE];
-
-		long totalLength = 0;
-		int length;
-		chunks.clear();
-		while ((this.length > totalLength || this.length == -1) && (length = inputStream.read(buffer)) > 0) {
-			totalLength += length;
-			out.write(buffer, 0, length);
-			byte[] chunk = new byte[length];
-			System.arraycopy(buffer, 0, chunk, 0, length);
-			Chunk chunk1 = new Chunk(chunk);
-			chunks.add(chunk1);
-			for (MessageObserver observer : observers)
-				observer.bodyChunk(chunk1);
-		}
-
-		out.finish(null);
-		markAsRead();
-	}
-
-	@Override
 	protected void writeStreamed(AbstractBodyTransferer out) {
 		byte[] buffer = new byte[BUFFER_SIZE];
 
@@ -167,7 +147,7 @@ public class Body extends AbstractBody {
                 if (!((this.length > totalLength || this.length == -1) && (length = inputStream.read(buffer)) > 0))
                     break;
             } catch (IOException e) {
-                throw new ReadingBodyException(e);
+                throw fail(e);
             }
             totalLength += length;
 			streamedLength += length;

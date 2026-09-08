@@ -18,10 +18,12 @@ import com.predic8.membrane.core.interceptor.oauth2.OAuth2AnswerParameters;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import static com.predic8.membrane.core.interceptor.oauth2.ParamNames.ACCESS_TOKEN;
 import static com.predic8.membrane.core.interceptor.oauth2client.temp.OAuth2Constants.OAUTH2_ANSWER;
+import static java.util.Collections.unmodifiableMap;
 
 public class Session {
     @JsonIgnore  // we don't want this utility method to show up in JSON representations
@@ -44,19 +46,21 @@ public class Session {
     protected final static String AUTHORIZATION_LEVEL = "auth_level";
 
     private String usernameKeyName;
-    Map<String, Object> content;
+    volatile ConcurrentHashMap<String, Object> content;
 
-    boolean isDirty;
+    volatile boolean isDirty;
 
     public Session(String usernameKeyName, Map<String, Object> content) {
         this.usernameKeyName = usernameKeyName;
-        this.content = content;
+        this.content = withoutNullEntries(content);
         if(getInternal(AUTHORIZATION_LEVEL) == null)
             setAuthorization(AuthorizationLevel.ANONYMOUS);
         isDirty = false;
     }
 
-    public Session(){};
+    public Session() {
+        this.content = new ConcurrentHashMap<>();
+    }
 
     public Session(Map<String, Object> content) {
         this("username",content);
@@ -67,6 +71,8 @@ public class Session {
     }
 
     public <T> void put(String key, T value) {
+        if (key == null) throw new IllegalArgumentException("Session key must not be null");
+        if (value == null) return; // null value = absent; treat as no-op
         put(Collections.singletonMap(key, value));
     }
 
@@ -80,17 +86,20 @@ public class Session {
     }
 
     public void remove(String... keys) {
-        Set<String> keysUnique = new HashSet<>(Arrays.asList(keys));
-        content = content
-                .entrySet()
-                .stream()
-                .filter(entry -> !keysUnique.contains(entry.getKey()))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        for (String key : keys)
+            if (key == null) throw new IllegalArgumentException("Session key must not be null");
+        Arrays.stream(keys).forEach(content::remove);
         dirty();
     }
 
     public void put(Map<String, Object> map) {
-        content.putAll(map);
+        // ConcurrentHashMap rejects null keys and values. Filter them here so that batch
+        // operations and Jackson deserialization (which may produce null values from JSON null)
+        // remain backward compatible. Null keys are still a programming error when passed to
+        // the single-entry put(String, T), which throws explicitly.
+        map.forEach((k, v) -> {
+            if (k != null && v != null) content.put(k, v);
+        });
         dirty();
     }
 
@@ -99,7 +108,7 @@ public class Session {
     }
 
     public Map<String, Object> get() {
-        return content;
+        return unmodifiableMap(content);
     }
 
     public void clear() {
@@ -229,11 +238,20 @@ public class Session {
     }
 
     public Map<String, Object> getContent() {
-        return content;
+        return unmodifiableMap(content);
     }
 
     public void setContent(Map<String, Object> content) {
-        this.content = content;
+        // Always make a defensive copy so the Session owns its map exclusively.
+        // External mutations to the source map and sharing between Session instances
+        // cannot then bypass put() or dirty().
+        this.content = withoutNullEntries(content);
+    }
+
+    private static ConcurrentHashMap<String, Object> withoutNullEntries(Map<String, Object> source) {
+        ConcurrentHashMap<String, Object> result = new ConcurrentHashMap<>();
+        source.forEach((k, v) -> { if (k != null && v != null) result.put(k, v); });
+        return result;
     }
 
     public String getUsernameKeyName() {

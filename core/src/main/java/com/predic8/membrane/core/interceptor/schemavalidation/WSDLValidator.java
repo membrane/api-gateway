@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
+import com.predic8.membrane.annot.Constants.SoapVersion;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.interceptor.Interceptor;
@@ -23,29 +24,33 @@ import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.LSInputImpl;
-import com.predic8.membrane.core.util.MessageUtil;
 import com.predic8.membrane.core.util.wsdl.parser.Definitions.SOAPVersion;
 import com.predic8.membrane.core.util.xml.XMLUtil;
+import com.predic8.membrane.core.util.xml.parser.HardenedSchemaFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
 import org.w3c.dom.ls.LSResourceResolver;
+import org.xml.sax.SAXException;
 
+import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
 import javax.xml.transform.Source;
+import javax.xml.transform.stream.StreamSource;
+import javax.xml.validation.Schema;
+import javax.xml.validation.Validator;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 
 import static com.predic8.membrane.annot.Constants.SoapVersion.SOAP11;
 import static com.predic8.membrane.annot.Constants.SoapVersion.SOAP12;
-import static com.predic8.membrane.core.http.Header.VALIDATION_ERROR_SOURCE;
-import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.annot.Constants.XSD_NS;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static com.predic8.membrane.core.interceptor.schemavalidation.WSDLMessageElementExtractor.getPossibleRequestElements;
-import static com.predic8.membrane.core.interceptor.schemavalidation.WSDLMessageElementExtractor.getPossibleResponseElements;
+import static com.predic8.membrane.core.interceptor.schemavalidation.WSDLMessageElementExtractor.*;
 import static com.predic8.membrane.core.util.SOAPUtil.FaultCode.Client;
 import static com.predic8.membrane.core.util.SOAPUtil.*;
 import static com.predic8.membrane.core.util.wsdl.parser.Definitions.SOAPVersion.SOAP_11;
@@ -71,6 +76,28 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
     private final boolean skipFaults;
 
     /**
+     * Elements allowed as the payload of a SOAP fault's detail/Detail, as declared via
+     * wsdl:fault on the service's operations.
+     */
+    private final Set<QName> faultDetailElements;
+
+    /**
+     * Schemas describing the structural shape of a SOAP 1.1/1.2 Fault element (faultcode/
+     * faultstring/detail resp. Code/Reason/Detail). Membrane doesn't otherwise bundle a SOAP
+     * envelope schema, so these are compiled once per validator instance from small dedicated
+     * resources rather than being derived from the WSDL.
+     */
+    private final Map<SoapVersion, Schema> faultStructureSchemas;
+
+    /**
+     * One pool of ready-to-use validators per SOAP version, filled in {@link #init()}. Kept apart
+     * from the pool of the WSDL's embedded schemas: that one is iterated looking for <i>any</i>
+     * schema the message matches, whereas exactly one fault schema applies, selected by SOAP
+     * version.
+     */
+    private Map<SoapVersion, BlockingQueue<Validator>> faultStructureValidators;
+
+    /**
      * Parsed WSDL document
      */
     private final com.predic8.membrane.core.util.wsdl.parser.Definitions definitions;
@@ -94,7 +121,57 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
 
         requestElements = getPossibleRequestElements(definitions, serviceName);
         responseElements = getPossibleResponseElements(definitions, serviceName);
+        faultDetailElements = getPossibleFaultDetailElements(definitions, serviceName);
         versions = definitions.getSoapVersions();
+
+        faultStructureSchemas = new EnumMap<>(SoapVersion.class);
+        faultStructureSchemas.put(SOAP11, compileFaultStructureSchema("soap11-fault.xsd"));
+        faultStructureSchemas.put(SOAP12, compileFaultStructureSchema("soap12-fault.xsd"));
+    }
+
+    @Override
+    public void init() {
+        super.init();
+        int concurrency = poolConcurrency();
+        faultStructureValidators = new EnumMap<>(SoapVersion.class);
+        faultStructureSchemas.forEach((version, schema) -> {
+            var pool = new ArrayBlockingQueue<Validator>(concurrency);
+            for (int i = 0; i < concurrency; i++)
+                pool.add(newHardenedValidator(schema));
+            faultStructureValidators.put(version, pool);
+        });
+    }
+
+    private static Validator newHardenedValidator(Schema schema) {
+        var validator = schema.newValidator();
+        HardenedSchemaFactory.hardenValidator(validator);
+        validator.setErrorHandler(new SchemaValidatorErrorHandler());
+        return validator;
+    }
+
+    private static Schema compileFaultStructureSchema(String resourceName) {
+        try {
+            var sf = HardenedSchemaFactory.newInstance(XSD_NS);
+            // soap12-fault.xsd imports the XML namespace for xml:lang; serve it from the bundled
+            // xml.xsd instead of letting the (hardened, network-blocked) factory fetch it.
+            sf.setResourceResolver((type, namespaceURI, publicId, systemId, baseURI) -> {
+                if (!XMLConstants.XML_NS_URI.equals(namespaceURI)) {
+                    return null;
+                }
+                try {
+                    return new LSInputImpl(publicId, systemId,
+                            Objects.requireNonNull(WSDLValidator.class.getResourceAsStream("xml.xsd"),
+                                    "Bundled schema resource not found: xml.xsd"));
+                } catch (IOException e) {
+                    throw new RuntimeException("Cannot load bundled xml.xsd.", e);
+                }
+            });
+            return sf.newSchema(new StreamSource(
+                    Objects.requireNonNull(WSDLValidator.class.getResourceAsStream(resourceName),
+                            "Bundled schema resource not found: " + resourceName)));
+        } catch (SAXException e) {
+            throw new ConfigurationException("Cannot load bundled SOAP fault schema %s.".formatted(resourceName), e);
+        }
     }
 
     @Override
@@ -114,9 +191,13 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
         var result = analyseSOAPMessage(xopr, message);
 
         if (!result.isSOAP()) {
-            setErrorResponse(exc, "Not a valid SOAP message.");
-            exc.getResponse().getHeader().add(VALIDATION_ERROR_SOURCE, flow.name());
-            return ABORT;
+            return abort(exc, flow, "Not a valid SOAP message.");
+        }
+
+        // wsdl:fault describes what a service returns, so a fault is never a legal request - not
+        // even with skipFaults, which is about tolerating the faults a backend sends back.
+        if (result.isFault() && flow == Interceptor.Flow.REQUEST) {
+            return abort(exc, flow, "A SOAP Fault is not a valid request. Possible elements are %s".formatted(requestElements));
         }
 
         if (result.isFault() && skipFaults) {
@@ -126,24 +207,74 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
 
         if (!versions.isEmpty()) {
             if (result.version() == SOAP11 && !versions.contains(SOAP_11)) {
-                setErrorResponse(exc, "SOAP version 1.1 is not valid");
-                return ABORT;
+                return abort(exc, flow, "SOAP version 1.1 is not valid");
             }
             if (result.version() == SOAP12 && !versions.contains(SOAP_12)) {
-                setErrorResponse(exc, "SOAP version 1.2 is not valid");
-                return ABORT;
+                return abort(exc, flow, "SOAP version 1.2 is not valid");
             }
         }
 
-        if (flow == Interceptor.Flow.REQUEST && !isPossibleRequestElement(result.soapElement())) {
-            setErrorResponse(exc, "%s is not a valid request element. Possible elements are %s".formatted(result.soapElement(), requestElements));
-            return ABORT;
+        if (result.isFault()) {
+            return validateFault(exc, message, result.version());
         }
-        if (flow == Interceptor.Flow.RESPONSE && !result.isFault() && !isPossibleResponseElement(result.soapElement())) {
-            setErrorResponse(exc, "%s is not a valid response element. Possible elements are %s".formatted(result.soapElement(), responseElements));
-            return ABORT;
+
+        if (flow == Interceptor.Flow.REQUEST && !isPossibleRequestElement(result.soapElement())) {
+            return abort(exc, flow, "%s is not a valid request element. Possible elements are %s".formatted(result.soapElement(), requestElements));
+        }
+        if (flow == Interceptor.Flow.RESPONSE && !isPossibleResponseElement(result.soapElement())) {
+            return abort(exc, flow, "%s is not a valid response element. Possible elements are %s".formatted(result.soapElement(), responseElements));
         }
         return super.validateMessage(exc, flow);
+    }
+
+    /**
+     * Validates a SOAP fault: first structurally, against the bundled SOAP 1.1/1.2 Fault shape
+     * (faultcode/faultstring/detail resp. Code/Reason/Detail), then - if a detail/Detail payload
+     * is present and the WSDL declares wsdl:fault elements for this service - validates that
+     * payload against the WSDL's embedded schemas, same as request/response elements.
+     * <p>
+     * Only reached in the response flow: a fault is rejected outright as a request, so every
+     * rejection here is reported against {@link Interceptor.Flow#RESPONSE}.
+     */
+    private Outcome validateFault(Exchange exc, Message message, SoapVersion version) throws Exception {
+        var exceptions = new ArrayList<Exception>();
+
+        // Only SOAP 1.1 and 1.2 fault shapes are bundled. analyseSOAPMessage cannot currently
+        // report any other version for a message it accepted as SOAP, so this is a guard against
+        // an invariant three classes away - not a reachable state.
+        var structureValidators = faultStructureValidators.get(version);
+        if (structureValidators == null) {
+            return abort(exc, Interceptor.Flow.RESPONSE, "Cannot validate a fault of SOAP version %s. Only SOAP 1.1 and SOAP 1.2 faults are supported.".formatted(version));
+        }
+
+        if (!validateWith(structureValidators, getMessageBody(xopr.reconstituteIfNecessary(message)), exceptions)) {
+            return abort(exc, Interceptor.Flow.RESPONSE, exceptions);
+        }
+
+        var detailEntries = extractFaultDetailElements(xopr, message, version);
+        if (detailEntries.isEmpty()) {
+            // detail/Detail is optional per the SOAP spec, and may be empty.
+            return CONTINUE;
+        }
+        if (faultDetailElements.isEmpty()) {
+            log.debug("WSDL declares no wsdl:fault for this service; skipping validation of fault detail content.");
+            return CONTINUE;
+        }
+        // SOAP allows several detail entries, but a WSDL fault message has a single part, so a
+        // WSDL-described fault carries exactly one - and only that one could be validated below.
+        if (detailEntries.size() > 1) {
+            return abort(exc, Interceptor.Flow.RESPONSE, "A fault detail must contain exactly one element, because a WSDL fault message has a single part, but found %d: %s".formatted(detailEntries.size(), detailEntries));
+        }
+        var detailElement = detailEntries.getFirst();
+        if (!faultDetailElements.contains(detailElement)) {
+            return abort(exc, Interceptor.Flow.RESPONSE, "%s is not a valid fault detail element. Possible elements are %s".formatted(detailElement, faultDetailElements));
+        }
+
+        if (!validateAgainstSchemas(() -> getFaultDetailBody(xopr.reconstituteIfNecessary(message), version), exceptions)) {
+            return abort(exc, Interceptor.Flow.RESPONSE, exceptions);
+        }
+        valid.incrementAndGet();
+        return CONTINUE;
     }
 
     private boolean isPossibleRequestElement(javax.xml.namespace.QName name) {
@@ -193,7 +324,7 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
 
     @Override
     protected Source getMessageBody(InputStream input) {
-        return MessageUtil.getSOAPBody(input);
+        return getSOAPBody(input);
     }
 
     @Override

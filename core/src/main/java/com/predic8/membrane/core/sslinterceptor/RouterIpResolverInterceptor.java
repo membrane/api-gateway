@@ -29,6 +29,7 @@ import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.transport.ssl.SSLContext;
 import com.predic8.membrane.core.transport.ssl.SSLExchange;
 import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
+import com.predic8.membrane.core.transport.ssl.TLSError;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -143,12 +144,14 @@ public class RouterIpResolverInterceptor implements SSLInterceptor {
                 exc.setRemoteAddrIp(remoteIp);
             } else {
                 log.warn("Error during remote IP lookup on router " + remoteIp);
+                exc.setError(TLSError.access_denied);
                 return errorOutcome;
             }
 
             return CONTINUE;
         } catch (Exception e) {
             log.error("", e);
+            exc.setError(TLSError.internal_error);
             return errorOutcome;
         }
     }

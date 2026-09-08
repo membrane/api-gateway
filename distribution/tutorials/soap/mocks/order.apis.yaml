@@ -1,0 +1,78 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.5.0.json
+#
+# OrderService Mock
+#
+# Start standalone:
+#   ./membrane.sh -c mocks/order.apis.yaml
+#
+# The cancel operation always answers with one of the two faults the WSDL declares, so the
+# tutorial can show how each of them is mapped:
+#
+#   1           WrongState fault      — the order has already been shipped
+#   any other   OrderDoesNotExist fault
+#
+# Both are sent with HTTP status 200: a SOAP fault lives in the body, and many SOAP stacks
+# return it with a 200. The gateway reads the fault from the body and answers 500 either way.
+
+global:
+  - beautifier: {}
+  - log:
+      label: "********* SOAP Message *********"
+
+---
+api:
+  port: 2002
+  name: cancel
+  test: header.SOAPAction == 'cancel'
+  flow:
+    - setProperty:
+        name: orderId
+        value: "${string(//*[local-name()='orderId'])}"
+        language: xpath
+
+    # The order exists, but cancelling it is not possible in its current state.
+    # The fault detail wraps the wrongState element the WSDL declares.
+    - if:
+        test: //*[local-name()='orderId'] = '1'
+        language: XPath
+        flow:
+          - template:
+              contentType: text/xml
+              src: |
+                <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                  <s11:Body>
+                    <s11:Fault>
+                      <faultcode>s11:Client</faultcode>
+                      <faultstring>Cancellation is not possible in this state</faultstring>
+                      <detail>
+                        <o:wrongState xmlns:o="https://example.com/order">
+                          <orderId>${property.orderId}</orderId>
+                          <currentState>SHIPPED</currentState>
+                          <message>A shipped order cannot be cancelled.</message>
+                        </o:wrongState>
+                      </detail>
+                    </s11:Fault>
+                  </s11:Body>
+                </s11:Envelope>
+          - return:
+              status: 200
+
+    # Unknown order
+    - template:
+        contentType: text/xml
+        src: |
+          <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+            <s11:Body>
+              <s11:Fault>
+                <faultcode>s11:Client</faultcode>
+                <faultstring>Order does not exist</faultstring>
+                <detail>
+                  <o:orderDoesNotExist xmlns:o="https://example.com/order">
+                    <orderId>${property.orderId}</orderId>
+                  </o:orderDoesNotExist>
+                </detail>
+              </s11:Fault>
+            </s11:Body>
+          </s11:Envelope>
+    - return:
+        status: 200

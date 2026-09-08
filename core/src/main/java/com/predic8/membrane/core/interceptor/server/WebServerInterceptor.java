@@ -249,7 +249,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
         } catch (Exception e) {
             return internal(router.getConfiguration().isProduction(), getDisplayName())
                     .title("Could not resolve file")
-                    .topLevel("path", resPath)
+                    .internal("path", resPath)
                     .exception(e)
                     .build();
         }

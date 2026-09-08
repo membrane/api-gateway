@@ -12,38 +12,46 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.tutorials.security;
+package com.predic8.membrane.tutorials.webservicessecurity;
 
 import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 
-public class CentralSslConfigTutorialTest extends AbstractSecurityTutorialTest {
+public class SignAndValidateBodyTutorialTest extends AbstractWebServicesSecurityTutorialTest {
 
     @Override
     protected String getTutorialYaml() {
-        return "20-Central-SSL-Config.yaml";
+        return "50-Sign-And-Validate-Body.yaml";
     }
 
     @Test
-    void sharedSslConfigServesMultipleRoutes() {
+    void signsAtSenderAndValidatesAtReceiver() throws IOException {
         // @formatter:off
         given()
-            .relaxedHTTPSValidation()
+            .body(readFileFromBaseDir("request.xml"))
+            .contentType("text/xml")
         .when()
-            .get("https://localhost:8443/foo")
+            .post("http://localhost:2000")
         .then()
             .statusCode(200)
-            .body(equalTo("Foo"));
+            .body("Envelope.Body.getCityResponse.population", equalTo("34665600"));
+        // @formatter:on
+    }
 
+    @Test
+    void rejectsTamperedBodyAtValidator() throws IOException {
+        // @formatter:off
         given()
-            .relaxedHTTPSValidation()
+            .body(readFileFromBaseDir("request-tampered.xml"))
+            .contentType("text/xml")
         .when()
-            .get("https://localhost:8443/bar")
+            .post("http://localhost:2001")
         .then()
-            .statusCode(200)
-            .body(equalTo("Bar"));
+            .body("Envelope.Body.Fault.faultcode", equalTo("wsse:FailedCheck"));
         // @formatter:on
     }
 }

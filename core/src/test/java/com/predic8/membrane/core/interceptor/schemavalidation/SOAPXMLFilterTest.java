@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
-import com.predic8.membrane.core.util.MessageUtil;
+import com.predic8.membrane.core.util.SOAPUtil;
 import org.junit.jupiter.api.Test;
 
 import javax.xml.transform.Transformer;
@@ -75,7 +75,7 @@ class SOAPXMLFilterTest {
         tf.setFeature(javax.xml.XMLConstants.FEATURE_SECURE_PROCESSING, true);
         Transformer t = tf.newTransformer();
         StringWriter sw = new StringWriter();
-        t.transform(MessageUtil.getSOAPBody(new ByteArrayInputStream(soap.getBytes(UTF_8))), new StreamResult(sw));
+        t.transform(SOAPUtil.getSOAPBody(new ByteArrayInputStream(soap.getBytes(UTF_8))), new StreamResult(sw));
         return sw.toString();
     }
 }

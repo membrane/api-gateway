@@ -14,17 +14,21 @@
 
 package com.predic8.membrane.core.interceptor.json;
 
-import com.predic8.membrane.core.exceptions.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.router.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.router.DefaultRouter;
+import org.apache.commons.io.IOUtils;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static com.google.common.base.Strings.*;
-import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.util.ProblemDetailsTestUtil.*;
+import static com.google.common.base.Strings.repeat;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.json.JsonLimits.UNLIMITED;
+import static com.predic8.membrane.core.interceptor.protection.AbstractBodyProtectionInterceptor.OtherContentTypes.SKIP;
+import static com.predic8.membrane.core.util.ProblemDetailsTestUtil.parse;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class JsonProtectionInterceptorTest {
@@ -32,12 +36,16 @@ public class JsonProtectionInterceptorTest {
     static JsonProtectionInterceptor jpiDev;
 
     private static JsonProtectionInterceptor buildJPI(boolean prod) {
+        return buildJPI(prod, 10240);
+    }
+
+    private static JsonProtectionInterceptor buildJPI(boolean prod, int maxSize) {
         DefaultRouter router = new DefaultRouter();
         router.getConfiguration().setProduction(prod);
         JsonProtectionInterceptor jpi = new JsonProtectionInterceptor();
 
         jpi.setMaxTokens(4096);
-        jpi.setMaxSize(10240);
+        jpi.setMaxSize(maxSize);
         jpi.setMaxDepth(10);
         jpi.setMaxStringLength(20);
         jpi.setMaxKeyLength(10);
@@ -73,7 +81,7 @@ public class JsonProtectionInterceptorTest {
     void duplicateKey() throws Exception {
         send("""
                 {"a":1,"a":2}""",
-                RETURN,
+                ABORT,
                 1,
                 11,
                 "Duplicate field");
@@ -83,7 +91,7 @@ public class JsonProtectionInterceptorTest {
     public void malformed() throws Exception {
         send("""
                 {""",
-                RETURN,
+                ABORT,
                 1,
                 2,
                 "close marker for Object");
@@ -95,9 +103,17 @@ public class JsonProtectionInterceptorTest {
     }
 
     @Test
+    public void getRequestIsNotScanned() throws Exception {
+        var exc = Request.get("/").buildExchange();
+
+        assertEquals(CONTINUE, jpiProd.handleRequest(exc));
+        assertNull(exc.getResponse());
+    }
+
+    @Test
     public void tooLong() throws Exception {
         send("[" + repeat("\"0123456\",", 1024) + "\"x\"]",
-                RETURN,
+                ABORT,
                 1,
                 8003,
                 "Exceeded maxSize.");
@@ -112,7 +128,7 @@ public class JsonProtectionInterceptorTest {
     @Test
     public void tooDeep() throws Exception {
         send(repeat("{\"a\":", 11) + "1" + repeat("}", 11),
-                RETURN,
+                ABORT,
                 1,
                 52,
                 "Exceeded maxDepth.");
@@ -125,7 +141,7 @@ public class JsonProtectionInterceptorTest {
         jpiProd.setMaxArraySize(1000);
 
         send(repeat("[", 11) + "1" + repeat("]", 11),
-                RETURN,
+                ABORT,
                 1,
                 12,
                 "Exceeded maxDepth.");
@@ -140,7 +156,7 @@ public class JsonProtectionInterceptorTest {
     @Test
     public void stringTooLong() throws Exception {
         send("[\"" + repeat("1", 21) + "\"]",
-                RETURN,
+                ABORT,
                 1,
                 25,
                 "Exceeded maxStringLength.");
@@ -155,7 +171,7 @@ public class JsonProtectionInterceptorTest {
     @Test
     public void keyTooLong() throws Exception {
         send("{\"01234567890\": \"" + repeat("1", 20) + "\"}",
-                RETURN,
+                ABORT,
                 1,
                 18,
                 "Exceeded maxKeyLength.");
@@ -164,7 +180,7 @@ public class JsonProtectionInterceptorTest {
     @Test
     public void keyTooLong2() throws Exception {
         send("{\"0123456789\": { \"01234567890\": \"" + repeat("1", 20) + "\"} }",
-                RETURN,
+                ABORT,
                 1,
                 34,
                 "Exceeded maxKeyLength.");
@@ -173,7 +189,7 @@ public class JsonProtectionInterceptorTest {
     @Test
     public void keyTooLong3() throws Exception {
         send("{\"0123456789\": [ { \"01234567890\": \"" + repeat("1", 20) + "\"} ] }",
-                RETURN,
+                ABORT,
                 1,
                 36,
                 "Exceeded maxKeyLength.");
@@ -195,7 +211,7 @@ public class JsonProtectionInterceptorTest {
         }
         sb.append("}");
         send(sb.toString(),
-                RETURN,
+                ABORT,
                 1,
                 79,
                 "Exceeded maxObjectSize.");
@@ -217,7 +233,7 @@ public class JsonProtectionInterceptorTest {
     @Test
     public void arrayTooLarge() throws Exception {
         send("[" + repeat("1,", 2048) + "1]",
-                RETURN,
+                ABORT,
                 1,
                 4099,
                 "Exceeded maxArraySize.");
@@ -232,7 +248,7 @@ public class JsonProtectionInterceptorTest {
     @Test
     public void tooManyTokens() throws Exception {
         send("[" + repeat("1,", 2047) + "[" + repeat("1,", 2047) + "1]" + "]",
-                RETURN,
+                ABORT,
                 1,
                 8192,
                 "Exceeded maxTokens.");
@@ -247,10 +263,234 @@ public class JsonProtectionInterceptorTest {
     @Test
     public void protoBlocked() throws Exception {
         send("{\"__proto__\": {}}",
-                RETURN,
+                ABORT,
                 1,
                 16,
                 "__proto__ found as key.");
+    }
+
+    // --- Multipart / attachments -------------------------------------------------------------
+
+    @Test
+    void jsonPartOfMultipartIsInspected() throws Exception {
+        var exc = multipartExchange(part("data", APPLICATION_JSON, deeplyNested()));
+
+        assertEquals(ABORT, jpiDev.handleRequest(exc));
+        var pd = parse(exc.getResponse());
+        assertTrue(pd.getDetail().contains("Exceeded maxDepth."), pd.getDetail());
+        assertTrue(pd.getDetail().contains("data"), "should name the offending part: " + pd.getDetail());
+    }
+
+    @Test
+    void benignMultipartPasses() throws Exception {
+        var exc = multipartExchange(part("data", APPLICATION_JSON, "{\"a\":\"b\"}"));
+
+        assertEquals(CONTINUE, jpiDev.handleRequest(exc));
+        assertNull(exc.getResponse());
+    }
+
+    @Test
+    void everyJsonPartIsInspected() throws Exception {
+        var exc = multipartExchange(
+                part("first", APPLICATION_JSON, "{\"a\":\"b\"}"),
+                part("second", APPLICATION_JSON, deeplyNested()));
+
+        assertEquals(ABORT, jpiDev.handleRequest(exc));
+        assertTrue(parse(exc.getResponse()).getDetail().contains("second"));
+    }
+
+    @Test
+    void nonJsonPartIsRejectedByDefault() throws Exception {
+        var exc = multipartExchange(part("logo", "image/png", "\u0089PNG"));
+
+        assertEquals(ABORT, jpiDev.handleRequest(exc));
+        var detail = parse(exc.getResponse()).getDetail();
+        assertTrue(detail.contains("is not JSON"), detail);
+        // The name comes from the part header alone, since the body of a rejected part is never read.
+        assertTrue(detail.contains("logo"), "should name the offending part: " + detail);
+    }
+
+    @Test
+    void nonJsonPartIsSkippedWhenConfigured() throws Exception {
+        jpiDev.setOtherContentTypes(SKIP);
+        var exc = multipartExchange(
+                part("logo", "image/png", "\u0089PNG"),
+                part("data", APPLICATION_JSON, "{\"a\":\"b\"}"));
+
+        assertEquals(CONTINUE, jpiDev.handleRequest(exc));
+        assertNull(exc.getResponse());
+    }
+
+    @Test
+    void multipartBodyIsNotModified() throws Exception {
+        jpiDev.setOtherContentTypes(SKIP);
+        var exc = multipartExchange(part("logo", "image/png", "\u0089PNG"));
+        byte[] before = exc.getRequest().getBody().getContent();
+
+        assertEquals(CONTINUE, jpiDev.handleRequest(exc));
+        assertArrayEquals(before, exc.getRequest().getBody().getContent());
+    }
+
+    /**
+     * A part without a Content-Type defaults to text/plain, so it is not JSON - unlike a whole body
+     * without a Content-Type, which is still parsed (see {@link #bodyWithoutContentTypeIsStillParsed()}).
+     */
+    @Test
+    void partWithoutContentTypeIsNotJson() throws Exception {
+        jpiDev.setOtherContentTypes(SKIP);
+        var exc = multipartExchange(part("field", null, deeplyNested()));
+
+        assertEquals(CONTINUE, jpiDev.handleRequest(exc));
+        assertNull(exc.getResponse());
+    }
+
+    @Test
+    void bodyWithoutContentTypeIsStillParsed() throws Exception {
+        var exc = Request.post("/").body(deeplyNested()).buildExchange();
+
+        assertEquals(ABORT, jpiDev.handleRequest(exc));
+        assertTrue(parse(exc.getResponse()).getDetail().contains("Exceeded maxDepth."));
+    }
+
+    @Test
+    void nonJsonBodyIsSkippedWhenConfigured() throws Exception {
+        jpiDev.setOtherContentTypes(SKIP);
+        var exc = Request.post("/").contentType("image/png").body("\u0089PNG").buildExchange();
+
+        assertEquals(CONTINUE, jpiDev.handleRequest(exc));
+        assertNull(exc.getResponse());
+    }
+
+    @Test
+    void nestedMultipartIsRejected() throws Exception {
+        var exc = multipartExchange(part("nested", "multipart/mixed; boundary=inner", "..."));
+
+        assertEquals(ABORT, jpiDev.handleRequest(exc));
+        assertTrue(parse(exc.getResponse()).getDetail().contains("Nested multipart"));
+    }
+
+    /** Exceeds the maxDepth of 10 configured in {@link #buildJPI(boolean)}. */
+    private static String deeplyNested() {
+        return repeat("[", 12) + repeat("]", 12);
+    }
+
+    private static String part(String name, String contentType, String body) {
+        return "Content-Disposition: form-data; name=\"" + name + "\"\r\n"
+               + (contentType == null ? "" : "Content-Type: " + contentType + "\r\n")
+               + "\r\n" + body;
+    }
+
+    private static Exchange multipartExchange(String... parts) throws Exception {
+        StringBuilder body = new StringBuilder();
+        for (String part : parts)
+            body.append("--").append(BOUNDARY).append("\r\n").append(part).append("\r\n");
+        body.append("--").append(BOUNDARY).append("--\r\n");
+
+        return Request.post("/")
+                .contentType("multipart/form-data; boundary=" + BOUNDARY)
+                .body(body.toString())
+                .buildExchange();
+    }
+
+    private static final String BOUNDARY = "----MembraneTestBoundary";
+
+    // --- Bounded buffering -------------------------------------------------------------------
+
+    /** maxSize is per document, so an oversized part must be rejected without being buffered whole. */
+    @Test
+    void firstPartExceedingMaxSizeIsRejected() throws Exception {
+        var exc = multipartExchange(
+                part("first", APPLICATION_JSON, "{\"a\":\"" + repeat("x", 20000) + "\"}"),
+                part("second", APPLICATION_JSON, "{\"a\":\"b\"}"));
+
+        assertEquals(ABORT, jpiDev.handleRequest(exc));
+        var detail = parse(exc.getResponse()).getDetail();
+        assertTrue(detail.contains("maximum size"), detail);
+        assertTrue(detail.contains("In part 'first'"), detail);
+    }
+
+    /**
+     * The case that must not buffer: a huge non-JSON part under SKIP is discarded from the stream
+     * without ever being materialised, so maxSize does not apply to it.
+     */
+    @Test
+    void oversizedNonJsonPartIsSkippedWithoutBuffering() throws Exception {
+        jpiDev.setOtherContentTypes(SKIP);
+        var exc = multipartExchange(
+                part("logo", "image/png", repeat("x", 50000)),
+                part("data", APPLICATION_JSON, "{\"a\":\"b\"}"));
+
+        assertEquals(CONTINUE, jpiDev.handleRequest(exc));
+        assertNull(exc.getResponse());
+    }
+
+    /** Rejecting a non-JSON part needs its header only, so its body is never read. */
+    @Test
+    void oversizedNonJsonPartIsRejectedWithoutBuffering() throws Exception {
+        var exc = multipartExchange(part("logo", "image/png", repeat("x", 50000)));
+
+        assertEquals(ABORT, jpiDev.handleRequest(exc));
+        assertTrue(parse(exc.getResponse()).getDetail().contains("is not JSON"));
+    }
+
+    // --- XOP / MTOM --------------------------------------------------------------------------
+
+    /**
+     * An XOP message is XML by definition, so jsonProtection never wants it reassembled - it is
+     * traversed as raw parts and handled by the otherContentTypes policy like any other non-JSON.
+     */
+    @Test
+    void xopRequestIsSkippedWhenConfigured() throws Exception {
+        jpiDev.setOtherContentTypes(SKIP);
+        var exc = xopExchange();
+
+        assertEquals(CONTINUE, jpiDev.handleRequest(exc));
+        assertNull(exc.getResponse());
+    }
+
+    @Test
+    void xopRequestIsRejectedByDefault() throws Exception {
+        var exc = xopExchange();
+
+        assertEquals(ABORT, jpiDev.handleRequest(exc));
+        assertTrue(parse(exc.getResponse()).getDetail().contains("application/xop+xml"),
+                parse(exc.getResponse()).getDetail());
+    }
+
+    private static Exchange xopExchange() throws Exception {
+        byte[] body = IOUtils.toByteArray(
+                JsonProtectionInterceptorTest.class.getResourceAsStream("/multipart/embedded-byte-array.txt"));
+        return Request.post("/")
+                .contentType("multipart/related; type=\"application/xop+xml\"; "
+                        + "boundary=\"uuid:168683dc-43b3-4e71-8e66-efb633ef406b\"; "
+                        + "start=\"<root.message@cxf.apache.org>\"; start-info=\"text/xml\"")
+                .body(body)
+                .buildExchange();
+    }
+
+    // --- Unlimited size ----------------------------------------------------------------------
+
+    /** maxSize -1 switches the limit off, the way it already does for xmlProtection. */
+    @Test
+    void unlimitedMaxSizeAcceptsADocumentOverTheDefaultLimit() throws Exception {
+        var exc = Request.post("/").contentType(APPLICATION_JSON)
+                .body("[" + repeat("\"0123456\",", 1024) + "\"x\"]")
+                .buildExchange();
+
+        assertEquals(CONTINUE, buildJPI(false, UNLIMITED).handleRequest(exc));
+        assertNull(exc.getResponse());
+    }
+
+    /**
+     * The per-part buffer needs a byte count, not "no limit". Were UNLIMITED passed through as -1,
+     * every part would be rejected before a single byte of it was read.
+     */
+    @Test
+    void unlimitedMaxSizeStillAcceptsAMultipartPart() throws Exception {
+        var exc = multipartExchange(part("data", APPLICATION_JSON, "{\"a\":\"b\"}"));
+
+        assertEquals(CONTINUE, buildJPI(false, UNLIMITED).handleRequest(exc));
+        assertNull(exc.getResponse());
     }
 
     private void send(String body, Outcome expectOut, Object... parameters) throws Exception {

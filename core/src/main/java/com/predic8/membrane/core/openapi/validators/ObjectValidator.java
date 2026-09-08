@@ -16,22 +16,24 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.node.*;
-import com.predic8.membrane.core.openapi.util.*;
-import io.swagger.v3.oas.models.*;
-import io.swagger.v3.oas.models.media.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.predic8.membrane.core.openapi.util.SchemaUtil;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.media.Schema;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.regex.*;
+import java.util.regex.Pattern;
 
-import static com.predic8.membrane.core.openapi.util.Utils.*;
+import static com.predic8.membrane.core.openapi.util.Utils.joinByComma;
 import static com.predic8.membrane.core.openapi.validators.ValidationError.v;
 import static com.predic8.membrane.core.openapi.validators.ValidationErrors.error;
-import static java.lang.String.*;
-import static java.util.Collections.*;
+import static java.lang.String.format;
+import static java.util.Collections.emptySet;
 
 /**
  * Not supported:
@@ -234,14 +236,26 @@ public class ObjectValidator implements JsonSchemaValidator {
 
     @SuppressWarnings("rawtypes")
     private boolean isPropertyReadOnly(String propertyName) {
-        Schema propSchema = (Schema) schema.getProperties().get(propertyName);
-        return propSchema.getReadOnly() != null && propSchema.getReadOnly();
+        Schema propSchema = getPropertySchema(propertyName);
+        return propSchema != null && propSchema.getReadOnly() != null && propSchema.getReadOnly();
     }
 
     @SuppressWarnings("rawtypes")
     private boolean isPropertyWriteOnly(String propertyName) {
-        Schema propSchema = (Schema) schema.getProperties().get(propertyName);
-        return propSchema.getWriteOnly() != null && propSchema.getWriteOnly();
+        Schema propSchema = getPropertySchema(propertyName);
+        return propSchema != null && propSchema.getWriteOnly() != null && propSchema.getWriteOnly();
+    }
+
+    /**
+     * @return the schema of the property, or null if the schema declares no properties at all or
+     * none for this name. A schema can require a property without declaring it, e.g. next to a
+     * $ref. See #3188.
+     */
+    @SuppressWarnings("rawtypes")
+    private @Nullable Schema getPropertySchema(String propertyName) {
+        if (schema.getProperties() == null)
+            return null;
+        return (Schema) schema.getProperties().get(propertyName);
     }
 
     private ValidationErrors createErrorsForMissingRequiredProperties(ValidationContext ctx, List<String> missingProperties) {

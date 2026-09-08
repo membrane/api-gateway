@@ -26,7 +26,6 @@ import org.slf4j.LoggerFactory;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 
 import static com.predic8.membrane.core.exchange.Exchange.OAUTH2;
 import static com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2Interceptor.WANTED_SCOPE;
@@ -34,8 +33,12 @@ import static com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2
 public class AccessTokenRefresher {
     private static final Logger log = LoggerFactory.getLogger(AccessTokenRefresher.class);
 
-    private final Cache<String, Object> synchronizers = CacheBuilder.newBuilder()
-            .expireAfterAccess(1, TimeUnit.MINUTES)
+    // weakKeys() ties the entry lifetime to the Session object: the entry is evicted only
+    // when the Session is GC'd, which cannot happen while any thread holds a reference to it.
+    // No expireAfterAccess: time-based eviction could replace a monitor while a slow
+    // refreshTokenRequest holds it, letting a second thread acquire a different lock object.
+    private final Cache<Session, Object> synchronizers = CacheBuilder.newBuilder()
+            .weakKeys()
             .build();
 
     private AuthorizationService auth;
@@ -53,6 +56,11 @@ public class AccessTokenRefresher {
         }
 
         synchronized (getTokenSynchronizer(session)) {
+            // a concurrent caller may have already refreshed the token
+            // while this thread waited for the monitor.
+            if (!refreshingOfAccessTokenIsNeeded(session, wantedScope)) {
+                return;
+            }
             try {
                 exc.setProperty(OAUTH2, refreshAccessToken(session, wantedScope));
             } catch (Exception e) {
@@ -107,12 +115,8 @@ public class AccessTokenRefresher {
     }
 
     private Object getTokenSynchronizer(Session session) {
-        var refreshToken = session.getOAuth2AnswerParameters().getRefreshToken();
-
         try {
-            return refreshToken == null
-                    ? new Object()
-                    : synchronizers.get(refreshToken, Object::new);
+            return synchronizers.get(session, Object::new);
         } catch (ExecutionException e) {
             throw new RuntimeException(e);
         }

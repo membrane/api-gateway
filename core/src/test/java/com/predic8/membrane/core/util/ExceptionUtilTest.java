@@ -13,10 +13,17 @@
    limitations under the License. */
 package com.predic8.membrane.core.util;
 
+import com.predic8.membrane.core.http.ReadingBodyException;
 import org.junit.jupiter.api.Test;
 
+import java.io.EOFException;
+import java.io.IOException;
+import java.net.*;
+import java.nio.channels.ClosedChannelException;
+
 import static com.predic8.membrane.core.util.ExceptionUtil.concatMessageAndCauseMessages;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static com.predic8.membrane.core.util.ExceptionUtil.isPeerDisconnect;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ExceptionUtilTest {
 
@@ -36,5 +43,69 @@ public class ExceptionUtilTest {
     public void testLevel3() {
         assertEquals("foo caused by: bar caused by: baz",
                 concatMessageAndCauseMessages(new RuntimeException("foo", new RuntimeException("bar", new RuntimeException("baz")))));
+    }
+
+    @Test
+    void clientDisconnectClosedChannel() {
+        assertTrue(isPeerDisconnect(new ReadingBodyException(new ClosedChannelException())));
+    }
+
+    @Test
+    void clientDisconnectNestedSeveralLevelsDeep() {
+        assertTrue(isPeerDisconnect(new ReadingBodyException(
+                new ReadingBodyException(new IOException(new SocketException("Connection reset"))))));
+    }
+
+    @Test
+    void serverSideDisconnectMatchesTheSameWay() {
+        // the predicate is deliberately side-agnostic: a backend closing mid-response looks the same
+        assertTrue(isPeerDisconnect(new ReadingBodyException(new SocketException("Connection reset"))));
+    }
+
+    @Test
+    void clientDisconnectEndOfStream() {
+        assertTrue(isPeerDisconnect(new ReadingBodyException(new EOFException())));
+    }
+
+    @Test
+    void plainIOExceptionIsNoClientDisconnect() {
+        // e.g. Undertow's "UT010029: Stream is closed": deliberately not matched by message. It is no
+        // longer reached anyway, now that a failed body read is sticky.
+        assertFalse(isPeerDisconnect(new ReadingBodyException(new IOException("UT010029: Stream is closed"))));
+    }
+
+    @Test
+    void genuineFaultIsNoClientDisconnect() {
+        assertFalse(isPeerDisconnect(new ReadingBodyException(new IllegalStateException("broken"))));
+    }
+
+    @Test
+    void nullIsNoClientDisconnect() {
+        assertFalse(isPeerDisconnect(null));
+    }
+
+    @Test
+    void connectExceptionIsNoPeerDisconnect() {
+        // ConnectException extends SocketException, but an unreachable backend is a genuine fault
+        assertFalse(isPeerDisconnect(new ConnectException("Connection refused")));
+        assertFalse(isPeerDisconnect(new ReadingBodyException(
+                new IOException(new ConnectException("Connection refused")))));
+    }
+
+    @Test
+    void noRouteToHostIsNoPeerDisconnect() {
+        assertFalse(isPeerDisconnect(new NoRouteToHostException("No route to host")));
+        assertFalse(isPeerDisconnect(new ReadingBodyException(new NoRouteToHostException("No route to host"))));
+    }
+
+    @Test
+    void portUnreachableIsNoPeerDisconnect() {
+        assertFalse(isPeerDisconnect(new PortUnreachableException("ICMP port unreachable")));
+    }
+
+    @Test
+    void bindExceptionIsNoPeerDisconnect() {
+        assertFalse(isPeerDisconnect(new BindException("Address already in use")));
+        assertFalse(isPeerDisconnect(new ReadingBodyException(new BindException("Address already in use"))));
     }
 }

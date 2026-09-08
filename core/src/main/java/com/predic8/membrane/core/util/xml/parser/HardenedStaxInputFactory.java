@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.util.xml.parser;
 
 import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLResolver;
 import java.io.ByteArrayInputStream;
 
 import static java.lang.Boolean.FALSE;
@@ -28,38 +29,29 @@ import static javax.xml.stream.XMLInputFactory.*;
  * once per factory instance (factory creation takes ~10s for 1,000,000 instances; ThreadLocal
  * reuse takes ~0s).
  * <p>
- * DTD support stays enabled so callers can still observe and act on {@code DOCTYPE} events (e.g.
- * removing them, as {@link com.predic8.membrane.core.interceptor.xmlprotection.XMLProtector}
- * does), but external entities and external subset fetching are disabled via the resolver, so
- * no DOCTYPE can trigger an outbound network or file-system access.
+ * {@link #inputFactory()} rejects DTDs outright. Callers that have to see the {@code DOCTYPE} event
+ * to act on it themselves - {@link com.predic8.membrane.core.interceptor.xmlprotection.XMLProtector}
+ * removes or rejects it - use {@link #dtdAwareInputFactory()} instead. Neither can trigger an
+ * outbound network or file-system access: external entities and external subset fetching are
+ * disabled via the resolver in both.
  */
 public final class HardenedStaxInputFactory {
 
     public static final String JAVAX_XML_STREAM_IS_SUPPORTING_EXTERNAL_ENTITIES = "javax.xml.stream.isSupportingExternalEntities";
 
+    private static final String JDK_XML_MAX_ELEMENT_DEPTH = "jdk.xml.maxElementDepth";
+    private static final String JDK_XML_MAX_XML_NAME_LIMIT = "jdk.xml.maxXMLNameLimit";
+
+    /** The JAXP depth limit reads 0 as "no limit", not as "no element". */
+    private static final int NO_DEPTH_LIMIT = 0;
+
+    /** Resolves every external reference to an empty document instead of fetching it. */
+    private static final XMLResolver NO_EXTERNAL_ENTITIES =
+            (publicId, systemId, baseURI, namespace) -> new ByteArrayInputStream(new byte[0]);
+
     private static final ThreadLocal<XMLInputFactory> TL = ThreadLocal.withInitial(() -> {
-        XMLInputFactory f = XMLInputFactory.newInstance();
-        f.setProperty(IS_COALESCING, FALSE); // CDATA stays CDATA
+        XMLInputFactory f = harden(XMLInputFactory.newInstance());
         f.setProperty(SUPPORT_DTD, FALSE);
-        f.setProperty(IS_NAMESPACE_AWARE, TRUE);
-
-        // Do not replace internal character references to avoid XML bombs that deflate the message size
-        f.setProperty(IS_REPLACING_ENTITY_REFERENCES, FALSE);
-
-        // Defensive hardening: disable external entities if supported and use a no-op resolver.
-        try {
-            f.setProperty(JAVAX_XML_STREAM_IS_SUPPORTING_EXTERNAL_ENTITIES, FALSE);
-        } catch (IllegalArgumentException ignore) {
-            // property not supported by this implementation
-        }
-
-        // Disable entity resolving
-        f.setXMLResolver((publicId, systemId, baseURI, namespace) -> new ByteArrayInputStream(new byte[0]));
-
-        // Ensure validation is disabled across implementations
-        try { f.setProperty(IS_VALIDATING, FALSE); }
-        catch (IllegalArgumentException ignore) {}
-
         return f;
     });
 
@@ -68,6 +60,65 @@ public final class HardenedStaxInputFactory {
 
     public static XMLInputFactory inputFactory() {
         return TL.get();
+    }
+
+    /**
+     * Returns a hardened factory that still reports {@code DOCTYPE} events, for callers that inspect
+     * the DTD and enforce their own size limits - as
+     * {@link com.predic8.membrane.core.interceptor.xmlprotection.XMLProtector} does, and has to.
+     * <p>
+     * JAXP caps nesting depth at 100 and name length at 1000 by default, and reports an exceeded cap
+     * as a parse error at the same point a caller's own equal cap would fire. Left in place, the JDK
+     * limit would both override a caller configured for larger documents and hide the real reason
+     * behind "not well-formed". The depth cap is therefore lifted entirely and belongs to the
+     * caller, while the name cap is handed in: set above the caller's own name limits, it stays a
+     * backstop for the names the caller does not check itself.
+     * <p>
+     * Unlike {@link #inputFactory()} this creates a fresh instance on every call. Callers that parse
+     * repeatedly should hold on to the returned factory - per thread, as factories are not shared
+     * across threads here - rather than asking for a new one per message.
+     *
+     * @param maxXMLNameLength longest XML name the parser accepts, or {@code 0} for no cap. Keep it
+     *                         above the caller's own name limits, so that those decide first.
+     */
+    public static XMLInputFactory dtdAwareInputFactory(int maxXMLNameLength) {
+        XMLInputFactory f = harden(XMLInputFactory.newInstance());
+        // Support DTDs on purpose, so the caller can detect them in its StAX loop
+        f.setProperty(SUPPORT_DTD, TRUE);
+        setIfSupported(f, JDK_XML_MAX_ELEMENT_DEPTH, NO_DEPTH_LIMIT);
+        setIfSupported(f, JDK_XML_MAX_XML_NAME_LIMIT, maxXMLNameLength);
+        return f;
+    }
+
+    /**
+     * Applies everything the two factories share; the caller decides on {@code SUPPORT_DTD}.
+     */
+    private static XMLInputFactory harden(XMLInputFactory f) {
+        f.setProperty(IS_COALESCING, FALSE); // CDATA stays CDATA
+        f.setProperty(IS_NAMESPACE_AWARE, TRUE);
+
+        // Do not replace internal character references to avoid XML bombs that deflate the message size
+        f.setProperty(IS_REPLACING_ENTITY_REFERENCES, FALSE);
+
+        // Defensive hardening: disable external entities if supported and use a no-op resolver.
+        setIfSupported(f, JAVAX_XML_STREAM_IS_SUPPORTING_EXTERNAL_ENTITIES, FALSE);
+        f.setXMLResolver(NO_EXTERNAL_ENTITIES);
+
+        // Ensure validation is disabled across implementations
+        setIfSupported(f, IS_VALIDATING, FALSE);
+        return f;
+    }
+
+    /**
+     * Sets a property that not every StAX implementation knows, leaving the factory as it is when it
+     * does not.
+     */
+    private static void setIfSupported(XMLInputFactory f, String property, Object value) {
+        try {
+            f.setProperty(property, value);
+        } catch (IllegalArgumentException ignore) {
+            // property not supported by this implementation
+        }
     }
 }
 

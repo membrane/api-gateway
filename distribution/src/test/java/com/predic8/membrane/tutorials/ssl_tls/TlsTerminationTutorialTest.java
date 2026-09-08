@@ -12,7 +12,7 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.tutorials.security;
+package com.predic8.membrane.tutorials.ssl_tls;
 
 import org.junit.jupiter.api.Test;
 
@@ -20,7 +20,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.isEmptyOrNullString;
 
-public class TlsTerminationTutorialTest extends AbstractSecurityTutorialTest {
+public class TlsTerminationTutorialTest extends AbstractSslTlsTutorialTest {
 
     @Override
     protected String getTutorialYaml() {

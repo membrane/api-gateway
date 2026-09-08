@@ -15,12 +15,8 @@ package com.predic8.membrane.examples.withoutinternet.opentelemetry;
 
 
 import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcase;
-import com.predic8.membrane.examples.util.BufferLogger;
-import com.predic8.membrane.examples.util.Process2;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
 import java.util.List;
 
 import static com.predic8.membrane.examples.withoutinternet.opentelemetry.Traceparent.parse;
@@ -33,14 +29,6 @@ public class OpenTelemetryExampleTest extends AbstractSampleMembraneStartStopTes
     @Override
     protected String getExampleDirName() {
         return "monitoring-tracing/opentelemetry";
-    }
-
-    BufferLogger logger;
-
-    @BeforeEach
-    void startMembrane() throws IOException, InterruptedException {
-        logger = new BufferLogger();
-        process = new Process2.Builder().in(baseDir).script("membrane").withWatcher(logger).waitForMembrane().start();
     }
 
     @Test

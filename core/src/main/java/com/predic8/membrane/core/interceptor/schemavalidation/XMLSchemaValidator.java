@@ -41,7 +41,6 @@ import java.util.List;
 
 import static com.predic8.membrane.annot.Constants.XSD_NS;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
-import static com.predic8.membrane.core.http.Header.VALIDATION_ERROR_SOURCE;
 
 public class XMLSchemaValidator extends AbstractXMLSchemaValidator {
 
@@ -121,7 +120,6 @@ public class XMLSchemaValidator extends AbstractXMLSchemaValidator {
                 .title(getErrorTitle())
                 .internal("validation", convertExceptionsToMap(exceptions))
                 .buildAndSetResponse(exchange);
-        exchange.getResponse().getHeader().add(VALIDATION_ERROR_SOURCE, flow.name());
     }
 
     @Override

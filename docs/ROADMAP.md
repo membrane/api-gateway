@@ -52,6 +52,25 @@ PRIO 3:
     - Backpressure: `maxThreadPoolSize` is a documented attribute and `HttpEndpointListener` handles `RejectedExecutionException` by closing the socket. A per-task executor never rejects — replace with a `Semaphore` or rely on `concurrentConnectionLimitPerIp`. Dropping the attribute is a breaking change.
     - Thread naming: keep "router" thread names via `Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("router-", 0).factory())`.
     - Graceful shutdown / hot deploy: `shutdown()` + `awaitTermination()` in `closeAll()` works unchanged with a per-task executor.
+- `xmlProtection` and `jsonProtection`: inspect responses, not only requests
+  - Story: both plugins pin themselves to the request flow in their constructors (`setAppliedFlow(REQUEST_FLOW)`), so a backend answering with a malicious or oversized document is never inspected. A gateway that shields the backend from the client should be able to shield the client from the backend as well.
+  - This matters most for an outgoing proxy: there the party to protect is the internal client, and the untrusted document arrives in the *response* from some server on the internet.
+  - **Breaking**: letting the flow be chosen means the plugin has to be placed explicitly in a `request:` or `response:` block instead of being written directly into `flow:`, where it silently means "request only" today.
+
+    Old:
+    ```yaml
+    flow:
+      - xmlProtection: {}
+    ```
+    New:
+    ```yaml
+    flow:
+      - request:
+          - xmlProtection: {}
+      - response:
+          - xmlProtection: {}
+    ```
+  - To decide: whether a violation found in a response maps to a gateway error (502) rather than the 400 a request violation gets, since the fault is the backend's and the detail must not leak to the client.
 
 ## Breaking Changes
 

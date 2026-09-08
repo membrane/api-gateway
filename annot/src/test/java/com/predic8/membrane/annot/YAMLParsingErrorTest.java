@@ -14,15 +14,16 @@
 
 package com.predic8.membrane.annot;
 
-import com.predic8.membrane.annot.util.*;
-import com.predic8.membrane.annot.yaml.*;
-import com.predic8.membrane.common.*;
-import org.jetbrains.annotations.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.annot.util.CompilerHelper;
+import com.predic8.membrane.annot.util.CompilerResult;
+import com.predic8.membrane.annot.yaml.ConfigurationParsingException;
+import com.predic8.membrane.common.ExceptionUtil;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
-import static com.predic8.membrane.annot.SpringConfigurationXSDGeneratingAnnotationProcessorTest.*;
+import static com.predic8.membrane.annot.SpringConfigurationXSDGeneratingAnnotationProcessorTest.MC_MAIN_DEMO;
 import static com.predic8.membrane.annot.util.CompilerHelper.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -119,6 +120,50 @@ public class YAMLParsingErrorTest {
             assertEquals("$.demo", pc.getPath());
             assertEquals("wrong", pc.getKey());
         }
+    }
+
+    @Test
+    void attributeSetterExceptionMessageSurfaces() {
+        var sources = splitSources(MC_MAIN_DEMO + """
+                package com.predic8.membrane.demo;
+                import com.predic8.membrane.annot.*;
+                @MCElement(name="demo", topLevel=true, component=false)
+                public class DemoElement {
+                    @MCAttribute
+                    public void setAttr(String attr) {
+                        throw new IllegalArgumentException("attr \\"" + attr + "\\" is invalid.");
+                    }
+                }
+                """);
+        var result = compile(sources, false);
+        assertCompilerResult(true, result);
+
+        try {
+            parseYAML(result, """
+                    demo:
+                        attr: "wrong"
+                    """);
+            fail();
+        } catch (RuntimeException e) {
+            // The setter's IllegalArgumentException gets wrapped in InvocationTargetException by
+            // reflection; PropertyBinder must unwrap it so the real message surfaces instead of
+            // InvocationTargetException's own null getMessage(). ConfigurationParsingException
+            // now carries the setter's exception as its cause, so look for it directly rather
+            // than via getCause()'s root-cause search, which would walk past it to the setter's
+            // exception itself.
+            var c = findConfigurationParsingException(e);
+            assertEquals("attr \"wrong\" is invalid.", c.getMessage());
+            assertEquals("attr \"wrong\" is invalid.", c.getCause().getMessage());
+        }
+    }
+
+    private static ConfigurationParsingException findConfigurationParsingException(Throwable t) {
+        while (t != null) {
+            if (t instanceof ConfigurationParsingException e)
+                return e;
+            t = t.getCause();
+        }
+        throw new AssertionError("No ConfigurationParsingException in cause chain.");
     }
 
     @Test

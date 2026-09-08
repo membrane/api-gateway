@@ -16,7 +16,7 @@ package com.predic8.membrane.examples.util;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,7 +37,12 @@ import static org.apache.commons.io.FileUtils.writeStringToFile;
 
 /**
  * Extracts the .zip distribution built by Maven.
+ * <p>
+ * A single instance per test class ({@link TestInstance.Lifecycle#PER_CLASS}) so that the
+ * distribution and the gateway can be set up in {@code @BeforeAll} while still using the
+ * instance methods that describe the example under test.
  */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class DistributionExtractingTestcase {
 
     protected static final Logger log = LoggerFactory.getLogger(DistributionExtractingTestcase.class.getName());
@@ -45,8 +50,8 @@ public abstract class DistributionExtractingTestcase {
     public static final String MEMBRANE_LOG_LEVEL = "info";
     public static final String LOCALHOST_2000 = "http://localhost:2000";
 
-    private static File unzipDir;
-    private static File membraneHome;
+    private File unzipDir;
+    private File membraneHome;
     protected File baseDir;
 
     /**
@@ -69,7 +74,7 @@ public abstract class DistributionExtractingTestcase {
     }
 
     @BeforeAll
-    public static void beforeAll() throws Exception {
+    public void beforeAll() throws Exception {
         log.info("unzipping router distribution");
 
         File targetDir = getTargetDir();
@@ -84,19 +89,16 @@ public abstract class DistributionExtractingTestcase {
         membraneHome = requireNonNull(unzipDir.listFiles((dir, name) -> name.startsWith("membrane-api-gateway")))[0];
 
         replaceLog4JConfig();
+
+        baseDir = getExampleDir(getExampleDirName());
+        log.info("running test... in {}", baseDir);
     }
 
     @AfterAll
-    public static void done() {
+    public void done() {
         log.info("cleaning up...");
         recursiveDelete(unzipDir);
         log.info("cleaning up... done");
-    }
-
-    @BeforeEach
-    void init() {
-        baseDir = getExampleDir(getExampleDirName());
-        log.info("running test... in {}", baseDir);
     }
 
     private static File getTargetDir() throws IOException {
@@ -123,7 +125,7 @@ public abstract class DistributionExtractingTestcase {
             throw new RuntimeException("Could not mkdir " + dir.getAbsolutePath());
     }
 
-    private static void replaceLog4JConfig() throws IOException {
+    private void replaceLog4JConfig() throws IOException {
         File log4jproperties = new File(membraneHome, "conf" + separator + "log4j2.xml");
         if (!log4jproperties.exists())
             throw new RuntimeException("log4j2.xml does not exits.");

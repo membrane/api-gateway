@@ -121,8 +121,26 @@ public class Definitions extends WSDLElement {
         return portTypes;
     }
 
+    /**
+     * The operations of all port types, in document order. Operations without a name are included.
+     */
+    public List<Operation> getOperations() {
+        return portTypes.stream().flatMap(pt -> pt.getOperations().stream()).toList();
+    }
+
+    public Optional<Operation> findOperation(String name) {
+        return getOperations().stream().filter(op -> Objects.equals(name, op.getName())).findFirst();
+    }
+
     public List<Binding> getBindings() {
         return bindings;
+    }
+
+    public Optional<BindingOperation> findBindingOperation(String name) {
+        return bindings.stream()
+                .flatMap(b -> b.getBindingOperations().stream())
+                .filter(bo -> Objects.equals(name, bo.getName()))
+                .findFirst();
     }
 
     public List<Service> getServices() {

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- A validly signed body whose <name> was edited after signing - the digest no longer matches. -->
+<s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cit="https://predic8.de/cities">
+    <soap:Header xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><wsse:Security soap:mustUnderstand="1" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"><ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#" Id="SIG-c4970866-799c-4076-b6df-0a32f82737b5"><ds:SignedInfo><ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"><InclusiveNamespaces xmlns="http://www.w3.org/2001/10/xml-exc-c14n#" PrefixList="s11"/></ds:CanonicalizationMethod><ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/><ds:Reference URI="#sig-9f06e7fe-3556-4632-8700-8f0bedbf4986"><ds:Transforms><ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/></ds:Transforms><ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/><ds:DigestValue>HbC8GB6A+Jgx/jbHSpHfyBMtfLELH4s1sulRmsU4SMg=</ds:DigestValue></ds:Reference></ds:SignedInfo><ds:SignatureValue>jRiJPBozjIWdHhMUI+vnG30+m+KsWLNJ7NZCTvp3mbD/whhMTMKXjDu8Qu02JxevAn59CCb0JjPeOMjxWKQEfd6SU94GjehEAUO36A3ixFGfXVGzVsT15XIEDDv/fBclk4HIvmIMmzGU14LtCpYubYzY6gt2CCUSnWj5SEda82nNJLP1ouYQUjW9cTDHQ276DxfrUu5dZjMAeLdLRFFBljm8DIsKioBqyQnPJpiPER6f0DnB1TgO4dxCWqlXTFwvL/ZnL9nPyXbJ77c4sx2pycowrq9Ywi19ZJH8m5jyQBTSSL7caV7CPQhKmOMwRxaKNIwh0gzs/DhXiqSTYLGNJg==</ds:SignatureValue><ds:KeyInfo><ds:X509Data><ds:X509Certificate>MIIDSDCCAjCgAwIBAgIJAPvG5CFpTV3JMA0GCSqGSIb3DQEBDAUAMFIxCzAJBgNVBAYTAkRFMREw&#13;
+DwYDVQQKEwhNZW1icmFuZTESMBAGA1UECxMJVHV0b3JpYWxzMRwwGgYDVQQDExN3c3NlY3VyaXR5&#13;
+LXR1dG9yaWFsMB4XDTI2MDgwODEzNTcwOFoXDTM2MDgwNTEzNTcwOFowUjELMAkGA1UEBhMCREUx&#13;
+ETAPBgNVBAoTCE1lbWJyYW5lMRIwEAYDVQQLEwlUdXRvcmlhbHMxHDAaBgNVBAMTE3dzc2VjdXJp&#13;
+dHktdHV0b3JpYWwwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCf+vcjFCdcdMIB0gT1&#13;
+u8dzBYsdw8T3lFZUe5fiFopSRPwkymhfAbJBlW580NnSOuvM+qQ9pFXW8bOLAL+xJcZVW+lQqTrk&#13;
+STKlidlelzyk54GQTNUh3sT6mjdYiOg/ULYtBjML9qR8owc8hpCgqR1vLVXnEENJPR8kR01LcPOs&#13;
+K8ZV9ITn8ORQ4YuMuAj0iD24/9ASDaDLSUrhJYDtKFYH+26vpyz+ZEL0XADfqJk8R8nmbmkofoOn&#13;
+CsnQqVnET2JKfSRB2d6yaKbt32iQrqIp1aPACrGD8qx5jobmEZlQ4ceJhXDXMzMniyj7OI+XoZ2O&#13;
+guaJHPl9uU6Vy2n+1savAgMBAAGjITAfMB0GA1UdDgQWBBTl0vNzAwu4fAHJN/IDMpaAEtAnMjAN&#13;
+BgkqhkiG9w0BAQwFAAOCAQEAJ3PAJ1lC1BB92vyPFTePAgufuenpCNkzKj9eAkyz4yKICmf01VbD&#13;
+6VQutB6LsQSwnQA92jITxohVdNg56IZFRERz1KJzPGou4lxpQ5/6CtjgZ3IYNfMsZhF+QLKT3Yn1&#13;
+KTtgzb1tP1s3RpkAY1eoSLyt3GJAvUDkOtZAFcafSyPEqC/NRU3+Zj1lOrhYN62xtCkl2IVRUJIX&#13;
+vdUfSCwgitPk12tFx2xRNTnqpUJbEhHQM9tVYY7AzgpL9R5B7U8ZXIL9EigTEfiweYaPEQoOqTSs&#13;
+nXjMy76xSwlNn2rK11zmVQEG/QGRmc1yxRfAMUx57SuDhucKXRceZzL+G9kwBA==</ds:X509Certificate></ds:X509Data></ds:KeyInfo></ds:Signature></wsse:Security></soap:Header><s11:Body xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" wsu:Id="sig-9f06e7fe-3556-4632-8700-8f0bedbf4986">
+        <cit:getCity>
+            <name>Berlin</name>
+        </cit:getCity>
+    </s11:Body>
+</s11:Envelope>
+

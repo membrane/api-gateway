@@ -13,6 +13,8 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  # Needed to start the 'Build Docker Image' workflow via workflow_dispatch.
+  actions: write
 
 jobs:
   build-release:
@@ -25,11 +27,11 @@ jobs:
         id: get_version
         run: echo '${{ github.head_ref }}' | sed 's/v/::set-output name=VERSION::/'
       - name: Set up Java
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v6
         with:
           java-version: '21'
           distribution: 'temurin'
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.ref }}
       - id: compile-membrane
@@ -59,13 +61,13 @@ jobs:
           cd ..
       - name: Create Pull Request for next Snapshot
         id: cpr
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           commit-message: "Snapshot version"
           title: "Snapshot version"
           author: "github-actions <github-actions@github.com>"
           body: "Update all project `pom.xml` and related files to post-${{ steps.get_version.outputs.VERSION }} snapshot version"
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.ref }}
       - id: install-secret-key
@@ -101,9 +103,67 @@ jobs:
           artifacts: "core/target/classes/com/predic8/membrane/core/config/json/membrane.schema.json,distribution/target/membrane-api-gateway-${{ steps.get_version.outputs.VERSION }}.zip,distribution/target/membrane-api-gateway-${{ steps.get_version.outputs.VERSION }}.zip.asc"
           token: ${{ github.token }}
 
+      # A release created with the default GITHUB_TOKEN does not fire the
+      # 'release: published' event: GitHub suppresses workflow triggering for
+      # events created by GITHUB_TOKEN, so the Docker build never started.
+      # workflow_dispatch is explicitly exempt from that restriction, so the
+      # build is kicked off here instead. It is dispatched on the base branch
+      # (the tag has no workflow file of its own for older releases) and gets
+      # the release tag passed as an input.
+      - name: Trigger Docker image build
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          BASE_REF: ${{ github.base_ref }}
+          RELEASE_TAG: ${{ github.head_ref }}
+        run: |
+          set -euo pipefail
+          gh workflow run docker-publish.yml \
+            --repo "$REPO" \
+            --ref "$BASE_REF" \
+            --field tag="$RELEASE_TAG" \
+            --field latest=false
+
   trigger-website:
     needs: build-release
     uses: ./.github/workflows/trigger-website-pipeline.yml
     with:
       version: ${{ needs.build-release.outputs.version }}
     secrets: inherit
+
+  # A release created with the default GITHUB_TOKEN does not fire the
+  # 'release: published' event: GitHub suppresses workflow triggering for
+  # events created by GITHUB_TOKEN, so the Docker build never started.
+  # workflow_dispatch is explicitly exempt from that restriction, so the build
+  # is kicked off here instead.
+  #
+  # Dispatched on the base branch rather than on the tag, because release-pr.yml
+  # creates a branch AND a tag named v<version>, so '--ref v<version>' would be
+  # ambiguous; the tag is passed as an input instead.
+  #
+  # Its own job on purpose: a dispatch that fails -- against a branch whose
+  # docker-publish.yml predates the 'tag' input the API rejects it with 422 --
+  # must not fail the release itself or block the jobs beside it. It also keeps
+  # 'actions: write' off the Maven steps in build-release.
+  trigger-docker:
+    needs: build-release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - name: Trigger Docker image build
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          BASE_REF: ${{ github.base_ref }}
+          RELEASE_TAG: ${{ github.head_ref }}
+        run: |
+          set -euo pipefail
+          gh workflow run docker-publish.yml \
+            --repo "$REPO" \
+            --ref "$BASE_REF" \
+            --field tag="$RELEASE_TAG" \
+            --field latest=false

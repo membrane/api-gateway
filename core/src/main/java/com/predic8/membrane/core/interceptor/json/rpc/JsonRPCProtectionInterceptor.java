@@ -21,7 +21,6 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.json.rpc.JsonRPCValidator.PayloadType;
 import com.predic8.membrane.core.interceptor.json.rpc.JsonRPCValidator.RequestValidationResult;
 import com.predic8.membrane.core.interceptor.json.rpc.JsonRPCValidator.ResponseValidationContext;
 import com.predic8.membrane.core.interceptor.json.rpc.JsonRPCValidator.ValidationError;
@@ -37,13 +36,12 @@ import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.Response.statusCode;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static com.predic8.membrane.core.interceptor.json.rpc.JsonRPCValidator.PayloadType.BATCH;
-import static com.predic8.membrane.core.interceptor.json.rpc.JsonRPCValidator.PayloadType.SINGLE;
 import static com.predic8.membrane.core.interceptor.json.rpc.JsonRPCValidator.getPayloadType;
-import static java.util.EnumSet.of;
 import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.ERR_INVALID_REQUEST;
+import static java.util.EnumSet.of;
 
 /**
  * @topic 3. Security and Validation
@@ -158,7 +156,7 @@ public class JsonRPCProtectionInterceptor extends AbstractInterceptor {
         }
         log.info("Rejected JSON-RPC request: {}", error.message());
         exc.setResponse(createErrorResponse(error));
-        return RETURN;
+        return ABORT;
     }
 
     private Outcome rejectResponse(Exchange exc, ValidationError error) {
@@ -167,7 +165,7 @@ public class JsonRPCProtectionInterceptor extends AbstractInterceptor {
         }
         log.info("Rejected JSON-RPC response: {}", error.message());
         exc.setResponse(createErrorResponse(error));
-        return RETURN;
+        return ABORT;
     }
 
     /**

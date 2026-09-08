@@ -1,4 +1,4 @@
-/* Copyright 2023 predic8 GmbH, www.predic8.com
+/* Copyright 2026 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -11,11 +11,13 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
+package com.predic8.membrane.core.interceptor.soap.wsse;
 
-package com.predic8.membrane.core.interceptor.xmlprotection;
-
-public class XMLProtectionException extends Exception {
-    public XMLProtectionException(String message) {
-        super(message);
-    }
+/**
+ * A part of a {@code wsSecurity} element's {@code secure} list: it applies outbound security,
+ * adding to the fresh {@code wsse:Security} header the group created.
+ *
+ * @see ValidatePart
+ */
+public abstract class SecurePart extends WsSecurityPart {
 }
