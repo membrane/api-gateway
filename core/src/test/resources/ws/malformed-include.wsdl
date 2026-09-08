@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- The included schema exists but is not well-formed XML. -->
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                  xmlns:tns="https://example.com/malformed"
+                  targetNamespace="https://example.com/malformed">
+    <wsdl:types>
+        <xsd:schema targetNamespace="https://example.com/malformed">
+            <xsd:include schemaLocation="malformed.xsd"/>
+            <xsd:element name="doSomething" type="xsd:string"/>
+        </xsd:schema>
+    </wsdl:types>
+    <wsdl:message name="doSomethingRequest">
+        <wsdl:part name="parameters" element="tns:doSomething"/>
+    </wsdl:message>
+    <wsdl:portType name="MalformedPortType">
+        <wsdl:operation name="doSomething">
+            <wsdl:input message="tns:doSomethingRequest"/>
+        </wsdl:operation>
+    </wsdl:portType>
+</wsdl:definitions>

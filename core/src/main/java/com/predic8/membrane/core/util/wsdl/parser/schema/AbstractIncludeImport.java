@@ -14,13 +14,26 @@
 
 package com.predic8.membrane.core.util.wsdl.parser.schema;
 
-import com.predic8.membrane.core.resolver.*;
-import com.predic8.membrane.core.util.*;
-import com.predic8.membrane.core.util.wsdl.parser.*;
-import org.jetbrains.annotations.*;
-import org.w3c.dom.*;
+import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.resolver.ResourceRetrievalException;
+import com.predic8.membrane.core.util.wsdl.parser.WSDLElement;
+import com.predic8.membrane.core.util.wsdl.parser.WSDLParserContext;
+import com.predic8.membrane.core.util.wsdl.parser.WSDLParserException;
+import com.predic8.membrane.core.util.wsdl.parser.WSDLParserUtil;
+import com.predic8.membrane.core.util.xml.parser.XmlParseException;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+
+import java.io.IOException;
+
+import static com.predic8.membrane.core.util.URIUtil.getNormalizedAbsolutePathOrUri;
+import static org.slf4j.LoggerFactory.getLogger;
 
 public abstract class AbstractIncludeImport extends WSDLElement {
+
+    private static final Logger log = getLogger(AbstractIncludeImport.class);
 
     protected String schemaLocation;
     protected Schema schema;
@@ -36,23 +49,35 @@ public abstract class AbstractIncludeImport extends WSDLElement {
     }
 
     protected Schema getSchema(WSDLParserContext ctx) {
-        try {
-            var resolved = resolve(ctx);
+        var resolved = resolve(ctx);
 
-            // Check if the schema has already been imported or included
-            if (ctx.visitedLocations().contains(resolved))
-                return null;
+        // Check if the schema has already been imported or included
+        if (ctx.visitedLocations().contains(resolved))
+            return null;
 
-            try (var is = ctx.resolver().resolve(resolved)) {
-                return new Schema(ctx.basePath(resolved), WSDLParserUtil.parse(is));
-            }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        try (var is = ctx.resolver().resolve(resolved)) {
+            return new Schema(ctx.basePath(resolved), WSDLParserUtil.parse(is));
+        } catch (ResourceRetrievalException e) {
+            throw logAndFail("retrieve", ctx, e);
+        } catch (XmlParseException e) {
+            throw logAndFail("parse", ctx, e);
+        } catch (IOException e) {
+            throw logAndFail("read", ctx, e);
         }
     }
 
+    /**
+     * Logs the failure with its full cause and builds the exception to be thrown by the caller.
+     */
+    private WSDLParserException logAndFail(String verb, WSDLParserContext ctx, Exception cause) {
+        log.error("Cannot {} schema '{}' referenced from '{}'", verb, schemaLocation, ctx.basePath(), cause);
+        return new WSDLParserException("""
+                Cannot %s schema "%s" referenced from %s
+                Error: %s""".formatted(verb, schemaLocation, ctx.basePath(), cause.getMessage()), cause);
+    }
+
     private String resolve(WSDLParserContext ctx) {
-        return URIUtil.getNormalizedAbsolutePathOrUri(ResolverMap.combine(ctx.basePath(), schemaLocation));
+        return getNormalizedAbsolutePathOrUri(ResolverMap.combine(ctx.basePath(), schemaLocation));
     }
 
     public String getSchemaLocation() {

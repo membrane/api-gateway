@@ -67,4 +67,26 @@ class WebServerInterceptorTest {
         assertTrue(body.contains("<a href=\"./index.html\">index.html</a>"));
         assertTrue(body.contains("<a href=\"./page.html\">page.html</a>"));
     }
+
+    @Test
+    void createResponseHidesPathInProduction() throws Exception {
+        Router prod = DummyTestRouter.productionRouter();
+        WebServerInterceptor prodWs = new WebServerInterceptor(prod);
+
+        JsonNode body = om.readTree(prodWs.createResponse(prod.getResolverMap(), "file:/installation/product/client/nonexisting")
+                .getBodyAsStringDecoded());
+
+        // The absolute installation path must not leak to the client in production mode.
+        assertFalse(body.has("path"));
+        assertFalse(body.toString().contains("installation/product/client"));
+    }
+
+    @Test
+    void createResponseExposesPathInDevelopment() throws Exception {
+        JsonNode body = om.readTree(ws.createResponse(r.getResolverMap(), "file:/installation/product/client/nonexisting")
+                .getBodyAsStringDecoded());
+
+        // In development mode the path stays available to aid debugging.
+        assertEquals("file:/installation/product/client/nonexisting", body.get("path").asText());
+    }
 }

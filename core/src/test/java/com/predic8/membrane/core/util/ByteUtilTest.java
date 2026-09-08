@@ -52,4 +52,33 @@ public class ByteUtilTest {
 	public void testReadByteArray2() throws IOException {
 		assertArrayEquals(readByteArray(in2, message2.length()), message2.getBytes());
 	}
+
+	/**
+	 * A stream that ends before the requested number of bytes has been delivered must be reported.
+	 * Returning the pre-allocated buffer makes its NUL padding indistinguishable from real content,
+	 * so a truncated message body is accepted as complete.
+	 * See <a href="https://github.com/membrane/api-gateway/issues/3193">#3193</a>.
+	 */
+	@Test
+	void readByteArrayThrowsWhenTheStreamEndsEarly() {
+		assertThrows(EOFException.class, () -> readByteArray(new ByteArrayInputStream("part".getBytes()), 7));
+	}
+
+	/**
+	 * The full-length read must keep working when it takes several read() calls to get there -
+	 * a short read is not the same as the end of the stream.
+	 */
+	@Test
+	void readByteArrayAccumulatesAcrossShortReads() throws IOException {
+		assertArrayEquals(message1.getBytes(), readByteArray(oneByteAtATime(message1), message1.length()));
+	}
+
+	private static InputStream oneByteAtATime(String content) {
+		return new FilterInputStream(new ByteArrayInputStream(content.getBytes())) {
+			@Override
+			public int read(byte[] b, int off, int len) throws IOException {
+				return super.read(b, off, 1); // force the caller to loop
+			}
+		};
+	}
 }

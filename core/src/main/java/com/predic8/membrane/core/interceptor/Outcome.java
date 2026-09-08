@@ -14,7 +14,8 @@
 package com.predic8.membrane.core.interceptor;
 
 /**
- * Also see {@link FlowController}.
+ * What an interceptor tells the {@link FlowController} to do next. When to return which is
+ * documented on {@link Interceptor}.
  */
 public enum Outcome {
 
@@ -24,16 +25,23 @@ public enum Outcome {
 	CONTINUE,
 
 	/**
-	 * Do not continue the interceptor chain, but start normal response
-	 * handling:
-	 * <p>
-	 * All interceptors passed up to this point will be given a chance to handle
-	 * the response (in reverse order).
+	 * Do not continue the interceptor chain, but start normal response handling: flow is reversed
+	 * and the interceptors are invoked in reverse order on the way back and given a chance to handle
+	 * the response.
+	 *
+	 * Returned when the interceptor has answered the request itself and that is one of its
+	 * regular results rather than a failure: a cache hit or a mock response. The response has to be set on the exchange.
 	 */
 	RETURN,
 
-    /**
-	 * Abort the interceptor chain, start abortion handling.
+	/**
+	 * Abort the interceptor chain, start abortion handling: the interceptors passed up to this
+	 * point receive {@link Interceptor#handleAbort} instead of
+	 * {@link Interceptor#handleResponse}.
+	 *
+	 * Returned when handling failed so fundamentally that the response flow has nothing
+	 * reasonable left to do with the message, for example a body that could not be parsed or a
+	 * backend that could not be reached. The response has to be set on the exchange.
 	 */
 	ABORT
 

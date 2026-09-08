@@ -105,6 +105,55 @@ class APIProxyKeyComplexMatchTest {
         assertFalse(key.matchesPath("/other"));
     }
 
+    @Test
+    @DisplayName("matchesPath honours the configured path and does not swallow a shared base path (#3173)")
+    void matchesPathDoesNotSwallowSharedBasePath() {
+        // Two APIs share the rewrite base path /jfa/api/ but are told apart by their configured path.
+        var key = new APIProxyKey("", "", 8443, "/jfa/api/housekeeping", "*", null, true) {{
+            addBasePaths(new ArrayList<>(List.of("/jfa/api/")));
+        }};
+
+        assertTrue(key.matchesPath("/jfa/api/housekeeping"));
+        assertTrue(key.matchesPath("/jfa/api/housekeeping/foo"));
+
+        assertFalse(key.matchesPath("/jfa/api/echo"));
+        assertFalse(key.matchesPath("/jfa/api/user"));
+
+        assertTrue(key.matchesPath("/api-docs"));
+    }
+
+    @Test
+    @DisplayName("Api docs paths stay reachable when the key was not built from OpenAPI specs, e.g. wsdl2openapi")
+    void matchesPathAllowsRegisteredApiDocsPaths() {
+        var key = new APIProxyKey("", "", 2000, "/service", "*", null, false) {{
+            addApiDocsPaths(new ArrayList<>(List.of("/api-docs")));
+            addBasePaths(new ArrayList<>(List.of("/service")));
+        }};
+
+        assertTrue(key.matchesPath("/api-docs"));
+        assertTrue(key.matchesPath("/api-docs/ui"));
+        assertTrue(key.matchesPath("/service/get-city"));
+        assertFalse(key.matchesPath("/other"));
+    }
+
+    @Test
+    @DisplayName("Keys differing only in their api docs paths are not equal")
+    void keysWithDifferentApiDocsPathsAreNotEqual() {
+        var openAPIKey = new APIProxyKey("", "", 80, "/cities", "*", null, true);
+
+        assertEquals(openAPIKey, new APIProxyKey("", "", 80, "/cities", "*", null, true));
+        assertNotEquals(openAPIKey, new APIProxyKey("", "", 80, "/cities", "*", null, false));
+    }
+
+    @Test
+    @DisplayName("hashCode agrees with equals and works without an expression")
+    void hashCodeWithoutExchangeExpression() {
+        var key = new APIProxyKey("", "", 80, "/cities", "*", null, true);
+
+        assertEquals(key.hashCode(), new APIProxyKey("", "", 80, "/cities", "*", null, true).hashCode());
+        assertNotEquals(key.hashCode(), new APIProxyKey("", "", 80, "/cities", "*", null, false).hashCode());
+    }
+
     private static Stream<Arguments> urls() {
         return Stream.of(
                 of("/api-docs",true),

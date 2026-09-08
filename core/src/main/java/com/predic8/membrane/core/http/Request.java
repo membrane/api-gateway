@@ -38,6 +38,7 @@ import static com.predic8.membrane.annot.Constants.CRLF;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_XML;
+import static com.predic8.membrane.core.util.text.StringUtil.maskNonPrintableCharacters;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class Request extends Message {
@@ -143,15 +144,33 @@ public class Request extends Message {
         return uri;
     }
 
+    /**
+     * Per RFC 9112 &sect;6.3 a request whose <tt>Transfer-Encoding</tt> does not end in
+     * <tt>chunked</tt> has no reliably determinable body length. Reject it before selecting a body,
+     * rather than falling back to reading until EOF, which would hang a keep-alive connection and
+     * open the door to request smuggling.
+     */
+    @Override
+    protected void createBody(InputStream in) throws IOException {
+        final String transferEncoding = header.getFirstValue(TRANSFER_ENCODING);
+        if (transferEncoding != null && !header.isChunked()) {
+            String message = "Transfer-Encoding \"%s\" does not end in \"chunked\". The body length of the request cannot be determined; rejecting to prevent request smuggling."
+                    .formatted(maskNonPrintableCharacters(transferEncoding));
+            log.info(message);
+            throw new MalformedHeaderException(message);
+        }
+        super.createBody(in);
+    }
+
     @Override
     public boolean shouldNotContainBody() {
-        if (methodsWithoutBody.contains(method)) // GET, HEAD, CONNECT
-            return true;
-        if (isHTTP10())
-            return false;
         if (header.hasContentLength())
             return header.getContentLength() == 0;
-        return header.getFirstValue(TRANSFER_ENCODING) == null;
+        if (header.getFirstValue(TRANSFER_ENCODING) != null)
+            return false;
+        if (methodsWithoutBody.contains(method)) // GET, HEAD, CONNECT
+            return true;
+        return !isHTTP10();
     }
 
     /**

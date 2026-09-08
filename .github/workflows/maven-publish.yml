@@ -12,7 +12,7 @@ jobs:
           ref: ${{ github.ref }}
           persist-credentials: false
       - name: Set up Maven Central Repository
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v6
         with:
           java-version: '21'
           distribution: 'temurin'

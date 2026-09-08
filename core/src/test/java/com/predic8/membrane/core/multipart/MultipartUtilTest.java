@@ -166,10 +166,9 @@ class MultipartUtilTest {
     // Real-world resource: XOP multipart from ReassembleTest
     // -------------------------------------------------------------------------
 
-    @Test
-    void xopResourceSplitsIntoTwoParts() throws IOException {
-        byte[] body = IOUtils.toByteArray(getClass().getResourceAsStream("/multipart/embedded-byte-array.txt"));
-        var response = Response.ok()
+    private static Response xopResponse() throws IOException {
+        byte[] body = IOUtils.toByteArray(MultipartUtilTest.class.getResourceAsStream("/multipart/embedded-byte-array.txt"));
+        return Response.ok()
                 .header("Content-Type", "multipart/related; "
                         + "type=\"application/xop+xml\"; "
                         + "boundary=\"uuid:168683dc-43b3-4e71-8e66-efb633ef406b\"; "
@@ -178,14 +177,27 @@ class MultipartUtilTest {
                 .header("Content-Length", String.valueOf(body.length))
                 .body(body)
                 .build();
+    }
 
-        var parts = MultipartUtil.split(response, "uuid:168683dc-43b3-4e71-8e66-efb633ef406b");
+    @Test
+    void xopResourceSplitsIntoTwoParts() throws IOException {
+        var parts = MultipartUtil.split(xopResponse(), "uuid:168683dc-43b3-4e71-8e66-efb633ef406b");
 
         assertEquals(2, parts.size());
         assertEquals("<root.message@cxf.apache.org>",                parts.get(0).getContentID());
         assertEquals("<a416c16d-a50e-44ca-a6d7-3e8a61480afa-2@cxf.apache.org>", parts.get(1).getContentID());
         assertEquals("application/xop+xml; charset=UTF-8; type=\"text/xml\";", parts.get(0).getContentType());
         assertEquals("application/octet-stream",                      parts.get(1).getContentType());
+    }
+
+    /** split() shares the traversal with forEachPart(), so it rejects nested multipart alike. */
+    @Test
+    void splitRejectsNestedMultipart() {
+        var msg = response(multipartBody(
+                "Content-Disposition: form-data; name=\"nested\"" + CRLF
+                + "Content-Type: multipart/mixed; boundary=inner" + CRLF + CRLF + "..."));
+
+        assertThrows(IOException.class, () -> MultipartUtil.split(msg));
     }
 
     // -------------------------------------------------------------------------

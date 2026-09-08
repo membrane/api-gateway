@@ -40,6 +40,8 @@ import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.http.MimeType.isBinary;
 import static com.predic8.membrane.core.util.HttpUtil.readLine;
+import static com.predic8.membrane.core.util.text.StringUtil.maskNonPrintableCharacters;
+import static com.predic8.membrane.core.util.text.StringUtil.truncateAfter;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.stream;
@@ -155,31 +157,72 @@ public class Header {
      * Constructs a Header by reading and parsing HTTP header lines from the provided input stream.
      *
      * <p>This constructor reads the input stream line by line until an empty line is encountered,
-     * creating and adding a HeaderField for each non-empty line. If a header line is malformed, resulting
-     * in a StringIndexOutOfBoundsException, the error is logged and the line is skipped.</p>
+     * creating and adding a HeaderField for each non-empty line.</p>
      *
      * @param in the input stream containing HTTP header lines
-     * @throws IOException          if an I/O error occurs while reading the stream
-     * @throws EndOfStreamException if the stream ends unexpectedly before a complete header is read
+     * @throws IOException              if an I/O error occurs while reading the stream
+     * @throws EndOfStreamException     if the stream ends unexpectedly before a complete header is read
+     * @throws MalformedHeaderException if a line is not a valid field line
      */
     public Header(InputStream in) throws IOException, EndOfStreamException {
         String line;
-        while (!(line = readLine(in)).isEmpty()) {
-            try {
-                add(new HeaderField(line));
-            } catch (StringIndexOutOfBoundsException sie) {
-                log.error("Header read line that caused problems: {}", line);
-            }
-        }
+        while (!(line = readLine(in)).isEmpty())
+            add(parseFieldLine(line));
     }
 
+    /**
+     * Parses one line of an HTTP header block into a field.
+     * <p>
+     * A line without a field name terminated by a colon is rejected rather than skipped. Such a
+     * line is most often an obsolete folded continuation, which RFC 9112 &sect;5.2 requires a
+     * server to reject or to unfold into the preceding field - never to interpret as it stands.
+     * Dropping it would forward the message with a header silently missing or truncated, so that
+     * Membrane and the backend disagree on what the message said, which is the disagreement HTTP
+     * request smuggling relies on. A MIME part header is the opposite case, where folding is still
+     * legal and is joined back together instead, see {@link #unfold(String)}.
+     *
+     * @throws MalformedHeaderException if the line carries no field name followed by a colon
+     */
+    private static HeaderField parseFieldLine(String line) {
+        if (line.indexOf(':') < 1) {
+            String message = "Malformed header line \"%s\": it carries no field name followed by a colon. Rejecting the message rather than dropping the line, which would forward it with a header silently missing."
+                    .formatted(maskNonPrintableCharacters(truncateAfter(line, 80)));
+            log.info(message);
+            throw new MalformedHeaderException(message);
+        }
+        return new HeaderField(line);
+    }
+
+    /**
+     * Parses a header block, as it is handed over by a MIME parser for one part of a multipart
+     * message.
+     */
     public Header(String header) {
-        this(
-                stream(header.split("\r?\n"))
-                        .filter(s -> !s.isEmpty())
-                        .map(HeaderField::new)
-                        .toList()
-        );
+        this(unfold(header).stream().map(HeaderField::new).toList());
+    }
+
+    /**
+     * Joins the continuation lines of a folded header block back onto the field they belong to.
+     * A MIME part header may still be folded (RFC 5322, 2.2.3) even though HTTP has retired the
+     * practice, and a continuation line is not a field of its own: it carries no name and no colon.
+     * Unfolding drops the line break and keeps the leading whitespace, as the RFC prescribes.
+     */
+    private static List<String> unfold(String header) {
+        List<String> fields = new ArrayList<>();
+        for (String line : header.split("\r?\n")) {
+            if (line.isEmpty())
+                continue;
+            if (!isContinuation(line))
+                fields.add(line);
+            else if (!fields.isEmpty())
+                fields.set(fields.size() - 1, fields.getLast() + line);
+            // A continuation before any field belongs to nothing and is dropped.
+        }
+        return fields;
+    }
+
+    private static boolean isContinuation(String line) {
+        return line.charAt(0) == ' ' || line.charAt(0) == '\t';
     }
 
     public Header(Header header) {

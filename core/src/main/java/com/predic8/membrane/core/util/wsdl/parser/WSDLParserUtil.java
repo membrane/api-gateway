@@ -14,18 +14,22 @@
 
 package com.predic8.membrane.core.util.wsdl.parser;
 
-import org.w3c.dom.*;
+import com.predic8.membrane.core.util.xml.parser.HardenedXmlParser;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.xml.sax.InputSource;
 
-import javax.xml.namespace.*;
-import javax.xml.parsers.*;
-import java.io.*;
+import javax.xml.namespace.QName;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+
+import static java.util.stream.Collectors.joining;
 
 public class WSDLParserUtil {
 
-    public static Element parse(InputStream is) throws Exception {
-        var dbf = DocumentBuilderFactory.newInstance();
-        dbf.setNamespaceAware(true);
-        return dbf.newDocumentBuilder().parse(is).getDocumentElement();
+    public static Element parse(InputStream is) throws IOException {
+        return HardenedXmlParser.getInstance().parse(new InputSource(is)).getDocumentElement();
     }
 
     /**
@@ -38,6 +42,22 @@ public class WSDLParserUtil {
         if (pos == -1)
             return value;
         return value.substring(pos+1);
+    }
+
+    /**
+     * The text of a {@code documentation} element as prose: the line breaks and indentation the WSDL
+     * author wrapped it with are not part of what it says, so each paragraph is joined into one line
+     * and blank lines are kept as the paragraph breaks they are. Returns null where nothing but
+     * whitespace is left, which is how an empty {@code documentation} counts as none.
+     */
+    public static String normalizeDocumentation(String text) {
+        var paragraphs = new ArrayList<String>();
+        for (String paragraph : text.strip().split("\\n\\s*\\n")) {
+            String joined = paragraph.lines().map(String::strip).filter(line -> !line.isEmpty())
+                    .collect(joining(" "));
+            if (!joined.isEmpty()) paragraphs.add(joined);
+        }
+        return paragraphs.isEmpty() ? null : String.join("\n\n", paragraphs);
     }
 
     public static QName resolveQName(String value, Node context) {

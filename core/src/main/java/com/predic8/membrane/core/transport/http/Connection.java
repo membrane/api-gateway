@@ -13,23 +13,27 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.http;
 
-import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.transport.http.client.*;
-import com.predic8.membrane.core.transport.ssl.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.transport.http.client.ProxyConfiguration;
+import com.predic8.membrane.core.transport.ssl.SSLProvider;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
-import javax.net.ssl.*;
+import javax.net.ssl.SSLSocket;
 import java.io.*;
-import java.net.*;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.util.Random;
 
-import static com.predic8.membrane.annot.Constants.*;
+import static com.predic8.membrane.annot.Constants.USERAGENT;
 import static com.predic8.membrane.core.transport.http.ByteStreamLogging.wrapConnectionInputStream;
 import static com.predic8.membrane.core.transport.http.ByteStreamLogging.wrapConnectionOutputStream;
-import static com.predic8.membrane.core.util.text.TextUtil.*;
+import static com.predic8.membrane.core.util.text.TextUtil.isNullOrEmpty;
 
 /**
  * A {@link Connection} is an outbound TCP/IP (with or without TLS) connection, possibly managed
@@ -102,31 +106,58 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 			sniServername = null;
 		}
 
-		if (sslProvider != null) {
-			if (isNullOrEmpty(localHost))
-				con.socket = sslProvider.createSocket(host, port, connectTimeout, sniServername, applicationProtocols);
-			else
-				con.socket = sslProvider.createSocket(host, port, InetAddress.getByName(localHost), 0,
-						connectTimeout, sniServername, applicationProtocols);
-		} else {
-			if (isNullOrEmpty(localHost)) {
-				con.socket = new Socket();
+		// Everything up to here happens before the first byte of the request is written, so a timeout
+		// in this block means nothing was sent. ConnectTimeoutException carries that fact to the
+		// retry handling, which the JDK's undifferentiated SocketTimeoutException cannot.
+		try {
+			if (sslProvider != null) {
+				if (isNullOrEmpty(localHost))
+					con.socket = sslProvider.createSocket(host, port, connectTimeout, sniServername, applicationProtocols);
+				else
+					con.socket = sslProvider.createSocket(host, port, InetAddress.getByName(localHost), 0,
+							connectTimeout, sniServername, applicationProtocols);
 			} else {
-				con.socket = new Socket();
-				con.socket.bind(new InetSocketAddress(InetAddress.getByName(localHost), 0));
+				if (isNullOrEmpty(localHost)) {
+					con.socket = new Socket();
+				} else {
+					con.socket = new Socket();
+					con.socket.bind(new InetSocketAddress(InetAddress.getByName(localHost), 0));
+				}
+				con.socket.connect(new InetSocketAddress(host, port), connectTimeout);
 			}
-			con.socket.connect(new InetSocketAddress(host, port), connectTimeout);
-		}
 
-		if (proxy != null && origSSLProvider != null) {
-			con.doTunnelHandshake(proxy, con.socket, origHost, origPort);
-			con.socket = origSSLProvider.createSocket(con.socket, origHost, origPort, connectTimeout, origSniServername, applicationProtocols);
+			if (proxy != null && origSSLProvider != null) {
+				con.doTunnelHandshake(proxy, con.socket, origHost, origPort);
+				con.socket = origSSLProvider.createSocket(con.socket, origHost, origPort, connectTimeout, origSniServername, applicationProtocols);
+			}
+		} catch (SocketTimeoutException e) {
+			// The socket can already be open here: a timeout during the proxy handshake or the TLS
+			// wrapping happens after it was connected. Without closing it the descriptor leaks, and a
+			// retried connect attempt would leak one more.
+			ConnectTimeoutException timedOut = new ConnectTimeoutException(
+					"Connecting to %s:%d timed out after %dms.".formatted(host, port, connectTimeout), e);
+			closeSocket(con.socket, timedOut);
+			throw timedOut;
 		}
 
 		log.debug("Opened connection on localPort: {}", con.socket.getLocalPort());
 
 		con.setupStreams();
 		return con;
+	}
+
+	/**
+	 * Closes a socket that is being abandoned because opening the connection failed. A failure to close
+	 * is attached to the original exception rather than replacing it.
+	 */
+	private static void closeSocket(@Nullable Socket socket, Exception cause) {
+		if (socket == null)
+			return;
+		try {
+			socket.close();
+		} catch (IOException closeFailure) {
+			cause.addSuppressed(closeFailure);
+		}
 	}
 
 	private void setupStreams() throws IOException {
@@ -241,6 +272,29 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 	@Override
 	public void bodyRequested(AbstractBody body) {
 		// do nothing
+	}
+
+	/**
+	 * A failed body read leaves this connection desynchronized: the rest of the body is still in the
+	 * stream and would be parsed as the beginning of the next message. Close it rather than letting it
+	 * go back into the pool.
+	 * <p>
+	 * {@link HttpServerHandler} closes an orphaned target connection as well, but only for exchanges
+	 * that reach its {@code finally}; connections obtained directly via {@link ConnectionFactory} have
+	 * no such backstop.
+	 */
+	@Override
+	public void bodyFailed(ReadingBodyException e) {
+		if (exchange == null)
+			return;
+		// detach before closing: a failing close() must not leave this connection attached to the exchange
+		exchange.setTargetConnection(null);
+		exchange = null;
+		try {
+			close();
+		} catch (IOException e2) {
+			throw new RuntimeException(e2);
+		}
 	}
 
 	@Override

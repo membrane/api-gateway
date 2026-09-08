@@ -1,0 +1,12 @@
+{
+  "name": "Dave",
+  "birthDate": "1990-01-01",
+  "kind": "PERSON",
+  "address": {
+    "street": "Oak Ave",
+    "houseNumber": "5",
+    "postalCode": "54321",
+    "city": "Portland",
+    "country": "US"
+  }
+}

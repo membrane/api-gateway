@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- One operation declaring two faults, to show how wsdl2openapi maps declared faults to JSON. -->
+<wsdl:definitions
+        xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+        xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+        xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+        xmlns:tns="https://example.com/order"
+        targetNamespace="https://example.com/order">
+
+    <wsdl:types>
+        <xsd:schema targetNamespace="https://example.com/order">
+
+            <xsd:simpleType name="OrderState">
+                <xsd:restriction base="xsd:string">
+                    <xsd:enumeration value="NEW"/>
+                    <xsd:enumeration value="CONFIRMED"/>
+                    <xsd:enumeration value="SHIPPED"/>
+                    <xsd:enumeration value="CANCELLED"/>
+                </xsd:restriction>
+            </xsd:simpleType>
+
+            <!-- ── cancel ──────────────────────────────────────────────── -->
+
+            <xsd:element name="cancel">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="orderId" type="xsd:string"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="cancelResponse">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="orderId" type="xsd:string"/>
+                        <xsd:element name="state" type="tns:OrderState"/>
+                        <xsd:element name="cancelledAt" type="xsd:dateTime"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+
+            <!-- ── Faults of cancel ────────────────────────────────────── -->
+
+            <!-- The two faults have different content models on purpose: the generated OpenAPI
+                 combines them with oneOf, each under its own key in the details member. -->
+
+            <xsd:element name="orderDoesNotExist">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="orderId" type="xsd:string"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+
+            <xsd:element name="wrongState">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="orderId" type="xsd:string"/>
+                        <xsd:element name="currentState" type="tns:OrderState"/>
+                        <xsd:element name="message" type="xsd:string"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+
+        </xsd:schema>
+    </wsdl:types>
+
+    <wsdl:message name="CancelRequest"><wsdl:part name="parameters" element="tns:cancel"/></wsdl:message>
+    <wsdl:message name="CancelResponse"><wsdl:part name="parameters" element="tns:cancelResponse"/></wsdl:message>
+    <wsdl:message name="OrderDoesNotExistFault"><wsdl:part name="parameters" element="tns:orderDoesNotExist"/></wsdl:message>
+    <wsdl:message name="WrongStateFault"><wsdl:part name="parameters" element="tns:wrongState"/></wsdl:message>
+
+    <wsdl:portType name="Order">
+        <wsdl:operation name="cancel">
+            <wsdl:input message="tns:CancelRequest"/>
+            <wsdl:output message="tns:CancelResponse"/>
+            <wsdl:fault name="OrderDoesNotExist" message="tns:OrderDoesNotExistFault"/>
+            <wsdl:fault name="WrongState" message="tns:WrongStateFault"/>
+        </wsdl:operation>
+    </wsdl:portType>
+
+    <wsdl:binding name="OrderSoapBinding" type="tns:Order">
+        <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+        <wsdl:operation name="cancel">
+            <soap:operation soapAction="cancel"/>
+            <wsdl:input><soap:body use="literal"/></wsdl:input>
+            <wsdl:output><soap:body use="literal"/></wsdl:output>
+            <wsdl:fault name="OrderDoesNotExist"><soap:fault name="OrderDoesNotExist" use="literal"/></wsdl:fault>
+            <wsdl:fault name="WrongState"><soap:fault name="WrongState" use="literal"/></wsdl:fault>
+        </wsdl:operation>
+    </wsdl:binding>
+
+    <wsdl:service name="OrderService">
+        <wsdl:port name="OrderPort" binding="tns:OrderSoapBinding">
+            <soap:address location="http://localhost:2002/order"/>
+        </wsdl:port>
+    </wsdl:service>
+
+</wsdl:definitions>
