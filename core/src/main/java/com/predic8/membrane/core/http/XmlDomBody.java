@@ -88,7 +88,7 @@ public class XmlDomBody extends AbstractBody {
         if (msg.getBody() instanceof XmlDomBody xmlDomBody)
             return xmlDomBody.getDocument();
         byte[] content = msg.getBody().getContent();
-        Document doc = msg.isEncoded() ? parseDecoded(msg) : parse(content);
+        Document doc = msg.isEncoded() ? parseDecoded(msg) : parse(msg, content);
         msg.setBody(new XmlDomBody(doc, content)); // Bytes unchanged, so the header still fits
         return doc;
     }
@@ -209,8 +209,19 @@ public class XmlDomBody extends AbstractBody {
         }
     }
 
-    private static Document parse(byte[] content) {
-        return HardenedXmlParser.getInstance().parse(new InputSource(new ByteArrayInputStream(content)));
+    /**
+     * Parses bytes the caller already read, so the {@code Content-Type} charset has to be applied
+     * here explicitly instead of via {@link XMLUtil#getInputSource(Message)}, which reads the
+     * message's body stream itself. Per RFC 7303 that charset takes precedence over the XML
+     * declaration, so it must win over the SAX parser's own detection.
+     */
+    private static Document parse(Message msg, byte[] content) {
+        InputSource source = new InputSource(new ByteArrayInputStream(content));
+        String charset = msg.getHeader().getCharset();
+        if (charset != null) {
+            source.setEncoding(charset);
+        }
+        return HardenedXmlParser.getInstance().parse(source);
     }
 
     /**
@@ -243,10 +254,15 @@ public class XmlDomBody extends AbstractBody {
      * Parses the decoded body, streaming it into the parser rather than materializing it as a
      * second array. The stream is closed because for a gzip or brotli body it holds a native
      * decompressor, which is then released here instead of whenever the Cleaner gets to it.
+     * <p>
+     * {@link XMLUtil#getInputSource(Message)} builds the {@link InputSource}, so the
+     * {@code Content-Type} charset takes precedence over the XML declaration here the same way it
+     * does for every other XPath/XML consumer of a {@link Message}.
      */
     private static Document parseDecoded(Message msg) {
-        try (InputStream in = msg.getBodyAsStreamDecoded()) {
-            return HardenedXmlParser.getInstance().parse(new InputSource(in));
+        InputSource source = XMLUtil.getInputSource(msg);
+        try (InputStream in = source.getByteStream()) {
+            return HardenedXmlParser.getInstance().parse(source);
         } catch (IOException e) {
             throw new ReadingBodyException(e);
         }
