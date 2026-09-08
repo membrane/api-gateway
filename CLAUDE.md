@@ -72,6 +72,14 @@ YAML. See `docs/DEVELOPING.md` for the full annotation reference
 (`@MCElement`, `@MCAttribute`, `@MCChildElement`, `@MCTextContent`, `@MCOtherAttributes`, `@Required`).
 Every annotated setter needs a matching getter.
 
+## YAML `$schema=` version comments
+
+The `# yaml-language-server: $schema=https://www.membrane-api.io/vX.Y.Z.json` header comment on
+any `.yaml`/`.yml` file in the repo (not just `distribution/tutorials/` — the release tooling
+walks the whole project tree) is rewritten automatically as part of cutting a release
+(`ConsistentVersionNumbers.java`, run from the `release-pr.yml` GitHub Action). Don't hand-edit
+it, and don't flag a stale/mismatched version as a bug in review.
+
 ## Reference docs (Javadoc → membrane-api.io)
 
 Class/method Javadoc on `@MCElement` classes is parsed by a custom doc generator, **not**
