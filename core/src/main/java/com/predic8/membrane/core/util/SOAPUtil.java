@@ -29,6 +29,7 @@ import org.w3c.dom.Element;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -77,9 +78,12 @@ public class SOAPUtil {
 
     public enum FaultCode {Server, Client}
 
-    public static Response createSOAPFaultResponse(FaultCode code, String faultstring, Map<String,Object> details) {
+    public static Response createSOAPFaultResponse(FaultCode code, String faultstring, Map<String,Object> details, SoapVersion version) {
         try {
-            return ok().contentType(TEXT_XML_UTF8).body(xmlNode2String(createSOAP11Fault(code, faultstring, details))).build();
+            Element fault = version == SoapVersion.SOAP12
+                    ? createSOAP12Fault(code, faultstring, details)
+                    : createSOAP11Fault(code, faultstring, details);
+            return ok().contentType(TEXT_XML_UTF8).body(xmlNode2String(fault)).build();
         } catch (Exception e) {
             throw new RuntimeException("Should not happen", e);
         }
@@ -108,6 +112,44 @@ public class SOAPUtil {
 
         if (detail != null && !detail.isEmpty()) {
             Element detailElement = doc.createElement("detail");
+            mapToXml(doc, detailElement, detail);
+            fault.appendChild(detailElement);
+        }
+
+        return env;
+    }
+
+    public static Element createSOAP12Fault(FaultCode faultcode, String faultstring, Map<String, Object> detail) throws ParserConfigurationException {
+        Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
+
+        Element env = doc.createElementNS(SOAP12_NS, "soap:Envelope");
+        env.setAttribute("xmlns:soap", SOAP12_NS);
+        doc.appendChild(env);
+
+        Element body = doc.createElementNS(SOAP12_NS, "soap:Body");
+        env.appendChild(body);
+
+        Element fault = doc.createElementNS(SOAP12_NS, "soap:Fault");
+        body.appendChild(fault);
+
+        Element code = doc.createElementNS(SOAP12_NS, "soap:Code");
+        fault.appendChild(code);
+
+        Element value = doc.createElementNS(SOAP12_NS, "soap:Value");
+        // faultcode.name() is Client/Server; SOAP 1.2's fault-code vocabulary is Sender/Receiver.
+        value.setTextContent("soap:" + (faultcode == FaultCode.Client ? "Sender" : "Receiver"));
+        code.appendChild(value);
+
+        Element reason = doc.createElementNS(SOAP12_NS, "soap:Reason");
+        fault.appendChild(reason);
+
+        Element text = doc.createElementNS(SOAP12_NS, "soap:Text");
+        text.setAttributeNS(XMLConstants.XML_NS_URI, "xml:lang", "en");
+        text.setTextContent(faultstring);
+        reason.appendChild(text);
+
+        if (detail != null && !detail.isEmpty()) {
+            Element detailElement = doc.createElementNS(SOAP12_NS, "soap:Detail");
             mapToXml(doc, detailElement, detail);
             fault.appendChild(detailElement);
         }

@@ -32,6 +32,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import static com.predic8.membrane.annot.Constants.SOAP11_NS;
+import static com.predic8.membrane.annot.Constants.SOAP12_NS;
 import static com.predic8.membrane.core.http.Header.VALIDATION_ERROR_SOURCE;
 import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
@@ -141,6 +143,23 @@ public class WSDLValidatorTest {
         assertEquals(ABORT, actual);
         assertNotNull(exc.getResponse());
         assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("SOAP version 1.2 is not valid"));
+    }
+
+    /**
+     * A validation failure against a SOAP 1.2 message must be reported as a SOAP 1.2 fault - a
+     * SOAP 1.2 client is not guaranteed to understand a SOAP 1.1 envelope.
+     */
+    @Test
+    void faultResponseMatchesRequestSoapVersion() throws Exception {
+        Exchange exc = getRequestExchange(soap12("""
+                <foo:notInSchema xmlns:foo="http://membrane-api.io/foo"/>
+                """));
+
+        assertEquals(ABORT, createValidator(HELLO_SOAP12_WSDL, null, false).validateMessage(exc, REQUEST));
+        dumpResonseBody(exc);
+        String body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains(SOAP12_NS), "Expected a SOAP 1.2 fault envelope but got: " + body);
+        assertFalse(body.contains(SOAP11_NS), "Expected no SOAP 1.1 envelope but got: " + body);
     }
 
     @Test
