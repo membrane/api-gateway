@@ -13,22 +13,29 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.shadowing;
 
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.exchangestore.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchangestore.ForgetfulExchangeStore;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.flow.*;
-import com.predic8.membrane.core.interceptor.lang.*;
-import com.predic8.membrane.core.proxies.AbstractServiceProxy.*;
-import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.transport.http.*;
-import org.junit.jupiter.api.*;
-import org.mockito.*;
+import com.predic8.membrane.core.interceptor.flow.ReturnInterceptor;
+import com.predic8.membrane.core.interceptor.lang.SetHeaderInterceptor;
+import com.predic8.membrane.core.proxies.ServiceProxy;
+import com.predic8.membrane.core.proxies.ServiceProxyKey;
+import com.predic8.membrane.core.proxies.Target;
+import com.predic8.membrane.core.router.DefaultRouter;
+import com.predic8.membrane.core.transport.http.HttpTransport;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
 
-import java.util.*;
+import java.io.ByteArrayInputStream;
+import java.util.ArrayList;
+import java.util.List;
 
-import static com.predic8.membrane.core.http.MimeType.*;
-import static io.restassured.RestAssured.*;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -142,5 +149,47 @@ class ShadowingInterceptorTest {
         assertEquals("/foo", exc.getRequest().getUri());
         assertEquals("https://www.predic8.com:9000/foo", exc.getDestinations().getFirst());
         assertEquals(APPLICATION_JSON, exc.getRequest().getHeader().getContentType());
+    }
+
+    /**
+     * A request body that failed to read is incomplete: shadowing it would send a truncated request to
+     * the targets, so the clone must be suppressed.
+     */
+    @Test
+    void failedRequestBodyIsNotShadowed() throws Exception {
+        List<AbstractBody> shadowed = new ArrayList<>();
+        ShadowingInterceptor interceptor = new ShadowingInterceptor() {
+            @Override
+            public void cloneRequestAndSend(AbstractBody completeBody, Exchange mainExchange, Header copiedHeader) {
+                shadowed.add(completeBody);
+            }
+        };
+        Exchange exchange = new Request.Builder().post("http://localhost:2000").buildExchange();
+        Body body = new Body(ThrowingInputStream.closedChannel("partial"), 1000);
+        exchange.getRequest().setBody(body);
+
+        interceptor.handleRequest(exchange);
+        assertThrows(ReadingBodyException.class, body::read);
+
+        assertTrue(shadowed.isEmpty());
+    }
+
+    @Test
+    void completeRequestBodyIsShadowed() throws Exception {
+        List<AbstractBody> shadowed = new ArrayList<>();
+        ShadowingInterceptor interceptor = new ShadowingInterceptor() {
+            @Override
+            public void cloneRequestAndSend(AbstractBody completeBody, Exchange mainExchange, Header copiedHeader) {
+                shadowed.add(completeBody);
+            }
+        };
+        Exchange exchange = new Request.Builder().post("http://localhost:2000").buildExchange();
+        Body body = new Body(new ByteArrayInputStream("foo".getBytes()), 3);
+        exchange.getRequest().setBody(body);
+
+        interceptor.handleRequest(exchange);
+        body.read();
+
+        assertEquals(List.of(body), shadowed);
     }
 }

@@ -14,19 +14,26 @@
 
 package com.predic8.membrane.core.transport.ssl;
 
-import com.oracle.util.ssl.*;
-import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.util.*;
-import org.slf4j.*;
+import com.oracle.util.ssl.SSLCapabilities;
+import com.oracle.util.ssl.SSLExplorer;
+import com.predic8.membrane.core.proxies.ServiceProxyKey;
+import com.predic8.membrane.core.util.EndOfStreamException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.annotation.*;
-import javax.net.ssl.*;
-import java.io.*;
-import java.net.*;
-import java.util.*;
-import java.util.regex.*;
+import javax.annotation.Nullable;
+import javax.net.ssl.SNIServerName;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.regex.Pattern;
 
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Manages multiple {@link SSLContext}s using the same port. This is only possible when using SSL with
@@ -59,15 +66,22 @@ public class SSLContextCollection implements SSLProvider {
 				return sslContexts.getFirst();
 		}
 
-		public void add(SSLContext sslContext) {
+		public Builder add(SSLContext sslContext) {
 			if (!sslContexts.contains(sslContext)) {
 				sslContexts.add(sslContext);
 				dnsNames.add(sslContext.constructHostNamePattern());
 			}
+			return this;
 		}
 
-		public void useCollection() {
+		/**
+		 * Builds a collection even for a single context, so that an SNI name that matches none of
+		 * them is answered with an 'unrecognized_name' alert instead of falling through to the
+		 * lone context.
+		 */
+		public Builder useCollection() {
 			useCollection = true;
+			return this;
 		}
 	}
 

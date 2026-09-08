@@ -16,14 +16,16 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.predic8.membrane.core.openapi.model.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.openapi.model.Request;
+import org.junit.jupiter.api.Test;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_XML;
-import static com.predic8.membrane.core.openapi.util.JsonTestUtil.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static com.predic8.membrane.core.openapi.util.JsonTestUtil.mapToJson;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 @SuppressWarnings("OptionalGetWithoutIsPresent")
@@ -363,6 +365,33 @@ protected String getOpenAPIFileName() {
 
         ValidationErrors errors = validator.validate(Request.post().path("/composition-ref-cycle").body(mapToJson(m)));
         assertEquals(0,errors.size());
+    }
+
+    /**
+     * A recursive schema is not a cycle as long as the validation descends into the instance:
+     * RefRecursiveNode.next points back at RefRecursiveNode, and every nested node has to be
+     * validated against it.
+     */
+    @Test
+    void refRecursiveIsValidatedAtEveryLevel() {
+
+        Map<String,Object> node = Map.of("id","1","next",Map.of("id","2","next",Map.of()));
+
+        ValidationErrors errors = validator.validate(Request.post().path("/composition-ref-recursive").body(mapToJson(node)));
+
+        assertEquals(1, errors.size(), () -> "Unexpected errors: " + errors);
+        assertEquals("Required property id is missing.", errors.getFirst().getMessage());
+        assertEquals("REQUEST/BODY#/next/next/id", errors.getFirst().getContext().getLocationForRequest());
+    }
+
+    @Test
+    void refRecursiveValid() {
+
+        Map<String,Object> node = Map.of("id","1","next",Map.of("id","2","next",Map.of("id","3")));
+
+        ValidationErrors errors = validator.validate(Request.post().path("/composition-ref-recursive").body(mapToJson(node)));
+
+        assertEquals(0, errors.size(), () -> "Unexpected errors: " + errors);
     }
 
     /**

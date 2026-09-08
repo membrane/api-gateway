@@ -14,12 +14,14 @@
 
 package com.predic8.membrane.core.interceptor.lang;
 
-import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.flow.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.interceptor.flow.ReturnInterceptor;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import java.net.*;
+import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -72,5 +74,22 @@ public class ReturnInterceptorTest {
         interceptor.handleRequest(get);
         assertNull(get.getResponse().getHeader().getContentType());
         assertEquals(0,get.getResponse().getHeader().getContentLength());
+    }
+
+    /**
+     * An interceptor upstream of {@code return} (e.g. wsSecurity) may have replaced the request's
+     * body with an {@link XmlDomBody} to reflect a DOM mutation - not a plain {@link Body}, but
+     * still an {@link AbstractBody}. That body must come through unchanged, not be dropped.
+     */
+    @Test
+    void requestWithXmlDomBodyIsReturned() throws Exception {
+        Exchange xml = Request.post("/shop").contentType(TEXT_XML).body("<a><b/></a>").buildExchange();
+        XmlDomBody.modify(xml.getRequest(), doc -> doc.getDocumentElement().appendChild(doc.createElement("c")));
+
+        interceptor.handleRequest(xml);
+
+        String body = xml.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains("<c/>"), "Expected the DOM-mutated body, got: " + body);
+        assertEquals(body.getBytes(StandardCharsets.UTF_8).length, xml.getResponse().getHeader().getContentLength());
     }
 }

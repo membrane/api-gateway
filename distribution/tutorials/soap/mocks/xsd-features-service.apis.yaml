@@ -1,0 +1,302 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.5.0.json
+#
+# XsdFeaturesService Mock
+#
+# Start standalone:
+#   ./membrane.sh -c mocks/xsd-features-service.apis.yaml
+#
+# Routes by SOAPAction and returns a static SOAP response for each operation.
+
+global:
+  - beautifier: {}
+  - log:
+      label: "********* SOAP Message *********"
+
+---
+api:
+  port: 2001
+  name: getPrimitiveTypes
+  test: header.SOAPAction == 'getPrimitiveTypes'
+  flow:
+    - static:
+        contentType: text/xml
+        src: |
+          <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+            <s11:Body>
+              <f:getPrimitiveTypesResponse xmlns:f="https://example.com/xsd-features">
+                <text>Widget</text>
+                <count>42</count>
+                <total>9007199254740991</total>
+                <price>9.99</price>
+                <active>true</active>
+                <created>2026-08-12</created>
+                <updated>2026-08-12T10:30:00Z</updated>
+              </f:getPrimitiveTypesResponse>
+            </s11:Body>
+          </s11:Envelope>
+    - return:
+        status: 200
+
+---
+api:
+  port: 2001
+  name: getSequence
+  test: header.SOAPAction == 'getSequence'
+  flow:
+    - static:
+        contentType: text/xml
+        src: |
+          <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+            <s11:Body>
+              <f:getSequenceResponse xmlns:f="https://example.com/xsd-features">
+                <status>ordered</status>
+              </f:getSequenceResponse>
+            </s11:Body>
+          </s11:Envelope>
+    - return:
+        status: 200
+
+---
+api:
+  port: 2001
+  name: getAll
+  test: header.SOAPAction == 'getAll'
+  flow:
+    - static:
+        contentType: text/xml
+        src: |
+          <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+            <s11:Body>
+              <f:getAllResponse xmlns:f="https://example.com/xsd-features">
+                <status>ok</status>
+              </f:getAllResponse>
+            </s11:Body>
+          </s11:Envelope>
+    - return:
+        status: 200
+
+---
+api:
+  port: 2001
+  name: getChoice
+  test: header.SOAPAction == 'getChoice'
+  flow:
+    - static:
+        contentType: text/xml
+        src: |
+          <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+            <s11:Body>
+              <f:getChoiceResponse xmlns:f="https://example.com/xsd-features">
+                <status>ok</status>
+              </f:getChoiceResponse>
+            </s11:Body>
+          </s11:Envelope>
+    - return:
+        status: 200
+
+---
+api:
+  port: 2001
+  name: getGroupRef
+  test: header.SOAPAction == 'getGroupRef'
+  flow:
+    - static:
+        contentType: text/xml
+        src: |
+          <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+            <s11:Body>
+              <f:getGroupRefResponse xmlns:f="https://example.com/xsd-features">
+                <status>ok</status>
+                <createdBy>alice</createdBy>
+                <createdAt>2026-08-12T10:30:00Z</createdAt>
+              </f:getGroupRefResponse>
+            </s11:Body>
+          </s11:Envelope>
+    - return:
+        status: 200
+
+---
+api:
+  port: 2001
+  name: getArray
+  # deliberately ONE occurrence: the schema decides this is an array, not the number of elements
+  test: header.SOAPAction == 'getArray'
+  flow:
+    - static:
+        contentType: text/xml
+        src: |
+          <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+            <s11:Body>
+              <f:getArrayResponse xmlns:f="https://example.com/xsd-features">
+                <tag>java</tag>
+              </f:getArrayResponse>
+            </s11:Body>
+          </s11:Envelope>
+    - return:
+        status: 200
+
+---
+api:
+  port: 2001
+  name: getNillable
+  test: header.SOAPAction == 'getNillable'
+  flow:
+    - static:
+        contentType: text/xml
+        src: |
+          <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/"
+                        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+            <s11:Body>
+              <f:getNillableResponse xmlns:f="https://example.com/xsd-features">
+                <label>open account</label>
+                <closedAt xsi:nil="true"/>
+              </f:getNillableResponse>
+            </s11:Body>
+          </s11:Envelope>
+    - return:
+        status: 200
+
+---
+api:
+  port: 2001
+  name: getAttributes
+  test: header.SOAPAction == 'getAttributes'
+  flow:
+    - static:
+        contentType: text/xml
+        src: |
+          <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+            <s11:Body>
+              <f:getAttributesResponse xmlns:f="https://example.com/xsd-features">
+                <record id="123" kind="city">
+                  <name>Berlin</name>
+                </record>
+              </f:getAttributesResponse>
+            </s11:Body>
+          </s11:Envelope>
+    - return:
+        status: 200
+
+---
+api:
+  port: 2001
+  name: getSimpleContent
+  test: header.SOAPAction == 'getSimpleContent'
+  flow:
+    - static:
+        contentType: text/xml
+        src: |
+          <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+            <s11:Body>
+              <f:getSimpleContentResponse xmlns:f="https://example.com/xsd-features">
+                <price currency="EUR">9.99</price>
+              </f:getSimpleContentResponse>
+            </s11:Body>
+          </s11:Envelope>
+    - return:
+        status: 200
+
+---
+api:
+  port: 2001
+  name: getExtension
+  test: header.SOAPAction == 'getExtension'
+  flow:
+    - static:
+        contentType: text/xml
+        src: |
+          <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+            <s11:Body>
+              <f:getExtensionResponse xmlns:f="https://example.com/xsd-features">
+                <order>
+                  <orderId>A-1</orderId>
+                  <customer>Alice</customer>
+                  <priority>high</priority>
+                </order>
+              </f:getExtensionResponse>
+            </s11:Body>
+          </s11:Envelope>
+    - return:
+        status: 200
+
+---
+api:
+  port: 2001
+  name: getRestriction
+  # customer is restricted away, so the response carries orderId only
+  test: header.SOAPAction == 'getRestriction'
+  flow:
+    - static:
+        contentType: text/xml
+        src: |
+          <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+            <s11:Body>
+              <f:getRestrictionResponse xmlns:f="https://example.com/xsd-features">
+                <order>
+                  <orderId>A-1</orderId>
+                </order>
+              </f:getRestrictionResponse>
+            </s11:Body>
+          </s11:Envelope>
+    - return:
+        status: 200
+
+---
+api:
+  port: 2001
+  name: getFacets
+  test: header.SOAPAction == 'getFacets'
+  flow:
+    - static:
+        contentType: text/xml
+        src: |
+          <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+            <s11:Body>
+              <f:getFacetsResponse xmlns:f="https://example.com/xsd-features">
+                <status>ok</status>
+              </f:getFacetsResponse>
+            </s11:Body>
+          </s11:Envelope>
+    - return:
+        status: 200
+
+---
+api:
+  port: 2001
+  name: getFixedAndDefault
+  test: header.SOAPAction == 'getFixedAndDefault'
+  flow:
+    - static:
+        contentType: text/xml
+        src: |
+          <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+            <s11:Body>
+              <f:getFixedAndDefaultResponse xmlns:f="https://example.com/xsd-features">
+                <status>ok</status>
+              </f:getFixedAndDefaultResponse>
+            </s11:Body>
+          </s11:Envelope>
+    - return:
+        status: 200
+
+---
+api:
+  port: 2001
+  name: getImportedType
+  test: header.SOAPAction == 'getImportedType'
+  flow:
+    - static:
+        contentType: text/xml
+        src: |
+          <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+            <s11:Body>
+              <f:getImportedTypeResponse xmlns:f="https://example.com/xsd-features">
+                <address>
+                  <street>Main St 1</street>
+                  <city>Berlin</city>
+                </address>
+              </f:getImportedTypeResponse>
+            </s11:Body>
+          </s11:Envelope>
+    - return:
+        status: 200

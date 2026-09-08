@@ -85,6 +85,10 @@ class HttpServletHandler extends AbstractHttpHandler {
 		} catch (EOFWhileReadingFirstLineException e) {
 			log.debug("Client connection terminated before line was read. Line so far: ("
 					+ e.getLineSoFar() + ")");
+		} catch (ReadingBodyException e) {
+			logReadingBodyException(e);
+		} catch (WritingBodyException e) {
+			logWritingBodyException(e);
 		} catch (Exception e) {
 			log.error(e.getMessage(), e);
 		} finally {

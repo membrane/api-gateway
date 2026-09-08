@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  One operation declaring TWO wsdl:faults whose detail elements have different content models:
+  cityNotFound carries a name, rateLimited a retryAfter. Both are valid fault details for the
+  operation, but each must validate against its own declaration.
+-->
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:cs="https://predic8.de/cities"
+                  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                  xmlns:s="http://schemas.xmlsoap.org/wsdl/soap/"
+                  targetNamespace="https://predic8.de/cities" name="cities">
+    <wsdl:types>
+        <xsd:schema targetNamespace="https://predic8.de/cities">
+            <xsd:element name="getCity">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="name" type="xsd:string"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="getCityResponse">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="country" type="xsd:string"/>
+                        <xsd:element name="population" type="xsd:integer"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="cityNotFound">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="name" type="xsd:string"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="rateLimited">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="retryAfter" type="xsd:integer"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+        </xsd:schema>
+    </wsdl:types>
+    <wsdl:message name="City">
+        <wsdl:part name="getCity" element="cs:getCity"/>
+    </wsdl:message>
+    <wsdl:message name="CityResponse">
+        <wsdl:part name="getCityResponse" element="cs:getCityResponse"/>
+    </wsdl:message>
+    <wsdl:message name="CityNotFound">
+        <wsdl:part name="cityNotFound" element="cs:cityNotFound"/>
+    </wsdl:message>
+    <wsdl:message name="RateLimited">
+        <wsdl:part name="rateLimited" element="cs:rateLimited"/>
+    </wsdl:message>
+    <wsdl:portType name="CityPort">
+        <wsdl:operation name="getCity">
+            <wsdl:input message="cs:City"/>
+            <wsdl:output message="cs:CityResponse"/>
+            <wsdl:fault name="CityNotFound" message="cs:CityNotFound"/>
+            <wsdl:fault name="RateLimited" message="cs:RateLimited"/>
+        </wsdl:operation>
+    </wsdl:portType>
+    <wsdl:binding name="CitySoapBinding" type="cs:CityPort">
+        <s:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+        <wsdl:operation name="getCity">
+            <s:operation soapAction="https://predic8.de/cities"/>
+            <wsdl:input>
+                <s:body use="literal" namespace="https://predic8.de/cities"/>
+            </wsdl:input>
+            <wsdl:output>
+                <s:body use="literal" namespace="https://predic8.de/cities"/>
+            </wsdl:output>
+            <wsdl:fault name="CityNotFound">
+                <s:fault use="literal" name="CityNotFound"/>
+            </wsdl:fault>
+            <wsdl:fault name="RateLimited">
+                <s:fault use="literal" name="RateLimited"/>
+            </wsdl:fault>
+        </wsdl:operation>
+    </wsdl:binding>
+    <wsdl:service name="CityService">
+        <wsdl:port name="CityPort" binding="cs:CitySoapBinding">
+            <s:address location="http://localhost:2001/services/cities"/>
+        </wsdl:port>
+    </wsdl:service>
+</wsdl:definitions>

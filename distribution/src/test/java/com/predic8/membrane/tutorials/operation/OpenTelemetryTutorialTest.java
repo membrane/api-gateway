@@ -14,13 +14,10 @@
 
 package com.predic8.membrane.tutorials.operation;
 
-import com.predic8.membrane.examples.util.BufferLogger;
 import com.predic8.membrane.examples.util.SubstringWaitableConsoleEvent;
 import com.predic8.membrane.examples.withoutinternet.opentelemetry.Traceparent;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
 import java.util.List;
 
 import static com.predic8.membrane.examples.withoutinternet.opentelemetry.Traceparent.parse;
@@ -37,17 +34,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class OpenTelemetryTutorialTest extends AbstractOperationTutorialTest {
 
-    private BufferLogger logger;
-
     @Override
     protected String getTutorialYaml() {
         return "40-OpenTelemetry.yaml";
     }
 
-    @BeforeEach
-    void startMembrane() throws IOException, InterruptedException {
-        logger = new BufferLogger();
-        process = startServiceProxyScript(logger);
+    /**
+     * {@link #traceparentIsPropagatedToBackend()} compares the first two traceparents in the
+     * captured console output, so it needs a gateway whose log holds only its own requests.
+     */
+    @Override
+    protected boolean restartForEachTest() {
+        return true;
     }
 
     @Test

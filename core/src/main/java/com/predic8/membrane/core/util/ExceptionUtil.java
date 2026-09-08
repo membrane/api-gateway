@@ -15,6 +15,10 @@ package com.predic8.membrane.core.util;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.io.EOFException;
+import java.net.*;
+import java.nio.channels.ClosedChannelException;
+
 public class ExceptionUtil {
 
     /**
@@ -43,6 +47,30 @@ public class ExceptionUtil {
             }
         } while (throwable != null);
         return sb.toString();
+    }
+
+    /**
+     * Whether the throwable was (ultimately) caused by the peer going away, e.g. a client aborting an
+     * upload. Such events are normal operation and should not be logged as errors.
+     * <p>
+     * Deliberately type-based: a plain {@link java.io.IOException} is not treated as a disconnect,
+     * because it can just as well indicate a genuine fault.
+     * <p>
+     * {@link ConnectException}, {@link NoRouteToHostException}, {@link BindException} and
+     * {@link PortUnreachableException} are excluded although they extend {@link SocketException}: they
+     * indicate that a connection could not be established in the first place (e.g. an unreachable
+     * backend), which is a genuine fault and not a peer going away.
+     */
+    public static boolean isPeerDisconnect(Throwable t) {
+        Throwable root = getRootCause(t);
+        if (root instanceof ConnectException          // connection refused / backend unreachable
+                || root instanceof NoRouteToHostException
+                || root instanceof PortUnreachableException
+                || root instanceof BindException)     // local setup failure
+            return false;
+        return root instanceof ClosedChannelException
+                || root instanceof SocketException
+                || root instanceof EOFException;
     }
 
     public static Throwable getRootCause(Throwable t) {

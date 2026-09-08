@@ -1,51 +1,49 @@
-# yaml-language-server: $schema=https://www.membrane-api.io/v7.4.0.json
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.3.1.json
 #
-# Tutorial: Splitting Config with Include
+# Tutorial: Include YAML Configuration
 #
-# Split a Membrane configuration across multiple files using include.
-# Each service team can own its API definition independently.
+# Large gateway configs become hard to maintain in a single file.
+# Use include to split config across multiple files. E.g. each team can own
+# and version their API definitions independently.
+#
+# This config mixes an inline API with a list of includes:
+#   - /health                       (defined in this file)
+#   - apis/shop.apis.yaml           (included)
+#   - apis/fallback.apis.yaml       (included)
+#   - apis/shop-orders.apis.yaml    (transitive included from shop.apis.yaml)
 #
 # 1.) Start Membrane:
 #     ./membrane.sh -c 95-Include.yaml
 #
-# 2.) Call the customers API:
-#     curl -i http://localhost:2000/customers
+# 2.) Health check (inline):
+#     curl -i http://localhost:2000/health
+#     → 200  {"status":"up"}
 #
-#     X-Gateway: Membrane
-#     {"customers":[1,2,3]}
+# 3.) Shop root (from apis/shop.apis.yaml):
+#     curl -i http://localhost:2000/shop
+#     → 200  {"status":"open"}
 #
-# 3.) Call the orders API:
-#     curl -i http://localhost:2000/orders
+# 4.) Orders (included transitively via apis/shop.apis.yaml):
+#     curl -i http://localhost:2000/shop/orders
+#     → 200  [{"id":1},{"id":2}]
 #
-#     X-Gateway: Membrane
-#     {"orders":[5,9,13]}
-#
-# 4.) Call an unknown path:
+# 5.) Unknown path (from apis/fallback.apis.yaml):
 #     curl -i http://localhost:2000/unknown
-#
-#     X-Gateway: Membrane
-#     404 Not Found
+#     → 404
 
-# Included files define the per-service APIs.
-include:
-  - ./apis/customers.yaml
-  - ./apis/orders.yaml
-
----
-# Global interceptors run on every request across all APIs.
-# Place shared concerns here: logging, CORS, rate limiting, authentication.
-global:
-  - log:
-      message: "${method} ${path}"
-  - response:
-      - setHeader:
-          name: X-Gateway
-          value: Membrane
-
----
-# Fallback: catches all requests not matched by the included APIs.
 api:
   port: 2000
+  path:
+    uri: /health
   flow:
+    - static:
+        src: |
+          { "status": "up" }
+        contentType: application/json
     - return:
-        status: 404
+        status: 200
+
+---
+include:
+  - ./apis/shop.apis.yaml
+  - ./apis/fallback.apis.yaml

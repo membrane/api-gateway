@@ -30,13 +30,15 @@ import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.wsdl.parser.BindingOperation;
 import com.predic8.membrane.core.util.wsdl.parser.Definitions;
+import com.predic8.membrane.core.util.wsdl.parser.Operation;
+import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.Schema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.w3c.dom.DOMException;
 
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
@@ -44,12 +46,19 @@ import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
 import static com.predic8.membrane.core.interceptor.InterceptorUtil.getInterceptors;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.wsdl2openapi.OperationRouter.*;
+import static com.predic8.membrane.core.interceptor.wsdl2openapi.Wsdl2OpenApiConverter.ApiInfo;
+import static com.predic8.membrane.core.interceptor.wsdl2openapi.Wsdl2OpenApiConverter.FAULT_DETAILS_FIELD;
+import static com.predic8.membrane.core.interceptor.wsdl2openapi.Wsdl2OpenApiConverter.OPERATION_ERROR_TYPE;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.camelToKebab;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisherInterceptor.PATH;
 import static com.predic8.membrane.core.resolver.ResolverMap.combine;
+import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
+import static com.predic8.membrane.core.util.URLParamUtil.getParams;
 import static com.predic8.membrane.core.util.wsdl.parser.Definitions.parse;
 import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.OUTPUT;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.w3c.dom.DOMException.INVALID_CHARACTER_ERR;
 
 /**
  * @description <p>
@@ -63,6 +72,13 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * </p>
  * <p>
  * The generated OpenAPI document's title is the enclosing <i>api</i>'s <code>name</code>.
+ * </p>
+ * <p>
+ * Errors are returned as problem details documents (RFC 7807). An error the service reports becomes
+ * a 500, and the content of an error the WSDL declares appears under <code>details</code>, keyed by
+ * the name of the declared error. Errors the gateway itself detects carry the status that fits them,
+ * such as 400 for a request it cannot map or 405 for a method the path does not support. Nothing in
+ * the response reveals that a SOAP service is being called.
  * </p>
  * @yaml <pre><code>
  * api:
@@ -92,6 +108,7 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
 
     private String wsdl;
     private String description;
+    private String version;
     /** The api this plugin lives in. Set by init(), which rejects anything that is not an APIProxy. */
     private APIProxy apiProxy;
     private Definitions definitions;
@@ -99,11 +116,27 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
     private String basePath;
     private OperationsConfig operations;
     private Map<String, OperationSettings> operationsByName = Map.of();
-    record RouteEntry(Pattern pathPattern, List<String> paramNames, String method, String operationName) {}
-    record RouteMatch(String operationName, Map<String, String> pathParams) {}
+    /** Replaced wholesale by init(), so a re-init cannot leave routes of the previous WSDL behind. */
+    private OperationRouter operationRouter = new OperationRouter("/", List.of());
+    /** Set from the generated document in init(), so the document stays the single source of truth. */
+    private Map<String, Set<String>> queryParamNames = Map.of();
+    /** Per operation, the body property a URL parameter fills where its published name differs. */
+    private Map<String, Map<String, String>> urlParamProperties = Map.of();
+    /**
+     * Everything the runtime needs to serve one operation. Built once per operation in init(): the
+     * WSDL does not change, and every request and response needs all three.
+     *
+     * @param faultDetailSchema types the content of a SOAP fault detail, one property per fault the
+     *                          operation declares; empty for an operation that declares none, in
+     *                          which case the detail is still converted, just with every scalar as
+     *                          a string.
+     */
+    record OperationRuntime(Json2SoapTransformer requestTransformer,
+                            Schema<?> responseSchema,
+                            Schema<?> faultDetailSchema) {}
 
-    private List<RouteEntry> routes = new ArrayList<>();
-    private final Map<String, Json2SoapTransformer> requestTransformers = new LinkedHashMap<>();
+    /** Replaced wholesale by init(), keyed by operation name — one entry per route. */
+    private Map<String, OperationRuntime> operationRuntimes = Map.of();
     private OpenAPIPublisherInterceptor publisher;
 
     private final String instanceId = UUID.randomUUID().toString();
@@ -113,12 +146,6 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
         name = "wsdl2openapi";
     }
 
-    // Package-private — used by tests only
-    Wsdl2OpenapiInterceptor(String basePath, List<RouteEntry> routes) {
-        this.basePath = basePath;
-        this.routes = new ArrayList<>(routes);
-    }
-
     @Override
     public void init() {
         super.init();
@@ -126,22 +153,26 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
         apiProxy = validateAndGetApiProxy();
         basePath = getBasePath();
 
-        // init() can run more than once on the same instance: AbstractProxy.clone() and
-        // RuleManager.replaceRule both init, and the clone shares this interceptor.
-        routes.clear();
-        requestTransformers.clear();
-
         definitions = parseWsdl();
-        xsdToSchema = new XsdToSchema(definitions);
         operationsByName = operations != null ? operations.getMap() : Map.of();
         initOperationFlows();
 
-        routes.addAll(buildRoutes(definitions, operationsByName));
-        for (RouteEntry route : routes) {
-            requestTransformers.put(route.operationName(), new Json2SoapTransformer(definitions, route.operationName()));
-        }
+        // One converter for the document and the runtime alike: the schemas used to convert a
+        // response refer to the named types by the very names the document publishes them under.
+        var wsdl2OpenApi = new Wsdl2OpenApiConverter(definitions, basePath, operationsByName,
+                new ApiInfo(apiProxy.getName(), description, version));
+        xsdToSchema = wsdl2OpenApi.getSchemaConverter();
 
-        publisher = createPublisher();
+        // init() can run more than once on the same instance: AbstractProxy.clone() and
+        // RuleManager.replaceRule both init, and the clone shares this interceptor. Both the router
+        // and the runtimes are replaced wholesale, so nothing of the previous WSDL can survive.
+        operationRouter = new OperationRouter(basePath, buildRoutes(definitions, operationsByName));
+        operationRuntimes = buildOperationRuntimes(operationRouter.getRoutes());
+
+        var openApiModel = wsdl2OpenApi.generate();
+        queryParamNames = collectQueryParamNames(openApiModel);
+        urlParamProperties = wsdl2OpenApi.getUrlParamProperties();
+        publisher = createPublisher(openApiModel);
 
         registerApiDocsPaths();
 
@@ -195,8 +226,7 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
 
     /** One route per exposed operation: all of them, or only those named in {@code operationsByName}. */
     static List<RouteEntry> buildRoutes(Definitions definitions, Map<String, OperationSettings> operationsByName) {
-        return definitions.getPortTypes().stream()
-                .flatMap(pt -> pt.getOperations().stream())
+        return definitions.getOperations().stream()
                 .map(op -> op.getName())
                 .filter(name -> operationsByName.isEmpty() || operationsByName.containsKey(name))
                 .map(name -> toRoute(name, operationsByName.get(name)))
@@ -209,8 +239,28 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
         return new RouteEntry(buildPathPattern(segment), extractParamNames(segment), method, operationName);
     }
 
-    private OpenAPIPublisherInterceptor createPublisher() {
-        var openApiModel = new Wsdl2OpenApiConverter(definitions, basePath, operationsByName, apiProxy.getName(), description).generate();
+    private Map<String, OperationRuntime> buildOperationRuntimes(List<RouteEntry> routes) {
+        var runtimes = new LinkedHashMap<String, OperationRuntime>();
+        for (RouteEntry route : routes) {
+            runtimes.put(route.operationName(), buildOperationRuntime(route.operationName()));
+        }
+        return Map.copyOf(runtimes);
+    }
+
+    private OperationRuntime buildOperationRuntime(String operationName) {
+        Optional<Operation> wsdlOp = definitions.findOperation(operationName);
+        return new OperationRuntime(
+                new Json2SoapTransformer(definitions, operationName, xsdToSchema.getSchemasByNamespace()),
+                xsdToSchema.convertMessageParts(wsdlOp.map(op -> op.getMessagesByDirection(OUTPUT)).orElse(List.of())),
+                xsdToSchema.convertFaultDetail(wsdlOp.map(Operation::getFaults).orElse(List.of())));
+    }
+
+    /** The routes built by the last {@code init()}. */
+    OperationRouter getOperationRouter() {
+        return operationRouter;
+    }
+
+    private OpenAPIPublisherInterceptor createPublisher(OpenAPI openApiModel) {
         var publisherInterceptor = new OpenAPIPublisherInterceptor(new LinkedHashMap<>());
         publisherInterceptor.init(router);
         publisherInterceptor.addRecord(new OpenAPIRecord(openApiModel, new OpenAPISpec()));
@@ -225,29 +275,19 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
         }
 
         String uri = exc.getRequest().getUri();
-        var match = matchRoute(uri, exc.getRequest().getMethod());
+        var match = operationRouter.match(uri, exc.getRequest().getMethod());
         if (match.isPresent()) {
             return handleOperation(exc, match.get().operationName(), match.get().pathParams());
         }
 
         // The path is mapped, but not for this method: answer 405 instead of forwarding an
         // untransformed JSON body to the SOAP backend.
-        var allowedMethods = allowedMethods(uri);
+        var allowedMethods = operationRouter.allowedMethods(uri);
         if (!allowedMethods.isEmpty()) {
             return methodNotAllowed(exc, allowedMethods);
         }
 
         return CONTINUE;
-    }
-
-    /** The methods registered for the route(s) matching {@code path}, in declaration order. */
-    List<String> allowedMethods(String path) {
-        String segment = pathSegment(path);
-        return routes.stream()
-                .filter(entry -> entry.pathPattern().matcher(segment).matches())
-                .map(RouteEntry::method)
-                .distinct()
-                .toList();
     }
 
     private Outcome methodNotAllowed(Exchange exc, List<String> allowedMethods) {
@@ -270,8 +310,13 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
         }
 
         try {
-            String jsonResponse = new Soap2JsonTransformer()
-                    .transform(exc.getResponse().getBodyAsStringDecoded(), responseSchemaFor(operationName));
+            // The property is set by the request path of this very instance after a route matched,
+            // so the operation always has a runtime.
+            OperationRuntime runtime = operationRuntimes.get(operationName);
+            String jsonResponse = new Soap2JsonTransformer(xsdToSchema.getComponents())
+                    .transform(exc.getResponse().getBodyAsStringDecoded(),
+                            runtime.responseSchema(),
+                            runtime.faultDetailSchema());
 
             exc.getResponse().setBodyContent(jsonResponse.getBytes(UTF_8));
             exc.getResponse().getHeader().setContentType(APPLICATION_JSON);
@@ -297,24 +342,23 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
         return CONTINUE;
     }
 
-    /** The schema of the operation's OUTPUT messages; an empty schema if the operation is unknown. */
-    private Schema<?> responseSchemaFor(String operationName) {
-        return xsdToSchema.convertMessageParts(definitions.getPortTypes().stream()
-                .flatMap(pt -> pt.getOperations().stream())
-                .filter(op -> operationName.equals(op.getName()))
-                .findFirst()
-                .map(op -> op.getMessagesByDirection(OUTPUT))
-                .orElse(List.of()));
-    }
-
+    /**
+     * A fault becomes a 500: the gateway cannot tell whether the backend rejected the input, broke,
+     * or timed out, so the most generic status is the only honest one. Nothing in the response names
+     * the technology behind the API — the fault code and the backend's fault message stay internal,
+     * development-mode aids, because an operator may not want clients to know a legacy service sits
+     * behind the gateway, and a faultstring can carry a class name or an internal host name.
+     */
     private Response soapFaultResponse(SoapFaultException fault) {
-        var pd = problemDetails("soap-fault", router.getConfiguration().isProduction())
+        var pd = problemDetails(OPERATION_ERROR_TYPE, router.getConfiguration().isProduction())
                 .component(getDisplayName())
-                .status(fault.getHttpStatus())
-                .title(fault.getFaultMessage())
-                .topLevel("faultCode", fault.getFaultCode());
+                .status(500)
+                .title("Operation failed")
+                .detail("The service could not complete the operation.")
+                .internal("faultCode", fault.getFaultCode())
+                .internal("faultMessage", fault.getFaultMessage());
         if (fault.getSoapDetail() != null) {
-            pd.internal("error", fault.getSoapDetail());
+            pd.topLevel(FAULT_DETAILS_FIELD, fault.getSoapDetail());
         }
         return pd.build();
     }
@@ -323,10 +367,13 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
      * Makes the OpenAPI document reachable next to the API's own path. Only base paths are added:
      * the key's path itself is never rewritten, so this stays safe when init() runs again on the
      * same proxy (APIProxy rebuilds its key on each init, so the list cannot accumulate either).
+     * PATH goes into the key's api docs paths so that it stays reachable even when the API has a
+     * custom path configured.
      */
     private void registerApiDocsPaths() {
         if (proxy.getKey() instanceof APIProxyKey apiKey) {
-            apiKey.addBasePaths(new ArrayList<>(List.of(PATH, basePath)));
+            apiKey.addApiDocsPaths(new ArrayList<>(List.of(PATH)));
+            apiKey.addBasePaths(new ArrayList<>(List.of(basePath)));
         }
     }
 
@@ -338,58 +385,86 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
         return "/";
     }
 
-    /** Strips the base path and any query string, leaving the segment the routes are matched against. */
-    private String pathSegment(String path) {
-        String withoutBase = path.replaceFirst("^" + Pattern.quote(basePath), "");
-        if (withoutBase.startsWith("/")) withoutBase = withoutBase.substring(1);
-        return withoutBase.contains("?") ? withoutBase.substring(0, withoutBase.indexOf('?')) : withoutBase;
-    }
-
-    Optional<RouteMatch> matchRoute(String path, String method) {
-        String segment = pathSegment(path);
-        for (var entry : routes) {
-            if (!entry.method().equalsIgnoreCase(method)) continue;
-            Matcher m = entry.pathPattern().matcher(segment);
-            if (m.matches()) {
-                var params = new LinkedHashMap<String, String>();
-                for (int i = 0; i < entry.paramNames().size(); i++) {
-                    params.put(entry.paramNames().get(i), m.group(i + 1));
-                }
-                return Optional.of(new RouteMatch(entry.operationName(), params));
-            }
-        }
-        return Optional.empty();
-    }
-
-    static List<String> extractParamNames(String template) {
-        List<String> names = new ArrayList<>();
-        Matcher m = Pattern.compile("\\{([^}]+)}").matcher(template);
-        while (m.find()) names.add(m.group(1));
-        return names;
-    }
-
-    static Pattern buildPathPattern(String template) {
-        StringBuilder sb = new StringBuilder("^");
-        Matcher m = Pattern.compile("\\{[^}]+}").matcher(template);
-        int last = 0;
-        while (m.find()) {
-            sb.append(Pattern.quote(template.substring(last, m.start())));
-            sb.append("([^/]+)");
-            last = m.end();
-        }
-        sb.append(Pattern.quote(template.substring(last)));
-        sb.append("$");
-        return Pattern.compile(sb.toString());
-    }
-
-    private String mergePathParamsIntoJson(String existingBody, Map<String, String> pathParams) throws Exception {
-        if (pathParams.isEmpty()) return existingBody;
-        var merged = new LinkedHashMap<String, Object>(pathParams);
+    /**
+     * Adds the values taken from the URL to the JSON body. Query parameters carry the input fields a
+     * bodyless method has nowhere else to put; the path parameters are applied last, because the URL
+     * path selected the resource and neither the query string nor a body that carries the same field
+     * — it is not part of the published request schema, but nothing stops a client from sending it —
+     * must silently address another one.
+     */
+    static String mergeUrlParamsIntoJson(String existingBody, Map<String, String> queryParams,
+                                         Map<String, String> pathParams) throws Exception {
+        if (queryParams.isEmpty() && pathParams.isEmpty()) return existingBody;
+        var merged = new LinkedHashMap<String, Object>();
         if (existingBody != null && !existingBody.isBlank()) {
-            var parsed = MAPPER.readValue(existingBody, new TypeReference<Map<String, Object>>() {});
-            merged.putAll(parsed);
+            merged.putAll(MAPPER.readValue(existingBody, new TypeReference<Map<String, Object>>() {}));
         }
+        merged.putAll(queryParams);
+        merged.putAll(pathParams);
         return MAPPER.writeValueAsString(merged);
+    }
+
+    /**
+     * Renames the values taken from the URL to the body properties they fill. The two differ for an
+     * XSD attribute: the document publishes it under its plain name, because an {@code @} in a
+     * parameter name would have to be percent-encoded by every client, while the JSON the SOAP
+     * transformation reads expects the {@code "@"}-prefixed property.
+     */
+    private Map<String, String> toBodyProperties(Map<String, String> urlParams, String operationName) {
+        Map<String, String> properties = urlParamProperties.getOrDefault(operationName, Map.of());
+        if (properties.isEmpty() || urlParams.isEmpty()) return urlParams;
+        var renamed = new LinkedHashMap<String, String>();
+        urlParams.forEach((name, value) -> renamed.put(properties.getOrDefault(name, name), value));
+        return renamed;
+    }
+
+    /**
+     * The query parameters of the request that the operation actually declares. Anything else a
+     * client appends stays out of the SOAP request instead of being sent to the service unchecked.
+     */
+    private Map<String, String> declaredQueryParams(Exchange exc, String operationName) throws Exception {
+        Set<String> declared = queryParamNames.getOrDefault(operationName, Set.of());
+        if (declared.isEmpty()) return Map.of();
+        var params = new LinkedHashMap<>(parseQueryParams(exc));
+        params.keySet().retainAll(declared);
+        return params;
+    }
+
+    /**
+     * Parses the query string, rejecting duplicate keys and malformed pairs. Those are client
+     * mistakes, so the {@link RuntimeException} {@code getParams} raises for them is translated
+     * into a distinct exception instead of ending up as a transformation failure.
+     */
+    private Map<String, String> parseQueryParams(Exchange exc) throws Exception {
+        try {
+            return getParams(router.getConfiguration().getUriFactory(), exc, ERROR);
+        } catch (RuntimeException e) {
+            throw new InvalidQueryStringException(e);
+        }
+    }
+
+    /** A query string with duplicate keys or malformed key/value pairs. */
+    private static class InvalidQueryStringException extends Exception {
+        private InvalidQueryStringException(Throwable cause) {
+            super(cause);
+        }
+    }
+
+    /** The query parameters the generated document declares, per operation. */
+    static Map<String, Set<String>> collectQueryParamNames(OpenAPI api) {
+        var result = new LinkedHashMap<String, Set<String>>();
+        if (api.getPaths() == null) return result;
+        api.getPaths().values().stream()
+                .flatMap(pathItem -> pathItem.readOperations().stream())
+                .forEach(op -> {
+                    if (op.getParameters() == null) return;
+                    Set<String> names = op.getParameters().stream()
+                            .filter(p -> "query".equals(p.getIn()))
+                            .map(io.swagger.v3.oas.models.parameters.Parameter::getName)
+                            .collect(Collectors.toCollection(LinkedHashSet::new));
+                    if (!names.isEmpty()) result.put(op.getOperationId(), names);
+                });
+        return result;
     }
 
     private Outcome handleOperation(Exchange exc, String operationName, Map<String, String> pathParams) {
@@ -401,8 +476,10 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
                 if (outcome != CONTINUE) return outcome;
             }
 
-            String jsonBody = mergePathParamsIntoJson(exc.getRequest().getBodyAsStringDecoded(), pathParams);
-            byte[] soapRequest = requestTransformers.get(operationName).transform(jsonBody);
+            String jsonBody = mergeUrlParamsIntoJson(exc.getRequest().getBodyAsStringDecoded(),
+                    toBodyProperties(declaredQueryParams(exc, operationName), operationName),
+                    toBodyProperties(pathParams, operationName));
+            byte[] soapRequest = operationRuntimes.get(operationName).requestTransformer().transform(jsonBody);
 
             exc.getRequest().setBodyContent(soapRequest);
             exc.getRequest().setMethod("POST");
@@ -416,23 +493,46 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
                 exc.setDestinations(List.of(serviceAddress));
             }
 
-        } catch (Exception e) {
-            log.error("Failed to transform JSON to SOAP for operation {}", operationName, e);
-            internal(router.getConfiguration().isProduction(), getDisplayName())
-                    .detail("Could not transform JSON request to SOAP")
+        } catch (InvalidQueryStringException e) {
+            log.debug("Cannot parse the query string of the request for operation {}", operationName, e);
+            user(router.getConfiguration().isProduction(), getDisplayName())
+                    .status(400)
+                    .title("Invalid query string")
+                    .detail("The query string could not be parsed. Check for duplicate or malformed parameters.")
                     .exception(e)
                     .buildAndSetResponse(exc);
             return ABORT;
+        } catch (DOMException e) {
+            // A field name the JSON body carries is not a legal XML name — a client mistake, so a
+            // 400 rather than the 500 any other transformation failure gets. Every other DOM error
+            // is the gateway's own problem and takes that generic path.
+            if (e.code != INVALID_CHARACTER_ERR) return transformationFailed(exc, operationName, e);
+            log.debug("Cannot map a field name of the request body to XML for operation {}", operationName, e);
+            user(router.getConfiguration().isProduction(), getDisplayName())
+                    .status(400)
+                    .title("Invalid field name")
+                    .detail("A field name in the request body cannot be mapped to XML.")
+                    .exception(e)
+                    .buildAndSetResponse(exc);
+            return ABORT;
+        } catch (Exception e) {
+            return transformationFailed(exc, operationName, e);
         }
 
         return CONTINUE;
     }
 
+    private Outcome transformationFailed(Exchange exc, String operationName, Exception e) {
+        log.error("Failed to transform JSON to SOAP for operation {}", operationName, e);
+        internal(router.getConfiguration().isProduction(), getDisplayName())
+                .detail("Could not transform JSON request to SOAP")
+                .exception(e)
+                .buildAndSetResponse(exc);
+        return ABORT;
+    }
+
     private String getSOAPAction(String operationName) {
-        return definitions.getBindings().stream()
-                .flatMap(b -> b.getBindingOperations().stream())
-                .filter(op -> op.getName().equals(operationName))
-                .findFirst()
+        return definitions.findBindingOperation(operationName)
                 .map(BindingOperation::getSoapAction)
                 .orElse("");
     }
@@ -476,6 +576,20 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
     @MCAttribute
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    /**
+     * @description Version of the generated OpenAPI document.
+     * @default 1.0.0
+     * @example 2.1.0
+     */
+    @MCAttribute
+    public void setVersion(String version) {
+        this.version = version;
     }
 
     public OperationsConfig getOperations() {

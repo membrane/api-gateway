@@ -3,43 +3,22 @@
 Membrane API Gateway — a lightweight Java API gateway for REST, GraphQL, and legacy SOAP/WSDL
 services, configurable in YAML or XML. Upstream: https://github.com/membrane/api-gateway
 
+## Git & Commit Policy
+
+- NEVER commit, push, or open/merge a PR unless the user explicitly asks for it in that moment.
+  Stage nothing automatically; report what changed and wait.
+- Use `Closes #<issue>` in commit messages when the work resolves a filed issue.
+- Never commit customer-derived artifacts — real customer names, WSDLs, XML, or sample payloads,
+  not even as test fixtures. Generate synthetic equivalents (`example.com`-style) or reuse
+  existing generic fixtures.
+
 ## Working principles
 
-Behavioral guidelines to reduce common coding mistakes; they compose with the project-specific
-conventions below.
-**Tradeoff:** these bias toward caution over speed. For trivial tasks, use judgment.
-
-### 1. Think before coding
-**Don't assume silently. Surface tradeoffs.**
-- State assumptions explicitly rather than picking one silently.
-- If multiple reasonable interpretations exist, name them instead of just choosing.
-- Ask before proceeding only on judgment calls with real cost to being wrong (data model, auth,
-  hard-to-undo changes). For everything else, state your assumption and proceed — don't stall on
-  low-stakes ambiguity.
-- If a simpler approach exists, say so, even if it means pushing back.
-
-### 2. Simplicity first
-**No speculative abstraction.**
-- No features, flexibility, or config beyond what was asked.
-- No abstractions for single-use code.
-- If it could be a third of the length, rewrite it shorter.
-
-### 3. Surgical changes
-**Touch only what you must.**
-- Don't "improve," reformat, or refactor adjacent code, even if it's messy.
-- Match existing style even where you'd choose differently.
-- Remove imports/vars/functions your change made unused; leave pre-existing dead code alone
-  (mention it, don't touch it).
-- Every changed line should trace to the request.
-
-### 4. Verify before declaring done
+- Don't refactor, reformat, or "improve" adjacent code, even if it's messy. Remove
+  imports/vars/methods your change made unused; leave pre-existing dead code alone (mention it,
+  don't touch it).
 - For bug fixes: reproduce with a failing test first, then fix.
-- For new logic: add tests for the cases that matter (invalid input, edge cases), not exhaustive
-  coverage.
-
-### 5. Never push on your own
-- Never run `git push` (or open/merge a PR) without the user explicitly asking for it in that
-  moment. Committing locally is fine; pushing is not the default next step.
+- If a simpler approach than the one requested exists, say so, even if it means pushing back.
 
 ## Modules
 
@@ -50,6 +29,10 @@ Maven multi-module reactor (root `pom.xml`), Java 21 (`javac.source/target`):
 - `core` — the router engine and all built-in interceptors/plugins. Primary library code.
 - `distribution` — assembles the runnable `.zip` (`membrane.sh`/`membrane.cmd`, `conf/proxies.xml`,
   `tutorials/`, `examples/`). Also owns the tutorial/example integration tests.
+  `distribution/router/conf/` is what actually ships as the zip's `conf/` (see
+  `src/assembly/distribution.xml`); `distribution/conf/` is a separate, unpackaged scratch
+  directory for the programmer's own local testing — never treat it as shipped config or
+  reference it from tutorials/examples/docs.
 - `war` — packages `core` for deployment into a servlet container (Tomcat, Jetty).
 - `test` — shared test utilities (HTTP client helpers, fixtures), depended on as `test` scope.
 
@@ -62,43 +45,25 @@ mvn -pl core -am -DskipTests package   # one module + its dependencies
 
 ## Testing
 
-- **Default to running only the tests affected by a change** — the class(es)/package(s) touched,
-  not the whole suite. Never run a full unit test run (`mvn test` / `mvn -pl core -am test`) or
-  the full distribution IT suite without asking the user first; these are slow and often fail on
+- **To run tests, use the `test-runner` agent** — it owns this repo's run mechanics: the
+  `-Dtest`/`-Dit.test` suite traps that silently run the wrong scope, `run-core-test.sh` for a
+  single `core` class, rebuilding the distribution zip before tutorial/example ITs, macOS locale
+  flags, and the fixed-port (2000/3000/7007) conflicts that fake a regression. Don't hand-roll
+  the Maven invocation.
+- **Run only the tests affected by a change** — the class(es)/package(s) touched, and report pass
+  counts. Never run a full unit test run (`mvn test` / `mvn -pl core -am test`) or the full
+  distribution IT suite without asking first; these are slow and often fail on
   unrelated/network-dependent tests offline.
-- For a single `core` test class or package, use `test/scripts/run-core-test.sh <FQCN or package>`
-  — it drives `com.predic8.membrane.devtools.SingleTestRunner` (a permanent JUnit Platform
-  Launcher entry point under `core/src/test/java`, so it compiles with the normal test build —
-  no per-run codegen) and matches Surefire's `argLine`/CWD so results agree with a real Maven
-  run. For a single distribution/tutorial IT, use the `run-example-test` skill.
-- **`-Dtest=ClassName` does NOT isolate a class in `core`.** Surefire is bound to
-  `UnitTests.java`, a JUnit Platform `@Suite` with `@SelectPackages("com.predic8")` — the suite
-  engine ignores Surefire's class filter and runs the whole package regardless (including
-  network-dependent tests that fail offline). To run one class fast, use the JUnit Platform
-  Launcher directly (build a classpath with `test-classes` first, then `target/classes`, then
-  deps) rather than `-Dtest`.
-- **Tutorial/example tests are Failsafe ITs that run against the *built* distribution**, not the
-  source tree: `DistributionExtractingTestcase` unzips `distribution/target/membrane-api-gateway-*.zip`
-  and runs the real `membrane.sh` against it. Rebuild first — `mvn clean install -DskipTests` at
-  the repo root — or edits to tutorials/config/`core` are invisible to the test run.
-  `-Dit.test=Foo` does **not** filter (the Failsafe entry point `ExampleTests.java` hardcodes
-  `@SelectPackages`), so a single-test invocation still runs the whole ~6 min suite. Use the
-  `run-example-test` skill for a fast single-test path.
-  `-am` also rebuilds `annot`, where `SpringConfigXSDErrorsTest` asserts English `javac`
-  diagnostics and fails under a non-English JVM locale — `-DskipTests` avoids that.
-- **On macOS, the JVM ignores `LANG`/`LC_ALL`.** If the dev machine's default locale isn't
-  English, pass `-Duser.language=en -Duser.country=US` explicitly — and note the child
-  `membrane.sh` process spawned by distribution ITs only inherits it via `JAVA_OPTS`, not the
-  parent JVM's system properties.
-- **Fixed test ports**: `OAuth2Test` (core) and the security tutorial ITs bind `2000`/`3000`/`7007`.
-  A manually running Membrane instance or an IDE-launched JVM holding one of these ports causes
-  misleading failures (`PortOccupiedException` inside a passing-looking suite, or a bare
-  `TimeoutException` from `waitForMembrane()`). Check `lsof -nP -tiTCP:2000 -sTCP:LISTEN` (and
-  `7007`) before assuming a config regression.
-- Every new function or feature must be covered by at least one test — before writing a new test class, check `<module>/src/test/java/<mirrored package>/` for an existing test class covering that production class and add a test method there; only create a new `<ClassName>Test` class if none exists yet.
-- Test observable behavior — inputs/outputs, edge cases (zero/identical values, boundaries), and any documented invariants. Do not write tests for record accessors, generated `equals`/`hashCode`/`toString`, or plain getters/setters — there's no behavior there to break.
-- Test classes mirror the package of the class under test (e.g. `com.predic8.membrane.core.util.URLUtil` → `com.predic8.membrane.core.util.URLUtilTest`).
-- Prefer a few tests that pin down real behavior (known-value checks, symmetry/round-trip properties) over exhaustive trivial cases.
+- Every new function or feature needs at least one test. Before writing a new test class, check
+  `<module>/src/test/java/<mirrored package>/` for an existing test class covering that
+  production class and add a method there; only create `<ClassName>Test` if none exists.
+- Test classes mirror the package of the class under test (`…core.util.URLUtil` →
+  `…core.util.URLUtilTest`) and are package-private, as are `@Test` methods.
+- Before running Membrane tests, check that ports 2000/2001/3000/7007/9000 are free
+  (`lsof -nP -iTCP:2000,2001,3000,7007,9000 -sTCP:LISTEN`); an IDE-launched Membrane instance
+  frequently blocks test runs.
+- Integration tests can be flaky for environmental reasons (TIME_WAIT collisions on macOS, accept
+  backlog limits). Triage a failure as environmental before changing product code.
 
 ## Configuration grammar (annotations)
 
@@ -106,6 +71,14 @@ Config elements are Java classes annotated in the `annot` module and rendered in
 YAML. See `docs/DEVELOPING.md` for the full annotation reference
 (`@MCElement`, `@MCAttribute`, `@MCChildElement`, `@MCTextContent`, `@MCOtherAttributes`, `@Required`).
 Every annotated setter needs a matching getter.
+
+## YAML `$schema=` version comments
+
+The `# yaml-language-server: $schema=https://www.membrane-api.io/vX.Y.Z.json` header comment on
+any `.yaml`/`.yml` file in the repo (not just `distribution/tutorials/` — the release tooling
+walks the whole project tree) is rewritten automatically as part of cutting a release
+(`ConsistentVersionNumbers.java`, run from the `release-pr.yml` GitHub Action). Don't hand-edit
+it, and don't flag a stale/mismatched version as a bug in review.
 
 ## Reference docs (Javadoc → membrane-api.io)
 
@@ -130,25 +103,20 @@ example/tutorial discovery and scaffolding.
 
 ## Code style
 
+- Interceptors must be thread safe (`Interceptor` javadoc): one instance per config element serves
+  every request thread, and `<call>`/internal routing can re-enter it on its own thread. Keep
+  per-request state in locals or on the `Exchange`; fields hold configuration, written before
+  `init()` and read-only afterwards.
 - Don't abbreviate parameter names in public interfaces (private methods: fine) — `docs/CONVENTIONS.md`.
 - Prefer `SequencedCollection.getFirst()` over `.get(0)`; custom list-like wrappers (e.g.
   `ValidationErrors`) should expose a delegating `getFirst()`.
+- Prefer `final` fields, parameters, and locals, and immutable data over mutating caller-owned
+  collections: `List.of` or `List.copyOf` for an immutable snapshot;
+  `Collections.unmodifiableList` only as a read-only *view* — it still reflects later changes to
+  the backing list, so use it when that live behaviour is intended, not as a defensive copy.
 - SLF4J everywhere; no `System.out` in production code.
 - Attack/validation-detection log lines (e.g. XXE/DOCTYPE detection) are intentionally `info`,
   not `warn` — that's an ops-tunable level, not a severity bug to flag in review.
-- Prefer pure methods where practical: same input → same output, minimal side effects; push I/O and mutation to the edges of a call chain.
-- Prefer `final` fields, parameters, and locals; a variable that must be reassigned is a signal to extract a helper method instead.
-- Treat data as immutable by default — prefer immutable collections (`List.of`, `Collections.unmodifiableList`) or defensive copies over mutating a caller-owned array/collection in place.
-- Use Streams only where they read more clearly than an equivalent loop; don't force a stream onto logic a plain loop expresses better.
-- Model control flow declaratively where it fits: pattern matching (`switch` over sealed types/records, pattern `instanceof`) over long `if`/`else` chains.
-- No hidden side effects in getter-like methods — anything that mutates state, logs, or does I/O should be named and called out explicitly, not buried in a computation.
-- Keep methods small and cohesive with a single responsibility; make result and exception behavior explicit — return a value (or `Optional`) for expected outcomes, reserve exceptions for actual failures, and declare checked exceptions rather than swallowing them.
-
-## Git hygiene
-
-Never commit customer-derived artifacts — real customer names, WSDLs, XML, or sample payloads —
-even as test fixtures. Generate synthetic equivalents (`example.com`-style) or reuse existing
-generic fixtures instead.
 
 ## Release notes
 

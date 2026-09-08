@@ -15,8 +15,10 @@
 package com.predic8.membrane.core.transport.http;
 
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.http.WritingBodyException;
 import com.predic8.membrane.core.transport.Transport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +27,8 @@ import java.io.IOException;
 import java.net.InetAddress;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
+import static com.predic8.membrane.core.util.ExceptionUtil.concatMessageAndCauseMessages;
+import static com.predic8.membrane.core.util.ExceptionUtil.isPeerDisconnect;
 
 public abstract class AbstractHttpHandler  {
 
@@ -76,6 +80,41 @@ public abstract class AbstractHttpHandler  {
             }
             log.warn("An exception occurred while handling a request: ", e);
 		}
+	}
+
+	/**
+	 * Reading a body can fail on either end: the client while its request body is being read, or the
+	 * target server while its response body is being streamed to the client. Attribute the failure to
+	 * the body that actually recorded it, and log a peer going away as normal operation rather than as
+	 * an error.
+	 */
+	protected void logReadingBodyException(ReadingBodyException e) {
+		if (!isPeerDisconnect(e)) {
+			log.error("", e);
+			return;
+		}
+		if (e.belongsTo(exchange.getResponse()))
+			log.warn("Server connection to {} closed while the response body was being read: {}",
+					exchange.getDestinations(), concatMessageAndCauseMessages(e));
+		else if (e.belongsTo(exchange.getRequest()))
+			log.info("Client closed the connection while its request body was being read: {}",
+					concatMessageAndCauseMessages(e));
+		else
+			log.info("Connection closed while a message body was being read: {}",
+					concatMessageAndCauseMessages(e));
+	}
+
+	/**
+	 * Only writing the response to the client can reach the handlers: a failure writing the request body
+	 * to the target is swallowed by {@link #invokeHandlers()} and turned into a 500. So this is always
+	 * the client's end.
+	 */
+	protected void logWritingBodyException(WritingBodyException e) {
+		if (isPeerDisconnect(e))
+			log.info("Client closed the connection while the response body was being written: {}",
+					concatMessageAndCauseMessages(e));
+		else
+			log.error("", e);
 	}
 
 	private Response generateErrorResponse(Exception e) {

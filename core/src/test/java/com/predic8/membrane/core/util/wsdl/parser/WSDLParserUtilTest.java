@@ -14,9 +14,10 @@
 
 package com.predic8.membrane.core.util.wsdl.parser;
 
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 class WSDLParserUtilTest {
 
@@ -24,6 +25,27 @@ class WSDLParserUtilTest {
     void typeName() {
         assertEquals("myPortType", WSDLParserUtil.getLocalName("myPortType"));
         assertEquals("myPortType", WSDLParserUtil.getLocalName("tns:myPortType"));
+    }
+
+    @Test
+    void normalizeDocumentationJoinsWrappedLines() {
+        assertEquals("Reads one partner by its number. Reports an error where no partner has that number.",
+                WSDLParserUtil.normalizeDocumentation("""
+
+                            Reads one partner by its number. Reports an error where no partner
+                            has that number.
+                        """));
+    }
+
+    @Test
+    void normalizeDocumentationKeepsParagraphs() {
+        assertEquals("First paragraph.\n\nSecond one.",
+                WSDLParserUtil.normalizeDocumentation("  First\n  paragraph.\n\n   \n  Second one.  "));
+    }
+
+    @Test
+    void normalizeDocumentationOfWhitespaceIsNull() {
+        assertNull(WSDLParserUtil.normalizeDocumentation("  \n\n  "));
     }
 
 }

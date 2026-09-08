@@ -107,6 +107,50 @@ class RetryHandlerTest {
 
     }
 
+    /**
+     * A timeout while connecting means nothing was sent, so it is retried for POST on a single node
+     * too. A timeout while reading might have been processed by the backend and stays restricted.
+     */
+    @Nested
+    class Timeouts {
+
+        @Test
+        void connectTimeoutIsRetriedForPostOnOneNode() {
+            RetryableExchangeCallMock mock = new RetryableExchangeCallMock(connectTimeout());
+            assertThrows(ConnectTimeoutException.class, () -> rh.executeWithRetries(post("/foo").buildExchange(), mock));
+            assertEquals(3, mock.attempts);
+        }
+
+        @Test
+        void connectTimeoutIsNotRetriedWhenDisabled() {
+            rh.setRetryOnConnectTimeout(false);
+            RetryableExchangeCallMock mock = new RetryableExchangeCallMock(connectTimeout());
+            assertThrows(ConnectTimeoutException.class, () -> rh.executeWithRetries(post("/foo").buildExchange(), mock));
+            assertEquals(1, mock.attempts);
+        }
+
+        @Test
+        void readTimeoutIsNotRetriedForPostOnOneNode() {
+            RetryableExchangeCallMock mock = new RetryableExchangeCallMock(new SocketTimeoutException("Read timed out"));
+            assertThrows(SocketTimeoutException.class, () -> rh.executeWithRetries(post("/foo").buildExchange(), mock));
+            assertEquals(1, mock.attempts);
+        }
+
+        @Test
+        void readTimeoutIsRetriedForGetOnMultipleNodes() throws Exception {
+            RetryableExchangeCallMock mock = new RetryableExchangeCallMock(new SocketTimeoutException("Read timed out"));
+            Exchange exc = get("/foo").buildExchange();
+            exc.setDestinations(List.of("http://node1.example.com/", "http://node2.example.com/"));
+            assertThrows(SocketTimeoutException.class, () -> rh.executeWithRetries(exc, mock));
+            assertEquals(3, mock.attempts);
+        }
+
+        private static ConnectTimeoutException connectTimeout() {
+            return new ConnectTimeoutException("Connecting to example.com:80 timed out after 10000ms.",
+                    new SocketTimeoutException("Connect timed out"));
+        }
+    }
+
     @Test
     void internalError() throws Exception {
         RetryableExchangeCallMock mock = new RetryableExchangeCallMock(500);
@@ -161,6 +205,17 @@ class RetryHandlerTest {
             assertNotEquals(new RetryHandler(), new RetryHandler() {{
                 setFailOverOn5XX(false);
             }});
+        }
+
+        @Test
+        void equals_returnsFalseForDifferentRetryOnConnectTimeout() {
+            // Plain instances, not anonymous subclasses: equals() compares getClass(), so a subclass
+            // would differ regardless of the field.
+            RetryHandler withRetry = new RetryHandler();
+            RetryHandler withoutRetry = new RetryHandler();
+            withoutRetry.setRetryOnConnectTimeout(false);
+            assertNotEquals(withRetry, withoutRetry);
+            assertNotEquals(withRetry.hashCode(), withoutRetry.hashCode());
         }
 
         @Test
