@@ -14,25 +14,33 @@
 package com.predic8.membrane.annot;
 
 import com.predic8.membrane.annot.generator.*;
-import com.predic8.membrane.annot.generator.kubernetes.*;
+import com.predic8.membrane.annot.generator.kubernetes.KubernetesBootstrapper;
 import com.predic8.membrane.annot.model.*;
 
-import javax.annotation.processing.*;
-import javax.lang.model.*;
+import javax.annotation.processing.AbstractProcessor;
+import javax.annotation.processing.RoundEnvironment;
+import javax.annotation.processing.SupportedAnnotationTypes;
+import javax.lang.model.SourceVersion;
 import javax.lang.model.element.*;
-import javax.lang.model.type.*;
-import javax.tools.Diagnostic.*;
-import javax.tools.*;
-import java.io.*;
-import java.lang.annotation.*;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeKind;
+import javax.lang.model.type.TypeMirror;
+import javax.tools.Diagnostic.Kind;
+import javax.tools.FileObject;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.lang.annotation.Annotation;
 import java.util.*;
-import java.util.Map.*;
-import java.util.stream.*;
+import java.util.Map.Entry;
+import java.util.stream.Stream;
 
-import static java.util.function.Function.*;
-import static java.util.stream.Collectors.*;
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.counting;
+import static java.util.stream.Collectors.groupingBy;
 import static javax.tools.Diagnostic.Kind.ERROR;
-import static javax.tools.StandardLocation.*;
+import static javax.tools.StandardLocation.CLASS_OUTPUT;
 
 /**
  * The annotation processor for the annotations defining Membrane's configuration language ({@link MCMain} and others).
@@ -41,9 +49,6 @@ import static javax.tools.StandardLocation.*;
  * <li>validates the correct usage of the annotations (not everything is checked, though)</li>
  * <li>generates the XML schema file for the declared namespace</li>
  * <li>generates parser classes for Spring-based deployments</li>
- * <li>generates parser classes for Blueprint-based deployments (if
- * org.apache.aries.blueprint:blueprint-parser and org.apache.aries.blueprint:org.apache.aries.blueprint.api
- * are present on the classpath)</li>
  * <li>generates the documentation of the language as an XML file
  * (if the MEMBRANE_GENERATE_DOC_DIR environment variable is set), based on the annotations and javadoc.</li>
  * </ul>
@@ -123,10 +128,10 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
             try (BufferedWriter bw = new BufferedWriter(o.openWriter())) {
                 bw.write("1\n");
 
-                for (Entry<Class<? extends Annotation>, HashSet<Element>> e : cache.entrySet()) {
+                for (Entry<Class<? extends Annotation>, HashSet<Element>> e : sortedByAnnotationName(cache)) {
                     bw.write(e.getKey().getName());
                     bw.write("\n");
-                    for (Element f : e.getValue()) {
+                    for (Element f : sortedByQualifiedName(e.getValue())) {
                         bw.write(" ");
                         bw.write(((TypeElement) f).getQualifiedName().toString());
                         bw.write("\n");
@@ -159,6 +164,27 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
         return result;
     }
 
+    /**
+     * Orders elements by qualified name, so that the generated XSD, JSON schema, parsers and the
+     * cache file do not depend on the hash-based iteration order of the annotation cache.
+     */
+    private static List<Element> sortedByQualifiedName(Set<? extends Element> elements) {
+        List<Element> sorted = new ArrayList<>(elements);
+        sorted.sort(Comparator.comparing(e -> ((TypeElement) e).getQualifiedName().toString()));
+        return sorted;
+    }
+
+    /**
+     * The cache's own key order is hash-based too, so the annotation classes are sorted by name
+     * before being written.
+     */
+    private static List<Entry<Class<? extends Annotation>, HashSet<Element>>> sortedByAnnotationName(
+            Map<Class<? extends Annotation>, HashSet<Element>> cache) {
+        List<Entry<Class<? extends Annotation>, HashSet<Element>>> sorted = new ArrayList<>(cache.entrySet());
+        sorted.sort(Comparator.comparing(e -> e.getKey().getName()));
+        return sorted;
+    }
+
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         // An instance is create per compiler call and not kept for the next incremental compilation.
@@ -189,7 +215,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 
                 Model m = new Model();
 
-                Set<? extends Element> mcmains = getCachedElementsAnnotatedWith(roundEnv, MCMain.class);
+                List<Element> mcmains = sortedByQualifiedName(getCachedElementsAnnotatedWith(roundEnv, MCMain.class));
                 if (mcmains.isEmpty()) {
                     processingEnv.getMessager().printMessage(Kind.WARNING, "@MCMain was nowhere found.");
                     return true;
@@ -201,7 +227,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
                     m.getMains().add(main);
                 }
 
-                for (Element e : getCachedElementsAnnotatedWith(roundEnv, MCElement.class)) {
+                for (Element e : sortedByQualifiedName(getCachedElementsAnnotatedWith(roundEnv, MCElement.class))) {
                     ElementInfo ii = new ElementInfo();
                     ii.setElement((TypeElement) e);
                     ii.setAnnotation(e.getAnnotation(MCElement.class));
@@ -575,10 +601,6 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
         new HelpReference(processingEnv).writeHelp(m);
         new NamespaceInfo(processingEnv).writeInfo(m);
         new YamlDocsGenerator(processingEnv).write(m);
-        if (processingEnv.getElementUtils().getTypeElement("org.apache.aries.blueprint.ParserContext") != null) {
-            new BlueprintParsers(processingEnv).writeParserDefinitior(m);
-            new BlueprintParsers(processingEnv).writeParsers(m);
-        }
     }
 
     private void validateEnumAttribute(AttributeInfo ai) {
@@ -600,8 +622,8 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
             if (enclosed.getKind() == ElementKind.ENUM_CONSTANT) {
                 String name = enclosed.getSimpleName().toString();
                 if (!name.equals(name.toUpperCase(Locale.ROOT))) {
-                    throw new IllegalArgumentException("Enum constant '" + name + "' in " + enumType.getQualifiedName() +
-                                                       " must be uppercase. Found: " + name + ", expected: " + name.toUpperCase(Locale.ROOT));
+                    throw new ProcessingException("Enum constant '" + name + "' in " + enumType.getQualifiedName() +
+                                                  " must be uppercase. Found: " + name + ", expected: " + name.toUpperCase(Locale.ROOT), enclosed);
                 }
             }
         }

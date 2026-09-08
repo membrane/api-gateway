@@ -17,9 +17,6 @@ import com.predic8.membrane.annot.util.CompilerHelper;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import javax.tools.JavaFileObject;
-import java.util.List;
-
 import static com.predic8.membrane.annot.SpringConfigurationXSDGeneratingAnnotationProcessorTest.MC_MAIN_DEMO;
 import static com.predic8.membrane.annot.util.CompilerHelper.*;
 import static java.util.List.of;
@@ -115,6 +112,28 @@ public class SpringConfigXSDErrorsTest {
         assertCompilerResult(false, of(
                 error("Duplicate component @MCElement name. Make at least one @MCElement(component=false,...) ."),
                 error("also here")
+        ), result);
+    }
+
+    @Test
+    public void enumConstantNotUppercase() {
+        var sources = splitSources(MC_MAIN_DEMO + """
+            package com.predic8.membrane.demo;
+            import com.predic8.membrane.annot.MCAttribute;
+            import com.predic8.membrane.annot.MCElement;
+            @MCElement(name="demo")
+            public class DemoElement {
+                public enum Mode { FAST, slow }
+                private Mode mode;
+                public Mode getMode() { return mode; }
+                @MCAttribute
+                public void setMode(Mode mode) { this.mode = mode; }
+            }
+            """);
+        var result = CompilerHelper.compile(sources, false);
+
+        assertCompilerResult(false, of(
+                error("Enum constant 'slow' in com.predic8.membrane.demo.DemoElement.Mode must be uppercase. Found: slow, expected: SLOW")
         ), result);
     }
 

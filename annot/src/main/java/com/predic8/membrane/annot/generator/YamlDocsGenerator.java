@@ -35,6 +35,7 @@ import static com.fasterxml.jackson.core.JsonGenerator.Feature.AUTO_CLOSE_TARGET
 import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.LITERAL_BLOCK_STYLE;
 import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.WRITE_DOC_START_MARKER;
 import static com.predic8.membrane.annot.Constants.VERSION;
+import static com.predic8.membrane.annot.generator.util.FilerUtil.isAlreadyCreated;
 import static javax.tools.StandardLocation.CLASS_OUTPUT;
 
 public class YamlDocsGenerator {
@@ -63,8 +64,8 @@ public class YamlDocsGenerator {
                 w.write("\n");
             }
         } catch (FilerException e) {
-            if (e.getMessage() != null && e.getMessage().contains("Source file already created")) return;
-            throw e;
+            if (!isAlreadyCreated(e))
+                throw e;
         }
     }
 
