@@ -14,20 +14,27 @@
 
 package com.predic8.membrane.core.transport.http;
 
-import com.predic8.membrane.core.config.security.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.resolver.*;
-import com.predic8.membrane.core.transport.http.client.*;
-import com.predic8.membrane.core.transport.http2.*;
-import com.predic8.membrane.core.transport.ssl.*;
-import com.predic8.membrane.core.util.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.config.security.SSLParser;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
+import com.predic8.membrane.core.transport.http.client.ProxyConfiguration;
+import com.predic8.membrane.core.transport.http2.Http2Client;
+import com.predic8.membrane.core.transport.http2.Http2ClientPool;
+import com.predic8.membrane.core.transport.http2.Http2TlsSupport;
+import com.predic8.membrane.core.transport.ssl.SSLContext;
+import com.predic8.membrane.core.transport.ssl.SSLProvider;
+import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
+import com.predic8.membrane.core.util.TimerManager;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.annotation.concurrent.*;
-import java.io.*;
+import javax.annotation.concurrent.GuardedBy;
+import java.io.IOException;
 
-import static com.predic8.membrane.core.exchange.Exchange.*;
+import static com.predic8.membrane.core.exchange.Exchange.SNI_SERVER_NAME;
+import static com.predic8.membrane.core.exchange.Exchange.SSL_CONTEXT;
 
 public class ConnectionFactory {
 
@@ -47,6 +54,8 @@ public class ConnectionFactory {
 
     public ConnectionFactory(HttpClientConfiguration config, TimerManager timerManager) {
         this.config = config;
+        if (config.getProxy() != null)
+            config.getProxy().validate();
         this.http2ClientPool = getHttp2ClientPool(config);
         this.proxySSLContext = getProxySSLContext(config.getProxy());
         this.sslContext = getSSLContext(config);

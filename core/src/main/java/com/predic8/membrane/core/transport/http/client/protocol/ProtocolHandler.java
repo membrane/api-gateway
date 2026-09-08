@@ -14,8 +14,10 @@
 
 package com.predic8.membrane.core.transport.http.client.protocol;
 
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.transport.http.ConnectionFactory;
+import com.predic8.membrane.core.transport.http.HostColonPort;
+import com.predic8.membrane.core.transport.http.ProtocolUpgradeDeniedException;
 
 /**
  * <p>
@@ -30,7 +32,10 @@ import com.predic8.membrane.core.transport.http.*;
  *     <li>{@link #checkUpgradeRequest(Exchange)} - Validate request headers <em>before</em> sending.</li>
  *     <li>{@link #handle(Exchange, ConnectionFactory.OutgoingConnectionType, HostColonPort)} - Full I/O conversation.</li>
  *     <li>{@link #checkUpgradeResponse(Exchange)} - Inspect upstream response (e.g. {@code 101 Switching Protocols}).</li>
- *     <li>{@link #cleanup(Exchange)} - Release protocol-specific resources; always invoked exactly once.</li>
+ *     <li>{@link #cleanup(Exchange)} - Hand the target connection over for reuse; only after a
+ *         successful exchange, and only for a plain HTTP/1 response that can be pooled. CONNECT
+ *         exchanges and upgraded protocols are excluded: their connection is either forwarded by
+ *         {@code StreamPump} or pooled by the protocol itself (e.g. {@code Http2ClientPool}).</li>
  * </ol>
  *
  * <h2>Thread-Safety & State</h2>
@@ -93,8 +98,15 @@ public interface ProtocolHandler {
     void checkUpgradeResponse(Exchange exchange);
 
     /**
-     * Clean up protocol-specific artefacts (e.g. cancel ping schedulers) that are not covered by
-     * {@code try-with-resources}. Always invoked exactly once regardless of success or failure.
+     * Registers the target connection so that it is returned to the connection pool once the response
+     * body has been consumed, and applies whatever the response says about keeping it alive.
+     * <p>
+     * Called only after {@link #handle(Exchange, ConnectionFactory.OutgoingConnectionType, HostColonPort)}
+     * completed, so implementations may rely on a response being present. An exchange that failed does
+     * not reach this method: its target connection must be closed rather than pooled, which
+     * {@code HttpServerHandler} does when it finishes the exchange. Implementations must not pool the
+     * connection of a CONNECT exchange or of a protocol upgrade - it is handed over to {@code StreamPump}
+     * or to the protocol's own pool - so those cases return without registering anything.
      *
      * @param exchange current exchange
      */

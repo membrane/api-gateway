@@ -24,14 +24,13 @@ import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.Util;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
 import static com.predic8.membrane.annot.Constants.NOT_APPLICABLE;
-import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.gateway;
 import static com.predic8.membrane.core.exchange.Exchange.ALLOW_TCP;
 import static com.predic8.membrane.core.exchange.Exchange.ALLOW_WEBSOCKET;
 import static com.predic8.membrane.core.http.Header.*;
@@ -58,8 +57,7 @@ public class Http1ProtocolHandler extends AbstractProtocolHandler {
     public void handle(Exchange exchange, OutgoingConnectionType ct, HostColonPort target) throws Exception {
 
         // 100 - Continue
-        var connectExchange = answerConnectRequest(exchange, ct);
-        if (connectExchange != null)
+        if (answerConnectRequest(exchange, ct))
             return;
 
         // TODO only for HTTP1 ?
@@ -67,7 +65,7 @@ public class Http1ProtocolHandler extends AbstractProtocolHandler {
 
         trace(exchange.getRequest());
 
-        exchange.getRequest().write(ct.con().out, configuration.getRetryHandler().getRetries() > 1);
+        exchange.getRequest().write(ct.con().out, retainBodyForRetry());
 
         // TODO only for HTTP1 ?
         exchange.setTimeReqSent(currentTimeMillis());
@@ -149,7 +147,7 @@ public class Http1ProtocolHandler extends AbstractProtocolHandler {
         Response response = exchange.getResponse();
         if (response.getStatusCode() != 100)
             return;
-        exchange.getRequest().getBody().write(getBodyTransferer(exchange, c), configuration.getRetryHandler().getRetries() > 1);
+        exchange.getRequest().getBody().write(getBodyTransferer(exchange, c), retainBodyForRetry());
         c.out.flush();
         response.read(c.in, !exchange.getRequest().isHEADRequest());
     }
@@ -158,23 +156,35 @@ public class Http1ProtocolHandler extends AbstractProtocolHandler {
         return exchange.getRequest().getHeader().isChunked() ? new ChunkedBodyTransferer(c.out) : new PlainBodyTransferer(c.out);
     }
 
-    private @Nullable Exchange answerConnectRequest(Exchange exchange, OutgoingConnectionType ct) throws IOException, EndOfStreamException {
+    /**
+     * @return true if the request was a CONNECT and has been answered, so no further exchange with the
+     *         target is needed
+     */
+    private boolean answerConnectRequest(Exchange exchange, OutgoingConnectionType ct) throws IOException, EndOfStreamException {
         if (!exchange.getRequest().isCONNECTRequest())
-            return null;
+            return false;
 
         if (configuration.getProxy() != null) {
-            exchange.getRequest().write(ct.con().out, configuration.getRetryHandler().getRetries() > 1);
+            exchange.getRequest().write(ct.con().out, retainBodyForRetry());
             Response response = fromStream(ct.con().in, false);
             if (response.getStatusCode() > 299) {
-                log.debug("Status code response? on CONNECT request: {}", response.getStatusCode());
-                exchange.setResponse(internal(true, "proxy")
+                log.info("Proxy rejected CONNECT request with status code {}.", response.getStatusCode());
+                gateway(true, "proxy")
+                        .title("Bad Gateway")
+                        .addSubSee("connect")
+                        .status(502)
                         .detail("Could not connect to proxy server")
-                        .build());
+                        .topLevel("proxy-status", response.getStatusCode())
+                        .buildAndSetResponse(exchange);
+                // No tunnel was established: do not mark the exchange as upgraded and
+                // close the connection to the proxy, as nobody else will.
+                ct.con().close();
+                return true;
             }
         }
         exchange.getRequest().setUri(NOT_APPLICABLE); // TODO Why?
         exchange.setResponse(ok().build());
         exchange.setProperty(UPGRADED_PROTOCOL, METHOD_CONNECT);
-        return exchange;
+        return true;
     }
 }

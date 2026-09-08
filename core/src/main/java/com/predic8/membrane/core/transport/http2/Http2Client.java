@@ -25,7 +25,10 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.concurrent.GuardedBy;
 import java.io.IOException;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 
 import static com.predic8.membrane.core.transport.http2.Http2ExchangeHandler.createHeadersFrames;
 import static com.predic8.membrane.core.transport.http2.Http2ExchangeHandler.writeMessageBody;
@@ -72,7 +75,11 @@ public class Http2Client implements Runnable, AutoCloseable {
         thread.start();
     }
 
-    public Response doCall(Exchange exc) throws IOException, InterruptedException {
+    /**
+     * @param retainBody whether the request body has to be retained, so that it can be sent again if
+     *                   the call is retried
+     */
+    public Response doCall(Exchange exc, boolean retainBody) throws IOException, InterruptedException {
         int streamId;
         synchronized(this) {
             if (reserved > 0)
@@ -88,7 +95,7 @@ public class Http2Client implements Runnable, AutoCloseable {
 
             logic.sender.send(streamId, (encoder, peerSettings) -> createHeadersFrames(exc.getRequest(), exc.getRequest().getHeader(), streamId, encoder, peerSettings, false));
 
-            writeMessageBody(streamId, streamInfo, logic.sender, logic.peerSettings, logic.peerFlowControl, exc.getRequest());
+            writeMessageBody(streamId, streamInfo, logic.sender, logic.peerSettings, logic.peerFlowControl, exc.getRequest(), retainBody);
 
             // TODO: handle error/exception
             ri.cdl.await();
