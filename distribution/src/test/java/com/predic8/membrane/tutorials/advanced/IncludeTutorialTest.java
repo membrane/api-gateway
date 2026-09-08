@@ -18,7 +18,6 @@ import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.equalTo;
 
 public class IncludeTutorialTest extends AbstractAdvancedTutorialTest {
 
@@ -28,40 +27,49 @@ public class IncludeTutorialTest extends AbstractAdvancedTutorialTest {
     }
 
     @Test
-    void customersApiReturnsCustomerList() {
+    void shopRouteFromIncludeReturns200() {
         // @formatter:off
         given()
         .when()
-            .get("http://localhost:2000/customers")
+            .get("http://localhost:2000/shop")
         .then()
             .statusCode(200)
-            .header("X-Gateway", equalTo("Membrane"))
-            .body(containsString("\"customers\""));
+            .body(containsString("\"status\""));
         // @formatter:on
     }
 
     @Test
-    void ordersApiReturnsOrderList() {
+    void shopOrdersFromTransitiveIncludeReturns200() {
         // @formatter:off
         given()
         .when()
-            .get("http://localhost:2000/orders")
+            .get("http://localhost:2000/shop/orders")
         .then()
             .statusCode(200)
-            .header("X-Gateway", equalTo("Membrane"))
-            .body(containsString("\"orders\""));
+            .body(containsString("\"id\""));
         // @formatter:on
     }
 
     @Test
-    void unknownPathReturns404WithGatewayHeader() {
+    void healthRouteDefinedInlineReturns200() {
+        // @formatter:off
+        given()
+        .when()
+            .get("http://localhost:2000/health")
+        .then()
+            .statusCode(200)
+            .body(containsString("\"status\""));
+        // @formatter:on
+    }
+
+    @Test
+    void unknownPathCaughtByFallbackReturns404() {
         // @formatter:off
         given()
         .when()
             .get("http://localhost:2000/unknown")
         .then()
-            .statusCode(404)
-            .header("X-Gateway", equalTo("Membrane"));
+            .statusCode(404);
         // @formatter:on
     }
 }

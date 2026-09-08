@@ -65,9 +65,9 @@ public class AttributeInfo extends AbstractJavadocedInfo {
             return "boolean";
         }
         return switch (getXSDType(typeUtils)) {
-            case "spel_number", "xsd:double", "xsd:float", "xsd:decimal" -> "number";
-            case "spel_boolean", "xsd:boolean" -> "boolean";
-            case "xsd:int", "xsd:integer", "xsd:long" -> "integer";
+            case "spel_number" -> "integer"; // spel_number is emitted for integral types only
+            case "xsd:double", "xsd:float" -> "number";
+            case "spel_boolean" -> "boolean";
             default -> "string";
         };
     }
@@ -130,8 +130,16 @@ public class AttributeInfo extends AbstractJavadocedInfo {
                     return;
                 }
 
-                if (e.getQualifiedName().toString().equals("java.lang.String")) {
+                String qualifiedName = e.getQualifiedName().toString();
+
+                if (qualifiedName.equals("java.lang.String")) {
                     xsdType = "xsd:string";
+                    return;
+                }
+
+                String boxedXsdType = boxedXSDType(qualifiedName);
+                if (boxedXsdType != null) {
+                    xsdType = boxedXsdType;
                     return;
                 }
 
@@ -160,6 +168,22 @@ public class AttributeInfo extends AbstractJavadocedInfo {
             default:
                 throw new ProcessingException("Not implemented: XSD type for " + ve.asType().getKind().toString(), this.getE());
         }
+    }
+
+    /**
+     * Boxed scalars are configured by value, exactly like their primitive counterparts. Without this
+     * they would fall through to the bean reference fallback of analyze() and be declared as strings.
+     *
+     * @return the XSD type of the boxed scalar, or {@code null} if the type is not a boxed scalar
+     */
+    private static String boxedXSDType(String qualifiedName) {
+        return switch (qualifiedName) {
+            case "java.lang.Integer", "java.lang.Long", "java.lang.Short", "java.lang.Byte" -> "spel_number";
+            case "java.lang.Double" -> "xsd:double";
+            case "java.lang.Float" -> "xsd:float";
+            case "java.lang.Boolean" -> "spel_boolean";
+            default -> null;
+        };
     }
 
     private static List<String> getEnumValues(TypeElement te) {
