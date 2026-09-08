@@ -17,26 +17,37 @@ package com.predic8.membrane.core.interceptor.llmgateway.provider.claude;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.AbstractModelInputRequest;
-import com.predic8.membrane.core.interceptor.llmgateway.provider.ModelInputRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.List;
 
+import static com.predic8.membrane.core.http.Header.ACCEPT_ENCODING;
+
 /**
  * system field for system prompt
  */
-public class ClaudeLLMRequest extends AbstractModelInputRequest implements ModelInputRequest {
+public class ClaudeLLMRequest extends AbstractModelInputRequest {
 
     private static final Logger log = LoggerFactory.getLogger(ClaudeLLMRequest.class);
 
     public static final String X_API_KEY = "x-api-key";
 
+    private static final String IDENTITY = "identity";
+
     public ClaudeLLMRequest(Exchange exchange) throws IOException {
         super(exchange);
 
-        exchange.getRequest().getHeader().setValue( "Accept-Encoding","identity");
+        askForAnUncompressedResponse();
+    }
+
+    /**
+     * The streamed response is parsed as SSE text chunk by chunk, which only works while it is not
+     * compressed, so the gateway asks Anthropic not to encode it.
+     */
+    private void askForAnUncompressedResponse() {
+        exchange.getRequest().getHeader().setValue(ACCEPT_ENCODING, IDENTITY);
     }
 
     public void setMaxOutputTokens(int maxOutputTokens) {
@@ -112,14 +123,13 @@ public class ClaudeLLMRequest extends AbstractModelInputRequest implements Model
     }
 
     @Override
-    public String getApiKey() {
-        return exchange.getRequest().getHeader().getFirstValue(X_API_KEY);
+    protected String apiKeyHeaderName() {
+        return X_API_KEY;
     }
 
     @Override
-    public void setApiKey(String apiKey) {
-        exchange.getRequest().getHeader().removeFields(X_API_KEY);
-        exchange.getRequest().getHeader().add(X_API_KEY, apiKey);
+    protected boolean apiKeyIsBearer() {
+        return false;
     }
 
     /**

@@ -38,6 +38,7 @@ public final class SSEParser {
     private String eventName;
     private final StringBuilder data = new StringBuilder();
 
+    private SSEEvent terminalEvent;
     private boolean terminalFound;
 
     public SSEParser(Set<String> terminalEventNames) {
@@ -65,6 +66,7 @@ public final class SSEParser {
                     events.add(event);
 
                     if ((event.name() != null && terminalEventNames.contains(event.name())) || "[DONE]".equals(event.data())) {
+                        terminalEvent = event;
                         terminalFound = true;
                         return true;
                     }
@@ -79,16 +81,22 @@ public final class SSEParser {
         return false;
     }
 
-    public List<SSEEvent> getEvents() {
-        return List.copyOf(events);
+    /**
+     * Returns the events parsed since the last call and forgets them. A stream is consumed as it
+     * arrives, so holding on to every event of a long one would grow without bound.
+     */
+    public List<SSEEvent> drainEvents() {
+        var drained = List.copyOf(events);
+        events.clear();
+        return drained;
     }
 
+    /**
+     * @return the event that ended the stream, empty while it has not arrived. Also included in the
+     *         events drained from the chunk it arrived in.
+     */
     public Optional<SSEEvent> getTerminalEvent() {
-        if (!terminalFound || events.isEmpty()) {
-            return Optional.empty();
-        }
-
-        return Optional.of(events.getLast());
+        return Optional.ofNullable(terminalEvent);
     }
 
     private SSEEvent buildEvent() {
