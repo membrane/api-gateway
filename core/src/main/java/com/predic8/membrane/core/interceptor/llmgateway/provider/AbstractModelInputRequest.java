@@ -31,9 +31,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
-public class AbstractModelInputRequest extends BaseLLMRequest implements ModelInputRequest {
+public abstract class AbstractModelInputRequest extends BaseLLMRequest implements ModelInputRequest {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractModelInputRequest.class);
 
@@ -49,29 +47,43 @@ public class AbstractModelInputRequest extends BaseLLMRequest implements ModelIn
         super(exchange);
 
         if (exchange.getRequest().getHeader().isMultipart()) {
-            try {
-                for (var part : MultipartUtil.split(exchange.getRequest())) {
-                    log.info("Part: name={} type={} size={}", part.getName(), part.getContentType(), part.getBody().length);
-                    if ("model".equals(part.getName())) {
-                        log.info("Model: {}", part.getBodyAsString());
-                        model = part.getBodyAsString();
-                    }
-                }
-                body = exchange.getRequest().getBody();
-            } catch (IOException | ParseException e) {
-                throw new RuntimeException(e);
-            }
+            readMultipart(exchange);
             return;
         }
 
-        if (exchange.getRequest().isJSON()) {
-            json = JsonUtil.getJsonObject(exchange.getRequest()).orElseThrow(() -> new RuntimeException("Cannot parse input as JSON message."));
+        readJson(exchange);
+    }
+
+    /**
+     * A multipart request keeps the model input in its parts, not in JSON. An empty object keeps the
+     * accessors working, and {@link #getBody()} hands back the original body untouched.
+     */
+    private void readMultipart(Exchange exchange) throws IOException {
+        try {
+            for (var part : MultipartUtil.split(exchange.getRequest())) {
+                log.info("Part: name={} type={} size={}", part.getName(), part.getContentType(), part.getBody().length);
+                if ("model".equals(part.getName())) {
+                    log.info("Model: {}", part.getBodyAsString());
+                    model = part.getBodyAsString();
+                }
+            }
+        } catch (ParseException e) {
+            throw new IOException("Cannot parse the multipart request.", e);
+        }
+        body = exchange.getRequest().getBody();
+        json = om.createObjectNode();
+    }
+
+    private void readJson(Exchange exchange) {
+        if (!exchange.getRequest().isJSON()) {
+            return;
         }
 
-        if (json != null) {
-            if (json.has("model")) {
-                model = json.path("model").asText();
-            }
+        json = JsonUtil.getJsonObject(exchange.getRequest())
+                .orElseThrow(() -> new RuntimeException("Cannot parse input as JSON message."));
+
+        if (json.has("model")) {
+            model = json.path("model").asText();
         }
     }
 
@@ -115,7 +127,7 @@ public class AbstractModelInputRequest extends BaseLLMRequest implements ModelIn
 
     @Override
     public long getRequestedMaxOutputTokens() {
-        return -1;
+        return 0;
     }
 
     @Override
@@ -133,9 +145,7 @@ public class AbstractModelInputRequest extends BaseLLMRequest implements ModelIn
         if (body != null)
             return body;
         try {
-            return new Body(om
-                    .writerWithDefaultPrettyPrinter()
-                    .writeValueAsString(json).getBytes(UTF_8));
+            return new Body(om.writeValueAsBytes(json));
         } catch (JsonProcessingException e) {
             log.info("Could not serialize JSON: {}", e.getMessage());
             throw new RuntimeException("Could not serialize JSON: " + e.getMessage());

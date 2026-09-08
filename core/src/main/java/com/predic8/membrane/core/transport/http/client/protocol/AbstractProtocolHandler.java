@@ -14,9 +14,10 @@
 
 package com.predic8.membrane.core.transport.http.client.protocol;
 
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.transport.http.*;
-import com.predic8.membrane.core.transport.http.client.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.transport.http.ConnectionFactory;
+import com.predic8.membrane.core.transport.http.ProtocolUpgradeDeniedException;
+import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 
 public abstract class AbstractProtocolHandler implements ProtocolHandler {
 
@@ -41,6 +42,15 @@ public abstract class AbstractProtocolHandler implements ProtocolHandler {
 
     @Override
     public void cleanup(Exchange exchange) {}
+
+    /**
+     * A body that is only streamed through cannot be sent a second time, so it has to be retained
+     * whenever the {@link com.predic8.membrane.core.transport.http.client.RetryHandler} may replay
+     * the request.
+     */
+    protected boolean retainBodyForRetry() {
+        return configuration.getRetryHandler().isRetryPossible();
+    }
 
     protected static boolean isUpgradeRequest(Exchange exchange, String protocol) {
         String upgrade = exchange.getRequest().getHeader().getUpgradeProtocol();

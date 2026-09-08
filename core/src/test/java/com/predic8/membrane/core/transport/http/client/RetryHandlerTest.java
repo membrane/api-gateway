@@ -14,18 +14,30 @@
 
 package com.predic8.membrane.core.transport.http.client;
 
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.transport.http.*;
-import org.jetbrains.annotations.*;
-import org.junit.jupiter.api.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.transport.http.ConnectTimeoutException;
+import com.predic8.membrane.core.transport.http.HttpClientStatusEventBus;
+import com.predic8.membrane.core.transport.http.HttpClientStatusEventListener;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.net.*;
-import java.util.*;
+import java.net.ConnectException;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-import static com.predic8.membrane.core.http.Request.*;
-import static com.predic8.membrane.core.http.Response.*;
+import static com.predic8.membrane.core.http.Request.get;
+import static com.predic8.membrane.core.http.Request.post;
+import static com.predic8.membrane.core.http.Response.ok;
 import static org.junit.jupiter.api.Assertions.*;
 
 class RetryHandlerTest {
@@ -42,9 +54,32 @@ class RetryHandlerTest {
 
 
     @Test
+    void retryPossibleOnlyWhenAnAttemptFollowsTheInitialCall() {
+        rh.setRetries(0);
+        assertFalse(rh.isRetryPossible());
+        rh.setRetries(1);
+        assertTrue(rh.isRetryPossible());
+    }
+
+    @Test
     void noRetries() throws Exception {
         rh.setRetries(0);
         RetryableExchangeCallMock mock = new RetryableExchangeCallMock(false);
+        rh.executeWithRetries(get("/foo").buildExchange(), mock);
+        assertEquals(1, mock.attempts);
+    }
+
+    /**
+     * A negative configuration value is clamped, so only the initial call is made instead of the
+     * destination lookup running off the end of the attempt count.
+     */
+    @Test
+    void negativeRetriesDisableRetrying() throws Exception {
+        rh.setRetries(-1);
+        assertEquals(0, rh.getRetries());
+        assertFalse(rh.isRetryPossible());
+
+        RetryableExchangeCallMock mock = new RetryableExchangeCallMock(504);
         rh.executeWithRetries(get("/foo").buildExchange(), mock);
         assertEquals(1, mock.attempts);
     }
@@ -74,6 +109,49 @@ class RetryHandlerTest {
         assertEquals(200, listener.statusCodes.get("/foo"));
     }
 
+    /**
+     * The response of the last attempt is what the caller gets, so it has to reach the event bus even
+     * though every attempt was retryable.
+     */
+    @Test
+    void statusIsReportedWhenRetriesAreExhausted() throws Exception {
+        rh.setFailOverOn5XX(true);
+        rh.setDelay(1);
+        RetryableExchangeCallMock mock = new RetryableExchangeCallMock(504);
+        Exchange exc = get("/foo").buildExchange();
+        exc.setDestinations(List.of("http://node1.example.com/"));
+        HttpClientStatusEventListenerMock listener = registerHttpClientStatusEventBus(exc);
+
+        rh.executeWithRetries(exc, mock);
+
+        assertEquals(3, mock.attempts);
+        assertEquals(504, listener.statusCodes.get("http://node1.example.com/"));
+    }
+
+    /**
+     * The last attempt decides: when it answered with a response, an exception from an earlier attempt
+     * is no longer the outcome of the call.
+     */
+    @Test
+    void responseOfLastAttemptWinsOverEarlierException() throws Exception {
+        rh.setFailOverOn5XX(true);
+        rh.setRetries(1);
+        rh.setDelay(1);
+        Exchange exc = get("/foo").buildExchange();
+        exc.setDestinations(List.of("http://node1.example.com/"));
+        HttpClientStatusEventListenerMock listener = registerHttpClientStatusEventBus(exc);
+
+        rh.executeWithRetries(exc, (e, dest, attempt) -> {
+            if (attempt == 0)
+                throw new SocketException("reset");
+            e.setResponse(Response.statusCode(503).build());
+            return false;
+        });
+
+        assertEquals(503, exc.getResponse().getStatusCode());
+        assertEquals(503, listener.statusCodes.get("http://node1.example.com/"));
+    }
+
     @Nested
     class ExceptionIsThrown {
 
@@ -88,6 +166,17 @@ class RetryHandlerTest {
             assertEquals(3, mock.attempts);
 
             assertEquals(exception, listener.exceptions.get("/foo"));
+        }
+
+        /**
+         * A SocketException does not necessarily carry a message, e.g. when the socket was closed
+         * while it was being read.
+         */
+        @Test
+        void socketExceptionWithoutMessage() {
+            RetryableExchangeCallMock mock = new RetryableExchangeCallMock(new SocketException());
+            assertThrows(SocketException.class, () -> rh.executeWithRetries(get("/foo").buildExchange(), mock));
+            assertEquals(3, mock.attempts);
         }
 
         @Test

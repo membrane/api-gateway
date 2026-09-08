@@ -24,9 +24,24 @@ import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMResponse;
 import java.io.IOException;
 import java.util.function.Consumer;
 
+import static com.predic8.membrane.core.interceptor.llmgateway.provider.LLMProvider.started;
+
 /**
- * @description (Experimental)Google AI provider configuration
- * Use to configure a LLM gateway to use the Google LLM API
+ * @description (Experimental) Talks to the Google Gemini API, where the model is named in the path rather than in the request body,
+ * as in <code>/v1beta/models/gemini-2.5-pro:generateContent</code>. The api key travels in the
+ * <code>x-goog-api-key</code> header. See tutorials/ai/llm-gateway/google/10-Basic-LLM-Gateway.yaml.
+ * @yaml
+ * <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - llmGateway:
+ *         google: {}
+ *         policies:
+ *           maxOutputTokens: 200
+ *   target:
+ *     url: https://generativelanguage.googleapis.com
+ * </code></pre>
  */
 @MCElement( name="google",id = "google-ai-provider")
 public class GoogleProvider implements LLMProvider {
@@ -38,7 +53,7 @@ public class GoogleProvider implements LLMProvider {
 
     @Override
     public LLMResponse getLLMResponse(Exchange request, Consumer<LLMResponse> postProcessor) {
-        return new GoogleLLMResponse(request, postProcessor);
+        return started(new GoogleLLMResponse(request, postProcessor));
     }
 
     @Override

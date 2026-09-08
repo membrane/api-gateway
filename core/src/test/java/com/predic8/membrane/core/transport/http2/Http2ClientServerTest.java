@@ -13,33 +13,49 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.http2;
 
-import com.predic8.membrane.core.config.security.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.transport.http.*;
-import com.predic8.membrane.core.transport.http.client.*;
-import com.predic8.membrane.core.transport.http.client.protocol.*;
-import com.predic8.membrane.core.util.*;
-import org.jetbrains.annotations.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.config.security.KeyStore;
+import com.predic8.membrane.core.config.security.SSLParser;
+import com.predic8.membrane.core.config.security.TrustStore;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.proxies.ServiceProxy;
+import com.predic8.membrane.core.proxies.ServiceProxyKey;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.router.TestRouter;
+import com.predic8.membrane.core.transport.http.AbstractHttpHandler;
+import com.predic8.membrane.core.transport.http.HttpClient;
+import com.predic8.membrane.core.transport.http.HttpServerHandler;
+import com.predic8.membrane.core.transport.http.client.ConnectionConfiguration;
+import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
+import com.predic8.membrane.core.transport.http.client.protocol.Http2ProtocolHandler;
+import com.predic8.membrane.core.util.URIFactory;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.*;
-import java.util.function.*;
+import java.util.function.Consumer;
 
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
-import static com.predic8.membrane.core.transport.http2.StreamState.*;
-import static java.util.concurrent.TimeUnit.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static com.predic8.membrane.core.transport.http2.StreamState.CLOSED;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class Http2ClientServerTest {
     private volatile Response response;
     private volatile Consumer<Request> requestAsserter;
     private volatile AbstractHttpHandler handler;
     private HttpClient hc;
+    private HttpClientConfiguration clientConfiguration;
     private Router router;
     private static final ConcurrentHashMap<String, Boolean> connectionHashes = new ConcurrentHashMap<>();
 
@@ -73,7 +89,7 @@ public class Http2ClientServerTest {
         sslParser2.getTrustStore().setLocation("classpath:/ssl-rsa-pub.keystore");
         sslParser2.getTrustStore().setPassword("secret");
 
-        HttpClientConfiguration configuration = new HttpClientConfiguration();
+        HttpClientConfiguration configuration = clientConfiguration = new HttpClientConfiguration();
         configuration.setUseExperimentalHttp2(true);
         configuration.setSslParser(sslParser2);
         configuration.setBaseLocation("/");
@@ -181,6 +197,32 @@ public class Http2ClientServerTest {
         }
 
         assertEquals(1, connectionHashes.size());
+    }
+
+    /**
+     * A body that is still unread cannot be sent twice unless it is retained, so a retried request
+     * has to keep working over HTTP/2 just as it does over HTTP/1.
+     */
+    @Test
+    public void retriedRequestWithStreamedBodyIsReplayed() throws Exception {
+        clientConfiguration.getRetryHandler().setFailOverOn5XX(true);
+        clientConfiguration.getRetryHandler().setRetries(1);
+        clientConfiguration.getRetryHandler().setDelay(1);
+
+        this.response = Response.badGateway("upstream down").build();
+        CopyOnWriteArrayList<String> received = new CopyOnWriteArrayList<>();
+        this.requestAsserter = req -> received.add(req.getBodyAsStringDecoded());
+
+        byte[] payload = "hello".getBytes(UTF_8);
+        Exchange e = new Request.Builder()
+                .put("https://localhost:3049")
+                .body(payload.length, new ByteArrayInputStream(payload))
+                .buildExchange();
+        hc.call(e);
+
+        assertNotNull(e.getProperty(Http2ProtocolHandler.HTTP2_PROTOCOL));
+        assertEquals(502, e.getResponse().getStatusCode());
+        assertEquals(List.of("hello", "hello"), received, "both attempts must carry the body");
     }
 
     private void test200(String body) throws Exception {

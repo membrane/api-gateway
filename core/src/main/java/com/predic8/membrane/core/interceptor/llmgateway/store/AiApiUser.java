@@ -47,6 +47,11 @@ public class AiApiUser {
 
     /**
      * Checks if the user has enough tokens to make the request.
+     * <p>
+     * The check is advisory: it reads the usage of the period without reserving anything, so
+     * requests running at the same time can each be told there is budget left and together overshoot
+     * it. What they actually used is settled by {@link #addTokensUsedInPeriod(Usage)} once the
+     * responses arrive, and the next request sees it.
      *
      * @param tokensNeededForRequest The number of tokens that the user needs to make the request
      * @return The estimated number of tokens that the user has left after this request
@@ -62,8 +67,8 @@ public class AiApiUser {
     }
 
     /**
-     * @param name of the user
-     * @description Name of the API user, group or cost center.
+     * @description Name of the api user, group or cost center. Used to attribute the recorded usage.
+     * @example alice
      */
     @MCAttribute()
     public void setName(String name) {
@@ -75,9 +80,9 @@ public class AiApiUser {
     }
 
     /**
-     * @description API key to authenticate the user at the llm gateway
-     * @default (not set)
-     * @param apikey to authenticate the user
+     * @description The api key the client sends to authenticate as this user. It is the key of the gateway, not the key
+     * of the provider, and it is required.
+     * @example abc123
      */
     @MCAttribute()
     public void setApiKey(String apikey) {
@@ -90,9 +95,10 @@ public class AiApiUser {
     }
 
     /**
-     * @description Number of tokens that the user has available within the current period.
+     * @description Number of tokens the user may spend within the current period. Input and the reserved output of a
+     * request count against it, and the period is set by <code>limitResetPeriod</code> of the store.
      * @default 0 (no limit)
-     * @param tokens available tokens
+     * @example 10000
      */
     @MCAttribute
     public void setTokens(long tokens) {

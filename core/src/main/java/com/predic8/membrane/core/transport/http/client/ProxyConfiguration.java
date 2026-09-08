@@ -14,11 +14,13 @@
 
 package com.predic8.membrane.core.transport.http.client;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.config.security.*;
-import com.predic8.membrane.core.util.security.BasicAuthenticationUtil;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.config.security.SSLParser;
+import com.predic8.membrane.core.util.ConfigurationException;
 
-import java.util.*;
+import java.util.Objects;
 
 import static com.predic8.membrane.core.util.security.BasicAuthenticationUtil.createAuthorizationHeader;
 
@@ -42,8 +44,6 @@ import static com.predic8.membrane.core.util.security.BasicAuthenticationUtil.cr
  *       username: alice
  *       password: secret
  * </code></pre>
- *
- * @topic 4. Transports and Clients
  */
 @MCElement(name="proxy", component =false, id="proxy-configuration")
 public class ProxyConfiguration {
@@ -161,6 +161,25 @@ public class ProxyConfiguration {
 	@MCChildElement
 	public void setSslParser(SSLParser sslParser) {
 		this.sslParser = sslParser;
+	}
+
+	/**
+	 * Rejects a proxy that cannot be used, instead of failing on the first request that is routed
+	 * through it.
+	 *
+	 * @throws ConfigurationException if the host is missing, or if authentication is switched on
+	 *                                without credentials
+	 */
+	public void validate() {
+		if (host == null || host.isBlank())
+			throw new ConfigurationException("The proxy needs a host, e.g. host=\"proxy.example.com\".");
+
+		if (!authentication)
+			return;
+
+		if (username == null || password == null)
+			throw new ConfigurationException(("The proxy %s:%d has authentication=\"true\", so it needs a username "
+					+ "and a password. Set both, or remove authentication.").formatted(host, port));
 	}
 
 	/**

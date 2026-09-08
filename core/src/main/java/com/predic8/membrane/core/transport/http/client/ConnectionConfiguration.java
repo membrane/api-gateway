@@ -19,21 +19,9 @@ import com.predic8.membrane.annot.MCElement;
 import java.util.Objects;
 
 /**
- * @description Configuration for low-level socket behavior of Membrane's HTTP client.
- *              This includes timeouts and local address binding for outbound connections.
- *              Typically used as a child of &lt;httpClientConfig&gt;.
- *
- *              XML Example:
- *              &lt;connection keepAliveTimeout="30000" timeout="10000" soTimeout="5000" localAddr="192.168.1.100"/&gt;
- *
- *              YAML (experimental):
- *              <pre><code>connection:
- *                keepAliveTimeout: 30000
- *                timeout: 10000
- *                soTimeout: 5000
- *                localAddr: "192.168.1.100"</code></pre>
- *
- * @topic 4. Transports and Clients
+ * @description Socket level settings for connections to a backend: how long the client waits while
+ *              connecting and while reading, how long an idle connection is kept in the pool, and
+ *              which local network interface it binds to.
  */
 @MCElement(name="connection", component =false)
 public class ConnectionConfiguration {

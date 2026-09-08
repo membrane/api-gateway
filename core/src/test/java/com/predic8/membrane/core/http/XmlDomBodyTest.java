@@ -45,6 +45,25 @@ class XmlDomBodyTest {
             <?xml version="1.0" encoding="ISO-8859-1"?>
             <greeting>Grüße</greeting>""";
 
+    /**
+     * Declares ISO-8859-1 but is actually ISO-8859-15: byte 0xA4 is the currency sign (¤) in the
+     * former and the euro sign (€) in the latter, one of the few code points the two disagree on.
+     * Neither is multi-byte, so misreading the charset silently swaps one character for the other
+     * rather than failing to parse.
+     */
+    private static final byte[] CONTRADICTING_CHARSET_XML = concat(
+            "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?><price>".getBytes(ISO_8859_1),
+            new byte[]{(byte) 0xA4},
+            "</price>".getBytes(ISO_8859_1));
+
+    private static byte[] concat(byte[]... parts) {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        for (byte[] part : parts) {
+            out.writeBytes(part);
+        }
+        return out.toByteArray();
+    }
+
     private static Request requestWith(byte[] content) {
         Request req = new Request();
         req.setBodyContent(content);
@@ -110,9 +129,14 @@ class XmlDomBodyTest {
     @Test
     void replaceBodyCorrectsAContentTypeCharsetThatContradictsTheBytes() {
         Request req = requestWith(LATIN1_XML.getBytes(ISO_8859_1));
+        // Parsed while the header still agrees with the declaration; the contradiction below is
+        // introduced only afterwards, e.g. by an interceptor that touches the header but not the
+        // body - documentOf() honors the (correct) header at parse time, so this must not be set
+        // any earlier or the message would be genuinely malformed and fail to parse.
+        Document doc = XmlDomBody.documentOf(req);
         req.getHeader().setContentType("text/xml; charset=UTF-8");
 
-        XmlDomBody.replaceBody(req, XmlDomBody.documentOf(req));
+        XmlDomBody.replaceBody(req, doc);
 
         assertEquals("ISO-8859-1", req.getHeader().getCharset());
         assertTrue(req.getHeader().getContentType().startsWith("text/xml"), req.getHeader().getContentType());
@@ -128,9 +152,13 @@ class XmlDomBodyTest {
     @Test
     void replaceBodyCorrectsTheCharsetOfAnUndeclaredDocumentToUtf8() {
         Request req = requestWith("<greeting>Grüße</greeting>".getBytes(UTF_8));
+        // See replaceBodyCorrectsAContentTypeCharsetThatContradictsTheBytes(): the contradicting
+        // header is introduced only after parsing, so documentOf() still sees a header-free (and
+        // so correctly UTF-8-decoded) message.
+        Document doc = XmlDomBody.documentOf(req);
         req.getHeader().setContentType("text/xml; charset=ISO-8859-1");
 
-        XmlDomBody.replaceBody(req, XmlDomBody.documentOf(req));
+        XmlDomBody.replaceBody(req, doc);
 
         assertEquals("UTF-8", req.getHeader().getCharset());
         assertTrue(new String(req.getBody().getContent(), UTF_8).contains("Grüße"),
@@ -340,6 +368,36 @@ class XmlDomBodyTest {
 
         assertSame(first, XmlDomBody.documentOf(req));
         assertArrayEquals(original, req.getBody().getContent());
+    }
+
+    /**
+     * RFC 7303 gives the {@code Content-Type} charset precedence over the XML declaration - the
+     * read-side mirror of {@link #replaceBodyCorrectsAContentTypeCharsetThatContradictsTheBytes()}.
+     * Issue #3141: {@code documentOf}'s non-encoded path used to build its {@code InputSource}
+     * straight from the bytes, ignoring the header and letting the (wrong) declaration decide.
+     */
+    @Test
+    void documentOfHonorsTheContentTypeCharsetOverAContradictingXmlDeclaration() {
+        Request req = requestWith(CONTRADICTING_CHARSET_XML);
+        req.getHeader().setContentType("text/xml; charset=ISO-8859-15");
+
+        Document doc = XmlDomBody.documentOf(req);
+
+        assertEquals("€", doc.getDocumentElement().getTextContent());
+    }
+
+    /**
+     * Same precedence rule, but through the encoded/streaming path ({@code parseDecoded}).
+     */
+    @Test
+    void gzippedDocumentOfHonorsTheContentTypeCharsetOverAContradictingXmlDeclaration() throws IOException {
+        Request req = requestWith(gzip(CONTRADICTING_CHARSET_XML));
+        req.getHeader().setValue(CONTENT_ENCODING, "gzip");
+        req.getHeader().setContentType("text/xml; charset=ISO-8859-15");
+
+        Document doc = XmlDomBody.documentOf(req);
+
+        assertEquals("€", doc.getDocumentElement().getTextContent());
     }
 
     /**

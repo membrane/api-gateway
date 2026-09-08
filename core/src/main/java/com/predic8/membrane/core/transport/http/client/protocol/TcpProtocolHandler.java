@@ -14,13 +14,14 @@
 
 package com.predic8.membrane.core.transport.http.client.protocol;
 
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.transport.http.*;
-import com.predic8.membrane.core.transport.http.ConnectionFactory.*;
-import com.predic8.membrane.core.transport.http.client.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.transport.http.ConnectionFactory;
+import com.predic8.membrane.core.transport.http.ConnectionFactory.OutgoingConnectionType;
+import com.predic8.membrane.core.transport.http.HostColonPort;
+import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 
-import static com.predic8.membrane.core.exchange.Exchange.*;
-import static java.lang.Boolean.*;
+import static com.predic8.membrane.core.exchange.Exchange.ALLOW_TCP;
+import static java.lang.Boolean.TRUE;
 
 public class TcpProtocolHandler extends AbstractProtocolHandler {
 
@@ -39,7 +40,10 @@ public class TcpProtocolHandler extends AbstractProtocolHandler {
     }
 
     @Override
-    public void handle(Exchange exchange, OutgoingConnectionType connectionType, HostColonPort target) throws Exception {
+    public void handle(Exchange exchange, OutgoingConnectionType connectionType, HostColonPort target) {
+        throw new IllegalStateException(
+                "TCP handler should not be called directly. " +
+                "Use HTTP/1.1 with Upgrade header.");
     }
 
 }

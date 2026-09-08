@@ -27,8 +27,29 @@ import java.util.List;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
 /**
- * @description When used with older chat completions API the instruction is converted to a system message like:
- * "system": "You are a helpful assistant."
+ * @description Sets the system prompt of every request before it is forwarded, so that all clients of an api talk to
+ * the model under the same instruction. The prompt is written in the wire format of the configured provider: the
+ * <code>system</code> field for Claude, <code>instructions</code> for the OpenAI Responses API, a
+ * <code>role: system</code> message for Chat Completions, and <code>systemInstruction</code> for Gemini. A prompt the
+ * client sent is replaced, kept or dropped, depending on the action.
+ * <pre>
+ * systemPrompt:
+ *   [ action: OVERWRITE | APPEND | PREPEND | REMOVE ]   # default: OVERWRITE
+ *   [ content: &lt;prompt&gt; ]
+ * </pre>
+ * @yaml
+ * <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - llmGateway:
+ *         claude: {}
+ *         systemPrompt:
+ *           action: PREPEND
+ *           content: Answer in German.
+ *   target:
+ *     url: https://api.anthropic.com
+ * </code></pre>
  */
 @MCElement(name = "systemPrompt")
 public class SystemPrompt {
@@ -69,6 +90,13 @@ public class SystemPrompt {
         return action;
     }
 
+    /**
+     * @description What to do with the system prompt the client sent. <code>OVERWRITE</code> replaces it,
+     * <code>APPEND</code> and <code>PREPEND</code> combine both with a newline between them, and
+     * <code>REMOVE</code> drops it and ignores the content.
+     * @default OVERWRITE
+     * @example PREPEND
+     */
     @MCAttribute
     public void setAction(Action action) {
         this.action = action;
@@ -78,6 +106,11 @@ public class SystemPrompt {
         return content;
     }
 
+    /**
+     * @description The system prompt to set. Ignored when the action is <code>REMOVE</code>.
+     * @default (empty)
+     * @example You are a helpful assistant. Answer in German.
+     */
     @MCAttribute
     public void setContent(String content) {
         this.content = content;

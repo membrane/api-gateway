@@ -40,13 +40,9 @@ public class ResponsesApiEvent extends AbstractLLMEvent {
                 var on = (ObjectNode) item;
 
                 if ("function_call".equals(on.path("type").asText())) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Function call: {} with params {}",
-                                on.path("name").asText(),
-                                on.path("arguments").asText());
-                    } else {
-                        log.info("Function call: {}", on.path("name"));
-                    }
+                    log.debug("Function call: {} with params {}",
+                            on.path("name").asText(),
+                            on.path("arguments").asText());
                 }
             }
         }

@@ -19,6 +19,7 @@ import com.predic8.membrane.core.interceptor.llmgateway.provider.AbstractLLMResp
 import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMResponse;
 import com.predic8.membrane.core.interceptor.llmgateway.store.Usage;
 import com.predic8.membrane.core.util.http.SSEParser;
+import com.predic8.membrane.core.util.json.JsonUtil;
 
 import java.util.Set;
 import java.util.function.Consumer;
@@ -46,13 +47,22 @@ public class GoogleLLMResponse extends AbstractLLMResponse {
         );
     }
 
+    /**
+     * The Gemini stream has no terminal event: its chunks are unnamed data events, so the end of
+     * the body is what ends the stream.
+     */
     @Override
     public Set<String> getTerminalEvents() {
-        return Set.of("response.completed","response.incompleted");
+        return Set.of();
     }
 
+    /**
+     * Every streamed chunk carries the usage so far, the last one the totals for the response.
+     */
     @Override
     public void process(SSEParser.SSEEvent event) {
-
+        JsonUtil.getJsonObject(event.data())
+                .filter(chunk -> chunk.path("usageMetadata").isObject())
+                .ifPresent(chunk -> json = chunk);
     }
 }

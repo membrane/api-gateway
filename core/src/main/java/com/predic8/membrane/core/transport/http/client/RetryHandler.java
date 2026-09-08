@@ -39,27 +39,30 @@ import static java.lang.Thread.sleep;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
 /**
- * <p>Retries a backend request when network-level failures or selected HTTP status codes occur.</p>
- *
- * <p>The handler performs the initial call and, on failure, up to {@link #retries} additional attempts.
- * Waiting time before hitting the <em>same</em> node grows exponentially by
- * {@code delay backoffMultiplier}. If several backend nodes are configured, the next retry is
- * immediately directed to the next node (fail-over)  - the sleep is only applied between consecutive
- * attempts to the <strong>same</strong> destination.</p>
- *
- * <p>A retry is triggered for:</p>
- * <ul>
- *   <li>Connection/IO exceptions (timeout, refused, reset...)</li>
- *   <li>A timeout while the connection was still being established (when
- *       <code>retryOnConnectTimeout=true</code>), for any request method</li>
- *   <li>HTTP 408 Request Timeout</li>
- *   <li>HTTP 500, 502, 503, 504, 507 (when {@code failOverOn5XX=true})</li>
- * </ul>
- * <p>
- * Non-idempotent methods (POST, PATCH) are <em>not</em> repeated if the request might already have
- * reached the server.</p>
+ * @description Retries a request to the backend when the connection fails or the server answers with a
+ *              status code that is worth another attempt. The initial call is followed by a
+ *              configurable number of further attempts.
+ *              <p>
+ *              With several backend nodes each attempt goes to the next node, so a failing node is
+ *              skipped straight away. The delay applies only to a target with a single node, where it
+ *              grows exponentially between attempts. Attempts spread over several nodes follow each
+ *              other without a delay.
+ *              </p>
+ *              <p>
+ *              A retry follows a connection or IO error and HTTP 408, and optionally HTTP 500, 502,
+ *              503, 504 and 507. Methods that are not idempotent, such as POST and PATCH, are not
+ *              repeated once the request may have reached the server.
+ *              </p>
+ * @yaml <pre><code>
+ * configuration:
+ *   httpClientConfig:
+ *     retries:
+ *       retries: 3
+ *       delay: 500
+ *       failOverOn5XX: true
+ * </code></pre>
  */
-@MCElement(name = "retries")
+@MCElement(name = "retries", component = false)
 public class RetryHandler {
 
     private static final Logger log = LoggerFactory.getLogger(RetryHandler.class);
@@ -67,8 +70,8 @@ public class RetryHandler {
     private int retries = 2;
 
     /**
-     * Initial delay before the 1st retry (ms).  Multiplied by {@link #backoffMultiplier} for each
-     * further attempt to the same backend.
+     * Initial delay before the 1st retry (ms). Multiplied by {@link #backoffMultiplier} for each
+     * further attempt. Only applied when the target has a single node.
      */
     private int delay = 100;
 
@@ -90,6 +93,17 @@ public class RetryHandler {
     private boolean retryOnConnectTimeout = true;
 
     private static final Set<Integer> RETRYABLE_5XX = Set.of(500, 502, 503, 504, 507);
+
+    /**
+     * Whether {@link #executeWithRetries(Exchange, RetryableCall)} can send the request more than once.
+     * Callers writing the request to the wire have to retain the body in that case, otherwise the
+     * replay has nothing left to send.
+     *
+     * @return true if at least one retry attempt follows the initial call
+     */
+    public boolean isRetryPossible() {
+        return retries > 0;
+    }
 
     /**
      * Execute the given {@link RetryableCall} applying the retry logic configured in this handler.
@@ -116,6 +130,12 @@ public class RetryHandler {
                     reportStatusCode(exc, dest, statusCode);
                     return;
                 }
+                // This attempt answered with a response rather than an exception, so an exception from
+                // an earlier attempt is no longer the outcome of the last call. E.g.:
+                // 1. attempt #0 fails with a SocketException, which is retryable for a GET
+                // 2. attempt #1 answers 503
+                // The caller gets the 503 of the last attempt, not the exception of the first one.
+                exceptionInLastCall = null;
             } catch (Exception e) {
                 reportException(exc, e, dest);
                 log.debug("Exception in retry #{}", attempt, e);
@@ -138,6 +158,10 @@ public class RetryHandler {
 
         if (exceptionInLastCall != null)
             throw exceptionInLastCall;
+
+        // The last attempt returned a retryable status. Its response is what the caller gets, so that
+        // is the status to report.
+        reportStatusCode(exc, getDestination(exc, retries), getStatusCode(exc));
     }
 
     private static int getStatusCode(Exchange exc) {
@@ -199,13 +223,16 @@ public class RetryHandler {
         }
         // Low-level TCP error, e.g., during write or read.
         if (e instanceof SocketException) {
-            if (e.getMessage().contains("abort")) {
+            // A SocketException does not always carry a message, e.g. when the socket was closed while
+            // it was read. Such a case falls through to the "unknown condition" branch below.
+            String message = Objects.requireNonNullElse(e.getMessage(), "");
+            if (message.contains("abort")) {
                 log.debug("Connection to {} was aborted externally.", dest);
-            } else if (e.getMessage().contains("reset")) {
+            } else if (message.contains("reset")) {
                 log.debug("Connection to {} was reset externally.", dest);
             } else {
                 logException(exc, attempt, e);
-                log.info("", e); // Unknown condition => log stacktrace
+                log.info("Unexpected SocketException: {}", e.getMessage(), e); // Unknown condition => log stacktrace
             }
             return !isIdempotent(exc.getRequest().getMethod());
         }
@@ -258,7 +285,7 @@ public class RetryHandler {
     }
 
     private void delayBetweenCalls(Exchange exc, double delay) throws InterruptedException {
-        //as documented above, the sleep timeout is only applied between successive calls to the SAME destination.
+        // As documented above, the delay is only applied to a target with a single destination.
         if (exc.getDestinations().size() == 1) {
             log.debug("Waiting {} ms before next try", delay);
             sleep((long) delay);
@@ -275,17 +302,20 @@ public class RetryHandler {
     }
 
     /**
-     * @description Number of <em>additional</em> retry attempts after the initial call.
+     * @description Number of <em>additional</em> retry attempts after the initial call. A value of 0 or
+     *              less disables retries, so only the initial call is made.
      * @default 2
      * @example 5
      */
     @MCAttribute
     public void setRetries(int retries) {
-        this.retries = retries;
+        this.retries = Math.max(0, retries);
     }
 
     /**
-     * @description Initial delay in milliseconds before retrying the same node.
+     * @description Initial delay in milliseconds before the next attempt. Only applied when the
+     *              target has a single node; with several nodes the attempts follow each other
+     *              without a delay.
      * @default 100
      * @example 1000
      */
