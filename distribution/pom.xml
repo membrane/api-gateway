@@ -182,6 +182,19 @@
                     <skipTests>true</skipTests>
                     <failIfNoTests>false</failIfNoTests>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>apis-yaml-schema-validation</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <skipTests>false</skipTests>
+                            <test>ApisYamlSchemaValidationTest</test>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <artifactId>maven-failsafe-plugin</artifactId>
