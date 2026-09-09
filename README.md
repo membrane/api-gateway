@@ -1,6 +1,6 @@
 ![Membrane Logo](distribution/media/membrane-logo-m-text.svg)
 
-# Modern API Gateway with legacy Support for (XML, SOAP, WSDL) 
+# Modern API Gateway with Legacy Support for XML, SOAP, and WSDL
 
 [![GitHub release](https://img.shields.io/github/v/release/membrane/api-gateway?display_name=tag)](https://github.com/membrane/api-gateway/releases/latest)
 [![Build](https://img.shields.io/github/actions/workflow/status/membrane/api-gateway/build-and-test.yml?branch=master)](https://github.com/membrane/api-gateway/actions)
@@ -9,10 +9,9 @@
 
 <img src="docs/images/api-gateway-demo.gif" alt="Animated demo of Membrane API Gateway" width="800">
 
-Built on the **Java platform**, Membrane provides comprehensive integration with enterprise and legacy technologies such as **XML**, **SOAP**, and **WSDL**, while delivering high performance and scalability.
+Built on the **Java platform**, Membrane provides comprehensive legacy integration, including **XML-to-JSON transformation**, **WSDL-to-OpenAPI conversion**, **SOAP-to-REST integration**, and message validation against **OpenAPI** and **WSDL**.
 
-At the same time, Membrane supports modern API technologies with native **OpenAPI validation**, **OAuth 2** authentication, and support for GraphQL.
-
+At the same time, Membrane supports modern API technologies such as **OAuth 2**, **JWT**, and **GraphQL**. It is **easy to set up** and deploy, whether in a containerized environment or as a Java application in a virtual machine.
 
 ## Try Membrane in 5 Minutes
 
@@ -54,7 +53,23 @@ Requests to http://localhost:2000 are now forwarded to https://apibin.io.
 
 **Next:** Browse the configuration samples below or explore the [tutorials](distribution/tutorials).
 
-Here are some configuration snippets showing how easy it is to set up an API Gateway with Membrane.
+## Powerful Plugins and Easy Configuration
+
+
+```yaml
+api:
+  port: 2000
+  openapi:
+    - location: api.yml
+      validateRequests: true
+  flow:
+    - rateLimiter:
+        requestLimit: 1000
+        requestLimitDuration: PT1H
+  target:
+    url: https://backend.example.com
+```
+
 
 **Forwarding Requests from Port 2000 to a Backend:**
 

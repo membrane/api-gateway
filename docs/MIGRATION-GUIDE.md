@@ -1,3 +1,29 @@
+# Migrate to Membrane 7.6
+
+This guide explains how to migrate existing Membrane installations to **Membrane 7.6**.
+
+## Interceptors: rejected requests now use `ABORT`, not `RETURN`
+
+Built-in protection interceptors (e.g. `jsonRpcProtection`, `mcpProtection`) that reject a request
+now return `Outcome.ABORT` instead of `Outcome.RETURN` from `handleRequest()`. With `ABORT`, the
+already-invoked interceptors see `handleAbort()` instead of `handleResponse()`, and a rejected
+request can no longer produce an unfiltered backend response — closing a gap where a failed
+interceptor allowed the backend response to reach the client unfiltered.
+
+If you have custom Java interceptors that branch on `Outcome.RETURN`/`Outcome.ABORT`, or that
+inspect the exchange in `handleResponse()` expecting to see requests rejected by these
+interceptors, update them to handle `handleAbort()` instead.
+
+## RouterCLI: `generate-jwk` now restricts the private key file to its owner
+
+`generate-jwk` now writes the private JWK file with owner-only permissions (`rw-------` on POSIX
+systems), including when an existing file is replaced with `-overwrite`. Previously the file was
+created with the process's default (often world-readable) permissions. If a script or deployment
+step depends on the private key file being group- or world-readable, adjust its permissions
+explicitly after generation instead of relying on the previous default.
+
+---
+
 # Migrate to Membrane 7.1
 
 This guide explains how to migrate existing Membrane installations to **Membrane 7.1**.
