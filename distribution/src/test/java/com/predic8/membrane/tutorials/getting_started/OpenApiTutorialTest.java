@@ -25,7 +25,7 @@ public class OpenApiTutorialTest extends AbstractGettingStartedTutorialTest{
 
     @Override
     protected String getTutorialYaml() {
-        return "80-OpenAPI.yaml";
+        return "120-OpenAPI.yaml";
     }
 
     @Test

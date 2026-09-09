@@ -34,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class HotReloadTutorialTest extends DistributionExtractingTestcase {
 
-    private static final String YAML = "05-Hot-Reload.yaml";
+    private static final String YAML = "20-Hot-Reload.yaml";
 
     protected Process2 process;
     private final BufferLogger logger = new BufferLogger();

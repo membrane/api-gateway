@@ -23,7 +23,7 @@ public class IncludeTutorialTest extends AbstractAdvancedTutorialTest {
 
     @Override
     protected String getTutorialYaml() {
-        return "95-Include.yaml";
+        return "110-Include.yaml";
     }
 
     @Test

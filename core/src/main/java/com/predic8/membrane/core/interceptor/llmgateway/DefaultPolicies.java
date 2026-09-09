@@ -33,7 +33,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
  * @description Limits what a client may ask of the model: how large the input may be, how much the model may generate,
  * and which models it may use. A request over the input limit or for a model that is not allowed is rejected with an
  * error in the format of the configured provider; the output limit is written into the request instead of rejecting it.
- * See tutorials/ai/llm-gateway/openai/10-Basic-LLM-Gateway.yaml.
+ * See tutorials/llm-gateway/openai/10-Basic-LLM-Gateway.yaml.
  * <pre>
  * policies:
  *   [ maxInputTokens: &lt;count&gt; ]

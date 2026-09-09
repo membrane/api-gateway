@@ -62,7 +62,7 @@ import static java.util.stream.Collectors.*;
  * <code>validateSecurity</code> options (or the matching <code>x-membrane-validation</code> extension in the document).
  * A request matching no document is answered with 404, a request that violates its schema with a 4xx Problem Details,
  * and an invalid response with 500. Can only be used inside an api. See the examples under examples/openapi and the
- * tutorial tutorials/getting-started/90-OpenAPI-Validation.yaml.
+ * tutorial tutorials/getting-started/130-OpenAPI-Validation.yaml.
  * @topic 5. OpenAPI
  * @yaml
  * <pre><code>

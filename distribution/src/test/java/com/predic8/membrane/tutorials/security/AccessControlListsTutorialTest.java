@@ -23,7 +23,7 @@ public class AccessControlListsTutorialTest extends AbstractSecurityTutorialTest
 
     @Override
     protected String getTutorialYaml() {
-        return "60-Access-Control-Lists.yaml";
+        return "20-Access-Control-Lists.yaml";
     }
 
     @Test

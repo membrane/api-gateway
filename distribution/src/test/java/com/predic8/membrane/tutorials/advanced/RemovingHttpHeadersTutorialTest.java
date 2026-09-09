@@ -27,7 +27,7 @@ public class RemovingHttpHeadersTutorialTest extends AbstractAdvancedTutorialTes
 
     @Override
     protected String getTutorialYaml() {
-        return "80-Removing-HTTP-Headers.yaml";
+        return "90-Removing-HTTP-Headers.yaml";
     }
 
     @Test

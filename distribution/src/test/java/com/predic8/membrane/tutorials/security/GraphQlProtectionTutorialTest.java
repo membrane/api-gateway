@@ -14,17 +14,18 @@
 
 package com.predic8.membrane.tutorials.security;
 
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Test;
 
-import static io.restassured.RestAssured.*;
-import static io.restassured.http.ContentType.*;
-import static org.hamcrest.Matchers.*;
+import static io.restassured.RestAssured.given;
+import static io.restassured.http.ContentType.JSON;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
 
 public class GraphQlProtectionTutorialTest extends AbstractSecurityTutorialTest {
 
     @Override
     protected String getTutorialYaml() {
-        return "95-GraphQL-Protection.yaml";
+        return "50-GraphQL-Protection.yaml";
     }
 
     @Test

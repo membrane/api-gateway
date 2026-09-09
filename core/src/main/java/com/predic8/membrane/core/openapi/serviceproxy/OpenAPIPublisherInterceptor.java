@@ -64,7 +64,7 @@ import static java.lang.String.valueOf;
  * <code>/api-docs/{id}</code> returns one document as YAML, rewritten so its server URLs point at the gateway, and
  * <code>/api-docs/ui/{id}</code> opens the Swagger UI for that document. An unknown id returns 404; requests to other
  * paths pass through unchanged. Can only be used inside an api. See the examples under examples/openapi and the tutorial
- * tutorials/getting-started/80-OpenAPI.yaml.
+ * tutorials/getting-started/120-OpenAPI.yaml.
  * @topic 5. OpenAPI
  * @yaml
  * <pre><code>

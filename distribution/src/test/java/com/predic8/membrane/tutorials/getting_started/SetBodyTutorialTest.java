@@ -17,13 +17,14 @@ package com.predic8.membrane.tutorials.getting_started;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.startsWith;
 
 public class SetBodyTutorialTest extends AbstractGettingStartedTutorialTest {
 
     @Override
     protected String getTutorialYaml() {
-        return "65-SetBody.yaml";
+        return "100-SetBody.yaml";
     }
 
     @Test

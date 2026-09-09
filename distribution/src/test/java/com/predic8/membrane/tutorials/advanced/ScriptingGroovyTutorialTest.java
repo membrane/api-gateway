@@ -29,7 +29,7 @@ public class ScriptingGroovyTutorialTest extends AbstractAdvancedTutorialTest {
 
     @Override
     protected String getTutorialYaml() {
-        return "70-Scripting-Groovy.yaml";
+        return "80-Scripting-Groovy.yaml";
     }
 
     @Test

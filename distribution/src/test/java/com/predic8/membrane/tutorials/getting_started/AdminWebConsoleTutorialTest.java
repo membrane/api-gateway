@@ -23,7 +23,7 @@ public class AdminWebConsoleTutorialTest extends AbstractGettingStartedTutorialT
 
     @Override
     protected String getTutorialYaml() {
-        return "45-Admin-Web-Console.yaml";
+        return "70-Admin-Web-Console.yaml";
     }
 
     @Test

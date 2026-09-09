@@ -17,7 +17,8 @@ package com.predic8.membrane.tutorials.getting_started;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.core.IsNull.notNullValue;
 
@@ -25,7 +26,7 @@ public class OpenApiValidationTutorialTest extends AbstractGettingStartedTutoria
 
     @Override
     protected String getTutorialYaml() {
-        return "90-OpenAPI-Validation.yaml";
+        return "130-OpenAPI-Validation.yaml";
     }
 
     @Test

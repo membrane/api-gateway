@@ -39,7 +39,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
  * share a single provider API key among many clients, authenticate clients and enforce per-user token limits through a
  * store, apply usage policies, and inject a system prompt; token usage is recorded when the response returns. Place it
  * in the flow of an api whose target is the provider's API. Without a store the gateway is stateless and just forwards
- * requests with the configured key and policies. See the tutorials under tutorials/ai/llm-gateway.
+ * requests with the configured key and policies. See the tutorials under tutorials/llm-gateway.
  * <pre>
  * llmGateway:
  *   [ apiKey: &lt;provider-key&gt; ]
