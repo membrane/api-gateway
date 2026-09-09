@@ -25,8 +25,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 
 import javax.xml.XMLConstants;
+import javax.xml.transform.Result;
 import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.SchemaFactory;
@@ -39,6 +42,8 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -84,6 +89,26 @@ class AbstractXMLSchemaValidatorTest {
         assertTrue(appender.contains("threw while validating"),
                 "a validator throwing must be logged even though another schema went on to match: "
                         + appender.getMessages());
+    }
+
+    @Test
+    void callbackErrorReportedBeforeAThrowIsNotLost() throws Exception {
+        var validator = new CallbackThenThrowTestValidator();
+        validator.init();
+
+        var exceptions = new ArrayList<Exception>();
+
+        assertFalse(validator.validateAgainstSchemas(() -> okSource(), exceptions),
+                "the only schema throws, so nothing can have matched");
+        assertEquals(2, exceptions.size(),
+                "both the error reported through the callback and the thrown exception must be kept: "
+                        + exceptions);
+        assertTrue(exceptions.stream().anyMatch(e -> "reported through callback".equals(e.getMessage())),
+                "the callback-reported error must not be discarded when the handler is reset: " + exceptions);
+        assertTrue(exceptions.stream().anyMatch(e -> "thrown from validate()".equals(e.getMessage())),
+                "the exception thrown by validate() must still be recorded: " + exceptions);
+        assertTrue(appender.contains("threw while validating"),
+                "a validator throwing must still be logged: " + appender.getMessages());
     }
 
     private static Source failingSource() {
@@ -135,6 +160,83 @@ class AbstractXMLSchemaValidatorTest {
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
+        }
+
+        @Override
+        protected List<Element> getSchemas() {
+            throw new UnsupportedOperationException("createValidators() is overridden for this test");
+        }
+
+        @Override
+        protected Source getMessageBody(InputStream input) {
+            throw new UnsupportedOperationException("not used by this test");
+        }
+
+        @Override
+        protected void setErrorResponse(Exchange exchange, String message) {
+            throw new UnsupportedOperationException("not used by this test");
+        }
+
+        @Override
+        protected void setErrorResponse(Exchange exchange, Flow flow, List<Exception> exceptions) {
+            throw new UnsupportedOperationException("not used by this test");
+        }
+
+        @Override
+        protected String getPreliminaryError(XOPReconstitutor xopr, Message msg) {
+            throw new UnsupportedOperationException("not used by this test");
+        }
+    }
+
+    /**
+     * Sets up a single validator whose run first reports an error through the
+     * {@link SchemaValidatorErrorHandler} callback, then throws - reproducing a validator that
+     * detects an ordinary mismatch before hitting something more serious (e.g. an unresolvable
+     * import) partway through the same run.
+     */
+    private static class CallbackThenThrowTestValidator extends AbstractXMLSchemaValidator {
+
+        CallbackThenThrowTestValidator() {
+            super(new ResolverMap(), "test-location", null);
+        }
+
+        @Override
+        public String getName() {
+            return "test-validator";
+        }
+
+        @Override
+        protected List<Validator> createValidators() {
+            var handler = new SchemaValidatorErrorHandler();
+            return List.of(new Validator() {
+                @Override
+                public void validate(Source source, javax.xml.transform.Result result) throws SAXException {
+                    handler.error(new SAXParseException("reported through callback", null));
+                    throw new SAXException("thrown from validate()");
+                }
+
+                @Override
+                public void reset() {
+                }
+
+                @Override
+                public void setErrorHandler(org.xml.sax.ErrorHandler errorHandler) {
+                }
+
+                @Override
+                public org.xml.sax.ErrorHandler getErrorHandler() {
+                    return handler;
+                }
+
+                @Override
+                public void setResourceResolver(org.w3c.dom.ls.LSResourceResolver resourceResolver) {
+                }
+
+                @Override
+                public org.w3c.dom.ls.LSResourceResolver getResourceResolver() {
+                    return null;
+                }
+            });
         }
 
         @Override

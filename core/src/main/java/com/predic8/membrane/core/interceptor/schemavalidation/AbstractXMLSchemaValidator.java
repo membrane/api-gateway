@@ -182,7 +182,9 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
                     }
                 } catch (Exception e) {
                     logValidatorFailure(e);
-                    exceptions.add(e);
+                    if (!exceptions.contains(e)) {
+                        exceptions.add(e);
+                    }
                 }
             }
         } finally {
@@ -209,7 +211,9 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
             return validateOnce(validator, source, exceptions);
         } catch (Exception e) {
             logValidatorFailure(e);
-            exceptions.add(e);
+            if (!exceptions.contains(e)) {
+                exceptions.add(e);
+            }
             return false;
         } finally {
             pool.put(validator);
@@ -240,6 +244,13 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
             }
             exceptions.addAll(handler.getExceptions());
             return false;
+        } catch (IOException | SAXException e) {
+            var reported = handler.getExceptions();
+            exceptions.addAll(reported);
+            if (!reported.contains(e)) {
+                exceptions.add(e);
+            }
+            throw e;
         } finally {
             handler.reset();
         }
