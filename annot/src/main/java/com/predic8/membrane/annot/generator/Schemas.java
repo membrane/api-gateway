@@ -13,16 +13,23 @@
    limitations under the License. */
 package com.predic8.membrane.annot.generator;
 
-import com.predic8.membrane.annot.*;
+import com.predic8.membrane.annot.ProcessingException;
 import com.predic8.membrane.annot.model.*;
-import com.predic8.membrane.annot.model.doc.*;
-import com.predic8.membrane.annot.model.doc.Doc.*;
+import com.predic8.membrane.annot.model.doc.Doc;
+import com.predic8.membrane.annot.model.doc.Doc.Entry;
 
-import javax.annotation.processing.*;
-import javax.lang.model.element.*;
-import javax.tools.*;
-import java.io.*;
-import java.util.*;
+import javax.annotation.processing.FilerException;
+import javax.annotation.processing.ProcessingEnvironment;
+import javax.lang.model.element.Element;
+import javax.tools.FileObject;
+import javax.tools.StandardLocation;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.Writer;
+import java.util.ArrayList;
+import java.util.List;
+
+import static com.predic8.membrane.annot.generator.util.FilerUtil.isAlreadyCreated;
 
 public class Schemas {
 
@@ -33,22 +40,21 @@ public class Schemas {
 	}
 
 	public void writeXSD(Model m) throws IOException {
-		try {
-			for (MainInfo main : m.getMains()) {
-				List<Element> sources = new ArrayList<>();
-				sources.add(main.getElement());
-				sources.addAll(main.getInterceptorElements());
+		for (MainInfo main : m.getMains()) {
+			List<Element> sources = new ArrayList<>();
+			sources.add(main.getElement());
+			sources.addAll(main.getInterceptorElements());
 
+			try {
 				FileObject o = processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT,
 						main.getAnnotation().outputPackage(), main.getAnnotation().outputName(), sources.toArray(new Element[0]));
                 try (BufferedWriter bw = new BufferedWriter(o.openWriter())) {
                     assembleXSD(bw, m, main);
                 }
+			} catch (FilerException e) {
+				if (!isAlreadyCreated(e))
+					throw e;
 			}
-		} catch (FilerException e) {
-			if (e.getMessage().contains("Source file already created"))
-				return;
-			throw e;
 		}
 	}
 

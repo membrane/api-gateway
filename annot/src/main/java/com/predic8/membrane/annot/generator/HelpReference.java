@@ -14,20 +14,26 @@
 package com.predic8.membrane.annot.generator;
 
 import com.predic8.membrane.annot.model.*;
-import com.predic8.membrane.annot.model.doc.*;
+import com.predic8.membrane.annot.model.doc.Doc;
 
-import javax.annotation.processing.*;
-import javax.lang.model.element.*;
+import javax.annotation.processing.ProcessingEnvironment;
+import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
 import javax.tools.FileObject;
 import javax.tools.StandardLocation;
-import javax.xml.stream.*;
-import javax.xml.transform.*;
-import javax.xml.transform.stream.*;
+import javax.xml.stream.XMLOutputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamWriter;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.stream.StreamSource;
 import java.io.*;
 import java.util.*;
 
-import static java.util.Comparator.*;
+import static java.util.Comparator.comparing;
 
 public class HelpReference {
 	private final ProcessingEnvironment processingEnv;
@@ -110,8 +116,9 @@ public class HelpReference {
 		xew.writeStartElement("namespace");
 		xew.writeAttribute("package", main.getAnnotation().outputPackage());
 		xew.writeAttribute("targetNamespace", main.getAnnotation().targetNamespace());
-		main.getIis().sort(comparing((ElementInfo o) -> o.getAnnotation().name()).thenComparing(o -> o.getElement().getQualifiedName().toString()));
-		for (ElementInfo ei : main.getIis())
+		List<ElementInfo> iis = new ArrayList<>(main.getIis());
+		iis.sort(comparing((ElementInfo o) -> o.getAnnotation().name()).thenComparing(o -> o.getElement().getQualifiedName().toString()));
+		for (ElementInfo ei : iis)
 			handle(m, main, ei);
 		xew.writeEndElement();
 	}
@@ -132,12 +139,11 @@ public class HelpReference {
 
 		handleDoc(ei);
 
-		List<AttributeInfo> ais = ei.getAis();
-		ais.sort(comparing(AttributeInfo::getXMLName));
+		List<AttributeInfo> ais = ei.getAis().stream()
+				.filter(ai -> !ai.getXMLName().equals("id"))
+				.sorted(comparing(AttributeInfo::getXMLName))
+				.toList();
 		OtherAttributesInfo oai = ei.getOai();
-
-		if (ais.size() > 0 && ais.get(0).getXMLName().equals("id"))
-			ais.remove(0);
 
 		if (ais.size() > 0 || oai != null) {
 			xew.writeStartElement("attributes");
@@ -163,8 +169,8 @@ public class HelpReference {
 	}
 
 	private String getPrimaryParentId(Model m, MainInfo mi, ElementInfo ei) {
-		// choose a random parent (TODO: choose a better one)
-		Set<ElementInfo> possibleParents = new HashSet<>();
+		// choose the first parent in model order (TODO: choose a better one)
+		Set<ElementInfo> possibleParents = new LinkedHashSet<>();
 		for (Map.Entry<TypeElement, ChildElementDeclarationInfo> e : mi.getChildElementDeclarations().entrySet())
 			if (e.getValue().getElementInfo().contains(ei)) {
 				for (ChildElementInfo usedBy : e.getValue().getUsedBy()) {
