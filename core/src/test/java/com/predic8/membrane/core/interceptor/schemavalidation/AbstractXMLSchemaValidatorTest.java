@@ -173,7 +173,7 @@ class AbstractXMLSchemaValidatorTest {
         }
 
         @Override
-        protected void setErrorResponse(Exchange exchange, String message) {
+        protected void setErrorResponse(Exchange exchange, Flow flow, String message) {
             throw new UnsupportedOperationException("not used by this test");
         }
 
@@ -250,7 +250,7 @@ class AbstractXMLSchemaValidatorTest {
         }
 
         @Override
-        protected void setErrorResponse(Exchange exchange, String message) {
+        protected void setErrorResponse(Exchange exchange, Flow flow, String message) {
             throw new UnsupportedOperationException("not used by this test");
         }
 
