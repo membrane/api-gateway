@@ -42,7 +42,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
  * the peer hostname to be resolved and is performed only when at least one configured rule uses a hostname target.</p>
  *
  * <p>See the examples under examples/security/access-control-list and the tutorial
- * tutorials/security/60-Access-Control-Lists.yaml.</p>
+ * tutorials/security/20-Access-Control-Lists.yaml.</p>
  *
  * @yaml
  * <pre><code>

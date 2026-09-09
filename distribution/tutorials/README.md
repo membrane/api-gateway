@@ -30,7 +30,7 @@ Learn how to use Membrane in more advanced scenarios. Topics include path rewrit
 Run and observe Membrane in production. 
 
 
-## [AI / MCP](ai/mcp)
+## [AI / MCP](mcp)
 
 Expose Membrane as an MCP server for AI clients, inspect recent API traffic, restrict MCP tools, and protect the endpoint with an API key.
 
@@ -43,8 +43,8 @@ forward encrypted connections to the backend untouched and route them by their T
 
 ## [Security](security)
 
-Protect an API against common threats. Covers Basic Authentication, access control lists,
-JSON/XML/GraphQL/SQL-injection protection, and a full OAuth2 setup.
+Protect an API against common threats. Covers Basic Authentication, access control lists, and
+JSON/XML/GraphQL/SQL-injection protection.
 
 
 ## [JWT](jwt)
@@ -58,9 +58,30 @@ Secure an API with API keys. Covers simple key validation, scope-based access co
 key requirements from an OpenAPI document, and storing keys in PostgreSQL or MongoDB.
 
 
+## [OAuth2](oauth2)
+
+Run a complete OAuth2 setup with Membrane acting as both the authorization server and the
+token-validating gateway. Covers client credentials, password flow, automatic token renewal,
+and a distributed issuer/validator setup.
+
+
 ## [SOAP Web Services (Legacy)](soap)
 
 If you need to integrate legacy SOAP Web Services, this tutorial provides examples and practical guidance.
+
+
+## [WSDL to OpenAPI](wsdl-to-openapi)
+
+Expose a legacy SOAP/WSDL web service as a REST/OpenAPI API. Covers automatic and manual
+per-operation conversion, how XSD constructs map to OpenAPI, and how SOAP faults become problem
+details documents.
+
+
+## [SOAP/REST Converter](soap-rest-converter)
+
+Transform requests and responses between REST/JSON and SOAP/XML by hand, with templates and
+Groovy scripts. Covers converting REST calls to SOAP and back, JSON/SOAP array conversion in
+both directions, and SOAP fault handling.
 
 
 ## [Web Services Security](web-services-security)

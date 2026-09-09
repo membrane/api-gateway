@@ -4,12 +4,12 @@ The 'Getting Started' tutorial takes about 15 minutes. After completing it, you 
 
 Each step of the tutorial is explained directly in the corresponding file, which also serves as the configuration file for Membrane.
 
-Start by opening the 00-First-API.yaml file in an editor, then continue with the next numbered file. If possible, use an editor with YAML support such as Visual Studio Code, Atom or IntelliJ IDEA.
+Start by opening the 10-First-API.yaml file in an editor, then continue with the next numbered file. If possible, use an editor with YAML support such as Visual Studio Code, Atom or IntelliJ IDEA.
 
 
 ## Next Steps
 
-Open [00-First-API.yaml](00-First-API.yaml) and follow the instructions there.
+Open [10-First-API.yaml](10-First-API.yaml) and follow the instructions there.
 
 
 

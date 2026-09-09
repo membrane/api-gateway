@@ -16,11 +16,7 @@ package com.predic8.membrane.core.interceptor.llmgateway.provider.openai;
 
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.llmgateway.provider.BaseLLMRequest;
-import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMErrorCreator;
-import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMProvider;
-import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMRequest;
-import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMResponse;
+import com.predic8.membrane.core.interceptor.llmgateway.provider.*;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.chatcompletions.ChatCompletionsErrorCreator;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.chatcompletions.ChatCompletionsResponse;
 
@@ -33,7 +29,7 @@ import static com.predic8.membrane.core.interceptor.llmgateway.provider.LLMProvi
  * @description Talks to the OpenAI API. Both the Responses API under <code>/v1/responses</code> and the Chat Completions API under
  * <code>/v1/chat/completions</code> are supported, and the endpoint the client calls decides which one is used. The
  * api key travels as a Bearer token in the <code>Authorization</code> header. See
- * tutorials/ai/llm-gateway/openai/10-Basic-LLM-Gateway.yaml.
+ * tutorials/llm-gateway/openai/10-Basic-LLM-Gateway.yaml.
  * @yaml
  * <pre><code>
  * api:

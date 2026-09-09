@@ -44,7 +44,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
  * Due to Membrane's streaming architecture, request headers may already have been forwarded to
  * the backend when the limit is exceeded mid-body; in that case the backend connection is closed.
  * </p>
- * <p>See tutorials/security/100-SQL-Injection-Protection.yaml.</p>
+ * <p>See tutorials/security/60-SQL-Injection-Protection.yaml.</p>
  * @topic 3. Security and Validation
  * @yaml <pre><code>
  * api:

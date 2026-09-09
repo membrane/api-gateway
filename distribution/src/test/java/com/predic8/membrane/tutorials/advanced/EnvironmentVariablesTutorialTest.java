@@ -25,7 +25,7 @@ public class EnvironmentVariablesTutorialTest extends AbstractAdvancedTutorialTe
 
     @Override
     protected String getTutorialYaml() {
-        return "90-Environment-Variables.yaml";
+        return "100-Environment-Variables.yaml";
     }
 
     @Override

@@ -147,7 +147,7 @@ Notes:
   an existing one — it just returns the hyphenated dir name from `getTutorialDir()`.
 - **Sub-categories** (e.g. `security/jwt`) need their own abstract base returning the full relative
   path (`security/jwt`), not just the top-level category abstract. Model on `AbstractAiTutorialTest`
-  / `AbstractGoogleTutorialTest` in `distribution/src/test/java/com/predic8/membrane/tutorials/ai/`.
+  / `AbstractGoogleTutorialTest` in `distribution/src/test/java/com/predic8/membrane/tutorials/`.
 - **`.md` steps** have no integration test — skip this step for them.
 
 ## Step 5 — Verify

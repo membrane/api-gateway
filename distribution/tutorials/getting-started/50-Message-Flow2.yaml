@@ -1,0 +1,48 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.5.0.json
+#
+# Tutorial: Message Flow 2
+#
+# A plugin is executed at a specific point in the request or response flow.
+# By placing a plugin in either the request or the response flow, you get
+# fine-grained control over its execution.
+#
+# 1.) Start Membrane:
+#     ./membrane.sh -c 50-Message-Flow2.yaml
+#
+# 2.) Call the API:
+#     curl localhost:2000
+#
+#     Observe in which order the numbers 1 to 6 appear in the console.
+#
+# 3.) Admin Console
+#     Open in the browser: http://localhost:9000
+#
+#     Click on the API 'Message Flow Logging' and look at the diagram
+
+api:
+  port: 2000
+  flow:
+    - request: # executed during request flow from top to bottom
+        - log:
+            message: Step 1
+        - log:
+            message: Step 2 Path ${path}
+        - log:
+            message: Step 3
+    - response: # executed during response flow from bottom to top
+        - log:
+            message: Step 6
+        - log:
+            message: Step 5 Status ${statusCode}
+        - log:
+            message: Step 4
+  target:
+    url: https://api.predic8.de
+
+---
+# Admin Console
+api:
+  port: 9000
+  flow:
+    - adminConsole:
+        readOnly: true

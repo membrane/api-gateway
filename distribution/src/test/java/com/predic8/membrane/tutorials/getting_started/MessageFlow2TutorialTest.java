@@ -27,7 +27,7 @@ public class MessageFlow2TutorialTest extends AbstractGettingStartedTutorialTest
 
     @Override
     protected String getTutorialYaml() {
-        return "30-Message-Flow2.yaml";
+        return "50-Message-Flow2.yaml";
     }
 
     @Test

@@ -366,7 +366,7 @@ api:
 
 Instead of handing your provider API key to every developer, keep it in the gateway and issue per-user keys. Membrane authenticates the user, enforces a per-user token budget, restricts the allowed models, and forwards the request using the shared provider key.
 
-See the [key sharing tutorial](distribution/tutorials/ai/llm-gateway/claude/20-Sharing-API-Keys.yaml).
+See the [key sharing tutorial](distribution/tutorials/llm-gateway/claude/20-Sharing-API-Keys.yaml).
 
 ### MCP Protection
 
@@ -387,7 +387,7 @@ api:
     url: http://my-mcp-server
 ```
 
-See the [MCP protection tutorial](distribution/tutorials/ai/mcp/20-MCP-Protection.yaml).
+See the [MCP protection tutorial](distribution/tutorials/mcp/20-MCP-Protection.yaml).
 
 # 5. Routing
 Membrane provides versatile routing with a fallthrough mechanism that applies only the first matching API rule, ensuring precise and efficient routing based on path, HTTP method, hostname, and many other criteria.

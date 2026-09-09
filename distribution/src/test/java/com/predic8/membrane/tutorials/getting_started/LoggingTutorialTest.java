@@ -27,7 +27,7 @@ public class LoggingTutorialTest extends AbstractGettingStartedTutorialTest {
 
     @Override
     protected String getTutorialYaml() {
-        return "10-Logging.yaml";
+        return "30-Logging.yaml";
     }
 
     @Test

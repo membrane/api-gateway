@@ -24,4 +24,4 @@ Start with [10-JWT-Requesting-Token.md](10-JWT-Requesting-Token.md), then run
 [20-JWT-Signing.yaml](20-JWT-Signing.yaml).
 
 For a full OAuth2 setup — an authorization server and a token-validating gateway — see the
-[OAuth2 tutorial](../security#oauth2-tutorial).
+[OAuth2 tutorial](../oauth2).

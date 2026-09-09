@@ -23,7 +23,7 @@ public class BasicAuthenticationTutorialTest extends AbstractSecurityTutorialTes
 
     @Override
     protected String getTutorialYaml() {
-        return "30-Basic-Authentication.yaml";
+        return "10-Basic-Authentication.yaml";
     }
 
     @Test

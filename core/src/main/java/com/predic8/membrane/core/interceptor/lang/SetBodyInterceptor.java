@@ -14,26 +14,30 @@
 
 package com.predic8.membrane.core.interceptor.lang;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.lang.*;
-import com.predic8.membrane.core.util.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.lang.ExchangeExpression;
+import com.predic8.membrane.core.lang.TemplateExchangeExpression;
+import com.predic8.membrane.core.util.ExceptionUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.util.text.SerializationFunction.TEXT_SERIALIZATION;
-import static com.predic8.membrane.core.util.text.SerializationUtil.*;
-import static java.nio.charset.StandardCharsets.*;
+import static com.predic8.membrane.core.util.text.SerializationUtil.getSerialization;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * @description Sets the body of the current HTTP message to a static string or a computed expression.
  * SpEL template expressions are supported by default; Groovy, JsonPath, and XPath are also available.
  * For conditional output or loops, use the template interceptor instead.
- * See tutorials/getting-started/65-SetBody.yaml.
+ * See tutorials/getting-started/100-SetBody.yaml.
  * @topic 2. Enterprise Integration Patterns
  * @yaml
  * <pre><code>

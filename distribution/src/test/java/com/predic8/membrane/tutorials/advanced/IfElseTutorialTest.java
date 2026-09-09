@@ -22,7 +22,7 @@ public class IfElseTutorialTest extends AbstractAdvancedTutorialTest {
 
     @Override
     protected String getTutorialYaml() {
-        return "61-If-Else.yaml";
+        return "60-If-Else.yaml";
     }
 
     @Test
