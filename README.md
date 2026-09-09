@@ -23,15 +23,21 @@ Run Membrane as a container or as a [Java application](https://www.membrane-api.
 docker run --rm -it -p 2000:2000 predic8/membrane
 ```
 
-Open http://localhost:2000 in your browser or call it from the command line:
+Open these URLs in your browser:
+
+- http://localhost:2000
+- http://localhost:2000/api-docs
+
+Or call an API from the command line:
 
 ```bash
-curl http://localhost:2000
+curl http://localhost:2000/shop/v2/products
 ```
+
 
 ### Proxy Your First API
 
-Create an `apis.yaml` file:
+Create a file `apis.yaml` with the following content:
 
 ```yaml
 api:
@@ -42,6 +48,8 @@ api:
 
 Start Membrane with your configuration:
 
+**Linux/macOS:**
+
 ```bash
 docker run --rm \
   -p 2000:2000 \
@@ -49,59 +57,58 @@ docker run --rm \
   predic8/membrane
 ```
 
+**Windows PowerShell:**
+
+```pwsh
+docker run --rm `
+    -p 2000:2000 ` 
+    -v "${PWD}/apis.yaml:/opt/membrane/conf/apis.yaml" ` 
+    predic8/membrane
+```
+
 Requests to http://localhost:2000 are now forwarded to https://apibin.io.
 
 **Next:** Browse the configuration samples below or explore the [tutorials](distribution/tutorials).
 
-## Powerful Plugins and Easy Configuration
+## Configuration Samples
 
+Here are a few examples showing how much you can do with a small amount of configuration.
 
-```yaml
-api:
-  port: 2000
-  openapi:
-    - location: api.yml
-      validateRequests: true
-  flow:
-    - rateLimiter:
-        requestLimit: 1000
-        requestLimitDuration: PT1H
-  target:
-    url: https://backend.example.com
-```
+**URL Rewriting, JSON Protection, and Rate Limiting:**
 
-
-**Forwarding Requests from Port 2000 to a Backend:**
-
-```yaml
-api:
-  port: 2000
-  target:
-    url: https://api.predic8.de
-```
-
-**Path Rewriting with a URI Template:**
 ```yaml
 api:
   port: 2000
   path:
     uri: /fruit/{id}
+  flow:
+    - jsonProtection:
+        maxDepth: 5
+    - rateLimiter:
+        requestLimit: 1000
+        requestLimitDuration: PT1H
   target:
     url: https://api.predic8.de/shop/v2/products/${pathParam.id}
 ```
 
-**Deploy OpenAPI and enable Request Validation:**
+
+**Deploy an API from OpenAPI with Message Validation**:
+
+Membrane can deploy APIs directly from an OpenAPI document and validate requests and responses against the schemas defined in it:
+
 ```yaml
 api:
   port: 2000
   openapi:
     - location: "fruitshop-api.yml"
       validateRequests: true
+      validateResponses: true
 ```
+Membrane also provides a Swagger UI for the deployed API at `/api-docs`.
 
-**Issue JSON Web Tokens:**
+**Simple Token Server for JWT**
 
-To issue a JWT for a user, create an API that acts as a simple token endpoint:
+Build a simple JWT token server from standard Membrane components in fewer than 20 lines. The server authenticates clients with Basic Authentication and issues a signed JWT containing the username.
 
 ```yaml
 api:
@@ -125,24 +132,6 @@ api:
     - return:
         status: 200
 ```
-
-Authenticated requests to '/token' return a signed JWT in which the username from Basic Authentication is used as the sub claim.
-
-```text
-{
-  "typ": "JWT",
-  "alg": "RS256"
-}
-.
-{
-  "sub": "alice",
-  "iat": 1765222877,
-  "exp": 1765223177
-}
-.hTL_0-AS8IZgiDUJ6Kg...
-```
-
-This example is intentionally minimal, but it highlights the basic building blocks: authenticate the caller, shape the token payload, and sign the result. From there, you can extend it with additional claims, custom logic, or stricter policies to implement tailored API security flows.
 
 ## API Gateway eBook
 
