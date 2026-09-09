@@ -24,7 +24,6 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptor.FailureHandler;
 import com.predic8.membrane.core.resolver.Resolver;
 import com.predic8.membrane.core.util.ConfigurationException;
 import org.jetbrains.annotations.NotNull;
@@ -90,13 +89,6 @@ public class JSONSchemaValidator extends AbstractMessageValidator {
             errors = getErrors(report);
         } catch (JsonParseException e) {
             errors = List.of(e.getOriginalMessage() != null ? e.getOriginalMessage() : e.getMessage());
-        }
-
-        // What is that for? A property "error" is accessed in the elasticsearchstore?
-        if (failureHandler == FailureHandler.VOID) {
-            exc.setProperty("error", getErrorString(msg, errors));
-            invalid.incrementAndGet();
-            return ABORT;
         }
 
         if (failureHandler != null) {

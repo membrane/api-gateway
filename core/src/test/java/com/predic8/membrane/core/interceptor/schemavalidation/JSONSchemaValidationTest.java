@@ -170,6 +170,29 @@ public class JSONSchemaValidationTest {
         assertEquals(2, jn.get("errors").size());
     }
 
+    /**
+     * No caller ever constructs a validator with the {@code FailureHandler.VOID} singleton itself
+     * (by reference) - a validator built with any other {@link ValidatorInterceptor.FailureHandler},
+     * VOID included, must go through the ordinary failure-reporting path: invoke the handler and
+     * still build a ProblemDetails response, rather than silently setting an exchange property and
+     * nothing else.
+     */
+    @Test
+    void voidFailureHandlerStillReportsFailure() throws Exception {
+        var validator = new JSONSchemaValidator(new StaticStringResolver(), """
+                {
+                    "required": [ "p1" ]
+                }
+                """, ValidatorInterceptor.FailureHandler.VOID);
+        validator.init();
+
+        Exchange exc = post("/foo").body("{}").buildExchange();
+        assertEquals(ABORT, validator.validateMessage(exc, REQUEST));
+
+        JsonNode jn = om.readTree(exc.getResponse().getBodyAsStream());
+        assertEquals("JSON validation failed", jn.get("title").textValue());
+    }
+
     private static @NotNull JSONSchemaValidator getValidator(String schema) {
         var validator = new JSONSchemaValidator(new StaticStringResolver(), schema, null);
         validator.init();
