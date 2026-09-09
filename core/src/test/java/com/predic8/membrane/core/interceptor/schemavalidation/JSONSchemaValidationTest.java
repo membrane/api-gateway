@@ -13,17 +13,18 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.resolver.*;
-import org.jetbrains.annotations.*;
-import org.junit.jupiter.api.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.resolver.StaticStringResolver;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.Test;
 
-import static com.predic8.membrane.core.http.Request.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
+import static com.predic8.membrane.core.http.Request.post;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class JSONSchemaValidationTest {
 
@@ -77,6 +78,28 @@ public class JSONSchemaValidationTest {
 
         assertEquals("JSON validation failed", jn.get("title").textValue());
         assertEquals("https://membrane-api.io/problems/user/validation",jn.get("type").textValue());
+        assertEquals(1, jn.get("errors").size());
+    }
+
+    @Test
+    void malformedJson() throws Exception {
+        var validator = getValidator("""
+                {
+                    "required": [ "p1" ],
+                    "properties": {
+                        "p1": {
+                            "format": "date"
+                        }
+                    }
+                }
+                """);
+        Exchange exc = post("/foo").body("{ invalid").buildExchange();
+        assertEquals(ABORT, validator.validateMessage(exc, REQUEST));
+
+        JsonNode jn = om.readTree(exc.getResponse().getBodyAsStream());
+
+        assertEquals("JSON validation failed", jn.get("title").textValue());
+        assertEquals("https://membrane-api.io/problems/user/validation", jn.get("type").textValue());
         assertEquals(1, jn.get("errors").size());
     }
 
@@ -145,6 +168,29 @@ public class JSONSchemaValidationTest {
         assertEquals("JSON validation failed", jn.get("title").textValue());
         assertEquals("https://membrane-api.io/problems/user/validation",jn.get("type").textValue());
         assertEquals(2, jn.get("errors").size());
+    }
+
+    /**
+     * No caller ever constructs a validator with the {@code FailureHandler.VOID} singleton itself
+     * (by reference) - a validator built with any other {@link ValidatorInterceptor.FailureHandler},
+     * VOID included, must go through the ordinary failure-reporting path: invoke the handler and
+     * still build a ProblemDetails response, rather than silently setting an exchange property and
+     * nothing else.
+     */
+    @Test
+    void voidFailureHandlerStillReportsFailure() throws Exception {
+        var validator = new JSONSchemaValidator(new StaticStringResolver(), """
+                {
+                    "required": [ "p1" ]
+                }
+                """, ValidatorInterceptor.FailureHandler.VOID);
+        validator.init();
+
+        Exchange exc = post("/foo").body("{}").buildExchange();
+        assertEquals(ABORT, validator.validateMessage(exc, REQUEST));
+
+        JsonNode jn = om.readTree(exc.getResponse().getBodyAsStream());
+        assertEquals("JSON validation failed", jn.get("title").textValue());
     }
 
     private static @NotNull JSONSchemaValidator getValidator(String schema) {

@@ -34,6 +34,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.events.EndElement;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
 import javax.xml.transform.Source;
@@ -233,23 +234,46 @@ public class SOAPUtil {
         try {
             var parser = HardenedStaxInputFactory.inputFactory().createXMLEventReader(xopr.reconstituteIfNecessary(msg));
             int depth = -1; // -1 outside detail, 0 on the detail element, n when n levels inside it
+            // Only consulted while `depth` is still -1 (detail not found yet): -1 before/after
+            // Fault, 0 at Fault's direct children (where detail is looked for), n>0 when nested
+            // deeper inside one of Fault's other children. Scopes the match to a direct child of
+            // Fault, so a same-named element elsewhere in the message (e.g. in soap:Header) isn't
+            // mistaken for the fault's own detail.
+            int faultDepth = -1;
             while (parser.hasNext()) {
                 var event = parser.nextEvent();
                 if (event.isStartElement()) {
                     var name = ((StartElement) event).getName();
                     if (depth < 0) {
-                        if (isDetailElement(name, version))
+                        if (faultDepth == 0 && isDetailElement(name, version)) {
                             depth = 0;
+                            continue;
+                        }
+                        if (faultDepth < 0) {
+                            if (isFaultElement(name))
+                                faultDepth = 0;
+                        } else {
+                            faultDepth++;
+                        }
                         continue;
                     }
                     if (++depth == 1)
                         entries.add(name);
                     continue;
                 }
-                if (event.isEndElement() && depth >= 0) {
-                    if (depth == 0)
-                        return entries; // detail closed
-                    depth--;
+                if (event.isEndElement()) {
+                    if (depth >= 0) {
+                        if (depth == 0)
+                            return entries; // detail closed
+                        depth--;
+                        continue;
+                    }
+                    var name = ((EndElement) event).getName();
+                    if (faultDepth == 0 && isFaultElement(name)) {
+                        faultDepth = -1; // left Fault without finding a detail element
+                    } else if (faultDepth > 0) {
+                        faultDepth--;
+                    }
                 }
             }
         } catch (Exception e) {
@@ -264,6 +288,11 @@ public class SOAPUtil {
             case SOAP12 -> "Detail".equals(name.getLocalPart()) && SOAP12_NS.equals(name.getNamespaceURI());
             default -> false;
         };
+    }
+
+    private static boolean isFaultElement(QName name) {
+        return "Fault".equals(name.getLocalPart())
+                && (SOAP11_NS.equals(name.getNamespaceURI()) || SOAP12_NS.equals(name.getNamespaceURI()));
     }
 
     /**

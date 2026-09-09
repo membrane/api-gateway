@@ -21,27 +21,30 @@ import com.networknt.schema.*;
 import com.networknt.schema.Error;
 import com.networknt.schema.path.NodePath;
 import com.networknt.schema.resource.SchemaLoader;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.Interceptor.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.schemavalidation.*;
-import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptor.*;
-import com.predic8.membrane.core.resolver.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.Interceptor.Flow;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.schemavalidation.AbstractMessageValidator;
+import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptor.FailureHandler;
+import com.predic8.membrane.core.resolver.Resolver;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.*;
+import java.io.UncheckedIOException;
+import java.nio.charset.Charset;
 import java.util.*;
-import java.util.concurrent.atomic.*;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static com.fasterxml.jackson.core.StreamReadFeature.STRICT_DUPLICATE_DETECTION;
 import static com.networknt.schema.InputFormat.JSON;
 import static com.networknt.schema.InputFormat.YAML;
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static java.nio.charset.StandardCharsets.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
 
@@ -119,20 +122,31 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
 
     public Outcome validateMessage(Exchange exc, Flow flow, Charset ignored) throws Exception {
 
-        List<Error> assertions = inputFormat == YAML ?
-                handleMultipleYAMLDocuments(exc, flow) :
-                schema.validate(exc.getMessage(flow).getBodyAsStringDecoded(), inputFormat);
+        List<Error> assertions;
+        try {
+            assertions = inputFormat == YAML ?
+                    handleMultipleYAMLDocuments(exc, flow) :
+                    schema.validate(exc.getMessage(flow).getBodyAsStringDecoded(), inputFormat);
+        } catch (UncheckedIOException | IOException e) {
+            String detail = e instanceof UncheckedIOException uioe && uioe.getCause() != null ?
+                    uioe.getCause().getMessage() : e.getMessage();
+            log.debug("Could not parse {} body: {}", inputFormat, detail, e);
+            return reportFailure(exc, flow, List.of(Map.of("message", "Could not parse " + inputFormat + " body: " + detail)));
+        }
 
         if (assertions.isEmpty()) {
             valid.incrementAndGet();
             return CONTINUE;
         }
-        invalid.incrementAndGet();
-
 
         log.debug("Validation failed: {}", assertions);
 
-        List<Map<String, Object>> mapForProblemDetails = getMapForProblemDetails(assertions);
+        return reportFailure(exc, flow, getMapForProblemDetails(assertions));
+    }
+
+    private Outcome reportFailure(Exchange exc, Flow flow, List<Map<String, Object>> mapForProblemDetails) {
+        invalid.incrementAndGet();
+
         failureHandler.handleFailure(mapForProblemDetails.toString(), exc);
 
         user(false, getName())
