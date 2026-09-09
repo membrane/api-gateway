@@ -17,9 +17,9 @@ package com.predic8.membrane.examples;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.networknt.schema.Error;
-import com.networknt.schema.InputFormat;
 import com.networknt.schema.Schema;
 import com.networknt.schema.SchemaLocation;
 import com.networknt.schema.SchemaRegistry;
@@ -73,12 +73,24 @@ class ApisYamlSchemaValidationTest {
         try (InputStream in = ApisYamlSchemaValidationTest.class.getResourceAsStream(SCHEMA_CLASSPATH)) {
             if (in == null)
                 throw new IOException("Schema not found on classpath: " + SCHEMA_CLASSPATH);
+            JsonNode schemaNode = new ObjectMapper().readTree(in);
+            stripLegacyIdKeyword(schemaNode);
             SchemaRegistry registry = SchemaRegistry.withDefaultDialect(DRAFT_2020_12);
-            SCHEMA = registry.getSchema(SchemaLocation.of(SCHEMA_CLASSPATH), in, InputFormat.JSON);
+            SCHEMA = registry.getSchema(SchemaLocation.of(SCHEMA_CLASSPATH), schemaNode);
             SCHEMA.initializeValidators();
         } catch (Exception e) {
             throw new RuntimeException("Failed to load JSON schema", e);
         }
+    }
+
+    private static void stripLegacyIdKeyword(JsonNode schemaNode) {
+        JsonNode defs = schemaNode.get("$defs");
+        if (defs == null)
+            return;
+        defs.forEach(def -> {
+            if (def instanceof ObjectNode obj)
+                obj.remove("id");
+        });
     }
 
     static Stream<String> getApisYamlConfigs() {
@@ -113,12 +125,6 @@ class ApisYamlSchemaValidationTest {
         }
     }
 
-    /**
-     * Demonstrates the exact dev mistake this class exists to catch: {@code setHeader}'s
-     * {@code value} attribute is declared {@code "type": "string"} in the schema, but the YAML
-     * parser coerces a bare (unquoted) number into a {@code String} without complaint, so the
-     * config parses and runs fine while silently violating the schema.
-     */
     @Test
     void bareNumberForStringAttributeParsesButViolatesSchema() throws Exception {
         JsonNode apiDoc = YAML.readTree("""
