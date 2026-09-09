@@ -157,6 +157,13 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
      * Takes a {@link Supplier} rather than a single {@link Source} because a {@code Source}
      * backed by a stream is consumed after one {@code validate()} call - a fresh one is needed
      * for each of the (possibly several) embedded schemas tried.
+     * <p>
+     * A schema whose validator run itself throws (as opposed to reporting validation errors
+     * through its {@link SchemaValidatorErrorHandler}) is logged immediately - unlike an ordinary
+     * validation mismatch, it signals something more serious (e.g. a schema failing to resolve an
+     * import) that must not go unnoticed just because another embedded schema goes on to match -
+     * and the remaining schemas are still tried; one broken schema must not stop a message from
+     * matching another one of the (possibly several) alternatives.
      *
      * @param exceptions collects one exception per schema the source failed against
      * @return {@code true} if the source matched at least one embedded schema
@@ -169,12 +176,15 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
         try {
             // the message must be valid for one schema embedded into WSDL
             for (var validator : vals) {
-                if (validateOnce(validator, source.get(), exceptions)) {
-                    return true;
+                try {
+                    if (validateOnce(validator, source.get(), exceptions)) {
+                        return true;
+                    }
+                } catch (Exception e) {
+                    logValidatorFailure(e);
+                    exceptions.add(e);
                 }
             }
-        } catch (Exception e) {
-            exceptions.add(e);
         } finally {
             validators.put(vals);
         }
@@ -198,11 +208,23 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
         try {
             return validateOnce(validator, source, exceptions);
         } catch (Exception e) {
+            logValidatorFailure(e);
             exceptions.add(e);
             return false;
         } finally {
             pool.put(validator);
         }
+    }
+
+    /**
+     * A validator throwing (rather than reporting an ordinary validation error through its
+     * {@link SchemaValidatorErrorHandler}) signals something more serious than "the message
+     * doesn't match this schema" - e.g. a schema failing to resolve an import. Unlike ordinary
+     * validation errors, which are only logged once none of the (possibly several) embedded
+     * schemas matched, this must be logged unconditionally so it isn't lost.
+     */
+    private void logValidatorFailure(Exception e) {
+        log.warn("Validator for {} threw while validating: {}", location, e.getMessage(), e);
     }
 
     /**
