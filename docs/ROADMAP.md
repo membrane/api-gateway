@@ -57,6 +57,8 @@ PRIO 3:
     - Backpressure: `maxThreadPoolSize` is a documented attribute and `HttpEndpointListener` handles `RejectedExecutionException` by closing the socket. A per-task executor never rejects — replace with a `Semaphore` or rely on `concurrentConnectionLimitPerIp`. Dropping the attribute is a breaking change.
     - Thread naming: keep "router" thread names via `Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("router-", 0).factory())`.
     - Graceful shutdown / hot deploy: `shutdown()` + `awaitTermination()` in `closeAll()` works unchanged with a per-task executor.
+- `RuleManager.addProxy`/`addProxyAndOpenPortIfNew`: drop the unused `RuleDefinitionSource source` parameter
+  - Story: `source` (`SPRING` vs `MANUAL`) is threaded through both methods and ~10 call sites across `main` and `test` but never read anywhere in `RuleManager` — no field stores it, no branch or log line depends on it. Either wire it into an actual behavior/log distinction, or remove the parameter and the `RuleDefinitionSource` enum from all callers in one cleanup pass.
 - `xmlProtection` and `jsonProtection`: inspect responses, not only requests
   - Story: both plugins pin themselves to the request flow in their constructors (`setAppliedFlow(REQUEST_FLOW)`), so a backend answering with a malicious or oversized document is never inspected. A gateway that shields the backend from the client should be able to shield the client from the backend as well.
   - This matters most for an outgoing proxy: there the party to protect is the internal client, and the untrusted document arrives in the *response* from some server on the internet.
