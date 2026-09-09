@@ -13,24 +13,33 @@
    limitations under the License. */
 package com.predic8.membrane.core.resolver;
 
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.schemavalidation.*;
-import com.predic8.membrane.core.interceptor.server.*;
-import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.util.*;
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.params.*;
-import org.junit.jupiter.params.provider.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.schemavalidation.XMLSchemaValidator;
+import com.predic8.membrane.core.interceptor.server.WebServerInterceptor;
+import com.predic8.membrane.core.proxies.ServiceProxy;
+import com.predic8.membrane.core.proxies.ServiceProxyKey;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.router.TestRouter;
+import com.predic8.membrane.core.util.OSUtil;
+import com.predic8.membrane.core.util.URIFactory;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
-import java.io.*;
-import java.security.*;
-import java.util.*;
+import java.io.File;
+import java.io.IOException;
+import java.security.InvalidParameterException;
+import java.util.ArrayList;
+import java.util.List;
 
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.test.TestUtil.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.test.TestUtil.getPathFromResource;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ResolverTest {
 
@@ -126,7 +135,8 @@ public class ResolverTest {
             return;
 
         try {
-            new XMLSchemaValidator(resolverMap, xsdLocation, null);
+            XMLSchemaValidator validator = new XMLSchemaValidator(resolverMap, xsdLocation, null);
+            validator.init();
         } catch (Exception e) {
             throw new RuntimeException("xsdLocation = " + xsdLocation, e);
         }

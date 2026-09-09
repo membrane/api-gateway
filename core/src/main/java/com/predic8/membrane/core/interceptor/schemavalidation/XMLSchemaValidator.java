@@ -48,7 +48,6 @@ public class XMLSchemaValidator extends AbstractXMLSchemaValidator {
 
     public XMLSchemaValidator(ResolverMap resourceResolver, String location, ValidatorInterceptor.FailureHandler failureHandler) {
         super(resourceResolver, location, failureHandler);
-        init(); // Better to call in Interceptor?
     }
 
     @Override
@@ -105,7 +104,7 @@ public class XMLSchemaValidator extends AbstractXMLSchemaValidator {
     }
 
     @Override
-    protected void setErrorResponse(Exchange exchange, String message) {
+    protected void setErrorResponse(Exchange exchange, Interceptor.Flow flow, String message) {
         user(false,getName())
                 .title(getErrorTitle())
                 .addSubType("validation")
