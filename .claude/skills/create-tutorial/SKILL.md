@@ -27,8 +27,9 @@ with no other docs open, so the single most important thing is that the YAML tea
 ## Step 1 — Choose the category and filename
 
 Categories live under `distribution/tutorials/`: `getting-started`, `json`, `xml`, `advanced`,
-`transformation`, `security`, `soap`, `orchestration`, `misc`, `ai/...`. Pick the one that fits;
-only create a new category if nothing fits (see "New category" at the end).
+`transformation`, `security`, `jwt`, `api-keys`, `oauth2`, `soap`, `soap-rest-converter`,
+`wsdl-to-openapi`, `orchestration`, `sse`, `mcp`, `llm-gateway`. Pick the one that fits; only
+create a new category if nothing fits (see "New category" at the end).
 
 Files are numbered `NN-Title.yaml` (e.g. `10-PathParameters.yaml`). The number sets reading
 order. List the directory and pick the next gap — convention leaves room between numbers
@@ -145,9 +146,10 @@ Notes:
   "you should see Customer: 7", assert exactly that. The test is the executable form of the lesson.
 - If you created a brand-new category, also create its `Abstract<Category>TutorialTest` modeled on
   an existing one — it just returns the hyphenated dir name from `getTutorialDir()`.
-- **Sub-categories** (e.g. `security/jwt`) need their own abstract base returning the full relative
-  path (`security/jwt`), not just the top-level category abstract. Model on `AbstractAiTutorialTest`
-  / `AbstractGoogleTutorialTest` in `distribution/src/test/java/com/predic8/membrane/tutorials/ai/`.
+- **Sub-categories** (e.g. `llm-gateway/google`) need their own abstract base returning the full
+  relative path (`llm-gateway/google`), not just the top-level category abstract. Model on
+  `AbstractAiTutorialTest` / `AbstractGoogleTutorialTest` in
+  `distribution/src/test/java/com/predic8/membrane/tutorials/`.
 - **`.md` steps** have no integration test — skip this step for them.
 
 ## Step 5 — Verify

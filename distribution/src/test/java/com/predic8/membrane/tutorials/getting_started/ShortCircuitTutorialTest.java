@@ -23,7 +23,7 @@ public class ShortCircuitTutorialTest extends AbstractGettingStartedTutorialTest
 
     @Override
     protected String getTutorialYaml() {
-        return "50-Short-Circuit.yaml";
+        return "80-Short-Circuit.yaml";
     }
 
     @Test

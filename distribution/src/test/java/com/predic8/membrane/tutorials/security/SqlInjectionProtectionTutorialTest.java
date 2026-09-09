@@ -24,7 +24,7 @@ public class SqlInjectionProtectionTutorialTest extends AbstractSecurityTutorial
 
     @Override
     protected String getTutorialYaml() {
-        return "100-SQL-Injection-Protection.yaml";
+        return "60-SQL-Injection-Protection.yaml";
     }
 
     @Test

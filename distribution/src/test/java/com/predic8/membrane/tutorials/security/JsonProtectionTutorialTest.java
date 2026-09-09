@@ -14,17 +14,17 @@
 
 package com.predic8.membrane.tutorials.security;
 
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Test;
 
-import static io.restassured.RestAssured.*;
-import static io.restassured.http.ContentType.*;
-import static org.hamcrest.Matchers.*;
+import static io.restassured.RestAssured.given;
+import static io.restassured.http.ContentType.JSON;
+import static org.hamcrest.Matchers.equalTo;
 
 public class JsonProtectionTutorialTest extends AbstractSecurityTutorialTest {
 
     @Override
     protected String getTutorialYaml() {
-        return "80-JSON-Protection.yaml";
+        return "30-JSON-Protection.yaml";
     }
 
     @Test

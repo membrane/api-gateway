@@ -46,7 +46,7 @@ import static com.predic8.membrane.core.security.HttpSecurityScheme.BASIC;
  * security scheme carrying the username is attached to the exchange; the <code>Authorization</code> header is removed
  * before the request is forwarded. A missing or invalid credential is rejected with 401 and a
  * <code>WWW-Authenticate</code> challenge. See the examples under
- * examples/security/basic-auth and the tutorial tutorials/security/30-Basic-Authentication.yaml.
+ * examples/security/basic-auth and the tutorial tutorials/security/10-Basic-Authentication.yaml.
  * <pre>
  * basicAuthentication:
  *   [ removeAuthorizationHeader: true | false ]   # default: true

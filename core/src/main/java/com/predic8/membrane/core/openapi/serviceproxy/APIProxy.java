@@ -54,8 +54,8 @@ import static com.predic8.membrane.core.util.text.StringUtil.maskNonPrintableCha
  * <code>servers</code> field determines where the API is reachable. Requests are forwarded to
  * the explicit <code>target</code> when one is configured; otherwise Membrane forwards to the
  * host from the OpenAPI <code>servers</code> field. See
- * <code>tutorials/getting-started/80-OpenAPI.yaml</code> and
- * <code>tutorials/getting-started/90-OpenAPI-Validation.yaml</code>.</p>
+ * <code>tutorials/getting-started/120-OpenAPI.yaml</code> and
+ * <code>tutorials/getting-started/130-OpenAPI-Validation.yaml</code>.</p>
  *
  * @topic 1. Proxies and Flow
  * @yaml <pre><code>

@@ -1,6 +1,6 @@
 ![Membrane Logo](distribution/media/membrane-logo-m-text.svg)
 
-# API Gateway
+# Modern API Gateway with legacy Support for (XML, SOAP, WSDL) 
 
 [![GitHub release](https://img.shields.io/github/v/release/membrane/api-gateway?display_name=tag)](https://github.com/membrane/api-gateway/releases/latest)
 [![Build](https://img.shields.io/github/actions/workflow/status/membrane/api-gateway/build-and-test.yml?branch=master)](https://github.com/membrane/api-gateway/actions)
@@ -9,9 +9,50 @@
 
 <img src="docs/images/api-gateway-demo.gif" alt="Animated demo of Membrane API Gateway" width="800">
 
-Lightweight **API Gateway** for **REST**, **GraphQL** and **legacy Web Services**, easily extended with powerful plugins.
+Built on the **Java platform**, Membrane provides comprehensive integration with enterprise and legacy technologies such as **XML**, **SOAP**, and **WSDL**, while delivering high performance and scalability.
 
-Built on the **Java platform**, Membrane integrates seamlessly with enterprise technologies while delivering high performance and scalability. In load tests on a MacBook Pro, Membrane processed more than 40,000 requests per second, supported up to 20,000 concurrent clients, and hosted over 100,000 APIs on a single instance.
+At the same time, Membrane supports modern API technologies with native **OpenAPI validation**, **OAuth 2** authentication, and support for GraphQL.
+
+
+## Try Membrane in 5 Minutes
+
+### Start the API Gateway
+
+Run Membrane as a container or as a [Java application](https://www.membrane-api.io/getting-started.html):
+
+```bash
+docker run --rm -it -p 2000:2000 predic8/membrane
+```
+
+Open http://localhost:2000 in your browser or call it from the command line:
+
+```bash
+curl http://localhost:2000
+```
+
+### Proxy Your First API
+
+Create an `apis.yaml` file:
+
+```yaml
+api:
+  port: 2000
+  target:
+    url: https://apibin.io
+```
+
+Start Membrane with your configuration:
+
+```bash
+docker run --rm \
+  -p 2000:2000 \
+  -v "$(pwd)/apis.yaml:/opt/membrane/conf/apis.yaml" \
+  predic8/membrane
+```
+
+Requests to http://localhost:2000 are now forwarded to https://apibin.io.
+
+**Next:** Browse the configuration samples below or explore the [tutorials](distribution/tutorials).
 
 Here are some configuration snippets showing how easy it is to set up an API Gateway with Membrane.
 
@@ -366,7 +407,7 @@ api:
 
 Instead of handing your provider API key to every developer, keep it in the gateway and issue per-user keys. Membrane authenticates the user, enforces a per-user token budget, restricts the allowed models, and forwards the request using the shared provider key.
 
-See the [key sharing tutorial](distribution/tutorials/ai/llm-gateway/claude/20-Sharing-API-Keys.yaml).
+See the [key sharing tutorial](distribution/tutorials/llm-gateway/claude/20-Sharing-API-Keys.yaml).
 
 ### MCP Protection
 
@@ -387,7 +428,7 @@ api:
     url: http://my-mcp-server
 ```
 
-See the [MCP protection tutorial](distribution/tutorials/ai/mcp/20-MCP-Protection.yaml).
+See the [MCP protection tutorial](distribution/tutorials/mcp/20-MCP-Protection.yaml).
 
 # 5. Routing
 Membrane provides versatile routing with a fallthrough mechanism that applies only the first matching API rule, ensuring precise and efficient routing based on path, HTTP method, hostname, and many other criteria.

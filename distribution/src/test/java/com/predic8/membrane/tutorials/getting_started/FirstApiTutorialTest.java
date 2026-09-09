@@ -23,7 +23,7 @@ public class FirstApiTutorialTest extends AbstractGettingStartedTutorialTest {
 
     @Override
     protected String getTutorialYaml() {
-        return "00-First-API.yaml";
+        return "10-First-API.yaml";
     }
 
     @Test

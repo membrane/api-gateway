@@ -22,7 +22,7 @@ public class ChooseTutorialTest extends AbstractAdvancedTutorialTest {
 
     @Override
     protected String getTutorialYaml() {
-        return "65-Choose.yaml";
+        return "70-Choose.yaml";
     }
 
 

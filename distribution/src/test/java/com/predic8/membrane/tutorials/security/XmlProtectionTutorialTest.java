@@ -26,7 +26,7 @@ public class XmlProtectionTutorialTest extends AbstractSecurityTutorialTest {
 
     @Override
     protected String getTutorialYaml() {
-        return "90-XML-Protection.yaml";
+        return "40-XML-Protection.yaml";
     }
 
     @Test

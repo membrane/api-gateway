@@ -23,7 +23,7 @@ public class TemplateTutorialTest extends AbstractGettingStartedTutorialTest{
 
     @Override
     protected String getTutorialYaml() {
-        return "70-Template.yaml";
+        return "110-Template.yaml";
     }
 
     @Test

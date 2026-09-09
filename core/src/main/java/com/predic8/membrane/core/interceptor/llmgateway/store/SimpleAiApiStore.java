@@ -37,7 +37,7 @@ import static java.time.Instant.now;
  * users configured inline and their usage kept in memory. A request whose key is unknown is rejected; a user who has
  * spent the tokens of the current period is rejected until the period resets. Usage counts are lost on restart, so
  * this fits a small, fixed set of clients rather than a large or changing one. See
- * tutorials/ai/llm-gateway/openai/20-Sharing-API-Keys.yaml.
+ * tutorials/llm-gateway/openai/20-Sharing-API-Keys.yaml.
  * <pre>
  * simpleStore:
  *   users:

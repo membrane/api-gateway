@@ -29,7 +29,7 @@ import static com.predic8.membrane.core.interceptor.llmgateway.provider.LLMProvi
 /**
  * @description (Experimental) Talks to the Google Gemini API, where the model is named in the path rather than in the request body,
  * as in <code>/v1beta/models/gemini-2.5-pro:generateContent</code>. The api key travels in the
- * <code>x-goog-api-key</code> header. See tutorials/ai/llm-gateway/google/10-Basic-LLM-Gateway.yaml.
+ * <code>x-goog-api-key</code> header. See tutorials/llm-gateway/google/10-Basic-LLM-Gateway.yaml.
  * @yaml
  * <pre><code>
  * api:

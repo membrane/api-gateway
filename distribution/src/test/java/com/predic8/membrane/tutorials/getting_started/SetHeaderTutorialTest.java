@@ -23,7 +23,7 @@ public class SetHeaderTutorialTest extends AbstractGettingStartedTutorialTest{
 
     @Override
     protected String getTutorialYaml() {
-        return "60-SetHeader.yaml";
+        return "90-SetHeader.yaml";
     }
 
     @Test

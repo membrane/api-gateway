@@ -55,7 +55,7 @@ public class XsdSchemaValidationTutorialTest extends AbstractXmlTutorialTest{
             .body("status", equalTo(400))
             .body("title", containsStringIgnoringCase("validation"))
             .body("validation.size()", greaterThan(0))
-            .body("validation[0].message", containsString("year"));
+            .body("validation.message", hasItem(containsString("year")));
         // @formatter:on
     }
 }

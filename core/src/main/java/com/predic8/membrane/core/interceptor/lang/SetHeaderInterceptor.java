@@ -23,7 +23,7 @@ import static com.predic8.membrane.core.util.text.SerializationFunction.HEADERVA
 /**
  * @description Sets an HTTP header field on the current message to a constant string or a computed value.
  * SpEL template expressions are supported by default; Groovy, JsonPath, and XPath are also available.
- * See tutorials/getting-started/60-SetHeader.yaml.
+ * See tutorials/getting-started/90-SetHeader.yaml.
  * @topic 2. Enterprise Integration Patterns
  * @yaml
  * <pre><code>

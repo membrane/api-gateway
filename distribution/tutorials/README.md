@@ -30,9 +30,21 @@ Learn how to use Membrane in more advanced scenarios. Topics include path rewrit
 Run and observe Membrane in production. 
 
 
-## [AI / MCP](ai/mcp)
+## [Server-Sent Events](sse)
+
+Proxy a Server-Sent Events (SSE) stream and watch it in a browser-based debugger.
+
+
+## [AI / MCP](mcp)
 
 Expose Membrane as an MCP server for AI clients, inspect recent API traffic, restrict MCP tools, and protect the endpoint with an API key.
+
+
+## [LLM Gateway](llm-gateway)
+
+Put Membrane in front of an LLM provider's chat API (OpenAI, Claude, or Gemini). Share one
+provider key among many clients, enforce token and model policies, and issue per-user API keys
+with their own token quotas.
 
 
 ## [SSL/TLS](ssl-tls)
@@ -43,12 +55,45 @@ forward encrypted connections to the backend untouched and route them by their T
 
 ## [Security](security)
 
-Issue signed JSON Web Tokens and protect an API by validating them. Covers the OAuth2 client-credentials flow, Bearer tokens, and signature/expiry/audience checks.
+Protect an API against common threats. Covers Basic Authentication, access control lists, and
+JSON/XML/GraphQL/SQL-injection protection.
+
+
+## [JWT](jwt)
+
+Issue signed JSON Web Tokens and protect an API by validating them. Covers Bearer tokens and signature/expiry/audience checks.
+
+
+## [API Keys](api-keys)
+
+Secure an API with API keys. Covers simple key validation, scope-based access control, deriving
+key requirements from an OpenAPI document, and storing keys in PostgreSQL or MongoDB.
+
+
+## [OAuth2](oauth2)
+
+Run a complete OAuth2 setup with Membrane acting as both the authorization server and the
+token-validating gateway. Covers client credentials, password flow, automatic token renewal,
+and a distributed issuer/validator setup.
 
 
 ## [SOAP Web Services (Legacy)](soap)
 
 If you need to integrate legacy SOAP Web Services, this tutorial provides examples and practical guidance.
+
+
+## [WSDL to OpenAPI](wsdl-to-openapi)
+
+Expose a legacy SOAP/WSDL web service as a REST/OpenAPI API. Covers automatic and manual
+per-operation conversion, how XSD constructs map to OpenAPI, and how SOAP faults become problem
+details documents.
+
+
+## [SOAP/REST Converter](soap-rest-converter)
+
+Transform requests and responses between REST/JSON and SOAP/XML by hand, with templates and
+Groovy scripts. Covers converting REST calls to SOAP and back, JSON/SOAP array conversion in
+both directions, and SOAP fault handling.
 
 
 ## [Web Services Security](web-services-security)
