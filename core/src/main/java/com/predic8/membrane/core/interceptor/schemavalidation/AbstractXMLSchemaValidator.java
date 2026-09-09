@@ -165,7 +165,7 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
      * and the remaining schemas are still tried; one broken schema must not stop a message from
      * matching another one of the (possibly several) alternatives.
      *
-     * @param exceptions collects one exception per schema the source failed against
+     * @param exceptions collects the errors reported for each schema the source failed against
      * @return {@code true} if the source matched at least one embedded schema
      * @throws InterruptedException if interrupted while waiting for a validator from the pool.
      *                             Validation failures are collected in {@code exceptions} instead

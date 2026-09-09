@@ -43,7 +43,7 @@ public class SchemaValidatorErrorHandler implements ErrorHandler {
 	}
 
 	public List<Exception> getExceptions() {
-		return exceptions;
+		return List.copyOf(exceptions);
 	}
 
 	public boolean noErrors() {
