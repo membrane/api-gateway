@@ -40,6 +40,13 @@ Proxy a Server-Sent Events (SSE) stream and watch it in a browser-based debugger
 Expose Membrane as an MCP server for AI clients, inspect recent API traffic, restrict MCP tools, and protect the endpoint with an API key.
 
 
+## [LLM Gateway](llm-gateway)
+
+Put Membrane in front of an LLM provider's chat API (OpenAI, Claude, or Gemini). Share one
+provider key among many clients, enforce token and model policies, and issue per-user API keys
+with their own token quotas.
+
+
 ## [SSL/TLS](ssl-tls)
 
 Terminate TLS with your own certificate, share one TLS configuration between several APIs, or
