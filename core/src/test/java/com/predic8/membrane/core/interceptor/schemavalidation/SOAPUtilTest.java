@@ -288,6 +288,32 @@ public class SOAPUtilTest {
                         """), SOAP11));
     }
 
+    /**
+     * {@code detail} is unqualified precisely because SOAP 1.1 leaves it namespace-less, so a
+     * same-named element elsewhere in the message (e.g. in {@code soap:Header}) must not be
+     * mistaken for the fault's own {@code detail} — only a direct child of {@code Fault} counts.
+     */
+    @Test
+    void faultDetailEntriesIgnoresDetailOutsideFault() {
+        assertEquals(List.of(new QName(TB_NS, "notFound")),
+                extractFaultDetailElements(new XOPReconstitutor(), getMessageFromString("""
+                        <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                          <s11:Header>
+                            <detail>unrelated header content</detail>
+                          </s11:Header>
+                          <s11:Body>
+                            <s11:Fault>
+                              <faultcode>Server</faultcode>
+                              <faultstring>Not found</faultstring>
+                              <detail>
+                                <ns1:notFound xmlns:ns1="http://thomas-bayer.com/blz/"/>
+                              </detail>
+                            </s11:Fault>
+                          </s11:Body>
+                        </s11:Envelope>
+                        """), SOAP11));
+    }
+
     @Test
     void faultDetailEntriesSoap12() {
         assertEquals(List.of(new QName(MEMBRANE_NS, "hint")),
