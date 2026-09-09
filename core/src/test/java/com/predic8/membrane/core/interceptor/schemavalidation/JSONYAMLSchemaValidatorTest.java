@@ -14,14 +14,16 @@
 
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.schemavalidation.json.*;
-import com.predic8.membrane.core.resolver.*;
-import com.predic8.membrane.core.util.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.schemavalidation.json.JSONYAMLSchemaValidator;
+import com.predic8.membrane.core.resolver.ClasspathSchemaResolver;
+import com.predic8.membrane.core.util.ConfigurationException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -73,5 +75,16 @@ class JSONYAMLSchemaValidatorTest {
                 }
                 """).buildExchange();
         validator.validateMessage( exc, REQUEST);
+    }
+
+    @Test
+    void malformedJson() throws Exception {
+        Exchange exc = get("/foo").body("""
+                {
+                    "name":
+                """).buildExchange();
+        assertEquals(ABORT, validator.validateMessage(exc, REQUEST));
+        assertEquals(1, validator.getInvalid());
+        assertEquals(0, validator.getValid());
     }
 }

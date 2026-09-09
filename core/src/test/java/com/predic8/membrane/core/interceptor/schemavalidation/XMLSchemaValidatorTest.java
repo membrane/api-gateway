@@ -48,6 +48,7 @@ class XMLSchemaValidatorTest {
     void setUp() {
         validator = new XMLSchemaValidator(new ResolverMap(), "src/test/resources/validation/order.xsd",
                 (message, exc) -> log.info("Validation failure: {}", message));
+        validator.init();
     }
 
     @Test

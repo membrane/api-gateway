@@ -50,7 +50,7 @@ import static com.predic8.membrane.core.interceptor.authentication.SecurityUtils
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.YES;
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.isOpenAPIMisplacedError;
 import static com.predic8.membrane.core.proxies.ApiInfo.logInfosAboutStartedProxies;
-import static com.predic8.membrane.core.proxies.RuleManager.RuleDefinitionSource.MANUAL;
+import static com.predic8.membrane.core.proxies.RuleManager.RuleDefinitionSource.SPRING;
 import static com.predic8.membrane.core.router.YamlRouterBootstrap.loadIntoRouter;
 import static com.predic8.membrane.core.util.ExceptionUtil.concatMessageAndCauseMessages;
 import static com.predic8.membrane.core.util.OSUtil.fixBackslashes;
@@ -256,7 +256,7 @@ public class RouterCLI {
 
     static Router initRouterByOpenApiSpec(MembraneCommandLine commandLine) throws Exception {
         var router = new DefaultRouter();
-        router.getRuleManager().addProxy(getApiProxy(commandLine), MANUAL);
+        router.getRuleManager().addProxy(getApiProxy(commandLine), SPRING);
         router.start();
         logInfosAboutStartedProxies(router.getRuleManager());
         logStartupMessage();

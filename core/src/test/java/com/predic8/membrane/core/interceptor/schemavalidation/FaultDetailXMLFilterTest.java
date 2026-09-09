@@ -127,6 +127,33 @@ class FaultDetailXMLFilterTest {
         assertFalse(out.contains("boom"), out);
     }
 
+    /**
+     * {@code detail} is unqualified precisely because SOAP 1.1 leaves it namespace-less, so a
+     * same-named element elsewhere in the message (e.g. in {@code soap:Header}) must not be
+     * mistaken for the fault's own {@code detail} — only a direct child of {@code Fault} counts.
+     */
+    @Test
+    void ignoresDetailElementOutsideFault() throws Exception {
+        String out = filterFaultDetail(SOAP11, """
+                <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                  <s11:Header>
+                    <detail>unrelated header content</detail>
+                  </s11:Header>
+                  <s11:Body>
+                    <s11:Fault>
+                      <faultcode>Server</faultcode>
+                      <faultstring>City not found</faultstring>
+                      <detail><p:err xmlns:p="http://example.com/svc">boom</p:err></detail>
+                    </s11:Fault>
+                  </s11:Body>
+                </s11:Envelope>
+                """);
+
+        assertTrue(out.contains("err"), out);
+        assertTrue(out.contains("boom"), out);
+        assertFalse(out.contains("unrelated header content"), out);
+    }
+
     private static String filterFaultDetail(SoapVersion version, String soap) throws Exception {
         TransformerFactory tf = TransformerFactory.newInstance();
         tf.setFeature(javax.xml.XMLConstants.FEATURE_SECURE_PROCESSING, true);

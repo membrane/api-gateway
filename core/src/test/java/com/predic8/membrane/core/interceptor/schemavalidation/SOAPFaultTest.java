@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
+import static com.predic8.membrane.annot.Constants.SoapVersion.SOAP11;
 import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
 import static com.predic8.membrane.core.http.Response.ok;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
@@ -75,7 +76,7 @@ public class SOAPFaultTest {
 
 	private Exchange createFaultExchange() {
 		Exchange exc = new Exchange(null);
-		exc.setResponse(SOAPUtil.createSOAPFaultResponse(Server,"secret", Map.of("detail","error")));
+		exc.setResponse(SOAPUtil.createSOAPFaultResponse(Server,"secret", Map.of("detail","error"), SOAP11));
 		return exc;
 	}
 
