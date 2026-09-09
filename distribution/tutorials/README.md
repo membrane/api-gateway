@@ -30,6 +30,11 @@ Learn how to use Membrane in more advanced scenarios. Topics include path rewrit
 Run and observe Membrane in production. 
 
 
+## [Server-Sent Events](sse)
+
+Proxy a Server-Sent Events (SSE) stream and watch it in a browser-based debugger.
+
+
 ## [AI / MCP](mcp)
 
 Expose Membrane as an MCP server for AI clients, inspect recent API traffic, restrict MCP tools, and protect the endpoint with an API key.

@@ -12,7 +12,7 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.tutorials.misc;
+package com.predic8.membrane.tutorials.sse;
 
 import com.predic8.membrane.examples.util.WaitableConsoleEvent;
 import org.junit.jupiter.api.Test;
@@ -42,11 +42,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * </ul>
  *
  */
-public class ServerSentEventsTutorialTest extends AbstractMiscTutorialTest {
+public class ServerSentEventsTutorialTest extends AbstractSseTutorialTest {
 
     @Override
     protected String getTutorialYaml() {
-        return "Server-Sent-Events.yaml";
+        return "10-Server-Sent-Events.yaml";
     }
 
     /**

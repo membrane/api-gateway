@@ -12,15 +12,15 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.tutorials.misc;
+package com.predic8.membrane.tutorials.sse;
 
 import com.predic8.membrane.tutorials.AbstractMembraneTutorialTest;
 
-public abstract class AbstractMiscTutorialTest extends AbstractMembraneTutorialTest {
+public abstract class AbstractSseTutorialTest extends AbstractMembraneTutorialTest {
 
     @Override
     protected String getTutorialDir() {
-        return "misc";
+        return "sse";
     }
 
 }
