@@ -14,7 +14,6 @@
 
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
-import com.networknt.schema.InputFormat;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.schemavalidation.json.JSONYAMLSchemaValidator;
 import com.predic8.membrane.core.resolver.ClasspathSchemaResolver;
@@ -25,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import static com.networknt.schema.InputFormat.YAML;
 import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.schemavalidation.json.JSONYAMLSchemaValidator.SCHEMA_VERSION_2020_12;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -95,5 +95,18 @@ class JSONYAMLSchemaValidatorYAMLTest {
                 """).buildExchange();
         validator.validateMessage( exc, REQUEST);
         assertEquals(1, validator.getValid());
+    }
+
+    @Test
+    void malformedYaml() throws Exception {
+        // A duplicate key is not a schema violation but a YAML *parse* error, since this
+        // validator's YAMLFactory has STRICT_DUPLICATE_DETECTION enabled.
+        Exchange exc = get("/foo").body("""
+                "name": "Robert"
+                "name": "Eve"
+                """).buildExchange();
+        assertEquals(ABORT, validator.validateMessage(exc, REQUEST));
+        assertEquals(1, validator.getInvalid());
+        assertEquals(0, validator.getValid());
     }
 }

@@ -62,6 +62,13 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
     private static final Logger log = LoggerFactory.getLogger(WSDLValidator.class.getName());
 
     /**
+     * Exchange property key {@link #validateMessage} caches the current {@link SOAPAnalysisResult}
+     * under, so {@link #soapVersionOf} can report the rejected message's SOAP version without
+     * parsing it again.
+     */
+    private static final String SOAP_ANALYSIS_PROPERTY = "wsdlValidator.soapAnalysis";
+
+    /**
      * List of toplevel soapElements that are valid for requests
      */
     private final Set<QName> requestElements;
@@ -189,6 +196,9 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
         }
 
         var result = analyseSOAPMessage(xopr, message);
+        // Cached so a rejection can report the message's SOAP version (see #soapVersionOf)
+        // without parsing the message a second time.
+        exc.setProperty(SOAP_ANALYSIS_PROPERTY, result);
 
         if (!result.isSOAP()) {
             return abort(exc, flow, "Not a valid SOAP message.");
@@ -328,13 +338,26 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
     }
 
     @Override
-    protected void setErrorResponse(Exchange exchange, String message) {
-        exchange.setResponse(createSOAPFaultResponse(Client, getErrorTitle(), Map.of("error", message)));
+    protected void setErrorResponse(Exchange exchange, Interceptor.Flow flow, String message) {
+        exchange.setResponse(createSOAPFaultResponse(Client, getErrorTitle(), Map.of("error", message), soapVersionOf(exchange)));
     }
 
     @Override
     protected void setErrorResponse(Exchange exchange, Interceptor.Flow flow, List<Exception> exceptions) {
-        exchange.setResponse(createSOAPFaultResponse(Client, getErrorTitle(), Map.of("validation", convertExceptionsToMap(exceptions))));
+        exchange.setResponse(createSOAPFaultResponse(Client, getErrorTitle(), Map.of("validation", convertExceptionsToMap(exceptions)), soapVersionOf(exchange)));
+    }
+
+    /**
+     * The SOAP version of the message being rejected, so the fault reporting the rejection is
+     * itself a well-formed fault for that version. Falls back to SOAP 1.1 when the version can't
+     * be determined - e.g. the message was rejected for not being SOAP at all.
+     * <p>
+     * Reads the {@link SOAPAnalysisResult} that {@link #validateMessage} cached on the exchange
+     * rather than re-parsing the message: every rejection is reported via {@link #abort}, which
+     * is only ever reached after {@code validateMessage} has analysed the message once already.
+     */
+    private SoapVersion soapVersionOf(Exchange exchange) {
+        return exchange.getProperty(SOAP_ANALYSIS_PROPERTY, SOAPAnalysisResult.class).version() == SOAP12 ? SOAP12 : SOAP11;
     }
 
     @Override

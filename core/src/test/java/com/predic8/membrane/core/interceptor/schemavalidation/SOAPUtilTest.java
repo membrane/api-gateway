@@ -25,6 +25,7 @@ import java.io.FileInputStream;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.predic8.membrane.annot.Constants.SOAP12_NS;
 import static com.predic8.membrane.annot.Constants.SoapVersion.SOAP11;
 import static com.predic8.membrane.annot.Constants.SoapVersion.SOAP12;
 import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
@@ -233,6 +234,23 @@ public class SOAPUtilTest {
         assertEquals("http://schemas.xmlsoap.org/soap/envelope/", fault.getNamespaceURI());
     }
 
+    /**
+     * createSOAP12Fault's Fault element must carry the SOAP 1.2 envelope namespace, matching the
+     * bundled soap12-fault.xsd - otherwise Membrane-generated faults fail their own structural
+     * validation. Also checks that FaultCode.Client/Server are translated to the SOAP 1.2
+     * Sender/Receiver vocabulary the schema's Code/Value enumeration restricts to.
+     */
+    @Test
+    void createSOAP12FaultQualifiesFaultElement() throws Exception {
+        var doc = SOAPUtil.createSOAP12Fault(SOAPUtil.FaultCode.Client, "failed", null);
+
+        var fault = doc.getElementsByTagNameNS("*", "Fault").item(0);
+        assertEquals(SOAP12_NS, fault.getNamespaceURI());
+
+        var value = doc.getElementsByTagNameNS("*", "Value").item(0);
+        assertEquals("soap:Sender", value.getTextContent());
+    }
+
     @Test
     void faultDetailEntries() {
         assertEquals(List.of(new QName(TB_NS, "notFound"), new QName(MEMBRANE_NS, "hint")),
@@ -282,6 +300,32 @@ public class SOAPUtilTest {
                                 <ns1:notFound xmlns:ns1="http://thomas-bayer.com/blz/"/>
                               </detail>
                               <faultactor>http://example.com/actor</faultactor>
+                            </s11:Fault>
+                          </s11:Body>
+                        </s11:Envelope>
+                        """), SOAP11));
+    }
+
+    /**
+     * {@code detail} is unqualified precisely because SOAP 1.1 leaves it namespace-less, so a
+     * same-named element elsewhere in the message (e.g. in {@code soap:Header}) must not be
+     * mistaken for the fault's own {@code detail} — only a direct child of {@code Fault} counts.
+     */
+    @Test
+    void faultDetailEntriesIgnoresDetailOutsideFault() {
+        assertEquals(List.of(new QName(TB_NS, "notFound")),
+                extractFaultDetailElements(new XOPReconstitutor(), getMessageFromString("""
+                        <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                          <s11:Header>
+                            <detail>unrelated header content</detail>
+                          </s11:Header>
+                          <s11:Body>
+                            <s11:Fault>
+                              <faultcode>Server</faultcode>
+                              <faultstring>Not found</faultstring>
+                              <detail>
+                                <ns1:notFound xmlns:ns1="http://thomas-bayer.com/blz/"/>
+                              </detail>
                             </s11:Fault>
                           </s11:Body>
                         </s11:Envelope>

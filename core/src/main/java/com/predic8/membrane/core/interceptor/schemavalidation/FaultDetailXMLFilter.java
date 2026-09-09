@@ -19,6 +19,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLFilterImpl;
 
+import static com.predic8.membrane.annot.Constants.SOAP11_NS;
 import static com.predic8.membrane.annot.Constants.SOAP12_NS;
 
 /**
@@ -32,6 +33,11 @@ import static com.predic8.membrane.annot.Constants.SOAP12_NS;
  * named {@code detail} (fault schemas usually leave {@code elementFormDefault} at its
  * {@code unqualified} default), which would otherwise end the payload halfway through and emit
  * an unbalanced document.
+ * <p>
+ * The match is additionally scoped to a direct child of {@code Fault}: {@code detail} is
+ * unqualified precisely because SOAP 1.1 leaves it namespace-less, so a same-named element
+ * elsewhere in the message (e.g. in {@code soap:Header}) must not be mistaken for the fault's own
+ * {@code detail}.
  */
 public class FaultDetailXMLFilter extends XMLFilterImpl {
 
@@ -42,6 +48,15 @@ public class FaultDetailXMLFilter extends XMLFilterImpl {
      * when {@code n} levels deep inside its content.
      */
     private int depth = -1;
+
+    /**
+     * Only consulted while {@link #depth} is still {@code -1} (the detail element hasn't been
+     * found yet). {@code -1} before entering {@code Fault} (or after leaving it without finding
+     * a detail element), {@code 0} while positioned at Fault's direct children (where
+     * {@code detail} is looked for), {@code n>0} while nested deeper inside one of Fault's other
+     * children.
+     */
+    private int faultDepth = -1;
 
     public FaultDetailXMLFilter(XMLReader reader, SoapVersion version) {
         super(reader);
@@ -56,11 +71,23 @@ public class FaultDetailXMLFilter extends XMLFilterImpl {
         };
     }
 
+    private static boolean isFault(String uri, String localName) {
+        return "Fault".equals(localName) && (SOAP11_NS.equals(uri) || SOAP12_NS.equals(uri));
+    }
+
     @Override
     public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
         if (depth < 0) {
-            if (isDetail(uri, localName))
+            if (faultDepth == 0 && isDetail(uri, localName)) {
                 depth = 0;
+                return;
+            }
+            if (faultDepth < 0) {
+                if (isFault(uri, localName))
+                    faultDepth = 0;
+            } else {
+                faultDepth++;
+            }
             return;
         }
         depth++;
@@ -69,8 +96,14 @@ public class FaultDetailXMLFilter extends XMLFilterImpl {
 
     @Override
     public void endElement(String uri, String localName, String qName) throws SAXException {
-        if (depth < 0)
+        if (depth < 0) {
+            if (faultDepth == 0 && isFault(uri, localName)) {
+                faultDepth = -1; // left Fault without finding a detail element
+            } else if (faultDepth > 0) {
+                faultDepth--;
+            }
             return;
+        }
         if (depth == 0) {
             depth = -1; // the detail element itself: consumed, not forwarded
             return;

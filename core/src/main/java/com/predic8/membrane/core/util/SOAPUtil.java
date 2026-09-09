@@ -29,11 +29,13 @@ import org.w3c.dom.Element;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.events.EndElement;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
 import javax.xml.transform.Source;
@@ -77,9 +79,12 @@ public class SOAPUtil {
 
     public enum FaultCode {Server, Client}
 
-    public static Response createSOAPFaultResponse(FaultCode code, String faultstring, Map<String,Object> details) {
+    public static Response createSOAPFaultResponse(FaultCode code, String faultstring, Map<String,Object> details, SoapVersion version) {
         try {
-            return ok().contentType(TEXT_XML_UTF8).body(xmlNode2String(createSOAP11Fault(code, faultstring, details))).build();
+            Element fault = version == SoapVersion.SOAP12
+                    ? createSOAP12Fault(code, faultstring, details)
+                    : createSOAP11Fault(code, faultstring, details);
+            return ok().contentType(TEXT_XML_UTF8).body(xmlNode2String(fault)).build();
         } catch (Exception e) {
             throw new RuntimeException("Should not happen", e);
         }
@@ -108,6 +113,44 @@ public class SOAPUtil {
 
         if (detail != null && !detail.isEmpty()) {
             Element detailElement = doc.createElement("detail");
+            mapToXml(doc, detailElement, detail);
+            fault.appendChild(detailElement);
+        }
+
+        return env;
+    }
+
+    public static Element createSOAP12Fault(FaultCode faultcode, String faultstring, Map<String, Object> detail) throws ParserConfigurationException {
+        Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
+
+        Element env = doc.createElementNS(SOAP12_NS, "soap:Envelope");
+        env.setAttribute("xmlns:soap", SOAP12_NS);
+        doc.appendChild(env);
+
+        Element body = doc.createElementNS(SOAP12_NS, "soap:Body");
+        env.appendChild(body);
+
+        Element fault = doc.createElementNS(SOAP12_NS, "soap:Fault");
+        body.appendChild(fault);
+
+        Element code = doc.createElementNS(SOAP12_NS, "soap:Code");
+        fault.appendChild(code);
+
+        Element value = doc.createElementNS(SOAP12_NS, "soap:Value");
+        // faultcode.name() is Client/Server; SOAP 1.2's fault-code vocabulary is Sender/Receiver.
+        value.setTextContent("soap:" + (faultcode == FaultCode.Client ? "Sender" : "Receiver"));
+        code.appendChild(value);
+
+        Element reason = doc.createElementNS(SOAP12_NS, "soap:Reason");
+        fault.appendChild(reason);
+
+        Element text = doc.createElementNS(SOAP12_NS, "soap:Text");
+        text.setAttributeNS(XMLConstants.XML_NS_URI, "xml:lang", "en");
+        text.setTextContent(faultstring);
+        reason.appendChild(text);
+
+        if (detail != null && !detail.isEmpty()) {
+            Element detailElement = doc.createElementNS(SOAP12_NS, "soap:Detail");
             mapToXml(doc, detailElement, detail);
             fault.appendChild(detailElement);
         }
@@ -233,23 +276,46 @@ public class SOAPUtil {
         try {
             var parser = HardenedStaxInputFactory.inputFactory().createXMLEventReader(xopr.reconstituteIfNecessary(msg));
             int depth = -1; // -1 outside detail, 0 on the detail element, n when n levels inside it
+            // Only consulted while `depth` is still -1 (detail not found yet): -1 before/after
+            // Fault, 0 at Fault's direct children (where detail is looked for), n>0 when nested
+            // deeper inside one of Fault's other children. Scopes the match to a direct child of
+            // Fault, so a same-named element elsewhere in the message (e.g. in soap:Header) isn't
+            // mistaken for the fault's own detail.
+            int faultDepth = -1;
             while (parser.hasNext()) {
                 var event = parser.nextEvent();
                 if (event.isStartElement()) {
                     var name = ((StartElement) event).getName();
                     if (depth < 0) {
-                        if (isDetailElement(name, version))
+                        if (faultDepth == 0 && isDetailElement(name, version)) {
                             depth = 0;
+                            continue;
+                        }
+                        if (faultDepth < 0) {
+                            if (isFaultElement(name))
+                                faultDepth = 0;
+                        } else {
+                            faultDepth++;
+                        }
                         continue;
                     }
                     if (++depth == 1)
                         entries.add(name);
                     continue;
                 }
-                if (event.isEndElement() && depth >= 0) {
-                    if (depth == 0)
-                        return entries; // detail closed
-                    depth--;
+                if (event.isEndElement()) {
+                    if (depth >= 0) {
+                        if (depth == 0)
+                            return entries; // detail closed
+                        depth--;
+                        continue;
+                    }
+                    var name = ((EndElement) event).getName();
+                    if (faultDepth == 0 && isFaultElement(name)) {
+                        faultDepth = -1; // left Fault without finding a detail element
+                    } else if (faultDepth > 0) {
+                        faultDepth--;
+                    }
                 }
             }
         } catch (Exception e) {
@@ -264,6 +330,11 @@ public class SOAPUtil {
             case SOAP12 -> "Detail".equals(name.getLocalPart()) && SOAP12_NS.equals(name.getNamespaceURI());
             default -> false;
         };
+    }
+
+    private static boolean isFaultElement(QName name) {
+        return "Fault".equals(name.getLocalPart())
+                && (SOAP11_NS.equals(name.getNamespaceURI()) || SOAP12_NS.equals(name.getNamespaceURI()));
     }
 
     /**
