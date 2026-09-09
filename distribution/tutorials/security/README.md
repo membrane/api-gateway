@@ -1,27 +1,6 @@
-# JWT Authentication Tutorial
+For issuing and validating signed JSON Web Tokens, see the [JWT tutorial](../jwt).
 
-Learn how to protect an API with JSON Web Tokens (JWT). A client exchanges its
-credentials for a short-lived, signed token and then uses that token as a Bearer
-token on each request, while the gateway validates the signature, expiry and
-audience on every call.
-
-Each step is explained directly in the configuration file, which is also the
-Membrane config you run. If possible, use an editor with YAML support such as
-Visual Studio Code or IntelliJ IDEA.
-
-The tutorials build on each other, from simple to advanced:
-
-1. [40-JWT-Requesting-Token.md](40-JWT-Requesting-Token.md) — a `curl`-only walkthrough of the
-   hosted [Membrane demo](https://www.membrane-api.io/jwt/jwt-api-authentication-authorization-tutorial.html):
-   request a token via the OAuth2 Client Credentials flow and use it to call a
-   protected API. Nothing to run locally.
-2. [41-JWT-Signing.yaml](41-JWT-Signing.yaml) — sign and validate JWTs with the
-   jwtSign interceptor, a lightweight alternative to a full OAuth2 token endpoint.
-
-## Next Steps
-
-Start with [40-JWT-Requesting-Token.md](40-JWT-Requesting-Token.md), then run
-[41-JWT-Signing.yaml](41-JWT-Signing.yaml).
+For securing an API with API keys, see the [API Key tutorial](../api-keys).
 
 # OAuth2 Tutorial
 

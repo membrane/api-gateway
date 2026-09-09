@@ -12,7 +12,7 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.tutorials.security.jwt;
+package com.predic8.membrane.tutorials.jwt;
 
 import org.junit.jupiter.api.Test;
 
@@ -20,11 +20,11 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 
-public class JwtSigningTutorialTest extends AbstractSecurityJwtTutorialTest {
+public class JwtSigningTutorialTest extends AbstractJwtTutorialTest {
 
     @Override
     protected String getTutorialYaml() {
-        return "41-JWT-Signing.yaml";
+        return "20-JWT-Signing.yaml";
     }
 
     @Test

@@ -12,18 +12,18 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.tutorials.security;
+package com.predic8.membrane.tutorials.api_keys;
 
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.containsString;
 
-public class ApiKeyAuthenticationTutorialTest extends AbstractSecurityTutorialTest {
+public class ApiKeyAuthenticationTutorialTest extends AbstractApiKeysTutorialTest {
 
     @Override
     protected String getTutorialYaml() {
-        return "100-API-Key-Simple.yaml";
+        return "10-API-Key-Simple.yaml";
     }
 
     @Test

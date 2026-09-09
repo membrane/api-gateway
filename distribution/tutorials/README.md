@@ -43,7 +43,19 @@ forward encrypted connections to the backend untouched and route them by their T
 
 ## [Security](security)
 
-Issue signed JSON Web Tokens and protect an API by validating them. Covers the OAuth2 client-credentials flow, Bearer tokens, and signature/expiry/audience checks.
+Protect an API against common threats. Covers Basic Authentication, access control lists,
+JSON/XML/GraphQL/SQL-injection protection, and a full OAuth2 setup.
+
+
+## [JWT](jwt)
+
+Issue signed JSON Web Tokens and protect an API by validating them. Covers Bearer tokens and signature/expiry/audience checks.
+
+
+## [API Keys](api-keys)
+
+Secure an API with API keys. Covers simple key validation, scope-based access control, deriving
+key requirements from an OpenAPI document, and storing keys in PostgreSQL or MongoDB.
 
 
 ## [SOAP Web Services (Legacy)](soap)

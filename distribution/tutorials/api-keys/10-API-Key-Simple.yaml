@@ -6,7 +6,7 @@
 # Keys are passed via the X-Api-Key HTTP header.
 #
 # 1.) Start Membrane:
-#     ./membrane.sh -c 100-API-Key-Simple.yaml
+#     ./membrane.sh -c 10-API-Key-Simple.yaml
 #
 # 2.) No API key → 401:
 #     curl -i localhost:2000
@@ -18,7 +18,7 @@
 #
 #     Secured API!
 #
-# Continue with 110-API-Key-RBAC.yaml
+# Continue with 20-API-Key-RBAC.yaml
 
 api:
   port: 2000

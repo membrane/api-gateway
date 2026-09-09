@@ -12,15 +12,15 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.tutorials.security.jwt;
+package com.predic8.membrane.tutorials.jwt;
 
 import com.predic8.membrane.tutorials.AbstractMembraneTutorialTest;
 
-public abstract class AbstractSecurityJwtTutorialTest extends AbstractMembraneTutorialTest {
+public abstract class AbstractJwtTutorialTest extends AbstractMembraneTutorialTest {
 
     @Override
     protected String getTutorialDir() {
-        return "security";
+        return "jwt";
     }
 
 }

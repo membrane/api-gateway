@@ -56,5 +56,5 @@ curl -v https://api.predic8.de/demo/resource -H "Authorization: Bearer eyJ0eXAiO
 
 ## Next
 
-Continue with [41-JWT-Signing.yaml](41-JWT-Signing.yaml)
+Continue with [20-JWT-Signing.yaml](20-JWT-Signing.yaml)
 where Membrane issues and validates the tokens itself.

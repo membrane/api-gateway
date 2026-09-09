@@ -12,7 +12,7 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.tutorials.security.jwt;
+package com.predic8.membrane.tutorials.jwt;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * Verifies that the hosted Membrane demo at api.predic8.de still behaves as the
- * 40-JWT-Requesting-Token.md walkthrough documents. That tutorial has no local
+ * 10-JWT-Requesting-Token.md walkthrough documents. That tutorial has no local
  * config — it drives the public demo directly — so this test needs internet, not a
  * running gateway. It exists to catch drift if the hosted demo ever changes.
  * Skipped (not failed) when api.predic8.de is unreachable, so offline runs stay green.

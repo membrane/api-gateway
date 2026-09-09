@@ -3,7 +3,7 @@
 # Tutorial: Signing and Validating JWTs
 #
 # There are two ways in Membrane to issue JWTs:
-#   - by a built-in OAuth token endpoint (as described in 51-OAuth2-Client-Credentials.yaml),
+#   - by a built-in OAuth token endpoint (as described in ../security/51-OAuth2-Client-Credentials.yaml),
 #   - using the jwtSign interceptor as described here
 #
 # The jwtSign interceptor is a flexible and simple alternative to OAuth.
@@ -14,7 +14,7 @@
 #   - Exchange a token for a different token (e.g. Basic Auth with a JWT, a JWT for a different JWT, ...)
 #
 # 1.) Start Membrane:
-#     ./membrane.sh -c 41-JWT-Signing.yaml
+#     ./membrane.sh -c 20-JWT-Signing.yaml
 #
 # 2.) Request a token with Basic Auth:
 #     curl -v localhost:2000/token -u "alice:alice-secret"

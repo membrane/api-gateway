@@ -6,7 +6,7 @@
 # Authentication is optional — callers without a key reach the public path.
 #
 # 1.) Start Membrane:
-#     ./membrane.sh -c 110-API-Key-RBAC.yaml
+#     ./membrane.sh -c 20-API-Key-RBAC.yaml
 #
 # 2.) No key → public path:
 #     curl localhost:2000
@@ -23,7 +23,7 @@
 #
 #     Admin area
 #
-# Continue with 120-API-Key-OpenAPI.yaml
+# Continue with 30-API-Key-OpenAPI.yaml
 
 api:
   port: 2000

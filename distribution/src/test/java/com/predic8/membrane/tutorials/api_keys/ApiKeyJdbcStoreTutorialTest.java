@@ -12,7 +12,7 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.tutorials.security;
+package com.predic8.membrane.tutorials.api_keys;
 
 import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.util.Process2;
@@ -29,7 +29,7 @@ import static java.io.File.separator;
 import static org.apache.commons.io.FileUtils.copyFileToDirectory;
 
 /**
- * Runs the JDBC API key store tutorial (130-API-Key-JDBC-Store.yaml) without an
+ * Runs the JDBC API key store tutorial (40-API-Key-JDBC-Store.yaml) without an
  * external database. The tutorial ships configured for PostgreSQL; before starting
  * Membrane this test rewrites the datasource to an embedded H2 database (shared with
  * the test JVM via {@code AUTO_SERVER=TRUE}) and drops the H2 driver into Membrane's
@@ -40,11 +40,11 @@ import static org.apache.commons.io.FileUtils.copyFileToDirectory;
  */
 public class ApiKeyJdbcStoreTutorialTest extends DistributionExtractingTestcase {
 
-    private static final String TUTORIAL_YAML = "130-API-Key-JDBC-Store.yaml";
+    private static final String TUTORIAL_YAML = "40-API-Key-JDBC-Store.yaml";
 
     @Override
     protected String getExampleDirName() {
-        return ".." + separator + "tutorials" + separator + "security";
+        return ".." + separator + "tutorials" + separator + "api-keys";
     }
 
     @Override

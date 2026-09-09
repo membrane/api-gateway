@@ -17,7 +17,7 @@
 #     docker run --rm --name mongodb -p 27017:27017 mongo
 #
 # 3.) Start Membrane:
-#     ./membrane.sh -c 140-MongoDB-API-Key-Store.yaml
+#     ./membrane.sh -c 50-MongoDB-API-Key-Store.yaml
 #
 # 4.) Insert test keys:
 #     docker exec mongodb mongosh --eval "
