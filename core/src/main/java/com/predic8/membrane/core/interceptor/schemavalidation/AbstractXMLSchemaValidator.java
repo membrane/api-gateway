@@ -127,7 +127,7 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
      * say, or carries an element the WSDL does not describe.
      */
     protected Outcome abort(Exchange exc, Interceptor.Flow flow, String message) {
-        setErrorResponse(exc, message);
+        setErrorResponse(exc, flow, message);
         return finishAbort(exc, flow, "message rejected: " + message, message);
     }
 
@@ -319,7 +319,7 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
 
     protected abstract Source getMessageBody(InputStream input);
 
-    protected abstract void setErrorResponse(Exchange exchange, String message);
+    protected abstract void setErrorResponse(Exchange exchange, Interceptor.Flow flow, String message);
 
     protected abstract void setErrorResponse(Exchange exchange, Interceptor.Flow flow, List<Exception> exceptions);
 

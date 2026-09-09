@@ -25,6 +25,7 @@ import java.io.FileInputStream;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.predic8.membrane.annot.Constants.SOAP12_NS;
 import static com.predic8.membrane.annot.Constants.SoapVersion.SOAP11;
 import static com.predic8.membrane.annot.Constants.SoapVersion.SOAP12;
 import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
@@ -231,6 +232,23 @@ public class SOAPUtilTest {
         var fault = SOAPUtil.createSOAP11Fault(SOAPUtil.FaultCode.Client, "failed", null)
                 .getElementsByTagNameNS("*", "Fault").item(0);
         assertEquals("http://schemas.xmlsoap.org/soap/envelope/", fault.getNamespaceURI());
+    }
+
+    /**
+     * createSOAP12Fault's Fault element must carry the SOAP 1.2 envelope namespace, matching the
+     * bundled soap12-fault.xsd - otherwise Membrane-generated faults fail their own structural
+     * validation. Also checks that FaultCode.Client/Server are translated to the SOAP 1.2
+     * Sender/Receiver vocabulary the schema's Code/Value enumeration restricts to.
+     */
+    @Test
+    void createSOAP12FaultQualifiesFaultElement() throws Exception {
+        var doc = SOAPUtil.createSOAP12Fault(SOAPUtil.FaultCode.Client, "failed", null);
+
+        var fault = doc.getElementsByTagNameNS("*", "Fault").item(0);
+        assertEquals(SOAP12_NS, fault.getNamespaceURI());
+
+        var value = doc.getElementsByTagNameNS("*", "Value").item(0);
+        assertEquals("soap:Sender", value.getTextContent());
     }
 
     @Test
