@@ -28,6 +28,7 @@ import static com.predic8.membrane.core.interceptor.soap.wsse.SignatureReference
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityFaultCode.INVALID_SECURITY;
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.WSSE_NS;
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.WSU_NS;
+import static com.predic8.membrane.core.interceptor.soap.wsse.XmlEncryptionUtil.XENC_NS;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -374,5 +375,85 @@ class WsSecurityInterceptorTest extends AbstractWsSecurityTest {
         wsSecurity.setKeyStore(signingKeyStore(ALIAS_1));
 
         assertDoesNotThrow(() -> wsSecurity.init(router));
+    }
+
+    // ---- what survives the group boundary ------------------------------------------------------
+    //
+    // An xenc:EncryptedKey is not a claim: it asserts no identity and is addressed to a named
+    // recipient. The xenc:EncryptedData it unlocks sits in the body, which this element never
+    // touches, so dropping the key while forwarding the ciphertext would produce a message nobody
+    // downstream can ever read. It is therefore kept exactly as long as such ciphertext exists.
+
+    /**
+     * A message carrying a real EncryptedKey plus its ciphertext, and a wsu:Timestamp alongside it so
+     * that a validate list has something it can legitimately check without a decrypt part.
+     */
+    private void exchangeWithEncryptedBody() throws Exception {
+        exchangeWithBody(SOAP_BODY);
+        assertEquals(CONTINUE, encrypter(TRUSTSTORE,
+                new TimestampSecurePart(), encrypt(ALIAS_1, encryptedBodyReference())).handleRequest(exchange));
+        crossTheWire();
+    }
+
+    @Test
+    void aSecureOnlyElementKeepsAnEncryptedKeyWhoseCiphertextSurvives() throws Exception {
+        exchangeWithEncryptedBody();
+
+        assertEquals(CONTINUE, securingInitialized(new TimestampSecurePart()).handleRequest(exchange));
+
+        Document doc = parseBody();
+        assertEquals(1, doc.getElementsByTagNameNS(XENC_NS, "EncryptedKey").getLength(),
+                "the key material must survive: the backend is the recipient that can use it");
+        assertEquals(1, doc.getElementsByTagNameNS(WSU_NS, "Timestamp").getLength());
+    }
+
+    /**
+     * The other path with the same hole: a validate list that consumes the header but contains no
+     * decrypt. Everything it checked is still dropped - only the key material stays.
+     */
+    @Test
+    void aValidateWithoutDecryptKeepsAnEncryptedKeyWhoseCiphertextSurvives() throws Exception {
+        exchangeWithEncryptedBody();
+
+        assertEquals(CONTINUE, verifier(TRUSTSTORE, new TimestampValidatePart()).handleRequest(exchange));
+
+        Document doc = parseBody();
+        assertEquals(1, doc.getElementsByTagNameNS(XENC_NS, "EncryptedKey").getLength());
+        assertEquals(0, doc.getElementsByTagNameNS(WSU_NS, "Timestamp").getLength(),
+                "a validated timestamp is consumed like any other checked child");
+    }
+
+    /** Once decrypt has run there is no ciphertext left, so the spent key is dropped like any other child. */
+    @Test
+    void aValidateWithDecryptRemovesTheSpentEncryptedKey() throws Exception {
+        exchangeWithEncryptedBody();
+
+        assertEquals(CONTINUE, decrypter(ALIAS_1, decrypt(encryptedBodyReference())).handleRequest(exchange));
+
+        Document doc = parseBody();
+        assertEquals(0, doc.getElementsByTagNameNS(XENC_NS, "EncryptedKey").getLength());
+        assertEquals(0, doc.getElementsByTagNameNS(WSSE_NS, "Security").getLength(),
+                "with nothing retained the header itself goes, as it always did");
+    }
+
+    /** An EncryptedKey with no ciphertext left to unlock is not retained. */
+    @Test
+    void anEncryptedKeyWithoutCiphertextIsDiscarded() throws Exception {
+        exchangeWithEncryptedBody();
+        Document doc = parseBody();
+        // Strip the ciphertext but leave the key behind.
+        Element encryptedData = firstByTag(doc, XENC_NS, "EncryptedData");
+        encryptedData.getParentNode().removeChild(encryptedData);
+        setBody(doc);
+
+        assertEquals(CONTINUE, securingInitialized(new TimestampSecurePart()).handleRequest(exchange));
+
+        assertEquals(0, parseBody().getElementsByTagNameNS(XENC_NS, "EncryptedKey").getLength());
+    }
+
+    private WsSecurityInterceptor securingInitialized(SecurePart... parts) {
+        WsSecurityInterceptor wsSecurity = securing(parts);
+        wsSecurity.init(router);
+        return wsSecurity;
     }
 }

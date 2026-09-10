@@ -15,6 +15,8 @@ WS-Security. The tutorials build on each other, from simple to advanced:
    and verify the signature on another, using a shared keypair.
 6. [60-Full-Signature-Example.yaml](60-Full-Signature-Example.yaml) — combine a timestamp, a
    UsernameToken and a signature covering all of them plus an XPath-selected element.
+7. [70-Encrypt-And-Decrypt-Body.yaml](70-Encrypt-And-Decrypt-Body.yaml) — encrypt the body with XML
+   Encryption on one API and decrypt it on another, for confidentiality rather than integrity.
 
 Start with [10-Add-UsernameToken.yaml](10-Add-UsernameToken.yaml) and follow the instructions
 in the file.

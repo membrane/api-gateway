@@ -33,6 +33,7 @@ import org.xml.sax.InputSource;
 import javax.xml.crypto.dsig.XMLSignature;
 import javax.xml.crypto.dsig.XMLSignatureFactory;
 import javax.xml.crypto.dsig.dom.DOMValidateContext;
+import java.security.PrivateKey;
 import java.security.cert.Certificate;
 import java.util.List;
 
@@ -106,6 +107,18 @@ abstract class AbstractWsSecurityTest {
 
     void setBody(Document doc) throws Exception {
         exchange.getRequest().setBodyContent(XMLUtil.xmlNode2String(doc).getBytes(UTF_8));
+    }
+
+    /**
+     * Rebuilds the exchange from the bytes the last element produced, so the next one starts from a
+     * real serialized message instead of inheriting the same in-memory {@code Document}.
+     * <p>
+     * Deliberately not {@link #setBody(Document)}: that re-serializes through
+     * {@code XMLUtil.xmlNode2String}, which indents, and reformatting a signed message invalidates
+     * the signature - which is the whole thing a sender/receiver test is trying to observe.
+     */
+    void crossTheWire() throws Exception {
+        exchangeWithBody(rawBody());
     }
 
     // ---- assembling a wsSecurity element ------------------------------------------------------
@@ -213,6 +226,69 @@ abstract class AbstractWsSecurityTest {
         return ref;
     }
 
+    // ---- assembling encrypt / decrypt ----------------------------------------------------------
+
+    static EncryptSecurePart encrypt(String recipientAlias, EncryptionReference... references) {
+        EncryptSecurePart encrypt = new EncryptSecurePart();
+        encrypt.setRecipientAlias(recipientAlias);
+        encrypt.setReferences(List.of(references));
+        return encrypt;
+    }
+
+    static DecryptValidatePart decrypt(EncryptionReference... requiredReferences) {
+        DecryptValidatePart decrypt = new DecryptValidatePart();
+        decrypt.setRequiredReferences(List.of(requiredReferences));
+        return decrypt;
+    }
+
+    static EncryptionReference encryptionReference(EncryptionReference.By by) {
+        EncryptionReference ref = new EncryptionReference();
+        ref.setBy(by);
+        return ref;
+    }
+
+    static EncryptionReference encryptionReference(EncryptionReference.By by, EncryptionReference.Type type) {
+        EncryptionReference ref = encryptionReference(by);
+        ref.setType(type);
+        return ref;
+    }
+
+    static EncryptionReference encryptedBodyReference() {
+        return encryptionReference(EncryptionReference.By.BODY);
+    }
+
+    /**
+     * A {@code wsSecurity} element encrypting for {@code recipientAlias} out of
+     * {@code truststoreLocation}, initialized.
+     */
+    WsSecurityInterceptor encrypter(String truststoreLocation, SecurePart... parts) {
+        WsSecurityInterceptor wsSecurity = securing(parts);
+        wsSecurity.setTrustStore(trustStore(truststoreLocation));
+        wsSecurity.init(router);
+        return wsSecurity;
+    }
+
+    /** A {@code wsSecurity} element decrypting with {@code alias}'s private key, initialized. */
+    WsSecurityInterceptor decrypter(String alias, ValidatePart... parts) {
+        WsSecurityInterceptor wsSecurity = validating(parts);
+        wsSecurity.setKeyStore(signingKeyStore(alias));
+        wsSecurity.init(router);
+        return wsSecurity;
+    }
+
+    /**
+     * A {@code wsSecurity} element holding both stores, which a combined sign-and-encrypt or
+     * verify-and-decrypt element needs.
+     */
+    WsSecurityInterceptor wsSecurityWithBothStores(String keyAlias, String truststoreLocation,
+                                                   List<ValidatePart> validate, List<SecurePart> secure) {
+        WsSecurityInterceptor wsSecurity = wsSecurity(validate, secure);
+        wsSecurity.setKeyStore(signingKeyStore(keyAlias));
+        wsSecurity.setTrustStore(trustStore(truststoreLocation));
+        wsSecurity.init(router);
+        return wsSecurity;
+    }
+
     // ---- assertions ---------------------------------------------------------------------------
 
     /**
@@ -256,11 +332,23 @@ abstract class AbstractWsSecurityTest {
     }
 
     Certificate certificate(String alias) throws Exception {
+        return keyStore().getCertificate(alias);
+    }
+
+    /**
+     * The private half of {@link #certificate(String)}, so an assertion can decrypt independently
+     * instead of taking the part under test's word for it.
+     */
+    PrivateKey privateKey(String alias) throws Exception {
+        return (PrivateKey) keyStore().getKey(alias, KEYSTORE_PASSWORD.toCharArray());
+    }
+
+    private java.security.KeyStore keyStore() throws Exception {
         java.security.KeyStore ks = java.security.KeyStore.getInstance("PKCS12");
         try (var is = getClass().getResourceAsStream("/alias-keystore.p12")) {
             ks.load(is, KEYSTORE_PASSWORD.toCharArray());
         }
-        return ks.getCertificate(alias);
+        return ks;
     }
 
     void assertSignatureIsValid(Document doc) throws Exception {

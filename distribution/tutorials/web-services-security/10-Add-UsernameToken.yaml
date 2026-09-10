@@ -32,7 +32,8 @@ api:
 
 # Notice that this is a deliberately simple example.
 #
-# - Make sure to protect your credentials with encryption (TLS or XML Encryption)
+# - Make sure to protect your credentials with encryption (TLS, or XML Encryption as shown in
+#   70-Encrypt-And-Decrypt-Body.yaml)
 # - See the following tutorials on protecting the token with a signature.
 #
 # Continue with file 20-Validate-UsernameToken.yaml

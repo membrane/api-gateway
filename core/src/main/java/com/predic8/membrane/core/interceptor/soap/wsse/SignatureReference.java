@@ -28,7 +28,7 @@ import com.predic8.membrane.core.util.ConfigurationException;
 @MCElement(name = "reference", component = false, id = "wsSecurity-signature-reference")
 public class SignatureReference {
 
-    public enum By {BODY, HEADER, TIMESTAMP, USERNAME_TOKEN, XPATH, BST}
+    public enum By {BODY, HEADER, TIMESTAMP, USERNAME_TOKEN, XPATH, BST, ENCRYPTED_KEY}
 
     private By by = By.BODY;
     private boolean byExplicitlySet;
@@ -49,8 +49,10 @@ public class SignatureReference {
      * <code>wsse:BinarySecurityToken</code> created for the <code>securityTokenReference</code>
      * KeyInfo mode, so it is itself covered by the signature; only valid when
      * <code>securityTokenReference</code> is configured on the enclosing
-     * <code>signature</code>. Must be omitted when {@link #setXpath(String)} is
-     * set — in that case the reference is always resolved by XPath.
+     * <code>signature</code>. <code>ENCRYPTED_KEY</code> selects the
+     * <code>xenc:EncryptedKey</code> an <code>encrypt</code> part created, so that the key material
+     * is covered too; it has to be listed after that <code>encrypt</code>. Must be omitted when
+     * {@link #setXpath(String)} is set — in that case the reference is always resolved by XPath.
      * @default BODY
      */
     @MCAttribute

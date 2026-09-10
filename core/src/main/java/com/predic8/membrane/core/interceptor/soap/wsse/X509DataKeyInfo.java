@@ -16,11 +16,13 @@ package com.predic8.membrane.core.interceptor.soap.wsse;
 import com.predic8.membrane.annot.MCElement;
 
 /**
- * @description Embeds the signing certificate directly in <code>ds:KeyInfo</code> as a
- * <code>ds:X509Data</code>/<code>ds:X509Certificate</code>. This is the default
- * <code>signature</code> behavior when no key-info element
- * (<code>x509Data</code>, <code>securityTokenReference</code>, or <code>keyIdentifier</code>)
- * is configured.
+ * @description Embeds the certificate directly in <code>ds:KeyInfo</code> as a
+ * <code>ds:X509Data</code>/<code>ds:X509Certificate</code> — the signing certificate under
+ * <code>signature</code>, the recipient's certificate under <code>encrypt</code>. This is what
+ * <code>signature</code> does when no key-info element (<code>x509Data</code>,
+ * <code>securityTokenReference</code>, or <code>keyIdentifier</code>) is configured;
+ * <code>encrypt</code> instead defaults to a thumbprint <code>keyIdentifier</code>, since the
+ * recipient already holds the certificate and does not need it sent back.
  */
 @MCElement(name = "x509Data", component = false, id = "wsSecurity-signature-x509Data")
 public class X509DataKeyInfo {

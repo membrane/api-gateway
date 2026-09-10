@@ -1,0 +1,86 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.6.0.json
+#
+# Tutorial: WS-Security - Encrypt and Decrypt the Body
+#
+# Two APIs in one gateway: the one on port 2000 encrypts the SOAP body for a recipient and forwards
+# the request to the one on port 2001, which decrypts it before passing the request on to the SOAP
+# backend. Both sides use the same self-signed keypair (signer.p12) - once as a truststore holding
+# the recipient's certificate to encrypt for, once as a keystore holding the private key that
+# decrypts.
+#
+# The body is encrypted by content: the soap:Body element itself stays, and its children are
+# replaced by an xenc:EncryptedData. Replacing the body element itself would leave something that is
+# no longer a SOAP envelope.
+#
+# 1.) Start Membrane (starts both APIs)
+#    Linux/Mac:
+#      ./membrane.sh -c 70-Encrypt-And-Decrypt-Body.yaml
+#    Windows:
+#      membrane.cmd -c 70-Encrypt-And-Decrypt-Body.yaml
+#
+# 2.) Send a plain SOAP request to port 2000
+#    curl -d @request.xml -H "Content-Type: text/xml" http://localhost:2000
+#
+#    Expected: a getCityResponse. Port 2000 encrypted the body, port 2001 decrypted it and
+#    forwarded the request to the service. The log shows the message as it leaves port 2000:
+#    an xenc:EncryptedKey in the header, and the city name nowhere to be seen.
+#
+# 3.) Send an unencrypted request directly to port 2001
+#    curl -d @request.xml -H "Content-Type: text/xml" http://localhost:2001
+#
+#    Expected: a soap:Fault. This is what requiredReferences is for - without it, decrypt would
+#    accept a message that simply arrived in the clear, and confidentiality would be optional for
+#    anyone talking to this gateway.
+
+api:
+  name: Encryptor
+  port: 2000
+  flow:
+    - request:
+        - wsSecurity:
+            truststore:
+              location: signer.p12
+              password: secret
+            secure:
+              - encrypt:
+                  recipientAlias: signer
+                  references:
+                    - by: BODY
+        # No beautifier here - re-indenting a message that has just been encrypted changes bytes
+        # that the receiver has to get back exactly as they were.
+        - log: {}
+  target:
+    url: http://localhost:2001
+
+---
+api:
+  name: Decryptor
+  port: 2001
+  flow:
+    - request:
+        - wsSecurity:
+            keystore:
+              location: signer.p12
+              password: secret
+              keyAlias: signer
+            validate:
+              - decrypt:
+                  requiredReferences:
+                    - by: BODY
+        - beautifier: {}
+        - log:
+            message: |
+              Notice that the body is readable again and the wsse:Security header is gone.
+              ${body}
+    - sampleSoapService: {}
+
+# Notice that this is a deliberately simple example.
+#
+# - Do not use one keystore for both roles. The sender only ever needs the recipient's public
+#   certificate; it has no business holding the private key that decrypts.
+# - Encryption provides confidentiality, not authentication. Anyone can encrypt for a public
+#   certificate, so this says nothing about who sent the message. Combine it with a signature when
+#   the sender has to be identified - list signature before encrypt under secure, and decrypt
+#   before signature under validate, so the receiver undoes what the sender did in reverse.
+# - Only AES-GCM and RSA-OAEP are supported. The older AES-CBC and RSA-1.5 algorithms are refused
+#   on purpose: both let a decrypting receiver be used as an oracle to recover plaintext.

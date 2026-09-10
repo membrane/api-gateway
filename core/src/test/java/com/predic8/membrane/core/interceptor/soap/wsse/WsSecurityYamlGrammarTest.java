@@ -206,6 +206,99 @@ class WsSecurityYamlGrammarTest {
                 validation.getRequiredReferences().stream().map(SignatureReference::getBy).toList());
     }
 
+    /**
+     * {@code reference} is the third element name meaning two different things: under
+     * {@code signature} it binds to {@link SignatureReference}, under {@code encrypt} to
+     * {@link EncryptionReference}, with their own {@code By} enums. Nothing else pins the distinct
+     * {@code @MCElement} ids that make that possible.
+     */
+    @Test
+    void referenceBindsToADifferentTypeUnderSignatureAndEncrypt() throws Exception {
+        WsSecurityInterceptor wsSecurity = parse("""
+                api:
+                  port: 2000
+                  flow:
+                    - request:
+                        - wsSecurity:
+                            keystore:
+                              location: classpath:/alias-keystore.p12
+                              keyAlias: key1
+                              keyPassword: secret
+                            truststore:
+                              location: classpath:/alias-truststore.p12
+                              password: secret
+                            secure:
+                              - signature:
+                                  references:
+                                    - by: BODY
+                              - encrypt:
+                                  recipientAlias: key1
+                                  dataEncryptionAlgorithm: http://www.w3.org/2009/xmlenc11#aes128-gcm
+                                  references:
+                                    - by: BODY
+                """);
+
+        SignatureSecurePart signing =
+                assertInstanceOf(SignatureSecurePart.class, wsSecurity.getSecureParts().getFirst());
+        assertEquals(List.of(SignatureReference.By.BODY),
+                signing.getReferences().stream().map(SignatureReference::getBy).toList());
+
+        EncryptSecurePart encrypting =
+                assertInstanceOf(EncryptSecurePart.class, wsSecurity.getSecureParts().getLast());
+        assertEquals("key1", encrypting.getRecipientAlias());
+        assertEquals("http://www.w3.org/2009/xmlenc11#aes128-gcm", encrypting.getDataEncryptionAlgorithm());
+        assertEquals(List.of(EncryptionReference.By.BODY),
+                encrypting.getReferences().stream().map(EncryptionReference::getBy).toList());
+        // The derived default: a body is encrypted by content, or the envelope stops being SOAP.
+        assertEquals(EncryptionReference.Type.CONTENT, encrypting.getReferences().getFirst().getType());
+    }
+
+    /**
+     * The fixed inbound allowlist is the point of {@code decrypt}, so there must be no attribute to
+     * weaken it with.
+     */
+    @Test
+    void decryptRejectsAnAlgorithmAttribute() {
+        Exception e = assertThrows(Exception.class, () -> parse("""
+                api:
+                  port: 2000
+                  flow:
+                    - request:
+                        - wsSecurity:
+                            keystore:
+                              location: classpath:/alias-keystore.p12
+                              keyAlias: key1
+                              keyPassword: secret
+                            validate:
+                              - decrypt:
+                                  dataEncryptionAlgorithm: http://www.w3.org/2009/xmlenc11#aes128-gcm
+                """));
+        assertTrue(messageChainOf(e).contains("dataEncryptionAlgorithm"),
+                () -> "Expected the error to name the rejected attribute, but was: " + messageChainOf(e));
+    }
+
+    /** A signature-only target must not be accepted on an encrypt reference. */
+    @Test
+    void aSignatureOnlyByValueIsRejectedOnAnEncryptReference() {
+        Exception e = assertThrows(Exception.class, () -> parse("""
+                api:
+                  port: 2000
+                  flow:
+                    - request:
+                        - wsSecurity:
+                            truststore:
+                              location: classpath:/alias-truststore.p12
+                              password: secret
+                            secure:
+                              - encrypt:
+                                  recipientAlias: key1
+                                  references:
+                                    - by: BST
+                """));
+        assertTrue(messageChainOf(e).contains("BST"),
+                () -> "Expected the error to name the rejected value, but was: " + messageChainOf(e));
+    }
+
     private static String messageChainOf(Throwable t) {
         StringBuilder messages = new StringBuilder();
         for (Throwable current = t; current != null; current = current.getCause()) {
