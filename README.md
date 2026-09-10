@@ -1,6 +1,7 @@
-![Membrane Logo](distribution/media/membrane-logo-text-500.png)
 
-# Modern API Gateway with Legacy Support for XML, SOAP, and WSDL
+# Membrane API Gateway
+
+**For REST, OpenAPI, and GraphQL with Strong Legacy Support for XML, SOAP, and WSDL**
 
 [![GitHub release](https://img.shields.io/github/v/release/membrane/api-gateway?display_name=tag)](https://github.com/membrane/api-gateway/releases/latest)
 [![Build](https://img.shields.io/github/actions/workflow/status/membrane/api-gateway/build-and-test.yml?branch=master)](https://github.com/membrane/api-gateway/actions)
@@ -71,29 +72,9 @@ Requests to http://localhost:2000 are now forwarded to https://apibin.io.
 
 **Next:** Browse the configuration samples below or explore the [tutorials](distribution/tutorials).
 
-## API Gateway eBook(Free Download)
-
-Learn how API Gateways work through practical scenarios and real-world examples.
-
-<img src="docs/images/api-gateway-ebook-cover.jpg" alt="API Gateway eBook Cover" width="400">
-
-[Download](https://www.membrane-api.io/ebook/API-Gateway-Handbook-v2.0.0.pdf) instantly. **No registration** required.
-
-## Participate in the API Tech Talk
-
-Meet other Membrane users **online** to discuss API gateway operation and architecture. Membrane developers answer questions and welcome your feedback and feature requests.
-
-### Upcoming Topics
-
-- **September 30, 2026** Legacy Integration with XML, SOAP, and WSDL
-- **October 28, 2026** Authentication with JSON Web Tokens (JWT)
-- **November 25, 2026** MCP and AI Tool Integration
-- **December 30, 2026** Message Transformation
-
-[Learn more](https://www.membrane-api.io/user-meeting/)
-
-
 # Why Membrane
+
+From OpenAPI and OAuth to SOAP, XML, LLMs, and MCP, Membrane bridges modern APIs and enterprise integration.
 
 ## Native OpenAPI Support
 
@@ -101,11 +82,15 @@ Deploy APIs directly from [OpenAPI](https://www.membrane-api.io/openapi/configur
 
 ## Legacy XML and Web Services Integration
 
-`wsdl2openapi` transforms a Web Service's WSDL into an OpenAPI and uses the XSD schema for the conversion between XML and JSON. Deploy a WSDL, and Membrane exposes the service as an API with an OpenAPI description.
+`wsdl2openapi` transforms a Web Service's WSDL into an OpenAPI and uses the underlying XSD schema for the conversion between XML and JSON. Deploy a WSDL, and Membrane exposes the service as an API with an OpenAPI description.
 
 XML and JSON are deeply integrated into Membrane. **XPath** and **JSONPath** expressions provide direct access to message data for routing, filtering, and transformation.
 
-Templates and XSLT allow for flexible message transformation and SOAP to REST conversion.
+Templates and XSLT allow for flexible message transformation and SOAP-to-REST conversion.
+
+## XML and Web Services Security
+
+Secure legacy services with WSDL and XSD message validation, XML message protection, and XML signatures.
 
 ## OpenAPI, JSON Schema, XSD, and WSDL Validation
 
@@ -126,9 +111,21 @@ On a single server Membrane can process more than **50,000 requests per second**
 Membrane is implemented entirely in Java, from the HTTP engine to the OpenAPI support. This avoids the overhead of crossing between a native proxy core and a separate scripting runtime for plugins. As a result, Membrane can offer high performance even when multiple plugins for validation, security, and transformation are active.
 
 
+# What Can You Do With Membrane?
+
+* Expose APIs securely to partners or the public over the Internet.
+* Protect APIs with **OAuth 2.0**, **API keys**, and **JSON Web Tokens (JWT)**.
+* Secure legacy SOAP Web Services with **XML signatures**, message validation, and XML protection.
+* Integrate backend services and legacy systems using message transformation.
+* Use Membrane as an **outgoing gateway** for secure access to public and partner APIs.
+* Monitor, log, and trace API traffic.
+* Use Membrane as an **AI Gateway** for LLM and MCP traffic.
+* Replace maintenance-intensive, hand-written **Backend for Frontend (BFF)** applications with gateway configuration.
+* Embed Membrane into your own products and ship it as part of your solution.
+* Use Membrane as an API gateway in public or private cloud environments.
 
 
-# Content
+# Sample Configurations
 
 1. [Getting Started](#1-getting-started)
     - [Java](#java-standalone)
@@ -1286,10 +1283,33 @@ For a working example and detailed setup, see the [OpenTelemetry Example](./dist
 
 ## Community Support
 
-To get support from our community, post your questions to our [Discussions](https://github.com/membrane/api-gateway/discussions) page @GitHub.
+To get support from our community, post your questions to our [discussions](https://github.com/membrane/api-gateway/discussions) page @GitHub.
 
-If you find a bug, please report it using [GitHub Issues](https://github.com/membrane/api-gateway/issues). Please provide a minimal example that reproduces the issue and the version of Membrane you are using.
+If you find a bug, report it using [GitHub Issues](https://github.com/membrane/api-gateway/issues). Please provide a minimal example that reproduces the issue and the version of Membrane you are using.
 
 ## Enterprise-Grade Support
 
 See [commercial support options and pricing](https://www.membrane-api.io/api-gateway-pricing.html).
+
+
+## API Gateway eBook(Free Download)
+
+Learn how API Gateways work through practical scenarios and real-world examples.
+
+<img src="docs/images/api-gateway-ebook-cover.jpg" alt="API Gateway eBook Cover" width="400">
+
+[Download](https://www.membrane-api.io/ebook/API-Gateway-Handbook-v2.0.0.pdf) instantly. **No registration** required.
+
+## Participate in the API Tech Talk
+
+Meet other Membrane users **online** to discuss API gateway operation and architecture. Membrane developers answer questions and welcome your feedback and feature requests.
+
+### Upcoming Topics
+
+- **September 30, 2026** Legacy Integration with XML, SOAP, and WSDL
+- **October 28, 2026** Authentication with JSON Web Tokens (JWT)
+- **November 25, 2026** MCP and AI Tool Integration
+- **December 30, 2026** Message Transformation
+
+[Learn more](https://www.membrane-api.io/user-meeting/)
+
