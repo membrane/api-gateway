@@ -14,6 +14,8 @@
 
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
@@ -34,6 +36,8 @@ import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.test.TestUtil.getPathFromResource;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 public class ValidatorInterceptorTest {
@@ -143,6 +147,34 @@ public class ValidatorInterceptorTest {
     void testSchemaValidation() throws Exception {
         assertEquals(CONTINUE, getOutcome(requestTB, createSchemaValidatorInterceptor(getPathFromResource("/validation/order.xsd")), getPathFromResource("validation/order.xml")));
         assertEquals(ABORT, getOutcome(requestTB, createSchemaValidatorInterceptor(getPathFromResource("/validation/order.xsd")), getPathFromResource("validation/invalid-order.xml")));
+    }
+
+    /**
+     * The {@code validationDetails} attribute must reach the validator that actually renders the
+     * error response.
+     */
+    @Test
+    void validationDetailsIsPassedToTheValidator() throws Exception {
+        var interceptor = createSchemaValidatorInterceptor(getPathFromResource("/validation/order.xsd"));
+        interceptor.setValidationDetails(false);
+        interceptor.init(router);
+
+        assertEquals(ABORT, getOutcome(post("http://thomas-bayer.com").build(), interceptor, getPathFromResource("validation/invalid-order.xml")));
+
+        JsonNode jn = new ObjectMapper().readTree(exc.getResponse().getBodyAsStreamDecoded());
+        assertEquals("XML message validation failed", jn.get("title").asText());
+        assertNull(jn.get("validation"));
+    }
+
+    @Test
+    void validationDetailsDefaultsToOn() throws Exception {
+        var interceptor = createSchemaValidatorInterceptor(getPathFromResource("/validation/order.xsd"));
+        assertTrue(interceptor.isValidationDetails());
+
+        assertEquals(ABORT, getOutcome(post("http://thomas-bayer.com").build(), interceptor, getPathFromResource("validation/invalid-order.xml")));
+
+        JsonNode jn = new ObjectMapper().readTree(exc.getResponse().getBodyAsStreamDecoded());
+        assertEquals(1, jn.get("validation").size());
     }
 
     private Outcome getOutcome(Request request, Interceptor interceptor, String fileName) throws Exception {

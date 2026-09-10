@@ -24,7 +24,9 @@ import static com.predic8.membrane.core.http.Request.post;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptor.FailureHandler.VOID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class JSONSchemaValidationTest {
 
@@ -183,7 +185,7 @@ public class JSONSchemaValidationTest {
                 {
                     "required": [ "p1" ]
                 }
-                """, ValidatorInterceptor.FailureHandler.VOID);
+                """, VOID);
         validator.init();
 
         Exchange exc = post("/foo").body("{}").buildExchange();
@@ -191,6 +193,43 @@ public class JSONSchemaValidationTest {
 
         JsonNode jn = om.readTree(exc.getResponse().getBodyAsStream());
         assertEquals("JSON validation failed", jn.get("title").textValue());
+        assertEquals(1, jn.get("errors").size(), "a failure handler must not swallow the validation details");
+    }
+
+    @Test
+    void validationDetailsOffOmitsErrors() throws Exception {
+        var validator = new JSONSchemaValidator(new StaticStringResolver(), """
+                {
+                    "required": [ "p1" ]
+                }
+                """, VOID, new ErrorDetailsPolicy(false, false));
+        validator.init();
+
+        Exchange exc = post("/foo").body("{}").buildExchange();
+        assertEquals(ABORT, validator.validateMessage(exc, REQUEST));
+
+        JsonNode jn = om.readTree(exc.getResponse().getBodyAsStream());
+        assertEquals("JSON validation failed", jn.get("title").textValue());
+        assertEquals("https://membrane-api.io/problems/user/validation", jn.get("type").textValue());
+        assertNull(jn.get("errors"));
+        assertNull(jn.get("flow"));
+    }
+
+    @Test
+    void productionModeKeepsErrors() throws Exception {
+        var validator = new JSONSchemaValidator(new StaticStringResolver(), """
+                {
+                    "required": [ "p1" ]
+                }
+                """, VOID, new ErrorDetailsPolicy(true, true));
+        validator.init();
+
+        Exchange exc = post("/foo").body("{}").buildExchange();
+        assertEquals(ABORT, validator.validateMessage(exc, REQUEST));
+
+        JsonNode jn = om.readTree(exc.getResponse().getBodyAsStream());
+        assertEquals(1, jn.get("errors").size(), "the schema is public, so its errors stay visible in production");
+        assertNull(jn.get("attention"), "no development-mode warning on a production router");
     }
 
     private static @NotNull JSONSchemaValidator getValidator(String schema) {

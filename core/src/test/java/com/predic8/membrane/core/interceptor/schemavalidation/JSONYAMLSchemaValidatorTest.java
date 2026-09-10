@@ -14,6 +14,8 @@
 
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.schemavalidation.json.JSONYAMLSchemaValidator;
 import com.predic8.membrane.core.resolver.ClasspathSchemaResolver;
@@ -25,7 +27,9 @@ import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.schemavalidation.json.JSONYAMLSchemaValidator.SCHEMA_VERSION_2020_12;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class JSONYAMLSchemaValidatorTest {
@@ -53,6 +57,44 @@ class JSONYAMLSchemaValidatorTest {
                 """).buildExchange();
         assertEquals(CONTINUE, validator.validateMessage( exc, REQUEST));
         assertEquals(1, validator.getValid());
+    }
+
+    @Test
+    void detailsOnByDefault() throws Exception {
+        assertEquals(1, invalidAge(validator).get("errors").size());
+    }
+
+    @Test
+    void validationDetailsOffOmitsErrors() throws Exception {
+        JsonNode jn = invalidAge(build(new ErrorDetailsPolicy(false, false)));
+        assertEquals("JSON validation failed", jn.get("title").asText());
+        assertNull(jn.get("errors"));
+        assertNull(jn.get("flow"));
+    }
+
+    @Test
+    void productionModeKeepsErrors() throws Exception {
+        JsonNode jn = invalidAge(build(new ErrorDetailsPolicy(true, true)));
+        assertEquals(1, jn.get("errors").size(), "the schema is public, so its errors stay visible in production");
+        assertNull(jn.get("attention"), "no development-mode warning on a production router");
+    }
+
+    private static JSONYAMLSchemaValidator build(ErrorDetailsPolicy policy) {
+        var v = new JSONYAMLSchemaValidator(new ClasspathSchemaResolver(),
+                "classpath:/validation/json-schema/simple-schema.json", (a, b) -> {},
+                SCHEMA_VERSION_2020_12, policy);
+        v.init();
+        return v;
+    }
+
+    private static JsonNode invalidAge(JSONYAMLSchemaValidator v) throws Exception {
+        Exchange exc = get("/foo").body("""
+                {
+                    "age": -1
+                }
+                """).buildExchange();
+        assertEquals(ABORT, v.validateMessage(exc, REQUEST));
+        return new ObjectMapper().readTree(exc.getResponse().getBodyAsStreamDecoded());
     }
 
     @Test

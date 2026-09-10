@@ -89,6 +89,46 @@ class XMLSchemaValidatorTest {
     }
 
     @Test
+    void validationDetailsOffOmitsValidationMember() throws Exception {
+        Exchange exc = invalidOrder(new ErrorDetailsPolicy(false, false));
+
+        assertEquals(APPLICATION_PROBLEM_JSON, exc.getResponse().getHeader().getContentType());
+        assertEquals(400, exc.getResponse().getStatusCode());
+        assertEquals(REQUEST.name(), exc.getResponse().getHeader().getFirstValue(VALIDATION_ERROR_SOURCE));
+
+        JsonNode jn = om.readTree(exc.getResponse().getBodyAsStreamDecoded());
+        assertEquals("XML message validation failed", jn.get("title").asText());
+        assertEquals("https://membrane-api.io/problems/user", jn.get("type").asText());
+        assertNull(jn.get("validation"));
+    }
+
+    @Test
+    void productionModeKeepsValidationMember() throws Exception {
+        Exchange exc = invalidOrder(new ErrorDetailsPolicy(true, true));
+
+        JsonNode jn = om.readTree(exc.getResponse().getBodyAsStreamDecoded());
+        assertEquals(1, jn.get("validation").size(), "the XSD is public, so its errors stay visible in production");
+        assertTrue(jn.get("validation").get(0).get("message").asText().contains("illegal"));
+        assertNull(jn.get("attention"), "no development-mode warning on a production router");
+    }
+
+    private Exchange invalidOrder(ErrorDetailsPolicy policy) throws Exception {
+        var v = new XMLSchemaValidator(new ResolverMap(), "src/test/resources/validation/order.xsd",
+                (message, exc) -> log.info("Validation failure: {}", message), policy);
+        v.init();
+        Exchange exc = post("/foo").body("""
+                <order xmlns="http://membrane-soa.org/router/validation/order/1/">
+                	<items>
+                		<item id="3" />
+                		<illegal/>
+                	</items>
+                </order>
+                """).buildExchange();
+        assertEquals(ABORT, v.validateMessage(exc, REQUEST));
+        return exc;
+    }
+
+    @Test
     void doesNotFetchExternalDtdInInstanceDocument() throws Exception {
         var received = new AtomicBoolean(false);
         int port = freePort();
