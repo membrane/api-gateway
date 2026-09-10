@@ -111,6 +111,12 @@ Templates and XSLT allow for flexible message transformation and SOAP to REST co
 
 Validate messages against API and service specifications. Don't let invalid messages slip into your organization.
 
+## Easy Configuration and Extensibility
+
+Take a look at the samples below and the tutorials to see what just a few lines of configuration can do.
+
+When you need more flexibility, extend Membrane with expressions and scripting using **JSONPath**, **XPath**, **Groovy**, or **SpEL**, or write your own plugin in **Java**. In most cases, custom Java code is not necessary.
+
 ## Speed & Footprint
 
 Although Membrane is written in Java, it delivers high performance with a low memory footprint. HTTP streaming, Keep-Alive, and non-blocking processing enable efficient resource utilization and high throughput. The Membrane distribution is only about 55 MB, making it smaller than many other API gateways.
