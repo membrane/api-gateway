@@ -277,14 +277,40 @@ class EncryptSecurePartTest extends AbstractWsSecurityTest {
         assertTrue(e.getMessage().contains("<reference>"), e.getMessage());
     }
 
+    /**
+     * {@code keyIdentifier} is the only key-info mode here. An {@code x509Data} would produce exactly
+     * the same {@code ds:KeyInfo} as {@code valueType: X509_V3}, so offering both would be two
+     * spellings of one message.
+     */
     @Test
-    void bothKeyInfoModesAtOnceAreRejected() {
-        EncryptSecurePart encrypt = encrypt(ALIAS_1, encryptedBodyReference());
-        encrypt.setX509Data(new X509DataKeyInfo());
-        encrypt.setKeyIdentifier(new KeyIdentifierKeyInfo());
+    void encryptTakesNoX509DataChild() {
+        assertTrue(java.util.Arrays.stream(EncryptSecurePart.class.getMethods())
+                .noneMatch(m -> m.getName().equals("setX509Data")));
+    }
 
-        ConfigurationException e = assertThrows(ConfigurationException.class, () -> encrypter(TRUSTSTORE, encrypt));
-        assertTrue(e.getMessage().contains("at most one"), e.getMessage());
+    @Test
+    void twoReferencesSharingAnIdAreRejected() {
+        EncryptionReference first = new EncryptionReference();
+        first.setXpath("//*[local-name()='a']");
+        first.setId("ED-1");
+        EncryptionReference second = new EncryptionReference();
+        second.setXpath("//*[local-name()='b']");
+        second.setId("ED-1");
+
+        ConfigurationException e = assertThrows(ConfigurationException.class,
+                () -> encrypter(TRUSTSTORE, encrypt(ALIAS_1, first, second)));
+        assertTrue(e.getMessage().contains("ED-1"), e.getMessage());
+    }
+
+    /** An id becomes an XML {@code ID} and a {@code "#..."} reference, so not every string will do. */
+    @Test
+    void anIdThatIsNotAnXmlNameIsRejected() {
+        EncryptionReference ref = encryptedBodyReference();
+        ref.setId("1 not a name");
+
+        ConfigurationException e = assertThrows(ConfigurationException.class,
+                () -> encrypter(TRUSTSTORE, encrypt(ALIAS_1, ref)));
+        assertTrue(e.getMessage().contains("1 not a name"), e.getMessage());
     }
 
     /** The CBC modes are the Jager-Somorovsky attack surface and must not be configurable. */

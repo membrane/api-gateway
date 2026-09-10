@@ -22,6 +22,8 @@ import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.OAEPParameterSpec;
+import javax.crypto.spec.PSource;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.dom.DOMSource;
@@ -32,21 +34,11 @@ import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.SecureRandom;
 import java.security.spec.MGF1ParameterSpec;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.crypto.spec.OAEPParameterSpec;
-import javax.crypto.spec.PSource;
+import java.util.*;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static javax.xml.XMLConstants.XMLNS_ATTRIBUTE;
-import static javax.xml.XMLConstants.XMLNS_ATTRIBUTE_NS_URI;
-import static javax.xml.XMLConstants.XML_NS_PREFIX;
-import static javax.xml.transform.OutputKeys.ENCODING;
-import static javax.xml.transform.OutputKeys.METHOD;
-import static javax.xml.transform.OutputKeys.OMIT_XML_DECLARATION;
+import static javax.xml.XMLConstants.*;
+import static javax.xml.transform.OutputKeys.*;
 
 /**
  * XML Encryption helpers shared by {@link EncryptSecurePart} and {@link DecryptValidatePart}:
@@ -243,9 +235,11 @@ final class XmlEncryptionUtil {
      * The plaintext is an XML <i>fragment</i> - possibly several elements, possibly text - which no
      * DOM parser accepts on its own, so it is parsed inside a synthetic wrapper that re-declares
      * every namespace in scope at its destination. The wrapper is discarded; only its children are
-     * imported. It is in no namespace and carries no prefix, so it cannot collide with a prefix the
-     * plaintext declares, and a declaration inside the plaintext shadows the wrapper's by ordinary
-     * XML scoping.
+     * imported. It carries no prefix of its own, so it cannot collide with one the plaintext
+     * declares, and a declaration inside the plaintext shadows the wrapper's by ordinary XML
+     * scoping. (It does land in whatever default namespace was in scope at the destination, since
+     * that declaration is copied onto it like any other - which is immaterial, as the wrapper never
+     * leaves this method.)
      * <p>
      * The parser is the hardened one because this content is attacker-supplied: it is whatever the
      * ciphertext happened to decrypt to, and it is parsed before anything has authenticated it
@@ -368,7 +362,7 @@ final class XmlEncryptionUtil {
     static Element createCipherData(Document doc, byte[] cipherValue) {
         Element cipherData = createXencElement(doc, "CipherData");
         Element value = createXencElement(doc, "CipherValue");
-        value.setTextContent(java.util.Base64.getEncoder().encodeToString(cipherValue));
+        value.setTextContent(Base64.getEncoder().encodeToString(cipherValue));
         cipherData.appendChild(value);
         return cipherData;
     }

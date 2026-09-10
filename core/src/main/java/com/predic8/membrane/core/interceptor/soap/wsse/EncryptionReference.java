@@ -17,6 +17,8 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.util.ConfigurationException;
 
+import java.util.regex.Pattern;
+
 /**
  * @description One element to encrypt, listed in a <code>secure</code>/<code>encrypt</code>'s
  * <code>references</code>, or one that must have arrived encrypted, listed in a
@@ -24,10 +26,11 @@ import com.predic8.membrane.core.util.ConfigurationException;
  * either by a well-known name (<code>BODY</code>, <code>USERNAME_TOKEN</code>) or by an XPath
  * expression (set <code>xpath</code>; <code>by</code> is then inferred and must be omitted).
  * <p><code>type</code> decides whether the element itself or only its content is replaced by the
- * <code>xenc:EncryptedData</code>. The default is derived from the target: the
- * <code>soap:Body</code> is encrypted by <code>CONTENT</code>, because replacing the body element
- * itself would leave an envelope that is no longer valid SOAP, while anything else is encrypted as
- * a whole <code>ELEMENT</code>, so that its name does not stay in the clear.</p>
+ * <code>xenc:EncryptedData</code> — and, under <code>requiredReferences</code>, which of the two the
+ * sender had to have done. The default is derived from the target: the <code>soap:Body</code> is
+ * encrypted by <code>CONTENT</code>, because replacing the body element itself would leave an
+ * envelope that is no longer valid SOAP, while anything else is encrypted as a whole
+ * <code>ELEMENT</code>, so that its name does not stay in the clear.</p>
  */
 @MCElement(name = "reference", component = false, id = "wsSecurity-encrypt-reference")
 public class EncryptionReference {
@@ -43,6 +46,14 @@ public class EncryptionReference {
     public enum By {BODY, USERNAME_TOKEN, XPATH}
 
     public enum Type {CONTENT, ELEMENT}
+
+    /**
+     * What an XML {@code ID} may look like, restricted to ASCII. Narrower than the {@code NCName} the
+     * schema allows, which admits most of Unicode - and deliberately so: an id travels into a
+     * {@code "#..."} reference, and there is no reason to accept characters whose only effect would be
+     * to make that reference harder to read.
+     */
+    private static final Pattern ID_PATTERN = Pattern.compile("[A-Za-z_][A-Za-z0-9_.\\-]*");
 
     private By by = By.BODY;
     private boolean byExplicitlySet;
@@ -108,7 +119,9 @@ public class EncryptionReference {
     /**
      * @description The <code>Id</code> to assign to the <code>xenc:EncryptedData</code> this
      * reference produces, which the <code>xenc:ReferenceList</code> then points at. If omitted, one
-     * is generated. Only applies when encrypting; it is unused in
+     * is generated. Has to be an XML name — a letter or underscore followed by letters, digits,
+     * <code>.</code>, <code>-</code> or <code>_</code> — since that is what the <code>ID</code> type
+     * the <code>xenc</code> schema declares allows. Only applies when encrypting; it is unused in
      * <code>requiredReferences</code>.
      */
     @MCAttribute
@@ -128,6 +141,10 @@ public class EncryptionReference {
             throw new ConfigurationException(
                     "reference: type: ELEMENT is not allowed with by: BODY — replacing soap:Body with an " +
                     "xenc:EncryptedData would not be a valid SOAP envelope. Use type: CONTENT (the default).");
+        }
+        if (id != null && !ID_PATTERN.matcher(id).matches()) {
+            throw new ConfigurationException("reference: \"" + id + "\" is not usable as an id. It has to start " +
+                    "with a letter or underscore and continue with letters, digits, '.', '-' or '_'.");
         }
     }
 }

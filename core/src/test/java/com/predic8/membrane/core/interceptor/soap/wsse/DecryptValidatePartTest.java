@@ -329,6 +329,77 @@ class DecryptValidatePartTest extends AbstractWsSecurityTest {
         assertEquals(Outcome.CONTINUE, decrypter(ALIAS_1, decrypt()).handleRequest(exchange));
     }
 
+    /**
+     * The element-encrypted counterpart of the BODY case, and the reason the two reference types are
+     * checked at different moments: element encryption replaces the wsse:UsernameToken outright, so
+     * while the message is still encrypted there is no token for the reference to resolve to. Checked
+     * up front, this requirement would reject exactly the message that satisfies it.
+     */
+    @Test
+    void aRequiredElementReferenceIsSatisfiedByAnElementEncryptedToken() throws Exception {
+        exchangeWithBody(PLAINTEXT_BODY);
+        sendUsernameTokenEncryptedAs(EncryptionReference.Type.ELEMENT);
+
+        assertEquals(Outcome.CONTINUE, decrypter(ALIAS_1,
+                decrypt(encryptionReference(EncryptionReference.By.USERNAME_TOKEN))).handleRequest(exchange));
+
+        // The token itself does not survive - it is an unvalidated claim, dropped with the rest of
+        // the consumed header. What is asserted here is that the requirement was met, not the token.
+        assertEquals("bar", parseBody().getElementsByTagName("foo").item(0).getTextContent());
+    }
+
+    /**
+     * The check has to be about how the element arrived, not merely about it being there once
+     * everything has been decrypted - otherwise a peer could send the token in the clear next to any
+     * unrelated ciphertext and pass.
+     */
+    @Test
+    void aRequiredElementReferenceFailsWhenTheTokenArrivedInTheClear() throws Exception {
+        exchangeWithBody(PLAINTEXT_BODY);
+        sendUsernameTokenEncryptedAs(null);
+
+        assertFault(decrypter(ALIAS_1,
+                decrypt(encryptionReference(EncryptionReference.By.USERNAME_TOKEN))), FAILED_CHECK);
+    }
+
+    /**
+     * A wsse:UsernameToken plus an encrypt of the body, and - when {@code tokenType} is given - of the
+     * token itself. Crosses the wire, so the receiver starts from real bytes.
+     */
+    private void sendUsernameTokenEncryptedAs(EncryptionReference.Type tokenType) throws Exception {
+        UsernameTokenSecurePart token = new UsernameTokenSecurePart();
+        token.setUsername("alice");
+        token.setPassword("secret");
+
+        List<EncryptionReference> references = new java.util.ArrayList<>(List.of(encryptedBodyReference()));
+        if (tokenType != null) {
+            references.add(encryptionReference(EncryptionReference.By.USERNAME_TOKEN, tokenType));
+        }
+        EncryptSecurePart encrypt = encrypt(ALIAS_1, references.toArray(new EncryptionReference[0]));
+
+        assertEquals(Outcome.CONTINUE,
+                encrypter(TRUSTSTORE, token, encrypt).handleRequest(exchange));
+        crossTheWire();
+    }
+
+    /**
+     * Naming one xenc:EncryptedData twice used to leave the second pass with a node the first had
+     * already detached, which surfaced as an internal error rather than a fault.
+     */
+    @Test
+    void anEncryptedDataNamedTwiceIsRejected() throws Exception {
+        exchangeWithBody(PLAINTEXT_BODY);
+        encryptFor(ALIAS_1);
+
+        Document doc = parseBody();
+        Element referenceList = firstByTag(doc, XENC_NS, "ReferenceList");
+        Element dataReference = getFirstChildByName(referenceList, XENC_NS, "DataReference");
+        referenceList.appendChild(dataReference.cloneNode(true));
+        setBody(doc);
+
+        assertFault(decrypter(ALIAS_1, decrypt()), INVALID_SECURITY);
+    }
+
     // ---- configuration -------------------------------------------------------------------------
 
     @Test

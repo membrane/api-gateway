@@ -28,7 +28,6 @@ import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPublicKey;
 import java.util.*;
-import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityFaultCode.INVALID_SECURITY;
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.*;
@@ -82,7 +81,6 @@ public class EncryptSecurePart extends SecurePart {
     private String recipientAlias;
     private String dataEncryptionAlgorithm = DEFAULT_DATA_ENCRYPTION_ALGORITHM;
     private String keyTransportAlgorithm = DEFAULT_KEY_TRANSPORT_ALGORITHM;
-    private X509DataKeyInfo x509Data;
     private KeyIdentifierKeyInfo keyIdentifier;
 
     private X509Certificate recipientCertificate;
@@ -123,13 +121,25 @@ public class EncryptSecurePart extends SecurePart {
         if (references.isEmpty()) {
             throw new ConfigurationException("wsSecurity secure/encrypt requires at least one <reference> child element.");
         }
-        if (Stream.of(x509Data, keyIdentifier).filter(Objects::nonNull).count() > 1) {
-            throw new ConfigurationException(
-                    "wsSecurity secure/encrypt accepts at most one of <x509Data> or <keyIdentifier>.");
-        }
         references.forEach(EncryptionReference::validate);
+        requireDistinctIds();
         requireSupported("dataEncryptionAlgorithm", dataEncryptionAlgorithm, SUPPORTED_DATA_ENCRYPTION_ALGORITHMS);
         requireSupported("keyTransportAlgorithm", keyTransportAlgorithm, SUPPORTED_KEY_TRANSPORT_ALGORITHMS);
+    }
+
+    /**
+     * Two references may not carry the same configured {@code id}: the resulting message would hold
+     * two {@code xenc:EncryptedData} elements with one {@code Id}, which every receiver worth the
+     * name - this gateway's own {@code decrypt} included - rejects as ambiguous.
+     */
+    private void requireDistinctIds() {
+        Set<String> seen = new HashSet<>();
+        for (EncryptionReference reference : references) {
+            if (reference.getId() != null && !seen.add(reference.getId())) {
+                throw new ConfigurationException("wsSecurity secure/encrypt: the reference id \"" + reference.getId() +
+                        "\" is used more than once; each xenc:EncryptedData needs its own.");
+            }
+        }
     }
 
     private static void requireSupported(String attribute, String value, List<String> supported) {
@@ -278,10 +288,6 @@ public class EncryptSecurePart extends SecurePart {
      * that is needed and sending the certificate itself back would only be noise.
      */
     private Element createRecipientKeyInfo(Document doc) throws Exception {
-        if (x509Data != null) {
-            return createKeyInfoWithSecurityTokenReference(doc,
-                    createKeyIdentifier(doc, recipientCertificate, KeyIdentifierKeyInfo.ValueType.X509_V3));
-        }
         KeyIdentifierKeyInfo.ValueType valueType = keyIdentifier != null
                 ? keyIdentifier.valueTypeOrDefault(KeyIdentifierKeyInfo.ValueType.THUMBPRINT_SHA1)
                 : KeyIdentifierKeyInfo.ValueType.THUMBPRINT_SHA1;
@@ -354,30 +360,20 @@ public class EncryptSecurePart extends SecurePart {
         this.keyTransportAlgorithm = keyTransportAlgorithm;
     }
 
-    public X509DataKeyInfo getX509Data() {
-        return x509Data;
-    }
-
-    /**
-     * @description Names the recipient by embedding its certificate in the
-     * <code>xenc:EncryptedKey</code>'s <code>ds:KeyInfo</code>. Rarely needed, since the recipient
-     * already holds that certificate. Mutually exclusive with <code>keyIdentifier</code>.
-     */
-    @MCChildElement(order = 2)
-    public void setX509Data(X509DataKeyInfo x509Data) {
-        this.x509Data = x509Data;
-    }
-
     public KeyIdentifierKeyInfo getKeyIdentifier() {
         return keyIdentifier;
     }
 
     /**
-     * @description Names the recipient by a <code>wsse:SecurityTokenReference</code>/<code>wsse:KeyIdentifier</code>.
-     * This is the default even when omitted, with <code>valueType=THUMBPRINT_SHA1</code>; configure it
-     * explicitly only to select <code>X509_V3</code>. Mutually exclusive with <code>x509Data</code>.
+     * @description Names the recipient by a <code>wsse:SecurityTokenReference</code>/<code>wsse:KeyIdentifier</code>,
+     * which is what the <code>xenc:EncryptedKey</code> carries whether or not this element is present:
+     * omitted, it names the certificate by its SHA-1 thumbprint. Configure it explicitly only to select
+     * <code>valueType=X509_V3</code>, which embeds the certificate itself — the one reason being a
+     * recipient that cannot look a thumbprint up in a store of its own. Unlike under
+     * <code>signature</code>, there is no <code>x509Data</code> alternative here, because the two would
+     * produce the same <code>ds:KeyInfo</code>.
      */
-    @MCChildElement(order = 3)
+    @MCChildElement(order = 2)
     public void setKeyIdentifier(KeyIdentifierKeyInfo keyIdentifier) {
         this.keyIdentifier = keyIdentifier;
     }

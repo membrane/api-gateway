@@ -46,6 +46,10 @@ import static com.predic8.membrane.core.interceptor.soap.wsse.XmlEncryptionUtil.
  * <code>wsse:UnsupportedAlgorithm</code> before any cipher is constructed. That asymmetry is the
  * point: accepting what is merely common would let any peer choose the padding-oracle-shaped
  * algorithms whatever this gateway emits.</p>
+ * <p>One message, one recipient: a <code>wsse:Security</code> header carrying more than one
+ * <code>xenc:EncryptedKey</code> is refused rather than searched for the key this gateway can open.
+ * A multi-recipient message is a sender that addressed no header at any <code>actor</code>, and the
+ * fix for it is to target each header at the role meant to process it.</p>
  * <p>Without <code>requiredReferences</code> this asserts only that whatever arrived encrypted
  * could be decrypted — not that anything was encrypted at all, so a peer sending an entirely
  * plaintext message would pass. List the elements that must have arrived encrypted to make
@@ -127,16 +131,22 @@ public class DecryptValidatePart extends ValidatePart {
         // to decrypt" is reported as the structural problem it is rather than as a policy failure -
         // the same split validate/signature makes between "carries no ds:Signature" and "does not
         // cover what was required". Before, because decryption is about to destroy the evidence:
-        // once the body is plaintext again, "did this arrive encrypted?" is unanswerable.
-        checkRequiredReferences(ctx);
+        // once the body is plaintext again, "did this content arrive encrypted?" is unanswerable.
+        checkRequiredContentReferences(ctx);
 
         List<Element> targets = resolveDataReferences(doc, encryptedKey);
         String dataAlgorithm = checkDataAlgorithms(targets);
 
         byte[] contentEncryptionKey = unwrapContentEncryptionKey(encryptedKey, dataAlgorithm);
 
+        // Compared by identity: two distinct elements of the same name are not the same target, and
+        // DOM nodes have no value equality that would say otherwise.
+        Set<Element> restoredElements = Collections.newSetFromMap(new IdentityHashMap<>());
         for (Element encryptedData : targets) {
-            decryptInPlace(doc, encryptedData, contentEncryptionKey);
+            Element restored = decryptInPlace(doc, encryptedData, contentEncryptionKey);
+            if (restored != null) {
+                restoredElements.add(restored);
+            }
         }
 
         // The EncryptedKey is spent; leaving it would forward key material for ciphertext that is no
@@ -144,20 +154,20 @@ public class DecryptValidatePart extends ValidatePart {
         encryptedKey.getParentNode().removeChild(encryptedKey);
 
         checkNothingLeftEncrypted(ctx.envelope());
+        checkRequiredElementReferences(ctx, restoredElements);
     }
 
-    private void checkRequiredReferences(WsSecurityContext ctx) {
+    /**
+     * The {@code CONTENT} requirements, checked before anything is decrypted: the element itself is
+     * still where the reference names it, and everything inside it has to be ciphertext.
+     */
+    private void checkRequiredContentReferences(WsSecurityContext ctx) {
         for (EncryptionReference required : requiredReferences) {
-            List<Element> elements;
-            try {
-                elements = resolveEncryptionReference(ctx.document(), ctx.envelope(), ctx.security(), ctx.soapNs(),
-                        required, parent.getXmlConfig());
-            } catch (WsSecurityXmlUtil.ReferenceResolutionException e) {
-                throw new WsSecurityFaultException(FAILED_CHECK,
-                        "[" + describe(required) + "] " + e.getMessage(), e);
+            if (required.getType() != EncryptionReference.Type.CONTENT) {
+                continue;
             }
-            for (Element element : elements) {
-                if (!isEncrypted(element, required)) {
+            for (Element element : resolveRequired(ctx, required)) {
+                if (!isFullyEncryptedContent(element)) {
                     throw new WsSecurityFaultException(FAILED_CHECK,
                             "Required element (" + describe(required) + ") did not arrive encrypted.");
                 }
@@ -166,9 +176,45 @@ public class DecryptValidatePart extends ValidatePart {
     }
 
     /**
-     * Whether {@code element} arrived encrypted in the way {@code required} demands: for
-     * {@code ELEMENT}, by being an {@code xenc:EncryptedData} itself; for {@code CONTENT}, by having
-     * nothing left in the clear inside it.
+     * The {@code ELEMENT} requirements, checked after decryption instead.
+     * <p>
+     * They have to be: element encryption <i>replaces</i> the target with an
+     * {@code xenc:EncryptedData}, so while the message is still encrypted there is no
+     * {@code wsse:UsernameToken} and no XPath match left for the reference to resolve to - the
+     * element exists again only once it has been decrypted. Checking these up front would therefore
+     * reject exactly the messages that satisfy the requirement.
+     * <p>
+     * The evidence decryption would otherwise destroy is carried forward explicitly instead:
+     * {@code restoredElements} holds the elements an {@code ELEMENT} decryption produced, and
+     * nothing else, so a target the peer sent in the clear is not in it and a target that arrived
+     * inside someone else's {@code CONTENT} ciphertext is not either.
+     */
+    private void checkRequiredElementReferences(WsSecurityContext ctx, Set<Element> restoredElements) {
+        for (EncryptionReference required : requiredReferences) {
+            if (required.getType() != EncryptionReference.Type.ELEMENT) {
+                continue;
+            }
+            for (Element element : resolveRequired(ctx, required)) {
+                if (!restoredElements.contains(element)) {
+                    throw new WsSecurityFaultException(FAILED_CHECK,
+                            "Required element (" + describe(required) + ") did not arrive encrypted.");
+                }
+            }
+        }
+    }
+
+    private List<Element> resolveRequired(WsSecurityContext ctx, EncryptionReference required) {
+        try {
+            return resolveEncryptionReference(ctx.document(), ctx.envelope(), ctx.security(), ctx.soapNs(),
+                    required, parent.getXmlConfig());
+        } catch (WsSecurityXmlUtil.ReferenceResolutionException e) {
+            throw new WsSecurityFaultException(FAILED_CHECK, "[" + describe(required) + "] " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Whether {@code element} arrived with nothing left in the clear inside it, which is what a
+     * {@code CONTENT} requirement demands.
      * <p>
      * Every child has to be ciphertext, not merely one of them. "It contains an
      * {@code xenc:EncryptedData}" would be satisfied by a body holding one next to a plaintext
@@ -177,10 +223,7 @@ public class DecryptValidatePart extends ValidatePart {
      * counts as in the clear for the same reason; whitespace between elements does not, since it
      * carries nothing.
      */
-    private static boolean isEncrypted(Element element, EncryptionReference required) {
-        if (required.getType() == EncryptionReference.Type.ELEMENT) {
-            return isEncryptedData(element);
-        }
+    private static boolean isFullyEncryptedContent(Element element) {
         List<Element> children = childElementsOf(element);
         return !children.isEmpty()
                && children.stream().allMatch(DecryptValidatePart::isEncryptedData)
@@ -300,11 +343,19 @@ public class DecryptValidatePart extends ValidatePart {
         }
 
         List<Element> targets = new ArrayList<>();
+        Set<String> seenIds = new HashSet<>();
         for (Element dataReference : dataReferences) {
             String uri = dataReference.getAttribute("URI");
             if (!uri.startsWith("#")) {
                 throw new WsSecurityFaultException(INVALID_SECURITY,
                         "xenc:DataReference URI must be a same-document reference.");
+            }
+            // Naming the same EncryptedData twice is refused rather than deduplicated: the second
+            // pass would find a node this loop's own decryption had already detached from the
+            // document, and there is no message a peer could mean by it.
+            if (!seenIds.add(uri.substring(1))) {
+                throw new WsSecurityFaultException(INVALID_SECURITY,
+                        "xenc:ReferenceList names \"" + uri + "\" more than once.");
             }
             // Ambiguity is rejected inside: a duplicated Id would let an attacker aim the decryption
             // at an element of their choosing rather than the one the reference names.
@@ -338,7 +389,12 @@ public class DecryptValidatePart extends ValidatePart {
         }
     }
 
-    private void decryptInPlace(Document doc, Element encryptedData, byte[] contentEncryptionKey) {
+    /**
+     * @return the element an {@code ELEMENT} decryption restored, or {@code null} for a
+     * {@code CONTENT} one, so that {@link #checkRequiredElementReferences} can tell an element that
+     * arrived as its own {@code xenc:EncryptedData} from one that was there all along
+     */
+    private Element decryptInPlace(Document doc, Element encryptedData, byte[] contentEncryptionKey) {
         Element parentElement = (Element) encryptedData.getParentNode();
         boolean contentOnly = TYPE_CONTENT.equals(encryptedData.getAttribute("Type"));
 
@@ -353,15 +409,17 @@ public class DecryptValidatePart extends ValidatePart {
             throw decryptionFailed(e);
         }
 
+        Element restoredElement = null;
         if (contentOnly) {
             parentElement.removeChild(encryptedData);
             restored.forEach(parentElement::appendChild);
         } else {
-            if (restored.size() != 1 || !(restored.getFirst() instanceof Element)) {
+            if (restored.size() != 1 || !(restored.getFirst() instanceof Element element)) {
                 throw new WsSecurityFaultException(FAILED_CHECK,
                         "An xenc:EncryptedData of Type Element must decrypt to exactly one element.");
             }
-            parentElement.replaceChild(restored.getFirst(), encryptedData);
+            parentElement.replaceChild(element, encryptedData);
+            restoredElement = element;
         }
 
         // The interceptor marked the ids of the document it received, which was before these nodes
@@ -369,6 +427,7 @@ public class DecryptValidatePart extends ValidatePart {
         // "#id" into what was just decrypted - and that is the legitimate encrypt-then-sign case.
         restored.stream().filter(Element.class::isInstance)
                 .forEach(node -> markWsuIdAttributes((Element) node));
+        return restoredElement;
     }
 
     private static byte[] cipherValueOf(Element encryptedElement) {
@@ -429,7 +488,10 @@ public class DecryptValidatePart extends ValidatePart {
      * @description The elements that must have arrived encrypted. Validation fails if any of them was
      * sent in the clear. Without this list, a message carrying no encryption at all is accepted, so
      * this is what makes confidentiality an enforced requirement rather than an option the peer may
-     * decline.
+     * decline. Each entry's <code>type</code> says <i>how</i> the element had to arrive, and has to
+     * match what the sender did: <code>CONTENT</code> requires everything inside the element to be
+     * ciphertext, <code>ELEMENT</code> requires the element itself to have been replaced by an
+     * <code>xenc:EncryptedData</code>.
      */
     @MCChildElement(order = 1)
     public void setRequiredReferences(List<EncryptionReference> requiredReferences) {

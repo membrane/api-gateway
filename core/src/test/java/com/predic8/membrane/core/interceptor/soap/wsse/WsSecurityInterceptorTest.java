@@ -436,6 +436,48 @@ class WsSecurityInterceptorTest extends AbstractWsSecurityTest {
                 "with nothing retained the header itself goes, as it always did");
     }
 
+    /**
+     * The ciphertext an element-encrypted token leaves behind sits in the header itself, not in the
+     * body. Dropping it while keeping the key would forward an xenc:ReferenceList naming an element
+     * that is no longer there, which the next recipient can only reject.
+     */
+    @Test
+    void aRetainedKeyKeepsTheHeaderCiphertextItNames() throws Exception {
+        exchangeWithBody(SOAP_BODY);
+        assertEquals(CONTINUE, encrypter(TRUSTSTORE, usernameTokenSecuring(),
+                encrypt(ALIAS_1, encryptionReference(EncryptionReference.By.USERNAME_TOKEN)))
+                .handleRequest(exchange));
+        crossTheWire();
+
+        assertEquals(CONTINUE, securingInitialized(new TimestampSecurePart()).handleRequest(exchange));
+
+        Document doc = parseBody();
+        assertEquals(1, doc.getElementsByTagNameNS(XENC_NS, "EncryptedKey").getLength());
+        assertEquals(1, doc.getElementsByTagNameNS(XENC_NS, "EncryptedData").getLength(),
+                "the encrypted token is what the retained key's DataReference names");
+    }
+
+    /**
+     * The other half of that rule: ciphertext is not its own reason to survive. Without a key to
+     * retain alongside it, a header xenc:EncryptedData is an unreadable claim and is dropped like
+     * every other one - otherwise nothing could ever drop it.
+     */
+    @Test
+    void headerCiphertextWithoutAKeyIsDiscarded() throws Exception {
+        exchangeWithBody(SOAP_BODY);
+        assertEquals(CONTINUE, encrypter(TRUSTSTORE, usernameTokenSecuring(),
+                encrypt(ALIAS_1, encryptionReference(EncryptionReference.By.USERNAME_TOKEN)))
+                .handleRequest(exchange));
+        Document sent = parseBody();
+        Element encryptedKey = firstByTag(sent, XENC_NS, "EncryptedKey");
+        encryptedKey.getParentNode().removeChild(encryptedKey);
+        setBody(sent);
+
+        assertEquals(CONTINUE, securingInitialized(new TimestampSecurePart()).handleRequest(exchange));
+
+        assertEquals(0, parseBody().getElementsByTagNameNS(XENC_NS, "EncryptedData").getLength());
+    }
+
     /** An EncryptedKey with no ciphertext left to unlock is not retained. */
     @Test
     void anEncryptedKeyWithoutCiphertextIsDiscarded() throws Exception {

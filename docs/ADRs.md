@@ -80,10 +80,21 @@ self-limiting: once a `validate/decrypt` has run, nothing is encrypted any more 
 dropped like any other child. This applies to both paths — no `validate` list at all, and a `validate`
 list that happens to contain no `decrypt` — since both previously destroyed the key.
 
+A header `xenc:EncryptedData` — an element-encrypted token — is retained too, but strictly *because*
+the key is: it is one of the things that key unlocks, and dropping it would strand the
+`xenc:DataReference` naming it. Never on its own. Letting ciphertext be its own reason to survive
+would forward an unreadable claim forever, with nothing left that could ever drop it.
+
 This is a compatibility accommodation for senders that emit a single header with no `actor`, which is
 most stacks' default. A sender that targets each header at the role meant to process it never reaches
 this path, because ADR-006 already passes other actors' headers through untouched — and that, not
 retention, is the correct fix for a multi-hop confidentiality topology.
+
+Retention has one consequence worth naming: a `wsSecurity` element that retains an inbound key *and*
+runs a `secure/encrypt` emits a header with two `xenc:EncryptedKey` elements, one per recipient.
+That is legal XML Encryption, and `validate/decrypt` deliberately refuses it (see below) rather than
+searching the header for the key it can open. Encrypting for two recipients at once is not a
+confidentiality topology this element models; addressing each header at its `actor` is.
 
 ### Ordering stays the sender's choice
 
@@ -99,9 +110,10 @@ decidable at configuration time, and neither forbids a legal ordering:
   the element and its `wsu:Id` in place, which is exactly what keeps sign-then-encrypt of the body
   working.
 
-A receiver whose `validate` list mirrors the wrong order gets `wsse:FailedCheck`, with a hint logged
-at `info`. The hint is deliberately not in the fault: ADR-006 keeps WS-Security fault text
-non-specific so it cannot serve as an oracle.
+A receiver whose `validate` list mirrors the wrong order gets `wsse:FailedCheck` and nothing more
+specific, on either side: ADR-006 keeps WS-Security fault text non-specific so it cannot serve as an
+oracle, and the receiver cannot tell "you signed and encrypted in the other order" from "the
+signature is simply wrong" anyway.
 
 ### Consequences
 
@@ -111,11 +123,20 @@ non-specific so it cannot serve as an oracle.
   CA trust anchors but also a store of peer certificates.
 - `recipientAlias` is required, with no "first alias" fallback: choosing a certificate automatically
   would mean encrypting the message for whichever recipient happened to sort first.
+- `validate/decrypt` accepts one `xenc:EncryptedKey` per message and refuses a header carrying
+  several, rather than trying each against its private key. A multi-recipient message is a sender
+  that addressed no header at any `actor`; see the retention note above.
 - `validate/decrypt` without `requiredReferences` asserts only that what arrived encrypted was
   decryptable, not that anything was encrypted. `requiredReferences` is the confidentiality
   counterpart of `validate/signature`'s wrapping defence, and a `CONTENT` reference requires
   everything inside the element to be ciphertext — one encrypted child next to a readable sibling does
   not satisfy it.
+- The two reference types are consequently checked at different moments. A `CONTENT` requirement is
+  checked before anything is decrypted, because afterwards the content is plaintext and how it
+  arrived is unanswerable. An `ELEMENT` requirement has to be checked *after*, because element
+  encryption replaced the target with an `xenc:EncryptedData` and there is nothing for the reference
+  to resolve to until it has been decrypted; what would otherwise be lost is carried forward as the
+  set of elements an `ELEMENT` decryption produced, so a target sent in the clear still fails.
 - Nested (super-)encryption is not supported: any `xenc:EncryptedData` still present after every
   `xenc:DataReference` has been processed is a fault. That both bounds the work an attacker can ask
   for and stops unreferenced ciphertext reaching the backend uninspected.

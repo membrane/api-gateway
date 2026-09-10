@@ -31,7 +31,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 
 import java.util.List;
 import java.util.Map;
@@ -53,10 +52,10 @@ import static com.predic8.membrane.core.interceptor.soap.wsse.XmlEncryptionUtil.
  * that boundary before <code>secure</code> creates a new one. With no <code>validate</code> list the
  * header is emptied of the tokens the peer sent instead of being forwarded unchecked; what survives is
  * only what asserts nothing on its own — its <code>wsu:Timestamp</code>, since a <code>secure</code>
- * signature may cover it, and an <code>xenc:EncryptedKey</code> for as long as encrypted content it
- * unlocks is still in the message, since dropping key material while forwarding the ciphertext would
- * leave a message nobody downstream can read. Header blocks targeted at a different
- * <code>actor</code> are left untouched.</p>
+ * signature may cover it, and its XML Encryption material (<code>xenc:EncryptedKey</code> and
+ * <code>xenc:EncryptedData</code>) for as long as encrypted content is still in the message, since
+ * dropping key material while forwarding the ciphertext would leave a message nobody downstream can
+ * read. Header blocks targeted at a different <code>actor</code> are left untouched.</p>
  * <p>Signing and encrypting draw on opposite stores: a signature uses the <code>keystore</code>'s
  * private key and is verified against the <code>truststore</code>, while <code>encrypt</code> uses a
  * <code>truststore</code> certificate (the recipient's) and <code>decrypt</code> the
@@ -332,33 +331,49 @@ public class WsSecurityInterceptor extends AbstractInterceptor {
      * check is something it cannot forward. What survives is the children that <i>assert</i> nothing
      * on their own:
      * <ul>
-     * <li>{@code wsu:Timestamp}, when the header was never validated ({@code keepTimestamp}), because
+     * <li>{@code wsu:Timestamp}, when the header was never validated ({@code unvalidated}), because
      * a {@code secure/signature} may reference it ({@code by: TIMESTAMP}) to cover a freshness window
      * the message already carried.</li>
-     * <li>{@code xenc:EncryptedKey}, whenever ciphertext it might unlock is still in the message. It
-     * is key material addressed to a named recipient, not a claim: if that recipient is a backend
+     * <li>An {@code xenc:EncryptedKey}, whenever ciphertext it might unlock is still in the message.
+     * It is key material addressed to a named recipient, not a claim: if that recipient is a backend
      * rather than this gateway, dropping the key while forwarding the {@code xenc:EncryptedData} in
      * the body - which is not in this header and survives regardless - would turn a valid message into
      * one nobody can ever read. The ciphertext condition makes this self-limiting: once a
-     * {@code validate/decrypt} has run there is no {@code xenc:EncryptedData} left, so a spent key is
-     * dropped like anything else.</li>
+     * {@code validate/decrypt} has run nothing is encrypted any more, so a spent key is dropped like
+     * anything else.</li>
+     * <li>A header {@code xenc:EncryptedData} - an element-encrypted token - but <i>only</i> while a
+     * key is being retained alongside it, since it is then one of the things that key unlocks and
+     * dropping it would strand the {@code xenc:DataReference} naming it. Never on its own: a piece of
+     * ciphertext must not be its own reason to survive, or an unreadable claim would be forwarded
+     * forever.</li>
      * </ul>
-     * Retaining a key is a compatibility accommodation, not a WS-Security requirement. A sender that
-     * targets each header at the {@code actor} meant to process it never reaches this path at all,
+     * Retaining key material is a compatibility accommodation, not a WS-Security requirement. A sender
+     * that targets each header at the {@code actor} meant to process it never reaches this path at all,
      * because a header addressed elsewhere is not this element's to consume.
      */
-    private static void stripToRetained(Element security, Element envelope, boolean keepTimestamp) {
+    private static void stripToRetained(Element security, Element envelope, boolean unvalidated) {
+        // The two decisions are linked, and in this order: the key survives because ciphertext does,
+        // and the header's own ciphertext survives because the key does - never the other way round.
+        boolean retainKeyMaterial = getFirstChildByName(security, XENC_NS, "EncryptedKey") != null
+                                    && carriesEncryptedData(envelope);
         for (Element child : childElementsOf(security)) {
-            if (keepTimestamp && WSU_NS.equals(child.getNamespaceURI()) && "Timestamp".equals(child.getLocalName())) {
+            if (unvalidated && WSU_NS.equals(child.getNamespaceURI()) && "Timestamp".equals(child.getLocalName())) {
                 continue;
             }
-            if (XENC_NS.equals(child.getNamespaceURI()) && "EncryptedKey".equals(child.getLocalName())
-                && carriesEncryptedData(envelope, security)) {
-                log.info("Keeping an inbound xenc:EncryptedKey in the wsse:Security header: the message still " +
-                         "carries encrypted content, so the key material is a downstream recipient's to use.");
+            if (retainKeyMaterial && isEncryptionMaterial(child)) {
+                log.info("Keeping an inbound {} in the wsse:Security header: the message still carries " +
+                         "encrypted content, so the key material is a downstream recipient's to use.",
+                        child.getNodeName());
                 continue;
             }
-            log.info("Discarding {} from the inbound wsse:Security header.", child.getNodeName());
+            if (unvalidated) {
+                log.info("Discarding an unvalidated {} from the inbound wsse:Security header: this " +
+                         "wsSecurity element owns the header but has no <validate> list.", child.getNodeName());
+            } else {
+                // The validated path drops the whole header by design (SOAP's "understood, so not
+                // forwarded"), which is unremarkable - at info it would narrate every good message.
+                log.debug("Removing {} from the consumed wsse:Security header.", child.getNodeName());
+            }
             security.removeChild(child);
         }
         if (childElementsOf(security).isEmpty()) {
@@ -366,25 +381,20 @@ public class WsSecurityInterceptor extends AbstractInterceptor {
         }
     }
 
-    /** Whether any {@code xenc:EncryptedData} remains in the message outside {@code security}. */
-    private static boolean carriesEncryptedData(Element envelope, Element security) {
+    private static boolean isEncryptionMaterial(Element child) {
+        return XENC_NS.equals(child.getNamespaceURI())
+               && ("EncryptedKey".equals(child.getLocalName()) || "EncryptedData".equals(child.getLocalName()));
+    }
+
+    /** Whether any {@code xenc:EncryptedData} remains anywhere in the message. */
+    private static boolean carriesEncryptedData(Element envelope) {
         boolean[] found = {false};
         forEachDescendantElement(envelope, element -> {
-            if (XENC_NS.equals(element.getNamespaceURI()) && "EncryptedData".equals(element.getLocalName())
-                && !isWithin(element, security)) {
+            if (XENC_NS.equals(element.getNamespaceURI()) && "EncryptedData".equals(element.getLocalName())) {
                 found[0] = true;
             }
         });
         return found[0];
-    }
-
-    private static boolean isWithin(Node node, Element ancestor) {
-        for (Node current = node; current != null; current = current.getParentNode()) {
-            if (current == ancestor) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private static void runAll(List<? extends WsSecurityPart> parts, WsSecurityContext ctx) throws Exception {

@@ -18,10 +18,11 @@ import com.predic8.membrane.annot.MCElement;
 
 /**
  * @description Names a certificate from <code>ds:KeyInfo</code> via a
- * <code>wsse:SecurityTokenReference</code>/<code>wsse:KeyIdentifier</code>, instead of embedding it
- * inline (<code>x509Data</code>). Under <code>signature</code> that is the signing certificate the
- * receiver verifies with; under <code>encrypt</code> it is the recipient's certificate, telling the
- * receiver which of its own keys decrypts the message. With <code>valueType=X509_V3</code> the
+ * <code>wsse:SecurityTokenReference</code>/<code>wsse:KeyIdentifier</code>, rather than embedding it
+ * inline the way <code>signature</code>'s <code>x509Data</code> does. Under <code>signature</code>
+ * that is the signing certificate the receiver verifies with; under <code>encrypt</code> it is the
+ * recipient's certificate, telling the receiver which of its own keys decrypts the message, and it is
+ * the only key-info mode there. With <code>valueType=X509_V3</code> the
  * certificate itself is embedded in the <code>wsse:KeyIdentifier</code>; with
  * <code>THUMBPRINT_SHA1</code> only its SHA-1 thumbprint is, and the receiver looks the matching
  * certificate up in its own store.
