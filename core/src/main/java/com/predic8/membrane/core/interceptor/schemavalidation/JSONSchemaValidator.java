@@ -34,7 +34,6 @@ import java.nio.charset.Charset;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -97,21 +96,21 @@ public class JSONSchemaValidator extends AbstractMessageValidator {
             errors = List.of(e.getOriginalMessage() != null ? e.getOriginalMessage() : e.getMessage());
         }
 
+        return reportFailure(exc, flow, msg, errors);
+    }
+
+    private Outcome reportFailure(Exchange exc, Flow flow, Message msg, List<String> errors) {
+        invalid.incrementAndGet();
+        log.info("{} message did not validate against {}: {}", flow, jsonSchema, errors);
+
         if (failureHandler != null) {
             failureHandler.handleFailure(getErrorString(msg, errors), exc);
         }
 
-        var pd = user(errorDetailsPolicy.production(), getName())
-                .title(getErrorTitle())
-                .addSubType("validation")
-                .component(getName());
-        if (errorDetailsPolicy.validationDetails()) {
-            pd.topLevel("flow", flow.name());
-            pd.topLevel("errors", errors);
-        }
-        pd.buildAndSetResponse(exc);
+        errorDetailsPolicy.problemDetails(getName(), getErrorTitle(),
+                        pd -> pd.topLevel("flow", flow.name()).topLevel("errors", errors))
+                .buildAndSetResponse(exc);
 
-        invalid.incrementAndGet();
         return ABORT;
     }
 

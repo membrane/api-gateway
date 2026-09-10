@@ -14,6 +14,12 @@
 
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
+import com.predic8.membrane.core.exceptions.ProblemDetails;
+
+import java.util.function.Consumer;
+
+import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
+
 /**
  * How a validation failure is reported to the client.
  * <p>
@@ -34,4 +40,25 @@ public record ErrorDetailsPolicy(boolean validationDetails, boolean production) 
      * than through {@link ValidatorInterceptor}.
      */
     public static final ErrorDetailsPolicy FULL = new ErrorDetailsPolicy(true, false);
+
+    /**
+     * The {@link ProblemDetails} envelope reporting a rejected message: a user error naming the
+     * validator and carrying {@code title}, with {@code details} applied only when the
+     * configuration allows the validation details to be disclosed. Every validator that answers
+     * with a ProblemDetails document builds its response here, so that the disclosure decision is
+     * made in one place.
+     *
+     * @param component the validator's name
+     * @param title     what went wrong in general terms - never a message-specific detail, since
+     *                  the title is reported whether the details are disclosed or not
+     * @param details   adds the top-level members describing what was wrong with the message
+     */
+    public ProblemDetails problemDetails(String component, String title, Consumer<ProblemDetails> details) {
+        var pd = user(production, component)
+                .title(title)
+                .addSubType("validation");
+        if (validationDetails)
+            details.accept(pd);
+        return pd;
+    }
 }

@@ -104,7 +104,7 @@ public class SOAPUtil {
         body.appendChild(fault);
 
         Element faultCode = doc.createElement("faultcode");
-        faultCode.setTextContent(faultcode.name());
+        faultCode.setTextContent("soap:" + faultcode.name());
         fault.appendChild(faultCode);
 
         Element faultString = doc.createElement("faultstring");

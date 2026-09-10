@@ -20,6 +20,9 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.schemavalidation.json.JSONYAMLSchemaValidator;
 import com.predic8.membrane.core.resolver.ClasspathSchemaResolver;
 import com.predic8.membrane.core.util.ConfigurationException;
+import com.predic8.membrane.test.TestAppender;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.Logger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -31,6 +34,7 @@ import static com.predic8.membrane.core.interceptor.schemavalidation.json.JSONYA
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class JSONYAMLSchemaValidatorTest {
 
@@ -77,6 +81,23 @@ class JSONYAMLSchemaValidatorTest {
         JsonNode jn = invalidAge(build(new ErrorDetailsPolicy(true, true)));
         assertEquals(1, jn.get("errors").size(), "the schema is public, so its errors stay visible in production");
         assertNull(jn.get("attention"), "no development-mode warning on a production router");
+    }
+
+    @Test
+    void validationDetailsOffStillLogsTheErrors() throws Exception {
+        Logger root = (Logger) LogManager.getRootLogger();
+        var appender = new TestAppender("JSONYAMLSchemaValidatorTest");
+        appender.start();
+        root.addAppender(appender);
+        try {
+            invalidAge(build(new ErrorDetailsPolicy(false, false)));
+        } finally {
+            root.removeAppender(appender);
+            appender.stop();
+        }
+
+        assertTrue(appender.contains("message did not validate against"), appender.getMessages().toString());
+        assertTrue(appender.contains("minimum"), appender.getMessages().toString());
     }
 
     private static JSONYAMLSchemaValidator build(ErrorDetailsPolicy policy) {

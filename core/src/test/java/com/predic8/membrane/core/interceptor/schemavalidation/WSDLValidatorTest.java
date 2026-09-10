@@ -100,7 +100,7 @@ public class WSDLValidatorTest {
 
         String body = exc.getResponse().getBodyAsStringDecoded();
         assertEquals(200, exc.getResponse().getStatusCode());
-        assertTrue(body.contains("<faultcode>Client</faultcode>"), body);
+        assertTrue(body.contains("<faultcode>soap:Client</faultcode>"), body);
         assertTrue(body.contains("WSDL message validation failed"), body);
         assertFalse(body.contains("cvc-"), "schema error codes must not leak when details are off: " + body);
         assertFalse(body.contains("<detail>"), body);

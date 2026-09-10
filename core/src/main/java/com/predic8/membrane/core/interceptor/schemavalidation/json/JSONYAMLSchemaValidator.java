@@ -42,7 +42,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import static com.fasterxml.jackson.core.StreamReadFeature.STRICT_DUPLICATE_DETECTION;
 import static com.networknt.schema.InputFormat.JSON;
 import static com.networknt.schema.InputFormat.YAML;
-import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -150,25 +149,18 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
             return CONTINUE;
         }
 
-        log.debug("Validation failed: {}", assertions);
-
         return reportFailure(exc, flow, getMapForProblemDetails(assertions));
     }
 
     private Outcome reportFailure(Exchange exc, Flow flow, List<Map<String, Object>> mapForProblemDetails) {
         invalid.incrementAndGet();
+        log.info("{} message did not validate against {}: {}", flow, jsonSchema, mapForProblemDetails);
 
         failureHandler.handleFailure(mapForProblemDetails.toString(), exc);
 
-        var pd = user(errorDetailsPolicy.production(), getName())
-                .title(getErrorTitle())
-                .addSubType("validation")
-                .component(getName());
-        if (errorDetailsPolicy.validationDetails()) {
-            pd.topLevel("flow", flow.name());
-            pd.topLevel("errors", mapForProblemDetails);
-        }
-        pd.buildAndSetResponse(exc);
+        errorDetailsPolicy.problemDetails(getName(), getErrorTitle(),
+                        pd -> pd.topLevel("flow", flow.name()).topLevel("errors", mapForProblemDetails))
+                .buildAndSetResponse(exc);
 
         return ABORT;
     }

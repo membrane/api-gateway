@@ -155,13 +155,8 @@ public class ValidatorInterceptorTest {
      */
     @Test
     void validationDetailsIsPassedToTheValidator() throws Exception {
-        var interceptor = createSchemaValidatorInterceptor(getPathFromResource("/validation/order.xsd"));
-        interceptor.setValidationDetails(false);
-        interceptor.init(router);
+        JsonNode jn = rejectInvalidOrder(createSchemaValidatorInterceptor(getPathFromResource("/validation/order.xsd"), false));
 
-        assertEquals(ABORT, getOutcome(post("http://thomas-bayer.com").build(), interceptor, getPathFromResource("validation/invalid-order.xml")));
-
-        JsonNode jn = new ObjectMapper().readTree(exc.getResponse().getBodyAsStreamDecoded());
         assertEquals("XML message validation failed", jn.get("title").asText());
         assertNull(jn.get("validation"));
     }
@@ -171,10 +166,17 @@ public class ValidatorInterceptorTest {
         var interceptor = createSchemaValidatorInterceptor(getPathFromResource("/validation/order.xsd"));
         assertTrue(interceptor.isValidationDetails());
 
-        assertEquals(ABORT, getOutcome(post("http://thomas-bayer.com").build(), interceptor, getPathFromResource("validation/invalid-order.xml")));
+        assertEquals(1, rejectInvalidOrder(interceptor).get("validation").size());
+    }
 
-        JsonNode jn = new ObjectMapper().readTree(exc.getResponse().getBodyAsStreamDecoded());
-        assertEquals(1, jn.get("validation").size());
+    private JsonNode rejectInvalidOrder(ValidatorInterceptor interceptor) throws Exception {
+        Exchange exchange = new Exchange(null);
+        exchange.setRequest(post("http://thomas-bayer.com")
+                .body(getContent(getPathFromResource("validation/invalid-order.xml"))).build());
+
+        assertEquals(ABORT, interceptor.handleRequest(exchange));
+
+        return new ObjectMapper().readTree(exchange.getResponse().getBodyAsStreamDecoded());
     }
 
     private Outcome getOutcome(Request request, Interceptor interceptor, String fileName) throws Exception {
@@ -188,9 +190,14 @@ public class ValidatorInterceptorTest {
     }
 
     private ValidatorInterceptor createSchemaValidatorInterceptor(String schema) {
+        return createSchemaValidatorInterceptor(schema, true);
+    }
+
+    private ValidatorInterceptor createSchemaValidatorInterceptor(String schema, boolean validationDetails) {
         ValidatorInterceptor interceptor = new ValidatorInterceptor();
         interceptor.setResourceResolver(new ResolverMap());
         interceptor.setSchema(schema);
+        interceptor.setValidationDetails(validationDetails);
         interceptor.init(router);
         return interceptor;
     }
