@@ -25,17 +25,16 @@ Run Membrane as a container or as a [Java application](https://www.membrane-api.
 docker run --rm -it -p 2000:2000 predic8/membrane
 ```
 
-Open these URLs in your browser:
+Open these URLs in your browser to access sample APIs:
 
-- http://localhost:2000
-- http://localhost:2000/api-docs
+- http://localhost:2000 (Actual time)
+- http://localhost:2000/api-docs (API deployed from OpenAPI)
 
 Or call an API from the command line:
 
 ```bash
 curl http://localhost:2000/shop/v2/products
 ```
-
 
 ### Proxy Your First API
 
@@ -72,70 +71,7 @@ Requests to http://localhost:2000 are now forwarded to https://apibin.io.
 
 **Next:** Browse the configuration samples below or explore the [tutorials](distribution/tutorials).
 
-## Configuration Samples
-
-Here are a few examples showing how much you can do with a small amount of configuration.
-
-**URL Rewriting, JSON Protection, and Rate Limiting:**
-
-```yaml
-api:
-  port: 2000
-  path:
-    uri: /fruit/{id}
-  flow:
-    - jsonProtection:
-        maxDepth: 5
-    - rateLimiter:
-        requestLimit: 1000
-        requestLimitDuration: PT1H
-  target:
-    url: https://api.predic8.de/shop/v2/products/${pathParam.id}
-```
-
-
-**Deploy an API from OpenAPI with Message Validation**:
-
-Membrane can deploy APIs directly from an OpenAPI document and validate requests and responses against the schemas defined in it:
-
-```yaml
-api:
-  port: 2000
-  openapi:
-    - location: "fruitshop-api.yml"
-      validateRequests: true
-      validateResponses: true
-```
-Membrane also provides a Swagger UI for the deployed API at `/api-docs`.
-
-**Simple Token Server for JWT**
-
-Build a simple JWT token server from standard Membrane components in fewer than 20 lines. The server authenticates clients with Basic Authentication and issues a signed JWT containing the username.
-
-```yaml
-api:
-  port: 2000
-  path:
-    uri: /token
-  flow:
-    - basicAuthentication:
-        htpasswdFileProvider:
-          location: .htpasswd
-    - request:
-        - template:
-            contentType: application/json
-            src: |
-              {
-                "sub": ${user()}
-              }
-        - jwtSign:
-            jwk:
-              location: jwk.json
-    - return:
-        status: 200
-```
-
-## API Gateway eBook
+## API Gateway eBook(Free Download)
 
 Learn how API Gateways work through practical scenarios and real-world examples.
 
@@ -143,9 +79,9 @@ Learn how API Gateways work through practical scenarios and real-world examples.
 
 [Download](https://www.membrane-api.io/ebook/API-Gateway-Handbook-v2.0.0.pdf) instantly. **No registration** required.
 
-## Tech Talk
+## Participate in the API Tech Talk
 
-Meet other Membrane users **online** to discuss API gateway configuration, operation, and architecture. Membrane developers answer questions and welcome your feedback and feature requests.
+Meet other Membrane users **online** to discuss API gateway operation and architecture. Membrane developers answer questions and welcome your feedback and feature requests.
 
 ### Upcoming Topics
 
@@ -157,43 +93,34 @@ Meet other Membrane users **online** to discuss API gateway configuration, opera
 [Learn more](https://www.membrane-api.io/user-meeting/)
 
 
-## Membrane API Gateway Features
+# Why Membrane
 
-### **OpenAPI**
+## Native OpenAPI Support
 
-- Deploy APIs from [OpenAPI specifications](https://www.membrane-api.io/openapi/configuration-and-validation).
-- Validate requests and responses against [OpenAPI](distribution/examples/openapi/validation-simple) and **JSON Schema**.
-- Support for [OpenAPI 3.2](#openapi-32), including the `QUERY` method, `additionalOperations`, and `itemSchema`.
+Deploy APIs directly from [OpenAPI](https://www.membrane-api.io/openapi/configuration-and-validation) documents, [validate](distribution/examples/openapi/validation-simple) messages against them, and even generate OpenAPI specifications from legacy WSDL. In addition to OpenAPI 3.0, and 3.1, Membrane also supports **OpenAPI 3.2**.
 
-### **API Security**
-- [JSON Web Tokens](#json-web-tokens), [OAuth2](https://www.membrane-soa.org/service-proxy/oauth2-provider-client.html), [API Keys](#api-keys), [NTLM](distribution/examples/security/ntlm), and [Basic Authentication](https://www.membrane-api.io/docs/current/basicAuthentication.html).
-- Built-in [OAuth2 Authorization Server](https://www.membrane-soa.org/service-proxy-doc/4.8/security/oauth2/flows/code/index.html).
-- [Rate limiting](#rate-limiting) and traffic control
-- Protection for **GraphQL**, **JSON**, and **XML** APIs against malicious inputs.
+## Legacy XML and Web Services Integration
 
-### **AI and LLM Gateway**
-- [LLM Gateway](https://www.membrane-api.io/api-key-sharing-for-ai-and-llm-models.html)
-- [Securely Share LLM API Keys](https://www.membrane-api.io/api-key-sharing-for-ai-and-llm-models.html)
-- [MCP Protection](https://www.membrane-api.io/ai/mcp-protection-api-gateway.html)
+`wsdl2openapi` transforms a Web Service's WSDL into an OpenAPI and uses the XSD schema for the conversion between XML and JSON. Deploy a WSDL, and Membrane exposes the service as an API with an OpenAPI description.
 
-### **Legacy Web Services**
-- Seamless support for [SOAP message routing](#11-legacy-web-services-soap).
-- Configure, validate, and rewrite WSDL-based services, including [message validation](#message-validation-against-wsdl-and-xsd).
+XML and JSON are deeply integrated into Membrane. **XPath** and **JSONPath** expressions provide direct access to message data for routing, filtering, and transformation.
 
-### **Additional Features**
-- **Admin Web Console** for monitoring and management.
-- Advanced [load balancing](#load-balancing) to ensure high availability.
-- Flexible [message transformation](#7-message-transformation) for seamless data processing.
-- Embeddable reverse proxy HTTP framework to build custom API gateways.
-- Traffic shadowing
+Templates and XSLT allow for flexible message transformation and SOAP to REST conversion.
 
-### **Speed & Size**
+## OpenAPI, JSON Schema, XSD, and WSDL Validation
 
-- Streams HTTP traffic for low-latency, non-blocking processing.
-- Reuses TCP connections via HTTP Keep-Alive to reduce request overhead.
-- Lightweight distribution (~55 MB) compared to other Java-based gateways.
-- Low memory footprint, ideal for containers and cloud-native environments.
-- Java-based, yet competitive with C/C++ gateways in performance.
+Validate messages against API and service specifications. Don't let invalid messages slip into your organization.
+
+## Speed & Footprint
+
+Although Membrane is written in Java, it delivers high performance with a low memory footprint. HTTP streaming, Keep-Alive, and non-blocking processing enable efficient resource utilization and high throughput. The Membrane distribution is only about 55 MB, making it smaller than many other API gateways.
+
+On a single server Membrane can process more than **50,000 requests per second**. However, raw throughput benchmarks often measure only simple proxying without message protection or transformation.
+
+Membrane is implemented entirely in Java, from the HTTP engine to the OpenAPI support. This avoids the overhead of crossing between a native proxy core and a separate scripting runtime for plugins. As a result, Membrane can offer high performance even when multiple plugins for validation, security, and transformation are active.
+
+
+
 
 # Content
 
