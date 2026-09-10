@@ -46,13 +46,16 @@ import static com.predic8.membrane.core.util.text.TextUtil.linkURL;
  * @description Validates request and response message bodies against a schema. The schema type is selected by the
  * attribute you set: <code>wsdl</code> for SOAP messages, <code>schema</code> for XML against an XSD,
  * <code>jsonSchema</code> for JSON or YAML, or <code>schematron</code>. Exactly one of them must be configured; inside a
- * soapProxy the WSDL is taken from the proxy automatically. An empty body passes; an invalid body is rejected, either
- * with a detailed error response or a generic one plus a log entry, depending on <code>failureHandler</code>. See the
- * examples under examples/validation, examples/xml/xml-validation, and examples/web-services-soap/soap-wsdl-validation.
+ * soapProxy the WSDL is taken from the proxy automatically. An empty body passes; an invalid body is rejected with an
+ * error response that lists what was wrong. Set <code>validationDetails</code> to <code>false</code> to reject with a
+ * bare error instead, and <code>failureHandler</code> to control where the failure is logged. See
+ * distribution/tutorials/xml/50-XSD-Schema-validation.yaml and
+ * distribution/tutorials/soap/40-WSDL-Message-Validation.yaml.
  * <pre>
  * validator:
  *   wsdl: &lt;url&gt; | schema: &lt;url&gt; | jsonSchema: &lt;url&gt; | schematron: &lt;url&gt;   # choose one
- *   [ failureHandler: response | log ]   # default: response
+ *   [ validationDetails: true | false ]   # default: true
+ *   [ failureHandler: response | log ]    # default: response
  * </pre>
  * @topic 3. Security and Validation
  * @yaml
@@ -85,6 +88,7 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
     private String schematron;
     private String failureHandler;
     private boolean skipFaults;
+    private boolean validationDetails = true;
 
     private MessageValidator validator;
     private ResolverMap resourceResolver;
@@ -124,22 +128,22 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
         if (wsdl != null) {
             if (schemaMappings != null)
                 logIgnoringRefSchemas();
-            return new WSDLValidator(resourceResolver, combine(router.getConfiguration().getUriFactory(), getBeanBaseLocation(), wsdl), serviceName, createFailureHandler(), skipFaults);
+            return new WSDLValidator(resourceResolver, combine(router.getConfiguration().getUriFactory(), getBeanBaseLocation(), wsdl), serviceName, createFailureHandler(), skipFaults, errorDetailsPolicy());
         }
         if (schema != null) {
             if (schemaMappings != null)
                 logIgnoringRefSchemas();
-            return new XMLSchemaValidator(resourceResolver, combine(router.getConfiguration().getUriFactory(), getBeanBaseLocation(), schema), createFailureHandler());
+            return new XMLSchemaValidator(resourceResolver, combine(router.getConfiguration().getUriFactory(), getBeanBaseLocation(), schema), createFailureHandler(), errorDetailsPolicy());
         }
         if (jsonSchema != null) {
-            return new JSONYAMLSchemaValidator(resourceResolver, combine(router.getConfiguration().getUriFactory(), getBeanBaseLocation(), jsonSchema), createFailureHandler(), schemaVersion) {{
+            return new JSONYAMLSchemaValidator(resourceResolver, combine(router.getConfiguration().getUriFactory(), getBeanBaseLocation(), jsonSchema), createFailureHandler(), schemaVersion, errorDetailsPolicy()) {{
                 if(schemaMappings != null) setSchemaMappings(schemaMappings.getSchemaMap());
             }};
         }
         if (schematron != null) {
             if (schemaMappings != null)
                 logIgnoringRefSchemas();
-            return new SchematronValidator(combine(router.getConfiguration().getUriFactory(), getBeanBaseLocation(), schematron), createFailureHandler(), router, applicationContext);
+            return new SchematronValidator(combine(router.getConfiguration().getUriFactory(), getBeanBaseLocation(), schematron), createFailureHandler(), router, applicationContext, errorDetailsPolicy());
         }
 
         var validator = getWsdlValidatorFromSOAPProxy();
@@ -156,7 +160,11 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
         if(soapProxy == null) return null;
         wsdl = soapProxy.getResolvedWsdl();
         name = "soap validator";
-        return new WSDLValidator(resourceResolver, combine(router.getConfiguration().getUriFactory(), resolveBaseLocation(soapProxy, router), wsdl), serviceName, createFailureHandler(), skipFaults);
+        return new WSDLValidator(resourceResolver, combine(router.getConfiguration().getUriFactory(), resolveBaseLocation(soapProxy, router), wsdl), serviceName, createFailureHandler(), skipFaults, errorDetailsPolicy());
+    }
+
+    private ErrorDetailsPolicy errorDetailsPolicy() {
+        return new ErrorDetailsPolicy(validationDetails, router.getConfiguration().isProduction());
     }
 
     @Override
@@ -228,8 +236,9 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
     }
 
     /**
-     * @description How a validation failure is reported. <code>response</code> returns a detailed error to the client;
-     * <code>log</code> returns a generic error and writes the details to the log.
+     * @description Where a validation failure is reported in addition to the error response.
+     * <code>log</code> writes the details to the log, <code>response</code> does not. What the client receives is
+     * controlled by <code>validationDetails</code>.
      * @default response
      * @example log
      */
@@ -276,6 +285,22 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
     @MCAttribute
     public void setSchematron(String schematron) {
         this.schematron = schematron;
+    }
+
+    public boolean isValidationDetails() {
+        return validationDetails;
+    }
+
+    /**
+     * @description Whether validation error responses list what was wrong with the message. Set to <code>false</code>
+     * to reject with a bare error instead. The details are not hidden by production mode, because the schema a message
+     * is validated against is public.
+     * @default true
+     * @example false
+     */
+    @MCAttribute
+    public void setValidationDetails(boolean validationDetails) {
+        this.validationDetails = validationDetails;
     }
 
     public boolean isSkipFaults() {

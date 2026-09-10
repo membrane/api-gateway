@@ -25,6 +25,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.schemavalidation.AbstractMessageValidator;
+import com.predic8.membrane.core.interceptor.schemavalidation.ErrorDetailsPolicy;
 import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptor.FailureHandler;
 import com.predic8.membrane.core.resolver.Resolver;
 import org.jetbrains.annotations.NotNull;
@@ -58,6 +59,7 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
     private final Resolver resolver;
     private final String jsonSchema;
     private final FailureHandler failureHandler;
+    private final ErrorDetailsPolicy errorDetailsPolicy;
 
     private final AtomicLong valid = new AtomicLong();
     private final AtomicLong invalid = new AtomicLong();
@@ -73,15 +75,24 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
     InputFormat inputFormat;
 
     public JSONYAMLSchemaValidator(Resolver resolver, String jsonSchema, FailureHandler failureHandler, String schemaVersion, InputFormat inputFormat) {
+        this(resolver, jsonSchema, failureHandler, schemaVersion, inputFormat, ErrorDetailsPolicy.FULL);
+    }
+
+    public JSONYAMLSchemaValidator(Resolver resolver, String jsonSchema, FailureHandler failureHandler, String schemaVersion, InputFormat inputFormat, ErrorDetailsPolicy errorDetailsPolicy) {
         this.resolver = resolver;
         this.jsonSchema = jsonSchema;
         this.failureHandler = failureHandler;
         this.schemaId = JSONSchemaVersionParser.parse(schemaVersion);
         this.inputFormat = inputFormat;
+        this.errorDetailsPolicy = errorDetailsPolicy;
     }
 
     public JSONYAMLSchemaValidator(Resolver resolver, String jsonSchema, FailureHandler failureHandler, String schemaVersion) {
         this(resolver, jsonSchema, failureHandler, schemaVersion, JSON);
+    }
+
+    public JSONYAMLSchemaValidator(Resolver resolver, String jsonSchema, FailureHandler failureHandler, String schemaVersion, ErrorDetailsPolicy errorDetailsPolicy) {
+        this(resolver, jsonSchema, failureHandler, schemaVersion, JSON, errorDetailsPolicy);
     }
 
     public JSONYAMLSchemaValidator(Resolver resolver, String jsonSchema, FailureHandler failureHandler) {
@@ -149,13 +160,15 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
 
         failureHandler.handleFailure(mapForProblemDetails.toString(), exc);
 
-        user(false, getName())
+        var pd = user(errorDetailsPolicy.production(), getName())
                 .title(getErrorTitle())
                 .addSubType("validation")
-                .component(getName())
-                .internal("flow", flow.name())
-                .internal("errors", mapForProblemDetails)
-                .buildAndSetResponse(exc);
+                .component(getName());
+        if (errorDetailsPolicy.validationDetails()) {
+            pd.topLevel("flow", flow.name());
+            pd.topLevel("errors", mapForProblemDetails);
+        }
+        pd.buildAndSetResponse(exc);
 
         return ABORT;
     }

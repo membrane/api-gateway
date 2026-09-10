@@ -50,6 +50,10 @@ public class XMLSchemaValidator extends AbstractXMLSchemaValidator {
         super(resourceResolver, location, failureHandler);
     }
 
+    public XMLSchemaValidator(ResolverMap resourceResolver, String location, ValidatorInterceptor.FailureHandler failureHandler, ErrorDetailsPolicy errorDetailsPolicy) {
+        super(resourceResolver, location, failureHandler, errorDetailsPolicy);
+    }
+
     @Override
     public String getName() {
         return "xml-schema-validator";
@@ -105,20 +109,22 @@ public class XMLSchemaValidator extends AbstractXMLSchemaValidator {
 
     @Override
     protected void setErrorResponse(Exchange exchange, Interceptor.Flow flow, String message) {
-        user(false,getName())
+        var pd = user(errorDetailsPolicy.production(), getName())
                 .title(getErrorTitle())
                 .addSubType("validation")
-                .component(getName())
-                .internal("error", message)
-                .buildAndSetResponse(exchange);
+                .component(getName());
+        if (errorDetailsPolicy.validationDetails())
+            pd.topLevel("error", message);
+        pd.buildAndSetResponse(exchange);
     }
 
     @Override
     protected void setErrorResponse(Exchange exchange, Interceptor.Flow flow, List<Exception> exceptions) {
-        user(false,getName())
-                .title(getErrorTitle())
-                .internal("validation", convertExceptionsToMap(exceptions))
-                .buildAndSetResponse(exchange);
+        var pd = user(errorDetailsPolicy.production(), getName())
+                .title(getErrorTitle());
+        if (errorDetailsPolicy.validationDetails())
+            pd.topLevel("validation", convertExceptionsToMap(exceptions));
+        pd.buildAndSetResponse(exchange);
     }
 
     @Override

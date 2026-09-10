@@ -50,14 +50,20 @@ public class JSONSchemaValidator extends AbstractMessageValidator {
     private final Resolver resolver;
     private final String jsonSchema;
     private final ValidatorInterceptor.FailureHandler failureHandler;
+    private final ErrorDetailsPolicy errorDetailsPolicy;
 
     private final AtomicLong valid = new AtomicLong();
     private final AtomicLong invalid = new AtomicLong();
 
     public JSONSchemaValidator(Resolver resolver, String jsonSchema, ValidatorInterceptor.FailureHandler failureHandler) {
+        this(resolver, jsonSchema, failureHandler, ErrorDetailsPolicy.FULL);
+    }
+
+    public JSONSchemaValidator(Resolver resolver, String jsonSchema, ValidatorInterceptor.FailureHandler failureHandler, ErrorDetailsPolicy errorDetailsPolicy) {
         this.resolver = resolver;
         this.jsonSchema = jsonSchema;
         this.failureHandler = failureHandler;
+        this.errorDetailsPolicy = errorDetailsPolicy;
     }
 
     @Override
@@ -93,21 +99,17 @@ public class JSONSchemaValidator extends AbstractMessageValidator {
 
         if (failureHandler != null) {
             failureHandler.handleFailure(getErrorString(msg, errors), exc);
-            user(false,getName())
-                    .title(getErrorTitle())
-                    .addSubType("validation")
-                    .buildAndSetResponse(exc);
-            invalid.incrementAndGet();
-            return ABORT;
         }
 
-        user(false,getName())
+        var pd = user(errorDetailsPolicy.production(), getName())
                 .title(getErrorTitle())
                 .addSubType("validation")
-                .component(getName())
-                .internal("flow", flow.name())
-                .internal("errors", errors)
-                .buildAndSetResponse(exc);
+                .component(getName());
+        if (errorDetailsPolicy.validationDetails()) {
+            pd.topLevel("flow", flow.name());
+            pd.topLevel("errors", errors);
+        }
+        pd.buildAndSetResponse(exc);
 
         invalid.incrementAndGet();
         return ABORT;
