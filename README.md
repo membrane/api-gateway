@@ -61,8 +61,8 @@ docker run --rm \
 
 ```pwsh
 docker run --rm `
-    -p 2000:2000 ` 
-    -v "${PWD}/apis.yaml:/opt/membrane/conf/apis.yaml" ` 
+    -p 2000:2000 `
+    -v "${PWD}/apis.yaml:/opt/membrane/conf/apis.yaml" `
     predic8/membrane
 ```
 
