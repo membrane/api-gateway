@@ -123,6 +123,7 @@ public class EncryptSecurePart extends SecurePart {
         }
         references.forEach(EncryptionReference::validate);
         requireDistinctIds();
+        requireDistinctTargets();
         requireSupported("dataEncryptionAlgorithm", dataEncryptionAlgorithm, SUPPORTED_DATA_ENCRYPTION_ALGORITHMS);
         requireSupported("keyTransportAlgorithm", keyTransportAlgorithm, SUPPORTED_KEY_TRANSPORT_ALGORITHMS);
     }
@@ -138,6 +139,27 @@ public class EncryptSecurePart extends SecurePart {
             if (reference.getId() != null && !seen.add(reference.getId())) {
                 throw new ConfigurationException("wsSecurity secure/encrypt: the reference id \"" + reference.getId() +
                         "\" is used more than once; each xenc:EncryptedData needs its own.");
+            }
+        }
+    }
+
+    /**
+     * The same named target may not be referenced twice either: the second reference would find the
+     * {@code xenc:EncryptedData} the first left behind - nothing left to encrypt under
+     * {@code ELEMENT}, and super-encryption under {@code CONTENT}, which no receiver here accepts.
+     * <p>
+     * The counterpart across parts is {@code WsSecurityInterceptor}'s ordering check; without this
+     * one, that check would be sidestepped by writing both references under a single
+     * {@code encrypt}. XPath references are out of scope for both, since two expressions cannot be
+     * compared statically.
+     */
+    private void requireDistinctTargets() {
+        Set<EncryptionReference.By> seen = EnumSet.noneOf(EncryptionReference.By.class);
+        for (EncryptionReference reference : references) {
+            if (reference.getBy() != EncryptionReference.By.XPATH && !seen.add(reference.getBy())) {
+                throw new ConfigurationException("wsSecurity secure/encrypt: by: " + reference.getBy() +
+                        " is referenced more than once; after the first reference has encrypted it, there is an " +
+                        "xenc:EncryptedData in its place and nothing left for the second to encrypt.");
             }
         }
     }
@@ -211,8 +233,11 @@ public class EncryptSecurePart extends SecurePart {
 
         try {
             for (EncryptionReference reference : references) {
-                for (Element target : resolveEncryptionReference(doc, ctx.envelope(), ctx.security(), ctx.soapNs(),
-                        reference, parent.getXmlConfig())) {
+                List<Element> targets = resolveEncryptionReference(doc, ctx.envelope(), ctx.security(), ctx.soapNs(),
+                        reference, parent.getXmlConfig());
+                requireOneTargetPerConfiguredId(reference, targets);
+                for (Element target : targets) {
+                    requireEncryptable(target, reference, ctx.soapNs());
                     encryptedDataElements.add(encrypt(doc, target, reference, contentEncryptionKey));
                 }
             }
@@ -222,6 +247,66 @@ public class EncryptSecurePart extends SecurePart {
         }
 
         ctx.security().appendChild(createEncryptedKey(doc, contentEncryptionKey, encryptedDataElements));
+    }
+
+    /**
+     * A configured {@code id} names one {@code xenc:EncryptedData}, so the reference carrying it has
+     * to resolve to exactly one element. An XPath matching several would put that one id on every
+     * one of them, leaving a {@code xenc:ReferenceList} that names the same target repeatedly and a
+     * {@code "#id"} neither a signature nor a receiver can resolve.
+     * <p>
+     * Reported here rather than at startup for the reason {@link #requireDistinctTargets} leaves
+     * XPath alone: how many elements an expression matches depends on the message.
+     */
+    private static void requireOneTargetPerConfiguredId(EncryptionReference reference, List<Element> targets) {
+        if (reference.getId() != null && targets.size() > 1) {
+            throw new ConfigurationException(("wsSecurity secure/encrypt: reference (%s) carries id \"%s\" but " +
+                    "matched %d elements, and an id can name only one xenc:EncryptedData. Omit the id to have " +
+                    "one generated per match, or narrow the expression to a single element.")
+                    .formatted(reference.describe(), reference.getId(), targets.size()));
+        }
+    }
+
+    /**
+     * Refuses a target whose encryption would destroy the message instead of protecting it.
+     * <p>
+     * Only an XPath reference can get here: {@code by: BODY} and {@code by: USERNAME_TOKEN} name a
+     * legal target by construction, and {@code type: ELEMENT} on the body is already refused in
+     * configuration. An expression, though, can select the envelope, either of the two elements the
+     * envelope consists of, the {@code wsse:Security} header this part is writing its own key into,
+     * or an {@code xenc:EncryptedKey} that an earlier part put there - and replacing any of those
+     * yields either something that is no longer a SOAP envelope or ciphertext whose key is itself
+     * encrypted and therefore unreachable. The one structural target that can be encrypted is the
+     * body's <i>content</i>, which is the ordinary case and the default.
+     * <p>
+     * A {@link ConfigurationException} rather than a {@link WsSecurityFaultException}: what is wrong
+     * here is this gateway's own configuration, not the message, so the sender is answered with an
+     * internal error and the operator with a logged warning. A {@code wsse:InvalidSecurity} fault
+     * would tell a blameless peer their message was the problem.
+     */
+    private static void requireEncryptable(Element target, EncryptionReference reference, String soapNs) {
+        boolean asElement = reference.getType() == EncryptionReference.Type.ELEMENT;
+        String selected = null;
+        if (!(target.getParentNode() instanceof Element)) {
+            selected = "the " + target.getNodeName() + " document element, which nothing can replace";
+        } else if (isNamed(target, soapNs, "Body")) {
+            selected = asElement ? "the SOAP body, whose replacement would not be a SOAP envelope" : null;
+        } else if (isNamed(target, soapNs, "Header")) {
+            selected = "the SOAP header, which carries the wsse:Security element";
+        } else if (isNamed(target, WSSE_NS, "Security")) {
+            selected = "the wsse:Security header this part writes its own xenc:EncryptedKey into";
+        } else if (isNamed(target, XENC_NS, "EncryptedKey")) {
+            selected = "an xenc:EncryptedKey, the key material a receiver decrypts with";
+        }
+        if (selected != null) {
+            throw new ConfigurationException(("wsSecurity secure/encrypt: reference (%s) selects %s, so " +
+                    "encrypting it%s would leave a message no receiver can read.")
+                    .formatted(reference.describe(), selected, asElement ? " as a whole ELEMENT" : ""));
+        }
+    }
+
+    private static boolean isNamed(Element element, String namespace, String localName) {
+        return Objects.equals(namespace, element.getNamespaceURI()) && localName.equals(element.getLocalName());
     }
 
     /**

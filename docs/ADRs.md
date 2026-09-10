@@ -126,11 +126,12 @@ signature is simply wrong" anyway.
 - `validate/decrypt` accepts one `xenc:EncryptedKey` per message and refuses a header carrying
   several, rather than trying each against its private key. A multi-recipient message is a sender
   that addressed no header at any `actor`; see the retention note above.
-- `validate/decrypt` without `requiredReferences` asserts only that what arrived encrypted was
-  decryptable, not that anything was encrypted. `requiredReferences` is the confidentiality
-  counterpart of `validate/signature`'s wrapping defence, and a `CONTENT` reference requires
-  everything inside the element to be ciphertext — one encrypted child next to a readable sibling does
-  not satisfy it.
+- `validate/decrypt` requires an `xenc:EncryptedKey`, so configuring it already refuses a message
+  that arrived in the clear. `requiredReferences` adds *which* elements had to arrive encrypted:
+  without it, a peer that encrypted one trivial element and left the rest readable passes. It is the
+  confidentiality counterpart of `validate/signature`'s wrapping defence, and a `CONTENT` reference
+  requires everything inside the element to be ciphertext — one encrypted child next to a readable
+  sibling does not satisfy it.
 - The two reference types are consequently checked at different moments. A `CONTENT` requirement is
   checked before anything is decrypted, because afterwards the content is plaintext and how it
   arrived is unanswerable. An `ELEMENT` requirement has to be checked *after*, because element

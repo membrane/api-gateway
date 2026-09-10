@@ -50,10 +50,11 @@ import static com.predic8.membrane.core.interceptor.soap.wsse.XmlEncryptionUtil.
  * <code>xenc:EncryptedKey</code> is refused rather than searched for the key this gateway can open.
  * A multi-recipient message is a sender that addressed no header at any <code>actor</code>, and the
  * fix for it is to target each header at the role meant to process it.</p>
- * <p>Without <code>requiredReferences</code> this asserts only that whatever arrived encrypted
- * could be decrypted — not that anything was encrypted at all, so a peer sending an entirely
- * plaintext message would pass. List the elements that must have arrived encrypted to make
- * confidentiality enforceable. See
+ * <p>A message carrying no <code>xenc:EncryptedKey</code> is refused outright, so configuring this
+ * element already makes encryption mandatory. What <code>requiredReferences</code> adds is
+ * <i>which</i> elements had to arrive encrypted: without it, a peer that encrypted one trivial
+ * element and sent the rest of the message readable passes. List the elements that must have
+ * arrived encrypted to make confidentiality enforceable. See
  * <code>distribution/tutorials/web-services-security/70-Encrypt-And-Decrypt-Body.yaml</code>.</p>
  * @yaml <pre><code>
  * - wsSecurity:
@@ -169,7 +170,7 @@ public class DecryptValidatePart extends ValidatePart {
             for (Element element : resolveRequired(ctx, required)) {
                 if (!isFullyEncryptedContent(element)) {
                     throw new WsSecurityFaultException(FAILED_CHECK,
-                            "Required element (" + describe(required) + ") did not arrive encrypted.");
+                            "Required element (" + required.describe() + ") did not arrive encrypted.");
                 }
             }
         }
@@ -197,7 +198,7 @@ public class DecryptValidatePart extends ValidatePart {
             for (Element element : resolveRequired(ctx, required)) {
                 if (!restoredElements.contains(element)) {
                     throw new WsSecurityFaultException(FAILED_CHECK,
-                            "Required element (" + describe(required) + ") did not arrive encrypted.");
+                            "Required element (" + required.describe() + ") did not arrive encrypted.");
                 }
             }
         }
@@ -208,7 +209,7 @@ public class DecryptValidatePart extends ValidatePart {
             return resolveEncryptionReference(ctx.document(), ctx.envelope(), ctx.security(), ctx.soapNs(),
                     required, parent.getXmlConfig());
         } catch (WsSecurityXmlUtil.ReferenceResolutionException e) {
-            throw new WsSecurityFaultException(FAILED_CHECK, "[" + describe(required) + "] " + e.getMessage(), e);
+            throw new WsSecurityFaultException(FAILED_CHECK, "[" + required.describe() + "] " + e.getMessage(), e);
         }
     }
 
@@ -244,12 +245,6 @@ public class DecryptValidatePart extends ValidatePart {
         return node instanceof Element element
                && XENC_NS.equals(element.getNamespaceURI())
                && "EncryptedData".equals(element.getLocalName());
-    }
-
-    private static String describe(EncryptionReference required) {
-        return required.getBy() == EncryptionReference.By.XPATH
-                ? "XPATH " + required.getXpath()
-                : required.getBy().toString();
     }
 
     /**
@@ -411,8 +406,12 @@ public class DecryptValidatePart extends ValidatePart {
 
         Element restoredElement = null;
         if (contentOnly) {
+            // Put back where the ciphertext stood rather than appended: a parent carrying anything
+            // besides the xenc:EncryptedData would otherwise see the plaintext move behind it, and a
+            // validate/signature listed after this part then canonicalizes a different node order
+            // than the sender signed.
+            restored.forEach(node -> parentElement.insertBefore(node, encryptedData));
             parentElement.removeChild(encryptedData);
-            restored.forEach(parentElement::appendChild);
         } else {
             if (restored.size() != 1 || !(restored.getFirst() instanceof Element element)) {
                 throw new WsSecurityFaultException(FAILED_CHECK,

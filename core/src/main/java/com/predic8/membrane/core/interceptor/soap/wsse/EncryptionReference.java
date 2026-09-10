@@ -121,12 +121,19 @@ public class EncryptionReference {
      * reference produces, which the <code>xenc:ReferenceList</code> then points at. If omitted, one
      * is generated. Has to be an XML name — a letter or underscore followed by letters, digits,
      * <code>.</code>, <code>-</code> or <code>_</code> — since that is what the <code>ID</code> type
-     * the <code>xenc</code> schema declares allows. Only applies when encrypting; it is unused in
+     * the <code>xenc</code> schema declares allows. Names one element, so a reference carrying it has
+     * to select exactly one: an <code>xpath</code> matching several is refused rather than given the
+     * same id repeatedly. Only applies when encrypting; it is unused in
      * <code>requiredReferences</code>.
      */
     @MCAttribute
     public void setId(String id) {
         this.id = id;
+    }
+
+    /** How this reference is named in a message about it, on either the encrypt or the decrypt side. */
+    String describe() {
+        return getBy() == By.XPATH ? "XPATH " + xpath : getBy().toString();
     }
 
     void validate() {

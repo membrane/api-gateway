@@ -37,7 +37,7 @@ import java.security.PrivateKey;
 import java.security.cert.Certificate;
 import java.util.List;
 
-import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
+import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.WSU_NS;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
@@ -307,6 +307,27 @@ abstract class AbstractWsSecurityTest {
         assertAborts(wsSecurity, SOAP11_FAULT_STATUS);
         assertEquals("wsse:" + expectedCode.getLocalName(),
                 faultBody().getElementsByTagName("faultcode").item(0).getTextContent());
+    }
+
+    /**
+     * Asserts the element aborted with Problem Details rather than a {@code soap:Fault} - how a
+     * misconfiguration of this gateway is answered, as opposed to a problem with the message the
+     * sender is to blame for. The status code cannot tell the two apart, since a SOAP 1.1 fault is a
+     * 500 as well, so the content type is what pins it down.
+     */
+    void assertInternalError(WsSecurityInterceptor wsSecurity, String expectedInMessage) throws Exception {
+        assertAborts(wsSecurity, SOAP11_FAULT_STATUS);
+        // Problem Details answers in the flavour the request suggests, so an XML request gets the XML
+        // one - which is still not the text/xml soap:Fault a rejected message would have got.
+        String contentType = exchange.getResponse().getHeader().getContentType();
+        assertTrue(contentType != null && (contentType.startsWith(APPLICATION_PROBLEM_XML)
+                                           || contentType.startsWith(APPLICATION_PROBLEM_JSON)),
+                "Expected Problem Details, but the response was " + contentType);
+        // Outside production the reported message carries the reason, which is what separates one
+        // refused target from another - "it aborted with a 500" alone would not.
+        String body = exchange.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains(expectedInMessage),
+                () -> "Expected the reported message to mention \"" + expectedInMessage + "\", but was: " + body);
     }
 
     Document faultBody() throws Exception {

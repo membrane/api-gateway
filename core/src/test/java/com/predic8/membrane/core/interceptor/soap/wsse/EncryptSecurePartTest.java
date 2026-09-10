@@ -221,6 +221,107 @@ class EncryptSecurePartTest extends AbstractWsSecurityTest {
         assertFault(encrypter(TRUSTSTORE, encrypt(ALIAS_1, ref)), WsSecurityFaultCode.INVALID_SECURITY);
     }
 
+    // ---- targets an XPath must not select ------------------------------------------------------
+
+    /**
+     * The configuration guard against replacing soap:Body only sees {@code by: BODY}. An expression
+     * selecting the body is the same mistake spelled differently - and one only the resolved target
+     * can reveal, since an XPath cannot be judged at startup.
+     */
+    @Test
+    void anXpathSelectingTheBodyAsAnElementIsRefused() throws Exception {
+        exchangeWithBody(SOAP_BODY_WITH_TOKEN);
+
+        assertInternalError(encrypter(TRUSTSTORE, encrypt(ALIAS_1, elementEncrypted("//soap:Body"))),
+                "the SOAP body");
+        assertTrue(rawBody().contains("<foo>bar</foo>"),
+                "the refused message keeps the body it arrived with, half-encrypted documents are not published");
+    }
+
+    /** The counterpart: the body's content is the one structural target that can be encrypted. */
+    @Test
+    void anXpathSelectingTheBodyContentIsAccepted() throws Exception {
+        exchangeWithBody(SOAP_BODY_WITH_TOKEN);
+        EncryptionReference ref = new EncryptionReference();
+        ref.setXpath("//soap:Body");
+        ref.setType(EncryptionReference.Type.CONTENT);
+
+        assertEquals(Outcome.CONTINUE, encrypter(TRUSTSTORE, encrypt(ALIAS_1, ref)).handleRequest(exchange));
+
+        assertEquals(1, parseBody().getElementsByTagNameNS(XENC_NS, "EncryptedData").getLength());
+    }
+
+    @Test
+    void anXpathSelectingTheEnvelopeIsRefused() throws Exception {
+        exchangeWithBody(SOAP_BODY_WITH_TOKEN);
+
+        assertInternalError(encrypter(TRUSTSTORE, encrypt(ALIAS_1, elementEncrypted("/soap:Envelope"))),
+                "document element");
+    }
+
+    /** Encrypting the header this part is writing its own xenc:EncryptedKey into. */
+    @Test
+    void anXpathSelectingTheSecurityHeaderIsRefused() throws Exception {
+        exchangeWithBody(SOAP_BODY_WITH_TOKEN);
+
+        assertInternalError(encrypter(TRUSTSTORE, encrypt(ALIAS_1, elementEncrypted("//wsse:Security"))),
+                "the wsse:Security header");
+    }
+
+    /** Encrypting the key material itself would leave ciphertext nobody can ever open. */
+    @Test
+    void anXpathSelectingAnEncryptedKeyIsRefused() throws Exception {
+        exchangeWithBody(SOAP_BODY_WITH_TOKEN);
+
+        assertInternalError(encrypter(TRUSTSTORE,
+                encrypt(ALIAS_1, encryptedBodyReference()),
+                encrypt(ALIAS_1, elementEncrypted("//*[local-name()='EncryptedKey']"))),
+                "an xenc:EncryptedKey");
+    }
+
+    /**
+     * One id cannot name several xenc:EncryptedData elements: the ReferenceList would name the same
+     * target repeatedly and a "#id" would resolve to nothing.
+     */
+    @Test
+    void anIdOnAnXpathMatchingSeveralElementsIsRefused() throws Exception {
+        exchangeWithBody("""
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                    <soap:Body>
+                        <order><secret>a</secret><secret>b</secret></order>
+                    </soap:Body>
+                </soap:Envelope>
+                """);
+        EncryptionReference ref = new EncryptionReference();
+        ref.setXpath("//*[local-name()='secret']");
+        ref.setId("ED-both");
+
+        assertInternalError(encrypter(TRUSTSTORE, encrypt(ALIAS_1, ref)), "ED-both");
+    }
+
+    /** The same expression without an id is the documented one-EncryptedData-per-match case. */
+    @Test
+    void anXpathMatchingSeveralElementsIsAcceptedWithoutAnId() throws Exception {
+        exchangeWithBody("""
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                    <soap:Body>
+                        <order><secret>a</secret><secret>b</secret></order>
+                    </soap:Body>
+                </soap:Envelope>
+                """);
+        EncryptionReference ref = new EncryptionReference();
+        ref.setXpath("//*[local-name()='secret']");
+
+        assertEquals(Outcome.CONTINUE, encrypter(TRUSTSTORE, encrypt(ALIAS_1, ref)).handleRequest(exchange));
+    }
+
+    private static EncryptionReference elementEncrypted(String xpath) {
+        EncryptionReference ref = new EncryptionReference();
+        ref.setXpath(xpath);
+        ref.setType(EncryptionReference.Type.ELEMENT);
+        return ref;
+    }
+
     // ---- recipient alias resolution ------------------------------------------------------------
 
     /**
@@ -300,6 +401,29 @@ class EncryptSecurePartTest extends AbstractWsSecurityTest {
         ConfigurationException e = assertThrows(ConfigurationException.class,
                 () -> encrypter(TRUSTSTORE, encrypt(ALIAS_1, first, second)));
         assertTrue(e.getMessage().contains("ED-1"), e.getMessage());
+    }
+
+    /**
+     * The within-one-part counterpart of the interceptor's ordering rule: the second reference would
+     * find the xenc:EncryptedData the first left behind. Without this, writing both references under
+     * a single encrypt would sidestep that rule.
+     */
+    @Test
+    void theSameTargetReferencedTwiceIsRejected() {
+        ConfigurationException e = assertThrows(ConfigurationException.class, () -> encrypter(TRUSTSTORE,
+                encrypt(ALIAS_1, encryptedBodyReference(), encryptedBodyReference())));
+        assertTrue(e.getMessage().contains("BODY"), e.getMessage());
+    }
+
+    /** Two XPath references can name anything, so they are not comparable at startup. */
+    @Test
+    void twoXpathReferencesAreNotRejectedAsDuplicates() {
+        EncryptionReference first = new EncryptionReference();
+        first.setXpath("//*[local-name()='a']");
+        EncryptionReference second = new EncryptionReference();
+        second.setXpath("//*[local-name()='b']");
+
+        assertDoesNotThrow(() -> encrypter(TRUSTSTORE, encrypt(ALIAS_1, first, second)));
     }
 
     /** An id becomes an XML {@code ID} and a {@code "#..."} reference, so not every string will do. */

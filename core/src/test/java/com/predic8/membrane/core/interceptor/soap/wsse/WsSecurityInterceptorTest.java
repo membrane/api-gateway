@@ -361,6 +361,49 @@ class WsSecurityInterceptorTest extends AbstractWsSecurityTest {
         assertDoesNotThrow(() -> wsSecurity.init(router));
     }
 
+    /**
+     * The mirror image of the rule above: an encrypt with type: ELEMENT replaces the token outright,
+     * so a signature covering it has to come first. Caught at startup rather than per message.
+     */
+    @Test
+    void signingAnElementEncryptedUsernameTokenIsAConfigurationError() {
+        WsSecurityInterceptor wsSecurity = securing(usernameTokenSecuring(),
+                encrypt(ALIAS_1, encryptionReference(EncryptionReference.By.USERNAME_TOKEN)),
+                signature(reference(SignatureReference.By.USERNAME_TOKEN)));
+        wsSecurity.setKeyStore(signingKeyStore(ALIAS_1));
+        wsSecurity.setTrustStore(trustStore(TRUSTSTORE));
+
+        ConfigurationException e = assertThrows(ConfigurationException.class, () -> wsSecurity.init(router));
+        assertTrue(e.getMessage().contains("secure/signature"), e.getMessage());
+        assertTrue(e.getMessage().contains("USERNAME_TOKEN"), e.getMessage());
+    }
+
+    /** A second encrypt naming the same token is the same mistake, and used to fail per message. */
+    @Test
+    void encryptingAnElementEncryptedUsernameTokenAgainIsAConfigurationError() {
+        WsSecurityInterceptor wsSecurity = securing(usernameTokenSecuring(),
+                encrypt(ALIAS_1, encryptionReference(EncryptionReference.By.USERNAME_TOKEN)),
+                encrypt(ALIAS_1, encryptionReference(EncryptionReference.By.USERNAME_TOKEN)));
+        wsSecurity.setTrustStore(trustStore(TRUSTSTORE));
+
+        ConfigurationException e = assertThrows(ConfigurationException.class, () -> wsSecurity.init(router));
+        assertTrue(e.getMessage().contains("secure/encrypt"), e.getMessage());
+        assertTrue(e.getMessage().contains("USERNAME_TOKEN"), e.getMessage());
+    }
+
+    /** CONTENT encryption leaves the token element in place, so a later part still finds it. */
+    @Test
+    void contentEncryptingTheUsernameTokenLeavesItSignable() {
+        WsSecurityInterceptor wsSecurity = securing(usernameTokenSecuring(),
+                encrypt(ALIAS_1, encryptionReference(EncryptionReference.By.USERNAME_TOKEN,
+                        EncryptionReference.Type.CONTENT)),
+                signature(reference(SignatureReference.By.USERNAME_TOKEN)));
+        wsSecurity.setKeyStore(signingKeyStore(ALIAS_1));
+        wsSecurity.setTrustStore(trustStore(TRUSTSTORE));
+
+        assertDoesNotThrow(() -> wsSecurity.init(router));
+    }
+
     private static UsernameTokenSecurePart usernameTokenSecuring() {
         UsernameTokenSecurePart usernameToken = new UsernameTokenSecurePart();
         usernameToken.setUsername("alice");

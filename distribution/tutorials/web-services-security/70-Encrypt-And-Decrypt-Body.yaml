@@ -28,9 +28,10 @@
 # 3.) Send an unencrypted request directly to port 2001
 #    curl -d @request.xml -H "Content-Type: text/xml" http://localhost:2001
 #
-#    Expected: a soap:Fault. This is what requiredReferences is for - without it, decrypt would
-#    accept a message that simply arrived in the clear, and confidentiality would be optional for
-#    anyone talking to this gateway.
+#    Expected: a soap:Fault. Configuring decrypt is what makes encryption mandatory: a message
+#    carrying no xenc:EncryptedKey is refused, so confidentiality is not optional for anyone talking
+#    to this gateway. requiredReferences goes one step further and says which elements had to arrive
+#    encrypted - without it, a peer could encrypt one trivial element and send the rest readable.
 
 api:
   name: Encryptor

@@ -170,7 +170,7 @@ public class WsSecurityInterceptor extends AbstractInterceptor {
                 "sign", part -> part instanceof SignatureSecurePart signature && signature.references(by)));
         ENCRYPT_CREATED_BY.forEach((by, creator) -> requireCreatorListedFirst(parts, creator, "encrypt", by.name(),
                 "encrypt", part -> part instanceof EncryptSecurePart encrypt && encrypt.references(by)));
-        checkNothingSignsWhatEncryptRemoves(parts);
+        checkNothingCoversWhatEncryptRemoves(parts);
     }
 
     private static void requireCreatorListedFirst(List<SecurePart> parts, Class<? extends SecurePart> creator,
@@ -195,12 +195,16 @@ public class WsSecurityInterceptor extends AbstractInterceptor {
      * because an {@code encrypt} with {@code type: ELEMENT} replaces its target outright and a later
      * part naming that element then finds nothing there.
      * <p>
+     * A {@code signature} is not the only part that can be listed too late: a second
+     * {@code encrypt} naming the same token has the same problem, and would otherwise pass
+     * {@code init()} only to fail per message once the token is not where the reference says.
+     * <p>
      * Only {@code ELEMENT} destroys anything. {@code CONTENT} leaves the element and its
      * {@code wsu:Id} in place, which is exactly what keeps sign-then-encrypt of the body legal - the
      * common case, and one this must not reject. XPath targets are out of scope, since two
      * expressions cannot be compared statically.
      */
-    private static void checkNothingSignsWhatEncryptRemoves(List<SecurePart> parts) {
+    private static void checkNothingCoversWhatEncryptRemoves(List<SecurePart> parts) {
         for (int i = 0; i < parts.size(); i++) {
             if (!(parts.get(i) instanceof EncryptSecurePart encrypt)
                 || !encrypt.replacesElement(EncryptionReference.By.USERNAME_TOKEN)) {
@@ -209,13 +213,21 @@ public class WsSecurityInterceptor extends AbstractInterceptor {
             for (SecurePart later : parts.subList(i + 1, parts.size())) {
                 if (later instanceof SignatureSecurePart signature
                     && signature.references(SignatureReference.By.USERNAME_TOKEN)) {
-                    throw new ConfigurationException(
-                            "wsSecurity: a secure/signature referencing by: USERNAME_TOKEN must be listed before " +
-                            "the secure/encrypt that replaces it with an xenc:EncryptedData, otherwise there is " +
-                            "nothing left there to sign.");
+                    throw tooLateForTheUsernameToken("signature", "sign");
+                }
+                if (later instanceof EncryptSecurePart laterEncrypt
+                    && laterEncrypt.references(EncryptionReference.By.USERNAME_TOKEN)) {
+                    throw tooLateForTheUsernameToken("encrypt", "encrypt");
                 }
             }
         }
+    }
+
+    private static ConfigurationException tooLateForTheUsernameToken(String element, String verb) {
+        return new ConfigurationException(
+                ("wsSecurity: a secure/%s referencing by: USERNAME_TOKEN must be listed before the secure/encrypt " +
+                 "that replaces it with an xenc:EncryptedData, otherwise there is nothing left there to %s.")
+                        .formatted(element, verb));
     }
 
     private static int indexOf(List<SecurePart> parts, Class<? extends SecurePart> type) {

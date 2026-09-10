@@ -109,6 +109,29 @@ class DecryptValidatePartTest extends AbstractWsSecurityTest {
         assertEquals("widget", order.getTextContent().trim());
     }
 
+    /**
+     * Content decryption has to put the plaintext back where the ciphertext stood. Appended to the
+     * parent instead, it would move behind any sibling that parent carries - and a validate/signature
+     * listed after this part would then canonicalize a different node order than the sender signed.
+     */
+    @Test
+    void contentDecryptionRestoresThePlaintextWhereTheCiphertextStood() throws Exception {
+        exchangeWithBody(PLAINTEXT_BODY);
+        encryptFor(ALIAS_1);
+
+        // A sibling behind the ciphertext, so appending and inserting are distinguishable at all.
+        Document sent = parseBody();
+        Element body = firstByTag(sent, SOAP_NS, "Body");
+        body.appendChild(sent.createElement("tail"));
+        setBody(sent);
+
+        assertEquals(Outcome.CONTINUE, decrypter(ALIAS_1, decrypt()).handleRequest(exchange));
+
+        assertEquals(List.of("foo", "tail"),
+                WsSecurityXmlUtil.childElementsOf(firstByTag(parseBody(), SOAP_NS, "Body")).stream()
+                        .map(Element::getLocalName).toList());
+    }
+
     // ---- cryptographic failure -----------------------------------------------------------------
 
     @Test
