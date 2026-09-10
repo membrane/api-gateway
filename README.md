@@ -1,6 +1,6 @@
 ![Membrane Logo](distribution/media/membrane-logo-text-500.png)
 
-# API Gateway Bridging Legacy and Modern APIs
+# Modern API Gateway with Legacy Support for XML, SOAP, and WSDL
 
 [![GitHub release](https://img.shields.io/github/v/release/membrane/api-gateway?display_name=tag)](https://github.com/membrane/api-gateway/releases/latest)
 [![Build](https://img.shields.io/github/actions/workflow/status/membrane/api-gateway/build-and-test.yml?branch=master)](https://github.com/membrane/api-gateway/actions)
