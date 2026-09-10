@@ -1,6 +1,6 @@
-![Membrane Logo](distribution/media/membrane-logo-m-text.svg)
+![Membrane Logo](distribution/media/membrane-logo-text-500.png)
 
-# Modern API Gateway with Legacy Support for XML, SOAP, and WSDL
+# API Gateway Bridging Legacy and Modern APIs
 
 [![GitHub release](https://img.shields.io/github/v/release/membrane/api-gateway?display_name=tag)](https://github.com/membrane/api-gateway/releases/latest)
 [![Build](https://img.shields.io/github/actions/workflow/status/membrane/api-gateway/build-and-test.yml?branch=master)](https://github.com/membrane/api-gateway/actions)
@@ -9,9 +9,11 @@
 
 <img src="docs/images/api-gateway-demo.gif" alt="Animated demo of Membrane API Gateway" width="800">
 
-Built on the **Java platform**, Membrane provides comprehensive legacy integration, including **XML-to-JSON transformation**, **WSDL-to-OpenAPI conversion**, **SOAP-to-REST integration**, and message validation against **OpenAPI** and **WSDL**.
+Built on the **Java platform**, Membrane bridges legacy and modern APIs. It supports **XML-to-JSON transformation**, **WSDL-to-OpenAPI conversion**, **SOAP-to-REST integration**, and validation against **OpenAPI** and **WSDL**.
 
-At the same time, Membrane supports modern API technologies such as **OAuth 2**, **JWT**, and **GraphQL**. It is **easy to set up** and deploy, whether in a containerized environment or as a Java application in a virtual machine.
+For modern APIs, Membrane supports technologies such as OAuth 2, JWT, and AI, along with a broad range of routing, transformation, and observability features. It is easy to set up and deploy, either as a container or as a Java application on a virtual machine.
+
+Extending Membrane does not require learning Lua. Combine flexible interceptors such as `if` and `loop` with short **Groovy** or **SpEL** scripts, or implement custom extensions in **Java**.
 
 ## Try Membrane in 5 Minutes
 
