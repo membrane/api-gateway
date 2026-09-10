@@ -55,6 +55,8 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
 
     public static final String SCHEMA_VERSION_2020_12 = "2020-12";
 
+    private static final Set<String> LOGGED_ERROR_FIELDS = Set.of("message", "key", "keyword", "pointer");
+
     private final Resolver resolver;
     private final String jsonSchema;
     private final FailureHandler failureHandler;
@@ -154,7 +156,7 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
 
     private Outcome reportFailure(Exchange exc, Flow flow, List<Map<String, Object>> mapForProblemDetails) {
         invalid.incrementAndGet();
-        log.info("{} message did not validate against {}: {}", flow, jsonSchema, mapForProblemDetails);
+        log.info("{} message did not validate against {}: {}", flow, jsonSchema, failedConstraints(mapForProblemDetails));
 
         failureHandler.handleFailure(mapForProblemDetails.toString(), exc);
 
@@ -178,6 +180,14 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
             parser.nextToken();
         }
         return assertions;
+    }
+
+    private static List<Map<String, Object>> failedConstraints(List<Map<String, Object>> errors) {
+        return errors.stream().<Map<String, Object>>map(error -> {
+            var constraint = new LinkedHashMap<>(error);
+            constraint.keySet().retainAll(LOGGED_ERROR_FIELDS);
+            return constraint;
+        }).toList();
     }
 
     private @NotNull List<Map<String, Object>> getMapForProblemDetails(List<Error> assertions) {

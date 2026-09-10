@@ -26,12 +26,15 @@ import org.apache.logging.log4j.core.Logger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.concurrent.Callable;
+
 import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.schemavalidation.json.JSONYAMLSchemaValidator.SCHEMA_VERSION_2020_12;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -83,21 +86,55 @@ class JSONYAMLSchemaValidatorTest {
         assertNull(jn.get("attention"), "no development-mode warning on a production router");
     }
 
+    /**
+     * Withholding the details from the client must not withhold the failed constraint from the
+     * operator: the failure handler is a no-op by default, so the log is the only place left where
+     * the reason for the rejection can be found.
+     */
     @Test
-    void validationDetailsOffStillLogsTheErrors() throws Exception {
+    void validationDetailsOffStillLogsTheFailedConstraint() throws Exception {
+        var appender = captureLog(() -> invalidAge(build(new ErrorDetailsPolicy(false, false))));
+
+        assertTrue(appender.contains("message did not validate against"), appender.getMessages().toString());
+        assertTrue(appender.contains("minimum"), appender.getMessages().toString());
+    }
+
+    /**
+     * What the log must not carry is the message being validated. An {@code additionalProperties}
+     * violation reports the whole body as the offending node, so a rejected login would otherwise
+     * put the submitted password in the log.
+     */
+    @Test
+    void submittedValuesAreNotLogged() throws Exception {
+        var appender = captureLog(() -> {
+            Exchange exc = get("/foo").body("""
+                    {
+                        "name": "Bob",
+                        "secret": "hunter2"
+                    }
+                    """).buildExchange();
+            assertEquals(ABORT, build(new ErrorDetailsPolicy(false, false)).validateMessage(exc, REQUEST));
+            return null;
+        });
+
+        String logged = appender.getMessages().toString();
+        assertTrue(logged.contains("additionalProperties"), logged);
+        assertFalse(logged.contains("hunter2"), "the submitted value must not be logged: " + logged);
+        assertFalse(logged.contains("node="), "the offending node must not be logged: " + logged);
+    }
+
+    private static TestAppender captureLog(Callable<?> validation) throws Exception {
         Logger root = (Logger) LogManager.getRootLogger();
         var appender = new TestAppender("JSONYAMLSchemaValidatorTest");
         appender.start();
         root.addAppender(appender);
         try {
-            invalidAge(build(new ErrorDetailsPolicy(false, false)));
+            validation.call();
         } finally {
             root.removeAppender(appender);
             appender.stop();
         }
-
-        assertTrue(appender.contains("message did not validate against"), appender.getMessages().toString());
-        assertTrue(appender.contains("minimum"), appender.getMessages().toString());
+        return appender;
     }
 
     private static JSONYAMLSchemaValidator build(ErrorDetailsPolicy policy) {
