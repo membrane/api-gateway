@@ -114,7 +114,7 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- For LoadTester tool -->
+        <!-- For ComplexLoadTester tool -->
         <dependency>
             <groupId>org.asynchttpclient</groupId>
             <artifactId>async-http-client</artifactId>
