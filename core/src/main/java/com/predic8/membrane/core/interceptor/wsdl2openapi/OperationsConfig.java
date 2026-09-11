@@ -23,8 +23,8 @@ import java.util.Map;
 
 /**
  * @description Configures which WSDL operations are exposed via OpenAPI. Add one attribute per
- * operation you want to expose, naming it after the WSDL operation and giving it a nested
- * <code>operationSettings</code> value. Omitting this element exposes every WSDL operation with
+ * operation you want to expose, naming it after the WSDL operation and giving it an
+ * <code>OperationSettings</code> value. Omitting this element exposes every WSDL operation with
  * default settings.
  * See tutorials/wsdl-to-openapi/20-WSDL-to-OpenAPI-REST.yaml.
  * @yaml <pre><code>
