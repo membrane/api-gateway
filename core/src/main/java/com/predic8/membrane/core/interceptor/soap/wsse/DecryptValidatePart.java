@@ -609,11 +609,13 @@ public class DecryptValidatePart extends ValidatePart {
 
     /**
      * @description The elements that must have arrived encrypted. Validation fails if any of them was
-     * sent in the clear. Without this list, a message carrying no encryption at all is accepted, so
-     * this is what makes confidentiality an enforced requirement rather than an option the peer may
-     * decline. Each entry's <code>type</code> says <i>how</i> the element had to arrive, and has to
-     * match what the sender did: <code>CONTENT</code> requires everything inside the element to be
-     * ciphertext, <code>ELEMENT</code> requires the element itself to have been replaced by an
+     * sent in the clear. <code>decrypt</code> already requires every message to carry an
+     * <code>xenc:EncryptedKey</code>, whether or not this list is set; what it adds is <i>which</i>
+     * elements had to be among the ones that key decrypts — without it, a peer that encrypted one
+     * trivial element and sent the rest in the clear still passes. Each entry's <code>type</code>
+     * says <i>how</i> the element had to arrive, and has to match what the sender did:
+     * <code>CONTENT</code> requires everything inside the element to be ciphertext,
+     * <code>ELEMENT</code> requires the element itself to have been replaced by an
      * <code>xenc:EncryptedData</code>.
      */
     @MCChildElement(order = 1)
