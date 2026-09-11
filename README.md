@@ -103,9 +103,11 @@ When you need more flexibility, extend Membrane with expressions and scripting u
 
 Although Membrane is written in Java, it delivers high performance with a low memory footprint. HTTP streaming, Keep-Alive, and non-blocking processing enable efficient resource utilization and high throughput. The Membrane distribution is only about 55 MB, making it smaller than many other API gateways.
 
-On a single server Membrane can process more than **50,000 requests per second**. However, raw throughput benchmarks often measure only simple proxying without message protection or transformation.
+On a single server Membrane can process **39,000 requests per second**. However, raw throughput benchmarks often measure only simple proxying without message protection or transformation.
 
-Membrane is implemented entirely in Java, from the HTTP engine to the OpenAPI support. This avoids the overhead of crossing between a native proxy core and a separate scripting runtime for plugins. As a result, Membrane can offer high performance even when multiple plugins for validation, security, and transformation are active.
+Membrane is implemented entirely in Java, from the HTTP engine to OpenAPI processing. This avoids the overhead of crossing between a native proxy core and a separate scripting runtime for plugins.
+
+As a result, Membrane can maintain high performance even when multiple plugins for validation, security, and transformation are active. What matters is not performance in reduced benchmark setups, but performance under realistic gateway configurations.
 
 # What Can You Do With Membrane?
 
