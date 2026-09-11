@@ -21,6 +21,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.HeaderField;
 import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.util.MemcachedConnector;
+import net.rubyeye.xmemcached.GetsResponse;
 import net.rubyeye.xmemcached.MemcachedClient;
 import net.rubyeye.xmemcached.exception.MemcachedException;
 
@@ -75,13 +76,88 @@ public class MemcachedSessionManager extends SessionManager {
     }
 
     protected void addSessions(Session[] sessions) {
-        Arrays.stream(sessions).forEach(s -> {
-            try {
-                client.set(s.get(ID_NAME), Math.toIntExact(getExpiresAfterSeconds()), stringify(s));
-            } catch (TimeoutException | InterruptedException | MemcachedException e) {
-                throw new RuntimeException(e);
-            }
-        });
+        Arrays.stream(sessions).forEach(s ->
+                SessionCasWriter.write(store, s.get(ID_NAME), s, Math.toIntExact(getExpiresAfterSeconds())));
+    }
+
+    /**
+     * Adapts the memcached client to what {@link SessionCasWriter} needs. The four operations that touch
+     * the server are separate methods so that a test double can replace the server without reimplementing
+     * anything else.
+     */
+    private final SessionCasWriter.Store store = new SessionCasWriter.Store() {
+        @Override
+        public Optional<SessionCasWriter.VersionedValue> read(String key) {
+            return readVersioned(key);
+        }
+
+        @Override
+        public boolean createIfAbsent(String key, String value, int ttlSeconds) {
+            return MemcachedSessionManager.this.createIfAbsent(key, value, ttlSeconds);
+        }
+
+        @Override
+        public boolean compareAndSet(String key, Object version, String value, int ttlSeconds) {
+            return MemcachedSessionManager.this.compareAndSet(key, version, value, ttlSeconds);
+        }
+
+        @Override
+        public void blindSet(String key, String value, int ttlSeconds) {
+            MemcachedSessionManager.this.blindSet(key, value, ttlSeconds);
+        }
+
+        @Override
+        public Map<String, Object> parse(String value) {
+            return MemcachedSessionManager.this.parse(value).getContent();
+        }
+
+        @Override
+        public String serialize(Map<String, Object> content) {
+            return stringify(rawSession(content));
+        }
+
+        @Override
+        public boolean isAdditiveKey(String key) {
+            return MemcachedSessionManager.this.isAdditiveKey(key);
+        }
+    };
+
+    /**
+     * memcached hands out a CAS token with every read, which {@link #compareAndSet} passes back to prove
+     * that nothing was written in between.
+     */
+    protected Optional<SessionCasWriter.VersionedValue> readVersioned(String key) {
+        try {
+            GetsResponse<String> response = client.gets(key);
+            return Optional.ofNullable(response)
+                    .map(r -> new SessionCasWriter.VersionedValue(r.getValue(), r.getCas()));
+        } catch (TimeoutException | InterruptedException | MemcachedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    protected boolean createIfAbsent(String key, String value, int ttlSeconds) {
+        try {
+            return client.add(key, ttlSeconds, value);
+        } catch (TimeoutException | InterruptedException | MemcachedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    protected boolean compareAndSet(String key, Object version, String value, int ttlSeconds) {
+        try {
+            return client.cas(key, ttlSeconds, value, (Long) version);
+        } catch (TimeoutException | InterruptedException | MemcachedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    protected void blindSet(String key, String value, int ttlSeconds) {
+        try {
+            client.set(key, ttlSeconds, value);
+        } catch (TimeoutException | InterruptedException | MemcachedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     protected String stringify(Session session) {
@@ -163,11 +239,7 @@ public class MemcachedSessionManager extends SessionManager {
     }
 
     protected Optional<String> getCachedSession(String cookie) {
-        try {
-            return Optional.ofNullable(client.get(getKeyOfCookie(cookie)));
-        } catch (TimeoutException | InterruptedException | MemcachedException e) {
-            throw new RuntimeException(e);
-        }
+        return readVersioned(getKeyOfCookie(cookie)).map(SessionCasWriter.VersionedValue::value);
     }
 
     public MemcachedConnector getConnector() {
