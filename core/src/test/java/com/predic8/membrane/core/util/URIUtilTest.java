@@ -183,8 +183,8 @@ public class URIUtilTest {
 
     @Test
     void toFileURIStringTest() throws URISyntaxException {
-        assertEquals(wl("file:/C:/swig/jig", "file:/swig/jig"), FileUtil.toFileURIString(new File("/swig/jig")));
-        assertEquals(wl("file:/C:/jag%20sag/runt", "file:/jag%20sag/runt"), FileUtil.toFileURIString(new File("/jag sag/runt")));
+        assertEquals(wl("file:/" + currentDrive() + "/swig/jig", "file:/swig/jig"), FileUtil.toFileURIString(new File("/swig/jig")));
+        assertEquals(wl("file:/" + currentDrive() + "/jag%20sag/runt", "file:/jag%20sag/runt"), FileUtil.toFileURIString(new File("/jag sag/runt")));
     }
 
     String wl(String windows, String linux) {
@@ -193,10 +193,21 @@ public class URIUtilTest {
         return linux;
     }
 
+    /**
+     * A leading "/" in a File resolves against the JVM's current drive, which isn't
+     * necessarily C: (e.g. CI runners may check out onto D:). Only meaningful on Windows;
+     * {@code wl()} evaluates both arguments eagerly, so this must not throw on other OSes.
+     */
+    String currentDrive() {
+        if (!OSUtil.isWindows())
+            return "";
+        return new File("/").getAbsolutePath().substring(0, 2);
+    }
+
     @Test
     void toFileURIStringSpaceTest() throws URISyntaxException {
         assertEquals(wl(
-                "file:/C:/chip%20clip",
+                "file:/" + currentDrive() + "/chip%20clip",
                 "file:/chip%20clip"
         ), FileUtil.toFileURIString(new File("/chip clip")));
     }
