@@ -6,15 +6,13 @@
 [![GitHub release](https://img.shields.io/github/v/release/membrane/api-gateway?display_name=tag)](https://github.com/membrane/api-gateway/releases/latest)
 [![Build](https://img.shields.io/github/actions/workflow/status/membrane/api-gateway/build-and-test.yml?branch=master)](https://github.com/membrane/api-gateway/actions)
 [![Docker Pulls](https://img.shields.io/docker/pulls/predic8/membrane)](https://hub.docker.com/r/predic8/membrane)
-[![Hex.pm](https://img.shields.io/hexpm/l/plug.svg)](https://raw.githubusercontent.com/membrane/api-gateway/master/distribution/router/LICENSE.txt)
+[![License](https://img.shields.io/github/license/membrane/api-gateway)](https://github.com/membrane/api-gateway/blob/master/distribution/router/LICENSE.txt)
 
 <img src="docs/images/api-gateway-demo.gif" alt="Animated demo of Membrane API Gateway" width="800">
 
 Built on the **Java platform**, Membrane bridges legacy and modern APIs. It supports **XML-to-JSON transformation**, **WSDL-to-OpenAPI conversion**, **SOAP-to-REST integration**, and validation against **OpenAPI** and **WSDL**.
 
 For modern APIs, Membrane supports technologies such as OAuth 2, JWT, and AI, along with a broad range of routing, transformation, and observability features. It is easy to set up and deploy, either as a container or as a Java application on a virtual machine.
-
-Extending Membrane does not require learning Lua. Combine flexible interceptors such as `if` and `loop` with short **Groovy** or **SpEL** scripts, or implement custom extensions in **Java**.
 
 ## Try Membrane in 5 Minutes
 
@@ -53,24 +51,23 @@ Start Membrane with your configuration:
 **Linux/macOS:**
 
 ```bash
-docker run --rm \
-  -p 2000:2000 \
-  -v "$(pwd)/apis.yaml:/opt/membrane/conf/apis.yaml" \
-  predic8/membrane
+docker run --rm -p 2000:2000 -v "$(pwd)/apis.yaml:/opt/membrane/conf/apis.yaml" predic8/membrane
 ```
 
 **Windows PowerShell:**
 
 ```pwsh
-docker run --rm `
-    -p 2000:2000 `
-    -v "${PWD}/apis.yaml:/opt/membrane/conf/apis.yaml" `
-    predic8/membrane
+docker run --rm -p 2000:2000 -v "${PWD}/apis.yaml:/opt/membrane/conf/apis.yaml" predic8/membrane
 ```
 
 Requests to http://localhost:2000 are now forwarded to https://apibin.io.
 
-**Next:** Browse the configuration samples below or explore the [tutorials](distribution/tutorials).
+### Make the Getting Started Tutorial
+
+1. [Download](https://github.com/membrane/api-gateway) the Membrane distribution
+2. Unzip
+3. Open [tutorials/getting-started/10-First-API.yaml](distribution/tutorials/getting-started/10-First-API.yaml) in your text editor and follow the instructions.
+
 
 # Why Membrane
 
@@ -125,55 +122,39 @@ Membrane is implemented entirely in Java, from the HTTP engine to the OpenAPI su
 * Deploy Membrane in **containers, virtual machines, private clouds, or public clouds**.
 
 
-# Sample Configurations
+# Membrane Features with Exsamples 
 
-1. [Getting Started](#1-getting-started)
-    - [Java](#java-standalone)
-    - [Docker](#docker)
-2. [Basics](#2-basics)
-    - [API Definition and Configuration](#api-definition-and-configuration)
-    - [Simple REST and HTTP Forwarding APIs](#simple-rest-and-http-forwarding-apis)
-3. [OpenAPI Support](#3-openapi-support)
-    - [Deploy APIs with OpenAPI](#deploy-apis-with-openapi)
-    - [OpenAPI 3.2](#openapi-32)
-4. [AI and LLM Gateway](#4-ai-and-llm-gateway)
-    - [LLM Gateway](#llm-gateway)
-    - [MCP Protection](#mcp-protection)
-5. [Routing](#5-routing)
-    - [Short Circuit](#short-circuit)
-    - [URL Rewriting](#url-rewriting)
+For a quick overview of what you can do with Membrane, the sections below provide a selection of short examples and configuration snippets.
+
+1. [OpenAPI Deployment, Message Validation and Swagger UI](#1-openapi-deployment-message-validation-and-swagger-ui)
+2. [Legacy Web Services with SOAP and WSDL](#2-legacy-web-services-with-soap-and-wsdl)
+   - [API Configuration from WSDL](#api-configuration-from-wsdl)
+   - [Message Validation against WSDL and XSD](#message-validation-against-wsdl-and-xsd)
+3. [AI and LLM Gateway](#3-ai-and-llm-gateway)
+   - [MCP Protection](#mcp-protection)
+   - [LLM Gateway](#llm-gateway)
+4. [Routing](#4-routing)
+5. [Message Transformation](#5-message-transformation)
+   - [Templates](#71-templates)
 6. [Scripting](#6-scripting)
-    - With [Groovy](#groovy-scripts) and [JavaScript](#javascript-scripts)
-    - [Creating Responses with Groovy](#creating-responses-with-groovy)
-7. [Message Transformation](#7-message-transformation)
-    - [Manipulating](#manipulating-http-headers) and [removing](#removing-http-headers) HTTP Headers
-    - [Create JSON from Query Parameters](#create-json-from-query-parameters)
-    - [Transform JSON into TEXT, JSON or XML with Templates](#transform-json-into-text-json-or-xml-with-templates)
-    - [Transform XML into Text or JSON](#transform-xml-into-text-or-json)
-    - [Complex Transformations Using JavaScript or Groovy](#complex-transformations-using-javascript-or-groovy)
-    - [Transformation with Computations](#transformation-with-computations)
-    - [JSON and XML Beautifier](#json-and-xml-beautifier)
-8. [Conditionals with if](#8-conditionals-with-if)
-9. [Security](#9-security)
-    - [API Keys](#api-keys) and [Basic Authentication](#basic-authentication)
-    - [SSL/TLS](#ssltls)
-    - [JSON Web Tokens](#json-web-tokens)
-    - [OAuth2](#oauth2)
-    - [XML and JSON Protection](#xml-and-json-protection)
-10. [Traffic Control](#10-traffic-control)
-    - [Rate Limiting](#rate-limiting)
-    - [Load Balancing](#load-balancing)
-11. [Legacy Web Services](#11-legacy-web-services-soap)
-    - [API Configuration from WSDL](#api-configuration-from-wsdl)
-    - [Message Validation against WSDL and XSD](#message-validation-against-wsdl-and-xsd)
-12. [Other Protocols](#12-other-protocols)
-    - [JSON-RPC](#json-rpc)
-    - [WebSockets](#websockets)
-13. [Operation](#13-operation)
-    - [Logging](#log-http)
-    - [Monitoring with Prometheus and Grafana](#monitoring-with-prometheus-and-grafana)
-    - [OpenTelemetry](#opentelemetry-integration)
-14. [Community and Enterprise Support](#14-community-and-enterprise-support)
+   - [Conditional Processing With the ´if´-Statement](#conditional-processing-with-the-if-statement)
+7. [Security](#7-security)
+   - [API Keys](#api-keys)
+   - [JSON Web Tokens](#json-web-tokens)
+   - [OAuth2](#oauth2)
+   - [SSL/TLS](#ssltls)
+   - [XML, JSON, JSON-RPC and GraphQL Protection](#xml-json-json-rpc-and-graphql-protection)
+8. [Traffic Control](#8-traffic-control)
+   - [Rate Limiting](#rate-limiting)
+   - [Load Balancing](#load-balancing)
+9. [Operation](#9-operation)
+   - [Monitoring with Prometheus and Grafana](#monitoring-with-prometheus-and-grafana)
+   - [OpenTelemetry Integration](#opentelemetry-integration)
+10. [Community and Enterprise Support](#10-community-and-enterprise-support)
+    - [Community Support](#community-support)
+    - [Enterprise-Grade Support](#enterprise-grade-support)
+    - [API Gateway eBook(Free Download)](#api-gateway-ebookfree-download)
+    - [Participate in the API Tech Talk](#participate-in-the-api-tech-talk)
 
 # 1. OpenAPI Deployment, Message Validation and Swagger UI
 
@@ -321,7 +302,7 @@ See the [API reference documentation](https://www.membrane-api.io/docs/current/a
 
 # 5. Message Transformation
 
-## 7.1 Templates
+## Templates
 
 Templates can transform request and response bodies using data from the current message or the environment.
 
@@ -613,7 +594,7 @@ Membrane supports integration with **OpenTelemetry**. This enables detailed trac
 
 For working examples of Prometheus, Grafana and OpenTelemetry  see the [operation tutorial](./distribution/tutorials/operation).
 
-# 10. Community and Enterprise Support
+# Community and Enterprise Support
 
 ## Community Support
 
