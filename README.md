@@ -272,6 +272,8 @@ api:
     url: https://www.predic8.de/city-service
 ```
 
+**Note:** Membrane automatically escapes expression values such as ${xpath(...)} for the specified content type.
+
 See the [SOAP to REST tutorial](distribution/tutorials/soap-rest-converter) for more details.
 
 
@@ -438,6 +440,8 @@ api:
     url: https://api.predic8.de/shop/v2/products?sort=${$.sort}&limit=${$.limit}
     language: jsonpath
 ```
+
+**Note:** Membrane automatically escapes expression values such as ${$.sort} for the specified content type.
 
 See the [tutorial](distribution/tutorials/transformation/20-GET-to-POST.yaml) to transform from **GET to POST**.
 
