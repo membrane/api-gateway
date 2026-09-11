@@ -22,14 +22,31 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Named map of WSDL operations to expose via OpenAPI.
- * Each key is a WSDL operation name; the value holds its HTTP mapping settings.
+ * @description Configures which WSDL operations are exposed via OpenAPI. Add one attribute per
+ * operation you want to expose, naming it after the WSDL operation and giving it an
+ * <code>OperationSettings</code> value. Omitting this element exposes every WSDL operation with
+ * default settings.
+ * See tutorials/wsdl-to-openapi/20-WSDL-to-OpenAPI-REST.yaml.
+ * @yaml <pre><code>
+ * operations:
+ *   getPartner:
+ *     method: GET
+ *     path: /partners/{id}
+ *     tag: Partner
+ *   createPartner:
+ *     method: POST
+ *     path: /partners
+ *     tag: Partner
+ * </code></pre>
  */
 @MCElement(name = "operations", component = false)
 public class OperationsConfig {
 
     private final Map<String, OperationSettings> map = new LinkedHashMap<>();
 
+    /**
+     * @description Each attribute name is a WSDL operation name and its value configures that operation.
+     */
     @MCOtherAttributes
     public void setEntry(Map<String, OperationSettings> entry) {
         if (entry != null) map.putAll(entry);
