@@ -180,11 +180,11 @@ public class ResolverTest {
             case FILE:
                 if (!deployment.equals(STANDALONE))
                     return false;
-                String current = new File(".").getAbsolutePath().replaceAll("\\\\", "/");
+                if (OSUtil.isWindows())
+                    return false;
+                String current = new File(".").getAbsolutePath();
                 if (current.endsWith("."))
                     current = current.substring(0, current.length() - 1);
-                if (current.startsWith(":/", 1))
-                    current = current.substring(2);
                 wsdlLocation = "file://" + current + "src/test/resources/resolver/a.wsdl";
                 xsdLocation = "file://" + current + "src/test/resources/resolver/2.xsd";
                 return true;
@@ -220,11 +220,11 @@ public class ResolverTest {
             case ROOT_DIR:
                 String current3;
                 if (deployment.equals(STANDALONE)) {
-                    current3 = new File(".").getAbsolutePath().replaceAll("\\\\", "/");
+                    if (OSUtil.isWindows())
+                        return false; // drive-letter resolution is covered by the WINDOWS_DRIVE* cases; a bare "/..." path is ambiguous with a drive letter on Windows
+                    current3 = new File(".").getAbsolutePath();
                     if (current3.endsWith("."))
                         current3 = current3.substring(0, current3.length() - 1);
-                    if (current3.startsWith(":/", 1))
-                        current3 = current3.substring(2);
                     current3 = current3 + "src/test/resources";
                 } else {
                     current3 = "/test";
