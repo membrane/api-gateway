@@ -23,6 +23,7 @@ import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.util.*;
 import org.slf4j.*;
 import redis.clients.jedis.*;
+import redis.clients.jedis.params.*;
 
 import java.util.*;
 import java.util.stream.*;
@@ -40,6 +41,16 @@ public class RedisSessionManager extends SessionManager{
     private RedisConnector connector;
     static final String ID_NAME = "_in_memory_session_id";
 
+    /**
+     * Replaces the stored session only if it is still the one that was read, so that a concurrent write
+     * is merged instead of overwritten. Redis hands out no version token, so the stored value itself
+     * serves as one; every write of a session differs from the last, so an ABA cannot occur.
+     */
+    private static final String COMPARE_AND_SET =
+            "if redis.call('GET', KEYS[1]) == ARGV[1] then " +
+            "redis.call('SET', KEYS[1], ARGV[2], 'EX', ARGV[3]); return 1 " +
+            "else return 0 end";
+
 
     public RedisSessionManager(){
         objMapper = new ObjectMapper();
@@ -53,15 +64,25 @@ public class RedisSessionManager extends SessionManager{
 
     @Override
     protected Map<String, Object> cookieValueToAttributes(String cookie) {
-        try {
-            try (Jedis jedis = connector.getJedisWithDb()) {
-                return (!jedis.get(getKeyOfCookie(cookie)).equals("nil")) ?
-                        jsonStringtoSession(jedis.getEx(getKeyOfCookie(cookie), connector.getParams())).get() : new Session(usernameKeyName, new HashMap<>()).get();
-            }
-        } catch (JsonProcessingException e) {
-            log.debug("Cannot parse JSON in Cookie.",e);
+        return getCachedSession(cookie)
+                .map(this::parse)
+                .orElse(new Session(usernameKeyName, new HashMap<>()))
+                .get();
+    }
+
+    private Optional<String> getCachedSession(String cookie) {
+        try (Jedis jedis = connector.getJedisWithDb()) {
+            return Optional.ofNullable(jedis.getEx(getKeyOfCookie(cookie), connector.getParams()));
         }
-        return Collections.emptyMap();
+    }
+
+    private Session parse(String json) {
+        try {
+            return jsonStringtoSession(json);
+        } catch (JsonProcessingException e) {
+            log.debug("Cannot parse JSON in Cookie.", e);
+            return new Session(usernameKeyName, new HashMap<>());
+        }
     }
 
     @Override
@@ -78,16 +99,61 @@ public class RedisSessionManager extends SessionManager{
     }
 
     private void addSessionToRedis(Session[] session) {
-        Arrays.stream(session).forEach(s -> {
-            try {
-                try (Jedis jedis = connector.getJedisWithDb()) {
-                    jedis.setex(s.get(ID_NAME), getExpiresAfterSeconds(), sessionToJsonString(s));
-                }
-            } catch (JsonProcessingException e) {
-                log.debug("Cannot process JSON.",e);
-            }
-        });
+        Arrays.stream(session).forEach(s ->
+                SessionCasWriter.write(store, s.get(ID_NAME), s, Math.toIntExact(getExpiresAfterSeconds())));
     }
+
+    private final SessionCasWriter.Store store = new SessionCasWriter.Store() {
+        @Override
+        public Optional<SessionCasWriter.VersionedValue> read(String key) {
+            try (Jedis jedis = connector.getJedisWithDb()) {
+                return Optional.ofNullable(jedis.get(key))
+                        .map(value -> new SessionCasWriter.VersionedValue(value, value));
+            }
+        }
+
+        @Override
+        public boolean createIfAbsent(String key, String value, int ttlSeconds) {
+            try (Jedis jedis = connector.getJedisWithDb()) {
+                return jedis.set(key, value, SetParams.setParams().nx().ex(ttlSeconds)) != null;
+            }
+        }
+
+        @Override
+        public boolean compareAndSet(String key, Object version, String value, int ttlSeconds) {
+            try (Jedis jedis = connector.getJedisWithDb()) {
+                Object applied = jedis.eval(COMPARE_AND_SET, List.of(key),
+                        List.of((String) version, value, Integer.toString(ttlSeconds)));
+                return Long.valueOf(1).equals(applied);
+            }
+        }
+
+        @Override
+        public void blindSet(String key, String value, int ttlSeconds) {
+            try (Jedis jedis = connector.getJedisWithDb()) {
+                jedis.setex(key, ttlSeconds, value);
+            }
+        }
+
+        @Override
+        public Map<String, Object> parse(String value) {
+            return RedisSessionManager.this.parse(value).getContent();
+        }
+
+        @Override
+        public String serialize(Map<String, Object> content) {
+            try {
+                return sessionToJsonString(rawSession(content));
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException("Cannot serialize session.", e);
+            }
+        }
+
+        @Override
+        public boolean isAdditiveKey(String key) {
+            return RedisSessionManager.this.isAdditiveKey(key);
+        }
+    };
 
     private void createSessionIdsForNewSessions(Session[] session) {
         Arrays.stream(session).filter(s -> s.get(ID_NAME) == null).forEach(s -> s.put(ID_NAME, cookieNamePrefix + "-" +UUID.randomUUID()));
@@ -120,15 +186,17 @@ public class RedisSessionManager extends SessionManager{
 
     @Override
     protected boolean isValidCookieForThisSessionManager(String cookie) {
-        try (Jedis jedis = connector.getJedisWithDb()) {
-            return cookie.startsWith(cookieNamePrefix) && !jedis.get(getKeyOfCookie(cookie)).equals("nil");
-        }
+        return cookie.startsWith(cookieNamePrefix) && isStored(cookie);
     }
 
     @Override
     protected boolean cookieRenewalNeeded(String originalCookie) {
+        return isStored(originalCookie);
+    }
+
+    private boolean isStored(String cookie) {
         try (Jedis jedis = connector.getJedisWithDb()) {
-            return !jedis.get(originalCookie).equals("nil");
+            return jedis.exists(getKeyOfCookie(cookie));
         }
     }
 

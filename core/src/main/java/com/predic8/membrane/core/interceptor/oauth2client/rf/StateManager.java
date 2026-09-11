@@ -31,6 +31,7 @@ import static com.predic8.membrane.core.interceptor.oauth2.OAuth2Util.urlencode;
 import static com.predic8.membrane.core.interceptor.oauth2.authorizationservice.FlowContext.fromUrlParam;
 import static com.predic8.membrane.core.interceptor.oauth2.authorizationservice.FlowContext.toUrlParam;
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.OAuth2CallbackRequestHandler.*;
+import static com.predic8.membrane.core.interceptor.session.SessionManager.SESSION_PARAMETER_STATE;
 import static com.predic8.membrane.core.interceptor.session.SessionManager.SESSION_VALUE_SEPARATOR;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
 import static com.predic8.membrane.core.util.URLParamUtil.parseQueryString;
@@ -38,7 +39,6 @@ import static java.net.URLDecoder.decode;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class StateManager {
-    private static final String SESSION_PARAMETER_STATE = "state";
 
     private static final Logger log = LoggerFactory.getLogger(StateManager.class);
     private static final SecureRandom sr = new SecureRandom();

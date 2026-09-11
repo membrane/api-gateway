@@ -48,6 +48,21 @@ public abstract class SessionManager {
     public static final String SESSION_VALUE_SEPARATOR = ",";
     public static final String VALUE_TO_EXPIRE_SESSION_IN_BROWSER = "Expires=Thu, 01 Jan 1970 00:00:00 GMT";
 
+    /**
+     * Session key of the OAuth2 client's CSRF tokens. Lives here, not in StateManager, because merging
+     * concurrent writes has to know that the value is a list - see {@link #isAdditiveKey(String)}.
+     */
+    public static final String SESSION_PARAMETER_STATE = "state";
+
+    /**
+     * Session key of the OAuth2 client's PKCE verifiers.
+     *
+     * @see #SESSION_PARAMETER_STATE
+     */
+    public static final String SESSION_PARAMETER_VERIFIER = "verifier";
+
+    private static final Set<String> ADDITIVE_KEYS = Set.of(SESSION_PARAMETER_STATE, SESSION_PARAMETER_VERIFIER);
+
     public static final String SESSION = "SESSION";
     public static final String SESSION_COOKIE_ORIGINAL = "SESSION_COOKIE_ORIGINAL";
 
@@ -270,15 +285,50 @@ public abstract class SessionManager {
     protected Session getSessionInternal(Exchange exc) {
         exc.setProperty(SESSION_COOKIE_ORIGINAL,null);
         if (getCookieHeader(exc) == null) {
-            return new Session(usernameKeyName, new HashMap<>());
+            return snapshotted(new Session(usernameKeyName, new HashMap<>()));
         }
 
         Map<String, Map<String, Object>> validCookiesAsListOfMaps = convertValidCookiesToAttributes(exc);
-        Session session = new Session(usernameKeyName, mergeCookies(new ArrayList<>(validCookiesAsListOfMaps.values())));
+        Session session = snapshotted(new Session(usernameKeyName, mergeCookies(new ArrayList<>(validCookiesAsListOfMaps.values()))));
 
         if(validCookiesAsListOfMaps.size() == 1)
             exc.setProperty(SESSION_COOKIE_ORIGINAL,validCookiesAsListOfMaps.keySet().iterator().next());
 
+        return session;
+    }
+
+    /**
+     * Remembers what the session looked like when it was read, so that a store can tell our own changes
+     * from those a concurrent request made while this one was running.
+     */
+    private static Session snapshotted(Session session) {
+        session.setBaseSnapshot(session.getContent());
+        return session;
+    }
+
+    /**
+     * Whether the value under this key is a {@link #SESSION_VALUE_SEPARATOR}-joined list of independent
+     * tokens rather than a single value. Concurrent requests append to such a list instead of replacing
+     * it, so when two of them collide both additions have to survive.
+     * <p>
+     * Only needed for the very first collision, when there is no previous value to recognise an append
+     * against; after that {@link SessionContentMerger} detects the shape on its own. Inferring it from
+     * the value alone is not safe: {@code oauth2Answer} holds JSON that legitimately contains the
+     * separator.
+     */
+    protected boolean isAdditiveKey(String key) {
+        return ADDITIVE_KEYS.contains(key);
+    }
+
+    /**
+     * A Session holding exactly this content, for serializing it into a store. The regular constructor
+     * would add a default authorization level, which would put a key into the store that the content
+     * being written does not have.
+     */
+    protected Session rawSession(Map<String, Object> content) {
+        Session session = new Session();
+        session.setUsernameKeyName(usernameKeyName);
+        session.setContent(content);
         return session;
     }
 
