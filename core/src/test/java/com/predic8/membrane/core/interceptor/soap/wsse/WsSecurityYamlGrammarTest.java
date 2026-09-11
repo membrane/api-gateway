@@ -253,9 +253,47 @@ class WsSecurityYamlGrammarTest {
         assertEquals(EncryptionReference.Type.CONTENT, encrypting.getReferences().getFirst().getType());
     }
 
+    /** The legacy opt-in, and the legacy URIs on the outbound side, have to survive the grammar. */
+    @Test
+    void theLegacyAlgorithmsAndTheirInboundOptInParse() throws Exception {
+        WsSecurityInterceptor wsSecurity = parse("""
+                api:
+                  port: 2000
+                  flow:
+                    - request:
+                        - wsSecurity:
+                            keystore:
+                              location: classpath:/alias-keystore.p12
+                              keyAlias: key1
+                              keyPassword: secret
+                            truststore:
+                              location: classpath:/alias-truststore.p12
+                              password: secret
+                            validate:
+                              - decrypt:
+                                  allowLegacyAlgorithms: true
+                            secure:
+                              - encrypt:
+                                  recipientAlias: key1
+                                  dataEncryptionAlgorithm: http://www.w3.org/2001/04/xmlenc#aes256-cbc
+                                  keyTransportAlgorithm: http://www.w3.org/2001/04/xmlenc#rsa-1_5
+                                  references:
+                                    - by: BODY
+                """);
+
+        DecryptValidatePart decrypting =
+                assertInstanceOf(DecryptValidatePart.class, wsSecurity.getValidateParts().getFirst());
+        assertTrue(decrypting.isAllowLegacyAlgorithms());
+
+        EncryptSecurePart encrypting =
+                assertInstanceOf(EncryptSecurePart.class, wsSecurity.getSecureParts().getFirst());
+        assertEquals("http://www.w3.org/2001/04/xmlenc#aes256-cbc", encrypting.getDataEncryptionAlgorithm());
+        assertEquals("http://www.w3.org/2001/04/xmlenc#rsa-1_5", encrypting.getKeyTransportAlgorithm());
+    }
+
     /**
-     * The fixed inbound allowlist is the point of {@code decrypt}, so there must be no attribute to
-     * weaken it with.
+     * {@code allowLegacyAlgorithms} is the only way to widen the inbound allowlist, and it names the
+     * two legacy families. A free-form algorithm attribute would let any URI in, so there is none.
      */
     @Test
     void decryptRejectsAnAlgorithmAttribute() {

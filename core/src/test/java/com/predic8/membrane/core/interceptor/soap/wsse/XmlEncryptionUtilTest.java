@@ -14,13 +14,21 @@
 package com.predic8.membrane.core.interceptor.soap.wsse;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
 
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.StringReader;
+import java.security.GeneralSecurityException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.util.List;
 
 import static com.predic8.membrane.core.interceptor.soap.wsse.XmlEncryptionUtil.*;
@@ -28,12 +36,17 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * The namespace-fixup and fragment round trip, deliberately with no cipher anywhere in the picture.
+ * Two things, kept apart on purpose.
  * <p>
- * Serializing a subtree and parsing it back is the whole of XML Encryption's structural risk: the
- * plaintext leaves a document where its prefixes are declared on ancestors and arrives somewhere it
- * has to stand on its own. Testing it against a cipher as well would only make a failure harder to
- * localize.
+ * First the namespace-fixup and fragment round trip, deliberately with no cipher anywhere in the
+ * picture. Serializing a subtree and parsing it back is the whole of XML Encryption's structural
+ * risk: the plaintext leaves a document where its prefixes are declared on ancestors and arrives
+ * somewhere it has to stand on its own. Testing it against a cipher as well would only make a
+ * failure harder to localize.
+ * <p>
+ * Then the algorithm dispatch and the key lengths, with no XML in the picture. Every part of the
+ * gateway asks for an algorithm by URI, so a URI mapped to the wrong cipher or the wrong key length
+ * is silent until a real peer disagrees.
  */
 class XmlEncryptionUtilTest {
 
@@ -214,5 +227,98 @@ class XmlEncryptionUtilTest {
         roundTripContent(holder);
 
         assertFalse(holder.hasChildNodes());
+    }
+
+    // ---- algorithms ----------------------------------------------------------------------------
+
+    @ParameterizedTest
+    @CsvSource({
+            AES128_GCM + ",16",
+            AES256_GCM + ",32",
+            AES128_CBC + ",16",
+            AES192_CBC + ",24",
+            AES256_CBC + ",32",
+    })
+    void everySupportedAlgorithmHasItsKeyLength(String algorithm, int expectedLength) {
+        assertEquals(expectedLength, cekLengthFor(algorithm));
+    }
+
+    /**
+     * An algorithm nobody mapped must not silently get a plausible-looking 16, which is what the
+     * earlier expression returned for everything that was not AES-256-GCM.
+     */
+    @Test
+    void anUnmappedAlgorithmHasNoKeyLength() {
+        assertThrows(IllegalStateException.class, () -> cekLengthFor(XENC_NS + "tripledes-cbc"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {AES128_GCM, AES256_GCM, AES128_CBC, AES192_CBC, AES256_CBC})
+    void everySupportedAlgorithmRoundTripsItsPlaintext(String algorithm) throws Exception {
+        SecretKey key = generateContentEncryptionKey(algorithm);
+        byte[] plaintext = "<a>hello</a>".getBytes(UTF_8);
+
+        byte[] ciphertext = encryptData(algorithm, key, plaintext);
+
+        assertArrayEquals(plaintext, decryptData(algorithm, key, ciphertext));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {AES128_CBC, AES192_CBC, AES256_CBC})
+    void cbcKeysHaveTheLengthTheirUriPromises(String algorithm) throws Exception {
+        assertEquals(cekLengthFor(algorithm), generateContentEncryptionKey(algorithm).getEncoded().length);
+    }
+
+    /** {@code IV || ciphertext}, with the ciphertext block-aligned - the layout a peer expects. */
+    @Test
+    void cbcCiphertextIsAnIvFollowedByWholeBlocks() throws Exception {
+        byte[] ciphertext = encryptCbc(generateContentEncryptionKey(AES256_CBC), "x".getBytes(UTF_8));
+
+        assertEquals(0, ciphertext.length % 16);
+        assertTrue(ciphertext.length >= 32, "an IV plus at least one block, was " + ciphertext.length);
+    }
+
+    /**
+     * Rejected before any {@code Cipher} sees it. Reaching the cipher with a truncated input would
+     * produce a differently-shaped failure than a wrong key does, which is a distinction an attacker
+     * can measure.
+     */
+    @Test
+    void cbcCiphertextShorterThanAnIvAndABlockIsRejected() throws Exception {
+        SecretKey key = generateContentEncryptionKey(AES256_CBC);
+
+        assertThrows(GeneralSecurityException.class, () -> decryptCbc(key, new byte[31]));
+    }
+
+    /** The two families have to actually differ; a dispatch that always chose GCM would pass a
+     * round-trip test but produce something no CBC peer can read. */
+    @Test
+    void theDispatchSelectsDifferentCiphersForCbcAndGcm() throws Exception {
+        SecretKey key = generateContentEncryptionKey(AES256_CBC);
+        byte[] plaintext = "<a>hello</a>".getBytes(UTF_8);
+
+        byte[] cbc = encryptData(AES256_CBC, key, plaintext);
+        byte[] gcm = encryptData(AES256_GCM, key, plaintext);
+
+        // CBC prefixes a 16-byte IV and pads to a block; GCM prefixes 12 and appends a 16-byte tag.
+        assertEquals(0, cbc.length % 16);
+        assertEquals(12 + plaintext.length + 16, gcm.length);
+    }
+
+    @Test
+    void theKeyTransportDispatchSelectsPkcs1ForRsa15() throws Exception {
+        KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
+        generator.initialize(2048);
+        KeyPair keyPair = generator.generateKeyPair();
+        byte[] contentEncryptionKey = generateContentEncryptionKey(AES256_CBC).getEncoded();
+
+        byte[] wrapped = keyTransportCipher(RSA_1_5, Cipher.ENCRYPT_MODE, keyPair.getPublic())
+                .doFinal(contentEncryptionKey);
+
+        assertArrayEquals(contentEncryptionKey,
+                keyTransportCipher(RSA_1_5, Cipher.DECRYPT_MODE, keyPair.getPrivate()).doFinal(wrapped));
+        // And is not interchangeable with OAEP, which is the mistake a single shared factory invites.
+        assertThrows(GeneralSecurityException.class,
+                () -> keyTransportCipher(RSA_OAEP, Cipher.DECRYPT_MODE, keyPair.getPrivate()).doFinal(wrapped));
     }
 }

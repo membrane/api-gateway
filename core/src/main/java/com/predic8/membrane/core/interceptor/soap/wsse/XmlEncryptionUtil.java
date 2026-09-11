@@ -22,6 +22,7 @@ import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.OAEPParameterSpec;
 import javax.crypto.spec.PSource;
 import javax.xml.transform.Transformer;
@@ -42,12 +43,13 @@ import static javax.xml.transform.OutputKeys.*;
 
 /**
  * XML Encryption helpers shared by {@link EncryptSecurePart} and {@link DecryptValidatePart}:
- * namespace fixup, fragment serialization and parsing, the AES-GCM and RSA-OAEP primitives, and the
- * {@code xenc:} DOM structures.
+ * namespace fixup, fragment serialization and parsing, the AES-GCM/AES-CBC and RSA-OAEP/RSA-1.5
+ * primitives, and the {@code xenc:} DOM structures.
  * <p>
  * Everything here is mechanical and two-directional. The <i>policy</i> - which algorithms are
  * accepted, which fault a failure becomes, whether a certificate may encrypt - lives in the parts,
- * next to the javadoc explaining it.
+ * next to the javadoc explaining it. That includes the legacy algorithms: this class knows how to
+ * compute AES-CBC and RSA-1.5, and says nothing about whether either may be used.
  */
 final class XmlEncryptionUtil {
 
@@ -72,6 +74,19 @@ final class XmlEncryptionUtil {
     static final String AES256_GCM = XENC11_NS + "aes256-gcm";
 
     /**
+     * The unauthenticated CBC modes, which are XML Encryption 1.0 and therefore live in
+     * {@link #XENC_NS} rather than {@link #XENC11_NS} - a URI in the wrong namespace is the single
+     * easiest way to produce something no peer recognizes.
+     * <p>
+     * 192 exists here although the GCM side offers only 128 and 256: the point of these three is
+     * interoperating with a peer whose configuration cannot be changed, and that peer may well name
+     * the middle one.
+     */
+    static final String AES128_CBC = XENC_NS + "aes128-cbc";
+    static final String AES192_CBC = XENC_NS + "aes192-cbc";
+    static final String AES256_CBC = XENC_NS + "aes256-cbc";
+
+    /**
      * RSA-OAEP with a negotiable mask generation function, as opposed to the 1.0
      * {@code xmlenc#rsa-oaep-mgf1p}, which bakes MGF1-SHA-1 into the URI itself. Pairing that older
      * URI with a SHA-256 {@code ds:DigestMethod} is self-contradictory, and WSS4J reads MGF1-SHA-1
@@ -79,12 +94,20 @@ final class XmlEncryptionUtil {
      * gateway actually computes.
      */
     static final String RSA_OAEP = XENC11_NS + "rsa-oaep";
+    /**
+     * RSA with PKCS#1 v1.5 padding. Also 1.0, and unlike {@link #RSA_OAEP} it takes no
+     * {@code ds:DigestMethod} and no {@code xenc11:MGF} - there is nothing about it to negotiate,
+     * which is why {@link #createKeyTransportEncryptionMethod} emits it childless.
+     */
+    static final String RSA_1_5 = XENC_NS + "rsa-1_5";
     static final String MGF1_SHA256 = XENC11_NS + "mgf1sha256";
     static final String SHA256_DIGEST = XENC_NS + "sha256";
 
     /** 96 bits: the IV length GCM uses natively, and the one XML Encryption 1.1 fixes. */
     private static final int GCM_IV_BYTES = 12;
     private static final int GCM_TAG_BITS = 128;
+    /** One AES block, which is what CBC prefixes to the ciphertext and also its padding quantum. */
+    private static final int AES_BLOCK_BYTES = 16;
 
     // Thread-safe, and constructing one per message would repeat provider lookup and seeding.
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
@@ -277,9 +300,22 @@ final class XmlEncryptionUtil {
 
     // ---------------------------------------------------------------- primitives
 
-    /** The content encryption key length, in bytes, that {@code dataAlgorithm} requires. */
+    /**
+     * The content encryption key length, in bytes, that {@code dataAlgorithm} requires.
+     * <p>
+     * Exhaustive rather than defaulted, because a wrong answer here is silent in both directions: it
+     * would generate a key of the wrong size on the way out, and on the way in it feeds the length
+     * check that stops {@link DecryptValidatePart} from handing the sender a distinguishable
+     * {@code InvalidKeyException}. The {@code default} is unreachable - both parts allowlist the
+     * algorithm before anything asks for its key length.
+     */
     static int cekLengthFor(String dataAlgorithm) {
-        return AES256_GCM.equals(dataAlgorithm) ? 32 : 16;
+        return switch (dataAlgorithm) {
+            case AES128_GCM, AES128_CBC -> 16;
+            case AES192_CBC -> 24;
+            case AES256_GCM, AES256_CBC -> 32;
+            default -> throw new IllegalStateException("No key length known for " + dataAlgorithm + ".");
+        };
     }
 
     static SecretKey generateContentEncryptionKey(String dataAlgorithm) throws GeneralSecurityException {
@@ -313,6 +349,79 @@ final class XmlEncryptionUtil {
     }
 
     /**
+     * The content encryption {@code dataAlgorithm} prescribes, applied to {@code plaintext}.
+     * <p>
+     * Both parts dispatch through here rather than naming a mode themselves. Enumerated exhaustively
+     * for the reason {@link #cekLengthFor} is: an algorithm added to an allowlist but not here has to
+     * fail, not quietly fall through to whichever cipher the last branch happened to be.
+     */
+    static byte[] encryptData(String dataAlgorithm, SecretKey contentEncryptionKey, byte[] plaintext)
+            throws GeneralSecurityException {
+        return switch (dataAlgorithm) {
+            case AES128_GCM, AES256_GCM -> encryptGcm(contentEncryptionKey, plaintext);
+            case AES128_CBC, AES192_CBC, AES256_CBC -> encryptCbc(contentEncryptionKey, plaintext);
+            default -> throw new IllegalStateException("No content cipher known for " + dataAlgorithm + ".");
+        };
+    }
+
+    /** The inverse of {@link #encryptData}. */
+    static byte[] decryptData(String dataAlgorithm, SecretKey contentEncryptionKey, byte[] ivAndCiphertext)
+            throws GeneralSecurityException {
+        return switch (dataAlgorithm) {
+            case AES128_GCM, AES256_GCM -> decryptGcm(contentEncryptionKey, ivAndCiphertext);
+            case AES128_CBC, AES192_CBC, AES256_CBC -> decryptCbc(contentEncryptionKey, ivAndCiphertext);
+            default -> throw new IllegalStateException("No content cipher known for " + dataAlgorithm + ".");
+        };
+    }
+
+    /**
+     * AES-CBC encryption, returning {@code IV || ciphertext} - the layout XML Encryption prescribes
+     * for the {@code xenc:CipherValue} of a CBC algorithm.
+     * <p>
+     * Note what is missing compared to {@link #encryptGcm}: there is no authentication tag, so a
+     * receiver cannot tell a tampered ciphertext from an authentic one until it looks at the
+     * plaintext - which is the whole of the Jager-Somorovsky attack and the reason the parts warn
+     * about this algorithm rather than merely permitting it.
+     * <p>
+     * {@code ISO10126Padding} rather than {@code PKCS5Padding}, and deliberately: XML Encryption
+     * defines the final octet as the pad length and leaves the preceding pad octets arbitrary, which
+     * is what this padding writes and what Apache Santuario/WSS4J emit. The fresh IV is generated
+     * here, not taken as a parameter, for the reason {@link #encryptGcm} gives.
+     */
+    static byte[] encryptCbc(SecretKey contentEncryptionKey, byte[] plaintext) throws GeneralSecurityException {
+        byte[] iv = new byte[AES_BLOCK_BYTES];
+        SECURE_RANDOM.nextBytes(iv);
+        Cipher cipher = Cipher.getInstance("AES/CBC/ISO10126Padding");
+        cipher.init(Cipher.ENCRYPT_MODE, contentEncryptionKey, new IvParameterSpec(iv));
+        byte[] ciphertext = cipher.doFinal(plaintext);
+
+        byte[] out = new byte[iv.length + ciphertext.length];
+        System.arraycopy(iv, 0, out, 0, iv.length);
+        System.arraycopy(ciphertext, 0, out, iv.length, ciphertext.length);
+        return out;
+    }
+
+    /**
+     * The inverse of {@link #encryptCbc}: the first 16 bytes are the IV and the remainder is the
+     * ciphertext.
+     * <p>
+     * {@code ISO10126Padding} is also what makes this accept a conforming peer. Its unpadding reads
+     * only the final octet as the pad length, which is exactly the XML Encryption rule, so ciphertext
+     * padded the PKCS#7 way decrypts here too. {@code PKCS5Padding} would be the natural-looking
+     * choice and is the wrong one: it additionally requires every pad octet to equal the length, and
+     * therefore rejects the random pad octets Santuario/WSS4J write.
+     */
+    static byte[] decryptCbc(SecretKey contentEncryptionKey, byte[] ivAndCiphertext) throws GeneralSecurityException {
+        if (ivAndCiphertext.length < AES_BLOCK_BYTES + AES_BLOCK_BYTES) {
+            throw new GeneralSecurityException("Ciphertext is too short to hold an IV and a block.");
+        }
+        Cipher cipher = Cipher.getInstance("AES/CBC/ISO10126Padding");
+        cipher.init(Cipher.DECRYPT_MODE, contentEncryptionKey,
+                new IvParameterSpec(ivAndCiphertext, 0, AES_BLOCK_BYTES));
+        return cipher.doFinal(ivAndCiphertext, AES_BLOCK_BYTES, ivAndCiphertext.length - AES_BLOCK_BYTES);
+    }
+
+    /**
      * The inverse of {@link #encryptGcm}: the first 12 bytes are the IV, and the whole remainder -
      * trailing authentication tag included - goes to {@code doFinal}, which verifies it.
      */
@@ -341,6 +450,30 @@ final class XmlEncryptionUtil {
         cipher.init(mode, key, new OAEPParameterSpec(
                 "SHA-256", "MGF1", MGF1ParameterSpec.SHA256, PSource.PSpecified.DEFAULT));
         return cipher;
+    }
+
+    /**
+     * An RSA cipher with PKCS#1 v1.5 padding, which has no parameters to get wrong.
+     * <p>
+     * It is Bleichenbacher's oracle, and nothing about constructing the cipher mitigates that: the
+     * mitigation is in how {@link DecryptValidatePart} handles a failed unwrap, which must not be
+     * distinguishable from a failed content decryption.
+     */
+    static Cipher rsa15Cipher(int mode, Key key) throws GeneralSecurityException {
+        Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+        cipher.init(mode, key);
+        return cipher;
+    }
+
+    /** The key transport cipher {@code keyTransportAlgorithm} names. */
+    static Cipher keyTransportCipher(String keyTransportAlgorithm, int mode, Key key)
+            throws GeneralSecurityException {
+        return switch (keyTransportAlgorithm) {
+            case RSA_OAEP -> rsaOaepCipher(mode, key);
+            case RSA_1_5 -> rsa15Cipher(mode, key);
+            default -> throw new IllegalStateException(
+                    "No key transport cipher known for " + keyTransportAlgorithm + ".");
+        };
     }
 
     // ---------------------------------------------------------------- xenc structures
@@ -391,14 +524,21 @@ final class XmlEncryptionUtil {
     }
 
     /**
-     * The {@code xenc:EncryptionMethod} of an {@code xenc:EncryptedKey}: the RSA-OAEP algorithm plus
-     * the two children that pin its digests.
+     * The {@code xenc:EncryptionMethod} of an {@code xenc:EncryptedKey}: the key transport algorithm
+     * plus, under RSA-OAEP, the two children that pin its digests.
      * <p>
      * {@code ds:DigestMethod} precedes {@code xenc11:MGF}, matching what WSS4J emits and the
      * {@code EncryptionMethodType} content model.
+     * <p>
+     * RSA-1.5 gets neither child, which is again what WSS4J emits: its padding has no digest and no
+     * mask generation function, so a {@code ds:DigestMethod} beside it would describe nothing this
+     * or any other implementation computes.
      */
     static Element createKeyTransportEncryptionMethod(Document doc, String keyTransportAlgorithm) {
         Element method = encryptionMethod(doc, keyTransportAlgorithm);
+        if (RSA_1_5.equals(keyTransportAlgorithm)) {
+            return method;
+        }
 
         Element digestMethod = doc.createElementNS(WsSecurityXmlUtil.DS_NS, "ds:DigestMethod");
         digestMethod.setAttributeNS(XMLNS_ATTRIBUTE_NS_URI, "xmlns:ds", WsSecurityXmlUtil.DS_NS);

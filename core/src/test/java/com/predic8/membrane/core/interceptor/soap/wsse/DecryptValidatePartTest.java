@@ -21,7 +21,15 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import javax.crypto.Cipher;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+import java.security.SecureRandom;
+import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
+import java.util.function.IntUnaryOperator;
+import java.util.function.UnaryOperator;
 
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityFaultCode.*;
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.getFirstChildByName;
@@ -162,7 +170,10 @@ class DecryptValidatePartTest extends AbstractWsSecurityTest {
 
     // ---- algorithm allowlist -------------------------------------------------------------------
 
-    /** The settled CBC rejection has to be enforced on the way in, not only in configuration. */
+    /**
+     * The default rejection has to be enforced on the way in, not only in configuration - and it is
+     * the default even though {@code secure/encrypt} can be configured to emit this algorithm.
+     */
     @Test
     void anInboundCbcDataAlgorithmIsRefused() throws Exception {
         exchangeWithBody(PLAINTEXT_BODY);
@@ -220,6 +231,343 @@ class DecryptValidatePartTest extends AbstractWsSecurityTest {
         setBody(doc);
 
         assertFault(decrypter(ALIAS_1, decrypt()), UNSUPPORTED_ALGORITHM);
+    }
+
+    // ---- allowLegacyAlgorithms -----------------------------------------------------------------
+
+    /** {@code decrypt} with the legacy opt-in switched on. */
+    private static DecryptValidatePart legacyDecrypt(EncryptionReference... requiredReferences) {
+        DecryptValidatePart decrypt = decrypt(requiredReferences);
+        decrypt.setAllowLegacyAlgorithms(true);
+        return decrypt;
+    }
+
+    private void encryptForWith(String dataAlgorithm, String keyTransportAlgorithm) throws Exception {
+        EncryptSecurePart encrypt = encrypt(ALIAS_1, encryptedBodyReference());
+        encrypt.setDataEncryptionAlgorithm(dataAlgorithm);
+        encrypt.setKeyTransportAlgorithm(keyTransportAlgorithm);
+        assertEquals(Outcome.CONTINUE, encrypter(TRUSTSTORE, encrypt).handleRequest(exchange));
+    }
+
+    private void assertBodyIsPlaintextAgain() throws Exception {
+        assertEquals("bar", parseBody().getElementsByTagName("foo").item(0).getTextContent());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {AES128_CBC, AES192_CBC, AES256_CBC})
+    void everyCbcKeySizeRoundTripsWhenLegacyAlgorithmsAreAllowed(String algorithm) throws Exception {
+        exchangeWithBody(PLAINTEXT_BODY);
+        encryptForWith(algorithm, RSA_OAEP);
+
+        assertEquals(Outcome.CONTINUE, decrypter(ALIAS_1, legacyDecrypt()).handleRequest(exchange));
+
+        assertBodyIsPlaintextAgain();
+    }
+
+    @Test
+    void rsa15KeyTransportRoundTripsWhenLegacyAlgorithmsAreAllowed() throws Exception {
+        exchangeWithBody(PLAINTEXT_BODY);
+        encryptForWith(AES256_GCM, RSA_1_5);
+
+        assertEquals(Outcome.CONTINUE, decrypter(ALIAS_1, legacyDecrypt()).handleRequest(exchange));
+
+        assertBodyIsPlaintextAgain();
+    }
+
+    /** The combination a legacy .NET/WCF or older WSS4J peer actually sends. */
+    @Test
+    void cbcTogetherWithRsa15RoundTripsWhenLegacyAlgorithmsAreAllowed() throws Exception {
+        exchangeWithBody(PLAINTEXT_BODY);
+        encryptForWith(AES256_CBC, RSA_1_5);
+
+        assertEquals(Outcome.CONTINUE, decrypter(ALIAS_1, legacyDecrypt()).handleRequest(exchange));
+
+        assertBodyIsPlaintextAgain();
+    }
+
+    /** A requiredReferences check has to keep working over legacy ciphertext, not just GCM. */
+    @Test
+    void aRequiredReferenceIsStillEnforcedOverCbcCiphertext() throws Exception {
+        exchangeWithBody(PLAINTEXT_BODY);
+        encryptForWith(AES256_CBC, RSA_1_5);
+
+        assertEquals(Outcome.CONTINUE,
+                decrypter(ALIAS_1, legacyDecrypt(encryptedBodyReference())).handleRequest(exchange));
+
+        assertBodyIsPlaintextAgain();
+    }
+
+    /** The switch names two algorithm families; it is not a blanket "accept whatever arrives". */
+    @Test
+    void anUnknownAlgorithmIsRefusedEvenWhenLegacyAlgorithmsAreAllowed() throws Exception {
+        exchangeWithBody(PLAINTEXT_BODY);
+        encryptFor(ALIAS_1);
+
+        Document doc = parseBody();
+        getFirstChildByName(firstByTag(doc, XENC_NS, "EncryptedData"), XENC_NS, "EncryptionMethod")
+                .setAttribute("Algorithm", "http://www.w3.org/2001/04/xmlenc#tripledes-cbc");
+        setBody(doc);
+
+        assertFault(decrypter(ALIAS_1, legacyDecrypt()), UNSUPPORTED_ALGORITHM);
+    }
+
+    /**
+     * The one thing the switch must not do: a peer that names {@code rsa-oaep} has claimed the modern
+     * algorithm, and an SHA-1 mask generation function inside it is a downgrade of that claim rather
+     * than a peer honestly asking for an old algorithm. Allowing RSA-1.5 is not a reason to accept it.
+     */
+    @Test
+    void anSha1MaskGenerationFunctionIsStillRefusedWhenLegacyAlgorithmsAreAllowed() throws Exception {
+        exchangeWithBody(PLAINTEXT_BODY);
+        encryptFor(ALIAS_1);
+
+        Document doc = parseBody();
+        Element method = getFirstChildByName(firstByTag(doc, XENC_NS, "EncryptedKey"), XENC_NS, "EncryptionMethod");
+        getFirstChildByName(method, XENC11_NS, "MGF")
+                .setAttribute("Algorithm", "http://www.w3.org/2009/xmlenc11#mgf1sha1");
+        setBody(doc);
+
+        assertFault(decrypter(ALIAS_1, legacyDecrypt()), UNSUPPORTED_ALGORITHM);
+    }
+
+    /**
+     * Flips the first plaintext octet from {@code expected} to {@code replacement} by XOR-ing the
+     * delta into the first octet of the IV, which is what CBC's first block is masked with.
+     * <p>
+     * Precise rather than "corrupt a byte and see": this is the whole demonstration below, and a
+     * random corruption of the first block lands on valid XML often enough to make a test flaky -
+     * which is how the property the tests below assert was found in the first place.
+     * <p>
+     * {@code expected} is verified against the actual plaintext rather than assumed. It is the
+     * newline after {@code <soap:Body>} only because of how {@link #PLAINTEXT_BODY} is indented and
+     * because the leading whitespace text node is part of what gets encrypted - neither of which
+     * this test controls. Without the check, re-indenting that constant would leave
+     * {@code aTamperedCbcCiphertextCanGoUndetected} XOR-ing the wrong delta and passing for the
+     * wrong reason, i.e. silently no longer asserting its security property.
+     */
+    private void flipFirstPlaintextOctet(Document doc, char expected, char replacement) throws Exception {
+        Element dataCipherValue = dataCipherValueOf(doc);
+        byte[] ivAndCiphertext = base64Of(dataCipherValue);
+
+        byte[] plaintext = decryptCbc(new SecretKeySpec(recoverContentEncryptionKey(doc), "AES"), ivAndCiphertext);
+        assertEquals(expected, (char) plaintext[0], "the octet this test flips is not the one it assumes");
+
+        ivAndCiphertext[0] ^= (byte) (expected ^ replacement);
+        dataCipherValue.setTextContent(Base64.getEncoder().encodeToString(ivAndCiphertext));
+        setBody(doc);
+    }
+
+    /**
+     * Tampering that breaks the XML is caught, and answered with the one indistinguishable fault
+     * rather than anything describing the padding - which is what denies an attacker the oracle.
+     */
+    @Test
+    void aTamperedCbcCiphertextThatBreaksTheXmlIsRefused() throws Exception {
+        exchangeWithBody(PLAINTEXT_BODY);
+        encryptForWith(AES256_CBC, RSA_OAEP);
+        // A '<' where the leading whitespace was: no name can start with the space that follows.
+        flipFirstPlaintextOctet(parseBody(), '\n', '<');
+
+        assertFault(decrypter(ALIAS_1, legacyDecrypt()), FAILED_CHECK);
+    }
+
+    /**
+     * And tampering that does not break the XML is <i>not</i> caught. This is the point of the
+     * warning on {@code allowLegacyAlgorithms}, asserted rather than left to prose: AES-CBC carries
+     * no authentication tag, so an attacker who can modify the ciphertext gets the receiver to
+     * accept plaintext the sender never wrote, and no amount of care on this side detects it. Only
+     * choosing AES-GCM does - where the equivalent tampering fails the tag, as
+     * {@link #aTamperedCiphertextFailsTheAuthenticationTag} shows.
+     * <p>
+     * If this test ever starts failing, something has begun authenticating CBC ciphertext, and the
+     * warning is the thing to revisit.
+     */
+    @Test
+    void aTamperedCbcCiphertextCanGoUndetected() throws Exception {
+        exchangeWithBody(PLAINTEXT_BODY);
+        encryptForWith(AES256_CBC, RSA_OAEP);
+        // A space where the newline was: still whitespace, so the fragment still parses.
+        flipFirstPlaintextOctet(parseBody(), '\n', ' ');
+
+        assertEquals(Outcome.CONTINUE, decrypter(ALIAS_1, legacyDecrypt()).handleRequest(exchange));
+
+        assertBodyIsPlaintextAgain();
+    }
+
+    /**
+     * The Bleichenbacher countermeasure, observed from outside: an RSA-1.5 key this gateway cannot
+     * unwrap produces the same fault as any other decryption failure, because the unwrap does not
+     * fail - it continues with a random content encryption key and the content decryption fails
+     * instead.
+     */
+    @Test
+    void anRsa15MessageForAnotherRecipientFailsWithTheGenericFault() throws Exception {
+        exchangeWithBody(PLAINTEXT_BODY);
+        EncryptSecurePart encrypt = encrypt(ALIAS_2, encryptedBodyReference());
+        encrypt.setKeyTransportAlgorithm(RSA_1_5);
+        encrypter(TRUSTSTORE_KEY2, encrypt).handleRequest(exchange);
+
+        assertFault(decrypter(ALIAS_1, legacyDecrypt()), FAILED_CHECK);
+    }
+
+    /** The same, with CBC underneath, where the failure surfaces as a padding error. */
+    @Test
+    void anRsa15CbcMessageForAnotherRecipientFailsWithTheGenericFault() throws Exception {
+        exchangeWithBody(PLAINTEXT_BODY);
+        EncryptSecurePart encrypt = encrypt(ALIAS_2, encryptedBodyReference());
+        encrypt.setKeyTransportAlgorithm(RSA_1_5);
+        encrypt.setDataEncryptionAlgorithm(AES256_CBC);
+        encrypter(TRUSTSTORE_KEY2, encrypt).handleRequest(exchange);
+
+        assertFault(decrypter(ALIAS_1, legacyDecrypt()), FAILED_CHECK);
+    }
+
+    // ---- CBC padding interoperability ----------------------------------------------------------
+    //
+    // Every other test here has Membrane on both ends, so whatever padding this gateway writes it
+    // also reads, and a mistake round-trips perfectly. XML Encryption defines the final octet of the
+    // plaintext as the pad length and leaves the preceding pad octets arbitrary - so a conforming
+    // peer may send PKCS#7 padding, all-random padding, or anything between, and all of it has to
+    // decrypt here. These tests re-pad a real message's plaintext themselves to prove it.
+
+    private Element dataCipherValueOf(Document doc) {
+        return (Element) firstByTag(doc, XENC_NS, "EncryptedData")
+                .getElementsByTagNameNS(XENC_NS, "CipherValue").item(0);
+    }
+
+    private static byte[] base64Of(Element cipherValue) {
+        return Base64.getDecoder().decode(cipherValue.getTextContent().replaceAll("\\s", ""));
+    }
+
+    /**
+     * The content encryption key of a message addressed to {@link #ALIAS_1}, so that a test can act
+     * on the ciphertext the way a peer - or an attacker who obtained the key - would.
+     */
+    private byte[] recoverContentEncryptionKey(Document doc) throws Exception {
+        Element encryptedKey = firstByTag(doc, XENC_NS, "EncryptedKey");
+        byte[] wrapped = base64Of((Element) encryptedKey.getElementsByTagNameNS(XENC_NS, "CipherValue").item(0));
+        return rsaOaepCipher(Cipher.DECRYPT_MODE, privateKey(ALIAS_1)).doFinal(wrapped);
+    }
+
+    /**
+     * Re-encrypts a CBC message's own plaintext with padding this test controls, under the content
+     * encryption key the message already carries.
+     * <p>
+     * The {@code xenc:EncryptedKey} is left untouched, so what arrives is a message whose key
+     * material is authentic and whose ciphertext is padded the way some other implementation pads -
+     * which is exactly the inbound case that cannot be produced by encrypting with this gateway.
+     *
+     * @param padder given the plaintext, returns the block-aligned bytes to encrypt
+     */
+    private void repadCiphertext(Document doc, UnaryOperator<byte[]> padder) throws Exception {
+        byte[] cek = recoverContentEncryptionKey(doc);
+
+        Element dataCipherValue = dataCipherValueOf(doc);
+        byte[] plaintext = decryptCbc(new SecretKeySpec(cek, "AES"), base64Of(dataCipherValue));
+
+        byte[] iv = new byte[16];
+        new SecureRandom().nextBytes(iv);
+        Cipher cipher = Cipher.getInstance("AES/CBC/NoPadding");
+        cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(cek, "AES"), new IvParameterSpec(iv));
+        byte[] ciphertext = cipher.doFinal(padder.apply(plaintext));
+
+        byte[] out = new byte[iv.length + ciphertext.length];
+        System.arraycopy(iv, 0, out, 0, iv.length);
+        System.arraycopy(ciphertext, 0, out, iv.length, ciphertext.length);
+        dataCipherValue.setTextContent(Base64.getEncoder().encodeToString(out));
+        setBody(doc);
+    }
+
+    /** Appends {@code padLength} octets, the last of which states the length, the rest as given. */
+    private static byte[] padWith(byte[] plaintext, int padLength, IntUnaryOperator fill) {
+        byte[] padded = new byte[plaintext.length + padLength];
+        System.arraycopy(plaintext, 0, padded, 0, plaintext.length);
+        for (int i = 0; i < padLength - 1; i++) {
+            padded[plaintext.length + i] = (byte) fill.applyAsInt(i);
+        }
+        padded[padded.length - 1] = (byte) padLength;
+        return padded;
+    }
+
+    private static int padLengthFor(byte[] plaintext) {
+        return 16 - plaintext.length % 16;
+    }
+
+    /** PKCS#7: every pad octet equals the length. A conforming, and very common, choice. */
+    @Test
+    void ciphertextPaddedThePkcs7WayDecrypts() throws Exception {
+        exchangeWithBody(PLAINTEXT_BODY);
+        encryptForWith(AES256_CBC, RSA_OAEP);
+        repadCiphertext(parseBody(), plaintext -> {
+            int padLength = padLengthFor(plaintext);
+            return padWith(plaintext, padLength, i -> padLength);
+        });
+
+        assertEquals(Outcome.CONTINUE, decrypter(ALIAS_1, legacyDecrypt()).handleRequest(exchange));
+
+        assertBodyIsPlaintextAgain();
+    }
+
+    /**
+     * ISO 10126: the pad octets before the length are random. This is what Apache Santuario and
+     * WSS4J write, and it is why decrypting with {@code PKCS5Padding} - which additionally requires
+     * every pad octet to equal the length - would reject a conforming peer.
+     */
+    @Test
+    void ciphertextPaddedWithRandomOctetsDecrypts() throws Exception {
+        exchangeWithBody(PLAINTEXT_BODY);
+        encryptForWith(AES256_CBC, RSA_OAEP);
+        SecureRandom random = new SecureRandom();
+        repadCiphertext(parseBody(), plaintext ->
+                padWith(plaintext, padLengthFor(plaintext), i -> random.nextInt(256)));
+
+        assertEquals(Outcome.CONTINUE, decrypter(ALIAS_1, legacyDecrypt()).handleRequest(exchange));
+
+        assertBodyIsPlaintextAgain();
+    }
+
+    /**
+     * A full block of padding, which is what a conforming peer sends when the plaintext already ends
+     * on a block boundary - the case an off-by-one in the unpadding gets wrong.
+     * <p>
+     * The plaintext is brought to a boundary with spaces rather than with a first round of padding:
+     * those spaces survive the unpadding as character data, and whitespace between elements is
+     * ignorable, whereas the NUL octets a pad block is free to contain are not legal XML characters
+     * at all and would fail the fragment parse for the wrong reason.
+     */
+    @Test
+    void ciphertextPaddedWithAFullBlockDecrypts() throws Exception {
+        exchangeWithBody(PLAINTEXT_BODY);
+        encryptForWith(AES256_CBC, RSA_OAEP);
+        repadCiphertext(parseBody(), plaintext -> {
+            byte[] aligned = new byte[plaintext.length + (16 - plaintext.length % 16) % 16];
+            Arrays.fill(aligned, (byte) ' ');
+            System.arraycopy(plaintext, 0, aligned, 0, plaintext.length);
+            return padWith(aligned, 16, i -> 0);
+        });
+
+        assertEquals(Outcome.CONTINUE, decrypter(ALIAS_1, legacyDecrypt()).handleRequest(exchange));
+
+        assertBodyIsPlaintextAgain();
+    }
+
+    /**
+     * A final octet that is not a possible pad length, which is what a tampered or mis-keyed
+     * ciphertext most often decrypts to. The answer is the same generic fault as every other
+     * failure - the padding must not be observable.
+     */
+    @ParameterizedTest
+    @ValueSource(ints = {0x00, 0x11})
+    void ciphertextWithAnImpossiblePadLengthFailsWithTheGenericFault(int finalOctet) throws Exception {
+        exchangeWithBody(PLAINTEXT_BODY);
+        encryptForWith(AES256_CBC, RSA_OAEP);
+        repadCiphertext(parseBody(), plaintext -> {
+            byte[] padded = padWith(plaintext, padLengthFor(plaintext), i -> 0);
+            padded[padded.length - 1] = (byte) finalOctet;
+            return padded;
+        });
+
+        assertFault(decrypter(ALIAS_1, legacyDecrypt()), FAILED_CHECK);
     }
 
     // ---- structural rejection ------------------------------------------------------------------
@@ -433,11 +781,18 @@ class DecryptValidatePartTest extends AbstractWsSecurityTest {
     }
 
     @Test
-    void decryptTakesNoAlgorithmAttributes() {
-        // The fixed allowlist is the point: there is no setter to weaken it with.
+    void decryptTakesNoPerAlgorithmAttributes() {
+        // What a peer may send is not a per-algorithm setting: the only way to widen the inbound set
+        // is allowLegacyAlgorithms, which names the two legacy families and nothing else. A
+        // free-form algorithm attribute here would let any URI in.
         assertTrue(java.util.Arrays.stream(DecryptValidatePart.class.getMethods())
                 .noneMatch(m -> m.getName().equals("setDataEncryptionAlgorithm")
                                 || m.getName().equals("setKeyTransportAlgorithm")));
+    }
+
+    @Test
+    void legacyAlgorithmsAreOffByDefault() {
+        assertFalse(new DecryptValidatePart().isAllowLegacyAlgorithms());
     }
 
     @Test

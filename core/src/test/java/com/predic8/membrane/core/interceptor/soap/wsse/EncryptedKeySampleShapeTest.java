@@ -19,7 +19,11 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
+import javax.crypto.Cipher;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.*;
@@ -86,6 +90,75 @@ class EncryptedKeySampleShapeTest extends AbstractWsSecurityTest {
         assertEquals("http://www.w3.org/2009/xmlenc11#rsa-oaep", RSA_OAEP);
         assertEquals("http://www.w3.org/2009/xmlenc11#mgf1sha256", MGF1_SHA256);
         assertEquals("http://www.w3.org/2001/04/xmlenc#sha256", SHA256_DIGEST);
+    }
+
+    /**
+     * The legacy URIs are XML Encryption <i>1.0</i>, so they belong in the {@code xmlenc#} namespace.
+     * Writing them under the 1.1 one would round-trip perfectly against this gateway itself and be
+     * unrecognizable to the peers they exist for - the same trap as above, in the other direction.
+     */
+    @Test
+    void legacyAlgorithmUrisAreInTheXmlEncryption10Namespace() {
+        assertEquals("http://www.w3.org/2001/04/xmlenc#aes128-cbc", AES128_CBC);
+        assertEquals("http://www.w3.org/2001/04/xmlenc#aes192-cbc", AES192_CBC);
+        assertEquals("http://www.w3.org/2001/04/xmlenc#aes256-cbc", AES256_CBC);
+        assertEquals("http://www.w3.org/2001/04/xmlenc#rsa-1_5", RSA_1_5);
+    }
+
+    /**
+     * RSA-1.5 has no digest and no mask generation function, and WSS4J writes its
+     * {@code xenc:EncryptionMethod} childless. A {@code ds:DigestMethod} beside it would describe
+     * nothing any implementation computes.
+     */
+    @Test
+    void theRsa15KeyTransportEncryptionMethodHasNoChildren() throws Exception {
+        exchangeWithBody(SOAP_BODY);
+        EncryptSecurePart encrypt = encrypt(ALIAS_1, encryptedBodyReference());
+        encrypt.setKeyTransportAlgorithm(RSA_1_5);
+        encrypter(TRUSTSTORE, encrypt).handleRequest(exchange);
+
+        Element method = getFirstChildByName(
+                firstByTag(parseBody(), XENC_NS, "EncryptedKey"), XENC_NS, "EncryptionMethod");
+
+        assertEquals(RSA_1_5, method.getAttribute("Algorithm"));
+        assertEquals(List.of(), childNames(method));
+    }
+
+    /**
+     * {@code IV || ciphertext}, block-aligned, with a final plaintext octet that states the pad
+     * length - which is all XML Encryption says about CBC padding and therefore all a conforming peer
+     * checks. Nothing in this suite can make WSS4J unpad the blob, so this is the closest available
+     * proof that what leaves here is unpaddable by someone else.
+     */
+    @Test
+    void aCbcCipherValueIsBlockAlignedAndStatesItsPadLength() throws Exception {
+        exchangeWithBody(SOAP_BODY);
+        EncryptSecurePart encrypt = encrypt(ALIAS_1, encryptedBodyReference());
+        encrypt.setDataEncryptionAlgorithm(AES256_CBC);
+        encrypter(TRUSTSTORE, encrypt).handleRequest(exchange);
+
+        Document doc = parseBody();
+        Element encryptedKey = firstByTag(doc, XENC_NS, "EncryptedKey");
+        byte[] ivAndCiphertext = decodedCipherValueOf(firstByTag(doc, XENC_NS, "EncryptedData"));
+
+        assertEquals(0, ivAndCiphertext.length % 16, "not block-aligned");
+        assertTrue(ivAndCiphertext.length >= 32, "shorter than an IV plus a block");
+
+        byte[] cek = rsaOaepCipher(Cipher.DECRYPT_MODE, privateKey(ALIAS_1))
+                .doFinal(decodedCipherValueOf(encryptedKey));
+        Cipher cipher = Cipher.getInstance("AES/CBC/NoPadding");
+        cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(cek, "AES"),
+                new IvParameterSpec(ivAndCiphertext, 0, 16));
+        byte[] padded = cipher.doFinal(ivAndCiphertext, 16, ivAndCiphertext.length - 16);
+
+        int padLength = padded[padded.length - 1] & 0xFF;
+        assertTrue(padLength >= 1 && padLength <= 16, "final octet is not a pad length: " + padLength);
+    }
+
+    private static byte[] decodedCipherValueOf(Element encryptedElement) {
+        Element cipherData = getFirstChildByName(encryptedElement, XENC_NS, "CipherData");
+        return Base64.getDecoder().decode(
+                getFirstChildByName(cipherData, XENC_NS, "CipherValue").getTextContent().replaceAll("\\s", ""));
     }
 
     /**

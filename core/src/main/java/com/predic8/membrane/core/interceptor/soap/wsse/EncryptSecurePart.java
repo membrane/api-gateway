@@ -18,6 +18,8 @@ import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
 import com.predic8.membrane.core.util.ConfigurationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -46,7 +48,13 @@ import static com.predic8.membrane.core.interceptor.soap.wsse.XmlEncryptionUtil.
  * Whichever is chosen, the receiver's <code>validate</code> list has to mirror it.</p>
  * <p>Encryption provides confidentiality only — it says nothing about who sent the message, since
  * the recipient's certificate is public. Combine it with a <code>signature</code> when the sender
- * has to be authenticated. See
+ * has to be authenticated.</p>
+ * <p>AES-GCM and RSA-OAEP are the defaults. <code>dataEncryptionAlgorithm</code> and
+ * <code>keyTransportAlgorithm</code> also accept the legacy AES-CBC and RSA-1.5 algorithms for a
+ * recipient that supports nothing else; both are vulnerable to padding-oracle attacks and log a
+ * warning at startup. Configuring one here does not make it acceptable inbound — a
+ * <code>validate</code>/<code>decrypt</code> needs its own <code>allowLegacyAlgorithms</code> for
+ * that. See
  * <code>distribution/tutorials/web-services-security/70-Encrypt-And-Decrypt-Body.yaml</code>.</p>
  * @yaml <pre><code>
  * - wsSecurity:
@@ -63,19 +71,33 @@ import static com.predic8.membrane.core.interceptor.soap.wsse.XmlEncryptionUtil.
 @MCElement(name = "encrypt", component = false, id = "wsSecurity-encrypt")
 public class EncryptSecurePart extends SecurePart {
 
+    private static final Logger log = LoggerFactory.getLogger(EncryptSecurePart.class);
+
     private static final String DEFAULT_DATA_ENCRYPTION_ALGORITHM = AES256_GCM;
     private static final String DEFAULT_KEY_TRANSPORT_ALGORITHM = RSA_OAEP;
 
     /**
-     * Only AEAD modes, and only the modern OAEP. AES-CBC as XML Encryption defines it carries no
-     * authentication tag, which is what makes a decrypting gateway usable as the padding oracle of
-     * the Jager-Somorovsky attack, and RSA-1.5 is Bleichenbacher's. Neither is offered here even
-     * though {@code secure} algorithms are otherwise configurable for legacy backends
-     * (see {@code signature}, which still offers rsa-sha1), because there is no way to emit them
-     * safely - the weakness is in the algorithm, not in who accepts it.
+     * The AEAD modes and the modern OAEP, which are the defaults and what a peer that can be
+     * configured should be given; plus AES-CBC and RSA-1.5, which exist here only to talk to a peer
+     * that cannot be.
+     * <p>
+     * Both legacy families are padding-oracle-shaped: AES-CBC as XML Encryption defines it carries
+     * no authentication tag, which is the Jager-Somorovsky backwards-compatibility attack, and
+     * RSA-1.5 is Bleichenbacher's. Emitting them is the sender's decision to expose the
+     * <i>recipient</i> to that, so choosing one logs a warning naming the consequence - see
+     * {@link #warnAboutLegacyAlgorithms()}. It also does not license accepting them: an inbound
+     * message still needs {@code validate/decrypt}'s {@code allowLegacyAlgorithms}, which is
+     * separate and off by default.
+     * <p>
+     * This is the same shape as {@code signature}, which offers rsa-sha1 outbound while
+     * {@code validate/signature} refuses it inbound.
      */
-    private static final List<String> SUPPORTED_DATA_ENCRYPTION_ALGORITHMS = List.of(AES128_GCM, AES256_GCM);
-    private static final List<String> SUPPORTED_KEY_TRANSPORT_ALGORITHMS = List.of(RSA_OAEP);
+    private static final List<String> SUPPORTED_DATA_ENCRYPTION_ALGORITHMS =
+            List.of(AES128_GCM, AES256_GCM, AES128_CBC, AES192_CBC, AES256_CBC);
+    private static final List<String> SUPPORTED_KEY_TRANSPORT_ALGORITHMS = List.of(RSA_OAEP, RSA_1_5);
+
+    private static final List<String> LEGACY_DATA_ENCRYPTION_ALGORITHMS =
+            List.of(AES128_CBC, AES192_CBC, AES256_CBC);
 
     private List<EncryptionReference> references = new ArrayList<>();
     private String recipientAlias;
@@ -126,6 +148,35 @@ public class EncryptSecurePart extends SecurePart {
         requireDistinctTargets();
         requireSupported("dataEncryptionAlgorithm", dataEncryptionAlgorithm, SUPPORTED_DATA_ENCRYPTION_ALGORITHMS);
         requireSupported("keyTransportAlgorithm", keyTransportAlgorithm, SUPPORTED_KEY_TRANSPORT_ALGORITHMS);
+        warnAboutLegacyAlgorithms();
+    }
+
+    /**
+     * Says out loud what choosing a legacy algorithm costs, once, at startup.
+     * <p>
+     * Called from {@link #init()} and deliberately not from {@link #process}: the algorithm is a
+     * property of this configuration, so it is fully known here, and repeating the warning for every
+     * request would bury it in the log rather than make it louder. {@code validate/decrypt}'s
+     * warning is startup-only for the same reason plus a stronger one - there the algorithm is the
+     * peer's choice, so a per-message warning would be a log-flood vector.
+     * <p>
+     * Not a {@link ConfigurationException} either: the operator asked for this algorithm, presumably
+     * because the peer leaves no choice, and refusing would make the gateway useless in front of
+     * exactly the stacks the algorithm exists for.
+     */
+    private void warnAboutLegacyAlgorithms() {
+        if (LEGACY_DATA_ENCRYPTION_ALGORITHMS.contains(dataEncryptionAlgorithm)) {
+            log.warn("wsSecurity secure/encrypt is configured with dataEncryptionAlgorithm {}. AES-CBC carries no " +
+                     "authentication tag, which leaves the recipient usable as a padding oracle " +
+                     "(Jager-Somorovsky). Use it only for compatibility with a peer that cannot do AES-GCM, and " +
+                     "only if you understand that consequence.", dataEncryptionAlgorithm);
+        }
+        if (RSA_1_5.equals(keyTransportAlgorithm)) {
+            log.warn("wsSecurity secure/encrypt is configured with keyTransportAlgorithm {}. RSA-1.5 is vulnerable " +
+                     "to Bleichenbacher's adaptive chosen-ciphertext attack. Use it only for compatibility with a " +
+                     "peer that cannot do RSA-OAEP, and only if you understand that consequence.",
+                    keyTransportAlgorithm);
+        }
     }
 
     /**
@@ -324,7 +375,7 @@ public class EncryptSecurePart extends SecurePart {
                 reference.getId() != null ? reference.getId() : "ED-" + UUID.randomUUID(),
                 contentOnly ? TYPE_CONTENT : TYPE_ELEMENT,
                 dataEncryptionAlgorithm,
-                encryptGcm(contentEncryptionKey, plaintext));
+                encryptData(dataEncryptionAlgorithm, contentEncryptionKey, plaintext));
 
         if (contentOnly) {
             while (target.getFirstChild() != null) {
@@ -346,7 +397,8 @@ public class EncryptSecurePart extends SecurePart {
      */
     private Element createEncryptedKey(Document doc, SecretKey contentEncryptionKey, List<Element> encryptedDataElements)
             throws Exception {
-        Cipher cipher = rsaOaepCipher(Cipher.ENCRYPT_MODE, recipientCertificate.getPublicKey());
+        Cipher cipher = keyTransportCipher(keyTransportAlgorithm, Cipher.ENCRYPT_MODE,
+                recipientCertificate.getPublicKey());
         Element encryptedKey = createXencElement(doc, "EncryptedKey");
         encryptedKey.setAttribute("Id", "EK-" + UUID.randomUUID());
         encryptedKey.appendChild(createKeyTransportEncryptionMethod(doc, keyTransportAlgorithm));
@@ -418,10 +470,14 @@ public class EncryptSecurePart extends SecurePart {
     }
 
     /**
-     * @description The XML Encryption algorithm URI protecting the referenced elements. Only the
-     * authenticated AES-GCM modes are supported — <code>http://www.w3.org/2009/xmlenc11#aes128-gcm</code>
-     * and <code>http://www.w3.org/2009/xmlenc11#aes256-gcm</code>. The CBC modes are refused because
-     * they carry no authentication tag, which leaves a decrypting receiver usable as a padding oracle.
+     * @description The XML Encryption algorithm URI protecting the referenced elements. The
+     * authenticated AES-GCM modes — <code>http://www.w3.org/2009/xmlenc11#aes128-gcm</code> and
+     * <code>http://www.w3.org/2009/xmlenc11#aes256-gcm</code> — are the ones to use.
+     * <p>The unauthenticated CBC modes <code>http://www.w3.org/2001/04/xmlenc#aes128-cbc</code>,
+     * <code>#aes192-cbc</code> and <code>#aes256-cbc</code> are accepted for compatibility with a
+     * recipient that supports nothing else, and log a warning at startup when configured. They carry
+     * no authentication tag, which leaves the recipient usable as a padding oracle, so choose one
+     * only when the recipient leaves no alternative.</p>
      * @default http://www.w3.org/2009/xmlenc11#aes256-gcm
      */
     @MCAttribute
@@ -434,10 +490,14 @@ public class EncryptSecurePart extends SecurePart {
     }
 
     /**
-     * @description The algorithm URI encrypting the content encryption key for the recipient. Only
-     * <code>http://www.w3.org/2009/xmlenc11#rsa-oaep</code> with SHA-256 and MGF1-SHA-256 is
-     * supported; RSA-1.5 is refused as a Bleichenbacher oracle, and the older
-     * <code>rsa-oaep-mgf1p</code> URI cannot express a SHA-256 mask generation function.
+     * @description The algorithm URI encrypting the content encryption key for the recipient.
+     * <code>http://www.w3.org/2009/xmlenc11#rsa-oaep</code>, which this gateway emits with SHA-256
+     * and MGF1-SHA-256, is the one to use. The older <code>rsa-oaep-mgf1p</code> URI is not
+     * available, because it cannot express a SHA-256 mask generation function.
+     * <p><code>http://www.w3.org/2001/04/xmlenc#rsa-1_5</code> is accepted for compatibility with a
+     * recipient that supports nothing else, and logs a warning at startup when configured. RSA-1.5
+     * is vulnerable to Bleichenbacher's adaptive chosen-ciphertext attack, so choose it only when
+     * the recipient leaves no alternative.</p>
      * @default http://www.w3.org/2009/xmlenc11#rsa-oaep
      */
     @MCAttribute

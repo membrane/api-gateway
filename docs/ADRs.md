@@ -4,6 +4,11 @@
 
 Status: ACCEPTED
 Date: 2026-09-10
+Amended: 2026-09-11 — the algorithm set was widened with AES-CBC and RSA-1.5 for legacy peers. As
+originally accepted it read "AES-128/256-GCM … RSA-OAEP … Nothing else, in either direction", and
+pre-authorised an outbound-only legacy algorithm "without ever widening what is accepted inbound".
+Inbound is now widenable too, but only behind an explicit switch that is off by default; see
+"The legacy algorithms, and why the two directions are decided separately".
 
 ### Context
 
@@ -19,7 +24,10 @@ This ADR settles it, and records the two decisions that shape what the feature c
 - **Hand-rolled on the JDK.** `secure/encrypt` and `validate/decrypt` are implemented with plain JCA
   (`Cipher`) and DOM. No new dependency.
 - **AES-128/256-GCM** for content encryption, **RSA-OAEP with SHA-256 and MGF1-SHA-256** for key
-  transport. Nothing else, in either direction.
+  transport. These are the defaults and the recommendation.
+- **AES-128/192/256-CBC** and **RSA-1.5** are additionally available for peers that support nothing
+  else — outbound by naming the URI on `encrypt`, inbound only behind `decrypt`'s
+  `allowLegacyAlgorithms`, which is off by default. Every legacy choice logs a warning at startup.
 
 ### Why hand-rolled
 
@@ -37,30 +45,60 @@ namespace-carrying wrapper on the way back.
 
 The grammar was unaffected, which is the constraint ADR-006 imposed and evidence it was the right one.
 
-### The algorithm restriction, and its interop cost
+### The legacy algorithms, and why the two directions are decided separately
 
-Both refused algorithm families are padding-oracle-shaped, and a gateway that decrypts is precisely
-the oracle they need:
+Both legacy families are padding-oracle-shaped, and a gateway that decrypts is precisely the oracle
+they need:
 
 - XML Encryption's **AES-CBC** modes carry no authentication tag. That is the Jager–Somorovsky
   backwards-compatibility attack.
 - **RSA-1.5** key transport is Bleichenbacher's.
 
-The cost is real and is accepted deliberately: peers that offer only AES-CBC and RSA-1.5 — still
-common in older WSS4J/CXF and .NET/WCF configurations — cannot interoperate with this gateway, and
-are answered with `wsse:UnsupportedAlgorithm`.
+They are nevertheless supported, because the alternative is not "peers upgrade" but "this gateway
+cannot be put in front of them at all": AES-CBC + RSA-1.5 is still what older WSS4J/CXF and
+.NET/WCF configurations offer, and those configurations are frequently not ours to change.
 
-This goes one step further than ADR-006's "accepted algorithms are stricter than produced ones".
-There, `secure/signature` still offers `rsa-sha1` for a legacy backend while `validate/signature`
-refuses it, because emitting a weak signature harms only the party who chose to trust it. Encryption
-has no such escape hatch on either side, because emitting AES-CBC would expose *the recipient* to an
-oracle, not the sender. The asymmetry still exists in the grammar — `encrypt` takes
-`dataEncryptionAlgorithm`/`keyTransportAlgorithm` attributes and `decrypt` takes none — so an
-outbound-only legacy algorithm could be added later without ever widening what is accepted inbound.
+The two directions are separate decisions, and that is the whole of the design here:
 
-Because the modern `xenc11#rsa-oaep` URI makes the mask generation function negotiable, `decrypt`
-also checks the `ds:DigestMethod` and `xenc11:MGF` children, not just the algorithm URI: otherwise a
-peer sends the modern name with `mgf1sha1` inside and gets a downgrade for free.
+- **Outbound**, choosing the algorithm *is* the opt-in — `dataEncryptionAlgorithm` and
+  `keyTransportAlgorithm` name a URI, and nothing else is needed. This extends ADR-006's
+  "accepted algorithms are stricter than produced ones" rather than contradicting it.
+- **Inbound**, `decrypt` has `allowLegacyAlgorithms`, default `false`. It is deliberately *not*
+  implied by what `encrypt` emits, because the exposure runs the other way: emitting AES-CBC exposes
+  the recipient, accepting it exposes *this gateway*, to whoever can reach the endpoint. A peer must
+  never be able to pick the weak algorithm unilaterally, which is what widening the inbound set
+  without a switch would allow.
+
+A single boolean rather than per-algorithm inbound attributes: the question an operator actually has
+is "may this peer use the old algorithms", not "which URIs may appear", and a free-form inbound
+algorithm attribute would accept any URI including ones with no implementation behind them.
+
+`allowLegacyAlgorithms` widens exactly two sets. The `ds:DigestMethod` and `xenc11:MGF` checks stay
+fixed either way, because they are a different question: the modern `xenc11#rsa-oaep` URI exists so
+that the mask generation function is stated separately, so a peer sending it with `mgf1sha1` inside
+has downgraded the algorithm it just claimed — that is not backwards compatibility. A peer that
+genuinely cannot do OAEP asks for `rsa-1_5`, where neither element appears at all (and `decrypt`
+therefore does not require them, while `encrypt` emits the `EncryptionMethod` childless, as WSS4J
+does).
+
+Two implementation facts that are easy to get wrong and were settled empirically:
+
+- **CBC uses `ISO10126Padding` in both directions.** XML Encryption defines the final octet as the
+  pad length and leaves the preceding pad octets arbitrary; `ISO10126Padding` writes exactly that,
+  which is what Santuario/WSS4J emit, and its unpadding reads only the final octet — so it also
+  accepts PKCS#7-padded ciphertext. `PKCS5Padding` is the natural-looking choice and is wrong on the
+  inbound side: it additionally requires every pad octet to equal the length and therefore rejects
+  conforming peers.
+- **A failed RSA-1.5 unwrap does not throw.** Bleichenbacher's attack is built on distinguishing a
+  well-formed PKCS#1 padding from a malformed one, so `validate/decrypt` answers a failed unwrap —
+  and an unwrapped key of the wrong length, which is the same information — with a random key of the
+  length the data algorithm requires, and carries on. The content decryption then fails as it would
+  for any wrong key. This is RFC 3218's countermeasure, and it is what makes accepting the algorithm
+  defensible at all. OAEP keeps the plain throw; it is not a Bleichenbacher oracle.
+
+The fault for a refused algorithm is still `wsse:UnsupportedAlgorithm`, and because ADR-006 keeps
+fault text non-specific, the refusal is also logged at `info` naming the algorithm and the switch —
+otherwise an operator has no way to learn why a peer is being turned away.
 
 ### An unvalidated header is not forwarded — with one addition
 
@@ -141,6 +179,11 @@ signature is simply wrong" anyway.
 - Nested (super-)encryption is not supported: any `xenc:EncryptedData` still present after every
   `xenc:DataReference` has been processed is a fault. That both bounds the work an attacker can ask
   for and stops unreferenced ciphertext reaching the backend uninspected.
+- A gateway that sits between a legacy peer and a modern one translates between the two algorithm
+  sets for free, because the inbound and outbound algorithms are independent: `validate/decrypt`
+  with `allowLegacyAlgorithms` on one side and a default `secure/encrypt` on the other upgrades the
+  message in passing. That is the shape this support is meant to have — the legacy algorithm stays
+  on the one hop that requires it, rather than propagating through the whole topology.
 
 ## ADR-010 Default for `uriFactory`'s `allowIllegalCharacters`
 

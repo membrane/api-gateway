@@ -56,13 +56,27 @@ class EncryptSecurePartTest extends AbstractWsSecurityTest {
 
     /** Decrypts an {@code xenc:EncryptedData} independently of the part that produced it. */
     private String decryptIndependently(Document doc, String alias) throws Exception {
+        return decryptIndependently(doc, alias, RSA_OAEP, AES256_GCM);
+    }
+
+    /**
+     * The same, for a message whose algorithms are not the defaults.
+     * <p>
+     * Reads the algorithms from the parameters rather than from the message, deliberately: taking
+     * them off the {@code xenc:EncryptionMethod} would make this helper agree with whatever the part
+     * wrote, and the point of decrypting independently is that it cannot.
+     */
+    private String decryptIndependently(Document doc, String alias, String keyTransportAlgorithm,
+                                        String dataAlgorithm) throws Exception {
         Element encryptedKey = firstByTag(doc, XENC_NS, "EncryptedKey");
         Element encryptedData = firstByTag(doc, XENC_NS, "EncryptedData");
 
         byte[] wrapped = Base64.getDecoder().decode(cipherValue(encryptedKey));
-        byte[] cek = XmlEncryptionUtil.rsaOaepCipher(Cipher.DECRYPT_MODE, privateKey(alias)).doFinal(wrapped);
+        byte[] cek = keyTransportCipher(keyTransportAlgorithm, Cipher.DECRYPT_MODE, privateKey(alias))
+                .doFinal(wrapped);
+        assertEquals(cekLengthFor(dataAlgorithm), cek.length, "content encryption key length");
 
-        byte[] plaintext = decryptGcm(new SecretKeySpec(cek, "AES"),
+        byte[] plaintext = decryptData(dataAlgorithm, new SecretKeySpec(cek, "AES"),
                 Base64.getDecoder().decode(cipherValue(encryptedData)));
         return new String(plaintext, UTF_8);
     }
@@ -114,7 +128,7 @@ class EncryptSecurePartTest extends AbstractWsSecurityTest {
 
         encrypter(TRUSTSTORE, encrypt).handleRequest(exchange);
 
-        assertDecryptsToFooBar(decryptIndependently(parseBody(), ALIAS_1));
+        assertDecryptsToFooBar(decryptIndependently(parseBody(), ALIAS_1, RSA_OAEP, algorithm));
     }
 
     /**
@@ -131,6 +145,23 @@ class EncryptSecurePartTest extends AbstractWsSecurityTest {
 
         Element encryptedData = firstByTag(parseBody(), XENC_NS, "EncryptedData");
         assertEquals(AES128_GCM,
+                getFirstChildByName(encryptedData, XENC_NS, "EncryptionMethod").getAttribute("Algorithm"));
+    }
+
+    /**
+     * A CBC algorithm has to reach the wire in the 1.0 {@code xmlenc#} namespace. Emitting it under
+     * the 1.1 one would round-trip perfectly here and be unrecognizable to every real peer.
+     */
+    @Test
+    void theEmittedEncryptionMethodCarriesTheCbcUriUnchanged() throws Exception {
+        exchangeWithBody(SOAP_BODY_WITH_TOKEN);
+        EncryptSecurePart encrypt = encrypt(ALIAS_1, encryptedBodyReference());
+        encrypt.setDataEncryptionAlgorithm(AES256_CBC);
+
+        encrypter(TRUSTSTORE, encrypt).handleRequest(exchange);
+
+        Element encryptedData = firstByTag(parseBody(), XENC_NS, "EncryptedData");
+        assertEquals("http://www.w3.org/2001/04/xmlenc#aes256-cbc",
                 getFirstChildByName(encryptedData, XENC_NS, "EncryptionMethod").getAttribute("Algorithm"));
     }
 
@@ -437,20 +468,63 @@ class EncryptSecurePartTest extends AbstractWsSecurityTest {
         assertTrue(e.getMessage().contains("1 not a name"), e.getMessage());
     }
 
-    /** The CBC modes are the Jager-Somorovsky attack surface and must not be configurable. */
-    @Test
-    void aCbcDataEncryptionAlgorithmIsRejected() {
+    /**
+     * The CBC modes are offered for a recipient that supports nothing else, all three key sizes -
+     * including 192, which the GCM side does not have.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {AES128_CBC, AES192_CBC, AES256_CBC})
+    void everyCbcKeySizeProducesADecryptableMessage(String algorithm) throws Exception {
+        exchangeWithBody(SOAP_BODY_WITH_TOKEN);
         EncryptSecurePart encrypt = encrypt(ALIAS_1, encryptedBodyReference());
-        encrypt.setDataEncryptionAlgorithm("http://www.w3.org/2001/04/xmlenc#aes256-cbc");
+        encrypt.setDataEncryptionAlgorithm(algorithm);
+
+        encrypter(TRUSTSTORE, encrypt).handleRequest(exchange);
+
+        assertDecryptsToFooBar(decryptIndependently(parseBody(), ALIAS_1, RSA_OAEP, algorithm));
+    }
+
+    @Test
+    void anRsa15KeyTransportAlgorithmProducesADecryptableMessage() throws Exception {
+        exchangeWithBody(SOAP_BODY_WITH_TOKEN);
+        EncryptSecurePart encrypt = encrypt(ALIAS_1, encryptedBodyReference());
+        encrypt.setKeyTransportAlgorithm(RSA_1_5);
+
+        encrypter(TRUSTSTORE, encrypt).handleRequest(exchange);
+
+        assertDecryptsToFooBar(decryptIndependently(parseBody(), ALIAS_1, RSA_1_5, AES256_GCM));
+    }
+
+    /** The combination a legacy .NET/WCF or older WSS4J peer actually asks for. */
+    @Test
+    void cbcTogetherWithRsa15ProducesADecryptableMessage() throws Exception {
+        exchangeWithBody(SOAP_BODY_WITH_TOKEN);
+        EncryptSecurePart encrypt = encrypt(ALIAS_1, encryptedBodyReference());
+        encrypt.setDataEncryptionAlgorithm(AES256_CBC);
+        encrypt.setKeyTransportAlgorithm(RSA_1_5);
+
+        encrypter(TRUSTSTORE, encrypt).handleRequest(exchange);
+
+        assertDecryptsToFooBar(decryptIndependently(parseBody(), ALIAS_1, RSA_1_5, AES256_CBC));
+    }
+
+    /**
+     * Widening the supported set did not turn it into "anything goes": an algorithm nobody
+     * implements is still a configuration error, not a message that fails on the first request.
+     */
+    @Test
+    void anUnknownDataEncryptionAlgorithmIsStillRejected() {
+        EncryptSecurePart encrypt = encrypt(ALIAS_1, encryptedBodyReference());
+        encrypt.setDataEncryptionAlgorithm("http://www.w3.org/2001/04/xmlenc#tripledes-cbc");
 
         ConfigurationException e = assertThrows(ConfigurationException.class, () -> encrypter(TRUSTSTORE, encrypt));
         assertTrue(e.getMessage().contains("dataEncryptionAlgorithm"), e.getMessage());
     }
 
     @Test
-    void anRsa15KeyTransportAlgorithmIsRejected() {
+    void anUnknownKeyTransportAlgorithmIsStillRejected() {
         EncryptSecurePart encrypt = encrypt(ALIAS_1, encryptedBodyReference());
-        encrypt.setKeyTransportAlgorithm("http://www.w3.org/2001/04/xmlenc#rsa-1_5");
+        encrypt.setKeyTransportAlgorithm("http://www.w3.org/2001/04/xmlenc#rsa-oaep-mgf1p");
 
         ConfigurationException e = assertThrows(ConfigurationException.class, () -> encrypter(TRUSTSTORE, encrypt));
         assertTrue(e.getMessage().contains("keyTransportAlgorithm"), e.getMessage());

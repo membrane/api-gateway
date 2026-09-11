@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.soap.wsse;
 
+import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.config.security.KeyStore;
@@ -28,6 +29,7 @@ import org.w3c.dom.Node;
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 import java.security.PrivateKey;
+import java.security.SecureRandom;
 import java.util.*;
 
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityFaultCode.*;
@@ -39,13 +41,15 @@ import static com.predic8.membrane.core.interceptor.soap.wsse.XmlEncryptionUtil.
  * <code>xenc:EncryptedKey</code> in the <code>wsse:Security</code> header is opened with the
  * enclosing <code>wsSecurity</code> element's <code>keystore</code> private key, and every
  * <code>xenc:EncryptedData</code> it names is replaced by its plaintext.
- * <p>Accepted algorithms are fixed and deliberately narrower than what <code>encrypt</code> can be
- * configured to produce: AES-128/256-GCM for content and RSA-OAEP with SHA-256 and MGF1-SHA-256 for
- * the key. A message using anything else — an AES-CBC downgrade, RSA-1.5, or the modern OAEP URI
- * carrying an SHA-1 mask generation function — is answered with
- * <code>wsse:UnsupportedAlgorithm</code> before any cipher is constructed. That asymmetry is the
- * point: accepting what is merely common would let any peer choose the padding-oracle-shaped
- * algorithms whatever this gateway emits.</p>
+ * <p>By default the accepted algorithms are narrower than what <code>encrypt</code> can be configured
+ * to produce: AES-128/256-GCM for content and RSA-OAEP with SHA-256 and MGF1-SHA-256 for the key. A
+ * message using anything else — an AES-CBC downgrade, RSA-1.5, or the modern OAEP URI carrying an
+ * SHA-1 mask generation function — is answered with <code>wsse:UnsupportedAlgorithm</code> before any
+ * cipher is constructed. That asymmetry is deliberate: what a peer may send is a separate decision
+ * from what this gateway emits, because accepting a padding-oracle-shaped algorithm exposes this
+ * gateway rather than the peer. <code>allowLegacyAlgorithms</code> widens it to AES-CBC and RSA-1.5
+ * for a peer that supports nothing else; the OAEP digest and mask generation function stay fixed
+ * either way.</p>
  * <p>One message, one recipient: a <code>wsse:Security</code> header carrying more than one
  * <code>xenc:EncryptedKey</code> is refused rather than searched for the key this gateway can open.
  * A multi-recipient message is a sender that addressed no header at any <code>actor</code>, and the
@@ -73,20 +77,45 @@ public class DecryptValidatePart extends ValidatePart {
 
     private static final Logger log = LoggerFactory.getLogger(DecryptValidatePart.class);
 
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+
     /**
-     * Only the authenticated GCM modes. XML Encryption's CBC modes carry no authentication tag, which
-     * is exactly what makes a decrypting gateway usable as the oracle in the Jager-Somorovsky
-     * backwards-compatibility attack.
+     * The default: only the authenticated GCM modes. XML Encryption's CBC modes carry no
+     * authentication tag, which is exactly what makes a decrypting gateway usable as the oracle in
+     * the Jager-Somorovsky backwards-compatibility attack - so they are accepted only where an
+     * operator has said {@link #allowLegacyAlgorithms}, never merely because this gateway can also
+     * emit them.
      */
     private static final Set<String> ALLOWED_DATA_ALGORITHMS = Set.of(AES128_GCM, AES256_GCM);
-    /** RSA-1.5 is absent by intent: it is Bleichenbacher's oracle. */
+    /** Likewise: RSA-1.5 is Bleichenbacher's oracle, so it is not in the default set. */
     private static final Set<String> ALLOWED_KEY_TRANSPORT_ALGORITHMS = Set.of(RSA_OAEP);
+    /**
+     * The OAEP digest and mask generation function, which stay fixed <i>whatever</i>
+     * {@link #allowLegacyAlgorithms} says - folding these two into the legacy switch is the obvious
+     * simplification and the wrong one.
+     * <p>
+     * They are a different question from "may this peer use an old algorithm". A peer that sends
+     * {@code xenc11#rsa-oaep} has claimed the modern algorithm, and the whole reason that URI makes
+     * the mask generation function negotiable is that the MGF is then stated separately - so
+     * accepting {@code mgf1sha1} inside it is not backwards compatibility, it is a downgrade of the
+     * algorithm the peer itself named. A peer that genuinely cannot do OAEP asks for
+     * {@link XmlEncryptionUtil#RSA_1_5}, where these two elements do not appear at all.
+     */
     private static final Set<String> ALLOWED_OAEP_DIGESTS = Set.of(SHA256_DIGEST);
     private static final Set<String> ALLOWED_MGF_ALGORITHMS = Set.of(MGF1_SHA256);
 
+    /** What {@link #allowLegacyAlgorithms} adds, and the only thing it adds. */
+    private static final Set<String> LEGACY_DATA_ALGORITHMS = Set.of(AES128_CBC, AES192_CBC, AES256_CBC);
+    private static final Set<String> LEGACY_KEY_TRANSPORT_ALGORITHMS = Set.of(RSA_1_5);
+
     private List<EncryptionReference> requiredReferences = new ArrayList<>();
+    private boolean allowLegacyAlgorithms;
 
     private PrivateKey privateKey;
+    // Resolved in init() from allowLegacyAlgorithms and read-only afterwards, like every other field
+    // here: one instance serves every request thread.
+    private Set<String> allowedDataAlgorithms;
+    private Set<String> allowedKeyTransportAlgorithms;
 
     @Override
     protected void init() {
@@ -95,7 +124,36 @@ public class DecryptValidatePart extends ValidatePart {
                     "wsSecurity validate/decrypt requires a <keystore> on the enclosing wsSecurity element.");
         }
         requiredReferences.forEach(EncryptionReference::validate);
+        resolveAllowedAlgorithms();
         loadDecryptionKey();
+    }
+
+    /**
+     * Fixes what this part accepts, once, and says so if it is more than the default.
+     * <p>
+     * The warning is startup-only and deliberately not repeated per message: the algorithm of an
+     * inbound message is the <i>peer's</i> choice, so a per-message warning would be a log-flood
+     * vector for anyone who can reach this endpoint. A refusal does log per message, at
+     * {@code info} - see {@link #requireAllowed}.
+     */
+    private void resolveAllowedAlgorithms() {
+        if (!allowLegacyAlgorithms) {
+            allowedDataAlgorithms = ALLOWED_DATA_ALGORITHMS;
+            allowedKeyTransportAlgorithms = ALLOWED_KEY_TRANSPORT_ALGORITHMS;
+            return;
+        }
+        allowedDataAlgorithms = union(ALLOWED_DATA_ALGORITHMS, LEGACY_DATA_ALGORITHMS);
+        allowedKeyTransportAlgorithms = union(ALLOWED_KEY_TRANSPORT_ALGORITHMS, LEGACY_KEY_TRANSPORT_ALGORITHMS);
+        log.warn("wsSecurity validate/decrypt has allowLegacyAlgorithms enabled: inbound AES-CBC and RSA-1.5 are " +
+                 "now accepted. Any peer that reaches this endpoint can then choose them, which makes this gateway " +
+                 "a padding oracle (Jager-Somorovsky / Bleichenbacher) for the messages it decrypts. Enable this " +
+                 "only for a peer that cannot be upgraded, and only if you understand that consequence.");
+    }
+
+    private static Set<String> union(Set<String> first, Set<String> second) {
+        Set<String> union = new HashSet<>(first);
+        union.addAll(second);
+        return Set.copyOf(union);
     }
 
     private void loadDecryptionKey() {
@@ -126,7 +184,7 @@ public class DecryptValidatePart extends ValidatePart {
         Element security = ctx.security();
 
         Element encryptedKey = findSingleEncryptedKey(security);
-        checkKeyTransportAlgorithm(encryptedKey);
+        String keyTransportAlgorithm = checkKeyTransportAlgorithm(encryptedKey);
 
         // After the structural checks, before any decryption. After, so that "there is nothing here
         // to decrypt" is reported as the structural problem it is rather than as a policy failure -
@@ -138,13 +196,13 @@ public class DecryptValidatePart extends ValidatePart {
         List<Element> targets = resolveDataReferences(doc, encryptedKey);
         String dataAlgorithm = checkDataAlgorithms(targets);
 
-        byte[] contentEncryptionKey = unwrapContentEncryptionKey(encryptedKey, dataAlgorithm);
+        byte[] contentEncryptionKey = unwrapContentEncryptionKey(encryptedKey, keyTransportAlgorithm, dataAlgorithm);
 
         // Compared by identity: two distinct elements of the same name are not the same target, and
         // DOM nodes have no value equality that would say otherwise.
         Set<Element> restoredElements = Collections.newSetFromMap(new IdentityHashMap<>());
         for (Element encryptedData : targets) {
-            Element restored = decryptInPlace(doc, encryptedData, contentEncryptionKey);
+            Element restored = decryptInPlace(doc, encryptedData, dataAlgorithm, contentEncryptionKey);
             if (restored != null) {
                 restoredElements.add(restored);
             }
@@ -267,22 +325,33 @@ public class DecryptValidatePart extends ValidatePart {
     }
 
     /**
-     * Checks the key transport algorithm and both digests it depends on.
+     * Checks the key transport algorithm and, under OAEP, both digests it depends on.
      * <p>
      * The {@code ds:DigestMethod} and {@code xenc11:MGF} children matter as much as the algorithm URI
      * itself: the 1.1 {@code rsa-oaep} URI exists precisely so that the mask generation function is
      * negotiable, so a peer that sends it with {@code mgf1sha1} inside has downgraded the OAEP while
      * still naming the modern algorithm. An absent MGF child is refused for the same reason - under
      * this URI there is no default to fall back on.
+     * <p>
+     * Under {@code rsa-1_5} neither child is checked, because neither means anything there: PKCS#1
+     * v1.5 padding has no digest and no mask generation function. They are not refused if present
+     * either - a peer that emits a stray one has written something inert, not a downgrade.
+     *
+     * @return the key transport algorithm, which decides both the unwrapping cipher and how a failed
+     * unwrap has to be handled
      */
-    private static void checkKeyTransportAlgorithm(Element encryptedKey) {
+    private String checkKeyTransportAlgorithm(Element encryptedKey) {
         Element method = getFirstChildByName(encryptedKey, XENC_NS, "EncryptionMethod");
         if (method == null) {
             throw new WsSecurityFaultException(INVALID_SECURITY, "xenc:EncryptedKey has no xenc:EncryptionMethod.");
         }
-        requireAllowed("xenc:EncryptionMethod", method.getAttribute("Algorithm"), ALLOWED_KEY_TRANSPORT_ALGORITHMS);
-        requireAllowed("ds:DigestMethod", algorithmOf(method, DS_NS, "DigestMethod"), ALLOWED_OAEP_DIGESTS);
-        requireAllowed("xenc11:MGF", algorithmOf(method, XENC11_NS, "MGF"), ALLOWED_MGF_ALGORITHMS);
+        String algorithm = method.getAttribute("Algorithm");
+        requireAllowed("xenc:EncryptionMethod", algorithm, allowedKeyTransportAlgorithms);
+        if (!RSA_1_5.equals(algorithm)) {
+            requireAllowed("ds:DigestMethod", algorithmOf(method, DS_NS, "DigestMethod"), ALLOWED_OAEP_DIGESTS);
+            requireAllowed("xenc11:MGF", algorithmOf(method, XENC11_NS, "MGF"), ALLOWED_MGF_ALGORITHMS);
+        }
+        return algorithm;
     }
 
     /**
@@ -291,7 +360,7 @@ public class DecryptValidatePart extends ValidatePart {
      *                {@code iterator().next()} below safe
      * @return the data encryption algorithm every target agrees on
      */
-    private static String checkDataAlgorithms(List<Element> targets) {
+    private String checkDataAlgorithms(List<Element> targets) {
         Set<String> algorithms = new LinkedHashSet<>();
         for (Element encryptedData : targets) {
             Element method = getFirstChildByName(encryptedData, XENC_NS, "EncryptionMethod");
@@ -299,7 +368,7 @@ public class DecryptValidatePart extends ValidatePart {
                 throw new WsSecurityFaultException(INVALID_SECURITY, "xenc:EncryptedData has no xenc:EncryptionMethod.");
             }
             String algorithm = method.getAttribute("Algorithm");
-            requireAllowed("xenc:EncryptionMethod", algorithm, ALLOWED_DATA_ALGORITHMS);
+            requireAllowed("xenc:EncryptionMethod", algorithm, allowedDataAlgorithms);
             algorithms.add(algorithm);
         }
         if (algorithms.size() > 1) {
@@ -320,8 +389,26 @@ public class DecryptValidatePart extends ValidatePart {
         return element == null ? "" : element.getAttribute("Algorithm");
     }
 
+    /**
+     * The refusal is logged as well as faulted, because the fault cannot say what was wrong: WS-
+     * Security fault text here is kept non-specific so it cannot serve as an oracle, which leaves the
+     * log as the only place an operator can find out that a peer is being turned away over an
+     * algorithm. {@code info} rather than {@code warn} because the trigger is peer-controlled, like
+     * every other detection in this package.
+     * <p>
+     * The hint is attached only when {@code allowLegacyAlgorithms} would actually have accepted this
+     * value. Naming the switch for a refusal it does not affect - an SHA-1 mask generation function,
+     * most obviously - would send an operator to enable it and then puzzle over the same fault.
+     */
     private static void requireAllowed(String what, String algorithm, Set<String> allowed) {
         if (!allowed.contains(algorithm)) {
+            if (LEGACY_DATA_ALGORITHMS.contains(algorithm) || LEGACY_KEY_TRANSPORT_ALGORITHMS.contains(algorithm)) {
+                log.info("Refused inbound {} algorithm \"{}\": it is one of the legacy algorithms, which are not " +
+                         "accepted by default. If this peer cannot be upgraded, set allowLegacyAlgorithms=\"true\" " +
+                         "on wsSecurity validate/decrypt - and read what that costs before you do.", what, algorithm);
+            } else {
+                log.info("Refused inbound {} algorithm \"{}\"; accepted: {}.", what, algorithm, allowed);
+            }
             throw new WsSecurityFaultException(UNSUPPORTED_ALGORITHM,
                     "Unsupported " + what + " algorithm \"" + algorithm + "\".");
         }
@@ -368,20 +455,54 @@ public class DecryptValidatePart extends ValidatePart {
         return targets;
     }
 
-    private byte[] unwrapContentEncryptionKey(Element encryptedKey, String dataAlgorithm) {
+    /**
+     * Opens the {@code xenc:EncryptedKey} with this gateway's private key.
+     * <p>
+     * Under RSA-1.5 a failure does not throw. Bleichenbacher's attack is built entirely on telling
+     * "the PKCS#1 padding was well-formed" apart from "it was not", so a well-formedness failure -
+     * or an unwrapped key of the wrong length, which is the same information - is answered with a
+     * random key of the length the data algorithm requires, and decryption carries on with it. The
+     * content decryption then fails as it would for any wrong key, which is the only thing the
+     * sender gets to observe. This is the countermeasure RFC 3218 describes and XML Encryption 1.1
+     * requires of an implementation that accepts the algorithm at all.
+     * <p>
+     * OAEP keeps the plain throw: it is not a Bleichenbacher oracle, and every failure on that path
+     * already funnels into the one indistinguishable fault.
+     */
+    private byte[] unwrapContentEncryptionKey(Element encryptedKey, String keyTransportAlgorithm,
+                                              String dataAlgorithm) {
         byte[] wrapped = cipherValueOf(encryptedKey);
+        int expectedLength = cekLengthFor(dataAlgorithm);
         try {
-            byte[] contentEncryptionKey = rsaOaepCipher(Cipher.DECRYPT_MODE, privateKey).doFinal(wrapped);
+            byte[] contentEncryptionKey =
+                    keyTransportCipher(keyTransportAlgorithm, Cipher.DECRYPT_MODE, privateKey).doFinal(wrapped);
             // Not optional, and easy to leave out: without it a wrong-length key reaches Cipher.init
             // and throws a distinguishable InvalidKeyException, which separates "the RSA unwrap
             // produced garbage" from "the GCM tag failed" and hands the sender an oracle.
-            if (contentEncryptionKey.length != cekLengthFor(dataAlgorithm)) {
+            if (contentEncryptionKey.length != expectedLength) {
                 throw new IllegalStateException("unwrapped key has the wrong length for " + dataAlgorithm);
             }
             return contentEncryptionKey;
         } catch (Exception e) {
+            if (RSA_1_5.equals(keyTransportAlgorithm)) {
+                log.info("RSA-1.5 key unwrap failed; continuing with a random content encryption key so that the " +
+                         "failure is indistinguishable from a content decryption failure.", e);
+                // Length taken from the data algorithm, never from the blob that just failed to
+                // unwrap - a length derived from the failure would reinstate the distinction this
+                // substitution exists to remove.
+                return randomContentEncryptionKey(expectedLength);
+            }
             throw decryptionFailed(e);
         }
+    }
+
+    private static byte[] randomContentEncryptionKey(int length) {
+        byte[] key = new byte[length];
+        // The shared instance, not a fresh one: this runs on a path a peer can trigger at will, and
+        // constructing a SecureRandom per failed unwrap would repeat provider lookup and seeding for
+        // each of them.
+        SECURE_RANDOM.nextBytes(key);
+        return key;
     }
 
     /**
@@ -389,16 +510,19 @@ public class DecryptValidatePart extends ValidatePart {
      * {@code CONTENT} one, so that {@link #checkRequiredElementReferences} can tell an element that
      * arrived as its own {@code xenc:EncryptedData} from one that was there all along
      */
-    private Element decryptInPlace(Document doc, Element encryptedData, byte[] contentEncryptionKey) {
+    private Element decryptInPlace(Document doc, Element encryptedData, String dataAlgorithm,
+                                   byte[] contentEncryptionKey) {
         Element parentElement = (Element) encryptedData.getParentNode();
         boolean contentOnly = TYPE_CONTENT.equals(encryptedData.getAttribute("Type"));
 
         List<Node> restored;
         try {
-            byte[] plaintext = decryptGcm(new SecretKeySpec(contentEncryptionKey, "AES"), cipherValueOf(encryptedData));
+            byte[] plaintext = decryptData(dataAlgorithm, new SecretKeySpec(contentEncryptionKey, "AES"),
+                    cipherValueOf(encryptedData));
             // Parsing is inside the same try on purpose: "the ciphertext decrypted to something that
             // is not XML" is precisely the signal an adaptive chosen-ciphertext attack feeds on, so it
-            // has to be indistinguishable from a failed authentication tag.
+            // has to be indistinguishable from a failed authentication tag - or, under CBC, from a
+            // failed padding check, which is the whole of the Jager-Somorovsky attack.
             restored = parsePlaintextFragment(plaintext, parentElement, doc);
         } catch (Exception e) {
             throw decryptionFailed(e);
@@ -495,5 +619,30 @@ public class DecryptValidatePart extends ValidatePart {
     @MCChildElement(order = 1)
     public void setRequiredReferences(List<EncryptionReference> requiredReferences) {
         this.requiredReferences = requiredReferences == null ? List.of() : List.copyOf(requiredReferences);
+    }
+
+    public boolean isAllowLegacyAlgorithms() {
+        return allowLegacyAlgorithms;
+    }
+
+    /**
+     * @description Additionally accepts the legacy AES-CBC content encryption algorithms
+     * (<code>http://www.w3.org/2001/04/xmlenc#aes128-cbc</code>, <code>#aes192-cbc</code>,
+     * <code>#aes256-cbc</code>) and RSA-1.5 key transport
+     * (<code>http://www.w3.org/2001/04/xmlenc#rsa-1_5</code>) on inbound messages, and logs a warning
+     * at startup. Enable it only for a peer that supports nothing else.
+     * <p>Both are vulnerable to padding-oracle attacks — AES-CBC carries no authentication tag, and
+     * RSA-1.5 is open to Bleichenbacher's attack — and accepting them means any peer reaching this
+     * endpoint may choose them, whatever this gateway itself emits. That is why it is a separate
+     * switch from <code>encrypt</code>'s algorithm attributes rather than implied by them.</p>
+     * <p>It does not relax anything else: an unknown algorithm is still refused, and an
+     * <code>rsa-oaep</code> key still has to carry SHA-256 and MGF1-SHA-256, so a peer cannot use
+     * this switch to downgrade the mask generation function of the modern algorithm.</p>
+     * @default false
+     * @example true
+     */
+    @MCAttribute
+    public void setAllowLegacyAlgorithms(boolean allowLegacyAlgorithms) {
+        this.allowLegacyAlgorithms = allowLegacyAlgorithms;
     }
 }

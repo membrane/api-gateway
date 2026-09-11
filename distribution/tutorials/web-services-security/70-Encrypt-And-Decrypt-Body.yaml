@@ -83,5 +83,9 @@ api:
 #   certificate, so this says nothing about who sent the message. Combine it with a signature when
 #   the sender has to be identified - list signature before encrypt under secure, and decrypt
 #   before signature under validate, so the receiver undoes what the sender did in reverse.
-# - Only AES-GCM and RSA-OAEP are supported. The older AES-CBC and RSA-1.5 algorithms are refused
-#   on purpose: both let a decrypting receiver be used as an oracle to recover plaintext.
+# - AES-GCM and RSA-OAEP are the defaults, and what this tutorial uses. The older AES-CBC and
+#   RSA-1.5 algorithms exist only for a peer that supports nothing else: set them on encrypt with
+#   dataEncryptionAlgorithm and keyTransportAlgorithm, and accept them on decrypt with
+#   allowLegacyAlgorithms: true. Both let a decrypting receiver be used as an oracle to recover
+#   plaintext, which is why accepting them is a separate, explicit decision and why each choice
+#   logs a warning at startup.
