@@ -17,6 +17,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.ConfigurationException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -623,6 +624,66 @@ class DecryptValidatePartTest extends AbstractWsSecurityTest {
         Element stray = (Element) firstByTag(doc, XENC_NS, "EncryptedData").cloneNode(true);
         stray.setAttribute("Id", "ED-unreferenced");
         firstByTag(doc, SOAP_NS, "Body").appendChild(stray);
+        setBody(doc);
+
+        assertFault(decrypter(ALIAS_1, decrypt()), INVALID_SECURITY);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "http://schemas.xmlsoap.org/soap/envelope/, actor, false",
+            "http://schemas.xmlsoap.org/soap/envelope/, actor, true",
+            "http://www.w3.org/2003/05/soap-envelope, role, false",
+            "http://www.w3.org/2003/05/soap-envelope, role, true"
+    })
+    void ciphertextForAnotherActorPassesThrough(String soapNs, String actorAttribute, boolean explicitActor)
+            throws Exception {
+        exchangeWithBody(PLAINTEXT_BODY.replace(SOAP_NS, soapNs));
+        encryptFor(ALIAS_1);
+        Document doc = parseBody();
+        Element security = firstByTag(doc, WsSecurityXmlUtil.WSSE_NS, "Security");
+        if (explicitActor) {
+            security.setAttributeNS(soapNs, "soap:" + actorAttribute, "urn:gateway");
+        }
+        Element foreign = doc.createElementNS(WsSecurityXmlUtil.WSSE_NS, "wsse:Security");
+        if (!explicitActor) {
+            foreign.setAttributeNS(soapNs, "soap:" + actorAttribute, "urn:backend");
+        }
+        Element ciphertext = (Element) firstByTag(doc, XENC_NS, "EncryptedData").cloneNode(true);
+        ciphertext.setAttribute("Id", "ED-other-recipient");
+        foreign.appendChild(ciphertext);
+        firstByTag(doc, soapNs, "Header").appendChild(foreign);
+        setBody(doc);
+        Element before = WsSecurityXmlUtil.childElementsOf(firstByTag(parseBody(), soapNs, "Header")).getLast();
+
+        WsSecurityInterceptor receiver = validating(decrypt(encryptedBodyReference()));
+        receiver.setKeyStore(signingKeyStore(ALIAS_1));
+        if (explicitActor) {
+            receiver.setActor("urn:gateway");
+        }
+        receiver.init(router);
+        assertEquals(Outcome.CONTINUE, receiver.handleRequest(exchange));
+
+        Document result = parseBody();
+        assertEquals("bar", result.getElementsByTagName("foo").item(0).getTextContent());
+        assertTrue(before.isEqualNode(firstByTag(result, WsSecurityXmlUtil.WSSE_NS, "Security")));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"owned-header", "body"})
+    void aSecurityElementCannotHideUnreferencedCiphertext(String location) throws Exception {
+        exchangeWithBody(PLAINTEXT_BODY);
+        encryptFor(ALIAS_1);
+        Document doc = parseBody();
+        Element stray = (Element) firstByTag(doc, XENC_NS, "EncryptedData").cloneNode(true);
+        stray.setAttribute("Id", "ED-unreferenced");
+        Element container = firstByTag(doc, WsSecurityXmlUtil.WSSE_NS, "Security");
+        if (location.equals("body")) {
+            container = doc.createElementNS(WsSecurityXmlUtil.WSSE_NS, "wsse:Security");
+            container.setAttributeNS(SOAP_NS, "soap:actor", "urn:backend");
+            firstByTag(doc, SOAP_NS, "Body").appendChild(container);
+        }
+        container.appendChild(stray);
         setBody(doc);
 
         assertFault(decrypter(ALIAS_1, decrypt()), INVALID_SECURITY);

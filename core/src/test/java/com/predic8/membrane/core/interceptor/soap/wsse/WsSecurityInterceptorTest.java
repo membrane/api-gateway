@@ -17,9 +17,12 @@ import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDa
 import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider.UserConfig;
 import com.predic8.membrane.core.util.ConfigurationException;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import java.util.Base64;
 import java.util.List;
 
 import static com.predic8.membrane.annot.Constants.SOAP12_NS;
@@ -464,6 +467,69 @@ class WsSecurityInterceptorTest extends AbstractWsSecurityTest {
         assertEquals(1, doc.getElementsByTagNameNS(XENC_NS, "EncryptedKey").getLength());
         assertEquals(0, doc.getElementsByTagNameNS(WSU_NS, "Timestamp").getLength(),
                 "a validated timestamp is consumed like any other checked child");
+    }
+
+    @ParameterizedTest
+    @CsvSource({"true, true", "true, false", "false, true", "false, false"})
+    void retainedKeysKeepReferencedCertificates(boolean validate, boolean tokenFirst) throws Exception {
+        exchangeWithEncryptedBody();
+        addRecipientCertificateReference(tokenFirst);
+        Document before = parseBody();
+        Element certificate = (Element) before.getElementsByTagNameNS(WSSE_NS, "BinarySecurityToken").item(0);
+        Element key = firstByTag(before, XENC_NS, "EncryptedKey");
+
+        WsSecurityInterceptor interceptor = validate
+                ? verifier(TRUSTSTORE, new TimestampValidatePart())
+                : securingInitialized(new TimestampSecurePart());
+        assertEquals(CONTINUE, interceptor.handleRequest(exchange));
+
+        Document result = parseBody();
+        assertEquals(1, result.getElementsByTagNameNS(WSSE_NS, "BinarySecurityToken").getLength(),
+                "only the certificate referenced by the retained key should survive");
+        assertTrue(certificate.isEqualNode(firstByTag(result, WSSE_NS, "BinarySecurityToken")));
+        assertTrue(key.isEqualNode(firstByTag(result, XENC_NS, "EncryptedKey")));
+        assertEquals(CONTINUE, decrypter(ALIAS_1, decrypt(encryptedBodyReference())).handleRequest(exchange));
+        assertEquals(0, parseBody().getElementsByTagNameNS(WSSE_NS, "BinarySecurityToken").getLength(),
+                "the certificate is consumed once its key is spent");
+    }
+
+    @Test
+    void certificatesAreDiscardedWhenTheirKeyHasNoCiphertext() throws Exception {
+        exchangeWithEncryptedBody();
+        addRecipientCertificateReference(true);
+        Document doc = parseBody();
+        Element data = firstByTag(doc, XENC_NS, "EncryptedData");
+        data.getParentNode().removeChild(data);
+        setBody(doc);
+
+        assertEquals(CONTINUE, securingInitialized(new TimestampSecurePart()).handleRequest(exchange));
+        assertEquals(0, parseBody().getElementsByTagNameNS(WSSE_NS, "BinarySecurityToken").getLength());
+    }
+
+    private void addRecipientCertificateReference(boolean tokenFirst) throws Exception {
+        Document doc = parseBody();
+        Element security = firstByTag(doc, WSSE_NS, "Security");
+        Element keyInfo = firstByTag(doc, DS_NS, "KeyInfo");
+        while (keyInfo.hasChildNodes()) {
+            keyInfo.removeChild(keyInfo.getFirstChild());
+        }
+        Element tokenReference = doc.createElementNS(WSSE_NS, "wsse:SecurityTokenReference");
+        Element reference = doc.createElementNS(WSSE_NS, "wsse:Reference");
+        reference.setAttribute("URI", "#recipient-cert");
+        reference.setAttribute("ValueType", WsSecurityXmlUtil.X509_V3_VALUE_TYPE);
+        tokenReference.appendChild(reference);
+        keyInfo.appendChild(tokenReference);
+
+        Element token = doc.createElementNS(WSSE_NS, "wsse:BinarySecurityToken");
+        WsSecurityXmlUtil.declareWsuId(token, "recipient-cert");
+        token.setAttribute("ValueType", WsSecurityXmlUtil.X509_V3_VALUE_TYPE);
+        token.setAttribute("EncodingType", WsSecurityXmlUtil.BASE64_BINARY_ENCODING_TYPE);
+        token.setTextContent(Base64.getEncoder().encodeToString(certificate(ALIAS_1).getEncoded()));
+        security.insertBefore(token, tokenFirst ? security.getFirstChild() : null);
+        Element unrelated = (Element) token.cloneNode(true);
+        WsSecurityXmlUtil.declareWsuId(unrelated, "unrelated-cert");
+        security.appendChild(unrelated);
+        setBody(doc);
     }
 
     /** Once decrypt has run there is no ciphertext left, so the spent key is dropped like any other child. */

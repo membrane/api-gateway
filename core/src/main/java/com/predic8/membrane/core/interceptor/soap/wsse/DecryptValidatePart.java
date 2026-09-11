@@ -212,7 +212,8 @@ public class DecryptValidatePart extends ValidatePart {
         // longer there, and WsSecurityInterceptor's retention rule reads this header afterwards.
         encryptedKey.getParentNode().removeChild(encryptedKey);
 
-        checkNothingLeftEncrypted(ctx.envelope());
+        checkNothingLeftEncrypted(ctx.envelope(),
+                getFirstChildByName(ctx.envelope(), ctx.soapNs(), "Header"), security);
         checkRequiredElementReferences(ctx, restoredElements);
     }
 
@@ -594,13 +595,22 @@ public class DecryptValidatePart extends ValidatePart {
      * {@code xenc:EncryptedData} nodes. That also makes super-encryption a fault rather than a
      * recursion, which bounds the work an attacker can ask for; nested encryption is not supported.
      */
-    private static void checkNothingLeftEncrypted(Element envelope) {
-        forEachDescendantElement(envelope, element -> {
-            if (isEncryptedData(element)) {
-                throw new WsSecurityFaultException(INVALID_SECURITY,
-                        "The message still carries an xenc:EncryptedData that no xenc:DataReference named.");
-            }
-        });
+    private static void checkNothingLeftEncrypted(Element element, Element header, Element security) {
+        // findSecurity already selected the unique header for this actor. Other direct Security
+        // header blocks belong to other recipients, whose ciphertext must pass through untouched.
+        // Restrict this exception to header blocks: a nested Security element in the body must not
+        // hide unreferenced ciphertext from this check.
+        if (element.getParentNode() == header && element != security
+            && WSSE_NS.equals(element.getNamespaceURI()) && "Security".equals(element.getLocalName())) {
+            return;
+        }
+        if (isEncryptedData(element)) {
+            throw new WsSecurityFaultException(INVALID_SECURITY,
+                    "The message still carries an xenc:EncryptedData that no xenc:DataReference named.");
+        }
+        for (Element child : childElementsOf(element)) {
+            checkNothingLeftEncrypted(child, header, security);
+        }
     }
 
     public List<EncryptionReference> getRequiredReferences() {

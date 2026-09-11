@@ -32,8 +32,10 @@ import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Predicate;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
@@ -358,6 +360,9 @@ public class WsSecurityInterceptor extends AbstractInterceptor {
      * dropping it would strand the {@code xenc:DataReference} naming it. Never on its own: a piece of
      * ciphertext must not be its own reason to survive, or an unreadable claim would be forwarded
      * forever.</li>
+     * <li>A {@code wsse:BinarySecurityToken} directly referenced by a retained key's
+     * {@code ds:KeyInfo/wsse:SecurityTokenReference}, so the downstream recipient can still
+     * resolve the certificate identifying its decryption key.</li>
      * </ul>
      * Retaining key material is a compatibility accommodation, not a WS-Security requirement. A sender
      * that targets each header at the {@code actor} meant to process it never reaches this path at all,
@@ -368,11 +373,14 @@ public class WsSecurityInterceptor extends AbstractInterceptor {
         // and the header's own ciphertext survives because the key does - never the other way round.
         boolean retainKeyMaterial = getFirstChildByName(security, XENC_NS, "EncryptedKey") != null
                                     && carriesEncryptedData(envelope);
+        Set<String> retainedTokenIds = retainKeyMaterial ? referencedEncryptionTokenIds(security) : Set.of();
         for (Element child : childElementsOf(security)) {
             if (unvalidated && WSU_NS.equals(child.getNamespaceURI()) && "Timestamp".equals(child.getLocalName())) {
                 continue;
             }
-            if (retainKeyMaterial && isEncryptionMaterial(child)) {
+            if (retainKeyMaterial && (isEncryptionMaterial(child)
+                    || WSSE_NS.equals(child.getNamespaceURI()) && "BinarySecurityToken".equals(child.getLocalName())
+                       && retainedTokenIds.contains(idOf(child)))) {
                 log.info("Keeping an inbound {} in the wsse:Security header: the message still carries " +
                          "encrypted content, so the key material is a downstream recipient's to use.",
                         child.getNodeName());
@@ -396,6 +404,23 @@ public class WsSecurityInterceptor extends AbstractInterceptor {
     private static boolean isEncryptionMaterial(Element child) {
         return XENC_NS.equals(child.getNamespaceURI())
                && ("EncryptedKey".equals(child.getLocalName()) || "EncryptedData".equals(child.getLocalName()));
+    }
+
+    private static Set<String> referencedEncryptionTokenIds(Element security) {
+        Set<String> ids = new HashSet<>();
+        for (Element key : getChildrenByName(security, XENC_NS, "EncryptedKey")) {
+            for (Element keyInfo : getChildrenByName(key, DS_NS, "KeyInfo")) {
+                for (Element tokenReference : getChildrenByName(keyInfo, WSSE_NS, "SecurityTokenReference")) {
+                    for (Element reference : getChildrenByName(tokenReference, WSSE_NS, "Reference")) {
+                        String uri = reference.getAttribute("URI");
+                        if (uri.startsWith("#") && uri.length() > 1) {
+                            ids.add(uri.substring(1));
+                        }
+                    }
+                }
+            }
+        }
+        return ids;
     }
 
     /** Whether any {@code xenc:EncryptedData} remains anywhere in the message. */
