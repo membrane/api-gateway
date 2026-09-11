@@ -104,6 +104,7 @@ public class EncryptSecurePart extends SecurePart {
     private String dataEncryptionAlgorithm = DEFAULT_DATA_ENCRYPTION_ALGORITHM;
     private String keyTransportAlgorithm = DEFAULT_KEY_TRANSPORT_ALGORITHM;
     private KeyIdentifierKeyInfo keyIdentifier;
+    private boolean requireKeyEncipherment;
 
     private X509Certificate recipientCertificate;
 
@@ -267,12 +268,45 @@ public class EncryptSecurePart extends SecurePart {
                     keyTransportAlgorithm + " requires one.");
         }
         boolean[] keyUsage = certificate.getKeyUsage();
-        // Index 2 is keyEncipherment, 3 dataEncipherment - either one permits encrypting for this
-        // certificate. A certificate with no keyUsage extension is unconstrained, so it passes.
-        if (keyUsage != null && keyUsage.length > 3 && !keyUsage[2] && !keyUsage[3]) {
+        // A certificate with no keyUsage extension is unconstrained, so it passes outright.
+        if (keyUsage == null || keyUsage.length <= 3) {
+            return;
+        }
+        // Index 2 is keyEncipherment, 3 dataEncipherment.
+        boolean keyEncipherment = keyUsage[2];
+        boolean dataEncipherment = keyUsage[3];
+        if (!keyEncipherment && !dataEncipherment) {
             throw new ConfigurationException("Recipient certificate \"" + recipientAlias +
                     "\"'s keyUsage permits neither keyEncipherment nor dataEncipherment.");
         }
+        if (!keyEncipherment) {
+            warnOrRejectDataEnciphermentOnly();
+        }
+    }
+
+    /**
+     * RFC 5280 assigns <code>keyEncipherment</code> to exactly what this class does with the
+     * certificate — wrapping a symmetric content encryption key — and reserves
+     * <code>dataEncipherment</code> for directly enciphering user data, which nothing here does.
+     * A certificate that sets only <code>dataEncipherment</code> is therefore being used outside its
+     * stated purpose. {@link #requireKeyEncipherment} defaults to {@code false} because such
+     * certificates exist in the wild and this gateway used to accept them unconditionally; turning it
+     * on trades that compatibility for spec-correctness.
+     */
+    private void warnOrRejectDataEnciphermentOnly() {
+        if (requireKeyEncipherment) {
+            throw new ConfigurationException("Recipient certificate \"" + recipientAlias +
+                    "\"'s keyUsage permits dataEncipherment but not keyEncipherment, which requireKeyEncipherment " +
+                    "requires for RSA key transport (RFC 5280 reserves keyEncipherment for encrypting a " +
+                    "symmetric content encryption key, and dataEncipherment for direct data encryption). Use a " +
+                    "certificate with keyEncipherment, or set requireKeyEncipherment: false to accept this one " +
+                    "for compatibility.");
+        }
+        log.warn("Recipient certificate \"{}\"'s keyUsage permits dataEncipherment but not keyEncipherment. RFC " +
+                 "5280 reserves keyEncipherment for encrypting a symmetric content encryption key, which is what " +
+                 "this gateway does with it, and dataEncipherment for direct data encryption. Accepting it anyway " +
+                 "for compatibility with certificates issued that way; set requireKeyEncipherment: true to reject " +
+                 "it instead.", recipientAlias);
     }
 
     @Override
@@ -521,5 +555,27 @@ public class EncryptSecurePart extends SecurePart {
     @MCChildElement(order = 2)
     public void setKeyIdentifier(KeyIdentifierKeyInfo keyIdentifier) {
         this.keyIdentifier = keyIdentifier;
+    }
+
+    public boolean isRequireKeyEncipherment() {
+        return requireKeyEncipherment;
+    }
+
+    /**
+     * @description Whether the recipient certificate's <code>keyUsage</code> must permit
+     * <code>keyEncipherment</code>. RFC 5280 reserves <code>keyEncipherment</code> for exactly what
+     * this part does with the certificate — encrypting a symmetric content encryption key — and
+     * <code>dataEncipherment</code> for directly encrypting user data, which nothing here does. By
+     * default a certificate with <code>dataEncipherment</code> but not <code>keyEncipherment</code> is
+     * still accepted, for compatibility with certificates issued that way, and logs a warning at
+     * startup naming the mismatch. Set this to <code>true</code> to reject such a certificate instead.
+     * A certificate with neither bit set, or with no <code>keyUsage</code> extension at all, is
+     * unaffected either way.
+     * @default false
+     * @example true
+     */
+    @MCAttribute
+    public void setRequireKeyEncipherment(boolean requireKeyEncipherment) {
+        this.requireKeyEncipherment = requireKeyEncipherment;
     }
 }

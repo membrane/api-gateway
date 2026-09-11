@@ -78,10 +78,28 @@ class EncryptRecipientCertificateTest extends AbstractWsSecurityTest {
         assertDoesNotThrow(() -> encryptWith(validRecipientStore("RSA", KeyUsage.keyEncipherment)));
     }
 
-    /** dataEncipherment is the other bit that permits encrypting for a certificate. */
+    /**
+     * dataEncipherment is the other bit that permits encrypting for a certificate, by default: it is
+     * not what RFC 5280 reserves for RSA key transport, but this gateway used to accept it
+     * unconditionally, and {@code requireKeyEncipherment} defaults to {@code false} to not break that.
+     */
     @Test
-    void aRecipientCertificateDeclaringDataEnciphermentIsAccepted() throws Exception {
+    void aRecipientCertificateDeclaringDataEnciphermentIsAcceptedByDefault() throws Exception {
         assertDoesNotThrow(() -> encryptWith(validRecipientStore("RSA", KeyUsage.dataEncipherment)));
+    }
+
+    /**
+     * {@code requireKeyEncipherment} trades that compatibility for the spec-correct reading: only
+     * keyEncipherment, which is what this part actually does with the certificate, is accepted.
+     */
+    @Test
+    void aDataEnciphermentOnlyCertificateIsRejectedWhenKeyEnciphermentIsRequired() throws Exception {
+        assertRejects(validRecipientStore("RSA", KeyUsage.dataEncipherment), true, "keyEncipherment");
+    }
+
+    @Test
+    void aKeyEnciphermentCertificateIsAcceptedWhenKeyEnciphermentIsRequired() throws Exception {
+        assertDoesNotThrow(() -> encryptWith(validRecipientStore("RSA", KeyUsage.keyEncipherment), true));
     }
 
     /**
@@ -101,13 +119,24 @@ class EncryptRecipientCertificateTest extends AbstractWsSecurityTest {
     }
 
     private void assertRejects(TrustStore store, String expectedInMessage) {
-        ConfigurationException e = assertThrows(ConfigurationException.class, () -> encryptWith(store));
+        assertRejects(store, false, expectedInMessage);
+    }
+
+    private void assertRejects(TrustStore store, boolean requireKeyEncipherment, String expectedInMessage) {
+        ConfigurationException e = assertThrows(ConfigurationException.class,
+                () -> encryptWith(store, requireKeyEncipherment));
         assertTrue(e.getMessage().contains(expectedInMessage),
                 () -> "Expected the error to mention \"" + expectedInMessage + "\", but was: " + e.getMessage());
     }
 
     private void encryptWith(TrustStore store) {
-        WsSecurityInterceptor wsSecurity = securing(encrypt(RECIPIENT_ALIAS, encryptedBodyReference()));
+        encryptWith(store, false);
+    }
+
+    private void encryptWith(TrustStore store, boolean requireKeyEncipherment) {
+        EncryptSecurePart encrypt = encrypt(RECIPIENT_ALIAS, encryptedBodyReference());
+        encrypt.setRequireKeyEncipherment(requireKeyEncipherment);
+        WsSecurityInterceptor wsSecurity = securing(encrypt);
         wsSecurity.setTrustStore(store);
         wsSecurity.init(router);
     }
