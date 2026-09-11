@@ -64,7 +64,7 @@ Requests to http://localhost:2000 are now forwarded to https://apibin.io.
 
 ### Make the Getting Started Tutorial
 
-1. [Download](https://github.com/membrane/api-gateway) the Membrane distribution
+1. [Download](https://github.com/membrane/api-gateway/releases/latest) the Membrane distribution
 2. Unzip
 3. Open [tutorials/getting-started/10-First-API.yaml](distribution/tutorials/getting-started/10-First-API.yaml) in your text editor and follow the instructions.
 
@@ -137,7 +137,7 @@ For a quick overview of what you can do with Membrane, the sections below provid
    - [LLM Gateway](#llm-gateway)
 4. [Routing](#4-routing)
 5. [Message Transformation](#5-message-transformation)
-   - [Templates](#71-templates)
+   - [Templates](#templates)
 6. [Scripting](#6-scripting)
    - [Conditional Processing With the ´if´-Statement](#conditional-processing-with-the-if-statement)
 7. [Security](#7-security)
@@ -220,7 +220,7 @@ Membrane can act as a gateway for **Large Language Models (LLMs)** and **Model C
 
 ## MCP Protection
 
-The `mspProtection`plugin sits in front of an MCP server and controls which tools clients can discover and call.
+The `mcpProtection`plugin sits in front of an MCP server and controls which tools clients can discover and call.
 
 <img src="docs/images/mcp-protection-api-gateway.png" alt="Membrane MCP protection in front of an MCP server" width="800">
 
@@ -325,14 +325,14 @@ api:
 
 For example, this JSON:
 
-```
-{"city":"Berlin"}'
+```json
+{"city": "Berlin"}
 ```
 
 is transformed into:
 
-```
-{"destionation":"Berlin"}'
+```json
+{"destionation": "Berlin"}
 ```
 
 Templates can access message data using **JSONPath**, **XPath**, and **Groovy**.
@@ -454,7 +454,7 @@ api:
     url: http://backend
 ```
 
-Try the [OAuth tutorial](/distribution/tutorials/oauth)
+Try the [OAuth tutorial](distribution/tutorials/oauth)
 
 ## Membrane as Authorization Server
 
