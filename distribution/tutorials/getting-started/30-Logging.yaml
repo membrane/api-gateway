@@ -8,6 +8,8 @@
 #
 # 1.) Start Membrane:
 #
+#     Docker:
+#       ./run-docker.sh -c 30-Logging.yaml
 #     Linux/Mac:
 #       ./membrane.sh -c 30-Logging.yaml
 #     Windows:

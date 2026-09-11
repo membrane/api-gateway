@@ -51,13 +51,13 @@ Start Membrane with your configuration:
 **Linux/macOS:**
 
 ```bash
-docker run --rm -p 2000:2000 -v "$(pwd)/apis.yaml:/opt/membrane/conf/apis.yaml" predic8/membrane
+docker run --rm -it -p 2000:2000 -v "$(pwd)/apis.yaml:/opt/membrane/conf/apis.yaml" predic8/membrane
 ```
 
 **Windows PowerShell:**
 
 ```pwsh
-docker run --rm -p 2000:2000 -v "${PWD}/apis.yaml:/opt/membrane/conf/apis.yaml" predic8/membrane
+docker run --rm -it -p 2000:2000 -v "${PWD}/apis.yaml:/opt/membrane/conf/apis.yaml" predic8/membrane
 ```
 
 Requests to http://localhost:2000 are now forwarded to https://apibin.io.
@@ -66,7 +66,7 @@ Requests to http://localhost:2000 are now forwarded to https://apibin.io.
 
 1. [Download](https://github.com/membrane/api-gateway/releases/latest) the Membrane distribution
 2. Unzip
-3. Open [tutorials/getting-started/10-First-API.yaml](distribution/tutorials/getting-started/10-First-API.yaml) in your text editor and follow the instructions.
+3. Open [tutorials/getting-started/30-Logging.yaml](distribution/tutorials/getting-started/30-Logging.yaml) in your text editor and follow the instructions.
 
 
 # Why Membrane

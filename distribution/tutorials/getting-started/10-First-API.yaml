@@ -7,6 +7,8 @@
 # 1.) Start Membrane:
 #     Open a terminal in this folder and run:
 #
+#     Docker:
+#       ./run-docker.sh -c 10-First-API.yaml
 #     Linux/Mac:
 #       ./membrane.sh -c 10-First-API.yaml
 #     Windows:

@@ -6,6 +6,9 @@
 # whenever they are modified and saved. No restart needed.
 #
 # 1.) Start Membrane:
+#
+#     Docker:
+#       ./run-docker.sh -c 20-Hot-Reload.yaml
 #     Linux/Mac:
 #       ./membrane.sh -c 20-Hot-Reload.yaml
 #     Windows:
