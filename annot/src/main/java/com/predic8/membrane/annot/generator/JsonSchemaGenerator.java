@@ -36,6 +36,9 @@ import static com.predic8.membrane.annot.Constants.JSON_SCHEMA_VERSION;
 import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaFactory.*;
 import static com.predic8.membrane.annot.generator.util.SchemaGeneratorUtil.escapeJsonContent;
 import static com.predic8.membrane.annot.model.OtherAttributesInfo.ValueType.STRING;
+import static java.util.Locale.ROOT;
+import static javax.lang.model.element.ElementKind.ENUM;
+import static javax.lang.model.element.ElementKind.ENUM_CONSTANT;
 import static javax.tools.StandardLocation.CLASS_OUTPUT;
 
 /**
@@ -442,12 +445,22 @@ public class JsonSchemaGenerator extends AbstractGrammar {
     }
 
     private AbstractSchema<?> scalarItemsSchema(ChildElementInfo childSpec) {
+        if (childSpec.getTypeDeclaration().getKind() == ENUM) {
+            return new SchemaString(null).enumeration(getEnumConstants(childSpec));
+        }
         return switch (getScalarSchemaKind(childSpec)) {
             case STRING, NONE -> SchemaFactory.from("string").type("string");
             case BOOLEAN -> SchemaFactory.from("boolean").type("boolean");
             case INTEGER -> SchemaFactory.from("integer").type("integer");
             case NUMBER -> SchemaFactory.from("number").type("number");
         };
+    }
+
+    private static @NotNull List<String> getEnumConstants(ChildElementInfo childSpec) {
+        return childSpec.getTypeDeclaration().getEnclosedElements().stream()
+                .filter(e -> e.getKind() == ENUM_CONSTANT)
+                .map(e -> e.getSimpleName().toString().toLowerCase(ROOT))
+                .toList();
     }
 
     private boolean isComponentsList(ElementInfo parentElementInfo, ChildElementInfo childSpec) {
@@ -682,6 +695,9 @@ public class JsonSchemaGenerator extends AbstractGrammar {
             return ScalarSchemaKind.NONE;
         }
 
+        if (childSpec.getTypeDeclaration().getKind() == ENUM) {
+            return ScalarSchemaKind.STRING;
+        }
         String qualifiedName = childSpec.getTypeDeclaration().getQualifiedName().toString();
 
         return switch (qualifiedName) {

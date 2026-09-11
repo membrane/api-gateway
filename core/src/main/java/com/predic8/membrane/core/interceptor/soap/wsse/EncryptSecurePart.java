@@ -53,7 +53,7 @@ import static com.predic8.membrane.core.interceptor.soap.wsse.XmlEncryptionUtil.
  * <code>keyTransportAlgorithm</code> also accept the legacy AES-CBC and RSA-1.5 algorithms for a
  * recipient that supports nothing else; both are vulnerable to padding-oracle attacks and log a
  * warning at startup. Configuring one here does not make it acceptable inbound — a
- * <code>validate</code>/<code>decrypt</code> needs its own <code>allowLegacyAlgorithms</code> for
+ * <code>validate</code>/<code>decrypt</code> needs its own <code>allowedLegacyAlgorithms</code> for
  * that. See
  * <code>distribution/tutorials/web-services-security/70-Encrypt-And-Decrypt-Body.yaml</code>.</p>
  * @yaml <pre><code>
@@ -86,7 +86,7 @@ public class EncryptSecurePart extends SecurePart {
      * RSA-1.5 is Bleichenbacher's. Emitting them is the sender's decision to expose the
      * <i>recipient</i> to that, so choosing one logs a warning naming the consequence - see
      * {@link #warnAboutLegacyAlgorithms()}. It also does not license accepting them: an inbound
-     * message still needs {@code validate/decrypt}'s {@code allowLegacyAlgorithms}, which is
+     * message still needs {@code validate/decrypt}'s {@code allowedLegacyAlgorithms}, which is
      * separate and off by default.
      * <p>
      * This is the same shape as {@code signature}, which offers rsa-sha1 outbound while

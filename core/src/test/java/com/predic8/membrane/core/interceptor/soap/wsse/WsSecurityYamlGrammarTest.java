@@ -271,7 +271,7 @@ class WsSecurityYamlGrammarTest {
                               password: secret
                             validate:
                               - decrypt:
-                                  allowLegacyAlgorithms: true
+                                  allowedLegacyAlgorithms: [aes256_cbc, rsa_1_5]
                             secure:
                               - encrypt:
                                   recipientAlias: key1
@@ -283,7 +283,8 @@ class WsSecurityYamlGrammarTest {
 
         DecryptValidatePart decrypting =
                 assertInstanceOf(DecryptValidatePart.class, wsSecurity.getValidateParts().getFirst());
-        assertTrue(decrypting.isAllowLegacyAlgorithms());
+        assertEquals(java.util.List.of(LegacyEncryptionAlgorithm.AES256_CBC, LegacyEncryptionAlgorithm.RSA_1_5),
+                decrypting.getAllowedLegacyAlgorithms());
 
         EncryptSecurePart encrypting =
                 assertInstanceOf(EncryptSecurePart.class, wsSecurity.getSecureParts().getFirst());
@@ -292,9 +293,23 @@ class WsSecurityYamlGrammarTest {
     }
 
     /**
-     * {@code allowLegacyAlgorithms} is the only way to widen the inbound allowlist, and it names the
-     * two legacy families. A free-form algorithm attribute would let any URI in, so there is none.
+     * {@code allowedLegacyAlgorithms} is the only way to widen the inbound allowlist, and it names the
+     * supported legacy algorithms. Outbound algorithm selection attributes do not apply here.
      */
+    @Test
+    void decryptRejectsUnknownLegacyAlgorithm() {
+        Exception error = assertThrows(Exception.class, () -> parse("""
+                api:
+                  port: 2000
+                  flow:
+                    - wsSecurity:
+                        validate:
+                          - decrypt:
+                              allowedLegacyAlgorithms: [aes128_cbcc]
+                """));
+        assertTrue(error.toString().contains("aes128_cbcc"), error.toString());
+    }
+
     @Test
     void decryptRejectsAnAlgorithmAttribute() {
         Exception e = assertThrows(Exception.class, () -> parse("""

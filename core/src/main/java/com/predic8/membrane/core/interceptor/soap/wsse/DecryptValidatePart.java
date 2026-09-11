@@ -13,7 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.soap.wsse;
 
-import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.config.security.KeyStore;
@@ -47,7 +46,7 @@ import static com.predic8.membrane.core.interceptor.soap.wsse.XmlEncryptionUtil.
  * SHA-1 mask generation function — is answered with <code>wsse:UnsupportedAlgorithm</code> before any
  * cipher is constructed. That asymmetry is deliberate: what a peer may send is a separate decision
  * from what this gateway emits, because accepting a padding-oracle-shaped algorithm exposes this
- * gateway rather than the peer. <code>allowLegacyAlgorithms</code> widens it to AES-CBC and RSA-1.5
+ * gateway rather than the peer. <code>allowedLegacyAlgorithms</code> adds individual AES-CBC or RSA-1.5 exceptions
  * for a peer that supports nothing else; the OAEP digest and mask generation function stay fixed
  * either way.</p>
  * <p>One message, one recipient: a <code>wsse:Security</code> header carrying more than one
@@ -83,7 +82,7 @@ public class DecryptValidatePart extends ValidatePart {
      * The default: only the authenticated GCM modes. XML Encryption's CBC modes carry no
      * authentication tag, which is exactly what makes a decrypting gateway usable as the oracle in
      * the Jager-Somorovsky backwards-compatibility attack - so they are accepted only where an
-     * operator has said {@link #allowLegacyAlgorithms}, never merely because this gateway can also
+     * operator has listed the algorithm in {@link #allowedLegacyAlgorithms}, never merely because this gateway can also
      * emit them.
      */
     private static final Set<String> ALLOWED_DATA_ALGORITHMS = Set.of(AES128_GCM, AES256_GCM);
@@ -91,7 +90,7 @@ public class DecryptValidatePart extends ValidatePart {
     private static final Set<String> ALLOWED_KEY_TRANSPORT_ALGORITHMS = Set.of(RSA_OAEP);
     /**
      * The OAEP digest and mask generation function, which stay fixed <i>whatever</i>
-     * {@link #allowLegacyAlgorithms} says - folding these two into the legacy switch is the obvious
+     * {@link #allowedLegacyAlgorithms} contains - folding these two into the legacy exceptions is the obvious
      * simplification and the wrong one.
      * <p>
      * They are a different question from "may this peer use an old algorithm". A peer that sends
@@ -104,15 +103,15 @@ public class DecryptValidatePart extends ValidatePart {
     private static final Set<String> ALLOWED_OAEP_DIGESTS = Set.of(SHA256_DIGEST);
     private static final Set<String> ALLOWED_MGF_ALGORITHMS = Set.of(MGF1_SHA256);
 
-    /** What {@link #allowLegacyAlgorithms} adds, and the only thing it adds. */
+    /** The supported legacy exceptions. */
     private static final Set<String> LEGACY_DATA_ALGORITHMS = Set.of(AES128_CBC, AES192_CBC, AES256_CBC);
     private static final Set<String> LEGACY_KEY_TRANSPORT_ALGORITHMS = Set.of(RSA_1_5);
 
     private List<EncryptionReference> requiredReferences = new ArrayList<>();
-    private boolean allowLegacyAlgorithms;
+    private List<LegacyEncryptionAlgorithm> allowedLegacyAlgorithms = List.of();
 
     private PrivateKey privateKey;
-    // Resolved in init() from allowLegacyAlgorithms and read-only afterwards, like every other field
+    // Resolved in init() from allowedLegacyAlgorithms and read-only afterwards, like every other field
     // here: one instance serves every request thread.
     private Set<String> allowedDataAlgorithms;
     private Set<String> allowedKeyTransportAlgorithms;
@@ -137,23 +136,20 @@ public class DecryptValidatePart extends ValidatePart {
      * {@code info} - see {@link #requireAllowed}.
      */
     private void resolveAllowedAlgorithms() {
-        if (!allowLegacyAlgorithms) {
-            allowedDataAlgorithms = ALLOWED_DATA_ALGORITHMS;
-            allowedKeyTransportAlgorithms = ALLOWED_KEY_TRANSPORT_ALGORITHMS;
-            return;
+        Set<String> data = new HashSet<>(ALLOWED_DATA_ALGORITHMS);
+        Set<String> keyTransport = new HashSet<>(ALLOWED_KEY_TRANSPORT_ALGORITHMS);
+        for (LegacyEncryptionAlgorithm algorithm : new LinkedHashSet<>(allowedLegacyAlgorithms)) {
+            if (LEGACY_DATA_ALGORITHMS.contains(algorithm.getUri())) {
+                data.add(algorithm.getUri());
+            } else {
+                keyTransport.add(algorithm.getUri());
+            }
+            log.warn("wsSecurity validate/decrypt accepts legacy algorithm {} ({}). Enable this only for a peer " +
+                     "that cannot be upgraded: accepting legacy encryption exposes this gateway to padding-oracle attacks.",
+                    algorithm, algorithm.getUri());
         }
-        allowedDataAlgorithms = union(ALLOWED_DATA_ALGORITHMS, LEGACY_DATA_ALGORITHMS);
-        allowedKeyTransportAlgorithms = union(ALLOWED_KEY_TRANSPORT_ALGORITHMS, LEGACY_KEY_TRANSPORT_ALGORITHMS);
-        log.warn("wsSecurity validate/decrypt has allowLegacyAlgorithms enabled: inbound AES-CBC and RSA-1.5 are " +
-                 "now accepted. Any peer that reaches this endpoint can then choose them, which makes this gateway " +
-                 "a padding oracle (Jager-Somorovsky / Bleichenbacher) for the messages it decrypts. Enable this " +
-                 "only for a peer that cannot be upgraded, and only if you understand that consequence.");
-    }
-
-    private static Set<String> union(Set<String> first, Set<String> second) {
-        Set<String> union = new HashSet<>(first);
-        union.addAll(second);
-        return Set.copyOf(union);
+        allowedDataAlgorithms = Set.copyOf(data);
+        allowedKeyTransportAlgorithms = Set.copyOf(keyTransport);
     }
 
     private void loadDecryptionKey() {
@@ -397,15 +393,15 @@ public class DecryptValidatePart extends ValidatePart {
      * algorithm. {@code info} rather than {@code warn} because the trigger is peer-controlled, like
      * every other detection in this package.
      * <p>
-     * The hint is attached only when {@code allowLegacyAlgorithms} would actually have accepted this
-     * value. Naming the switch for a refusal it does not affect - an SHA-1 mask generation function,
+     * The hint is attached only when {@code allowedLegacyAlgorithms} would actually have accepted this
+     * value. Naming the list for a refusal it does not affect - an SHA-1 mask generation function,
      * most obviously - would send an operator to enable it and then puzzle over the same fault.
      */
     private static void requireAllowed(String what, String algorithm, Set<String> allowed) {
         if (!allowed.contains(algorithm)) {
             if (LEGACY_DATA_ALGORITHMS.contains(algorithm) || LEGACY_KEY_TRANSPORT_ALGORITHMS.contains(algorithm)) {
                 log.info("Refused inbound {} algorithm \"{}\": it is one of the legacy algorithms, which are not " +
-                         "accepted by default. If this peer cannot be upgraded, set allowLegacyAlgorithms=\"true\" " +
+                         "accepted by default. If this peer cannot be upgraded, add the algorithm to allowedLegacyAlgorithms " +
                          "on wsSecurity validate/decrypt - and read what that costs before you do.", what, algorithm);
             } else {
                 log.info("Refused inbound {} algorithm \"{}\"; accepted: {}.", what, algorithm, allowed);
@@ -633,28 +629,20 @@ public class DecryptValidatePart extends ValidatePart {
         this.requiredReferences = requiredReferences == null ? List.of() : List.copyOf(requiredReferences);
     }
 
-    public boolean isAllowLegacyAlgorithms() {
-        return allowLegacyAlgorithms;
+    public List<LegacyEncryptionAlgorithm> getAllowedLegacyAlgorithms() {
+        return allowedLegacyAlgorithms;
     }
 
     /**
-     * @description Additionally accepts the legacy AES-CBC content encryption algorithms
-     * (<code>http://www.w3.org/2001/04/xmlenc#aes128-cbc</code>, <code>#aes192-cbc</code>,
-     * <code>#aes256-cbc</code>) and RSA-1.5 key transport
-     * (<code>http://www.w3.org/2001/04/xmlenc#rsa-1_5</code>) on inbound messages, and logs a warning
-     * at startup. Enable it only for a peer that supports nothing else.
-     * <p>Both are vulnerable to padding-oracle attacks — AES-CBC carries no authentication tag, and
-     * RSA-1.5 is open to Bleichenbacher's attack — and accepting them means any peer reaching this
-     * endpoint may choose them, whatever this gateway itself emits. That is why it is a separate
-     * switch from <code>encrypt</code>'s algorithm attributes rather than implied by them.</p>
-     * <p>It does not relax anything else: an unknown algorithm is still refused, and an
-     * <code>rsa-oaep</code> key still has to carry SHA-256 and MGF1-SHA-256, so a peer cannot use
-     * this switch to downgrade the mask generation function of the modern algorithm.</p>
-     * @default false
-     * @example true
+     * @description Legacy algorithms additionally accepted on inbound messages. Each listed algorithm
+     * is enabled independently and logs a warning at startup. An omitted or empty list preserves the
+     * modern defaults. Enable an exception only for a peer that supports nothing else.
+     * <p>AES-CBC and RSA-1.5 expose the decrypting gateway to padding-oracle attacks. These exceptions
+     * are independent of outbound encryption settings and do not relax OAEP digest, MGF, or signature checks.</p>
+     * @example [aes128_cbc]
      */
-    @MCAttribute
-    public void setAllowLegacyAlgorithms(boolean allowLegacyAlgorithms) {
-        this.allowLegacyAlgorithms = allowLegacyAlgorithms;
+    @MCChildElement(order = 2)
+    public void setAllowedLegacyAlgorithms(List<LegacyEncryptionAlgorithm> allowedLegacyAlgorithms) {
+        this.allowedLegacyAlgorithms = allowedLegacyAlgorithms == null ? List.of() : List.copyOf(allowedLegacyAlgorithms);
     }
 }

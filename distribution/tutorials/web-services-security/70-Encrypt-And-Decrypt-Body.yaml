@@ -86,6 +86,6 @@ api:
 # - AES-GCM and RSA-OAEP are the defaults, and what this tutorial uses. The older AES-CBC and
 #   RSA-1.5 algorithms exist only for a peer that supports nothing else: set them on encrypt with
 #   dataEncryptionAlgorithm and keyTransportAlgorithm, and accept them on decrypt with
-#   allowLegacyAlgorithms: true. Both let a decrypting receiver be used as an oracle to recover
+#   allowedLegacyAlgorithms: [aes256_cbc, rsa_1_5]. Both let a decrypting receiver be used as an oracle to recover
 #   plaintext, which is why accepting them is a separate, explicit decision and why each choice
 #   logs a warning at startup.

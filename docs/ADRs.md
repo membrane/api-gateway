@@ -7,7 +7,7 @@ Date: 2026-09-10
 Amended: 2026-09-11 — the algorithm set was widened with AES-CBC and RSA-1.5 for legacy peers. As
 originally accepted it read "AES-128/256-GCM … RSA-OAEP … Nothing else, in either direction", and
 pre-authorised an outbound-only legacy algorithm "without ever widening what is accepted inbound".
-Inbound is now widenable too, but only behind an explicit switch that is off by default; see
+Inbound is now widenable too, but only through an explicit list that is empty by default; see
 "The legacy algorithms, and why the two directions are decided separately".
 
 ### Context
@@ -27,7 +27,7 @@ This ADR settles it, and records the two decisions that shape what the feature c
   transport. These are the defaults and the recommendation.
 - **AES-128/192/256-CBC** and **RSA-1.5** are additionally available for peers that support nothing
   else — outbound by naming the URI on `encrypt`, inbound only behind `decrypt`'s
-  `allowLegacyAlgorithms`, which is off by default. Every legacy choice logs a warning at startup.
+  `allowedLegacyAlgorithms`, which is empty by default. Every legacy choice logs a warning at startup.
 
 ### Why hand-rolled
 
@@ -63,17 +63,20 @@ The two directions are separate decisions, and that is the whole of the design h
 - **Outbound**, choosing the algorithm *is* the opt-in — `dataEncryptionAlgorithm` and
   `keyTransportAlgorithm` name a URI, and nothing else is needed. This extends ADR-006's
   "accepted algorithms are stricter than produced ones" rather than contradicting it.
-- **Inbound**, `decrypt` has `allowLegacyAlgorithms`, default `false`. It is deliberately *not*
+- **Inbound**, `decrypt` has `allowedLegacyAlgorithms`, default empty. It is deliberately *not*
   implied by what `encrypt` emits, because the exposure runs the other way: emitting AES-CBC exposes
   the recipient, accepting it exposes *this gateway*, to whoever can reach the endpoint. A peer must
   never be able to pick the weak algorithm unilaterally, which is what widening the inbound set
-  without a switch would allow.
+  without an explicit exception would allow.
 
-A single boolean rather than per-algorithm inbound attributes: the question an operator actually has
-is "may this peer use the old algorithms", not "which URIs may appear", and a free-form inbound
-algorithm attribute would accept any URI including ones with no implementation behind them.
+An enum list names individual legacy exceptions: `aes128_cbc`, `aes192_cbc`, `aes256_cbc`,
+and `rsa_1_5`. Only explicitly listed algorithms are added to the modern defaults. Unknown values
+are rejected during configuration parsing. This lets a peer use one CBC algorithm without also
+permitting other CBC key sizes or RSA-1.5. The list belongs to `validate/decrypt`; it does not
+change signature validation or outbound choices. Each enabled exception logs a startup warning.
 
-`allowLegacyAlgorithms` widens exactly two sets. The `ds:DigestMethod` and `xenc11:MGF` checks stay
+`allowedLegacyAlgorithms` can widen the data encryption and key transport sets independently.
+The `ds:DigestMethod` and `xenc11:MGF` checks stay
 fixed either way, because they are a different question: the modern `xenc11#rsa-oaep` URI exists so
 that the mask generation function is stated separately, so a peer sending it with `mgf1sha1` inside
 has downgraded the algorithm it just claimed — that is not backwards compatibility. A peer that
@@ -97,7 +100,7 @@ Two implementation facts that are easy to get wrong and were settled empirically
   defensible at all. OAEP keeps the plain throw; it is not a Bleichenbacher oracle.
 
 The fault for a refused algorithm is still `wsse:UnsupportedAlgorithm`, and because ADR-006 keeps
-fault text non-specific, the refusal is also logged at `info` naming the algorithm and the switch —
+fault text non-specific, the refusal is also logged at `info` naming the algorithm and the exception list —
 otherwise an operator has no way to learn why a peer is being turned away.
 
 ### An unvalidated header is not forwarded — with one addition
@@ -181,7 +184,7 @@ signature is simply wrong" anyway.
   for and stops unreferenced ciphertext reaching the backend uninspected.
 - A gateway that sits between a legacy peer and a modern one translates between the two algorithm
   sets for free, because the inbound and outbound algorithms are independent: `validate/decrypt`
-  with `allowLegacyAlgorithms` on one side and a default `secure/encrypt` on the other upgrades the
+  with `allowedLegacyAlgorithms` on one side and a default `secure/encrypt` on the other upgrades the
   message in passing. That is the shape this support is meant to have — the legacy algorithm stays
   on the one hop that requires it, rather than propagating through the whole topology.
 

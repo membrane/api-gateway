@@ -234,12 +234,12 @@ class DecryptValidatePartTest extends AbstractWsSecurityTest {
         assertFault(decrypter(ALIAS_1, decrypt()), UNSUPPORTED_ALGORITHM);
     }
 
-    // ---- allowLegacyAlgorithms -----------------------------------------------------------------
+    // ---- allowedLegacyAlgorithms -----------------------------------------------------------------
 
     /** {@code decrypt} with the legacy opt-in switched on. */
     private static DecryptValidatePart legacyDecrypt(EncryptionReference... requiredReferences) {
         DecryptValidatePart decrypt = decrypt(requiredReferences);
-        decrypt.setAllowLegacyAlgorithms(true);
+        decrypt.setAllowedLegacyAlgorithms(List.of(LegacyEncryptionAlgorithm.values()));
         return decrypt;
     }
 
@@ -262,6 +262,35 @@ class DecryptValidatePartTest extends AbstractWsSecurityTest {
 
         assertEquals(Outcome.CONTINUE, decrypter(ALIAS_1, legacyDecrypt()).handleRequest(exchange));
 
+        assertBodyIsPlaintextAgain();
+    }
+
+    @ParameterizedTest
+    @org.junit.jupiter.params.provider.EnumSource(LegacyEncryptionAlgorithm.class)
+    void individualExceptionAcceptsOnlyThatLegacyAlgorithm(LegacyEncryptionAlgorithm allowed) throws Exception {
+        for (LegacyEncryptionAlgorithm incoming : LegacyEncryptionAlgorithm.values()) {
+            exchangeWithBody(PLAINTEXT_BODY);
+            boolean keyTransport = incoming == LegacyEncryptionAlgorithm.RSA_1_5;
+            encryptForWith(keyTransport ? AES256_GCM : incoming.getUri(),
+                    keyTransport ? incoming.getUri() : RSA_OAEP);
+            DecryptValidatePart decrypt = decrypt();
+            decrypt.setAllowedLegacyAlgorithms(List.of(allowed));
+            if (incoming == allowed) {
+                assertEquals(Outcome.CONTINUE, decrypter(ALIAS_1, decrypt).handleRequest(exchange));
+                assertBodyIsPlaintextAgain();
+            } else {
+                assertFault(decrypter(ALIAS_1, decrypt), UNSUPPORTED_ALGORITHM);
+            }
+        }
+    }
+
+    @Test
+    void legacyExceptionPreservesModernDefaults() throws Exception {
+        exchangeWithBody(PLAINTEXT_BODY);
+        encryptForWith(AES256_GCM, RSA_OAEP);
+        DecryptValidatePart decrypt = decrypt();
+        decrypt.setAllowedLegacyAlgorithms(List.of(LegacyEncryptionAlgorithm.AES128_CBC));
+        assertEquals(Outcome.CONTINUE, decrypter(ALIAS_1, decrypt).handleRequest(exchange));
         assertBodyIsPlaintextAgain();
     }
 
@@ -374,7 +403,7 @@ class DecryptValidatePartTest extends AbstractWsSecurityTest {
 
     /**
      * And tampering that does not break the XML is <i>not</i> caught. This is the point of the
-     * warning on {@code allowLegacyAlgorithms}, asserted rather than left to prose: AES-CBC carries
+     * warning on {@code allowedLegacyAlgorithms}, asserted rather than left to prose: AES-CBC carries
      * no authentication tag, so an attacker who can modify the ciphertext gets the receiver to
      * accept plaintext the sender never wrote, and no amount of care on this side detects it. Only
      * choosing AES-GCM does - where the equivalent tampering fails the tag, as
@@ -844,7 +873,7 @@ class DecryptValidatePartTest extends AbstractWsSecurityTest {
     @Test
     void decryptTakesNoPerAlgorithmAttributes() {
         // What a peer may send is not a per-algorithm setting: the only way to widen the inbound set
-        // is allowLegacyAlgorithms, which names the two legacy families and nothing else. A
+        // is allowedLegacyAlgorithms, which names individual supported legacy algorithms. A
         // free-form algorithm attribute here would let any URI in.
         assertTrue(java.util.Arrays.stream(DecryptValidatePart.class.getMethods())
                 .noneMatch(m -> m.getName().equals("setDataEncryptionAlgorithm")
@@ -853,7 +882,7 @@ class DecryptValidatePartTest extends AbstractWsSecurityTest {
 
     @Test
     void legacyAlgorithmsAreOffByDefault() {
-        assertFalse(new DecryptValidatePart().isAllowLegacyAlgorithms());
+        assertTrue(new DecryptValidatePart().getAllowedLegacyAlgorithms().isEmpty());
     }
 
     @Test
