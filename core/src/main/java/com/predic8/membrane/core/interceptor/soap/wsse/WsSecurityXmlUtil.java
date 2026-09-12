@@ -51,7 +51,7 @@ final class WsSecurityXmlUtil {
     static final String X509_V3_VALUE_TYPE =
             "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3";
     static final String THUMBPRINT_SHA1_VALUE_TYPE =
-            "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.1#ThumbprintSHA1";
+            "http://docs.oasis-open.org/wss/oasis-wss-soap-message-security-1.1#ThumbprintSHA1";
     // Note: this is a distinct namespace from WSSE_NS (the wsse secext schema itself) - not to be
     // confused with "...wssecurity-secext-1.0.xsd#Base64Binary", which is not a valid EncodingType.
     static final String BASE64_BINARY_ENCODING_TYPE =

@@ -331,7 +331,10 @@ public class EncryptSecurePart extends SecurePart {
                     "Could not resolve encryption reference: " + e.getMessage(), e);
         }
 
-        ctx.security().appendChild(createEncryptedKey(doc, contentEncryptionKey, encryptedDataElements));
+        // A consumer processing headers in document order must decrypt before verifying a signature
+        // over the plaintext. Put the key before signatures produced by earlier secure parts.
+        Element signature = getFirstChildByName(ctx.security(), DS_NS, "Signature");
+        ctx.security().insertBefore(createEncryptedKey(doc, contentEncryptionKey, encryptedDataElements), signature);
     }
 
     /**
