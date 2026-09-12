@@ -71,6 +71,28 @@ import static com.predic8.membrane.core.interceptor.soap.wsse.XmlEncryptionUtil.
  * offending message, carrying the WS-Security fault code (<code>wsse:FailedAuthentication</code>,
  * <code>wsse:FailedCheck</code>, and so on); a body that is not SOAP at all answers with Problem
  * Details, since no fault envelope can be produced for it.</p>
+ * <h3>Apache CXF compatibility</h3>
+ * <p>Interoperability is tested with Apache CXF. Membrane supports SOAP 1.1 and SOAP 1.2 in
+ * both directions: it can secure requests for CXF and validate its secured responses, or
+ * validate CXF requests and secure responses for CXF. Compatible security features include:</p>
+ * <ul>
+ * <li>Signing the SOAP body and timestamp with RSA-SHA256 and SHA-256 digests, using a
+ * <code>wsse:SecurityTokenReference</code> pointing to an embedded certificate.</li>
+ * <li>UsernameToken authentication with <code>PasswordText</code>
+ * (Membrane <code>passwordType: PLAIN_TEXT</code>).</li>
+ * <li>Encrypting SOAP body content with AES-256-GCM and XML Encryption 1.1 RSA-OAEP key
+ * transport using SHA-256 and MGF1-SHA256, with a certificate thumbprint key identifier.</li>
+ * <li>Signing the body and timestamp before encrypting the body.</li>
+ * </ul>
+ * <p>For signatures, add <code>securityTokenReference</code> to
+ * Membrane's outbound <code>signature</code> and configure WSS4J's signature key identifier as
+ * <code>DirectReference</code>. On Membrane, secure in the order <code>timestamp</code>,
+ * <code>signature</code>, then optionally <code>encrypt</code>; validate in the order
+ * <code>decrypt</code> when encrypted, <code>timestamp</code>, then <code>signature</code>.
+ * Configure WSS4J with the action string <code>Signature Timestamp</code> or
+ * <code>Signature Timestamp Encrypt</code> to place the timestamp before the signature
+ * in the security header. Require signature coverage of both body and timestamp, and body
+ * content encryption when using encryption, on the receiving side.</p>
  * @topic 3. Security
  * @yaml <pre><code>
  * api:

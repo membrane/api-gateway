@@ -72,7 +72,30 @@ import static org.apache.cxf.ws.security.wss4j.CryptoCoverageUtil.CoverageType.S
 import static org.apache.wss4j.common.ConfigurationConstants.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Real HTTP interoperability: each secured message is produced and consumed by different stacks. */
+/**
+ * Tests WS-Security interoperability between Membrane and Apache CXF/WSS4J over real loopback HTTP,
+ * using an embedded CXF echo service and a Membrane proxy; no external service is required.
+ * Each secured message is produced and consumed by different stacks.
+ *
+ * <p>The round-trip matrix covers SOAP 1.1 and SOAP 1.2 in both directions:
+ * Membrane secures requests for CXF and validates CXF responses, or CXF secures requests for
+ * Membrane and validates Membrane responses. Four profiles give 16 round-trip cases:</p>
+ * <ul>
+ *     <li>Signature covering the SOAP body and timestamp.</li>
+ *     <li>UsernameToken with a text password.</li>
+ *     <li>SOAP body encryption.</li>
+ *     <li>Signing followed by encryption.</li>
+ * </ul>
+ * <p>Successful calls must preserve the payload, invoke the service exactly once, and carry the
+ * expected security elements on both request and response; encrypted bodies must hide the payload.</p>
+ *
+ * <p>Another 28 cases cover seven rejected requests in both directions and SOAP versions:
+ * a tampered signed body, an untrusted signing certificate, an expired signed timestamp,
+ * a wrong UsernameToken password, an unsigned body, a missing security header, and missing
+ * required encryption. Password and encryption failures use their respective profiles; the
+ * remaining failures use the signature profile. Each case checks that the service is never
+ * invoked and that the receiving stack returns a SOAP fault with the expected rejection reason.</p>
+ */
 @Timeout(30)
 class WsSecurityCxfInteropTest extends AbstractWsSecurityTest {
     private static final String SERVICE_NS = "urn:membrane:wsse:interop";
