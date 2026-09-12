@@ -208,7 +208,7 @@ public class SoapProxyInvocationTest {
                 .post("http://localhost:2000/services/a")
         .then().statusCode(200)
                 .contentType(TEXT_XML)
-                .body("Envelope.Body.Fault.faultcode", equalTo("Client"))
+                .body("Envelope.Body.Fault.faultcode", equalTo("soap:Client"))
                 .body("Envelope.Body.Fault.faultstring", equalTo("WSDL message validation failed"));
         // @formatter:on
     }

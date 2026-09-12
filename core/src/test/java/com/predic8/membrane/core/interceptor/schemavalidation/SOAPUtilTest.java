@@ -235,6 +235,19 @@ public class SOAPUtilTest {
     }
 
     /**
+     * faultcode is xs:QName (soap11-fault.xsd); SOAP 1.1 SS4.4.1 requires its value to be
+     * qualified with the SOAP envelope namespace prefix, e.g. "soap:Client" - an unprefixed
+     * "Client" is a syntactically valid QName too, but means "no namespace", not "in the SOAP
+     * envelope namespace".
+     */
+    @Test
+    void createSOAP11FaultQualifiesFaultCodeValue() throws Exception {
+        var doc = SOAPUtil.createSOAP11Fault(SOAPUtil.FaultCode.Client, "failed", null);
+        var faultCode = doc.getElementsByTagName("faultcode").item(0);
+        assertEquals("soap:Client", faultCode.getTextContent());
+    }
+
+    /**
      * createSOAP12Fault's Fault element must carry the SOAP 1.2 envelope namespace, matching the
      * bundled soap12-fault.xsd - otherwise Membrane-generated faults fail their own structural
      * validation. Also checks that FaultCode.Client/Server are translated to the SOAP 1.2

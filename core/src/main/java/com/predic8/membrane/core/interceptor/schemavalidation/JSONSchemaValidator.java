@@ -34,7 +34,6 @@ import java.nio.charset.Charset;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -50,14 +49,20 @@ public class JSONSchemaValidator extends AbstractMessageValidator {
     private final Resolver resolver;
     private final String jsonSchema;
     private final ValidatorInterceptor.FailureHandler failureHandler;
+    private final ErrorDetailsPolicy errorDetailsPolicy;
 
     private final AtomicLong valid = new AtomicLong();
     private final AtomicLong invalid = new AtomicLong();
 
     public JSONSchemaValidator(Resolver resolver, String jsonSchema, ValidatorInterceptor.FailureHandler failureHandler) {
+        this(resolver, jsonSchema, failureHandler, ErrorDetailsPolicy.FULL);
+    }
+
+    public JSONSchemaValidator(Resolver resolver, String jsonSchema, ValidatorInterceptor.FailureHandler failureHandler, ErrorDetailsPolicy errorDetailsPolicy) {
         this.resolver = resolver;
         this.jsonSchema = jsonSchema;
         this.failureHandler = failureHandler;
+        this.errorDetailsPolicy = errorDetailsPolicy;
     }
 
     @Override
@@ -91,25 +96,21 @@ public class JSONSchemaValidator extends AbstractMessageValidator {
             errors = List.of(e.getOriginalMessage() != null ? e.getOriginalMessage() : e.getMessage());
         }
 
+        return reportFailure(exc, flow, msg, errors);
+    }
+
+    private Outcome reportFailure(Exchange exc, Flow flow, Message msg, List<String> errors) {
+        invalid.incrementAndGet();
+        log.info("{} message did not validate against {}: {}", flow, jsonSchema, errors);
+
         if (failureHandler != null) {
             failureHandler.handleFailure(getErrorString(msg, errors), exc);
-            user(false,getName())
-                    .title(getErrorTitle())
-                    .addSubType("validation")
-                    .buildAndSetResponse(exc);
-            invalid.incrementAndGet();
-            return ABORT;
         }
 
-        user(false,getName())
-                .title(getErrorTitle())
-                .addSubType("validation")
-                .component(getName())
-                .internal("flow", flow.name())
-                .internal("errors", errors)
+        errorDetailsPolicy.problemDetails(getName(), getErrorTitle(),
+                        pd -> pd.topLevel("flow", flow.name()).topLevel("errors", errors))
                 .buildAndSetResponse(exc);
 
-        invalid.incrementAndGet();
         return ABORT;
     }
 
