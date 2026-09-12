@@ -110,7 +110,11 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
     private final com.predic8.membrane.core.util.wsdl.parser.Definitions definitions;
 
     public WSDLValidator(ResolverMap resourceResolver, String location, String serviceName, ValidatorInterceptor.FailureHandler failureHandler, boolean skipFaults) {
-        super(resourceResolver, location, failureHandler);
+        this(resourceResolver, location, serviceName, failureHandler, skipFaults, ErrorDetailsPolicy.FULL);
+    }
+
+    public WSDLValidator(ResolverMap resourceResolver, String location, String serviceName, ValidatorInterceptor.FailureHandler failureHandler, boolean skipFaults, ErrorDetailsPolicy errorDetailsPolicy) {
+        super(resourceResolver, location, failureHandler, errorDetailsPolicy);
         this.skipFaults = skipFaults;
 
         try {
@@ -339,12 +343,22 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
 
     @Override
     protected void setErrorResponse(Exchange exchange, Interceptor.Flow flow, String message) {
-        exchange.setResponse(createSOAPFaultResponse(Client, getErrorTitle(), Map.of("error", message), soapVersionOf(exchange)));
+        setFaultResponse(exchange, Map.of("error", message));
     }
 
     @Override
     protected void setErrorResponse(Exchange exchange, Interceptor.Flow flow, List<Exception> exceptions) {
-        exchange.setResponse(createSOAPFaultResponse(Client, getErrorTitle(), Map.of("validation", convertExceptionsToMap(exceptions)), soapVersionOf(exchange)));
+        setFaultResponse(exchange, Map.of("validation", convertExceptionsToMap(exceptions)));
+    }
+
+    /**
+     * Sends a SOAP fault reporting the rejection. The fault code and reason always identify the
+     * rejection; the {@code detail} content is only filled in when the configuration allows the
+     * validation details to be disclosed.
+     */
+    private void setFaultResponse(Exchange exchange, Map<String, Object> detail) {
+        exchange.setResponse(createSOAPFaultResponse(Client, getErrorTitle(),
+                errorDetailsPolicy.validationDetails() ? detail : Map.of(), soapVersionOf(exchange)));
     }
 
     /**
