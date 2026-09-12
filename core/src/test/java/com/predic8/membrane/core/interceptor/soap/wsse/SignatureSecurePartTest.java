@@ -469,7 +469,7 @@ class SignatureSecurePartTest extends AbstractWsSecurityTest {
         Document result = signBodyWith(withKeyIdentifier(KeyIdentifierKeyInfo.ValueType.THUMBPRINT_SHA1));
 
         Element keyIdentifier = firstByTag(result, WSSE_NS, "KeyIdentifier");
-        assertEquals("http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.1#ThumbprintSHA1",
+        assertEquals("http://docs.oasis-open.org/wss/oasis-wss-soap-message-security-1.1#ThumbprintSHA1",
                 keyIdentifier.getAttribute("ValueType"));
 
         MessageDigest sha1 = MessageDigest.getInstance("SHA-1");

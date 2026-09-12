@@ -32,8 +32,11 @@ import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.function.Predicate;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
@@ -41,6 +44,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityFaultCode.INVALID_SECURITY;
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.*;
+import static com.predic8.membrane.core.interceptor.soap.wsse.XmlEncryptionUtil.XENC_NS;
 
 /**
  * @description <p>Owns the WS-Security (<code>wsse:Security</code>) header of a SOAP message: the
@@ -48,9 +52,16 @@ import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.
  * applies fresh security for the next hop. Both lists are optional and run in the order they are
  * written; the whole <code>validate</code> list runs first, and the inbound header is removed at
  * that boundary before <code>secure</code> creates a new one. With no <code>validate</code> list the
- * header is emptied of the tokens the peer sent instead of being forwarded unchecked; only its
- * <code>wsu:Timestamp</code> is kept, since a <code>secure</code> signature may cover it. Header blocks
- * targeted at a different <code>actor</code> are left untouched.</p>
+ * header is emptied of the tokens the peer sent instead of being forwarded unchecked; what survives is
+ * only what asserts nothing on its own — its <code>wsu:Timestamp</code>, since a <code>secure</code>
+ * signature may cover it, and its XML Encryption material (<code>xenc:EncryptedKey</code> and
+ * <code>xenc:EncryptedData</code>) for as long as encrypted content is still in the message, since
+ * dropping key material while forwarding the ciphertext would leave a message nobody downstream can
+ * read. Header blocks targeted at a different <code>actor</code> are left untouched.</p>
+ * <p>Signing and encrypting draw on opposite stores: a signature uses the <code>keystore</code>'s
+ * private key and is verified against the <code>truststore</code>, while <code>encrypt</code> uses a
+ * <code>truststore</code> certificate (the recipient's) and <code>decrypt</code> the
+ * <code>keystore</code>'s private key.</p>
  * <p>Direction is not part of this element: nest it in <code>request</code> or <code>response</code>
  * to say which message it applies to. A gateway commonly validates what a client sent and
  * re-secures for the backend in one element, and mirrors that on the way back. Use two elements
@@ -60,6 +71,28 @@ import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.
  * offending message, carrying the WS-Security fault code (<code>wsse:FailedAuthentication</code>,
  * <code>wsse:FailedCheck</code>, and so on); a body that is not SOAP at all answers with Problem
  * Details, since no fault envelope can be produced for it.</p>
+ * <h3>Apache CXF compatibility</h3>
+ * <p>Interoperability is tested with Apache CXF. Membrane supports SOAP 1.1 and SOAP 1.2 in
+ * both directions: it can secure requests for CXF and validate its secured responses, or
+ * validate CXF requests and secure responses for CXF. Compatible security features include:</p>
+ * <ul>
+ * <li>Signing the SOAP body and timestamp with RSA-SHA256 and SHA-256 digests, using a
+ * <code>wsse:SecurityTokenReference</code> pointing to an embedded certificate.</li>
+ * <li>UsernameToken authentication with <code>PasswordText</code>
+ * (Membrane <code>passwordType: PLAIN_TEXT</code>).</li>
+ * <li>Encrypting SOAP body content with AES-256-GCM and XML Encryption 1.1 RSA-OAEP key
+ * transport using SHA-256 and MGF1-SHA256, with a certificate thumbprint key identifier.</li>
+ * <li>Signing the body and timestamp before encrypting the body.</li>
+ * </ul>
+ * <p>For signatures, add <code>securityTokenReference</code> to
+ * Membrane's outbound <code>signature</code> and configure WSS4J's signature key identifier as
+ * <code>DirectReference</code>. On Membrane, secure in the order <code>timestamp</code>,
+ * <code>signature</code>, then optionally <code>encrypt</code>; validate in the order
+ * <code>decrypt</code> when encrypted, <code>timestamp</code>, then <code>signature</code>.
+ * Configure WSS4J with the action string <code>Signature Timestamp</code> or
+ * <code>Signature Timestamp Encrypt</code> to place the timestamp before the signature
+ * in the security header. Require signature coverage of both body and timestamp, and body
+ * content encryption when using encryption, on the receiving side.</p>
  * @topic 3. Security
  * @yaml <pre><code>
  * api:
@@ -74,6 +107,9 @@ import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.
  *               location: partner-ca.p12
  *               password: secret
  *             validate:
+ *               - decrypt:
+ *                   requiredReferences:
+ *                     - by: BODY
  *               - timestamp:
  *                   clockSkew: PT1M
  *               - usernameToken:
@@ -92,7 +128,15 @@ import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.
  *                     - by: BODY
  *                     - by: TIMESTAMP
  *                     - xpath: //*[local-name()='order']
+ *               - encrypt:
+ *                   recipientAlias: backend
+ *                   references:
+ *                     - by: BODY
  * </code></pre>
+ * <p>The placement in that example is the lesson, not a detail: <code>encrypt</code> comes last so the
+ * body is signed before it is encrypted, and <code>decrypt</code> comes first so the receiving side
+ * undoes that in reverse. Swap either and the signature is computed over one form of the body and
+ * checked against another.</p>
  */
 @MCElement(name = "wsSecurity")
 public class WsSecurityInterceptor extends AbstractInterceptor {
@@ -122,9 +166,14 @@ public class WsSecurityInterceptor extends AbstractInterceptor {
      * The element names of the {@code secure} parts that create what a {@code signature} reference can
      * name, so that "listed before" can be checked for each.
      */
-    private static final Map<SignatureReference.By, Class<? extends SecurePart>> CREATED_BY = Map.of(
+    private static final Map<SignatureReference.By, Class<? extends SecurePart>> SIGNATURE_CREATED_BY = Map.of(
             SignatureReference.By.TIMESTAMP, TimestampSecurePart.class,
-            SignatureReference.By.USERNAME_TOKEN, UsernameTokenSecurePart.class);
+            SignatureReference.By.USERNAME_TOKEN, UsernameTokenSecurePart.class,
+            SignatureReference.By.ENCRYPTED_KEY, EncryptSecurePart.class);
+
+    /** The same, for what an {@code encrypt} reference can name. */
+    private static final Map<EncryptionReference.By, Class<? extends SecurePart>> ENCRYPT_CREATED_BY = Map.of(
+            EncryptionReference.By.USERNAME_TOKEN, UsernameTokenSecurePart.class);
 
     /**
      * WS-SecurityPolicy sanctions both sign-before-encrypt and encrypt-before-sign, and a receiver
@@ -141,20 +190,68 @@ public class WsSecurityInterceptor extends AbstractInterceptor {
      */
     private void checkSecureOrder() {
         List<SecurePart> parts = getSecureParts();
-        CREATED_BY.forEach((by, creator) -> {
-            int creatorIndex = indexOf(parts, creator);
-            if (creatorIndex < 0) {
-                return;
+        SIGNATURE_CREATED_BY.forEach((by, creator) -> requireCreatorListedFirst(parts, creator, "signature", by.name(),
+                "sign", part -> part instanceof SignatureSecurePart signature && signature.references(by)));
+        ENCRYPT_CREATED_BY.forEach((by, creator) -> requireCreatorListedFirst(parts, creator, "encrypt", by.name(),
+                "encrypt", part -> part instanceof EncryptSecurePart encrypt && encrypt.references(by)));
+        checkNothingCoversWhatEncryptRemoves(parts);
+    }
+
+    private static void requireCreatorListedFirst(List<SecurePart> parts, Class<? extends SecurePart> creator,
+                                                  String referencingElement, String by, String verb,
+                                                  Predicate<SecurePart> references) {
+        int creatorIndex = indexOf(parts, creator);
+        if (creatorIndex < 0) {
+            return;
+        }
+        for (SecurePart part : parts.subList(0, creatorIndex)) {
+            if (references.test(part)) {
+                throw new ConfigurationException(
+                        ("wsSecurity: a secure/%s referencing by: %s must be listed after the " +
+                         "secure part that creates it, otherwise there is nothing there to %s.")
+                                .formatted(referencingElement, by, verb));
             }
-            for (SecurePart part : parts.subList(0, creatorIndex)) {
-                if (part instanceof SignatureSecurePart signature && signature.references(by)) {
-                    throw new ConfigurationException(
-                            ("wsSecurity: a secure/signature referencing by: %s must be listed after the " +
-                             "secure part that creates it, otherwise there is nothing there to sign.")
-                                    .formatted(by));
+        }
+    }
+
+    /**
+     * The mirror image of {@link #requireCreatorListedFirst}: a part can also be listed too <i>late</i>,
+     * because an {@code encrypt} with {@code type: ELEMENT} replaces its target outright and a later
+     * part naming that element then finds nothing there.
+     * <p>
+     * A {@code signature} is not the only part that can be listed too late: a second
+     * {@code encrypt} naming the same token has the same problem, and would otherwise pass
+     * {@code init()} only to fail per message once the token is not where the reference says.
+     * <p>
+     * Only {@code ELEMENT} destroys anything. {@code CONTENT} leaves the element and its
+     * {@code wsu:Id} in place, which is exactly what keeps sign-then-encrypt of the body legal - the
+     * common case, and one this must not reject. XPath targets are out of scope, since two
+     * expressions cannot be compared statically.
+     */
+    private static void checkNothingCoversWhatEncryptRemoves(List<SecurePart> parts) {
+        for (int i = 0; i < parts.size(); i++) {
+            if (!(parts.get(i) instanceof EncryptSecurePart encrypt)
+                || !encrypt.replacesElement(EncryptionReference.By.USERNAME_TOKEN)) {
+                continue;
+            }
+            for (SecurePart later : parts.subList(i + 1, parts.size())) {
+                if (later instanceof SignatureSecurePart signature
+                    && signature.references(SignatureReference.By.USERNAME_TOKEN)) {
+                    throw tooLateForTheUsernameToken("signature", "sign");
+                }
+                if (later instanceof EncryptSecurePart laterEncrypt
+                    && laterEncrypt.references(EncryptionReference.By.USERNAME_TOKEN)) {
+                    throw tooLateForTheUsernameToken("encrypt", "encrypt");
                 }
             }
-        });
+        }
+    }
+
+    private static ConfigurationException tooLateForTheUsernameToken(String element, String verb) {
+        return new ConfigurationException(
+                ("wsSecurity: a secure/%s referencing by: USERNAME_TOKEN must be listed before the secure/encrypt " +
+                 "that replaces it with an xenc:EncryptedData, otherwise there is nothing left there to %s.")
+                        .formatted(element, verb));
     }
 
     private static int indexOf(List<SecurePart> parts, Class<? extends SecurePart> type) {
@@ -246,13 +343,13 @@ public class WsSecurityInterceptor extends AbstractInterceptor {
             runAll(getValidateParts(), new WsSecurityContext(exc, flow, doc, envelope, soapNs, inbound));
             // The group boundary: this element understood the header, so SOAP requires it to be
             // removed rather than forwarded to a next hop that would have to understand it again.
-            inbound.getParentNode().removeChild(inbound);
+            stripToRetained(inbound, envelope, false);
         } else if (inbound != null) {
             // Nothing here was checked, but this element still owns the header, and the tokens in it are
             // the peer's claims. Forwarded, they would reach the backend as if this gateway had vouched
             // for them: a UsernameToken the backend authenticates, a signature it trusts, next to the
             // security this element is about to add. So they are dropped.
-            discardUncheckedClaims(inbound);
+            stripToRetained(inbound, envelope, true);
         }
 
         if (!getSecureParts().isEmpty()) {
@@ -262,23 +359,101 @@ public class WsSecurityInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * Empties an unvalidated {@code wsse:Security} header of everything but its {@code wsu:Timestamp}.
+     * Consumes the inbound {@code wsse:Security} header, keeping only what this element must not
+     * destroy, and removing the header entirely when that leaves nothing.
      * <p>
      * An allowlist rather than a list of the token names to drop: every child of a
      * {@code wsse:Security} header is security content by definition, so anything this element did not
-     * check is something it cannot forward. {@code wsu:Timestamp} is the one exception, because it
-     * asserts nothing on its own and a {@code secure/signature} may reference it (<code>by:
-     * TIMESTAMP</code>) to cover a freshness window the message already carried.
+     * check is something it cannot forward. What survives is the children that <i>assert</i> nothing
+     * on their own:
+     * <ul>
+     * <li>{@code wsu:Timestamp}, when the header was never validated ({@code unvalidated}), because
+     * a {@code secure/signature} may reference it ({@code by: TIMESTAMP}) to cover a freshness window
+     * the message already carried.</li>
+     * <li>An {@code xenc:EncryptedKey}, whenever ciphertext it might unlock is still in the message.
+     * It is key material addressed to a named recipient, not a claim: if that recipient is a backend
+     * rather than this gateway, dropping the key while forwarding the {@code xenc:EncryptedData} in
+     * the body - which is not in this header and survives regardless - would turn a valid message into
+     * one nobody can ever read. The ciphertext condition makes this self-limiting: once a
+     * {@code validate/decrypt} has run nothing is encrypted any more, so a spent key is dropped like
+     * anything else.</li>
+     * <li>A header {@code xenc:EncryptedData} - an element-encrypted token - but <i>only</i> while a
+     * key is being retained alongside it, since it is then one of the things that key unlocks and
+     * dropping it would strand the {@code xenc:DataReference} naming it. Never on its own: a piece of
+     * ciphertext must not be its own reason to survive, or an unreadable claim would be forwarded
+     * forever.</li>
+     * <li>A {@code wsse:BinarySecurityToken} directly referenced by a retained key's
+     * {@code ds:KeyInfo/wsse:SecurityTokenReference}, so the downstream recipient can still
+     * resolve the certificate identifying its decryption key.</li>
+     * </ul>
+     * Retaining key material is a compatibility accommodation, not a WS-Security requirement. A sender
+     * that targets each header at the {@code actor} meant to process it never reaches this path at all,
+     * because a header addressed elsewhere is not this element's to consume.
      */
-    private static void discardUncheckedClaims(Element security) {
+    private static void stripToRetained(Element security, Element envelope, boolean unvalidated) {
+        // The two decisions are linked, and in this order: the key survives because ciphertext does,
+        // and the header's own ciphertext survives because the key does - never the other way round.
+        boolean retainKeyMaterial = getFirstChildByName(security, XENC_NS, "EncryptedKey") != null
+                                    && carriesEncryptedData(envelope);
+        Set<String> retainedTokenIds = retainKeyMaterial ? referencedEncryptionTokenIds(security) : Set.of();
         for (Element child : childElementsOf(security)) {
-            if (WSU_NS.equals(child.getNamespaceURI()) && "Timestamp".equals(child.getLocalName())) {
+            if (unvalidated && WSU_NS.equals(child.getNamespaceURI()) && "Timestamp".equals(child.getLocalName())) {
                 continue;
             }
-            log.info("Discarding an unvalidated {} from the inbound wsse:Security header: this " +
-                     "wsSecurity element owns the header but has no <validate> list.", child.getNodeName());
+            if (retainKeyMaterial && (isEncryptionMaterial(child)
+                    || WSSE_NS.equals(child.getNamespaceURI()) && "BinarySecurityToken".equals(child.getLocalName())
+                       && retainedTokenIds.contains(idOf(child)))) {
+                log.info("Keeping an inbound {} in the wsse:Security header: the message still carries " +
+                         "encrypted content, so the key material is a downstream recipient's to use.",
+                        child.getNodeName());
+                continue;
+            }
+            if (unvalidated) {
+                log.info("Discarding an unvalidated {} from the inbound wsse:Security header: this " +
+                         "wsSecurity element owns the header but has no <validate> list.", child.getNodeName());
+            } else {
+                // The validated path drops the whole header by design (SOAP's "understood, so not
+                // forwarded"), which is unremarkable - at info it would narrate every good message.
+                log.debug("Removing {} from the consumed wsse:Security header.", child.getNodeName());
+            }
             security.removeChild(child);
         }
+        if (childElementsOf(security).isEmpty()) {
+            security.getParentNode().removeChild(security);
+        }
+    }
+
+    private static boolean isEncryptionMaterial(Element child) {
+        return XENC_NS.equals(child.getNamespaceURI())
+               && ("EncryptedKey".equals(child.getLocalName()) || "EncryptedData".equals(child.getLocalName()));
+    }
+
+    private static Set<String> referencedEncryptionTokenIds(Element security) {
+        Set<String> ids = new HashSet<>();
+        for (Element key : getChildrenByName(security, XENC_NS, "EncryptedKey")) {
+            for (Element keyInfo : getChildrenByName(key, DS_NS, "KeyInfo")) {
+                for (Element tokenReference : getChildrenByName(keyInfo, WSSE_NS, "SecurityTokenReference")) {
+                    for (Element reference : getChildrenByName(tokenReference, WSSE_NS, "Reference")) {
+                        String uri = reference.getAttribute("URI");
+                        if (uri.startsWith("#") && uri.length() > 1) {
+                            ids.add(uri.substring(1));
+                        }
+                    }
+                }
+            }
+        }
+        return ids;
+    }
+
+    /** Whether any {@code xenc:EncryptedData} remains anywhere in the message. */
+    private static boolean carriesEncryptedData(Element envelope) {
+        boolean[] found = {false};
+        forEachDescendantElement(envelope, element -> {
+            if (XENC_NS.equals(element.getNamespaceURI()) && "EncryptedData".equals(element.getLocalName())) {
+                found[0] = true;
+            }
+        });
+        return found[0];
     }
 
     private static void runAll(List<? extends WsSecurityPart> parts, WsSecurityContext ctx) throws Exception {
@@ -339,8 +514,9 @@ public class WsSecurityInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description The keystore holding the private key and certificate used by the
-     * <code>secure</code> parts that sign. Required only when one of them does.
+     * @description The keystore holding this gateway's own private key: the <code>secure</code> parts
+     * that sign use it to sign, and <code>validate</code>/<code>decrypt</code> uses it to decrypt what
+     * a peer encrypted for this gateway. Required only when one of those is configured.
      */
     @MCChildElement(order = 1)
     public void setKeyStore(KeyStore keyStore) {
@@ -352,8 +528,10 @@ public class WsSecurityInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description The truststore holding the CA certificates used by the <code>validate</code>
-     * parts that check a signing certificate's chain of trust. Required only when one of them does.
+     * @description The truststore holding other parties' certificates: the <code>validate</code> parts
+     * that verify a signature check the signing certificate's chain of trust against it, and
+     * <code>secure</code>/<code>encrypt</code> resolves its <code>recipientAlias</code> in it to find
+     * the certificate to encrypt for. Required only when one of those is configured.
      */
     @MCChildElement(order = 2)
     public void setTrustStore(TrustStore trustStore) {

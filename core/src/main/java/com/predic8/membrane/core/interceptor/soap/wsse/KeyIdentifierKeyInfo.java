@@ -17,29 +17,43 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 
 /**
- * @description References the signing certificate from <code>ds:KeyInfo</code> via a
- * <code>wsse:SecurityTokenReference</code>/<code>wsse:KeyIdentifier</code>, instead of embedding
- * the certificate inline (<code>x509Data</code>) or via a separate <code>wsse:BinarySecurityToken</code>
- * (<code>securityTokenReference</code>). With <code>valueType=X509_V3</code> the certificate itself
- * is embedded in the <code>wsse:KeyIdentifier</code>; with <code>THUMBPRINT_SHA1</code> only its
- * SHA-1 thumbprint is, and the verifier looks the matching certificate up in its truststore.
+ * @description Names a certificate from <code>ds:KeyInfo</code> via a
+ * <code>wsse:SecurityTokenReference</code>/<code>wsse:KeyIdentifier</code>, rather than embedding it
+ * inline the way <code>signature</code>'s <code>x509Data</code> does. Under <code>signature</code>
+ * that is the signing certificate the receiver verifies with; under <code>encrypt</code> it is the
+ * recipient's certificate, telling the receiver which of its own keys decrypts the message, and it is
+ * the only key-info mode there. With <code>valueType=X509_V3</code> the
+ * certificate itself is embedded in the <code>wsse:KeyIdentifier</code>; with
+ * <code>THUMBPRINT_SHA1</code> only its SHA-1 thumbprint is, and the receiver looks the matching
+ * certificate up in its own store.
  */
 @MCElement(name = "keyIdentifier", component = false, id = "wsSecurity-signature-keyIdentifier")
 public class KeyIdentifierKeyInfo {
 
     public enum ValueType {X509_V3, THUMBPRINT_SHA1}
 
-    private ValueType valueType = ValueType.X509_V3;
+    // Deliberately null rather than a constant: the useful default differs per parent - a signature
+    // ships the certificate so the receiver can verify with it, while an encrypt names one the
+    // receiver already holds - so the parent supplies it via valueTypeOrDefault().
+    private ValueType valueType;
 
     public ValueType getValueType() {
         return valueType;
     }
 
     /**
+     * The configured value type, or {@code fallback} when the attribute was omitted.
+     */
+    ValueType valueTypeOrDefault(ValueType fallback) {
+        return valueType != null ? valueType : fallback;
+    }
+
+    /**
      * @description Whether the <code>wsse:KeyIdentifier</code> carries the full certificate
      * (<code>X509_V3</code>) or only its SHA-1 thumbprint (<code>THUMBPRINT_SHA1</code>), in which
-     * case the verifier resolves the certificate from its truststore instead of the message.
-     * @default X509_V3
+     * case the receiver resolves the certificate from its own store instead of the message. When
+     * omitted, <code>signature</code> uses <code>X509_V3</code> and <code>encrypt</code> uses
+     * <code>THUMBPRINT_SHA1</code>.
      */
     @MCAttribute
     public void setValueType(ValueType valueType) {

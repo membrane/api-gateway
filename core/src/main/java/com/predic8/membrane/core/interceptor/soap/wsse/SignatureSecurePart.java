@@ -23,7 +23,6 @@ import com.predic8.membrane.core.util.ConfigurationException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import javax.xml.XMLConstants;
 import javax.xml.crypto.dsig.*;
 import javax.xml.crypto.dsig.dom.DOMSignContext;
 import javax.xml.crypto.dsig.keyinfo.KeyInfo;
@@ -164,18 +163,6 @@ public class SignatureSecurePart extends SecurePart {
         } catch (Exception e) {
             throw new ConfigurationException("Could not load signing key from the wsSecurity keystore.", e);
         }
-    }
-
-    // For a PKCS12 keystore, the key is commonly protected by the same password as the store
-    // itself; fall back to it when no distinct keyPassword is configured.
-    private static char[] resolveKeyPassword(KeyStore keyStore) {
-        if (keyStore.getKeyPassword() != null) {
-            return keyStore.getKeyPassword().toCharArray();
-        }
-        if (keyStore.getPassword() != null) {
-            return keyStore.getPassword().toCharArray();
-        }
-        return "changeit".toCharArray();
     }
 
     @Override
@@ -350,39 +337,14 @@ public class SignatureSecurePart extends SecurePart {
     }
 
     private void appendKeyIdentifierKeyInfo(Document doc, Element signatureElement) throws Exception {
-        Element keyIdentifierElement = doc.createElementNS(WSSE_NS, "wsse:KeyIdentifier");
-        keyIdentifierElement.setAttribute("EncodingType", BASE64_BINARY_ENCODING_TYPE);
-        if (keyIdentifier.getValueType() == KeyIdentifierKeyInfo.ValueType.THUMBPRINT_SHA1) {
-            keyIdentifierElement.setAttribute("ValueType", THUMBPRINT_SHA1_VALUE_TYPE);
-            keyIdentifierElement.setTextContent(Base64.getEncoder().encodeToString(sha1Thumbprint(certificate)));
-        } else {
-            keyIdentifierElement.setAttribute("ValueType", X509_V3_VALUE_TYPE);
-            keyIdentifierElement.setTextContent(Base64.getEncoder().encodeToString(certificate.getEncoded()));
-        }
-
-        appendKeyInfo(doc, signatureElement, keyIdentifierElement);
+        // X509_V3 when the attribute is omitted: a signature ships the certificate so the receiver
+        // can verify with it, unlike an encrypt, which names one the receiver already holds.
+        appendKeyInfo(doc, signatureElement, createKeyIdentifier(doc, certificate,
+                keyIdentifier.valueTypeOrDefault(KeyIdentifierKeyInfo.ValueType.X509_V3)));
     }
 
-    /**
-     * Appends a {@code ds:KeyInfo} holding a {@code wsse:SecurityTokenReference} that wraps
-     * {@code tokenReference} - either a {@code wsse:Reference} or a {@code wsse:KeyIdentifier}.
-     */
     private static void appendKeyInfo(Document doc, Element signatureElement, Element tokenReference) {
-        Element securityTokenReferenceElement = doc.createElementNS(WSSE_NS, "wsse:SecurityTokenReference");
-        declareWsuId(securityTokenReferenceElement, "STR-" + UUID.randomUUID());
-        // WSS 1.1's TokenType says what kind of token the reference names. It is redundant next to a
-        // wsse:Reference/KeyIdentifier that already carries a ValueType, but a ThumbprintSHA1
-        // KeyIdentifier names the token by hash alone, and WSS4J/CXF read TokenType to learn what that
-        // hash identifies. Set for every mode so the STR looks the same whichever one is configured.
-        securityTokenReferenceElement.setAttributeNS(WSSE11_NS, "wsse11:TokenType", X509_V3_VALUE_TYPE);
-        securityTokenReferenceElement.setAttributeNS(XMLConstants.XMLNS_ATTRIBUTE_NS_URI, "xmlns:wsse11", WSSE11_NS);
-        securityTokenReferenceElement.appendChild(tokenReference);
-
-        Element keyInfo = doc.createElementNS(XMLSignature.XMLNS, "ds:KeyInfo");
-        keyInfo.setAttribute("Id", "KI-" + UUID.randomUUID());
-        keyInfo.appendChild(securityTokenReferenceElement);
-
-        signatureElement.appendChild(keyInfo);
+        signatureElement.appendChild(createKeyInfoWithSecurityTokenReference(doc, tokenReference));
     }
 
     public List<SignatureReference> getReferences() {

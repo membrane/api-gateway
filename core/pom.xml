@@ -28,6 +28,7 @@
 
     <properties>
         <graalvm.version>24.1.2</graalvm.version>
+        <cxf.version>4.1.8</cxf.version>
     </properties>
 
 
@@ -273,6 +274,37 @@
         </dependency>
 
         <!-- Test dependencies -->
+        <!-- Existing tests use javax JAXB; CXF additionally needs the Jakarta JAXB API. -->
+        <dependency>
+            <groupId>javax.xml.bind</groupId>
+            <artifactId>jaxb-api</artifactId>
+            <version>2.3.1</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.xml.bind</groupId>
+            <artifactId>jakarta.xml.bind-api</artifactId>
+            <version>4.0.5</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cxf</groupId>
+            <artifactId>cxf-rt-frontend-jaxws</artifactId>
+            <version>${cxf.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cxf</groupId>
+            <artifactId>cxf-rt-transports-http-jetty</artifactId>
+            <version>${cxf.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cxf</groupId>
+            <artifactId>cxf-rt-ws-security</artifactId>
+            <version>${cxf.version}</version>
+            <scope>test</scope>
+        </dependency>
         <!-- GraalVM Javascript Engine, for tests only. Will not be shipped! -->
         <dependency>
             <groupId>org.graalvm.js</groupId>
@@ -413,7 +445,9 @@
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <test>**/UnitTests.java</test>
+                    <includes>
+                        <include>**/UnitTests.java</include>
+                    </includes>
                     <argLine>-Dfile.encoding=UTF-8 -Djdk.xml.maxGeneralEntitySizeLimit=0 -Djdk.xml.totalEntitySizeLimit=0</argLine>
                 </configuration>
             </plugin>

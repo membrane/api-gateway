@@ -130,6 +130,8 @@ public class Schemas {
 	private void assembleElementInfo(Writer w, Model m, MainInfo main, ElementInfo i) throws IOException {
 		w.append("<xsd:sequence>\r\n");
 		for (ChildElementInfo cei : i.getChildElementSpecs()) {
+            if (cei.isList() && cei.getTypeDeclaration().getKind() == javax.lang.model.element.ElementKind.ENUM)
+                continue;
 			w.append("<xsd:choice" + (cei.isRequired() ? " minOccurs=\"1\"" : " minOccurs=\"0\"") + (cei.isList() ? " maxOccurs=\"unbounded\"" : "") + ">\r\n");
 			assembleDocumentation(w, cei);
 			for (ElementInfo ei : main.getChildElementDeclarations().get(cei.getTypeDeclaration()).getElementInfo()) {
@@ -151,6 +153,18 @@ public class Schemas {
 		}
 
 		w.append("</xsd:sequence>\r\n");
+        for (ChildElementInfo cei : i.getChildElementSpecs()) {
+            if (!cei.isList() || cei.getTypeDeclaration().getKind() != javax.lang.model.element.ElementKind.ENUM)
+                continue;
+            w.append("<xsd:attribute name=\"" + cei.getPropertyName() + "\"><xsd:simpleType><xsd:list><xsd:simpleType><xsd:restriction base=\"xsd:string\">");
+            for (var constant : cei.getTypeDeclaration().getEnclosedElements()) {
+                if (constant.getKind() == javax.lang.model.element.ElementKind.ENUM_CONSTANT) {
+                    for (String value : java.util.List.of(constant.getSimpleName().toString(), constant.getSimpleName().toString().toLowerCase(java.util.Locale.ROOT)))
+                        w.append("<xsd:enumeration value=\"" + value + "\"/>");
+                }
+            }
+            w.append("</xsd:restriction></xsd:simpleType></xsd:list></xsd:simpleType></xsd:attribute>\n");
+        }
 		for (AttributeInfo ai : i.getAis())
 			if (!ai.getXMLName().equals("id"))
 				assembleAttributeDeclaration(w, ai);

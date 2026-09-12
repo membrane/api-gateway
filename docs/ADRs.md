@@ -1,5 +1,193 @@
 # Architecture Decision Log
 
+## ADR-011 XML Encryption: Hand-Rolled, and a Narrow Algorithm Set
+
+Status: ACCEPTED
+Date: 2026-09-10
+Amended: 2026-09-11 — the algorithm set was widened with AES-CBC and RSA-1.5 for legacy peers. As
+originally accepted it read "AES-128/256-GCM … RSA-OAEP … Nothing else, in either direction", and
+pre-authorised an outbound-only legacy algorithm "without ever widening what is accepted inbound".
+Inbound is now widenable too, but only through an explicit list that is empty by default; see
+"The legacy algorithms, and why the two directions are decided separately".
+
+### Context
+
+ADR-006 built the `wsSecurity` grammar with XML Encryption in mind but left it unimplemented, and
+left one question explicitly open: whether the implementation would be hand-rolled or library-backed.
+That is why its processor SPI is defined over a shared `org.w3c.dom.Document` and forbids JSR-105
+types on `@MCElement` classes — so the choice could be made later without touching the grammar.
+
+This ADR settles it, and records the two decisions that shape what the feature can interoperate with.
+
+### Decision
+
+- **Hand-rolled on the JDK.** `secure/encrypt` and `validate/decrypt` are implemented with plain JCA
+  (`Cipher`) and DOM. No new dependency.
+- **AES-128/256-GCM** for content encryption, **RSA-OAEP with SHA-256 and MGF1-SHA-256** for key
+  transport. These are the defaults and the recommendation.
+- **AES-128/192/256-CBC** and **RSA-1.5** are additionally available for peers that support nothing
+  else — outbound by naming the URI on `encrypt`, inbound only behind `decrypt`'s
+  `allowedLegacyAlgorithms`, which is empty by default. Every legacy choice logs a warning at startup.
+
+### Why hand-rolled
+
+The JDK has no XML Encryption API — there is no `javax.xml.crypto.enc` counterpart to the JSR-105
+`javax.xml.crypto.dsig` that `signature` already uses. The realistic alternative was Apache Santuario
+(`xmlsec`), which is not in the reactor, not present transitively, and not in a typical local
+repository, so it would have been a genuinely new runtime dependency on `core`.
+
+What is actually needed is small and, crucially, *not* the part of XML security that is hard: there is
+no canonicalization and no transform chain in encryption. Serialize a subtree, encrypt it, base64 it.
+The one real difficulty is namespace fixup — the plaintext leaves a document where its prefixes are
+declared on ancestors and must arrive able to stand alone — and that is solved the way Santuario
+solves it, by injecting the in-scope declarations on the way out and parsing inside a
+namespace-carrying wrapper on the way back.
+
+The grammar was unaffected, which is the constraint ADR-006 imposed and evidence it was the right one.
+
+### The legacy algorithms, and why the two directions are decided separately
+
+Both legacy families are padding-oracle-shaped, and a gateway that decrypts is precisely the oracle
+they need:
+
+- XML Encryption's **AES-CBC** modes carry no authentication tag. That is the Jager–Somorovsky
+  backwards-compatibility attack.
+- **RSA-1.5** key transport is Bleichenbacher's.
+
+They are nevertheless supported, because the alternative is not "peers upgrade" but "this gateway
+cannot be put in front of them at all": AES-CBC + RSA-1.5 is still what older WSS4J/CXF and
+.NET/WCF configurations offer, and those configurations are frequently not ours to change.
+
+The two directions are separate decisions, and that is the whole of the design here:
+
+- **Outbound**, choosing the algorithm *is* the opt-in — `dataEncryptionAlgorithm` and
+  `keyTransportAlgorithm` name a URI, and nothing else is needed. This extends ADR-006's
+  "accepted algorithms are stricter than produced ones" rather than contradicting it.
+- **Inbound**, `decrypt` has `allowedLegacyAlgorithms`, default empty. It is deliberately *not*
+  implied by what `encrypt` emits, because the exposure runs the other way: emitting AES-CBC exposes
+  the recipient, accepting it exposes *this gateway*, to whoever can reach the endpoint. A peer must
+  never be able to pick the weak algorithm unilaterally, which is what widening the inbound set
+  without an explicit exception would allow.
+
+An enum list names individual legacy exceptions: `aes128_cbc`, `aes192_cbc`, `aes256_cbc`,
+and `rsa_1_5`. Only explicitly listed algorithms are added to the modern defaults. Unknown values
+are rejected during configuration parsing. This lets a peer use one CBC algorithm without also
+permitting other CBC key sizes or RSA-1.5. The list belongs to `validate/decrypt`; it does not
+change signature validation or outbound choices. Each enabled exception logs a startup warning.
+
+`allowedLegacyAlgorithms` can widen the data encryption and key transport sets independently.
+The `ds:DigestMethod` and `xenc11:MGF` checks stay
+fixed either way, because they are a different question: the modern `xenc11#rsa-oaep` URI exists so
+that the mask generation function is stated separately, so a peer sending it with `mgf1sha1` inside
+has downgraded the algorithm it just claimed — that is not backwards compatibility. A peer that
+genuinely cannot do OAEP asks for `rsa-1_5`, where neither element appears at all (and `decrypt`
+therefore does not require them, while `encrypt` emits the `EncryptionMethod` childless, as WSS4J
+does).
+
+Two implementation facts that are easy to get wrong and were settled empirically:
+
+- **CBC uses `ISO10126Padding` in both directions.** XML Encryption defines the final octet as the
+  pad length and leaves the preceding pad octets arbitrary; `ISO10126Padding` writes exactly that,
+  which is what Santuario/WSS4J emit, and its unpadding reads only the final octet — so it also
+  accepts PKCS#7-padded ciphertext. `PKCS5Padding` is the natural-looking choice and is wrong on the
+  inbound side: it additionally requires every pad octet to equal the length and therefore rejects
+  conforming peers.
+- **A failed RSA-1.5 unwrap does not throw.** Bleichenbacher's attack is built on distinguishing a
+  well-formed PKCS#1 padding from a malformed one, so `validate/decrypt` answers a failed unwrap —
+  and an unwrapped key of the wrong length, which is the same information — with a random key of the
+  length the data algorithm requires, and carries on. The content decryption then fails as it would
+  for any wrong key. This is RFC 3218's countermeasure, and it is what makes accepting the algorithm
+  defensible at all. OAEP keeps the plain throw; it is not a Bleichenbacher oracle.
+
+The fault for a refused algorithm is still `wsse:UnsupportedAlgorithm`, and because ADR-006 keeps
+fault text non-specific, the refusal is also logged at `info` naming the algorithm and the exception list —
+otherwise an operator has no way to learn why a peer is being turned away.
+
+### An unvalidated header is not forwarded — with one addition
+
+ADR-006 established that the header this element owns is consumed at the group boundary, and that
+`wsu:Timestamp` is the sole survivor because it asserts nothing on its own. `xenc:EncryptedKey` is now
+a second survivor, and the rule is restated as: **the children that assert nothing on their own are
+retained; the ones that assert identity or authorization are dropped.**
+
+An `xenc:EncryptedKey` asserts no identity and grants no authorization. It is key material addressed
+to a named recipient, and if that recipient is a backend rather than this gateway, it cannot be acted
+on here at all. Meanwhile the `xenc:EncryptedData` it unlocks sits in the *body*, which this element
+never touches and which survives regardless — so dropping the key while forwarding the ciphertext
+turns a valid message into one nobody downstream can ever read.
+
+It is therefore retained only while such ciphertext is still present, which makes the rule
+self-limiting: once a `validate/decrypt` has run, nothing is encrypted any more and the spent key is
+dropped like any other child. This applies to both paths — no `validate` list at all, and a `validate`
+list that happens to contain no `decrypt` — since both previously destroyed the key.
+
+A header `xenc:EncryptedData` — an element-encrypted token — is retained too, but strictly *because*
+the key is: it is one of the things that key unlocks, and dropping it would strand the
+`xenc:DataReference` naming it. Never on its own. Letting ciphertext be its own reason to survive
+would forward an unreadable claim forever, with nothing left that could ever drop it.
+
+This is a compatibility accommodation for senders that emit a single header with no `actor`, which is
+most stacks' default. A sender that targets each header at the role meant to process it never reaches
+this path, because ADR-006 already passes other actors' headers through untouched — and that, not
+retention, is the correct fix for a multi-hop confidentiality topology.
+
+Retention has one consequence worth naming: a `wsSecurity` element that retains an inbound key *and*
+runs a `secure/encrypt` emits a header with two `xenc:EncryptedKey` elements, one per recipient.
+That is legal XML Encryption, and `validate/decrypt` deliberately refuses it (see below) rather than
+searching the header for the key it can open. Encrypting for two recipients at once is not a
+confidentiality topology this element models; addressing each header at its `actor` is.
+
+### Ordering stays the sender's choice
+
+ADR-006 refuses to fix sign-before-encrypt or encrypt-before-sign, and that is unchanged: the list
+order is the processing order, and the receiver mirrors whatever the sender did. Two things are now
+decidable at configuration time, and neither forbids a legal ordering:
+
+- A `signature` referencing something a later part creates (now including `ENCRYPTED_KEY`) is an
+  error, as it already was for `TIMESTAMP` and `USERNAME_TOKEN`. The same check was extended to
+  `encrypt`, which had the identical gap.
+- A `signature` referencing an element an *earlier* `encrypt` replaced outright (`type: ELEMENT`) is
+  an error, because there is nothing left there to sign. Scoped to `ELEMENT` only — `CONTENT` leaves
+  the element and its `wsu:Id` in place, which is exactly what keeps sign-then-encrypt of the body
+  working.
+
+A receiver whose `validate` list mirrors the wrong order gets `wsse:FailedCheck` and nothing more
+specific, on either side: ADR-006 keeps WS-Security fault text non-specific so it cannot serve as an
+oracle, and the receiver cannot tell "you signed and encrypted in the other order" from "the
+signature is simply wrong" anyway.
+
+### Consequences
+
+- `wsSecurity`'s `keystore` and `truststore` change meaning. Encryption inverts the signing roles:
+  `encrypt` resolves the recipient's certificate in the **truststore** (via `recipientAlias`), and
+  `decrypt` uses the **keystore** private key. The truststore is consequently no longer only a set of
+  CA trust anchors but also a store of peer certificates.
+- `recipientAlias` is required, with no "first alias" fallback: choosing a certificate automatically
+  would mean encrypting the message for whichever recipient happened to sort first.
+- `validate/decrypt` accepts one `xenc:EncryptedKey` per message and refuses a header carrying
+  several, rather than trying each against its private key. A multi-recipient message is a sender
+  that addressed no header at any `actor`; see the retention note above.
+- `validate/decrypt` requires an `xenc:EncryptedKey`, so configuring it already refuses a message
+  that arrived in the clear. `requiredReferences` adds *which* elements had to arrive encrypted:
+  without it, a peer that encrypted one trivial element and left the rest readable passes. It is the
+  confidentiality counterpart of `validate/signature`'s wrapping defence, and a `CONTENT` reference
+  requires everything inside the element to be ciphertext — one encrypted child next to a readable
+  sibling does not satisfy it.
+- The two reference types are consequently checked at different moments. A `CONTENT` requirement is
+  checked before anything is decrypted, because afterwards the content is plaintext and how it
+  arrived is unanswerable. An `ELEMENT` requirement has to be checked *after*, because element
+  encryption replaced the target with an `xenc:EncryptedData` and there is nothing for the reference
+  to resolve to until it has been decrypted; what would otherwise be lost is carried forward as the
+  set of elements an `ELEMENT` decryption produced, so a target sent in the clear still fails.
+- Nested (super-)encryption is not supported: any `xenc:EncryptedData` still present after every
+  `xenc:DataReference` has been processed is a fault. That both bounds the work an attacker can ask
+  for and stops unreferenced ciphertext reaching the backend uninspected.
+- A gateway that sits between a legacy peer and a modern one translates between the two algorithm
+  sets for free, because the inbound and outbound algorithms are independent: `validate/decrypt`
+  with `allowedLegacyAlgorithms` on one side and a default `secure/encrypt` on the other upgrades the
+  message in passing. That is the shape this support is meant to have — the legacy algorithm stays
+  on the one hop that requires it, rather than propagating through the whole topology.
+
 ## ADR-010 Default for `uriFactory`'s `allowIllegalCharacters`
 
 Status: FOR DISCUSSION
@@ -261,9 +449,10 @@ Date: 2026-08-07
 
 WS-Security support started as separate flat interceptors: `wsuTimestamp`, `usernameToken`,
 `usernameTokenVerifier`, `digitalSignature`, `digitalSignatureVerifier`. XML Encryption and
-Decryption are still to come. Flat siblings duplicate the keystore/truststore/namespace
-configuration on every element, cannot validate constraints that span elements, and leave the
-lifecycle of the `wsse:Security` header unowned.
+Decryption were still to come at the time of this decision; they arrived as `encrypt`/`decrypt`
+parts in the grammar described here — see ADR-011. Flat siblings duplicate the
+keystore/truststore/namespace configuration on every element, cannot validate constraints that span
+elements, and leave the lifecycle of the `wsse:Security` header unowned.
 
 Membrane is a gateway, so the common case is not "verify" or "sign" but both on the same message:
 validate what the client sent, then re-secure for the backend, and the mirror image on the way
@@ -318,6 +507,13 @@ The `wsu:Timestamp` is the one child that survives: it asserts nothing on its ow
 `secure/signature` may reference it (`by: TIMESTAMP`) to cover a freshness window the message already
 carried. Everything else is dropped — an allowlist, since every other child of a `wsse:Security`
 header is a claim.
+
+**Amended by ADR-011.** `xenc:EncryptedKey` turned out to be a second child that asserts nothing on
+its own, so the retained set is now the two of them, and the rule is stated as "retain what asserts
+nothing, drop what asserts identity or authorization". The key is kept only while an
+`xenc:EncryptedData` it might unlock is still in the message, because dropping key material while
+forwarding the ciphertext would make the message permanently unreadable. See ADR-011 for the full
+reasoning, including why this is a compatibility accommodation rather than a change of principle.
 
 ### Deviation from ADR-001 (ProblemDetails)
 

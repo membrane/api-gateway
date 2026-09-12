@@ -173,6 +173,15 @@ public class Parsers {
                         for (ChildElementInfo cei : ii.getChildElementSpecs())
                             if (cei.isList())
                                 bw.write("		builder.addPropertyValue(\"" + cei.getPropertyName() + "\", new java.util.ArrayList<Object>());\r\n");
+                        for (ChildElementInfo cei : ii.getChildElementSpecs()) {
+                            if (cei.isList() && cei.getTypeDeclaration().getKind() == javax.lang.model.element.ElementKind.ENUM) {
+                                String property = cei.getPropertyName();
+                                bw.write("        if (element.hasAttribute(\"" + property + "\")) builder.addPropertyValue(\"" + property + "\", " +
+                                        "java.util.Arrays.stream(element.getAttribute(\"" + property + "\").trim().split(\"\\\\s+\"))" +
+                                        ".filter(v -> !v.isEmpty()).map(v -> " + cei.getTypeDeclaration().getQualifiedName() +
+                                        ".valueOf(v.toUpperCase(java.util.Locale.ROOT))).toList());\n");
+                            }
+                        }
                         if (ii.getTci() != null)
                             bw.write("		builder.addPropertyValue(\"" + ii.getTci().getPropertyName() + "\", element.getTextContent());\r\n");
                         else

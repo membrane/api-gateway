@@ -39,6 +39,8 @@ import java.util.stream.Stream;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingBy;
+import static javax.lang.model.element.ElementKind.ENUM;
+import static javax.lang.model.element.ElementKind.ENUM_CONSTANT;
 import static javax.tools.Diagnostic.Kind.ERROR;
 import static javax.tools.StandardLocation.CLASS_OUTPUT;
 
@@ -279,7 +281,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
                         for (ElementInfo ei2 : cedi.getElementInfo())
                             ei2.addUsedBy(f.getValue());
 
-                        if (cedi.getElementInfo().isEmpty() && cedi.isRaiseErrorWhenNoSpecimen()) {
+                        if (cedi.getElementInfo().isEmpty() && cedi.isRaiseErrorWhenNoSpecimen() && f.getKey().getKind() != ENUM) {
                             processingEnv.getMessager().printMessage(ERROR, "@MCChildElement references " + f.getKey().getQualifiedName() + ", but there is no @MCElement among it and its subclasses.", f.getKey());
                             return true;
                         }
@@ -619,7 +621,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 
     private void validateEnumConstantsUppercase(TypeElement enumType) {
         for (Element enclosed : enumType.getEnclosedElements()) {
-            if (enclosed.getKind() == ElementKind.ENUM_CONSTANT) {
+            if (enclosed.getKind() == ENUM_CONSTANT) {
                 String name = enclosed.getSimpleName().toString();
                 if (!name.equals(name.toUpperCase(Locale.ROOT))) {
                     throw new ProcessingException("Enum constant '" + name + "' in " + enumType.getQualifiedName() +
