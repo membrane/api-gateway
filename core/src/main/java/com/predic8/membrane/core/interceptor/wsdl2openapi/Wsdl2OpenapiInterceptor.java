@@ -21,6 +21,7 @@ import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.Required;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.EmptyBody;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Interceptor;
@@ -41,6 +42,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.http.Header.CONTENT_TYPE;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
 import static com.predic8.membrane.core.interceptor.InterceptorUtil.getInterceptors;
@@ -133,7 +135,8 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
      */
     record OperationRuntime(Json2SoapTransformer requestTransformer,
                             Schema<?> responseSchema,
-                            Schema<?> faultDetailSchema) {}
+                            Schema<?> faultDetailSchema,
+                            boolean hasResponseBody) {}
 
     /** Replaced wholesale by init(), keyed by operation name — one entry per route. */
     private Map<String, OperationRuntime> operationRuntimes = Map.of();
@@ -249,10 +252,14 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
 
     private OperationRuntime buildOperationRuntime(String operationName) {
         Optional<Operation> wsdlOp = definitions.findOperation(operationName);
+        Schema<?> responseSchema = xsdToSchema.convertMessageParts(
+                wsdlOp.map(op -> op.getMessagesByDirection(OUTPUT)).orElse(List.of()));
         return new OperationRuntime(
                 new Json2SoapTransformer(definitions, operationName, xsdToSchema.getSchemasByNamespace()),
-                xsdToSchema.convertMessageParts(wsdlOp.map(op -> op.getMessagesByDirection(OUTPUT)).orElse(List.of())),
-                xsdToSchema.convertFaultDetail(wsdlOp.map(Operation::getFaults).orElse(List.of())));
+                responseSchema,
+                xsdToSchema.convertFaultDetail(wsdlOp.map(Operation::getFaults).orElse(List.of())),
+                responseSchema.get$ref() != null
+                        || (responseSchema.getProperties() != null && !responseSchema.getProperties().isEmpty()));
     }
 
     /** The routes built by the last {@code init()}. */
@@ -318,8 +325,15 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
                             runtime.responseSchema(),
                             runtime.faultDetailSchema());
 
-            exc.getResponse().setBodyContent(jsonResponse.getBytes(UTF_8));
-            exc.getResponse().getHeader().setContentType(APPLICATION_JSON);
+            if (runtime.hasResponseBody()) {
+                exc.getResponse().setBodyContent(jsonResponse.getBytes(UTF_8));
+                exc.getResponse().getHeader().setContentType(APPLICATION_JSON);
+            } else {
+                exc.getResponse().setStatusCode(204);
+                exc.getResponse().setStatusMessage("No Content");
+                exc.getResponse().setBody(new EmptyBody());
+                exc.getResponse().getHeader().removeFields(CONTENT_TYPE);
+            }
 
             OperationSettings opSettings = operationsByName.get(operationName);
             if (opSettings != null && !opSettings.getFlow().isEmpty()) {

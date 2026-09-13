@@ -58,6 +58,7 @@ class OpenApiGeneratorTest {
     static Definitions recursiveDefinitions;
     static Definitions articleDefinitions;
     static Definitions attributeDefinitions;
+    static Definitions emptyMessageDefinitions;
 
     @BeforeAll
     static void setup() throws Exception {
@@ -68,6 +69,7 @@ class OpenApiGeneratorTest {
         recursiveDefinitions = Definitions.parse(new ResolverMap(), "classpath:/ws/recursive-type.wsdl");
         articleDefinitions = Definitions.parse(new ResolverMap(), "classpath:/validation/article-service.wsdl");
         attributeDefinitions = Definitions.parse(new ResolverMap(), "classpath:/ws/attributes.wsdl");
+        emptyMessageDefinitions = Definitions.parse(new ResolverMap(), "classpath:/special/empty-message.wsdl");
     }
 
     @Test
@@ -155,6 +157,14 @@ class OpenApiGeneratorTest {
         assertFalse(yaml.contains("\"500\":"), "Errors are described by the default response, not by an explicit status");
         assertTrue(yaml.contains("application/problem+json:"));
         assertTrue(yaml.contains("$ref: \"#/components/schemas/ProblemDetails\""));
+    }
+
+    @Test
+    void emptyOutputMessageHasNoSuccessResponseContent() {
+        var response = converter(emptyMessageDefinitions, "/").generate().getPaths()
+                .get("/ping").getPost().getResponses().get("204");
+
+        assertNull(response.getContent(), "An operation without output parts must not advertise a response body");
     }
 
     @Test

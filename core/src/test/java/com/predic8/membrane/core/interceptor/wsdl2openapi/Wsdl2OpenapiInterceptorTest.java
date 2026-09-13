@@ -176,6 +176,25 @@ class Wsdl2OpenapiInterceptorTest {
     }
 
     @Test
+    void anEmptyOutputMessageReturns204WithoutContent() throws Exception {
+        var interceptor = wsdl2openapi("classpath:/special/empty-message.wsdl");
+        interceptor.init(new DummyTestRouter(), apiProxyWith(interceptor));
+
+        var exc = new Exchange(null);
+        exc.setProperty(operationPropertyKey(interceptor), "ping");
+        exc.setResponse(Response.ok("""
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soap:Body><pingResponse/></soap:Body>
+                </soap:Envelope>
+                """).build());
+
+        assertEquals(Outcome.CONTINUE, interceptor.handleResponse(exc));
+        assertEquals(204, exc.getResponse().getStatusCode());
+        assertEquals("", exc.getResponse().getBodyAsStringDecoded());
+        assertNull(exc.getResponse().getHeader().getContentType());
+    }
+
+    @Test
     void twoInstancesInOneFlowAreRejected() {
         var router = new DummyTestRouter();
         var proxy = apiProxyWith(wsdl2openapi("classpath:/ws/cities.wsdl"), wsdl2openapi("classpath:/blz-service.wsdl"));

@@ -513,13 +513,18 @@ public class Wsdl2OpenApiConverter {
     }
 
     private ApiResponses buildResponses(Operation wsdlOp) {
-        var response200 = new ApiResponse()
-                .description("Successful response")
-                .content(jsonContent(converter.convertMessageParts(wsdlOp.getMessagesByDirection(OUTPUT))));
-
-        return new ApiResponses()
-                .addApiResponse("200", response200)
-                .addApiResponse(ApiResponses.DEFAULT, buildErrorResponse(wsdlOp));
+        Schema<?> responseSchema = converter.convertMessageParts(wsdlOp.getMessagesByDirection(OUTPUT));
+        var responses = new ApiResponses();
+        // An output message without parts has no payload. 204 makes that contract explicit instead
+        // of publishing an unconstrained JSON object which falsely implies a response body.
+        if (isEmptySchema(responseSchema)) {
+            responses.addApiResponse("204", new ApiResponse().description("Successful response without content"));
+        } else {
+            responses.addApiResponse("200", new ApiResponse()
+                    .description("Successful response")
+                    .content(jsonContent(responseSchema)));
+        }
+        return responses.addApiResponse(ApiResponses.DEFAULT, buildErrorResponse(wsdlOp));
     }
 
     /**
