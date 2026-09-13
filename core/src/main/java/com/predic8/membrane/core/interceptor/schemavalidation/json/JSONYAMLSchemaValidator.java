@@ -25,6 +25,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.schemavalidation.AbstractMessageValidator;
+import com.predic8.membrane.core.interceptor.schemavalidation.ErrorDetailsPolicy;
 import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptor.FailureHandler;
 import com.predic8.membrane.core.resolver.Resolver;
 import org.jetbrains.annotations.NotNull;
@@ -41,7 +42,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import static com.fasterxml.jackson.core.StreamReadFeature.STRICT_DUPLICATE_DETECTION;
 import static com.networknt.schema.InputFormat.JSON;
 import static com.networknt.schema.InputFormat.YAML;
-import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -55,9 +55,12 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
 
     public static final String SCHEMA_VERSION_2020_12 = "2020-12";
 
+    private static final Set<String> LOGGED_ERROR_FIELDS = Set.of("message", "key", "keyword", "pointer");
+
     private final Resolver resolver;
     private final String jsonSchema;
     private final FailureHandler failureHandler;
+    private final ErrorDetailsPolicy errorDetailsPolicy;
 
     private final AtomicLong valid = new AtomicLong();
     private final AtomicLong invalid = new AtomicLong();
@@ -73,15 +76,24 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
     InputFormat inputFormat;
 
     public JSONYAMLSchemaValidator(Resolver resolver, String jsonSchema, FailureHandler failureHandler, String schemaVersion, InputFormat inputFormat) {
+        this(resolver, jsonSchema, failureHandler, schemaVersion, inputFormat, ErrorDetailsPolicy.FULL);
+    }
+
+    public JSONYAMLSchemaValidator(Resolver resolver, String jsonSchema, FailureHandler failureHandler, String schemaVersion, InputFormat inputFormat, ErrorDetailsPolicy errorDetailsPolicy) {
         this.resolver = resolver;
         this.jsonSchema = jsonSchema;
         this.failureHandler = failureHandler;
         this.schemaId = JSONSchemaVersionParser.parse(schemaVersion);
         this.inputFormat = inputFormat;
+        this.errorDetailsPolicy = errorDetailsPolicy;
     }
 
     public JSONYAMLSchemaValidator(Resolver resolver, String jsonSchema, FailureHandler failureHandler, String schemaVersion) {
         this(resolver, jsonSchema, failureHandler, schemaVersion, JSON);
+    }
+
+    public JSONYAMLSchemaValidator(Resolver resolver, String jsonSchema, FailureHandler failureHandler, String schemaVersion, ErrorDetailsPolicy errorDetailsPolicy) {
+        this(resolver, jsonSchema, failureHandler, schemaVersion, JSON, errorDetailsPolicy);
     }
 
     public JSONYAMLSchemaValidator(Resolver resolver, String jsonSchema, FailureHandler failureHandler) {
@@ -139,22 +151,17 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
             return CONTINUE;
         }
 
-        log.debug("Validation failed: {}", assertions);
-
         return reportFailure(exc, flow, getMapForProblemDetails(assertions));
     }
 
     private Outcome reportFailure(Exchange exc, Flow flow, List<Map<String, Object>> mapForProblemDetails) {
         invalid.incrementAndGet();
+        log.info("{} message did not validate against {}: {}", flow, jsonSchema, failedConstraints(mapForProblemDetails));
 
         failureHandler.handleFailure(mapForProblemDetails.toString(), exc);
 
-        user(false, getName())
-                .title(getErrorTitle())
-                .addSubType("validation")
-                .component(getName())
-                .internal("flow", flow.name())
-                .internal("errors", mapForProblemDetails)
+        errorDetailsPolicy.problemDetails(getName(), getErrorTitle(),
+                        pd -> pd.topLevel("flow", flow.name()).topLevel("errors", mapForProblemDetails))
                 .buildAndSetResponse(exc);
 
         return ABORT;
@@ -173,6 +180,14 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
             parser.nextToken();
         }
         return assertions;
+    }
+
+    private static List<Map<String, Object>> failedConstraints(List<Map<String, Object>> errors) {
+        return errors.stream().<Map<String, Object>>map(error -> {
+            var constraint = new LinkedHashMap<>(error);
+            constraint.keySet().retainAll(LOGGED_ERROR_FIELDS);
+            return constraint;
+        }).toList();
     }
 
     private @NotNull List<Map<String, Object>> getMapForProblemDetails(List<Error> assertions) {

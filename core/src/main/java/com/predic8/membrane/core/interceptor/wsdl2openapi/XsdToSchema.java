@@ -56,7 +56,7 @@ import static java.lang.Boolean.TRUE;
  *   <li>xsd:restriction facets: enumeration, pattern, length, minLength, maxLength,
  *       minInclusive, maxInclusive, minExclusive, maxExclusive</li>
  *   <li>nillable="true" (produces a nullable schema)</li>
- *   <li>maxOccurs="unbounded" or > 1 (produces ArraySchema)</li>
+ *   <li>minOccurs/maxOccurs on repeated elements (produces ArraySchema with minItems/maxItems)</li>
  *   <li>Cross-namespace type references (resolved via the full import graph)</li>
  * </ul>
  *
@@ -522,12 +522,39 @@ public class XsdToSchema {
         schema.addType(NULL_TYPE);
     }
 
-    /** Wraps {@code fieldSchema} in an ArraySchema if the declaration allows more than one occurrence. */
+    /**
+     * Wraps {@code fieldSchema} in an ArraySchema if the declaration allows more than one occurrence.
+     * Numeric occurrence bounds describe the array itself; nillability and values have already been
+     * applied to its items by {@link #declaredSchema}.
+     */
     private static Schema<?> applyMaxOccurs(Element declaration, Schema<?> fieldSchema) {
-        if (allowsMany(declaration.getAttribute("maxOccurs"))) {
-            return new ArraySchema().items(fieldSchema);
+        String maxOccurs = declaration.getAttribute("maxOccurs");
+        if (!allowsMany(maxOccurs)) return fieldSchema;
+
+        var array = new ArraySchema().items(fieldSchema);
+        Integer maxItems = numericOccurs(maxOccurs);
+        if (maxItems != null) array.setMaxItems(maxItems);
+
+        Integer minItems = numericOccurs(declaration.getAttribute("minOccurs"));
+        if (minItems != null && minItems > 1) array.setMinItems(minItems);
+        return array;
+    }
+
+    /**
+     * Parses an XSD occurrence bound for OpenAPI's integer-valued array keywords.
+     *
+     * <p>Returns {@code null} for an absent bound, {@code "unbounded"}, or any malformed or
+     * out-of-range value, leaving the corresponding OpenAPI keyword unspecified.
+     *
+     * @param occurs the XSD {@code minOccurs} or {@code maxOccurs} attribute value
+     * @return the parsed bound, or {@code null} when it cannot be represented as an integer
+     */
+    private static Integer numericOccurs(String occurs) {
+        try {
+            return occurs == null || occurs.isEmpty() ? null : Integer.valueOf(occurs);
+        } catch (NumberFormatException e) {
+            return null;
         }
-        return fieldSchema;
     }
 
     /**
@@ -953,8 +980,8 @@ public class XsdToSchema {
             case "string" -> new StringSchema();
             case "date" -> withFormat(new StringSchema(), "date");
             case "dateTime" -> withFormat(new StringSchema(), "date-time");
-            case "base64Binary" -> withFormat(new StringSchema(), "byte");
-            case "hexBinary" -> withFormat(new StringSchema(), "binary");
+            case "base64Binary" -> new StringSchema().contentEncoding("base64");
+            case "hexBinary" -> withXsdType(new StringSchema().pattern("^([0-9a-fA-F]{2})*$"), localPart);
             case "anyURI" -> withXsdType(withFormat(new StringSchema(), "uri"), localPart);
             case "time" -> withXsdType(withFormat(new StringSchema(), "time"), localPart);
             case "duration" -> withXsdType(withFormat(new StringSchema(), "duration"), localPart);
