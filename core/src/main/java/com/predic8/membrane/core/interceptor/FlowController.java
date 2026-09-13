@@ -115,7 +115,6 @@ public class FlowController {
         String component = interceptors.get(pos).getDisplayName();
         String detail = "Aborting! Exception caused in %s during %s %s flow."
                 .formatted(component, exchange.getRequest().getUri(), flow);
-        log.debug(detail, e);
         createErrorProblem(exchange, component, detail, e)
                 .exception(e)
                 .buildAndSetResponse(exchange);
@@ -125,13 +124,16 @@ public class FlowController {
     }
 
     private ProblemDetails createErrorProblem(Exchange exchange, String component, String detail, Exception e) {
-        boolean production = router.getConfiguration().isProduction();
+        var production = router.getConfiguration().isProduction();
         // Attribute failures to the message, since either body can be read in either flow.
-        ReadingBodyException bodyFailure = throwableOfType(e, ReadingBodyException.class);
+        var bodyFailure = throwableOfType(e, ReadingBodyException.class);
         if (bodyFailure != null && bodyFailure.belongsTo(exchange.getRequest())
                 && !bodyFailure.belongsTo(exchange.getResponse())) {
-            return user(production, component).detail(getRootCause(bodyFailure).getMessage());
+            return user(production, component)
+                    .flow(REQUEST)
+                    .detail(getRootCause(bodyFailure).getMessage());
         }
+        log.warn(detail, e);  // Not exclusively attributable to the request body.
         return internal(production, component).detail(detail);
     }
 

@@ -135,11 +135,9 @@ public abstract class Message {
 	 * elements with base64-encoded attachment content. Unlike this method,
 	 * {@link #getBodyAsStringDecoded()} leaves the multipart package intact.</p>
 	 *
-	 * <p>Supports streaming where the decoding path allows it. XOP/MTOM reassembly and deflate
-	 * decoding buffer the body before this method returns.</p>
+	 * <p>Supports streaming where the decoding path allows it.</p>
 	 */
 	public InputStream getBodyAsStreamDecoded() throws ReadingBodyException {
-		// Possible future improvement: cache the decoded result
 		try {
 			Message m = xopr.getReconstitutedMessage(this);
 			if (m != null)
@@ -163,8 +161,8 @@ public abstract class Message {
 	 * reassembled XML with attachment content inlined as base64.</p>
 	 *
 	 * <p>Blocks until the body has been fully received and allocates a String for the whole body.
-	 * Prefer {@link #getBodyAsStreamDecoded()} for performance-sensitive consumers, taking its
-	 * additional XOP/MTOM reassembly into account.</p>
+	 * Prefer {@link #getBodyAsStreamDecoded()} for performance-sensitive consumers or to avoid
+	 * allocating the whole decoded body in memory where streaming is supported.</p>
 	 *
 	 * @return the message's body as a Java String.
 	 */
