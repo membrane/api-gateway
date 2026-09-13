@@ -76,6 +76,16 @@ class XOPReconstitutorTest {
         assertTrue(actual.contains("MDEyMzQ1Njc4OQ=="));
     }
 
+    @Test
+    void messageBodyAsStringDecodedMatchesStreamDecodedForXop() throws Exception {
+        Response response = xopResponse();
+        String fromStream = IOUtils.toString(response.getBodyAsStreamDecoded(), UTF_8);
+
+        assertEquals(fromStream, response.getBodyAsStringDecoded());
+        assertFalse(response.getBodyAsStringDecoded().startsWith("--"),
+                "string accessor should reassemble XOP, not return raw multipart");
+    }
+
     // -------------------------------------------------------------------------
     // Guard conditions — getReconstitutedMessage returns null
     // -------------------------------------------------------------------------

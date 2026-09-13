@@ -164,7 +164,9 @@ public abstract class Message {
 	 */
 	public String getBodyAsStringDecoded() throws ReadingBodyException {
 		try {
-			return new String(MessageUtil.getContent(this), getCharsetOrDefault());
+			return new String(getBodyAsStreamDecoded().readAllBytes(), getCharsetOrDefault());
+		} catch (ReadingBodyException e) {
+			throw e;
 		} catch (Exception e) {
 			throw new ReadingBodyException(e);
 		}
