@@ -953,8 +953,8 @@ public class XsdToSchema {
             case "string" -> new StringSchema();
             case "date" -> withFormat(new StringSchema(), "date");
             case "dateTime" -> withFormat(new StringSchema(), "date-time");
-            case "base64Binary" -> withFormat(new StringSchema(), "byte");
-            case "hexBinary" -> withFormat(new StringSchema(), "binary");
+            case "base64Binary" -> new StringSchema().contentEncoding("base64");
+            case "hexBinary" -> withXsdType(new StringSchema().pattern("^([0-9a-fA-F]{2})*$"), localPart);
             case "anyURI" -> withXsdType(withFormat(new StringSchema(), "uri"), localPart);
             case "time" -> withXsdType(withFormat(new StringSchema(), "time"), localPart);
             case "duration" -> withXsdType(withFormat(new StringSchema(), "duration"), localPart);
