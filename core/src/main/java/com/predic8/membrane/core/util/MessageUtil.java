@@ -13,19 +13,35 @@
    limitations under the License. */
 package com.predic8.membrane.core.util;
 
+import com.predic8.membrane.core.http.Chunk;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.ReadingBodyException;
 import org.brotli.dec.BrotliInputStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.zip.DataFormatException;
 import java.util.zip.GZIPInputStream;
-
-import static com.predic8.membrane.core.util.ByteUtil.getDecompressedData;
+import java.util.zip.Inflater;
 
 public class MessageUtil {
 
+	private static final Logger log = LoggerFactory.getLogger(MessageUtil.class);
+
+	/**
+	 * Returns body bytes as a stream with supported Content-Encodings (gzip, deflate, Brotli) removed.
+	 * Transfer-Encodings have already been removed by the message body layer.
+	 * Does not reassemble XOP/MTOM multipart packages; use {@link Message#getBodyAsStreamDecoded()}
+	 * when reassembled XML is required.
+	 *
+	 * @see #getContent(Message)
+	 */
 	public static InputStream getContentAsStream(Message msg) {
 		try {
 			if (msg.isGzip()) {
@@ -43,26 +59,73 @@ public class MessageUtil {
 		}
 	}
 	
+	/**
+	 * Returns the complete body bytes with the same Content-Encoding-only decoding as
+	 * {@link #getContentAsStream(Message)}. Blocks until the body has been fully received.
+	 * Does not reassemble XOP/MTOM: MIME boundaries and attachment parts remain in the result.
+	 * Use {@link Message#getBodyAsStreamDecoded()} when reassembled XML is required.
+	 */
 	public static byte[] getContent(Message msg) {
 		try {
 			if (msg.isGzip()) {
-				try (InputStream lInputStream = msg.getBodyAsStream();
-					 GZIPInputStream lGZIPInputStream = new GZIPInputStream(lInputStream)) {
-					return lGZIPInputStream.readAllBytes();
+				try (var is = msg.getBodyAsStream();
+					 var decoded = new GZIPInputStream(is)) {
+					return decoded.readAllBytes();
 				}
 			}
 			if (msg.isDeflate()) {
 				return getDecompressedData(msg.getBody().getContent());
 			}
 			if (msg.isBrotli()) {
-				try (InputStream lInputStream = msg.getBodyAsStream();
-					 BrotliInputStream lBrotliInputStream = new BrotliInputStream(lInputStream)) {
-					return lBrotliInputStream.readAllBytes();
+				try (var is = msg.getBodyAsStream();
+					 var decoded = new BrotliInputStream(is)) {
+					return decoded.readAllBytes();
 				}
 			}
 			return msg.getBody().getContent();
 		} catch (IOException e) {
 			throw new ReadingBodyException(e);
+		}
+	}
+
+	public static byte[] getDecompressedData(byte[] compressedData) throws IOException {
+		var decompressor = new Inflater(true);
+		try {
+			decompressor.setInput(compressedData);
+
+			List<Chunk> chunks = new ArrayList<>();
+
+			while (!decompressor.finished()) {
+				byte[] buf = new byte[1024];
+				int count;
+				try {
+					count = decompressor.inflate(buf);
+				} catch (DataFormatException e) {
+					throw new IOException(e);
+				}
+				if (buf.length == count) {
+                    chunks.add(new Chunk(buf));
+				} else if (count < buf.length) {
+					byte[] shortContent = new byte[count];
+					System.arraycopy(buf, 0, shortContent, 0, count);
+                    chunks.add(new Chunk(shortContent));
+				}
+			}
+
+			log.debug("Number of decompressed chunks: {}", chunks.size());
+			if (!chunks.isEmpty()) {
+
+				var bos = new ByteArrayOutputStream();
+
+				for (Chunk chunk : chunks) {
+					chunk.write(bos);
+				}
+				return bos.toByteArray();
+			}
+			return null;
+		} finally {
+			// Inflater is not AutoCloseable in Java 21, so use finally instead of try-with-resources.
+			decompressor.end();
 		}
 	}
 }
