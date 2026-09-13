@@ -13,7 +13,9 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
+import com.predic8.membrane.core.exceptions.ProblemDetails;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.router.Router;
 import org.slf4j.Logger;
@@ -22,9 +24,12 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.util.ExceptionUtil.getRootCause;
+import static org.apache.commons.lang3.exception.ExceptionUtils.throwableOfType;
 
 /**
  * Controls the flow of an exchange through a chain of interceptors. What the outcomes mean and
@@ -107,16 +112,27 @@ public class FlowController {
      * by calling their {@link Interceptor#handleAbort(Exchange)}.
      */
     private Outcome abortWithError(Exchange exchange, List<Interceptor> interceptors, int pos, Flow flow, Exception e) {
-        Interceptor interceptor = interceptors.get(pos);
-        String msg = "Aborting! Exception caused in %s during %s %s flow.".formatted(interceptor.getDisplayName(), exchange.getRequest().getUri(), flow);
-        log.warn(msg, e);
-        internal(router.getConfiguration().isProduction(), interceptor.getDisplayName())
-                .detail(msg)
+        String component = interceptors.get(pos).getDisplayName();
+        String detail = "Aborting! Exception caused in %s during %s %s flow."
+                .formatted(component, exchange.getRequest().getUri(), flow);
+        log.debug(detail, e);
+        createErrorProblem(exchange, component, detail, e)
                 .exception(e)
                 .buildAndSetResponse(exchange);
         exchange.setProperty(ABORTION_REASON, e);
         invokeAbortHandlers(exchange, interceptors, pos);
         return ABORT;
+    }
+
+    private ProblemDetails createErrorProblem(Exchange exchange, String component, String detail, Exception e) {
+        boolean production = router.getConfiguration().isProduction();
+        // Attribute failures to the message, since either body can be read in either flow.
+        ReadingBodyException bodyFailure = throwableOfType(e, ReadingBodyException.class);
+        if (bodyFailure != null && bodyFailure.belongsTo(exchange.getRequest())
+                && !bodyFailure.belongsTo(exchange.getResponse())) {
+            return user(production, component).detail(getRootCause(bodyFailure).getMessage());
+        }
+        return internal(production, component).detail(detail);
     }
 
     public Outcome invokeResponseHandlers(Exchange exchange, List<Interceptor> interceptors) {

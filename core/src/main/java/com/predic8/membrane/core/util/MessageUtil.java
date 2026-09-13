@@ -20,10 +20,7 @@ import org.brotli.dec.BrotliInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.DataFormatException;
@@ -45,17 +42,17 @@ public class MessageUtil {
 	public static InputStream getContentAsStream(Message msg) {
 		try {
 			if (msg.isGzip()) {
-				return new GZIPInputStream(msg.getBodyAsStream());
+				return associateDecodingFailures(new GZIPInputStream(msg.getBodyAsStream()), msg);
 			}
 			if (msg.isDeflate()) {
 				return new ByteArrayInputStream(getDecompressedData(msg.getBody().getContent()));
 			}
 			if (msg.isBrotli()) {
-				return new BrotliInputStream(msg.getBodyAsStream());
+				return associateDecodingFailures(new BrotliInputStream(msg.getBodyAsStream()), msg);
 			}
 			return msg.getBodyAsStream();
 		} catch (IOException e) {
-			throw new ReadingBodyException(e);
+			throw new ReadingBodyException(e, msg);
 		}
 	}
 	
@@ -84,8 +81,38 @@ public class MessageUtil {
 			}
 			return msg.getBody().getContent();
 		} catch (IOException e) {
-			throw new ReadingBodyException(e);
+			throw new ReadingBodyException(e, msg);
 		}
+	}
+
+	/**
+	 * Associates failures during reads from a streaming decoder with the original message.
+	 * These failures occur after getContentAsStream has returned, outside its catch block.
+	 * The association lets error handling distinguish request failures (400) from backend
+	 * response failures (500), even if the encoded body has already been read successfully.
+	 * Wrapping the exception does not notify body observers again: transport completion
+	 * may already have released the connection.
+	 */
+	private static InputStream associateDecodingFailures(InputStream decoded, Message message) {
+		return new FilterInputStream(decoded) {
+			@Override
+			public int read() {
+				try {
+					return in.read();
+				} catch (IOException e) {
+					throw new ReadingBodyException(e, message);
+				}
+			}
+
+			@Override
+			public int read(byte[] bytes, int offset, int length) {
+				try {
+					return in.read(bytes, offset, length);
+				} catch (IOException e) {
+					throw new ReadingBodyException(e, message);
+				}
+			}
+		};
 	}
 
 	public static byte[] getDecompressedData(byte[] compressedData) throws IOException {
