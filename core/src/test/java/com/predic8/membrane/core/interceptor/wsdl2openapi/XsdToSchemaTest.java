@@ -317,7 +317,8 @@ class XsdToSchemaTest {
                 </xsd:element>
                 """), "list");
 
-        assertInstanceOf(ArraySchema.class, fieldOf(schema, "item"));
+        var item = assertInstanceOf(ArraySchema.class, fieldOf(schema, "item"));
+        assertNull(item.getMaxItems());
     }
 
     @Test
@@ -330,7 +331,24 @@ class XsdToSchemaTest {
                 </xsd:element>
                 """), "list");
 
-        assertInstanceOf(ArraySchema.class, fieldOf(schema, "item"));
+        var item = assertInstanceOf(ArraySchema.class, fieldOf(schema, "item"));
+        assertEquals(3, item.getMaxItems());
+    }
+
+    @Test
+    void repeatedElementCarriesItsNumericOccurrenceBoundsAsArrayBounds() {
+        var schema = convert(converterFor("""
+                <xsd:element name="list">
+                  <xsd:complexType><xsd:sequence>
+                    <xsd:element name="item" type="xsd:string" minOccurs="2" maxOccurs="3"/>
+                  </xsd:sequence></xsd:complexType>
+                </xsd:element>
+                """), "list");
+
+        var item = assertInstanceOf(ArraySchema.class, fieldOf(schema, "item"));
+        assertEquals(2, item.getMinItems());
+        assertEquals(3, item.getMaxItems());
+        assertTrue(isRequired(schema, "item"), "minOccurs still requires the array property");
     }
 
     @Test
