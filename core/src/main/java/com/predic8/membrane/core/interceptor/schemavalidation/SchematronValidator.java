@@ -44,6 +44,7 @@ public class SchematronValidator extends AbstractMessageValidator {
 	private final ArrayBlockingQueue<Transformer> transformers;
 	private final XMLInputFactory xmlInputFactory;
 	private final ValidatorInterceptor.FailureHandler failureHandler;
+	private final ErrorDetailsPolicy errorDetailsPolicy;
 	private final XOPReconstitutor xopr = new XOPReconstitutor();
 
 	private final AtomicLong valid = new AtomicLong();
@@ -54,8 +55,9 @@ public class SchematronValidator extends AbstractMessageValidator {
 		return "Schematron Validator";
 	}
 
-	public SchematronValidator(String schematron, ValidatorInterceptor.FailureHandler failureHandler, Router router, BeanFactory beanFactory) throws Exception {
+	public SchematronValidator(String schematron, ValidatorInterceptor.FailureHandler failureHandler, Router router, BeanFactory beanFactory, ErrorDetailsPolicy errorDetailsPolicy) throws Exception {
 		this.failureHandler = failureHandler;
+		this.errorDetailsPolicy = errorDetailsPolicy;
 
 		//works as standalone "com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl"
 		TransformerFactory fac;
@@ -141,10 +143,9 @@ public class SchematronValidator extends AbstractMessageValidator {
 
 		if (failureHandler != null) {
 			failureHandler.handleFailure(message, exc);
-			exc.setResponse(Response.badRequest().contentType(TEXT_XML_UTF8).body((MSG_HEADER + MSG_FOOTER).getBytes(UTF_8)).build());
-		} else {
-			exc.setResponse(Response.badRequest().contentType(TEXT_XML_UTF8).body(message.getBytes(UTF_8)).build());
 		}
+		String body = errorDetailsPolicy.validationDetails() ? message : MSG_HEADER + MSG_FOOTER;
+		exc.setResponse(Response.badRequest().contentType(TEXT_XML_UTF8).body(body.getBytes(UTF_8)).build());
 		if (!escape)
 			exc.getResponse().getHeader().add(VALIDATION_ERROR_SOURCE, source);
 	}

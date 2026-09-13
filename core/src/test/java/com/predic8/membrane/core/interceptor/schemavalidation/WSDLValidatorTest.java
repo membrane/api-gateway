@@ -91,6 +91,35 @@ public class WSDLValidatorTest {
     };
 
     @Test
+    void validationDetailsOffKeepsFaultButDropsDetail() throws Exception {
+        var exc = getRequestExchange(soap11("""
+                    <cit:getCity xmlns:cit="https://predic8.de/cities"><wrong/></cit:getCity>
+                """));
+
+        assertEquals(ABORT, createValidator(new ErrorDetailsPolicy(false, false)).validateMessage(exc, REQUEST));
+
+        String body = exc.getResponse().getBodyAsStringDecoded();
+        assertEquals(200, exc.getResponse().getStatusCode());
+        assertTrue(body.contains("<faultcode>soap:Client</faultcode>"), body);
+        assertTrue(body.contains("WSDL message validation failed"), body);
+        assertFalse(body.contains("cvc-"), "schema error codes must not leak when details are off: " + body);
+        assertFalse(body.contains("<detail>"), body);
+    }
+
+    @Test
+    void validationDetailsOnKeepsFaultDetail() throws Exception {
+        var exc = getRequestExchange(soap11("""
+                    <cit:getCity xmlns:cit="https://predic8.de/cities"><wrong/></cit:getCity>
+                """));
+
+        assertEquals(ABORT, createValidator(new ErrorDetailsPolicy(true, true)).validateMessage(exc, REQUEST));
+
+        String body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains("<detail>"), body);
+        assertTrue(body.contains("cvc-"), "the WSDL is public, so its errors stay visible in production: " + body);
+    }
+
+    @Test
     void invalidRequestElement() throws Exception {
         var exc = getRequestExchange(soap11("""
                     <foo:notInSchema xmlns:foo="http://membrane-api.io/foo"/>
@@ -664,6 +693,13 @@ public class WSDLValidatorTest {
 
     private static WSDLValidator createValidator(String location, String serviceName, boolean skipFaults) {
         var validator = new WSDLValidator(new ResolverMap(), location, serviceName, (msg, exc) -> log.info("Validation failure: {}", msg), skipFaults);
+        validator.init();
+        return validator;
+    }
+
+    private static WSDLValidator createValidator(ErrorDetailsPolicy policy) {
+        var validator = new WSDLValidator(new ResolverMap(), CITIES_WSDL, null,
+                (msg, exc) -> log.info("Validation failure: {}", msg), false, policy);
         validator.init();
         return validator;
     }

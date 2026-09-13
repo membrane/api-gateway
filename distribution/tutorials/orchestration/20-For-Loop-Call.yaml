@@ -24,7 +24,7 @@ api:
   port: 2000
   flow:
     - for:
-        # Evaluates to a list of Maps like [{ "name": "Mango", "price": 1.23 },..]
+        # Evaluates to a list of objects like [{ "name": "Mango", "price": 1.23 },..]
         in: $.fruits
         language: jsonpath
         flow:

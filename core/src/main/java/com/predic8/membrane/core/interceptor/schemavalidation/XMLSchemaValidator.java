@@ -40,7 +40,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.predic8.membrane.annot.Constants.XSD_NS;
-import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
 
 public class XMLSchemaValidator extends AbstractXMLSchemaValidator {
 
@@ -48,6 +47,10 @@ public class XMLSchemaValidator extends AbstractXMLSchemaValidator {
 
     public XMLSchemaValidator(ResolverMap resourceResolver, String location, ValidatorInterceptor.FailureHandler failureHandler) {
         super(resourceResolver, location, failureHandler);
+    }
+
+    public XMLSchemaValidator(ResolverMap resourceResolver, String location, ValidatorInterceptor.FailureHandler failureHandler, ErrorDetailsPolicy errorDetailsPolicy) {
+        super(resourceResolver, location, failureHandler, errorDetailsPolicy);
     }
 
     @Override
@@ -105,19 +108,14 @@ public class XMLSchemaValidator extends AbstractXMLSchemaValidator {
 
     @Override
     protected void setErrorResponse(Exchange exchange, Interceptor.Flow flow, String message) {
-        user(false,getName())
-                .title(getErrorTitle())
-                .addSubType("validation")
-                .component(getName())
-                .internal("error", message)
+        errorDetailsPolicy.problemDetails(getName(), getErrorTitle(), pd -> pd.topLevel("error", message))
                 .buildAndSetResponse(exchange);
     }
 
     @Override
     protected void setErrorResponse(Exchange exchange, Interceptor.Flow flow, List<Exception> exceptions) {
-        user(false,getName())
-                .title(getErrorTitle())
-                .internal("validation", convertExceptionsToMap(exceptions))
+        errorDetailsPolicy.problemDetails(getName(), getErrorTitle(),
+                        pd -> pd.topLevel("validation", convertExceptionsToMap(exceptions)))
                 .buildAndSetResponse(exchange);
     }
 

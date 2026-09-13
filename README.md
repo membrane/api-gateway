@@ -93,6 +93,10 @@ Secure legacy services with WSDL and XSD message validation, XML message protect
 
 Validate messages against API and service specifications. Don't let invalid messages slip into your organization.
 
+## API Orchestration
+
+Orchestrate **calls to external APIs** and process collections with loops and conditional flows.
+
 ## Easy Configuration and Extensibility
 
 Take a look at the samples below and the tutorials to see what just a few lines of configuration can do.
@@ -124,41 +128,40 @@ As a result, Membrane can maintain high performance even when multiple plugins f
 * Deploy Membrane in **containers, virtual machines, private clouds, or public clouds**.
 
 
-# Membrane Features with Exsamples 
+# Membrane Features with Examples 
 
 For a quick overview of what you can do with Membrane, the sections below provide a selection of short examples and configuration snippets.
 
-1. [OpenAPI Deployment, Message Validation and Swagger UI](#1-openapi-deployment-message-validation-and-swagger-ui)
+1. [OpenAPI Deployment, Validation and Swagger UI](#1-openapi-deployment-validation-and-swagger-ui)
 2. [Legacy Web Services with SOAP and WSDL](#2-legacy-web-services-with-soap-and-wsdl)
+   - [WSDL to OpenAPI Conversion](#wsdl-to-openapi-conversion)
    - [API Configuration from WSDL](#api-configuration-from-wsdl)
    - [Message Validation against WSDL and XSD](#message-validation-against-wsdl-and-xsd)
+   - [Web Services Security (WSS)](#web-services-security-wss)
 3. [AI and LLM Gateway](#3-ai-and-llm-gateway)
    - [MCP Protection](#mcp-protection)
    - [LLM Gateway](#llm-gateway)
 4. [Routing](#4-routing)
 5. [Message Transformation](#5-message-transformation)
+   - [POST to GET with Query Parameters](#post-to-get-with-query-parameters)
    - [Templates](#templates)
-6. [Scripting](#6-scripting)
-   - [Conditional Processing With the ´if´-Statement](#conditional-processing-with-the-if-statement)
-7. [Security](#7-security)
+6. [Orchestration and Call Outs](#6-orchestration-and-call-outs)
+7. [Scripting](#7-scripting)
+   - [Conditional Processing With the 'if'-Statement](#conditional-processing-with-the-if-statement)
+8. [Security](#8-security)
    - [API Keys](#api-keys)
    - [JSON Web Tokens](#json-web-tokens)
    - [OAuth2](#oauth2)
    - [SSL/TLS](#ssltls)
    - [XML, JSON, JSON-RPC and GraphQL Protection](#xml-json-json-rpc-and-graphql-protection)
-8. [Traffic Control](#8-traffic-control)
+9. [Traffic Control](#9-traffic-control)
    - [Rate Limiting](#rate-limiting)
    - [Load Balancing](#load-balancing)
-9. [Operation](#9-operation)
+10. [Operation](#10-operation)
    - [Monitoring with Prometheus and Grafana](#monitoring-with-prometheus-and-grafana)
    - [OpenTelemetry Integration](#opentelemetry-integration)
-10. [Community and Enterprise Support](#10-community-and-enterprise-support)
-    - [Community Support](#community-support)
-    - [Enterprise-Grade Support](#enterprise-grade-support)
-    - [API Gateway eBook(Free Download)](#api-gateway-ebookfree-download)
-    - [Participate in the API Tech Talk](#participate-in-the-api-tech-talk)
 
-# 1. OpenAPI Deployment, Message Validation and Swagger UI
+# 1. OpenAPI Deployment, Validation and Swagger UI
 
 OpenAPI is a native feature in Membrane. The gateway supports OpenAPI 3.0, 3.1, and 3.2, including the QUERY HTTP method.
 
@@ -185,6 +188,94 @@ See: [OpenAPI tutorial](distribution/tutorials/openapi/)
 # 2. Legacy Web Services with SOAP and WSDL
 
 Integrate and modernize legacy SOAP web services.
+
+## WSDL to OpenAPI Conversion
+
+Membrane can expose a SOAP web service described by WSDL as a REST API with an OpenAPI specification.
+
+This configuration:
+
+```yaml
+api:
+  port: 2000
+  flow:
+    - wsdl2openapi:
+        wsdl: mocks/partner.wsdl
+        operations:
+          getPartners:
+            method: GET
+            path: /partners
+            tag: Partner
+          getPartner:
+            method: GET
+            path: /partners/{id}
+            tag: Partner
+          createPartner:
+            method: POST
+            path: /partners
+            tag: Partner
+          updatePartner:
+            method: PUT
+            path: /partners/{id}
+            tag: Partner
+          deletePartner:
+            method: DELETE
+            path: /partners/{id}
+            tag: Partner
+  target:
+    url: http://localhost:3000/partner-service
+```
+
+turns this [WSDL](distribution/tutorials/wsdl-to-openapi/mocks/partner.wsdl) into an OpenAPI specification including JSON schemas derived from the WSDL's XSD schemas:
+
+![OpenAPI from WSDL](docs/images/openapi-from-wsdl.png)
+
+After deploying this configuration, clients can send JSON requests to the REST API. Membrane transforms them into SOAP requests for the backend Web Service and converts the XML responses back to JSON.
+
+The conversion uses the XML Schema definitions from the WSDL to map data precisely between JSON and XML.
+
+## Manual SOAP to REST Conversion
+
+The easiest way to expose a SOAP Web Service as a REST API is to use the `wsdl2openapi` plugin described above.
+
+For more control over the conversion, you can define the REST API manually and map individual REST endpoints to SOAP operations.
+
+The following configuration accepts a request such as `GET /cities/Tokio`, creates a SOAP request for the backend service, and transforms the SOAP response into JSON:
+
+```yaml
+api:
+  port: 2000
+  method: GET
+  path:
+    uri: /cities/{city}
+  flow:
+    - request:
+        - soapBody:
+            src: |
+              <getCity xmlns="https://predic8.de/cities">
+                  <name>${pathParam.city}</name>
+              </getCity>
+        - setHeader:
+            name: SOAPAction
+            value: https://predic8.de/cities/get
+    - response:
+        - template:
+            contentType: application/json
+            src: |
+              {
+                "country": ${xpath('//country')},
+                "population": ${xpath('//population')}
+              }
+  target:
+    # Change method to POST
+    method: POST
+    url: https://www.predic8.de/city-service
+```
+
+**Note:** Membrane automatically escapes expression values such as ${xpath(...)} for the specified content type.
+
+See the [SOAP to REST tutorial](distribution/tutorials/soap-rest-converter) for more details.
+
 
 ## API Configuration from WSDL
 
@@ -213,6 +304,30 @@ soapProxy:
     # Validates SOAP messages against the WSDL and XSDs
     - validator: {}
 ```
+
+## Web Services Security (WSS)
+
+Legacy SOAP services protected with **Web Services Security (WS-Security)** may require credentials and an XML Signature.
+
+```yaml
+api:
+  port: 2000
+  flow:
+     - wsSecurity:
+         secure:
+           - usernameToken:
+               username: alice
+               password: secret
+           - signature:
+               references:
+                 - by: BODY
+                 - by: USERNAME_TOKEN
+target:
+    url: http://localhost:2001
+```
+
+Membrane can create and validate **WS-Security UsernameTokens** and XML Signatures.
+
 
 # 3. AI and LLM Gateway
 
@@ -304,41 +419,87 @@ See the [API reference documentation](https://www.membrane-api.io/docs/current/a
 
 # 5. Message Transformation
 
+## POST to GET with Query Parameters
+
+Transform a POST request such as:
+
+```
+POST /products
+Content-Type: application/json
+
+{"limit": 100, "sort": "name"}
+```
+
+into a GET request: `GET /products?limit=100&sort=name` using a URI template with **JSONPath** expressions:
+
+```yaml
+api:
+  port: 2000
+  target:
+    method: GET
+    url: https://api.predic8.de/shop/v2/products?sort=${$.sort}&limit=${$.limit}
+    language: jsonpath
+```
+
+**Note:** Membrane automatically escapes expression values such as ${$.sort} for the specified content type.
+
+See the [tutorial](distribution/tutorials/transformation/20-GET-to-POST.yaml) to transform from **GET to POST**.
+
 ## Templates
 
 Templates can transform request and response bodies using data from the current message or the environment.
+
+Membrane uses a **Groovy-based template** engine with dynamic constructs such as **loops** and **conditionals**. Its syntax is similar to template engines commonly used in web applications.
+
+The example creates a JSON document containing the names and values of the request's HTTP headers.
+
+```yaml
+- template:
+    contentType: application/json
+    pretty: true
+    src: |
+      {
+        <% header.eachWithIndex { e, i -> %>
+          <% if (i > 0) { %>,<% } %>
+          <%= e.key %>: <%= e.value %>
+        <% } %>
+      }
+```
+
+Templates can access message data using **JSONPath**, **XPath**, and **Groovy**.
+
+# 6. Orchestration and Call Outs
+
+Membrane can orchestrate calls to external APIs and process collections with **loops** and **conditional** flows.
+
+The example iterates over a list of fruits and sends a POST request for each item:
 
 ```yaml
 api:
   port: 2000
   flow:
-    - request:
-        - template:
-            contentType: application/json
-            src: |
-              {
-                "destination": ${json.city}
-              }
+    - for:
+        # Loops over a list of objects [{ "name": "Mango", "price": 1.23 }, ..]
+        in: $.fruits
+        language: jsonpath
+        flow:
+          - setBody:
+              # Serialize the current item to a JSON string
+              value: ${toJSON(it)}
+          # callout to an external API
+          - call:
+              method: POST
+              url: https://api.predic8.de/shop/v2/products
+          - log:
+              message: "Created product: ${it['name']}"
     - return:
         status: 200
 ```
 
-For example, this JSON:
-
-```json
-{"city": "Berlin"}
-```
-
-is transformed into:
-
-```json
-{"destionation": "Berlin"}
-```
-
-Templates can access message data using **JSONPath**, **XPath**, and **Groovy**.
+See [orchestration tutorials](distribution/tutorials/orchestration)
 
 
-# 6. Scripting
+# 7. Scripting
 
 Scripts can inspect and modify requests, responses, and extend gateway behavior. This makes it possible to implement custom API logic for use cases such as:
 
@@ -382,7 +543,7 @@ api:
     url: https://httpbin.org/status/500
 ```
 
-# 7. Security
+# 8. Security
 
 Membrane provides security features for protecting APIs, services, and backend systems.
 
@@ -535,7 +696,7 @@ api:
 
 See the [XML protection](https://www.membrane-api.io/docs/current/xmlProtection.html), [JSON protection ](https://www.membrane-api.io/docs/current/jsonProtection.html), [JSON-RPC protection](https://www.membrane-api.io/docs/current/jsonRPCProtection.html), and [GraphQl protection ](https://www.membrane-api.io/docs/current/graphQLProtection.html) references.
 
-# 8. Traffic Control
+# 9. Traffic Control
 
 ## Rate Limiting
 
@@ -570,7 +731,7 @@ api:
 
 See the [API loadbalancing examples](distribution/examples/loadbalancing)
 
-# 9. Operation
+# 10. Operation
 
 ## Monitoring with Prometheus and Grafana
 
