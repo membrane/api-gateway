@@ -26,8 +26,8 @@
 # 4.) Get a single partner by id (GET, no body)
 #     curl -v http://localhost:2000/partners/1
 #
-# 5.) Create a partner (POST, body required)
-#     curl -d @partner.json -H "Content-Type: application/json" http://localhost:2000/partners
+# 5.) Create a partner (POST, body required, returns 201 Created)
+#     curl -i -d @partner.json -H "Content-Type: application/json" http://localhost:2000/partners
 #
 # 6.) Update a partner — ID from URL, fields in body (PUT)
 #     curl -X PUT -d @partner.json -H "Content-Type: application/json" http://localhost:2000/partners/1
@@ -59,6 +59,7 @@ api:
           createPartner:
             method: POST
             path: /partners
+            status: 201
             tag: Partner
           updatePartner:
             method: PUT

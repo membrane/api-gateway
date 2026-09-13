@@ -329,6 +329,49 @@ class Wsdl2OpenapiInterceptorTest {
     }
 
     @ParameterizedTest
+    @MethodSource("successStatuses")
+    void successStatusIsPublishedAndReturned(Integer status) throws Exception {
+        var interceptor = wsdl2openapi("classpath:/ws/cities-with-fault.wsdl");
+        if (status != null) {
+            var settings = new OperationSettings();
+            settings.setStatus(status);
+            var operations = new OperationsConfig();
+            operations.setEntry(Map.of("getCity", settings));
+            interceptor.setOperations(operations);
+        }
+        interceptor.init(new DummyTestRouter(), apiProxyWith(interceptor));
+        int expected = status == null ? 200 : status;
+        var responses = generatedOpenApi(interceptor).getPaths().get("/get-city").getPost().getResponses();
+        assertNotNull(responses.get(Integer.toString(expected)).getContent().get("application/json").getSchema());
+        assertEquals(2, responses.size());
+        assertNotNull(responses.getDefault());
+
+        for (String soap : List.of("""
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soap:Body><getCityResponse xmlns="https://predic8.de/cities">
+                    <country>Germany</country><population>123</population>
+                  </getCityResponse></soap:Body>
+                </soap:Envelope>
+                """, CITY_NOT_FOUND_FAULT, "invalid XML")) {
+            var exc = new Exchange(null);
+            exc.setRequest(new Request.Builder().post("/get-city").body("{\"name\":\"Bonn\"}").build());
+            assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exc));
+            exc.setResponse(Response.ok().body(soap).build());
+            boolean success = soap.contains("getCityResponse");
+            assertEquals(success ? Outcome.CONTINUE : Outcome.ABORT, interceptor.handleResponse(exc));
+            assertEquals(success ? expected : 500, exc.getResponse().getStatusCode());
+            if (success) {
+                assertEquals(expected == 201 ? "Created" : "OK", exc.getResponse().getStatusMessage());
+                assertEquals(123, new ObjectMapper().readTree(exc.getResponse().getBodyAsStringDecoded()).get("population").asInt());
+            }
+        }
+    }
+
+    static Stream<Arguments> successStatuses() {
+        return Stream.of(arguments((Integer) null), arguments(200), arguments(201));
+    }
+
+    @ParameterizedTest
     @MethodSource("soapResponseEncodings")
     void responseUsesXmlEncoding(String encoding, boolean fault) throws Exception {
         var interceptor = wsdl2openapi("classpath:/ws/cities-with-fault.wsdl");

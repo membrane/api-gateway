@@ -272,7 +272,7 @@ public class Wsdl2OpenApiConverter {
         var apiOp = new io.swagger.v3.oas.models.Operation()
                 .operationId(name)
                 .description(wsdlOp.getDocumentation())
-                .responses(buildResponses(wsdlOp));
+                .responses(buildResponses(wsdlOp, settings.getStatus()));
 
         // Every operation is tagged: an untagged one would end up in the "default" group of a
         // documentation UI, and with no tag configured anywhere that is where all of them land.
@@ -512,13 +512,13 @@ public class Wsdl2OpenApiConverter {
         return new Content().addMediaType(APPLICATION_JSON, new MediaType().schema(schema));
     }
 
-    private ApiResponses buildResponses(Operation wsdlOp) {
-        var response200 = new ApiResponse()
+    private ApiResponses buildResponses(Operation wsdlOp, int status) {
+        var successResponse = new ApiResponse()
                 .description("Successful response")
                 .content(jsonContent(converter.convertMessageParts(wsdlOp.getMessagesByDirection(OUTPUT))));
 
         return new ApiResponses()
-                .addApiResponse("200", response200)
+                .addApiResponse(Integer.toString(status), successResponse)
                 .addApiResponse(ApiResponses.DEFAULT, buildErrorResponse(wsdlOp));
     }
 

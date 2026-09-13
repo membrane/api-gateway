@@ -51,6 +51,7 @@ import static com.predic8.membrane.core.interceptor.wsdl2openapi.Wsdl2OpenApiCon
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.camelToKebab;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisherInterceptor.PATH;
 import static com.predic8.membrane.core.resolver.ResolverMap.combine;
+import static com.predic8.membrane.core.util.HttpUtil.getMessageForStatusCode;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
 import static com.predic8.membrane.core.util.URLParamUtil.getParams;
 import static com.predic8.membrane.core.util.wsdl.parser.Definitions.parse;
@@ -311,6 +312,9 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
             exc.getResponse().getHeader().setContentType(APPLICATION_JSON);
 
             var opSettings = operationsByName.get(operationName);
+            int status = opSettings != null ? opSettings.getStatus() : 200;
+            exc.getResponse().setStatusCode(status);
+            exc.getResponse().setStatusMessage(getMessageForStatusCode(status));
             if (opSettings != null && !opSettings.getFlow().isEmpty()) {
                 return router.getFlowController().invokeResponseHandlers(exc, opSettings.getFlow());
             }

@@ -34,6 +34,7 @@ public class OperationSettings {
     private static final Set<String> ALLOWED_METHODS = Set.of("GET", "POST", "PUT", "DELETE", "PATCH");
 
     private String method = "POST";
+    private int status = 200;
     private String path;
     private String tag;
     private List<Interceptor> flow = new ArrayList<>();
@@ -59,6 +60,20 @@ public class OperationSettings {
         if (!ALLOWED_METHODS.contains(upper)) throw new ConfigurationException(
                 "Unsupported HTTP method: " + method + ". Allowed: " + ALLOWED_METHODS);
         this.method = upper;
+    }
+
+    public int getStatus() {
+        return status;
+    }
+
+    /**
+     * @description HTTP status code returned after successful SOAP-to-JSON conversion and published
+     * in the OpenAPI document. Defaults to 200. Does not apply to SOAP faults or conversion errors.
+     * @example 201
+     */
+    @MCAttribute
+    public void setStatus(int status) {
+        this.status = status;
     }
 
     public String getPath() {
