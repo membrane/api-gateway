@@ -33,6 +33,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.lang.reflect.Field;
+import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -325,6 +326,48 @@ class Wsdl2OpenapiInterceptorTest {
         assertEquals(500, body.get("status").asInt());
         assertEquals("Atlantis", body.at("/details/cityNotFound/name").asText(),
                 "the declared fault's content appears under details, keyed by the fault element name");
+    }
+
+    @ParameterizedTest
+    @MethodSource("soapResponseEncodings")
+    void responseUsesXmlEncoding(String encoding, boolean fault) throws Exception {
+        var interceptor = wsdl2openapi("classpath:/ws/cities-with-fault.wsdl");
+        interceptor.init(new DummyTestRouter(), apiProxyWith(interceptor));
+        String soap = fault
+                ? CITY_NOT_FOUND_FAULT.replace("Atlantis", "München")
+                : """
+                  <?xml version="1.0" encoding="UTF-8"?>
+                  <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                    <soap:Body>
+                      <getCityResponse xmlns="https://predic8.de/cities">
+                        <country>Österreich</country>
+                        <population>123</population>
+                      </getCityResponse>
+                    </soap:Body>
+                  </soap:Envelope>
+                  """;
+        var exc = new Exchange(null);
+        exc.setProperty(operationPropertyKey(interceptor), "getCity");
+        exc.setResponse(Response.ok().body(soap.replace("UTF-8", encoding)
+                .getBytes(Charset.forName(encoding))).build());
+        exc.getResponse().getHeader().setContentType("text/xml");
+
+        assertEquals(fault ? Outcome.ABORT : Outcome.CONTINUE, interceptor.handleResponse(exc));
+
+        var body = new ObjectMapper().readTree(exc.getResponse().getBodyAsStringDecoded());
+        if (fault) {
+            assertEquals(500, exc.getResponse().getStatusCode());
+            assertEquals("München", body.at("/details/cityNotFound/name").asText());
+        } else {
+            assertEquals("application/json", exc.getResponse().getHeader().getContentType());
+            assertEquals("Österreich", body.get("country").asText());
+            assertEquals(123, body.get("population").intValue());
+        }
+    }
+
+    static Stream<Arguments> soapResponseEncodings() {
+        return Stream.of("UTF-8", "ISO-8859-1", "UTF-16")
+                .flatMap(encoding -> Stream.of(arguments(encoding, false), arguments(encoding, true)));
     }
 
     @Test

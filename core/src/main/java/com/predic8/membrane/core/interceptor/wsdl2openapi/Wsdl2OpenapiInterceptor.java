@@ -47,9 +47,7 @@ import static com.predic8.membrane.core.interceptor.InterceptorUtil.getIntercept
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.OperationRouter.*;
-import static com.predic8.membrane.core.interceptor.wsdl2openapi.Wsdl2OpenApiConverter.ApiInfo;
-import static com.predic8.membrane.core.interceptor.wsdl2openapi.Wsdl2OpenApiConverter.FAULT_DETAILS_FIELD;
-import static com.predic8.membrane.core.interceptor.wsdl2openapi.Wsdl2OpenApiConverter.OPERATION_ERROR_TYPE;
+import static com.predic8.membrane.core.interceptor.wsdl2openapi.Wsdl2OpenApiConverter.*;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.camelToKebab;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisherInterceptor.PATH;
 import static com.predic8.membrane.core.resolver.ResolverMap.combine;
@@ -57,7 +55,6 @@ import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidF
 import static com.predic8.membrane.core.util.URLParamUtil.getParams;
 import static com.predic8.membrane.core.util.wsdl.parser.Definitions.parse;
 import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.OUTPUT;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.w3c.dom.DOMException.INVALID_CHARACTER_ERR;
 
 /**
@@ -310,18 +307,10 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
         }
 
         try {
-            // The property is set by the request path of this very instance after a route matched,
-            // so the operation always has a runtime.
-            OperationRuntime runtime = operationRuntimes.get(operationName);
-            String jsonResponse = new Soap2JsonTransformer(xsdToSchema.getComponents())
-                    .transform(exc.getResponse().getBodyAsStringDecoded(),
-                            runtime.responseSchema(),
-                            runtime.faultDetailSchema());
-
-            exc.getResponse().setBodyContent(jsonResponse.getBytes(UTF_8));
+            exc.getResponse().setBodyContent(getJsonResponse(exc, operationName));
             exc.getResponse().getHeader().setContentType(APPLICATION_JSON);
 
-            OperationSettings opSettings = operationsByName.get(operationName);
+            var opSettings = operationsByName.get(operationName);
             if (opSettings != null && !opSettings.getFlow().isEmpty()) {
                 return router.getFlowController().invokeResponseHandlers(exc, opSettings.getFlow());
             }
@@ -340,6 +329,16 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
         }
 
         return CONTINUE;
+    }
+
+    private byte[] getJsonResponse(Exchange exc, String operationName) throws Exception {
+        // The property is set by the request path of this very instance after a route matched,
+        // so the operation always has a runtime.
+        OperationRuntime runtime = operationRuntimes.get(operationName);
+        try (var soapResponse = exc.getResponse().getBodyAsStreamDecoded()) {
+            return new Soap2JsonTransformer(xsdToSchema.getComponents())
+                    .transform(soapResponse, runtime.responseSchema(), runtime.faultDetailSchema());
+        }
     }
 
     /**
