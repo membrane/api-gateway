@@ -103,6 +103,24 @@ public class MessageUtil {
 				} catch (DataFormatException e) {
 					throw new IOException(e);
 				}
+				// Zero output is valid when the stream has finished (including an empty body).
+				// Otherwise, retrying without new input or a dictionary can loop forever.
+				if (count == 0 && !decompressor.finished()) {
+					// A preset dictionary contains bytes shared by compressor and decoder in advance.
+					// Defensive check: raw deflate has no header identifying a required dictionary.
+					if (decompressor.needsDictionary()) {
+						log.info("Deflate stream requires a preset dictionary.");
+						throw new IOException("Deflate stream requires a preset dictionary.");
+					}
+					// The complete compressed body was supplied, so no more input can arrive.
+					if (decompressor.needsInput()) {
+						log.info("Truncated deflate stream.");
+						throw new IOException("Truncated deflate stream.");
+					}
+					// Reject any other stalled state instead of retrying indefinitely.
+					log.info("Deflate decompression made no progress.");
+					throw new IOException("Deflate decompression made no progress.");
+				}
 				if (buf.length == count) {
                     chunks.add(new Chunk(buf));
 				} else if (count < buf.length) {
@@ -118,7 +136,7 @@ public class MessageUtil {
 				var bos = new ByteArrayOutputStream();
 
 				for (Chunk chunk : chunks) {
-					chunk.write(bos);
+					bos.write(chunk.content());
 				}
 				return bos.toByteArray();
 			}
