@@ -167,6 +167,15 @@ class OpenApiGeneratorTest {
     }
 
     @Test
+    void problemDetailsUriReferencesHaveUriFormat() {
+        var properties = converter(citiesDefinitions, "/").generate().getComponents()
+                .getSchemas().get("ProblemDetails").getProperties();
+
+        assertEquals("uri", ((Schema<?>) properties.get("type")).getFormat());
+        assertEquals("uri", ((Schema<?>) properties.get("instance")).getFormat());
+    }
+
+    @Test
     void operationWithoutDeclaredFaultsHasNoDetailsMember() {
         // cities.wsdl declares no wsdl:fault, so the error response is the bare problem details
         // document — there is no operation-specific fault content to describe.
@@ -328,6 +337,26 @@ class OpenApiGeneratorTest {
 
         assertTrue(e.getMessage().contains("getCitty"), "Message should name the unknown operation");
         assertTrue(e.getMessage().contains("getCity"), "Message should list the available operations");
+    }
+
+    @Test
+    void configuredOperationsCannotSharePathAndMethod() throws Exception {
+        // PathItem accepts just one operation per HTTP method; without this validation, the
+        // operation processed last silently replaces the first one in the generated document.
+        var definitions = Definitions.parse(new ResolverMap(), "classpath:/ws/cities-2-services.wsdl");
+
+        // Both settings share the same path and method, which is invalid.
+        var getCity = new OperationSettings();
+        getCity.setPath("cities");
+        var getCityB = new OperationSettings();
+        getCityB.setPath("cities");
+
+        var e = assertThrows(ConfigurationException.class,
+                () -> converter(definitions, "/", Map.of("getCity", getCity, "getCityB", getCityB)).generate());
+
+        assertTrue(e.getMessage().contains("getCity"));
+        assertTrue(e.getMessage().contains("getCityB"));
+        assertTrue(e.getMessage().contains("POST /cities"));
     }
 
     @Test
