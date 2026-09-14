@@ -13,7 +13,10 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.soap.wsse;
 
+import com.predic8.membrane.annot.MCElement;
+
 /** Supported, explicit exceptions to the inbound encryption algorithm defaults. */
+@MCElement(name = "legacyEncryptionAlgorithm", component = false)
 public enum LegacyEncryptionAlgorithm {
     AES128_CBC(XmlEncryptionUtil.AES128_CBC),
     AES192_CBC(XmlEncryptionUtil.AES192_CBC),

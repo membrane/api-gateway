@@ -35,8 +35,7 @@ import java.io.*;
 import java.nio.charset.Charset;
 import java.util.function.Supplier;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.security;
-import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.MimeType.isXML;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_FLOW;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
@@ -111,7 +110,7 @@ public class XMLProtectionInterceptor extends AbstractBodyProtectionInterceptor 
         } catch (Exception e) {
             log.info("Could not inspect the XML body: {}", e.getMessage());
             log.debug("", e);
-            user(router.getConfiguration().isProduction(), getDisplayName())
+            internal(router.getConfiguration().isProduction(), getDisplayName())
                     .status(500)
                     .detail("Error inspecting body!")
                     .internal("reason", e.getMessage())
