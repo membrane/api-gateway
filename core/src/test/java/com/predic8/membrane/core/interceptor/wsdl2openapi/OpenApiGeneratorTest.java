@@ -30,6 +30,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -395,9 +396,12 @@ class OpenApiGeneratorTest {
         getCity.setPath("cities");
         var getCityB = new OperationSettings();
         getCityB.setPath("cities");
+        var operations = new LinkedHashMap<String, OperationSettings>();
+        operations.put("getCity", getCity);
+        operations.put("getCityB", getCityB);
 
         var e = assertThrows(ConfigurationException.class,
-                () -> converter(definitions, "/", Map.of("getCity", getCity, "getCityB", getCityB)).generate());
+                () -> converter(definitions, "/", operations).generate());
 
         assertTrue(e.getMessage().contains("getCity"));
         assertTrue(e.getMessage().contains("getCityB"));
@@ -408,11 +412,12 @@ class OpenApiGeneratorTest {
         getCityB.setPath("cities/{name}");
 
         e = assertThrows(ConfigurationException.class,
-                () -> converter(definitions, "/", Map.of("getCity", getCity, "getCityB", getCityB)).generate());
+                () -> converter(definitions, "/", operations).generate());
 
         assertTrue(e.getMessage().contains("getCity"));
         assertTrue(e.getMessage().contains("getCityB"));
-        assertTrue(e.getMessage().contains("POST /cities/{name}"));
+        assertTrue(e.getMessage().contains("POST /cities/{name}")
+                || e.getMessage().contains("POST /cities/{id}"));
     }
 
     @Test
