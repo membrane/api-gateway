@@ -316,6 +316,67 @@ class Wsdl2OpenApiConverterWsdlStyleTest {
     }
 
     @Test
+    void portTypeOperationWithoutAnOutputIsPublishedAs204WithoutContent() throws Exception {
+        // A one-way operation: the port type declares an input and no output, so the WSDL promises
+        // no response message and the document must not describe a body for it.
+        var wsdl = """
+                <definitions xmlns="http://schemas.xmlsoap.org/wsdl/"
+                             xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                             xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+                             xmlns:tns="http://example.com/notify"
+                             targetNamespace="http://example.com/notify"
+                             name="NotifyService">
+
+                  <types>
+                    <xs:schema targetNamespace="http://example.com/notify"
+                               elementFormDefault="qualified">
+                      <xs:element name="notify">
+                        <xs:complexType>
+                          <xs:sequence>
+                            <xs:element name="text" type="xs:string"/>
+                          </xs:sequence>
+                        </xs:complexType>
+                      </xs:element>
+                    </xs:schema>
+                  </types>
+
+                  <message name="NotifyRequest">
+                    <part name="parameters" element="tns:notify"/>
+                  </message>
+
+                  <portType name="NotifyPortType">
+                    <operation name="notify">
+                      <input message="tns:NotifyRequest"/>
+                    </operation>
+                  </portType>
+
+                  <binding name="NotifyBinding" type="tns:NotifyPortType">
+                    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+                    <operation name="notify">
+                      <soap:operation soapAction="notify"/>
+                      <input>
+                        <soap:body use="literal"/>
+                      </input>
+                    </operation>
+                  </binding>
+
+                  <service name="NotifyService">
+                    <port name="NotifyPort" binding="tns:NotifyBinding">
+                      <soap:address location="http://example.com/notify"/>
+                    </port>
+                  </service>
+
+                </definitions>""";
+
+        var responses = converter(Definitions.parse(new StaticStringResolver(), wsdl), "/")
+                .generate().getPaths().get("/notify").getPost().getResponses();
+
+        assertNull(responses.get("200"));
+        assertNull(responses.get("204").getContent());
+        assertNotNull(responses.getDefault(), "a one-way operation can still fault");
+    }
+
+    @Test
     void multipleFaultsProduceOneOfSchemaOnErrorResponse() throws Exception {
         // Every error is a problem details document, so all faults share the single "default"
         // response. Its details member must be a oneOf of both fault element schemas, so each
