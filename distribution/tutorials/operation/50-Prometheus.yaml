@@ -6,8 +6,12 @@
 # at /metrics so any Prometheus server can scrape them.
 #
 # 1.) Start Membrane:
-#       Linux/Mac:  ./membrane.sh -c 50-Prometheus.yaml
-#       Windows:    membrane.cmd  -c 50-Prometheus.yaml
+#     with Docker:
+#       ./run-docker.sh -c 50-Prometheus.yaml   (Linux/Mac)
+#       run-docker.cmd -c 50-Prometheus.yaml    (Windows)
+#     or with Java:
+#       ./membrane.sh -c 50-Prometheus.yaml     (Linux/Mac)
+#       membrane.cmd -c 50-Prometheus.yaml      (Windows)
 #
 # 2.) Generate traffic on the two backend APIs:
 #       curl http://localhost:2001

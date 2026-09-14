@@ -6,10 +6,12 @@
 # whenever they are modified and saved. No restart needed.
 #
 # 1.) Start Membrane:
-#     Linux/Mac:
-#       ./membrane.sh -c 20-Hot-Reload.yaml
-#     Windows:
-#       membrane.cmd -c 20-Hot-Reload.yaml
+#     with Docker:
+#       ./run-docker.sh -c 20-Hot-Reload.yaml   (Linux/Mac)
+#       run-docker.cmd -c 20-Hot-Reload.yaml    (Windows)
+#     or with Java:
+#       ./membrane.sh -c 20-Hot-Reload.yaml     (Linux/Mac)
+#       membrane.cmd -c 20-Hot-Reload.yaml      (Windows)
 #
 # 2.) Call the API:
 #     curl http://localhost:2000
@@ -17,8 +19,8 @@
 #     You should see a list of public APIs from api.predic8.de.
 #
 # 3.) While Membrane is running, open this file in a text editor.
-#     Change the url below from https://api.predic8.de to https://apibin.io/
-#     and save the file.
+#     Change the url at the end of this file from https://api.predic8.de to https://apibin.io/
+#     and save this file.
 #
 #     The console shows "Configuration reloaded."
 #
