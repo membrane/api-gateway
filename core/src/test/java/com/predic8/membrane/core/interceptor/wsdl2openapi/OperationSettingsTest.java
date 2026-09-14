@@ -16,6 +16,8 @@ package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
 import com.predic8.membrane.core.util.ConfigurationException;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -59,5 +61,29 @@ class OperationSettingsTest {
         var s = new OperationSettings();
         s.setMethod("post");
         assertEquals("POST", s.getMethod());
+    }
+
+    @Test
+    void statusIsUnsetByDefault() {
+        // Not 200: the default is derived per operation, so "unset" has to stay distinguishable
+        // from a configured 200.
+        assertNull(new OperationSettings().getStatus());
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {0, 99, 600, 2001})
+    void statusOutsideTheHttpRangeThrowsConfigurationException(int status) {
+        var s = new OperationSettings();
+        assertThrows(ConfigurationException.class, () -> s.setStatus(status));
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {100, 200, 204, 404, 599})
+    void statusInsideTheHttpRangeIsAccepted(int status) {
+        var s = new OperationSettings();
+        s.setStatus(status);
+        // 204 included on purpose: the operator may be fronting a service this gateway
+        // cannot second-guess, so the status is theirs to choose.
+        assertEquals(status, s.getStatus());
     }
 }

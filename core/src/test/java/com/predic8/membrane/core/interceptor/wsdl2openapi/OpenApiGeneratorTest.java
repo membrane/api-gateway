@@ -58,6 +58,8 @@ class OpenApiGeneratorTest {
     static Definitions recursiveDefinitions;
     static Definitions articleDefinitions;
     static Definitions attributeDefinitions;
+    static Definitions emptyMessageDefinitions;
+    static Definitions scalarOutputDefinitions;
 
     @BeforeAll
     static void setup() throws Exception {
@@ -68,6 +70,8 @@ class OpenApiGeneratorTest {
         recursiveDefinitions = Definitions.parse(new ResolverMap(), "classpath:/ws/recursive-type.wsdl");
         articleDefinitions = Definitions.parse(new ResolverMap(), "classpath:/validation/article-service.wsdl");
         attributeDefinitions = Definitions.parse(new ResolverMap(), "classpath:/ws/attributes.wsdl");
+        emptyMessageDefinitions = Definitions.parse(new ResolverMap(), "classpath:/special/empty-message.wsdl");
+        scalarOutputDefinitions = Definitions.parse(new ResolverMap(), "classpath:/ws/scalar-output.wsdl");
     }
 
     @Test
@@ -155,6 +159,47 @@ class OpenApiGeneratorTest {
         assertFalse(yaml.contains("\"500\":"), "Errors are described by the default response, not by an explicit status");
         assertTrue(yaml.contains("application/problem+json:"));
         assertTrue(yaml.contains("$ref: \"#/components/schemas/ProblemDetails\""));
+    }
+
+    @Test
+    void outputMessageWithNoPartsIsPublishedAsResponseContent() {
+        var responses = converter(emptyMessageDefinitions, "/").generate().getPaths()
+                .get("/ping").getPost().getResponses();
+
+        // The WSDL declares an output message for "ping", so a 204 would falsely promise the
+        // service never replies with anything — it may still answer with a fault.
+        assertNull(responses.get("204"));
+        assertEquals("object", responses.get("200").getContent().get(APPLICATION_JSON).getSchema().getType());
+    }
+
+    @Test
+    void scalarOutputPartIsPublishedAsResponseContent() {
+        var responses = converter(scalarOutputDefinitions, "/").generate().getPaths()
+                .get("/get-name").getPost().getResponses();
+
+        assertNull(responses.get("204"), "An operation whose output message has a part does send content");
+        assertEquals("string", responses.get("200").getContent().get(APPLICATION_JSON).getSchema().getType());
+
+        // The published document is the YAML, and a scalar response schema is the one case here
+        // where a 200's content is not an object.
+        assertTrue(generator(scalarOutputDefinitions, "/").contains(
+                """
+                        "200":
+                          description: OK
+                          content:
+                            application/json:
+                              schema:
+                                type: string
+                """.stripTrailing()));
+    }
+
+    @Test
+    void emptyComplexTypeOutputPartIsPublishedAsResponseContent() {
+        var responses = converter(scalarOutputDefinitions, "/").generate().getPaths()
+                .get("/refresh").getPost().getResponses();
+
+        assertNull(responses.get("204"), "An operation whose output message has a part does send content");
+        assertEquals("object", responses.get("200").getContent().get(APPLICATION_JSON).getSchema().getType());
     }
 
     @Test
