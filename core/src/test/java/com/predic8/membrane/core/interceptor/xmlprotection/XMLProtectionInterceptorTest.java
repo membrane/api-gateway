@@ -19,7 +19,11 @@ import com.predic8.membrane.core.router.DefaultRouter;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.Arrays;
 import java.util.function.Consumer;
+import java.util.zip.GZIPOutputStream;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_XML;
@@ -124,6 +128,40 @@ class XMLProtectionInterceptorTest {
         assertNull(exc.getResponse().getHeader().getFirstValue(X_PROTECTION));
         // Outside production the cause is reported as the "reason" detail rather than a stacktrace
         assertTrue(bodyOf(exc).contains("GZIP"), bodyOf(exc));
+    }
+
+    /**
+     * The other half of {@link #undecodableBodyIsReportedAsServerError}: a body whose gzip header is
+     * valid but whose compressed data stops short fails on a read from the decoder rather than when
+     * the decoder is built. Both are the same kind of failure and must be reported alike, so that
+     * where the stream happens to break does not decide the status code.
+     */
+    @Test
+    @DisplayName("A gzip body that fails mid-stream is a server error too, not a policy violation")
+    void truncatedGzipBodyIsReportedAsServerError() throws Exception {
+        Exchange exc = post("/")
+                // Charset given explicitly: without it the encoding probe reads the body first, and
+                // this test is about the failure surfacing from the scan.
+                .contentType("application/xml; charset=UTF-8")
+                .body(truncatedGzip("<foo/>"))
+                .header("Content-Encoding", "gzip") // after body(), which clears Content-Encoding
+                .buildExchange();
+
+        assertEquals(ABORT, interceptor().handleRequest(exc));
+        assertEquals(500, exc.getResponse().getStatusCode());
+        assertNull(exc.getResponse().getHeader().getFirstValue(X_PROTECTION));
+    }
+
+    /**
+     * Keeps the 10-byte gzip header - all {@code GZIPInputStream}'s constructor validates - plus two
+     * bytes of compressed data, so decoding starts and only the first read runs out of input.
+     */
+    private static byte[] truncatedGzip(String document) throws IOException {
+        var compressed = new ByteArrayOutputStream();
+        try (var gzip = new GZIPOutputStream(compressed)) {
+            gzip.write(document.getBytes(UTF_8));
+        }
+        return Arrays.copyOf(compressed.toByteArray(), 12);
     }
 
     @Test
