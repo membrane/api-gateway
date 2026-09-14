@@ -31,8 +31,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.lang.reflect.Field;
+import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -325,6 +327,99 @@ class Wsdl2OpenapiInterceptorTest {
         assertEquals(500, body.get("status").asInt());
         assertEquals("Atlantis", body.at("/details/cityNotFound/name").asText(),
                 "the declared fault's content appears under details, keyed by the fault element name");
+    }
+
+    private static final String GET_CITY_RESPONSE = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+              <soap:Body>
+                <getCityResponse xmlns="https://predic8.de/cities">
+                  <country>Österreich</country>
+                  <population>123</population>
+                </getCityResponse>
+              </soap:Body>
+            </soap:Envelope>
+            """;
+
+    @ParameterizedTest
+    @ValueSource(strings = {"UTF-8", "ISO-8859-1", "UTF-16"})
+    void responseUsesTheEncodingOfItsXmlDeclaration(String encoding) throws Exception {
+        var response = transformGetCityResponse(
+                GET_CITY_RESPONSE.replace("UTF-8", encoding), encoding, "text/xml", Outcome.CONTINUE);
+
+        assertEquals("application/json", response.getHeader().getContentType());
+        var body = new ObjectMapper().readTree(response.getBodyAsStringDecoded());
+        assertEquals("Österreich", body.get("country").asText());
+        assertEquals(123, body.get("population").intValue());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"UTF-8", "ISO-8859-1", "UTF-16"})
+    void faultResponseUsesTheEncodingOfItsXmlDeclaration(String encoding) throws Exception {
+        var response = transformGetCityResponse(
+                CITY_NOT_FOUND_FAULT.replace("Atlantis", "München").replace("UTF-8", encoding),
+                encoding, "text/xml", Outcome.ABORT);
+
+        assertEquals(500, response.getStatusCode());
+        assertEquals("München", new ObjectMapper().readTree(response.getBodyAsStringDecoded())
+                .at("/details/cityNotFound/name").asText());
+    }
+
+    /**
+     * A backend that omits the XML declaration leaves the Content-Type's charset as the only thing
+     * naming the encoding; ignoring it would fall back to UTF-8 and mangle the body.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"UTF-8", "ISO-8859-1", "UTF-16"})
+    void responseUsesTheContentTypeCharsetWhenTheXmlDeclarationIsAbsent(String encoding) throws Exception {
+        var response = transformGetCityResponse(withoutXmlDeclaration(GET_CITY_RESPONSE), encoding,
+                "text/xml; charset=" + encoding, Outcome.CONTINUE);
+
+        assertEquals("Österreich", new ObjectMapper().readTree(response.getBodyAsStringDecoded())
+                .get("country").asText());
+    }
+
+    /** RFC 7303 makes the Content-Type's charset authoritative for XML, over the document's own declaration. */
+    @Test
+    void contentTypeCharsetWinsOverAContradictingXmlDeclaration() throws Exception {
+        var response = transformGetCityResponse(GET_CITY_RESPONSE, "ISO-8859-1",
+                "text/xml; charset=ISO-8859-1", Outcome.CONTINUE);
+
+        assertEquals("Österreich", new ObjectMapper().readTree(response.getBodyAsStringDecoded())
+                .get("country").asText());
+    }
+
+    /** An encoding no JVM knows must not fail the exchange: the parser detects the encoding instead. */
+    @Test
+    void unknownContentTypeCharsetFallsBackToDetection() throws Exception {
+        var response = transformGetCityResponse(GET_CITY_RESPONSE, "UTF-8",
+                "text/xml; charset=no-such-charset", Outcome.CONTINUE);
+
+        assertEquals("Österreich", new ObjectMapper().readTree(response.getBodyAsStringDecoded())
+                .get("country").asText());
+    }
+
+    /**
+     * Runs a SOAP response for the getCity operation through the interceptor and returns what the
+     * exchange ends up carrying. {@code contentType} is set verbatim, so a test decides whether the
+     * charset is declared in the header, in the document, in both, or in neither.
+     */
+    private static Response transformGetCityResponse(String soap, String encoding, String contentType,
+                                                     Outcome expectedOutcome) throws Exception {
+        var interceptor = wsdl2openapi("classpath:/ws/cities-with-fault.wsdl");
+        interceptor.init(new DummyTestRouter(), apiProxyWith(interceptor));
+
+        var exc = new Exchange(null);
+        exc.setProperty(operationPropertyKey(interceptor), "getCity");
+        exc.setResponse(Response.ok().body(soap.getBytes(Charset.forName(encoding))).build());
+        exc.getResponse().getHeader().setContentType(contentType);
+
+        assertEquals(expectedOutcome, interceptor.handleResponse(exc));
+        return exc.getResponse();
+    }
+
+    private static String withoutXmlDeclaration(String xml) {
+        return xml.substring(xml.indexOf("?>") + 2).stripLeading();
     }
 
     @Test
