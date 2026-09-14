@@ -50,6 +50,7 @@ public class JSONSchemaValidationExampleTest extends AbstractSampleMembraneStart
         .when()
             .post("http://localhost:2000")
         .then()
+            .log().ifValidationFails()
             .statusCode(400)
             .contentType(APPLICATION_PROBLEM_JSON)
             .body("title", equalTo("JSON validation failed"))

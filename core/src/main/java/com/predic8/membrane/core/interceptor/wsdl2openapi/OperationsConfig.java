@@ -36,6 +36,7 @@ import java.util.Map;
  *   createPartner:
  *     method: POST
  *     path: /partners
+ *     status: 201
  *     tag: Partner
  * </code></pre>
  */

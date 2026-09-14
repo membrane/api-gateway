@@ -20,6 +20,7 @@ import org.w3c.dom.*;
 import org.xml.sax.InputSource;
 
 import javax.xml.XMLConstants;
+import java.io.InputStream;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
