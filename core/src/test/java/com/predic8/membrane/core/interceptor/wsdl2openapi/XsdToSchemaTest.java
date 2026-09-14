@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
+import io.swagger.v3.core.util.Yaml31;
 import io.swagger.v3.oas.models.media.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -151,6 +152,33 @@ class XsdToSchemaTest {
         return schema.getExtensions() == null ? null : schema.getExtensions().get(XsdToSchema.XSD_TYPE_EXTENSION);
     }
 
+    @Test
+    void binaryTypesSerializeAsEncodedStrings() throws Exception {
+        var converter = converterFor("""
+                <xsd:element name="base64" type="xsd:base64Binary"/>
+                <xsd:element name="hex" type="xsd:hexBinary"/>
+                """);
+
+        var base64 = Yaml31.mapper().readTree(Yaml31.pretty(convert(converter, "base64")));
+        assertEquals("string", base64.path("type").asText());
+        assertEquals("base64", base64.path("contentEncoding").asText());
+        assertFalse(base64.has("format"));
+
+        var hex = Yaml31.mapper().readTree(Yaml31.pretty(convert(converter, "hex")));
+        assertEquals("string", hex.path("type").asText());
+        assertEquals("hexBinary", hex.path("x-xsd-type").asText());
+        assertFalse(hex.has("format"));
+        assertFalse(hex.has("contentEncoding"));
+        var pattern = hex.path("pattern").asText();
+        assertEquals("^([0-9a-fA-F]{2})*$", pattern);
+        for (var valid : List.of("", "00", "aF", "0123456789abcdefABCDEF")) {
+            assertTrue(valid.matches(pattern), valid);
+        }
+        for (var invalid : List.of("0", "abc", "GG", "0xFF", "AA BB")) {
+            assertFalse(invalid.matches(pattern), invalid);
+        }
+    }
+
     static Stream<Arguments> primitiveTypeMapping() {
         return Stream.of(
                 arguments("xsd:string",          StringSchema.class,  null,        null),
@@ -159,8 +187,8 @@ class XsdToSchemaTest {
                 arguments("xsd:date",             StringSchema.class, "date",      null),
                 arguments("xsd:dateTime",         StringSchema.class, "date-time", null),
                 arguments("xsd:time",             StringSchema.class, "time",      "time"),
-                arguments("xsd:base64Binary",     StringSchema.class, "byte",      null),
-                arguments("xsd:hexBinary",        StringSchema.class, "binary",    null),
+                arguments("xsd:base64Binary",     StringSchema.class, null,        null),
+                arguments("xsd:hexBinary",        StringSchema.class, null,        "hexBinary"),
                 arguments("xsd:duration",         StringSchema.class, "duration",  "duration"),
                 arguments("xsd:integer",          IntegerSchema.class, null,       "integer"),
                 arguments("xsd:int",              IntegerSchema.class, "int32",    null),
@@ -317,7 +345,8 @@ class XsdToSchemaTest {
                 </xsd:element>
                 """), "list");
 
-        assertInstanceOf(ArraySchema.class, fieldOf(schema, "item"));
+        var item = assertInstanceOf(ArraySchema.class, fieldOf(schema, "item"));
+        assertNull(item.getMaxItems());
     }
 
     @Test
@@ -330,7 +359,24 @@ class XsdToSchemaTest {
                 </xsd:element>
                 """), "list");
 
-        assertInstanceOf(ArraySchema.class, fieldOf(schema, "item"));
+        var item = assertInstanceOf(ArraySchema.class, fieldOf(schema, "item"));
+        assertEquals(3, item.getMaxItems());
+    }
+
+    @Test
+    void repeatedElementCarriesItsNumericOccurrenceBoundsAsArrayBounds() {
+        var schema = convert(converterFor("""
+                <xsd:element name="list">
+                  <xsd:complexType><xsd:sequence>
+                    <xsd:element name="item" type="xsd:string" minOccurs="2" maxOccurs="3"/>
+                  </xsd:sequence></xsd:complexType>
+                </xsd:element>
+                """), "list");
+
+        var item = assertInstanceOf(ArraySchema.class, fieldOf(schema, "item"));
+        assertEquals(2, item.getMinItems());
+        assertEquals(3, item.getMaxItems());
+        assertTrue(isRequired(schema, "item"), "minOccurs still requires the array property");
     }
 
     @Test

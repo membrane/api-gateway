@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://schemas.xmlsoap.org/wsdl/"
+             xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+             xmlns:tns="https://example.com/scalar-output"
+             xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+             targetNamespace="https://example.com/scalar-output"
+             name="ScalarOutputService">
+
+  <types>
+    <xsd:schema targetNamespace="https://example.com/scalar-output">
+      <xsd:element name="getName">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="id" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+      <!-- Output of a simple type: a schema without properties, but content all the same -->
+      <xsd:element name="getNameResponse" type="xsd:string"/>
+
+      <xsd:element name="refresh">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="id" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+      <!-- Output of an empty complex type: an element the service sends, carrying no fields -->
+      <xsd:element name="refreshResponse">
+        <xsd:complexType/>
+      </xsd:element>
+    </xsd:schema>
+  </types>
+
+  <message name="getNameRequest">
+    <part name="parameters" element="tns:getName"/>
+  </message>
+  <message name="getNameResponse">
+    <part name="parameters" element="tns:getNameResponse"/>
+  </message>
+
+  <message name="refreshRequest">
+    <part name="parameters" element="tns:refresh"/>
+  </message>
+  <message name="refreshResponse">
+    <part name="parameters" element="tns:refreshResponse"/>
+  </message>
+
+  <portType name="ScalarOutputPortType">
+    <operation name="getName">
+      <input message="tns:getNameRequest"/>
+      <output message="tns:getNameResponse"/>
+    </operation>
+    <operation name="refresh">
+      <input message="tns:refreshRequest"/>
+      <output message="tns:refreshResponse"/>
+    </operation>
+  </portType>
+
+  <binding name="ScalarOutputBinding" type="tns:ScalarOutputPortType">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <operation name="getName">
+      <soap:operation soapAction="getName"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+    <operation name="refresh">
+      <soap:operation soapAction="refresh"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+  </binding>
+
+  <service name="ScalarOutputService">
+    <port name="ScalarOutputPort" binding="tns:ScalarOutputBinding">
+      <soap:address location="http://example.com/scalar-output"/>
+    </port>
+  </service>
+</definitions>
