@@ -19,7 +19,9 @@ package com.predic8.membrane.core.interceptor.soap.wsse;
  * The SPI is deliberately defined over the shared {@link org.w3c.dom.Document} of
  * {@link WsSecurityContext} and over nothing else (see ADR-006): JSR-105 types such as
  * {@code XMLSignatureFactory} must not appear here, so that an implementation may be replaced -
- * hand-rolled or library-backed - without touching the configuration grammar.
+ * hand-rolled or library-backed - without touching the configuration grammar. ADR-011 settled that
+ * question for XML Encryption in favour of hand-rolled on the JDK, and the grammar was indeed
+ * unaffected.
  * <p>
  * Parts are stateless with respect to a single message: everything derived from configuration is
  * resolved in {@link #init()}, everything derived from the message lives in the

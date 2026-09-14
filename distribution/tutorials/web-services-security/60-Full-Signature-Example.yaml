@@ -92,3 +92,5 @@ api:
               Notice that the wsSecurity header was removed after validation.
               ${body}
     - sampleSoapService: {}
+
+# Continue with file 70-Encrypt-And-Decrypt-Body.yaml

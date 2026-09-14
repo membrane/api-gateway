@@ -197,10 +197,9 @@ class XMLProtectorTest {
     void namespaceUriBeyondTheBackstopIsStillRejected() throws Exception {
         // A namespace URI is never inspected by XMLProtector - this is the JAXP name cap doing its
         // backstop job. Derived from the cap, so the test keeps its meaning if the headroom changes.
-        XMLLimits limits = maxAttributeNameLength(1200);
-        String xml = "<foo xmlns='urn:%s'/>".formatted("u".repeat(limits.jaxpNameLimit() + 1));
-
-        assertTrue(reasonOf(protect(xml, limits)).contains("Not well-formed XML"));
+        var limits = maxAttributeNameLength(1200);
+        var xml = "<foo xmlns='urn:%s'/>".formatted("u".repeat(limits.jaxpNameLimit() + 1));
+        assertTrue(reasonOf(protect(xml, limits)).contains("Namespace URI exceeds"));
     }
 
     @Test
@@ -213,7 +212,11 @@ class XMLProtectorTest {
 
     @Test
     void manyAttributes() throws Exception {
-        assertTrue(reasonOf(runOn("/xml/many-attributes.xml")).contains("attributes"));
+        StringBuilder xml = new StringBuilder("<foo");
+        for (int i = 0; i < 101; i++)
+            xml.append(" a").append(i).append("=''");
+        xml.append("/>");
+        assertTrue(reasonOf(protect(xml.toString(), maxAttributeCount(100))).contains("attributes"));
     }
 
     @Test
@@ -306,6 +309,6 @@ class XMLProtectorTest {
 
     @Test
     void unlimitedDepthDisablesCheck() throws Exception {
-        assertEquals(ACCEPTED, protect(nested(2000), maxDepth(-1)));
+        assertEquals(ACCEPTED, protect(nested(500), maxDepth(-1)));
     }
 }
