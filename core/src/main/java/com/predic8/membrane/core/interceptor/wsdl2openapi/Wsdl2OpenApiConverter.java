@@ -153,11 +153,11 @@ public class Wsdl2OpenApiConverter {
     private static Schema<?> buildProblemDetailsSchema() {
         return new ObjectSchema()
                 .description("Problem details as defined by RFC 7807.")
-                .addProperty("type", new StringSchema().format("uri").description("Identifies the kind of problem."))
+                .addProperty("type", new StringSchema().format("uri-reference").description("Identifies the kind of problem."))
                 .addProperty("title", new StringSchema().description("Short summary of the problem."))
                 .addProperty("status", new IntegerSchema().description("The HTTP status code."))
                 .addProperty("detail", new StringSchema().description("Explanation specific to this occurrence."))
-                .addProperty("instance", new StringSchema().format("uri").description("Identifies this specific occurrence."));
+                .addProperty("instance", new StringSchema().format("uri-reference").description("Identifies this specific occurrence."));
     }
 
     /**

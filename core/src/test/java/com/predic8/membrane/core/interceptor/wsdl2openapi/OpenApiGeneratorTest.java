@@ -35,8 +35,8 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
-import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.componentName;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.Wsdl2OpenApiConverter.ApiInfo;
+import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.componentName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
@@ -167,12 +167,12 @@ class OpenApiGeneratorTest {
     }
 
     @Test
-    void problemDetailsUriReferencesHaveUriFormat() {
+    void problemDetailsUriReferencesHaveUriReferenceFormat() {
         var properties = converter(citiesDefinitions, "/").generate().getComponents()
                 .getSchemas().get("ProblemDetails").getProperties();
 
-        assertEquals("uri", ((Schema<?>) properties.get("type")).getFormat());
-        assertEquals("uri", ((Schema<?>) properties.get("instance")).getFormat());
+        assertEquals("uri-reference", ((Schema<?>) properties.get("type")).getFormat());
+        assertEquals("uri-reference", ((Schema<?>) properties.get("instance")).getFormat());
     }
 
     @Test
