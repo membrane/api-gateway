@@ -21,6 +21,7 @@ import com.predic8.membrane.core.config.security.TrustStore;
 import com.predic8.membrane.core.config.xml.XmlConfig;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.http.XmlDomBody;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
@@ -194,6 +195,11 @@ public class WsSecurityInterceptor extends AbstractInterceptor {
         // envelope version the fault would have to use.
         try {
             return XmlDomBody.read(msg, doc -> handleParsed(exc, flow, msg, doc));
+        } catch (ReadingBodyException e) {
+            // A body that never arrived readable is not a malformed document: calling it "not XML"
+            // would name the content for a transport or Content-Encoding failure. Reported centrally,
+            // which also tells a request body apart from a backend response body.
+            throw e;
         } catch (Exception e) {
             log.info("Could not parse the {} body as XML: {}", flow.name().toLowerCase(), e.getMessage());
             user(router.getConfiguration().isProduction(), getDisplayName())
