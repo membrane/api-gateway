@@ -32,7 +32,7 @@ public class Wsdl2OpenAPIRestTutorialTest extends AbstractWsdl2OpenAPITutorialTe
         // @formatter:off
         given()
         .when()
-            .get("http://localhost:2000/partners")
+            .get("http://localhost:2000/v1/partners")
         .then()
             .statusCode(200)
             .contentType(JSON)
@@ -52,7 +52,7 @@ public class Wsdl2OpenAPIRestTutorialTest extends AbstractWsdl2OpenAPITutorialTe
         // @formatter:off
         given()
         .when()
-            .get("http://localhost:2000/partners?city=Berlin")
+            .get("http://localhost:2000/v1/partners?city=Berlin")
         .then()
             .statusCode(200)
             .contentType(JSON)
@@ -66,7 +66,7 @@ public class Wsdl2OpenAPIRestTutorialTest extends AbstractWsdl2OpenAPITutorialTe
         // @formatter:off
         given()
         .when()
-            .get("http://localhost:2000/partners?nonsense=Berlin")
+            .get("http://localhost:2000/v1/partners?nonsense=Berlin")
         .then()
             .statusCode(200)
             .contentType(JSON)
@@ -95,7 +95,7 @@ public class Wsdl2OpenAPIRestTutorialTest extends AbstractWsdl2OpenAPITutorialTe
         // @formatter:off
         given()
         .when()
-            .get("http://localhost:2000/partners/1")
+            .get("http://localhost:2000/v1/partners/1")
         .then()
             .statusCode(200)
             .contentType(JSON)
@@ -112,7 +112,7 @@ public class Wsdl2OpenAPIRestTutorialTest extends AbstractWsdl2OpenAPITutorialTe
             .contentType(JSON)
             .body("{\"name\":\"Alice Updated\",\"birthDate\":\"1985-03-15\",\"kind\":\"PERSON\",\"address\":{\"street\":\"Main St\",\"houseNumber\":\"1\",\"postalCode\":\"12345\",\"city\":\"Springfield\",\"country\":\"US\"}}")
         .when()
-            .put("http://localhost:2000/partners/1")
+            .put("http://localhost:2000/v1/partners/1")
         .then()
             .statusCode(200)
             .contentType(JSON)
@@ -126,7 +126,7 @@ public class Wsdl2OpenAPIRestTutorialTest extends AbstractWsdl2OpenAPITutorialTe
         // @formatter:off
         given()
         .when()
-            .delete("http://localhost:2000/partners/1")
+            .delete("http://localhost:2000/v1/partners/1")
         .then()
             .statusCode(200)
             .contentType(JSON);
@@ -135,14 +135,14 @@ public class Wsdl2OpenAPIRestTutorialTest extends AbstractWsdl2OpenAPITutorialTe
 
     @Test
     void unmappedMethodOnMappedPathReturns405() {
-        // /partners/{id} is mapped for GET, PUT and DELETE but not POST. Without a 405 the
+        // /v1/partners/{id} is mapped for GET, PUT and DELETE but not POST. Without a 405 the
         // untransformed JSON body would be forwarded to the SOAP backend.
         // @formatter:off
         given()
             .contentType(JSON)
             .body("{\"name\":\"Dave\"}")
         .when()
-            .post("http://localhost:2000/partners/1")
+            .post("http://localhost:2000/v1/partners/1")
         .then()
             .statusCode(405)
             .header("Allow", equalTo("GET, PUT, DELETE"));
@@ -150,15 +150,15 @@ public class Wsdl2OpenAPIRestTutorialTest extends AbstractWsdl2OpenAPITutorialTe
     }
 
     @Test
-    void createPartnerReturnsEmptyObject() {
+    void createPartnerReturns201EmptyObject() {
         // @formatter:off
         given()
             .contentType(JSON)
             .body("{\"name\":\"Dave\",\"birthDate\":\"1990-01-01\",\"kind\":\"PERSON\",\"address\":{\"street\":\"Oak Ave\",\"houseNumber\":\"5\",\"postalCode\":\"54321\",\"city\":\"Portland\",\"country\":\"US\"}}")
         .when()
-            .post("http://localhost:2000/partners")
+            .post("http://localhost:2000/v1/partners")
         .then()
-            .statusCode(200)
+            .statusCode(201)
             .contentType(JSON);
         // @formatter:on
     }
