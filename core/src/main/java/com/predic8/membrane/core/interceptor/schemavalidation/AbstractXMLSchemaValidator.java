@@ -57,14 +57,20 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
     protected final String location;
     protected final ResolverMap resolver;
     protected final ValidatorInterceptor.FailureHandler failureHandler;
+    protected final ErrorDetailsPolicy errorDetailsPolicy;
     protected final AtomicLong valid = new AtomicLong();
     protected final AtomicLong invalid = new AtomicLong();
     private ArrayBlockingQueue<List<Validator>> validators;
 
     public AbstractXMLSchemaValidator(ResolverMap resolver, String location, ValidatorInterceptor.FailureHandler failureHandler) {
+        this(resolver, location, failureHandler, ErrorDetailsPolicy.FULL);
+    }
+
+    public AbstractXMLSchemaValidator(ResolverMap resolver, String location, ValidatorInterceptor.FailureHandler failureHandler, ErrorDetailsPolicy errorDetailsPolicy) {
         this.location = location;
         this.resolver = resolver;
         this.failureHandler = failureHandler;
+        this.errorDetailsPolicy = errorDetailsPolicy;
         xopr = new XOPReconstitutor();
     }
 

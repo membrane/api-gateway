@@ -31,13 +31,16 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.lang.reflect.Field;
+import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import static com.predic8.membrane.core.http.Header.CONTENT_LENGTH;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.Wsdl2OpenApiConverter.ApiInfo;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.camelToKebab;
 import static com.predic8.membrane.test.TestUtil.getPathFromResource;
@@ -312,6 +315,15 @@ class Wsdl2OpenapiInterceptorTest {
             </soap:Envelope>
             """;
 
+    /** A successful getCity response as cities-with-fault.wsdl declares it. */
+    private static final String GET_CITY_RESPONSE = """
+            <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+              <soap:Body><getCityResponse xmlns="https://predic8.de/cities">
+                <country>Germany</country><population>123</population>
+              </getCityResponse></soap:Body>
+            </soap:Envelope>
+            """;
+
     @Test
     void declaredFaultBecomesProblemDetailsWithDetailsMember() throws Exception {
         var response = faultResponse(false);
@@ -325,6 +337,338 @@ class Wsdl2OpenapiInterceptorTest {
         assertEquals(500, body.get("status").asInt());
         assertEquals("Atlantis", body.at("/details/cityNotFound/name").asText(),
                 "the declared fault's content appears under details, keyed by the fault element name");
+    }
+
+    @ParameterizedTest
+    @MethodSource("successStatuses")
+    void successStatusIsPublishedInTheDocument(Integer status) throws Exception {
+        var responses = generatedOpenApi(interceptorWithStatus(status))
+                .getPaths().get("/get-city").getPost().getResponses();
+
+        assertNotNull(responses.get(Integer.toString(expectedStatus(status)))
+                .getContent().get("application/json").getSchema());
+        assertEquals(2, responses.size());
+        assertNotNull(responses.getDefault(), "the configured status and default are the only two responses");
+    }
+
+    @ParameterizedTest
+    @MethodSource("successStatuses")
+    void successStatusIsReturnedOnTheWire(Integer status) throws Exception {
+        var interceptor = interceptorWithStatus(status);
+        var exc = getCityExchange(interceptor, GET_CITY_RESPONSE);
+
+        assertEquals(Outcome.CONTINUE, interceptor.handleResponse(exc));
+        assertEquals(expectedStatus(status), exc.getResponse().getStatusCode());
+        assertEquals(expectedStatus(status) == 201 ? "Created" : "OK", exc.getResponse().getStatusMessage());
+        assertEquals(123, new ObjectMapper().readTree(exc.getResponse().getBodyAsStringDecoded()).get("population").asInt());
+    }
+
+    @ParameterizedTest
+    @MethodSource("faultResponsesForConfiguredStatus")
+    void configuredStatusDoesNotApplyToFaultsOrConversionErrors(Integer status, String soap) throws Exception {
+        var interceptor = interceptorWithStatus(status);
+        var exc = getCityExchange(interceptor, soap);
+
+        assertEquals(Outcome.ABORT, interceptor.handleResponse(exc));
+        assertEquals(500, exc.getResponse().getStatusCode());
+    }
+
+    static Stream<Arguments> successStatuses() {
+        return Stream.of(arguments((Integer) null), arguments(200), arguments(201));
+    }
+
+    static Stream<Arguments> faultResponsesForConfiguredStatus() {
+        return Stream.<Integer>of(null, 200, 201).flatMap(status ->
+                Stream.of(CITY_NOT_FOUND_FAULT, "invalid XML").map(soap -> arguments(status, soap)));
+    }
+
+    private static int expectedStatus(Integer configured) {
+        return configured == null ? 200 : configured;
+    }
+
+    /** The interceptor for cities-with-fault.wsdl, with getCity's status configured unless {@code null}. */
+    private static Wsdl2OpenapiInterceptor interceptorWithStatus(Integer status) {
+        var interceptor = wsdl2openapi("classpath:/ws/cities-with-fault.wsdl");
+        if (status != null) {
+            var settings = new OperationSettings();
+            settings.setStatus(status);
+            var operations = new OperationsConfig();
+            operations.setEntry(Map.of("getCity", settings));
+            interceptor.setOperations(operations);
+        }
+        interceptor.init(new DummyTestRouter(), apiProxyWith(interceptor));
+        return interceptor;
+    }
+
+    /** Runs the request leg so the operation property is set, then stages {@code soap} as the backend's answer. */
+    private static Exchange getCityExchange(Wsdl2OpenapiInterceptor interceptor, String soap) throws Exception {
+        var exc = new Exchange(null);
+        exc.setRequest(new Request.Builder().post("/get-city").body("{\"name\":\"Bonn\"}").build());
+        assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exc));
+        exc.setResponse(Response.ok().body(soap).build());
+        return exc;
+    }
+
+    @Test
+    void oneWayOperationIsAnsweredWithoutABody() throws Exception {
+        var interceptor = oneWayInterceptor(null);
+        var exc = sendMessageExchange(interceptor, Response.ok().build());
+
+        assertEquals(Outcome.CONTINUE, interceptor.handleResponse(exc));
+        assertEquals(204, exc.getResponse().getStatusCode());
+        assertEquals("No Content", exc.getResponse().getStatusMessage());
+        assertEquals(0, exc.getResponse().getBody().getLength());
+        // Not decoration: Response.ok() already sets Content-Length: 0, so Message.emptyBody() would
+        // take its isBodyEmpty() early return and leave these headers in place. The 202 case below
+        // passes either way — that early return happens to leave the Content-Length a 202 needs —
+        // so this is the only assertion that tells the two implementations apart.
+        assertNull(exc.getResponse().getHeader().getFirstValue(CONTENT_LENGTH),
+                "a 204 must not carry Content-Length");
+        assertNull(exc.getResponse().getHeader().getContentType());
+    }
+
+    @Test
+    void oneWayFaultIsNotSwallowed() throws Exception {
+        var interceptor = oneWayInterceptor(null);
+        // The WSDL declares no fault for sendMessage: detection is by the element name, not by a
+        // declaration, so a fault must still abort rather than pass as an accepted one-way call.
+        var exc = sendMessageExchange(interceptor, Response.ok().body(CITY_NOT_FOUND_FAULT).build());
+
+        assertEquals(Outcome.ABORT, interceptor.handleResponse(exc));
+        assertEquals(500, exc.getResponse().getStatusCode());
+    }
+
+    @Test
+    void oneWayBodyFromTheServiceIsDiscarded() throws Exception {
+        var interceptor = oneWayInterceptor(null);
+        var exc = sendMessageExchange(interceptor, Response.ok().body(GET_CITY_RESPONSE).build());
+
+        assertEquals(Outcome.CONTINUE, interceptor.handleResponse(exc));
+        assertEquals(204, exc.getResponse().getStatusCode());
+        assertEquals(0, exc.getResponse().getBody().getLength(), "the envelope must not reach the client");
+        assertNull(exc.getResponse().getHeader().getContentType());
+    }
+
+    @Test
+    void oneWayWithConfiguredStatusKeepsTheBodilessResponse() throws Exception {
+        var interceptor = oneWayInterceptor(202);
+        var exc = sendMessageExchange(interceptor, Response.ok().build());
+
+        assertEquals(Outcome.CONTINUE, interceptor.handleResponse(exc));
+        assertEquals(202, exc.getResponse().getStatusCode());
+        assertEquals(0, exc.getResponse().getBody().getLength());
+        assertEquals("0", exc.getResponse().getHeader().getFirstValue(CONTENT_LENGTH),
+                "a bodiless 202 still needs Content-Length: 0 to frame the response");
+    }
+
+    @Test
+    void oneWayErrorFromTheServiceIsNotAnnouncedAsSuccess() throws Exception {
+        var interceptor = oneWayInterceptor(null);
+        var exc = sendMessageExchange(interceptor, Response.statusCode(503).build());
+
+        assertEquals(Outcome.ABORT, interceptor.handleResponse(exc));
+        assertEquals(500, exc.getResponse().getStatusCode());
+    }
+
+    @Test
+    void oneWayWhitespaceOnlyBodyCountsAsEmpty() throws Exception {
+        var interceptor = oneWayInterceptor(null);
+        var exc = sendMessageExchange(interceptor, Response.ok().body("\r\n").build());
+
+        assertEquals(Outcome.CONTINUE, interceptor.handleResponse(exc));
+        assertEquals(204, exc.getResponse().getStatusCode());
+    }
+
+    @Test
+    void operationWithAnOutputKeepsItsJsonBodyAtAnExplicit204() throws Exception {
+        var interceptor = interceptorWithStatus(204);
+        var exc = getCityExchange(interceptor, GET_CITY_RESPONSE);
+
+        assertEquals(Outcome.CONTINUE, interceptor.handleResponse(exc));
+        assertEquals(204, exc.getResponse().getStatusCode());
+        // Deliberate: the operation has a response message, so it is sent. Choosing a status that
+        // must not carry one is the operator's call, not something the gateway overrules.
+        assertEquals(123, new ObjectMapper().readTree(exc.getResponse().getBodyAsStringDecoded()).get("population").asInt());
+    }
+
+    @Test
+    void oneWayOperationIsPublishedWithoutContent() throws Exception {
+        var responses = generatedOpenApi(oneWayInterceptor(null))
+                .getPaths().get("/send-message").getPost().getResponses();
+
+        assertNull(responses.get("200"));
+        assertNotNull(responses.get("204"));
+        assertNull(responses.get("204").getContent(), "a bodiless response declares no content at all");
+        assertEquals(2, responses.size());
+        assertNotNull(responses.getDefault(), "a one-way operation can still fault");
+    }
+
+    @Test
+    void configuredStatusWinsOverTheDerived204() throws Exception {
+        var responses = generatedOpenApi(oneWayInterceptor(202))
+                .getPaths().get("/send-message").getPost().getResponses();
+
+        assertNull(responses.get("204"));
+        assertNotNull(responses.get("202"));
+        assertNull(responses.get("202").getContent());
+    }
+
+    /** The interceptor for qualified-elements.wsdl, whose sendMessage is one-way (input, no output). */
+    private static Wsdl2OpenapiInterceptor oneWayInterceptor(Integer status) {
+        var interceptor = wsdl2openapi("classpath:/ws/qualified-elements.wsdl");
+        if (status != null) {
+            var settings = new OperationSettings();
+            settings.setStatus(status);
+            var operations = new OperationsConfig();
+            operations.setEntry(Map.of("sendMessage", settings));
+            interceptor.setOperations(operations);
+        }
+        interceptor.init(new DummyTestRouter(), apiProxyWith(interceptor));
+        return interceptor;
+    }
+
+    /** Runs the one-way request leg, then stages {@code backendResponse} as the service's answer. */
+    private static Exchange sendMessageExchange(Wsdl2OpenapiInterceptor interceptor, Response backendResponse) throws Exception {
+        var exc = new Exchange(null);
+        exc.setRequest(new Request.Builder().post("/send-message").body("{\"text\":\"hi\",\"priority\":1}").build());
+        assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exc));
+        exc.setResponse(backendResponse);
+        return exc;
+    }
+
+    @ParameterizedTest
+    @MethodSource("soapResponseEncodings")
+    void responseUsesXmlEncoding(String encoding, boolean fault) throws Exception {
+        var interceptor = wsdl2openapi("classpath:/ws/cities-with-fault.wsdl");
+        interceptor.init(new DummyTestRouter(), apiProxyWith(interceptor));
+        String soap = fault
+                ? CITY_NOT_FOUND_FAULT.replace("Atlantis", "München")
+                : """
+                  <?xml version="1.0" encoding="UTF-8"?>
+                  <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                    <soap:Body>
+                      <getCityResponse xmlns="https://predic8.de/cities">
+                        <country>Österreich</country>
+                        <population>123</population>
+                      </getCityResponse>
+                    </soap:Body>
+                  </soap:Envelope>
+                  """;
+        var exc = new Exchange(null);
+        exc.setProperty(operationPropertyKey(interceptor), "getCity");
+        exc.setResponse(Response.ok().body(soap.replace("UTF-8", encoding)
+                .getBytes(Charset.forName(encoding))).build());
+        exc.getResponse().getHeader().setContentType("text/xml");
+
+        assertEquals(fault ? Outcome.ABORT : Outcome.CONTINUE, interceptor.handleResponse(exc));
+
+        var body = new ObjectMapper().readTree(exc.getResponse().getBodyAsStringDecoded());
+        if (fault) {
+            assertEquals(500, exc.getResponse().getStatusCode());
+            assertEquals("München", body.at("/details/cityNotFound/name").asText());
+        } else {
+            assertEquals("application/json", exc.getResponse().getHeader().getContentType());
+            assertEquals("Österreich", body.get("country").asText());
+            assertEquals(123, body.get("population").intValue());
+        }
+    }
+
+    static Stream<Arguments> soapResponseEncodings() {
+        return Stream.of("UTF-8", "ISO-8859-1", "UTF-16")
+                .flatMap(encoding -> Stream.of(arguments(encoding, false), arguments(encoding, true)));
+    }
+                                    
+    private static final String GET_CITY_RESPONSE = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+              <soap:Body>
+                <getCityResponse xmlns="https://predic8.de/cities">
+                  <country>Österreich</country>
+                  <population>123</population>
+                </getCityResponse>
+              </soap:Body>
+            </soap:Envelope>
+            """;
+
+    @ParameterizedTest
+    @ValueSource(strings = {"UTF-8", "ISO-8859-1", "UTF-16"})
+    void responseUsesTheEncodingOfItsXmlDeclaration(String encoding) throws Exception {
+        var response = transformGetCityResponse(
+                GET_CITY_RESPONSE.replace("UTF-8", encoding), encoding, "text/xml", Outcome.CONTINUE);
+
+        assertEquals("application/json", response.getHeader().getContentType());
+        var body = new ObjectMapper().readTree(response.getBodyAsStringDecoded());
+        assertEquals("Österreich", body.get("country").asText());
+        assertEquals(123, body.get("population").intValue());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"UTF-8", "ISO-8859-1", "UTF-16"})
+    void faultResponseUsesTheEncodingOfItsXmlDeclaration(String encoding) throws Exception {
+        var response = transformGetCityResponse(
+                CITY_NOT_FOUND_FAULT.replace("Atlantis", "München").replace("UTF-8", encoding),
+                encoding, "text/xml", Outcome.ABORT);
+
+        assertEquals(500, response.getStatusCode());
+        assertEquals("München", new ObjectMapper().readTree(response.getBodyAsStringDecoded())
+                .at("/details/cityNotFound/name").asText());
+    }
+
+    /**
+     * A backend that omits the XML declaration leaves the Content-Type's charset as the only thing
+     * naming the encoding; ignoring it would fall back to UTF-8 and mangle the body.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"UTF-8", "ISO-8859-1", "UTF-16"})
+    void responseUsesTheContentTypeCharsetWhenTheXmlDeclarationIsAbsent(String encoding) throws Exception {
+        var response = transformGetCityResponse(withoutXmlDeclaration(GET_CITY_RESPONSE), encoding,
+                "text/xml; charset=" + encoding, Outcome.CONTINUE);
+
+        assertEquals("Österreich", new ObjectMapper().readTree(response.getBodyAsStringDecoded())
+                .get("country").asText());
+    }
+
+    /** RFC 7303 makes the Content-Type's charset authoritative for XML, over the document's own declaration. */
+    @Test
+    void contentTypeCharsetWinsOverAContradictingXmlDeclaration() throws Exception {
+        var response = transformGetCityResponse(GET_CITY_RESPONSE, "ISO-8859-1",
+                "text/xml; charset=ISO-8859-1", Outcome.CONTINUE);
+
+        assertEquals("Österreich", new ObjectMapper().readTree(response.getBodyAsStringDecoded())
+                .get("country").asText());
+    }
+
+    /** An encoding no JVM knows must not fail the exchange: the parser detects the encoding instead. */
+    @Test
+    void unknownContentTypeCharsetFallsBackToDetection() throws Exception {
+        var response = transformGetCityResponse(GET_CITY_RESPONSE, "UTF-8",
+                "text/xml; charset=no-such-charset", Outcome.CONTINUE);
+
+        assertEquals("Österreich", new ObjectMapper().readTree(response.getBodyAsStringDecoded())
+                .get("country").asText());
+    }
+
+    /**
+     * Runs a SOAP response for the getCity operation through the interceptor and returns what the
+     * exchange ends up carrying. {@code contentType} is set verbatim, so a test decides whether the
+     * charset is declared in the header, in the document, in both, or in neither.
+     */
+    private static Response transformGetCityResponse(String soap, String encoding, String contentType,
+                                                     Outcome expectedOutcome) throws Exception {
+        var interceptor = wsdl2openapi("classpath:/ws/cities-with-fault.wsdl");
+        interceptor.init(new DummyTestRouter(), apiProxyWith(interceptor));
+
+        var exc = new Exchange(null);
+        exc.setProperty(operationPropertyKey(interceptor), "getCity");
+        exc.setResponse(Response.ok().body(soap.getBytes(Charset.forName(encoding))).build());
+        exc.getResponse().getHeader().setContentType(contentType);
+
+        assertEquals(expectedOutcome, interceptor.handleResponse(exc));
+        return exc.getResponse();
+    }
+
+    private static String withoutXmlDeclaration(String xml) {
+        return xml.substring(xml.indexOf("?>") + 2).stripLeading();
     }
 
     @Test

@@ -20,6 +20,7 @@ import org.w3c.dom.*;
 import org.xml.sax.InputSource;
 
 import javax.xml.XMLConstants;
+import java.io.InputStream;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -71,7 +72,22 @@ public class Soap2JsonTransformer {
      * a string — the only thing possible for untyped or {@code xsd:any} content.
      */
     public String transform(String soapXml, Schema<?> responseSchema, Schema<?> faultDetailSchema) throws Exception {
-        Document doc = getInstance().parse(new InputSource(new StringReader(soapXml)));
+        return MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(
+                toMap(new InputSource(new StringReader(soapXml)), responseSchema, faultDetailSchema));
+    }
+
+    /**
+     * Transforms a SOAP document to UTF-8 JSON. The source decides the input encoding: with
+     * {@link InputSource#setEncoding} it is fixed, otherwise the XML parser detects it from the
+     * byte order mark or the XML declaration. The caller closes the source's stream.
+     */
+    public byte[] transform(InputSource soapXml, Schema<?> responseSchema, Schema<?> faultDetailSchema) throws Exception {
+        return MAPPER.writerWithDefaultPrettyPrinter().writeValueAsBytes(
+                toMap(soapXml, responseSchema, faultDetailSchema));
+    }
+
+    private Map<String, Object> toMap(InputSource soapXml, Schema<?> responseSchema, Schema<?> faultDetailSchema) throws Exception {
+        var doc = getInstance().parse(soapXml);
 
         Element body = getSoapBody(doc);
         if (body == null) {
@@ -87,8 +103,7 @@ public class Soap2JsonTransformer {
             throw buildFaultException(responseElement, faultDetailSchema);
         }
 
-        Map<String, Object> jsonMap = elementToMap(responseElement, responseSchema);
-        return MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(jsonMap);
+        return elementToMap(responseElement, responseSchema);
     }
 
     private static Element getSoapBody(Document doc) {
