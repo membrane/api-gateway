@@ -69,6 +69,7 @@ import static com.predic8.membrane.core.interceptor.soap.wsse.XmlEncryptionUtil.
  *       - decrypt:
  *           requiredReferences:
  *             - by: BODY
+ *           allowedLegacyAlgorithms: [aes256_cbc, rsa_1_5]
  * </code></pre>
  */
 @MCElement(name = "decrypt", component = false, id = "wsSecurity-validate-decrypt")
