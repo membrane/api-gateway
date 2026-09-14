@@ -37,8 +37,7 @@ import org.slf4j.LoggerFactory;
 import java.net.URL;
 import java.util.*;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
-import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.exchange.Exchange.SNI_SERVER_NAME;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
@@ -148,10 +147,9 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
                     .buildAndSetResponse(exc);
             return RETURN;
         } catch (ReadingBodyException e) {
-            user(router.getConfiguration().isProduction(), getDisplayName())
-                    .addSubSee("reading-body")
-                    .flow(REQUEST)
-                    .detail("Connection problem: %s . Maybe the peer or the network closed the connection?".formatted(e.getMessage()))
+            // Reported centrally: a body that arrived undecodable is not the connection problem this
+            // used to name, and the sender has to be told apart from the backend either way.
+            bodyFailure(router.getConfiguration().isProduction(), getDisplayName(), exc, e)
                     .buildAndSetResponse(exc);
 
             return RETURN;
