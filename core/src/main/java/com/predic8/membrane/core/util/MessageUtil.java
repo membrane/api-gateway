@@ -92,6 +92,19 @@ public class MessageUtil {
 	 * response failures (500), even if the encoded body has already been read successfully.
 	 * Wrapping the exception does not notify body observers again: transport completion
 	 * may already have released the connection.
+	 * <p>
+	 * Reads on the returned stream throw the unchecked {@link ReadingBodyException} where
+	 * {@link com.predic8.membrane.core.http.BodyInputStream} honours the {@link InputStream}
+	 * contract and throws {@link IOException}. The departure is deliberate: an IOException coming
+	 * out of a read is indistinguishable from one the consumer caused itself, so consumers
+	 * rediagnose it as a problem with the content. A truncated gzip body used to reach the client
+	 * as "Not well-formed XML ... Premature end of file" under a security-policy header, naming the
+	 * document the parser never got to read rather than the encoding that broke.
+	 * <p>
+	 * The cost is that a {@code catch (IOException)} around a read of this stream does not fire.
+	 * Callers that handle a decoding failure themselves have to catch {@link ReadingBodyException}
+	 * too; everything else lets it travel to the flow controller, which attributes it to the
+	 * message it came from.
 	 */
 	private static InputStream associateDecodingFailures(InputStream decoded, Message message) {
 		return new FilterInputStream(decoded) {
