@@ -19,6 +19,7 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.protection.AbstractBodyProtectionInterceptor;
 import com.predic8.membrane.core.interceptor.protection.Origin;
@@ -102,6 +103,11 @@ public class XMLProtectionInterceptor extends AbstractBodyProtectionInterceptor 
     public Outcome handleRequest(Exchange exc) {
         try {
             return protect(exc, exc.getRequest());
+        } catch (ReadingBodyException e) {
+            // A body that could not even be read is not an XML policy matter: reporting it as one
+            // would blame the document for a transport or Content-Encoding failure. Let the flow
+            // controller describe it, which also tells a client body from a backend body.
+            throw e;
         } catch (Exception e) {
             log.info("Could not inspect the XML body: {}", e.getMessage());
             log.debug("", e);

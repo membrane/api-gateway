@@ -14,12 +14,12 @@
 
 package com.predic8.membrane.core.util;
 
-import com.predic8.membrane.core.http.*;
-import org.slf4j.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.util.*;
-import java.util.zip.*;
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.InputStream;
 
 public class ByteUtil {
 
@@ -55,44 +55,6 @@ public class ByteUtil {
 			if (read < 0)
 				break;
 		}
-	}
-
-	public static byte[] getDecompressedData(byte[] compressedData) throws IOException {
-		Inflater decompressor = new Inflater(true);
-		decompressor.setInput(compressedData);
-
-		List<Chunk> chunks = new ArrayList<>();
-
-		while (!decompressor.finished()) {
-			byte[] buf = new byte[1024];
-			int count;
-			try {
-				count = decompressor.inflate(buf);
-			} catch (DataFormatException e) {
-				throw new IOException(e);
-			}
-			if (buf.length == count) {
-				Chunk chunk = new Chunk(buf);
-				chunks.add(chunk);
-			} else if (count < buf.length){
-				byte[] shortContent = new byte[count];
-				System.arraycopy(buf, 0, shortContent, 0, count);
-				Chunk chunk = new Chunk(shortContent);
-				chunks.add(chunk);
-			}
-		}
-
-		log.debug("Number of decompressed chunks: {}",chunks.size());
-		if (!chunks.isEmpty()) {
-
-			ByteArrayOutputStream bos = new ByteArrayOutputStream();
-
-			for (Chunk chunk : chunks) {
-				chunk.write(bos);
-			}
-			return bos.toByteArray();
-		}
-		return null;
 	}
 
 	public static int getValueOfBits(byte b, int minBitPosition, int maxBitPosition){

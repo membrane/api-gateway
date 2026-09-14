@@ -20,12 +20,79 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.net.*;
 import java.nio.channels.ClosedChannelException;
+import java.util.ArrayList;
+import java.util.List;
 
-import static com.predic8.membrane.core.util.ExceptionUtil.concatMessageAndCauseMessages;
-import static com.predic8.membrane.core.util.ExceptionUtil.isPeerDisconnect;
+import static com.predic8.membrane.core.util.ExceptionUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ExceptionUtilTest {
+
+    @Test
+    void matchesExceptionItselfWithoutVisitingItsCause() {
+        var exception = new RuntimeException(new IOException());
+        assertTrue(hasCauseMatching(exception, cause -> {
+            assertSame(exception, cause);
+            return true;
+        }));
+    }
+
+    @Test
+    void matchesNestedCauseAfterNonMatchingWrapperOfSameType() {
+        var failure = new ReadingBodyException("broken body");
+        var wrapper = new ReadingBodyException(new IOException(failure));
+        List<Throwable> visited = new ArrayList<>();
+
+        assertTrue(hasCauseMatching(wrapper, cause -> {
+            visited.add(cause);
+            return cause instanceof ReadingBodyException && cause == failure;
+        }));
+        assertEquals(List.of(wrapper, wrapper.getCause(), failure), visited);
+    }
+
+    @Test
+    void returnsFalseWhenNoCauseMatches() {
+        assertFalse(hasCauseMatching(new RuntimeException(new IOException()),
+                cause -> cause instanceof IllegalArgumentException));
+    }
+
+    @Test
+    void nullDoesNotInvokePredicate() {
+        assertFalse(hasCauseMatching(null, cause -> {
+            fail("An empty chain must not invoke the predicate");
+            return true;
+        }));
+    }
+
+    @Test
+    void cyclicChainVisitsEachExceptionOnce() {
+        var first = new RuntimeException("first");
+        var second = new RuntimeException("second", first);
+        first.initCause(second);
+        List<Throwable> visited = new ArrayList<>();
+
+        assertFalse(hasCauseMatching(first, cause -> {
+            // Fail immediately on a repeated visit instead of hanging if cycle detection regresses.
+            assertFalse(visited.contains(cause));
+            visited.add(cause);
+            return false;
+        }));
+        assertEquals(List.of(first, second), visited);
+    }
+
+    @Test
+    void ignoresSuppressedExceptions() {
+        var exception = new RuntimeException();
+        exception.addSuppressed(new IOException());
+        assertFalse(hasCauseMatching(exception, cause -> cause instanceof IOException));
+    }
+
+    @Test
+    void propagatesPredicateFailure() {
+        var failure = new IllegalStateException("predicate failed");
+        assertSame(failure, assertThrows(IllegalStateException.class,
+                () -> hasCauseMatching(new RuntimeException(), cause -> { throw failure; })));
+    }
 
     @Test
     public void testSimple() {
