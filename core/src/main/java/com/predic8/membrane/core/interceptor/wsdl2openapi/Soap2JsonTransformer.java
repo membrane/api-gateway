@@ -20,7 +20,6 @@ import org.w3c.dom.*;
 import org.xml.sax.InputSource;
 
 import javax.xml.XMLConstants;
-import java.io.InputStream;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -73,16 +72,20 @@ public class Soap2JsonTransformer {
      */
     public String transform(String soapXml, Schema<?> responseSchema, Schema<?> faultDetailSchema) throws Exception {
         return MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(
-                transform(new InputSource(new StringReader(soapXml)), responseSchema, faultDetailSchema));
+                toMap(new InputSource(new StringReader(soapXml)), responseSchema, faultDetailSchema));
     }
 
-    /** Transforms SOAP bytes to UTF-8 JSON, letting the XML parser detect the input encoding. The caller closes the stream. */
-    public byte[] transform(InputStream soapXml, Schema<?> responseSchema, Schema<?> faultDetailSchema) throws Exception {
+    /**
+     * Transforms a SOAP document to UTF-8 JSON. The source decides the input encoding: with
+     * {@link InputSource#setEncoding} it is fixed, otherwise the XML parser detects it from the
+     * byte order mark or the XML declaration. The caller closes the source's stream.
+     */
+    public byte[] transform(InputSource soapXml, Schema<?> responseSchema, Schema<?> faultDetailSchema) throws Exception {
         return MAPPER.writerWithDefaultPrettyPrinter().writeValueAsBytes(
-                transform(new InputSource(soapXml), responseSchema, faultDetailSchema));
+                toMap(soapXml, responseSchema, faultDetailSchema));
     }
 
-    private Map<String, Object> transform(InputSource soapXml, Schema<?> responseSchema, Schema<?> faultDetailSchema) throws Exception {
+    private Map<String, Object> toMap(InputSource soapXml, Schema<?> responseSchema, Schema<?> faultDetailSchema) throws Exception {
         var doc = getInstance().parse(soapXml);
 
         Element body = getSoapBody(doc);

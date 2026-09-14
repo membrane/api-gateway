@@ -36,7 +36,10 @@ import io.swagger.v3.oas.models.media.Schema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.DOMException;
+import org.xml.sax.InputSource;
 
+import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -53,6 +56,7 @@ import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisherInt
 import static com.predic8.membrane.core.resolver.ResolverMap.combine;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
 import static com.predic8.membrane.core.util.URLParamUtil.getParams;
+import static com.predic8.membrane.core.util.text.TextUtil.getCharset;
 import static com.predic8.membrane.core.util.wsdl.parser.Definitions.parse;
 import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.OUTPUT;
 import static org.w3c.dom.DOMException.INVALID_CHARACTER_ERR;
@@ -310,7 +314,7 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
             exc.getResponse().setBodyContent(getJsonResponse(exc, operationName));
             exc.getResponse().getHeader().setContentType(APPLICATION_JSON);
 
-            var opSettings = operationsByName.get(operationName);
+            OperationSettings opSettings = operationsByName.get(operationName);
             if (opSettings != null && !opSettings.getFlow().isEmpty()) {
                 return router.getFlowController().invokeResponseHandlers(exc, opSettings.getFlow());
             }
@@ -337,8 +341,26 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
         OperationRuntime runtime = operationRuntimes.get(operationName);
         try (var soapResponse = exc.getResponse().getBodyAsStreamDecoded()) {
             return new Soap2JsonTransformer(xsdToSchema.getComponents())
-                    .transform(soapResponse, runtime.responseSchema(), runtime.faultDetailSchema());
+                    .transform(soapSource(exc.getResponse(), soapResponse),
+                            runtime.responseSchema(),
+                            runtime.faultDetailSchema());
         }
+    }
+
+    /**
+     * The SOAP response as a parser input. RFC 7303 makes the <tt>charset</tt> parameter of the
+     * Content-Type authoritative for XML media types, so it is fixed on the source and overrides
+     * whatever the document's own XML declaration claims. Without it — or when it names an encoding
+     * this JVM does not know — the source stays unset and the parser detects the encoding from the
+     * byte order mark or the XML declaration instead of the gateway guessing UTF-8.
+     */
+    private static InputSource soapSource(Response response, InputStream body) {
+        InputSource source = new InputSource(body);
+        Charset charset = getCharset(response.getHeader().getCharset(), null);
+        if (charset != null) {
+            source.setEncoding(charset.name());
+        }
+        return source;
     }
 
     /**
