@@ -180,6 +180,7 @@ public class HttpUtil {
 			case 101 -> "Switching Protocols";
 			case 102 -> "Processing";
 			case 103 -> "Early Hints";
+			case 104 -> "Upload Resumption Supported";
 			case 200 -> "OK";
 			case 201 -> "Created";
 			case 202 -> "Accepted";

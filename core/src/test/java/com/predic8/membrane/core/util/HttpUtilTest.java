@@ -144,9 +144,11 @@ public class HttpUtilTest {
 
     @ParameterizedTest
     @CsvSource({
+            "104, Upload Resumption Supported",
             "204, No Content",
             "205, Reset Content",
             "207, Multi-Status",
+            "226, IM Used",
             "301, Moved Permanently",
             "413, Content Too Large",
             "429, Too Many Requests",
