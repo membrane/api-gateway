@@ -278,6 +278,19 @@ public class Wsdl2OpenApiConverter {
                                 name, wsdlOps.stream().map(Operation::getName).toList())));
         var pathKey = "/" + (opSettings.getPath() != null ? opSettings.getPath() : camelToKebab(name));
         var existing = paths.get(pathKey);
+        if (existing == null) {
+            var canonicalPathKey = canonicalizeTemplatedPath(pathKey);
+            for (var entry : paths.entrySet()) {
+                if (!canonicalizeTemplatedPath(entry.getKey()).equals(canonicalPathKey)) {
+                    continue;
+                }
+                var existingOperation = getMethod(entry.getValue(), opSettings.getMethod());
+                if (existingOperation != null) {
+                    throw new ConfigurationException("Operations '%s' and '%s' are both configured for %s %s".formatted(
+                            existingOperation.getOperationId(), name, opSettings.getMethod(), pathKey));
+                }
+            }
+        }
         if (existing != null) {
             var existingOperation = getMethod(existing, opSettings.getMethod());
             if (existingOperation != null) {
@@ -288,6 +301,10 @@ public class Wsdl2OpenApiConverter {
         } else {
             paths.addPathItem(pathKey, buildPathItem(name, wsdlOp, opSettings));
         }
+    }
+
+    private static String canonicalizeTemplatedPath(String path) {
+        return path.replaceAll("\\{[^}]*}", "{param}");
     }
 
     private PathItem buildPathItem(String name, Operation wsdlOp, OperationSettings settings) {

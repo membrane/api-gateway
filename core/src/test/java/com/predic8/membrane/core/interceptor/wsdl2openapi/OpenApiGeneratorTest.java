@@ -402,6 +402,17 @@ class OpenApiGeneratorTest {
         assertTrue(e.getMessage().contains("getCity"));
         assertTrue(e.getMessage().contains("getCityB"));
         assertTrue(e.getMessage().contains("POST /cities"));
+
+        // Parameter names do not distinguish templated paths for routing, so these conflict too.
+        getCity.setPath("cities/{id}");
+        getCityB.setPath("cities/{name}");
+
+        e = assertThrows(ConfigurationException.class,
+                () -> converter(definitions, "/", Map.of("getCity", getCity, "getCityB", getCityB)).generate());
+
+        assertTrue(e.getMessage().contains("getCity"));
+        assertTrue(e.getMessage().contains("getCityB"));
+        assertTrue(e.getMessage().contains("POST /cities/{name}"));
     }
 
     @Test
