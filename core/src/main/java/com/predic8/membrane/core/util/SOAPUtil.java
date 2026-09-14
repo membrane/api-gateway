@@ -237,6 +237,10 @@ public class SOAPUtil {
                     }
                 }
             }
+        } catch (ReadingBodyException e) {
+            // As in isSOAP: a body that could not be read says nothing about whether it was SOAP.
+            // Reporting it as "not SOAP" would turn a transport failure into a content verdict.
+            throw e;
         } catch (Exception e) {
             log.info("Error parsing SOAP message: {}", e.getMessage());
             log.debug("Ignoring exception: ", e);
