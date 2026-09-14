@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.util;
 
 import com.predic8.membrane.core.http.Chunk;
+import com.predic8.membrane.core.http.DecodingException;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.ReadingBodyException;
 import org.brotli.dec.BrotliInputStream;
@@ -52,7 +53,7 @@ public class MessageUtil {
 			}
 			return msg.getBodyAsStream();
 		} catch (IOException e) {
-			throw new ReadingBodyException(e, msg);
+			throw decodingFailure(msg, e);
 		}
 	}
 	
@@ -81,8 +82,20 @@ public class MessageUtil {
 			}
 			return msg.getBody().getContent();
 		} catch (IOException e) {
-			throw new ReadingBodyException(e, msg);
+			throw decodingFailure(msg, e);
 		}
+	}
+
+	/**
+	 * Associates a read failure with the message it happened on, naming the Content-Encoding when the
+	 * message carries one. A body the sender did not label is not a decoding problem, so it keeps the
+	 * plain wrapping: {@link #getContentAsStream} reads an unencoded body through the same try block.
+	 */
+	private static ReadingBodyException decodingFailure(Message message, IOException e) {
+		final String contentEncoding = message.getHeader().getContentEncoding();
+		if (contentEncoding == null)
+			return new ReadingBodyException(e, message);
+		return new ReadingBodyException(new DecodingException(contentEncoding, e), message);
 	}
 
 	/**
@@ -103,8 +116,9 @@ public class MessageUtil {
 	 * <p>
 	 * The cost is that a {@code catch (IOException)} around a read of this stream does not fire.
 	 * Callers that handle a decoding failure themselves have to catch {@link ReadingBodyException}
-	 * too; everything else lets it travel to the flow controller, which attributes it to the
-	 * message it came from.
+	 * too, and describe it with
+	 * {@link com.predic8.membrane.core.exceptions.ProblemDetails#bodyFailure} rather than deciding a
+	 * status of their own; everything else lets it travel to the flow controller, which does the same.
 	 */
 	private static InputStream associateDecodingFailures(InputStream decoded, Message message) {
 		return new FilterInputStream(decoded) {
@@ -113,7 +127,7 @@ public class MessageUtil {
 				try {
 					return in.read();
 				} catch (IOException e) {
-					throw new ReadingBodyException(e, message);
+					throw decodingFailure(message, e);
 				}
 			}
 
@@ -122,7 +136,7 @@ public class MessageUtil {
 				try {
 					return in.read(bytes, offset, length);
 				} catch (IOException e) {
-					throw new ReadingBodyException(e, message);
+					throw decodingFailure(message, e);
 				}
 			}
 		};

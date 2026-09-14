@@ -14,6 +14,8 @@
 
 package com.predic8.membrane.core.http;
 
+import com.predic8.membrane.core.exchange.Exchange;
+
 import static com.predic8.membrane.core.util.ExceptionUtil.getRootCause;
 import static com.predic8.membrane.core.util.ExceptionUtil.hasCauseMatching;
 
@@ -61,5 +63,15 @@ public class ReadingBodyException extends RuntimeException {
         ReadingBodyException recorded = message.getBody().getObservedException();
         return recorded == this
                 || (recorded != null && getRootCause(recorded) == getRootCause(this));
+    }
+
+    /**
+     * @return whether this failure is the sender's to answer for: it belongs to the request body and
+     * not to the response body. A body can be read in either flow, so the flow the exception surfaced
+     * in does not decide this - only which body it belongs to does. Anything else, a backend response
+     * body above all, is the gateway's problem rather than the sender's.
+     */
+    public boolean isRequestBodyFailure(Exchange exchange) {
+        return belongsTo(exchange.getRequest()) && !belongsTo(exchange.getResponse());
     }
 }

@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.transport.http;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
@@ -22,6 +23,8 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.flow.ReturnInterceptor;
+import com.predic8.membrane.core.interceptor.json.JsonProtectionInterceptor;
+import com.predic8.membrane.core.interceptor.xmlprotection.XMLProtectionInterceptor;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
 import com.predic8.membrane.core.proxies.Target;
 import com.predic8.membrane.core.router.TestRouter;
@@ -45,8 +48,10 @@ import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.GZIPOutputStream;
 
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
+import static com.predic8.membrane.core.interceptor.xmlprotection.XMLProtectionInterceptor.X_PROTECTION;
 import static com.predic8.membrane.core.util.NetworkUtil.getFreePortEqualAbove;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
@@ -57,6 +62,17 @@ class RequestBodyDecodingTest {
 
     /** What {@code InflaterInputStream} reports when the compressed data ends early. */
     private static final String GZIP_TRUNCATION_MESSAGE = "Unexpected end of ZLIB input stream";
+
+    private static final String BODY_DECODING_TYPE = "https://membrane-api.io/problems/user/body-decoding";
+
+    /**
+     * The wording {@link com.predic8.membrane.core.http.DecodingException} composes. Asserted in full
+     * rather than by substring: naming the coding is the point of it, and a detail that only repeated
+     * the decoder's own message would leave the sender guessing which of its headers was wrong.
+     */
+    private static String decodingDetail(String contentEncoding, String cause) {
+        return "Could not decode body with Content-Encoding \"%s\": %s".formatted(contentEncoding, cause);
+    }
 
     private TestRouter router;
     private int port;
@@ -140,7 +156,7 @@ class RequestBodyDecodingTest {
             // Malformed client content must identify the decoding error in the 400 response.
             assertAll(
                     () -> assertEquals(400, response.statusCode(), response.body()),
-                    () -> assertEquals("Truncated deflate stream.",
+                    () -> assertEquals(decodingDetail("deflate", "Truncated deflate stream."),
                             new ObjectMapper().readTree(response.body()).path("detail").asText(), response.body()));
         }
     }
@@ -195,10 +211,13 @@ class RequestBodyDecodingTest {
                 .connectTimeout(Duration.ofSeconds(5)).build()) {
             var response = client.send(request, HttpResponse.BodyHandlers.ofString());
             // A failure raised mid-stream must still be attributed to the client, like the buffered one.
+            JsonNode problem = new ObjectMapper().readTree(response.body());
             assertAll(
                     () -> assertEquals(400, response.statusCode(), response.body()),
-                    () -> assertEquals(GZIP_TRUNCATION_MESSAGE,
-                            new ObjectMapper().readTree(response.body()).path("detail").asText(), response.body()));
+                    () -> assertEquals(decodingDetail("gzip", GZIP_TRUNCATION_MESSAGE),
+                            problem.path("detail").asText(), response.body()),
+                    () -> assertEquals(BODY_DECODING_TYPE, problem.path("type").asText(), response.body()),
+                    () -> assertEquals("gzip", problem.path("contentEncoding").asText(), response.body()));
         }
     }
 
@@ -228,6 +247,60 @@ class RequestBodyDecodingTest {
             }
         } finally {
             backend.stop(0);
+        }
+    }
+
+    /**
+     * A protection plugin must not answer a body it could not read as a verdict on the document it
+     * never saw: before, this came back 500 "Error inspecting body!" from xmlProtection's blanket
+     * catch, and the sender learned nothing about its compression.
+     */
+    @Test
+    void truncatedGzipThroughXmlProtectionIsADecodingError() throws Exception {
+        var protection = new XMLProtectionInterceptor();
+        protection.init(router); // the flow is replaced after start(), so init() does not run on its own
+        proxy.setFlow(new ArrayList<>(List.of(protection, new ReturnInterceptor())));
+
+        var response = postTruncatedGzip("application/xml; charset=UTF-8");
+
+        // An XML request is answered as problem+xml, so assert what such a client actually receives.
+        assertAll(
+                () -> assertEquals(400, response.statusCode(), response.body()),
+                () -> assertTrue(response.body().contains("<type>%s</type>".formatted(BODY_DECODING_TYPE)), response.body()),
+                () -> assertTrue(response.body().contains("<contentEncoding>gzip</contentEncoding>"), response.body()),
+                // Not a policy violation, so the security header that marks one must stay away
+                () -> assertNull(response.headers().firstValue(X_PROTECTION).orElse(null)));
+    }
+
+    /**
+     * The same for jsonProtection, which used to call it a "JSON Protection Violation" - blaming the
+     * document for a body whose compression was what could not be read.
+     */
+    @Test
+    void truncatedGzipThroughJsonProtectionIsADecodingError() throws Exception {
+        var protection = new JsonProtectionInterceptor();
+        protection.init(router);
+        proxy.setFlow(new ArrayList<>(List.of(protection, new ReturnInterceptor())));
+
+        var response = postTruncatedGzip(APPLICATION_JSON);
+
+        JsonNode problem = new ObjectMapper().readTree(response.body());
+        assertAll(
+                () -> assertEquals(400, response.statusCode(), response.body()),
+                () -> assertEquals(BODY_DECODING_TYPE, problem.path("type").asText(), response.body()),
+                () -> assertFalse(problem.path("title").asText().contains("Protection"), response.body()));
+    }
+
+    private HttpResponse<String> postTruncatedGzip(String contentType) throws Exception {
+        var request = HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/"))
+                .timeout(Duration.ofSeconds(5))
+                .header("Content-Type", contentType)
+                .header("Content-Encoding", "gzip")
+                .POST(HttpRequest.BodyPublishers.ofByteArray(truncatedGzipBody("payload payload payload")))
+                .build();
+        try (var client = HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1)
+                .connectTimeout(Duration.ofSeconds(5)).build()) {
+            return client.send(request, HttpResponse.BodyHandlers.ofString());
         }
     }
 

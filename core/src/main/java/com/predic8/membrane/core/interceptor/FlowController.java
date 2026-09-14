@@ -23,12 +23,11 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.bodyFailure;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
-import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.util.ExceptionUtil.getRootCause;
 import static org.apache.commons.lang3.exception.ExceptionUtils.throwableOfType;
 
 /**
@@ -127,14 +126,13 @@ public class FlowController {
         var production = router.getConfiguration().isProduction();
         // Attribute failures to the message, since either body can be read in either flow.
         var bodyFailure = throwableOfType(e, ReadingBodyException.class);
-        if (bodyFailure != null && bodyFailure.belongsTo(exchange.getRequest())
-                && !bodyFailure.belongsTo(exchange.getResponse())) {
-            return user(production, component)
-                    .flow(REQUEST)
-                    .detail(getRootCause(bodyFailure).getMessage());
+        if (bodyFailure == null) {
+            log.warn(detail, e);
+            return internal(production, component).detail(detail);
         }
-        log.warn(detail, e);  // Not exclusively attributable to the request body.
-        return internal(production, component).detail(detail);
+        if (!bodyFailure.isRequestBodyFailure(exchange))
+            log.warn(detail, e);  // Not exclusively attributable to the request body.
+        return bodyFailure(production, component, exchange, bodyFailure);
     }
 
     public Outcome invokeResponseHandlers(Exchange exchange, List<Interceptor> interceptors) {

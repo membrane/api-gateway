@@ -15,6 +15,8 @@
 package com.predic8.membrane.core.interceptor.xmlprotection;
 
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.DecodingException;
+import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.router.DefaultRouter;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -114,31 +116,36 @@ class XMLProtectionInterceptorTest {
         assertTrue(bodyOf(exc).contains("invalid or unsupported encoding"), bodyOf(exc));
     }
 
+    /**
+     * A body that cannot be read is not this plugin's to answer for, so the exception travels on
+     * rather than becoming an XML verdict. Who it is reported to, and as what, is decided centrally
+     * by {@link com.predic8.membrane.core.exceptions.ProblemDetails#bodyFailure} and covered
+     * end-to-end - through a router, which this test does not have - in
+     * {@code RequestBodyDecodingTest}.
+     */
     @Test
-    @DisplayName("A body that cannot even be decoded is a server error, not a policy violation")
-    void undecodableBodyIsReportedAsServerError() throws Exception {
+    @DisplayName("A body that cannot even be decoded is not answered as a policy violation")
+    void undecodableBodyEscapesInsteadOfBecomingAnXmlVerdict() throws Exception {
         Exchange exc = post("/")
                 .contentType(APPLICATION_XML)
                 .body("<foo/>") // announced as gzip below, but is not
                 .header("Content-Encoding", "gzip") // after body(), which clears Content-Encoding
                 .buildExchange();
 
-        assertEquals(ABORT, interceptor().handleRequest(exc));
-        assertEquals(500, exc.getResponse().getStatusCode());
-        assertNull(exc.getResponse().getHeader().getFirstValue(X_PROTECTION));
-        // Outside production the cause is reported as the "reason" detail rather than a stacktrace
-        assertTrue(bodyOf(exc).contains("GZIP"), bodyOf(exc));
+        DecodingException decoding = decodingFailureOf(exc);
+        assertEquals("gzip", decoding.getContentEncoding());
+        assertTrue(decoding.getMessage().contains("GZIP"), decoding.getMessage());
     }
 
     /**
-     * The other half of {@link #undecodableBodyIsReportedAsServerError}: a body whose gzip header is
-     * valid but whose compressed data stops short fails on a read from the decoder rather than when
-     * the decoder is built. Both are the same kind of failure and must be reported alike, so that
-     * where the stream happens to break does not decide the status code.
+     * The other half of {@link #undecodableBodyEscapesInsteadOfBecomingAnXmlVerdict}: a body whose
+     * gzip header is valid but whose compressed data stops short fails on a read from the decoder
+     * rather than when the decoder is built. Both are the same kind of failure and must travel the
+     * same way, so that where the stream happens to break does not decide the answer.
      */
     @Test
-    @DisplayName("A gzip body that fails mid-stream is a server error too, not a policy violation")
-    void truncatedGzipBodyIsReportedAsServerError() throws Exception {
+    @DisplayName("A gzip body that fails mid-stream escapes too, not as a policy violation")
+    void truncatedGzipBodyEscapesInsteadOfBecomingAnXmlVerdict() throws Exception {
         Exchange exc = post("/")
                 // Charset given explicitly: without it the encoding probe reads the body first, and
                 // this test is about the failure surfacing from the scan.
@@ -147,9 +154,19 @@ class XMLProtectionInterceptorTest {
                 .header("Content-Encoding", "gzip") // after body(), which clears Content-Encoding
                 .buildExchange();
 
-        assertEquals(ABORT, interceptor().handleRequest(exc));
-        assertEquals(500, exc.getResponse().getStatusCode());
-        assertNull(exc.getResponse().getHeader().getFirstValue(X_PROTECTION));
+        assertEquals("gzip", decodingFailureOf(exc).getContentEncoding());
+    }
+
+    /**
+     * Asserts that inspecting the body raises a decoding failure instead of setting a response, and
+     * hands back the cause so the test can check what it says. A response left on the exchange would
+     * mean the plugin answered a transport failure as an XML one.
+     */
+    private static DecodingException decodingFailureOf(Exchange exc) {
+        ReadingBodyException failure = assertThrows(ReadingBodyException.class,
+                () -> interceptor().handleRequest(exc));
+        assertNull(exc.getResponse());
+        return assertInstanceOf(DecodingException.class, failure.getCause());
     }
 
     /**
