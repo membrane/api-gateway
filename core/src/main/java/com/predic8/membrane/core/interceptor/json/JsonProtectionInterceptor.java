@@ -19,6 +19,7 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exceptions.ProblemDetails;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.protection.AbstractBodyProtectionInterceptor;
@@ -107,6 +108,9 @@ public class JsonProtectionInterceptor extends AbstractBodyProtectionInterceptor
     public Outcome handleRequest(Exchange exc) {
         try {
             return protect(exc, exc.getRequest());
+        } catch (ReadingBodyException e) {
+            // Not a JSON policy matter: see the same rethrow in XMLProtectionInterceptor.
+            throw e;
         } catch (Exception e) {
             exc.setResponse(createErrorResponse(e.getMessage(), null, null));
             return ABORT;
@@ -139,6 +143,10 @@ public class JsonProtectionInterceptor extends AbstractBodyProtectionInterceptor
         } catch (JsonParseException e) {
             return reject(exc, origin.describe(e.getMessage()),
                     e.getLocation().getLineNr(), e.getLocation().getColumnNr());
+        } catch (ReadingBodyException e) {
+            // Would otherwise be reported as a "JSON Protection Violation", blaming the document for
+            // a body that could not be read in the first place.
+            throw e;
         } catch (Exception e) {
             return reject(exc, origin.describe(e.getMessage()), null, null);
         }

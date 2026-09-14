@@ -41,6 +41,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.http.Header.CONTENT_LENGTH;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.Wsdl2OpenApiConverter.ApiInfo;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.camelToKebab;
 import static com.predic8.membrane.test.TestUtil.getPathFromResource;
@@ -176,6 +177,49 @@ class Wsdl2OpenapiInterceptorTest {
         var result = new ObjectMapper().readTree(exc.getResponse().getBodyAsStringDecoded()).get("result");
         assertTrue(result.get("itemCount").isNumber(), "xsd:int must not arrive as a string: " + result);
         assertEquals("Chair", result.get("itemName").asText());
+    }
+
+    @Test
+    void anOutputMessageWithNoPartsStillReturnsABody() throws Exception {
+        var interceptor = wsdl2openapi("classpath:/special/empty-message.wsdl");
+        interceptor.init(new DummyTestRouter(), apiProxyWith(interceptor));
+
+        var exc = new Exchange(null);
+        exc.setProperty(operationPropertyKey(interceptor), "ping");
+        exc.setResponse(Response.ok("""
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soap:Body><pingResponse/></soap:Body>
+                </soap:Envelope>
+                """).build());
+
+        assertEquals(Outcome.CONTINUE, interceptor.handleResponse(exc));
+        // The WSDL declares an output message for "ping", even though it carries no parts: the
+        // service still sends an envelope, which may turn out to hold a fault instead. That is
+        // reason enough not to collapse it to 204 the way a truly one-way operation is.
+        assertEquals(200, exc.getResponse().getStatusCode());
+        assertTrue(exc.getResponse().getHeader().getContentType().startsWith(APPLICATION_JSON));
+        assertTrue(new ObjectMapper().readTree(exc.getResponse().getBodyAsStringDecoded()).isObject());
+    }
+
+    @Test
+    void anOutputPartWithoutFieldsStillReturnsABody() throws Exception {
+        var interceptor = wsdl2openapi("classpath:/ws/scalar-output.wsdl");
+        interceptor.init(new DummyTestRouter(), apiProxyWith(interceptor));
+
+        var exc = new Exchange(null);
+        exc.setProperty(operationPropertyKey(interceptor), "refresh");
+        exc.setResponse(Response.ok("""
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soap:Body><refreshResponse xmlns="https://example.com/scalar-output"/></soap:Body>
+                </soap:Envelope>
+                """).build());
+
+        assertEquals(Outcome.CONTINUE, interceptor.handleResponse(exc));
+        // The output message has a part, so the service does send a response element — an empty
+        // complex type is an empty JSON object, not "no content".
+        assertEquals(200, exc.getResponse().getStatusCode());
+        assertTrue(exc.getResponse().getHeader().getContentType().startsWith(APPLICATION_JSON));
+        assertTrue(new ObjectMapper().readTree(exc.getResponse().getBodyAsStringDecoded()).isObject());
     }
 
     @Test
@@ -578,7 +622,7 @@ class Wsdl2OpenapiInterceptorTest {
                 .flatMap(encoding -> Stream.of(arguments(encoding, false), arguments(encoding, true)));
     }
                                     
-    private static final String GET_CITY_RESPONSE = """
+    private static final String GET_CITY_RESPONSE_WITH_XML_DECLARATION = """
             <?xml version="1.0" encoding="UTF-8"?>
             <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
               <soap:Body>
@@ -594,7 +638,7 @@ class Wsdl2OpenapiInterceptorTest {
     @ValueSource(strings = {"UTF-8", "ISO-8859-1", "UTF-16"})
     void responseUsesTheEncodingOfItsXmlDeclaration(String encoding) throws Exception {
         var response = transformGetCityResponse(
-                GET_CITY_RESPONSE.replace("UTF-8", encoding), encoding, "text/xml", Outcome.CONTINUE);
+                GET_CITY_RESPONSE_WITH_XML_DECLARATION.replace("UTF-8", encoding), encoding, "text/xml", Outcome.CONTINUE);
 
         assertEquals("application/json", response.getHeader().getContentType());
         var body = new ObjectMapper().readTree(response.getBodyAsStringDecoded());
@@ -621,7 +665,7 @@ class Wsdl2OpenapiInterceptorTest {
     @ParameterizedTest
     @ValueSource(strings = {"UTF-8", "ISO-8859-1", "UTF-16"})
     void responseUsesTheContentTypeCharsetWhenTheXmlDeclarationIsAbsent(String encoding) throws Exception {
-        var response = transformGetCityResponse(withoutXmlDeclaration(GET_CITY_RESPONSE), encoding,
+        var response = transformGetCityResponse(withoutXmlDeclaration(GET_CITY_RESPONSE_WITH_XML_DECLARATION), encoding,
                 "text/xml; charset=" + encoding, Outcome.CONTINUE);
 
         assertEquals("Österreich", new ObjectMapper().readTree(response.getBodyAsStringDecoded())
@@ -631,7 +675,7 @@ class Wsdl2OpenapiInterceptorTest {
     /** RFC 7303 makes the Content-Type's charset authoritative for XML, over the document's own declaration. */
     @Test
     void contentTypeCharsetWinsOverAContradictingXmlDeclaration() throws Exception {
-        var response = transformGetCityResponse(GET_CITY_RESPONSE, "ISO-8859-1",
+        var response = transformGetCityResponse(GET_CITY_RESPONSE_WITH_XML_DECLARATION, "ISO-8859-1",
                 "text/xml; charset=ISO-8859-1", Outcome.CONTINUE);
 
         assertEquals("Österreich", new ObjectMapper().readTree(response.getBodyAsStringDecoded())
@@ -641,7 +685,7 @@ class Wsdl2OpenapiInterceptorTest {
     /** An encoding no JVM knows must not fail the exchange: the parser detects the encoding instead. */
     @Test
     void unknownContentTypeCharsetFallsBackToDetection() throws Exception {
-        var response = transformGetCityResponse(GET_CITY_RESPONSE, "UTF-8",
+        var response = transformGetCityResponse(GET_CITY_RESPONSE_WITH_XML_DECLARATION, "UTF-8",
                 "text/xml; charset=no-such-charset", Outcome.CONTINUE);
 
         assertEquals("Österreich", new ObjectMapper().readTree(response.getBodyAsStringDecoded())
