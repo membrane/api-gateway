@@ -39,6 +39,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import static com.predic8.membrane.core.http.Header.CONTENT_LENGTH;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.Wsdl2OpenApiConverter.ApiInfo;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.camelToKebab;
 import static com.predic8.membrane.test.TestUtil.getPathFromResource;
@@ -313,6 +314,15 @@ class Wsdl2OpenapiInterceptorTest {
             </soap:Envelope>
             """;
 
+    /** A successful getCity response as cities-with-fault.wsdl declares it. */
+    private static final String GET_CITY_RESPONSE = """
+            <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+              <soap:Body><getCityResponse xmlns="https://predic8.de/cities">
+                <country>Germany</country><population>123</population>
+              </getCityResponse></soap:Body>
+            </soap:Envelope>
+            """;
+
     @Test
     void declaredFaultBecomesProblemDetailsWithDetailsMember() throws Exception {
         var response = faultResponse(false);
@@ -330,7 +340,53 @@ class Wsdl2OpenapiInterceptorTest {
 
     @ParameterizedTest
     @MethodSource("successStatuses")
-    void successStatusIsPublishedAndReturned(Integer status) throws Exception {
+    void successStatusIsPublishedInTheDocument(Integer status) throws Exception {
+        var responses = generatedOpenApi(interceptorWithStatus(status))
+                .getPaths().get("/get-city").getPost().getResponses();
+
+        assertNotNull(responses.get(Integer.toString(expectedStatus(status)))
+                .getContent().get("application/json").getSchema());
+        assertEquals(2, responses.size());
+        assertNotNull(responses.getDefault(), "the configured status and default are the only two responses");
+    }
+
+    @ParameterizedTest
+    @MethodSource("successStatuses")
+    void successStatusIsReturnedOnTheWire(Integer status) throws Exception {
+        var interceptor = interceptorWithStatus(status);
+        var exc = getCityExchange(interceptor, GET_CITY_RESPONSE);
+
+        assertEquals(Outcome.CONTINUE, interceptor.handleResponse(exc));
+        assertEquals(expectedStatus(status), exc.getResponse().getStatusCode());
+        assertEquals(expectedStatus(status) == 201 ? "Created" : "OK", exc.getResponse().getStatusMessage());
+        assertEquals(123, new ObjectMapper().readTree(exc.getResponse().getBodyAsStringDecoded()).get("population").asInt());
+    }
+
+    @ParameterizedTest
+    @MethodSource("faultResponsesForConfiguredStatus")
+    void configuredStatusDoesNotApplyToFaultsOrConversionErrors(Integer status, String soap) throws Exception {
+        var interceptor = interceptorWithStatus(status);
+        var exc = getCityExchange(interceptor, soap);
+
+        assertEquals(Outcome.ABORT, interceptor.handleResponse(exc));
+        assertEquals(500, exc.getResponse().getStatusCode());
+    }
+
+    static Stream<Arguments> successStatuses() {
+        return Stream.of(arguments((Integer) null), arguments(200), arguments(201));
+    }
+
+    static Stream<Arguments> faultResponsesForConfiguredStatus() {
+        return Stream.<Integer>of(null, 200, 201).flatMap(status ->
+                Stream.of(CITY_NOT_FOUND_FAULT, "invalid XML").map(soap -> arguments(status, soap)));
+    }
+
+    private static int expectedStatus(Integer configured) {
+        return configured == null ? 200 : configured;
+    }
+
+    /** The interceptor for cities-with-fault.wsdl, with getCity's status configured unless {@code null}. */
+    private static Wsdl2OpenapiInterceptor interceptorWithStatus(Integer status) {
         var interceptor = wsdl2openapi("classpath:/ws/cities-with-fault.wsdl");
         if (status != null) {
             var settings = new OperationSettings();
@@ -340,35 +396,143 @@ class Wsdl2OpenapiInterceptorTest {
             interceptor.setOperations(operations);
         }
         interceptor.init(new DummyTestRouter(), apiProxyWith(interceptor));
-        int expected = status == null ? 200 : status;
-        var responses = generatedOpenApi(interceptor).getPaths().get("/get-city").getPost().getResponses();
-        assertNotNull(responses.get(Integer.toString(expected)).getContent().get("application/json").getSchema());
-        assertEquals(2, responses.size());
-        assertNotNull(responses.getDefault());
-
-        for (String soap : List.of("""
-                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
-                  <soap:Body><getCityResponse xmlns="https://predic8.de/cities">
-                    <country>Germany</country><population>123</population>
-                  </getCityResponse></soap:Body>
-                </soap:Envelope>
-                """, CITY_NOT_FOUND_FAULT, "invalid XML")) {
-            var exc = new Exchange(null);
-            exc.setRequest(new Request.Builder().post("/get-city").body("{\"name\":\"Bonn\"}").build());
-            assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exc));
-            exc.setResponse(Response.ok().body(soap).build());
-            boolean success = soap.contains("getCityResponse");
-            assertEquals(success ? Outcome.CONTINUE : Outcome.ABORT, interceptor.handleResponse(exc));
-            assertEquals(success ? expected : 500, exc.getResponse().getStatusCode());
-            if (success) {
-                assertEquals(expected == 201 ? "Created" : "OK", exc.getResponse().getStatusMessage());
-                assertEquals(123, new ObjectMapper().readTree(exc.getResponse().getBodyAsStringDecoded()).get("population").asInt());
-            }
-        }
+        return interceptor;
     }
 
-    static Stream<Arguments> successStatuses() {
-        return Stream.of(arguments((Integer) null), arguments(200), arguments(201));
+    /** Runs the request leg so the operation property is set, then stages {@code soap} as the backend's answer. */
+    private static Exchange getCityExchange(Wsdl2OpenapiInterceptor interceptor, String soap) throws Exception {
+        var exc = new Exchange(null);
+        exc.setRequest(new Request.Builder().post("/get-city").body("{\"name\":\"Bonn\"}").build());
+        assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exc));
+        exc.setResponse(Response.ok().body(soap).build());
+        return exc;
+    }
+
+    @Test
+    void oneWayOperationIsAnsweredWithoutABody() throws Exception {
+        var interceptor = oneWayInterceptor(null);
+        var exc = sendMessageExchange(interceptor, Response.ok().build());
+
+        assertEquals(Outcome.CONTINUE, interceptor.handleResponse(exc));
+        assertEquals(204, exc.getResponse().getStatusCode());
+        assertEquals("No Content", exc.getResponse().getStatusMessage());
+        assertEquals(0, exc.getResponse().getBody().getLength());
+        // Not decoration: Response.ok() already sets Content-Length: 0, so Message.emptyBody() would
+        // take its isBodyEmpty() early return and leave these headers in place. The 202 case below
+        // passes either way — that early return happens to leave the Content-Length a 202 needs —
+        // so this is the only assertion that tells the two implementations apart.
+        assertNull(exc.getResponse().getHeader().getFirstValue(CONTENT_LENGTH),
+                "a 204 must not carry Content-Length");
+        assertNull(exc.getResponse().getHeader().getContentType());
+    }
+
+    @Test
+    void oneWayFaultIsNotSwallowed() throws Exception {
+        var interceptor = oneWayInterceptor(null);
+        // The WSDL declares no fault for sendMessage: detection is by the element name, not by a
+        // declaration, so a fault must still abort rather than pass as an accepted one-way call.
+        var exc = sendMessageExchange(interceptor, Response.ok().body(CITY_NOT_FOUND_FAULT).build());
+
+        assertEquals(Outcome.ABORT, interceptor.handleResponse(exc));
+        assertEquals(500, exc.getResponse().getStatusCode());
+    }
+
+    @Test
+    void oneWayBodyFromTheServiceIsDiscarded() throws Exception {
+        var interceptor = oneWayInterceptor(null);
+        var exc = sendMessageExchange(interceptor, Response.ok().body(GET_CITY_RESPONSE).build());
+
+        assertEquals(Outcome.CONTINUE, interceptor.handleResponse(exc));
+        assertEquals(204, exc.getResponse().getStatusCode());
+        assertEquals(0, exc.getResponse().getBody().getLength(), "the envelope must not reach the client");
+        assertNull(exc.getResponse().getHeader().getContentType());
+    }
+
+    @Test
+    void oneWayWithConfiguredStatusKeepsTheBodilessResponse() throws Exception {
+        var interceptor = oneWayInterceptor(202);
+        var exc = sendMessageExchange(interceptor, Response.ok().build());
+
+        assertEquals(Outcome.CONTINUE, interceptor.handleResponse(exc));
+        assertEquals(202, exc.getResponse().getStatusCode());
+        assertEquals(0, exc.getResponse().getBody().getLength());
+        assertEquals("0", exc.getResponse().getHeader().getFirstValue(CONTENT_LENGTH),
+                "a bodiless 202 still needs Content-Length: 0 to frame the response");
+    }
+
+    @Test
+    void oneWayErrorFromTheServiceIsNotAnnouncedAsSuccess() throws Exception {
+        var interceptor = oneWayInterceptor(null);
+        var exc = sendMessageExchange(interceptor, Response.statusCode(503).build());
+
+        assertEquals(Outcome.ABORT, interceptor.handleResponse(exc));
+        assertEquals(500, exc.getResponse().getStatusCode());
+    }
+
+    @Test
+    void oneWayWhitespaceOnlyBodyCountsAsEmpty() throws Exception {
+        var interceptor = oneWayInterceptor(null);
+        var exc = sendMessageExchange(interceptor, Response.ok().body("\r\n").build());
+
+        assertEquals(Outcome.CONTINUE, interceptor.handleResponse(exc));
+        assertEquals(204, exc.getResponse().getStatusCode());
+    }
+
+    @Test
+    void operationWithAnOutputKeepsItsJsonBodyAtAnExplicit204() throws Exception {
+        var interceptor = interceptorWithStatus(204);
+        var exc = getCityExchange(interceptor, GET_CITY_RESPONSE);
+
+        assertEquals(Outcome.CONTINUE, interceptor.handleResponse(exc));
+        assertEquals(204, exc.getResponse().getStatusCode());
+        // Deliberate: the operation has a response message, so it is sent. Choosing a status that
+        // must not carry one is the operator's call, not something the gateway overrules.
+        assertEquals(123, new ObjectMapper().readTree(exc.getResponse().getBodyAsStringDecoded()).get("population").asInt());
+    }
+
+    @Test
+    void oneWayOperationIsPublishedWithoutContent() throws Exception {
+        var responses = generatedOpenApi(oneWayInterceptor(null))
+                .getPaths().get("/send-message").getPost().getResponses();
+
+        assertNull(responses.get("200"));
+        assertNotNull(responses.get("204"));
+        assertNull(responses.get("204").getContent(), "a bodiless response declares no content at all");
+        assertEquals(2, responses.size());
+        assertNotNull(responses.getDefault(), "a one-way operation can still fault");
+    }
+
+    @Test
+    void configuredStatusWinsOverTheDerived204() throws Exception {
+        var responses = generatedOpenApi(oneWayInterceptor(202))
+                .getPaths().get("/send-message").getPost().getResponses();
+
+        assertNull(responses.get("204"));
+        assertNotNull(responses.get("202"));
+        assertNull(responses.get("202").getContent());
+    }
+
+    /** The interceptor for qualified-elements.wsdl, whose sendMessage is one-way (input, no output). */
+    private static Wsdl2OpenapiInterceptor oneWayInterceptor(Integer status) {
+        var interceptor = wsdl2openapi("classpath:/ws/qualified-elements.wsdl");
+        if (status != null) {
+            var settings = new OperationSettings();
+            settings.setStatus(status);
+            var operations = new OperationsConfig();
+            operations.setEntry(Map.of("sendMessage", settings));
+            interceptor.setOperations(operations);
+        }
+        interceptor.init(new DummyTestRouter(), apiProxyWith(interceptor));
+        return interceptor;
+    }
+
+    /** Runs the one-way request leg, then stages {@code backendResponse} as the service's answer. */
+    private static Exchange sendMessageExchange(Wsdl2OpenapiInterceptor interceptor, Response backendResponse) throws Exception {
+        var exc = new Exchange(null);
+        exc.setRequest(new Request.Builder().post("/send-message").body("{\"text\":\"hi\",\"priority\":1}").build());
+        assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exc));
+        exc.setResponse(backendResponse);
+        return exc;
     }
 
     @ParameterizedTest

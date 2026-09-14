@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
 import com.predic8.membrane.core.util.ConfigurationException;
+import com.predic8.membrane.core.util.HttpUtil;
 import com.predic8.membrane.core.util.wsdl.parser.*;
 import io.swagger.v3.core.util.Yaml31;
 import io.swagger.v3.oas.models.Components;
@@ -49,8 +50,34 @@ public class Wsdl2OpenApiConverter {
 
     private static final Logger log = LoggerFactory.getLogger(Wsdl2OpenApiConverter.class);
 
-    /** Mapping of an operation the configuration says nothing about: POST on its kebab-case name. */
-    private static final OperationSettings DEFAULT_SETTINGS = new OperationSettings();
+    /**
+     * Settings of an operation the configuration says nothing about: POST on its kebab-case name,
+     * answered with the default status. Shared with {@link Wsdl2OpenapiInterceptor} so the document
+     * and the response it describes cannot drift apart.
+     */
+    static final OperationSettings DEFAULT_SETTINGS = new OperationSettings();
+
+    /**
+     * Whether the WSDL declares a response message for the operation. A one-way operation has none,
+     * so there is nothing to convert into a body. Deliberately not {@link #isEmptySchema}: that
+     * cannot tell an absent output message from one whose parts resolve to an empty type, and the
+     * two differ on the wire — a one-way service sends nothing, a service with an empty output
+     * message still sends an envelope, which may be a fault.
+     */
+    static boolean hasOutput(Operation wsdlOp) {
+        return !wsdlOp.getMessagesByDirection(OUTPUT).isEmpty();
+    }
+
+    /**
+     * The status a successful response carries. A configured status always wins; without one it is
+     * 200, or 204 for an operation with no output message. Shared with {@link Wsdl2OpenapiInterceptor}
+     * so the published document and the response it describes cannot disagree.
+     */
+    static int successStatus(OperationSettings settings, boolean hasOutput) {
+        var configured = settings.getStatus();
+        if (configured != null) return configured;
+        return hasOutput ? 200 : 204;
+    }
 
     /**
      * Problem details subtype for a failed operation. Deliberately says nothing about SOAP: the
@@ -272,7 +299,7 @@ public class Wsdl2OpenApiConverter {
         var apiOp = new io.swagger.v3.oas.models.Operation()
                 .operationId(name)
                 .description(wsdlOp.getDocumentation())
-                .responses(buildResponses(wsdlOp, settings.getStatus()));
+                .responses(buildResponses(wsdlOp, settings));
 
         // Every operation is tagged: an untagged one would end up in the "default" group of a
         // documentation UI, and with no tag configured anywhere that is where all of them land.
@@ -512,13 +539,17 @@ public class Wsdl2OpenApiConverter {
         return new Content().addMediaType(APPLICATION_JSON, new MediaType().schema(schema));
     }
 
-    private ApiResponses buildResponses(Operation wsdlOp, int status) {
-        var successResponse = new ApiResponse()
-                .description("Successful response")
-                .content(jsonContent(converter.convertMessageParts(wsdlOp.getMessagesByDirection(OUTPUT))));
-
+    private ApiResponses buildResponses(Operation wsdlOp, OperationSettings settings) {
+        boolean hasOutput = hasOutput(wsdlOp);
+        int statusCode = successStatus(settings, hasOutput);
+        var successResponse = new ApiResponse().description(HttpUtil.getMessageForStatusCode(statusCode));
+        // Left without content, never an empty Content: a response validator only lets a bodiless
+        // response through when the document declares no content for it at all.
+        if (hasOutput) {
+            successResponse.content(jsonContent(converter.convertMessageParts(wsdlOp.getMessagesByDirection(OUTPUT))));
+        }
         return new ApiResponses()
-                .addApiResponse(Integer.toString(status), successResponse)
+                .addApiResponse(Integer.toString(statusCode), successResponse)
                 .addApiResponse(ApiResponses.DEFAULT, buildErrorResponse(wsdlOp));
     }
 

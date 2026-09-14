@@ -21,6 +21,9 @@ import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.Required;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.AbstractBody;
+import com.predic8.membrane.core.http.EmptyBody;
+import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Interceptor;
@@ -37,10 +40,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.DOMException;
 
+import java.io.ByteArrayInputStream;
 import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.http.Header.CONTENT_LENGTH;
+import static com.predic8.membrane.core.http.Header.CONTENT_TYPE;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
 import static com.predic8.membrane.core.interceptor.InterceptorUtil.getInterceptors;
@@ -128,10 +134,15 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
      *                          operation declares; empty for an operation that declares none, in
      *                          which case the detail is still converted, just with every scalar as
      *                          a string.
+     * @param hasOutput         false for a one-way operation, which is answered without a body.
+     *                          Taken from the WSDL rather than from {@code responseSchema}, which is
+     *                          an empty object for a one-way operation and for one whose output has
+     *                          no parts alike.
      */
     record OperationRuntime(Json2SoapTransformer requestTransformer,
                             Schema<?> responseSchema,
-                            Schema<?> faultDetailSchema) {}
+                            Schema<?> faultDetailSchema,
+                            boolean hasOutput) {}
 
     /** Replaced wholesale by init(), keyed by operation name — one entry per route. */
     private Map<String, OperationRuntime> operationRuntimes = Map.of();
@@ -250,7 +261,10 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
         return new OperationRuntime(
                 new Json2SoapTransformer(definitions, operationName, xsdToSchema.getSchemasByNamespace()),
                 xsdToSchema.convertMessageParts(wsdlOp.map(op -> op.getMessagesByDirection(OUTPUT)).orElse(List.of())),
-                xsdToSchema.convertFaultDetail(wsdlOp.map(Operation::getFaults).orElse(List.of())));
+                xsdToSchema.convertFaultDetail(wsdlOp.map(Operation::getFaults).orElse(List.of())),
+                // An operation the WSDL does not resolve keeps the two-way path: it is the one that
+                // reports what went wrong instead of answering an unreadable response with a 204.
+                wsdlOp.map(Wsdl2OpenApiConverter::hasOutput).orElse(true));
     }
 
     /** The routes built by the last {@code init()}. */
@@ -267,7 +281,7 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) {
-        Outcome outcome = publisher.handleRequest(exc);
+        var outcome = publisher.handleRequest(exc);
         if (outcome != CONTINUE) {
             return outcome;
         }
@@ -307,21 +321,38 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
             return CONTINUE;
         }
 
-        try {
-            exc.getResponse().setBodyContent(getJsonResponse(exc, operationName));
-            exc.getResponse().getHeader().setContentType(APPLICATION_JSON);
+        var opSettings = operationsByName.getOrDefault(operationName, DEFAULT_SETTINGS);
+        var runtime = operationRuntimes.get(operationName);
+        int status = successStatus(opSettings, runtime.hasOutput());
 
-            var opSettings = operationsByName.get(operationName);
-            int status = opSettings != null ? opSettings.getStatus() : 200;
+        try {
+            if (runtime.hasOutput()) {
+                exc.getResponse().setBodyContent(getJsonResponse(exc, operationName));
+                exc.getResponse().getHeader().setContentType(APPLICATION_JSON);
+            } else {
+                inspectOneWayResponse(exc, operationName, runtime);
+            }
+
             exc.getResponse().setStatusCode(status);
             exc.getResponse().setStatusMessage(getMessageForStatusCode(status));
-            if (opSettings != null && !opSettings.getFlow().isEmpty()) {
+            // After the status: stripBodyFraming asks the response whether that status may carry a body.
+            if (!runtime.hasOutput()) {
+                stripBodyFraming(exc.getResponse());
+            }
+            if (!opSettings.getFlow().isEmpty()) {
                 return router.getFlowController().invokeResponseHandlers(exc, opSettings.getFlow());
             }
 
         } catch (SoapFaultException fault) {
             log.debug("SOAP fault received for operation {}: [{}] {}", operationName, fault.getFaultCode(), fault.getFaultMessage());
             exc.setResponse(soapFaultResponse(fault));
+            return ABORT;
+        } catch (BackendErrorException e) {
+            log.error("Operation {} failed: {}", operationName, e.getMessage());
+            internal(router.getConfiguration().isProduction(), getDisplayName())
+                    .detail("The service did not carry out the operation")
+                    .exception(e)
+                    .buildAndSetResponse(exc);
             return ABORT;
         } catch (Exception e) {
             log.error("Failed to transform SOAP to JSON for operation {}", operationName, e);
@@ -342,6 +373,71 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
         try (var soapResponse = exc.getResponse().getBodyAsStreamDecoded()) {
             return new Soap2JsonTransformer(xsdToSchema.getComponents())
                     .transform(soapResponse, runtime.responseSchema(), runtime.faultDetailSchema());
+        }
+    }
+
+    /**
+     * Looks at what a one-way operation's service answered, without keeping any of it. The body is
+     * still read: such an operation can fault, and dropping it unread would turn a fault into a
+     * silent success. An empty body is the expected answer — but only from a service reporting
+     * success, so that an error with an empty body does not become a 2xx.
+     */
+    private void inspectOneWayResponse(Exchange exc, String operationName, OperationRuntime runtime) throws Exception {
+        byte[] body;
+        try (var soapResponse = exc.getResponse().getBodyAsStreamDecoded()) {
+            body = soapResponse.readAllBytes();
+        }
+        if (isBlank(body)) {
+            if (!exc.getResponse().isOk()) {
+                throw new BackendErrorException(exc.getResponse().getStatusCode());
+            }
+            return;
+        }
+        // Throws SoapFaultException for a fault, which the caller turns into a problem details document.
+        new Soap2JsonTransformer(xsdToSchema.getComponents())
+                .transform(new ByteArrayInputStream(body), runtime.responseSchema(), runtime.faultDetailSchema());
+        log.info("The service answered the one-way operation '{}' with a body. The WSDL declares no output "
+                 + "message for it, so the response is published without content and the body is dropped.",
+                operationName);
+    }
+
+    /** Whitespace alone counts as no body: a service may end a one-way answer with a bare newline. */
+    private static boolean isBlank(byte[] body) {
+        for (byte b : body) {
+            if (b != ' ' && b != '\t' && b != '\r' && b != '\n') return false;
+        }
+        return true;
+    }
+
+    /**
+     * Drops the body and the headers that frame it. Deliberately not {@link Message#emptyBody()}:
+     * that returns early when the body is already empty — the very case here — leaving the service's
+     * Content-Length, Content-Type and Transfer-Encoding on a response that must carry none, and a
+     * stale chunked encoding would make the writer emit a terminating chunk after a 204.
+     * <p>
+     * {@link Message#setBodyContent(AbstractBody)} rather than {@link Message#setBody(AbstractBody)}
+     * for the same reason: only the former drops Content-Encoding and Transfer-Encoding, and the
+     * writer picks the transfer framing from the header, not from the body.
+     * <p>
+     * A 204 or 205 carries no Content-Length at all; any other bodiless status needs
+     * <code>Content-Length: 0</code>, or an HTTP/1.1 client cannot tell where the response ends.
+     */
+    private static void stripBodyFraming(Response response) {
+        response.setBodyContent(new EmptyBody());
+        response.getHeader().removeFields(CONTENT_TYPE);
+        if (response.shouldNotContainBody()) {
+            response.getHeader().removeFields(CONTENT_LENGTH);
+        }
+    }
+
+    /**
+     * A service that answered a one-way operation with an error and no body to explain it. Kept
+     * apart from a conversion failure: there was nothing to convert, and saying so is what tells an
+     * operator to look at the service rather than at the WSDL.
+     */
+    private static class BackendErrorException extends Exception {
+        BackendErrorException(int statusCode) {
+            super("The service answered with status " + statusCode + " and no body.");
         }
     }
 

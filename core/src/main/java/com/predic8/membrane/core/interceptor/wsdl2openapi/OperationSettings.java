@@ -34,7 +34,7 @@ public class OperationSettings {
     private static final Set<String> ALLOWED_METHODS = Set.of("GET", "POST", "PUT", "DELETE", "PATCH");
 
     private String method = "POST";
-    private int status = 200;
+    private Integer status; // No default here. Integer to support null for unset
     private String path;
     private String tag;
     private List<Interceptor> flow = new ArrayList<>();
@@ -62,17 +62,27 @@ public class OperationSettings {
         this.method = upper;
     }
 
-    public int getStatus() {
+    /** The configured status, or {@code null} when none was set: the default is derived per operation. */
+    public Integer getStatus() {
         return status;
     }
 
     /**
-     * @description HTTP status code returned after successful SOAP-to-JSON conversion and published
-     * in the OpenAPI document. Defaults to 200. Does not apply to SOAP faults or conversion errors.
+     * @description HTTP status code a successful response carries, published in the OpenAPI document
+     * alongside it. Defaults to 200, or to 204 for an operation the WSDL declares without an output
+     * message: there is no response message to put into a body, so such an operation is answered
+     * without one whatever status is configured for it. A configured status always wins over the
+     * derived default. Does not apply to SOAP faults or conversion errors, which stay 500.
+     * @default 200
      * @example 201
      */
     @MCAttribute
     public void setStatus(int status) {
+        // Only the range is checked. 204 is deliberately accepted even for an operation that has a
+        // response body to send: the operator may be fronting a service whose answers this gateway
+        // cannot second-guess, and the status is theirs to choose.
+        if (status < 100 || status > 599) throw new ConfigurationException(
+                "Invalid HTTP status code: " + status + ". Allowed: 100 to 599.");
         this.status = status;
     }
 
@@ -110,7 +120,9 @@ public class OperationSettings {
      * @description Interceptors applied to this operation.
      * On the request side they run before JSON-to-SOAP conversion and before the SOAP backend call,
      * so plugins like <code>apiKey</code> or <code>rateLimiter</code> can reject early.
-     * On the response side they run after SOAP-to-JSON conversion on the final JSON body.
+     * On the response side they run after SOAP-to-JSON conversion on the final JSON body, and for an
+     * operation with no output message on the empty response. A plugin that gives such a response a
+     * body is not stopped from doing so: what the response carries stays the operator's decision.
      */
     @MCChildElement
     public void setFlow(List<Interceptor> flow) {
