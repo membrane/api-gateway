@@ -38,7 +38,7 @@ class EncryptSecurePartTest extends AbstractWsSecurityTest {
     private static final String SOAP_BODY_WITH_TOKEN = """
             <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
                 <soap:Body>
-                    <foo>bar</foo>
+                    <foo>willmostlikelynotbepartofbase64encoding</foo>
                 </soap:Body>
             </soap:Envelope>
             """;
@@ -51,7 +51,7 @@ class EncryptSecurePartTest extends AbstractWsSecurityTest {
      */
     private static void assertDecryptsToFooBar(String plaintext) {
         assertTrue(plaintext.contains("<foo"), plaintext);
-        assertTrue(plaintext.contains(">bar</foo>"), plaintext);
+        assertTrue(plaintext.contains(">willmostlikelynotbepartofbase64encoding</foo>"), plaintext);
     }
 
     /** Decrypts an {@code xenc:EncryptedData} independently of the part that produced it. */
@@ -97,7 +97,7 @@ class EncryptSecurePartTest extends AbstractWsSecurityTest {
         Element body = firstByTag(doc, SOAP_NS, "Body");
         assertEquals(1, body.getElementsByTagNameNS(XENC_NS, "EncryptedData").getLength());
         assertEquals(0, doc.getElementsByTagName("foo").getLength(), "the plaintext must be gone");
-        assertFalse(rawBody().contains(">bar<"), "the plaintext must not survive anywhere in the message");
+        assertFalse(rawBody().contains("willmostlikelynotbepartofbase64encoding"), "the plaintext must not survive anywhere in the message");
     }
 
     /** Content encryption exists so that the envelope stays a SOAP envelope. */
@@ -265,7 +265,7 @@ class EncryptSecurePartTest extends AbstractWsSecurityTest {
 
         assertInternalError(encrypter(TRUSTSTORE, encrypt(ALIAS_1, elementEncrypted("//soap:Body"))),
                 "the SOAP body");
-        assertTrue(rawBody().contains("<foo>bar</foo>"),
+        assertTrue(rawBody().contains("<foo>willmostlikelynotbepartofbase64encoding</foo>"),
                 "the refused message keeps the body it arrived with, half-encrypted documents are not published");
     }
 
