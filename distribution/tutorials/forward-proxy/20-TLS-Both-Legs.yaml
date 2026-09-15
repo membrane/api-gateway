@@ -1,0 +1,36 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.6.0.json
+#
+# Tutorial: TLS on Both Legs of a Forward Proxy
+#
+# So far the client's own connection to the proxy was plain HTTP, and only the tunneled
+# connection to the backend was encrypted. On an untrusted network, for example a public
+# WiFi or a shared corporate network, the client wants the proxy connection itself
+# encrypted too.
+#
+# The client now also speaks TLS to the gateway itself; ssl on a proxy terminates that
+# leg exactly like it does on an api. The CONNECT request the client sends is therefore
+# already encrypted. From there on this works like 10-Forward-Proxy.yaml's HTTPS step.
+# Membrane opens a plain TCP connection to the target and pipes the bytes through
+# unchanged, so the second, inner TLS handshake still happens directly between client
+# and backend. Only the first leg, client to gateway, is newly terminated here.
+#
+# Notes:
+#   - The example uses a self-signed certificate for the gateway leg, so curl needs
+#     --proxy-insecure (it does not need -k/--insecure: the backend's own certificate is
+#     verified normally).
+#
+# 1.) Start Membrane:
+#     ./membrane.sh -c 20-TLS-Both-Legs.yaml
+#
+# 2.) Ask curl to use Membrane as an HTTPS proxy, then request a public HTTPS API through it:
+#     curl -x https://localhost:8443 --proxy-insecure https://api.predic8.de/
+#     → You should see a list of public APIs.
+
+proxy:
+  port: 8443
+  ssl:
+    key:
+      private:
+        location: membrane-key.pem
+      certificates:
+        - location: membrane.pem
