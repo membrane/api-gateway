@@ -17,9 +17,12 @@ import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDa
 import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider.UserConfig;
 import com.predic8.membrane.core.util.ConfigurationException;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import java.util.Base64;
 import java.util.List;
 
 import static com.predic8.membrane.annot.Constants.SOAP12_NS;
@@ -28,6 +31,7 @@ import static com.predic8.membrane.core.interceptor.soap.wsse.SignatureReference
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityFaultCode.INVALID_SECURITY;
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.WSSE_NS;
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.WSU_NS;
+import static com.predic8.membrane.core.interceptor.soap.wsse.XmlEncryptionUtil.XENC_NS;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -360,6 +364,49 @@ class WsSecurityInterceptorTest extends AbstractWsSecurityTest {
         assertDoesNotThrow(() -> wsSecurity.init(router));
     }
 
+    /**
+     * The mirror image of the rule above: an encrypt with type: ELEMENT replaces the token outright,
+     * so a signature covering it has to come first. Caught at startup rather than per message.
+     */
+    @Test
+    void signingAnElementEncryptedUsernameTokenIsAConfigurationError() {
+        WsSecurityInterceptor wsSecurity = securing(usernameTokenSecuring(),
+                encrypt(ALIAS_1, encryptionReference(EncryptionReference.By.USERNAME_TOKEN)),
+                signature(reference(SignatureReference.By.USERNAME_TOKEN)));
+        wsSecurity.setKeyStore(signingKeyStore(ALIAS_1));
+        wsSecurity.setTrustStore(trustStore(TRUSTSTORE));
+
+        ConfigurationException e = assertThrows(ConfigurationException.class, () -> wsSecurity.init(router));
+        assertTrue(e.getMessage().contains("secure/signature"), e.getMessage());
+        assertTrue(e.getMessage().contains("USERNAME_TOKEN"), e.getMessage());
+    }
+
+    /** A second encrypt naming the same token is the same mistake, and used to fail per message. */
+    @Test
+    void encryptingAnElementEncryptedUsernameTokenAgainIsAConfigurationError() {
+        WsSecurityInterceptor wsSecurity = securing(usernameTokenSecuring(),
+                encrypt(ALIAS_1, encryptionReference(EncryptionReference.By.USERNAME_TOKEN)),
+                encrypt(ALIAS_1, encryptionReference(EncryptionReference.By.USERNAME_TOKEN)));
+        wsSecurity.setTrustStore(trustStore(TRUSTSTORE));
+
+        ConfigurationException e = assertThrows(ConfigurationException.class, () -> wsSecurity.init(router));
+        assertTrue(e.getMessage().contains("secure/encrypt"), e.getMessage());
+        assertTrue(e.getMessage().contains("USERNAME_TOKEN"), e.getMessage());
+    }
+
+    /** CONTENT encryption leaves the token element in place, so a later part still finds it. */
+    @Test
+    void contentEncryptingTheUsernameTokenLeavesItSignable() {
+        WsSecurityInterceptor wsSecurity = securing(usernameTokenSecuring(),
+                encrypt(ALIAS_1, encryptionReference(EncryptionReference.By.USERNAME_TOKEN,
+                        EncryptionReference.Type.CONTENT)),
+                signature(reference(SignatureReference.By.USERNAME_TOKEN)));
+        wsSecurity.setKeyStore(signingKeyStore(ALIAS_1));
+        wsSecurity.setTrustStore(trustStore(TRUSTSTORE));
+
+        assertDoesNotThrow(() -> wsSecurity.init(router));
+    }
+
     private static UsernameTokenSecurePart usernameTokenSecuring() {
         UsernameTokenSecurePart usernameToken = new UsernameTokenSecurePart();
         usernameToken.setUsername("alice");
@@ -374,5 +421,190 @@ class WsSecurityInterceptorTest extends AbstractWsSecurityTest {
         wsSecurity.setKeyStore(signingKeyStore(ALIAS_1));
 
         assertDoesNotThrow(() -> wsSecurity.init(router));
+    }
+
+    // ---- what survives the group boundary ------------------------------------------------------
+    //
+    // An xenc:EncryptedKey is not a claim: it asserts no identity and is addressed to a named
+    // recipient. The xenc:EncryptedData it unlocks sits in the body, which this element never
+    // touches, so dropping the key while forwarding the ciphertext would produce a message nobody
+    // downstream can ever read. It is therefore kept exactly as long as such ciphertext exists.
+
+    /**
+     * A message carrying a real EncryptedKey plus its ciphertext, and a wsu:Timestamp alongside it so
+     * that a validate list has something it can legitimately check without a decrypt part.
+     */
+    private void exchangeWithEncryptedBody() throws Exception {
+        exchangeWithBody(SOAP_BODY);
+        assertEquals(CONTINUE, encrypter(TRUSTSTORE,
+                new TimestampSecurePart(), encrypt(ALIAS_1, encryptedBodyReference())).handleRequest(exchange));
+        crossTheWire();
+    }
+
+    @Test
+    void aSecureOnlyElementKeepsAnEncryptedKeyWhoseCiphertextSurvives() throws Exception {
+        exchangeWithEncryptedBody();
+
+        assertEquals(CONTINUE, securingInitialized(new TimestampSecurePart()).handleRequest(exchange));
+
+        Document doc = parseBody();
+        assertEquals(1, doc.getElementsByTagNameNS(XENC_NS, "EncryptedKey").getLength(),
+                "the key material must survive: the backend is the recipient that can use it");
+        assertEquals(1, doc.getElementsByTagNameNS(WSU_NS, "Timestamp").getLength());
+    }
+
+    /**
+     * The other path with the same hole: a validate list that consumes the header but contains no
+     * decrypt. Everything it checked is still dropped - only the key material stays.
+     */
+    @Test
+    void aValidateWithoutDecryptKeepsAnEncryptedKeyWhoseCiphertextSurvives() throws Exception {
+        exchangeWithEncryptedBody();
+
+        assertEquals(CONTINUE, verifier(TRUSTSTORE, new TimestampValidatePart()).handleRequest(exchange));
+
+        Document doc = parseBody();
+        assertEquals(1, doc.getElementsByTagNameNS(XENC_NS, "EncryptedKey").getLength());
+        assertEquals(0, doc.getElementsByTagNameNS(WSU_NS, "Timestamp").getLength(),
+                "a validated timestamp is consumed like any other checked child");
+    }
+
+    @ParameterizedTest
+    @CsvSource({"true, true", "true, false", "false, true", "false, false"})
+    void retainedKeysKeepReferencedCertificates(boolean validate, boolean tokenFirst) throws Exception {
+        exchangeWithEncryptedBody();
+        addRecipientCertificateReference(tokenFirst);
+        Document before = parseBody();
+        Element certificate = (Element) before.getElementsByTagNameNS(WSSE_NS, "BinarySecurityToken").item(0);
+        Element key = firstByTag(before, XENC_NS, "EncryptedKey");
+
+        WsSecurityInterceptor interceptor = validate
+                ? verifier(TRUSTSTORE, new TimestampValidatePart())
+                : securingInitialized(new TimestampSecurePart());
+        assertEquals(CONTINUE, interceptor.handleRequest(exchange));
+
+        Document result = parseBody();
+        assertEquals(1, result.getElementsByTagNameNS(WSSE_NS, "BinarySecurityToken").getLength(),
+                "only the certificate referenced by the retained key should survive");
+        assertTrue(certificate.isEqualNode(firstByTag(result, WSSE_NS, "BinarySecurityToken")));
+        assertTrue(key.isEqualNode(firstByTag(result, XENC_NS, "EncryptedKey")));
+        assertEquals(CONTINUE, decrypter(ALIAS_1, decrypt(encryptedBodyReference())).handleRequest(exchange));
+        assertEquals(0, parseBody().getElementsByTagNameNS(WSSE_NS, "BinarySecurityToken").getLength(),
+                "the certificate is consumed once its key is spent");
+    }
+
+    @Test
+    void certificatesAreDiscardedWhenTheirKeyHasNoCiphertext() throws Exception {
+        exchangeWithEncryptedBody();
+        addRecipientCertificateReference(true);
+        Document doc = parseBody();
+        Element data = firstByTag(doc, XENC_NS, "EncryptedData");
+        data.getParentNode().removeChild(data);
+        setBody(doc);
+
+        assertEquals(CONTINUE, securingInitialized(new TimestampSecurePart()).handleRequest(exchange));
+        assertEquals(0, parseBody().getElementsByTagNameNS(WSSE_NS, "BinarySecurityToken").getLength());
+    }
+
+    private void addRecipientCertificateReference(boolean tokenFirst) throws Exception {
+        Document doc = parseBody();
+        Element security = firstByTag(doc, WSSE_NS, "Security");
+        Element keyInfo = firstByTag(doc, DS_NS, "KeyInfo");
+        while (keyInfo.hasChildNodes()) {
+            keyInfo.removeChild(keyInfo.getFirstChild());
+        }
+        Element tokenReference = doc.createElementNS(WSSE_NS, "wsse:SecurityTokenReference");
+        Element reference = doc.createElementNS(WSSE_NS, "wsse:Reference");
+        reference.setAttribute("URI", "#recipient-cert");
+        reference.setAttribute("ValueType", WsSecurityXmlUtil.X509_V3_VALUE_TYPE);
+        tokenReference.appendChild(reference);
+        keyInfo.appendChild(tokenReference);
+
+        Element token = doc.createElementNS(WSSE_NS, "wsse:BinarySecurityToken");
+        WsSecurityXmlUtil.declareWsuId(token, "recipient-cert");
+        token.setAttribute("ValueType", WsSecurityXmlUtil.X509_V3_VALUE_TYPE);
+        token.setAttribute("EncodingType", WsSecurityXmlUtil.BASE64_BINARY_ENCODING_TYPE);
+        token.setTextContent(Base64.getEncoder().encodeToString(certificate(ALIAS_1).getEncoded()));
+        security.insertBefore(token, tokenFirst ? security.getFirstChild() : null);
+        Element unrelated = (Element) token.cloneNode(true);
+        WsSecurityXmlUtil.declareWsuId(unrelated, "unrelated-cert");
+        security.appendChild(unrelated);
+        setBody(doc);
+    }
+
+    /** Once decrypt has run there is no ciphertext left, so the spent key is dropped like any other child. */
+    @Test
+    void aValidateWithDecryptRemovesTheSpentEncryptedKey() throws Exception {
+        exchangeWithEncryptedBody();
+
+        assertEquals(CONTINUE, decrypter(ALIAS_1, decrypt(encryptedBodyReference())).handleRequest(exchange));
+
+        Document doc = parseBody();
+        assertEquals(0, doc.getElementsByTagNameNS(XENC_NS, "EncryptedKey").getLength());
+        assertEquals(0, doc.getElementsByTagNameNS(WSSE_NS, "Security").getLength(),
+                "with nothing retained the header itself goes, as it always did");
+    }
+
+    /**
+     * The ciphertext an element-encrypted token leaves behind sits in the header itself, not in the
+     * body. Dropping it while keeping the key would forward an xenc:ReferenceList naming an element
+     * that is no longer there, which the next recipient can only reject.
+     */
+    @Test
+    void aRetainedKeyKeepsTheHeaderCiphertextItNames() throws Exception {
+        exchangeWithBody(SOAP_BODY);
+        assertEquals(CONTINUE, encrypter(TRUSTSTORE, usernameTokenSecuring(),
+                encrypt(ALIAS_1, encryptionReference(EncryptionReference.By.USERNAME_TOKEN)))
+                .handleRequest(exchange));
+        crossTheWire();
+
+        assertEquals(CONTINUE, securingInitialized(new TimestampSecurePart()).handleRequest(exchange));
+
+        Document doc = parseBody();
+        assertEquals(1, doc.getElementsByTagNameNS(XENC_NS, "EncryptedKey").getLength());
+        assertEquals(1, doc.getElementsByTagNameNS(XENC_NS, "EncryptedData").getLength(),
+                "the encrypted token is what the retained key's DataReference names");
+    }
+
+    /**
+     * The other half of that rule: ciphertext is not its own reason to survive. Without a key to
+     * retain alongside it, a header xenc:EncryptedData is an unreadable claim and is dropped like
+     * every other one - otherwise nothing could ever drop it.
+     */
+    @Test
+    void headerCiphertextWithoutAKeyIsDiscarded() throws Exception {
+        exchangeWithBody(SOAP_BODY);
+        assertEquals(CONTINUE, encrypter(TRUSTSTORE, usernameTokenSecuring(),
+                encrypt(ALIAS_1, encryptionReference(EncryptionReference.By.USERNAME_TOKEN)))
+                .handleRequest(exchange));
+        Document sent = parseBody();
+        Element encryptedKey = firstByTag(sent, XENC_NS, "EncryptedKey");
+        encryptedKey.getParentNode().removeChild(encryptedKey);
+        setBody(sent);
+
+        assertEquals(CONTINUE, securingInitialized(new TimestampSecurePart()).handleRequest(exchange));
+
+        assertEquals(0, parseBody().getElementsByTagNameNS(XENC_NS, "EncryptedData").getLength());
+    }
+
+    /** An EncryptedKey with no ciphertext left to unlock is not retained. */
+    @Test
+    void anEncryptedKeyWithoutCiphertextIsDiscarded() throws Exception {
+        exchangeWithEncryptedBody();
+        Document doc = parseBody();
+        // Strip the ciphertext but leave the key behind.
+        Element encryptedData = firstByTag(doc, XENC_NS, "EncryptedData");
+        encryptedData.getParentNode().removeChild(encryptedData);
+        setBody(doc);
+
+        assertEquals(CONTINUE, securingInitialized(new TimestampSecurePart()).handleRequest(exchange));
+
+        assertEquals(0, parseBody().getElementsByTagNameNS(XENC_NS, "EncryptedKey").getLength());
+    }
+
+    private WsSecurityInterceptor securingInitialized(SecurePart... parts) {
+        WsSecurityInterceptor wsSecurity = securing(parts);
+        wsSecurity.init(router);
+        return wsSecurity;
     }
 }

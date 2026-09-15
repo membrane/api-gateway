@@ -401,7 +401,8 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
         }
         // Throws SoapFaultException for a fault, which the caller turns into a problem details document.
         new Soap2JsonTransformer(xsdToSchema.getComponents())
-                .transform(new ByteArrayInputStream(body), runtime.responseSchema(), runtime.faultDetailSchema());
+                .transform(soapSource(exc.getResponse(), new ByteArrayInputStream(body)),
+                        runtime.responseSchema(), runtime.faultDetailSchema());
         log.info("The service answered the one-way operation '{}' with a body. The WSDL declares no output "
                  + "message for it, so the response is published without content and the body is dropped.",
                 operationName);

@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.soap.wsse;
 
+import com.predic8.membrane.core.config.security.KeyStore;
 import com.predic8.membrane.core.config.xml.XmlConfig;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -50,7 +51,7 @@ final class WsSecurityXmlUtil {
     static final String X509_V3_VALUE_TYPE =
             "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3";
     static final String THUMBPRINT_SHA1_VALUE_TYPE =
-            "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.1#ThumbprintSHA1";
+            "http://docs.oasis-open.org/wss/oasis-wss-soap-message-security-1.1#ThumbprintSHA1";
     // Note: this is a distinct namespace from WSSE_NS (the wsse secext schema itself) - not to be
     // confused with "...wssecurity-secext-1.0.xsd#Base64Binary", which is not a valid EncodingType.
     static final String BASE64_BINARY_ENCODING_TYPE =
@@ -191,10 +192,11 @@ final class WsSecurityXmlUtil {
 
     /**
      * The {@code wsse:Security} header for {@code actor} that {@code secure} parts add to, created
-     * if the message does not already carry one. In practice it is always created: the enclosing
-     * element removes the header targeted at its actor before any {@code secure} part runs, whether or
-     * not it had a {@code validate} list. The reuse branch is what keeps that a single
-     * {@code wsse:Security} block per actor even so, which is all WS-Security allows.
+     * if the message does not already carry one. Usually it is created: the enclosing element strips
+     * the header targeted at its actor before any {@code secure} part runs, and removes it outright
+     * when that leaves nothing behind. The reuse branch is not dead, though - a retained
+     * {@code xenc:EncryptedKey} keeps the header alive - and it is what keeps a single
+     * {@code wsse:Security} block per actor in that case, which is all WS-Security allows.
      * <p>
      * Appended rather than inserted first so header blocks the message already carried - including
      * ones targeted at other actors - keep their relative order.
@@ -311,6 +313,42 @@ final class WsSecurityXmlUtil {
                     "No wsse:UsernameToken found inside wsse:Security."));
             case BST -> List.of(requireElement(getFirstChildByName(security, WSSE_NS, "BinarySecurityToken"),
                     "No wsse:BinarySecurityToken found inside wsse:Security."));
+            case ENCRYPTED_KEY -> List.of(singleEncryptedKey(security));
+            case XPATH -> resolveByXPath(doc, reference.getXpath(), xmlConfig, soapNs);
+        };
+    }
+
+    /**
+     * The one {@code xenc:EncryptedKey} in {@code security}.
+     * <p>
+     * "The last one" would be the tempting heuristic and is the wrong one: an inbound key retained
+     * for a downstream recipient can sit next to the one a {@code secure/encrypt} just created, and
+     * silently signing the wrong one covers key material the receiver never uses.
+     */
+    private static Element singleEncryptedKey(Element security) {
+        List<Element> keys = getChildrenByName(security, XmlEncryptionUtil.XENC_NS, "EncryptedKey");
+        if (keys.isEmpty()) {
+            throw new ReferenceResolutionException("No xenc:EncryptedKey found inside wsse:Security.");
+        }
+        if (keys.size() > 1) {
+            throw new ReferenceResolutionException(
+                    "More than one xenc:EncryptedKey found inside wsse:Security; rejecting as ambiguous.");
+        }
+        return keys.getFirst();
+    }
+
+    /**
+     * The element(s) an {@link EncryptionReference} selects, resolved the same way and against the
+     * same structures as {@link #resolveReference}.
+     *
+     * @throws ReferenceResolutionException if the reference cannot be resolved to at least one element
+     */
+    static List<Element> resolveEncryptionReference(Document doc, Element envelope, Element security, String soapNs,
+                                                    EncryptionReference reference, XmlConfig xmlConfig) {
+        return switch (reference.getBy()) {
+            case BODY -> List.of(requireElement(getFirstChildByName(envelope, soapNs, "Body"), "soap:Body is missing."));
+            case USERNAME_TOKEN -> List.of(requireElement(getFirstChildByName(security, WSSE_NS, "UsernameToken"),
+                    "No wsse:UsernameToken found inside wsse:Security."));
             case XPATH -> resolveByXPath(doc, reference.getXpath(), xmlConfig, soapNs);
         };
     }
@@ -445,6 +483,93 @@ final class WsSecurityXmlUtil {
 
     static byte[] sha1Thumbprint(X509Certificate certificate) throws GeneralSecurityException {
         return MessageDigest.getInstance("SHA-1").digest(certificate.getEncoded());
+    }
+
+    /**
+     * For a PKCS12 keystore, the key is commonly protected by the same password as the store itself;
+     * fall back to it when no distinct keyPassword is configured.
+     */
+    static char[] resolveKeyPassword(KeyStore keyStore) {
+        if (keyStore.getKeyPassword() != null) {
+            return keyStore.getKeyPassword().toCharArray();
+        }
+        if (keyStore.getPassword() != null) {
+            return keyStore.getPassword().toCharArray();
+        }
+        return "changeit".toCharArray();
+    }
+
+    /**
+     * A {@code wsse:KeyIdentifier} naming {@code certificate} - by the certificate itself
+     * ({@code X509_V3}) or by its SHA-1 thumbprint ({@code THUMBPRINT_SHA1}).
+     */
+    static Element createKeyIdentifier(Document doc, X509Certificate certificate,
+                                       KeyIdentifierKeyInfo.ValueType valueType) throws GeneralSecurityException {
+        Element keyIdentifier = doc.createElementNS(WSSE_NS, "wsse:KeyIdentifier");
+        keyIdentifier.setAttribute("EncodingType", BASE64_BINARY_ENCODING_TYPE);
+        if (valueType == KeyIdentifierKeyInfo.ValueType.THUMBPRINT_SHA1) {
+            keyIdentifier.setAttribute("ValueType", THUMBPRINT_SHA1_VALUE_TYPE);
+            keyIdentifier.setTextContent(Base64.getEncoder().encodeToString(sha1Thumbprint(certificate)));
+        } else {
+            keyIdentifier.setAttribute("ValueType", X509_V3_VALUE_TYPE);
+            keyIdentifier.setTextContent(Base64.getEncoder().encodeToString(certificate.getEncoded()));
+        }
+        return keyIdentifier;
+    }
+
+    /**
+     * A {@code ds:KeyInfo} holding a {@code wsse:SecurityTokenReference} that wraps
+     * {@code tokenReference} - either a {@code wsse:Reference} or a {@code wsse:KeyIdentifier}.
+     * <p>
+     * Returned rather than appended: a {@code ds:Signature} appends it last, while an
+     * {@code xenc:EncryptedKey} needs it before its {@code xenc:CipherData}.
+     */
+    static Element createKeyInfoWithSecurityTokenReference(Document doc, Element tokenReference) {
+        Element securityTokenReference = doc.createElementNS(WSSE_NS, "wsse:SecurityTokenReference");
+        declareWsuId(securityTokenReference, "STR-" + UUID.randomUUID());
+        // WSS 1.1's TokenType says what kind of token the reference names. It is redundant next to a
+        // wsse:Reference/KeyIdentifier that already carries a ValueType, but a ThumbprintSHA1
+        // KeyIdentifier names the token by hash alone, and WSS4J/CXF read TokenType to learn what that
+        // hash identifies. Set for every mode so the STR looks the same whichever one is configured.
+        securityTokenReference.setAttributeNS(WSSE11_NS, "wsse11:TokenType", X509_V3_VALUE_TYPE);
+        securityTokenReference.setAttributeNS(XMLConstants.XMLNS_ATTRIBUTE_NS_URI, "xmlns:wsse11", WSSE11_NS);
+        securityTokenReference.appendChild(tokenReference);
+
+        Element keyInfo = doc.createElementNS(DS_NS, "ds:KeyInfo");
+        // Explicit, because DOM only adds namespace declarations at serialization time: a signature
+        // canonicalizing this subtree before that happens would digest a form the receiver never sees.
+        keyInfo.setAttributeNS(XMLConstants.XMLNS_ATTRIBUTE_NS_URI, "xmlns:ds", DS_NS);
+        keyInfo.setAttribute("Id", "KI-" + UUID.randomUUID());
+        keyInfo.appendChild(securityTokenReference);
+        return keyInfo;
+    }
+
+    /**
+     * The single element in {@code doc} carrying {@code id} as its {@code wsu:Id}/{@code Id}.
+     * <p>
+     * Rejecting a duplicate is a security check, not tidiness: an ambiguous id lets an attacker aim a
+     * reference - a {@code ds:Reference} or an {@code xenc:DataReference} - at an element of their
+     * choosing rather than the one the id was meant to name.
+     *
+     * @param ambiguityCode the fault to report when the id is missing or used more than once - a
+     *                      failed check when it is a required reference, an unavailable token when
+     *                      it is a {@code wsse:Reference} target
+     */
+    static Element resolveUniqueElementById(Document doc, String id, WsSecurityFaultCode ambiguityCode) {
+        List<Element> matches = new ArrayList<>();
+        forEachDescendantElement(doc.getDocumentElement(), element -> {
+            if (id.equals(idOf(element))) {
+                matches.add(element);
+            }
+        });
+        if (matches.isEmpty()) {
+            throw new WsSecurityFaultException(ambiguityCode, "No element found with Id \"" + id + "\".");
+        }
+        if (matches.size() > 1) {
+            throw new WsSecurityFaultException(ambiguityCode,
+                    "Id \"" + id + "\" is used by more than one element; rejecting as ambiguous.");
+        }
+        return matches.getFirst();
     }
 
     /**

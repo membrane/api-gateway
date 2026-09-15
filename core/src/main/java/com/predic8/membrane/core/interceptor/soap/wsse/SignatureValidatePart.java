@@ -104,6 +104,15 @@ public class SignatureValidatePart extends ValidatePart {
             "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha384",
             "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha512");
 
+    /**
+     * The reference targets that a {@code secure} part creates inside {@code wsse:Security}, and which
+     * therefore have to precede the {@code ds:Signature} covering them.
+     */
+    private static final Set<SignatureReference.By> PRODUCED_BEFORE_THE_SIGNATURE = Set.of(
+            SignatureReference.By.TIMESTAMP,
+            SignatureReference.By.USERNAME_TOKEN,
+            SignatureReference.By.ENCRYPTED_KEY);
+
     private List<SignatureReference> requiredReferences = new ArrayList<>();
     private Duration clockSkew = DEFAULT_CLOCK_SKEW;
 
@@ -478,11 +487,11 @@ public class SignatureValidatePart extends ValidatePart {
                     "Required element (" + required.getBy() + ") has no wsu:Id/Id, so it cannot be covered by the signature.");
         }
 
-        // A TIMESTAMP/USERNAME_TOKEN reference names something a wsSecurity secure part produces,
-        // and WS-Security requires the ds:Signature to follow whatever it covers in document order -
-        // a signature listed before its own subject could not possibly have digested it. Checked
-        // ahead of coverage: "wrong order" is the more specific and more actionable fault.
-        if ((required.getBy() == SignatureReference.By.TIMESTAMP || required.getBy() == SignatureReference.By.USERNAME_TOKEN)
+        // A TIMESTAMP/USERNAME_TOKEN/ENCRYPTED_KEY reference names something a wsSecurity secure part
+        // produces, and WS-Security requires the ds:Signature to follow whatever it covers in document
+        // order - a signature listed before its own subject could not possibly have digested it.
+        // Checked ahead of coverage: "wrong order" is the more specific and more actionable fault.
+        if (PRODUCED_BEFORE_THE_SIGNATURE.contains(required.getBy())
                 && (expected.compareDocumentPosition(signatureElement) & Node.DOCUMENT_POSITION_FOLLOWING) == 0) {
             throw new WsSecurityFaultException(FAILED_CHECK,
                     "Required element (" + required.getBy() + ") must precede the ds:Signature that covers it.");
@@ -520,28 +529,6 @@ public class SignatureValidatePart extends ValidatePart {
     private static boolean isCoveredBy(XMLSignature signature, String expectedId) {
         return signature.getSignedInfo().getReferences().stream()
                 .anyMatch(reference -> reference instanceof Reference ref && ("#" + expectedId).equals(ref.getURI()));
-    }
-
-    /**
-     * @param ambiguityCode the fault to report when the id is missing or used more than once - a
-     *                      failed check when it is a required reference, an unavailable token when
-     *                      it is a {@code wsse:Reference} target
-     */
-    private static Element resolveUniqueElementById(Document doc, String id, WsSecurityFaultCode ambiguityCode) {
-        List<Element> matches = new ArrayList<>();
-        forEachDescendantElement(doc.getDocumentElement(), element -> {
-            if (id.equals(idOf(element))) {
-                matches.add(element);
-            }
-        });
-        if (matches.isEmpty()) {
-            throw new WsSecurityFaultException(ambiguityCode, "No element found with Id \"" + id + "\".");
-        }
-        if (matches.size() > 1) {
-            throw new WsSecurityFaultException(ambiguityCode,
-                    "Id \"" + id + "\" is used by more than one element; rejecting as ambiguous.");
-        }
-        return matches.getFirst();
     }
 
     public List<SignatureReference> getRequiredReferences() {
