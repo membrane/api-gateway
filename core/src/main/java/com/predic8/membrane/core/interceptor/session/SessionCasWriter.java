@@ -118,5 +118,6 @@ class SessionCasWriter {
         log.warn("Could not store session {} without conflict after {} attempts; " +
                  "writing it unconditionally, which may discard a concurrent change.", key, MAX_ATTEMPTS);
         store.blindSet(key, store.serialize(ours), ttlSeconds);
+        session.setBaseSnapshot(ours);
     }
 }

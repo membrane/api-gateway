@@ -103,7 +103,7 @@ public class RedisSessionManager extends SessionManager{
                 SessionCasWriter.write(store, s.get(ID_NAME), s, Math.toIntExact(getExpiresAfterSeconds())));
     }
 
-    private final SessionCasWriter.Store store = new SessionCasWriter.Store() {
+    final SessionCasWriter.Store store = new SessionCasWriter.Store() {
         @Override
         public Optional<SessionCasWriter.VersionedValue> read(String key) {
             try (Jedis jedis = connector.getJedisWithDb()) {
@@ -137,7 +137,11 @@ public class RedisSessionManager extends SessionManager{
 
         @Override
         public Map<String, Object> parse(String value) {
-            return RedisSessionManager.this.parse(value).getContent();
+            try {
+                return jsonStringtoSession(value).getContent();
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException("Cannot parse stored session.", e);
+            }
         }
 
         @Override
