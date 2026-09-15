@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.interceptor.xmlprotection;
 
 import com.predic8.membrane.core.interceptor.xmlprotection.XMLProtectionResult.Rejected;
+import com.predic8.membrane.core.util.text.StringUtil;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -233,6 +234,10 @@ public class XMLProtector {
     }
 
     private @Nullable Rejected checkStartElement(StartElement element) {
+        Rejected namespaceViolation = checkNamespaceUri(element.getName());
+        if (namespaceViolation != null)
+            return namespaceViolation;
+
         int nameLength = nameLengthOf(element.getName());
         if (exceeds(nameLength, limits.maxElementNameLength()))
             return new Rejected("Element name of %d characters exceeds the limit of %d."
@@ -264,10 +269,29 @@ public class XMLProtector {
                 return new Rejected("Element %s has more than the %d allowed attributes."
                         .formatted(element.getName(), limits.maxAttributeCount()));
 
+            Rejected namespaceViolation = checkNamespaceUri(attribute.getName());
+            if (namespaceViolation != null)
+                return namespaceViolation;
+
             int nameLength = nameLengthOf(attribute.getName());
             if (exceeds(nameLength, limits.maxAttributeNameLength()))
                 return new Rejected("Attribute name of %d characters exceeds the limit of %d."
                         .formatted(nameLength, limits.maxAttributeNameLength()));
+        }
+        return null;
+    }
+
+    /**
+     * The JAXP name backstop also has to cover namespace URIs. Some JDK releases apply
+     * {@code jdk.xml.maxXMLNameLimit} to XML names but not to namespace URI values, so enforce the
+     * same backstop explicitly for those values rather than allowing an unbounded parser allocation.
+     */
+    private @Nullable Rejected checkNamespaceUri(QName name) {
+        int limit = limits.jaxpNameLimit();
+        String namespaceUri = name.getNamespaceURI();
+        if (limit != 0 && namespaceUri != null && namespaceUri.length() > limit) {
+            log.info("Namespace URI exceeds the limit of %d. URI: {}", StringUtil.truncateAfter(namespaceUri,200));
+            return new Rejected("Namespace URI exceeds the limit of %d.");
         }
         return null;
     }

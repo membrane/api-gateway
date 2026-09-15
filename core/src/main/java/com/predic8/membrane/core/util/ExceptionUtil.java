@@ -18,8 +18,31 @@ import org.jetbrains.annotations.NotNull;
 import java.io.EOFException;
 import java.net.*;
 import java.nio.channels.ClosedChannelException;
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.Set;
+import java.util.function.Predicate;
 
 public class ExceptionUtil {
+
+    /**
+     * Checks the exception itself, then each successive cause, until the predicate matches.
+     * Each throwable is visited at most once, using object identity to detect cycles.
+     * Suppressed exceptions are not examined. Exceptions thrown by the predicate propagate
+     * to the caller.
+     *
+     * @param exception the exception to start with, or null for an empty chain
+     * @param predicate the non-null condition to check against each throwable
+     * @return true on the first match; false for null input or a chain without a match
+     */
+    public static boolean hasCauseMatching(Throwable exception, Predicate<Throwable> predicate) {
+        Set<Throwable> visited = Collections.newSetFromMap(new IdentityHashMap<>());
+        for (Throwable cause = exception; cause != null && visited.add(cause); cause = cause.getCause()) {
+            if (predicate.test(cause))
+                return true;
+        }
+        return false;
+    }
 
     /**
      * Concatenates the messages of all nested exceptions.

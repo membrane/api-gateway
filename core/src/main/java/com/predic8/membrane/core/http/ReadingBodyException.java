@@ -14,7 +14,10 @@
 
 package com.predic8.membrane.core.http;
 
+import com.predic8.membrane.core.exchange.Exchange;
+
 import static com.predic8.membrane.core.util.ExceptionUtil.getRootCause;
+import static com.predic8.membrane.core.util.ExceptionUtil.hasCauseMatching;
 
 /**
  * Indicates that an error occurred while reading the body of a message.
@@ -22,16 +25,26 @@ import static com.predic8.membrane.core.util.ExceptionUtil.getRootCause;
  * (No need to use {@link com.predic8.membrane.core.util.ExceptionUtil#concatMessageAndCauseMessages(Throwable)}.)
  */
 public class ReadingBodyException extends RuntimeException {
-    public ReadingBodyException(Exception e) {
+    private final Message source;
+
+    /** Associates decoding failures without firing transport body lifecycle events. */
+    public ReadingBodyException(Exception e, Message source) {
         super(e);
+        this.source = source;
+    }
+
+    public ReadingBodyException(Exception e) {
+        this(e, null);
     }
 
     public ReadingBodyException(String message) {
         super(message);
+        source = null;
     }
 
     /**
-     * @return whether this exception reports the failure recorded on the given message's body. Useful
+     * @return whether this exception belongs to the given message through an explicit decoding
+     * association or a failure recorded on its body. Useful
      * to tell which end of the exchange the failure belongs to: the client (request body) or the target
      * server (response body).
      * <p>
@@ -44,8 +57,21 @@ public class ReadingBodyException extends RuntimeException {
     public boolean belongsTo(Message message) {
         if (message == null)
             return false;
+        // Preserve attribution even when callers wrap the decoding exception again.
+        if (hasCauseMatching(this, cause -> cause instanceof ReadingBodyException failure && failure.source == message))
+            return true;
         ReadingBodyException recorded = message.getBody().getObservedException();
         return recorded == this
                 || (recorded != null && getRootCause(recorded) == getRootCause(this));
+    }
+
+    /**
+     * @return whether this failure is the sender's to answer for: it belongs to the request body and
+     * not to the response body. A body can be read in either flow, so the flow the exception surfaced
+     * in does not decide this - only which body it belongs to does. Anything else, a backend response
+     * body above all, is the gateway's problem rather than the sender's.
+     */
+    public boolean isRequestBodyFailure(Exchange exchange) {
+        return belongsTo(exchange.getRequest()) && !belongsTo(exchange.getResponse());
     }
 }

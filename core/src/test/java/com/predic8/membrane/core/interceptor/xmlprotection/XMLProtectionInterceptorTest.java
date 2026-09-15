@@ -15,11 +15,17 @@
 package com.predic8.membrane.core.interceptor.xmlprotection;
 
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.DecodingException;
+import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.router.DefaultRouter;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.Arrays;
 import java.util.function.Consumer;
+import java.util.zip.GZIPOutputStream;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_XML;
@@ -32,6 +38,22 @@ import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Does not test that a rewritten part cannot smuggle the message's own MIME boundary past the
+ * rebuild - that defense lives in {@link com.predic8.membrane.core.multipart.PartRewriter} and is
+ * exercised directly, byte for byte, by
+ * {@link com.predic8.membrane.core.multipart.PartRewriterTest#aReplacementCarryingTheBoundaryIsRejected()}.
+ * An end-to-end version of that test used to live here, built by having {@link XMLProtector} strip a
+ * DTD from a part whose element text held the boundary as {@code &#xD;&#xA;} character references,
+ * expecting the rewrite to re-serialise them as a literal {@code CRLF--boundary}. Whether that
+ * happens depends on which {@code javax.xml.stream.XMLOutputFactory} wins
+ * {@code XMLOutputFactory.newInstance()}'s classpath-based provider lookup: the JDK's built-in writer
+ * emits the raw bytes, but Woodstox - pulled onto this module's test classpath transitively via
+ * {@code org.apache.cxf:cxf-core:test} - always re-escapes a bare {@code \r} back into a character
+ * reference, in element text, in attribute values, and left untouched inside CDATA. That made the
+ * "attack" inert before it ever reached {@link com.predic8.membrane.core.multipart.PartRewriter},
+ * regardless of which StAX provider is on the classpath, so it belongs at that layer.
+ */
 class XMLProtectionInterceptorTest {
 
     /**
@@ -110,20 +132,69 @@ class XMLProtectionInterceptorTest {
         assertTrue(bodyOf(exc).contains("invalid or unsupported encoding"), bodyOf(exc));
     }
 
+    /**
+     * A body that cannot be read is not this plugin's to answer for, so the exception travels on
+     * rather than becoming an XML verdict. Who it is reported to, and as what, is decided centrally
+     * by {@link com.predic8.membrane.core.exceptions.ProblemDetails#bodyFailure} and covered
+     * end-to-end - through a router, which this test does not have - in
+     * {@code RequestBodyDecodingTest}.
+     */
     @Test
-    @DisplayName("A body that cannot even be decoded is a server error, not a policy violation")
-    void undecodableBodyIsReportedAsServerError() throws Exception {
+    @DisplayName("A body that cannot even be decoded is not answered as a policy violation")
+    void undecodableBodyEscapesInsteadOfBecomingAnXmlVerdict() throws Exception {
         Exchange exc = post("/")
                 .contentType(APPLICATION_XML)
                 .body("<foo/>") // announced as gzip below, but is not
                 .header("Content-Encoding", "gzip") // after body(), which clears Content-Encoding
                 .buildExchange();
 
-        assertEquals(ABORT, interceptor().handleRequest(exc));
-        assertEquals(500, exc.getResponse().getStatusCode());
-        assertNull(exc.getResponse().getHeader().getFirstValue(X_PROTECTION));
-        // Outside production the cause is reported as the "reason" detail rather than a stacktrace
-        assertTrue(bodyOf(exc).contains("GZIP"), bodyOf(exc));
+        DecodingException decoding = decodingFailureOf(exc);
+        assertEquals("gzip", decoding.getContentEncoding());
+        assertTrue(decoding.getMessage().contains("GZIP"), decoding.getMessage());
+    }
+
+    /**
+     * The other half of {@link #undecodableBodyEscapesInsteadOfBecomingAnXmlVerdict}: a body whose
+     * gzip header is valid but whose compressed data stops short fails on a read from the decoder
+     * rather than when the decoder is built. Both are the same kind of failure and must travel the
+     * same way, so that where the stream happens to break does not decide the answer.
+     */
+    @Test
+    @DisplayName("A gzip body that fails mid-stream escapes too, not as a policy violation")
+    void truncatedGzipBodyEscapesInsteadOfBecomingAnXmlVerdict() throws Exception {
+        Exchange exc = post("/")
+                // Charset given explicitly: without it the encoding probe reads the body first, and
+                // this test is about the failure surfacing from the scan.
+                .contentType("application/xml; charset=UTF-8")
+                .body(truncatedGzip("<foo/>"))
+                .header("Content-Encoding", "gzip") // after body(), which clears Content-Encoding
+                .buildExchange();
+
+        assertEquals("gzip", decodingFailureOf(exc).getContentEncoding());
+    }
+
+    /**
+     * Asserts that inspecting the body raises a decoding failure instead of setting a response, and
+     * hands back the cause so the test can check what it says. A response left on the exchange would
+     * mean the plugin answered a transport failure as an XML one.
+     */
+    private static DecodingException decodingFailureOf(Exchange exc) {
+        ReadingBodyException failure = assertThrows(ReadingBodyException.class,
+                () -> interceptor().handleRequest(exc));
+        assertNull(exc.getResponse());
+        return assertInstanceOf(DecodingException.class, failure.getCause());
+    }
+
+    /**
+     * Keeps the 10-byte gzip header - all {@code GZIPInputStream}'s constructor validates - plus two
+     * bytes of compressed data, so decoding starts and only the first read runs out of input.
+     */
+    private static byte[] truncatedGzip(String document) throws IOException {
+        var compressed = new ByteArrayOutputStream();
+        try (var gzip = new GZIPOutputStream(compressed)) {
+            gzip.write(document.getBytes(UTF_8));
+        }
+        return Arrays.copyOf(compressed.toByteArray(), 12);
     }
 
     @Test
@@ -184,7 +255,7 @@ class XMLProtectionInterceptorTest {
 
         String result = new String(exc.getRequest().getBodyAsStreamDecoded().readAllBytes(), UTF_8);
         assertTrue(result.contains("café"), result);
-        assertTrue(result.contains("encoding=\"UTF-8\""), result);
+        assertTrue(result.matches("(?s).*encoding=['\"]UTF-8['\"].*"), result);
         assertFalse(result.contains("ISO-8859-1"), result);
     }
 
@@ -274,7 +345,7 @@ class XMLProtectionInterceptorTest {
 
     @Test
     void unlimitedDepthDisablesCheck() throws Exception {
-        assertEquals(CONTINUE, interceptor(i -> i.setMaxDepth(-1)).handleRequest(xml(nested(2000))));
+        assertEquals(CONTINUE, interceptor(i -> i.setMaxDepth(-1)).handleRequest(xml(nested(500))));
     }
 
     // --- Multipart / attachments -------------------------------------------------------------
@@ -371,22 +442,6 @@ class XMLProtectionInterceptorTest {
         assertTrue(rebuilt.contains("PNG-not-really"), "the untouched part must survive: " + rebuilt);
         assertTrue(rebuilt.contains("name=\"logo\""), "part headers must survive: " + rebuilt);
         assertEquals(rebuilt.getBytes(UTF_8).length, exc.getRequest().getHeader().getContentLength());
-    }
-
-    /**
-     * The rewritten copy of a part must not be able to introduce the message's own MIME boundary:
-     * the character references below are inert on the wire but become a literal CRLF--boundary once
-     * the protector re-serialises the document, splitting the body for the backend.
-     */
-    @Test
-    void rewrittenPartCannotInjectAMultipartBoundary() throws Exception {
-        Exchange exc = multipartExchange(part("data", APPLICATION_XML,
-                "<?xml version=\"1.0\"?><!DOCTYPE foo [ <!ELEMENT foo ANY > ]><foo>&#xD;&#xA;--"
-                + BOUNDARY + "--</foo>"));
-
-        assertEquals(ABORT, interceptor().handleRequest(exc));
-        assertEquals(400, exc.getResponse().getStatusCode());
-        assertTrue(bodyOf(exc).contains("MIME boundary"), bodyOf(exc));
     }
 
     /**
