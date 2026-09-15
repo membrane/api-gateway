@@ -98,7 +98,7 @@ both directions, and SOAP fault handling.
 
 ## [Web Services Security](web-services-security)
 
-Secure SOAP messages with WS-Security: add and validate a `wsse:UsernameToken`, a `wsu:Timestamp`, and a `ds:Signature`.
+Secure SOAP messages with WS-Security: add and validate a `wsse:UsernameToken`, a `wsu:Timestamp`, and a `ds:Signature`, and encrypt the body with XML Encryption.
 
 
 ## [OpenAPI](openapi)

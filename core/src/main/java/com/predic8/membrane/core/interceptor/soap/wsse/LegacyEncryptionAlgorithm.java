@@ -15,14 +15,21 @@ package com.predic8.membrane.core.interceptor.soap.wsse;
 
 import com.predic8.membrane.annot.MCElement;
 
-/**
- * @description Embeds the signing certificate directly in <code>ds:KeyInfo</code> as a
- * <code>ds:X509Data</code>/<code>ds:X509Certificate</code>. This is the default
- * <code>signature</code> behavior when no key-info element
- * (<code>x509Data</code>, <code>securityTokenReference</code>, or <code>keyIdentifier</code>)
- * is configured. It applies to <code>signature</code> only: an <code>encrypt</code> names the
- * recipient's certificate with a <code>keyIdentifier</code>, since the recipient already holds it.
- */
-@MCElement(name = "x509Data", component = false, id = "wsSecurity-signature-x509Data")
-public class X509DataKeyInfo {
+/** Supported, explicit exceptions to the inbound encryption algorithm defaults. */
+@MCElement(name = "legacyEncryptionAlgorithm", component = false)
+public enum LegacyEncryptionAlgorithm {
+    AES128_CBC(XmlEncryptionUtil.AES128_CBC),
+    AES192_CBC(XmlEncryptionUtil.AES192_CBC),
+    AES256_CBC(XmlEncryptionUtil.AES256_CBC),
+    RSA_1_5(XmlEncryptionUtil.RSA_1_5);
+
+    private final String uri;
+
+    LegacyEncryptionAlgorithm(String uri) {
+        this.uri = uri;
+    }
+
+    public String getUri() {
+        return uri;
+    }
 }

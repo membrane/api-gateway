@@ -30,6 +30,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -212,6 +213,15 @@ class OpenApiGeneratorTest {
     }
 
     @Test
+    void problemDetailsUriReferencesHaveUriReferenceFormat() {
+        var properties = converter(citiesDefinitions, "/").generate().getComponents()
+                .getSchemas().get("ProblemDetails").getProperties();
+
+        assertEquals("uri-reference", ((Schema<?>) properties.get("type")).getFormat());
+        assertEquals("uri-reference", ((Schema<?>) properties.get("instance")).getFormat());
+    }
+
+    @Test
     void operationWithoutDeclaredFaultsHasNoDetailsMember() {
         // cities.wsdl declares no wsdl:fault, so the error response is the bare problem details
         // document — there is no operation-specific fault content to describe.
@@ -373,6 +383,41 @@ class OpenApiGeneratorTest {
 
         assertTrue(e.getMessage().contains("getCitty"), "Message should name the unknown operation");
         assertTrue(e.getMessage().contains("getCity"), "Message should list the available operations");
+    }
+
+    @Test
+    void configuredOperationsCannotSharePathAndMethod() throws Exception {
+        // PathItem accepts just one operation per HTTP method; without this validation, the
+        // operation processed last silently replaces the first one in the generated document.
+        var definitions = Definitions.parse(new ResolverMap(), "classpath:/ws/cities-2-services.wsdl");
+
+        // Both settings share the same path and method, which is invalid.
+        var getCity = new OperationSettings();
+        getCity.setPath("cities");
+        var getCityB = new OperationSettings();
+        getCityB.setPath("cities");
+        var operations = new LinkedHashMap<String, OperationSettings>();
+        operations.put("getCity", getCity);
+        operations.put("getCityB", getCityB);
+
+        var e = assertThrows(ConfigurationException.class,
+                () -> converter(definitions, "/", operations).generate());
+
+        assertTrue(e.getMessage().contains("getCity"));
+        assertTrue(e.getMessage().contains("getCityB"));
+        assertTrue(e.getMessage().contains("POST /cities"));
+
+        // Parameter names do not distinguish templated paths for routing, so these conflict too.
+        getCity.setPath("cities/{id}");
+        getCityB.setPath("cities/{name}");
+
+        e = assertThrows(ConfigurationException.class,
+                () -> converter(definitions, "/", operations).generate());
+
+        assertTrue(e.getMessage().contains("getCity"));
+        assertTrue(e.getMessage().contains("getCityB"));
+        assertTrue(e.getMessage().contains("POST /cities/{name}")
+                || e.getMessage().contains("POST /cities/{id}"));
     }
 
     @Test

@@ -68,6 +68,7 @@ api:
 # Notice that this is a deliberately simple example.
 #
 # - Do not use the same keystore and truststore for both signing and validating
-# - The sample does not address confidentiality. If required, combine with TLS or XML Encryption.
+# - The sample does not address confidentiality. If required, combine with TLS or XML Encryption
+#   (see 70-Encrypt-And-Decrypt-Body.yaml).
 #
 # Continue with file 60-Full-Signature-Example.yaml
