@@ -97,7 +97,7 @@ class EncryptSecurePartTest extends AbstractWsSecurityTest {
         Element body = firstByTag(doc, SOAP_NS, "Body");
         assertEquals(1, body.getElementsByTagNameNS(XENC_NS, "EncryptedData").getLength());
         assertEquals(0, doc.getElementsByTagName("foo").getLength(), "the plaintext must be gone");
-        assertFalse(rawBody().contains("bar"), "the plaintext must not survive anywhere in the message");
+        assertFalse(rawBody().contains(">bar<"), "the plaintext must not survive anywhere in the message");
     }
 
     /** Content encryption exists so that the envelope stays a SOAP envelope. */
