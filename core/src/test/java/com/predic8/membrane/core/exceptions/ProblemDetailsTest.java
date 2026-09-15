@@ -377,6 +377,16 @@ public class ProblemDetailsTest {
         }
 
         @Test
+        @DisplayName("HTML the client explicitly rejected is not served to it")
+        void htmlRejectedByQualityZero() throws Exception {
+            Exchange exc = Request.get("/foo").header(ACCEPT, "text/html;q=0").buildExchange();
+
+            user(false, "openapi").status(404).buildAndSetResponse(exc);
+
+            assertEquals(APPLICATION_PROBLEM_JSON, exc.getResponse().getHeader().getContentType());
+        }
+
+        @Test
         @DisplayName("A malformed Accept header falls back to JSON instead of failing")
         void malformedAccept() throws Exception {
             Exchange exc = Request.get("/foo").header(ACCEPT, "text/html;q=").buildExchange();

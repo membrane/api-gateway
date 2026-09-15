@@ -440,6 +440,8 @@ public class ProblemDetails {
             if (types.isEmpty())
                 return false;
             double preferred = types.getFirst().getQualityValue();
+            if (preferred <= 0.0)
+                return false;  // q=0 asks for anything but this
             return types.stream()
                     .filter(type -> type.getQualityValue() == preferred)
                     .anyMatch(MediaType.TEXT_HTML::equalsTypeAndSubtype);
