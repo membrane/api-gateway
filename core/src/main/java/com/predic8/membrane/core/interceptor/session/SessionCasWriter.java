@@ -36,10 +36,11 @@ class SessionCasWriter {
     private static final Logger log = LoggerFactory.getLogger(SessionCasWriter.class);
 
     /**
-     * Enough attempts that losing all of them means the session is contended far beyond what retrying
-     * would fix.
+     * An attempt is only spent when another request stored the session in the meantime, so the bound has
+     * to cover the number of requests writing one session at once - not the number of requests in flight.
+     * Two hundred parallel writers on a single session stay below this.
      */
-    private static final int MAX_ATTEMPTS = 10;
+    private static final int MAX_ATTEMPTS = 50;
 
     private SessionCasWriter() {
     }
@@ -117,7 +118,14 @@ class SessionCasWriter {
 
         log.warn("Could not store session {} without conflict after {} attempts; " +
                  "writing it unconditionally, which may discard a concurrent change.", key, MAX_ATTEMPTS);
-        store.blindSet(key, store.serialize(ours), ttlSeconds);
-        session.setBaseSnapshot(ours);
+        // Still merged with what is stored now: giving up on the retry means giving up on the guarantee
+        // that nothing written in the last moment is lost, not on everything the session has collected
+        // so far. Writing our own copy over it would drop every change since this request read it.
+        final Map<String, Object> lastResort = store.read(key)
+                .map(stored -> SessionContentMerger.merge(base, store.parse(stored.value()), ours, store::isAdditiveKey))
+                .orElse(ours);
+        store.blindSet(key, store.serialize(lastResort), ttlSeconds);
+        session.setContent(lastResort);
+        session.setBaseSnapshot(lastResort);
     }
 }

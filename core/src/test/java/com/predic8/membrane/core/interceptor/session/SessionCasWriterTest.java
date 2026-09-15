@@ -28,6 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class SessionCasWriterTest {
 
     private static final int TTL = 42;
+    private static final String ADDITIVE_KEY = "state";
 
     private FakeStore store;
 
@@ -46,6 +47,21 @@ class SessionCasWriterTest {
         assertEquals(Map.of("a", "2"), store.parse(store.stored));
         assertEquals(TTL, store.ttlSeconds);
         assertEquals(Map.of("a", "2"), session.getBaseSnapshot());
+    }
+
+    /**
+     * Giving up on the conditional write must not turn into overwriting the session with this request's
+     * own copy: everything stored since this request read it would go.
+     */
+    @Test
+    void unconditionalWriteKeepsConcurrentChange() {
+        store.stored = serialize(Map.of(ADDITIVE_KEY, "t1,t2"));
+        Session session = sessionWith(Map.of(ADDITIVE_KEY, "t1"), Map.of(ADDITIVE_KEY, "t1,t3"));
+
+        SessionCasWriter.write(store, "key", session, TTL);
+
+        assertEquals(Map.of(ADDITIVE_KEY, "t1,t2,t3"), store.parse(store.stored));
+        assertEquals(Map.of(ADDITIVE_KEY, "t1,t2,t3"), session.getContent());
     }
 
     /**
@@ -130,7 +146,7 @@ class SessionCasWriterTest {
 
         @Override
         public boolean isAdditiveKey(String key) {
-            return false;
+            return ADDITIVE_KEY.equals(key);
         }
 
         private void set(String value, int ttl) {
