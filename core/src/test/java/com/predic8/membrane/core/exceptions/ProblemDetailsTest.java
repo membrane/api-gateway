@@ -11,20 +11,25 @@
 
 package com.predic8.membrane.core.exceptions;
 
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.exchange.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.*;
-import org.junit.jupiter.api.*;
-import org.xml.sax.*;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.InputSource;
 
-import javax.xml.xpath.*;
-import java.io.*;
-import java.util.*;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
+import java.io.EOFException;
+import java.io.StringReader;
+import java.util.List;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
-import static com.predic8.membrane.core.util.CollectionsUtil.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.util.CollectionsUtil.toList;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ProblemDetailsTest {
@@ -263,6 +268,91 @@ public class ProblemDetailsTest {
             assertEquals("https://membrane-api.io/problems/user/atomic", xPath(body, "/problem-details/type"));
             assertEquals("7", xPath(body, "/problem-details/foo"));
             assertTrue(xPath(body, "/problem-details/attention").contains("development mode"));
+        }
+    }
+
+    /**
+     * Which end of the exchange a body failure is charged to, and how much of it a production
+     * deployment still tells the sender. Either body can be read in either flow, so the exception
+     * decides rather than the flow it surfaced in.
+     */
+    @Nested
+    class bodyFailures {
+
+        private static final String TRUNCATED_GZIP = "Unexpected end of ZLIB input stream";
+
+        @Test
+        @DisplayName("An undecodable request body is the sender's error, naming the coding that failed")
+        void undecodableRequestBody() throws Exception {
+            Exchange exc = Request.post("/").body("x").buildExchange();
+
+            Response r = bodyFailure(false, "xml protection", exc, decodingFailure(exc.getRequest())).build();
+
+            assertEquals(400, r.getStatusCode());
+            JsonNode json = parseJson(r);
+            assertEquals("Request body could not be decoded", json.get(TITLE).asText());
+            assertEquals("https://membrane-api.io/problems/user/body-decoding", json.get(TYPE).asText());
+            assertEquals("gzip", json.get("contentEncoding").asText());
+            assertTrue(json.get(DETAIL).asText().contains(TRUNCATED_GZIP), json.get(DETAIL).asText());
+        }
+
+        @Test
+        @DisplayName("The same failure on a backend response body is ours, not the sender's")
+        void undecodableResponseBody() throws Exception {
+            Exchange exc = Request.post("/").body("x").buildExchange();
+            exc.setResponse(Response.ok().body("x").build());
+
+            Response r = bodyFailure(false, "validator", exc, decodingFailure(exc.getResponse())).build();
+
+            assertEquals(500, r.getStatusCode());
+            // Nothing the sender can act on, so it is not dressed up as a decoding problem of theirs
+            assertEquals("https://membrane-api.io/problems/internal", parseJson(r).get(TYPE).asText());
+        }
+
+        @Test
+        @DisplayName("A body failure that is not a decoding failure keeps its own cause and plain type")
+        void readFailureWithoutDecoding() throws Exception {
+            Exchange exc = Request.post("/").body("x").buildExchange();
+            var failure = new ReadingBodyException(new EOFException("peer went away"), exc.getRequest());
+
+            Response r = bodyFailure(false, "openapi", exc, failure).build();
+
+            assertEquals(400, r.getStatusCode());
+            JsonNode json = parseJson(r);
+            assertEquals("peer went away", json.get(DETAIL).asText());
+            assertEquals("https://membrane-api.io/problems/user", json.get(TYPE).asText());
+        }
+
+        @Test
+        @DisplayName("Production keeps the title, type and coding but withholds the decoder's wording")
+        void production() throws Exception {
+            Exchange exc = Request.post("/").body("x").buildExchange();
+
+            Response r = bodyFailure(true, "xml protection", exc, decodingFailure(exc.getRequest())).build();
+
+            assertEquals(400, r.getStatusCode());
+            JsonNode json = parseJson(r);
+            assertEquals("Request body could not be decoded", json.get(TITLE).asText());
+            assertEquals("https://membrane-api.io/problems/user/body-decoding", json.get(TYPE).asText());
+            assertEquals("gzip", json.get("contentEncoding").asText());
+            assertFalse(r.getBodyAsStringDecoded().contains(TRUNCATED_GZIP), r.getBodyAsStringDecoded());
+        }
+
+        /**
+         * {@link ProblemDetails#addSubSee} concatenates without a separator, so the factory has to be
+         * the only one adding a suffix - a caller adding its own would run the two together.
+         */
+        @Test
+        void seeSuffixIsSetOnceAndWellFormed() throws Exception {
+            Exchange exc = Request.post("/").body("x").buildExchange();
+
+            Response r = bodyFailure(false, "openapi", exc, decodingFailure(exc.getRequest())).build();
+
+            assertTrue(parseJson(r).get(SEE).asText().endsWith("/reading-body"), parseJson(r).get(SEE).asText());
+        }
+
+        private static ReadingBodyException decodingFailure(Message source) {
+            return new ReadingBodyException(new DecodingException("gzip", new EOFException(TRUNCATED_GZIP)), source);
         }
     }
 

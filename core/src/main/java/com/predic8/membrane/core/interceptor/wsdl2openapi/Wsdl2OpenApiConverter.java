@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
 import com.predic8.membrane.core.util.ConfigurationException;
+import com.predic8.membrane.core.util.HttpUtil;
 import com.predic8.membrane.core.util.wsdl.parser.*;
 import io.swagger.v3.core.util.Yaml31;
 import io.swagger.v3.oas.models.Components;
@@ -49,8 +50,34 @@ public class Wsdl2OpenApiConverter {
 
     private static final Logger log = LoggerFactory.getLogger(Wsdl2OpenApiConverter.class);
 
-    /** Mapping of an operation the configuration says nothing about: POST on its kebab-case name. */
-    private static final OperationSettings DEFAULT_SETTINGS = new OperationSettings();
+    /**
+     * Settings of an operation the configuration says nothing about: POST on its kebab-case name,
+     * answered with the default status. Shared with {@link Wsdl2OpenapiInterceptor} so the document
+     * and the response it describes cannot drift apart.
+     */
+    static final OperationSettings DEFAULT_SETTINGS = new OperationSettings();
+
+    /**
+     * Whether the WSDL declares a response message for the operation. A one-way operation has none,
+     * so there is nothing to convert into a body. Deliberately not {@link #isEmptySchema}: that
+     * cannot tell an absent output message from one whose parts resolve to an empty type, and the
+     * two differ on the wire — a one-way service sends nothing, a service with an empty output
+     * message still sends an envelope, which may be a fault.
+     */
+    static boolean hasOutput(Operation wsdlOp) {
+        return !wsdlOp.getMessagesByDirection(OUTPUT).isEmpty();
+    }
+
+    /**
+     * The status a successful response carries. A configured status always wins; without one it is
+     * 200, or 204 for an operation with no output message. Shared with {@link Wsdl2OpenapiInterceptor}
+     * so the published document and the response it describes cannot disagree.
+     */
+    static int successStatus(OperationSettings settings, boolean hasOutput) {
+        var configured = settings.getStatus();
+        if (configured != null) return configured;
+        return hasOutput ? 200 : 204;
+    }
 
     /**
      * Problem details subtype for a failed operation. Deliberately says nothing about SOAP: the
@@ -153,11 +180,11 @@ public class Wsdl2OpenApiConverter {
     private static Schema<?> buildProblemDetailsSchema() {
         return new ObjectSchema()
                 .description("Problem details as defined by RFC 7807.")
-                .addProperty("type", new StringSchema().description("Identifies the kind of problem."))
+                .addProperty("type", new StringSchema().format("uri-reference").description("Identifies the kind of problem."))
                 .addProperty("title", new StringSchema().description("Short summary of the problem."))
                 .addProperty("status", new IntegerSchema().description("The HTTP status code."))
                 .addProperty("detail", new StringSchema().description("Explanation specific to this occurrence."))
-                .addProperty("instance", new StringSchema().description("Identifies this specific occurrence."));
+                .addProperty("instance", new StringSchema().format("uri-reference").description("Identifies this specific occurrence."));
     }
 
     /**
@@ -251,11 +278,33 @@ public class Wsdl2OpenApiConverter {
                                 name, wsdlOps.stream().map(Operation::getName).toList())));
         var pathKey = "/" + (opSettings.getPath() != null ? opSettings.getPath() : camelToKebab(name));
         var existing = paths.get(pathKey);
+        if (existing == null) {
+            var canonicalPathKey = canonicalizeTemplatedPath(pathKey);
+            for (var entry : paths.entrySet()) {
+                if (!canonicalizeTemplatedPath(entry.getKey()).equals(canonicalPathKey)) {
+                    continue;
+                }
+                var existingOperation = getMethod(entry.getValue(), opSettings.getMethod());
+                if (existingOperation != null) {
+                    throw new ConfigurationException("Operations '%s' and '%s' are both configured for %s %s".formatted(
+                            existingOperation.getOperationId(), name, opSettings.getMethod(), pathKey));
+                }
+            }
+        }
         if (existing != null) {
+            var existingOperation = getMethod(existing, opSettings.getMethod());
+            if (existingOperation != null) {
+                throw new ConfigurationException("Operations '%s' and '%s' are both configured for %s %s".formatted(
+                        existingOperation.getOperationId(), name, opSettings.getMethod(), pathKey));
+            }
             applyMethod(existing, buildApiOperation(name, wsdlOp, opSettings), opSettings.getMethod());
         } else {
             paths.addPathItem(pathKey, buildPathItem(name, wsdlOp, opSettings));
         }
+    }
+
+    private static String canonicalizeTemplatedPath(String path) {
+        return path.replaceAll("\\{[^}]*}", "{param}");
     }
 
     private PathItem buildPathItem(String name, Operation wsdlOp, OperationSettings settings) {
@@ -272,7 +321,7 @@ public class Wsdl2OpenApiConverter {
         var apiOp = new io.swagger.v3.oas.models.Operation()
                 .operationId(name)
                 .description(wsdlOp.getDocumentation())
-                .responses(buildResponses(wsdlOp));
+                .responses(buildResponses(wsdlOp, settings));
 
         // Every operation is tagged: an untagged one would end up in the "default" group of a
         // documentation UI, and with no tag configured anywhere that is where all of them land.
@@ -343,6 +392,17 @@ public class Wsdl2OpenApiConverter {
             case "PATCH"  -> item.patch(op);
             // OperationSettings.setMethod already rejects anything else at config time, so this
             // is a bug rather than bad configuration.
+            default       -> throw new IllegalStateException("Unvalidated HTTP method reached the converter: " + method);
+        };
+    }
+
+    private static io.swagger.v3.oas.models.Operation getMethod(PathItem item, String method) {
+        return switch (method.toUpperCase()) {
+            case "GET"    -> item.getGet();
+            case "POST"   -> item.getPost();
+            case "PUT"    -> item.getPut();
+            case "DELETE" -> item.getDelete();
+            case "PATCH"  -> item.getPatch();
             default       -> throw new IllegalStateException("Unvalidated HTTP method reached the converter: " + method);
         };
     }
@@ -512,13 +572,17 @@ public class Wsdl2OpenApiConverter {
         return new Content().addMediaType(APPLICATION_JSON, new MediaType().schema(schema));
     }
 
-    private ApiResponses buildResponses(Operation wsdlOp) {
-        var response200 = new ApiResponse()
-                .description("Successful response")
-                .content(jsonContent(converter.convertMessageParts(wsdlOp.getMessagesByDirection(OUTPUT))));
-
+    private ApiResponses buildResponses(Operation wsdlOp, OperationSettings settings) {
+        boolean hasOutput = hasOutput(wsdlOp);
+        int statusCode = successStatus(settings, hasOutput);
+        var successResponse = new ApiResponse().description(HttpUtil.getMessageForStatusCode(statusCode));
+        // Left without content, never an empty Content: a response validator only lets a bodiless
+        // response through when the document declares no content for it at all.
+        if (hasOutput) {
+            successResponse.content(jsonContent(converter.convertMessageParts(wsdlOp.getMessagesByDirection(OUTPUT))));
+        }
         return new ApiResponses()
-                .addApiResponse("200", response200)
+                .addApiResponse(Integer.toString(statusCode), successResponse)
                 .addApiResponse(ApiResponses.DEFAULT, buildErrorResponse(wsdlOp));
     }
 

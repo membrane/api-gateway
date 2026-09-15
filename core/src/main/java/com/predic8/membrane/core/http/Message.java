@@ -128,15 +128,16 @@ public abstract class Message {
 	}
 
 	/**
-	 * <p>Returns the logical body content.</p>
+	 * <p>Returns the logical body content as a stream, with supported Content-Encodings
+	 * (gzip, deflate, Brotli) removed. Transfer-Encodings (e.g. chunking) have already been removed.</p>
 	 *
-	 * <p>No Transfer-Encodings (e.g. chunking) and/or Content-Encodings (e.g. gzip) have been applied.</p>
+	 * <p>Reassembles supported XOP/MTOM multipart packages into XML, replacing {@code xop:Include}
+	 * elements with base64-encoded attachment content. Unlike this method,
+	 * {@link #getBodyAsStringDecoded()} leaves the multipart package intact.</p>
 	 *
-	 * <p>Supports streaming: The HTTP message does not have to be completely received yet for this method to return.</p>
+	 * <p>Supports streaming where the decoding path allows it.</p>
 	 */
 	public InputStream getBodyAsStreamDecoded() throws ReadingBodyException {
-		// TODO: this logic should be split up into configurable decoding modules
-		// TODO: decoding result should be cached
 		try {
 			Message m = xopr.getReconstitutedMessage(this);
 			if (m != null)
@@ -151,14 +152,17 @@ public abstract class Message {
 	}
 
 	/**
-	 * <p>As this method has bad performance, it should <b>not</b> be used in any critical component.
-	 * (Use {@link #getBodyAsStreamDecoded()} instead.)</p>
+	 * <p>Returns the body as a String, with supported Content-Encodings (gzip, deflate, Brotli)
+	 * removed and bytes converted using {@link #getCharsetOrDefault()}.
+	 * Transfer-Encodings (e.g. chunking) have already been removed.</p>
 	 *
-	 * <p>Allocates a new {@link String} object for the whole body (potentially performing charset conversion).</p>
+	 * <p>Does not reassemble XOP/MTOM: the result contains the multipart package, including MIME
+	 * boundaries and attachment parts. Use {@link #getBodyAsStreamDecoded()} to obtain the
+	 * reassembled XML with attachment content inlined as base64.</p>
 	 *
-	 * <p>Blocks until the body has been fully received.</p>
-	 *
-	 * <p>(... and more bad internal performance)</p>
+	 * <p>Blocks until the body has been fully received and allocates a String for the whole body.
+	 * Prefer {@link #getBodyAsStreamDecoded()} for performance-sensitive consumers or to avoid
+	 * allocating the whole decoded body in memory where streaming is supported.</p>
 	 *
 	 * @return the message's body as a Java String.
 	 */

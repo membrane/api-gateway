@@ -33,6 +33,7 @@ import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.bodyFailure;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
@@ -182,17 +183,15 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
             if (exc.getMessage(flow).isBodyEmpty())
                 return CONTINUE;
         } catch (ReadingBodyException e) {
-            log.error("", e);
-            internal(router.getConfiguration().isProduction(),getDisplayName())
-                    .addSubSee("io")
-                    .detail("Could not read message body")
-                    .exception(e)
-                    .buildAndSetResponse(exc);
-            return ABORT;
+            return reportBodyFailure(exc, e);
         }
 
         try {
             return validator.validateMessage(exc, flow);
+        } catch (ReadingBodyException e) {
+            // Reached through the SOAP sniff in SOAPUtil, which rethrows rather than reporting a body
+            // it could not read as "not SOAP". Answering it below would call it a validation error.
+            return reportBodyFailure(exc, e);
         } catch (Exception e) {
             log.error("", e);
             internal(router.getConfiguration().isProduction(),getDisplayName())
@@ -203,6 +202,23 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
                     .buildAndSetResponse(exc);
             return ABORT;
         }
+    }
+
+    /**
+     * A body that could not be read is not a validation verdict on it. Which end of the exchange it is
+     * charged to is decided centrally: this runs in both flows, so the exception decides rather than
+     * the flow it surfaced in. A request body is logged at info, since a sender that keeps posting
+     * undecodable bodies would otherwise fill the log with stack traces for its own mistake.
+     */
+    private Outcome reportBodyFailure(Exchange exc, ReadingBodyException e) {
+        if (e.isRequestBodyFailure(exc))
+            log.info("Could not read the request body: {}", e.getMessage());
+        else
+            log.error("", e);
+        bodyFailure(router.getConfiguration().isProduction(), getDisplayName(), exc, e)
+                .exception(e)
+                .buildAndSetResponse(exc);
+        return ABORT;
     }
 
     /**

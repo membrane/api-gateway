@@ -30,13 +30,14 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
-import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.componentName;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.Wsdl2OpenApiConverter.ApiInfo;
+import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.componentName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
@@ -58,6 +59,8 @@ class OpenApiGeneratorTest {
     static Definitions recursiveDefinitions;
     static Definitions articleDefinitions;
     static Definitions attributeDefinitions;
+    static Definitions emptyMessageDefinitions;
+    static Definitions scalarOutputDefinitions;
 
     @BeforeAll
     static void setup() throws Exception {
@@ -68,6 +71,8 @@ class OpenApiGeneratorTest {
         recursiveDefinitions = Definitions.parse(new ResolverMap(), "classpath:/ws/recursive-type.wsdl");
         articleDefinitions = Definitions.parse(new ResolverMap(), "classpath:/validation/article-service.wsdl");
         attributeDefinitions = Definitions.parse(new ResolverMap(), "classpath:/ws/attributes.wsdl");
+        emptyMessageDefinitions = Definitions.parse(new ResolverMap(), "classpath:/special/empty-message.wsdl");
+        scalarOutputDefinitions = Definitions.parse(new ResolverMap(), "classpath:/ws/scalar-output.wsdl");
     }
 
     @Test
@@ -158,12 +163,62 @@ class OpenApiGeneratorTest {
     }
 
     @Test
+    void outputMessageWithNoPartsIsPublishedAsResponseContent() {
+        var responses = converter(emptyMessageDefinitions, "/").generate().getPaths()
+                .get("/ping").getPost().getResponses();
+
+        // The WSDL declares an output message for "ping", so a 204 would falsely promise the
+        // service never replies with anything — it may still answer with a fault.
+        assertNull(responses.get("204"));
+        assertEquals("object", responses.get("200").getContent().get(APPLICATION_JSON).getSchema().getType());
+    }
+
+    @Test
+    void scalarOutputPartIsPublishedAsResponseContent() {
+        var responses = converter(scalarOutputDefinitions, "/").generate().getPaths()
+                .get("/get-name").getPost().getResponses();
+
+        assertNull(responses.get("204"), "An operation whose output message has a part does send content");
+        assertEquals("string", responses.get("200").getContent().get(APPLICATION_JSON).getSchema().getType());
+
+        // The published document is the YAML, and a scalar response schema is the one case here
+        // where a 200's content is not an object.
+        assertTrue(generator(scalarOutputDefinitions, "/").contains(
+                """
+                        "200":
+                          description: OK
+                          content:
+                            application/json:
+                              schema:
+                                type: string
+                """.stripTrailing()));
+    }
+
+    @Test
+    void emptyComplexTypeOutputPartIsPublishedAsResponseContent() {
+        var responses = converter(scalarOutputDefinitions, "/").generate().getPaths()
+                .get("/refresh").getPost().getResponses();
+
+        assertNull(responses.get("204"), "An operation whose output message has a part does send content");
+        assertEquals("object", responses.get("200").getContent().get(APPLICATION_JSON).getSchema().getType());
+    }
+
+    @Test
     void problemDetailsSchemaIsDeclaredOnceAndReferenced() {
         var yaml = generator(citiesDefinitions, "/");
 
         assertEquals(1, yaml.split("ProblemDetails:").length - 1,
                 "declared once as a component, referenced by every operation");
         assertTrue(yaml.contains("Problem details as defined by RFC 7807."));
+    }
+
+    @Test
+    void problemDetailsUriReferencesHaveUriReferenceFormat() {
+        var properties = converter(citiesDefinitions, "/").generate().getComponents()
+                .getSchemas().get("ProblemDetails").getProperties();
+
+        assertEquals("uri-reference", ((Schema<?>) properties.get("type")).getFormat());
+        assertEquals("uri-reference", ((Schema<?>) properties.get("instance")).getFormat());
     }
 
     @Test
@@ -328,6 +383,41 @@ class OpenApiGeneratorTest {
 
         assertTrue(e.getMessage().contains("getCitty"), "Message should name the unknown operation");
         assertTrue(e.getMessage().contains("getCity"), "Message should list the available operations");
+    }
+
+    @Test
+    void configuredOperationsCannotSharePathAndMethod() throws Exception {
+        // PathItem accepts just one operation per HTTP method; without this validation, the
+        // operation processed last silently replaces the first one in the generated document.
+        var definitions = Definitions.parse(new ResolverMap(), "classpath:/ws/cities-2-services.wsdl");
+
+        // Both settings share the same path and method, which is invalid.
+        var getCity = new OperationSettings();
+        getCity.setPath("cities");
+        var getCityB = new OperationSettings();
+        getCityB.setPath("cities");
+        var operations = new LinkedHashMap<String, OperationSettings>();
+        operations.put("getCity", getCity);
+        operations.put("getCityB", getCityB);
+
+        var e = assertThrows(ConfigurationException.class,
+                () -> converter(definitions, "/", operations).generate());
+
+        assertTrue(e.getMessage().contains("getCity"));
+        assertTrue(e.getMessage().contains("getCityB"));
+        assertTrue(e.getMessage().contains("POST /cities"));
+
+        // Parameter names do not distinguish templated paths for routing, so these conflict too.
+        getCity.setPath("cities/{id}");
+        getCityB.setPath("cities/{name}");
+
+        e = assertThrows(ConfigurationException.class,
+                () -> converter(definitions, "/", operations).generate());
+
+        assertTrue(e.getMessage().contains("getCity"));
+        assertTrue(e.getMessage().contains("getCityB"));
+        assertTrue(e.getMessage().contains("POST /cities/{name}")
+                || e.getMessage().contains("POST /cities/{id}"));
     }
 
     @Test
