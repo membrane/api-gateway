@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.6.0.json
+#
+# Tutorial: Forward Proxy
+#
+# A forward proxy sits between a client and the internet at large: the client configures
+# it as its own proxy and then reaches whatever host it wants through it. Unlike a
+# reverse proxy (api/serviceProxy), which sits in front of one fixed backend chosen by
+# the gateway's config, not the client.
+#
+# proxy has no target for exactly that reason. Whatever host and port the client's own
+# request names, Membrane forwards to that. For an https:// target, curl first sends the
+# proxy a CONNECT request: Membrane opens a plain TCP connection to that host and pipes
+# the bytes through unchanged, so the TLS handshake happens directly between client and
+# backend and Membrane never terminates it or sees the encrypted traffic.
+#
+# 1.) Start Membrane:
+#     ./membrane.sh -c 10-Forward-Proxy.yaml
+#
+# 2.) Ask curl to use Membrane as its proxy, then request a public HTTPS API through it:
+#     curl -x http://localhost:3128 https://api.predic8.de/
+#     → You should see a list of public APIs.
+#
+# 3.) See the same thing in a browser instead of curl. Launch Chrome with the proxy set
+#     (works the same on Windows/Linux; adjust how you invoke Chrome for your platform):
+#     open -a "Google Chrome" --args --proxy-server=localhost:3128 https://api.predic8.de/
+#     → The address bar shows a closed padlock. Click it: the certificate is issued to
+#       api.predic8.de itself, not to Membrane. That is proof the proxy tunneled the TLS
+#       session through untouched instead of terminating it.
+
+proxy:
+  port: 3128
