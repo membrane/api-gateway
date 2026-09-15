@@ -20,7 +20,6 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
 
-import static com.predic8.membrane.annot.Constants.HTML_FOOTER;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.DETAIL;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.STATUS;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.TITLE;
@@ -42,9 +41,9 @@ public class ProblemDetailsHTML {
             dt { font-weight: 600; margin-top: 0.8em; }
             dd { margin: 0.2em 0 0 0; word-break: break-word; }
             dd dl { margin-top: 0.2em; border-top: none; padding-top: 0; }
-            .footer { margin-top: 2em; color: #AAAAAA; font-size: 0.85em; }
-            .footer a { color: #AAAAAA; }
-            .footer a:hover { color: #000000; }
+            .docs { margin-top: 2em; border-top: 1px solid #E5E5E5; padding-top: 1.2em; }
+            .docs a { color: #1F7A8C; font-weight: 600; text-decoration: none; }
+            .docs a:hover { text-decoration: underline; }
             """;
 
     static void createHTMLContent(Map<String, Object> root, Response.ResponseBuilder builder) {
@@ -66,7 +65,8 @@ public class ProblemDetailsHTML {
         sb.append("<h1>").append(escapeHtml4(headline(root, reason))).append("</h1>\n");
         appendDetail(sb, root.get(DETAIL));
         appendFields(sb, root);
-        sb.append("<p class=\"footer\">").append(HTML_FOOTER).append("</p>\n");
+        sb.append("<p class=\"docs\"><a href=\"https://www.membrane-api.io\">")
+                .append("Membrane API Gateway documentation</a></p>\n");
         sb.append("</main>\n</body>\n</html>");
         return sb.toString();
     }
