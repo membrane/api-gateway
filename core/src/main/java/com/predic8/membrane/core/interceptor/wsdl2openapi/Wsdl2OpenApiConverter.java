@@ -180,11 +180,11 @@ public class Wsdl2OpenApiConverter {
     private static Schema<?> buildProblemDetailsSchema() {
         return new ObjectSchema()
                 .description("Problem details as defined by RFC 7807.")
-                .addProperty("type", new StringSchema().description("Identifies the kind of problem."))
+                .addProperty("type", new StringSchema().format("uri-reference").description("Identifies the kind of problem."))
                 .addProperty("title", new StringSchema().description("Short summary of the problem."))
                 .addProperty("status", new IntegerSchema().description("The HTTP status code."))
                 .addProperty("detail", new StringSchema().description("Explanation specific to this occurrence."))
-                .addProperty("instance", new StringSchema().description("Identifies this specific occurrence."));
+                .addProperty("instance", new StringSchema().format("uri-reference").description("Identifies this specific occurrence."));
     }
 
     /**
@@ -278,11 +278,33 @@ public class Wsdl2OpenApiConverter {
                                 name, wsdlOps.stream().map(Operation::getName).toList())));
         var pathKey = "/" + (opSettings.getPath() != null ? opSettings.getPath() : camelToKebab(name));
         var existing = paths.get(pathKey);
+        if (existing == null) {
+            var canonicalPathKey = canonicalizeTemplatedPath(pathKey);
+            for (var entry : paths.entrySet()) {
+                if (!canonicalizeTemplatedPath(entry.getKey()).equals(canonicalPathKey)) {
+                    continue;
+                }
+                var existingOperation = getMethod(entry.getValue(), opSettings.getMethod());
+                if (existingOperation != null) {
+                    throw new ConfigurationException("Operations '%s' and '%s' are both configured for %s %s".formatted(
+                            existingOperation.getOperationId(), name, opSettings.getMethod(), pathKey));
+                }
+            }
+        }
         if (existing != null) {
+            var existingOperation = getMethod(existing, opSettings.getMethod());
+            if (existingOperation != null) {
+                throw new ConfigurationException("Operations '%s' and '%s' are both configured for %s %s".formatted(
+                        existingOperation.getOperationId(), name, opSettings.getMethod(), pathKey));
+            }
             applyMethod(existing, buildApiOperation(name, wsdlOp, opSettings), opSettings.getMethod());
         } else {
             paths.addPathItem(pathKey, buildPathItem(name, wsdlOp, opSettings));
         }
+    }
+
+    private static String canonicalizeTemplatedPath(String path) {
+        return path.replaceAll("\\{[^}]*}", "{param}");
     }
 
     private PathItem buildPathItem(String name, Operation wsdlOp, OperationSettings settings) {
@@ -370,6 +392,17 @@ public class Wsdl2OpenApiConverter {
             case "PATCH"  -> item.patch(op);
             // OperationSettings.setMethod already rejects anything else at config time, so this
             // is a bug rather than bad configuration.
+            default       -> throw new IllegalStateException("Unvalidated HTTP method reached the converter: " + method);
+        };
+    }
+
+    private static io.swagger.v3.oas.models.Operation getMethod(PathItem item, String method) {
+        return switch (method.toUpperCase()) {
+            case "GET"    -> item.getGet();
+            case "POST"   -> item.getPost();
+            case "PUT"    -> item.getPut();
+            case "DELETE" -> item.getDelete();
+            case "PATCH"  -> item.getPatch();
             default       -> throw new IllegalStateException("Unvalidated HTTP method reached the converter: " + method);
         };
     }

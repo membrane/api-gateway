@@ -8,8 +8,11 @@
 #     curl -d '<foo a="1" b="2" c="3" d="4"/>' -H "Content-Type: text/xml" localhost:2000
 #
 # 2.) DTD Removal
-#     Look at hello-dtd.xml
+#     Look at hello-dtd.xml. It contains a DTD configuration.
+#
 #     curl -d @hello-dtd.xml -H "Content-Type: text/xml" localhost:2000
+#
+#     The XML document in the response should have the DTD removed.
 #
 # 3.) Too deeply nested
 #     curl -d '<a><b><c><d>x</d></c></b></a>' -H "Content-Type: text/xml" localhost:2000
