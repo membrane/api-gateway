@@ -6,8 +6,12 @@
 # start there: tutorials/operation/50-Prometheus.yaml
 #
 # 1.) Start Membrane:
-#       Linux/Mac:  ./membrane.sh -c 60-Grafana.yaml
-#       Windows:    membrane.cmd  -c 60-Grafana.yaml
+#     with Docker:
+#       ./run-docker.sh -c 60-Grafana.yaml   (Linux/Mac)
+#       run-docker.cmd -c 60-Grafana.yaml    (Windows)
+#     or with Java:
+#       ./membrane.sh -c 60-Grafana.yaml     (Linux/Mac)
+#       membrane.cmd -c 60-Grafana.yaml      (Windows)
 #
 # 2.) Start Prometheus and Grafana:
 #       docker compose -f grafana/docker-compose.yml up -d

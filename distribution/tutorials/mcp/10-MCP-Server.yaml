@@ -7,11 +7,12 @@
 # the AI client can inspect through MCP.
 #
 # 1.) Start Membrane:
-#
-#    Linux/Mac:
-#      ./membrane.sh -c 10-MCP-Server.yaml
-#    Windows:
-#      membrane.cmd -c 10-MCP-Server.yaml
+#     with Docker:
+#       ./run-docker.sh -c 10-MCP-Server.yaml   (Linux/Mac)
+#       run-docker.cmd -c 10-MCP-Server.yaml    (Windows)
+#     or with Java:
+#       ./membrane.sh -c 10-MCP-Server.yaml     (Linux/Mac)
+#       membrane.cmd -c 10-MCP-Server.yaml      (Windows)
 #
 # 2.) Generate some demo traffic in a second terminal:
 #
