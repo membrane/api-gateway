@@ -141,4 +141,41 @@ public class HttpUtilTest {
     void idempotent(String method, boolean expected) {
         assertEquals(expected, isIdempotent(method));
     }
+
+    @ParameterizedTest
+    @CsvSource({
+            "104, Upload Resumption Supported",
+            "204, No Content",
+            "205, Reset Content",
+            "207, Multi-Status",
+            "226, IM Used",
+            "301, Moved Permanently",
+            "413, Content Too Large",
+            "429, Too Many Requests",
+            "431, Request Header Fields Too Large",
+            "451, Unavailable For Legal Reasons",
+            "505, HTTP Version Not Supported",
+            "511, Network Authentication Required"
+    })
+    void statusMessageForListedCode(int code, String message) {
+        assertEquals(message, getMessageForStatusCode(code));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "199, Information",
+            "299, Success",
+            "399, Redirection",
+            "499, Client Error",
+            "599, Server Error"
+    })
+    void unlistedCodeFallsBackToItsStatusClass(int code, String message) {
+        assertEquals(message, getMessageForStatusCode(code));
+    }
+
+    @Test
+    void everyStatusCodeHasANonEmptyMessage() {
+        for (int code = 100; code < 600; code++)
+            assertFalse(getMessageForStatusCode(code).isBlank(), "empty reason phrase for " + code);
+    }
 }
