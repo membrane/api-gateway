@@ -25,6 +25,12 @@ If your APIs use XML as input or output, this tutorial provides useful configura
 Learn how to use Membrane in more advanced scenarios. Topics include path rewriting, scripting, conditions and more.
 
 
+## [Forward Proxy](forward-proxy)
+
+Use Membrane as a classic HTTP forward proxy that forwards to whatever host the client's
+own request names, including tunneling HTTPS traffic to a TLS-protected backend.
+
+
 ## [Operation](operation)
 
 Run and observe Membrane in production. 
