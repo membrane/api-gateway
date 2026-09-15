@@ -19,6 +19,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.session.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.integration.*;
 import org.apache.http.Header;
 import org.apache.http.client.config.*;
@@ -322,6 +323,18 @@ public class SessionManagerTest {
     }
 
     /**
+     * All workers connect at the same moment, so the accept queue has to hold every one of them. The
+     * default of 50 only works where the kernel absorbs the overflow and lets the client retransmit;
+     * Windows answers the connections beyond it with a reset, failing the test on connect instead of on
+     * what it is about.
+     */
+    private static TestRouter routerAcceptingAtOnce(int connections) {
+        TestRouter router = new TestRouter();
+        router.getTransport().setBacklog(connections);
+        return router;
+    }
+
+    /**
      * The same read-modify-write StateManager.saveToSession does: append one more token to a
      * SESSION_VALUE_SEPARATOR-joined list so that several authorization flows can be in flight at once.
      */
@@ -346,7 +359,8 @@ public class SessionManagerTest {
             String nameDummyField,
             Supplier<com.predic8.membrane.core.interceptor.session.SessionManager> smSupplier) throws Exception {
         int limit = 200;
-        var httpRouter = Util.basicRouter(Util.createServiceProxy(GATEWAY_PORT, testInterceptor(smSupplier)));
+        var httpRouter = Util.basicRouter(routerAcceptingAtOnce(limit),
+                Util.createServiceProxy(GATEWAY_PORT, testInterceptor(smSupplier)));
 
         HttpClientContext ctx = getHttpClientContext();
         ExecutorService executor = Executors.newFixedThreadPool(limit);
