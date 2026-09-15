@@ -165,6 +165,12 @@ public class RuleManagerTest {
 	}
 
 	@Test
+	@DisplayName("A request that matches no host/method/path rule falls back to the ProxyRule on that port")
+	void getMatchingRuleFallsBackToProxyRuleOnUnmatchedPort() throws UnknownHostException {
+		assertEquals(proxy3013, manager.getMatchingRule(assembleExchange("unknown-host", "GET", "/anything", "1.1", 3013, "127.0.0.1")));
+	}
+
+	@Test
 	void internalUnknown() throws URISyntaxException {
 		Exchange exc = get("/ignored").buildExchange();
 		exc.getDestinations().add("internal://unknown");

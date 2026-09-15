@@ -1,0 +1,37 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.6.0.json
+#
+# Tutorial: Intercepting Forward Proxy Traffic
+#
+# A plain http:// request through the proxy is not tunneled: Membrane parses it like any
+# other request, so an interceptor in the proxy's flow runs and can read or change it
+# before it goes out, exactly like on an api.
+#
+# This does not apply to an https:// target. The client sends CONNECT first, and the
+# flow interceptors run on that CONNECT request, not on the tunneled bytes afterward, so
+# a header added here would never reach the request curl later sends inside the tunnel
+# (see 10-Forward-Proxy.yaml).
+#
+# 1.) Start Membrane:
+#     ./membrane.sh -c 30-Interceptor.yaml
+#
+# 2.) Ask curl to use Membrane as its proxy, then request the second API through it:
+#     curl -x http://localhost:3128 http://localhost:2000/
+#     → Added by the proxy: Membrane
+
+proxy:
+  port: 3128
+  flow:
+    - setHeader:
+        name: X-Added-By
+        value: Membrane
+
+---
+api:
+  port: 2000
+  flow:
+    - request:
+        - template:
+            contentType: text/plain
+            src: "Added by the proxy: ${header['X-Added-By']}"
+    - return:
+        status: 200
