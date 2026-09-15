@@ -10,7 +10,7 @@
 
 <img src="docs/images/api-gateway-demo.gif" alt="Animated demo of Membrane API Gateway" width="800">
 
-Built on the **Java platform**, Membrane bridges legacy and modern APIs. It supports [XML-to-JSON transformation](#Transformation-between-XML-to-JSON), [WSDL-to-OpenAPI conversion](#wsdl-to-openapi-conversion),[SOAP-to-REST](#manual-soap-to-rest-conversion) integration, and validation against **OpenAPI** and **WSDL**.
+Built on the **Java platform**, Membrane bridges legacy and modern APIs. It supports [XML-to-JSON transformation](#transformation-between-xml-to-json), [WSDL-to-OpenAPI conversion](#wsdl-to-openapi-conversion),[SOAP-to-REST](#manual-soap-to-rest-conversion) integration, and validation against **OpenAPI** and **WSDL**.
 
 For modern APIs, Membrane supports technologies such as [OAuth 2](#oauth2), [JWT](#json-web-tokens), and [AI](#3-ai-and-llm-gateway), along with a broad range of [transformation](#5-message-transformation), and [observability](#10-operation) features. It is easy to set up and deploy, either as a container or as a Java application.
 
