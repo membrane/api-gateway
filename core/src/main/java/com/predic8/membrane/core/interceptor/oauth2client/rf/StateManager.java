@@ -39,7 +39,6 @@ import static java.net.URLDecoder.decode;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class StateManager {
-
     private static final Logger log = LoggerFactory.getLogger(StateManager.class);
     private static final SecureRandom sr = new SecureRandom();
 

@@ -85,7 +85,7 @@ public class MemcachedSessionManager extends SessionManager {
      * the server are separate methods so that a test double can replace the server without reimplementing
      * anything else.
      */
-    private final SessionCasWriter.Store store = new SessionCasWriter.Store() {
+    private final SessionCasWriter.Store store = new SessionJsonStore(this) {
         @Override
         public Optional<SessionCasWriter.VersionedValue> read(String key) {
             return readVersioned(key);
@@ -105,28 +105,13 @@ public class MemcachedSessionManager extends SessionManager {
         public void blindSet(String key, String value, int ttlSeconds) {
             MemcachedSessionManager.this.blindSet(key, value, ttlSeconds);
         }
-
-        @Override
-        public Map<String, Object> parse(String value) {
-            return MemcachedSessionManager.this.parse(value).getContent();
-        }
-
-        @Override
-        public String serialize(Map<String, Object> content) {
-            return stringify(rawSession(content));
-        }
-
-        @Override
-        public boolean isAdditiveKey(String key) {
-            return MemcachedSessionManager.this.isAdditiveKey(key);
-        }
     };
 
     /**
      * memcached hands out a CAS token with every read, which {@link #compareAndSet} passes back to prove
      * that nothing was written in between.
      */
-    protected Optional<SessionCasWriter.VersionedValue> readVersioned(String key) {
+    Optional<SessionCasWriter.VersionedValue> readVersioned(String key) {
         try {
             GetsResponse<String> response = client.gets(key);
             return Optional.ofNullable(response)
@@ -136,7 +121,7 @@ public class MemcachedSessionManager extends SessionManager {
         }
     }
 
-    protected boolean createIfAbsent(String key, String value, int ttlSeconds) {
+    boolean createIfAbsent(String key, String value, int ttlSeconds) {
         try {
             return client.add(key, ttlSeconds, value);
         } catch (TimeoutException | InterruptedException | MemcachedException e) {
@@ -144,7 +129,7 @@ public class MemcachedSessionManager extends SessionManager {
         }
     }
 
-    protected boolean compareAndSet(String key, Object version, String value, int ttlSeconds) {
+    boolean compareAndSet(String key, Object version, String value, int ttlSeconds) {
         try {
             return client.cas(key, ttlSeconds, value, (Long) version);
         } catch (TimeoutException | InterruptedException | MemcachedException e) {
@@ -152,18 +137,10 @@ public class MemcachedSessionManager extends SessionManager {
         }
     }
 
-    protected void blindSet(String key, String value, int ttlSeconds) {
+    void blindSet(String key, String value, int ttlSeconds) {
         try {
             client.set(key, ttlSeconds, value);
         } catch (TimeoutException | InterruptedException | MemcachedException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    protected String stringify(Session session) {
-        try {
-            return objectMapper.writeValueAsString(session);
-        } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
     }

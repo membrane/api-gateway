@@ -42,6 +42,8 @@ public class SessionManagerTest {
 
     public static Collection<Object[]> data() {
         return Arrays.asList(inMemory(),
+                fakeSyncStore(),
+                fakeSyncRedisStore(),
                 jwt());
     }
 
@@ -53,7 +55,8 @@ public class SessionManagerTest {
      */
     public static Collection<Object[]> storeBackedData() {
         return Arrays.asList(inMemory(),
-                fakeSyncStore());
+                fakeSyncStore(),
+                fakeSyncRedisStore());
     }
 
     private static Object[] jwt() {
@@ -77,6 +80,24 @@ public class SessionManagerTest {
         };
     }
 
+    /**
+     * For the one test that fires ten thousand requests per session manager and so dominates the runtime
+     * of this class. It is about cookie handling under load, which the store-backed managers share with
+     * InMemorySessionManager; what is specific to them is covered by
+     * {@link #concurrentAppendsToOneSessionKeyAreNotLost}.
+     */
+    public static Collection<Object[]> heavyLoadData() {
+        return Arrays.asList(inMemory(),
+                jwt());
+    }
+
+    private static Object[] fakeSyncRedisStore() {
+        return new Object[]{
+                FakeSyncRedisSessionManager.class.getSimpleName(),
+                (Supplier) FakeSyncRedisSessionManager::new
+        };
+    }
+
     @SuppressWarnings("UastIncorrectHttpHeaderInspection")
     public static final String REMEMBER_HEADER = "X-Remember-This";
     @SuppressWarnings("UastIncorrectHttpHeaderInspection")
@@ -85,6 +106,12 @@ public class SessionManagerTest {
 
     /** The key StateManager keeps its CSRF tokens under - one of the keys declared additive. */
     private static final String STATE_KEY = SessionManager.SESSION_PARAMETER_STATE;
+
+    /**
+     * Writers on one session, all released at the same moment. High enough that a lost update is a
+     * certainty without the merge; the test costs a few seconds at this size.
+     */
+    private static final int CONCURRENT_WRITERS = 200;
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("data")
@@ -274,7 +301,7 @@ public class SessionManagerTest {
     }
 
     @ParameterizedTest(name = "{0}")
-    @MethodSource("data")
+    @MethodSource("heavyLoadData")
     public void parallelRequests(
             String nameDummyField,
             Supplier<com.predic8.membrane.core.interceptor.session.SessionManager> smSupplier) throws Exception {
@@ -358,7 +385,7 @@ public class SessionManagerTest {
     public void concurrentAppendsToOneSessionKeyAreNotLost(
             String nameDummyField,
             Supplier<com.predic8.membrane.core.interceptor.session.SessionManager> smSupplier) throws Exception {
-        int limit = 200;
+        int limit = CONCURRENT_WRITERS;
         var httpRouter = Util.basicRouter(routerAcceptingAtOnce(limit),
                 Util.createServiceProxy(GATEWAY_PORT, testInterceptor(smSupplier)));
 
@@ -394,7 +421,7 @@ public class SessionManagerTest {
                 });
             }
             startAllInParallel.countDown();
-            allDone.await();
+            assertTrue(allDone.await(60, TimeUnit.SECONDS), "workers did not finish");
 
             if (!failures.isEmpty())
                 throw new AssertionError(failures.size() + " of " + limit + " workers failed", failures.getFirst());

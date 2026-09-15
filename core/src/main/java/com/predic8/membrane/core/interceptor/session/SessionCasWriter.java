@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Writes a session back to a store that several Membrane instances share, without discarding what another
@@ -41,6 +42,18 @@ class SessionCasWriter {
      * Two hundred parallel writers on a single session stay below this.
      */
     private static final int MAX_ATTEMPTS = 50;
+
+    /**
+     * The first few collisions are retried straight away: with two or three writers one of them wins
+     * immediately and a delay would only slow the response down.
+     */
+    private static final int ATTEMPTS_BEFORE_BACKOFF = 3;
+
+    /**
+     * Keeps the worst case - every attempt colliding - at well under a second, which is what a request
+     * blocked in here costs.
+     */
+    private static final int MAX_BACKOFF_MILLIS = 16;
 
     private SessionCasWriter() {
     }
@@ -89,6 +102,7 @@ class SessionCasWriter {
     static void write(Store store, String key, Session session, int ttlSeconds) {
         final Map<String, Object> base = session.getBaseSnapshot();
         final Map<String, Object> ours = Map.copyOf(session.getContent());
+        final String serializedOurs = store.serialize(ours);
 
         for (int attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
             final Optional<VersionedValue> stored = store.read(key);
@@ -96,15 +110,14 @@ class SessionCasWriter {
             if (stored.isEmpty()) {
                 // Nothing to merge with: a new session, a session id regenerated after a cookie merge or
                 // after authorize(), or an entry that expired while the request ran.
-                if (store.createIfAbsent(key, store.serialize(ours), ttlSeconds)) {
+                if (store.createIfAbsent(key, serializedOurs, ttlSeconds)) {
                     session.setBaseSnapshot(ours);
                     return;
                 }
                 continue;
             }
 
-            final Map<String, Object> merged =
-                    SessionContentMerger.merge(base, store.parse(stored.get().value()), ours, store::isAdditiveKey);
+            final Map<String, Object> merged = mergeWithStored(store, base, ours, stored.get());
 
             if (store.compareAndSet(key, stored.get().version(), store.serialize(merged), ttlSeconds)) {
                 session.setContent(merged);
@@ -114,6 +127,8 @@ class SessionCasWriter {
                 session.setBaseSnapshot(merged);
                 return;
             }
+
+            backOff(attempt);
         }
 
         log.warn("Could not store session {} without conflict after {} attempts; " +
@@ -122,10 +137,33 @@ class SessionCasWriter {
         // that nothing written in the last moment is lost, not on everything the session has collected
         // so far. Writing our own copy over it would drop every change since this request read it.
         final Map<String, Object> lastResort = store.read(key)
-                .map(stored -> SessionContentMerger.merge(base, store.parse(stored.value()), ours, store::isAdditiveKey))
+                .map(stored -> mergeWithStored(store, base, ours, stored))
                 .orElse(ours);
         store.blindSet(key, store.serialize(lastResort), ttlSeconds);
         session.setContent(lastResort);
         session.setBaseSnapshot(lastResort);
+    }
+
+    private static Map<String, Object> mergeWithStored(Store store, Map<String, Object> base,
+                                                       Map<String, Object> ours, VersionedValue stored) {
+        return SessionContentMerger.merge(base, store.parse(stored.value()), ours, store::isAdditiveKey);
+    }
+
+    /**
+     * Without a delay every writer that lost a round re-reads and re-writes in lockstep with the others,
+     * so they keep colliding and each round trip is spent on the store for nothing. The delay is randomized
+     * to break exactly that lockstep, and grows so that heavier contention is spread wider.
+     */
+    private static void backOff(int attempt) {
+        if (attempt < ATTEMPTS_BEFORE_BACKOFF)
+            return;
+        long window = Math.min(1L << (attempt - ATTEMPTS_BEFORE_BACKOFF + 1), MAX_BACKOFF_MILLIS);
+        try {
+            Thread.sleep(ThreadLocalRandom.current().nextLong(window) + 1);
+        } catch (InterruptedException e) {
+            // Retry right away instead of failing the write; the flag stays set for whoever is shutting
+            // this thread down.
+            Thread.currentThread().interrupt();
+        }
     }
 }
