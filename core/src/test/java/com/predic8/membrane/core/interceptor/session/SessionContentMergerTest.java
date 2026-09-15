@@ -109,6 +109,41 @@ class SessionContentMergerTest {
                         Map.of(SESSION_PARAMETER_STATE, "t0,tSame,tOurs")));
     }
 
+    /**
+     * Reproduces the CSRF failure that survived the first fix: OAuth2CallbackRequestHandler does not
+     * append to the token list, it collapses it to the one token it just consumed
+     * (StateManager.verifyCsrfToken). Recognising only appends, the merge took that shrunk list as an
+     * opaque new value and dropped the token a parallel flow had added in the meantime - whose callback
+     * then failed with "CSRF token mismatch."
+     */
+    @Test
+    void aTokenAddedWhileAnotherFlowConsumedOneSurvives() {
+        assertEquals(Map.of(SESSION_PARAMETER_STATE, "t1,tNew"),
+                merge(Map.of(SESSION_PARAMETER_STATE, "t1,t2"),
+                        Map.of(SESSION_PARAMETER_STATE, "t1,t2,tNew"),
+                        Map.of(SESSION_PARAMETER_STATE, "t1")));
+    }
+
+    /**
+     * The same collision the other way round: the consuming flow stored first, so it is the append that
+     * has to merge. The consumed token must not come back - it is spent.
+     */
+    @Test
+    void aTokenConsumedWhileAnotherFlowAddedOneStaysConsumed() {
+        assertEquals(Map.of(SESSION_PARAMETER_STATE, "t1,tNew"),
+                merge(Map.of(SESSION_PARAMETER_STATE, "t1,t2"),
+                        Map.of(SESSION_PARAMETER_STATE, "t1"),
+                        Map.of(SESSION_PARAMETER_STATE, "t1,t2,tNew")));
+    }
+
+    @Test
+    void anAdditiveKeyEmptiedByBothSidesIsRemoved() {
+        assertEquals(Map.of(),
+                merge(Map.of(SESSION_PARAMETER_STATE, "t1,t2"),
+                        Map.of(SESSION_PARAMETER_STATE, "t1"),
+                        Map.of(SESSION_PARAMETER_STATE, "t2")));
+    }
+
     @Test
     void conflictingSingleValueKeepsOurs() {
         assertEquals(Map.of("a", "ours"),
@@ -130,14 +165,15 @@ class SessionContentMergerTest {
 
     /**
      * A value that happens to start with the previous one is not an append unless the separator follows,
-     * or "abc" would swallow "abcdef".
+     * or "abc" would swallow "abcdef". Shown on an undeclared key, because that is where the shape is
+     * all there is to go on - a declared additive key is merged token-wise either way.
      */
     @Test
     void aLongerValueIsNotAnAppendWithoutTheSeparator() {
-        assertEquals(Map.of(SESSION_PARAMETER_STATE, "t0ours"),
-                merge(Map.of(SESSION_PARAMETER_STATE, "t0"),
-                        Map.of(SESSION_PARAMETER_STATE, "t0theirs"),
-                        Map.of(SESSION_PARAMETER_STATE, "t0ours")));
+        assertEquals(Map.of("undeclared", "t0ours"),
+                merge(Map.of("undeclared", "t0"),
+                        Map.of("undeclared", "t0theirs"),
+                        Map.of("undeclared", "t0ours")));
     }
 
     @Test

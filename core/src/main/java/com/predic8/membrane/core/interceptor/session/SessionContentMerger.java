@@ -77,10 +77,10 @@ class SessionContentMerger {
             return theirs;  // we removed the key, but someone changed it meanwhile: keep the newer value
 
         if (theirs instanceof String their && ours instanceof String our) {
-            if (base == null && additive.test(key))
-                return union(null, their, our);
+            if (additive.test(key))
+                return mergeTokens(base, their, our);
             if (base instanceof String common && isAppendOf(common, their) && isAppendOf(common, our))
-                return union(common, their, our);
+                return mergeTokens(common, their, our);
         }
 
         // No rule for this key: the same last-writer-wins as before, but for this one key instead of
@@ -91,30 +91,52 @@ class SessionContentMerger {
     /**
      * Both sides kept everything that was there and only added to the end - the shape
      * {@code StateManager.saveToSession} and {@code PKCEVerifier.saveToSession} produce. Recognising it
-     * needs no knowledge of the key, which is why an additive key only has to be declared for the case
-     * where there is nothing to append to yet.
+     * needs no knowledge of the key, which is why a key that is not declared additive can still be
+     * merged as a list.
      */
     private static boolean isAppendOf(String base, String candidate) {
         return candidate.startsWith(base + SESSION_VALUE_SEPARATOR);
     }
 
     /**
-     * Every token of both sides, in the order they were added. Deduplicated because a token that ends up
-     * listed twice is rejected just like a missing one - see {@code StateManager.hasExactlyOneMatchingToken}.
+     * A three-way merge of the two token lists, which is what a list-valued key needs as soon as one
+     * side can also <i>remove</i> a token: {@code OAuth2CallbackRequestHandler} collapses the list to
+     * the single token it just consumed. Taking the union instead would put a spent token back, and
+     * taking the shrunk list as an opaque new value would drop whatever the other side added.
+     * <p>
+     * So a token that was already there survives only while both sides keep it - either side consuming
+     * it stands - and a token neither side started with was added by one of them and survives. The
+     * result is deduplicated and keeps the order the tokens were added in, because a token listed twice
+     * is rejected just like a missing one: see {@code StateManager.hasExactlyOneMatchingToken}.
+     *
+     * @return null once nothing is left, so that the key is dropped rather than left holding ""
      */
-    private static String union(String base, String theirs, String ours) {
-        final Set<String> tokens = new LinkedHashSet<>();
-        addTokens(tokens, base);
-        addTokens(tokens, theirs);
-        addTokens(tokens, ours);
-        return String.join(SESSION_VALUE_SEPARATOR, tokens);
+    private static String mergeTokens(Object base, String theirs, String ours) {
+        final Set<String> baseTokens = tokensOf(base instanceof String s ? s : null);
+        final Set<String> theirTokens = tokensOf(theirs);
+        final Set<String> ourTokens = tokensOf(ours);
+
+        final Set<String> merged = new LinkedHashSet<>(baseTokens);
+        merged.addAll(theirTokens);
+        merged.addAll(ourTokens);
+        merged.removeIf(token -> !survives(token, baseTokens, theirTokens, ourTokens));
+
+        return merged.isEmpty() ? null : String.join(SESSION_VALUE_SEPARATOR, merged);
     }
 
-    private static void addTokens(Set<String> tokens, String value) {
+    private static boolean survives(String token, Set<String> base, Set<String> theirs, Set<String> ours) {
+        if (base.contains(token))
+            return theirs.contains(token) && ours.contains(token);
+        return theirs.contains(token) || ours.contains(token);
+    }
+
+    private static Set<String> tokensOf(String value) {
+        final Set<String> tokens = new LinkedHashSet<>();
         if (value == null)
-            return;
+            return tokens;
         for (String token : SEPARATOR.split(value))
             if (!token.isEmpty())
                 tokens.add(token);
+        return tokens;
     }
 }
