@@ -3,6 +3,8 @@ name: Maven Build and Tests
 on:
   push:
     branches: [ master ]
+  pull_request:
+      branches: [ master ]
 
 # Matrix test does not work cause MAVEN_OPTS must be set
 jobs:
@@ -34,5 +36,5 @@ jobs:
           distribution: 'temurin'
       - name: Maven Build
         run: |
-          set MAVEN_OPTS="-Xmx3000m"
+          $env:MAVEN_OPTS = "-Xmx3000m"
           mvn --batch-mode --update-snapshots -Pno-internet verify
