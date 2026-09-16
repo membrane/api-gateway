@@ -13,12 +13,15 @@
    limitations under the License. */
 package com.predic8.membrane.core.proxies;
 
-import com.predic8.membrane.core.openapi.serviceproxy.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
+import com.predic8.membrane.core.openapi.serviceproxy.OpenAPIRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.Map;
 
-import static com.predic8.membrane.core.util.text.TerminalColors.*;
+import static com.predic8.membrane.core.util.text.TerminalColors.BRIGHT_GREEN;
+import static com.predic8.membrane.core.util.text.TerminalColors.RESET;
 import static java.util.stream.Collectors.joining;
 
 public class ApiInfo {
@@ -33,8 +36,43 @@ public class ApiInfo {
         }
         log.info("Started {} API{}:", manager.getRules().size(), (manager.getRules().size() > 1 ? "s" : ""));
         manager.getRules().forEach(proxy ->
-                log.info(" {}{} {}{}{}", BRIGHT_GREEN(), proxyKind(proxy), proxy.getName(), RESET(), additionalProxyInfo(proxy))
+                log.info(" {}{} {}{}{}", BRIGHT_GREEN(), proxyKind(proxy), proxyLabel(proxy), RESET(), additionalProxyInfo(proxy))
         );
+    }
+
+    static String proxyLabel(Proxy proxy) {
+        if (proxy instanceof AbstractServiceProxy asp && !(proxy instanceof NotPortOpeningProxy)) {
+            return proxy.getName() + "  " + buildUrl(asp);
+        }
+        return proxy.getName();
+    }
+
+    static String buildUrl(AbstractServiceProxy proxy) {
+        RuleKey key = proxy.getKey();
+        String path = openApiBasePath(proxy);
+        if (path == null) {
+            path = key.getPath();
+        }
+        return "%s://%s:%d%s".formatted(
+                proxy.getProtocol(),
+                displayHost(key),
+                key.getPort(),
+                path != null ? path : "");
+    }
+
+    private static String openApiBasePath(AbstractServiceProxy proxy) {
+        if (!(proxy instanceof APIProxy api) || api.getBasePaths() == null || api.getBasePaths().isEmpty()) {
+            return null;
+        }
+        return String.join(", ", api.getBasePaths().keySet());
+    }
+
+    static String displayHost(RuleKey key) {
+        if (key.getIp() != null) {
+            return key.getIp();
+        }
+        String host = key.getHost();
+        return (host == null || host.equals("*")) ? "127.0.0.1" : host;
     }
 
     private static String additionalProxyInfo(Proxy proxy) {
@@ -44,14 +82,7 @@ public class ApiInfo {
                 return "\n" + formatLocationInfo(recs);
             }
         } else if (proxy instanceof SOAPProxy s) {
-            return " %s\n    using WSDL @ %s".formatted(getPathString(s),s.getWsdl());
-        }
-        return "";
-    }
-
-    private static String getPathString(SOAPProxy s) {
-        if (s.getPath() != null) {
-            return s.getPath().getUri();
+            return "\n    using WSDL @ %s".formatted(s.getWsdl());
         }
         return "";
     }
