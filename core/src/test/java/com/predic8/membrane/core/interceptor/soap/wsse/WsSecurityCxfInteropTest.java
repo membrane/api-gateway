@@ -49,6 +49,8 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import javax.security.auth.callback.CallbackHandler;
+import java.io.Closeable;
+import java.lang.reflect.Proxy;
 import java.net.ServerSocket;
 import java.security.KeyStore;
 import java.time.Instant;
@@ -64,6 +66,7 @@ import java.util.stream.Stream;
 import static com.predic8.membrane.core.interceptor.soap.wsse.SignatureReference.By.TIMESTAMP;
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.WSSE_NS;
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.WSU_NS;
+import static java.lang.reflect.Proxy.getInvocationHandler;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.cxf.ws.security.wss4j.CryptoCoverageUtil.CoverageScope.CONTENT;
 import static org.apache.cxf.ws.security.wss4j.CryptoCoverageUtil.CoverageScope.ELEMENT;
@@ -128,6 +131,12 @@ class WsSecurityCxfInteropTest extends AbstractWsSecurityTest {
     private Bus bus;
     private Server server;
     private Client client;
+    /**
+     * Kept in a field, not just as a local: {@code ClientProxy.finalize()} destroys the client, and
+     * an unreachable proxy lets the finalizer race {@link #stop()} into a concurrent, non-idempotent
+     * {@code ClientImpl.destroy()}.
+     */
+    private Echo echoProxy;
     private TestRouter proxyRouter;
 
     static Stream<Scenario> scenarios() {
@@ -271,6 +280,7 @@ class WsSecurityCxfInteropTest extends AbstractWsSecurityTest {
         clientFactory.setBindingId(scenario.binding());
         clientFactory.setAddress("http://127.0.0.1:" + proxyPort + "/echo");
         Echo echo = (Echo) clientFactory.create();
+        echoProxy = echo;
         client = ClientProxy.getClient(echo);
         var http = ((HTTPConduit) client.getConduit()).getClient();
         http.setConnectionTimeout(5_000);
@@ -457,9 +467,10 @@ class WsSecurityCxfInteropTest extends AbstractWsSecurityTest {
     }
 
     @AfterEach
-    void stop() {
+    void stop() throws Exception {
         try {
-            if (client != null) client.destroy();
+            // Closing the proxy destroys the client and clears the finalizer's reference to it.
+            if (echoProxy != null) ((Closeable) getInvocationHandler(echoProxy)).close();
         } finally {
             try {
                 if (proxyRouter != null) {
