@@ -12,18 +12,18 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.tutorials.openapi.rewrite;
+package com.predic8.membrane.tutorials.openapi;
 
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.containsString;
 
-public class ReverseProxyTutorialTest extends AbstractOpenAPIRewriteTutorialTest {
+public class ReverseProxyTutorialTest extends AbstractOpenAPITutorialTest {
 
     @Override
     protected String getTutorialYaml() {
-        return "30-Behind-A-Reverse-Proxy.apis.yaml";
+        return "50-Behind-A-Reverse-Proxy.apis.yaml";
     }
 
     @Test

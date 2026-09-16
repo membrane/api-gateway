@@ -18,39 +18,53 @@ import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.Matchers.greaterThan;
 
-public class FormUrlEncodedTutorialTest extends AbstractOpenAPITutorialTest {
+public class OpenApiTutorialTest extends AbstractOpenAPITutorialTest {
 
     @Override
     protected String getTutorialYaml() {
-        return "60-Form-URL-Encoded.apis.yaml";
+        return "10-OpenAPI.apis.yaml";
     }
 
     @Test
-    void validFormPostIsForwarded() {
+    void apiDocs() {
         // @formatter:off
         given()
-            .contentType("application/x-www-form-urlencoded")
-            .body("product=Shoes&quantity=5")
         .when()
-            .post("http://localhost:2000/orders")
-        .then()
-            .statusCode(200)
-            .body(containsString("accepted"));
+            .get("http://localhost:2000/api-docs")
+            .then()
+        .statusCode(200)
+            .body(containsString("openapi"))
+            .body(containsString("Fruit Shop API"));
         // @formatter:on
     }
 
     @Test
-    void formWithNegativeQuantityIsRejected() {
+    void fruitshopProducts() {
         // @formatter:off
         given()
-            .contentType("application/x-www-form-urlencoded")
-            .body("product=Shoes&quantity=-5")
         .when()
-            .post("http://localhost:2000/orders")
+            .get("http://localhost:2000/shop/v2/products")
         .then()
-            .statusCode(400)
-            .body(containsString("minimum"));
+            .statusCode(200)
+            .body("meta", notNullValue())
+            .body("products", notNullValue())
+            .body("products.size()", greaterThan(0));
+        // @formatter:on
+    }
+
+    @Test
+    void dlpFieldsCity() {
+        // @formatter:off
+        given()
+        .when()
+            .get("http://localhost:2000/dlp/fields/city")
+        .then()
+            .statusCode(200)
+            .body("field", notNullValue())
+            .body("category", notNullValue());
         // @formatter:on
     }
 }
