@@ -299,7 +299,7 @@ public class ProblemDetailsTest {
             assertTrue(body.contains(">404<"), body);
             assertTrue(body.contains("No matching API found!"), body);
             assertTrue(body.contains("There is no API on the path /shop/v2 deployed."), body);
-            assertTrue(body.contains("https://www.membrane-api.io"), body);
+            assertTrue(body.contains("https://github.com/membrane/api-gateway"), body);
         }
 
         @Test
@@ -315,8 +315,7 @@ public class ProblemDetailsTest {
 
             String body = exc.getResponse().getBodyAsStringDecoded();
             assertTrue(body.contains("https://membrane-api.io/problems/user/atomic"), body);
-            assertTrue(body.contains("<dt>foo</dt>"), body);
-            assertTrue(body.contains("<dd>7</dd>"), body);
+            assertTrue(body.contains("<span class=\"key\">foo:</span> 7"), body);
         }
 
         @Test
