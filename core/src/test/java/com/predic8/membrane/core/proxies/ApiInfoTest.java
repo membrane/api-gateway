@@ -117,12 +117,12 @@ class ApiInfoTest {
     }
 
     @Test
-    @DisplayName("openapi: resolving to several base paths: they're listed comma-separated")
+    @DisplayName("openapi: resolving to several base paths: each is rendered as a complete URL, comma-separated")
     void openApiMultipleBasePathsListedCommaSeparated() {
         var proxy = openApiProxy("customers.yml");
 
         assertEquals(Set.of("/", "/foo/"), proxy.getBasePaths().keySet());
-        assertEquals("http://127.0.0.1:2000/, /foo/", buildUrl(proxy));
+        assertEquals("http://127.0.0.1:2000/, http://127.0.0.1:2000/foo/", buildUrl(proxy));
     }
 
     @Test

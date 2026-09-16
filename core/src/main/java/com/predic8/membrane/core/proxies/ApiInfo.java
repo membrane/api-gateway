@@ -49,22 +49,14 @@ public class ApiInfo {
 
     static String buildUrl(AbstractServiceProxy proxy) {
         RuleKey key = proxy.getKey();
-        String path = openApiBasePath(proxy);
-        if (path == null) {
-            path = key.getPath();
+        String origin = "%s://%s:%d".formatted(proxy.getProtocol(), displayHost(key), key.getPort());
+        if (proxy instanceof APIProxy api && api.getBasePaths() != null && !api.getBasePaths().isEmpty()) {
+            return api.getBasePaths().keySet().stream()
+                    .map(path -> origin + path)
+                    .collect(joining(", "));
         }
-        return "%s://%s:%d%s".formatted(
-                proxy.getProtocol(),
-                displayHost(key),
-                key.getPort(),
-                path != null ? path : "");
-    }
-
-    private static String openApiBasePath(AbstractServiceProxy proxy) {
-        if (!(proxy instanceof APIProxy api) || api.getBasePaths() == null || api.getBasePaths().isEmpty()) {
-            return null;
-        }
-        return String.join(", ", api.getBasePaths().keySet());
+        String path = key.getPath();
+        return origin + (path != null ? path : "");
     }
 
     static String displayHost(RuleKey key) {
