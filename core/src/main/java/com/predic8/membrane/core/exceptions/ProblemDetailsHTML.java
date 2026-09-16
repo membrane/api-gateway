@@ -41,7 +41,7 @@ public class ProblemDetailsHTML {
                    border-radius: 8px; padding: 2.5em; }
             .status { margin: 0; display: flex; align-items: center; gap: 0.8em; }
             .status .code { font-size: 2.6em; font-weight: 700; color: #2E8CE0; line-height: 1; }
-            .status .reason { font-size: 2.6em; font-weight: 700; color: #222222; line-height: 1; }
+            .status .reason { font-size: 2.6em; font-weight: 700; color: #2E8CE0; line-height: 1; }
             .title { font-size: 1.3em; font-weight: 600; color: #222222; margin: 0.6em 0 0 0; }
             .detail { font-size: 1.05em; font-weight: 400; font-style: italic; color: #555555; margin: 0.5em 0 0 0; }
             .fields { margin: 1.4em 0 0 0; }
