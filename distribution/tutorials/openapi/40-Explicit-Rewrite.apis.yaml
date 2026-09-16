@@ -7,7 +7,7 @@
 # overrides the request-derived value; fields you leave out keep the automatic behaviour.
 #
 # 1.) Start Membrane:
-#     ./membrane.sh -c 20-Explicit-Rewrite.apis.yaml
+#     ./membrane.sh -c 40-Explicit-Rewrite.apis.yaml
 #
 # 2.) Fetch the OpenAPI:
 #     curl localhost:2000/api-docs/minimal-shop-api-v2-0

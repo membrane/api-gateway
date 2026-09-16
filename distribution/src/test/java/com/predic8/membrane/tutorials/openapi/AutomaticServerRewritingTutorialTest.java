@@ -12,29 +12,31 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.tutorials.openapi.rewrite;
+package com.predic8.membrane.tutorials.openapi;
 
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.not;
 
-public class ExplicitRewriteTutorialTest extends AbstractOpenAPIRewriteTutorialTest {
+public class AutomaticServerRewritingTutorialTest extends AbstractOpenAPITutorialTest {
 
     @Override
     protected String getTutorialYaml() {
-        return "20-Explicit-Rewrite.apis.yaml";
+        return "30-Automatic-Server-Rewriting.apis.yaml";
     }
 
     @Test
-    void serverUrlIsRewrittenToConfiguredValues() {
+    void serverUrlIsRewrittenToTheGateway() {
         // @formatter:off
         given()
         .when()
             .get("http://localhost:2000/api-docs/minimal-shop-api-v2-0")
         .then()
             .statusCode(200)
-            .body(containsString("http://shop.example.com:8080/boutique"));
+            .body(containsString("http://localhost:2000/shop/v2"))
+            .body(not(containsString("api.predic8.de")));
         // @formatter:on
     }
 }

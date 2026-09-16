@@ -1,7 +1,7 @@
 
 # Membrane API Gateway
 
-**For REST, OpenAPI, and GraphQL with first-class Legacy Support for XML, SOAP, and WSDL**
+**for REST, OpenAPI, and GraphQL with first-class Legacy Support for XML, SOAP, and WSDL**
 
 [![GitHub release](https://img.shields.io/github/v/release/membrane/api-gateway?display_name=tag)](https://github.com/membrane/api-gateway/releases/latest)
 [![Build](https://img.shields.io/github/actions/workflow/status/membrane/api-gateway/build-and-test.yml?branch=master)](https://github.com/membrane/api-gateway/actions)
@@ -10,9 +10,9 @@
 
 <img src="docs/images/api-gateway-demo.gif" alt="Animated demo of Membrane API Gateway" width="800">
 
-Built on the **Java platform**, Membrane bridges legacy and modern APIs. It supports **XML-to-JSON transformation**, **WSDL-to-OpenAPI conversion**, **SOAP-to-REST integration**, and validation against **OpenAPI** and **WSDL**.
+Built on the **Java platform**, Membrane bridges legacy and modern APIs. It supports [XML-to-JSON transformation](#transformation-between-xml-to-json), [WSDL-to-OpenAPI conversion](#wsdl-to-openapi-conversion),[SOAP-to-REST](#manual-soap-to-rest-conversion) integration, and validation against **OpenAPI** and **WSDL**.
 
-For modern APIs, Membrane supports technologies such as OAuth 2, JWT, and AI, along with a broad range of routing, transformation, and observability features. It is easy to set up and deploy, either as a container or as a Java application on a virtual machine.
+For modern APIs, Membrane supports technologies such as [OAuth 2](#oauth2), [JWT](#json-web-tokens), and [AI](#3-ai-and-llm-gateway), along with a broad range of [transformation](#5-message-transformation), and [observability](#10-operation) features. It is easy to set up and deploy, either as a container or as a Java application.
 
 ## Try Membrane in 5 Minutes
 
@@ -75,7 +75,7 @@ From OpenAPI and OAuth to SOAP, XML, LLMs, and MCP, Membrane bridges modern APIs
 
 ## Native OpenAPI Support
 
-Deploy APIs directly from [OpenAPI](https://www.membrane-api.io/openapi/configuration-and-validation) documents, [validate](distribution/examples/openapi/validation-simple) messages against them, and even generate OpenAPI specifications from legacy WSDL. In addition to OpenAPI 3.0, and 3.1, Membrane also supports **OpenAPI 3.2**.
+Deploy APIs directly from [OpenAPI](https://www.membrane-api.io/openapi/configuration-and-validation) documents, [validate](distribution/examples/openapi/validation-simple) messages against them and even generate OpenAPI specifications from legacy WSDL. In addition to OpenAPI 3.0, and 3.1, Membrane also supports **OpenAPI 3.2**.
 
 ## Legacy XML and Web Services Integration
 
@@ -322,7 +322,7 @@ api:
                references:
                  - by: BODY
                  - by: USERNAME_TOKEN
-target:
+  target:
     url: http://localhost:2001
 ```
 
@@ -430,7 +430,7 @@ Content-Type: application/json
 {"limit": 100, "sort": "name"}
 ```
 
-into a GET request: `GET /products?limit=100&sort=name` using a URI template with **JSONPath** expressions:
+into a GET request like `GET /products?limit=100&sort=name` using a URI template with **JSONPath** expressions:
 
 ```yaml
 api:
@@ -441,9 +441,26 @@ api:
     language: jsonpath
 ```
 
-**Note:** Membrane automatically escapes expression values such as ${$.sort} for the specified content type.
+**Note:** Membrane automatically escapes expression values such as `${$.sort}` for the specified content type.
 
 See the [tutorial](distribution/tutorials/transformation/20-GET-to-POST.yaml) to transform from **GET to POST**.
+
+## Transformation between XML to JSON
+
+Both converters use a heuristic mapping and do not require a JSON or XSD schema.
+
+```yaml
+flow:
+  - xml2Json: {}
+```
+
+```yaml
+flow:
+  - json2Xml:
+      root: order
+```
+
+See [transformation tutorials](distribution/tutorials/transformation) for other ways to transform between XML and JSON.
 
 ## Templates
 
@@ -570,7 +587,7 @@ Membrane also supports:
 - Extracting API keys from headers, query parameters, or custom locations using expressions.
 - Role-based access control (RBAC) with fine-grained permissions.
 
-See the [API Key Tutorials](./distribution/tutorials/api-key)
+See the [API Key Tutorials](./distribution/tutorials/api-keys)
 
 ## JSON Web Tokens
 
@@ -615,7 +632,7 @@ api:
     url: http://backend
 ```
 
-Try the [OAuth tutorial](distribution/tutorials/oauth)
+Try the [OAuth tutorial](distribution/tutorials/oauth2)
 
 ## Membrane as Authorization Server
 
