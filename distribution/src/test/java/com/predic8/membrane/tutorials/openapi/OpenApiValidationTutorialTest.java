@@ -1,4 +1,4 @@
-/* Copyright 2025 predic8 GmbH, www.predic8.com
+/* Copyright 2026 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.tutorials.getting_started;
+package com.predic8.membrane.tutorials.openapi;
 
 import org.junit.jupiter.api.Test;
 
@@ -22,11 +22,11 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.core.IsNull.notNullValue;
 
-public class OpenApiValidationTutorialTest extends AbstractGettingStartedTutorialTest{
+public class OpenApiValidationTutorialTest extends AbstractOpenAPITutorialTest {
 
     @Override
     protected String getTutorialYaml() {
-        return "130-OpenAPI-Validation.yaml";
+        return "20-OpenAPI-Validation.apis.yaml";
     }
 
     @Test
