@@ -1,0 +1,25 @@
+# Start Membrane in Docker:
+#   docker compose up
+#
+# Stop and remove the container:
+#   Ctrl+C, then: docker compose down
+services:
+  membrane:
+    image: predic8/membrane:7.6.0
+    # The image entrypoint is ./membrane.sh relative to its workdir. Without this
+    # override it would resolve to the membrane.sh in the mount below and run the
+    # jars from this directory instead of the ones in the image.
+    entrypoint: /opt/membrane/membrane.sh
+    # Without an explicit -c the container falls back to its own baked-in
+    # conf/apis.yaml and silently ignores the one in this directory.
+    command: ["-c", "conf/apis.yaml"]
+    working_dir: /opt/membrane/work
+    volumes:
+      # Mounted at /opt/membrane/work, not /opt/membrane/conf: the image ships its
+      # own console-only conf/log4j2.xml that must not be shadowed.
+      - .:/opt/membrane/work
+    ports:
+      # 2000-2010 and 9000 (admin console) cover conf/apis.yaml and most tutorials.
+      # Add a line here for a configuration that listens elsewhere, e.g. "3128:3128".
+      - "2000-2010:2000-2010"
+      - "9000:9000"

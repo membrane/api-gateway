@@ -53,19 +53,21 @@
             </includes>
         </fileSet>
         <fileSet>
-            <!-- router folder fileSet without membrane.sh -->
+            <!-- router folder fileSet without the .sh launchers -->
             <directory>router</directory>
             <outputDirectory>/</outputDirectory>
             <excludes>
                 <exclude>membrane.sh</exclude>
+                <exclude>run-docker.sh</exclude>
             </excludes>
         </fileSet>
         <fileSet>
-            <!-- extra fileSet for membrane.sh with execute permissions -->
+            <!-- extra fileSet for the .sh launchers with execute permissions -->
             <directory>router</directory>
             <outputDirectory>/</outputDirectory>
             <includes>
                 <include>membrane.sh</include>
+                <include>run-docker.sh</include>
             </includes>
             <fileMode>0755</fileMode>
         </fileSet>
