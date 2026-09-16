@@ -25,6 +25,7 @@ import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static com.predic8.membrane.core.http.Response.badRequest;
 import static com.predic8.membrane.core.interceptor.oauth2.OAuth2Util.urlencode;
@@ -95,11 +96,20 @@ public class StateManager {
             }
         }
 
-        // state in session can be "merged" -> save the selected state in session overwriting the possibly merged value
-        if (!(session.get(SESSION_PARAMETER_STATE).equals(stateFromUri.getSecurityToken()))) {
-            log.warn("Replacing saved state '{}' with '{}'", session.get(SESSION_PARAMETER_STATE), stateFromUri.getSecurityToken());
+        // the session state can hold more than one pending token when other logins are in flight
+        // concurrently on the same session - remove only the one just verified, not the others.
+        removeVerifiedToken(session, stateFromUri.getSecurityToken());
+    }
+
+    private static void removeVerifiedToken(Session session, String verifiedToken) {
+        String remaining = Arrays.stream(session.get(SESSION_PARAMETER_STATE).toString().split(SESSION_VALUE_SEPARATOR))
+                .filter(token -> !token.equals(verifiedToken))
+                .collect(Collectors.joining(SESSION_VALUE_SEPARATOR));
+        if (remaining.isEmpty()) {
+            session.remove(SESSION_PARAMETER_STATE);
+        } else {
+            session.put(SESSION_PARAMETER_STATE, remaining);
         }
-        session.put(SESSION_PARAMETER_STATE, stateFromUri.getSecurityToken());
     }
 
     private static boolean matchesCsrfToken(StateManager stateFromUri, Object stateFromSession) {
