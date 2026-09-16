@@ -76,6 +76,26 @@ class ApiInfoTest {
     }
 
     @Test
+    @DisplayName("Unbracketed IPv6 ip: is bracketed so the URL authority stays valid")
+    void explicitIPv6IsBracketed() {
+        var key = new ServiceProxyKey(2000);
+        key.setIp("::1");
+        var proxy = new ServiceProxy(key, "backend", 80);
+
+        assertEquals("[::1]", displayHost(key));
+        assertEquals("http://[::1]:2000", buildUrl(proxy));
+    }
+
+    @Test
+    @DisplayName("Already-bracketed IPv6 ip: is left unchanged")
+    void explicitBracketedIPv6IsUnchanged() {
+        var key = new ServiceProxyKey(2000);
+        key.setIp("[fe80::1]");
+
+        assertEquals("[fe80::1]", displayHost(key));
+    }
+
+    @Test
     @DisplayName("https when inbound SSL is configured")
     void httpsProtocol() {
         var proxy = new ServiceProxy(new ServiceProxyKey(2000), "backend", 80) {

@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
+import static com.predic8.membrane.core.util.NetworkUtil.addBracketsIfIPv6;
 import static com.predic8.membrane.core.util.text.TerminalColors.BRIGHT_GREEN;
 import static com.predic8.membrane.core.util.text.TerminalColors.RESET;
 import static java.util.stream.Collectors.joining;
@@ -61,10 +62,10 @@ public class ApiInfo {
 
     static String displayHost(RuleKey key) {
         if (key.getIp() != null) {
-            return key.getIp();
+            return addBracketsIfIPv6(key.getIp());
         }
         String host = key.getHost();
-        return (host == null || host.equals("*")) ? "127.0.0.1" : host;
+        return addBracketsIfIPv6((host == null || host.equals("*")) ? "127.0.0.1" : host);
     }
 
     private static String additionalProxyInfo(Proxy proxy) {
