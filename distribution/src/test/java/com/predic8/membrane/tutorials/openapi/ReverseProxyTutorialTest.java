@@ -19,38 +19,22 @@ import org.junit.jupiter.api.Test;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.containsString;
 
-public class FormUrlEncodedTutorialTest extends AbstractOpenAPITutorialTest {
+public class ReverseProxyTutorialTest extends AbstractOpenAPITutorialTest {
 
     @Override
     protected String getTutorialYaml() {
-        return "60-Form-URL-Encoded.apis.yaml";
+        return "50-Behind-A-Reverse-Proxy.apis.yaml";
     }
 
     @Test
-    void validFormPostIsForwarded() {
+    void serverUrlUsesPublicHttpsEndpoint() {
         // @formatter:off
         given()
-            .contentType("application/x-www-form-urlencoded")
-            .body("product=Shoes&quantity=5")
         .when()
-            .post("http://localhost:2000/orders")
+            .get("http://localhost:2000/api-docs/minimal-shop-api-v2-0")
         .then()
             .statusCode(200)
-            .body(containsString("accepted"));
-        // @formatter:on
-    }
-
-    @Test
-    void formWithNegativeQuantityIsRejected() {
-        // @formatter:off
-        given()
-            .contentType("application/x-www-form-urlencoded")
-            .body("product=Shoes&quantity=-5")
-        .when()
-            .post("http://localhost:2000/orders")
-        .then()
-            .statusCode(400)
-            .body(containsString("minimum"));
+            .body(containsString("https://api.example.com/shop/v2"));
         // @formatter:on
     }
 }

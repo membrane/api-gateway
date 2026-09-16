@@ -25,6 +25,12 @@ If your APIs use XML as input or output, this tutorial provides useful configura
 Learn how to use Membrane in more advanced scenarios. Topics include path rewriting, scripting, conditions and more.
 
 
+## [Forward Proxy](forward-proxy)
+
+Use Membrane as a classic HTTP forward proxy that forwards to whatever host the client's
+own request names, including tunneling HTTPS traffic to a TLS-protected backend.
+
+
 ## [Operation](operation)
 
 Run and observe Membrane in production. 
@@ -103,12 +109,9 @@ Secure SOAP messages with WS-Security: add and validate a `wsse:UsernameToken`, 
 
 ## [OpenAPI](openapi)
 
-Validate requests against an OpenAPI description and learn the features added in OpenAPI 3.2, such as the QUERY method.
-
-
-## [OpenAPI Rewriting](openapi/rewrite)
-
-Understand how Membrane rewrites the server URLs of an OpenAPI document served at `/api-docs`, and how to pin the host, port, base path or protocol - for example when running behind a reverse proxy.
+Serve an OpenAPI description, validate requests against it, rewrite the server URLs it advertises
+at `/api-docs` (automatically, pinned, or for a deployment behind a reverse proxy), and learn the
+features added in OpenAPI 3.2, such as the QUERY method.
 
 ---
 

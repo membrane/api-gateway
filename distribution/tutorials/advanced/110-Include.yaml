@@ -13,7 +13,12 @@
 #   - apis/shop-orders.apis.yaml    (transitive included from shop.apis.yaml)
 #
 # 1.) Start Membrane:
-#     ./membrane.sh -c 110-Include.yaml
+#     with Docker:
+#       ./run-docker.sh -c 110-Include.yaml   (Linux/Mac)
+#       run-docker.cmd -c 110-Include.yaml    (Windows)
+#     or with Java:
+#       ./membrane.sh -c 110-Include.yaml     (Linux/Mac)
+#       membrane.cmd -c 110-Include.yaml      (Windows)
 #
 # 2.) Health check (inline):
 #     curl -i http://localhost:2000/health
