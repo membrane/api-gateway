@@ -8,7 +8,7 @@
 # Override the protocol and host so the served document shows the public URL.
 #
 # 1.) Start Membrane:
-#     ./membrane.sh -c 30-Behind-A-Reverse-Proxy.apis.yaml
+#     ./membrane.sh -c 50-Behind-A-Reverse-Proxy.apis.yaml
 #
 # 2.) Fetch the OpenAPI:
 #     curl localhost:2000/api-docs/minimal-shop-api-v2-0

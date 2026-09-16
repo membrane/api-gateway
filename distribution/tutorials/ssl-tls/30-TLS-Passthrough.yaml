@@ -8,8 +8,12 @@
 # in the TLS SNI extension.
 #
 # 1.) Start Membrane:
-#
-#       ./membrane.sh -c 30-TLS-Passthrough.yaml
+#     with Docker:
+#       ./run-docker.sh -c 30-TLS-Passthrough.yaml   (Linux/Mac)
+#       run-docker.cmd -c 30-TLS-Passthrough.yaml    (Windows)
+#     or with Java:
+#       ./membrane.sh -c 30-TLS-Passthrough.yaml     (Linux/Mac)
+#       membrane.cmd -c 30-TLS-Passthrough.yaml      (Windows)
 #
 # 2.) Call the first backend. --resolve sends the request to your local gateway
 #     while keeping api.predic8.de as the TLS server name, -v shows the

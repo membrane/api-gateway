@@ -1,4 +1,4 @@
-/* Copyright 2026 predic8 GmbH, www.predic8.com
+/* Copyright 2025 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -12,29 +12,32 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.tutorials.openapi.rewrite;
+package com.predic8.membrane.tutorials.forward_proxy;
 
+import io.restassured.specification.ProxySpecification;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.containsString;
 
-public class ReverseProxyTutorialTest extends AbstractOpenAPIRewriteTutorialTest {
+public class TlsBothLegsTutorialTest extends AbstractForwardProxyTutorialTest {
 
     @Override
     protected String getTutorialYaml() {
-        return "30-Behind-A-Reverse-Proxy.apis.yaml";
+        return "20-TLS-Both-Legs.yaml";
     }
 
     @Test
-    void serverUrlUsesPublicHttpsEndpoint() {
+    void tunnelsHttpsRequestToTheRealBackendOverAnHttpsProxy() {
         // @formatter:off
         given()
+            .proxy(ProxySpecification.host("localhost").withPort(8443).withScheme("https"))
+            .relaxedHTTPSValidation()
         .when()
-            .get("http://localhost:2000/api-docs/minimal-shop-api-v2-0")
+            .get("https://api.predic8.de/")
         .then()
             .statusCode(200)
-            .body(containsString("https://api.example.com/shop/v2"));
+            .body(containsString("Shop API Showcase"));
         // @formatter:on
     }
 }

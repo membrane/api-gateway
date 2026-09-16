@@ -15,8 +15,12 @@
 # the SAME id.
 #
 # 1.) Start Membrane:
-#       Linux/Mac:  ./membrane.sh -c 20-Propagation.yaml
-#       Windows:    membrane.cmd  -c 20-Propagation.yaml
+#     with Docker:
+#       ./run-docker.sh -c 20-Propagation.yaml   (Linux/Mac)
+#       run-docker.cmd -c 20-Propagation.yaml    (Windows)
+#     or with Java:
+#       ./membrane.sh -c 20-Propagation.yaml     (Linux/Mac)
+#       membrane.cmd -c 20-Propagation.yaml      (Windows)
 #
 # 2.) Call the EDGE API on port 2000 and watch the console:
 #       curl http://localhost:2000

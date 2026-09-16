@@ -43,38 +43,41 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.json.XMLParserConfiguration.ORIGINAL;
 
 /**
- * @description Converts an XML message body to JSON.
- * <p>
- * The interceptor performs a generic XML-to-JSON transformation using a
- * structural mapping of XML elements and attributes to JSON objects.
- * While this works well for simple and data-oriented XML, it has inherent
- * limitations and challenges.
- * </p>
+ * @description
+ * <p>Converts an XML message body to JSON using a structural, heuristic mapping: elements and
+ * attributes both become JSON properties, and a repeated element becomes a JSON array while the
+ * same element occurring once becomes an object.</p>
  *
- * <p>
- * In particular:
- * <ul>
- *   <li>XML attributes and elements are both mapped to JSON properties, which
- *       can lead to ambiguities.</li>
- *   <li>Element order, mixed content, and namespaces may not be preserved
- *       in a meaningful way.</li>
- *   <li>Repeated elements are heuristically converted into JSON arrays,
- *       which may not match the intended domain model.</li>
- * </ul>
- * </p>
+ * <p>Element order, mixed content, and namespaces
+ * are not preserved. Only messages with an XML content type are converted; other bodies pass
+ * through unchanged.</p>
  *
- * <p>
- * This interceptor is intended for integration scenarios where XML is used
- * as a transport format and the JSON representation is primarily consumed
- * by applications that do not require full fidelity of the original XML
- * structure.
- * </p>
+ * <p>Malformed XML aborts the exchange with a Problem Details response
+ * (<code>400</code> in the request flow, <code>500</code> in the response flow).</p>
  *
- * <p>
- * For complex XML schemas or contract-driven integrations, a dedicated
- * transformation using a template, XSLT or a schema-aware mapping is recommended.
- * </p>
+ * <p>The character
+ * encoding is taken from the <code>Content-Type</code> header if present, otherwise read from
+ * the XML prolog, and the result is always UTF-8 encoded JSON.</p>
+ *
+ * <p>For contract-driven integrations
+ * that need a fixed output shape, a template, XSLT, or schema-aware mapping gives more control.
+ * See tutorials/xml/20-XML-to-JSON.yaml.</p>
+ * <pre>
+ * xml2Json:
+ *   [ keepString: true | false ]                 # default: false
+ *   [ convertNilAttributeToNull: true | false ]   # default: true
+ *   forceList:                                    # 0..*; always render these element names as arrays
+ *     - &lt;element-name&gt;
+ *     ...
+ * </pre>
  * @topic 2. Enterprise Integration Patterns
+ * @yaml
+ * <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - xml2Json: {}
+ * </code></pre>
  */
 @MCElement(name = "xml2Json")
 public class Xml2JsonInterceptor extends AbstractInterceptor {
@@ -177,8 +180,10 @@ public class Xml2JsonInterceptor extends AbstractInterceptor {
 
     /**
      * @description
-     * If true, keeps element text values as Strings instead of trying to coerce them
-     * into Number/Boolean types during XML-to-JSON conversion.
+     * If <code>true</code>, keeps every element's text as a JSON string instead of coercing
+     * numeric- or boolean-looking text into JSON numbers and booleans.
+     * @default false
+     * @example true
      */
     @MCAttribute
     public void setKeepString(boolean keepString) {
@@ -191,7 +196,10 @@ public class Xml2JsonInterceptor extends AbstractInterceptor {
 
     /**
      * @description
-     * If true, converts xsi:nil="true" on elements into JSON null values.
+     * If <code>true</code>, converts elements marked <code>xsi:nil="true"</code> into JSON
+     * <code>null</code> values.
+     * @default true
+     * @example false
      */
     @MCAttribute
     public void setConvertNilAttributeToNull(boolean convertNilAttributeToNull) {
@@ -204,8 +212,12 @@ public class Xml2JsonInterceptor extends AbstractInterceptor {
 
     /**
      * @description
-     * Forces the specified element names to be represented as JSON arrays even if they occur only once.
-     * @example ["customer", "product"]
+     * Element names that are always rendered as a JSON array, even where they occur only once.
+     * Without this, whether an element becomes an array depends on how many times it occurs in a
+     * given message, so its JSON type can change from request to request. Names are matched
+     * literally against the parsed tag, prefix included, e.g. <code>ns:customer</code> for a
+     * namespaced element.
+     * @example [customer, product]
      */
     @MCChildElement(allowForeign = true)
     public void setForceList(List<String> forceList) {

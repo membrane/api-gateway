@@ -12,7 +12,12 @@
 # your backend. Those remain the primary defense against SQL injection.
 #
 # 1.) Start Membrane:
-#     ./membrane.sh -c 60-SQL-Injection-Protection.yaml
+#     with Docker:
+#       ./run-docker.sh -c 60-SQL-Injection-Protection.yaml   (Linux/Mac)
+#       run-docker.cmd -c 60-SQL-Injection-Protection.yaml    (Windows)
+#     or with Java:
+#       ./membrane.sh -c 60-SQL-Injection-Protection.yaml     (Linux/Mac)
+#       membrane.cmd -c 60-SQL-Injection-Protection.yaml      (Windows)
 #
 # 2.) A normal request passes through:
 #     curl -H 'Content-Type: application/json' -d '{"q":"laptop"}' localhost:2000

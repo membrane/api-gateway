@@ -1,4 +1,4 @@
-/* Copyright 2026 predic8 GmbH, www.predic8.com
+/* Copyright 2025 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -12,45 +12,30 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.tutorials.openapi;
+package com.predic8.membrane.tutorials.forward_proxy;
 
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.containsString;
 
-public class FormUrlEncodedTutorialTest extends AbstractOpenAPITutorialTest {
+public class ForwardProxyTutorialTest extends AbstractForwardProxyTutorialTest {
 
     @Override
     protected String getTutorialYaml() {
-        return "60-Form-URL-Encoded.apis.yaml";
+        return "10-Forward-Proxy.yaml";
     }
 
     @Test
-    void validFormPostIsForwarded() {
+    void tunnelsHttpsRequestToTheRealBackendOverAPlainProxy() {
         // @formatter:off
         given()
-            .contentType("application/x-www-form-urlencoded")
-            .body("product=Shoes&quantity=5")
+            .proxy("localhost", 3128)
         .when()
-            .post("http://localhost:2000/orders")
+            .get("https://api.predic8.de/")
         .then()
             .statusCode(200)
-            .body(containsString("accepted"));
-        // @formatter:on
-    }
-
-    @Test
-    void formWithNegativeQuantityIsRejected() {
-        // @formatter:off
-        given()
-            .contentType("application/x-www-form-urlencoded")
-            .body("product=Shoes&quantity=-5")
-        .when()
-            .post("http://localhost:2000/orders")
-        .then()
-            .statusCode(400)
-            .body(containsString("minimum"));
+            .body(containsString("Shop API Showcase"));
         // @formatter:on
     }
 }

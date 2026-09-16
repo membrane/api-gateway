@@ -1,4 +1,4 @@
-/* Copyright 2026 predic8 GmbH, www.predic8.com
+/* Copyright 2025 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -12,15 +12,15 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.tutorials.openapi.rewrite;
+package com.predic8.membrane.tutorials.forward_proxy;
 
 import com.predic8.membrane.tutorials.AbstractMembraneTutorialTest;
 
-public abstract class AbstractOpenAPIRewriteTutorialTest extends AbstractMembraneTutorialTest {
+public abstract class AbstractForwardProxyTutorialTest extends AbstractMembraneTutorialTest {
 
     @Override
     protected String getTutorialDir() {
-        return "openapi/rewrite";
+        return "forward-proxy";
     }
 
 }

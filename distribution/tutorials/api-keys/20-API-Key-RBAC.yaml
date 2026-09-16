@@ -6,7 +6,12 @@
 # Authentication is optional — callers without a key reach the public path.
 #
 # 1.) Start Membrane:
-#     ./membrane.sh -c 20-API-Key-RBAC.yaml
+#     with Docker:
+#       ./run-docker.sh -c 20-API-Key-RBAC.yaml   (Linux/Mac)
+#       run-docker.cmd -c 20-API-Key-RBAC.yaml    (Windows)
+#     or with Java:
+#       ./membrane.sh -c 20-API-Key-RBAC.yaml     (Linux/Mac)
+#       membrane.cmd -c 20-API-Key-RBAC.yaml      (Windows)
 #
 # 2.) No key → public path:
 #     curl localhost:2000

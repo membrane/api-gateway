@@ -2,7 +2,15 @@
 #
 # Tutorial: OpenAPI
 #
-# 1.) Start this configuration.
+# 1.) Start Membrane:
+#     Open a terminal in this folder and run:
+#
+#     with Docker:
+#       ./run-docker.sh -c 10-OpenAPI.apis.yaml   (Linux/Mac)
+#       run-docker.cmd -c 10-OpenAPI.apis.yaml    (Windows)
+#     or with Java:
+#       ./membrane.sh -c 10-OpenAPI.apis.yaml     (Linux/Mac)
+#       membrane.cmd -c 10-OpenAPI.apis.yaml      (Windows)
 #
 # 2.) Open /api-docs in the browser:
 #     http://localhost:2000/api-docs
@@ -14,8 +22,6 @@
 # 5.) Call the APIs:
 #     curl http://localhost:2000/shop/v2/products
 #     curl http://localhost:2000/dlp/fields/city
-#
-# 6.) Check also tutorials/openapi
 
 api:
   port: 2000

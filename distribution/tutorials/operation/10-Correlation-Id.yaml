@@ -9,8 +9,12 @@
 # request through the message flow.
 #
 # 1.) Start Membrane:
-#       Linux/Mac:  ./membrane.sh -c 10-Correlation-Id.yaml
-#       Windows:    membrane.cmd  -c 10-Correlation-Id.yaml
+#     with Docker:
+#       ./run-docker.sh -c 10-Correlation-Id.yaml   (Linux/Mac)
+#       run-docker.cmd -c 10-Correlation-Id.yaml    (Windows)
+#     or with Java:
+#       ./membrane.sh -c 10-Correlation-Id.yaml     (Linux/Mac)
+#       membrane.cmd -c 10-Correlation-Id.yaml      (Windows)
 #
 # 2.) Call the API WITHOUT a header and watch the console:
 #       curl http://localhost:2000
