@@ -27,6 +27,15 @@ import java.util.List;
  * @description Supplies a private key and its certificate chain directly as PEM blocks, as an
  * alternative to loading them from a <code>keystore</code> file. See
  * <tt>tutorials/ssl-tls/10-TLS-Termination.yaml</tt>.
+ * <pre><code>
+ * key:
+ *   private:
+ *     location: &lt;file&gt; | content: &lt;PEM text&gt;
+ *   certificates:
+ *     - location: &lt;file&gt; | content: &lt;PEM text&gt;
+ *     ...
+ *   [ password: &lt;password&gt; ]   # only if the private key PEM is encrypted
+ * </code></pre>
  * @yaml <pre><code>
  * ssl:
  *   key:
@@ -81,7 +90,10 @@ public class Key {
     }
 
     /**
-     * @description Password protecting the private key, if the PEM block is encrypted.
+     * @description Password protecting the private key, if the PEM block is encrypted. In YAML,
+     * this can be a SpEL expression reading an environment variable instead of a literal value,
+     * e.g. <tt>"#{env.KEY_PASSWORD}"</tt>, so the password itself need not be checked into
+     * version control.
      * @default <i>not set</i>
      */
     @MCAttribute

@@ -23,6 +23,15 @@ import static com.google.common.base.Objects.equal;
  * @description Loads a private key and its certificate chain from a keystore file, to be
  * presented as this side's identity during a TLS handshake (or, inside <code>wsSecurity</code>,
  * to sign a message). See <tt>tutorials/web-services-security/50-Sign-And-Validate-Body.yaml</tt>.
+ * <pre><code>
+ * keystore:
+ *   location: &lt;file&gt;
+ *   [ password: &lt;password&gt; ]        # default: keyPassword
+ *   [ keyPassword: &lt;password&gt; ]     # default: changeit
+ *   [ keyAlias: &lt;alias&gt; ]           # default: the keystore's first key entry
+ *   [ type: PKCS12 | JKS ]           # default: PKCS12
+ *   [ provider: &lt;name&gt; ]
+ * </code></pre>
  * @yaml <pre><code>
  * wsSecurity:
  *   keystore:
@@ -67,7 +76,10 @@ public class KeyStore extends Store {
 
 	/**
 	 * @description Password unlocking the private key entry inside the keystore. Also used to
-	 * open the keystore file itself when <code>password</code> is not set.
+	 * open the keystore file itself when <code>password</code> is not set. In YAML, this can be a
+	 * SpEL expression reading an environment variable instead of a literal value, e.g.
+	 * <tt>"#{env.KEYSTORE_KEY_PASSWORD}"</tt>, so the password itself need not be checked into
+	 * version control.
      * @default changeit
      * @example abc123
 	 */
