@@ -20,7 +20,20 @@ import com.predic8.membrane.annot.MCElement;
 import static com.google.common.base.Objects.equal;
 
 /**
- * @description Configuration element for a keystore holding private keys and certificates.
+ * @description Loads a private key and its certificate chain from a keystore file, to be
+ * presented as this side's identity during a TLS handshake (or, inside <code>wsSecurity</code>,
+ * to sign a message). See <tt>tutorials/web-services-security/50-Sign-And-Validate-Body.yaml</tt>.
+ * @yaml <pre><code>
+ * wsSecurity:
+ *   keystore:
+ *     location: signer.p12
+ *     password: secret
+ *     keyAlias: signer
+ *   secure:
+ *     - signature:
+ *         references:
+ *           - by: BODY
+ * </code></pre>
  */
 @MCElement(name="keystore")
 public class KeyStore extends Store {
@@ -53,7 +66,8 @@ public class KeyStore extends Store {
 	}
 
 	/**
-	 * @description Password used to unlock the private key entry in the keystore.
+	 * @description Password unlocking the private key entry inside the keystore. Also used to
+	 * open the keystore file itself when <code>password</code> is not set.
      * @default changeit
      * @example abc123
 	 */
@@ -68,7 +82,9 @@ public class KeyStore extends Store {
 	}
 
 	/**
-	 * @description The alias identifying which key entry to use from the keystore.
+	 * @description Alias of the key entry to use from the keystore, for a keystore holding more
+	 * than one.
+	 * @default the keystore's first key entry
 	 */
 	@MCAttribute
 	public void setKeyAlias(String keyAlias) {

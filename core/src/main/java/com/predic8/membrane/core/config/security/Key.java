@@ -24,10 +24,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @description Experimental.
- * <p>Allows to insert a PEM block containing the key (as well as one or more blocks for the
- * certificate(s)) directly into the proxies.xml file.</p>
- * <p>This is an alternative for {@link KeyStore}.</p>
+ * @description Supplies a private key and its certificate chain directly as PEM blocks, as an
+ * alternative to loading them from a <code>keystore</code> file. See
+ * <tt>tutorials/ssl-tls/10-TLS-Termination.yaml</tt>.
+ * @yaml <pre><code>
+ * ssl:
+ *   key:
+ *     private:
+ *       location: membrane-key.pem
+ *     certificates:
+ *       - location: membrane.pem
+ * </code></pre>
  */
 @MCElement(name="key")
 public class Key {
@@ -42,7 +49,8 @@ public class Key {
         }
 
         /**
-         * @description The key in PEM format.
+         * @description The key in PEM format, given inline as the element's text content instead
+         * of via <code>location</code>.
          */
         public void setContent(String content) {
             super.setContent(content);
@@ -71,6 +79,11 @@ public class Key {
     public String getPassword() {
         return password;
     }
+
+    /**
+     * @description Password protecting the private key, if the PEM block is encrypted.
+     * @default <i>not set</i>
+     */
     @MCAttribute
     public void setPassword(String password) {
         this.password = password;
@@ -79,6 +92,10 @@ public class Key {
     public Private getPrivate() {
         return private_;
     }
+
+    /**
+     * @description The private key, as a PEM block either inline or loaded from a file.
+     */
     @Required
     @MCChildElement(order=1)
     public void setPrivate(Private private_) {
@@ -88,6 +105,12 @@ public class Key {
     public List<Certificate> getCertificates() {
         return certificates;
     }
+
+    /**
+     * @description The certificate chain for the private key: the leaf certificate first,
+     * followed by any intermediates, each as its own PEM block either inline or loaded from a
+     * file.
+     */
     @Required
     @MCChildElement(order=2)
     public void setCertificates(List<Certificate> certificates) {

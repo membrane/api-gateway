@@ -16,7 +16,8 @@ package com.predic8.membrane.core.transport.ssl;
 import com.google.common.io.Resources;
 import com.predic8.membrane.core.config.security.*;
 import com.predic8.membrane.core.resolver.ResolverMap;
-import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.router.DummyTestRouter;
+import com.predic8.membrane.core.router.Router;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -70,6 +71,11 @@ public class SSLContextTest {
 
 		private SSLContextBuilder needClientAuth() {
 			sslParser.setClientAuth("need");
+			return this;
+		}
+
+		private SSLContextBuilder insecureValidation() {
+			sslParser.setInsecureValidation(true);
 			return this;
 		}
 
@@ -181,6 +187,22 @@ public class SSLContextTest {
 			SSLContext client = cb().withKeyStore("classpath:/ssl-rsa2.keystore").withTrustStore("classpath:/ssl-rsa-pub.keystore").needClientAuth().build();
 			testCombination(server, client);
 		});
+	}
+
+	@Test
+	public void insecureValidationTrustsUnknownServerCertificate() throws Exception {
+		SSLContext server = cb().withKeyStore("classpath:/ssl-rsa.keystore").build();
+		SSLContext client = cb().insecureValidation().build();
+		testCombination(server, client);
+	}
+
+	@Test
+	public void insecureValidationSkipsHostnameVerification() throws Exception {
+		SSLContext server = cb().withKeyStore("classpath:/ssl-rsa.keystore").build();
+		SSLParser clientParser = new SSLParser();
+		clientParser.setInsecureValidation(true);
+		SSLContext client = new StaticSSLContext(clientParser, router.getResolverMap(), router.getConfiguration().getBaseLocation());
+		testCombination(server, client);
 	}
 
 	public static <T extends Throwable, S extends Throwable> void assertThrows2(Class<T> expectedType1, Class<S> expectedType2, Executable executable) {
