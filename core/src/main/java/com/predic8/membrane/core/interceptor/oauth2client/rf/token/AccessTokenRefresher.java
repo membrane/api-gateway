@@ -34,6 +34,7 @@ import static com.predic8.membrane.core.interceptor.oauth2.authorizationservice.
 import static com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2Interceptor.WANTED_SCOPE;
 import static java.lang.Boolean.TRUE;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.apache.commons.codec.digest.DigestUtils.sha256Hex;
 
 public class AccessTokenRefresher {
     private static final Logger log = LoggerFactory.getLogger(AccessTokenRefresher.class);
@@ -55,8 +56,13 @@ public class AccessTokenRefresher {
     // every further request of such a session queues up on the monitor below and waits out its own
     // connect timeout, so N pending requests cost N timeouts and keep hammering a server that is
     // already down. An entry expires by itself, so the first request after the window tries again.
-    private final Cache<Session, Boolean> unreachable = CacheBuilder.newBuilder()
-            .weakKeys()
+    //
+    // Keyed by the refresh token rather than by the Session, because SessionManager builds a new
+    // Session from the cookie on every request: keys tied to the object would never match again and
+    // the backoff would only ever cover the one request that hit the outage. The refresh token is what
+    // the next attempt would send, it is the same for every request of the session, and it changes as
+    // soon as a refresh does succeed.
+    private final Cache<String, Boolean> unreachable = CacheBuilder.newBuilder()
             .expireAfterWrite(UNREACHABLE_BACKOFF_SECONDS, SECONDS)
             .build();
 
@@ -80,7 +86,8 @@ public class AccessTokenRefresher {
             return;
         }
 
-        failFastWhileUnreachable(session);
+        String backoffKey = backoffKey(session);
+        failFastWhileUnreachable(backoffKey);
 
         synchronized (getTokenSynchronizer(session)) {
             // a concurrent caller may have already refreshed the token
@@ -88,15 +95,17 @@ public class AccessTokenRefresher {
             if (!refreshingOfAccessTokenIsNeeded(session, wantedScope)) {
                 return;
             }
-            failFastWhileUnreachable(session);
+            failFastWhileUnreachable(backoffKey);
             try {
                 exc.setProperty(OAUTH2, refreshAccessToken(session, wantedScope));
-                unreachable.invalidate(session);
+                if (backoffKey != null)
+                    unreachable.invalidate(backoffKey);
             } catch (Exception e) {
                 if (e instanceof OAuth2Exception oauth2 && isUnreachable(oauth2)) {
                     log.warn("Could not reach the authorization server to refresh the access token. " +
                              "Keeping the session, the request fails instead.", e);
-                    unreachable.put(session, TRUE);
+                    if (backoffKey != null)
+                        unreachable.put(backoffKey, TRUE);
                     throw oauth2;
                 }
                 log.warn("Failed to refresh access token, clearing session and restarting OAuth2 flow.", e);
@@ -105,8 +114,21 @@ public class AccessTokenRefresher {
         }
     }
 
-    private void failFastWhileUnreachable(Session session) throws OAuth2Exception {
-        if (unreachable.getIfPresent(session) == null) {
+    /**
+     * @return the hash of the refresh token the next attempt would send, or null when the session has
+     *         none and the backoff therefore has nothing stable to key on. Hashed so that the cache
+     *         does not keep a second copy of the token around.
+     */
+    private static String backoffKey(Session session) {
+        OAuth2AnswerParameters params = session.getOAuth2AnswerParameters();
+        if (params == null || params.getRefreshToken() == null) {
+            return null;
+        }
+        return sha256Hex(params.getRefreshToken());
+    }
+
+    private void failFastWhileUnreachable(String backoffKey) throws OAuth2Exception {
+        if (backoffKey == null || unreachable.getIfPresent(backoffKey) == null) {
             return;
         }
         log.debug("Authorization server was unreachable within the last {} s, not asking again.", UNREACHABLE_BACKOFF_SECONDS);

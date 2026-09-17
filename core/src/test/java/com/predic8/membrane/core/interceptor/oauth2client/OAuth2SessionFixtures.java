@@ -38,20 +38,29 @@ public final class OAuth2SessionFixtures {
      * it. This is the state in which a request reaches the authorization server.
      */
     public static Session expiredSession() throws Exception {
-        return sessionWith("60", LocalDateTime.now().minusHours(1));
+        return expiredSession(REFRESH_TOKEN);
+    }
+
+    /**
+     * As {@link #expiredSession()}, but with the given refresh token. A caller that wants two sessions
+     * treated as different users has to give them different refresh tokens, because that is what the
+     * refresher keys its per-session state on.
+     */
+    public static Session expiredSession(String refreshToken) throws Exception {
+        return sessionWith("60", LocalDateTime.now().minusHours(1), refreshToken);
     }
 
     /**
      * Authenticated, holding an access token that is good for another hour.
      */
     public static Session validSession() throws Exception {
-        return sessionWith("3600", LocalDateTime.now());
+        return sessionWith("3600", LocalDateTime.now(), REFRESH_TOKEN);
     }
 
-    public static Session sessionWith(String expiresInSeconds, LocalDateTime receivedAt) throws Exception {
+    public static Session sessionWith(String expiresInSeconds, LocalDateTime receivedAt, String refreshToken) throws Exception {
         OAuth2AnswerParameters params = new OAuth2AnswerParameters();
         params.setAccessToken(ACCESS_TOKEN);
-        params.setRefreshToken(REFRESH_TOKEN);
+        params.setRefreshToken(refreshToken);
         params.setExpiration(expiresInSeconds);
         params.setReceivedAt(receivedAt);
 
