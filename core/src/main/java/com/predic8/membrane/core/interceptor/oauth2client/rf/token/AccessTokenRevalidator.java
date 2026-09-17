@@ -61,7 +61,14 @@ public class AccessTokenRevalidator {
 
     public Map<String, Object> revalidate(Session session, OAuth2Statistics statistics, String wantedScope) throws Exception {
         OAuth2AnswerParameters params = session.getOAuth2AnswerParameters(wantedScope);
-        Response response = auth.requestUserEndpoint(params.getTokenType(), params.getAccessToken());
+
+        Response response;
+        try {
+            response = auth.requestUserEndpoint(params.getTokenType(), params.getAccessToken());
+        } catch (Exception e) {
+            log.warn("Error contacting the user endpoint of the authorization server: {}", e.getMessage());
+            throw communicationError();
+        }
 
         if (response.getStatusCode() >= 500) {
             // The server is broken, the token is not. Returning null here would clear the session and

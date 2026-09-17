@@ -21,6 +21,8 @@ import com.predic8.membrane.core.interceptor.session.Session;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.net.ConnectException;
+
 import static com.predic8.membrane.core.http.Response.serviceUnavailable;
 import static com.predic8.membrane.core.http.Response.unauthorized;
 import static com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService.MEMBRANE_OAUTH2_SERVER_COMMUNICATION_ERROR;
@@ -51,6 +53,21 @@ class AccessTokenRevalidatorTest {
     @Test
     void serverErrorKeepsTheSession() throws Exception {
         when(auth.requestUserEndpoint(any(), any())).thenReturn(serviceUnavailable("down").build());
+        Session session = validSession();
+
+        OAuth2Exception e = assertThrows(OAuth2Exception.class, () -> revalidator.revalidateIfNeeded(session, null));
+
+        assertEquals(MEMBRANE_OAUTH2_SERVER_COMMUNICATION_ERROR, e.getError());
+        assertTrue(session.isVerified());
+    }
+
+    /**
+     * A server that could not be reached at all is the same situation as one answering 5xx, so it has
+     * to end in the same OAuth2 error rather than in a raw transport exception.
+     */
+    @Test
+    void unreachableServerKeepsTheSession() throws Exception {
+        when(auth.requestUserEndpoint(any(), any())).thenThrow(new ConnectException("Connection refused"));
         Session session = validSession();
 
         OAuth2Exception e = assertThrows(OAuth2Exception.class, () -> revalidator.revalidateIfNeeded(session, null));

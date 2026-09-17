@@ -62,18 +62,22 @@ class AccessTokenRefresherTest {
      * Every further request of the session would otherwise queue up on the refresh monitor and wait out
      * its own connect timeout, so a down authorization server would cost one timeout per request and
      * keep being hammered while it is already struggling.
+     * <p>
+     * The two requests get their own Session object on purpose: SessionManager rebuilds the session
+     * from the cookie every time, so a backoff that relied on the object staying the same would cover
+     * nothing at all.
      */
     @Test
     void furtherRequestsFailFastWhileTheServerIsUnreachable() throws Exception {
         when(auth.refreshTokenRequest(any(), any(), anyString())).thenThrow(communicationError());
-        Session session = expiredSession();
 
-        assertThrows(OAuth2Exception.class, () -> refresher.refreshIfNeeded(session, get("/foo").buildExchange()));
-        OAuth2Exception second = assertThrows(OAuth2Exception.class, () -> refresher.refreshIfNeeded(session, get("/foo").buildExchange()));
+        assertThrows(OAuth2Exception.class, () -> refresher.refreshIfNeeded(expiredSession(), get("/foo").buildExchange()));
+        Session secondRequest = expiredSession();
+        OAuth2Exception second = assertThrows(OAuth2Exception.class, () -> refresher.refreshIfNeeded(secondRequest, get("/foo").buildExchange()));
 
         assertEquals(MEMBRANE_OAUTH2_SERVER_COMMUNICATION_ERROR, second.getError());
         verify(auth, times(1)).refreshTokenRequest(any(), any(), anyString());
-        assertTrue(session.isVerified());
+        assertTrue(secondRequest.isVerified());
     }
 
     /**
@@ -84,8 +88,8 @@ class AccessTokenRefresherTest {
     void anotherSessionStillAsks() throws Exception {
         when(auth.refreshTokenRequest(any(), any(), anyString())).thenThrow(communicationError());
 
-        assertThrows(OAuth2Exception.class, () -> refresher.refreshIfNeeded(expiredSession(), get("/foo").buildExchange()));
-        assertThrows(OAuth2Exception.class, () -> refresher.refreshIfNeeded(expiredSession(), get("/foo").buildExchange()));
+        assertThrows(OAuth2Exception.class, () -> refresher.refreshIfNeeded(expiredSession("refresh-token-of-alice"), get("/foo").buildExchange()));
+        assertThrows(OAuth2Exception.class, () -> refresher.refreshIfNeeded(expiredSession("refresh-token-of-bob"), get("/foo").buildExchange()));
 
         verify(auth, times(2)).refreshTokenRequest(any(), any(), anyString());
     }
