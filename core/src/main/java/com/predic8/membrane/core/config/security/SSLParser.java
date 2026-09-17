@@ -20,8 +20,41 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.config.security.acme.Acme;
 
 /**
- * @description <p>Configures inbound or outbound SSL connections.</p>
+ * @description Configures a TLS context: the identity (key and certificate) presented to the
+ * peer, the certificates trusted from it, and handshake parameters such as protocol, ciphers,
+ * and client-certificate policy. Attach it to a <code>serviceProxy</code>/<code>api</code> to
+ * terminate inbound TLS, or to a <code>target</code> to make an outbound connection over TLS;
+ * most attributes and child elements apply to both directions, but a few - such as
+ * <code>clientAuth</code> and <code>useAsDefault</code> - only take effect on an inbound context.
+ * See <tt>tutorials/ssl-tls/10-TLS-Termination.yaml</tt> for inbound termination and
+ * <tt>tutorials/ssl-tls/20-Central-SSL-Config.yaml</tt> for sharing one <code>ssl</code> across
+ * several APIs via <code>$ref</code>.
+ * <pre><code>
+ * ssl:
+ *   keystore: ... | key: ... | keyGenerator: ...    # this side's identity (pick one)
+ *   [ truststore: ... | trust: ... ]                 # CAs trusted from the peer
+ *   [ acme: ... ]                                    # obtain identity via ACME instead
+ *   [ clientAuth: want | need ]                      # default: not set (inbound only)
+ *   [ protocols: &lt;protocol&gt;[,&lt;protocol&gt;...] ]
+ *   [ ciphers: &lt;cipher&gt;[,&lt;cipher&gt;...] ]
+ *   [ insecureValidation: true | false ]             # default: false
+ *   ...
+ * </code></pre>
  * @topic 3. Security and Validation
+ * @yaml <pre><code>
+ * api:
+ *   port: 8443
+ *   ssl:
+ *     key:
+ *       private:
+ *         location: membrane-key.pem
+ *       certificates:
+ *         - location: membrane.pem
+ *   flow:
+ *     - log: {}
+ *   target:
+ *     url: https://api.predic8.de
+ * </code></pre>
  */
 @MCElement(name="ssl")
 public class SSLParser {
@@ -38,6 +71,7 @@ public class SSLParser {
 	private String ciphers;
 	private String clientAuth;
 	private boolean ignoreTimestampCheckFailure;
+	private boolean insecureValidation;
 	private String endpointIdentificationAlgorithm = "HTTPS";
 	private String serverName;
 	private boolean showSSLExceptions = false;
@@ -61,6 +95,7 @@ public class SSLParser {
 				&& Objects.equal(ciphers, other.ciphers)
 				&& Objects.equal(clientAuth, other.clientAuth)
 				&& Objects.equal(ignoreTimestampCheckFailure, other.ignoreTimestampCheckFailure)
+				&& Objects.equal(insecureValidation, other.insecureValidation)
 				&& Objects.equal(endpointIdentificationAlgorithm, other.endpointIdentificationAlgorithm)
 				&& Objects.equal(serverName, other.serverName)
 				&& Objects.equal(showSSLExceptions, other.showSSLExceptions)
@@ -71,7 +106,7 @@ public class SSLParser {
 	@Override
 	public int hashCode() {
 		return java.util.Objects.hash(acme, keyStore, key, keyGenerator, trustStore, trust, algorithm, protocol,
-				protocols, ciphers, clientAuth, ignoreTimestampCheckFailure, endpointIdentificationAlgorithm,
+				protocols, ciphers, clientAuth, ignoreTimestampCheckFailure, insecureValidation, endpointIdentificationAlgorithm,
 				serverName, showSSLExceptions, useAsDefault, useExperimentalHttp2);
 	}
 
@@ -149,8 +184,9 @@ public class SSLParser {
 	}
 
 	/**
-	 * @description <a href="http://docs.oracle.com/javase/6/docs/api/javax/net/ssl/SSLSocket.html#setEnabledProtocols%28java.lang.String[]%29">SSLSocket.setEnabledProtocols()</a>
-	 * @default TLS*
+	 * @description Comma-separated list of enabled TLS protocol versions. See <a href="http://docs.oracle.com/javase/6/docs/api/javax/net/ssl/SSLSocket.html#setEnabledProtocols%28java.lang.String[]%29">SSLSocket.setEnabledProtocols()</a>.
+	 * @default all protocols the JVM enables by default, except <tt>SSLv3</tt> and <tt>SSLv2Hello</tt>
+	 * @example TLSv1.2,TLSv1.3
 	 */
 	@MCAttribute
 	public void setProtocols(String protocols) {
@@ -162,9 +198,12 @@ public class SSLParser {
 	}
 
 	/**
-	 * @description Space separated list of ciphers to allow. <a href="http://docs.oracle.com/javase/6/docs/api/javax/net/ssl/SSLSocketFactory.html#getSupportedCipherSuites%28%29">getSupportedCipherSuites()</a>
-	 * @default all system default ciphers
-	 * @example TLS_ECDH_anon_WITH_RC4_128_SHA
+	 * @description Comma-separated list of cipher suites to allow; an unknown name is rejected at
+	 * startup. See <a href="http://docs.oracle.com/javase/6/docs/api/javax/net/ssl/SSLSocketFactory.html#getSupportedCipherSuites%28%29">getSupportedCipherSuites()</a>
+	 * for the names the JVM supports.
+	 * @default the JVM's default cipher suites, excluding <tt>RC4</tt> and <tt>3DES</tt>, ordered
+	 * by preference (forward secrecy first, then AEAD, then key/hash strength)
+	 * @example TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
 	 */
 	@MCAttribute
 	public void setCiphers(String ciphers) {
@@ -189,9 +228,34 @@ public class SSLParser {
 		return ignoreTimestampCheckFailure;
 	}
 
+	/**
+	 * @description Accepts a peer certificate that is expired or not yet valid; the rest of chain
+	 * validation (issuer signature, trust anchor) is unaffected. For disabling all certificate
+	 * validation, see <code>insecureValidation</code> instead.
+	 * @default false
+	 */
 	@MCAttribute
 	public void setIgnoreTimestampCheckFailure(boolean ignoreTimestampCheckFailure) {
 		this.ignoreTimestampCheckFailure = ignoreTimestampCheckFailure;
+	}
+
+	public boolean isInsecureValidation() {
+		return insecureValidation;
+	}
+
+	/**
+	 * @description Disables all certificate validation (chain-of-trust and hostname) for this
+	 * SSL context, equivalent to <tt>curl -k</tt>; this also makes <code>ignoreTimestampCheckFailure</code>
+	 * redundant. A configured <tt>&lt;truststore&gt;</tt> or <tt>&lt;trust&gt;</tt> is ignored
+	 * while this is set. On an inbound (server) context with <tt>clientAuth="need"</tt>, a client
+	 * certificate is still required but no longer validated.
+	 * Only use for testing; never in production, as it removes all protection against
+	 * man-in-the-middle attacks.
+	 * @default false
+	 */
+	@MCAttribute
+	public void setInsecureValidation(boolean insecureValidation) {
+		this.insecureValidation = insecureValidation;
 	}
 
 	public Trust getTrust() {
@@ -224,9 +288,10 @@ public class SSLParser {
 	}
 
 	/**
-     * @description Setting the serverName tells Java to use the SNI (<a href="http://www.rfc-base.org/txt/rfc-3546.txt">...</a>) on outbound
-     *		 TLS connections to indicate to the TLS server, which hostname the client wants to connect to.
-     * @default same as target hostname.
+     * @description Hostname sent via the TLS Server Name Indication (SNI, <a href="http://www.rfc-base.org/txt/rfc-3546.txt">RFC 3546</a>)
+     * extension on outbound connections, telling the server which certificate to present. Set to
+     * an empty string to send no SNI extension at all.
+     * @default the target's hostname
      */
 	@MCAttribute
 	public void setServerName(String serverName) {
@@ -238,8 +303,9 @@ public class SSLParser {
 	}
 
 	/**
-	 * @description Tells Membrane to show SSL exceptions in its log
-	 * @default true
+	 * @description Logs SSL/TLS handshake exceptions (e.g. an untrusted or expired peer
+	 * certificate) instead of only failing the connection silently.
+	 * @default false
 	 */
 	@MCAttribute
 	public void setShowSSLExceptions(boolean showSSLExceptions) {

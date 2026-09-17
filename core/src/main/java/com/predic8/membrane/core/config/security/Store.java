@@ -59,7 +59,8 @@ public abstract class Store {
 	}
 
 	/**
-	 * @description A file/resource containing the PKCS#12 keystore (*.p12).
+	 * @description File or resource holding the store: a PKCS#12/JKS keystore file, or, with
+	 * <code>type="PEM"</code>, one or more X.509 certificates.
 	 */
 	@MCAttribute
 	public void setLocation(String location) {
@@ -72,7 +73,11 @@ public abstract class Store {
 	}
 
 	/**
-	 * @description The password used to open the keystore/truststore.
+	 * @description Password used to open the keystore/truststore file. Required for a
+	 * PKCS#12/JKS store, except when <code>type="PEM"</code>, where it is ignored - a bare
+	 * certificate has no password. On a <code>&lt;keystore&gt;</code>, leaving this unset falls
+	 * back to <code>keyPassword</code> (default <code>changeit</code>), which is the common case
+	 * when the same password protects both the file and the private key entry inside it.
 	 */
 	@MCAttribute
 	public void setPassword(String password) {

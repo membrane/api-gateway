@@ -9,7 +9,9 @@ RUN apt-get update \
     && apt-get upgrade -y \
     && apt-get install -y --no-install-recommends unzip \
     && rm -rf /var/lib/apt/lists/*
-RUN unzip membrane-api-gateway-*.zip -x */examples* */tutorials* \
+# The host-side Docker launchers make no sense inside the image itself, and
+# membrane.sh is already the ENTRYPOINT.
+RUN unzip membrane-api-gateway-*.zip -x */examples* */tutorials* */run-docker.* */docker-compose.yml \
     && rm membrane-api-gateway-*.zip \
     && mv membrane-api-gateway-* /opt/membrane
 COPY log4j2.xml /opt/membrane/conf/.
