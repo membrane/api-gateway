@@ -1,0 +1,217 @@
+name: Test Docker Launchers
+
+# Manual only. The regular build (build-and-test.yml) and the tutorial integration
+# tests exec membrane.sh; nothing exercises run-docker.sh, docker-compose.yml, or
+# the Dockerfile's exclude list. This job covers that gap on demand.
+#
+# It pulls the published predic8/membrane image, so it needs network access and it
+# tests the launchers against a *released* image, not against the code in this
+# branch. That is the point: the launchers mount a locally built distribution into
+# a published image, and it is the seam between the two that breaks.
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Override the predic8/membrane tag pinned in the launchers (e.g. 7.6.1 or latest). Leave empty to use the pinned tag."
+        type: string
+        required: false
+        default: ''
+
+jobs:
+  launchers:
+    name: run-docker.sh / docker-compose.yml
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v6
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Build distribution zip
+        run: |
+          export MAVEN_OPTS="-Xmx3000m"
+          mvn --batch-mode -DskipTests -pl distribution -am install
+
+      - name: Extract zip
+        run: |
+          set -euo pipefail
+          ZIP=$(ls distribution/target/membrane-api-gateway-*.zip)
+          echo "ZIP=$ZIP" >> "$GITHUB_ENV"
+          rm -rf /tmp/dist && mkdir -p /tmp/dist
+          unzip -q "$ZIP" -d /tmp/dist
+          DIST=$(echo /tmp/dist/membrane-api-gateway-*)
+          echo "DIST=$DIST" >> "$GITHUB_ENV"
+          # The zip's own version. The container must NOT report this one - if it
+          # does, the launcher lost its --entrypoint override and is running the
+          # mounted host jars instead of the image's.
+          echo "HOST_VERSION=$(basename "$DIST" | sed 's/^membrane-api-gateway-//')" >> "$GITHUB_ENV"
+
+      - name: Check root layout
+        run: |
+          set -euo pipefail
+          cd "$DIST"
+          test -x run-docker.sh   || { echo "run-docker.sh missing or not executable"; ls -l; exit 1; }
+          test -f run-docker.cmd  || { echo "run-docker.cmd missing"; exit 1; }
+          test -f docker-compose.yml || { echo "docker-compose.yml missing"; exit 1; }
+          # Shell completion: './m<TAB>' must still resolve to the Java launcher
+          # alone. A docker launcher named membrane-docker.* would break this.
+          set -- m*
+          if [ "$*" != "membrane.cmd membrane.sh" ]; then
+            echo "Unexpected 'm*' completion candidates at the zip root: $*"
+            exit 1
+          fi
+
+      - name: Override image tag
+        if: inputs.image_tag != ''
+        run: |
+          set -euo pipefail
+          cd "$DIST"
+          sed -i -E "s#(predic8/membrane:)[0-9a-zA-Z._-]+#\1${{ inputs.image_tag }}#g" \
+            run-docker.sh run-docker.cmd docker-compose.yml
+          grep -h -o 'predic8/membrane:[0-9a-zA-Z._-]*' run-docker.sh docker-compose.yml
+
+      - name: Add marker API to conf/apis.yaml
+        run: |
+          set -euo pipefail
+          cd "$DIST"
+          # Prepended, not appended: conf/apis.yaml ends with a catch-all API on
+          # port 2000 that would shadow anything added after it. Reaching this
+          # endpoint proves the HOST's config was loaded - without the launcher's
+          # default '-c conf/apis.yaml' the container silently serves its own
+          # baked-in copy instead, and this marker would be absent.
+          cat > /tmp/marker.yaml <<'EOF'
+          api:
+            port: 2000
+            path:
+              uri: /ci-marker
+            flow:
+              - request:
+                - template:
+                    contentType: text/plain
+                    src: CI_MARKER_OK
+                - return:
+                    status: 200
+          ---
+          EOF
+          cat /tmp/marker.yaml conf/apis.yaml > conf/apis.yaml.new
+          mv conf/apis.yaml.new conf/apis.yaml
+
+      - name: run-docker.sh serves the host config and cleans up
+        run: |
+          set -euo pipefail
+          cd "$DIST"
+          # Snapshot first: the assertions below must judge only the containers
+          # this job creates, never whatever else the runner happens to hold.
+          docker ps -aq | sort > /tmp/containers-before.txt
+
+          # Job control, so the launcher gets its own process group. That lets the
+          # Ctrl+C simulation below signal the launcher and its 'docker start -a'
+          # without also signalling this step's shell. Start and stop must stay in
+          # ONE step - a background process is not guaranteed to survive across
+          # step boundaries.
+          set -m
+          ./run-docker.sh > /tmp/run-docker.log 2>&1 &
+          launcher=$!
+
+          for _ in $(seq 1 60); do
+            curl -sf -o /dev/null http://localhost:2000/ci-marker && break
+            sleep 1
+          done
+
+          echo "--- launcher log ---"; sed 's/\x1b\[[0-9;]*m//g' /tmp/run-docker.log | tail -20
+
+          body=$(curl -sf http://localhost:2000/ci-marker || true)
+          [ "$body" = "CI_MARKER_OK" ] || { echo "FAIL: host conf/apis.yaml not used (got: '$body')"; exit 1; }
+
+          # Admin console: conf/apis.yaml binds 9000, which is outside the
+          # tutorials' 2000-2010 range and needs its own published port.
+          code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:9000 || true)
+          [ "$code" = "401" ] || { echo "FAIL: admin console on 9000 returned $code, expected 401"; exit 1; }
+
+          banner=$(sed 's/\x1b\[[0-9;]*m//g' /tmp/run-docker.log | grep -o 'Membrane API Gateway .* up and running' || true)
+          echo "banner: $banner"
+          case "$banner" in
+            *"$HOST_VERSION"*)
+              echo "FAIL: container reports the host zip version ($HOST_VERSION)."
+              echo "The --entrypoint override was lost: it is running the mounted host jars, not the image's."
+              exit 1 ;;
+          esac
+
+          # Simulate Ctrl+C: a real one signals the whole foreground process group,
+          # which is what lets bash run the launcher's EXIT/INT trap.
+          kill -INT -"$launcher" 2>/dev/null || true
+          sleep 8
+
+          docker ps -aq | sort > /tmp/containers-after.txt
+          leaked=$(comm -13 /tmp/containers-before.txt /tmp/containers-after.txt || true)
+          if [ -n "$leaked" ]; then
+            echo "FAIL: the launcher's trap did not remove its container(s):"
+            echo "$leaked" | xargs -r docker inspect -f '{{.Id}} {{.Config.Image}} {{.State.Status}}' || true
+            exit 1
+          fi
+          echo "OK: host config served, port 9000 published, image jars in use, container removed on Ctrl+C"
+
+      - name: docker compose up serves the host config
+        run: |
+          set -euo pipefail
+          cd "$DIST"
+          docker compose up -d
+          for _ in $(seq 1 60); do
+            curl -sf -o /dev/null http://localhost:2000/ci-marker && break
+            sleep 1
+          done
+          body=$(curl -sf http://localhost:2000/ci-marker || true)
+          if [ "$body" != "CI_MARKER_OK" ]; then
+            echo "FAIL: compose did not serve the host config (got: '$body')"
+            docker compose logs --no-color | tail -30
+            docker compose down || true
+            exit 1
+          fi
+          docker compose down
+          docker ps -aq | sort > /tmp/containers-after.txt
+          leaked=$(comm -13 /tmp/containers-before.txt /tmp/containers-after.txt)
+          [ -z "$leaked" ] || { echo "FAIL: 'docker compose down' left containers behind:"; echo "$leaked"; exit 1; }
+
+      - name: Image excludes the host-side launchers
+        run: |
+          set -euo pipefail
+          # The Dockerfile unzips this same artifact, so the launchers would land
+          # inside the image unless its exclude list drops them.
+          rm -rf distribution/docker/release-bin
+          mkdir -p distribution/docker/release-bin
+          cp "$ZIP" distribution/docker/release-bin/
+          docker build -q -t membrane-launcher-ci distribution/docker
+          root=$(docker run --rm --entrypoint sh membrane-launcher-ci -c 'ls -1 /opt/membrane')
+          echo "$root"
+          echo "$root" | grep -qx 'membrane.sh' || { echo "FAIL: membrane.sh missing from image"; exit 1; }
+          for f in run-docker.sh run-docker.cmd docker-compose.yml; do
+            if echo "$root" | grep -qx "$f"; then
+              echo "FAIL: $f should not ship inside the image"
+              exit 1
+            fi
+          done
+          echo "OK: image root clean"
+
+      - name: Collect logs on failure
+        if: failure()
+        run: |
+          echo "--- run-docker.log ---"
+          sed 's/\x1b\[[0-9;]*m//g' /tmp/run-docker.log 2>/dev/null | tail -60 || true
+          echo "--- containers ---"
+          docker ps -a || true
+
+      - name: Clean up
+        if: always()
+        run: |
+          cd "$DIST" 2>/dev/null && docker compose down --remove-orphans 2>/dev/null || true
+          # Only containers this job started - never anything that predates it.
+          if [ -f /tmp/containers-before.txt ]; then
+            docker ps -aq | sort > /tmp/containers-final.txt
+            comm -13 /tmp/containers-before.txt /tmp/containers-final.txt | xargs -r docker rm -f || true
+          fi
