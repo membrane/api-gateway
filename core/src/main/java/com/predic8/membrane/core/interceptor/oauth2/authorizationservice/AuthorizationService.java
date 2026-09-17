@@ -52,6 +52,21 @@ public abstract class AuthorizationService {
     public static final String MEMBRANE_OAUTH2_SERVER_COMMUNICATION_ERROR_DESCRIPTION = "Error contacting the OAuth2 Authorization Server.";
     public static final String MEMBRANE_OAUTH2_SERVER_COMMUNICATION_ERROR = "MEMBRANE_OAUTH2_SERVER_COMMUNICATION_ERROR";
 
+    /**
+     * The authorization server could not be asked, so its answer is unknown and the session says
+     * nothing about whether the user is still authenticated. Callers keep the session and let the
+     * request fail, see
+     * {@link com.predic8.membrane.core.interceptor.oauth2client.rf.token.AccessTokenRefresher}.
+     * <p>
+     * A new {@link Response} per call, because the caller hands it to a single exchange.
+     */
+    public static OAuth2Exception communicationError() {
+        return new OAuth2Exception(
+                MEMBRANE_OAUTH2_SERVER_COMMUNICATION_ERROR,
+                MEMBRANE_OAUTH2_SERVER_COMMUNICATION_ERROR_DESCRIPTION,
+                internalServerError().body(MEMBRANE_OAUTH2_SERVER_COMMUNICATION_ERROR_DESCRIPTION).build());
+    }
+
     protected Logger log;
 
     private HttpClient httpClient;
@@ -343,10 +358,7 @@ public abstract class AuthorizationService {
                     .buildExchange());
         } catch (Exception e) {
             log.warn("Error contacting OAuth2 Authorization Server during refresh request: {}", e.getMessage());
-            throw new OAuth2Exception(
-                    MEMBRANE_OAUTH2_SERVER_COMMUNICATION_ERROR,
-                    MEMBRANE_OAUTH2_SERVER_COMMUNICATION_ERROR_DESCRIPTION,
-                    internalServerError().body(MEMBRANE_OAUTH2_SERVER_COMMUNICATION_ERROR_DESCRIPTION).build());
+            throw communicationError();
         }
         return parseTokenResponse(checkTokenResponse(response));
     }
@@ -363,10 +375,7 @@ public abstract class AuthorizationService {
                     authorizationCodeBodyBuilder(code, verifier).redirectUri(redirectUri), flowContext).buildExchange());
         } catch (Exception e) {
             log.warn("Error contacting OAuth2 Authorization Server during code request: {}", e.getMessage());
-            throw new OAuth2Exception(
-                    MEMBRANE_OAUTH2_SERVER_COMMUNICATION_ERROR,
-                    MEMBRANE_OAUTH2_SERVER_COMMUNICATION_ERROR_DESCRIPTION,
-                    internalServerError().body(MEMBRANE_OAUTH2_SERVER_COMMUNICATION_ERROR_DESCRIPTION).build());
+            throw communicationError();
         }
         return parseTokenResponse(checkTokenResponse(response));
     }
@@ -375,7 +384,14 @@ public abstract class AuthorizationService {
         return OAuth2TokenResponseBody.parse(this, response.getBodyAsStreamDecoded());
     }
 
-    private Response checkTokenResponse(Response response) throws IOException, ParseException {
+    private Response checkTokenResponse(Response response) throws IOException, ParseException, OAuth2Exception {
+        if (response.getStatusCode() >= 500) {
+            // A server that answers 5xx is as good as one we could not reach at all: it has not
+            // judged the token, so the session is kept rather than cleared. Reaching the token
+            // endpoint through a proxy or load balancer makes this the common shape of an outage.
+            log.warn("Authorization server returned {}: {}", response.getStatusCode(), response.getBodyAsStringDecoded());
+            throw communicationError();
+        }
         if (response.getStatusCode() != 200) {
             log.info("Authorization server response: {}", response.getBodyAsStringDecoded());
             throw new RuntimeException("Authorization server returned " + response.getStatusCode() + ".");

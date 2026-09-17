@@ -87,10 +87,23 @@ public class RetryHandler {
     private boolean failOverOn5XX = false;
 
     /**
-     * Retry when establishing the connection timed out. Safe for any request method, because no part
-     * of the request was sent. Unlike a read timeout, this cannot have changed state on the server.
+     * Retry on {@link ConnectTimeoutException}, the timeout Membrane itself detects while establishing
+     * the connection. Safe for any request method, because no part of the request was sent. Unlike a
+     * read timeout, this cannot have changed state on the server.
+     * <p>
+     * A connect that runs into the operating system's own timeout arrives as a
+     * {@link java.net.ConnectException} instead and is governed by {@link #retryOnConnectFailure}.
      */
     private boolean retryOnConnectTimeout = true;
+
+    /**
+     * Retry on {@link java.net.ConnectException}, which the JDK raises for every connect that did not
+     * come up: refused, host unreachable, or timed out in the operating system. Safe for any request
+     * method for the same reason as {@link #retryOnConnectTimeout}: no part of the request reached the
+     * server. Such a failure is not necessarily permanent - a full accept queue answers with a reset on
+     * some platforms - so the next attempt can succeed against the very same node.
+     */
+    private boolean retryOnConnectFailure = true;
 
     private static final Set<Integer> RETRYABLE_5XX = Set.of(500, 502, 503, 504, 507);
 
@@ -201,10 +214,12 @@ public class RetryHandler {
             log.debug("URI {} caused: {}", dest, e);
             return true;
         }
+        // The connection was refused, so nothing was sent and no state was changed on the server.
+        // Retrying is safe for any method, including POST. Has to be checked before SocketException,
+        // which it extends.
         if (e instanceof ConnectException) {
-            // Connection was not established, so no state was changed on server
             log.debug("Connection to {} refused.", dest);
-            return !hasMultipleNodes(exc);
+            return !retryOnConnectFailure;
         }
         // The connection was never established, so nothing was sent and no state was changed on the
         // server. Retrying is safe for any method. Causes: dropped SYN, host unreachable, a TLS
@@ -362,15 +377,35 @@ public class RetryHandler {
 
     /**
      * @description If <code>true</code> retry when the connection to the target could not be
-     *              established within the connection timeout. No part of the request has been sent in
-     *              that case, so this applies to every request method, including POST and PATCH. A
-     *              timeout while reading the response is not covered by this and stays restricted to
-     *              idempotent methods. Set to <code>false</code> to fail fast instead.
+     *              established within the connection timeout Membrane applies itself. No part of the
+     *              request has been sent in that case, so this applies to every request method,
+     *              including POST and PATCH. A timeout while reading the response is not covered by
+     *              this and stays restricted to idempotent methods, and a connect that runs into the
+     *              operating system's own timeout is covered by
+     *              <code>retryOnConnectFailure</code> instead. Set to <code>false</code> to fail fast.
      * @default true
      */
     @MCAttribute
     public void setRetryOnConnectTimeout(boolean retryOnConnectTimeout) {
         this.retryOnConnectTimeout = retryOnConnectTimeout;
+    }
+
+    public boolean isRetryOnConnectFailure() {
+        return retryOnConnectFailure;
+    }
+
+    /**
+     * @description If <code>true</code> retry when the connection to the target could not be
+     *              established at all: refused, host unreachable, or timed out in the operating system.
+     *              Nothing has been sent in that case, so this applies to every request method,
+     *              including POST and PATCH. Such a failure can be transient, e.g. when the target's
+     *              accept queue is momentarily full, so the retry goes to the same node when there is
+     *              only one. Set to <code>false</code> to fail fast instead.
+     * @default true
+     */
+    @MCAttribute
+    public void setRetryOnConnectFailure(boolean retryOnConnectFailure) {
+        this.retryOnConnectFailure = retryOnConnectFailure;
     }
 
     @Override
@@ -382,7 +417,8 @@ public class RetryHandler {
                delay == that.delay &&
                Double.compare(backoffMultiplier, that.backoffMultiplier) == 0 &&
                Objects.equals(failOverOn5XX, that.failOverOn5XX) &&
-               retryOnConnectTimeout == that.retryOnConnectTimeout;
+               retryOnConnectTimeout == that.retryOnConnectTimeout &&
+               retryOnConnectFailure == that.retryOnConnectFailure;
     }
 
     @Override
@@ -392,6 +428,7 @@ public class RetryHandler {
         result = 31 * result + Double.hashCode(backoffMultiplier);
         result = 31 * result + Boolean.hashCode(failOverOn5XX);
         result = 31 * result + Boolean.hashCode(retryOnConnectTimeout);
+        result = 31 * result + Boolean.hashCode(retryOnConnectFailure);
         return result;
     }
 }
