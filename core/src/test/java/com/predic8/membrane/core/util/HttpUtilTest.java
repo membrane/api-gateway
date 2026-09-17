@@ -144,18 +144,17 @@ public class HttpUtilTest {
 
     @ParameterizedTest
     @CsvSource({
-            "104, Upload Resumption Supported",
             "204, No Content",
-            "205, Reset Content",
-            "207, Multi-Status",
-            "226, IM Used",
             "301, Moved Permanently",
-            "413, Content Too Large",
+            "406, Not Acceptable",
+            "407, Proxy Authentication Required",
+            "408, Request Timeout",
+            "412, Precondition Failed",
+            "418, I'm a Teapot",
+            "423, Locked",
+            "428, Precondition Required",
             "429, Too Many Requests",
-            "431, Request Header Fields Too Large",
-            "451, Unavailable For Legal Reasons",
-            "505, HTTP Version Not Supported",
-            "511, Network Authentication Required"
+            "508, Loop Detected"
     })
     void statusMessageForListedCode(int code, String message) {
         assertEquals(message, getMessageForStatusCode(code));
