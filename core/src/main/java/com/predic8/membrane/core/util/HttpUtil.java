@@ -193,15 +193,39 @@ public class HttpUtil {
 			case 403 -> "Forbidden";
 			case 404 -> "Not Found";
 			case 405 -> "Method Not Allowed";
+			case 406 -> "Not Acceptable";
+			case 407 -> "Proxy Authentication Required";
+			case 408 -> "Request Timeout";
 			case 409 -> "Conflict";
+			case 412 -> "Precondition Failed";
 			case 415 -> "Unsupported Mediatype";
+			case 418 -> "I'm a Teapot";
 			case 422 -> "Unprocessable Entity";
+			case 423 -> "Locked";
+			case 428 -> "Precondition Required";
+			case 429 -> "Too Many Requests";
 			case 500 -> "Internal Server Error";
 			case 501 -> "Not Implemented";
 			case 502 -> "Bad Gateway";
 			case 503 -> "Service Unavailable";
 			case 504 -> "Gateway Timeout";
-			default -> "";
+			case 508 -> "Loop Detected";
+			default -> defaultMessageForStatusCode(code);
+		};
+	}
+
+	/**
+	 * Reason phrase for a status code that has no entry in the table above,
+	 * derived from its class so the status line is never left with an empty phrase.
+	 */
+	private static String defaultMessageForStatusCode(int code) {
+		return switch (code / 100) {
+			case 1 -> "Information";
+			case 2 -> "Success";
+			case 3 -> "Redirection";
+			case 4 -> "Client Error";
+			case 5 -> "Server Error";
+			default -> "Unknown";
 		};
 	}
 

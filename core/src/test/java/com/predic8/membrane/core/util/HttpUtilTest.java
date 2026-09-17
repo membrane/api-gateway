@@ -141,4 +141,40 @@ public class HttpUtilTest {
     void idempotent(String method, boolean expected) {
         assertEquals(expected, isIdempotent(method));
     }
+
+    @ParameterizedTest
+    @CsvSource({
+            "204, No Content",
+            "301, Moved Permanently",
+            "406, Not Acceptable",
+            "407, Proxy Authentication Required",
+            "408, Request Timeout",
+            "412, Precondition Failed",
+            "418, I'm a Teapot",
+            "423, Locked",
+            "428, Precondition Required",
+            "429, Too Many Requests",
+            "508, Loop Detected"
+    })
+    void statusMessageForListedCode(int code, String message) {
+        assertEquals(message, getMessageForStatusCode(code));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "199, Information",
+            "299, Success",
+            "399, Redirection",
+            "499, Client Error",
+            "599, Server Error"
+    })
+    void unlistedCodeFallsBackToItsStatusClass(int code, String message) {
+        assertEquals(message, getMessageForStatusCode(code));
+    }
+
+    @Test
+    void everyStatusCodeHasANonEmptyMessage() {
+        for (int code = 100; code < 600; code++)
+            assertFalse(getMessageForStatusCode(code).isBlank(), "empty reason phrase for " + code);
+    }
 }
