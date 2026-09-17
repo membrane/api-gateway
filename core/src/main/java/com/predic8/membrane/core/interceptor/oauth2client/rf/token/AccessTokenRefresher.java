@@ -120,11 +120,14 @@ public class AccessTokenRefresher {
      *         does not keep a second copy of the token around.
      */
     private static String backoffKey(Session session) {
-        OAuth2AnswerParameters params = session.getOAuth2AnswerParameters();
-        if (params == null || params.getRefreshToken() == null) {
+        // Guard before deserializing: getOAuth2AnswerParameters() runs the raw value through
+        // URLDecoder and throws on a session that has no answer under the default key, which
+        // refreshingOfAccessTokenIsNeeded permits for a scoped request.
+        if (session.getOAuth2Answer() == null) {
             return null;
         }
-        return sha256Hex(params.getRefreshToken());
+        String refreshToken = session.getOAuth2AnswerParameters().getRefreshToken();
+        return refreshToken == null ? null : sha256Hex(refreshToken);
     }
 
     private void failFastWhileUnreachable(String backoffKey) throws OAuth2Exception {
