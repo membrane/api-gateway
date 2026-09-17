@@ -46,6 +46,14 @@ class NetworkUtilTest {
         assertEquals("2001:db8::1", removeBracketsIfPresent("[ 2001:db8::1 ]"));
     }
 
+    @Test
+    void addBracketsIfIPv6_wraps_bare_literal_leaves_others_unchanged() {
+        assertEquals("[::1]", addBracketsIfIPv6("::1"));
+        assertEquals("[fe80::1]", addBracketsIfIPv6("[fe80::1]"));
+        assertEquals("192.168.1.5", addBracketsIfIPv6("192.168.1.5"));
+        assertEquals("api.example.com", addBracketsIfIPv6("api.example.com"));
+    }
+
     @ParameterizedTest
     @CsvSource({
             "0.0.0.0,         0x00000000",
