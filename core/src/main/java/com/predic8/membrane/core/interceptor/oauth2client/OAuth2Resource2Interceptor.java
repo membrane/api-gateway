@@ -34,6 +34,7 @@ import static com.predic8.membrane.core.exchange.Exchange.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.oauth2.ParamNames.*;
+import static com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService.MEMBRANE_OAUTH2_SERVER_COMMUNICATION_ERROR;
 import static com.predic8.membrane.core.interceptor.oauth2client.LoginParameter.copyLoginParameters;
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.OAuthUtils.*;
 import static com.predic8.membrane.core.interceptor.oauth2client.temp.OAuth2Constants.*;
@@ -173,7 +174,11 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
             log.debug("session present, but not verified, redirecting.");
             return respondWithRedirect(exc, FlowContext.fromExchange(exc));
         } catch (OAuth2Exception e) {
-            session.clear();
+            // A server we could not reach says nothing about the session, so it is kept and the user
+            // stays logged in; the request fails and can simply be repeated. Every other OAuth2 error
+            // means the session itself is no longer usable.
+            if (!MEMBRANE_OAUTH2_SERVER_COMMUNICATION_ERROR.equals(e.getError()))
+                session.clear();
             if (afterErrorUrl != null) {
                 FormPostGenerator fpg = new FormPostGenerator(afterErrorUrl).withParameter("error", e.getError());
                 if (e.getErrorDescription() != null)
