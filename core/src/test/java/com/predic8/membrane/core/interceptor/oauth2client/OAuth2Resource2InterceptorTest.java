@@ -15,21 +15,16 @@ package com.predic8.membrane.core.interceptor.oauth2client;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.interceptor.oauth2.OAuth2AnswerParameters;
 import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService;
-import com.predic8.membrane.core.interceptor.oauth2client.rf.OAuth2Exception;
 import com.predic8.membrane.core.interceptor.session.Session;
 import com.predic8.membrane.core.interceptor.session.SessionManager;
 import com.predic8.membrane.core.router.TestRouter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.time.LocalDateTime;
-import java.util.HashMap;
-
-import static com.predic8.membrane.core.http.Response.internalServerError;
-import static com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService.MEMBRANE_OAUTH2_SERVER_COMMUNICATION_ERROR;
-import static com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService.MEMBRANE_OAUTH2_SERVER_COMMUNICATION_ERROR_DESCRIPTION;
+import static com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService.communicationError;
+import static com.predic8.membrane.core.interceptor.oauth2client.OAuth2SessionFixtures.USERNAME;
+import static com.predic8.membrane.core.interceptor.oauth2client.OAuth2SessionFixtures.expiredSession;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -79,22 +74,15 @@ class OAuth2Resource2InterceptorTest {
     void unreachableAuthorizationServerKeepsTheSession() throws Exception {
         when(auth.refreshTokenRequest(any(), any(), anyString())).thenThrow(communicationError());
 
-        Session session = expiredButAuthenticatedSession();
+        Session session = expiredSession();
         Exchange exc = requestWith(session);
 
         oauth2.handleRequestInternal(exc);
 
         assertTrue(session.isVerified(), "an unreachable authorization server logged the user out");
-        assertEquals("alice", session.getUsername());
+        assertEquals(USERNAME, session.getUsername());
         assertFalse(session.get().isEmpty(), "the session was cleared");
         assertEquals(500, exc.getResponse().getStatusCode());
-    }
-
-    private static OAuth2Exception communicationError() {
-        return new OAuth2Exception(
-                MEMBRANE_OAUTH2_SERVER_COMMUNICATION_ERROR,
-                MEMBRANE_OAUTH2_SERVER_COMMUNICATION_ERROR_DESCRIPTION,
-                internalServerError().body(MEMBRANE_OAUTH2_SERVER_COMMUNICATION_ERROR_DESCRIPTION).build());
     }
 
     private static Exchange requestWith(Session session) throws Exception {
@@ -102,18 +90,5 @@ class OAuth2Resource2InterceptorTest {
         exc.setOriginalRequestUri("/foo");
         exc.setProperty(SessionManager.SESSION, session);
         return exc;
-    }
-
-    private static Session expiredButAuthenticatedSession() throws Exception {
-        OAuth2AnswerParameters params = new OAuth2AnswerParameters();
-        params.setAccessToken("expired-access-token");
-        params.setRefreshToken("the-refresh-token");
-        params.setExpiration("60");
-        params.setReceivedAt(LocalDateTime.now().minusHours(1));
-
-        Session session = new Session("username", new HashMap<>());
-        session.setOAuth2Answer(params.serialize());
-        session.authorize("alice");
-        return session;
     }
 }

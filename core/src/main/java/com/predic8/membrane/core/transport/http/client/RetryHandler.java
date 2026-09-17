@@ -87,16 +87,21 @@ public class RetryHandler {
     private boolean failOverOn5XX = false;
 
     /**
-     * Retry when establishing the connection timed out. Safe for any request method, because no part
-     * of the request was sent. Unlike a read timeout, this cannot have changed state on the server.
+     * Retry on {@link ConnectTimeoutException}, the timeout Membrane itself detects while establishing
+     * the connection. Safe for any request method, because no part of the request was sent. Unlike a
+     * read timeout, this cannot have changed state on the server.
+     * <p>
+     * A connect that runs into the operating system's own timeout arrives as a
+     * {@link java.net.ConnectException} instead and is governed by {@link #retryOnConnectFailure}.
      */
     private boolean retryOnConnectTimeout = true;
 
     /**
-     * Retry when the connection to the target was refused. Safe for any request method for the same
-     * reason as {@link #retryOnConnectTimeout}: the connection never came up, so no part of the request
-     * reached the server. A refusal is not necessarily permanent - a full accept queue answers with a
-     * reset on some platforms - so the next attempt can succeed against the very same node.
+     * Retry on {@link java.net.ConnectException}, which the JDK raises for every connect that did not
+     * come up: refused, host unreachable, or timed out in the operating system. Safe for any request
+     * method for the same reason as {@link #retryOnConnectTimeout}: no part of the request reached the
+     * server. Such a failure is not necessarily permanent - a full accept queue answers with a reset on
+     * some platforms - so the next attempt can succeed against the very same node.
      */
     private boolean retryOnConnectFailure = true;
 
@@ -372,10 +377,12 @@ public class RetryHandler {
 
     /**
      * @description If <code>true</code> retry when the connection to the target could not be
-     *              established within the connection timeout. No part of the request has been sent in
-     *              that case, so this applies to every request method, including POST and PATCH. A
-     *              timeout while reading the response is not covered by this and stays restricted to
-     *              idempotent methods. Set to <code>false</code> to fail fast instead.
+     *              established within the connection timeout Membrane applies itself. No part of the
+     *              request has been sent in that case, so this applies to every request method,
+     *              including POST and PATCH. A timeout while reading the response is not covered by
+     *              this and stays restricted to idempotent methods, and a connect that runs into the
+     *              operating system's own timeout is covered by
+     *              <code>retryOnConnectFailure</code> instead. Set to <code>false</code> to fail fast.
      * @default true
      */
     @MCAttribute
@@ -388,11 +395,12 @@ public class RetryHandler {
     }
 
     /**
-     * @description If <code>true</code> retry when the connection to the target was refused. Nothing
-     *              has been sent in that case, so this applies to every request method, including POST
-     *              and PATCH. A refusal can be transient, e.g. when the target's accept queue is
-     *              momentarily full, so the retry goes to the same node when there is only one. Set to
-     *              <code>false</code> to fail fast instead.
+     * @description If <code>true</code> retry when the connection to the target could not be
+     *              established at all: refused, host unreachable, or timed out in the operating system.
+     *              Nothing has been sent in that case, so this applies to every request method,
+     *              including POST and PATCH. Such a failure can be transient, e.g. when the target's
+     *              accept queue is momentarily full, so the retry goes to the same node when there is
+     *              only one. Set to <code>false</code> to fail fast instead.
      * @default true
      */
     @MCAttribute

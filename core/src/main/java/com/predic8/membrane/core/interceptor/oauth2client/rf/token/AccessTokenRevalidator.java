@@ -23,13 +23,19 @@ import com.predic8.membrane.core.interceptor.oauth2.OAuth2Statistics;
 import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService;
 import com.predic8.membrane.core.interceptor.oauth2client.rf.JsonUtils;
 import com.predic8.membrane.core.interceptor.session.Session;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import static com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService.communicationError;
+
 public class AccessTokenRevalidator {
+
+    private static final Logger log = LoggerFactory.getLogger(AccessTokenRevalidator.class);
 
     private final Cache<String, Boolean> validTokens = CacheBuilder.newBuilder()
             .expireAfterWrite(10, TimeUnit.MINUTES)
@@ -56,6 +62,13 @@ public class AccessTokenRevalidator {
     public Map<String, Object> revalidate(Session session, OAuth2Statistics statistics, String wantedScope) throws Exception {
         OAuth2AnswerParameters params = session.getOAuth2AnswerParameters(wantedScope);
         Response response = auth.requestUserEndpoint(params.getTokenType(), params.getAccessToken());
+
+        if (response.getStatusCode() >= 500) {
+            // The server is broken, the token is not. Returning null here would clear the session and
+            // log out every user whose token happened to be revalidated during the outage.
+            log.warn("User endpoint of the authorization server returned {}.", response.getStatusCode());
+            throw communicationError();
+        }
 
         if (response.getStatusCode() != 200) {
             statistics.accessTokenInvalid();

@@ -14,25 +14,21 @@
 
 package com.predic8.membrane.core.interceptor.oauth2client.rf.token;
 
-import com.predic8.membrane.core.interceptor.oauth2.OAuth2AnswerParameters;
 import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService;
 import com.predic8.membrane.core.interceptor.oauth2client.rf.OAuth2Exception;
 import com.predic8.membrane.core.interceptor.session.Session;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.time.LocalDateTime;
-import java.util.HashMap;
-
 import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService.MEMBRANE_OAUTH2_SERVER_COMMUNICATION_ERROR;
-import static com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService.MEMBRANE_OAUTH2_SERVER_COMMUNICATION_ERROR_DESCRIPTION;
-import static com.predic8.membrane.core.http.Response.internalServerError;
+import static com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService.communicationError;
+import static com.predic8.membrane.core.interceptor.oauth2client.OAuth2SessionFixtures.expiredSession;
+import static com.predic8.membrane.core.interceptor.oauth2client.OAuth2SessionFixtures.validSession;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 class AccessTokenRefresherTest {
 
@@ -63,6 +59,38 @@ class AccessTokenRefresherTest {
     }
 
     /**
+     * Every further request of the session would otherwise queue up on the refresh monitor and wait out
+     * its own connect timeout, so a down authorization server would cost one timeout per request and
+     * keep being hammered while it is already struggling.
+     */
+    @Test
+    void furtherRequestsFailFastWhileTheServerIsUnreachable() throws Exception {
+        when(auth.refreshTokenRequest(any(), any(), anyString())).thenThrow(communicationError());
+        Session session = expiredSession();
+
+        assertThrows(OAuth2Exception.class, () -> refresher.refreshIfNeeded(session, get("/foo").buildExchange()));
+        OAuth2Exception second = assertThrows(OAuth2Exception.class, () -> refresher.refreshIfNeeded(session, get("/foo").buildExchange()));
+
+        assertEquals(MEMBRANE_OAUTH2_SERVER_COMMUNICATION_ERROR, second.getError());
+        verify(auth, times(1)).refreshTokenRequest(any(), any(), anyString());
+        assertTrue(session.isVerified());
+    }
+
+    /**
+     * The backoff is per session, so one session running into the outage must not make another one
+     * fail without ever having asked.
+     */
+    @Test
+    void anotherSessionStillAsks() throws Exception {
+        when(auth.refreshTokenRequest(any(), any(), anyString())).thenThrow(communicationError());
+
+        assertThrows(OAuth2Exception.class, () -> refresher.refreshIfNeeded(expiredSession(), get("/foo").buildExchange()));
+        assertThrows(OAuth2Exception.class, () -> refresher.refreshIfNeeded(expiredSession(), get("/foo").buildExchange()));
+
+        verify(auth, times(2)).refreshTokenRequest(any(), any(), anyString());
+    }
+
+    /**
      * Anything else - a rejected refresh token above all - really does mean the session cannot be
      * refreshed, and restarting the flow is the way out.
      */
@@ -78,34 +106,11 @@ class AccessTokenRefresherTest {
 
     @Test
     void nothingHappensWhileTheTokenIsStillValid() throws Exception {
-        Session session = sessionWith("3600", LocalDateTime.now());
+        Session session = validSession();
 
         refresher.refreshIfNeeded(session, get("/foo").buildExchange());
 
         assertTrue(session.isVerified());
-    }
-
-    private static OAuth2Exception communicationError() {
-        return new OAuth2Exception(
-                MEMBRANE_OAUTH2_SERVER_COMMUNICATION_ERROR,
-                MEMBRANE_OAUTH2_SERVER_COMMUNICATION_ERROR_DESCRIPTION,
-                internalServerError().body(MEMBRANE_OAUTH2_SERVER_COMMUNICATION_ERROR_DESCRIPTION).build());
-    }
-
-    private static Session expiredSession() throws Exception {
-        return sessionWith("60", LocalDateTime.now().minusHours(1));
-    }
-
-    private static Session sessionWith(String expiresInSeconds, LocalDateTime receivedAt) throws Exception {
-        OAuth2AnswerParameters params = new OAuth2AnswerParameters();
-        params.setAccessToken("expired-access-token");
-        params.setRefreshToken("the-refresh-token");
-        params.setExpiration(expiresInSeconds);
-        params.setReceivedAt(receivedAt);
-
-        Session session = new Session("username", new HashMap<>());
-        session.setOAuth2Answer(params.serialize());
-        session.authorize("alice");
-        return session;
+        verifyNoInteractions(auth);
     }
 }

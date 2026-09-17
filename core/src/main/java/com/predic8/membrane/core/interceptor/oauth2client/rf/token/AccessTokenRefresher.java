@@ -30,7 +30,10 @@ import java.util.concurrent.ExecutionException;
 
 import static com.predic8.membrane.core.exchange.Exchange.OAUTH2;
 import static com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService.MEMBRANE_OAUTH2_SERVER_COMMUNICATION_ERROR;
+import static com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService.communicationError;
 import static com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2Interceptor.WANTED_SCOPE;
+import static java.lang.Boolean.TRUE;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class AccessTokenRefresher {
     private static final Logger log = LoggerFactory.getLogger(AccessTokenRefresher.class);
@@ -41,6 +44,20 @@ public class AccessTokenRefresher {
     // refreshTokenRequest holds it, letting a second thread acquire a different lock object.
     private final Cache<Session, Object> synchronizers = CacheBuilder.newBuilder()
             .weakKeys()
+            .build();
+
+    /**
+     * How long a session stops asking after the authorization server was found unreachable.
+     */
+    static final int UNREACHABLE_BACKOFF_SECONDS = 5;
+
+    // Marks the sessions whose last refresh ran into an unreachable authorization server. Without it
+    // every further request of such a session queues up on the monitor below and waits out its own
+    // connect timeout, so N pending requests cost N timeouts and keep hammering a server that is
+    // already down. An entry expires by itself, so the first request after the window tries again.
+    private final Cache<Session, Boolean> unreachable = CacheBuilder.newBuilder()
+            .weakKeys()
+            .expireAfterWrite(UNREACHABLE_BACKOFF_SECONDS, SECONDS)
             .build();
 
     private AuthorizationService auth;
@@ -54,6 +71,8 @@ public class AccessTokenRefresher {
     /**
      * @throws OAuth2Exception if the authorization server could not be reached. The session stays
      *                         authenticated in that case - see {@link #isUnreachable(OAuth2Exception)}.
+     *                         Further requests of the same session fail right away for
+     *                         {@link #UNREACHABLE_BACKOFF_SECONDS} seconds instead of asking again.
      */
     public void refreshIfNeeded(Session session, Exchange exc) throws OAuth2Exception {
         String wantedScope = exc.getProperty(WANTED_SCOPE, String.class);
@@ -61,24 +80,37 @@ public class AccessTokenRefresher {
             return;
         }
 
+        failFastWhileUnreachable(session);
+
         synchronized (getTokenSynchronizer(session)) {
             // a concurrent caller may have already refreshed the token
             // while this thread waited for the monitor.
             if (!refreshingOfAccessTokenIsNeeded(session, wantedScope)) {
                 return;
             }
+            failFastWhileUnreachable(session);
             try {
                 exc.setProperty(OAUTH2, refreshAccessToken(session, wantedScope));
+                unreachable.invalidate(session);
             } catch (Exception e) {
                 if (e instanceof OAuth2Exception oauth2 && isUnreachable(oauth2)) {
                     log.warn("Could not reach the authorization server to refresh the access token. " +
                              "Keeping the session, the request fails instead.", e);
+                    unreachable.put(session, TRUE);
                     throw oauth2;
                 }
                 log.warn("Failed to refresh access token, clearing session and restarting OAuth2 flow.", e);
                 session.clearAuthentication();
             }
         }
+    }
+
+    private void failFastWhileUnreachable(Session session) throws OAuth2Exception {
+        if (unreachable.getIfPresent(session) == null) {
+            return;
+        }
+        log.debug("Authorization server was unreachable within the last {} s, not asking again.", UNREACHABLE_BACKOFF_SECONDS);
+        throw communicationError();
     }
 
     private static boolean isUnreachable(OAuth2Exception e) {
