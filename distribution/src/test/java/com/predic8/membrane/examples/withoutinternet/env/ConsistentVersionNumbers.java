@@ -151,6 +151,11 @@ public class ConsistentVersionNumbers {
 
 		handleYamlSchemas(baseDirectory, versionTransformer);
 		handleDockerScripts(baseDirectory, versionTransformer);
+
+		// Registered by path rather than by filename: the other docker-compose.yml files
+		// in the tree (tutorials/operation/grafana, .../loki) start Prometheus/Grafana,
+		// not Membrane, and are none of this rewriter's business.
+		handleDockerScriptFile(new File(baseDirectory.getAbsolutePath(), "/distribution/router/docker-compose.yml"), versionTransformer);
 	}
 
 	private static void handleConstants(File file, VersionTransformer versionTransformer) throws Exception {
