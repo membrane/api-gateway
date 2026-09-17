@@ -92,6 +92,14 @@ public class RetryHandler {
      */
     private boolean retryOnConnectTimeout = true;
 
+    /**
+     * Retry when the connection to the target was refused. Safe for any request method for the same
+     * reason as {@link #retryOnConnectTimeout}: the connection never came up, so no part of the request
+     * reached the server. A refusal is not necessarily permanent - a full accept queue answers with a
+     * reset on some platforms - so the next attempt can succeed against the very same node.
+     */
+    private boolean retryOnConnectFailure = true;
+
     private static final Set<Integer> RETRYABLE_5XX = Set.of(500, 502, 503, 504, 507);
 
     /**
@@ -201,10 +209,12 @@ public class RetryHandler {
             log.debug("URI {} caused: {}", dest, e);
             return true;
         }
+        // The connection was refused, so nothing was sent and no state was changed on the server.
+        // Retrying is safe for any method, including POST. Has to be checked before SocketException,
+        // which it extends.
         if (e instanceof ConnectException) {
-            // Connection was not established, so no state was changed on server
             log.debug("Connection to {} refused.", dest);
-            return !hasMultipleNodes(exc);
+            return !retryOnConnectFailure;
         }
         // The connection was never established, so nothing was sent and no state was changed on the
         // server. Retrying is safe for any method. Causes: dropped SYN, host unreachable, a TLS
@@ -373,6 +383,23 @@ public class RetryHandler {
         this.retryOnConnectTimeout = retryOnConnectTimeout;
     }
 
+    public boolean isRetryOnConnectFailure() {
+        return retryOnConnectFailure;
+    }
+
+    /**
+     * @description If <code>true</code> retry when the connection to the target was refused. Nothing
+     *              has been sent in that case, so this applies to every request method, including POST
+     *              and PATCH. A refusal can be transient, e.g. when the target's accept queue is
+     *              momentarily full, so the retry goes to the same node when there is only one. Set to
+     *              <code>false</code> to fail fast instead.
+     * @default true
+     */
+    @MCAttribute
+    public void setRetryOnConnectFailure(boolean retryOnConnectFailure) {
+        this.retryOnConnectFailure = retryOnConnectFailure;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
@@ -382,7 +409,8 @@ public class RetryHandler {
                delay == that.delay &&
                Double.compare(backoffMultiplier, that.backoffMultiplier) == 0 &&
                Objects.equals(failOverOn5XX, that.failOverOn5XX) &&
-               retryOnConnectTimeout == that.retryOnConnectTimeout;
+               retryOnConnectTimeout == that.retryOnConnectTimeout &&
+               retryOnConnectFailure == that.retryOnConnectFailure;
     }
 
     @Override
@@ -392,6 +420,7 @@ public class RetryHandler {
         result = 31 * result + Double.hashCode(backoffMultiplier);
         result = 31 * result + Boolean.hashCode(failOverOn5XX);
         result = 31 * result + Boolean.hashCode(retryOnConnectTimeout);
+        result = 31 * result + Boolean.hashCode(retryOnConnectFailure);
         return result;
     }
 }

@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.oauth2client.rf.token;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AnswerParameters;
 import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService;
+import com.predic8.membrane.core.interceptor.oauth2client.rf.OAuth2Exception;
 import com.predic8.membrane.core.interceptor.session.Session;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -25,6 +26,7 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 
 import static com.predic8.membrane.core.exchange.Exchange.OAUTH2;
+import static com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService.MEMBRANE_OAUTH2_SERVER_COMMUNICATION_ERROR;
 import static com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2Interceptor.WANTED_SCOPE;
 
 public class AccessTokenRefresher {
@@ -59,7 +61,11 @@ public class AccessTokenRefresher {
         this.onlyRefreshToken = onlyRefreshToken;
     }
 
-    public void refreshIfNeeded(Session session, Exchange exc) {
+    /**
+     * @throws OAuth2Exception if the authorization server could not be reached. The session stays
+     *                         authenticated in that case - see {@link #isUnreachable(Exception)}.
+     */
+    public void refreshIfNeeded(Session session, Exchange exc) throws OAuth2Exception {
         String wantedScope = exc.getProperty(WANTED_SCOPE, String.class);
         if (!refreshingOfAccessTokenIsNeeded(session, wantedScope)) {
             return;
@@ -74,10 +80,19 @@ public class AccessTokenRefresher {
             try {
                 exc.setProperty(OAUTH2, refreshAccessToken(session, wantedScope));
             } catch (Exception e) {
+                if (e instanceof OAuth2Exception oauth2 && isUnreachable(oauth2)) {
+                    log.warn("Could not reach the authorization server to refresh the access token. " +
+                             "Keeping the session, the request fails instead.", e);
+                    throw oauth2;
+                }
                 log.warn("Failed to refresh access token, clearing session and restarting OAuth2 flow.", e);
                 session.clearAuthentication();
             }
         }
+    }
+
+    private static boolean isUnreachable(OAuth2Exception e) {
+        return MEMBRANE_OAUTH2_SERVER_COMMUNICATION_ERROR.equals(e.getError());
     }
 
     private OAuth2AnswerParameters refreshAccessToken(Session session, String wantedScope) throws Exception {
