@@ -15,19 +15,28 @@
 
 package com.predic8.membrane.core.http;
 
-import com.predic8.membrane.core.util.*;
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.params.*;
-import org.junit.jupiter.params.provider.*;
+import com.predic8.membrane.core.util.EndOfStreamException;
+import com.predic8.membrane.core.util.StringTestUtil;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
-import java.io.*;
-import java.util.stream.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.stream.Stream;
 
-import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.MimeType.TEXT_HTML;
+import static com.predic8.membrane.core.http.MimeType.isOfMediaType;
 import static com.predic8.membrane.core.http.Response.*;
-import static com.predic8.membrane.test.TestUtil.*;
+import static com.predic8.membrane.test.TestUtil.getResourceAsStream;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.params.provider.Arguments.*;
+import static org.junit.jupiter.params.provider.Arguments.of;
 
 public class ResponseTest {
 
@@ -235,7 +244,7 @@ public class ResponseTest {
             of(gatewayTimeout("ABC"), 504, "Gateway Timeout", true),
             of(redirect("ABC", 307), 307, "Temporary Redirect", true),
             of(redirect("ABC", 301), 301, "Moved Permanently", true),
-            of(statusCode(999), 999, "", false)
+            of(statusCode(999), 999, "Unknown", false)
         );
     }
 
