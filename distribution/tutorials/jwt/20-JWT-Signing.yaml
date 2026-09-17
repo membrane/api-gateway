@@ -14,7 +14,12 @@
 #   - Exchange a token for a different token (e.g. Basic Auth with a JWT, a JWT for a different JWT, ...)
 #
 # 1.) Start Membrane:
-#     ./membrane.sh -c 20-JWT-Signing.yaml
+#     with Docker:
+#       ./run-docker.sh -c 20-JWT-Signing.yaml   (Linux/Mac)
+#       run-docker.cmd -c 20-JWT-Signing.yaml    (Windows)
+#     or with Java:
+#       ./membrane.sh -c 20-JWT-Signing.yaml     (Linux/Mac)
+#       membrane.cmd -c 20-JWT-Signing.yaml      (Windows)
 #
 # 2.) Request a token with Basic Auth:
 #     curl -v localhost:2000/token -u "alice:alice-secret"

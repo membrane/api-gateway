@@ -14,8 +14,11 @@
 
 package com.predic8.membrane.core.util;
 
-import java.io.*;
-import java.net.*;
+import java.io.IOException;
+import java.net.Inet4Address;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.UnknownHostException;
 
 import static java.lang.Integer.parseInt;
 import static java.net.InetAddress.getByAddress;
@@ -61,6 +64,14 @@ public class NetworkUtil {
             return s.substring(1, s.length() - 1).trim();
         }
         return s;
+    }
+
+    /**
+     * Wraps a bare IPv6 literal in square brackets, so it can be used as a URI authority.
+     * IPv4 literals, hostnames, and already-bracketed addresses are left unchanged.
+     */
+    public static String addBracketsIfIPv6(String host) {
+        return (host.contains(":") && !host.startsWith("[")) ? "[" + host + "]" : host;
     }
 
 

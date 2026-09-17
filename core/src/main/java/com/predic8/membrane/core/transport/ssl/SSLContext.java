@@ -39,7 +39,9 @@ import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPrivateCrtKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.ECFieldFp;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 
 public abstract class SSLContext implements SSLProvider {
     private static final Logger log = LoggerFactory.getLogger(SSLContext.class.getName());
@@ -96,7 +98,7 @@ public abstract class SSLContext implements SSLProvider {
             throw new RuntimeException("Invalid value '"+sslParser.getClientAuth()+"' in clientAuth: expected 'want', 'need' or not set.");
         }
 
-        endpointIdentificationAlgorithm = sslParser.getEndpointIdentificationAlgorithm();
+        endpointIdentificationAlgorithm = sslParser.isInsecureValidation() ? "" : sslParser.getEndpointIdentificationAlgorithm();
         useHttp2 = sslParser.isUseExperimentalHttp2();
     }
 

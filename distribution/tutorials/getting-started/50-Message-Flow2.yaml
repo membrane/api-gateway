@@ -7,7 +7,12 @@
 # fine-grained control over its execution.
 #
 # 1.) Start Membrane:
-#     ./membrane.sh -c 50-Message-Flow2.yaml
+#     with Docker:
+#       ./run-docker.sh -c 50-Message-Flow2.yaml   (Linux/Mac)
+#       run-docker.cmd -c 50-Message-Flow2.yaml    (Windows)
+#     or with Java:
+#       ./membrane.sh -c 50-Message-Flow2.yaml     (Linux/Mac)
+#       membrane.cmd -c 50-Message-Flow2.yaml      (Windows)
 #
 # 2.) Call the API:
 #     curl localhost:2000

@@ -3,7 +3,12 @@
 # Tutorial: Path Parameters
 #
 # 1.) Start Membrane:
-#     ./membrane.sh -c 10-PathParameters.yaml
+#     with Docker:
+#       ./run-docker.sh -c 10-PathParameters.yaml   (Linux/Mac)
+#       run-docker.cmd -c 10-PathParameters.yaml    (Windows)
+#     or with Java:
+#       ./membrane.sh -c 10-PathParameters.yaml     (Linux/Mac)
+#       membrane.cmd -c 10-PathParameters.yaml      (Windows)
 #
 # 2.) Call the API:
 #     curl localhost:2000/customer/7/account/55

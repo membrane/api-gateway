@@ -9,8 +9,12 @@
 # JVM, TLS, secrets, logging and rollout.
 #
 # 1.) Start Membrane:
-#       Linux/Mac:  ./membrane.sh -c 70-Production-Settings.yaml
-#       Windows:    membrane.cmd  -c 70-Production-Settings.yaml
+#     with Docker:
+#       ./run-docker.sh -c 70-Production-Settings.yaml   (Linux/Mac)
+#       run-docker.cmd -c 70-Production-Settings.yaml    (Windows)
+#     or with Java:
+#       ./membrane.sh -c 70-Production-Settings.yaml     (Linux/Mac)
+#       membrane.cmd -c 70-Production-Settings.yaml      (Windows)
 #
 # 2.) Call the hardened API and inspect the security header:
 #       curl -i http://localhost:2000/orders

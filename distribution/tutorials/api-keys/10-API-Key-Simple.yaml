@@ -6,7 +6,12 @@
 # Keys are passed via the X-Api-Key HTTP header.
 #
 # 1.) Start Membrane:
-#     ./membrane.sh -c 10-API-Key-Simple.yaml
+#     with Docker:
+#       ./run-docker.sh -c 10-API-Key-Simple.yaml   (Linux/Mac)
+#       run-docker.cmd -c 10-API-Key-Simple.yaml    (Windows)
+#     or with Java:
+#       ./membrane.sh -c 10-API-Key-Simple.yaml     (Linux/Mac)
+#       membrane.cmd -c 10-API-Key-Simple.yaml      (Windows)
 #
 # 2.) No API key → 401:
 #     curl -i localhost:2000

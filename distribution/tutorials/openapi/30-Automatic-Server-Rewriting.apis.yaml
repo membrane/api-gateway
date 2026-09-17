@@ -12,7 +12,7 @@
 #           - url: https://api.predic8.de/shop/v2
 #
 # 2.) Start Membrane:
-#     ./membrane.sh -c 10-Automatic-Server-Rewriting.apis.yaml
+#     ./membrane.sh -c 30-Automatic-Server-Rewriting.apis.yaml
 #
 # 3.) Fetch the document Membrane serves:
 #     curl localhost:2000/api-docs/minimal-shop-api-v2-0
