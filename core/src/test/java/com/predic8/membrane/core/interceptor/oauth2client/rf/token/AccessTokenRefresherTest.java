@@ -14,15 +14,23 @@
 
 package com.predic8.membrane.core.interceptor.oauth2client.rf.token;
 
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.oauth2.OAuth2AnswerParameters;
 import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService;
 import com.predic8.membrane.core.interceptor.oauth2client.rf.OAuth2Exception;
 import com.predic8.membrane.core.interceptor.session.Session;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalDateTime;
+import java.util.HashMap;
+
 import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService.MEMBRANE_OAUTH2_SERVER_COMMUNICATION_ERROR;
 import static com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService.communicationError;
+import static com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2Interceptor.WANTED_SCOPE;
+import static com.predic8.membrane.core.interceptor.oauth2client.OAuth2SessionFixtures.REFRESH_TOKEN;
+import static com.predic8.membrane.core.interceptor.oauth2client.OAuth2SessionFixtures.USERNAME;
 import static com.predic8.membrane.core.interceptor.oauth2client.OAuth2SessionFixtures.expiredSession;
 import static com.predic8.membrane.core.interceptor.oauth2client.OAuth2SessionFixtures.validSession;
 import static org.junit.jupiter.api.Assertions.*;
@@ -106,6 +114,30 @@ class AccessTokenRefresherTest {
         refresher.refreshIfNeeded(session, get("/foo").buildExchange());
 
         assertFalse(session.isVerified());
+    }
+
+    /**
+     * A scoped request on a session that carries no answer under the default key. Deriving the backoff
+     * key happens outside the try block, so it must not deserialize that missing default answer: doing
+     * so throws past the handler and turns a failed refresh into an error escaping the interceptor.
+     */
+    @Test
+    void scopedSessionWithoutADefaultAnswerDoesNotEscape() throws Exception {
+        OAuth2AnswerParameters params = new OAuth2AnswerParameters();
+        params.setAccessToken(null);
+        params.setRefreshToken(REFRESH_TOKEN);
+        params.setExpiration("60");
+        params.setReceivedAt(LocalDateTime.now().minusHours(1));
+
+        Session session = new Session("username", new HashMap<>());
+        session.setOAuth2Answer("the-scope", params.serialize());
+        session.authorize(USERNAME);
+
+        Exchange exc = get("/foo").buildExchange();
+        exc.setProperty(WANTED_SCOPE, "the-scope");
+
+        assertDoesNotThrow(() -> refresher.refreshIfNeeded(session, exc));
+        assertFalse(session.isVerified(), "the failed refresh should have cleared the authentication");
     }
 
     @Test
