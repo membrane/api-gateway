@@ -53,7 +53,7 @@ public class AccessTokenRefresher {
 
     /**
      * @throws OAuth2Exception if the authorization server could not be reached. The session stays
-     *                         authenticated in that case - see {@link #isUnreachable(Exception)}.
+     *                         authenticated in that case - see {@link #isUnreachable(OAuth2Exception)}.
      */
     public void refreshIfNeeded(Session session, Exchange exc) throws OAuth2Exception {
         String wantedScope = exc.getProperty(WANTED_SCOPE, String.class);
