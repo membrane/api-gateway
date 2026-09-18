@@ -53,6 +53,20 @@ public class JDBCApiKeyStorePerformanceTest {
         jdbcApiKeyStore.init(new Router());
     }
 
+    @AfterEach
+    void tearDown() throws SQLException {
+        connection.close();
+        try {
+            dataSource.setShutdownDatabase("shutdown");
+            dataSource.getConnection().close();
+        } catch (SQLException e) {
+            // Derby signals a successful shutdown by throwing SQLState 08006
+            if (!"08006".equals(e.getSQLState())) {
+                throw e;
+            }
+        }
+    }
+
     @Test
     public void createTableIfNotExistsTest() throws SQLException {
         assertTrue(tableExists(connection, jdbcApiKeyStore.getKeyTable().getName()));
