@@ -14,35 +14,41 @@
 
 package com.predic8.membrane.core.lang;
 
-import com.fasterxml.jackson.databind.*;
-import com.jayway.jsonpath.*;
-import com.predic8.membrane.core.config.xml.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jayway.jsonpath.JsonPath;
+import com.predic8.membrane.core.config.xml.XmlConfig;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.interceptor.AbstractInterceptorWithSession;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
-import com.predic8.membrane.core.security.*;
-import com.predic8.membrane.core.util.text.*;
-import com.predic8.membrane.core.util.xml.*;
-import com.predic8.membrane.core.util.xml.parser.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.security.BasicHttpSecurityScheme;
+import com.predic8.membrane.core.security.SecurityScheme;
+import com.predic8.membrane.core.util.text.SerializationUtil;
+import com.predic8.membrane.core.util.xml.XMLInputSourceUtil;
+import com.predic8.membrane.core.util.xml.XPathUtil;
+import com.predic8.membrane.core.util.xml.parser.HardenedXmlParser;
+import com.predic8.membrane.core.util.xml.parser.XmlParser;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.xml.namespace.*;
-import javax.xml.xpath.*;
-import java.net.*;
-import java.util.*;
-import java.util.concurrent.*;
+import javax.xml.namespace.QName;
+import javax.xml.xpath.XPathExpressionException;
+import java.net.URLEncoder;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Predicate;
 
-import static com.predic8.membrane.core.exchange.Exchange.*;
-import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.exchange.Exchange.SECURITY_SCHEMES;
+import static com.predic8.membrane.core.http.Header.AUTHORIZATION;
 import static com.predic8.membrane.core.util.text.SerializationFunction.JSON_SERIALIZATION;
-import static java.lang.System.*;
-import static java.nio.charset.StandardCharsets.*;
-import static java.util.Collections.*;
-import static java.util.Objects.*;
+import static java.lang.System.getenv;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Collections.emptyList;
+import static java.util.Objects.requireNonNull;
 import static javax.xml.xpath.XPathConstants.*;
 
 /**
@@ -92,7 +98,7 @@ public class CommonBuiltInFunctions {
         try {
             return XPathUtil.newXPath(cfg).evaluate(
                     expression,
-                    parser.parse(XMLUtil.getInputSource(message)),
+                    parser.parse(XMLInputSourceUtil.getInputSource(message)),
                     guessReturnType(expression)
             );
         } catch (XPathExpressionException ignored) {

@@ -45,6 +45,8 @@ import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.Wsdl2OpenApiConverter.ApiInfo;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.camelToKebab;
 import static com.predic8.membrane.test.TestUtil.getPathFromResource;
+import static java.nio.charset.StandardCharsets.UTF_16;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
@@ -677,6 +679,21 @@ class Wsdl2OpenapiInterceptorTest {
     void contentTypeCharsetWinsOverAContradictingXmlDeclaration() throws Exception {
         var response = transformGetCityResponse(GET_CITY_RESPONSE_WITH_XML_DECLARATION, "ISO-8859-1",
                 "text/xml; charset=ISO-8859-1", Outcome.CONTINUE);
+
+        assertEquals("Österreich", new ObjectMapper().readTree(response.getBodyAsStringDecoded())
+                .get("country").asText());
+    }
+
+    /**
+     * A byte order mark identifies the byte-stream encoding, so it must win over a contradicting
+     * Content-Type charset instead of being forced into a decoding that cannot parse the bytes.
+     * Regression test for https://github.com/membrane/api-gateway/issues/3279.
+     */
+    @Test
+    void bomWinsOverAContradictingContentTypeCharset() throws Exception {
+        var response = transformGetCityResponse(
+                GET_CITY_RESPONSE_WITH_XML_DECLARATION.replace(UTF_8.name(), UTF_16.name()),
+                UTF_16.name(), "text/xml; charset=ISO-8859-1", Outcome.CONTINUE);
 
         assertEquals("Österreich", new ObjectMapper().readTree(response.getBodyAsStringDecoded())
                 .get("country").asText());

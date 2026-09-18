@@ -22,7 +22,7 @@ import com.predic8.membrane.core.interceptor.XMLSupport;
 import com.predic8.membrane.core.lang.AbstractExchangeExpression;
 import com.predic8.membrane.core.lang.ExchangeExpressionException;
 import com.predic8.membrane.core.router.Router;
-import com.predic8.membrane.core.util.xml.XMLUtil;
+import com.predic8.membrane.core.util.xml.XMLInputSourceUtil;
 import com.predic8.membrane.core.util.xml.XPathUtil;
 import com.predic8.membrane.core.util.xml.parser.HardenedXmlParser;
 import com.predic8.membrane.core.util.xml.parser.XmlParser;
@@ -112,15 +112,15 @@ public class XPathExchangeExpression extends AbstractExchangeExpression {
 
         try {
             if (xmlType == null) {
-                return xPath.evaluateExpression(expression, parser.parse(XMLUtil.getInputSource(msg)));
+                return xPath.evaluateExpression(expression, parser.parse(XMLInputSourceUtil.getInputSource(msg)));
             }
             try {
                 // Depending on the xpath it is not always possible to set it to specified xmlType
                 // e.g., xmlType=NodeSet xpath=string(//city)
-                return xPath.evaluate(expression, parser.parse(XMLUtil.getInputSource(msg)), xmlType);
+                return xPath.evaluate(expression, parser.parse(XMLInputSourceUtil.getInputSource(msg)), xmlType);
             } catch (XPathExpressionException e) {
                 log.debug("XPath expression failed. Trying again without type.", e);
-                return xPath.evaluateExpression(expression, parser.parse(XMLUtil.getInputSource(msg)));
+                return xPath.evaluateExpression(expression, parser.parse(XMLInputSourceUtil.getInputSource(msg)));
             }
         } catch (RuntimeException e) {
             // Parser errors may escape as unchecked exceptions.
