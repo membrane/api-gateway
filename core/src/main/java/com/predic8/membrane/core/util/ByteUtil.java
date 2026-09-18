@@ -14,12 +14,17 @@
 
 package com.predic8.membrane.core.util;
 
-import com.predic8.membrane.core.http.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.http.Chunk;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.util.*;
-import java.util.zip.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.zip.DataFormatException;
+import java.util.zip.Inflater;
 
 public class ByteUtil {
 
@@ -61,6 +66,24 @@ public class ByteUtil {
 			} catch (DataFormatException e) {
 				throw new IOException(e);
 			}
+			// Zero output is valid when the stream has finished (including an empty body).
+			// Otherwise, retrying without new input or a dictionary can loop forever.
+			if (count == 0 && !decompressor.finished()) {
+				// A preset dictionary contains bytes shared by compressor and decoder in advance.
+				// Defensive check: raw deflate has no header identifying a required dictionary.
+				if (decompressor.needsDictionary()) {
+					log.info("Deflate stream requires a preset dictionary.");
+					throw new IOException("Deflate stream requires a preset dictionary.");
+				}
+				// The complete compressed body was supplied, so no more input can arrive.
+				if (decompressor.needsInput()) {
+					log.info("Truncated deflate stream.");
+					throw new IOException("Truncated deflate stream.");
+				}
+				// Reject any other stalled state instead of retrying indefinitely.
+				log.info("Deflate decompression made no progress.");
+				throw new IOException("Deflate decompression made no progress.");
+			}
 			if (buf.length == count) {
 				Chunk chunk = new Chunk(buf);
 				chunks.add(chunk);
@@ -78,7 +101,7 @@ public class ByteUtil {
 			ByteArrayOutputStream bos = new ByteArrayOutputStream();
 
 			for (Chunk chunk : chunks) {
-				chunk.write(bos);
+				bos.write(chunk.content());
 			}
 			return bos.toByteArray();
 		}

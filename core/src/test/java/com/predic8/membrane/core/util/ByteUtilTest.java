@@ -15,12 +15,21 @@
 
 package com.predic8.membrane.core.util;
 
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.time.Duration;
+import java.util.Arrays;
+import java.util.zip.Deflater;
 
-import static com.predic8.membrane.core.Constants.*;
-import static com.predic8.membrane.core.util.ByteUtil.*;
+import static com.predic8.membrane.core.Constants.CRLF;
+import static com.predic8.membrane.core.util.ByteUtil.getDecompressedData;
+import static com.predic8.membrane.core.util.ByteUtil.readByteArray;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ByteUtilTest {
@@ -51,5 +60,40 @@ public class ByteUtilTest {
 	@Test
 	public void testReadByteArray2() throws IOException {
 		assertArrayEquals(readByteArray(in2, message2.length()), message2.getBytes());
+	}
+
+	@Test
+	void validDeflateBodyReturnsOnlyDecompressedBytes() throws IOException {
+		// Regression: chunk.write() added HTTP chunk framing, e.g. "7\r\npayload\r\n".
+		// Decoding must return only the original bytes, including for empty and multi-buffer bodies.
+		for (String content : new String[]{"", "payload", "x".repeat(4096)}) {
+			assertArrayEquals(content.getBytes(UTF_8), getDecompressedData(rawDeflate(content)));
+		}
+	}
+
+	/**
+	 * A truncated raw deflate body leaves {@link java.util.zip.Inflater} unfinished and needing
+	 * input. ByteUtil must reject it instead of repeatedly calling inflate() with no progress.
+	 */
+	@Test
+	void truncatedDeflateBodyDoesNotLoopForever() {
+		byte[] compressed = rawDeflate("payload");
+		byte[] truncated = Arrays.copyOf(compressed, compressed.length - 1);
+
+		assertTimeoutPreemptively(Duration.ofSeconds(1), () ->
+				assertThrows(IOException.class, () -> getDecompressedData(truncated)));
+	}
+
+	private static byte[] rawDeflate(String value) {
+		var deflater = new Deflater(Deflater.DEFAULT_COMPRESSION, true);
+		try {
+			deflater.setInput(value.getBytes(UTF_8));
+			deflater.finish();
+			byte[] compressed = new byte[128];
+			int length = deflater.deflate(compressed);
+			return Arrays.copyOf(compressed, length);
+		} finally {
+			deflater.end();
+		}
 	}
 }
