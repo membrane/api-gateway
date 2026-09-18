@@ -1,0 +1,4 @@
+# Regenerated fresh by deploy-and-run.sh on every run -- never vendored/committed.
+client-libs/
+conf/resolved/
+*.log
