@@ -71,7 +71,13 @@ public abstract class OAuth2ResourceB2CIntegrationTest extends OAuth2ResourceB2C
             String uuid = UUID.randomUUID().toString();
             var excCallResource2 = browser.apply(get(tc.getClientAddress() + "/api/" + uuid));
 
-            var body = om.readValue(excCallResource2.getResponse().getBodyAsStringDecoded(), Map.class);
+            // An OAuth2 problem - a CSRF failure, say - comes back as a plain-text body, which would
+            // otherwise surface only as a JSON parse error naming its first word.
+            String responseBody = excCallResource2.getResponse().getBodyAsStringDecoded();
+            assertEquals(200, excCallResource2.getResponse().getStatusCode(),
+                    () -> "unexpected response: " + responseBody);
+
+            var body = om.readValue(responseBody, Map.class);
             String path = (String) body.get("path");
             assertEquals("/api/" + uuid, path);
             synchronized (accessTokens) {
