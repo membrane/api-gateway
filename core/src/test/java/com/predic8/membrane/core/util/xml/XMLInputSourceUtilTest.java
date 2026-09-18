@@ -80,4 +80,30 @@ class XMLInputSourceUtilTest {
         assertNull(source.getEncoding());
     }
 
+    /**
+     * The BOM peek must fill its buffer across multiple reads, not assume one read(byte[])
+     * call returns every byte requested - a stream delivering one byte at a time (as some
+     * network streams do) must still be recognized as starting with a BOM.
+     */
+    @Test
+    void bomIsDetectedWhenStreamReturnsOneByteAtATime() {
+        byte[] utf16WithBom = GREETING_XML.getBytes(UTF_16);
+
+        InputSource source = XMLInputSourceUtil.getInputSource(new OneByteAtATimeInputStream(utf16WithBom), ISO_8859_1.name());
+
+        Document doc = HardenedXmlParser.getInstance().parse(source);
+        assertEquals("Österreich", doc.getDocumentElement().getTextContent());
+    }
+
+    private static class OneByteAtATimeInputStream extends ByteArrayInputStream {
+        OneByteAtATimeInputStream(byte[] buf) {
+            super(buf);
+        }
+
+        @Override
+        public int read(byte[] b, int off, int len) {
+            return super.read(b, off, len == 0 ? 0 : 1);
+        }
+    }
+
 }

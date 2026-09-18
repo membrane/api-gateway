@@ -58,7 +58,14 @@ public class XMLInputSourceUtil {
         PushbackInputStream pushbackBody = new PushbackInputStream(body, BOM_PREFIX_LENGTH);
         byte[] prefix = new byte[BOM_PREFIX_LENGTH];
         try {
-            int prefixLength = Math.max(pushbackBody.read(prefix), 0);
+            int prefixLength = 0;
+            while (prefixLength < prefix.length) {
+                int read = pushbackBody.read(prefix, prefixLength, prefix.length - prefixLength);
+                if (read < 0) {
+                    break;
+                }
+                prefixLength += read;
+            }
             if (prefixLength > 0) {
                 pushbackBody.unread(prefix, 0, prefixLength);
             }
