@@ -17,6 +17,7 @@ package com.predic8.membrane.core.lang;
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.config.xml.*;
 import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.XmlDomBody;
 import com.predic8.membrane.core.security.*;
 import org.junit.jupiter.api.*;
 import org.w3c.dom.*;
@@ -76,6 +77,35 @@ class CommonBuiltInFunctionsTest {
         } else {
             fail();
         }
+    }
+
+    @Test
+    void xpathReusesTheCachedDocumentAcrossCalls() throws URISyntaxException {
+        var message = post("/foo").xml("<person name='Fritz'><nick>Fritzchen</nick></person>").build();
+
+        CommonBuiltInFunctions.xpath("string(/person/@name)", message, null);
+        assertInstanceOf(XmlDomBody.class, message.getBody());
+        var firstBody = message.getBody();
+
+        CommonBuiltInFunctions.xpath("string(/person/nick)", message, null);
+        assertSame(firstBody, message.getBody());
+    }
+
+    @Test
+    void xpathResolvesNamespacesFromXmlConfigOnMessage() throws Exception {
+        XmlConfig cfg = new XmlConfig();
+        Namespaces namespaces = new Namespaces();
+        Namespaces.Namespace ns = new Namespaces.Namespace();
+        ns.setPrefix("f");
+        ns.setUri("https://predic8.de/fruits");
+        namespaces.setNamespaces(List.of(ns));
+        cfg.setNamespaces(namespaces);
+
+        var message = post("/foo")
+                .xml("<f:root xmlns:f=\"https://predic8.de/fruits\"><f:name>Apricot</f:name></f:root>")
+                .build();
+
+        assertEquals("Apricot", CommonBuiltInFunctions.xpath("string(//f:root/f:name)", message, cfg));
     }
 
     @Test

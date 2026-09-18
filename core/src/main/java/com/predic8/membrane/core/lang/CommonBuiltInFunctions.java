@@ -24,7 +24,6 @@ import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.security.*;
 import com.predic8.membrane.core.util.text.*;
 import com.predic8.membrane.core.util.xml.*;
-import com.predic8.membrane.core.util.xml.parser.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 import org.slf4j.Logger;
@@ -54,8 +53,6 @@ public class CommonBuiltInFunctions {
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
-    private static final XmlParser parser = HardenedXmlParser.getInstance();
-
     public static Object jsonPath(String jsonPath, Message msg) {
         try {
             return JsonPath.read(objectMapper.readValue(msg.getBodyAsStringDecoded(), Map.class), jsonPath);
@@ -65,22 +62,21 @@ public class CommonBuiltInFunctions {
     }
 
     public static String toJSON(Object o) {
-       return JSON_SERIALIZATION.apply(o);
+        return JSON_SERIALIZATION.apply(o);
     }
 
     /**
      * <p>
-     * The message body is parsed into a DOM {@link org.w3c.dom.Document} and the
-     * XPath expression is evaluated against that document as the root context.
+     * The XPath expression is evaluated against the message's document, which is parsed only once
+     * and cached on the message via {@link XmlDomBody}, so other XML-aware evaluations/interceptors
+     * in the same exchange reuse it instead of re-parsing the body.
      * </p>
      * <p>
      * This variant is intended for full-document XPath expressions such as
      * {@code //fruit}, {@code string(//name)}, or {@code count(//item)}.
      * </p>
      * <p>
-     * Namespace support is currently not configured. The commented code below is
-     * intentionally kept as a reminder to re-enable namespace handling once the
-     * XML configuration can be obtained from the new registry.
+     * Namespace prefixes used in the expression are resolved from {@code cfg}, if given.
      * </p>
      *
      * @param expression the XPath expression to evaluate
@@ -90,14 +86,19 @@ public class CommonBuiltInFunctions {
      */
     public static Object xpath(String expression, Message message, XmlConfig cfg) {
         try {
-            return XPathUtil.newXPath(cfg).evaluate(
+            return XmlDomBody.xpath(
+                    message,
                     expression,
-                    parser.parse(XMLUtil.getInputSource(message)),
+                    getNamespaces(cfg),
                     guessReturnType(expression)
             );
         } catch (XPathExpressionException ignored) {
             return null;
         }
+    }
+
+    private static @Nullable NamespaceContext getNamespaces(XmlConfig cfg) {
+        return cfg != null && cfg.getNamespaces() != null ? cfg.getNamespaces().getNamespaceContext() : null;
     }
 
     /**
@@ -142,9 +143,9 @@ public class CommonBuiltInFunctions {
         expr = expr.trim();
         return expr.startsWith("string(") || expr.startsWith("normalize-space(") ? STRING
                 : expr.startsWith("count(") || expr.startsWith("number(") ? NUMBER
-                : expr.startsWith("boolean(") ? BOOLEAN
-                : expr.startsWith(".") && !expr.contains("//") ? NODE
-                : NODESET;
+                  : expr.startsWith("boolean(") ? BOOLEAN
+                    : expr.startsWith(".") && !expr.contains("//") ? NODE
+                      : NODESET;
     }
 
     public static String user(Exchange exchange) {
@@ -191,7 +192,7 @@ public class CommonBuiltInFunctions {
 
     public static boolean isBearerAuthorization(Exchange exc) {
         return exc.getRequest().getHeader().contains(AUTHORIZATION)
-               && exc.getRequest().getHeader().getFirstValue(AUTHORIZATION).startsWith("Bearer");
+                && exc.getRequest().getHeader().getFirstValue(AUTHORIZATION).startsWith("Bearer");
     }
 
     private static List<String> getSchemeScopes(Predicate<SecurityScheme> predicate, Exchange exc) {
