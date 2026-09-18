@@ -164,6 +164,8 @@ public class Target implements XMLSupport {
     }
 
     public int getPort() {
+        if (port == -1)
+            return sslParser != null ? 443 : 80;
         return port;
     }
 
