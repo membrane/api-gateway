@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.http;
 
+import com.predic8.membrane.core.util.xml.XMLInputSourceUtil;
 import com.predic8.membrane.core.util.xml.XMLUtil;
 import com.predic8.membrane.core.util.xml.XPathUtil;
 import com.predic8.membrane.core.util.xml.parser.HardenedXmlParser;
@@ -210,17 +211,13 @@ public class XmlDomBody extends AbstractBody {
     }
 
     /**
-     * Parses bytes the caller already read, so the {@code Content-Type} charset has to be applied
-     * here explicitly instead of via {@link XMLUtil#getInputSource(Message)}, which reads the
-     * message's body stream itself. Per RFC 7303 that charset takes precedence over the XML
-     * declaration, so it must win over the SAX parser's own detection.
+     * Parses bytes the caller already read, so this goes through
+     * {@link XMLInputSourceUtil#getInputSource(InputStream, String)} directly instead of
+     * {@link XMLInputSourceUtil#getInputSource(Message)}, which would re-read the message's body stream.
+     * The Content-Type charset and byte order mark are reconciled the same way either path.
      */
     private static Document parse(Message msg, byte[] content) {
-        InputSource source = new InputSource(new ByteArrayInputStream(content));
-        String charset = msg.getHeader().getCharset();
-        if (charset != null) {
-            source.setEncoding(charset);
-        }
+        InputSource source = XMLInputSourceUtil.getInputSource(new ByteArrayInputStream(content), msg.getHeader().getCharset());
         return HardenedXmlParser.getInstance().parse(source);
     }
 
@@ -255,12 +252,12 @@ public class XmlDomBody extends AbstractBody {
      * second array. The stream is closed because for a gzip or brotli body it holds a native
      * decompressor, which is then released here instead of whenever the Cleaner gets to it.
      * <p>
-     * {@link XMLUtil#getInputSource(Message)} builds the {@link InputSource}, so the
+     * {@link XMLInputSourceUtil#getInputSource(Message)} builds the {@link InputSource}, so the
      * {@code Content-Type} charset takes precedence over the XML declaration here the same way it
      * does for every other XPath/XML consumer of a {@link Message}.
      */
     private static Document parseDecoded(Message msg) {
-        InputSource source = XMLUtil.getInputSource(msg);
+        InputSource source = XMLInputSourceUtil.getInputSource(msg);
         try (InputStream in = source.getByteStream()) {
             return HardenedXmlParser.getInstance().parse(source);
         } catch (IOException e) {
