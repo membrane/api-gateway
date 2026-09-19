@@ -142,6 +142,18 @@ class ShadowingInterceptorTest {
     }
 
 
+    /**
+     * Issue #2242: a shadow target configured with only a host (no port) must not leak the
+     * unset-port sentinel into the destination URL as ":-1".
+     */
+    @Test
+    void getDestFromTargetDefaultsUnsetPort() {
+        Target target = new Target() {{
+            setHost("example.com");
+        }};
+        assertEquals("http://example.com:80/foo", ShadowingInterceptor.getDestFromTarget(target, "/foo"));
+    }
+
     @Test
     void buildExchangeTest() {
         assertNotNull(exc);
