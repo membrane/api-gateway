@@ -17,7 +17,6 @@ package com.predic8.membrane.tutorials.transformation;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
-import static io.restassured.RestAssured.withArgs;
 import static org.hamcrest.Matchers.*;
 
 public class GetToPostTutorialTest extends AbstractTransformationTutorialTest {
@@ -28,8 +27,8 @@ public class GetToPostTutorialTest extends AbstractTransformationTutorialTest {
     }
 
     @Test
-    void addedProductIsPresentInUpstreamList() {
-        var added =
+    void addedProductIsPresentInUpstream() {
+        var selfLink =
                 // @formatter:off
                 given()
                     .queryParam("name", "Lemon")
@@ -44,21 +43,18 @@ public class GetToPostTutorialTest extends AbstractTransformationTutorialTest {
                     .body("price", equalTo(0.3F))
                     .body("self_link", startsWith("/shop/v2/products/"))
                     .extract()
-                    .jsonPath();
+                    .path("self_link");
                 // @formatter:on
-
-        int id = added.getInt("id");
 
         // @formatter:off
         given()
             .relaxedHTTPSValidation()
-            .queryParam("limit", 1000)
         .when()
-            .get("https://api.predic8.de/shop/v2/products")
+            .get("https://api.predic8.de" + selfLink)
         .then()
             .statusCode(200)
-            .body("products.find { it.id == %s }.name", withArgs(id), equalTo("Lemon"))
-            .body("products.find { it.id == %s }.self_link", withArgs(id), equalTo("/shop/v2/products/" + id));
+            .body("name", equalTo("Lemon"))
+            .body("price", equalTo(0.3F));
         // @formatter:on
     }
 
