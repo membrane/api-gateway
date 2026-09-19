@@ -96,7 +96,9 @@ public class XmlDomBody extends AbstractBody {
     /**
      * Evaluates an XPath expression against the message's document, parsing it only if no earlier
      * consumer already did. So a chain of XPath using interceptors costs one parse rather than one
-     * per expression, which is what this body exists for.
+     * per expression, which is what this body exists for. See
+     * {@code com.predic8.membrane.evaluation.XPathExchangeExpressionPerformanceTest} (core test
+     * sources) for the measured before/after effect of this caching (#3130).
      * <p>
      * The namespace bindings are the caller's, not the body's: two interceptors may query the same
      * cached document through different prefix mappings.
