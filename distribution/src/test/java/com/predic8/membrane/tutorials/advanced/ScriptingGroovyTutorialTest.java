@@ -33,12 +33,13 @@ public class ScriptingGroovyTutorialTest extends AbstractAdvancedTutorialTest {
     }
 
     @Test
-    void groovyEndpointLogs() {
+    void groovyEndpointLogs() throws InterruptedException {
         synchronized (System.out) {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             PrintStream original = System.out;
             System.setOut(new PrintStream(out));
 
+            String console;
             try {
                 // @formatter:off
                 given()
@@ -47,11 +48,20 @@ public class ScriptingGroovyTutorialTest extends AbstractAdvancedTutorialTest {
                 .then()
                     .statusCode(200);
                 // @formatter:on
+
+                // The gateway runs as a separate process; its console output is relayed to
+                // System.out asynchronously by a background reader thread, so it can still be
+                // in flight after the HTTP response has already come back. Give it a few rounds
+                // to catch up instead of checking immediately.
+                console = out.toString();
+                for (int i = 0; i < 10 && !console.contains("I'm executed in the RESPONSE flow"); i++) {
+                    Thread.sleep(100);
+                    console = out.toString();
+                }
             } finally {
                 System.setOut(original);
             }
 
-            String console = out.toString();
             assertTrue(console.contains("I'm executed in the REQUEST flow"));
             assertTrue(console.contains("I'm executed in the RESPONSE flow"));
         }
