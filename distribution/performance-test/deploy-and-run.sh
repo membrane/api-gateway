@@ -74,7 +74,7 @@ for attempt in {1..30}; do
 done
 echo "Previous backend did not stop" >&2
 exit 1'
-$SSH "$ADMIN_USER@$BACKEND_PUB" "unzip -o $UNZIPPED_NAME.zip && javac -cp '$UNZIPPED_NAME/lib/*' -d classes LoadTesterBackend.java"
+$SSH "$ADMIN_USER@$BACKEND_PUB" "rm -rf $UNZIPPED_NAME && unzip -o $UNZIPPED_NAME.zip && javac -cp '$UNZIPPED_NAME/lib/*' -d classes LoadTesterBackend.java"
 $SSH "$ADMIN_USER@$BACKEND_PUB" "nohup java -cp '$UNZIPPED_NAME/lib/*:classes' com.predic8.membrane.load.LoadTesterBackend 2010 </dev/null >backend.log 2>&1 & echo \$! > backend.pid"
 $SSH "$ADMIN_USER@$BACKEND_PUB" 'pid=$(cat backend.pid)
 for attempt in {1..30}; do
@@ -89,7 +89,7 @@ cat backend.log
 exit 1'
 
 echo "== 7. Unpacking gateway distribution and placing configs (not starting it yet) =="
-$SSH "$ADMIN_USER@$GATEWAY_PUB" "unzip -o $UNZIPPED_NAME.zip && mkdir -p $UNZIPPED_NAME/conf_override && cp ~/loadtest-*.xml $UNZIPPED_NAME/conf_override/ && cp ~/fruitshop-v2-2-0.oas.yml $UNZIPPED_NAME/conf_override/"
+$SSH "$ADMIN_USER@$GATEWAY_PUB" "rm -rf $UNZIPPED_NAME && unzip -o $UNZIPPED_NAME.zip && mkdir -p $UNZIPPED_NAME/conf_override && cp ~/loadtest-*.xml $UNZIPPED_NAME/conf_override/ && cp ~/fruitshop-v2-2-0.oas.yml $UNZIPPED_NAME/conf_override/"
 $SSH "$ADMIN_USER@$GATEWAY_PUB" "printf '%s\\n' '$GHOME' > ~/loadtest-gateway-path"
 
 echo "== 8. Compiling client =="

@@ -13,7 +13,7 @@
          scp'd from distribution/router/conf/openapi/fruitshop-v2-2-0.oas.yml onto this VM; a
          relative `location` resolves under the distribution's own conf/, not conf_override/). -->
     <router>
-        <transport backlog="1024"/>
+        <transport backlog="8192"/>
         <api port="2000" name="fruitshop">
             <openapi location="__OAS_PATH__" validateRequests="yes" validateResponses="no" validationDetails="yes"/>
             <target host="__BACKEND_PRIVATE_IP__" port="2010"/>

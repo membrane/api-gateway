@@ -54,14 +54,18 @@ fi
 echo ">>> [$SCENARIO] stopping any running gateway"
 # The bracket trick ([R]outerCLI) keeps pkill/pgrep from matching their own ssh-invoked command
 # line, which otherwise contains the literal string "RouterCLI" and would self-match/self-kill.
-$SSH "$ADMIN_USER@$GATEWAY_PUB" "pkill -f '[R]outerCLI' || true; sleep 1"
+# Wait for it to actually exit (not a fixed sleep) so the new gateway below isn't racing it for
+# port 2000.
+$SSH "$ADMIN_USER@$GATEWAY_PUB" "pkill -f '[R]outerCLI' || true; for i in \$(seq 1 20); do pgrep -f '[R]outerCLI' >/dev/null || exit 0; sleep 0.5; done; echo 'old gateway did not exit in time' >&2; exit 1"
 
 echo ">>> [$SCENARIO] starting gateway with $CONFIG (JAVA_OPTS='$JAVA_OPTS')"
 # Keep setup in the foreground. Backgrounding an entire && chain leaves its shell holding
 # the SSH output pipe open, even when the gateway itself has all descriptors redirected.
-$SSH "$ADMIN_USER@$GATEWAY_PUB" "set -e; cd '$GHOME'; rm -f gc.log; JAVA_OPTS='$JAVA_OPTS' nohup ./membrane.sh -c '$GHOME/conf_override/$CONFIG' </dev/null >~/gateway.log 2>&1 & echo issued"
-sleep 10  # AlwaysPreTouch on a 32GB heap takes longer to come up than the JVM's untuned default
-$SSH "$ADMIN_USER@$GATEWAY_PUB" "pgrep -fa '[R]outerCLI' >/dev/null && echo 'gateway OK' || { echo 'gateway FAILED'; tail -50 ~/gateway.log; exit 1; }"
+$SSH "$ADMIN_USER@$GATEWAY_PUB" "set -e; cd '$GHOME'; rm -f gc.log; JAVA_OPTS='$JAVA_OPTS' nohup ./membrane.sh -c '$GHOME/conf_override/$CONFIG' </dev/null >~/gateway.log 2>&1 & echo \$! > ~/gateway.pid; echo issued"
+# Poll the PID we just launched specifically, plus the gateway's own port -- a broad pgrep here
+# could still match the old process if it lingers, and report OK even though the new one failed
+# to bind. AlwaysPreTouch on a 32GB heap takes longer to come up than the JVM's untuned default.
+$SSH "$ADMIN_USER@$GATEWAY_PUB" "PID=\$(cat ~/gateway.pid); for i in \$(seq 1 30); do kill -0 \$PID 2>/dev/null || { echo 'gateway FAILED (process exited)'; tail -50 ~/gateway.log; exit 1; }; (exec 3<>/dev/tcp/127.0.0.1/2000) 2>/dev/null && exec 3>&- && { echo 'gateway OK'; exit 0; }; sleep 1; done; echo 'gateway FAILED (not ready after 30s)'; tail -50 ~/gateway.log; exit 1"
 
 echo ">>> [$SCENARIO] starting CPU sampling"
 ROLES=(gw be cl)

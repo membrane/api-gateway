@@ -29,6 +29,8 @@ public class LoadTesterClient {
 
         int total = Integer.parseInt(System.getenv().getOrDefault("LOAD_TOTAL", "1000000"));
         int concurrency = Integer.parseInt(System.getenv().getOrDefault("LOAD_CONCURRENCY", "200"));
+        if (concurrency < 1)
+            throw new IllegalArgumentException("LOAD_CONCURRENCY must be >= 1, got " + concurrency);
         int warmup = Integer.parseInt(System.getenv().getOrDefault("LOAD_WARMUP", "10000"));
         String method = System.getenv().getOrDefault("LOAD_METHOD", "POST");
         String body = System.getenv().getOrDefault("LOAD_BODY", "Dummy");
