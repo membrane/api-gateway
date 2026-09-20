@@ -55,6 +55,17 @@ on all three VMs during the run, and prints RPS/OK/ERR plus a CPU-busy summary p
 it as many times as you like (e.g. at different concurrency levels: `./run-scenario.sh fullproxy
 150`) without re-running `deploy-and-run.sh` in between.
 
+After updating these scripts, rerun `deploy-and-run.sh` to install the client and CPU sampler
+and record the deployed gateway version. Redeploys stop the old backend and replace the client's
+JAR directory; previous JARs are retained under `~/client-libs-backup.*` on the client VM.
+
+CPU sampling reads Linux `/proc/stat` once per second and reports only complete intervals inside
+the client's measured phase, including idle intervals. Startup and warmup are excluded. This
+requires synchronized clocks on all three VMs (check `timedatectl status` before benchmarking).
+Runs too short to contain a full sampling interval report no CPU result. The historical CPU
+figures in the results documents used the older activity-filtered method and are not directly
+comparable to new runs.
+
 ## Configuration
 
 All scripts read sensible defaults but can be overridden via environment variables, e.g.:

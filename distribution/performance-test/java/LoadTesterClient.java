@@ -64,6 +64,7 @@ public class LoadTesterClient {
         var latch = new CountDownLatch(count);
         final AtomicInteger minAvailablePermits = new AtomicInteger(concurrency);
 
+        long startMillis = System.currentTimeMillis();
         long start = System.nanoTime();
 
         for (int i = 0; i < count; i++) {
@@ -75,8 +76,10 @@ public class LoadTesterClient {
 
         latch.await();
         long end = System.nanoTime();
+        long endMillis = System.currentTimeMillis();
 
         if (timed) {
+            System.out.println("MEASURED_WINDOW " + startMillis + " " + endMillis);
             double seconds = (end - start) / 1_000_000_000.0;
             System.out.println("RPS: " + (count / seconds));
             System.out.println("OK=" + ok.sum() + " ERR=" + err.sum());

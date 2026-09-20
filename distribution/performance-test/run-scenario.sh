@@ -19,7 +19,8 @@ ADMIN_USER=${ADMIN_USER:-azureuser}
 # JVM's adaptive default for the same throughput, with total GC pause time under 100ms across a
 # full 1,000,000-request run (see TESTED-CONFIGURATIONS.md, "Heap size and GC tuning"). Override
 # or blank out via the JAVA_OPTS env var to compare against the JVM's untuned defaults.
-JAVA_OPTS=${JAVA_OPTS:-'-Xms32g -Xmx32g -XX:+AlwaysPreTouch -XX:+UseParallelGC -Xlog:gc*,safepoint:file=gc.log:time,uptime,level,tags'}
+JAVA_OPTS=${JAVA_OPTS-'-Xms32g -Xmx32g -XX:+AlwaysPreTouch -XX:+UseParallelGC -Xlog:gc*,safepoint:file=gc.log:time,uptime,level,tags'}
+PT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # shortcircuit/openapi-validation use a small fixed POST+JSON body, same as always. fullproxy
 # instead uses a padded ~1KB JSON body -- a more realistic request size than the 33-byte minimal
@@ -40,14 +41,15 @@ case "$SCENARIO" in
 esac
 
 echo "Discovering VM IPs..."
-GATEWAY_PUB=$(az vm list-ip-addresses -g "$RG" -n lt-gateway --query "[0].virtualMachine.network.publicIpAddresses[0].ipAddress" -o tsv)
-GATEWAY_PRIV=$(az vm list-ip-addresses -g "$RG" -n lt-gateway --query "[0].virtualMachine.network.privateIpAddresses[0]" -o tsv)
-BACKEND_PUB=$(az vm list-ip-addresses -g "$RG" -n lt-backend --query "[0].virtualMachine.network.publicIpAddresses[0].ipAddress" -o tsv)
-CLIENT_PUB=$(az vm list-ip-addresses -g "$RG" -n lt-client --query "[0].virtualMachine.network.publicIpAddresses[0].ipAddress" -o tsv)
+source "$PT/vm-addresses.sh"
+discover_vm_ips
 SSH="ssh -o StrictHostKeyChecking=accept-new"
 
-GHOME=$($SSH "$ADMIN_USER@$GATEWAY_PUB" "ls -d \$HOME/membrane-api-gateway-*/ | head -1")
-GHOME=${GHOME%/}
+GHOME=$($SSH "$ADMIN_USER@$GATEWAY_PUB" 'cat ~/loadtest-gateway-path')
+if [[ "$GHOME" != /home/"$ADMIN_USER"/membrane-api-gateway-* || "$GHOME" == *$'\n'* ]]; then
+  echo "Invalid deployed gateway path; rerun deploy-and-run.sh" >&2
+  exit 1
+fi
 
 echo ">>> [$SCENARIO] stopping any running gateway"
 # The bracket trick ([R]outerCLI) keeps pkill/pgrep from matching their own ssh-invoked command
@@ -55,25 +57,44 @@ echo ">>> [$SCENARIO] stopping any running gateway"
 $SSH "$ADMIN_USER@$GATEWAY_PUB" "pkill -f '[R]outerCLI' || true; sleep 1"
 
 echo ">>> [$SCENARIO] starting gateway with $CONFIG (JAVA_OPTS='$JAVA_OPTS')"
-$SSH "$ADMIN_USER@$GATEWAY_PUB" "cd $GHOME && rm -f gc.log && JAVA_OPTS='$JAVA_OPTS' nohup ./membrane.sh -c \$(pwd)/conf_override/$CONFIG </dev/null >~/gateway.log 2>&1 & disown; echo issued"
+# Keep setup in the foreground. Backgrounding an entire && chain leaves its shell holding
+# the SSH output pipe open, even when the gateway itself has all descriptors redirected.
+$SSH "$ADMIN_USER@$GATEWAY_PUB" "set -e; cd '$GHOME'; rm -f gc.log; JAVA_OPTS='$JAVA_OPTS' nohup ./membrane.sh -c '$GHOME/conf_override/$CONFIG' </dev/null >~/gateway.log 2>&1 & echo issued"
 sleep 10  # AlwaysPreTouch on a 32GB heap takes longer to come up than the JVM's untuned default
 $SSH "$ADMIN_USER@$GATEWAY_PUB" "pgrep -fa '[R]outerCLI' >/dev/null && echo 'gateway OK' || { echo 'gateway FAILED'; tail -50 ~/gateway.log; exit 1; }"
 
-echo ">>> [$SCENARIO] starting CPU sampling (mpstat, 40s)"
-$SSH "$ADMIN_USER@$GATEWAY_PUB" "nohup mpstat -P ALL 1 40 > ~/mpstat_gw.log 2>&1 & disown; echo issued"
-$SSH "$ADMIN_USER@$BACKEND_PUB" "nohup mpstat -P ALL 1 40 > ~/mpstat_be.log 2>&1 & disown; echo issued"
-$SSH "$ADMIN_USER@$CLIENT_PUB"  "nohup mpstat -P ALL 1 40 > ~/mpstat_cl.log 2>&1 & disown; echo issued"
-sleep 1
+echo ">>> [$SCENARIO] starting CPU sampling"
+ROLES=(gw be cl)
+HOSTS=("$GATEWAY_PUB" "$BACKEND_PUB" "$CLIENT_PUB")
+SAMPLE_DIRS=()
+CLIENT_OUTPUT=$(mktemp)
+cleanup() {
+  for ((i=0; i<${#SAMPLE_DIRS[@]}; i++)); do
+    $SSH "$ADMIN_USER@${HOSTS[$i]}" "kill \$(cat '${SAMPLE_DIRS[$i]}/pid') 2>/dev/null || true" || true
+  done
+  rm -f "$CLIENT_OUTPUT"
+}
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+for ((i=0; i<${#HOSTS[@]}; i++)); do
+  SAMPLE_DIRS[$i]=$($SSH "$ADMIN_USER@${HOSTS[$i]}" 'mktemp -d /tmp/membrane-cpu.XXXXXX')
+  $SSH "$ADMIN_USER@${HOSTS[$i]}" "nohup bash ~/cpu-sample.sh </dev/null > '${SAMPLE_DIRS[$i]}/cpu.log' 2>'${SAMPLE_DIRS[$i]}/error.log' & echo \$! > '${SAMPLE_DIRS[$i]}/pid'"
+done
 
 echo ">>> [$SCENARIO] running client at concurrency $CONCURRENCY (1M requests + 10k warmup, $LOAD_METHOD)"
-$SSH "$ADMIN_USER@$CLIENT_PUB" "cd ~ && TARGET_URL=http://$GATEWAY_PRIV:2000/shop/v2/products LOAD_METHOD=$LOAD_METHOD LOAD_BODY='$LOAD_BODY' LOAD_CONTENT_TYPE=$LOAD_CONTENT_TYPE LOAD_TOTAL=1000000 LOAD_CONCURRENCY=$CONCURRENCY LOAD_WARMUP=10000 java -cp 'client-libs/*:classes' com.predic8.membrane.load.LoadTesterClient"
+$SSH "$ADMIN_USER@$CLIENT_PUB" "cd ~ && TARGET_URL=http://$GATEWAY_PRIV:2000/shop/v2/products LOAD_METHOD=$LOAD_METHOD LOAD_BODY='$LOAD_BODY' LOAD_CONTENT_TYPE=$LOAD_CONTENT_TYPE LOAD_TOTAL=1000000 LOAD_CONCURRENCY=$CONCURRENCY LOAD_WARMUP=10000 java -cp 'client-libs/*:classes' com.predic8.membrane.load.LoadTesterClient" | tee "$CLIENT_OUTPUT"
 
-echo ">>> [$SCENARIO] waiting for CPU samplers to finish"
-sleep 15
+WINDOW=$(awk '/^MEASURED_WINDOW [0-9]+ [0-9]+$/ {print $2, $3}' "$CLIENT_OUTPUT")
+if [[ ! "$WINDOW" =~ ^[0-9]+\ [0-9]+$ ]]; then
+  echo "Missing measured window; redeploy the updated client" >&2
+  exit 1
+fi
+read -r START END <<< "$WINDOW"
 
-echo ">>> [$SCENARIO] CPU summary (busy % averaged over active seconds only, idle seconds excluded)"
-for role in "gw:$GATEWAY_PUB" "be:$BACKEND_PUB" "cl:$CLIENT_PUB"; do
-  name="${role%%:*}"; host="${role##*:}"
-  echo "--- $name ---"
-  $SSH "$ADMIN_USER@$host" "awk '\$2==\"all\" && \$NF<99 {u+=\$3; s+=\$5; so+=\$8; idl+=\$NF; n++} END{if(n>0) printf \"n=%d usr=%.1f sys=%.1f soft=%.1f idle=%.1f\\n\", n,u/n,s/n,so/n,idl/n; else print \"no active samples\"}' ~/mpstat_${name}.log"
+echo ">>> [$SCENARIO] CPU summary (complete intervals inside measured window, including idle intervals)"
+for ((i=0; i<${#HOSTS[@]}; i++)); do
+  echo "--- ${ROLES[$i]} ---"
+  $SSH "$ADMIN_USER@${HOSTS[$i]}" "kill -0 \$(cat '${SAMPLE_DIRS[$i]}/pid') 2>/dev/null || { cat '${SAMPLE_DIRS[$i]}/error.log' >&2; exit 1; }"
+  $SSH "$ADMIN_USER@${HOSTS[$i]}" "awk -v start='$START' -v end='$END' -f - '${SAMPLE_DIRS[$i]}/cpu.log'" < "$PT/cpu-summary.awk"
 done

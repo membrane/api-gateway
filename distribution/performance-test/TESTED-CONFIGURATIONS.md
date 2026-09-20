@@ -16,6 +16,10 @@ Scenario shorthand used throughout: **1** = `shortcircuit`, **2** = `fullproxy`,
 in `run-scenario.sh`. CPU columns are gateway/backend/client busy % (100% - idle%, averaged over
 active seconds only); "--" means the role was idle/unused (scenario 1 has no backend).
 
+These historical CPU figures used an activity threshold, which could include startup and warmup.
+They have not been remeasured with the current scripts' measured-window CPU sampling and should
+not be compared directly with new CPU results. See README.md for the corrected methodology.
+
 ## Current defaults
 
 `Standard_FX16mds_v2` gateway, `Standard_F16as_v7` backend, `Standard_F16as_v6` client, Temurin

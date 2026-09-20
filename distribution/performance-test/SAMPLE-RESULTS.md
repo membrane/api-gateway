@@ -1,6 +1,6 @@
 # Sample Results: How Fast Is Membrane?
 
-This is an example run of the three scenarios described in [README.md](README.md), using the
+This is a historical example run of the three scenarios described in [README.md](README.md), using the
 current defaults baked into `provision.sh`/`run-scenario.sh`, included to show what the output
 looks like and how to interpret it. **These exact numbers are not a certified benchmark** -- see
 "Scope and limitations" below. For the full history of what else was tried (other VM sizes, JVM
@@ -59,8 +59,11 @@ own prior same-body measurements in TESTED-CONFIGURATIONS.md.
   plateau -- see TESTED-CONFIGURATIONS.md, "Concurrency sweep"); 10,000 untimed warmup requests
   discarded before the measured phase; 1,000,000 measured requests per scenario, timed wall-clock
   from first request submitted to last response received (RPS = 1,000,000 / elapsed seconds).
-- **CPU measurement**: `mpstat -P ALL 1` sampled every second on all three VMs during each run,
-  averaged over only the seconds actually under load. "CPU busy" = 100% - idle%.
+- **Historical CPU measurement**: `mpstat -P ALL 1` sampled every second, retaining samples
+  with more than 1% activity. This filter could include startup, warmup, and unrelated activity;
+  it did not isolate the measured phase. "CPU busy" = 100% - idle%. The current scripts use
+  complete `/proc/stat` intervals inside the client's measured window instead. The CPU figures
+  above have not been remeasured with that corrected method.
 
 ## Scope and limitations
 

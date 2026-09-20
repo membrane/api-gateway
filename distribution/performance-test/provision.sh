@@ -79,6 +79,7 @@ cat > "$CLOUDINIT_FILE" <<'CLOUDINIT'
 #cloud-config
 package_update: true
 packages:
+  - curl
   - unzip
   - sysstat
   - wget
