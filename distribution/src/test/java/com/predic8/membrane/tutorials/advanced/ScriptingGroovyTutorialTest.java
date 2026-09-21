@@ -14,10 +14,11 @@
 
 package com.predic8.membrane.tutorials.advanced;
 
+import com.predic8.membrane.examples.util.ConsoleWatcher;
 import org.junit.jupiter.api.Test;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
@@ -33,27 +34,33 @@ public class ScriptingGroovyTutorialTest extends AbstractAdvancedTutorialTest {
     }
 
     @Test
-    void groovyEndpointLogs() {
-        synchronized (System.out) {
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            PrintStream original = System.out;
-            System.setOut(new PrintStream(out));
+    void groovyEndpointLogs() throws InterruptedException {
+        CountDownLatch requestFlowLogged = new CountDownLatch(1);
+        CountDownLatch responseFlowLogged = new CountDownLatch(1);
+        ConsoleWatcher watcher = (error, line) -> {
+            if (line.contains("I'm executed in the REQUEST flow"))
+                requestFlowLogged.countDown();
+            if (line.contains("I'm executed in the RESPONSE flow"))
+                responseFlowLogged.countDown();
+        };
 
-            try {
-                // @formatter:off
-                given()
-                .when()
-                    .get("http://localhost:2000/groovy")
-                .then()
-                    .statusCode(200);
-                // @formatter:on
-            } finally {
-                System.setOut(original);
-            }
+        process.addConsoleWatcher(watcher);
+        try {
+            // @formatter:off
+            given()
+            .when()
+                .get("http://localhost:2000/groovy")
+            .then()
+                .statusCode(200);
+            // @formatter:on
 
-            String console = out.toString();
-            assertTrue(console.contains("I'm executed in the REQUEST flow"));
-            assertTrue(console.contains("I'm executed in the RESPONSE flow"));
+            // The gateway runs as a separate process; its console output is relayed
+            // asynchronously by a background reader thread, so it can still be in flight after
+            // the HTTP response has already come back.
+            assertTrue(requestFlowLogged.await(5, TimeUnit.SECONDS));
+            assertTrue(responseFlowLogged.await(5, TimeUnit.SECONDS));
+        } finally {
+            process.removeConsoleWatcher(watcher);
         }
     }
 
