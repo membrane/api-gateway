@@ -6,7 +6,10 @@ setup used by `distribution/src/test/java/com/predic8/membrane/load/LoadTester.j
 numbers conflate raw throughput with CPU contention between roles sharing one machine's cores;
 running each role on its own machine isolates what the gateway itself adds to a request.
 
-Three scenarios of increasing realism are included:
+Four scenarios are included. The first three are of increasing realism (`shortcircuit` -->
+`fullproxy` --> `openapi-validation`); `rate-limit-basic-auth` is a sibling of
+`openapi-validation`, built on `fullproxy`'s topology/body/backlog plus two added gateway tasks,
+so its RPS can be subtracted directly against `fullproxy`'s to isolate those tasks' combined cost:
 
 1. **`shortcircuit`** -- the gateway answers directly, no backend at all. Gives the best possible
    number, but isn't a realistic deployment: nobody runs a gateway that talks to nothing.
@@ -14,8 +17,19 @@ Three scenarios of increasing realism are included:
    realistic as a topology, but not a realistic *use* of an API gateway: if all it does is relay
    bytes, a plain reverse proxy would do the same job.
 3. **`openapi-validation`** -- the gateway forwards to the backend *and* validates every request
-   against an OpenAPI spec first. The first scenario that gives the gateway an actual job: a
+   against an OpenAPI spec first (small fixed body, to satisfy the spec -- not directly
+   RPS-comparable to `fullproxy`). The first scenario that gives the gateway an actual job: a
    plain reverse proxy structurally can't do this.
+4. **`rate-limit-basic-auth`** -- `fullproxy`, but every request must first pass HTTP Basic
+   credential verification (a constant-time byte compare against the configured plaintext
+   password, no hashing) and then a per-client rate-limit check (kept far above the request
+   volume actually sent, so nothing is ever rejected -- this measures the cost of the
+   counting/lock work, not of returning 429s), stacking both checks the way a production API
+   would.
+
+For `rate-limit-basic-auth`, a run is only valid if it reports `ERR=0` -- a nonzero `ERR` means
+requests were actually being rejected (401/429), and a short-circuited rejection is *cheaper* than
+a proxied request, so a bad run reports an RPS number that looks better, not worse.
 
 See [SAMPLE-RESULTS.md](SAMPLE-RESULTS.md) for an example run and how to interpret the numbers,
 and [TESTED-CONFIGURATIONS.md](TESTED-CONFIGURATIONS.md) for the full catalog of every hardware/
@@ -32,7 +46,7 @@ JVM/heap/concurrency combination measured so far.
 This test costs real money while the VMs are running (`Standard_FX16mds_v2` gateway,
 `Standard_F16as_v7` backend, `Standard_F16as_v6` client by default -- see
 [TESTED-CONFIGURATIONS.md](TESTED-CONFIGURATIONS.md) for why these particular sizes) --
-**always run `teardown.sh` when done.** A full run of all three scenarios takes well under an
+**always run `teardown.sh` when done.** A full run of all scenarios takes well under an
 hour end to end.
 
 ## Quickstart
@@ -46,6 +60,7 @@ cd distribution/performance-test
 ./run-scenario.sh shortcircuit
 ./run-scenario.sh fullproxy
 ./run-scenario.sh openapi-validation
+./run-scenario.sh rate-limit-basic-auth
 
 ./teardown.sh            # deletes everything -- do this when you're done
 ```

@@ -40,6 +40,8 @@ mkdir -p "$PT/conf/resolved"
 cp "$PT/conf/loadtest-shortcircuit.xml" "$PT/conf/resolved/loadtest-shortcircuit.xml"
 sed "s#__BACKEND_PRIVATE_IP__#$BACKEND_PRIV#" \
     "$PT/conf/loadtest-fullproxy.xml" > "$PT/conf/resolved/loadtest-fullproxy.xml"
+sed "s#__BACKEND_PRIVATE_IP__#$BACKEND_PRIV#" \
+    "$PT/conf/loadtest-rate-limit-basic-auth.xml" > "$PT/conf/resolved/loadtest-rate-limit-basic-auth.xml"
 sed -e "s#__BACKEND_PRIVATE_IP__#$BACKEND_PRIV#" \
     -e "s#__OAS_PATH__#$GHOME/conf_override/fruitshop-v2-2-0.oas.yml#" \
     "$PT/conf/loadtest-openapi-validation.xml" > "$PT/conf/resolved/loadtest-openapi-validation.xml"
@@ -100,6 +102,7 @@ echo "Setup complete. Run a scenario with:"
 echo "  ./run-scenario.sh shortcircuit"
 echo "  ./run-scenario.sh fullproxy"
 echo "  ./run-scenario.sh openapi-validation"
+echo "  ./run-scenario.sh rate-limit-basic-auth"
 echo ""
 echo "Each accepts an optional concurrency argument, e.g. ./run-scenario.sh fullproxy 150"
 echo ""

@@ -11,10 +11,10 @@
          API gateway: a plain reverse proxy would do the same job. This scenario measures the
          pure cost of the extra network hop, as a baseline for the openapi-validation scenario. -->
     <router>
-        <!-- Raised from 1024: measured no throughput difference by itself (0 errors either way),
-             but kept at 8192 to match the kernel somaxconn bump provision.sh applies, so this
-             config never becomes the limiting factor if load/hardware changes later. -->
-        <transport backlog="8192"/>
+        <!-- 1024 is the kernel default backlog; TESTED-CONFIGURATIONS.md's backlog experiment
+             (section 4) found no measurable throughput difference against 8192 either (0 errors
+             at either value), so this is a plain default, not a tuned setting. -->
+        <transport backlog="1024"/>
         <api port="2000">
             <target host="__BACKEND_PRIVATE_IP__" port="2010"/>
         </api>

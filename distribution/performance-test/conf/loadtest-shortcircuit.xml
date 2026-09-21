@@ -12,7 +12,7 @@
          comparison against the other two scenarios (same client, same request shape, one fewer
          network hop). Best-case, but unrealistic: no gateway is run only to talk to itself. -->
     <router>
-        <transport backlog="8192"/>
+        <transport backlog="1024"/>
         <api port="2000">
             <return statusCode="200"/>
         </api>

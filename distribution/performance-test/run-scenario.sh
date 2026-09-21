@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# Restarts the gateway with one of the three prepared scenario configs, samples CPU on all three
+# Restarts the gateway with one of the prepared scenario configs, samples CPU on all three
 # VMs while under load, and runs the measured client run against it. Run deploy-and-run.sh once
 # first; this script can then be re-run repeatedly (e.g. at different concurrency levels or after
 # a code change + redeploy) without needing to redo setup.
 #
-# Usage: ./run-scenario.sh <shortcircuit|fullproxy|openapi-validation> [concurrency]
+# Usage: ./run-scenario.sh <shortcircuit|fullproxy|openapi-validation|rate-limit-basic-auth> [concurrency]
 set -euo pipefail
 
-SCENARIO="${1:?Usage: $0 <shortcircuit|fullproxy|openapi-validation> [concurrency]}"
+SCENARIO="${1:?Usage: $0 <shortcircuit|fullproxy|openapi-validation|rate-limit-basic-auth> [concurrency]}"
 # 175 was found empirically to be the throughput plateau's sweet spot for the mixed-hardware
 # setup (Standard_FX16mds_v2 gateway / Standard_F16as_v7 backend) -- see TESTED-CONFIGURATIONS.md
 # for the concurrency sweep (125/175/220/300) that found it. Re-sweep if you change VM sizes.
@@ -22,22 +22,32 @@ ADMIN_USER=${ADMIN_USER:-azureuser}
 JAVA_OPTS=${JAVA_OPTS-'-Xms32g -Xmx32g -XX:+AlwaysPreTouch -XX:+UseParallelGC -Xlog:gc*,safepoint:file=gc.log:time,uptime,level,tags'}
 PT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# shortcircuit/openapi-validation use a small fixed POST+JSON body, same as always. fullproxy
-# instead uses a padded ~1KB JSON body -- a more realistic request size than the 33-byte minimal
-# one, and one of the two things (along with backlog/somaxconn) that differs between fullproxy's
-# config and the other two scenarios. See TESTED-CONFIGURATIONS.md for the full concurrency/body
-# sweep history behind these defaults.
+# shortcircuit/openapi-validation use a small fixed POST+JSON body, same as always. fullproxy and
+# rate-limit-basic-auth instead use a padded ~1KB JSON body -- a more realistic request size than
+# the 33-byte minimal one, and (along with backlog/somaxconn) one of the things that differs
+# between fullproxy's config and shortcircuit/openapi-validation. rate-limit-basic-auth is built
+# directly on top of fullproxy's topology and uses its body/backlog too, so its RPS can be
+# subtracted directly against fullproxy's to isolate the two plugins' combined added cost --
+# unlike openapi-validation, which must keep the small body to satisfy the OpenAPI spec it
+# validates against. See TESTED-CONFIGURATIONS.md for the full concurrency/body sweep history
+# behind these defaults.
 # (A GET/no-body variant of fullproxy was measured once and found statistically indistinguishable
 # in RPS -- the JSON body isn't on the gateway's/backend's critical path in this scenario, since
 # neither validates nor inspects it -- so the payload-size question only matters for byte-transfer
 # cost, not gateway logic.)
 FULLPROXY_BODY_1KB='{"name":"Mangos","price":2.79,"description":"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"}'
 
+BASIC_AUTH_USER=loadtest
+BASIC_AUTH_PASSWORD=loadtest-secret
+BASIC_AUTH_HEADER="Basic $(printf '%s:%s' "$BASIC_AUTH_USER" "$BASIC_AUTH_PASSWORD" | base64)"
+
+LOAD_AUTHORIZATION=""
 case "$SCENARIO" in
   shortcircuit)        CONFIG=loadtest-shortcircuit.xml;        LOAD_METHOD=POST; LOAD_BODY='{"name":"Mangos","price":2.79}'; LOAD_CONTENT_TYPE=application/json ;;
   fullproxy)            CONFIG=loadtest-fullproxy.xml;          LOAD_METHOD=POST; LOAD_BODY="$FULLPROXY_BODY_1KB";          LOAD_CONTENT_TYPE=application/json ;;
   openapi-validation)   CONFIG=loadtest-openapi-validation.xml; LOAD_METHOD=POST; LOAD_BODY='{"name":"Mangos","price":2.79}'; LOAD_CONTENT_TYPE=application/json ;;
-  *) echo "Unknown scenario '$SCENARIO' (expected shortcircuit|fullproxy|openapi-validation)"; exit 1 ;;
+  rate-limit-basic-auth) CONFIG=loadtest-rate-limit-basic-auth.xml; LOAD_METHOD=POST; LOAD_BODY="$FULLPROXY_BODY_1KB";      LOAD_CONTENT_TYPE=application/json; LOAD_AUTHORIZATION="$BASIC_AUTH_HEADER" ;;
+  *) echo "Unknown scenario '$SCENARIO' (expected shortcircuit|fullproxy|openapi-validation|rate-limit-basic-auth)"; exit 1 ;;
 esac
 
 echo "Discovering VM IPs..."
@@ -87,7 +97,7 @@ for ((i=0; i<${#HOSTS[@]}; i++)); do
 done
 
 echo ">>> [$SCENARIO] running client at concurrency $CONCURRENCY (1M requests + 10k warmup, $LOAD_METHOD)"
-$SSH "$ADMIN_USER@$CLIENT_PUB" "cd ~ && TARGET_URL=http://$GATEWAY_PRIV:2000/shop/v2/products LOAD_METHOD=$LOAD_METHOD LOAD_BODY='$LOAD_BODY' LOAD_CONTENT_TYPE=$LOAD_CONTENT_TYPE LOAD_TOTAL=1000000 LOAD_CONCURRENCY=$CONCURRENCY LOAD_WARMUP=10000 java -cp 'client-libs/*:classes' com.predic8.membrane.load.LoadTesterClient" | tee "$CLIENT_OUTPUT"
+$SSH "$ADMIN_USER@$CLIENT_PUB" "cd ~ && TARGET_URL=http://$GATEWAY_PRIV:2000/shop/v2/products LOAD_METHOD=$LOAD_METHOD LOAD_BODY='$LOAD_BODY' LOAD_CONTENT_TYPE=$LOAD_CONTENT_TYPE LOAD_AUTHORIZATION='$LOAD_AUTHORIZATION' LOAD_TOTAL=1000000 LOAD_CONCURRENCY=$CONCURRENCY LOAD_WARMUP=10000 java -cp 'client-libs/*:classes' com.predic8.membrane.load.LoadTesterClient" | tee "$CLIENT_OUTPUT"
 
 WINDOW=$(awk '/^MEASURED_WINDOW [0-9]+ [0-9]+$/ {print $2, $3}' "$CLIENT_OUTPUT")
 if [[ ! "$WINDOW" =~ ^[0-9]+\ [0-9]+$ ]]; then

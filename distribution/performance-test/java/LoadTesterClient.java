@@ -19,6 +19,7 @@ import static org.asynchttpclient.Dsl.*;
  * Total requests: env var LOAD_TOTAL, default 1_000_000.
  * Concurrency: env var LOAD_CONCURRENCY, default 200.
  * Warmup requests (untimed, run before the measured phase): env var LOAD_WARMUP, default 10_000.
+ * Authorization header (e.g. for the basic-auth scenario): env var LOAD_AUTHORIZATION, unset by default.
  */
 public class LoadTesterClient {
 
@@ -37,8 +38,11 @@ public class LoadTesterClient {
         String contentType = System.getenv().get("LOAD_CONTENT_TYPE");
         if (contentType != null && contentType.isEmpty())
             contentType = null;
+        String authorization = System.getenv().get("LOAD_AUTHORIZATION");
+        if (authorization != null && authorization.isEmpty())
+            authorization = null;
 
-        System.out.println("Target: " + url + "  METHOD=" + method + "  TOTAL=" + total + "  CONCURRENCY=" + concurrency + "  WARMUP=" + warmup);
+        System.out.println("Target: " + url + "  METHOD=" + method + "  TOTAL=" + total + "  CONCURRENCY=" + concurrency + "  WARMUP=" + warmup + "  AUTH=" + (authorization != null));
 
         try (var client = asyncHttpClient(new DefaultAsyncHttpClientConfig.Builder()
                 .setConnectTimeout(Duration.ofMillis(60000))
@@ -49,17 +53,17 @@ public class LoadTesterClient {
 
             if (warmup > 0) {
                 System.out.println("Warming up (" + warmup + " untimed requests)...");
-                runPhase(client, submitters, url, method, body, contentType, warmup, concurrency, false);
+                runPhase(client, submitters, url, method, body, contentType, authorization, warmup, concurrency, false);
                 System.out.println("Warmup done.");
             }
 
             System.out.println("Starting measured run...");
-            runPhase(client, submitters, url, method, body, contentType, total, concurrency, true);
+            runPhase(client, submitters, url, method, body, contentType, authorization, total, concurrency, true);
         }
     }
 
     private static void runPhase(AsyncHttpClient client, ExecutorService submitters, String url, String method, String body,
-                                  String contentType, int count, int concurrency, boolean timed) throws InterruptedException {
+                                  String contentType, String authorization, int count, int concurrency, boolean timed) throws InterruptedException {
         var semaphore = new Semaphore(concurrency);
         var ok = new LongAdder();
         var err = new LongAdder();
@@ -72,7 +76,7 @@ public class LoadTesterClient {
         for (int i = 0; i < count; i++) {
             semaphore.acquire();
             submitters.submit(() -> {
-                prepareCall(client, url, method, body, contentType, ok, err, latch, semaphore, minAvailablePermits);
+                prepareCall(client, url, method, body, contentType, authorization, ok, err, latch, semaphore, minAvailablePermits);
             });
         }
 
@@ -89,12 +93,14 @@ public class LoadTesterClient {
         }
     }
 
-    private static void prepareCall(AsyncHttpClient client, String url, String method, String body, String contentType, LongAdder ok, LongAdder err, CountDownLatch latch, Semaphore semaphore, AtomicInteger minAvailablePermits) {
+    private static void prepareCall(AsyncHttpClient client, String url, String method, String body, String contentType, String authorization, LongAdder ok, LongAdder err, CountDownLatch latch, Semaphore semaphore, AtomicInteger minAvailablePermits) {
         var request = "GET".equalsIgnoreCase(method)
                 ? client.prepareGet(url)
                 : client.preparePost(url).setBody(body);
         if (contentType != null)
             request.setHeader("Content-Type", contentType);
+        if (authorization != null)
+            request.setHeader("Authorization", authorization);
         request.execute(new AsyncCompletionHandler<Void>() {
             @Override
             public Void onCompleted(Response r) {
