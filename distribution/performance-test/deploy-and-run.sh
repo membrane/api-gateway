@@ -7,6 +7,10 @@
 # The client's HTTP library (async-http-client, a `test`-scoped dependency of the distribution
 # module) is resolved fresh via `mvn dependency:copy-dependencies` into ./client-libs on every
 # run -- that directory is gitignored, nothing here is a vendored/committed library.
+#
+# Also generates the self-signed TLS keystores/truststore used by the rate-limit-basic-auth-tls
+# scenario, via `keytool` (bundled with the JDK you already need to build this repo) -- see ./certs,
+# also gitignored/regenerated fresh every run.
 set -euo pipefail
 
 RG=${RG:-membrane-perftest-rg}
@@ -45,6 +49,34 @@ sed "s#__BACKEND_PRIVATE_IP__#$BACKEND_PRIV#" \
 sed -e "s#__BACKEND_PRIVATE_IP__#$BACKEND_PRIV#" \
     -e "s#__OAS_PATH__#$GHOME/conf_override/fruitshop-v2-2-0.oas.yml#" \
     "$PT/conf/loadtest-openapi-validation.xml" > "$PT/conf/resolved/loadtest-openapi-validation.xml"
+sed -e "s#__BACKEND_PRIVATE_IP__#$BACKEND_PRIV#" \
+    -e "s#__GATEWAY_KEYSTORE_PATH__#$GHOME/conf_override/gateway.p12#" \
+    -e "s#__GATEWAY_TRUSTSTORE_PATH__#$GHOME/conf_override/gateway-truststore.p12#" \
+    "$PT/conf/loadtest-rate-limit-basic-auth-tls.xml" > "$PT/conf/resolved/loadtest-rate-limit-basic-auth-tls.xml"
+
+echo "== 4b. Generating self-signed TLS certificates for the rate-limit-basic-auth-tls scenario =="
+# Regenerated fresh on every deploy (gitignored, see .gitignore) -- SANs are baked in against this
+# run's discovered private IPs, so they can't be committed/reused across provisions. The gateway's
+# own cert doesn't need a SAN matching anything: the client trusts it via LOAD_INSECURE_TLS, not a
+# truststore. The backend's does: the gateway's <target><ssl><truststore> validates both the chain
+# and (endpointIdentificationAlgorithm defaults to "HTTPS") that the cert's SAN matches the host it
+# connects to, i.e. __BACKEND_PRIVATE_IP__.
+CERT_PASSWORD=changeit
+CERTS="$PT/certs"
+rm -rf "$CERTS"
+mkdir -p "$CERTS"
+keytool -genkeypair -alias gateway -keyalg RSA -keysize 2048 -validity 365 \
+  -keystore "$CERTS/gateway.p12" -storetype PKCS12 -storepass "$CERT_PASSWORD" -keypass "$CERT_PASSWORD" \
+  -dname "CN=lt-gateway, OU=Membrane Performance Test, O=predic8, C=DE" \
+  -ext "SAN=ip:$GATEWAY_PRIV,ip:127.0.0.1"
+keytool -genkeypair -alias backend -keyalg RSA -keysize 2048 -validity 365 \
+  -keystore "$CERTS/backend.p12" -storetype PKCS12 -storepass "$CERT_PASSWORD" -keypass "$CERT_PASSWORD" \
+  -dname "CN=lt-backend, OU=Membrane Performance Test, O=predic8, C=DE" \
+  -ext "SAN=ip:$BACKEND_PRIV,ip:127.0.0.1"
+keytool -exportcert -alias backend -keystore "$CERTS/backend.p12" -storetype PKCS12 \
+  -storepass "$CERT_PASSWORD" -rfc -file "$CERTS/backend-cert.pem"
+keytool -importcert -alias backend -file "$CERTS/backend-cert.pem" \
+  -keystore "$CERTS/gateway-truststore.p12" -storetype PKCS12 -storepass "$CERT_PASSWORD" -noprompt
 
 SSH="ssh -o StrictHostKeyChecking=accept-new"
 SCP="scp -o StrictHostKeyChecking=accept-new"
@@ -52,9 +84,11 @@ SCP="scp -o StrictHostKeyChecking=accept-new"
 echo "== 5. Shipping artifacts =="
 $SCP "$ZIP" "$ADMIN_USER@$BACKEND_PUB:~/"
 $SCP "$PT/java/LoadTesterBackend.java" "$ADMIN_USER@$BACKEND_PUB:~/"
+$SCP "$CERTS/backend.p12" "$ADMIN_USER@$BACKEND_PUB:~/"
 $SCP "$ZIP" "$ADMIN_USER@$GATEWAY_PUB:~/"
 $SCP "$REPO/distribution/router/conf/openapi/fruitshop-v2-2-0.oas.yml" "$ADMIN_USER@$GATEWAY_PUB:~/"
 $SCP "$PT"/conf/resolved/*.xml "$ADMIN_USER@$GATEWAY_PUB:~/"
+$SCP "$CERTS/gateway.p12" "$CERTS/gateway-truststore.p12" "$ADMIN_USER@$GATEWAY_PUB:~/"
 $SCP "$PT/java/LoadTesterClient.java" "$ADMIN_USER@$CLIENT_PUB:~/"
 # Upload into a fresh directory, then replace the active directory so removed/upgraded JARs
 # cannot survive a redeploy. Keep the previous set in a separate backup directory.
@@ -77,11 +111,14 @@ done
 echo "Previous backend did not stop" >&2
 exit 1'
 $SSH "$ADMIN_USER@$BACKEND_PUB" "rm -rf $UNZIPPED_NAME && unzip -o $UNZIPPED_NAME.zip && javac -cp '$UNZIPPED_NAME/lib/*' -d classes LoadTesterBackend.java"
-$SSH "$ADMIN_USER@$BACKEND_PUB" "nohup java -cp '$UNZIPPED_NAME/lib/*:classes' com.predic8.membrane.load.LoadTesterBackend 2010 </dev/null >backend.log 2>&1 & echo \$! > backend.pid"
+# BACKEND_TLS_KEYSTORE starts a second, TLS-only listener on 2011 alongside the plaintext one on
+# 2010 (see LoadTesterBackend.java), so rate-limit-basic-auth-tls can share this same backend
+# process instead of needing its own.
+$SSH "$ADMIN_USER@$BACKEND_PUB" "BACKEND_TLS_KEYSTORE=/home/$ADMIN_USER/backend.p12 BACKEND_TLS_KEYSTORE_PASSWORD=$CERT_PASSWORD nohup java -cp '$UNZIPPED_NAME/lib/*:classes' com.predic8.membrane.load.LoadTesterBackend 2010 </dev/null >backend.log 2>&1 & echo \$! > backend.pid"
 $SSH "$ADMIN_USER@$BACKEND_PUB" 'pid=$(cat backend.pid)
 for attempt in {1..30}; do
   kill -0 "$pid" 2>/dev/null || break
-  if curl --silent --fail --max-time 2 http://localhost:2010/ >/dev/null; then
+  if curl --silent --fail --max-time 2 http://localhost:2010/ >/dev/null && curl --silent --fail --max-time 2 -k https://localhost:2011/ >/dev/null; then
     kill -0 "$pid" 2>/dev/null && { echo "backend OK"; exit 0; }
   fi
   sleep 1
@@ -91,7 +128,7 @@ cat backend.log
 exit 1'
 
 echo "== 7. Unpacking gateway distribution and placing configs (not starting it yet) =="
-$SSH "$ADMIN_USER@$GATEWAY_PUB" "rm -rf $UNZIPPED_NAME && unzip -o $UNZIPPED_NAME.zip && mkdir -p $UNZIPPED_NAME/conf_override && cp ~/loadtest-*.xml $UNZIPPED_NAME/conf_override/ && cp ~/fruitshop-v2-2-0.oas.yml $UNZIPPED_NAME/conf_override/"
+$SSH "$ADMIN_USER@$GATEWAY_PUB" "rm -rf $UNZIPPED_NAME && unzip -o $UNZIPPED_NAME.zip && mkdir -p $UNZIPPED_NAME/conf_override && cp ~/loadtest-*.xml $UNZIPPED_NAME/conf_override/ && cp ~/fruitshop-v2-2-0.oas.yml $UNZIPPED_NAME/conf_override/ && cp ~/gateway.p12 ~/gateway-truststore.p12 $UNZIPPED_NAME/conf_override/"
 $SSH "$ADMIN_USER@$GATEWAY_PUB" "printf '%s\\n' '$GHOME' > ~/loadtest-gateway-path"
 
 echo "== 8. Compiling client =="
@@ -103,6 +140,7 @@ echo "  ./run-scenario.sh shortcircuit"
 echo "  ./run-scenario.sh fullproxy"
 echo "  ./run-scenario.sh openapi-validation"
 echo "  ./run-scenario.sh rate-limit-basic-auth"
+echo "  ./run-scenario.sh rate-limit-basic-auth-tls"
 echo ""
 echo "Each accepts an optional concurrency argument, e.g. ./run-scenario.sh fullproxy 150"
 echo ""

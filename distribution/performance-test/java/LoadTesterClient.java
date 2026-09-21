@@ -20,6 +20,10 @@ import static org.asynchttpclient.Dsl.*;
  * Concurrency: env var LOAD_CONCURRENCY, default 200.
  * Warmup requests (untimed, run before the measured phase): env var LOAD_WARMUP, default 10_000.
  * Authorization header (e.g. for the basic-auth scenario): env var LOAD_AUTHORIZATION, unset by default.
+ * Trust any TLS certificate presented by the target, incl. self-signed (e.g. for the
+ * rate-limit-basic-auth-tls scenario, whose gateway cert is self-signed): env var LOAD_INSECURE_TLS=true,
+ * false by default. This client only ever talks to gateways this test itself stood up, so skipping
+ * verification here doesn't weaken what's being measured on the gateway side.
  */
 public class LoadTesterClient {
 
@@ -41,14 +45,16 @@ public class LoadTesterClient {
         String authorization = System.getenv().get("LOAD_AUTHORIZATION");
         if (authorization != null && authorization.isEmpty())
             authorization = null;
+        boolean insecureTls = Boolean.parseBoolean(System.getenv().getOrDefault("LOAD_INSECURE_TLS", "false"));
 
-        System.out.println("Target: " + url + "  METHOD=" + method + "  TOTAL=" + total + "  CONCURRENCY=" + concurrency + "  WARMUP=" + warmup + "  AUTH=" + (authorization != null));
+        System.out.println("Target: " + url + "  METHOD=" + method + "  TOTAL=" + total + "  CONCURRENCY=" + concurrency + "  WARMUP=" + warmup + "  AUTH=" + (authorization != null) + "  INSECURE_TLS=" + insecureTls);
 
         try (var client = asyncHttpClient(new DefaultAsyncHttpClientConfig.Builder()
                 .setConnectTimeout(Duration.ofMillis(60000))
                 .setRequestTimeout(Duration.ofMillis(60000))
                 .setMaxConnections(concurrency)
-                .setMaxConnectionsPerHost(concurrency).build()); ExecutorService submitters =
+                .setMaxConnectionsPerHost(concurrency)
+                .setUseInsecureTrustManager(insecureTls).build()); ExecutorService submitters =
                      Executors.newThreadPerTaskExecutor(Thread.ofVirtual().factory())) {
 
             if (warmup > 0) {

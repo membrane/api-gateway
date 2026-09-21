@@ -61,6 +61,12 @@ az network nsg rule create -g "$RG" --nsg-name "$NSG" -n AllowBackendPort \
   --priority 120 --access Allow --protocol Tcp --direction Inbound \
   --source-address-prefixes 10.10.0.0/24 --destination-port-ranges 2010
 
+# Backend's second, TLS-only listener, used by the rate-limit-basic-auth-tls scenario; kept
+# separate from AllowBackendPort/2010 so both plaintext and TLS scenarios can share one backend.
+az network nsg rule create -g "$RG" --nsg-name "$NSG" -n AllowBackendTlsPort \
+  --priority 121 --access Allow --protocol Tcp --direction Inbound \
+  --source-address-prefixes 10.10.0.0/24 --destination-port-ranges 2011
+
 declare -A SIZES=( [lt-backend]="$BACKEND_SIZE" [lt-gateway]="$GATEWAY_SIZE" [lt-client]="$CLIENT_SIZE" )
 
 CLOUDINIT_FILE=$(mktemp)

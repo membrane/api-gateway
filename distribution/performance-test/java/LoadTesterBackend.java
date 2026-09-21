@@ -1,5 +1,7 @@
 package com.predic8.membrane.load;
 
+import com.predic8.membrane.core.config.security.KeyStore;
+import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.exchangestore.ForgetfulExchangeStore;
 import com.predic8.membrane.core.interceptor.flow.ReturnInterceptor;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
@@ -15,6 +17,12 @@ import com.predic8.membrane.core.transport.http.HttpTransport;
  * <p>
  * Run: java -cp "membrane-api-gateway-VERSION/lib/*:classes" com.predic8.membrane.load.LoadTesterBackend [port]
  * Port defaults to env var BACKEND_PORT, then 2010.
+ * <p>
+ * A second, TLS-only listener (for the rate-limit-basic-auth-tls scenario) is started alongside
+ * the plaintext one when env var BACKEND_TLS_KEYSTORE is set, so plaintext and TLS scenarios can
+ * keep sharing one already-running backend process instead of each needing their own. Its port
+ * defaults to env var BACKEND_TLS_PORT, then 2011; its keystore password to BACKEND_TLS_KEYSTORE_PASSWORD,
+ * then "changeit".
  */
 public class LoadTesterBackend {
 
@@ -37,8 +45,30 @@ public class LoadTesterBackend {
         backend.getFlow().add(new ReturnInterceptor());
         r.add(backend);
 
-        r.start();
-        System.out.println("LoadTesterBackend listening on 0.0.0.0:" + port);
+        String tlsKeystore = System.getenv("BACKEND_TLS_KEYSTORE");
+        if (tlsKeystore != null && !tlsKeystore.isEmpty()) {
+            int tlsPort = Integer.parseInt(System.getenv().getOrDefault("BACKEND_TLS_PORT", "2011"));
+            String tlsKeystorePassword = System.getenv().getOrDefault("BACKEND_TLS_KEYSTORE_PASSWORD", "changeit");
+
+            var keyStore = new KeyStore();
+            keyStore.setLocation(tlsKeystore);
+            keyStore.setKeyPassword(tlsKeystorePassword);
+
+            var sslParser = new SSLParser();
+            sslParser.setKeyStore(keyStore);
+
+            var tlsBackend = new APIProxy();
+            tlsBackend.setKey(new APIProxyKey(tlsPort));
+            tlsBackend.setSslInboundParser(sslParser);
+            tlsBackend.getFlow().add(new ReturnInterceptor());
+            r.add(tlsBackend);
+
+            r.start();
+            System.out.println("LoadTesterBackend listening on 0.0.0.0:" + port + " (plain) and 0.0.0.0:" + tlsPort + " (TLS)");
+        } else {
+            r.start();
+            System.out.println("LoadTesterBackend listening on 0.0.0.0:" + port);
+        }
 
         Thread.currentThread().join();
     }
