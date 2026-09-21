@@ -14,10 +14,11 @@
 
 package com.predic8.membrane.tutorials.advanced;
 
+import com.predic8.membrane.examples.util.ConsoleWatcher;
 import org.junit.jupiter.api.Test;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
@@ -34,36 +35,32 @@ public class ScriptingGroovyTutorialTest extends AbstractAdvancedTutorialTest {
 
     @Test
     void groovyEndpointLogs() throws InterruptedException {
-        synchronized (System.out) {
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            PrintStream original = System.out;
-            System.setOut(new PrintStream(out));
+        CountDownLatch requestFlowLogged = new CountDownLatch(1);
+        CountDownLatch responseFlowLogged = new CountDownLatch(1);
+        ConsoleWatcher watcher = (error, line) -> {
+            if (line.contains("I'm executed in the REQUEST flow"))
+                requestFlowLogged.countDown();
+            if (line.contains("I'm executed in the RESPONSE flow"))
+                responseFlowLogged.countDown();
+        };
 
-            String console;
-            try {
-                // @formatter:off
-                given()
-                .when()
-                    .get("http://localhost:2000/groovy")
-                .then()
-                    .statusCode(200);
-                // @formatter:on
+        process.addConsoleWatcher(watcher);
+        try {
+            // @formatter:off
+            given()
+            .when()
+                .get("http://localhost:2000/groovy")
+            .then()
+                .statusCode(200);
+            // @formatter:on
 
-                // The gateway runs as a separate process; its console output is relayed to
-                // System.out asynchronously by a background reader thread, so it can still be
-                // in flight after the HTTP response has already come back. Give it a few rounds
-                // to catch up instead of checking immediately.
-                console = out.toString();
-                for (int i = 0; i < 10 && !console.contains("I'm executed in the RESPONSE flow"); i++) {
-                    Thread.sleep(100);
-                    console = out.toString();
-                }
-            } finally {
-                System.setOut(original);
-            }
-
-            assertTrue(console.contains("I'm executed in the REQUEST flow"));
-            assertTrue(console.contains("I'm executed in the RESPONSE flow"));
+            // The gateway runs as a separate process; its console output is relayed
+            // asynchronously by a background reader thread, so it can still be in flight after
+            // the HTTP response has already come back.
+            assertTrue(requestFlowLogged.await(5, TimeUnit.SECONDS));
+            assertTrue(responseFlowLogged.await(5, TimeUnit.SECONDS));
+        } finally {
+            process.removeConsoleWatcher(watcher);
         }
     }
 
