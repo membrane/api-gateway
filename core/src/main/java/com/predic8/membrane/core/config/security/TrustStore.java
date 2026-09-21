@@ -19,10 +19,19 @@ import com.predic8.membrane.annot.MCElement;
 import static com.google.common.base.Objects.equal;
 
 /**
- * @description Configuration element for a truststore containing trusted CA certificates.
- *
- * <p>Used by Membrane's TLS components to validate remote certificates
- * presented during SSL/TLS handshakes.</p>
+ * @description Supplies the CA certificates trusted when validating a peer's certificate chain,
+ * for example during a TLS handshake or, inside <code>wsSecurity</code>, when verifying a
+ * signature. See <tt>tutorials/web-services-security/50-Sign-And-Validate-Body.yaml</tt>.
+ * @yaml <pre><code>
+ * wsSecurity:
+ *   truststore:
+ *     location: signer.p12
+ *     password: secret
+ *   validate:
+ *     - signature:
+ *         requiredReferences:
+ *           - by: BODY
+ * </code></pre>
  */
 @MCElement(name="truststore")
 public class TrustStore extends Store {
@@ -56,6 +65,7 @@ public class TrustStore extends Store {
 
 	/**
 	 * @description Trust manager algorithm used to validate certificate chains.
+	 * @default the JVM's default (usually <tt>PKIX</tt>)
 	 */
 	@MCAttribute
 	public void setAlgorithm(String algorithm) {
@@ -71,9 +81,11 @@ public class TrustStore extends Store {
 	}
 
     /**
-     * @description Comma-separated PKIX revocation options: ONLY_END_ENTITY, PREFER_CRLS, NO_FALLBACK, SOFT_FAIL.
+     * @description Comma-separated PKIX revocation checking options, from
+     * <code>java.security.cert.PKIXRevocationChecker.Option</code>: <tt>ONLY_END_ENTITY</tt>,
+     * <tt>PREFER_CRLS</tt>, <tt>NO_FALLBACK</tt>, <tt>SOFT_FAIL</tt>. Unset, no revocation
+     * checking (CRL/OCSP) is performed at all.
      * @example ONLY_END_ENTITY,SOFT_FAIL
-     * @see java.security.cert.PKIXRevocationChecker.Option
      */
 	@MCAttribute
 	public void setCheckRevocation(String checkRevocation) {

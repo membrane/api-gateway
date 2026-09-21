@@ -14,23 +14,24 @@
 
 package com.predic8.membrane.core.transport.http;
 
-import com.predic8.membrane.core.transport.*;
-import com.predic8.membrane.core.transport.ssl.*;
-import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.core.transport.PortOccupiedException;
+import com.predic8.membrane.core.transport.ssl.SSLProvider;
+import com.predic8.membrane.core.util.NetworkUtil;
+import com.predic8.membrane.core.util.Pair;
 import org.slf4j.Logger;
-import org.slf4j.*;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.IOException;
 import java.net.*;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentHashMap.KeySetView;
-import java.util.concurrent.atomic.*;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
 import static com.predic8.membrane.core.util.TimerTaskUtil.createTimerTask;
-import static com.predic8.membrane.core.util.text.TerminalColors.*;
-import static java.lang.System.*;
+import static java.lang.System.currentTimeMillis;
 
 public class HttpEndpointListener extends Thread {
 
@@ -82,7 +83,7 @@ public class HttpEndpointListener extends Thread {
 
             final String s = p.toShortString();
             setName("Connection Acceptor " + s);
-            log.info("listening at {}{}{}", BRIGHT_MAGENTA(), s, RESET());
+            log.debug("listening at {}", s);
         } catch (BindException e) {
             throw new PortOccupiedException(p);
         }

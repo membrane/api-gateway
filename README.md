@@ -4,7 +4,6 @@
 **for REST, OpenAPI, and GraphQL with first-class Legacy Support for XML, SOAP, and WSDL**
 
 [![GitHub release](https://img.shields.io/github/v/release/membrane/api-gateway?display_name=tag)](https://github.com/membrane/api-gateway/releases/latest)
-[![Build](https://img.shields.io/github/actions/workflow/status/membrane/api-gateway/build-and-test.yml?branch=master)](https://github.com/membrane/api-gateway/actions)
 [![Docker Pulls](https://img.shields.io/docker/pulls/predic8/membrane)](https://hub.docker.com/r/predic8/membrane)
 [![License](https://img.shields.io/github/license/membrane/api-gateway)](https://github.com/membrane/api-gateway/blob/master/distribution/router/LICENSE.txt)
 
