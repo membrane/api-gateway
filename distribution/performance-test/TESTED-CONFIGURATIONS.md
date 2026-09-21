@@ -23,7 +23,7 @@ not be compared directly with new CPU results. See README.md for the corrected m
 ## Current defaults
 
 `Standard_FX16mds_v2` gateway, `Standard_F16as_v7` backend, `Standard_F16as_v6` client, Temurin
-21, `-Xms32g -Xmx32g -XX:+AlwaysPreTouch -XX:+UseParallelGC`, backlog 8192/somaxconn 65535
+21, `-Xms32g -Xmx32g -XX:+AlwaysPreTouch -XX:+UseParallelGC`, backlog 1024/somaxconn 65535
 (scenario 2 only), concurrency 175. See [SAMPLE-RESULTS.md](SAMPLE-RESULTS.md) for the full
 current numbers -- not repeated here, this page is about everything *else* that was tried.
 
@@ -194,8 +194,8 @@ raised to 65535 on the gateway VM to actually allow backlog values above the ker
 **No measurable effect either way** (differences under 2%, within noise) -- 0 errors at every
 backlog value tried, meaning the accept queue never actually overflowed, so raising its ceiling
 changed nothing. `backlog` only matters once connections are actually queuing up waiting to be
-accepted; this workload's bottleneck is elsewhere. Kept at 8192 in the shipped config anyway as a
-no-cost safety margin, not because it measurably helps.
+accepted; this workload's bottleneck is elsewhere. The shipped config now uses 1024, the kernel
+default, since 8192 never measurably helped either.
 
 ## 5. Concurrency sweep (mixed hardware, 128GB heap, Temurin 21, scenario 2)
 

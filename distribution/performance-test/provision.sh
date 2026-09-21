@@ -72,9 +72,9 @@ trap 'rm -f "$CLOUDINIT_FILE"' EXIT
 # keeping the exact vendor/build reproducible. The repo also carries 22-26 side by side
 # (temurin-<N>-jdk) if you want to re-run the JVM-version comparison yourself.
 #
-# net.core.somaxconn is raised to match the gateway config's `<transport backlog="8192"/>` --
-# without this the kernel silently caps the accept queue at its own default (1024 or 4096
-# depending on the image), regardless of what the XML asks for.
+# net.core.somaxconn is raised well above the kernel default (1024 or 4096 depending on the
+# image) so a config's `<transport backlog=".../>` is never silently capped by the kernel,
+# regardless of what value a scenario config asks for.
 cat > "$CLOUDINIT_FILE" <<'CLOUDINIT'
 #cloud-config
 package_update: true
