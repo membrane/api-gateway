@@ -17,20 +17,19 @@ package com.predic8.membrane.core.lang.xpath;
 import com.predic8.membrane.core.config.xml.XmlConfig;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.XmlDomBody;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.XMLSupport;
 import com.predic8.membrane.core.lang.AbstractExchangeExpression;
 import com.predic8.membrane.core.lang.ExchangeExpressionException;
 import com.predic8.membrane.core.router.Router;
-import com.predic8.membrane.core.util.xml.XMLUtil;
-import com.predic8.membrane.core.util.xml.XPathUtil;
-import com.predic8.membrane.core.util.xml.parser.HardenedXmlParser;
-import com.predic8.membrane.core.util.xml.parser.XmlParser;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.NodeList;
 
+import javax.xml.namespace.NamespaceContext;
 import javax.xml.namespace.QName;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathEvaluationResult;
@@ -43,8 +42,6 @@ import static javax.xml.xpath.XPathConstants.NODESET;
 public class XPathExchangeExpression extends AbstractExchangeExpression {
 
     private static final Logger log = LoggerFactory.getLogger(XPathExchangeExpression.class.getName());
-
-    private static final XmlParser parser = HardenedXmlParser.getInstance();
 
     private XmlConfig xmlConfig;
 
@@ -107,20 +104,19 @@ public class XPathExchangeExpression extends AbstractExchangeExpression {
             log.debug("Body: {}", msg.getBodyAsStringDecoded()); // is expensive!
         }
 
-        // XPath is not thread safe!
-        var xPath = XPathUtil.newXPath(xmlConfig);
+        var namespaces = namespaceContext();
 
         try {
             if (xmlType == null) {
-                return xPath.evaluateExpression(expression, parser.parse(XMLUtil.getInputSource(msg)));
+                return XmlDomBody.xpath(msg, expression, namespaces);
             }
             try {
                 // Depending on the xpath it is not always possible to set it to specified xmlType
                 // e.g., xmlType=NodeSet xpath=string(//city)
-                return xPath.evaluate(expression, parser.parse(XMLUtil.getInputSource(msg)), xmlType);
+                return XmlDomBody.xpath(msg, expression, namespaces, xmlType);
             } catch (XPathExpressionException e) {
                 log.debug("XPath expression failed. Trying again without type.", e);
-                return xPath.evaluateExpression(expression, parser.parse(XMLUtil.getInputSource(msg)));
+                return XmlDomBody.xpath(msg, expression, namespaces);
             }
         } catch (RuntimeException e) {
             // Parser errors may escape as unchecked exceptions.
@@ -141,6 +137,10 @@ public class XPathExchangeExpression extends AbstractExchangeExpression {
             }
             throw e;
         }
+    }
+
+    private @Nullable NamespaceContext namespaceContext() {
+        return xmlConfig != null && xmlConfig.getNamespaces() != null ? xmlConfig.getNamespaces().getNamespaceContext() : null;
     }
 
     private static boolean causeMessageContains(Throwable t, String fragment) {
