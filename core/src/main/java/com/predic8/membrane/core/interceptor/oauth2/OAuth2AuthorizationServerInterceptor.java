@@ -226,6 +226,11 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
         return path;
     }
 
+    /**
+     * @description Sub-path, appended to the element's base path, at which the login dialog endpoint is served
+     * and matched.
+     * @default /login/
+     */
     @MCAttribute
     public void setPath(String path) {
         this.path = path;
@@ -235,6 +240,10 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
         return message;
     }
 
+    /**
+     * @description HTML body shown on the intermediate 200-status redirect page the login dialog uses instead
+     * of a 30x redirect. When omitted, a generic "This page has moved" message is used.
+     */
     @MCAttribute
     public void setMessage(String message) {
         this.message = message;
@@ -253,6 +262,11 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
         return exposeUserCredentialsToSession;
     }
 
+    /**
+     * @description Whether the username and password entered on the login dialog are stored in the user's
+     * session, making them available to a configured <code>userDataProvider</code> or downstream plugins.
+     * @default false
+     */
     @MCAttribute
     public void setExposeUserCredentialsToSession(boolean exposeUserCredentialsToSession) {
         this.exposeUserCredentialsToSession = exposeUserCredentialsToSession;
@@ -340,6 +354,11 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
         return consentFile;
     }
 
+    /**
+     * @description Path to the consent page HTML file shown to the user before granting access. Required for the
+     * authorization code and implicit flows; without it those flows are disabled.
+     * @example conf/consent.html
+     */
     @MCAttribute
     public void setConsentFile(String consentFile) {
         this.consentFile = consentFile;

@@ -157,6 +157,8 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor implements Ap
 	}
 
 	/**
+	 * @description Whether only <code>POST</code> requests are recorded; requests with any other HTTP method are
+	 * skipped.
 	 * @default false
 	 */
 	@MCAttribute
@@ -182,6 +184,8 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor implements Ap
 	}
 
 	/**
+	 * @description Whether only requests with a SOAP or XML content type (<code>application/soap+xml</code> or
+	 * <code>text/xml</code>) are recorded; requests with any other content type are skipped.
 	 * @default false
 	 */
 	@MCAttribute

@@ -31,9 +31,9 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
- * @description Adds the current state of HTTP requests and responses to an "exchange store".
- * @explanation Note that depending on the implementation of the exchange store, both request *and* response logging
- *              might both be required for the exchange to be saved.
+ * @description Adds the current state of HTTP requests and responses to an "exchange store" so
+ * they can be inspected later. Depending on the store implementation, both the request and the
+ * response phase may need to run before an exchange is saved.
  * @topic 4. Monitoring, Logging and Statistics
  */
 @MCElement(name="exchangeStore", excludeFromFlow = true)

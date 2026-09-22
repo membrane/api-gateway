@@ -359,6 +359,12 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         return sessionAuthorizer.isSkipUserInfo();
     }
 
+    /**
+     * @description Whether the userinfo endpoint call and token verification are skipped after the token
+     * response; the session is authorized from the token response alone. Required when <code>onlyRefreshToken</code>
+     * is enabled.
+     * @default false
+     */
     @MCAttribute
     public void setSkipUserInfo(boolean skipUserInfo) {
         sessionAuthorizer.setSkipUserInfo(skipUserInfo);
@@ -442,6 +448,10 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         return afterLogoutUrl;
     }
 
+    /**
+     * @description URL the user is redirected to after a logout request.
+     * @default /
+     */
     @MCAttribute
     public void setAfterLogoutUrl(String afterLogoutUrl) {
         this.afterLogoutUrl = afterLogoutUrl;
@@ -460,6 +470,11 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         return appendAccessTokenToRequest;
     }
 
+    /**
+     * @description Whether the access token from the OAuth2 answer is added to the forwarded request as an
+     * <code>Authorization: Bearer</code> header.
+     * @default false
+     */
     @MCAttribute
     public void setAppendAccessTokenToRequest(boolean appendAccessTokenToRequest) {
         this.appendAccessTokenToRequest = appendAccessTokenToRequest;
@@ -478,6 +493,12 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         return onlyRefreshToken;
     }
 
+    /**
+     * @description Whether this interceptor only refreshes the access token and skips the normal login/session
+     * flow, relying on <code>skipUserInfo</code> for authorization. Requires <code>skipUserInfo</code> to also be
+     * set.
+     * @default false
+     */
     @MCAttribute
     public void setOnlyRefreshToken(boolean onlyRefreshToken) {
         this.onlyRefreshToken = onlyRefreshToken;

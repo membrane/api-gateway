@@ -36,7 +36,8 @@ import static java.time.Instant.now;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 
 /**
- * Demo interceptor that creates a Server-Sent Events (SSE) stream.
+ * @description Demo interceptor that streams a Server-Sent Events (SSE) response, emitting one JSON
+ * event per interval, for testing or demonstration purposes.
  */
 @MCElement(name = "sseDemoStream")
 public class ServerSentEventsDemoStreamInterceptor extends AbstractInterceptor {
@@ -136,6 +137,10 @@ public class ServerSentEventsDemoStreamInterceptor extends AbstractInterceptor {
         return intervalSeconds;
     }
 
+    /**
+     * @description Seconds to wait between events.
+     * @default 1
+     */
     @MCAttribute
     public void setIntervalSeconds(int intervalSeconds) {
         this.intervalSeconds = intervalSeconds;
@@ -145,6 +150,10 @@ public class ServerSentEventsDemoStreamInterceptor extends AbstractInterceptor {
         return totalEvents;
     }
 
+    /**
+     * @description Total number of events to send before the stream ends.
+     * @default 3600
+     */
     @MCAttribute
     public void setTotalEvents(int totalEvents) {
         this.totalEvents = totalEvents;

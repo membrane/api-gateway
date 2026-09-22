@@ -47,6 +47,11 @@ import static com.predic8.membrane.core.util.xml.XMLUtil.xmlNode2String;
 import static java.util.Objects.requireNonNull;
 import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
 
+/**
+ * @description A built-in SOAP web service returning city population data, for testing and
+ * demonstration. Serves its own WSDL, responds to <code>getCity</code> requests, and returns a SOAP
+ * fault for non-POST requests or unknown cities.
+ */
 @MCElement(name = "sampleSoapService")
 public class SampleSoapServiceInterceptor extends AbstractInterceptor {
 

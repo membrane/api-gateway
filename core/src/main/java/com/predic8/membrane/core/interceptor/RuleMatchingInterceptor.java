@@ -145,6 +145,11 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 		return xForwardedForEnabled;
 	}
 
+	/**
+	 * @description Whether <code>X-Forwarded-For</code>, <code>X-Forwarded-Proto</code>, and
+	 * <code>X-Forwarded-Host</code> headers are added to requests matched to a service proxy.
+	 * @default true
+	 */
 	@MCAttribute
 	public void setxForwardedForEnabled(boolean xForwardedForEnabled) {
 		this.xForwardedForEnabled = xForwardedForEnabled;
@@ -155,6 +160,11 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 		return maxXForwardedForHeaders;
 	}
 
+	/**
+	 * @description Maximum number of existing <code>X-Forwarded-For</code>/<code>-Proto</code>/<code>-Host</code>
+	 * header occurrences allowed on an incoming request before it is rejected as flooded.
+	 * @default 20
+	 */
 	@MCAttribute
 	public void setMaxXForwardedForHeaders(int maxXForwardedForHeaders) {
 		this.maxXForwardedForHeaders = maxXForwardedForHeaders;

@@ -67,6 +67,10 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 		return wsdl;
 	}
 
+	/**
+	 * @description Location of the WSDL document to explore, resolved via the router's resolver (classpath, file,
+	 * or URL).
+	 */
 	@Required
 	@MCAttribute
 	public void setWsdl(String wsdl) {
@@ -77,6 +81,9 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 		return portName;
 	}
 
+	/**
+	 * @description Name of the WSDL port to explore.
+	 */
 	@MCAttribute
 	public void setPortName(String portName) {
 		this.portName = portName;

@@ -154,8 +154,7 @@ public class IfInterceptor extends AbstractFlowWithChildrenInterceptor implement
     }
 
     /**
-     * XML Configuration e.g. declaration of XML namespaces for XPath expressions, ...
-     * @param xmlConfig
+     * @description XML configuration, e.g. namespace declarations for XPath expressions used in <code>test</code>.
      */
     @Override
     @MCChildElement(allowForeign = true,order = 10)
@@ -169,9 +168,7 @@ public class IfInterceptor extends AbstractFlowWithChildrenInterceptor implement
     }
 
     /**
-     * Sets the list of interceptors to be executed when the test condition evaluates to false.
-     *
-     * @param elseFlow the list of {@link Interceptor} instances to be executed in the "else" case
+     * @description Plugins to run when <code>test</code> evaluates to false, instead of the main flow.
      */
     @MCChildElement(order = 100)
     public void setElse(List<Interceptor> elseFlow) {
