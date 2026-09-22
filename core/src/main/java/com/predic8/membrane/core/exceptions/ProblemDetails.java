@@ -20,18 +20,23 @@ import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.http.InvalidMediaTypeException;
+import org.springframework.http.MediaType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetailsHTML.createHTMLContent;
 import static com.predic8.membrane.core.exceptions.ProblemDetailsXML.createXMLContent;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_PROBLEM_JSON;
 import static com.predic8.membrane.core.http.MimeType.TEXT_PLAIN_UTF8;
+import static com.predic8.membrane.core.http.MimeType.sortMimeTypeByQualityFactorAscending;
 import static com.predic8.membrane.core.http.Response.statusCode;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
@@ -397,7 +402,9 @@ public class ProblemDetails {
         root.put(STATUS, effectiveStatus);   // keep body in sync with HTTP status
         var builder = statusCode(effectiveStatus);
         try {
-            if (exchange != null && (acceptXML(exchange) || exchange.getRequest().isXML())) {
+            if (exchange != null && acceptHTML(exchange)) {
+                createHTMLContent(root, builder);
+            } else if (exchange != null && (acceptXML(exchange) || exchange.getRequest().isXML())) {
                 createXMLContent(root, builder);
             } else {
                 createJson(root, builder);
@@ -422,6 +429,26 @@ public class ProblemDetails {
         if (exc != null && exc.getResponse() != null && status >= 400 && status < 500)
             return 500;
         return status;
+    }
+
+    private boolean acceptHTML(Exchange exchange) {
+        String accept = exchange.getRequest().getHeader().getAccept();
+        if (accept == null)
+            return false;
+        try {
+            List<MediaType> types = sortMimeTypeByQualityFactorAscending(accept);
+            if (types.isEmpty())
+                return false;
+            double preferred = types.getFirst().getQualityValue();
+            if (preferred <= 0.0)
+                return false;  // q=0 asks for anything but this
+            return types.stream()
+                    .filter(type -> type.getQualityValue() == preferred)
+                    .anyMatch(MediaType.TEXT_HTML::equalsTypeAndSubtype);
+        } catch (InvalidMediaTypeException e) {
+            log.debug("Ignoring malformed Accept header '{}'.", accept);
+            return false;
+        }
     }
 
     private boolean acceptXML(Exchange exchange) {
