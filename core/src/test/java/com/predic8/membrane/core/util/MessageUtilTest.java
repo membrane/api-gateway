@@ -37,6 +37,27 @@ class MessageUtilTest {
     }
 
     /**
+     * RFC 9110 8.4.1.2 defines "deflate" as a zlib-wrapped (RFC 1950) stream; that is also what
+     * Java's own {@link Deflater#Deflater(int)} produces by default. Only opting into raw DEFLATE
+     * (RFC 1951, no zlib header) is the non-conformant case.
+     */
+    @Test
+    void zlibWrappedDeflateBodyReturnsOnlyDecompressedBytes() throws IOException {
+        for (String content : new String[]{"", "payload", "x".repeat(4096)}) {
+            assertArrayEquals(content.getBytes(UTF_8),
+                    MessageUtil.getDecompressedData(zlibDeflate(content)));
+        }
+    }
+
+    @Test
+    void isZlibWrappedDetectsZlibHeaderOnly() {
+        assertTrue(MessageUtil.isZlibWrapped(zlibDeflate("payload")));
+        assertFalse(MessageUtil.isZlibWrapped(rawDeflate("payload")));
+        assertFalse(MessageUtil.isZlibWrapped(new byte[0]));
+        assertFalse(MessageUtil.isZlibWrapped(new byte[]{0x78}));
+    }
+
+    /**
      * A truncated raw deflate body leaves {@link java.util.zip.Inflater} unfinished and needing
      * input. MessageUtil must reject it instead of repeatedly calling inflate() with no progress.
      */
@@ -50,7 +71,14 @@ class MessageUtilTest {
     }
 
     private static byte[] rawDeflate(String value) {
-        var deflater = new Deflater(Deflater.DEFAULT_COMPRESSION, true);
+        return deflate(value, new Deflater(Deflater.DEFAULT_COMPRESSION, true));
+    }
+
+    private static byte[] zlibDeflate(String value) {
+        return deflate(value, new Deflater(Deflater.DEFAULT_COMPRESSION, false));
+    }
+
+    private static byte[] deflate(String value, Deflater deflater) {
         try {
             deflater.setInput(value.getBytes(UTF_8));
             deflater.finish();
