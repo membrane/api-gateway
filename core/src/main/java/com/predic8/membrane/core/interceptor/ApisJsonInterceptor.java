@@ -139,8 +139,9 @@ public class ApisJsonInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description Prefix combined with <code>collectionId</code> (or an API proxy's own route id) to build
-     * each API's <code>aid</code> when the API proxy itself defines no id.
+     * @description Prefix of every generated <code>aid</code>: combined with <code>collectionId</code> for the
+     * collection itself, and with the OpenAPI record id or the proxy's key for each API that defines no id of
+     * its own.
      */
     @MCAttribute
     public void setRootDomain(String rootDomain) {

@@ -43,7 +43,8 @@ import static java.lang.System.currentTimeMillis;
 /**
  * @description Serves static files from a directory, a classpath location, or a URL, based on
  * the request's path. The interceptor chain does not continue past this interceptor: it always
- * finalizes the exchange, either with the contents of a matching file or with a 404 response.
+ * finalizes the exchange, either with the contents of a matching file or with an error response,
+ * 404 for a path that matches no file and 400 for one that tries to escape the document base.
  * @topic 9. Misc
  */
 @MCElement(name = "webServer")

@@ -30,10 +30,10 @@ import java.nio.charset.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
- * @description Moves the SOAP <code>authorization</code> element out of the request body into
- * <code>username</code>/<code>password</code> child elements of the request's namespaced payload
- * element, for backends that expect credentials inline rather than in a dedicated header element.
- * Requests without an <code>authorization</code> element pass through unchanged.
+ * @description Moves the credentials of a SOAP <code>authorization</code> element out of the request
+ * body into <code>username</code>/<code>password</code> child elements of the payload element, for a
+ * backend that expects them inline. Requests without an <code>authorization</code> element pass
+ * through unchanged.
  */
 @MCElement(name="authHead2Body")
 public class AuthHead2BodyInterceptor extends AbstractInterceptor {

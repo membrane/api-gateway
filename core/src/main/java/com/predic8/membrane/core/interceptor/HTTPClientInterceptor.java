@@ -243,7 +243,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 
     /**
      * @description Connection pooling, timeout, retry, and proxy settings for outgoing HTTP connections made by
-     * this element. When omitted, the transport's global configuration applies.
+     * this element. When omitted, the router's global <code>httpClientConfig</code> applies.
      */
     @MCChildElement
     public void setHttpClientConfig(HttpClientConfiguration httpClientConfig) {

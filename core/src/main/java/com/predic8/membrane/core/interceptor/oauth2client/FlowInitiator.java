@@ -39,8 +39,9 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 /**
  * @description Starts a named OAuth2 login flow other than the client's default one. It triggers the
  * configured <code>oauth2</code> client's normal login redirect internally, then rewrites the
- * resulting redirect (and cookies) so the browser is sent to <code>triggerFlow</code> instead of the
- * client's <code>defaultFlow</code>, merging in any configured login parameters.
+ * <code>Location</code> header and the body of that redirect so the browser is sent to
+ * <code>triggerFlow</code> instead of the client's <code>defaultFlow</code>, merging in any
+ * configured login parameters.
  */
 @MCElement(name = "flowInitiator", excludeFromFlow = true)
 public class FlowInitiator extends AbstractInterceptor {
@@ -158,6 +159,11 @@ public class FlowInitiator extends AbstractInterceptor {
         return loginParameters;
     }
 
+    /**
+     * @description Parameters added to the login redirect. A <code>loginParameter</code> with a
+     * <code>value</code> contributes that constant, one without forwards the incoming request's
+     * query parameter of the same name, if it is present.
+     */
     @MCChildElement
     public void setLoginParameters(List<LoginParameter> loginParameters) {
         this.loginParameters = loginParameters;

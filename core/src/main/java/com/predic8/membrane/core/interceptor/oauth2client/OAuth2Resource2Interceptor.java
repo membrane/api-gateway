@@ -360,9 +360,9 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     }
 
     /**
-     * @description Whether the userinfo endpoint call and token verification are skipped after the token
-     * response; the session is authorized from the token response alone. Required when <code>onlyRefreshToken</code>
-     * is enabled.
+     * @description Whether the call to the userinfo endpoint is skipped when authorizing the session. When
+     * enabled, the access token is assumed to be a JWT and is verified locally instead. Required when
+     * <code>onlyRefreshToken</code> is enabled.
      * @default false
      */
     @MCAttribute
@@ -461,6 +461,11 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         return loginParameters;
     }
 
+    /**
+     * @description Parameters appended to the authorization request sent to the identity provider. A
+     * <code>loginParameter</code> with a <code>value</code> contributes that constant, one without
+     * forwards the incoming request's query parameter of the same name, if it is present.
+     */
     @MCChildElement(order = 25)
     public void setLoginParameters(List<LoginParameter> loginParameters) {
         this.loginParameters = loginParameters;
@@ -484,6 +489,11 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         return afterErrorUrl;
     }
 
+    /**
+     * @description URL a form POST carrying the <code>error</code> and <code>error_description</code>
+     * of a failed OAuth2 flow is sent to. Without it, the error response of the flow itself is
+     * returned to the client.
+     */
     @MCAttribute
     public void setAfterErrorUrl(String afterErrorUrl) {
         this.afterErrorUrl = afterErrorUrl;
@@ -494,9 +504,9 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     }
 
     /**
-     * @description Whether this interceptor only refreshes the access token and skips the normal login/session
-     * flow, relying on <code>skipUserInfo</code> for authorization. Requires <code>skipUserInfo</code> to also be
-     * set.
+     * @description Whether a token response without an <code>access_token</code> is accepted. When enabled, the
+     * id token is verified in place of the access token and a refresh that returns only one of both tokens does
+     * not fail. Requires <code>skipUserInfo</code> to also be set.
      * @default false
      */
     @MCAttribute

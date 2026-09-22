@@ -178,7 +178,7 @@ public class StatisticsProvider extends AbstractInterceptor implements Applicati
 	}
 
 	/**
-	 * @description Spring bean id of the <code>DataSource</code> statistics are written to.
+	 * @description Spring bean id of the <code>DataSource</code> the statistics are read from.
 	 */
 	@Required
 	@MCAttribute(attributeName="dataSourceBeanId")

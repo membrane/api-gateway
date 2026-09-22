@@ -263,8 +263,9 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description Whether the username and password entered on the login dialog are stored in the user's
-     * session, making them available to a configured <code>userDataProvider</code> or downstream plugins.
+     * @description Whether the parameters submitted on the login dialog, the password included, are copied
+     * into the session's user attributes. Attributes the <code>userDataProvider</code> has already supplied
+     * are kept.
      * @default false
      */
     @MCAttribute

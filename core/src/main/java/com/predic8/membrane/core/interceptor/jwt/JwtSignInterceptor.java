@@ -167,6 +167,7 @@ public class JwtSignInterceptor extends AbstractInterceptor {
     /**
      * @description To account for clock skew between systems, the token's validity start (the
      * <code>nbf</code> claim) is backdated from "issued at" by this many seconds.
+     * @default 120
      */
     @MCAttribute
     public void setClockSkewSeconds(int clockSkewSeconds) {

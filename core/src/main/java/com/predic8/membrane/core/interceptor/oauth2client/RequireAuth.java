@@ -110,8 +110,8 @@ public class RequireAuth extends AbstractInterceptor {
     }
 
     /**
-     * @description Expected tenant ID claim value that a presented JWT must contain, when the
-     * identity provider issues tokens per tenant.
+     * @description Expected value of the <code>tid</code> (tenant ID) claim of a presented JWT,
+     * for identity providers that issue tokens per tenant.
      */
     @MCAttribute
     public void setExpectedTid(String expectedTid) {
@@ -155,8 +155,8 @@ public class RequireAuth extends AbstractInterceptor {
     }
 
     /**
-     * @description HTTP status code to use instead of the oauth2 flow's own status when
-     * authentication fails.
+     * @description HTTP status code to answer with, instead of redirecting the browser to the
+     * login page, when the request carries no usable session.
      */
     @MCAttribute
     public void setErrorStatus(int errorStatus) {
@@ -168,7 +168,8 @@ public class RequireAuth extends AbstractInterceptor {
     }
 
     /**
-     * @description OAuth2 scope that must be granted for the request to be authorized.
+     * @description OAuth2 scope the access token is requested for. A session that holds no token
+     * for this scope triggers a login or a refresh.
      */
     @MCAttribute
     public void setScope(String scope) {

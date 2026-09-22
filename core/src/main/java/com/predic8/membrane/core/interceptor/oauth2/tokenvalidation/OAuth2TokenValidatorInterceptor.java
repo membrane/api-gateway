@@ -28,9 +28,9 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
- * @description Validates the <code>Authorization</code> header of each request by forwarding it to
- * an external token-introspection endpoint; the request continues only if that endpoint responds
- * with HTTP 200, otherwise it is rejected with 400 Bad Request.
+ * @description Validates the <code>Authorization</code> header of each request by sending it on a
+ * GET to an external validation endpoint; the request continues only if that endpoint responds with
+ * HTTP 200, otherwise it is rejected with 400 Bad Request.
  */
 @MCElement(name="tokenValidator")
 public class OAuth2TokenValidatorInterceptor extends AbstractInterceptor {

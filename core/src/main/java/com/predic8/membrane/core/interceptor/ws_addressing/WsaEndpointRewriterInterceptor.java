@@ -96,7 +96,7 @@ public class WsaEndpointRewriterInterceptor extends AbstractInterceptor {
 
 	/**
 	 * @description Port the rewritten endpoint URLs will use.
-	 * @default -1 (port is left unchanged)
+	 * @default -1 (no port in the rewritten URL)
 	 */
 	@MCAttribute
 	public void setPort(int port) {

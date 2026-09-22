@@ -220,6 +220,10 @@ public class XenAuthenticationInterceptor extends AbstractInterceptor {
             return audience;
         }
 
+        /**
+         * @description Value written into the <code>aud</code> claim of the session JWT and expected
+         * when it is read back.
+         */
         @MCAttribute
         public void setAudience(String audience) {
             this.audience = audience;
@@ -229,6 +233,10 @@ public class XenAuthenticationInterceptor extends AbstractInterceptor {
             return jwk;
         }
 
+        /**
+         * @description RSA key used to sign and verify the session JWT. When it resolves to nothing,
+         * a key is generated at startup, which invalidates every session on restart.
+         */
         @Required
         @MCChildElement
         public void setJwk(Jwk jwk) {

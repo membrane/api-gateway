@@ -29,12 +29,11 @@ import com.predic8.membrane.core.exchange.*;
  *   port: 2000
  *   flow:
  *     - setProperty:
- *          name: product
- *          value: ${$.product_id}
- *          language: jsonpath
+ *         name: product
+ *         value: ${$.product_id}
+ *         language: jsonpath
  *     - call:
- *         url: https://api.predic8.de/shop/v2/${pathParam.product}
- *
+ *         url: https://api.predic8.de/shop/v2/products/${property.product}
  * </code></pre>
  */
 @MCElement(name = "setProperty")

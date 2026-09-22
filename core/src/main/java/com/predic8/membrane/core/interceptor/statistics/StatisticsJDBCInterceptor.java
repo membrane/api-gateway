@@ -184,8 +184,8 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor implements Ap
 	}
 
 	/**
-	 * @description Whether only requests with a SOAP or XML content type (<code>application/soap+xml</code> or
-	 * <code>text/xml</code>) are recorded; requests with any other content type are skipped.
+	 * @description Whether requests carrying a content type other than <code>application/soap+xml</code> or
+	 * <code>text/xml</code> are skipped. Requests without a content type are recorded either way.
 	 * @default false
 	 */
 	@MCAttribute
