@@ -75,8 +75,8 @@
 		<gpg.keyname>5B8A65F6</gpg.keyname>
 		<javac.source>21</javac.source>
 		<javac.target>21</javac.target>
-		<jackson.version>2.21.4</jackson.version>
 		<spring.version>7.0.9</spring.version>
+		<jackson.version>2.21.5</jackson.version>
 		<slf4j.version>2.0.17</slf4j.version>
 		<log4j.version>2.25.5</log4j.version>
 		<junit.version>5.10.0</junit.version>
@@ -326,7 +326,7 @@
 			<dependency>
 				<groupId>org.bouncycastle</groupId>
 				<artifactId>bcpkix-jdk18on</artifactId>
-				<version>1.84</version>
+				<version>1.85</version>
 			</dependency>
 			<dependency>
 				<groupId>org.jetbrains</groupId>
