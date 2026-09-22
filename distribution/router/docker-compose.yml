@@ -5,7 +5,7 @@
 #   Ctrl+C, then: docker compose down
 services:
   membrane:
-    image: predic8/membrane:7.6.1
+    image: predic8/membrane:7.6.2
     # The image entrypoint is ./membrane.sh relative to its workdir. Without this
     # override it would resolve to the membrane.sh in the mount below and run the
     # jars from this directory instead of the ones in the image.
