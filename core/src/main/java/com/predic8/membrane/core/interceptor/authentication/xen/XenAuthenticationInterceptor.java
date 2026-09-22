@@ -138,7 +138,8 @@ public class XenAuthenticationInterceptor extends AbstractInterceptor {
 
     /**
      * @description Session manager that encodes the backend session id as a signed JWT instead of
-     * storing a mapping; the JWT is verified and its subject read back on each incoming request.
+     * storing a mapping. The JWT is verified and its subject read back on every request except a
+     * login, which is authenticated with credentials instead.
      */
     @MCElement(name = "jwtSessionManager", component = false, id = "xenAuthentication-jwtSessionManager")
     public static class JwtSessionManager implements XenSessionManager {

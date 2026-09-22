@@ -37,7 +37,8 @@ import static java.util.Optional.*;
 
 /**
  * @description Serves the router's deployed API proxies as a single <code>apis.json</code> document,
- * listing each API's id, name, description, URL and version, for use by API discovery tools.
+ * listing each API's id, name, description and URL, plus its version where the API has an OpenAPI
+ * description, for use by API discovery tools.
  */
 @MCElement(name = "APIsJSON")
 public class ApisJsonInterceptor extends AbstractInterceptor {

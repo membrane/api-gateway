@@ -147,8 +147,9 @@ public class ShadowingInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description Shadow hosts each incoming request is additionally cloned and sent to in the background. Their
-     * responses are not returned to the client; a 5xx response from a shadow host is only logged.
+     * @description Shadow hosts each incoming request is additionally cloned and sent to in the background,
+     * once its body has been read completely. A request whose body could not be read is not shadowed.
+     * Responses from the shadow hosts are not returned to the client. A 5xx response is only logged.
      */
     @MCChildElement
     public void setTargets(List<Target> targets) {

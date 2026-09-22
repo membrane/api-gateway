@@ -82,7 +82,8 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 	}
 
 	/**
-	 * @description Name of the WSDL port to explore.
+	 * @description Name of the WSDL port. Currently without effect: the value is not evaluated, the
+	 * explorer always describes the first service of the WSDL and the operations of its first port.
 	 */
 	@MCAttribute
 	public void setPortName(String portName) {
