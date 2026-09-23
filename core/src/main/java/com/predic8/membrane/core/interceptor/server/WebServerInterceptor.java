@@ -46,6 +46,15 @@ import static java.lang.System.currentTimeMillis;
  * finalizes the exchange, either with the contents of a matching file or with an error response,
  * 404 for a path that matches no file and 400 for one that tries to escape the document base.
  * @topic 9. Misc
+ * @yaml
+ * <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - webServer:
+ *         docBase: docBase
+ *         index: index.html
+ * </code></pre>
  */
 @MCElement(name = "webServer")
 public class WebServerInterceptor extends AbstractInterceptor {

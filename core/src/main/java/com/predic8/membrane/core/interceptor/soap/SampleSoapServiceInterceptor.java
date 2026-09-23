@@ -50,7 +50,16 @@ import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
 /**
  * @description A built-in SOAP web service returning city population data, for testing and
  * demonstration. Serves its own WSDL, responds to <code>getCity</code> requests, and returns a SOAP
- * fault for non-POST requests or unknown cities.
+ * fault for non-POST requests or unknown cities. See tutorials/soap/10-Sample-SOAP-Service.yaml.
+ * @yaml
+ * <pre><code>
+ * api:
+ *   port: 2000
+ *   path:
+ *     uri: /city-service
+ *   flow:
+ *     - sampleSoapService: {}
+ * </code></pre>
  */
 @MCElement(name = "sampleSoapService")
 public class SampleSoapServiceInterceptor extends AbstractInterceptor {

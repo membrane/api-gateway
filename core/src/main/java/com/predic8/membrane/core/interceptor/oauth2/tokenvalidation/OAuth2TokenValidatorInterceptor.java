@@ -30,7 +30,15 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
 /**
  * @description Validates the <code>Authorization</code> header of each request by sending it on a
  * GET to an external validation endpoint; the request continues only if that endpoint responds with
- * HTTP 200, otherwise it is rejected with 400 Bad Request.
+ * HTTP 200, otherwise it is rejected with 400 Bad Request. See tutorials/oauth2/10-OAuth2-Basics.yaml.
+ * @yaml
+ * <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - tokenValidator:
+ *         endpoint: http://localhost:7007/oauth2/userinfo
+ * </code></pre>
  */
 @MCElement(name="tokenValidator")
 public class OAuth2TokenValidatorInterceptor extends AbstractInterceptor {

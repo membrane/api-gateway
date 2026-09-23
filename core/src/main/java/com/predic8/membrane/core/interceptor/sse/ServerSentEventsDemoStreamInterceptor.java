@@ -37,7 +37,17 @@ import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 
 /**
  * @description Demo interceptor that streams a Server-Sent Events (SSE) response, emitting one JSON
- * event per interval, for testing or demonstration purposes.
+ * event per interval, for testing or demonstration purposes. See tutorials/sse/10-Server-Sent-Events.yaml.
+ * @yaml
+ * <pre><code>
+ * api:
+ *   port: 2000
+ *   path:
+ *     uri: /stream
+ *   flow:
+ *     - sseDemoStream:
+ *         totalEvents: 10
+ * </code></pre>
  */
 @MCElement(name = "sseDemoStream")
 public class ServerSentEventsDemoStreamInterceptor extends AbstractInterceptor {
