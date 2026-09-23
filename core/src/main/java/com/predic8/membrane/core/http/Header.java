@@ -40,8 +40,7 @@ import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.http.MimeType.isBinary;
 import static com.predic8.membrane.core.util.HttpUtil.readLine;
-import static com.predic8.membrane.core.util.text.StringUtil.maskNonPrintableCharacters;
-import static com.predic8.membrane.core.util.text.StringUtil.truncateAfter;
+import static com.predic8.membrane.core.util.text.StringUtil.*;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.stream;
@@ -181,17 +180,27 @@ public class Header {
      * Membrane and the backend disagree on what the message said, which is the disagreement HTTP
      * request smuggling relies on. A MIME part header is the opposite case, where folding is still
      * legal and is joined back together instead, see {@link #unfold(String)}.
+     * <p>
+     * Whitespace between the field name and the colon is rejected for the same reason, as RFC 9112
+     * &sect;5.1 requires.
      *
-     * @throws MalformedHeaderException if the line carries no field name followed by a colon
+     * @throws MalformedHeaderException if the line carries no field name followed by a colon, or
+     *                                  if whitespace precedes the colon
      */
     private static HeaderField parseFieldLine(String line) {
-        if (line.indexOf(':') < 1) {
-            String message = "Malformed header line \"%s\": it carries no field name followed by a colon. Rejecting the message rather than dropping the line, which would forward it with a header silently missing."
-                    .formatted(maskNonPrintableCharacters(truncateAfter(line, 80)));
-            log.info(message);
-            throw new MalformedHeaderException(message);
-        }
+        final int colon = line.indexOf(':');
+        if (colon < 1)
+            throw malformedFieldLine(line, "it carries no field name followed by a colon. Rejecting the message rather than dropping the line, which would forward it with a header silently missing.");
+        if (isWhitespace(line.charAt(colon - 1)))
+            throw malformedFieldLine(line, "it carries whitespace between the field name and the colon. Rejecting the message rather than forwarding it, because a backend that trims the whitespace reads a different body length than Membrane does.");
         return new HeaderField(line);
+    }
+
+    private static MalformedHeaderException malformedFieldLine(String line, String reason) {
+        final String message = "Malformed header line \"%s\": %s"
+                .formatted(maskNonPrintableCharacters(truncateAfter(line, 80)), reason);
+        log.info(message);
+        return new MalformedHeaderException(message);
     }
 
     /**
