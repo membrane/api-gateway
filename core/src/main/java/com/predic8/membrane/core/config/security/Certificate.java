@@ -16,6 +16,24 @@ package com.predic8.membrane.core.config.security;
 
 import com.predic8.membrane.annot.MCElement;
 
+/**
+ * @description A single certificate, given as a PEM block either inline or loaded from a file.
+ * Used as an item in <code>key</code>'s certificate chain or <code>trust</code>'s list of trusted
+ * certificates. See <tt>tutorials/ssl-tls/10-TLS-Termination.yaml</tt>.
+ * <pre>
+ * certificate:
+ *   location: &lt;file&gt; | content: &lt;PEM text&gt;
+ * </pre>
+ * @yaml <pre><code>
+ * ssl:
+ *   trust:
+ *     certificates:
+ *       - content: |
+ *           -----BEGIN CERTIFICATE-----
+ *           MIIDXTCCAkWgAwIBAgIJAKL0...
+ *           -----END CERTIFICATE-----
+ * </code></pre>
+ */
 @MCElement(name="certificate", mixed=true)
 public class Certificate extends Blob {
     /**
