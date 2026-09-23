@@ -438,6 +438,40 @@ class HeaderTest {
         }
 
         /**
+         * The rejection message is logged and echoed in the 400 response, so it must not carry
+         * the field-line value: a malformed "Authorization : Basic ..." would leak the credential
+         * into the log and back to the client.
+         */
+        @Test
+        void rejectionMessageDoesNotCarryTheFieldValue() {
+            MalformedHeaderException e = assertThrows(MalformedHeaderException.class,
+                    () -> new Header(convertMessage("""
+                            Authorization : Basic c2VjcmV0
+
+                            """)));
+
+            assertFalse(e.getMessage().contains("c2VjcmV0"), e.getMessage());
+            assertTrue(e.getMessage().contains("Authorization"), e.getMessage());
+        }
+
+        /**
+         * A line without a colon has no field name to separate from a value, so nothing of it is
+         * echoed - a folded continuation of an Authorization field arrives this way.
+         */
+        @Test
+        void rejectionMessageDoesNotCarryALineWithoutAColon() {
+            MalformedHeaderException e = assertThrows(MalformedHeaderException.class,
+                    () -> new Header(convertMessage("""
+                            Authorization: Basic c2VjcmV0
+                            \tbW9yZQ==
+
+                            """)));
+
+            assertFalse(e.getMessage().contains("c2VjcmV0"), e.getMessage());
+            assertFalse(e.getMessage().contains("bW9yZQ=="), e.getMessage());
+        }
+
+        /**
          * Whitespace after the colon is the optional whitespace RFC 9112 5.1 allows, so rejecting
          * the whitespace before the colon must not start rejecting this too.
          */

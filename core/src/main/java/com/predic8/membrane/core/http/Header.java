@@ -23,6 +23,7 @@ import com.predic8.membrane.core.util.HttpUtil;
 import jakarta.mail.internet.ContentType;
 import jakarta.mail.internet.ParseException;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -190,15 +191,26 @@ public class Header {
     private static HeaderField parseFieldLine(String line) {
         final int colon = line.indexOf(':');
         if (colon < 1)
-            throw malformedFieldLine(line, "it carries no field name followed by a colon. Rejecting the message rather than dropping the line, which would forward it with a header silently missing.");
+            throw malformedFieldLine(null, "it carries no field name followed by a colon. Rejecting the message rather than dropping the line, which would forward it with a header silently missing.");
         if (isWhitespace(line.charAt(colon - 1)))
-            throw malformedFieldLine(line, "it carries whitespace between the field name and the colon. Rejecting the message rather than forwarding it, because a backend that trims the whitespace reads a different body length than Membrane does.");
+            throw malformedFieldLine(line.substring(0, colon), "it carries whitespace between the field name and the colon. Rejecting the message rather than forwarding it, because a backend that trims the whitespace reads a different body length than Membrane does.");
         return new HeaderField(line);
     }
 
-    private static MalformedHeaderException malformedFieldLine(String line, String reason) {
-        final String message = "Malformed header line \"%s\": %s"
-                .formatted(maskNonPrintableCharacters(truncateAfter(line, 80)), reason);
+    /**
+     * Builds the rejection message, which is logged and handed to the client in the 400 response.
+     * It names the offending field at most, never the field-line value, which may carry a
+     * credential: everything up to the first colon is the field name and the whitespace that makes
+     * it malformed, so it is safe to quote, while a line without a colon has no name to separate
+     * from a value and is reported with neither. The name is echoed untrimmed, because the
+     * trailing whitespace is the defect being reported.
+     *
+     * @param fieldName the field name as it arrived, or null if the line carries none
+     */
+    private static MalformedHeaderException malformedFieldLine(@Nullable String fieldName, String reason) {
+        final String message = fieldName == null
+                ? "Malformed header line: " + reason
+                : "Malformed header line \"%s\": %s".formatted(maskNonPrintableCharacters(truncateAfter(fieldName, 80)), reason);
         log.info(message);
         return new MalformedHeaderException(message);
     }
