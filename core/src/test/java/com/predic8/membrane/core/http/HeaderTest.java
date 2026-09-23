@@ -353,6 +353,27 @@ class HeaderTest {
         void missingTransferEncodingIsNotChunked() {
             assertFalse(new Header().isChunked());
         }
+
+        /**
+         * RFC 9112 5.2/6.1: repeated field lines are combined into one comma-separated list before
+         * the final transfer coding is determined. "chunked, identity" does not end in "chunked",
+         * so splitting the two codings over two field lines must not make the message chunked-framed.
+         */
+        @Test
+        void chunkedNotFinalCodingAcrossSeveralFieldsIsNotChunkedFramed() {
+            var h = new Header();
+            h.add(TRANSFER_ENCODING, "chunked");
+            h.add(TRANSFER_ENCODING, "identity");
+            assertFalse(h.isChunked());
+        }
+
+        @Test
+        void chunkedAsFinalCodingAcrossSeveralFields() {
+            var h = new Header();
+            h.add(TRANSFER_ENCODING, "gzip");
+            h.add(TRANSFER_ENCODING, "chunked");
+            assertTrue(h.isChunked());
+        }
     }
 
     @Nested

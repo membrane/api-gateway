@@ -14,6 +14,8 @@
 
 package com.predic8.membrane.core.util.text;
 
+import org.jspecify.annotations.NonNull;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -111,5 +113,10 @@ public class StringUtil {
 
     public static boolean isWhitespace(char c) {
         return c == ' ' || c == '\t';
+    }
+
+    public static @NonNull String getLastOfCommaSeparatedString(String value) {
+        int lastComma = value.lastIndexOf(',');
+        return (lastComma == -1 ? value : value.substring(lastComma + 1)).trim();
     }
 }

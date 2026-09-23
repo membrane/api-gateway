@@ -407,16 +407,36 @@ public class RequestTest {
     }
 
     /**
-     * Header.isChunked() only inspects the first Transfer-Encoding field, so a chunked coding
-     * split off into a second field line is not recognized as framing and must be rejected.
+     * The two field lines combine to "gzip, chunked", which ends in "chunked" and is therefore
+     * valid chunked framing - exactly like the single-field form in
+     * {@link #transferEncodingEndingInChunkedIsAccepted()}. This used to assert rejection, which
+     * only described what Header.isChunked() did when it read the first field line alone (#3327).
      */
     @Test
-    void transferEncodingSplitOverSeveralFieldsIsRejected() {
-        assertThrows(MalformedHeaderException.class, () -> readRequest("""
+    void transferEncodingEndingInChunkedAcrossSeveralFieldsIsAccepted() throws Exception {
+        assertInstanceOf(ChunkedBody.class, readRequest("""
                 POST /products HTTP/1.1
                 Host: example.com
                 Transfer-Encoding: gzip
                 Transfer-Encoding: chunked
+
+                0
+
+                """).getBody());
+    }
+
+    /**
+     * The smuggling guard in Request.createBody must not be walked past by moving "chunked" into
+     * its own field line: combined the codings are "chunked, identity", whose final coding is not
+     * "chunked", so the body length cannot be determined and the request must be rejected.
+     */
+    @Test
+    void transferEncodingWithChunkedNotFinalAcrossSeveralFieldsIsRejected() {
+        assertThrows(MalformedHeaderException.class, () -> readRequest("""
+                POST /products HTTP/1.1
+                Host: example.com
+                Transfer-Encoding: chunked
+                Transfer-Encoding: identity
 
                 """));
     }

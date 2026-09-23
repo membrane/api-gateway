@@ -437,8 +437,15 @@ public class Response extends Message {
 			createBody(in);
 	}
 
+	/**
+	 * A backend response whose <tt>Transfer-Encoding</tt> does not end in <tt>chunked</tt> is
+	 * rejected for the same reason as such a request: its body length is undeterminable. The
+	 * check runs before the redirect shortcut, so a redirect does not skip it.
+	 */
 	@Override
 	protected void createBody(InputStream in) throws IOException {
+		rejectIfBodyLengthUndeterminable("response");
+
 		if (isRedirect() && mayHaveNoBody())
 			return;
 

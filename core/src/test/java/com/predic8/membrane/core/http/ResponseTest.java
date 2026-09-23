@@ -335,6 +335,23 @@ public class ResponseTest {
                 """).getHeader().getContentType());
     }
 
+    /**
+     * The two field lines combine to "gzip, chunked", whose final coding is "chunked", so the
+     * response is chunked-framed. Reading only the first field line makes Membrane frame it as a
+     * plain body and hand the chunk sizes through as content (#3327).
+     */
+    @Test
+    void transferEncodingEndingInChunkedAcrossSeveralFieldsIsChunkedFramed() throws Exception {
+        assertInstanceOf(ChunkedBody.class, readResponse("""
+                HTTP/1.1 200 Ok
+                Transfer-Encoding: gzip
+                Transfer-Encoding: chunked
+
+                0
+
+                """).getBody());
+    }
+
     private static Response readResponse(String message) throws IOException, EndOfStreamException {
         Response res = new Response();
         res.read(convertMessage(message), true);

@@ -32,6 +32,7 @@ import static com.predic8.membrane.annot.Constants.CRLF_BYTES;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.util.ContentTypeDetector.EffectiveContentType.HTML;
 import static com.predic8.membrane.core.util.ContentTypeDetector.detectEffectiveContentType;
+import static com.predic8.membrane.core.util.text.StringUtil.maskNonPrintableCharacters;
 import static com.predic8.membrane.core.util.text.TextUtil.getCharset;
 
 /**
@@ -202,6 +203,26 @@ public abstract class Message {
 		header.removeFields(CONTENT_ENCODING);
 		header.removeFields(TRANSFER_ENCODING);
 		header.setContentLength(b.getLength());
+	}
+
+	/**
+	 * RFC 9112 &sect;6.3: if a <tt>Transfer-Encoding</tt> is present and <tt>chunked</tt> is not the
+	 * final coding, the body length cannot be determined. Falling back to reading until EOF would
+	 * let gateway and backend disagree on where the message ends - the desynchronization that
+	 * request smuggling and response splitting rely on - so the message is rejected before a body
+	 * is selected.
+	 *
+	 * @param messageType "request" or "response", named in the rejection message
+	 */
+	protected void rejectIfBodyLengthUndeterminable(String messageType) throws MalformedHeaderException {
+		String transferEncoding = header.getNormalizedValue(TRANSFER_ENCODING);
+		if (transferEncoding == null || header.isChunked())
+			return;
+
+		String message = "Transfer-Encoding \"%s\" does not end in \"chunked\". The body length of the %s cannot be determined; rejecting to prevent a desynchronized connection."
+				.formatted(maskNonPrintableCharacters(transferEncoding), messageType);
+		log.info(message);
+		throw new MalformedHeaderException(message);
 	}
 
 	protected void createBody(InputStream in) throws IOException {
