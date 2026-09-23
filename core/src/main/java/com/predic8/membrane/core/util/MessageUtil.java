@@ -142,8 +142,23 @@ public class MessageUtil {
 		};
 	}
 
+	/**
+	 * RFC 9110 8.4.1.2 defines the "deflate" coding as a zlib (RFC 1950) stream wrapping DEFLATE
+	 * (RFC 1951) data; some non-conformant senders omit the zlib header and send raw DEFLATE
+	 * instead. Sniff which framing was actually sent, the way browsers do, so both are accepted.
+	 * A body too short to carry a zlib header (including empty) is treated as raw, preserving the
+	 * existing truncation/empty-body handling below.
+	 */
+	static boolean isZlibWrapped(byte[] data) {
+		if (data.length < 2)
+			return false;
+		int cmf = data[0] & 0xff;
+		int flg = data[1] & 0xff;
+		return (cmf & 0x0f) == 8 && ((cmf << 8) | flg) % 31 == 0;
+	}
+
 	public static byte[] getDecompressedData(byte[] compressedData) throws IOException {
-		var decompressor = new Inflater(true);
+		var decompressor = new Inflater(!isZlibWrapped(compressedData));
 		try {
 			decompressor.setInput(compressedData);
 
@@ -161,7 +176,8 @@ public class MessageUtil {
 				// Otherwise, retrying without new input or a dictionary can loop forever.
 				if (count == 0 && !decompressor.finished()) {
 					// A preset dictionary contains bytes shared by compressor and decoder in advance.
-					// Defensive check: raw deflate has no header identifying a required dictionary.
+					// Only a zlib-framed stream can signal this (via the FDICT header bit); Membrane
+					// does not supply one, so reject rather than stall waiting for it.
 					if (decompressor.needsDictionary()) {
 						log.info("Deflate stream requires a preset dictionary.");
 						throw new IOException("Deflate stream requires a preset dictionary.");
