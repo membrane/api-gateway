@@ -47,8 +47,18 @@ import static java.lang.String.*;
  * The X-Forwarded-For header can only be trusted when a trustworthy reverse proxy or load balancer is between the client and server. The gateway not should be
  * reachable directly. Only activate this feature when you know what you are doing.
  * </p>
+ * <p>See tutorials/operation/70-Production-Settings.yaml.</p>
  * @see <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-For">X-Forwarded-For &#64;Mozilla</a>
  * @topic 3. Security and Validation
+ * @yaml
+ * <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - rateLimiter:
+ *         requestLimit: 10
+ *         requestLimitDuration: PT1M
+ * </code></pre>
  */
 @MCElement(name = "rateLimiter")
 public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor {

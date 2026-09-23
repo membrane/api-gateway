@@ -56,7 +56,20 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
  * the backend, which remain the primary protection against SQL injection.</p>
  * <p>The detection rules are derived from the OWASP Core Rule Set (Apache-2.0). See
  * https://coreruleset.org/ .</p>
+ * <p>See tutorials/security/60-SQL-Injection-Protection.yaml.</p>
  * @topic 3. Security and Validation
+ * @yaml
+ * <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - limit:
+ *         maxBodyLength: 100000
+ *     - sqlInjectionProtection:
+ *         level: 1
+ *         onDetect: block
+ *         inspectHeaders: false
+ * </code></pre>
  */
 @MCElement(name = "sqlInjectionProtection")
 public class SqlInjectionProtectionInterceptor extends AbstractInterceptor {

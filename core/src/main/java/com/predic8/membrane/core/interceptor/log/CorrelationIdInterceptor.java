@@ -31,8 +31,20 @@ import static com.predic8.membrane.core.util.text.StringUtil.truncateAfter;
 /**
  * @description Reads a correlation id from a request header (or generates one if absent), writes it
  * back into that header and adds it to the SLF4J MDC logging context so it appears in every log line
- * of the request. The MDC entry is removed again on the response (and on abort).
- * @topic 4. Logging
+ * of the request. The MDC entry is removed again on the response (and on abort). See
+ * tutorials/operation/10-Correlation-Id.yaml.
+ * @topic 4. Monitoring, Logging and Statistics
+ * @yaml
+ * <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - correlationId:
+ *         header: X-Trace-Id
+ *         default: "req-${T(java.util.UUID).randomUUID()}"
+ *     - log:
+ *         message: "Correlation id: ${request.header['X-Trace-Id']}"
+ * </code></pre>
  */
 @MCElement(name = "correlationId")
 public class CorrelationIdInterceptor extends AbstractExchangeExpressionInterceptor {

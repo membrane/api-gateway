@@ -45,6 +45,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * @description Obtains an OAuth2 access token using the client credentials flow and forwards the request with a Bearer token.
+ * See tutorials/oauth2/40-OAuth2-Client-Token-Renewal.yaml.
  * @yaml <pre><code>
  * api:
  *   port: 2000

@@ -88,6 +88,7 @@ import static org.w3c.dom.DOMException.INVALID_CHARACTER_ERR;
  * such as 400 for a request it cannot map or 405 for a method the path does not support. Nothing in
  * the response reveals that a SOAP service is being called.
  * </p>
+ * <p>See tutorials/wsdl-to-openapi/10-WSDL-to-OpenAPI.yaml.</p>
  * @yaml <pre><code>
  * api:
  *   name: Purchasing API

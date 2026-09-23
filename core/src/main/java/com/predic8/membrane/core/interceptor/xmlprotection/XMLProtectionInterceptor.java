@@ -50,6 +50,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * as an attachment is checked like a plain XML body. A part the plugin had to take a DTD out of is
  * written back into the body; the other parts pass through unchanged.</p>
  *
+ * <p>See tutorials/security/40-XML-Protection.yaml.</p>
+ *
  * @yaml
  * <pre><code>
  * - xmlProtection:

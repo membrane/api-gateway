@@ -39,6 +39,7 @@ import static org.apache.commons.text.StringEscapeUtils.escapeHtml4;
 
 /**
  * @description Validates a JWT on requests (signature via JWKS, required exp/sub) and exposes claims in exchange properties ("jwt").
+ * See tutorials/jwt/20-JWT-Signing.yaml.
  * @yaml
  * <pre><code>
  *  jwtAuth:

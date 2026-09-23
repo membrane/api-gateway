@@ -25,6 +25,7 @@ import static com.predic8.membrane.core.http.Header.*;
 
 /**
  * @description Displays up-to-date statistics, recent exchanges and, by default, allows live modification of Membrane's configuration.
+ * See tutorials/getting-started/70-Admin-Web-Console.yaml.
  * @yaml <pre><code>
  * api:
  *   port: 9000
