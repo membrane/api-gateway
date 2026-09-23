@@ -50,7 +50,8 @@ import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
 /**
  * @description A built-in SOAP web service returning city population data, for testing and
  * demonstration. Serves its own WSDL, responds to <code>getCity</code> requests, and returns a SOAP
- * fault for non-POST requests or unknown cities. See tutorials/soap/10-Sample-SOAP-Service.yaml.
+ * fault for non-POST requests or unknown cities.
+ * <p>See <a href="https://github.com/membrane/api-gateway/blob/master/distribution/tutorials/soap/10-Sample-SOAP-Service.yaml">tutorials/soap/10-Sample-SOAP-Service.yaml</a>.</p>
  * @yaml
  * <pre><code>
  * api:

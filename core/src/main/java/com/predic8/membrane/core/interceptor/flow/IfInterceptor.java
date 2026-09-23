@@ -43,7 +43,7 @@ import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
  * @description <p>
  * if allows conditional execution of nested interceptors.
  * </p>
- * <p>See tutorials/advanced/50-if.yaml.</p>
+ * <p>See <a href="https://github.com/membrane/api-gateway/blob/master/distribution/tutorials/advanced/50-if.yaml">tutorials/advanced/50-if.yaml</a>.</p>
  * @yaml <pre><code>
  * if:
  *   test: method == 'POST'

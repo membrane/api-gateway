@@ -52,7 +52,7 @@ import static java.util.stream.Stream.ofNullable;
  *   stores:                       # 1..*
  *     - ...
  * </pre>
- * See tutorials/api-keys/10-API-Key-Simple.yaml.
+ * <p>See <a href="https://github.com/membrane/api-gateway/blob/master/distribution/tutorials/api-keys/10-API-Key-Simple.yaml">tutorials/api-keys/10-API-Key-Simple.yaml</a>.</p>
  * @topic 3. Security and Validation
  * @yaml <pre><code>
  * api:

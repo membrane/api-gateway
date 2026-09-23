@@ -31,7 +31,7 @@ import java.util.*;
 
 /**
  * @description OAuth2/OIDC authorization server endpoints (auth/token/userinfo/revocation/.well-known) with session + consent/login UI.
- * See tutorials/oauth2/10-OAuth2-Basics.yaml.
+ * <p>See <a href="https://github.com/membrane/api-gateway/blob/master/distribution/tutorials/oauth2/10-OAuth2-Basics.yaml">tutorials/oauth2/10-OAuth2-Basics.yaml</a>.</p>
  * @yaml
  * <pre><code>
  *  oauth2authserver:

@@ -41,7 +41,8 @@ import static java.lang.String.format;
  * @description Stops processing the request and sends a response back to the client without calling
  * the backend. If the exchange already holds a response, that response is sent; otherwise a new
  * response is built from the request's body and Content-Type. Often paired with <code>template</code>
- * to return a generated body. See tutorials/getting-started/80-Short-Circuit.yaml.
+ * to return a generated body.
+ * <p>See <a href="https://github.com/membrane/api-gateway/blob/master/distribution/tutorials/getting-started/80-Short-Circuit.yaml">tutorials/getting-started/80-Short-Circuit.yaml</a>.</p>
  * @topic 1. Proxies and Flow
  * @yaml <pre><code>
  * api:

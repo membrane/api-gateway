@@ -51,7 +51,7 @@ import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.*;
  * - What APIs are deployed?
  * - Is the Membrane instance healthy?
  * - Give me a summary about the requests
- * See tutorials/mcp/10-MCP-Server.yaml.
+ * <p>See <a href="https://github.com/membrane/api-gateway/blob/master/distribution/tutorials/mcp/10-MCP-Server.yaml">tutorials/mcp/10-MCP-Server.yaml</a>.</p>
  * @yaml
  * <pre><code>
  * api:

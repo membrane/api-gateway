@@ -23,6 +23,7 @@ import static java.nio.charset.StandardCharsets.*;
  * @description
  * Sets the message body to static content. The body is either provided inline as text content or loaded from a file/URL.
  * If pretty is enabled, the formatted result is cached and reused until the interceptor is (re)initialized.
+ * <p>See <a href="https://github.com/membrane/api-gateway/blob/master/distribution/tutorials/soap/50-Simple-SOAP-Mock.yaml">tutorials/soap/50-Simple-SOAP-Mock.yaml</a>.</p>
  * @yaml
  * <pre><code>
  *  api:

@@ -46,7 +46,8 @@ import static org.jose4j.jws.AlgorithmIdentifiers.RSA_USING_SHA256;
  * @description Signs the request or response body as a JWT, replacing the body with the compact JWS
  * serialization (or storing it in a property instead, when <code>property</code> is set). The body
  * must be a JSON object; <code>iat</code>, <code>exp</code> and <code>nbf</code> claims are added
- * automatically before signing. See tutorials/jwt/20-JWT-Signing.yaml.
+ * automatically before signing.
+ * <p>See <a href="https://github.com/membrane/api-gateway/blob/master/distribution/tutorials/jwt/20-JWT-Signing.yaml">tutorials/jwt/20-JWT-Signing.yaml</a>.</p>
  * @yaml
  * <pre><code>
  * api:

@@ -30,7 +30,8 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
 /**
  * @description Validates the <code>Authorization</code> header of each request by sending it on a
  * GET to an external validation endpoint; the request continues only if that endpoint responds with
- * HTTP 200, otherwise it is rejected with 400 Bad Request. See tutorials/oauth2/10-OAuth2-Basics.yaml.
+ * HTTP 200, otherwise it is rejected with 400 Bad Request.
+ * <p>See <a href="https://github.com/membrane/api-gateway/blob/master/distribution/tutorials/oauth2/10-OAuth2-Basics.yaml">tutorials/oauth2/10-OAuth2-Basics.yaml</a>.</p>
  * @yaml
  * <pre><code>
  * api:

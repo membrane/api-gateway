@@ -58,7 +58,7 @@ import static java.util.EnumSet.of;
  * <code>location</code> for external JSON Schema files or <code>schema</code> for inline
  * schema definitions.</p>
  *
- * <p>See tutorials/security/json-rpc/10-JSON-RPC-Allow-Deny-and-Batch-Validation.yaml.</p>
+ * <p>See <a href="https://github.com/membrane/api-gateway/blob/master/distribution/tutorials/security/json-rpc/10-JSON-RPC-Allow-Deny-and-Batch-Validation.yaml">tutorials/security/json-rpc/10-JSON-RPC-Allow-Deny-and-Batch-Validation.yaml</a>.</p>
  *
  * @yaml
  * <pre><code>

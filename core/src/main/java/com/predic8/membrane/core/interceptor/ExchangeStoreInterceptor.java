@@ -33,8 +33,8 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
 /**
  * @description Adds the current state of HTTP requests and responses to an "exchange store" so
  * they can be inspected later. Depending on the store implementation, both the request and the
- * response phase may need to run before an exchange is saved. See
- * tutorials/operation/70-Record-Messages-In-Loki.yaml.
+ * response phase may need to run before an exchange is saved.
+ * <p>See <a href="https://github.com/membrane/api-gateway/blob/master/distribution/tutorials/operation/70-Record-Messages-In-Loki.yaml">tutorials/operation/70-Record-Messages-In-Loki.yaml</a>.</p>
  * @topic 4. Monitoring, Logging and Statistics
  * @yaml
  * <pre><code>

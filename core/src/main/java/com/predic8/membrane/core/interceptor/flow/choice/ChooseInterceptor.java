@@ -34,7 +34,7 @@ import static java.util.stream.Stream.*;
  * Evaluates {@link Case} elements in order and runs the first matching flow.
  * If no case matches, an optional trailing {@link Otherwise} is executed.
  * The "otherwise" element must be the last element of the list.
- * See tutorials/advanced/70-Choose.yaml.
+ * <p>See <a href="https://github.com/membrane/api-gateway/blob/master/distribution/tutorials/advanced/70-Choose.yaml">tutorials/advanced/70-Choose.yaml</a>.</p>
  * @yaml <pre><code>
  * api:
  *   port: 2000

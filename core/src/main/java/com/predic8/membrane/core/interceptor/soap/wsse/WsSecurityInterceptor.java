@@ -94,8 +94,7 @@ import static com.predic8.membrane.core.interceptor.soap.wsse.XmlEncryptionUtil.
  * <code>Signature Timestamp Encrypt</code> to place the timestamp before the signature
  * in the security header. Require signature coverage of both body and timestamp, and body
  * content encryption when using encryption, on the receiving side.</p>
- * <p>See tutorials/web-services-security/10-Add-UsernameToken.yaml, the first of a tutorial series
- * covering signing, timestamps, and encryption.</p>
+ * <p>See <a href="https://github.com/membrane/api-gateway/blob/master/distribution/tutorials/web-services-security/10-Add-UsernameToken.yaml">tutorials/web-services-security/10-Add-UsernameToken.yaml</a>, the first of a series covering signing, timestamps, and encryption.</p>
  * @topic 3. Security
  * @yaml <pre><code>
  * api:

@@ -26,7 +26,7 @@ import static com.predic8.membrane.core.interceptor.headerfilter.HeaderFilterInt
 /**
  * @description Removes message headers matching a list of patterns.
  * The first matching child element will be acted upon by the filter.
- * See tutorials/advanced/90-Removing-HTTP-Headers.yaml.
+ * <p>See <a href="https://github.com/membrane/api-gateway/blob/master/distribution/tutorials/advanced/90-Removing-HTTP-Headers.yaml">tutorials/advanced/90-Removing-HTTP-Headers.yaml</a>.</p>
  * @yaml <pre><code>
  * api:
  *   port: 2000

@@ -45,8 +45,8 @@ import static org.slf4j.LoggerFactory.getLogger;
  * </code></pre>
  * Streamed bodies are logged chunk by
  * chunk. Output uses terminal colors per log level where supported; set the system property
- * <code>MEMBRANE_DISABLE_TERM_COLORS</code> to <code>true</code> or <code>false</code> to override color detection. See
- * tutorials/getting-started/30-Logging.yaml.
+ * <code>MEMBRANE_DISABLE_TERM_COLORS</code> to <code>true</code> or <code>false</code> to override color detection.
+ * <p>See <a href="https://github.com/membrane/api-gateway/blob/master/distribution/tutorials/getting-started/30-Logging.yaml">tutorials/getting-started/30-Logging.yaml</a>.</p>
  * @topic 4. Monitoring, Logging and Statistics
  * @yaml
  * <pre><code>
