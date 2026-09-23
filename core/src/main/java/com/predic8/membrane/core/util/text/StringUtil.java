@@ -115,8 +115,18 @@ public class StringUtil {
         return c == ' ' || c == '\t';
     }
 
-    public static @NonNull String getLastOfCommaSeparatedString(String value) {
-        int lastComma = value.lastIndexOf(',');
-        return (lastComma == -1 ? value : value.substring(lastComma + 1)).trim();
+    /**
+     * Returns the last non-empty element of a comma-separated HTTP list value, or the empty
+     * string if the value has none. Empty list elements are legal and have to be ignored
+     * (RFC 9110 5.6.1.2), so "gzip, chunked," yields "chunked" and "," yields "".
+     */
+    public static @NonNull String getLastNonEmptyOfCommaSeparatedString(String value) {
+        String[] elements = value.split(",", -1);
+        for (int i = elements.length - 1; i >= 0; i--) {
+            String element = elements[i].trim();
+            if (!element.isEmpty())
+                return element;
+        }
+        return "";
     }
 }

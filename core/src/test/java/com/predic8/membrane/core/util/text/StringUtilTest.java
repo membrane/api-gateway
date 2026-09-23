@@ -17,7 +17,7 @@ package com.predic8.membrane.core.util.text;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import static com.predic8.membrane.core.util.text.StringUtil.getLastOfCommaSeparatedString;
+import static com.predic8.membrane.core.util.text.StringUtil.getLastNonEmptyOfCommaSeparatedString;
 import static com.predic8.membrane.core.util.text.StringUtil.tail;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -31,17 +31,17 @@ class StringUtilTest {
     }
 
     @Nested
-    class GetLastOfCommaSeparatedString {
+    class GetLastNonEmptyOfCommaSeparatedString {
 
         @Test
         void valueWithoutCommaIsTheLastElement() {
-            assertEquals("chunked", getLastOfCommaSeparatedString("chunked"));
+            assertEquals("chunked", getLastNonEmptyOfCommaSeparatedString("chunked"));
         }
 
         @Test
         void lastElementOfAList() {
-            assertEquals("chunked", getLastOfCommaSeparatedString("gzip, chunked"));
-            assertEquals("c", getLastOfCommaSeparatedString("a,b,c"));
+            assertEquals("chunked", getLastNonEmptyOfCommaSeparatedString("gzip, chunked"));
+            assertEquals("c", getLastNonEmptyOfCommaSeparatedString("a,b,c"));
         }
 
         /**
@@ -50,13 +50,13 @@ class StringUtilTest {
          */
         @Test
         void surroundingWhitespaceIsStripped() {
-            assertEquals("chunked", getLastOfCommaSeparatedString("gzip,   chunked  "));
-            assertEquals("chunked", getLastOfCommaSeparatedString("  chunked\t"));
+            assertEquals("chunked", getLastNonEmptyOfCommaSeparatedString("gzip,   chunked  "));
+            assertEquals("chunked", getLastNonEmptyOfCommaSeparatedString("  chunked\t"));
         }
 
         @Test
         void separatorWithoutWhitespace() {
-            assertEquals("chunked", getLastOfCommaSeparatedString("gzip,chunked"));
+            assertEquals("chunked", getLastNonEmptyOfCommaSeparatedString("gzip,chunked"));
         }
 
         /**
@@ -64,24 +64,43 @@ class StringUtilTest {
          */
         @Test
         void innerPunctuationOfTheLastElementIsKept() {
-            assertEquals("b;q=0.5", getLastOfCommaSeparatedString("a, b;q=0.5"));
+            assertEquals("b;q=0.5", getLastNonEmptyOfCommaSeparatedString("a, b;q=0.5"));
+        }
+
+        /**
+         * Empty list elements are legal and are ignored (RFC 9110 5.6.1.2), so a trailing
+         * separator does not hide the coding in front of it.
+         */
+        @Test
+        void trailingSeparatorIsIgnored() {
+            assertEquals("gzip", getLastNonEmptyOfCommaSeparatedString("gzip,"));
+            assertEquals("gzip", getLastNonEmptyOfCommaSeparatedString("gzip, "));
+            assertEquals("chunked", getLastNonEmptyOfCommaSeparatedString("gzip, chunked,,"));
         }
 
         @Test
-        void trailingSeparatorYieldsAnEmptyLastElement() {
-            assertEquals("", getLastOfCommaSeparatedString("gzip,"));
-            assertEquals("", getLastOfCommaSeparatedString("gzip, "));
+        void interiorEmptyElementIsIgnored() {
+            assertEquals("chunked", getLastNonEmptyOfCommaSeparatedString("gzip,, chunked"));
+        }
+
+        /**
+         * Only empty elements are skipped: a non-empty last element stays the last one.
+         */
+        @Test
+        void nonEmptyLastElementIsNotSkipped() {
+            assertEquals("gzip", getLastNonEmptyOfCommaSeparatedString("chunked, gzip,"));
         }
 
         @Test
-        void separatorOnlyYieldsAnEmptyLastElement() {
-            assertEquals("", getLastOfCommaSeparatedString(","));
+        void separatorsOnlyYieldAnEmptyString() {
+            assertEquals("", getLastNonEmptyOfCommaSeparatedString(","));
+            assertEquals("", getLastNonEmptyOfCommaSeparatedString(" , "));
         }
 
         @Test
         void emptyValue() {
-            assertEquals("", getLastOfCommaSeparatedString(""));
-            assertEquals("", getLastOfCommaSeparatedString("   "));
+            assertEquals("", getLastNonEmptyOfCommaSeparatedString(""));
+            assertEquals("", getLastNonEmptyOfCommaSeparatedString("   "));
         }
     }
 }

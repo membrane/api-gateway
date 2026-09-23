@@ -374,6 +374,69 @@ class HeaderTest {
             h.add(TRANSFER_ENCODING, "chunked");
             assertTrue(h.isChunked());
         }
+
+        /**
+         * RFC 9110 5.6.1.2: empty list elements are legal and are ignored, so a trailing
+         * separator does not hide the "chunked" in front of it.
+         */
+        @Test
+        void trailingSeparatorIsIgnored() {
+            var h = new Header();
+            h.add(TRANSFER_ENCODING, "gzip, chunked,");
+            assertTrue(h.isChunked());
+        }
+
+        @Test
+        void interiorEmptyCodingIsIgnored() {
+            var h = new Header();
+            h.add(TRANSFER_ENCODING, "gzip,, chunked");
+            assertTrue(h.isChunked());
+        }
+
+        /**
+         * An empty field line contributes an empty list element once the field lines are
+         * combined; it must not turn a chunked-framed message into an unframed one.
+         */
+        @Test
+        void emptyFieldAfterChunkedIsIgnored() {
+            var h = new Header();
+            h.add(TRANSFER_ENCODING, "chunked");
+            h.add(TRANSFER_ENCODING, "");
+            assertEquals("chunked,", h.getNormalizedValue(TRANSFER_ENCODING));
+            assertTrue(h.isChunked());
+        }
+
+        /**
+         * Only empty elements are skipped: "gzip" stays the final coding.
+         */
+        @Test
+        void trailingSeparatorDoesNotSkipANonEmptyFinalCoding() {
+            var h = new Header();
+            h.add(TRANSFER_ENCODING, "chunked, gzip,");
+            assertFalse(h.isChunked());
+        }
+
+        /**
+         * A field line without a value parses into a field whose value is the empty string. It is
+         * present, so getValuesAsString reports it, while getNormalizedValue cannot tell it apart
+         * from a missing field - which is why Message.rejectIfBodyLengthUndeterminable uses the
+         * former.
+         */
+        @Test
+        void emptyFieldIsPresentButCarriesNoCoding() {
+            var h = new Header();
+            h.add(TRANSFER_ENCODING, "");
+            assertEquals("", h.getValuesAsString(TRANSFER_ENCODING));
+            assertNull(h.getNormalizedValue(TRANSFER_ENCODING));
+            assertFalse(h.isChunked());
+        }
+
+        @Test
+        void separatorsOnlyIsNotChunked() {
+            var h = new Header();
+            h.add(TRANSFER_ENCODING, ",");
+            assertFalse(h.isChunked());
+        }
     }
 
     @Nested

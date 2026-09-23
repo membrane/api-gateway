@@ -211,11 +211,16 @@ public abstract class Message {
 	 * let gateway and backend disagree on where the message ends - the desynchronization that
 	 * request smuggling and response splitting rely on - so the message is rejected before a body
 	 * is selected.
+	 * <p>
+	 * A field line without a value carries no coding and therefore does not end in "chunked"
+	 * either, so it is rejected as well. That needs {@link Header#getValuesAsString(String)}: it
+	 * tells a present empty field apart from an absent one, which
+	 * {@link Header#getNormalizedValue(String)} reports as null in both cases.
 	 *
 	 * @param messageType "request" or "response", named in the rejection message
 	 */
 	protected void rejectIfBodyLengthUndeterminable(String messageType) throws MalformedHeaderException {
-		String transferEncoding = header.getNormalizedValue(TRANSFER_ENCODING);
+		String transferEncoding = header.getValuesAsString(TRANSFER_ENCODING);
 		if (transferEncoding == null || header.isChunked())
 			return;
 

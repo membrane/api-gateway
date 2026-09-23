@@ -389,8 +389,9 @@ public class Header {
      * Per RFC 9112 section 6.1 the body is chunked-framed if "chunked" is the
      * <em>final</em> transfer-coding. Transfer-coding names are case-insensitive,
      * and codings may be combined in a comma-separated list (e.g. "gzip, chunked"),
-     * so this looks at the last token case-insensitively rather than requiring an
-     * exact "chunked" match.
+     * so this looks at the last coding case-insensitively rather than requiring an
+     * exact "chunked" match. Empty list elements are legal and are ignored
+     * (RFC 9110 5.6.1.2), so "chunked," is still chunked-framed.
      * <p>
      * Repeated field lines carry one coding list between them and are combined before the
      * final coding is taken, so "chunked" in a field line that is not the last one does
@@ -400,7 +401,7 @@ public class Header {
         String value = getNormalizedValue(TRANSFER_ENCODING);
         if (value == null)
             return false;
-        return CHUNKED.equalsIgnoreCase(getLastOfCommaSeparatedString(value));
+        return CHUNKED.equalsIgnoreCase(getLastNonEmptyOfCommaSeparatedString(value));
     }
 
     /**

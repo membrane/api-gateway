@@ -426,6 +426,24 @@ public class RequestTest {
     }
 
     /**
+     * RFC 9112 6.3: the Transfer-Encoding field is present, so its coding list determines the
+     * framing - and an empty list does not end in "chunked". Reading the field as absent and
+     * falling back to the Content-Length lets Membrane and the backend disagree about where the
+     * body ends, which is what request smuggling relies on.
+     */
+    @Test
+    void emptyTransferEncodingIsRejected() {
+        assertThrows(MalformedHeaderException.class, () -> readRequest("""
+                POST /products HTTP/1.1
+                Host: example.com
+                Transfer-Encoding:
+                Content-Length: 3
+
+                abc
+                """));
+    }
+
+    /**
      * The smuggling guard in Request.createBody must not be walked past by moving "chunked" into
      * its own field line: combined the codings are "chunked, identity", whose final coding is not
      * "chunked", so the body length cannot be determined and the request must be rejected.

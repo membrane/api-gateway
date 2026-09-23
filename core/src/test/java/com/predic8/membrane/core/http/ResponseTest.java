@@ -352,6 +352,22 @@ public class ResponseTest {
                 """).getBody());
     }
 
+    /**
+     * A present but empty Transfer-Encoding carries no coding and therefore does not end in
+     * "chunked", so the body length of the response cannot be determined and it is rejected
+     * instead of being framed by its Content-Length.
+     */
+    @Test
+    void emptyTransferEncodingIsRejected() {
+        assertThrows(MalformedHeaderException.class, () -> readResponse("""
+                HTTP/1.1 200 Ok
+                Transfer-Encoding:
+                Content-Length: 3
+
+                abc
+                """));
+    }
+
     private static Response readResponse(String message) throws IOException, EndOfStreamException {
         Response res = new Response();
         res.read(convertMessage(message), true);
