@@ -19,8 +19,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -29,7 +27,6 @@ import java.io.InputStream;
 import java.net.URISyntaxException;
 
 import static com.predic8.membrane.annot.Constants.CRLF;
-import static com.predic8.membrane.core.http.Header.HOST;
 import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.util.HttpTestUtil.convertMessage;
@@ -473,37 +470,6 @@ public class RequestTest {
                 : value
 
                 """));
-    }
-
-    /**
-     * RFC 9112 5.1: a server must reject a request whose field line carries whitespace between
-     * the field name and the colon. The name then keeps the whitespace and no longer matches
-     * Content-Length, so Membrane builds an EmptyBody and forwards the line verbatim, while a
-     * backend that trims the whitespace reads the declared bytes as a body - and Membrane parses
-     * the very same bytes as the next request on the connection.
-     */
-    @ParameterizedTest
-    @ValueSource(strings = {"Content-Length : 6", "Content-Length\t: 6", "Content-Length  : 6"})
-    void headerLineWithWhitespaceBeforeColonIsRejected(String fieldLine) {
-        assertThrows(MalformedHeaderException.class, () -> readRequest("""
-                POST /products HTTP/1.1
-                Host: example.com
-                %s
-
-                """.formatted(fieldLine)));
-    }
-
-    /**
-     * Whitespace after the colon is the optional whitespace RFC 9112 5.1 allows and must stay
-     * accepted, so that rejecting the whitespace before the colon does not over-reject.
-     */
-    @Test
-    void headerLineWithWhitespaceAfterColonIsAccepted() throws Exception {
-        assertEquals("example.com", readRequest("""
-                POST /products HTTP/1.1
-                Host:\texample.com
-
-                """).getHeader().getFirstValue(HOST));
     }
 
     /**

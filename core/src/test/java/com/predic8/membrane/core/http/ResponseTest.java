@@ -24,7 +24,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -309,30 +308,18 @@ public class ResponseTest {
     }
 
     /**
-     * RFC 9112 5.1 forbids whitespace between a field name and the colon in either direction. A
-     * response carrying it desyncs the connection the same way a request does: the name keeps the
-     * whitespace and stops matching Content-Length, so Membrane reads no body while the declared
-     * bytes stay in the stream and are parsed as the next response.
+     * Response.read overrides Message.read with its own header parse, so the field line rules are
+     * pinned here as well: a backend that sends whitespace before the colon desyncs the connection
+     * the same way a client does. The rules themselves are covered in HeaderTest.
      */
-    @ParameterizedTest
-    @ValueSource(strings = {"Content-Length : 6", "Content-Length\t: 6"})
-    void headerLineWithWhitespaceBeforeColonIsRejected(String fieldLine) {
+    @Test
+    void headerLineWithWhitespaceBeforeColonIsRejected() {
         assertThrows(MalformedHeaderException.class, () -> readResponse("""
                 HTTP/1.1 200 Ok
                 Content-Type: text/plain
-                %s
+                Content-Length : 6
 
-                """.formatted(fieldLine)));
-    }
-
-    @Test
-    void headerLineWithWhitespaceAfterColonIsAccepted() throws Exception {
-        assertEquals("text/plain", readResponse("""
-                HTTP/1.1 200 Ok
-                Content-Type:\ttext/plain
-                Content-Length: 0
-
-                """).getHeader().getContentType());
+                """));
     }
 
     private static Response readResponse(String message) throws IOException, EndOfStreamException {
