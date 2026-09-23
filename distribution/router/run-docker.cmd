@@ -3,7 +3,7 @@ setlocal EnableExtensions DisableDelayedExpansion
 
 set "DIR=%~dp0"
 if "%DIR:~-1%"=="\" set "DIR=%DIR:~0,-1%"
-set "IMAGE=predic8/membrane:7.6.1"
+set "IMAGE=predic8/membrane:7.6.2"
 
 rem Without an explicit -c the container falls back to its own baked-in
 rem conf/apis.yaml and silently ignores the one in this directory.
