@@ -41,7 +41,7 @@ import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidF
  * The <i>wsdlPublisher</i> serves WSDL files (and attached XML Schema Documents), if your
  * backend service does not already do so.
  * </p>
- * <p>See tutorials/soap/90-Manual-SOAPProxy.yaml.</p>
+ * <p>Used as an example in <a href="https://github.com/membrane/api-gateway/blob/master/distribution/tutorials/soap/90-Manual-SOAPProxy.yaml">tutorials/soap/90-Manual-SOAPProxy.yaml</a>.</p>
  * @yaml <pre><code>
  * api:
  *   port: 2000

@@ -32,7 +32,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
  * @description Adds one or more Set-Cookie headers to the HTTP response for session handling, user preferences, or tracking purposes.
  *              Supports computing expiry, setting standard attributes like Domain and Path, and building a compliant cookie string.
  *              Useful for enriching responses with configurable cookies directly at gateway level without backend involvement.
- *              See tutorials/orchestration/40-Authentication-Call.yaml.
+ *              <p>Used as an example in <a href="https://github.com/membrane/api-gateway/blob/master/distribution/tutorials/orchestration/40-Authentication-Call.yaml">tutorials/orchestration/40-Authentication-Call.yaml</a>.</p>
  * @yaml <pre><code>
  * api:
  *   port: 2000
