@@ -14,14 +14,32 @@
 
 package com.predic8.membrane.core.config.security;
 
-import com.predic8.membrane.annot.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 /**
- * @description <p>Allows to insert one or more PEM blocks containing the certificates to be trusted directly into the proxies.xml
- * file.</p>
- * <p>This is an alternative for {@link TrustStore}.</p>
+ * @description Supplies the CA certificates to trust when validating a peer's certificate chain,
+ * given directly as PEM blocks instead of loading them from a <code>truststore</code> file. Each
+ * certificate can be a file/resource or inline PEM text.
+ * <pre>
+ * trust:
+ *   certificates:
+ *     - location: &lt;file&gt; | content: &lt;PEM text&gt;
+ *     ...
+ *   [ algorithm: &lt;name&gt; ]
+ *   [ checkRevocation: &lt;options&gt; ]
+ * </pre>
+ * @yaml <pre><code>
+ * ssl:
+ *   trust:
+ *     certificates:
+ *       - location: ca.pem
+ * </code></pre>
  */
 @MCElement(name="trust")
 public class Trust {
@@ -49,8 +67,8 @@ public class Trust {
     }
 
     /**
-     * @description List of certificates
-     * @param certificateList
+     * @description The CA certificates to trust, each as its own PEM block either inline or
+     * loaded from a file.
      */
     @MCChildElement
     public void setCertificates(List<Certificate> certificateList) {
@@ -62,8 +80,8 @@ public class Trust {
     }
 
     /**
-     *
-     * @param algorithm
+     * @description Trust manager algorithm used to validate certificate chains.
+     * @default the JVM's default (usually <code>PKIX</code>)
      */
     @MCAttribute
     public void setAlgorithm(String algorithm) {
@@ -75,8 +93,11 @@ public class Trust {
     }
 
     /**
-     * TODO
-     * @param checkRevocation
+     * @description Comma-separated PKIX revocation checking options, from
+     * <code>java.security.cert.PKIXRevocationChecker.Option</code>: <code>ONLY_END_ENTITY</code>,
+     * <code>PREFER_CRLS</code>, <code>NO_FALLBACK</code>, <code>SOFT_FAIL</code>. Unset, no
+     * revocation checking (CRL/OCSP) is performed at all.
+     * @example ONLY_END_ENTITY,SOFT_FAIL
      */
     @MCAttribute
     public void setCheckRevocation(String checkRevocation) {
