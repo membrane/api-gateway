@@ -273,6 +273,12 @@ public abstract class Message {
 			return;
 		}
 
+		// A client stops reading after the header fields; a body written anyway would desync keep-alive.
+		if (this instanceof Response res && res.shouldNotContainBody()) {
+			out.flush();
+			return;
+		}
+
 		body.write(getHeader().isChunked() ? new ChunkedBodyTransferer(out) : new PlainBodyTransferer(out), retainBody);
 
 		out.flush();
