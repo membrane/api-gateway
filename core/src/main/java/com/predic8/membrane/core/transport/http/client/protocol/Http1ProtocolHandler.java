@@ -76,10 +76,7 @@ public class Http1ProtocolHandler extends AbstractProtocolHandler {
 
         trace(exchange.getResponse());
 
-        // 100 - Continue
-        handle100Expected(exchange, ct.con());
-
-        skipInterimResponses(exchange, ct.con());
+        readFinalResponse(exchange, ct.con());
 
         // Only HTTP 1?
         exchange.setReceived();
@@ -143,25 +140,22 @@ public class Http1ProtocolHandler extends AbstractProtocolHandler {
         Util.shutdownOutput(connection.socket);
     }
 
-    // 100 - Connect
-
-    private void handle100Expected(Exchange exchange, Connection c) throws IOException, EndOfStreamException {
-        Response response = exchange.getResponse();
-        if (response.getStatusCode() != 100)
-            return;
-        exchange.getRequest().getBody().write(getBodyTransferer(exchange, c), retainBodyForRetry());
-        c.out.flush();
-        response.read(c.in, !exchange.getRequest().isHEADRequest());
-    }
-
     /**
      * RFC 9110 §15.2: a 1xx other than 101 is followed by the final response on the same connection.
-     * Membrane does not relay interim responses, so they are dropped.
+     * Membrane does not relay interim responses, so they are dropped. The first 100 Continue releases a
+     * body held back by <code>Expect: 100-continue</code>, whatever interim responses came before it.
      */
-    private void skipInterimResponses(Exchange exchange, Connection c) throws IOException, EndOfStreamException {
+    private void readFinalResponse(Exchange exchange, Connection c) throws IOException, EndOfStreamException {
         Response response = exchange.getResponse();
+        boolean bodyPending = exchange.getRequest().getHeader().is100ContinueExpected();
         while (response.getStatusCode() >= 100 && response.getStatusCode() < 200 && response.getStatusCode() != 101) {
-            log.debug("Skipping interim response {}.", response.getStatusCode());
+            if (response.getStatusCode() == 100 && bodyPending) {
+                exchange.getRequest().getBody().write(getBodyTransferer(exchange, c), retainBodyForRetry());
+                c.out.flush();
+                bodyPending = false;
+            } else {
+                log.debug("Skipping interim response {}.", response.getStatusCode());
+            }
             response.read(c.in, !exchange.getRequest().isHEADRequest());
         }
     }
