@@ -33,6 +33,7 @@ import java.io.OutputStream;
 import java.net.Socket;
 
 import static com.predic8.membrane.core.http.Header.EXPECT;
+import static com.predic8.membrane.core.http.Header.KEEP_ALIVE;
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.http.Response.continue100;
 import static com.predic8.membrane.core.transport.http.client.protocol.AbstractProtocolHandler.UPGRADED_PROTOCOL;
@@ -180,6 +181,40 @@ class Http1ProtocolHandlerTest {
             CollectingOutputStream wire = new CollectingOutputStream();
             handler.handle(exc, getConnectionType(getInputStreamFor(RESPONSE), wire), new HostColonPort("localhost", 8080));
             return new String(wire.toByteArray(), ISO_8859_1);
+        }
+    }
+
+    @Nested
+    class KeepAliveTimeout {
+
+        @Test
+        void timeoutFromBackendIsApplied() throws Exception {
+            assertEquals(5_000, timeoutAfterResponseWith("timeout=5"));
+        }
+
+        @Test
+        void timeoutIsCappedAtOneHour() throws Exception {
+            assertEquals(3_600_000, timeoutAfterResponseWith("timeout=100000000"));
+        }
+
+        /**
+         * 10^16 seconds fits into a long, but multiplied by 1000 it does not.
+         */
+        @Test
+        void hugeTimeoutDoesNotOverflow() throws Exception {
+            assertEquals(3_600_000, timeoutAfterResponseWith("timeout=10000000000000000"));
+        }
+
+        private long timeoutAfterResponseWith(String keepAlive) throws Exception {
+            Exchange exc = get("/foo").buildExchange();
+            exc.setResponse(Response.ok().header(KEEP_ALIVE, keepAlive).build());
+            // setTimeout()/getTimeout() are final, so the mock runs the real implementations
+            Connection con = mock(Connection.class);
+            exc.setTargetConnection(con);
+
+            handler.cleanup(exc);
+
+            return con.getTimeout();
         }
     }
 

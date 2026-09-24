@@ -14,13 +14,15 @@
 
 package com.predic8.membrane.core.http;
 
-import jakarta.mail.internet.*;
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.params.*;
-import org.junit.jupiter.params.provider.*;
-import org.springframework.http.*;
+import jakarta.mail.internet.ContentType;
+import jakarta.mail.internet.ParameterList;
+import jakarta.mail.internet.ParseException;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.http.MediaType;
 
-import java.util.*;
+import java.util.List;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -60,7 +62,7 @@ public class MimeTypeTest {
                         new MediaType("text", "html", 0.7),
                         new MediaType("*","*",0.6)
                 ),
-                sortMimeTypeByQualityFactorAscending("text/html;q=0.7, application/json;q=0.9, application/xml;q=0.8, image/webp, */*;q=0.6"));
+                sortMimeTypeByQualityFactorDescending("text/html;q=0.7, application/json;q=0.9, application/xml;q=0.8, image/webp, */*;q=0.6"));
     }
 
     @Test
@@ -70,7 +72,19 @@ public class MimeTypeTest {
                         new MediaType("text", "xml", 0.9),
                         new MediaType("*","*",0.8)
                 ),
-                sortMimeTypeByQualityFactorAscending("text/xml;q=0.9, application/json, */*;q=0.8"));
+                sortMimeTypeByQualityFactorDescending("text/xml;q=0.9, application/json, */*;q=0.8"));
+    }
+
+    // Equal quality values must keep the order the client listed them in. Sorting ascending and
+    // then reversing flips ties, so e.g. Axios' default Accept header yields */* first.
+    @Test
+    void sortMimeTypeByQualityFactorKeepsClientOrderOnTies() {
+        assertEquals(List.of(
+                        new MediaType("application", "json"),
+                        new MediaType("text", "plain"),
+                        new MediaType("*", "*")
+                ),
+                sortMimeTypeByQualityFactorDescending("application/json, text/plain, */*"));
     }
 
     @ParameterizedTest
