@@ -41,11 +41,19 @@ import static com.predic8.membrane.core.transport.http.MessageTracer.trace;
 import static com.predic8.membrane.core.transport.http.client.protocol.TcpProtocolHandler.TCP;
 import static com.predic8.membrane.core.transport.http.client.protocol.WebSocketProtocolHandler.WEBSOCKET;
 import static java.lang.Boolean.TRUE;
+import static java.lang.Math.min;
 import static java.lang.System.currentTimeMillis;
 
 public class Http1ProtocolHandler extends AbstractProtocolHandler {
 
     private static final Logger log = LoggerFactory.getLogger(Http1ProtocolHandler.class.getName());
+
+    /**
+     * Upper bound for the idle timeout a backend may request via {@code Keep-Alive: timeout=...}.
+     * Far above realistic server settings; keeps a bogus value from pooling a connection forever
+     * or overflowing when converted to milliseconds.
+     */
+    private static final long MAX_KEEP_ALIVE_TIMEOUT_SECONDS = 3600;
 
     ResponseReader responseReader = (ext, ct) -> fromStream(ct.con().in, !ext.getRequest().isHEADRequest());
 
@@ -127,7 +135,7 @@ public class Http1ProtocolHandler extends AbstractProtocolHandler {
 
         long timeoutSeconds = Header.parseKeepAliveHeader(value, TIMEOUT);
         if (timeoutSeconds != -1)
-            con.setTimeout(timeoutSeconds * 1000);
+            con.setTimeout(min(timeoutSeconds, MAX_KEEP_ALIVE_TIMEOUT_SECONDS) * 1000);
 
         long max = Header.parseKeepAliveHeader(value, MAX);
         if (max != -1 && max < con.getMaxExchanges())
