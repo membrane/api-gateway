@@ -517,6 +517,22 @@ class HeaderTest {
             assertEquals(List.of("Dup: new", "A: a", "B: b", "C: c"), fields(h));
         }
 
+        /**
+         * RFC 9110 §5.3: the order of field lines with the same name is significant.
+         */
+        @Test
+        void collapsingDuplicatesPreservesOrderOfSameNamedFields() {
+            Header h = new Header();
+            h.add("Dup", "1");
+            h.add("Dup", "2");
+            h.add("Set-Cookie", "a=1");
+            h.add("Set-Cookie", "b=2");
+
+            h.setValue("Dup", "new");
+
+            assertEquals(List.of("Dup: new", "Set-Cookie: a=1", "Set-Cookie: b=2"), fields(h));
+        }
+
         private static List<String> fields(Header h) {
             return Arrays.stream(h.getAllHeaderFields())
                     .map(f -> f.getHeaderName() + ": " + f.getValue())
