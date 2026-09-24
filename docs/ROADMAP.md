@@ -43,7 +43,7 @@ PRIO 3:
 
 ## Membrane 8.0.0 (Java 25)
 
-- Remove XML Konfiguration
+- Remove XML configuration
 - configure log4j with YAML
 - Remove SOAP2REST XSLT Interceptor:
   - rm HTTP2XMLInterceptor
