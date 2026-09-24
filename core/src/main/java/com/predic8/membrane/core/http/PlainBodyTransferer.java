@@ -30,6 +30,8 @@ public class PlainBodyTransferer extends AbstractBodyTransferer {
 
 	@Override
 	public void write(Chunk chunk) throws IOException {
+		if (chunk.getLength() == 0)
+			return;
 		out.write(chunk.content());
 	}
 
