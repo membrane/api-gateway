@@ -316,6 +316,14 @@ public class ChunkedBodyTest {
     }
 
     @Test
+    void getRawOfBodyWithChunks() {
+        var raw = "3" + CRLF + "abc" + CRLF + "10" + CRLF + "0123456789abcdef" + CRLF + "0" + CRLF + CRLF;
+        var cb = new ChunkedBody(new ByteArrayInputStream(raw.getBytes(US_ASCII)));
+        cb.read();
+        assertEquals(raw, new String(cb.getRaw(), US_ASCII));
+    }
+
+    @Test
     void readTrailerTest() throws IOException {
         byte[] trailer = ("3D" + CRLF + CRLF).getBytes();
         ByteArrayInputStream is = new ByteArrayInputStream(trailer);
