@@ -40,6 +40,7 @@ import static com.predic8.membrane.core.http.Response.ResponseBuilder.newInstanc
 import static com.predic8.membrane.core.util.HttpUtil.*;
 import static java.lang.Integer.parseInt;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Objects.requireNonNullElse;
 import static org.apache.commons.text.StringEscapeUtils.escapeXml11;
 
 public class Response extends Message {
@@ -397,7 +398,8 @@ public class Response extends Message {
 		}
 		version = matcher.group(1);
 		statusCode = parseInt(matcher.group(2));
-		statusMessage = matcher.group(4);
+		// RFC 9112 §4: the reason phrase is optional
+		statusMessage = requireNonNullElse(matcher.group(4), "");
 	}
 
 
