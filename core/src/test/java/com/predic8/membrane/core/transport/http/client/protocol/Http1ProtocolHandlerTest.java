@@ -131,6 +131,28 @@ class Http1ProtocolHandlerTest {
 
     }
 
+    /**
+     * An interim response is followed by the final one on the same connection. Taking it as the final
+     * response would leave the real one unread for the next request on that connection.
+     */
+    @Test
+    void interimResponseIsSkipped() throws Exception {
+        Exchange exc = get("/foo").buildExchange();
+        handler.handle(exc, getConnectionType(getInputStreamFor("""
+                HTTP/1.1 103 Early Hints\r
+                Link: </style.css>; rel=preload; as=style\r
+                \r
+                HTTP/1.1 102 Processing\r
+                \r
+                HTTP/1.1 200 OK\r
+                Content-Length: 5\r
+                \r
+                hello"""), new CollectingOutputStream()), new HostColonPort("localhost", 8080));
+
+        assertEquals(200, exc.getResponse().getStatusCode());
+        assertEquals("hello", exc.getResponse().getBodyAsStringDecoded());
+    }
+
     @Nested
     class RetryBodyRetention {
 

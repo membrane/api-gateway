@@ -79,6 +79,8 @@ public class Http1ProtocolHandler extends AbstractProtocolHandler {
         // 100 - Continue
         handle100Expected(exchange, ct.con());
 
+        skipInterimResponses(exchange, ct.con());
+
         // Only HTTP 1?
         exchange.setReceived();
         exchange.setTimeResReceived(currentTimeMillis());
@@ -150,6 +152,18 @@ public class Http1ProtocolHandler extends AbstractProtocolHandler {
         exchange.getRequest().getBody().write(getBodyTransferer(exchange, c), retainBodyForRetry());
         c.out.flush();
         response.read(c.in, !exchange.getRequest().isHEADRequest());
+    }
+
+    /**
+     * RFC 9110 §15.2: a 1xx other than 101 is followed by the final response on the same connection.
+     * Membrane does not relay interim responses, so they are dropped.
+     */
+    private void skipInterimResponses(Exchange exchange, Connection c) throws IOException, EndOfStreamException {
+        Response response = exchange.getResponse();
+        while (response.getStatusCode() >= 100 && response.getStatusCode() < 200 && response.getStatusCode() != 101) {
+            log.debug("Skipping interim response {}.", response.getStatusCode());
+            response.read(c.in, !exchange.getRequest().isHEADRequest());
+        }
     }
 
     private static @NotNull AbstractBodyTransferer getBodyTransferer(Exchange exchange, Connection c) {

@@ -358,6 +358,77 @@ public class ResponseTest {
         assertTrue(written.endsWith("\r\n\r\n"), written);
     }
 
+    /**
+     * RFC 9110 §8.6, RFC 9112 §6.1: a server must not send Content-Length or Transfer-Encoding in a
+     * 1xx or 204 response.
+     */
+    @ParameterizedTest
+    @ValueSource(ints = {103, 204})
+    void writeResponseNeverContainingBodyOmitsFraming(int statusCode) throws Exception {
+        String written = writeToString(Response.statusCode(statusCode).body("hello").build());
+        assertFalse(written.contains("Content-Length"), written);
+        assertFalse(written.contains("Transfer-Encoding"), written);
+    }
+
+    /**
+     * RFC 9112 §6.3 does not end a 205 at the header fields, so a client reads as many bytes as the
+     * framing announces. RFC 9110 §15.3.6: a 205 announces zero-length content.
+     */
+    @Test
+    void writeResetContentAnnouncesZeroLength() throws Exception {
+        String written = writeToString(Response.statusCode(205).body("hello").build());
+        assertTrue(written.contains("Content-Length: 0\r\n"), written);
+    }
+
+    @Test
+    void writeChunkedResetContentAnnouncesZeroLength() throws Exception {
+        String written = writeToString(Response.statusCode(205).body(new ByteArrayInputStream("hello".getBytes()), false).build());
+        assertFalse(written.contains("Transfer-Encoding"), written);
+        assertTrue(written.contains("Content-Length: 0\r\n"), written);
+    }
+
+    /**
+     * RFC 9110 §8.6: the Content-Length of a 304 describes the representation it stands for.
+     */
+    @Test
+    void writeNotModifiedKeepsContentLength() throws Exception {
+        String written = writeToString(Response.statusCode(304).body("hello").build());
+        assertTrue(written.contains("Content-Length: 5\r\n"), written);
+    }
+
+    /**
+     * The body is not written, but it still has to be consumed: that is what frees the connection it
+     * is read from.
+     */
+    @Test
+    void writeResponseNeverContainingBodyDrainsBody() throws Exception {
+        ByteArrayInputStream in = new ByteArrayInputStream("hello".getBytes());
+        Response res = Response.statusCode(204).build();
+        res.setBody(new Body(in, 5));
+        writeToString(res);
+        assertEquals(0, in.available());
+        assertTrue(res.getBody().isRead());
+    }
+
+    @Test
+    void writeResponseNeverContainingBodyClosesOwnedStream() throws Exception {
+        boolean[] closed = {false};
+        InputStream in = new ByteArrayInputStream("hello".getBytes()) {
+            @Override
+            public void close() {
+                closed[0] = true;
+            }
+        };
+        writeToString(Response.statusCode(204).body(in, true).build());
+        assertTrue(closed[0]);
+    }
+
+    private static String writeToString(Response res) throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        res.write(out, true);
+        return out.toString(ISO_8859_1);
+    }
+
     @Nested
     class RealResponses {
 

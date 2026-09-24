@@ -467,6 +467,30 @@ public class Response extends Message {
 		return (statusCode >= 100 && statusCode < 200) || statusCode == 204 || statusCode == 205 || statusCode == 304;
 	}
 
+	@Override
+	protected boolean prepareBodyForWrite() {
+		if (!shouldNotContainBody())
+			return true;
+		adjustFramingForNoBody();
+		return false;
+	}
+
+	/**
+	 * Makes the framing fields agree with a response that is written without a body. RFC 9110 §8.6 and
+	 * RFC 9112 §6.1: a 1xx or 204 carries neither Content-Length nor Transfer-Encoding. A 205 is not ended
+	 * by the header fields (RFC 9112 §6.3), so it announces zero-length content. A 304 keeps the fields of
+	 * the representation it stands for.
+	 */
+	private void adjustFramingForNoBody() {
+		if (statusCode == 304)
+			return;
+		header.removeFields(TRANSFER_ENCODING);
+		if (statusCode == 205)
+			header.setContentLength(0);
+		else
+			header.removeFields(CONTENT_LENGTH);
+	}
+
 	/**
 	 * A parsed 304 may keep the Content-Length of the representation it stands for; the message itself
 	 * has no body, see {@link #shouldNotContainBody()}.
