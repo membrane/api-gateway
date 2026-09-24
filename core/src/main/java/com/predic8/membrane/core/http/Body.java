@@ -102,18 +102,20 @@ public class Body extends AbstractBody {
     }
 
 	private void skipBodyContent() throws IOException {
-		byte[] buffer = null;
 		boolean hasRelevantObserver = hasRelevantObservers();
-		if (hasRelevantObserver)
+		// Unknown length: drain to EOF. Uses read(), since only read() reliably signals EOF.
+		boolean untilEof = length == -1;
+		byte[] buffer = null;
+		if (hasRelevantObserver || untilEof)
 			buffer = new byte[BUFFER_SIZE];
 
 		chunks.clear();
 		long toSkip = length;
-		while (toSkip > 0) {
+		while (untilEof || toSkip > 0) {
 			long skipped;
-			if (hasRelevantObserver) {
+			if (buffer != null) {
 				skipped = inputStream.read(buffer);
-				if (skipped > 0)
+				if (hasRelevantObserver && skipped > 0)
 					for (MessageObserver observer : observers)
 						observer.bodyChunk(buffer, 0, (int)skipped);
 			} else {

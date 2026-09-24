@@ -13,12 +13,16 @@
    limitations under the License. */
 package com.predic8.membrane.core.http;
 
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
-import java.io.*;
-import java.util.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
+import java.io.IOException;
+import java.util.Arrays;
 
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SuppressWarnings("unused")
@@ -181,6 +185,41 @@ public class BodyTest {
 
 		assertTrue(complete.isRead());
 		assertArrayEquals("payload".getBytes(), complete.getContent());
+	}
+
+	/**
+	 * A body of unknown length (EOF-delimited, length -1) must be drained to EOF by discard(),
+	 * not just marked as read with its bytes left in the stream.
+	 * See <a href="https://github.com/membrane/api-gateway/issues/3330">#3330</a>.
+	 */
+	@Test
+	void discardDrainsBodyOfUnknownLength() throws IOException {
+		ByteArrayInputStream in = new ByteArrayInputStream("leftover bytes".getBytes(UTF_8));
+		Body body = new Body(in);
+
+		body.discard();
+
+		assertTrue(body.isRead());
+		assertEquals(0, in.available(), "discard() must consume the remaining bytes");
+	}
+
+	@Test
+	void discardDrainsBodyOfUnknownLengthAndNotifiesRelevantObserver() throws IOException {
+		ByteArrayInputStream in = new ByteArrayInputStream("leftover bytes".getBytes(UTF_8));
+		Body body = new Body(in);
+		ByteArrayOutputStream observed = new ByteArrayOutputStream();
+		body.addObserver(new AbstractMessageObserver() {
+			@Override
+			public void bodyChunk(byte[] buffer, int offset, int length) {
+				observed.write(buffer, offset, length);
+			}
+		});
+
+		body.discard();
+
+		assertTrue(body.isRead());
+		assertEquals(0, in.available(), "discard() must consume the remaining bytes");
+		assertEquals("leftover bytes", observed.toString(UTF_8));
 	}
 
 	private static class NonRelevantObserver extends AbstractMessageObserver implements NonRelevantBodyObserver {}
