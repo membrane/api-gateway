@@ -29,6 +29,9 @@ public class ChunkedBodyTransferer extends AbstractBodyTransferer {
 
 	@Override
 	public void write(byte[] content, int i, int length) throws IOException {
+		// A zero-length chunk is the last-chunk marker; only finish() may emit it.
+		if (length == 0)
+			return;
 		writeChunkSize(out, length);
 		out.write(content, i, length);
 		out.write(Constants.CRLF_BYTES);
@@ -37,6 +40,8 @@ public class ChunkedBodyTransferer extends AbstractBodyTransferer {
 
 	@Override
 	public void write(Chunk chunk) throws IOException {
+		if (chunk.getLength() == 0)
+			return;
 		chunk.write(out);
 	}
 
