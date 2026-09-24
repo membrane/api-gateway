@@ -197,10 +197,9 @@ public class Header {
     }
 
     private static MalformedHeaderException malformedFieldLine(String line, String reason) {
-        final String message = "Malformed header line \"%s\": %s"
-                .formatted(maskNonPrintableCharacters(truncateAfter(line, 80)), reason);
-        log.info(message);
-        return new MalformedHeaderException(message);
+        final String maskedLine = maskNonPrintableCharacters(truncateAfter(line, 80));
+        log.info("Malformed header line \"{}\": {}", maskedLine, reason);
+        return new MalformedHeaderException("Malformed header line \"%s\": %s".formatted(maskedLine, reason));
     }
 
     /**

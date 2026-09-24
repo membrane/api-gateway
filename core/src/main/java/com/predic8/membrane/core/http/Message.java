@@ -33,6 +33,7 @@ import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.util.ContentTypeDetector.EffectiveContentType.HTML;
 import static com.predic8.membrane.core.util.ContentTypeDetector.detectEffectiveContentType;
 import static com.predic8.membrane.core.util.text.StringUtil.maskNonPrintableCharacters;
+import static com.predic8.membrane.core.util.text.StringUtil.truncateAfter;
 import static com.predic8.membrane.core.util.text.TextUtil.getCharset;
 
 /**
@@ -224,10 +225,10 @@ public abstract class Message {
 		if (transferEncoding == null || header.isChunked())
 			return;
 
-		String message = "Transfer-Encoding \"%s\" does not end in \"chunked\". The body length of the %s cannot be determined; rejecting to prevent a desynchronized connection."
-				.formatted(maskNonPrintableCharacters(transferEncoding), messageType);
-		log.info(message);
-		throw new MalformedHeaderException(message);
+		final String maskedTransferEncoding = maskNonPrintableCharacters(truncateAfter(transferEncoding, 80));
+		log.info("Transfer-Encoding \"{}\" does not end in \"chunked\". The body length of the {} cannot be determined; rejecting to prevent a desynchronized connection.", maskedTransferEncoding, messageType);
+		throw new MalformedHeaderException("Transfer-Encoding \"%s\" does not end in \"chunked\". The body length of the %s cannot be determined; rejecting to prevent a desynchronized connection."
+				.formatted(maskedTransferEncoding, messageType));
 	}
 
 	/**
