@@ -46,6 +46,7 @@ PRIO 3:
 - Remove XML Konfiguration
 - configure log4j with YAML
 - Remove SOAP2REST XSLT Interceptor:
+  - rm HTTP2XMLInterceptor
   - rm com.predic8.membrane.core.http.xml
 - Log harmonization:
   - Decide if log message start with uppercase or lowercase.
