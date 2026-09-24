@@ -148,10 +148,14 @@ public class Request extends Message {
      * <tt>chunked</tt> has no reliably determinable body length. Reject it before selecting a body,
      * rather than falling back to reading until EOF, which would hang a keep-alive connection and
      * open the door to request smuggling.
+     * <p>
+     * A request that is chunked-framed and also carries a <tt>Content-Length</tt> is rejected as
+     * well, see {@link #rejectIfChunkedWithContentLength(String)}.
      */
     @Override
     protected void createBody(InputStream in) throws IOException {
         rejectIfBodyLengthUndeterminable("request");
+        rejectIfChunkedWithContentLength("request");
         super.createBody(in);
     }
 

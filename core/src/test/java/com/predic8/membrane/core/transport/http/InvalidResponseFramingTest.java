@@ -137,6 +137,27 @@ class InvalidResponseFramingTest {
         assertGatewayRejects();
     }
 
+    /**
+     * RFC 9112 §6.3: a response with both Transfer-Encoding and Content-Length might indicate an
+     * attempt at response splitting and ought to be handled as an error.
+     */
+    @Test
+    void backendWithChunkedTransferCodingAndContentLengthYields502() throws Exception {
+        backendResponse =
+                "HTTP/1.1 200 OK" + CRLF +
+                "Content-Type: text/plain" + CRLF +
+                "Transfer-Encoding: chunked" + CRLF +
+                "Content-Length: 0" + CRLF +
+                "Connection: close" + CRLF +
+                CRLF +
+                "5" + CRLF +
+                "hello" + CRLF +
+                "0" + CRLF +
+                CRLF;
+
+        assertGatewayRejects();
+    }
+
     private static void assertGatewayRejects() throws Exception {
         try (HttpAssertions ha = new HttpAssertions()) {
             ha.getAndAssert(502, "http://localhost:" + FRONTEND_PORT + "/");

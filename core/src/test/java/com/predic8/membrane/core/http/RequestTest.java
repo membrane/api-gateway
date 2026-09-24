@@ -459,6 +459,40 @@ public class RequestTest {
                 """));
     }
 
+    /**
+     * RFC 9112 6.1: a request with both Content-Length and Transfer-Encoding may be rejected. Taking
+     * "Content-Length: 0" to mean an empty body would leave the chunked bytes unread on the
+     * connection, where they would be parsed as the next request - request smuggling.
+     */
+    @Test
+    void chunkedWithContentLengthIsRejected() {
+        assertThrows(MalformedHeaderException.class, () -> readRequest("""
+                POST /products HTTP/1.1
+                Host: example.com
+                Transfer-Encoding: chunked
+                Content-Length: 0
+
+                5
+                abcde
+                0
+
+                """));
+    }
+
+    @Test
+    void chunkedAcrossSeveralFieldsWithContentLengthIsRejected() {
+        assertThrows(MalformedHeaderException.class, () -> readRequest("""
+                POST /products HTTP/1.1
+                Host: example.com
+                Transfer-Encoding: gzip
+                Transfer-Encoding: chunked
+                Content-Length: 3
+
+                0
+
+                """));
+    }
+
     @Test
     void transferEncodingEndingInChunkedIsAccepted() throws Exception {
         assertInstanceOf(ChunkedBody.class, readRequest("""

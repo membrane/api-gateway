@@ -230,6 +230,29 @@ public abstract class Message {
 		throw new MalformedHeaderException(message);
 	}
 
+	/**
+	 * A message that is chunked-framed and also carries a <tt>Content-Length</tt> is a classic
+	 * smuggling vector: RFC 9112 &sect;6.1 allows a server to reject such a request, and &sect;6.3
+	 * says such a message ought to be handled as an error. Framing it by either header lets gateway
+	 * and peer disagree on where the body ends - e.g. {@link Request#shouldNotContainBody()} checks
+	 * the <tt>Content-Length</tt> first, so "Content-Length: 0" would leave the chunked bytes on the
+	 * connection, to be parsed as the next request.
+	 * <p>
+	 * Call after {@link #rejectIfBodyLengthUndeterminable(String)}, so any <tt>Transfer-Encoding</tt>
+	 * left at this point ends in <tt>chunked</tt>.
+	 *
+	 * @param messageType "request" or "response", named in the rejection message
+	 */
+	protected void rejectIfChunkedWithContentLength(String messageType) throws MalformedHeaderException {
+		if (!header.hasContentLength() || !header.isChunked())
+			return;
+
+		String message = "The %s has both Content-Length and Transfer-Encoding. Rejecting to prevent a desynchronized connection."
+				.formatted(messageType);
+		log.info(message);
+		throw new MalformedHeaderException(message);
+	}
+
 	protected void createBody(InputStream in) throws IOException {
 		log.debug("createBody");
 

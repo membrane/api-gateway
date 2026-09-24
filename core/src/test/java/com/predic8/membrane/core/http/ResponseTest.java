@@ -368,6 +368,66 @@ public class ResponseTest {
                 """));
     }
 
+    /**
+     * RFC 9112 6.3: a response with both Transfer-Encoding and Content-Length might indicate an
+     * attempt at response splitting and ought to be handled as an error, so it is rejected.
+     */
+    @Test
+    void chunkedWithContentLengthIsRejected() {
+        assertThrows(MalformedHeaderException.class, () -> readResponse("""
+                HTTP/1.1 200 Ok
+                Transfer-Encoding: chunked
+                Content-Length: 0
+
+                5
+                abcde
+                0
+
+                """));
+    }
+
+    @Test
+    void chunkedAcrossSeveralFieldsWithContentLengthIsRejected() {
+        assertThrows(MalformedHeaderException.class, () -> readResponse("""
+                HTTP/1.1 302 Found
+                Location: https://example.com/
+                Transfer-Encoding: gzip
+                Transfer-Encoding: chunked
+                Content-Length: 3
+
+                0
+
+                """));
+    }
+
+    /**
+     * A response that must not contain a body carries no framing to validate, so framing fields
+     * it happens to carry are not rejected - and the next response on the connection is read intact.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "204 No Content\nTransfer-Encoding: chunked\nContent-Length: 5",
+            "204 No Content\nTransfer-Encoding: gzip",
+    })
+    void responseWithoutBodyIgnoresFraming(String statusAndFraming) throws Exception {
+        InputStream in = convertMessage("""
+                HTTP/1.1 %s
+
+                HTTP/1.1 200 Ok
+                Content-Length: 2
+
+                ok""".formatted(statusAndFraming));
+
+        Response first = new Response();
+        first.read(in, true);
+        assertInstanceOf(EmptyBody.class, first.getBody());
+
+        Response next = new Response();
+        next.read(in, true);
+        assertEquals(200, next.getStatusCode());
+        assertEquals("ok", next.getBodyAsStringDecoded());
+    }
+
     private static Response readResponse(String message) throws IOException, EndOfStreamException {
         Response res = new Response();
         res.read(convertMessage(message), true);
