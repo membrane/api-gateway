@@ -39,6 +39,8 @@ import static com.predic8.membrane.core.util.xml.parser.HardenedXmlParser.getIns
  * {@code nullable} that {@code XsdToSchema} derives from {@code nillable="true"}.
  * An element that has attributes but no child elements becomes an object carrying those attributes
  * plus its own text value under {@code $value}.
+ * A response element that is itself a scalar (no child elements, and the schema names an XSD
+ * scalar type rather than an object) is emitted as a bare JSON value, not an empty object.
  */
 public class Soap2JsonTransformer {
 
@@ -72,7 +74,7 @@ public class Soap2JsonTransformer {
      */
     public String transform(String soapXml, Schema<?> responseSchema, Schema<?> faultDetailSchema) throws Exception {
         return MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(
-                toMap(new InputSource(new StringReader(soapXml)), responseSchema, faultDetailSchema));
+                toJson(new InputSource(new StringReader(soapXml)), responseSchema, faultDetailSchema));
     }
 
     /**
@@ -82,10 +84,10 @@ public class Soap2JsonTransformer {
      */
     public byte[] transform(InputSource soapXml, Schema<?> responseSchema, Schema<?> faultDetailSchema) throws Exception {
         return MAPPER.writerWithDefaultPrettyPrinter().writeValueAsBytes(
-                toMap(soapXml, responseSchema, faultDetailSchema));
+                toJson(soapXml, responseSchema, faultDetailSchema));
     }
 
-    private Map<String, Object> toMap(InputSource soapXml, Schema<?> responseSchema, Schema<?> faultDetailSchema) throws Exception {
+    private Object toJson(InputSource soapXml, Schema<?> responseSchema, Schema<?> faultDetailSchema) throws Exception {
         var doc = getInstance().parse(soapXml);
 
         Element body = getSoapBody(doc);
@@ -102,7 +104,23 @@ public class Soap2JsonTransformer {
             throw buildFaultException(responseElement, faultDetailSchema);
         }
 
+        if (isNil(responseElement)) return null;
+        if (isScalarRoot(responseElement, responseSchema)) return leafValue(responseElement, responseSchema);
         return elementToMap(responseElement, responseSchema);
+    }
+
+    /**
+     * Whether the root response element must be emitted as a bare JSON scalar rather than an
+     * object: it has no child elements, and the schema published for it names an XSD scalar type
+     * (string, integer, ...) rather than an object — an empty {@code complexType} keeps its
+     * {@code {}} shape, since the schema there still says "object".
+     */
+    private boolean isScalarRoot(Element element, Schema<?> schema) {
+        if (hasChildElements(element)) return false;
+        Schema<?> resolved = resolve(schema);
+        if (resolved == null) return false;
+        String type = resolved.getType();
+        return type != null && !"object".equals(type) && !"array".equals(type);
     }
 
     private static Element getSoapBody(Document doc) {
