@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -35,6 +36,7 @@ import static com.predic8.membrane.core.http.MimeType.TEXT_HTML;
 import static com.predic8.membrane.core.http.MimeType.isOfMediaType;
 import static com.predic8.membrane.core.http.Response.*;
 import static com.predic8.membrane.test.TestUtil.getResourceAsStream;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.params.provider.Arguments.of;
 
@@ -304,6 +306,56 @@ public class ResponseTest {
         res.read(getResourceAsStream(this,"response-205-reset.http"),true);
         assertTrue(res.isBodyEmpty());
         assertInstanceOf(EmptyBody.class, res.getBody());
+    }
+
+    /**
+     * RFC 9112 §6.3: a 1xx, 204 or 304 response is terminated by the empty line after the
+     * header fields, regardless of Content-Length or Transfer-Encoding.
+     */
+    @ParameterizedTest
+    @MethodSource("responsesWithoutBody")
+    void readResponseNeverContainingBody(String response) throws Exception {
+        Response res = new Response();
+        res.read(new ByteArrayInputStream(StringTestUtil.normalizeCRLF(response).getBytes()), true);
+        assertInstanceOf(EmptyBody.class, res.getBody());
+        assertTrue(res.isBodyEmpty());
+    }
+
+    static Stream<String> responsesWithoutBody() {
+        return Stream.of("""
+            HTTP/1.1 304 Not Modified
+            Content-Length: 5
+
+            """, """
+            HTTP/1.1 304 Not Modified
+            Transfer-Encoding: chunked
+
+            """, """
+            HTTP/1.1 304 Not Modified
+
+            """, """
+            HTTP/1.1 103 Early Hints
+            Link: </style.css>; rel=preload; as=style
+
+            """, """
+            HTTP/1.1 102 Processing
+
+            """);
+    }
+
+    /**
+     * The client stops reading a 204, 205 or 304 after the header fields, so a body written
+     * anyway is parsed as the start of the next response on a keep-alive connection.
+     */
+    @ParameterizedTest
+    @ValueSource(ints = {204, 205, 304})
+    void writeResponseNeverContainingBody(int statusCode) throws Exception {
+        Response res = Response.statusCode(statusCode).body("hello").build();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        res.write(out, true);
+        String written = out.toString(ISO_8859_1);
+        assertFalse(written.contains("hello"), written);
+        assertTrue(written.endsWith("\r\n\r\n"), written);
     }
 
     @Nested

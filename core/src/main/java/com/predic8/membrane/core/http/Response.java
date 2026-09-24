@@ -459,8 +459,23 @@ public class Response extends Message {
 		return " " + statusCode;
 	}
 
+	/**
+	 * RFC 9112 §6.3: a 1xx, 204 or 304 response ends with the empty line after the header fields,
+	 * whatever Content-Length or Transfer-Encoding says. RFC 9110 §15.3.6: a 205 carries no content either.
+	 */
 	public boolean shouldNotContainBody()  {
-		return statusCode == 100 || statusCode == 101 || statusCode == 204 || statusCode == 205 ;
+		return (statusCode >= 100 && statusCode < 200) || statusCode == 204 || statusCode == 205 || statusCode == 304;
+	}
+
+	/**
+	 * A parsed 304 may keep the Content-Length of the representation it stands for; the message itself
+	 * has no body, see {@link #shouldNotContainBody()}.
+	 */
+	@Override
+	public boolean isBodyEmpty() throws ReadingBodyException {
+		if (shouldNotContainBody() && getBody() instanceof EmptyBody)
+			return true;
+		return super.isBodyEmpty();
 	}
 
 	public boolean isOk(){
