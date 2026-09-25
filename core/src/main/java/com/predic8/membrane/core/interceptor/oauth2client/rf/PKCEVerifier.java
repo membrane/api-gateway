@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.interceptor.oauth2client.rf;
 
 import com.predic8.membrane.core.interceptor.session.Session;
+import com.predic8.membrane.core.interceptor.session.SessionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,7 +31,7 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
  * See RFC 7636.
  */
 public class PKCEVerifier {
-    public static final String SESSION_PARAMETER_VERIFIER = "verifier";
+    public static final String SESSION_PARAMETER_VERIFIER = SessionManager.SESSION_PARAMETER_VERIFIER;
 
     private static final Logger log = LoggerFactory.getLogger(PKCEVerifier.class);
     private static final String VERIFIER_CHARACTERS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~";

@@ -1,0 +1,52 @@
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+              xmlns:spring="http://www.springframework.org/schema/beans"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://www.springframework.org/schema/beans
+                    http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+                    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+    <!-- Scenario 5: identical to loadtest-rate-limit-basic-auth.xml (same basicAuthentication +
+         rateLimiter stack, same body/backlog), except both hops are TLS instead of plaintext:
+         the client-facing api terminates TLS (own self-signed keystore) and the connection to the
+         backend is TLS too (a truststore trusting the backend's self-signed cert). Everything else,
+         credentials, rate limit, topology, is unchanged, so its RPS can be subtracted directly
+         against rate-limit-basic-auth's to isolate the cost of the two TLS handshakes/hops added on
+         top, the same way rate-limit-basic-auth itself is subtracted against fullproxy.
+
+         The backend's plaintext listener on port 2010 (shared by fullproxy/openapi-validation/
+         rate-limit-basic-auth) is untouched; this scenario instead targets the backend's second,
+         TLS-only listener on port 2011 (see LoadTesterBackend.java), so all four scenarios can keep
+         sharing one already-running backend process.
+
+         __BACKEND_PRIVATE_IP__, __GATEWAY_KEYSTORE_PATH__ and __GATEWAY_TRUSTSTORE_PATH__ are
+         filled in by deploy-and-run.sh: the first once the backend VM's private IP is known, the
+         other two with the absolute paths of the self-signed keystore/truststore it generates and
+         ships alongside this config (see deploy-and-run.sh's cert-generation step). Client
+         certificates are not used; the client authenticates to the backend the normal way (HTTP
+         Basic, verified by basicAuthentication as in rate-limit-basic-auth), TLS here is transport
+         security only.
+
+         As with rate-limit-basic-auth, a run reporting ERR!=0 is invalid. Additionally, since this
+         scenario adds real client-side work (the TLS handshake/encryption AsyncHttpClient performs
+         for every connection) on top of rate-limit-basic-auth's request-building work, check the
+         client's CPU-busy figure too: if it's saturated (close to the gateway's), the RPS number is
+         measuring the load generator, not the gateway, and concurrency/client VM size need
+         adjusting before the run is trustworthy. -->
+    <router>
+        <transport backlog="1024"/>
+        <api port="2000">
+            <ssl>
+                <keystore location="__GATEWAY_KEYSTORE_PATH__" password="changeit" keyPassword="changeit"/>
+            </ssl>
+            <basicAuthentication>
+                <user name="loadtest" password="loadtest-secret"/>
+            </basicAuthentication>
+            <rateLimiter requestLimit="2000000" requestLimitDuration="PT1H"/>
+            <target host="__BACKEND_PRIVATE_IP__" port="2011">
+                <ssl>
+                    <truststore location="__GATEWAY_TRUSTSTORE_PATH__" password="changeit"/>
+                </ssl>
+            </target>
+        </api>
+    </router>
+</spring:beans>
