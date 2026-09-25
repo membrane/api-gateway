@@ -23,12 +23,13 @@ import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.util.*;
 import org.slf4j.*;
 import redis.clients.jedis.*;
+import redis.clients.jedis.params.*;
 
 import java.util.*;
 import java.util.stream.*;
 
 /**
- * For testing, the class FakeSyncSessionStoreManager is used instead.
+ * For testing, the class FakeSyncRedisSessionManager is used instead.
  */
 @MCElement(name = "redisSessionManager")
 public class RedisSessionManager extends SessionManager{
@@ -40,6 +41,15 @@ public class RedisSessionManager extends SessionManager{
     private RedisConnector connector;
     static final String ID_NAME = "_in_memory_session_id";
 
+    /**
+     * Replaces the stored session only if it is still the one that was read, so that a concurrent write
+     * is merged instead of overwritten. Redis hands out no version token, so the stored value itself
+     * serves as one; every write of a session differs from the last, so an ABA cannot occur.
+     */
+    private static final String COMPARE_AND_SET =
+            "if redis.call('GET', KEYS[1]) == ARGV[1] then " +
+            "redis.call('SET', KEYS[1], ARGV[2], 'EX', ARGV[3]); return 1 " +
+            "else return 0 end";
 
     public RedisSessionManager(){
         objMapper = new ObjectMapper();
@@ -53,15 +63,23 @@ public class RedisSessionManager extends SessionManager{
 
     @Override
     protected Map<String, Object> cookieValueToAttributes(String cookie) {
+        return getCachedSession(cookie)
+                .map(this::parse)
+                .orElse(new Session(usernameKeyName, new HashMap<>()))
+                .get();
+    }
+
+    private Optional<String> getCachedSession(String cookie) {
+        return readAndRefreshTtl(getKeyOfCookie(cookie));
+    }
+
+    private Session parse(String json) {
         try {
-            try (Jedis jedis = connector.getJedisWithDb()) {
-                return (!jedis.get(getKeyOfCookie(cookie)).equals("nil")) ?
-                        jsonStringtoSession(jedis.getEx(getKeyOfCookie(cookie), connector.getParams())).get() : new Session(usernameKeyName, new HashMap<>()).get();
-            }
+            return jsonStringtoSession(json);
         } catch (JsonProcessingException e) {
-            log.debug("Cannot parse JSON in Cookie.",e);
+            log.debug("Cannot parse JSON in Cookie.", e);
+            return new Session(usernameKeyName, new HashMap<>());
         }
-        return Collections.emptyMap();
     }
 
     @Override
@@ -78,15 +96,87 @@ public class RedisSessionManager extends SessionManager{
     }
 
     private void addSessionToRedis(Session[] session) {
-        Arrays.stream(session).forEach(s -> {
-            try {
-                try (Jedis jedis = connector.getJedisWithDb()) {
-                    jedis.setex(s.get(ID_NAME), getExpiresAfterSeconds(), sessionToJsonString(s));
-                }
-            } catch (JsonProcessingException e) {
-                log.debug("Cannot process JSON.",e);
-            }
-        });
+        Arrays.stream(session).forEach(s ->
+                SessionCasWriter.write(store, s.get(ID_NAME), s, Math.toIntExact(getExpiresAfterSeconds())));
+    }
+
+    /**
+     * Adapts Redis to what {@link SessionCasWriter} needs. Every operation that talks to the server is a
+     * separate method so that a test double can replace the server without reimplementing anything else.
+     */
+    private final SessionCasWriter.Store store = new SessionJsonStore(this) {
+        @Override
+        public Optional<SessionCasWriter.VersionedValue> read(String key) {
+            return readVersioned(key);
+        }
+
+        @Override
+        public boolean createIfAbsent(String key, String value, int ttlSeconds) {
+            return RedisSessionManager.this.createIfAbsent(key, value, ttlSeconds);
+        }
+
+        @Override
+        public boolean compareAndSet(String key, Object version, String value, int ttlSeconds) {
+            return RedisSessionManager.this.compareAndSet(key, version, value, ttlSeconds);
+        }
+
+        @Override
+        public void blindSet(String key, String value, int ttlSeconds) {
+            RedisSessionManager.this.blindSet(key, value, ttlSeconds);
+        }
+    };
+
+    /**
+     * Redis hands out no version token, so the stored value itself serves as one; see
+     * {@link #COMPARE_AND_SET}.
+     */
+    Optional<SessionCasWriter.VersionedValue> readVersioned(String key) {
+        try (Jedis jedis = connector.getJedisWithDb()) {
+            return Optional.ofNullable(jedis.get(key))
+                    .map(value -> new SessionCasWriter.VersionedValue(value, value));
+        }
+    }
+
+    boolean createIfAbsent(String key, String value, int ttlSeconds) {
+        try (Jedis jedis = connector.getJedisWithDb()) {
+            return jedis.set(key, value, SetParams.setParams().nx().ex(ttlSeconds)) != null;
+        }
+    }
+
+    boolean compareAndSet(String key, Object version, String value, int ttlSeconds) {
+        try (Jedis jedis = connector.getJedisWithDb()) {
+            Object applied = jedis.eval(COMPARE_AND_SET, List.of(key),
+                    List.of((String) version, value, Integer.toString(ttlSeconds)));
+            return Long.valueOf(1).equals(applied);
+        }
+    }
+
+    void blindSet(String key, String value, int ttlSeconds) {
+        try (Jedis jedis = connector.getJedisWithDb()) {
+            jedis.setex(key, ttlSeconds, value);
+        }
+    }
+
+    /**
+     * Reads a session and refreshes its expiry, which is what an accessed session needs and what
+     * {@link #readVersioned} deliberately does not do.
+     */
+    Optional<String> readAndRefreshTtl(String key) {
+        try (Jedis jedis = connector.getJedisWithDb()) {
+            return Optional.ofNullable(jedis.getEx(key, connector.getParams()));
+        }
+    }
+
+    boolean exists(String key) {
+        try (Jedis jedis = connector.getJedisWithDb()) {
+            return jedis.exists(key);
+        }
+    }
+
+    void delete(String key) {
+        try (Jedis jedis = connector.getJedisWithDb()) {
+            jedis.del(key);
+        }
     }
 
     private void createSessionIdsForNewSessions(Session[] session) {
@@ -97,10 +187,6 @@ public class RedisSessionManager extends SessionManager{
         Arrays.stream(session)
                 .filter(s -> s.get(ID_NAME).toString().contains(","))
                 .forEach(s -> s.put(ID_NAME, cookieNamePrefix + "-" +UUID.randomUUID()));
-    }
-
-    private String sessionToJsonString(Session session) throws JsonProcessingException {
-        return objMapper.writeValueAsString(session);
     }
 
     private Session jsonStringtoSession(String session) throws JsonProcessingException {
@@ -120,25 +206,21 @@ public class RedisSessionManager extends SessionManager{
 
     @Override
     protected boolean isValidCookieForThisSessionManager(String cookie) {
-        try (Jedis jedis = connector.getJedisWithDb()) {
-            return cookie.startsWith(cookieNamePrefix) && !jedis.get(getKeyOfCookie(cookie)).equals("nil");
-        }
+        return cookie.startsWith(cookieNamePrefix) && isStored(cookie);
     }
 
     @Override
     protected boolean cookieRenewalNeeded(String originalCookie) {
-        try (Jedis jedis = connector.getJedisWithDb()) {
-            return !jedis.get(originalCookie).equals("nil");
-        }
+        return isStored(originalCookie);
+    }
+
+    private boolean isStored(String cookie) {
+        return exists(getKeyOfCookie(cookie));
     }
 
     @Override
     public void removeSession(Exchange exc) {
-        getInvalidCookies(exc, UUID.randomUUID().toString()).forEach(key -> {
-            try (Jedis jedis = connector.getJedisWithDb()) {
-                jedis.del(key);
-            }
-        });
+        getInvalidCookies(exc, UUID.randomUUID().toString()).forEach(this::delete);
         super.removeSession(exc);
     }
 

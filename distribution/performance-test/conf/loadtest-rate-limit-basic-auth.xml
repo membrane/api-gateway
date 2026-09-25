@@ -1,0 +1,52 @@
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+              xmlns:spring="http://www.springframework.org/schema/beans"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://www.springframework.org/schema/beans
+                    http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+                    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+    <!-- Scenario 4: same topology/body/backlog as loadtest-fullproxy.xml, but every request must
+         first pass HTTP Basic credential verification and then a per-client rate-limit check
+         before being forwarded, real gateway tasks a plain reverse proxy cannot do. This
+         measures the compounded cost of stacking both checks on one request, the way a
+         production API would; run rateLimiter and basicAuthentication as separate scenarios
+         instead if you need each one's individual cost isolated.
+
+         basicAuthentication runs first (authenticating the request before rate-limiting it, the
+         common production order), then rateLimiter. basicAuthentication uses the built-in static
+         user list (StaticUserDataProvider) rather than htpasswd/JDBC/LDAP, so there is no backing
+         store I/O and no deliberately slow hash, but it is not just a byte compare: every request
+         pays for a Base64 decode, several String/substring allocations for the credentials, a
+         HashMap allocation to bridge into the generic UserDataProvider.verify(Map) interface, two
+         more HashMap lookups, and up to four regex Matcher allocations in
+         SecurityUtils.matchesHashPattern/verifyPassword, sniffing whether the incoming and stored
+         passwords look like a bcrypt/crypt(3) hash (they never do here) before falling through to
+         the actual MessageDigest.isEqual compare, plus a BasicHttpSecurityScheme and a List.of
+         allocation on success. removeAuthorizationHeader is left at its default (true).
+         rateLimiter's requestLimit is set far above this test's total request count (1,010,000
+         with warmup) so no request is ever actually rejected with 429; default keying (client IP)
+         is used, and since all load comes from one client VM, every request hits the same counter
+         key, the worst case for the interceptor's internal lock contention (LazyRateLimit: a
+         ConcurrentHashMap increment plus a synchronized clock check on every single request, with
+         no comparable per-request allocation). The gateway is already CPU-saturated in every
+         scenario here (roughly 95% busy), so basicAuthentication's extra allocation/regex work
+         shows up directly as lost throughput (measured around 5% against fullproxy), while
+         rateLimiter's near-allocation-free path measures as noise (under 1%).
+
+         run-scenario.sh sends valid credentials for the "loadtest" user on every request, so
+         every request passes both checks and is forwarded; none are rejected with 401 or 429. A
+         run reporting ERR!=0 here is invalid, not just noisy, since either short-circuit is
+         cheaper than a proxied request and would inflate RPS rather than deflate it.
+         __BACKEND_PRIVATE_IP__ is filled in by deploy-and-run.sh once the backend VM's private IP
+         is known. -->
+    <router>
+        <transport backlog="1024"/>
+        <api port="2000">
+            <basicAuthentication>
+                <user name="loadtest" password="loadtest-secret"/>
+            </basicAuthentication>
+            <rateLimiter requestLimit="2000000" requestLimitDuration="PT1H"/>
+            <target host="__BACKEND_PRIVATE_IP__" port="2010"/>
+        </api>
+    </router>
+</spring:beans>

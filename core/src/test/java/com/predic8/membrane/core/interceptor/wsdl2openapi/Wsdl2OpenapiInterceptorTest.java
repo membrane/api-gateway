@@ -223,6 +223,28 @@ class Wsdl2OpenapiInterceptorTest {
     }
 
     @Test
+    void aScalarOutputPartReturnsTheScalarValueNotAnEmptyObject() throws Exception {
+        // https://github.com/membrane/api-gateway/issues/3280 — getNameResponse is declared as
+        // plain xsd:string, so the published OpenAPI schema for this operation is `type: string`.
+        // The runtime response must honor that: a bare JSON string, not "{}".
+        var interceptor = wsdl2openapi("classpath:/ws/scalar-output.wsdl");
+        interceptor.init(new DummyTestRouter(), apiProxyWith(interceptor));
+
+        var exc = new Exchange(null);
+        exc.setProperty(operationPropertyKey(interceptor), "getName");
+        exc.setResponse(Response.ok("""
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soap:Body><getNameResponse xmlns="https://example.com/scalar-output">Alice</getNameResponse></soap:Body>
+                </soap:Envelope>
+                """).build());
+
+        assertEquals(Outcome.CONTINUE, interceptor.handleResponse(exc));
+        assertEquals(200, exc.getResponse().getStatusCode());
+        assertEquals("\"Alice\"", exc.getResponse().getBodyAsStringDecoded().trim(),
+                "a root element with no children must be emitted as its scalar text, not an empty object");
+    }
+
+    @Test
     void twoInstancesInOneFlowAreRejected() {
         var router = new DummyTestRouter();
         var proxy = apiProxyWith(wsdl2openapi("classpath:/ws/cities.wsdl"), wsdl2openapi("classpath:/blz-service.wsdl"));
