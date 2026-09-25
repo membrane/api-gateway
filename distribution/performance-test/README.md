@@ -43,9 +43,6 @@ client's CPU-busy figure: TLS adds real per-request work (handshake/encryption) 
 side too, and if the client saturates, the RPS number measures the load generator, not the
 gateway -- lower concurrency or a larger client VM before trusting the number.
 
-See [SAMPLE-RESULTS.md](SAMPLE-RESULTS.md) for an example run and how to interpret the numbers,
-and [TESTED-CONFIGURATIONS.md](TESTED-CONFIGURATIONS.md) for the full catalog of every hardware/
-JVM/heap/concurrency combination measured so far.
 
 ## Requirements
 
@@ -56,8 +53,7 @@ JVM/heap/concurrency combination measured so far.
   `~/.ssh/id_rsa` if you don't already have a key).
 
 This test costs real money while the VMs are running (`Standard_FX16mds_v2` gateway,
-`Standard_F16as_v7` backend, `Standard_F16as_v6` client by default -- see
-[TESTED-CONFIGURATIONS.md](TESTED-CONFIGURATIONS.md) for why these particular sizes) --
+`Standard_F16as_v7` backend, `Standard_F16as_v6` client by default
 **always run `teardown.sh` when done.** A full run of all scenarios takes well under an
 hour end to end.
 
@@ -116,7 +112,3 @@ See the top of each script for the variables it accepts.
   every run and are gitignored -- nothing under this directory vendors a library or bakes in an
   IP address (the self-signed TLS certs in `certs/` are the one exception, needed so the
   gateway's target-side TLS can validate the backend's SAN; they're still never committed).
-- [TESTED-CONFIGURATIONS.md](TESTED-CONFIGURATIONS.md) catalogs every hardware/JVM/heap/backlog/
-  concurrency combination measured so far, with full CPU-busy detail per role -- check it before
-  re-running a sweep that may already have been done, and add to it when you try something new so
-  future runs have something to compare against.
