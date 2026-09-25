@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CORS Tutorial</title>
+    <link rel="stylesheet" href="style.css" type="text/css">
+</head>
+<body>
+
+<div class="container">
+    <h2 style="text-align: center;">CORS Tutorial</h2>
+
+    <p>Calls <code>http://localhost:2000</code>. Start Membrane with
+        <a href="10-CORS-Allow-All.yaml">10-CORS-Allow-All.yaml</a> or
+        <a href="20-CORS-Restricted.yaml">20-CORS-Restricted.yaml</a> first.</p>
+
+    <label for="methodSelect">Method:</label>
+    <select id="methodSelect">
+        <option value="GET">GET</option>
+        <option value="POST">POST</option>
+        <option value="PUT">PUT</option>
+    </select>
+
+    <div>
+        <strong>Headers:</strong>
+        <label class="checkbox"><input type="checkbox" id="contentType"> Content-Type: application/json</label>
+        <label class="checkbox"><input type="checkbox" id="xFoo"> X-Foo: 42</label>
+        <label class="checkbox"><input type="checkbox" id="xBar"> X-Bar: 7</label>
+    </div>
+
+    <button onclick="call()">Call API</button>
+    <div class="response" id="response">No response yet!</div>
+</div>
+
+<script>
+    function call() {
+        const method = document.getElementById("methodSelect").value;
+
+        const headers = {};
+        if (document.getElementById("contentType").checked) {
+            headers["Content-Type"] = "application/json";
+        }
+        if (document.getElementById("xFoo").checked) {
+            headers["X-Foo"] = "42";
+        }
+        if (document.getElementById("xBar").checked) {
+            headers["X-Bar"] = "7";
+        }
+
+        const options = {
+            method: method,
+            headers: headers
+        };
+
+        if (method !== "GET") {
+            options.body = JSON.stringify({test: "test"});
+        }
+
+        fetch("http://localhost:2000", options)
+            .then(res => res.text())
+            .then(data => {
+                document.getElementById("response").textContent = data;
+            })
+            .catch(err => {
+                console.error("Request failed:", err);
+                document.getElementById("response").textContent = "Request failed (check the console)";
+            });
+    }
+</script>
+
+</body>
+</html>

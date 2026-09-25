@@ -1,0 +1,52 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.6.2.json
+#
+# Tutorial: CORS - Restricted
+#
+# Allow cross-origin calls only from listed origins, with listed methods and headers.
+#
+# 1.) Start Membrane:
+#     ./membrane.sh -c 20-CORS-Restricted.yaml
+#
+# 2.) Open page.html in your browser, open the developer tools (Network tab) and click "Call API".
+#     Calls with PUT or X-Bar fail in the preflight; the Console shows the CORS error.
+#
+# 3.) Send an allowed preflight request:
+#     curl -i -X OPTIONS localhost:2000 -H "Origin: https://example.com" -H "Access-Control-Request-Method: POST" -H "Access-Control-Request-Headers: X-Foo"
+#
+#     HTTP/1.1 204 No Content
+#     Access-Control-Allow-Origin: https://example.com
+#     Access-Control-Allow-Methods: POST
+#     Access-Control-Allow-Headers: x-foo, content-type
+#     ...
+#
+# 4.) Request a header that is not allowed:
+#     curl -i -X OPTIONS localhost:2000 -H "Origin: https://example.com" -H "Access-Control-Request-Method: POST" -H "Access-Control-Request-Headers: X-Bar"
+#
+#     HTTP/1.1 403 Forbidden
+#     ...
+#       "type" : "https://membrane-api.io/problems/security/headers-not-allowed",
+#     ...
+#
+# 5.) Call the API from an origin that is not allowed:
+#     curl -i localhost:2000 -H "Origin: https://evil.example.org"
+#
+#     HTTP/1.1 200 OK
+#     Content-Type: text/plain
+#     Content-Length: 24
+#
+#     Hello from the CORS API!
+#
+#     The request reaches the API, but without Access-Control-Allow-Origin the browser
+#     hides the response from the page. CORS protects users, not the API.
+
+api:
+  port: 2000
+  flow:
+    - cors:
+        origins: https://example.com null # Browsers send Origin: null for a page opened from a file
+        methods: GET, POST
+        headers: Content-Type, X-Foo
+    - static:
+        src: Hello from the CORS API!
+    - return:
+        status: 200

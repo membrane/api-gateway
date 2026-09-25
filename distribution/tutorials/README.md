@@ -65,6 +65,12 @@ Protect an API against common threats. Covers Basic Authentication, access contr
 JSON/XML/GraphQL/SQL-injection protection.
 
 
+## [CORS](cors)
+
+Let browsers call your APIs from other origins. Covers preflight requests, and restricting
+origins, methods and headers.
+
+
 ## [JWT](jwt)
 
 Issue signed JSON Web Tokens and protect an API by validating them. Covers Bearer tokens and signature/expiry/audience checks.

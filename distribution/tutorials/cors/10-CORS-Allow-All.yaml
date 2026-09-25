@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.6.2.json
+#
+# Tutorial: CORS - Allow All
+#
+# Let browsers call an API from any origin with any method and header.
+#
+# 1.) Start Membrane:
+#     ./membrane.sh -c 10-CORS-Allow-All.yaml
+#
+# 2.) Open page.html in your browser, open the developer tools (Network tab) and click "Call API".
+#     Every combination of method and headers succeeds.
+#
+# 3.) Send a preflight request, as a browser would before a PUT with a custom header:
+#     curl -i -X OPTIONS localhost:2000 -H "Origin: https://example.com" -H "Access-Control-Request-Method: PUT" -H "Access-Control-Request-Headers: X-Foo"
+#
+#     HTTP/1.1 204 No Content
+#     Access-Control-Allow-Origin: *
+#     Access-Control-Allow-Methods: PUT
+#     Access-Control-Allow-Headers: X-Foo
+#     Access-Control-Max-Age: 5
+#     Vary: Origin
+#
+# 4.) Continue with file 20-CORS-Restricted.yaml
+
+api:
+  port: 2000
+  flow:
+    - cors:
+        allowAll: true # For development only: skips all origin, method and header checks
+    - static:
+        src: Hello from the CORS API!
+    - return:
+        status: 200
