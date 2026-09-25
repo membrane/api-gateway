@@ -102,13 +102,19 @@ When you need more flexibility, extend Membrane with expressions and scripting u
 
 ## Speed & Footprint
 
-Although Membrane is written in Java, it delivers high performance with a low memory footprint. HTTP streaming, Keep-Alive, and non-blocking processing enable efficient resource utilization and high throughput. The Membrane distribution is only about 55 MB, making it smaller than many other API gateways.
+Membrane is one of the fastest API gateways available, and it stays fast when it does real work. On a 16-vCPU machine, it handles:
 
-On a single server Membrane can process **39,000 requests per second**. However, raw throughput benchmarks often measure only simple proxying without message protection or transformation.
+| Configuration                             | Requests/sec |
+|-------------------------------------------|-------------:|
+| Plain proxying                            |  **128,723** |
+| Basic Auth + rate limiting + TLS          |  **109,542** |
+| OpenAPI validation of every request       |   **89,197** |
 
-Membrane is implemented entirely in Java, from the HTTP engine to OpenAPI processing. This avoids the overhead of crossing between a native proxy core and a separate scripting runtime for plugins.
+Plain proxying numbers say little about a gateway, because what it does with each request matters far more than its raw speed. Membrane's HTTP engine and all of its plugins are written in Java and run in the same process, so a request never crosses from a native proxy core into a separate plugin runtime. Optimizations such as streaming or caching of parsed payloads keep the cost per request low, so even CPU-intensive OpenAPI validation processes almost 90,000 requests per second.
 
-As a result, Membrane can maintain high performance even when multiple plugins for validation, security, and transformation are active. What matters is not performance in reduced benchmark setups, but performance under realistic gateway configurations.
+The distribution is only about 55 MB and needs no database.
+
+See the [benchmark setup and results](https://www.membrane-api.io/api-gateway-performance.html), or [run the tests yourself](distribution/performance-test/README.md).
 
 # What Can You Do With Membrane?
 
