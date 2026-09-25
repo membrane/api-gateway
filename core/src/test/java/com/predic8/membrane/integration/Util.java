@@ -23,7 +23,14 @@ import java.util.*;
 
 public class Util {
     public static Router basicRouter(Proxy... proxies){
-        var router = new TestRouter();
+        return basicRouter(new TestRouter(), proxies);
+    }
+
+    /**
+     * Starts a router a test has configured beforehand - the accept backlog, for instance, which can only
+     * be set before the ports are opened.
+     */
+    public static Router basicRouter(TestRouter router, Proxy... proxies){
         router.getConfiguration().setHotDeploy(false);
         Arrays.stream(proxies).forEach(rule -> router.getRuleManager().addProxy(rule, RuleManager.RuleDefinitionSource.MANUAL));
         router.start();

@@ -19,6 +19,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.session.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.integration.*;
 import org.apache.http.Header;
 import org.apache.http.client.config.*;
@@ -41,7 +42,21 @@ public class SessionManagerTest {
 
     public static Collection<Object[]> data() {
         return Arrays.asList(inMemory(),
+                fakeSyncStore(),
+                fakeSyncRedisStore(),
                 jwt());
+    }
+
+    /**
+     * Only the managers that keep the session in a store on the server. JwtSessionManager is left out
+     * because it has no such store: it round-trips the whole session through the cookie, so parallel
+     * requests come back as several valid cookies that SessionManager.mergeCookies joins - a different
+     * mechanism with different (duplicating) semantics.
+     */
+    public static Collection<Object[]> storeBackedData() {
+        return Arrays.asList(inMemory(),
+                fakeSyncStore(),
+                fakeSyncRedisStore());
     }
 
     private static Object[] jwt() {
@@ -58,9 +73,45 @@ public class SessionManagerTest {
         };
     }
 
+    private static Object[] fakeSyncStore() {
+        return new Object[]{
+                FakeSyncSessionStoreManager.class.getSimpleName(),
+                (Supplier) FakeSyncSessionStoreManager::new
+        };
+    }
+
+    /**
+     * For the one test that fires ten thousand requests per session manager and so dominates the runtime
+     * of this class. It is about cookie handling under load, which the store-backed managers share with
+     * InMemorySessionManager; what is specific to them is covered by
+     * {@link #concurrentAppendsToOneSessionKeyAreNotLost}.
+     */
+    public static Collection<Object[]> heavyLoadData() {
+        return Arrays.asList(inMemory(),
+                jwt());
+    }
+
+    private static Object[] fakeSyncRedisStore() {
+        return new Object[]{
+                FakeSyncRedisSessionManager.class.getSimpleName(),
+                (Supplier) FakeSyncRedisSessionManager::new
+        };
+    }
+
     @SuppressWarnings("UastIncorrectHttpHeaderInspection")
     public static final String REMEMBER_HEADER = "X-Remember-This";
+    @SuppressWarnings("UastIncorrectHttpHeaderInspection")
+    public static final String APPEND_HEADER = "X-Append-State";
     public static final int GATEWAY_PORT = 3061;
+
+    /** The key StateManager keeps its CSRF tokens under - one of the keys declared additive. */
+    private static final String STATE_KEY = SessionManager.SESSION_PARAMETER_STATE;
+
+    /**
+     * Writers on one session, all released at the same moment. High enough that a lost update is a
+     * certainty without the merge; the test costs a few seconds at this size.
+     */
+    private static final int CONCURRENT_WRITERS = 200;
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("data")
@@ -250,7 +301,7 @@ public class SessionManagerTest {
     }
 
     @ParameterizedTest(name = "{0}")
-    @MethodSource("data")
+    @MethodSource("heavyLoadData")
     public void parallelRequests(
             String nameDummyField,
             Supplier<com.predic8.membrane.core.interceptor.session.SessionManager> smSupplier) throws Exception {
@@ -298,12 +349,113 @@ public class SessionManagerTest {
         httpRouter.stop();
     }
 
+    /**
+     * All workers connect at the same moment, so the accept queue has to hold every one of them. The
+     * default of 50 only works where the kernel absorbs the overflow and lets the client retransmit;
+     * Windows answers the connections beyond it with a reset, failing the test on connect instead of on
+     * what it is about.
+     */
+    private static TestRouter routerAcceptingAtOnce(int connections) {
+        TestRouter router = new TestRouter();
+        router.getTransport().setBacklog(connections);
+        return router;
+    }
+
+    /**
+     * The same read-modify-write StateManager.saveToSession does: append one more token to a
+     * SESSION_VALUE_SEPARATOR-joined list so that several authorization flows can be in flight at once.
+     */
+    private static void appendToState(Session session, String token) {
+        String current = session.get(STATE_KEY);
+        session.put(STATE_KEY, current == null ? token : current + SessionManager.SESSION_VALUE_SEPARATOR + token);
+    }
+
+    /**
+     * Reproduces <a href="https://github.com/membrane/api-gateway/issues/3238">#3238</a>: concurrent
+     * requests on one session each read their own copy of the session and write the whole thing back,
+     * so every writer but the last loses its append. StateManager.saveToSession does exactly this
+     * append to add a CSRF token for one more in-flight authorization flow; a token dropped here makes
+     * the callback fail with "CSRF token mismatch."
+     * <p>
+     * hasExactlyOneMatchingToken requires the token to appear <i>exactly once</i>, so a duplicate is as
+     * fatal as a loss - hence both assertions.
+     */
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("storeBackedData")
+    public void concurrentAppendsToOneSessionKeyAreNotLost(
+            String nameDummyField,
+            Supplier<com.predic8.membrane.core.interceptor.session.SessionManager> smSupplier) throws Exception {
+        int limit = CONCURRENT_WRITERS;
+        var httpRouter = Util.basicRouter(routerAcceptingAtOnce(limit),
+                Util.createServiceProxy(GATEWAY_PORT, testInterceptor(smSupplier)));
+
+        HttpClientContext ctx = getHttpClientContext();
+        ExecutorService executor = Executors.newFixedThreadPool(limit);
+        List<Throwable> failures = Collections.synchronizedList(new ArrayList<>());
+
+        try (CloseableHttpClient client = getHttpClient(limit)) {
+            // Establish the session first. Without a cookie every parallel request would start its own.
+            try (CloseableHttpResponse resp = client.execute(
+                    RequestBuilder.get("http://localhost:" + GATEWAY_PORT).addHeader(REMEMBER_HEADER, "init").build(), ctx)) {
+                assertEquals(200, resp.getStatusLine().getStatusCode());
+            }
+
+            List<String> tokens = IntStream.range(0, limit).mapToObj(i -> "token" + i).toList();
+            CountDownLatch startAllInParallel = new CountDownLatch(1);
+            CountDownLatch allDone = new CountDownLatch(limit);
+
+            for (String token : tokens) {
+                executor.execute(() -> {
+                    try {
+                        startAllInParallel.await();
+                        try (CloseableHttpResponse resp = client.execute(
+                                RequestBuilder.get("http://localhost:" + GATEWAY_PORT).addHeader(APPEND_HEADER, token).build(), ctx)) {
+                            assertEquals(200, resp.getStatusLine().getStatusCode());
+                        }
+                    } catch (Throwable t) {
+                        // Collected instead of thrown into the executor, where it would be swallowed.
+                        failures.add(t);
+                    } finally {
+                        allDone.countDown();
+                    }
+                });
+            }
+            startAllInParallel.countDown();
+            assertTrue(allDone.await(60, TimeUnit.SECONDS), "workers did not finish");
+
+            if (!failures.isEmpty())
+                throw new AssertionError(failures.size() + " of " + limit + " workers failed", failures.getFirst());
+
+            String state;
+            try (CloseableHttpResponse resp = client.execute(new HttpGet("http://localhost:" + GATEWAY_PORT), ctx)) {
+                state = resp.getFirstHeader(APPEND_HEADER).getValue();
+            }
+
+            List<String> stored = Arrays.asList(state.split(SessionManager.SESSION_VALUE_SEPARATOR));
+            List<String> lost = tokens.stream().filter(t -> !stored.contains(t)).toList();
+            assertEquals(List.of(), lost, lost.size() + " of " + limit + " tokens were lost");
+            assertEquals(tokens.size(), stored.size(), "stored tokens: " + state);
+        } finally {
+            executor.shutdown();
+            executor.awaitTermination(60, TimeUnit.SECONDS);
+            httpRouter.stop();
+        }
+    }
+
     private Stream<Header> allSetCookieHeadersExceptFor1970Expire(CloseableHttpResponse resp) {
         return Arrays.stream(resp.getHeaders("Set-Cookie")).filter(c -> !c.getValue().contains(com.predic8.membrane.core.interceptor.session.SessionManager.VALUE_TO_EXPIRE_SESSION_IN_BROWSER));
     }
 
     private CloseableHttpClient getHttpClient() {
         return HttpClients.custom().setDefaultRequestConfig(RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).build()).build();
+    }
+
+    private CloseableHttpClient getHttpClient(int maxConnections) {
+        return HttpClients.custom()
+                .setMaxConnTotal(maxConnections)
+                .setMaxConnPerRoute(maxConnections)
+                .setDefaultRequestConfig(RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).build())
+                .build();
     }
 
     private HttpClientContext getHttpClientContext() {
@@ -322,9 +474,19 @@ public class SessionManagerTest {
         AbstractInterceptorWithSession result = new AbstractInterceptorWithSession() {
             @Override
             protected Outcome handleRequestInternal(Exchange exc) {
+                String appendThis = exc.getRequest().getHeader().getFirstValue(APPEND_HEADER);
+                if (appendThis != null) {
+                    appendToState(getSessionManager().getSession(exc), appendThis);
+                    exc.setResponse(Response.ok().build());
+                    return Outcome.RETURN;
+                }
+
                 String rememberThis = exc.getRequest().getHeader().getFirstValue(REMEMBER_HEADER);
                 if (rememberThis == null)
-                    exc.setResponse(Response.ok().header(REMEMBER_HEADER, getSessionManager().getSession(exc).get(REMEMBER_HEADER)).build());
+                    exc.setResponse(Response.ok()
+                            .header(REMEMBER_HEADER, getSessionManager().getSession(exc).get(REMEMBER_HEADER))
+                            .header(APPEND_HEADER, Objects.toString(getSessionManager().getSession(exc).get(STATE_KEY), ""))
+                            .build());
                 else {
                     getSessionManager().getSession(exc).put(REMEMBER_HEADER, rememberThis);
                     exc.setResponse(Response.ok().build());
