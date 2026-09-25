@@ -83,6 +83,13 @@ PRIO 3:
           - xmlProtection: {}
     ```
   - To decide: whether a violation found in a response maps to a gateway error (502) rather than the 400 a request violation gets, since the fault is the backend's and the detail must not leak to the client.
+- Scripting `cookie`/`cookies` map (`LazyCookieMap`) read-only
+  - for Groovy
+  - Story: `put`/`remove`/`clear`/`putAll` (and `keySet`/`entrySet`/`values` views) change a private copy and are silently dropped. The parsed map is also cached, so it goes stale after `header.put('Cookie', …)`.
+  - Fix: mutators throw `UnsupportedOperationException` pointing to `header.put('Cookie', …)`; re-parse on every access (live like `SpELCookie`).
+  - **Breaking**: scripts calling `cookie.put(...)` fail instead of silently doing nothing.
+  - Related: in the response flow `cookie` is always empty (it only parses `Cookie`, not `Set-Cookie`). Document or address separately.
+  - What about setting cookies?
 
 ## Breaking Changes
 
