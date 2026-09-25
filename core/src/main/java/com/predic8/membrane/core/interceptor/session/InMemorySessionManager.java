@@ -48,7 +48,9 @@ public class InMemorySessionManager extends SessionManager {
     protected Map<String, Object> cookieValueToAttributes(String cookie) {
         try {
             synchronized (sessions) {
-                return sessions.get(getKeyOfCookie(cookie), () -> new Session(usernameKeyName, new HashMap<>())).get();
+                // A copy, not the cached session's live map: the caller keeps reading from it long after
+                // this lock is gone, while the request that owns the cached session is still writing to it.
+                return Map.copyOf(sessions.get(getKeyOfCookie(cookie), () -> new Session(usernameKeyName, new HashMap<>())).get());
             }
         } catch (ExecutionException e) {
             throw new RuntimeException(e);
@@ -72,8 +74,26 @@ public class InMemorySessionManager extends SessionManager {
                 .collect(Collectors.toMap(s -> s, s -> s.get(ID_NAME)));
     }
 
+    /**
+     * Like the store-backed managers, a request works on its own copy of the session and replaces the
+     * cached one wholesale, so a concurrent request's changes have to be merged back in. No
+     * compare-and-swap is needed for that here: the caller holds the lock on {@link #sessions} for the
+     * whole read-merge-write.
+     *
+     * @see SessionContentMerger
+     */
     private void addSessionToCache(Session[] session) {
-        Arrays.stream(session).forEach(s -> sessions.put(s.get(ID_NAME), s));
+        Arrays.stream(session).forEach(s -> {
+            String id = s.get(ID_NAME);
+            Session cached = sessions.getIfPresent(id);
+            if (cached != null && cached != s)
+                s.setContent(SessionContentMerger.merge(
+                        s.getBaseSnapshot(), Map.copyOf(cached.getContent()), s.getContent(), this::isAdditiveKey));
+            sessions.put(id, s);
+            // What was just stored is what the next write has to merge against; a request writes its
+            // session twice, once from postProcess on the request and once on the response.
+            s.setBaseSnapshot(s.getContent());
+        });
     }
 
     private void createSessionIdsForNewSessions(Session[] session) {
