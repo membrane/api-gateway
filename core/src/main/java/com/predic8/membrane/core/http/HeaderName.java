@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.http;
 
+import static java.util.Locale.ROOT;
 import static java.util.Objects.hash;
 
 /**
@@ -41,7 +42,7 @@ public class HeaderName {
 
 	@Override
 	public int hashCode() {
-		return hash(name.toLowerCase());
+		return hash(name.toLowerCase(ROOT));
 	}
 
 	public String getName() {

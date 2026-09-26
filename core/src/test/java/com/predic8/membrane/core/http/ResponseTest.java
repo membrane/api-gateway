@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -34,6 +35,7 @@ import java.util.stream.Stream;
 import static com.predic8.membrane.core.http.MimeType.TEXT_HTML;
 import static com.predic8.membrane.core.http.MimeType.isOfMediaType;
 import static com.predic8.membrane.core.http.Response.*;
+import static com.predic8.membrane.core.util.HttpTestUtil.convertMessage;
 import static com.predic8.membrane.test.TestUtil.getResourceAsStream;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.params.provider.Arguments.of;
@@ -304,6 +306,39 @@ public class ResponseTest {
         res.read(getResourceAsStream(this,"response-205-reset.http"),true);
         assertTrue(res.isBodyEmpty());
         assertInstanceOf(EmptyBody.class, res.getBody());
+    }
+
+    /**
+     * RFC 9112 5.1 forbids whitespace between a field name and the colon in either direction. A
+     * response carrying it desyncs the connection the same way a request does: the name keeps the
+     * whitespace and stops matching Content-Length, so Membrane reads no body while the declared
+     * bytes stay in the stream and are parsed as the next response.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"Content-Length : 6", "Content-Length\t: 6"})
+    void headerLineWithWhitespaceBeforeColonIsRejected(String fieldLine) {
+        assertThrows(MalformedHeaderException.class, () -> readResponse("""
+                HTTP/1.1 200 Ok
+                Content-Type: text/plain
+                %s
+
+                """.formatted(fieldLine)));
+    }
+
+    @Test
+    void headerLineWithWhitespaceAfterColonIsAccepted() throws Exception {
+        assertEquals("text/plain", readResponse("""
+                HTTP/1.1 200 Ok
+                Content-Type:\ttext/plain
+                Content-Length: 0
+
+                """).getHeader().getContentType());
+    }
+
+    private static Response readResponse(String message) throws IOException, EndOfStreamException {
+        Response res = new Response();
+        res.read(convertMessage(message), true);
+        return res;
     }
 
     @Nested
