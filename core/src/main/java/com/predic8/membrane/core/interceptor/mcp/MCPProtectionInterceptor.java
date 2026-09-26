@@ -68,6 +68,8 @@ import static java.util.EnumSet.of;
  * <p>Denied tools are also removed from <code>tools/list</code> responses so
  * clients do not discover tools they are not allowed to call.</p>
  *
+ * <p>See <a href="https://github.com/membrane/api-gateway/blob/master/distribution/tutorials/mcp/20-MCP-Protection.yaml">tutorials/mcp/20-MCP-Protection.yaml</a>.</p>
+ *
  * @yaml
  * <pre><code>
  * - mcpProtection:

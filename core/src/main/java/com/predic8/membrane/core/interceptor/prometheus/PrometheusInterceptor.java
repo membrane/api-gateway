@@ -62,7 +62,7 @@ import static java.util.stream.Collectors.toList;
  *   <li><code>lb_node_status{node,cluster}</code> — load balancer node health (1 = UP, 0 = DOWN).</li>
  *   <li>Response time histograms per proxy and status code range.</li>
  * </ul>
- * See examples/monitoring-tracing/prometheus-grafana for a runnable demo including Grafana dashboards.
+ * <p>See <a href="https://github.com/membrane/api-gateway/blob/master/distribution/tutorials/operation/50-Prometheus.yaml">tutorials/operation/50-Prometheus.yaml</a>.</p>
  * @topic 4. Monitoring, Logging and Statistics
  * @yaml <pre><code>
  * api:

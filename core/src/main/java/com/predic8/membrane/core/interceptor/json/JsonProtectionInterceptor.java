@@ -48,6 +48,8 @@ import static java.util.EnumSet.of;
  * <p>JSON documents carried inside a multipart body are inspected part by part, so a JSON document
  * uploaded as an attachment is checked like a plain JSON body.</p>
  *
+ * <p>See <a href="https://github.com/membrane/api-gateway/blob/master/distribution/tutorials/security/30-JSON-Protection.yaml">tutorials/security/30-JSON-Protection.yaml</a>.</p>
+ *
  * @yaml
  * <pre><code>
  * - jsonProtection:

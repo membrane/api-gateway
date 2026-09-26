@@ -30,6 +30,12 @@ import java.io.IOException;
 
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
+/**
+ * @description Extracts a SOAP operation's element name and namespace from the request body and
+ * stores them in the exchange properties <code>XSLT_SOAP_OPERATION</code> and
+ * <code>XSLT_SOAP_OPERATION_NS</code>, for use by downstream interceptors, such as an XSLT
+ * stylesheet, that branch on the operation. Non-SOAP or empty request bodies pass through unchanged.
+ */
 @MCElement(name="soapOperationExtractor")
 public class SoapOperationExtractor extends AbstractInterceptor {
 

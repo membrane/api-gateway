@@ -108,6 +108,10 @@ public class XenAuthenticationInterceptor extends AbstractInterceptor {
         String createSessionId(String xenSessionId);
     }
 
+    /**
+     * @description Session manager that keeps the client-to-backend session id mapping in memory
+     * only; mappings are lost on restart.
+     */
     @MCElement(name = "inMemorySessionManager", component = false)
     public static class InMemorySessionManager implements XenSessionManager {
         private final Map<String, String> ourSessionIds = new ConcurrentHashMap<>();
@@ -132,6 +136,11 @@ public class XenAuthenticationInterceptor extends AbstractInterceptor {
         }
     }
 
+    /**
+     * @description Session manager that encodes the backend session id as a signed JWT instead of
+     * storing a mapping. The JWT is verified and its subject read back on every request except a
+     * login, which is authenticated with credentials instead.
+     */
     @MCElement(name = "jwtSessionManager", component = false, id = "xenAuthentication-jwtSessionManager")
     public static class JwtSessionManager implements XenSessionManager {
         private String audience;
@@ -212,6 +221,10 @@ public class XenAuthenticationInterceptor extends AbstractInterceptor {
             return audience;
         }
 
+        /**
+         * @description Value written into the <code>aud</code> claim of the session JWT and expected
+         * when it is read back.
+         */
         @MCAttribute
         public void setAudience(String audience) {
             this.audience = audience;
@@ -221,6 +234,10 @@ public class XenAuthenticationInterceptor extends AbstractInterceptor {
             return jwk;
         }
 
+        /**
+         * @description RSA key used to sign and verify the session JWT. When it resolves to nothing,
+         * a key is generated at startup, which invalidates every session on restart.
+         */
         @Required
         @MCChildElement
         public void setJwk(Jwk jwk) {
@@ -237,6 +254,9 @@ public class XenAuthenticationInterceptor extends AbstractInterceptor {
         return user;
     }
 
+    /**
+     * @description User name sent to the backend service in place of the client-supplied one.
+     */
     @MCAttribute
     public void setUser(String user) {
         this.user = user;
@@ -246,6 +266,9 @@ public class XenAuthenticationInterceptor extends AbstractInterceptor {
         return password;
     }
 
+    /**
+     * @description Password sent to the backend service in place of the client-supplied one.
+     */
     @MCAttribute
     public void setPassword(String password) {
         this.password = password;
@@ -255,6 +278,9 @@ public class XenAuthenticationInterceptor extends AbstractInterceptor {
         return userDataProvider;
     }
 
+    /**
+     * @description Verifies the client-supplied login credentials before they are replaced.
+     */
     @MCChildElement(order = 10)
     public void setUserDataProvider(UserDataProvider userDataProvider) {
         this.userDataProvider = userDataProvider;
@@ -264,6 +290,10 @@ public class XenAuthenticationInterceptor extends AbstractInterceptor {
         return sessionManager;
     }
 
+    /**
+     * @description Session manager that maps between the client-facing session id and the backend
+     * session id.
+     */
     @MCChildElement(order = 20)
     public void setSessionManager(XenSessionManager sessionManager) {
         this.sessionManager = sessionManager;

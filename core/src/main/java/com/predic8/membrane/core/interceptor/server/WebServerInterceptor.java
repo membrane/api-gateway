@@ -41,16 +41,20 @@ import static com.predic8.membrane.core.util.text.TextUtil.*;
 import static java.lang.System.currentTimeMillis;
 
 /**
- * @description Serves static files based on the request's path.
- * @explanation <p>
- * Note that <i>docBase</i> any <i>location</i>: A relative or absolute directory, a
- * "classpath://com.predic8.membrane.core.interceptor.administration.docBase" expression or a URL.
- * </p>
- * <p>
- * The interceptor chain will not continue beyond this interceptor, as it either successfully returns a
- * HTTP response with the contents of a file, or a "404 Not Found." error.
- * </p>
+ * @description Serves static files from a directory, a classpath location, or a URL, based on
+ * the request's path. The interceptor chain does not continue past this interceptor: it always
+ * finalizes the exchange, either with the contents of a matching file or with an error response,
+ * 404 for a path that matches no file and 400 for one that tries to escape the document base.
  * @topic 9. Misc
+ * @yaml
+ * <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - webServer:
+ *         docBase: docBase
+ *         index: index.html
+ * </code></pre>
  */
 @MCElement(name = "webServer")
 public class WebServerInterceptor extends AbstractInterceptor {
@@ -301,6 +305,10 @@ public class WebServerInterceptor extends AbstractInterceptor {
         return StringUtils.join(index, ",");
     }
 
+    /**
+     * @description Comma-separated list of file names tried, in order, when a request resolves
+     * to a directory rather than a file.
+     */
     @MCAttribute
     public void setIndex(String i) {
         if (i == null)
@@ -314,6 +322,10 @@ public class WebServerInterceptor extends AbstractInterceptor {
         return generateIndex;
     }
 
+    /**
+     * @description Whether to generate an HTML directory listing when a requested directory has
+     * no matching index file.
+     */
     @MCAttribute
     public void setGenerateIndex(boolean generateIndex) {
         this.generateIndex = generateIndex;

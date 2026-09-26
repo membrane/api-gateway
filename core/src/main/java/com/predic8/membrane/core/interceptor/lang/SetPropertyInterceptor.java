@@ -16,6 +16,26 @@ package com.predic8.membrane.core.interceptor.lang;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 
+/**
+ * @description Sets an exchange property to a constant string or a computed value. Unlike a header or
+ * the body, a property is not sent to the client; it is only readable by later interceptors in the same
+ * exchange, e.g. as <code>${property.name}</code> in a template or another expression. The value is
+ * evaluated as a SpEL template, Groovy, JsonPath, or XPath expression, defaulting to SpEL.
+ * See tutorials/orchestration/30-Orchestration.yaml.
+ * @topic 2. Enterprise Integration Patterns
+ * @yaml
+ * <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - setProperty:
+ *         name: product
+ *         value: ${$.product_id}
+ *         language: jsonpath
+ *     - call:
+ *         url: https://api.predic8.de/shop/v2/products/${property.product}
+ * </code></pre>
+ */
 @MCElement(name = "setProperty")
 public class SetPropertyInterceptor extends AbstractSetterInterceptor {
 

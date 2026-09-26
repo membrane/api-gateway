@@ -31,10 +31,19 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
- * @description Adds the current state of HTTP requests and responses to an "exchange store".
- * @explanation Note that depending on the implementation of the exchange store, both request *and* response logging
- *              might both be required for the exchange to be saved.
+ * @description Adds the current state of HTTP requests and responses to an "exchange store" so
+ * they can be inspected later. Depending on the store implementation, both the request and the
+ * response phase may need to run before an exchange is saved.
+ * <p>See <a href="https://github.com/membrane/api-gateway/blob/master/distribution/tutorials/operation/70-Record-Messages-In-Loki.yaml">tutorials/operation/70-Record-Messages-In-Loki.yaml</a>.</p>
  * @topic 4. Monitoring, Logging and Statistics
+ * @yaml
+ * <pre><code>
+ * components:
+ *   exchangeStore:
+ *     lokiExchangeStore:
+ *       url: http://localhost:3100
+ *       job: membrane-instance-1
+ * </code></pre>
  */
 @MCElement(name="exchangeStore", excludeFromFlow = true)
 public class ExchangeStoreInterceptor extends AbstractInterceptor implements ApplicationContextAware {

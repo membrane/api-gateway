@@ -44,7 +44,7 @@ import static java.nio.charset.StandardCharsets.*;
  * header, query parameters, etc. If the extension of a referenced template file is <i>.xml</i> it will use
  * <a href="https://docs.groovy-lang.org/docs/next/html/documentation/template-engines.html#_xmltemplateengine">XMLTemplateEngine</a>
  * otherwise <a href="https://docs.groovy-lang.org/docs/next/html/documentation/template-engines.html#_streamingtemplateengine">StreamingTemplateEngine</a>.
- * Have a look at the samples in <a href="https://github.com/membrane/api-gateway/tree/master/distribution/examples/templating">examples/templating</a>.
+ * <p>See <a href="https://github.com/membrane/api-gateway/blob/master/distribution/tutorials/getting-started/110-Template.yaml">tutorials/getting-started/110-Template.yaml</a>.</p>
  *
  * When the <code>contentType</code> is a JSON variant (e.g., <code>application/json</code>), the engine automatically escapes all inserted values. For example, in the
  * <a href="https://github.com/membrane/api-gateway/tree/master/distribution/examples/templating/json">JSON templating example</a>, executing

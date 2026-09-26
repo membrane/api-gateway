@@ -359,6 +359,12 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         return sessionAuthorizer.isSkipUserInfo();
     }
 
+    /**
+     * @description Whether the call to the userinfo endpoint is skipped when authorizing the session. When
+     * enabled, the access token is assumed to be a JWT and is verified locally instead. Required when
+     * <code>onlyRefreshToken</code> is enabled.
+     * @default false
+     */
     @MCAttribute
     public void setSkipUserInfo(boolean skipUserInfo) {
         sessionAuthorizer.setSkipUserInfo(skipUserInfo);
@@ -442,6 +448,10 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         return afterLogoutUrl;
     }
 
+    /**
+     * @description URL the user is redirected to after a logout request.
+     * @default /
+     */
     @MCAttribute
     public void setAfterLogoutUrl(String afterLogoutUrl) {
         this.afterLogoutUrl = afterLogoutUrl;
@@ -451,6 +461,11 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         return loginParameters;
     }
 
+    /**
+     * @description Parameters appended to the authorization request sent to the identity provider. A
+     * <code>loginParameter</code> with a <code>value</code> contributes that constant, one without
+     * forwards the incoming request's query parameter of the same name, if it is present.
+     */
     @MCChildElement(order = 25)
     public void setLoginParameters(List<LoginParameter> loginParameters) {
         this.loginParameters = loginParameters;
@@ -460,6 +475,11 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         return appendAccessTokenToRequest;
     }
 
+    /**
+     * @description Whether the access token from the OAuth2 answer is added to the forwarded request as an
+     * <code>Authorization: Bearer</code> header.
+     * @default false
+     */
     @MCAttribute
     public void setAppendAccessTokenToRequest(boolean appendAccessTokenToRequest) {
         this.appendAccessTokenToRequest = appendAccessTokenToRequest;
@@ -469,6 +489,11 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         return afterErrorUrl;
     }
 
+    /**
+     * @description URL a form POST carrying the <code>error</code> and <code>error_description</code>
+     * of a failed OAuth2 flow is sent to. Without it, the error response of the flow itself is
+     * returned to the client.
+     */
     @MCAttribute
     public void setAfterErrorUrl(String afterErrorUrl) {
         this.afterErrorUrl = afterErrorUrl;
@@ -478,6 +503,12 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         return onlyRefreshToken;
     }
 
+    /**
+     * @description Whether a token response without an <code>access_token</code> is accepted. When enabled, the
+     * id token is verified in place of the access token and a refresh that returns only one of both tokens does
+     * not fail. Requires <code>skipUserInfo</code> to also be set.
+     * @default false
+     */
     @MCAttribute
     public void setOnlyRefreshToken(boolean onlyRefreshToken) {
         this.onlyRefreshToken = onlyRefreshToken;

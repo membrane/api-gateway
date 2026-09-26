@@ -52,6 +52,7 @@ import static java.util.stream.Stream.ofNullable;
  *   stores:                       # 1..*
  *     - ...
  * </pre>
+ * <p>See <a href="https://github.com/membrane/api-gateway/blob/master/distribution/tutorials/api-keys/10-API-Key-Simple.yaml">tutorials/api-keys/10-API-Key-Simple.yaml</a>.</p>
  * @topic 3. Security and Validation
  * @yaml <pre><code>
  * api:
@@ -59,8 +60,17 @@ import static java.util.stream.Stream.ofNullable;
  *   flow:
  *     - apiKey:
  *         required: true
+ *         stores:
+ *           - simple:
+ *               - secret:
+ *                   value: demokey
+ *               - secret:
+ *                   value: abc123
  *         extractors:
  *           - header: X-Api-Key
+ *     - static:
+ *         src: Secured API!
+ *     - return: {}
  * </code></pre>
  */
 @MCElement(name = "apiKey")

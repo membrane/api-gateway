@@ -30,6 +30,12 @@ import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.util.URLUtil.*;
 
+/**
+ * @description Routes a request to another proxy configured in the same router when its current
+ * destination is an <code>internal://</code> URI, running that proxy's interceptor chain in-process
+ * instead of over the network. If an interceptor along that chain returns early, the corresponding
+ * response handlers are invoked on the way back before control returns to the original proxy's flow.
+ */
 @MCElement(name = "internalRouting")
 public class InternalRoutingInterceptor extends AbstractInterceptor {
 

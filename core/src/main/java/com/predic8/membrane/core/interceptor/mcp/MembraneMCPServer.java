@@ -51,6 +51,15 @@ import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.*;
  * - What APIs are deployed?
  * - Is the Membrane instance healthy?
  * - Give me a summary about the requests
+ * <p>See <a href="https://github.com/membrane/api-gateway/blob/master/distribution/tutorials/mcp/10-MCP-Server.yaml">tutorials/mcp/10-MCP-Server.yaml</a>.</p>
+ * @yaml
+ * <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - membraneMCPServer:
+ *         maxExchanges: 10000
+ * </code></pre>
  */
 @MCElement(name = "membraneMCPServer")
 public class MembraneMCPServer extends AbstractInterceptor {

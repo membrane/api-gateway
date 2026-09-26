@@ -100,6 +100,9 @@ public class CacheInterceptor extends AbstractInterceptor {
 			return dir;
 		}
 
+		/**
+		 * @description Directory the file-based cache stores its entries in.
+		 */
 		@MCAttribute
 		public void setDir(String dir) {
 			this.dir = dir;

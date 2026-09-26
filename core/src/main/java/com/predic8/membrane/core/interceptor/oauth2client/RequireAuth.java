@@ -26,6 +26,12 @@ import java.util.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2Interceptor.*;
 
+/**
+ * @description Requires a valid access token for the request, accepted either as a Bearer JWT
+ * (validated directly against the configured <code>oauth2</code> client's JWKS) or, when no bearer
+ * token is present, via that client's normal session/login flow. After a successful session flow the
+ * request still passes through JWT validation before continuing.
+ */
 @MCElement(name = "requireAuth")
 public class RequireAuth extends AbstractInterceptor {
 
@@ -91,6 +97,9 @@ public class RequireAuth extends AbstractInterceptor {
         return expectedTid;
     }
 
+    /**
+     * @description Expected <code>aud</code> (audience) claim value that a presented JWT must contain.
+     */
     @Required
     @MCAttribute
     public void setExpectedAud(String expectedAud) {
@@ -100,6 +109,10 @@ public class RequireAuth extends AbstractInterceptor {
         }
     }
 
+    /**
+     * @description Expected value of the <code>tid</code> (tenant ID) claim of a presented JWT,
+     * for identity providers that issue tokens per tenant.
+     */
     @MCAttribute
     public void setExpectedTid(String expectedTid) {
         this.expectedTid = expectedTid;
@@ -112,12 +125,21 @@ public class RequireAuth extends AbstractInterceptor {
         return oauth2;
     }
 
+    /**
+     * @description The <code>oauth2</code> client interceptor supplying the JWKS and the
+     * session/login flow used when no bearer token is present.
+     */
     @Required
     @MCAttribute
     public void setOauth2(OAuth2Resource2Interceptor oauth2) {
         this.oauth2 = oauth2;
     }
 
+    /**
+     * @description Whether authentication is enforced. When <code>false</code>, a request that
+     * fails the oauth2 session/redirect flow is allowed to continue anyway.
+     * @default true
+     */
     @SuppressWarnings("SameParameterValue")
     @MCAttribute
     public void setRequired(boolean required) {
@@ -132,6 +154,10 @@ public class RequireAuth extends AbstractInterceptor {
         return errorStatus;
     }
 
+    /**
+     * @description HTTP status code to answer with, instead of redirecting the browser to the
+     * login page, when the request carries no usable session.
+     */
     @MCAttribute
     public void setErrorStatus(int errorStatus) {
         this.errorStatus = errorStatus;
@@ -141,6 +167,10 @@ public class RequireAuth extends AbstractInterceptor {
         return scope;
     }
 
+    /**
+     * @description OAuth2 scope the access token is requested for. A session that holds no token
+     * for this scope triggers a login or a refresh.
+     */
     @MCAttribute
     public void setScope(String scope) {
         this.scope = scope;

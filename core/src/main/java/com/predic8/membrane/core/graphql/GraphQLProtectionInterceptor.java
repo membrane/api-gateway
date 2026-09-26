@@ -44,7 +44,24 @@ import static com.predic8.membrane.core.util.text.TextUtil.*;
  * Only GraphQL documents conforming to the 'ExecutableDocument' of the grammar are allowed: This includes the usual
  * 'query', 'mutation', 'subscription' and 'fragment's.
  * </p>
+ * <p>See <a href="https://github.com/membrane/api-gateway/blob/master/distribution/tutorials/security/50-GraphQL-Protection.yaml">tutorials/security/50-GraphQL-Protection.yaml</a>.</p>
  * @topic 3. Security and Validation
+ * @yaml
+ * <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - request:
+ *         - graphQLProtection:
+ *             maxRecursion: 1
+ *             maxMutations: 5
+ *             maxDepth: 3
+ *             disallow:
+ *               - mutation: updateCategory
+ *               - introspection: {}
+ *   target:
+ *     url: https://www.predic8.de/fruit-shop-graphql
+ * </code></pre>
  */
 @SuppressWarnings("unused")
 @MCElement(name = "graphQLProtection")

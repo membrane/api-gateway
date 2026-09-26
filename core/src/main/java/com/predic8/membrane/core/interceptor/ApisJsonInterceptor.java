@@ -35,6 +35,11 @@ import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static java.util.Optional.*;
 
+/**
+ * @description Serves the router's deployed API proxies as a single <code>apis.json</code> document,
+ * listing each API's id, name, description and URL, plus its version where the API has an OpenAPI
+ * description, for use by API discovery tools.
+ */
 @MCElement(name = "APIsJSON")
 public class ApisJsonInterceptor extends AbstractInterceptor {
 
@@ -134,36 +139,61 @@ public class ApisJsonInterceptor extends AbstractInterceptor {
         return proxy.getProtocol() + "://";
     }
 
+    /**
+     * @description Prefix of every generated <code>aid</code>: combined with <code>collectionId</code> for the
+     * collection itself, and with the OpenAPI record id or the proxy's key for each API that defines no id of
+     * its own.
+     */
     @MCAttribute
     public void setRootDomain(String rootDomain) {
         this.rootDomain = rootDomain;
     }
 
+    /**
+     * @description Identifier of this apis.json collection, combined with <code>rootDomain</code> to build
+     * the collection's <code>aid</code>.
+     */
     @MCAttribute
     public void setCollectionId(String collectionId) {
         this.collectionId = collectionId;
     }
 
+    /**
+     * @description Human-readable name of the collection.
+     */
     @MCAttribute(attributeName = "name")
     public void setCollectionName(String collectionName) {
         this.collectionName = collectionName;
     }
 
+    /**
+     * @description Human-readable description of the collection.
+     */
     @MCAttribute
     public void setDescription(String description) {
         this.description = description;
     }
 
+    /**
+     * @description URL under which this apis.json document itself is published. Derived from the
+     * incoming request when omitted.
+     */
     @MCAttribute(attributeName = "url")
     public void setApisJsonUrl(String apisJsonUrl) {
         this.apisJsonUrl = apisJsonUrl;
     }
 
+    /**
+     * @description Date the collection was created, in <code>yyyy-MM-dd</code> format.
+     */
     @MCAttribute
     public void setCreated(String created) throws ParseException {
         this.created = new SimpleDateFormat(YYYY_MM_DD).parse(created);
     }
 
+    /**
+     * @description Date the collection was last modified, in <code>yyyy-MM-dd</code> format.
+     */
     @MCAttribute
     public void setModified(String modified) throws ParseException {
         this.modified = new SimpleDateFormat(YYYY_MM_DD).parse(modified);

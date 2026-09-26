@@ -49,6 +49,11 @@ import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidF
 @MCElement(name="formValidation", noEnvelope = true)
 public class FormValidationInterceptor extends AbstractInterceptor {
 
+	/**
+	 * @description A form parameter to validate: if the parameter is present and its value does not
+	 * match the given regular expression, the request is rejected. A request that does not contain
+	 * the parameter at all passes.
+	 */
 	@MCElement(name="field", component =false, id="formValidation-field")
 	public static class Field extends AbstractXmlElement {
 		public String name;
