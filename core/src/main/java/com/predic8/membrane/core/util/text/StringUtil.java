@@ -108,8 +108,4 @@ public class StringUtil {
             default -> false;
         };
     }
-
-    public static boolean isOptionalWhitespace(char c) {
-        return c == ' ' || c == '\t';
-    }
 }

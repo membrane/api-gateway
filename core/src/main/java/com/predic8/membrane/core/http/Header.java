@@ -40,8 +40,9 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.http.MimeType.isBinary;
-import static com.predic8.membrane.core.util.HttpUtil.readLine;
-import static com.predic8.membrane.core.util.text.StringUtil.*;
+import static com.predic8.membrane.core.util.HttpUtil.*;
+import static com.predic8.membrane.core.util.text.StringUtil.maskNonPrintableCharacters;
+import static com.predic8.membrane.core.util.text.StringUtil.truncateAfter;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.stream;
@@ -223,7 +224,7 @@ public class Header {
             throw malformedFieldLine(line.substring(0, colon), "its field name carries a character a field name must not contain, such as whitespace or a control character. Rejecting the message rather than forwarding it, because a parser that trims or ignores the character reads a different header than Membrane does.");
         if (end == colon)
             return new HeaderField(line);
-        log.info("Stripping whitespace between field name and colon in header line \"{}\".", maskNonPrintableCharacters(truncateAfter(line.substring(0, colon), 80)));
+        log.debug("Stripping whitespace between field name and colon in header line \"{}\".", maskNonPrintableCharacters(truncateAfter(line.substring(0, colon), 80)));
         return new HeaderField(line.substring(0, end) + line.substring(colon));
     }
 
@@ -238,11 +239,6 @@ public class Header {
             if (!isTchar(line.charAt(i)))
                 return false;
         return true;
-    }
-
-    private static boolean isTchar(int c) {
-        return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')
-               || "!#$%&'*+-.^_`|~".indexOf(c) >= 0;
     }
 
     /**
