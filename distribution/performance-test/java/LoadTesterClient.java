@@ -4,6 +4,7 @@ import org.asynchttpclient.*;
 
 import java.io.*;
 import java.time.*;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
@@ -24,6 +25,12 @@ import static org.asynchttpclient.Dsl.*;
  * rate-limit-basic-auth-tls scenario, whose gateway cert is self-signed): env var LOAD_INSECURE_TLS=true,
  * false by default. This client only ever talks to gateways this test itself stood up, so skipping
  * verification here doesn't weaken what's being measured on the gateway side.
+ * <p>
+ * The measured phase also reports latency percentiles (p50/p95/p99/max) over every completed
+ * request, successful or not, timed from handing the request to the HTTP client until its response
+ * or failure. This is a closed-loop client (a new request is only sent once one completes), so
+ * latencies are not corrected for coordinated omission: a gateway stall delays the requests that
+ * would have been sent during it instead of recording them as slow.
  */
 public class LoadTesterClient {
 
@@ -68,25 +75,41 @@ public class LoadTesterClient {
         }
     }
 
+    /**
+     * Runs {@code count} requests on {@code concurrency} worker virtual threads. Each worker sends
+     * one request, waits for its response and then sends the next, so exactly {@code concurrency}
+     * requests are in flight until the last ones drain. A single thread that submitted every
+     * request (acquire a permit, then send) could not keep up at several hundred thousand requests
+     * per second: in some runs only a fraction of the permitted requests were in flight, and
+     * throughput dropped by up to half while both client and gateway sat partly idle.
+     */
     private static void runPhase(AsyncHttpClient client, ExecutorService submitters, String url, String method, String body,
                                   String contentType, String authorization, int count, int concurrency, boolean timed) throws InterruptedException {
-        var semaphore = new Semaphore(concurrency);
         var ok = new LongAdder();
         var err = new LongAdder();
-        var latch = new CountDownLatch(count);
-        final AtomicInteger minAvailablePermits = new AtomicInteger(concurrency);
+        var next = new AtomicInteger();
+        // One slot per request, written once by the worker that sent it; joining the workers
+        // below makes every write visible to the percentile calculation.
+        final long[] latenciesNanos = new long[count];
+        int workers = Math.min(concurrency, count);
 
         long startMillis = System.currentTimeMillis();
         long start = System.nanoTime();
 
-        for (int i = 0; i < count; i++) {
-            semaphore.acquire();
-            submitters.submit(() -> {
-                prepareCall(client, url, method, body, contentType, authorization, ok, err, latch, semaphore, minAvailablePermits);
-            });
+        var futures = new ArrayList<Future<?>>(workers);
+        for (int w = 0; w < workers; w++) {
+            futures.add(submitters.submit(() -> {
+                for (int i = next.getAndIncrement(); i < count; i = next.getAndIncrement())
+                    sendAndWait(client, url, method, body, contentType, authorization, ok, err, latenciesNanos, i);
+            }));
         }
-
-        latch.await();
+        for (var future : futures) {
+            try {
+                future.get();
+            } catch (ExecutionException e) {
+                throw new IllegalStateException("Load worker failed", e.getCause());
+            }
+        }
         long end = System.nanoTime();
         long endMillis = System.currentTimeMillis();
 
@@ -95,11 +118,25 @@ public class LoadTesterClient {
             double seconds = (end - start) / 1_000_000_000.0;
             System.out.println("RPS: " + (count / seconds));
             System.out.println("OK=" + ok.sum() + " ERR=" + err.sum());
-            System.out.println("Max number of concurrent clients = " + (concurrency - minAvailablePermits.get()));
+            System.out.println("Concurrent workers = " + workers);
+            printLatencyPercentiles(latenciesNanos);
         }
     }
 
-    private static void prepareCall(AsyncHttpClient client, String url, String method, String body, String contentType, String authorization, LongAdder ok, LongAdder err, CountDownLatch latch, Semaphore semaphore, AtomicInteger minAvailablePermits) {
+    private static void printLatencyPercentiles(long[] latenciesNanos) {
+        Arrays.sort(latenciesNanos);
+        System.out.printf(Locale.ROOT, "LATENCY_MS p50=%.3f p95=%.3f p99=%.3f max=%.3f%n",
+                percentileMillis(latenciesNanos, 50), percentileMillis(latenciesNanos, 95),
+                percentileMillis(latenciesNanos, 99), latenciesNanos[latenciesNanos.length - 1] / 1_000_000.0);
+    }
+
+    /** Nearest-rank percentile of an ascending-sorted array. */
+    private static double percentileMillis(long[] sortedNanos, int percentile) {
+        int rank = (int) Math.ceil(percentile / 100.0 * sortedNanos.length);
+        return sortedNanos[Math.max(rank, 1) - 1] / 1_000_000.0;
+    }
+
+    private static void sendAndWait(AsyncHttpClient client, String url, String method, String body, String contentType, String authorization, LongAdder ok, LongAdder err, long[] latenciesNanos, int index) {
         var request = "GET".equalsIgnoreCase(method)
                 ? client.prepareGet(url)
                 : client.preparePost(url).setBody(body);
@@ -107,30 +144,20 @@ public class LoadTesterClient {
             request.setHeader("Content-Type", contentType);
         if (authorization != null)
             request.setHeader("Authorization", authorization);
-        request.execute(new AsyncCompletionHandler<Void>() {
-            @Override
-            public Void onCompleted(Response r) {
-                if (r.getStatusCode() < 400)
-                    ok.increment();
-                else
-                    err.increment();
-                latch.countDown();
-                calculateMinAvailablePermits();
-                semaphore.release();
-                return null;
-            }
-
-            @Override
-            public void onThrowable(Throwable t) {
+        long sentNanos = System.nanoTime();
+        try {
+            var response = request.execute().get();
+            latenciesNanos[index] = System.nanoTime() - sentNanos;
+            if (response.getStatusCode() < 400)
+                ok.increment();
+            else
                 err.increment();
-                latch.countDown();
-                calculateMinAvailablePermits();
-                semaphore.release();
-            }
-
-            private void calculateMinAvailablePermits() {
-                minAvailablePermits.updateAndGet(current -> Math.min(current, semaphore.availablePermits()));
-            }
-        });
+        } catch (ExecutionException e) {
+            latenciesNanos[index] = System.nanoTime() - sentNanos;
+            err.increment();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Interrupted while waiting for a response", e);
+        }
     }
 }

@@ -4,14 +4,22 @@
 # first; this script can then be re-run repeatedly (e.g. at different concurrency levels or after
 # a code change + redeploy) without needing to redo setup.
 #
-# Usage: ./run-scenario.sh <shortcircuit|fullproxy|openapi-validation|rate-limit-basic-auth|rate-limit-basic-auth-tls> [concurrency]
+# Usage: ./run-scenario.sh <shortcircuit|fullproxy|openapi-validation|rate-limit-basic-auth|rate-limit-basic-auth-tls|wsdl2openapi|soap-validation> [concurrency]
 set -euo pipefail
 
-SCENARIO="${1:?Usage: $0 <shortcircuit|fullproxy|openapi-validation|rate-limit-basic-auth|rate-limit-basic-auth-tls> [concurrency]}"
-# 175 was found empirically to be the throughput plateau's sweet spot for the mixed-hardware
-# setup (Standard_FX16mds_v2 gateway / Standard_F16as_v7 backend) -- see TESTED-CONFIGURATIONS.md
-# for the concurrency sweep (125/175/220/300) that found it. Re-sweep if you change VM sizes.
-CONCURRENCY="${2:-175}"
+SCENARIO="${1:?Usage: $0 <shortcircuit|fullproxy|openapi-validation|rate-limit-basic-auth|rate-limit-basic-auth-tls|wsdl2openapi|soap-validation> [concurrency]}"
+# Concurrency: the optional second argument, else the scenario's DEFAULT_CONCURRENCY set in the
+# case statement below. 100 (the default) is the throughput peak for fullproxy on the default
+# Standard_F16as_v7 gateway (sweep 64/100/150/220/300: ~200k/211k/201k/200k/204k RPS; above 100
+# only p99 grows, 3ms -> 23ms). Re-sweep if you change VM sizes.
+DEFAULT_CONCURRENCY=100
+# Measured requests per run. 10,000,000 gives a longer, steadier measured window; the rate-limit
+# configs' requestLimit is sized for that.
+LOAD_TOTAL=${LOAD_TOTAL:-1000000}
+# Untimed warmup requests before the measured phase. 1,000,000 (several seconds of load) lets the
+# gateway's JIT reach steady state; the former 10,000 took well under a second, so short runs
+# still measured part of the warmup.
+LOAD_WARMUP=${LOAD_WARMUP:-1000000}
 
 RG=${RG:-membrane-perftest-rg}
 ADMIN_USER=${ADMIN_USER:-azureuser}
@@ -43,22 +51,38 @@ BASIC_AUTH_USER=loadtest
 BASIC_AUTH_PASSWORD=loadtest-secret
 BASIC_AUTH_HEADER="Basic $(printf '%s:%s' "$BASIC_AUTH_USER" "$BASIC_AUTH_PASSWORD" | base64)"
 
+# Synthetic person for the wsdl2openapi scenario: 10 scalar fields, one array, one nested object,
+# matching the createPerson request element of conf/person-service.wsdl (no root key: the JSON is
+# the content of that element).
+WSDL2OPENAPI_BODY='{"person":{"firstName":"Jane","lastName":"Doe","email":"jane.doe@example.com","phone":"+49 228 5550100","dateOfBirth":"1985-04-12","heightCm":172,"weightKg":64.5,"newsletter":true,"customerNumber":100042,"nationality":"DE","hobby":["cycling","chess","cooking"],"address":{"street":"Example Street","houseNumber":"12a","postalCode":"53111","city":"Bonn","region":"NRW","country":"DE","additionalInfo":"2nd floor"}}}'
+
+# The same person as a SOAP 1.1 request for the soap-validation scenario. person-service.wsdl's
+# schema has no elementFormDefault, so only the createPerson element is namespace-qualified.
+SOAP_VALIDATION_BODY='<s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/"><s11:Body><p:createPerson xmlns:p="http://example.com/person"><person><firstName>Jane</firstName><lastName>Doe</lastName><email>jane.doe@example.com</email><phone>+49 228 5550100</phone><dateOfBirth>1985-04-12</dateOfBirth><heightCm>172</heightCm><weightKg>64.5</weightKg><newsletter>true</newsletter><customerNumber>100042</customerNumber><nationality>DE</nationality><hobby>cycling</hobby><hobby>chess</hobby><hobby>cooking</hobby><address><street>Example Street</street><houseNumber>12a</houseNumber><postalCode>53111</postalCode><city>Bonn</city><region>NRW</region><country>DE</country><additionalInfo>2nd floor</additionalInfo></address></person></p:createPerson></s11:Body></s11:Envelope>'
+
 LOAD_AUTHORIZATION=""
+LOAD_PATH=/shop/v2/products
 LOAD_SCHEME=http
 LOAD_INSECURE_TLS=""
 case "$SCENARIO" in
-  shortcircuit)        CONFIG=loadtest-shortcircuit.xml;        LOAD_METHOD=POST; LOAD_BODY='{"name":"Mangos","price":2.79}'; LOAD_CONTENT_TYPE=application/json ;;
+  shortcircuit)        CONFIG=loadtest-shortcircuit.xml;        LOAD_METHOD=POST; LOAD_BODY='{"name":"Mangos","price":2.79}'; LOAD_CONTENT_TYPE=application/json; DEFAULT_CONCURRENCY=350 ;;
   fullproxy)            CONFIG=loadtest-fullproxy.xml;          LOAD_METHOD=POST; LOAD_BODY="$FULLPROXY_BODY_1KB";          LOAD_CONTENT_TYPE=application/json ;;
   openapi-validation)   CONFIG=loadtest-openapi-validation.xml; LOAD_METHOD=POST; LOAD_BODY='{"name":"Mangos","price":2.79}'; LOAD_CONTENT_TYPE=application/json ;;
   rate-limit-basic-auth) CONFIG=loadtest-rate-limit-basic-auth.xml; LOAD_METHOD=POST; LOAD_BODY="$FULLPROXY_BODY_1KB";      LOAD_CONTENT_TYPE=application/json; LOAD_AUTHORIZATION="$BASIC_AUTH_HEADER" ;;
   rate-limit-basic-auth-tls) CONFIG=loadtest-rate-limit-basic-auth-tls.xml; LOAD_METHOD=POST; LOAD_BODY="$FULLPROXY_BODY_1KB"; LOAD_CONTENT_TYPE=application/json; LOAD_AUTHORIZATION="$BASIC_AUTH_HEADER"; LOAD_SCHEME=https; LOAD_INSECURE_TLS=true ;;
-  *) echo "Unknown scenario '$SCENARIO' (expected shortcircuit|fullproxy|openapi-validation|rate-limit-basic-auth|rate-limit-basic-auth-tls)"; exit 1 ;;
+  wsdl2openapi)          CONFIG=loadtest-wsdl2openapi.xml;       LOAD_METHOD=POST; LOAD_BODY="$WSDL2OPENAPI_BODY";          LOAD_CONTENT_TYPE=application/json; LOAD_PATH=/create-person ;;
+  soap-validation)       CONFIG=loadtest-soap-validation.xml;    LOAD_METHOD=POST; LOAD_BODY="$SOAP_VALIDATION_BODY";       LOAD_CONTENT_TYPE=text/xml; LOAD_PATH=/person-service ;;
+  *) echo "Unknown scenario '$SCENARIO' (expected shortcircuit|fullproxy|openapi-validation|rate-limit-basic-auth|rate-limit-basic-auth-tls|wsdl2openapi|soap-validation)"; exit 1 ;;
 esac
+CONCURRENCY="${2:-$DEFAULT_CONCURRENCY}"
 
 echo "Discovering VM IPs..."
 source "$PT/vm-addresses.sh"
 discover_vm_ips
-SSH="ssh -o StrictHostKeyChecking=accept-new"
+# Keepalives: the client's ssh session prints nothing during the measured run, which lasts
+# over a minute with LOAD_TOTAL=10000000, long enough for an idle connection to be dropped
+# ("Read from remote host ...: Operation timed out") and the run's output lost.
+SSH="ssh -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=15 -o ServerAliveCountMax=4"
 
 GHOME=$($SSH "$ADMIN_USER@$GATEWAY_PUB" 'cat ~/loadtest-gateway-path')
 if [[ "$GHOME" != /home/"$ADMIN_USER"/membrane-api-gateway-* || "$GHOME" == *$'\n'* ]]; then
@@ -101,8 +125,8 @@ for ((i=0; i<${#HOSTS[@]}; i++)); do
   $SSH "$ADMIN_USER@${HOSTS[$i]}" "nohup bash ~/cpu-sample.sh </dev/null > '${SAMPLE_DIRS[$i]}/cpu.log' 2>'${SAMPLE_DIRS[$i]}/error.log' & echo \$! > '${SAMPLE_DIRS[$i]}/pid'"
 done
 
-echo ">>> [$SCENARIO] running client at concurrency $CONCURRENCY (1M requests + 10k warmup, $LOAD_METHOD)"
-$SSH "$ADMIN_USER@$CLIENT_PUB" "cd ~ && TARGET_URL=$LOAD_SCHEME://$GATEWAY_PRIV:2000/shop/v2/products LOAD_METHOD=$LOAD_METHOD LOAD_BODY='$LOAD_BODY' LOAD_CONTENT_TYPE=$LOAD_CONTENT_TYPE LOAD_AUTHORIZATION='$LOAD_AUTHORIZATION' LOAD_INSECURE_TLS=$LOAD_INSECURE_TLS LOAD_TOTAL=1000000 LOAD_CONCURRENCY=$CONCURRENCY LOAD_WARMUP=10000 java -cp 'client-libs/*:classes' com.predic8.membrane.load.LoadTesterClient" | tee "$CLIENT_OUTPUT"
+echo ">>> [$SCENARIO] running client at concurrency $CONCURRENCY ($LOAD_TOTAL requests + $LOAD_WARMUP warmup, $LOAD_METHOD)"
+$SSH "$ADMIN_USER@$CLIENT_PUB" "cd ~ && TARGET_URL=$LOAD_SCHEME://$GATEWAY_PRIV:2000$LOAD_PATH LOAD_METHOD=$LOAD_METHOD LOAD_BODY='$LOAD_BODY' LOAD_CONTENT_TYPE=$LOAD_CONTENT_TYPE LOAD_AUTHORIZATION='$LOAD_AUTHORIZATION' LOAD_INSECURE_TLS=$LOAD_INSECURE_TLS LOAD_TOTAL=$LOAD_TOTAL LOAD_CONCURRENCY=$CONCURRENCY LOAD_WARMUP=$LOAD_WARMUP java -cp 'client-libs/*:classes' com.predic8.membrane.load.LoadTesterClient" | tee "$CLIENT_OUTPUT"
 
 WINDOW=$(awk '/^MEASURED_WINDOW [0-9]+ [0-9]+$/ {print $2, $3}' "$CLIENT_OUTPUT")
 if [[ ! "$WINDOW" =~ ^[0-9]+\ [0-9]+$ ]]; then
