@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -34,6 +35,7 @@ import java.util.stream.Stream;
 import static com.predic8.membrane.core.http.MimeType.TEXT_HTML;
 import static com.predic8.membrane.core.http.MimeType.isOfMediaType;
 import static com.predic8.membrane.core.http.Response.*;
+import static com.predic8.membrane.core.util.HttpTestUtil.convertMessage;
 import static com.predic8.membrane.test.TestUtil.getResourceAsStream;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.params.provider.Arguments.of;
@@ -304,6 +306,132 @@ public class ResponseTest {
         res.read(getResourceAsStream(this,"response-205-reset.http"),true);
         assertTrue(res.isBodyEmpty());
         assertInstanceOf(EmptyBody.class, res.getBody());
+    }
+
+    /**
+     * RFC 9112 5.1 forbids whitespace between a field name and the colon in either direction. A
+     * response carrying it desyncs the connection the same way a request does: the name keeps the
+     * whitespace and stops matching Content-Length, so Membrane reads no body while the declared
+     * bytes stay in the stream and are parsed as the next response.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"Content-Length : 6", "Content-Length\t: 6"})
+    void headerLineWithWhitespaceBeforeColonIsRejected(String fieldLine) {
+        assertThrows(MalformedHeaderException.class, () -> readResponse("""
+                HTTP/1.1 200 Ok
+                Content-Type: text/plain
+                %s
+
+                """.formatted(fieldLine)));
+    }
+
+    @Test
+    void headerLineWithWhitespaceAfterColonIsAccepted() throws Exception {
+        assertEquals("text/plain", readResponse("""
+                HTTP/1.1 200 Ok
+                Content-Type:\ttext/plain
+                Content-Length: 0
+
+                """).getHeader().getContentType());
+    }
+
+    /**
+     * The two field lines combine to "gzip, chunked", whose final coding is "chunked", so the
+     * response is chunked-framed. Reading only the first field line makes Membrane frame it as a
+     * plain body and hand the chunk sizes through as content (#3327).
+     */
+    @Test
+    void transferEncodingEndingInChunkedAcrossSeveralFieldsIsChunkedFramed() throws Exception {
+        assertInstanceOf(ChunkedBody.class, readResponse("""
+                HTTP/1.1 200 Ok
+                Transfer-Encoding: gzip
+                Transfer-Encoding: chunked
+
+                0
+
+                """).getBody());
+    }
+
+    /**
+     * A present but empty Transfer-Encoding carries no coding and therefore does not end in
+     * "chunked", so the body length of the response cannot be determined and it is rejected
+     * instead of being framed by its Content-Length.
+     */
+    @Test
+    void emptyTransferEncodingIsRejected() {
+        assertThrows(MalformedHeaderException.class, () -> readResponse("""
+                HTTP/1.1 200 Ok
+                Transfer-Encoding:
+                Content-Length: 3
+
+                abc
+                """));
+    }
+
+    /**
+     * RFC 9112 6.3: a response with both Transfer-Encoding and Content-Length might indicate an
+     * attempt at response splitting and ought to be handled as an error, so it is rejected.
+     */
+    @Test
+    void chunkedWithContentLengthIsRejected() {
+        assertThrows(MalformedHeaderException.class, () -> readResponse("""
+                HTTP/1.1 200 Ok
+                Transfer-Encoding: chunked
+                Content-Length: 0
+
+                5
+                abcde
+                0
+
+                """));
+    }
+
+    @Test
+    void chunkedAcrossSeveralFieldsWithContentLengthIsRejected() {
+        assertThrows(MalformedHeaderException.class, () -> readResponse("""
+                HTTP/1.1 302 Found
+                Location: https://example.com/
+                Transfer-Encoding: gzip
+                Transfer-Encoding: chunked
+                Content-Length: 3
+
+                0
+
+                """));
+    }
+
+    /**
+     * A response that must not contain a body carries no framing to validate, so framing fields
+     * it happens to carry are not rejected - and the next response on the connection is read intact.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "204 No Content\nTransfer-Encoding: chunked\nContent-Length: 5",
+            "204 No Content\nTransfer-Encoding: gzip",
+    })
+    void responseWithoutBodyIgnoresFraming(String statusAndFraming) throws Exception {
+        InputStream in = convertMessage("""
+                HTTP/1.1 %s
+
+                HTTP/1.1 200 Ok
+                Content-Length: 2
+
+                ok""".formatted(statusAndFraming));
+
+        Response first = new Response();
+        first.read(in, true);
+        assertInstanceOf(EmptyBody.class, first.getBody());
+
+        Response next = new Response();
+        next.read(in, true);
+        assertEquals(200, next.getStatusCode());
+        assertEquals("ok", next.getBodyAsStringDecoded());
+    }
+
+    private static Response readResponse(String message) throws IOException, EndOfStreamException {
+        Response res = new Response();
+        res.read(convertMessage(message), true);
+        return res;
     }
 
     @Nested

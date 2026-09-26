@@ -353,6 +353,90 @@ class HeaderTest {
         void missingTransferEncodingIsNotChunked() {
             assertFalse(new Header().isChunked());
         }
+
+        /**
+         * RFC 9112 5.2/6.1: repeated field lines are combined into one comma-separated list before
+         * the final transfer coding is determined. "chunked, identity" does not end in "chunked",
+         * so splitting the two codings over two field lines must not make the message chunked-framed.
+         */
+        @Test
+        void chunkedNotFinalCodingAcrossSeveralFieldsIsNotChunkedFramed() {
+            var h = new Header();
+            h.add(TRANSFER_ENCODING, "chunked");
+            h.add(TRANSFER_ENCODING, "identity");
+            assertFalse(h.isChunked());
+        }
+
+        @Test
+        void chunkedAsFinalCodingAcrossSeveralFields() {
+            var h = new Header();
+            h.add(TRANSFER_ENCODING, "gzip");
+            h.add(TRANSFER_ENCODING, "chunked");
+            assertTrue(h.isChunked());
+        }
+
+        /**
+         * RFC 9110 5.6.1.2: empty list elements are legal and are ignored, so a trailing
+         * separator does not hide the "chunked" in front of it.
+         */
+        @Test
+        void trailingSeparatorIsIgnored() {
+            var h = new Header();
+            h.add(TRANSFER_ENCODING, "gzip, chunked,");
+            assertTrue(h.isChunked());
+        }
+
+        @Test
+        void interiorEmptyCodingIsIgnored() {
+            var h = new Header();
+            h.add(TRANSFER_ENCODING, "gzip,, chunked");
+            assertTrue(h.isChunked());
+        }
+
+        /**
+         * An empty field line contributes an empty list element once the field lines are
+         * combined; it must not turn a chunked-framed message into an unframed one.
+         */
+        @Test
+        void emptyFieldAfterChunkedIsIgnored() {
+            var h = new Header();
+            h.add(TRANSFER_ENCODING, "chunked");
+            h.add(TRANSFER_ENCODING, "");
+            assertEquals("chunked,", h.getNormalizedValue(TRANSFER_ENCODING));
+            assertTrue(h.isChunked());
+        }
+
+        /**
+         * Only empty elements are skipped: "gzip" stays the final coding.
+         */
+        @Test
+        void trailingSeparatorDoesNotSkipANonEmptyFinalCoding() {
+            var h = new Header();
+            h.add(TRANSFER_ENCODING, "chunked, gzip,");
+            assertFalse(h.isChunked());
+        }
+
+        /**
+         * A field line without a value parses into a field whose value is the empty string. It is
+         * present, so getValuesAsString reports it, while getNormalizedValue cannot tell it apart
+         * from a missing field - which is why Message.rejectIfBodyLengthUndeterminable uses the
+         * former.
+         */
+        @Test
+        void emptyFieldIsPresentButCarriesNoCoding() {
+            var h = new Header();
+            h.add(TRANSFER_ENCODING, "");
+            assertEquals("", h.getValuesAsString(TRANSFER_ENCODING));
+            assertNull(h.getNormalizedValue(TRANSFER_ENCODING));
+            assertFalse(h.isChunked());
+        }
+
+        @Test
+        void separatorsOnlyIsNotChunked() {
+            var h = new Header();
+            h.add(TRANSFER_ENCODING, ",");
+            assertFalse(h.isChunked());
+        }
     }
 
     @Nested

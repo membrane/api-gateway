@@ -19,6 +19,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -27,6 +29,7 @@ import java.io.InputStream;
 import java.net.URISyntaxException;
 
 import static com.predic8.membrane.annot.Constants.CRLF;
+import static com.predic8.membrane.core.http.Header.HOST;
 import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.util.HttpTestUtil.convertMessage;
@@ -404,16 +407,88 @@ public class RequestTest {
     }
 
     /**
-     * Header.isChunked() only inspects the first Transfer-Encoding field, so a chunked coding
-     * split off into a second field line is not recognized as framing and must be rejected.
+     * The two field lines combine to "gzip, chunked", which ends in "chunked" and is therefore
+     * valid chunked framing - exactly like the single-field form in
+     * {@link #transferEncodingEndingInChunkedIsAccepted()}. This used to assert rejection, which
+     * only described what Header.isChunked() did when it read the first field line alone (#3327).
      */
     @Test
-    void transferEncodingSplitOverSeveralFieldsIsRejected() {
+    void transferEncodingEndingInChunkedAcrossSeveralFieldsIsAccepted() throws Exception {
+        assertInstanceOf(ChunkedBody.class, readRequest("""
+                POST /products HTTP/1.1
+                Host: example.com
+                Transfer-Encoding: gzip
+                Transfer-Encoding: chunked
+
+                0
+
+                """).getBody());
+    }
+
+    /**
+     * RFC 9112 6.3: the Transfer-Encoding field is present, so its coding list determines the
+     * framing - and an empty list does not end in "chunked". Reading the field as absent and
+     * falling back to the Content-Length lets Membrane and the backend disagree about where the
+     * body ends, which is what request smuggling relies on.
+     */
+    @Test
+    void emptyTransferEncodingIsRejected() {
+        assertThrows(MalformedHeaderException.class, () -> readRequest("""
+                POST /products HTTP/1.1
+                Host: example.com
+                Transfer-Encoding:
+                Content-Length: 3
+
+                abc
+                """));
+    }
+
+    /**
+     * The smuggling guard in Request.createBody must not be walked past by moving "chunked" into
+     * its own field line: combined the codings are "chunked, identity", whose final coding is not
+     * "chunked", so the body length cannot be determined and the request must be rejected.
+     */
+    @Test
+    void transferEncodingWithChunkedNotFinalAcrossSeveralFieldsIsRejected() {
+        assertThrows(MalformedHeaderException.class, () -> readRequest("""
+                POST /products HTTP/1.1
+                Host: example.com
+                Transfer-Encoding: chunked
+                Transfer-Encoding: identity
+
+                """));
+    }
+
+    /**
+     * RFC 9112 6.1: a request with both Content-Length and Transfer-Encoding may be rejected. Taking
+     * "Content-Length: 0" to mean an empty body would leave the chunked bytes unread on the
+     * connection, where they would be parsed as the next request - request smuggling.
+     */
+    @Test
+    void chunkedWithContentLengthIsRejected() {
+        assertThrows(MalformedHeaderException.class, () -> readRequest("""
+                POST /products HTTP/1.1
+                Host: example.com
+                Transfer-Encoding: chunked
+                Content-Length: 0
+
+                5
+                abcde
+                0
+
+                """));
+    }
+
+    @Test
+    void chunkedAcrossSeveralFieldsWithContentLengthIsRejected() {
         assertThrows(MalformedHeaderException.class, () -> readRequest("""
                 POST /products HTTP/1.1
                 Host: example.com
                 Transfer-Encoding: gzip
                 Transfer-Encoding: chunked
+                Content-Length: 3
+
+                0
 
                 """));
     }
@@ -470,6 +545,37 @@ public class RequestTest {
                 : value
 
                 """));
+    }
+
+    /**
+     * RFC 9112 5.1: a server must reject a request whose field line carries whitespace between
+     * the field name and the colon. The name then keeps the whitespace and no longer matches
+     * Content-Length, so Membrane builds an EmptyBody and forwards the line verbatim, while a
+     * backend that trims the whitespace reads the declared bytes as a body - and Membrane parses
+     * the very same bytes as the next request on the connection.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"Content-Length : 6", "Content-Length\t: 6", "Content-Length  : 6"})
+    void headerLineWithWhitespaceBeforeColonIsRejected(String fieldLine) {
+        assertThrows(MalformedHeaderException.class, () -> readRequest("""
+                POST /products HTTP/1.1
+                Host: example.com
+                %s
+
+                """.formatted(fieldLine)));
+    }
+
+    /**
+     * Whitespace after the colon is the optional whitespace RFC 9112 5.1 allows and must stay
+     * accepted, so that rejecting the whitespace before the colon does not over-reject.
+     */
+    @Test
+    void headerLineWithWhitespaceAfterColonIsAccepted() throws Exception {
+        assertEquals("example.com", readRequest("""
+                POST /products HTTP/1.1
+                Host:\texample.com
+
+                """).getHeader().getFirstValue(HOST));
     }
 
     /**

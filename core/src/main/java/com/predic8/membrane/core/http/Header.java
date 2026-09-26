@@ -40,8 +40,7 @@ import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.http.MimeType.isBinary;
 import static com.predic8.membrane.core.util.HttpUtil.readLine;
-import static com.predic8.membrane.core.util.text.StringUtil.maskNonPrintableCharacters;
-import static com.predic8.membrane.core.util.text.StringUtil.truncateAfter;
+import static com.predic8.membrane.core.util.text.StringUtil.*;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.stream;
@@ -181,17 +180,26 @@ public class Header {
      * Membrane and the backend disagree on what the message said, which is the disagreement HTTP
      * request smuggling relies on. A MIME part header is the opposite case, where folding is still
      * legal and is joined back together instead, see {@link #unfold(String)}.
+     * <p>
+     * Whitespace between the field name and the colon is rejected for the same reason, as RFC 9112
+     * &sect;5.1 requires.
      *
-     * @throws MalformedHeaderException if the line carries no field name followed by a colon
+     * @throws MalformedHeaderException if the line carries no field name followed by a colon, or
+     *                                  if whitespace precedes the colon
      */
     private static HeaderField parseFieldLine(String line) {
-        if (line.indexOf(':') < 1) {
-            String message = "Malformed header line \"%s\": it carries no field name followed by a colon. Rejecting the message rather than dropping the line, which would forward it with a header silently missing."
-                    .formatted(maskNonPrintableCharacters(truncateAfter(line, 80)));
-            log.info(message);
-            throw new MalformedHeaderException(message);
-        }
+        final int colon = line.indexOf(':');
+        if (colon < 1)
+            throw malformedFieldLine(line, "it carries no field name followed by a colon. Rejecting the message rather than dropping the line, which would forward it with a header silently missing.");
+        if (isWhitespace(line.charAt(colon - 1)))
+            throw malformedFieldLine(line, "it carries whitespace between the field name and the colon. Rejecting the message rather than forwarding it, because a backend that trims the whitespace reads a different body length than Membrane does.");
         return new HeaderField(line);
+    }
+
+    private static MalformedHeaderException malformedFieldLine(String line, String reason) {
+        final String maskedLine = maskNonPrintableCharacters(truncateAfter(line, 80));
+        log.info("Malformed header line \"{}\": {}", maskedLine, reason);
+        return new MalformedHeaderException("Malformed header line \"%s\": %s".formatted(maskedLine, reason));
     }
 
     /**
@@ -377,19 +385,22 @@ public class Header {
     /**
      * Whether the message body uses chunked transfer framing.
      * <p>
-     * Per RFC 7230 section 3.3.1 the body is chunked-framed if "chunked" is the
+     * Per RFC 9112 section 6.1 the body is chunked-framed if "chunked" is the
      * <em>final</em> transfer-coding. Transfer-coding names are case-insensitive,
      * and codings may be combined in a comma-separated list (e.g. "gzip, chunked"),
-     * so this looks at the last token case-insensitively rather than requiring an
-     * exact "chunked" match.
+     * so this looks at the last coding case-insensitively rather than requiring an
+     * exact "chunked" match. Empty list elements are legal and are ignored
+     * (RFC 9110 5.6.1.2), so "chunked," is still chunked-framed.
+     * <p>
+     * Repeated field lines carry one coding list between them and are combined before the
+     * final coding is taken, so "chunked" in a field line that is not the last one does
+     * <em>not</em> make the body chunked-framed.
      */
     public boolean isChunked() {
-        String value = getFirstValue(TRANSFER_ENCODING);
+        String value = getNormalizedValue(TRANSFER_ENCODING);
         if (value == null)
             return false;
-        int lastComma = value.lastIndexOf(',');
-        String last = (lastComma == -1 ? value : value.substring(lastComma + 1)).trim();
-        return CHUNKED.equalsIgnoreCase(last);
+        return CHUNKED.equalsIgnoreCase(getLastNonEmptyOfCommaSeparatedString(value));
     }
 
     /**

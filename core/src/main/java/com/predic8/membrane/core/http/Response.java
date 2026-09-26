@@ -437,8 +437,26 @@ public class Response extends Message {
 			createBody(in);
 	}
 
+	/**
+	 * A backend response whose <tt>Transfer-Encoding</tt> does not end in <tt>chunked</tt> is
+	 * rejected for the same reason as such a request: its body length is undeterminable. The
+	 * check runs before the redirect shortcut, so a redirect does not skip it. The same goes for a
+	 * response that is chunked-framed and also carries a <tt>Content-Length</tt>, see
+	 * {@link #rejectIfChunkedWithContentLength(String)}.
+	 * <p>
+	 * A response that {@link #shouldNotContainBody() must not contain a body} is not validated: it
+	 * has no framing, so the framing fields it carries are ignored.
+	 */
 	@Override
 	protected void createBody(InputStream in) throws IOException {
+		if (shouldNotContainBody()) {
+			body = new EmptyBody();
+			return;
+		}
+
+		rejectIfBodyLengthUndeterminable("response");
+		rejectIfChunkedWithContentLength("response");
+
 		if (isRedirect() && mayHaveNoBody())
 			return;
 

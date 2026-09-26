@@ -32,6 +32,8 @@ import static com.predic8.membrane.annot.Constants.CRLF_BYTES;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.util.ContentTypeDetector.EffectiveContentType.HTML;
 import static com.predic8.membrane.core.util.ContentTypeDetector.detectEffectiveContentType;
+import static com.predic8.membrane.core.util.text.StringUtil.maskNonPrintableCharacters;
+import static com.predic8.membrane.core.util.text.StringUtil.truncateAfter;
 import static com.predic8.membrane.core.util.text.TextUtil.getCharset;
 
 /**
@@ -202,6 +204,54 @@ public abstract class Message {
 		header.removeFields(CONTENT_ENCODING);
 		header.removeFields(TRANSFER_ENCODING);
 		header.setContentLength(b.getLength());
+	}
+
+	/**
+	 * RFC 9112 &sect;6.3: if a <tt>Transfer-Encoding</tt> is present and <tt>chunked</tt> is not the
+	 * final coding, the body length cannot be determined. Falling back to reading until EOF would
+	 * let gateway and backend disagree on where the message ends - the desynchronization that
+	 * request smuggling and response splitting rely on - so the message is rejected before a body
+	 * is selected.
+	 * <p>
+	 * A field line without a value carries no coding and therefore does not end in "chunked"
+	 * either, so it is rejected as well. That needs {@link Header#getValuesAsString(String)}: it
+	 * tells a present empty field apart from an absent one, which
+	 * {@link Header#getNormalizedValue(String)} reports as null in both cases.
+	 *
+	 * @param messageType "request" or "response", named in the rejection message
+	 */
+	protected void rejectIfBodyLengthUndeterminable(String messageType) throws MalformedHeaderException {
+		String transferEncoding = header.getValuesAsString(TRANSFER_ENCODING);
+		if (transferEncoding == null || header.isChunked())
+			return;
+
+		final String maskedTransferEncoding = maskNonPrintableCharacters(truncateAfter(transferEncoding, 80));
+		log.info("Transfer-Encoding \"{}\" does not end in \"chunked\". The body length of the {} cannot be determined; rejecting to prevent a desynchronized connection.", maskedTransferEncoding, messageType);
+		throw new MalformedHeaderException("Transfer-Encoding \"%s\" does not end in \"chunked\". The body length of the %s cannot be determined; rejecting to prevent a desynchronized connection."
+				.formatted(maskedTransferEncoding, messageType));
+	}
+
+	/**
+	 * A message that is chunked-framed and also carries a <tt>Content-Length</tt> is a classic
+	 * smuggling vector: RFC 9112 &sect;6.1 allows a server to reject such a request, and &sect;6.3
+	 * says such a message ought to be handled as an error. Framing it by either header lets gateway
+	 * and peer disagree on where the body ends - e.g. {@link Request#shouldNotContainBody()} checks
+	 * the <tt>Content-Length</tt> first, so "Content-Length: 0" would leave the chunked bytes on the
+	 * connection, to be parsed as the next request.
+	 * <p>
+	 * Call after {@link #rejectIfBodyLengthUndeterminable(String)}, so any <tt>Transfer-Encoding</tt>
+	 * left at this point ends in <tt>chunked</tt>.
+	 *
+	 * @param messageType "request" or "response", named in the rejection message
+	 */
+	protected void rejectIfChunkedWithContentLength(String messageType) throws MalformedHeaderException {
+		if (!header.hasContentLength() || !header.isChunked())
+			return;
+
+		String message = "The %s has both Content-Length and Transfer-Encoding. Rejecting to prevent a desynchronized connection."
+				.formatted(messageType);
+		log.info(message);
+		throw new MalformedHeaderException(message);
 	}
 
 	protected void createBody(InputStream in) throws IOException {
