@@ -112,7 +112,8 @@ public class Body extends AbstractBody {
 		while (toSkip > 0) {
 			long skipped;
 			if (hasRelevantObserver) {
-				skipped = inputStream.read(buffer);
+				// cap at the remaining body length: bytes past it belong to the next message (#3341)
+				skipped = inputStream.read(buffer, 0, (int) Math.min(buffer.length, toSkip));
 				if (skipped > 0)
 					for (MessageObserver observer : observers)
 						observer.bodyChunk(buffer, 0, (int)skipped);
@@ -144,7 +145,8 @@ public class Body extends AbstractBody {
 		chunks.clear();
 		while (true) {
             try {
-                if (!((this.length > totalLength || this.length == -1) && (length = inputStream.read(buffer)) > 0))
+                // capped at the remaining body length, see maxReadLength() (#3341)
+                if (!((this.length > totalLength || this.length == -1) && (length = inputStream.read(buffer, 0, maxReadLength(totalLength, buffer.length))) > 0))
                     break;
             } catch (IOException e) {
                 throw fail(e);
@@ -165,6 +167,16 @@ public class Body extends AbstractBody {
             throw new WritingBodyException(e);
         }
         markAsRead();
+	}
+
+	/**
+	 * Caps a read at the bytes remaining in a body of known length, so that the bytes following it
+	 * on the stream (e.g. the next pipelined message) are not consumed.
+	 */
+	private int maxReadLength(long alreadyRead, int bufferLength) {
+		if (length == -1)
+			return bufferLength;
+		return (int) Math.min(bufferLength, length - alreadyRead);
 	}
 
 	@Override

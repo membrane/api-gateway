@@ -13,12 +13,17 @@
    limitations under the License. */
 package com.predic8.membrane.core.http;
 
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
-import java.io.*;
-import java.util.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
+import java.io.IOException;
+import java.util.Arrays;
 
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.US_ASCII;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SuppressWarnings("unused")
@@ -181,6 +186,70 @@ public class BodyTest {
 
 		assertTrue(complete.isRead());
 		assertArrayEquals("payload".getBytes(), complete.getContent());
+	}
+
+	/**
+	 * With a relevant observer attached, discard() reads into an 8 KiB buffer without capping the
+	 * read at Content-Length, consuming the bytes that follow the body on the stream.
+	 * See <a href="https://github.com/membrane/api-gateway/issues/3341">#3341</a>.
+	 */
+	@Test
+	void discardWithObserverDoesNotReadPastContentLength() {
+		var in = new ByteArrayInputStream("1234567NEXT".getBytes());
+		Body body = new Body(in, 7);
+		ByteArrayOutputStream observed = new ByteArrayOutputStream();
+		body.addObserver(recordingObserver(observed));
+
+		body.discard();
+
+		assertEquals("1234567", observed.toString());
+		assertEquals(4, in.available());
+	}
+
+	/** Same as above for the streamed write path: the transferer must not get the trailing bytes. */
+	@Test
+	void writeStreamedDoesNotReadPastContentLength() {
+		ByteArrayInputStream in = new ByteArrayInputStream("1234567NEXT".getBytes());
+		Body body = new Body(in, 7);
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+		body.write(new PlainBodyTransferer(out), false);
+
+		assertEquals("1234567", out.toString());
+		assertEquals(4, in.available());
+	}
+
+	/** End-to-end: a pipelined second request on a keep-alive stream survives discarding the first body. */
+	@Test
+	void pipelinedRequestSurvivesDiscardOfPreviousBodyWithObserver() throws Exception {
+		ByteArrayInputStream in = new ByteArrayInputStream(("""
+				POST /first HTTP/1.1\r
+				Host: example.com\r
+				Content-Length: 7\r
+				\r
+				1234567\
+				GET /second HTTP/1.1\r
+				Host: example.com\r
+				\r
+				""").getBytes(US_ASCII));
+
+		Request first = new Request();
+		first.read(in, true);
+		first.getBody().addObserver(new AbstractMessageObserver() {});
+		first.getBody().discard();
+
+		Request second = new Request();
+		second.read(in, true);
+		assertEquals("/second", second.getUri());
+	}
+
+	private static MessageObserver recordingObserver(ByteArrayOutputStream sink) {
+		return new AbstractMessageObserver() {
+			@Override
+			public void bodyChunk(byte[] buffer, int offset, int length) {
+				sink.write(buffer, offset, length);
+			}
+		};
 	}
 
 	private static class NonRelevantObserver extends AbstractMessageObserver implements NonRelevantBodyObserver {}
