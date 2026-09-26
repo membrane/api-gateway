@@ -132,8 +132,10 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
     private Map<String, Map<String, String>> urlParamProperties = Map.of();
     /**
      * Everything the runtime needs to serve one operation. Built once per operation in init(): the
-     * WSDL does not change, and every request and response needs all three.
+     * WSDL does not change, and every request and response needs it. Requests must never read the
+     * WSDL model itself — it is a Xerces DOM, which concurrent reads corrupt.
      *
+     * @param soapAction        the SOAPAction header of the operation's binding, or empty.
      * @param faultDetailSchema types the content of a SOAP fault detail, one property per fault the
      *                          operation declares; empty for an operation that declares none, in
      *                          which case the detail is still converted, just with every scalar as
@@ -144,12 +146,15 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
      *                          no parts alike.
      */
     record OperationRuntime(Json2SoapTransformer requestTransformer,
+                            String soapAction,
                             Schema<?> responseSchema,
                             Schema<?> faultDetailSchema,
                             boolean hasOutput) {}
 
     /** Replaced wholesale by init(), keyed by operation name — one entry per route. */
     private Map<String, OperationRuntime> operationRuntimes = Map.of();
+    /** The WSDL's own soap:address, used when the api has no target url. Set by init(). */
+    private String wsdlServiceAddress;
     private OpenAPIPublisherInterceptor publisher;
 
     private final String instanceId = UUID.randomUUID().toString();
@@ -181,6 +186,7 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
         // and the runtimes are replaced wholesale, so nothing of the previous WSDL can survive.
         operationRouter = new OperationRouter(basePath, buildRoutes(definitions, operationsByName));
         operationRuntimes = buildOperationRuntimes(operationRouter.getRoutes());
+        wsdlServiceAddress = wsdlServiceAddress(definitions);
 
         var openApiModel = wsdl2OpenApi.generate();
         queryParamNames = collectQueryParamNames(openApiModel);
@@ -264,6 +270,7 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
         Optional<Operation> wsdlOp = definitions.findOperation(operationName);
         return new OperationRuntime(
                 new Json2SoapTransformer(definitions, operationName, xsdToSchema.getSchemasByNamespace()),
+                getSOAPAction(operationName),
                 xsdToSchema.convertMessageParts(wsdlOp.map(op -> op.getMessagesByDirection(OUTPUT)).orElse(List.of())),
                 xsdToSchema.convertFaultDetail(wsdlOp.map(Operation::getFaults).orElse(List.of())),
                 // An operation the WSDL does not resolve keeps the two-way path: it is the one that
@@ -601,12 +608,13 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
             String jsonBody = mergeUrlParamsIntoJson(exc.getRequest().getBodyAsStringDecoded(),
                     toBodyProperties(declaredQueryParams(exc, operationName), operationName),
                     toBodyProperties(pathParams, operationName));
-            byte[] soapRequest = operationRuntimes.get(operationName).requestTransformer().transform(jsonBody);
+            var runtime = operationRuntimes.get(operationName);
+            byte[] soapRequest = runtime.requestTransformer().transform(jsonBody);
 
             exc.getRequest().setBodyContent(soapRequest);
             exc.getRequest().setMethod("POST");
             exc.getRequest().getHeader().setContentType(TEXT_XML);
-            exc.getRequest().getHeader().setSOAPAction(getSOAPAction(operationName));
+            exc.getRequest().getHeader().setSOAPAction(runtime.soapAction());
 
             exc.setProperty(operationPropertyKey, operationName);
 
@@ -664,6 +672,10 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
         if (url != null && !url.isEmpty()) {
             return url;
         }
+        return wsdlServiceAddress;
+    }
+
+    private static String wsdlServiceAddress(Definitions definitions) {
         var services = definitions.getServices();
         if (services.isEmpty()) return null;
         var ports = services.getFirst().getPorts();
