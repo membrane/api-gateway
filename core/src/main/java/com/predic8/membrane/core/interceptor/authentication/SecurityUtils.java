@@ -67,7 +67,8 @@ public final class SecurityUtils {
     private SecurityUtils() {}
 
     public static boolean matchesHashPattern(String s) {
-        if (s == null) return false;
+        // All supported hash formats start with '$', so anything else can skip the regexes.
+        if (s == null || !s.startsWith("$")) return false;
         return BCRYPT_PATTERN.matcher(s).matches() || CRYPT3_PATTERN.matcher(s).matches() || s.startsWith("$argon2id$");
     }
 
@@ -78,17 +79,20 @@ public final class SecurityUtils {
     }
 
     public static boolean verifyPassword(String plaintext, String storedHashOrPlain) {
-        if (BCRYPT_PATTERN.matcher(storedHashOrPlain).matches()) {
-            return checkPassword(storedHashOrPlain, plaintext.toCharArray());
-        }
+        // All supported hash formats start with '$', so anything else is a plaintext password.
+        if (storedHashOrPlain.startsWith("$")) {
+            if (BCRYPT_PATTERN.matcher(storedHashOrPlain).matches()) {
+                return checkPassword(storedHashOrPlain, plaintext.toCharArray());
+            }
 
-        // crypt(3) family ($id$salt$hash)
-        if (CRYPT3_PATTERN.matcher(storedHashOrPlain).matches()) {
-            return Crypt.crypt(plaintext, storedHashOrPlain).equals(storedHashOrPlain);
-        }
+            // crypt(3) family ($id$salt$hash)
+            if (CRYPT3_PATTERN.matcher(storedHashOrPlain).matches()) {
+                return Crypt.crypt(plaintext, storedHashOrPlain).equals(storedHashOrPlain);
+            }
 
-        if (storedHashOrPlain.startsWith("$argon2id$")) {
-            return verifyArgon2id(plaintext, storedHashOrPlain);
+            if (storedHashOrPlain.startsWith("$argon2id$")) {
+                return verifyArgon2id(plaintext, storedHashOrPlain);
+            }
         }
 
         return isEqual(storedHashOrPlain.getBytes(), plaintext.getBytes());
@@ -144,7 +148,10 @@ public final class SecurityUtils {
     }
 
     public static void verifyLoginOrThrow(Map<String, String> postData, String storedPassword) {
-        String password = postData.get(PASSWORD);
+        verifyLoginOrThrow(postData.get(PASSWORD), storedPassword);
+    }
+
+    public static void verifyLoginOrThrow(String password, String storedPassword) {
         if (password == null) throw new NoSuchElementException();
 
         requirePlaintextPasswordInput(password);

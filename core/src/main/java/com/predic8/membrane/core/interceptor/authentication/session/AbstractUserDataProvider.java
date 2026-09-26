@@ -26,13 +26,17 @@ public abstract class AbstractUserDataProvider implements UserDataProvider {
 
     @Override
     public Map<String, String> verify(Map<String, String> postData) {
-        var username = postData.get("username");
+        return verify(postData.get("username"), postData.get(PASSWORD));
+    }
+
+    @Override
+    public Map<String, String> verify(String username, String password) {
         if (username == null) throw new NoSuchElementException();
 
         var userAttributes = getUsersByName().get(username);
         if (userAttributes == null) throw new NoSuchElementException();
 
-        verifyLoginOrThrow(postData, userAttributes.getPassword());
+        verifyLoginOrThrow(password, userAttributes.getPassword());
         return userAttributes.getAttributes();
     }
 
