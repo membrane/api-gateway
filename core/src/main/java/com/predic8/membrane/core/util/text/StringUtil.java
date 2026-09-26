@@ -109,7 +109,7 @@ public class StringUtil {
         };
     }
 
-    public static boolean isWhitespace(char c) {
+    public static boolean isOptionalWhitespace(char c) {
         return c == ' ' || c == '\t';
     }
 }

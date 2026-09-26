@@ -217,7 +217,7 @@ public class Header {
         // stays part of the name, so that the token check rejects it.
         int end = colon;
         if (stripWhitespaceBeforeColon)
-            while (end > 0 && isWhitespace(line.charAt(end - 1)))
+            while (end > 0 && isOptionalWhitespace(line.charAt(end - 1)))
                 end--;
         if (!isToken(line, end))
             throw malformedFieldLine(line.substring(0, colon), "its field name carries a character a field name must not contain, such as whitespace or a control character. Rejecting the message rather than forwarding it, because a parser that trims or ignores the character reads a different header than Membrane does.");
