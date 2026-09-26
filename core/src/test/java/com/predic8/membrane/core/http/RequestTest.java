@@ -473,15 +473,15 @@ public class RequestTest {
     }
 
     /**
-     * The message ends up in the 400 response body, so the echoed line must not carry control
-     * characters of the client's choosing.
+     * The message ends up in the 400 response body, so the echoed field name must not carry
+     * control characters of the client's choosing.
      */
     @Test
-    void rejectionMessageMasksTheOffendingLine() {
+    void rejectionMessageMasksTheOffendingFieldName() {
         MalformedHeaderException e = assertThrows(MalformedHeaderException.class, () -> readRequest(
-                "POST /products HTTP/1.1\nHost: example.com\nX-Bad\007Line\n\n"));
+                "POST /products HTTP/1.1\nHost: example.com\nX-Bad\007Name : value\n\n"));
 
-        assertTrue(e.getMessage().contains("X-Bad_Line"), e.getMessage());
+        assertTrue(e.getMessage().contains("X-Bad_Name"), e.getMessage());
         assertFalse(e.getMessage().contains("\007"));
     }
 

@@ -23,6 +23,7 @@ import com.predic8.membrane.core.util.HttpUtil;
 import jakarta.mail.internet.ContentType;
 import jakarta.mail.internet.ParseException;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,8 +41,7 @@ import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.http.MimeType.isBinary;
 import static com.predic8.membrane.core.util.HttpUtil.readLine;
-import static com.predic8.membrane.core.util.text.StringUtil.maskNonPrintableCharacters;
-import static com.predic8.membrane.core.util.text.StringUtil.truncateAfter;
+import static com.predic8.membrane.core.util.text.StringUtil.*;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.stream;
@@ -181,17 +181,38 @@ public class Header {
      * Membrane and the backend disagree on what the message said, which is the disagreement HTTP
      * request smuggling relies on. A MIME part header is the opposite case, where folding is still
      * legal and is joined back together instead, see {@link #unfold(String)}.
+     * <p>
+     * Whitespace between the field name and the colon is rejected for the same reason, as RFC 9112
+     * &sect;5.1 requires.
      *
-     * @throws MalformedHeaderException if the line carries no field name followed by a colon
+     * @throws MalformedHeaderException if the line carries no field name followed by a colon, or
+     *                                  if whitespace precedes the colon
      */
     private static HeaderField parseFieldLine(String line) {
-        if (line.indexOf(':') < 1) {
-            String message = "Malformed header line \"%s\": it carries no field name followed by a colon. Rejecting the message rather than dropping the line, which would forward it with a header silently missing."
-                    .formatted(maskNonPrintableCharacters(truncateAfter(line, 80)));
-            log.info(message);
-            throw new MalformedHeaderException(message);
-        }
+        final int colon = line.indexOf(':');
+        if (colon < 1)
+            throw malformedFieldLine(null, "it carries no field name followed by a colon. Rejecting the message rather than dropping the line, which would forward it with a header silently missing.");
+        if (isWhitespace(line.charAt(colon - 1)))
+            throw malformedFieldLine(line.substring(0, colon), "it carries whitespace between the field name and the colon. Rejecting the message rather than forwarding it, because a backend that trims the whitespace reads a different body length than Membrane does.");
         return new HeaderField(line);
+    }
+
+    /**
+     * Builds the rejection message, which is logged and handed to the client in the 400 response.
+     * It names the offending field at most, never the field-line value, which may carry a
+     * credential: everything up to the first colon is the field name and the whitespace that makes
+     * it malformed, so it is safe to quote, while a line without a colon has no name to separate
+     * from a value and is reported with neither. The name is echoed untrimmed, because the
+     * trailing whitespace is the defect being reported.
+     *
+     * @param fieldName the field name as it arrived, or null if the line carries none
+     */
+    private static MalformedHeaderException malformedFieldLine(@Nullable String fieldName, String reason) {
+        final String message = fieldName == null
+                ? "Malformed header line: " + reason
+                : "Malformed header line \"%s\": %s".formatted(maskNonPrintableCharacters(truncateAfter(fieldName, 80)), reason);
+        log.info(message);
+        return new MalformedHeaderException(message);
     }
 
     /**

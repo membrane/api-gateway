@@ -29,6 +29,7 @@ import java.util.List;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
 import static com.predic8.membrane.core.http.MimeType.isBinary;
+import static com.predic8.membrane.core.util.HttpTestUtil.convertMessage;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -413,6 +414,73 @@ class HeaderTest {
             Header h = new Header();
             h.add(CONTENT_LENGTH, value);
             assertThrows(MalformedHeaderException.class, h::getContentLength);
+        }
+    }
+
+    @Nested
+    @DisplayName("Parsing a header block, as it arrives on the wire")
+    class ParsingAWireHeader {
+
+        /**
+         * RFC 9112 5.1: a message whose field line carries whitespace between the field name and
+         * the colon must be rejected. The whitespace stays part of the name, so a
+         * "Content-Length : 6" field no longer matches Content-Length: Membrane treats the message
+         * as body-less while a backend that trims the whitespace reads the declared bytes as a
+         * body, and Membrane then parses those same bytes as the next message on the connection.
+         */
+        @ParameterizedTest
+        @ValueSource(strings = {"Content-Length : 6", "Content-Length\t: 6", "Content-Length  : 6"})
+        void whitespaceBeforeTheColonIsRejected(String fieldLine) {
+            assertThrows(MalformedHeaderException.class, () -> new Header(convertMessage("""
+                    %s
+
+                    """.formatted(fieldLine))));
+        }
+
+        /**
+         * The rejection message is logged and echoed in the 400 response, so it must not carry
+         * the field-line value: a malformed "Authorization : Basic ..." would leak the credential
+         * into the log and back to the client.
+         */
+        @Test
+        void rejectionMessageDoesNotCarryTheFieldValue() {
+            MalformedHeaderException e = assertThrows(MalformedHeaderException.class,
+                    () -> new Header(convertMessage("""
+                            Authorization : Basic c2VjcmV0
+
+                            """)));
+
+            assertFalse(e.getMessage().contains("c2VjcmV0"), e.getMessage());
+            assertTrue(e.getMessage().contains("Authorization"), e.getMessage());
+        }
+
+        /**
+         * A line without a colon has no field name to separate from a value, so nothing of it is
+         * echoed - a folded continuation of an Authorization field arrives this way.
+         */
+        @Test
+        void rejectionMessageDoesNotCarryALineWithoutAColon() {
+            MalformedHeaderException e = assertThrows(MalformedHeaderException.class,
+                    () -> new Header(convertMessage("""
+                            Authorization: Basic c2VjcmV0
+                            \tbW9yZQ==
+
+                            """)));
+
+            assertFalse(e.getMessage().contains("c2VjcmV0"), e.getMessage());
+            assertFalse(e.getMessage().contains("bW9yZQ=="), e.getMessage());
+        }
+
+        /**
+         * Whitespace after the colon is the optional whitespace RFC 9112 5.1 allows, so rejecting
+         * the whitespace before the colon must not start rejecting this too.
+         */
+        @Test
+        void whitespaceAfterTheColonIsAccepted() throws Exception {
+            assertEquals("example.com", new Header(convertMessage("""
+                    Host:\texample.com
+
+                    """)).getFirstValue(HOST));
         }
     }
 

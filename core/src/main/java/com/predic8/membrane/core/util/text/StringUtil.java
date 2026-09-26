@@ -14,7 +14,9 @@
 
 package com.predic8.membrane.core.util.text;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import static java.lang.Math.min;
 
@@ -105,5 +107,9 @@ public class StringUtil {
             case "off", "no", "n", "false", "0", "disable", "disabled" -> true;
             default -> false;
         };
+    }
+
+    public static boolean isWhitespace(char c) {
+        return c == ' ' || c == '\t';
     }
 }

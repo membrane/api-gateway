@@ -34,6 +34,7 @@ import java.util.stream.Stream;
 import static com.predic8.membrane.core.http.MimeType.TEXT_HTML;
 import static com.predic8.membrane.core.http.MimeType.isOfMediaType;
 import static com.predic8.membrane.core.http.Response.*;
+import static com.predic8.membrane.core.util.HttpTestUtil.convertMessage;
 import static com.predic8.membrane.test.TestUtil.getResourceAsStream;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.params.provider.Arguments.of;
@@ -304,6 +305,27 @@ public class ResponseTest {
         res.read(getResourceAsStream(this,"response-205-reset.http"),true);
         assertTrue(res.isBodyEmpty());
         assertInstanceOf(EmptyBody.class, res.getBody());
+    }
+
+    /**
+     * Response.read overrides Message.read with its own header parse, so the field line rules are
+     * pinned here as well: a backend that sends whitespace before the colon desyncs the connection
+     * the same way a client does. The rules themselves are covered in HeaderTest.
+     */
+    @Test
+    void headerLineWithWhitespaceBeforeColonIsRejected() {
+        assertThrows(MalformedHeaderException.class, () -> readResponse("""
+                HTTP/1.1 200 Ok
+                Content-Type: text/plain
+                Content-Length : 6
+
+                """));
+    }
+
+    private static Response readResponse(String message) throws IOException, EndOfStreamException {
+        Response res = new Response();
+        res.read(convertMessage(message), true);
+        return res;
     }
 
     @Nested
