@@ -36,6 +36,7 @@ import static com.predic8.membrane.core.http.MimeType.isOfMediaType;
 import static com.predic8.membrane.core.http.Response.*;
 import static com.predic8.membrane.core.util.HttpTestUtil.convertMessage;
 import static com.predic8.membrane.test.TestUtil.getResourceAsStream;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.params.provider.Arguments.of;
 
@@ -331,6 +332,28 @@ public class ResponseTest {
         Response res = new Response();
         res.read(convertMessage(message), true);
         return res;
+    }
+
+    /**
+     * RFC 9112 §4: the reason phrase is optional, so "HTTP/1.1 200" without a trailing space
+     * is a valid status line.
+     */
+    @Test
+    void readResponseWithoutReasonPhrase() throws Exception {
+        Response res = Response.fromStream(new ByteArrayInputStream(StringTestUtil.normalizeCRLF("""
+            HTTP/1.1 200
+            Content-Length: 0
+
+            """).getBytes()), true);
+        assertEquals(200, res.getStatusCode());
+        assertNotNull(res.getStatusMessage());
+        assertFalse(res.getStartLine().contains("null"), res.getStartLine());
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        res.write(out, true);
+        String written = out.toString(ISO_8859_1);
+        assertTrue(written.matches("(?s)HTTP/1\\.1 200 [^\\r\\n]*\\r\\n.*"), written);
+        assertFalse(written.contains("null"), written);
     }
 
     @Nested
