@@ -33,10 +33,10 @@ import org.xml.sax.XMLReader;
 import javax.xml.transform.Source;
 import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.stream.StreamSource;
+import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.List;
 
 import static com.predic8.membrane.annot.Constants.XSD_NS;
@@ -64,11 +64,10 @@ public class XMLSchemaValidator extends AbstractXMLSchemaValidator {
     }
 
     @Override
-    protected List<Validator> createValidators() {
+    protected List<Schema> compileSchemas() {
         SchemaFactory sf = HardenedSchemaFactory.newInstance(XSD_NS);
         sf.setResourceResolver(resolver.toLSResourceResolver());
-        List<Validator> validators = new ArrayList<>();
-        log.debug("Creating validator for schema: {}", location);
+        log.debug("Compiling schema: {}", location);
         StreamSource ss;
         try {
             ss = new StreamSource(resolver.resolve(location));
@@ -76,17 +75,18 @@ public class XMLSchemaValidator extends AbstractXMLSchemaValidator {
             throw new ConfigurationException("Cannot resolve schema from %s.".formatted(location), e);
         }
         ss.setSystemId(location);
-        Validator validator;
         try {
-            validator = sf.newSchema(ss).newValidator();
+            return List.of(sf.newSchema(ss));
         } catch (SAXException e) {
             throw new ConfigurationException("Cannot parse schema from %s.".formatted(location), e);
         }
+    }
+
+    @Override
+    protected Validator createValidator(Schema schema) {
+        Validator validator = super.createValidator(schema);
         validator.setResourceResolver(resolver.toLSResourceResolver());
-        validator.setErrorHandler(new SchemaValidatorErrorHandler());
-        HardenedSchemaFactory.hardenValidator(validator);
-        validators.add(validator);
-        return validators;
+        return validator;
     }
 
     /**

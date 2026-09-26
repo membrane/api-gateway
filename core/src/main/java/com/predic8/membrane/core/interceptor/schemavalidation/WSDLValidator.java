@@ -43,8 +43,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 
 import static com.predic8.membrane.annot.Constants.SoapVersion.SOAP11;
 import static com.predic8.membrane.annot.Constants.SoapVersion.SOAP12;
@@ -102,7 +100,7 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
      * schema the message matches, whereas exactly one fault schema applies, selected by SOAP
      * version.
      */
-    private Map<SoapVersion, BlockingQueue<Validator>> faultStructureValidators;
+    private Map<SoapVersion, ValidatorPool<Validator>> faultStructureValidators;
 
     /**
      * Parsed WSDL document
@@ -143,14 +141,9 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
     @Override
     public void init() {
         super.init();
-        int concurrency = poolConcurrency();
         faultStructureValidators = new EnumMap<>(SoapVersion.class);
-        faultStructureSchemas.forEach((version, schema) -> {
-            var pool = new ArrayBlockingQueue<Validator>(concurrency);
-            for (int i = 0; i < concurrency; i++)
-                pool.add(newHardenedValidator(schema));
-            faultStructureValidators.put(version, pool);
-        });
+        faultStructureSchemas.forEach((version, schema) ->
+                faultStructureValidators.put(version, new ValidatorPool<>(() -> newHardenedValidator(schema), poolConcurrency())));
     }
 
     private static Validator newHardenedValidator(Schema schema) {
