@@ -18,6 +18,7 @@ import com.predic8.membrane.core.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -101,27 +102,46 @@ public class Body extends AbstractBody {
         }
     }
 
+	/**
+	 * Drops the bytes the body still owes, so that the connection can carry the next message.
+	 * <p>
+	 * A body of <b>unknown length</b> is not drained. It ends only when the peer closes the connection,
+	 * so reading to its end would mean waiting for that close - and a length of -1 arises only where the
+	 * connection is already not reusable: HTTP/1.0 without a length, {@code Connection: close}, or the
+	 * "the server will send EOF" fallback (see {@code Message.createBody}). There is no connection to
+	 * reclaim, so the stream is left untouched and the body is marked failed rather than read.
+	 * <p>
+	 * A body of <b>known length</b> is drained, feeding the relevant observers as it goes, and never
+	 * reads beyond the declared length - the bytes after it belong to the next message. If the body ends
+	 * early, whether by EOF or by a read timeout, it is marked failed too: what the message promised is
+	 * not there, so the connection is out of step and must not be reused.
+	 */
 	private void skipBodyContent() throws IOException {
-		byte[] buffer = null;
-		boolean hasRelevantObserver = hasRelevantObservers();
-		if (hasRelevantObserver)
-			buffer = new byte[BUFFER_SIZE];
+		if (length == -1) {
+			fail(new IOException("Body of unknown length was not drained: it ends with the connection, which therefore cannot be reused."));
+			return;
+		}
 
+		boolean hasRelevantObserver = hasRelevantObservers();
 		chunks.clear();
+
 		long toSkip = length;
+		byte[] buffer = new byte[(int) Math.min(BUFFER_SIZE, toSkip)];
 		while (toSkip > 0) {
-			long skipped;
-			if (hasRelevantObserver) {
-				skipped = inputStream.read(buffer);
-				if (skipped > 0)
-					for (MessageObserver observer : observers)
-						observer.bodyChunk(buffer, 0, (int)skipped);
-			} else {
-				skipped = inputStream.skip(toSkip);
-			}
-			if (skipped <= 0)
-				break; // EOF
-			toSkip -= skipped;
+			// Bounded by what is still owed: reading further would eat into the next message. read(),
+			// not skip(), because only read() tells EOF apart from "skipped nothing this time".
+			int read = inputStream.read(buffer, 0, (int) Math.min(buffer.length, toSkip));
+			if (read < 0)
+				break;
+			if (hasRelevantObserver && read > 0)
+				for (MessageObserver observer : observers)
+					observer.bodyChunk(buffer, 0, read);
+			toSkip -= read;
+		}
+
+		if (toSkip > 0) {
+			fail(new EOFException("Body ended %d bytes before the declared length of %d while being discarded.".formatted(toSkip, length)));
+			return;
 		}
 		markAsRead();
 	}

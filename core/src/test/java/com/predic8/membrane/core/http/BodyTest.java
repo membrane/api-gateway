@@ -13,12 +13,17 @@
    limitations under the License. */
 package com.predic8.membrane.core.http;
 
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
-import java.io.*;
-import java.util.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Arrays;
 
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SuppressWarnings("unused")
@@ -181,6 +186,139 @@ public class BodyTest {
 
 		assertTrue(complete.isRead());
 		assertArrayEquals("payload".getBytes(), complete.getContent());
+	}
+
+	/**
+	 * A body of unknown length (EOF-delimited, length -1) must be drained to EOF by discard(),
+	 * not just marked as read with its bytes left in the stream.
+	 * See <a href="https://github.com/membrane/api-gateway/issues/3330">#3330</a>.
+	 */
+	@Test
+	void discardDoesNotReadABodyOfUnknownLength() {
+		Body body = new Body(failOnReadStream());
+
+		body.discard();
+
+		assertTrue(body.hasFailed(), "a body that was not drained must not count as read");
+		assertFalse(body.isRead());
+	}
+
+	/**
+	 * The point of the rule, rather than its symptom: a stream that never reaches EOF must not be read
+	 * at all. A ByteArrayInputStream would end instantly and hide a reintroduced drain.
+	 */
+	private static InputStream failOnReadStream() {
+		return new InputStream() {
+			@Override
+			public int read() {
+				throw new AssertionError("discard() must not read a body of unknown length");
+			}
+
+			@Override
+			public int read(byte[] b, int off, int len) {
+				throw new AssertionError("discard() must not read a body of unknown length");
+			}
+		};
+	}
+
+	@Test
+	void discardLeavesTheStreamOfAnUnknownLengthBodyUntouched() {
+		ByteArrayInputStream in = new ByteArrayInputStream("leftover bytes".getBytes(UTF_8));
+
+		new Body(in).discard();
+
+		assertEquals("leftover bytes".length(), in.available(), "nothing may be consumed");
+	}
+
+	@Test
+	void discardOfUnknownLengthBodyReportsFailureToObservers() {
+		Body body = new Body(failOnReadStream());
+		RecordingObserver observer = new RecordingObserver();
+		body.addObserver(observer);
+
+		body.discard();
+
+		assertTrue(observer.failed, "bodyFailed is the terminal event here");
+		assertFalse(observer.completed, "bodyComplete must not follow bodyFailed");
+		assertEquals("", observer.observed.toString(UTF_8), "no chunk may be handed out");
+	}
+
+	@Test
+	void discardDrainsABodyOfKnownLengthAndNotifiesRelevantObserver() throws IOException {
+		ByteArrayInputStream in = new ByteArrayInputStream("leftover bytes".getBytes(UTF_8));
+		Body body = new Body(in, "leftover bytes".length());
+		RecordingObserver observer = new RecordingObserver();
+		body.addObserver(observer);
+
+		body.discard();
+
+		assertTrue(body.isRead());
+		assertEquals(0, in.available(), "discard() must consume the declared bytes");
+		assertEquals("leftover bytes", observer.observed.toString(UTF_8));
+		assertTrue(observer.completed);
+		assertFalse(observer.failed);
+	}
+
+	/**
+	 * The bytes after the declared length belong to the next message on the connection; consuming them
+	 * would desync it.
+	 */
+	@Test
+	void discardDoesNotReadPastTheDeclaredLength() throws IOException {
+		ByteArrayInputStream in = new ByteArrayInputStream("bodyNEXT-REQUEST".getBytes(UTF_8));
+		Body body = new Body(in, 4);
+
+		body.discard();
+
+		assertTrue(body.isRead());
+		assertEquals("NEXT-REQUEST".length(), in.available(), "only the body itself may be consumed");
+	}
+
+	/**
+	 * Declared ten bytes, four arrived and the stream ended. The connection is out of step, so the body
+	 * must not be passed off as read. A read timeout reaches this the same way, as an IOException.
+	 */
+	@Test
+	void discardFailsWhenAKnownLengthBodyEndsEarly() {
+		Body body = new Body(new ByteArrayInputStream("four".getBytes(UTF_8)), 10);
+
+		body.discard();
+
+		assertTrue(body.hasFailed());
+		assertFalse(body.isRead());
+	}
+
+	@Test
+	void discardOfKnownLengthBodySkipsChunksForNonRelevantObserverButStillCompletes() throws IOException {
+		ByteArrayInputStream in = new ByteArrayInputStream("leftover bytes".getBytes(UTF_8));
+		Body body = new Body(in, "leftover bytes".length());
+		body.addObserver(new NonRelevantObserver());
+
+		body.discard();
+
+		assertTrue(body.isRead());
+		assertEquals(0, in.available());
+	}
+
+	private static class RecordingObserver extends AbstractMessageObserver {
+		final ByteArrayOutputStream observed = new ByteArrayOutputStream();
+		boolean completed;
+		boolean failed;
+
+		@Override
+		public void bodyChunk(byte[] buffer, int offset, int length) {
+			observed.write(buffer, offset, length);
+		}
+
+		@Override
+		public void bodyComplete(AbstractBody body) {
+			completed = true;
+		}
+
+		@Override
+		public void bodyFailed(ReadingBodyException e) {
+			failed = true;
+		}
 	}
 
 	private static class NonRelevantObserver extends AbstractMessageObserver implements NonRelevantBodyObserver {}
