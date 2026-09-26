@@ -26,8 +26,13 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.buildSchemaMap;
 import static org.junit.jupiter.api.Assertions.*;
@@ -198,6 +203,45 @@ class Json2SoapTransformerTest {
         assertEquals(2, nameElements.getLength(), "Array should produce two <name> elements");
         assertEquals("Berlin", nameElements.item(0).getTextContent());
         assertEquals("Paris", nameElements.item(1).getTextContent());
+    }
+
+    /**
+     * One transformer serves every concurrent exchange of its operation. The WSDL it was built from
+     * must not be read per request: the Xerces DOM is not thread-safe even for reads, and a race on
+     * its node-list cache used to leave the definitions corrupted for all later requests, too.
+     */
+    @Test
+    void concurrentTransformsOfOneInstanceAllSucceed() throws Exception {
+        // freshly parsed, so no earlier test has already walked this DOM
+        var shared = transformer(Definitions.parse(new ResolverMap(), "classpath:/ws/ref-child.wsdl"), "placeOrder");
+        var expected = transformer(refChildDefinitions, "placeOrder").transform(PLACE_ORDER_JSON);
+
+        int threads = 16;
+        int callsPerThread = 200;
+        var start = new CountDownLatch(1);
+        ExecutorService pool = Executors.newFixedThreadPool(threads);
+        try {
+            var results = new ArrayList<Future<Integer>>();
+            for (int t = 0; t < threads; t++) {
+                results.add(pool.submit(() -> {
+                    start.await();
+                    int mismatches = 0;
+                    for (int i = 0; i < callsPerThread; i++) {
+                        if (!Arrays.equals(expected, shared.transform(PLACE_ORDER_JSON))) mismatches++;
+                    }
+                    return mismatches;
+                }));
+            }
+            start.countDown();
+            for (var result : results) {
+                assertEquals(0, result.get(), "every concurrent call must produce the same SOAP request");
+            }
+        } finally {
+            pool.shutdownNow();
+        }
+
+        assertArrayEquals(expected, shared.transform(PLACE_ORDER_JSON),
+                "a call after the concurrent ones must still succeed");
     }
 
     @Test

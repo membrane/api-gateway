@@ -49,15 +49,34 @@ import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.INP
  * no attribute at all.
  * A {@code $value} key supplies the enclosing element's own text, for an element that carries both
  * a value and attributes.
+ *
+ * <p>One instance serves every concurrent exchange of its operation, so everything taken from the
+ * WSDL is resolved once, in the constructor, and {@link #transform} only reads the immutable result.
+ * The WSDL and its schemas are a Xerces DOM, which is not thread-safe even for reads: walking it
+ * per request raced on its node-list cache and left the definitions corrupted for later requests.
  */
 public class Json2SoapTransformer {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
-    private final Definitions definitions;
+    /**
+     * Looked up once: {@code newInstance()} scans the classpath for a provider under a JVM-wide
+     * class-loader lock, which serialized all request threads. Builders and transformers are not
+     * thread-safe and are still created per request.
+     */
+    private static final DocumentBuilderFactory DOCUMENT_BUILDER_FACTORY = createDocumentBuilderFactory();
+    private static final TransformerFactory TRANSFORMER_FACTORY = TransformerFactory.newInstance();
+
     private final String operationName;
     private final Map<String, List<Element>> schemasByNamespace;
     private final XsdContentModel contentModel;
+    private final boolean soap12;
+    /** The operation's request element, or {@code null} when the WSDL does not define a usable one. */
+    private final RequestElement requestElement;
+    /** Why the operation has no usable request element, reported by every {@link #transform} call. */
+    private final String unusableReason;
+    /** The field metadata of every declaration reachable from the request element. */
+    private final Map<XsdContext, FieldContext> fieldContexts;
 
     /**
      * @param schemasByNamespace the import graph resolved once by the caller — see
@@ -67,49 +86,113 @@ public class Json2SoapTransformer {
      */
     public Json2SoapTransformer(Definitions definitions, String operationName,
                                 Map<String, List<Element>> schemasByNamespace) {
-        this.definitions = definitions;
         this.operationName = operationName;
         this.schemasByNamespace = schemasByNamespace;
         this.contentModel = new XsdContentModel(schemasByNamespace);
+        this.soap12 = useSoap12(definitions);
+
+        var contexts = new HashMap<XsdContext, FieldContext>();
+        RequestElement resolved = null;
+        String reason = null;
+        try {
+            resolved = resolveRequestElement(definitions, contexts);
+        } catch (IllegalArgumentException e) {
+            // Reported per request, as before: one unusable operation must not stop the others.
+            reason = e.getMessage();
+        }
+        this.requestElement = resolved;
+        this.unusableReason = reason;
+        this.fieldContexts = Map.copyOf(contexts);
     }
 
     public byte[] transform(String jsonBody) throws Exception {
         JsonNode jsonNode = MAPPER.readTree(jsonBody);
 
-        List<Message> inputMessages = findOperation().getMessagesByDirection(INPUT);
-        if (inputMessages.isEmpty()) {
-            throw new IllegalArgumentException("No input message found for operation: " + operationName);
+        if (requestElement == null) {
+            throw new IllegalArgumentException(unusableReason);
         }
-        Message inputMessage = inputMessages.getFirst();
 
         Envelope envelope = createSoapEnvelope();
         Document doc = envelope.doc();
 
-        Element operationElement = createOperationElement(doc, inputMessage);
+        Element operationElement = createOperationElement(doc);
         envelope.body().appendChild(operationElement);
 
-        var partQName = inputMessage.getParts().getFirst().getElementQName();
-        mapJsonToElement(jsonNode, operationElement, doc, fieldContextFor(findXsdContext(partQName)));
+        mapJsonToElement(jsonNode, operationElement, doc, requestElement.fields());
 
         return documentToBytes(doc);
     }
 
-    private Operation findOperation() {
-        return definitions.findOperation(operationName)
+    /** The element a request's SOAP body carries, and the field metadata of its content. */
+    private record RequestElement(String name, String namespace, FieldContext fields) {}
+
+    /**
+     * Resolves the operation's request element from the WSDL, collecting the field metadata of every
+     * declaration reachable from it into {@code contexts}.
+     *
+     * @throws IllegalArgumentException if the operation, its input message, or the element of its
+     *                                  first part cannot be found
+     */
+    private RequestElement resolveRequestElement(Definitions definitions, Map<XsdContext, FieldContext> contexts) {
+        Operation operation = definitions.findOperation(operationName)
                 .orElseThrow(() -> new IllegalArgumentException("Operation not found: " + operationName));
+
+        List<Message> inputMessages = operation.getMessagesByDirection(INPUT);
+        if (inputMessages.isEmpty()) {
+            throw new IllegalArgumentException("No input message found for operation: " + operationName);
+        }
+        List<Part> parts = inputMessages.getFirst().getParts();
+        if (parts.isEmpty()) {
+            throw new IllegalArgumentException("Input message has no parts for operation: " + operationName);
+        }
+        Part part = parts.getFirst();
+        String elementName = part.getElementName();
+        if (elementName == null) {
+            throw new IllegalArgumentException("Part has no element name for operation: " + operationName);
+        }
+        return new RequestElement(elementName, part.getElementNamespace(),
+                resolveFieldContexts(findXsdContext(part.getElementQName()), contexts));
+    }
+
+    /**
+     * The field metadata of {@code root}, after resolving it for every declaration reachable from
+     * it into {@code contexts}. Keyed by declaration, so a recursive type is resolved once and ends
+     * the walk instead of repeating it.
+     */
+    private FieldContext resolveFieldContexts(XsdContext root, Map<XsdContext, FieldContext> contexts) {
+        if (root == null) return NO_FIELD_CONTEXT;
+        var pending = new ArrayDeque<XsdContext>();
+        pending.push(root);
+        while (!pending.isEmpty()) {
+            XsdContext context = pending.pop();
+            if (contexts.containsKey(context)) continue;
+            FieldContext fieldContext = fieldContextFor(context);
+            contexts.put(context, fieldContext);
+            fieldContext.childrenByLocalName().values().forEach(pending::push);
+        }
+        return contexts.get(root);
+    }
+
+    /** The field metadata of a child declaration; every one was resolved in the constructor. */
+    private FieldContext fieldContextOf(XsdContext context) {
+        return context == null ? NO_FIELD_CONTEXT : fieldContexts.get(context);
     }
 
     /** A freshly created SOAP envelope document, together with its Body element. */
     private record Envelope(Document doc, Element body) {}
 
-    private Envelope createSoapEnvelope() throws Exception {
+    private static DocumentBuilderFactory createDocumentBuilderFactory() {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         factory.setNamespaceAware(true);
-        DocumentBuilder builder = factory.newDocumentBuilder();
+        return factory;
+    }
+
+    private Envelope createSoapEnvelope() throws Exception {
+        DocumentBuilder builder = DOCUMENT_BUILDER_FACTORY.newDocumentBuilder();
         Document doc = builder.newDocument();
 
-        String soapNs = useSoap12() ? SOAP12_NS : SOAP11_NS;
-        String prefix = useSoap12() ? "s12" : "s11";
+        String soapNs = soap12 ? SOAP12_NS : SOAP11_NS;
+        String prefix = soap12 ? "s12" : "s11";
 
         Element envelope = doc.createElementNS(soapNs, prefix + ":Envelope");
         envelope.setAttribute("xmlns:" + prefix, soapNs);
@@ -121,23 +204,15 @@ public class Json2SoapTransformer {
         return new Envelope(doc, body);
     }
 
-    private boolean useSoap12() {
+    private static boolean useSoap12(Definitions definitions) {
         Set<Definitions.SOAPVersion> versions = definitions.getSoapVersions();
         return versions.contains(SOAP_12) && !versions.contains(SOAP_11);
     }
 
-    private Element createOperationElement(Document doc, Message message) {
-        if (message.getParts().isEmpty()) {
-            throw new IllegalArgumentException("Input message has no parts for operation: " + operationName);
-        }
-        Part part = message.getParts().getFirst();
-        String elementName = part.getElementName();
-        if (elementName == null) {
-            throw new IllegalArgumentException("Part has no element name for operation: " + operationName);
-        }
-        String namespace = part.getElementNamespace();
+    private Element createOperationElement(Document doc) {
+        String namespace = requestElement.namespace();
 
-        Element opElement = doc.createElementNS(namespace, elementName);
+        Element opElement = doc.createElementNS(namespace, requestElement.name());
 
         if (namespace != null && !namespace.isEmpty()) {
             String prefix = "ns";
@@ -364,17 +439,8 @@ public class Json2SoapTransformer {
     /**
      * The field metadata of {@code context}, or an empty context when the XSD declaration is unknown.
      * The content model is resolved once here and both the field bindings and the child index are
-     * derived from it.
-     *
-     * <p>This runs once per object per request rather than being memoized across requests, although
-     * the WSDL is immutable after {@code init()} and one transformer serves every request of its
-     * operation. Memoizing it was measured and does not pay off: best of 5 × 50,000 calls, a flat
-     * one-field type went 20.8 → 20.3 µs and a type inheriting through {@code xsd:extension} plus an
-     * {@code xsd:group} with a nested child went 24.9 → 21.9 µs. Both sit on a ~20 µs floor of DOM
-     * construction and serialization, so the whole content-model resolution is only some 4 µs of a
-     * call that waits milliseconds on the SOAP service afterwards — not worth a cache that would have
-     * to be thread-safe, since this instance is shared by all concurrent exchanges of its operation.
-     * Schemas far wider or deeper than the ones measured would shift that balance.
+     * derived from it. Walks the schema DOM, so it runs only from the constructor — see
+     * {@link #resolveFieldContexts}.
      */
     private FieldContext fieldContextFor(XsdContext context) {
         if (context == null) return NO_FIELD_CONTEXT;
@@ -419,7 +485,7 @@ public class Json2SoapTransformer {
         }
         String ns = context.fieldNamespaces().get(fieldName);
         String xmlLocalName = localNameFromKey(fieldName);
-        FieldContext childContext = fieldContextFor(context.childrenByLocalName().get(xmlLocalName));
+        FieldContext childContext = fieldContextOf(context.childrenByLocalName().get(xmlLocalName));
 
         if (fieldValue.isArray()) {
             for (JsonNode arrayItem : fieldValue) {
@@ -462,8 +528,7 @@ public class Json2SoapTransformer {
     }
 
     private byte[] documentToBytes(Document doc) throws Exception {
-        TransformerFactory transformerFactory = TransformerFactory.newInstance();
-        Transformer transformer = transformerFactory.newTransformer();
+        Transformer transformer = TRANSFORMER_FACTORY.newTransformer();
         transformer.setOutputProperty(OutputKeys.INDENT, "no");
         transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "no");
 
