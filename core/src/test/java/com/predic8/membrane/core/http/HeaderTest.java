@@ -69,6 +69,21 @@ class HeaderTest {
     }
 
     @Test
+    void removeFieldsRemovesAllMatchingFieldsIgnoringCase() {
+        var h = new Header();
+        h.add("X-Foo", "1");
+        h.add("Host", "example.com");
+        h.add("x-foo", "2");
+        h.add("X-FOO", "3");
+
+        h.removeFields("X-Foo");
+
+        assertNull(h.getFirstValue("X-Foo"));
+        assertEquals(1, h.getAllHeaderFields().length);
+        assertEquals("example.com", h.getFirstValue("Host"));
+    }
+
+    @Test
     void getMimeType() throws Exception {
         assertTrue(new MimeType(header.getContentType()).match(TEXT_XML));
     }

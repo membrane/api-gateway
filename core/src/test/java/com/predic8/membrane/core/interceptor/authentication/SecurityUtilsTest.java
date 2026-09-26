@@ -99,6 +99,22 @@ class SecurityUtilsTest {
     }
 
     @Test
+    void verifyPassword_plaintextStartingWithDollar() {
+        assertTrue(verifyPassword("$abc", "$abc"));
+        assertFalse(verifyPassword("abc", "$abc"));
+    }
+
+    @Test
+    void verifyLoginOrThrow_withPasswordString() {
+        String stored = hashPasswordBcrypt("2y", 10, DEMO_PASSWORD);
+
+        assertThrows(NoSuchElementException.class, () -> verifyLoginOrThrow((String) null, stored));
+        assertThrows(IllegalArgumentException.class, () -> verifyLoginOrThrow(stored, stored));
+        assertThrows(NoSuchElementException.class, () -> verifyLoginOrThrow(WRONG_PASSWORD, stored));
+        assertDoesNotThrow(() -> verifyLoginOrThrow(DEMO_PASSWORD, stored));
+    }
+
+    @Test
     void hashPasswordBcrypt_returns_valid_hash_and_verifies_small() {
         String stored = hashPasswordBcrypt("2y", 12, DEMO_PASSWORD);
 

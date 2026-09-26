@@ -28,4 +28,15 @@ public interface UserDataProvider {
 	 *         generator or to pass on HTTP headers)
 	 */
 	Map<String, String> verify(Map<String, String> postData);
+
+	/**
+	 * Same as {@link #verify(Map)} for a plain username/password pair. Providers can override it to avoid
+	 * building the map.
+	 */
+	default Map<String, String> verify(String username, String password) {
+		Map<String, String> postData = new HashMap<>();
+		postData.put("username", username);
+		postData.put("password", password);
+		return verify(postData);
+	}
 }

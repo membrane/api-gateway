@@ -104,7 +104,8 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) {
-        if (hasNoAuthorizationHeader(exc) || !validUser(exc)) {
+        var authorization = exc.getRequest().getHeader().getAuthorization();
+        if (authorization == null || !validUser(exc, authorization)) {
             removeAuthenticationHeader(exc);
             return deny(exc);
         }
@@ -118,10 +119,10 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
         exchange.getRequest().getHeader().removeFields(AUTHORIZATION);
     }
 
-    private boolean validUser(Exchange exc) {
+    private boolean validUser(Exchange exc, String authorization) {
         try {
-            var credentials = BasicAuthenticationUtil.getCredentials(exc);
-            userDataProvider.verify(credentials.toMap());
+            var credentials = BasicAuthenticationUtil.getCredentials(authorization);
+            userDataProvider.verify(credentials.username(), credentials.password());
             exc.setProperty(SECURITY_SCHEMES, List.of(BASIC().username(credentials.username())));
             return true;
         } catch (NoSuchElementException e) {
@@ -141,10 +142,6 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
         header.setConnection(CLOSE); // Stay compliant with old implementations.
         header.setWwwAuthenticate("membrane");
         return ABORT;
-    }
-
-    private boolean hasNoAuthorizationHeader(Exchange exc) {
-        return exc.getRequest().getHeader().getFirstValue(AUTHORIZATION) == null;
     }
 
     public List<UserConfig> getUsers() {

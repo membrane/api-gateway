@@ -52,6 +52,17 @@ public class StaticUserDataProviderTest {
     }
 
     @Test
+    void verifyWithUsernameAndPassword() {
+        provider.setUsers(List.of(new UserConfig("alice", "secret123")));
+
+        assertEquals("alice", provider.verify("alice", "secret123").get("username"));
+        assertThrows(NoSuchElementException.class, () -> provider.verify("alice", "wrong"));
+        assertThrows(NoSuchElementException.class, () -> provider.verify("unknown", "secret123"));
+        assertThrows(NoSuchElementException.class, () -> provider.verify(null, "secret123"));
+        assertThrows(NoSuchElementException.class, () -> provider.verify("alice", null));
+    }
+
+    @Test
     void verifyWithInvalidPassword() {
         // Given
         provider.setUsers(List.of(new UserConfig("bob", "correctPassword")));
