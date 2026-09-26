@@ -438,6 +438,70 @@ class HeaderTest {
         }
 
         /**
+         * RFC 9112 5.1: a proxy must remove whitespace before the colon from a response instead of
+         * rejecting it, so the field is recognized under its real name.
+         */
+        @ParameterizedTest
+        @ValueSource(strings = {"Content-Length : 6", "Content-Length\t: 6", "Content-Length  : 6"})
+        void whitespaceBeforeTheColonIsStrippedInAResponse(String fieldLine) throws Exception {
+            Header header = new Header(convertMessage("""
+                    %s
+
+                    """.formatted(fieldLine)), true);
+
+            assertEquals("6", header.getFirstValue(CONTENT_LENGTH));
+            assertEquals(CONTENT_LENGTH, header.getFields().getFirst().getHeaderName().toString());
+        }
+
+        /**
+         * Stripping only covers whitespace before the colon: a folded continuation line is still
+         * rejected in a response, which RFC 9112 5.2 permits a gateway to do.
+         */
+        @Test
+        void lineWithoutAColonIsRejectedInAResponse() {
+            assertThrows(MalformedHeaderException.class, () -> new Header(convertMessage("""
+                    X-Foo: bar
+                    \tbaz
+
+                    """), true));
+        }
+
+        /**
+         * A field name must be an RFC 9110 token as a whole, not merely free of whitespace before
+         * the colon: "Content-Length&lt;VT&gt;" misses Content-Length in Membrane, while a backend
+         * that trims with C's isspace() still reads it as one and expects a body.
+         */
+        @ParameterizedTest
+        @ValueSource(strings = {"Content-Length\u000B: 6", "Content-Length\f: 6", "Content-Length\u0000: 6", "X Foo: bar", "X-F\u00F6: bar"})
+        void fieldNameThatIsNotATokenIsRejected(String fieldLine) {
+            assertThrows(MalformedHeaderException.class, () -> new Header(convertMessage("""
+                    %s
+
+                    """.formatted(fieldLine))));
+        }
+
+        /**
+         * A response only has SP and HTAB stripped before the colon, as RFC 9112 5.1 prescribes;
+         * any other stray character still fails the token check.
+         */
+        @ParameterizedTest
+        @ValueSource(strings = {"Content-Length\u000B: 6", "Content-Length\u000B : 6"})
+        void fieldNameThatIsNotATokenIsRejectedInAResponse(String fieldLine) {
+            assertThrows(MalformedHeaderException.class, () -> new Header(convertMessage("""
+                    %s
+
+                    """.formatted(fieldLine)), true));
+        }
+
+        @Test
+        void fieldNameWithPunctuationTcharsIsAccepted() throws Exception {
+            assertEquals("v", new Header(convertMessage("""
+                    X-A!#$%&'*+.^_`|~: v
+
+                    """)).getFirstValue("X-A!#$%&'*+.^_`|~"));
+        }
+
+        /**
          * The rejection message is logged and echoed in the 400 response, so it must not carry
          * the field-line value: a malformed "Authorization : Basic ..." would leak the credential
          * into the log and back to the client.

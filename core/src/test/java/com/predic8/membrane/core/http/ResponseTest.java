@@ -308,18 +308,23 @@ public class ResponseTest {
     }
 
     /**
-     * Response.read overrides Message.read with its own header parse, so the field line rules are
-     * pinned here as well: a backend that sends whitespace before the colon desyncs the connection
-     * the same way a client does. The rules themselves are covered in HeaderTest.
+     * RFC 9112 5.1: unlike a request, a response with whitespace before the colon is not rejected,
+     * because a proxy must strip the whitespace before forwarding it. Stripping makes Membrane read
+     * the body length a trimming backend meant, so a sloppy backend keeps working instead of
+     * turning into a 502. The rules themselves are covered in HeaderTest.
      */
     @Test
-    void headerLineWithWhitespaceBeforeColonIsRejected() {
-        assertThrows(MalformedHeaderException.class, () -> readResponse("""
+    void headerLineWithWhitespaceBeforeColonIsStripped() throws Exception {
+        Response res = readResponse("""
                 HTTP/1.1 200 Ok
                 Content-Type: text/plain
                 Content-Length : 6
 
-                """));
+                abcdef""");
+
+        assertEquals(6, res.getHeader().getContentLength());
+        assertEquals("abcdef", res.getBodyAsStringDecoded());
+        assertTrue(res.getHeader().toString().contains("Content-Length: 6"), res.getHeader().toString());
     }
 
     private static Response readResponse(String message) throws IOException, EndOfStreamException {
