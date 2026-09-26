@@ -32,6 +32,7 @@ import org.xml.sax.SAXParseException;
 
 import javax.xml.transform.Source;
 import javax.xml.transform.dom.DOMSource;
+import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 import java.io.IOException;
@@ -40,8 +41,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
@@ -60,7 +59,14 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
     protected final ErrorDetailsPolicy errorDetailsPolicy;
     protected final AtomicLong valid = new AtomicLong();
     protected final AtomicLong invalid = new AtomicLong();
-    private ArrayBlockingQueue<List<Validator>> validators;
+    private ValidatorPool<List<Validator>> validators;
+
+    /**
+     * The embedded schemas, compiled once. A {@link Schema} is thread-safe, so new pool entries
+     * only need a cheap {@link Schema#newValidator()}. Set by the first {@link #createValidators()}
+     * call, which comes from {@link #init()} filling the pool, before any request thread runs.
+     */
+    private List<Schema> compiledSchemas;
 
     public AbstractXMLSchemaValidator(ResolverMap resolver, String location, ValidatorInterceptor.FailureHandler failureHandler) {
         this(resolver, location, failureHandler, ErrorDetailsPolicy.FULL);
@@ -86,14 +92,11 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
 
     public void init() {
         super.init();
-        int concurrency = poolConcurrency();
-        validators = new ArrayBlockingQueue<>(concurrency);
-        for (int i = 0; i < concurrency; i++)
-            validators.add(createValidators());
+        validators = new ValidatorPool<>(this::createValidators, poolConcurrency());
     }
 
     /**
-     * Size of a validator pool. Exposed so subclasses that keep an additional pool of their own
+     * Number of validators a pool creates up front; it grows beyond that on demand. Exposed so subclasses that keep an additional pool of their own
      * (e.g. {@link WSDLValidator}'s SOAP fault structure validators) size it identically.
      */
     protected static int poolConcurrency() {
@@ -173,12 +176,9 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
      *
      * @param exceptions collects the errors reported for each schema the source failed against
      * @return {@code true} if the source matched at least one embedded schema
-     * @throws InterruptedException if interrupted while waiting for a validator from the pool.
-     *                             Validation failures are collected in {@code exceptions} instead
-     *                             of being thrown.
      */
-    protected boolean validateAgainstSchemas(Supplier<Source> source, List<Exception> exceptions) throws InterruptedException {
-        var vals = validators.take();
+    protected boolean validateAgainstSchemas(Supplier<Source> source, List<Exception> exceptions) {
+        var vals = validators.borrow();
         try {
             // the message must be valid for one schema embedded into WSDL
             for (var validator : vals) {
@@ -194,7 +194,7 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
                 }
             }
         } finally {
-            validators.put(vals);
+            validators.release(vals);
         }
         return false;
     }
@@ -207,12 +207,9 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
      *
      * @param exceptions collects the validation error if the source did not validate
      * @return {@code true} if the source validated
-     * @throws InterruptedException if interrupted while waiting for a validator from the pool.
-     *                             Validation failures are collected in {@code exceptions} instead
-     *                             of being thrown.
      */
-    protected boolean validateWith(BlockingQueue<Validator> pool, Source source, List<Exception> exceptions) throws InterruptedException {
-        var validator = pool.take();
+    protected boolean validateWith(ValidatorPool<Validator> pool, Source source, List<Exception> exceptions) {
+        var validator = pool.borrow();
         try {
             return validateOnce(validator, source, exceptions);
         } catch (Exception e) {
@@ -222,7 +219,7 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
             }
             return false;
         } finally {
-            pool.put(validator);
+            pool.release(validator);
         }
     }
 
@@ -262,17 +259,42 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
         }
     }
 
+    /**
+     * Creates one validator per schema, forming one pool entry. Called from {@link #init()} and,
+     * when the pool is exhausted, from request threads.
+     */
     protected List<Validator> createValidators() {
+        if (compiledSchemas == null)
+            compiledSchemas = compileSchemas();
+        var validators = new ArrayList<Validator>(compiledSchemas.size());
+        for (var schema : compiledSchemas)
+            validators.add(createValidator(schema));
+        return validators;
+    }
+
+    /**
+     * Compiles the schemas validated against. Runs once, during {@link #init()}.
+     */
+    protected List<Schema> compileSchemas() {
         var sf = HardenedSchemaFactory.newInstance(XSD_NS);
         sf.setResourceResolver(getResourceResolver());
-        var validators = new ArrayList<Validator>();
+        var compiled = new ArrayList<Schema>();
         var schemas = getSchemas();
         for (int i = 0; i < schemas.size(); i++) {
-            var schema = schemas.get(i);
-            log.debug("Creating validator {}/{} for schema at: {}", i + 1, schemas.size(), location);
-            validators.add(createValidator(schema, sf));
+            log.debug("Compiling schema {}/{} at: {}", i + 1, schemas.size(), location);
+            compiled.add(compileSchema(schemas.get(i), sf));
         }
-        return validators;
+        return List.copyOf(compiled);
+    }
+
+    /**
+     * Creates a ready-to-use, hardened validator for a compiled schema.
+     */
+    protected Validator createValidator(Schema schema) {
+        var validator = schema.newValidator();
+        validator.setErrorHandler(new SchemaValidatorErrorHandler());
+        HardenedSchemaFactory.hardenValidator(validator);
+        return validator;
     }
 
     /**
@@ -284,14 +306,11 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
         return resolver.toLSResourceResolver();
     }
 
-    private @NotNull Validator createValidator(Element schema, SchemaFactory sf) {
+    private @NotNull Schema compileSchema(Element schema, SchemaFactory sf) {
         try {
             var source = new DOMSource(schema);
             source.setSystemId(location);
-            var validator = sf.newSchema(source).newValidator();
-            validator.setErrorHandler(new SchemaValidatorErrorHandler());
-            HardenedSchemaFactory.hardenValidator(validator);
-            return validator;
+            return sf.newSchema(source);
         } catch (SAXException e) {
             throw new ConfigurationException("Cannot read schema %s".formatted(location), e);
         }
