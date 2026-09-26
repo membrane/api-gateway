@@ -37,6 +37,7 @@ import java.nio.charset.Charset;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Request.get;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static java.nio.charset.StandardCharsets.UTF_16;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -110,6 +111,36 @@ public class Xml2JsonInterceptorTest {
         exc.setResponse(Response.ok().contentType(TEXT_XML).body("<unclosed>").build());
         interceptor.handleResponse(exc);
         assertEquals(500, exc.getResponse().getStatusCode());
+    }
+
+    /**
+     * A byte order mark identifies the byte stream's encoding directly, so it must win over a
+     * contradicting Content-Type charset here too - xml2Json used to take the declared charset
+     * unconditionally and was the one XML consumer left out of that rule (issue #3279).
+     */
+    @Test
+    void bomWinsOverAContradictingContentTypeCharset() throws Exception {
+        byte[] utf16WithBom = ("<greeting>" + UMLAUTS + "</greeting>").getBytes(UTF_16);
+
+        JsonNode root = getJsonRootFromStream(processThroughInterceptor(
+                fillAndGetExchangeWithEncodingHeader(new ByteArrayInputStream(utf16WithBom),
+                        "text/xml; charset=ISO-8859-1")));
+
+        assertEquals(UMLAUTS, root.get("greeting").asText());
+    }
+
+    /**
+     * Without a Content-Type charset the mark still decides, where the XML declaration alone
+     * could not: the prolog of a UTF-16 document is not readable as ASCII.
+     */
+    @Test
+    void bomDecidesWhenThereIsNoContentTypeCharset() throws Exception {
+        byte[] utf16WithBom = ("<greeting>" + UMLAUTS + "</greeting>").getBytes(UTF_16);
+
+        JsonNode root = getJsonRootFromStream(processThroughInterceptor(
+                fillAndGetExchange(new ByteArrayInputStream(utf16WithBom))));
+
+        assertEquals(UMLAUTS, root.get("greeting").asText());
     }
 
     private JsonNode getJsonRootFromStream(InputStream stream) throws IOException {

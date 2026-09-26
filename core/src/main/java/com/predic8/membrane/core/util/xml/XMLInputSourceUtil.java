@@ -14,21 +14,19 @@
 package com.predic8.membrane.core.util.xml;
 
 import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.util.text.UnicodeUtil;
+import org.apache.commons.io.input.BOMInputStream;
 import org.jetbrains.annotations.NotNull;
 import org.xml.sax.InputSource;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PushbackInputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.Charset;
 
 import static com.predic8.membrane.core.util.text.TextUtil.getCharset;
+import static com.predic8.membrane.core.util.xml.XMLEncodingUtil.XML_BYTE_ORDER_MARKS;
 
 public class XMLInputSourceUtil {
-
-    private static final int BOM_PREFIX_LENGTH = 3;
 
     /**
      * For XML processing sometimes an InputSource is needed.
@@ -55,23 +53,17 @@ public class XMLInputSourceUtil {
      * @param charsetName the declared charset (e.g. from Content-Type), or null if none
      */
     public static InputSource getInputSource(InputStream body, String charsetName) {
-        PushbackInputStream pushbackBody = new PushbackInputStream(body, BOM_PREFIX_LENGTH);
-        byte[] prefix = new byte[BOM_PREFIX_LENGTH];
         try {
-            int prefixLength = 0;
-            while (prefixLength < prefix.length) {
-                int read = pushbackBody.read(prefix, prefixLength, prefix.length - prefixLength);
-                if (read < 0) {
-                    break;
-                }
-                prefixLength += read;
-            }
-            if (prefixLength > 0) {
-                pushbackBody.unread(prefix, 0, prefixLength);
-            }
+            // Detects the mark and pushes the bytes back; setInclude keeps them in the stream, because
+            // the parser decodes the BOM itself once it is the one choosing the encoding.
+            BOMInputStream bomAware = BOMInputStream.builder()
+                    .setInputStream(body)
+                    .setInclude(true)
+                    .setByteOrderMarks(XML_BYTE_ORDER_MARKS)
+                    .get();
 
-            InputSource source = new InputSource(pushbackBody);
-            if (!UnicodeUtil.startsWithByteOrderMark(prefix, prefixLength)) {
+            InputSource source = new InputSource(bomAware);
+            if (bomAware.getBOM() == null) {
                 Charset charset = getCharset(charsetName, null);
                 if (charset != null) {
                     source.setEncoding(charset.name());
