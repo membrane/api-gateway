@@ -264,6 +264,8 @@ public abstract class Message {
 	}
 
 	public final void write(OutputStream out, boolean retainBody) throws IOException {
+		final boolean writeBody = prepareBodyForWrite();
+
 		writeStartLine(out);
 		header.write(out);
 		out.write(CRLF_BYTES);
@@ -273,9 +275,27 @@ public abstract class Message {
 			return;
 		}
 
+		// A client stops reading after the header fields; a body written anyway would desync keep-alive.
+		// Still consume it: that is what frees the connection it is read from.
+		if (!writeBody) {
+			out.flush();
+			discardBody();
+			return;
+		}
+
 		body.write(getHeader().isChunked() ? new ChunkedBodyTransferer(out) : new PlainBodyTransferer(out), retainBody);
 
 		out.flush();
+	}
+
+	/**
+	 * Called by {@link #write(OutputStream, boolean)} before the header is written.
+	 *
+	 * @return false if the body must not go on the wire. The implementation then adjusts the framing
+	 *         header fields to match; the body is still consumed.
+	 */
+	protected boolean prepareBodyForWrite() {
+		return true;
 	}
 
 	/**

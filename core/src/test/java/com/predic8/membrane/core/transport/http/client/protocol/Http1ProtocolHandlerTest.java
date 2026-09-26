@@ -129,6 +129,89 @@ class Http1ProtocolHandlerTest {
             assertTrue(sent.contains("hello"), "body must be streamed after 100‑Continue");
         }
 
+        /**
+         * The 100 Continue that releases the body need not be the first interim response.
+         */
+        @Test
+        void continueAfterOtherInterimResponse() throws Exception {
+            String sent = sendExpectingContinue("""
+                    HTTP/1.1 103 Early Hints\r
+                    \r
+                    HTTP/1.1 100 Continue\r
+                    \r
+                    HTTP/1.1 200 OK\r
+                    Content-Length: 0\r
+                    \r
+                    """, true);
+            assertEquals(1, countOf("hello", sent), sent);
+        }
+
+        @Test
+        void repeatedContinueSendsBodyOnce() throws Exception {
+            String sent = sendExpectingContinue("""
+                    HTTP/1.1 100 Continue\r
+                    \r
+                    HTTP/1.1 100 Continue\r
+                    \r
+                    HTTP/1.1 200 OK\r
+                    Content-Length: 0\r
+                    \r
+                    """, true);
+            assertEquals(1, countOf("hello", sent), sent);
+        }
+
+        /**
+         * Without <code>Expect: 100-continue</code> the body went out with the request, so a 100 must
+         * not send it a second time.
+         */
+        @Test
+        void unsolicitedContinueDoesNotResendBody() throws Exception {
+            String sent = sendExpectingContinue("""
+                    HTTP/1.1 100 Continue\r
+                    \r
+                    HTTP/1.1 200 OK\r
+                    Content-Length: 0\r
+                    \r
+                    """, false);
+            assertEquals(1, countOf("hello", sent), sent);
+        }
+
+        private String sendExpectingContinue(String responses, boolean expectContinue) throws Exception {
+            var builder = post("/foo").body("hello");
+            if (expectContinue)
+                builder.header(EXPECT, "100-continue");
+            Exchange exc = builder.buildExchange();
+            CollectingOutputStream wire = new CollectingOutputStream();
+            handler.handle(exc, getConnectionType(getInputStreamFor(responses), wire), new HostColonPort("localhost", 8080));
+            assertEquals(200, exc.getResponse().getStatusCode());
+            return new String(wire.toByteArray(), ISO_8859_1);
+        }
+
+        private static int countOf(String needle, String haystack) {
+            return haystack.split(needle, -1).length - 1;
+        }
+    }
+
+    /**
+     * An interim response is followed by the final one on the same connection. Taking it as the final
+     * response would leave the real one unread for the next request on that connection.
+     */
+    @Test
+    void interimResponseIsSkipped() throws Exception {
+        Exchange exc = get("/foo").buildExchange();
+        handler.handle(exc, getConnectionType(getInputStreamFor("""
+                HTTP/1.1 103 Early Hints\r
+                Link: </style.css>; rel=preload; as=style\r
+                \r
+                HTTP/1.1 102 Processing\r
+                \r
+                HTTP/1.1 200 OK\r
+                Content-Length: 5\r
+                \r
+                hello"""), new CollectingOutputStream()), new HostColonPort("localhost", 8080));
+
+        assertEquals(200, exc.getResponse().getStatusCode());
+        assertEquals("hello", exc.getResponse().getBodyAsStringDecoded());
     }
 
     @Nested

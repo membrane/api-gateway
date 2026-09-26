@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -35,6 +36,7 @@ import static com.predic8.membrane.core.http.MimeType.TEXT_HTML;
 import static com.predic8.membrane.core.http.MimeType.isOfMediaType;
 import static com.predic8.membrane.core.http.Response.*;
 import static com.predic8.membrane.test.TestUtil.getResourceAsStream;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.params.provider.Arguments.of;
 
@@ -304,6 +306,127 @@ public class ResponseTest {
         res.read(getResourceAsStream(this,"response-205-reset.http"),true);
         assertTrue(res.isBodyEmpty());
         assertInstanceOf(EmptyBody.class, res.getBody());
+    }
+
+    /**
+     * RFC 9112 §6.3: a 1xx, 204 or 304 response is terminated by the empty line after the
+     * header fields, regardless of Content-Length or Transfer-Encoding.
+     */
+    @ParameterizedTest
+    @MethodSource("responsesWithoutBody")
+    void readResponseNeverContainingBody(String response) throws Exception {
+        Response res = new Response();
+        res.read(new ByteArrayInputStream(StringTestUtil.normalizeCRLF(response).getBytes()), true);
+        assertInstanceOf(EmptyBody.class, res.getBody());
+        assertTrue(res.isBodyEmpty());
+    }
+
+    static Stream<String> responsesWithoutBody() {
+        return Stream.of("""
+            HTTP/1.1 304 Not Modified
+            Content-Length: 5
+
+            """, """
+            HTTP/1.1 304 Not Modified
+            Transfer-Encoding: chunked
+
+            """, """
+            HTTP/1.1 304 Not Modified
+
+            """, """
+            HTTP/1.1 103 Early Hints
+            Link: </style.css>; rel=preload; as=style
+
+            """, """
+            HTTP/1.1 102 Processing
+
+            """);
+    }
+
+    /**
+     * The client stops reading a 204, 205 or 304 after the header fields, so a body written
+     * anyway is parsed as the start of the next response on a keep-alive connection.
+     */
+    @ParameterizedTest
+    @ValueSource(ints = {204, 205, 304})
+    void writeResponseNeverContainingBody(int statusCode) throws Exception {
+        Response res = Response.statusCode(statusCode).body("hello").build();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        res.write(out, true);
+        String written = out.toString(ISO_8859_1);
+        assertFalse(written.contains("hello"), written);
+        assertTrue(written.endsWith("\r\n\r\n"), written);
+    }
+
+    /**
+     * RFC 9110 §8.6, RFC 9112 §6.1: a server must not send Content-Length or Transfer-Encoding in a
+     * 1xx or 204 response.
+     */
+    @ParameterizedTest
+    @ValueSource(ints = {103, 204})
+    void writeResponseNeverContainingBodyOmitsFraming(int statusCode) throws Exception {
+        String written = writeToString(Response.statusCode(statusCode).body("hello").build());
+        assertFalse(written.contains("Content-Length"), written);
+        assertFalse(written.contains("Transfer-Encoding"), written);
+    }
+
+    /**
+     * RFC 9112 §6.3 does not end a 205 at the header fields, so a client reads as many bytes as the
+     * framing announces. RFC 9110 §15.3.6: a 205 announces zero-length content.
+     */
+    @Test
+    void writeResetContentAnnouncesZeroLength() throws Exception {
+        String written = writeToString(Response.statusCode(205).body("hello").build());
+        assertTrue(written.contains("Content-Length: 0\r\n"), written);
+    }
+
+    @Test
+    void writeChunkedResetContentAnnouncesZeroLength() throws Exception {
+        String written = writeToString(Response.statusCode(205).body(new ByteArrayInputStream("hello".getBytes()), false).build());
+        assertFalse(written.contains("Transfer-Encoding"), written);
+        assertTrue(written.contains("Content-Length: 0\r\n"), written);
+    }
+
+    /**
+     * RFC 9110 §8.6: the Content-Length of a 304 describes the representation it stands for.
+     */
+    @Test
+    void writeNotModifiedKeepsContentLength() throws Exception {
+        String written = writeToString(Response.statusCode(304).body("hello").build());
+        assertTrue(written.contains("Content-Length: 5\r\n"), written);
+    }
+
+    /**
+     * The body is not written, but it still has to be consumed: that is what frees the connection it
+     * is read from.
+     */
+    @Test
+    void writeResponseNeverContainingBodyDrainsBody() throws Exception {
+        ByteArrayInputStream in = new ByteArrayInputStream("hello".getBytes());
+        Response res = Response.statusCode(204).build();
+        res.setBody(new Body(in, 5));
+        writeToString(res);
+        assertEquals(0, in.available());
+        assertTrue(res.getBody().isRead());
+    }
+
+    @Test
+    void writeResponseNeverContainingBodyClosesOwnedStream() throws Exception {
+        boolean[] closed = {false};
+        InputStream in = new ByteArrayInputStream("hello".getBytes()) {
+            @Override
+            public void close() {
+                closed[0] = true;
+            }
+        };
+        writeToString(Response.statusCode(204).body(in, true).build());
+        assertTrue(closed[0]);
+    }
+
+    private static String writeToString(Response res) throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        res.write(out, true);
+        return out.toString(ISO_8859_1);
     }
 
     @Nested
