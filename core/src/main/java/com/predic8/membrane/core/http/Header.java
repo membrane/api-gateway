@@ -344,21 +344,13 @@ public class Header {
      * @param value the new value to set for the header field
      */
     public void setValue(String name, String value) {
-        boolean found = false;
         for (int i = 0; i < fields.size(); i++) {
             if (fields.get(i).getHeaderName().hasName(name)) {
-                if (found) {
-                    fields.set(i, fields.getLast());
-                    fields.removeLast();
-                    i--;
-                } else {
-                    fields.get(i).setValue(value);
-                    found = true;
-                }
+                fields.get(i).setValue(value);
+                fields.subList(i + 1, fields.size()).removeIf(f -> f.getHeaderName().hasName(name));
+                return;
             }
         }
-        if (found)
-            return;
         fields.add(new HeaderField(name, value));
     }
 
