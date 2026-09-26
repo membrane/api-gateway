@@ -618,14 +618,18 @@ public class Header {
     /**
      * @param keepAliveHeaderValue the value of the <a href="http://www.w3.org/Protocols/HTTP/1.1/draft-ietf-http-v11-spec-01.html#Keep-Alive">Keep-Alive</a> header
      * @param paramName            either {@link #TIMEOUT} or {@link #MAX}.
-     * @return the extracted parameter value of the "Keep-Alive" header
+     * @return the extracted parameter value of the "Keep-Alive" header, or -1 if it is absent or too large
      */
     public static long parseKeepAliveHeader(String keepAliveHeaderValue, String paramName) {
         Pattern p = choosePattern(paramName);
         Matcher m = p.matcher(keepAliveHeaderValue);
         if (!m.find())
             return -1;
-        return Long.parseLong(m.group(1));
+        try {
+            return Long.parseLong(m.group(1));
+        } catch (NumberFormatException e) {
+            return -1; // Value does not fit into a long
+        }
     }
 
     private static @NotNull Pattern choosePattern(String paramName) {

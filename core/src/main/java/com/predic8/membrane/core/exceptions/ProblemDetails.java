@@ -20,23 +20,17 @@ import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.http.InvalidMediaTypeException;
-import org.springframework.http.MediaType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
+import org.springframework.http.InvalidMediaTypeException;
+import org.springframework.http.MediaType;
 
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetailsHTML.createHTMLContent;
 import static com.predic8.membrane.core.exceptions.ProblemDetailsXML.createXMLContent;
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_PROBLEM_JSON;
-import static com.predic8.membrane.core.http.MimeType.TEXT_PLAIN_UTF8;
-import static com.predic8.membrane.core.http.MimeType.sortMimeTypeByQualityFactorAscending;
+import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Response.statusCode;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
@@ -436,7 +430,7 @@ public class ProblemDetails {
         if (accept == null)
             return false;
         try {
-            List<MediaType> types = sortMimeTypeByQualityFactorAscending(accept);
+            List<MediaType> types = sortMimeTypeByQualityFactorDescending(accept);
             if (types.isEmpty())
                 return false;
             double preferred = types.getFirst().getQualityValue();

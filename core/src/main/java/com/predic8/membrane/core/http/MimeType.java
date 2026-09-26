@@ -20,7 +20,6 @@ import org.springframework.http.MediaType;
 
 import java.util.List;
 
-import static java.util.Collections.reverse;
 import static java.util.Comparator.comparingDouble;
 import static org.apache.commons.lang3.StringUtils.containsIgnoreCase;
 import static org.springframework.http.MediaType.parseMediaTypes;
@@ -225,10 +224,10 @@ public class MimeType {
      * @param s with MediaTypes e.g. text/html;q=0.9, application/json, application/xml;q=0.9, image/webp;q=0.8
      * @return List of sorted MediaTypes by quality
      */
-    public static List<MediaType> sortMimeTypeByQualityFactorAscending(String s) {
+    public static List<MediaType> sortMimeTypeByQualityFactorDescending(String s) {
         List<MediaType> m = parseMediaTypes(s);
-        m.sort(comparingDouble(MediaType::getQualityValue));
-        reverse(m);
+        // Stable sort: media types with equal quality keep the order the client listed them in
+        m.sort(comparingDouble(MediaType::getQualityValue).reversed());
         return m;
     }
 }
