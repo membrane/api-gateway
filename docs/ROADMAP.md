@@ -43,6 +43,11 @@ PRIO 3:
 
 ## Membrane 8.0.0 (Java 25)
 
+- Remove XML configuration
+- configure log4j with YAML
+- Remove SOAP2REST XSLT Interceptor:
+  - rm HTTP2XMLInterceptor
+  - rm com.predic8.membrane.core.http.xml
 - Log harmonization:
   - Decide if log message start with uppercase or lowercase.
      - e.g.:  Error loading log configuration., Started 1 API:, Closing server port:, listening at '*:2000'
