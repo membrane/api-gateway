@@ -1,0 +1,22 @@
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+              xmlns:spring="http://www.springframework.org/schema/beans"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://www.springframework.org/schema/beans
+                    http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+                    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+    <!-- Scenario 3: same topology as loadtest-fullproxy.xml, but the gateway validates every
+         incoming request body against the Fruitshop OpenAPI spec's createProduct operation
+         before forwarding it, a real gateway task a plain reverse proxy cannot do. Response
+         validation is deliberately off, isolating the cost of *request* validation specifically.
+         __BACKEND_PRIVATE_IP__ and __OAS_PATH__ are filled in by deploy-and-run.sh (the spec is
+         scp'd from distribution/router/conf/openapi/fruitshop-v2-2-0.oas.yml onto this VM; a
+         relative `location` resolves under the distribution's own conf/, not conf_override/). -->
+    <router>
+        <transport backlog="1024"/>
+        <api port="2000" name="fruitshop">
+            <openapi location="__OAS_PATH__" validateRequests="yes" validateResponses="no" validationDetails="yes"/>
+            <target host="__BACKEND_PRIVATE_IP__" port="2010"/>
+        </api>
+    </router>
+</spring:beans>

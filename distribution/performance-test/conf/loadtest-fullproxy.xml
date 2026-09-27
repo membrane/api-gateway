@@ -1,0 +1,22 @@
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+              xmlns:spring="http://www.springframework.org/schema/beans"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://www.springframework.org/schema/beans
+                    http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+                    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+    <!-- Scenario 2: gateway forwards every request to a real backend over the network, doing
+         nothing else to it. __BACKEND_PRIVATE_IP__ is filled in by deploy-and-run.sh once the
+         backend VM's private IP is known. Realistic topology, but not a realistic *use* of an
+         API gateway: a plain reverse proxy would do the same job. This scenario measures the
+         pure cost of the extra network hop, as a baseline for the openapi-validation scenario. -->
+    <router>
+        <!-- 1024 is the kernel default backlog; TESTED-CONFIGURATIONS.md's backlog experiment
+             (section 4) found no measurable throughput difference against 8192 either (0 errors
+             at either value), so this is a plain default, not a tuned setting. -->
+        <transport backlog="1024"/>
+        <api port="2000">
+            <target host="__BACKEND_PRIVATE_IP__" port="2010"/>
+        </api>
+    </router>
+</spring:beans>

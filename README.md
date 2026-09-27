@@ -1,7 +1,7 @@
 
 # Membrane API Gateway
 
-**for REST, OpenAPI, and GraphQL with first-class Legacy Support for XML, SOAP, and WSDL**
+**The open-source API gateway that speaks both REST and SOAP.**
 
 [![GitHub release](https://img.shields.io/github/v/release/membrane/api-gateway?display_name=tag)](https://github.com/membrane/api-gateway/releases/latest)
 [![Docker Pulls](https://img.shields.io/docker/pulls/predic8/membrane)](https://hub.docker.com/r/predic8/membrane)
@@ -9,15 +9,13 @@
 
 <img src="docs/images/api-gateway-demo.gif" alt="Animated demo of Membrane API Gateway" width="800">
 
-Built on the **Java platform**, Membrane bridges legacy and modern APIs. It supports [XML-to-JSON transformation](#transformation-between-xml-to-json), [WSDL-to-OpenAPI conversion](#wsdl-to-openapi-conversion),[SOAP-to-REST](#manual-soap-to-rest-conversion) integration, and validation against **OpenAPI** and **WSDL**.
-
-For modern APIs, Membrane supports technologies such as [OAuth 2](#oauth2), [JWT](#json-web-tokens), and [AI](#3-ai-and-llm-gateway), along with a broad range of [transformation](#5-message-transformation), and [observability](#10-operation) features. It is easy to set up and deploy, either as a container or as a Java application.
+Deploy APIs straight from [OpenAPI](#1-openapi-deployment-validation-and-swagger-ui), secure them with [OAuth2](#oauth2), [JWT](#json-web-tokens), and [API keys](#api-keys), and turn legacy
+[SOAP web services into JSON APIs](#wsdl-to-openapi-conversion), all with a few lines of YAML. Membrane runs as a single
+container or Java application, is Apache 2.0 licensed, and needs no database.
 
 ## Try Membrane in 5 Minutes
 
-### Start the API Gateway
-
-Run Membrane as a container or as a [Java application](https://www.membrane-api.io/getting-started.html):
+Start the gateway as a container or as a [Java application](https://www.membrane-api.io/getting-started.html):
 
 ```bash
 docker run --rm -it -p 2000:2000 predic8/membrane
@@ -25,7 +23,7 @@ docker run --rm -it -p 2000:2000 predic8/membrane
 
 Open these URLs in your browser to access sample APIs:
 
-- http://localhost:2000 (Actual time)
+- http://localhost:2000 (Current time)
 - http://localhost:2000/api-docs (API deployed from OpenAPI)
 
 Or call an API from the command line:
@@ -36,7 +34,7 @@ curl http://localhost:2000/shop/v2/products
 
 ### Proxy Your First API
 
-Create a file `apis.yaml` with the following content:
+Create an `apis.yaml` file containing the following configuration:
 
 ```yaml
 api:
@@ -45,7 +43,7 @@ api:
     url: https://apibin.io
 ```
 
-Start Membrane with your configuration:
+Run a container with the `apis.yaml` file mounted:
 
 **Linux/macOS:**
 
@@ -61,11 +59,11 @@ docker run --rm -p 2000:2000 -v "${PWD}/apis.yaml:/opt/membrane/conf/apis.yaml" 
 
 Requests to http://localhost:2000 are now forwarded to https://apibin.io.
 
-### Make the Getting Started Tutorial
+### Follow the Tutorials
 
-1. [Download](https://github.com/membrane/api-gateway/releases/latest) the Membrane distribution
-2. Unzip
-3. Open [tutorials/getting-started/10-First-API.yaml](distribution/tutorials/getting-started/10-First-API.yaml) in your text editor and follow the instructions.
+1. [Download](https://github.com/membrane/api-gateway/releases/latest) and unzip the Membrane distribution
+2. Open [tutorials/getting-started/10-First-API.yaml](distribution/tutorials/getting-started/10-First-API.yaml) in a text editor and work through the steps.
+3. Continue with the other [tutorials](distribution/tutorials/README.md) on OpenAPI, security, SOAP, AI, and more.
 
 
 # Why Membrane
@@ -104,13 +102,19 @@ When you need more flexibility, extend Membrane with expressions and scripting u
 
 ## Speed & Footprint
 
-Although Membrane is written in Java, it delivers high performance with a low memory footprint. HTTP streaming, Keep-Alive, and non-blocking processing enable efficient resource utilization and high throughput. The Membrane distribution is only about 55 MB, making it smaller than many other API gateways.
+Membrane is one of the fastest API gateways available, and it stays fast when it does real work. On a 16-vCPU machine, it handles:
 
-On a single server Membrane can process **39,000 requests per second**. However, raw throughput benchmarks often measure only simple proxying without message protection or transformation.
+| Configuration                             | Requests/sec |
+|-------------------------------------------|-------------:|
+| Plain proxying                            |  **128,723** |
+| Basic Auth + rate limiting + TLS          |  **109,542** |
+| OpenAPI validation of every request       |   **89,197** |
 
-Membrane is implemented entirely in Java, from the HTTP engine to OpenAPI processing. This avoids the overhead of crossing between a native proxy core and a separate scripting runtime for plugins.
+Plain proxying numbers say little about a gateway, because what it does with each request matters far more than its raw speed. Membrane's HTTP engine and all of its plugins are written in Java and run in the same process, so a request never crosses from a native proxy core into a separate plugin runtime. Optimizations such as streaming or caching of parsed payloads keep the cost per request low, so even CPU-intensive OpenAPI validation processes almost 90,000 requests per second.
 
-As a result, Membrane can maintain high performance even when multiple plugins for validation, security, and transformation are active. What matters is not performance in reduced benchmark setups, but performance under realistic gateway configurations.
+The distribution is only about 55 MB and needs no database.
+
+See the [benchmark setup and results](https://www.membrane-api.io/api-gateway-performance.html), or [run the tests yourself](distribution/performance-test/README.md).
 
 # What Can You Do With Membrane?
 
@@ -174,11 +178,11 @@ api:
       validateRequests: true
 ```
 
-Membrane lets you explore APIs deployed from OpenAPI APIs in a single overview page.
+Membrane lets you explore APIs deployed from OpenAPI in a single overview page.
 
 ![List of OpenAPI Deployments](distribution/examples/openapi/openapi-proxy/api-overview.jpg)
 
-For documentation and testing the gateway hosts also a Swagger UI for the deployed APIs.
+For documentation and testing, the gateway also hosts a Swagger UI for the deployed APIs.
 
 ![Swagger UI](distribution/examples/openapi/openapi-proxy/swagger-ui.jpg)
 
@@ -239,7 +243,7 @@ The easiest way to expose a SOAP Web Service as a REST API is to use the `wsdl2o
 
 For more control over the conversion, you can define the REST API manually and map individual REST endpoints to SOAP operations.
 
-The following configuration accepts a request such as `GET /cities/Tokio`, creates a SOAP request for the backend service, and transforms the SOAP response into JSON:
+The following configuration accepts a request such as `GET /cities/Nairobi`, creates a SOAP request for the backend service, and transforms the SOAP response into JSON:
 
 ```yaml
 api:
@@ -334,7 +338,7 @@ Membrane can act as a gateway for **Large Language Models (LLMs)** and **Model C
 
 ## MCP Protection
 
-The `mcpProtection`plugin sits in front of an MCP server and controls which tools clients can discover and call.
+The `mcpProtection` plugin sits in front of an MCP server and controls which tools clients can discover and call.
 
 <img src="docs/images/mcp-protection-api-gateway.png" alt="Membrane MCP protection in front of an MCP server" width="800">
 
@@ -367,7 +371,7 @@ api:
         policies:
           maxOutputTokens: 100000
           models:
-            - claude-opus-4-8
+            - claude-opus-5-5
             - claude-sonnet-5
         simpleStore:
           users:
@@ -444,7 +448,7 @@ api:
 
 See the [tutorial](distribution/tutorials/transformation/20-GET-to-POST.yaml) to transform from **GET to POST**.
 
-## Transformation between XML to JSON
+## Transformation between XML and JSON
 
 Both converters use a heuristic mapping and do not require a JSON or XSD schema.
 
@@ -541,7 +545,7 @@ api:
 
 You can write scripts in **Groovy** and **JavaScript**.
 
-## Conditional Processing With the ´if´-Statement
+## Conditional Processing With the `if`-Statement
 
 A Membrane flow does not have to follow a fixed sequence. The `if` and `choose` plugins let you execute parts of a flow only when specific conditions are met. A common use case is error handling.
 
@@ -692,7 +696,7 @@ Membrane supports advanced TLS scenarios, including:
 - Routing TLS connections without decrypting them.
 
 
-See the [TLS/SSL tutorial](/distribution/tutorials/ssl-tls)
+See the [TLS/SSL tutorial](distribution/tutorials/ssl-tls)
 
 ## XML, JSON, JSON-RPC and GraphQL Protection
 
@@ -710,7 +714,7 @@ api:
         status: 200
 ```  
 
-See the [XML protection](https://www.membrane-api.io/docs/current/xmlProtection.html), [JSON protection ](https://www.membrane-api.io/docs/current/jsonProtection.html), [JSON-RPC protection](https://www.membrane-api.io/docs/current/jsonRPCProtection.html), and [GraphQl protection ](https://www.membrane-api.io/docs/current/graphQLProtection.html) references.
+See the [XML protection](https://www.membrane-api.io/docs/current/xmlProtection.html), [JSON protection](https://www.membrane-api.io/docs/current/jsonProtection.html), [JSON-RPC protection](https://www.membrane-api.io/docs/current/jsonRPCProtection.html), and [GraphQL protection](https://www.membrane-api.io/docs/current/graphQLProtection.html) references.
 
 # 9. Traffic Control
 
@@ -745,7 +749,7 @@ api:
                 port: 4000
 ```
 
-See the [API loadbalancing examples](distribution/examples/loadbalancing)
+See the [API load balancing examples](distribution/examples/loadbalancing)
 
 # 10. Operation
 
@@ -764,14 +768,14 @@ api:
 
 The collected metrics can be visualized in a Grafana dashboard:
 
-![Grafana Dashboard for Membrane API Gateway](/docs/images/membrane-grafana-dashboard.png)
+![Grafana Dashboard for Membrane API Gateway](docs/images/membrane-grafana-dashboard.png)
 
 ## OpenTelemetry Integration
 Membrane supports integration with **OpenTelemetry**. This enables detailed tracing of requests across Membrane and backend services.
 
 ![OpenTelemetry Example](distribution/examples/monitoring-tracing/opentelemetry/resources/otel_example.png)  
 
-For working examples of Prometheus, Grafana and OpenTelemetry  see the [operation tutorial](./distribution/tutorials/operation).
+For working examples of Prometheus, Grafana and OpenTelemetry, see the [operation tutorial](./distribution/tutorials/operation).
 
 # Community and Enterprise Support
 
@@ -786,7 +790,7 @@ If you find a bug, report it using [GitHub Issues](https://github.com/membrane/a
 See [commercial support options and pricing](https://www.membrane-api.io/api-gateway-pricing.html).
 
 
-## API Gateway eBook(Free Download)
+## API Gateway eBook (Free Download)
 
 Learn how API Gateways work through practical scenarios and real-world examples.
 

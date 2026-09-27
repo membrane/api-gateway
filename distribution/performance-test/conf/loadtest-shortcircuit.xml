@@ -1,0 +1,20 @@
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+              xmlns:spring="http://www.springframework.org/schema/beans"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://www.springframework.org/schema/beans
+                    http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+                    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+    <!-- Scenario 1: client to gateway only, no backend. return with no response already on the
+         exchange echoes the request's body/Content-Type back with the given status, mirroring
+         what LoadTesterBackend's bare ReturnInterceptor does on the backend role, so this
+         isolates gateway-only overhead (transport, routing, thread handling) for direct
+         comparison against the other two scenarios (same client, same request shape, one fewer
+         network hop). Best-case, but unrealistic: no gateway is run only to talk to itself. -->
+    <router>
+        <transport backlog="1024"/>
+        <api port="2000">
+            <return statusCode="200"/>
+        </api>
+    </router>
+</spring:beans>
