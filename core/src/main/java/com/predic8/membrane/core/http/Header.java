@@ -40,9 +40,9 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.http.MimeType.isBinary;
-import static com.predic8.membrane.core.util.text.StringUtil.*;
 import static com.predic8.membrane.core.util.HttpUtil.*;
-
+import static com.predic8.membrane.core.util.text.StringUtil.maskNonPrintableCharacters;
+import static com.predic8.membrane.core.util.text.StringUtil.truncateAfter;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.stream;
@@ -255,13 +255,6 @@ public class Header {
         final String message = fieldName == null
                 ? "Malformed header line: " + reason
                 : "Malformed header line \"%s\": %s".formatted(maskNonPrintableCharacters(truncateAfter(fieldName, 80)), reason);
-        log.info(message);
-        return new MalformedHeaderException(message);
-    }
-
-    private static MalformedHeaderException malformedFieldLine(String line, String reason) {
-        final String message = "Malformed header line \"%s\": %s"
-                .formatted(maskNonPrintableCharacters(truncateAfter(line, 80)), reason);
         log.info(message);
         return new MalformedHeaderException(message);
     }
