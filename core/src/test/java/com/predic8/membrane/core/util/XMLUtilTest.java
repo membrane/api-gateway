@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.util;
 
 import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.util.xml.XMLInputSourceUtil;
 import com.predic8.membrane.core.util.xml.XMLUtil;
 import com.predic8.membrane.core.util.xml.parser.HardenedXmlParser;
 import org.junit.jupiter.api.Test;
@@ -54,7 +55,7 @@ public class XMLUtilTest {
                 <order><city>Bönnigheim</city></order>""".getBytes(ISO_8859_1));
         req.getHeader().setContentType("text/xml; charset=ISO-8859-1");
 
-        Document doc = HardenedXmlParser.getInstance().parse(XMLUtil.getInputSource(req));
+        Document doc = HardenedXmlParser.getInstance().parse(XMLInputSourceUtil.getInputSource(req));
 
         assertEquals("Bönnigheim", doc.getElementsByTagName("city").item(0).getTextContent());
     }
@@ -71,7 +72,7 @@ public class XMLUtilTest {
                 <order><city>Bönnigheim</city></order>""".getBytes(ISO_8859_1));
         req.getHeader().setContentType("text/xml");
 
-        Document doc = HardenedXmlParser.getInstance().parse(XMLUtil.getInputSource(req));
+        Document doc = HardenedXmlParser.getInstance().parse(XMLInputSourceUtil.getInputSource(req));
 
         assertEquals("Bönnigheim", doc.getElementsByTagName("city").item(0).getTextContent());
     }
