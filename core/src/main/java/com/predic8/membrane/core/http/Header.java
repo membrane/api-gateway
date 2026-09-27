@@ -23,6 +23,7 @@ import com.predic8.membrane.core.util.HttpUtil;
 import jakarta.mail.internet.ContentType;
 import jakarta.mail.internet.ParseException;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,8 +40,9 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.http.MimeType.isBinary;
-import static com.predic8.membrane.core.util.HttpUtil.readLine;
 import static com.predic8.membrane.core.util.text.StringUtil.*;
+import static com.predic8.membrane.core.util.HttpUtil.*;
+
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.stream;
@@ -165,9 +167,20 @@ public class Header {
      * @throws MalformedHeaderException if a line is not a valid field line
      */
     public Header(InputStream in) throws IOException, EndOfStreamException {
+        this(in, false);
+    }
+
+    /**
+     * Like {@link #Header(InputStream)}, but optionally strips whitespace between a field name and
+     * the colon instead of rejecting the message, as RFC 9112 &sect;5.1 requires a proxy to do for
+     * a response.
+     *
+     * @param stripWhitespaceBeforeColon true when parsing a response, false when parsing a request
+     */
+    public Header(InputStream in, boolean stripWhitespaceBeforeColon) throws IOException, EndOfStreamException {
         String line;
         while (!(line = readLine(in)).isEmpty())
-            add(parseFieldLine(line));
+            add(parseFieldLine(line, stripWhitespaceBeforeColon));
     }
 
     /**
@@ -181,19 +194,69 @@ public class Header {
      * request smuggling relies on. A MIME part header is the opposite case, where folding is still
      * legal and is joined back together instead, see {@link #unfold(String)}.
      * <p>
-     * Whitespace between the field name and the colon is rejected for the same reason, as RFC 9112
-     * &sect;5.1 requires.
+     * A field name that is not an RFC 9110 &sect;5.6.2 token is rejected for the same reason. Such a
+     * name no longer matches the field it resembles, while a parser that trims or ignores the stray
+     * character - whitespace, a control character such as VT, FF or CR - still recognizes it: a
+     * "Content-Length&lt;VT&gt;: 6" field is invisible to Membrane but declares a body to a backend
+     * that trims with C's isspace(). Validating the whole name closes every such variant rather than
+     * the ones we thought of.
+     * <p>
+     * The one exception is whitespace between the field name and the colon in a response, which RFC
+     * 9112 &sect;5.1 requires a proxy to remove rather than reject. A request must still be
+     * rejected, as that section requires of a server: a proxy in front of Membrane may not have
+     * recognized the field, so trimming it could make Membrane read a different body length than
+     * that proxy did. A backend at the end of the chain leaves nobody to disagree with.
      *
      * @throws MalformedHeaderException if the line carries no field name followed by a colon, or
-     *                                  if whitespace precedes the colon
+     *                                  if the field name is not a token
      */
-    private static HeaderField parseFieldLine(String line) {
+    private static HeaderField parseFieldLine(String line, boolean stripWhitespaceBeforeColon) {
         final int colon = line.indexOf(':');
         if (colon < 1)
-            throw malformedFieldLine(line, "it carries no field name followed by a colon. Rejecting the message rather than dropping the line, which would forward it with a header silently missing.");
-        if (isWhitespace(line.charAt(colon - 1)))
-            throw malformedFieldLine(line, "it carries whitespace between the field name and the colon. Rejecting the message rather than forwarding it, because a backend that trims the whitespace reads a different body length than Membrane does.");
-        return new HeaderField(line);
+            throw malformedFieldLine(null, "it carries no field name followed by a colon. Rejecting the message rather than dropping the line, which would forward it with a header silently missing.");
+        // Strips SP and HTAB only, the whitespace RFC 9112 5.1 means. Any other trailing character
+        // stays part of the name, so that the token check rejects it.
+        int end = colon;
+        if (stripWhitespaceBeforeColon)
+            while (end > 0 && isOptionalWhitespace(line.charAt(end - 1)))
+                end--;
+        if (!isToken(line, end))
+            throw malformedFieldLine(line.substring(0, colon), "its field name carries a character a field name must not contain, such as whitespace or a control character. Rejecting the message rather than forwarding it, because a parser that trims or ignores the character reads a different header than Membrane does.");
+        if (end == colon)
+            return new HeaderField(line);
+        log.debug("Stripping whitespace between field name and colon in header line \"{}\".", maskNonPrintableCharacters(truncateAfter(line.substring(0, colon), 80)));
+        return new HeaderField(line.substring(0, end) + line.substring(colon));
+    }
+
+    /**
+     * Whether the first {@code end} characters of the line form an RFC 9110 &sect;5.6.2 token:
+     * 1*tchar. Works on the line in place, as it runs for every header line.
+     */
+    private static boolean isToken(String line, int end) {
+        if (end == 0)
+            return false;
+        for (int i = 0; i < end; i++)
+            if (!isTchar(line.charAt(i)))
+                return false;
+        return true;
+    }
+
+    /**
+     * Builds the rejection message, which is logged and handed to the client in the 400 response.
+     * It names the offending field at most, never the field-line value, which may carry a
+     * credential: everything up to the first colon is the field name and the characters that make
+     * it malformed, so it is safe to quote, while a line without a colon has no name to separate
+     * from a value and is reported with neither. The name is echoed untrimmed, because a trailing
+     * character may be the defect being reported.
+     *
+     * @param fieldName the field name as it arrived, or null if the line carries none
+     */
+    private static MalformedHeaderException malformedFieldLine(@Nullable String fieldName, String reason) {
+        final String message = fieldName == null
+                ? "Malformed header line: " + reason
+                : "Malformed header line \"%s\": %s".formatted(maskNonPrintableCharacters(truncateAfter(fieldName, 80)), reason);
+        log.info(message);
+        return new MalformedHeaderException(message);
     }
 
     private static MalformedHeaderException malformedFieldLine(String line, String reason) {

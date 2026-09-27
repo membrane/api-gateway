@@ -13,8 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.oauth2client.rf.token;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AnswerParameters;
 import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService;
@@ -25,7 +23,6 @@ import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
-import java.util.concurrent.ExecutionException;
 
 import static com.predic8.membrane.core.exchange.Exchange.OAUTH2;
 import static com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2Interceptor.WANTED_SCOPE;
@@ -33,13 +30,26 @@ import static com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2
 public class AccessTokenRefresher {
     private static final Logger log = LoggerFactory.getLogger(AccessTokenRefresher.class);
 
-    // weakKeys() ties the entry lifetime to the Session object: the entry is evicted only
-    // when the Session is GC'd, which cannot happen while any thread holds a reference to it.
-    // No expireAfterAccess: time-based eviction could replace a monitor while a slow
-    // refreshTokenRequest holds it, letting a second thread acquire a different lock object.
-    private final Cache<Session, Object> synchronizers = CacheBuilder.newBuilder()
-            .weakKeys()
-            .build();
+    /**
+     * The monitors that serialize the exchange of one refresh token.
+     * <p>
+     * Keyed by the refresh token, because that is what concurrent requests of one session have in
+     * common: the session is read per request and cached on the Exchange, so every request holds its
+     * own {@link Session} instance. Keying by the Session - as this did before - handed each request a
+     * monitor of its own, so the refresh was not synchronized at all.
+     * <p>
+     * A fixed array rather than a cache: the mapping is pure hashing, so one token always maps to the
+     * same monitor and no eviction can hand a second thread a different one while a slow
+     * refreshTokenRequest still holds it. Two unrelated tokens that land on the same monitor only wait
+     * for each other, which costs a little latency and is never wrong.
+     */
+    private final Object[] tokenSynchronizers = createSynchronizers();
+
+    private static Object[] createSynchronizers() {
+        Object[] synchronizers = new Object[256];
+        Arrays.setAll(synchronizers, i -> new Object());
+        return synchronizers;
+    }
 
     private AuthorizationService auth;
     private boolean onlyRefreshToken;
@@ -115,10 +125,16 @@ public class AccessTokenRefresher {
     }
 
     private Object getTokenSynchronizer(Session session) {
-        try {
-            return synchronizers.get(session, Object::new);
-        } catch (ExecutionException e) {
-            throw new RuntimeException(e);
-        }
+        String refreshToken = refreshTokenOf(session);
+        if (refreshToken == null || refreshToken.isEmpty())
+            // Not a refresh token exchange, so there is nothing for a second thread to collide with.
+            return new Object();
+        return tokenSynchronizers[Math.floorMod(refreshToken.hashCode(), tokenSynchronizers.length)];
+    }
+
+    private static String refreshTokenOf(Session session) {
+        if (session.getOAuth2Answer() == null)
+            return null;
+        return session.getOAuth2AnswerParameters().getRefreshToken();
     }
 }
