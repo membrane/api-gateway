@@ -44,11 +44,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.EOFException;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URL;
@@ -310,6 +306,21 @@ public class ChunkedBodyTest {
         cb.read();
 
         assertEquals(1, cb.chunks.size());
+    }
+
+    @Test
+    void getRawOfEmptyBody() {
+        var cb = new ChunkedBody(new ByteArrayInputStream(("0" + CRLF + CRLF).getBytes(US_ASCII)));
+        cb.read();
+        assertEquals("0" + CRLF + CRLF, new String(cb.getRaw(), US_ASCII));
+    }
+
+    @Test
+    void getRawOfBodyWithChunks() {
+        var raw = "3" + CRLF + "abc" + CRLF + "10" + CRLF + "0123456789abcdef" + CRLF + "0" + CRLF + CRLF;
+        var cb = new ChunkedBody(new ByteArrayInputStream(raw.getBytes(US_ASCII)));
+        cb.read();
+        assertEquals(raw, new String(cb.getRaw(), US_ASCII));
     }
 
     @Test

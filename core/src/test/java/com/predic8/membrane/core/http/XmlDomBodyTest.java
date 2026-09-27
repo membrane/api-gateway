@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.http;
 
+import com.predic8.membrane.core.util.xml.XMLInputSourceUtil;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -27,8 +28,7 @@ import java.util.zip.GZIPOutputStream;
 
 import static com.predic8.membrane.core.http.Header.CONTENT_ENCODING;
 import static com.predic8.membrane.core.http.Header.TRANSFER_ENCODING;
-import static java.nio.charset.StandardCharsets.ISO_8859_1;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.nio.charset.StandardCharsets.*;
 import static javax.xml.XMLConstants.NULL_NS_URI;
 import static javax.xml.xpath.XPathConstants.STRING;
 import static org.junit.jupiter.api.Assertions.*;
@@ -384,6 +384,24 @@ class XmlDomBodyTest {
         Document doc = XmlDomBody.documentOf(req);
 
         assertEquals("€", doc.getDocumentElement().getTextContent());
+    }
+
+    /**
+     * A byte order mark identifies the byte-stream encoding directly, so it must win over a
+     * contradicting Content-Type charset instead of being forced into a decoding that cannot
+     * parse the bytes - the non-encoded twin of the precedence rule above. Regression coverage
+     * for the pattern behind issue #3279, which {@code parse(Message, byte[])} previously shared
+     * with {@code Wsdl2OpenapiInterceptor} before both were centralized in
+     * {@link XMLInputSourceUtil#getInputSource(java.io.InputStream, String)}.
+     */
+    @Test
+    void documentOfHonorsABomOverAContradictingContentTypeCharset() {
+        Request req = requestWith("<greeting>Österreich</greeting>".getBytes(UTF_16));
+        req.getHeader().setContentType("text/xml; charset=ISO-8859-1");
+
+        Document doc = XmlDomBody.documentOf(req);
+
+        assertEquals("Österreich", doc.getDocumentElement().getTextContent());
     }
 
     /**
