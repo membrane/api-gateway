@@ -16,11 +16,7 @@ package com.predic8.membrane.core.http;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.EOFException;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.util.Arrays;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -189,8 +185,9 @@ public class BodyTest {
 	}
 
 	/**
-	 * A body of unknown length (EOF-delimited, length -1) must be drained to EOF by discard(),
-	 * not just marked as read with its bytes left in the stream.
+	 * A body of unknown length (EOF-delimited, length -1) must not be drained by discard(), since it
+	 * ends only when the peer closes the connection. Nor may it be marked as read with its bytes left
+	 * in the stream: it is marked failed, so that the connection is closed instead of reused.
 	 * See <a href="https://github.com/membrane/api-gateway/issues/3330">#3330</a>.
 	 */
 	@Test
@@ -272,6 +269,36 @@ public class BodyTest {
 
 		assertTrue(body.isRead());
 		assertEquals("NEXT-REQUEST".length(), in.available(), "only the body itself may be consumed");
+	}
+
+	/**
+	 * Same boundary as {@link #discardDoesNotReadPastTheDeclaredLength()}, on the streaming path: the
+	 * bytes after the declared length must neither be forwarded as part of this body nor consumed.
+	 */
+	@Test
+	void writeStreamedDoesNotReadPastTheDeclaredLength() {
+		ByteArrayInputStream in = new ByteArrayInputStream("bodyNEXT-REQUEST".getBytes(UTF_8));
+		Body body = new Body(in, 4);
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+		body.write(new PlainBodyTransferer(out), false);
+
+		assertEquals("body", out.toString(UTF_8));
+		assertEquals("NEXT-REQUEST".length(), in.available(), "only the body itself may be consumed");
+	}
+
+	/**
+	 * Declared ten bytes, four arrived and the stream ended. Like {@link #discardFailsWhenAKnownLengthBodyEndsEarly()},
+	 * the truncated body must not be passed off as read - the receiver was promised ten bytes.
+	 */
+	@Test
+	void writeStreamedFailsWhenAKnownLengthBodyEndsEarly() {
+		Body body = new Body(new ByteArrayInputStream("four".getBytes(UTF_8)), 10);
+
+		assertThrows(ReadingBodyException.class, () -> body.write(new PlainBodyTransferer(new ByteArrayOutputStream()), false));
+
+		assertTrue(body.hasFailed());
+		assertFalse(body.isRead());
 	}
 
 	/**

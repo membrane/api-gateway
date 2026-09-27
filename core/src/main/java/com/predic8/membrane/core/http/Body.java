@@ -25,8 +25,10 @@ import java.io.InputStream;
 import static com.predic8.membrane.annot.Constants.*;
 
 /**
- * A message body (streaming, if possible). Use a subclass of {@link ChunkedBody} instead, if
- * "Transfer-Encoding: chunked" is set on the input.
+ * A message body that is not chunked: framed either by a declared length ({@code Content-Length}) or,
+ * if the length is unknown ({@code -1}), by the end of the stream. Streamed if possible. Use
+ * {@link ChunkedBody} instead if "Transfer-Encoding: chunked" is set on the input; which of the two is
+ * created is decided in {@code Message.createBody}.
  * <p>
  * The "Transfer-Encoding" of the output is not determined by this class hierarchy, but by
  * {@link AbstractBodyTransferer} and its subclasses.
@@ -34,7 +36,11 @@ import static com.predic8.membrane.annot.Constants.*;
  * The caller is responsible to adjust the header accordingly,
  * e.g. the fields Transfer-Encoding and Content-Length.
  * <p>
- * This class internally has a binary model whether the body is read or not.
+ * The body is consumed in exactly one of three ways: read into memory ({@link #read()}), streamed
+ * through without being retained ({@link #write(AbstractBodyTransferer, boolean)} with
+ * {@code retainCopy == false}), or discarded ({@link #discard()}). None of them reads beyond the
+ * declared length, since the bytes after it belong to the next message on the connection. A body of
+ * known length that ends early is marked failed (see {@link AbstractBody#hasFailed()}), never read.
  */
 public class Body extends AbstractBody {
 
@@ -54,15 +60,32 @@ public class Body extends AbstractBody {
 	private final long length;
 	private long streamedLength;
 
+	/**
+	 * Creates a body of unknown length that ends with the stream.
+	 *
+	 * @param in the stream to read the body from, usually the connection's
+	 */
 	public Body(InputStream in) {
 		this(in, -1);
 	}
 
+	/**
+	 * Creates a body that is read from a stream.
+	 *
+	 * @param in the stream to read the body from, usually the connection's
+	 * @param length the declared length in bytes, or {@code -1} if unknown, in which case the body ends
+	 *        with the stream
+	 */
 	public Body(InputStream in, long length) {
 		this.inputStream = in;
 		this.length = length;
 	}
 
+	/**
+	 * Creates a body from content already in memory. The body is read from the start.
+	 *
+	 * @param content the complete body
+	 */
 	public Body(byte[] content) {
 		this.inputStream = null;
 		this.length = content.length;
@@ -71,6 +94,13 @@ public class Body extends AbstractBody {
 		markAsRead(); // because we do not have something to read
 	}
 
+	/**
+	 * Reads the body into {@link #chunks}, in chunks of at most {@code MAX_CHUNK_LENGTH} bytes, passing
+	 * each chunk to the observers. A body of unknown length is read to the end of the stream as a single
+	 * chunk.
+	 *
+	 * @throws EOFException if a body of known length ends early
+	 */
 	@Override
 	protected void readLocal() throws IOException {
 		long l = length;
@@ -84,6 +114,13 @@ public class Body extends AbstractBody {
 		}
 	}
 
+	/**
+	 * Consumes the body without retaining it, so that the connection can carry the next message. Does
+	 * nothing if the body was already read, streamed, or has failed. See {@code skipBodyContent()} for
+	 * how bodies of unknown length and bodies that end early are handled.
+	 *
+	 * @throws ReadingBodyException if reading from the stream fails
+	 */
 	public void discard() {
 		if (isRead())
 			return;
@@ -106,10 +143,11 @@ public class Body extends AbstractBody {
 	 * Drops the bytes the body still owes, so that the connection can carry the next message.
 	 * <p>
 	 * A body of <b>unknown length</b> is not drained. It ends only when the peer closes the connection,
-	 * so reading to its end would mean waiting for that close - and a length of -1 arises only where the
-	 * connection is already not reusable: HTTP/1.0 without a length, {@code Connection: close}, or the
-	 * "the server will send EOF" fallback (see {@code Message.createBody}). There is no connection to
-	 * reclaim, so the stream is left untouched and the body is marked failed rather than read.
+	 * so reading to its end would mean waiting for that close. Such a close-delimited body (HTTP/1.0
+	 * without a length, {@code Connection: close}, or the "the server will send EOF" fallback, see
+	 * {@code Message.createBody}) leaves no connection to reclaim, even where the headers still say
+	 * keep-alive. So the stream is left untouched and the body is marked failed rather than read, which
+	 * makes sure the connection is closed instead of reused.
 	 * <p>
 	 * A body of <b>known length</b> is drained, feeding the relevant observers as it goes, and never
 	 * reads beyond the declared length - the bytes after it belong to the next message. If the body ends
@@ -146,6 +184,9 @@ public class Body extends AbstractBody {
 		markAsRead();
 	}
 
+	/**
+	 * Writes the content held in memory and finishes the transfer.
+	 */
 	@Override
 	protected void writeAlreadyRead(AbstractBodyTransferer out) throws IOException {
 		if (getLength() > 0) {
@@ -155,6 +196,16 @@ public class Body extends AbstractBody {
 		out.finish(null);
 	}
 
+	/**
+	 * Copies the body from the stream to {@code out} without retaining it, passing each piece to the
+	 * observers. A body of known length is read up to that length and no further; a body of unknown
+	 * length is read to the end of the stream. The transfer is finished and the body marked read only
+	 * once it is complete.
+	 *
+	 * @throws ReadingBodyException if reading from the stream fails, or if a body of known length ends
+	 *         early. The bytes received up to then have already been written to {@code out}.
+	 * @throws WritingBodyException if writing to {@code out} fails
+	 */
 	@Override
 	protected void writeStreamed(AbstractBodyTransferer out) {
 		byte[] buffer = new byte[BUFFER_SIZE];
@@ -164,7 +215,9 @@ public class Body extends AbstractBody {
 		chunks.clear();
 		while (true) {
             try {
-                if (!((this.length > totalLength || this.length == -1) && (length = inputStream.read(buffer)) > 0))
+                // Bounded by what is still owed: reading further would eat into the next message.
+                int toRead = this.length == -1 ? buffer.length : (int) Math.min(buffer.length, this.length - totalLength);
+                if (!((this.length > totalLength || this.length == -1) && (length = inputStream.read(buffer, 0, toRead)) > 0))
                     break;
             } catch (IOException e) {
                 throw fail(e);
@@ -179,6 +232,8 @@ public class Body extends AbstractBody {
 			for (MessageObserver observer : observers)
 				observer.bodyChunk(buffer, 0, length);
 		}
+		if (this.length != -1 && totalLength < this.length)
+			throw fail(new EOFException("Body ended %d bytes before the declared length of %d while being streamed.".formatted(this.length - totalLength, this.length)));
         try {
             out.finish(null);
         } catch (IOException e) {
@@ -187,6 +242,10 @@ public class Body extends AbstractBody {
         markAsRead();
 	}
 
+	/**
+	 * @return for a streamed body, the number of bytes streamed so far; otherwise, as in
+	 *         {@link AbstractBody#getLength()}
+	 */
 	@Override
 	public long getLength() {
 		if (wasStreamed())
@@ -194,6 +253,9 @@ public class Body extends AbstractBody {
 		return super.getLength();
 	}
 
+	/**
+	 * @return the content read into memory, or an empty array if there is none
+	 */
 	@Override
 	protected byte[] getRawLocal() {
 		if (chunks.isEmpty()) {
