@@ -428,11 +428,6 @@ public class Response extends Message {
 	EndOfStreamException {
 		parseStartLine(in);
 
-		if (getStatusCode() == 100) {
-			readLine(in);
-			return;
-		}
-
 		header = new Header(in, true);
 
 		if (createBody)

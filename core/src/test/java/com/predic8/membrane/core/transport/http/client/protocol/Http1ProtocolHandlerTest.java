@@ -147,6 +147,26 @@ class Http1ProtocolHandlerTest {
             assertEquals(1, countOf("hello", sent), sent);
         }
 
+        /**
+         * A 100 Continue may carry header fields; all of them must be consumed before the next response is read.
+         */
+        @Test
+        void continueWithHeaderFields() throws Exception {
+            String sent = sendExpectingContinue("""
+                    HTTP/1.1 103 Early Hints\r
+                    Link: </style.css>; rel=preload; as=style\r
+                    \r
+                    HTTP/1.1 100 Continue\r
+                    Server: example\r
+                    X-Trace: abc\r
+                    \r
+                    HTTP/1.1 200 OK\r
+                    Content-Length: 0\r
+                    \r
+                    """, true);
+            assertEquals(1, countOf("hello", sent), sent);
+        }
+
         @Test
         void repeatedContinueSendsBodyOnce() throws Exception {
             String sent = sendExpectingContinue("""
