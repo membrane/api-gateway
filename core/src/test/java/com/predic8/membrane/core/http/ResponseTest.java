@@ -34,6 +34,7 @@ import java.util.stream.Stream;
 import static com.predic8.membrane.core.http.MimeType.TEXT_HTML;
 import static com.predic8.membrane.core.http.MimeType.isOfMediaType;
 import static com.predic8.membrane.core.http.Response.*;
+import static com.predic8.membrane.core.util.HttpTestUtil.convertMessage;
 import static com.predic8.membrane.test.TestUtil.getResourceAsStream;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static org.junit.jupiter.api.Assertions.*;
@@ -305,6 +306,32 @@ public class ResponseTest {
         res.read(getResourceAsStream(this,"response-205-reset.http"),true);
         assertTrue(res.isBodyEmpty());
         assertInstanceOf(EmptyBody.class, res.getBody());
+    }
+
+    /**
+     * RFC 9112 5.1: unlike a request, a response with whitespace before the colon is not rejected,
+     * because a proxy must strip the whitespace before forwarding it. Stripping makes Membrane read
+     * the body length a trimming backend meant, so a sloppy backend keeps working instead of
+     * turning into a 502. The rules themselves are covered in HeaderTest.
+     */
+    @Test
+    void headerLineWithWhitespaceBeforeColonIsStripped() throws Exception {
+        Response res = readResponse("""
+                HTTP/1.1 200 Ok
+                Content-Type: text/plain
+                Content-Length : 6
+
+                abcdef""");
+
+        assertEquals(6, res.getHeader().getContentLength());
+        assertEquals("abcdef", res.getBodyAsStringDecoded());
+        assertTrue(res.getHeader().toString().contains("Content-Length: 6"), res.getHeader().toString());
+    }
+
+    private static Response readResponse(String message) throws IOException, EndOfStreamException {
+        Response res = new Response();
+        res.read(convertMessage(message), true);
+        return res;
     }
 
     /**
