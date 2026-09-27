@@ -671,4 +671,29 @@ class HeaderTest {
                     .toList();
         }
     }
+
+    @Nested
+    class ParseKeepAliveHeader {
+
+        @Test
+        void timeoutAndMax() {
+            assertEquals(5, parseKeepAliveHeader("timeout=5, max=100", TIMEOUT));
+            assertEquals(100, parseKeepAliveHeader("timeout=5, max=100", MAX));
+        }
+
+        @Test
+        void missingParameter() {
+            assertEquals(-1, parseKeepAliveHeader("timeout=5", MAX));
+        }
+
+        @Test
+        void timeoutOverflow() {
+            assertEquals(-1, parseKeepAliveHeader("timeout=99999999999999999999", TIMEOUT));
+        }
+
+        @Test
+        void maxOverflow() {
+            assertEquals(-1, parseKeepAliveHeader("max=99999999999999999999", MAX));
+        }
+    }
 }
