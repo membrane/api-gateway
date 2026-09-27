@@ -13,23 +13,41 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.oauth2client;
 
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService;
+import com.predic8.membrane.core.interceptor.session.Session;
+import com.predic8.membrane.core.interceptor.session.SessionManager;
+import com.predic8.membrane.core.router.TestRouter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import static com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService.communicationError;
+import static com.predic8.membrane.core.interceptor.oauth2client.OAuth2SessionFixtures.USERNAME;
+import static com.predic8.membrane.core.interceptor.oauth2client.OAuth2SessionFixtures.expiredSession;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class OAuth2Resource2InterceptorTest {
 
     private OAuth2Resource2Interceptor oauth2;
+    private AuthorizationService auth;
 
     @BeforeEach
     void setup() throws Exception {
         oauth2 = new OAuth2Resource2Interceptor();
 
+        auth = mock(AuthorizationService.class);
+        oauth2.setAuthService(auth);
+
         oauth2.setLogoutUrl("/login/logout");
         oauth2.setAfterLogoutUrl("/uebersicht");
         oauth2.setAppendAccessTokenToRequest(true);
 
-        oauth2.init();
+        oauth2.init(new TestRouter());
     }
 
     @Test
@@ -50,5 +68,27 @@ class OAuth2Resource2InterceptorTest {
         exc.setOriginalRequestUri("/login/logout");
 
         oauth2.handleRequestInternal(exc);
+    }
+
+    @Test
+    void unreachableAuthorizationServerKeepsTheSession() throws Exception {
+        when(auth.refreshTokenRequest(any(), any(), anyString())).thenThrow(communicationError());
+
+        Session session = expiredSession();
+        Exchange exc = requestWith(session);
+
+        oauth2.handleRequestInternal(exc);
+
+        assertTrue(session.isVerified(), "an unreachable authorization server logged the user out");
+        assertEquals(USERNAME, session.getUsername());
+        assertFalse(session.get().isEmpty(), "the session was cleared");
+        assertEquals(500, exc.getResponse().getStatusCode());
+    }
+
+    private static Exchange requestWith(Session session) throws Exception {
+        Exchange exc = new Request.Builder().get("/foo").buildExchange();
+        exc.setOriginalRequestUri("/foo");
+        exc.setProperty(SessionManager.SESSION, session);
+        return exc;
     }
 }

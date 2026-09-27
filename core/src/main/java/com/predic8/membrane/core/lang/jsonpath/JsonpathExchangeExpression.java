@@ -39,9 +39,17 @@ public class JsonpathExchangeExpression extends AbstractExchangeExpression {
 
     private final ObjectMapper om = new ObjectMapper();
 
+    /**
+     * Compiled once: the static {@code JsonPath.read(json, String)} looks the path up in Jayway's
+     * JVM-wide LRU cache, whose every access takes a single lock, serializing all request threads.
+     * A compiled {@link JsonPath} is immutable and can be shared across threads.
+     */
+    private final JsonPath compiledPath;
+
     public JsonpathExchangeExpression(String source, Router router) {
         super(source, router);
         syntaxCheckJsonpath(source);
+        compiledPath = JsonPath.compile(source);
     }
 
     private static void syntaxCheckJsonpath(String source) {
@@ -146,6 +154,6 @@ public class JsonpathExchangeExpression extends AbstractExchangeExpression {
     }
 
     private Object execute(Exchange exchange, Flow flow) throws IOException {
-        return JsonPath.read(om.readValue(exchange.getMessage(flow).getBodyAsStreamDecoded(), Object.class), expression);
+        return compiledPath.read(om.readValue(exchange.getMessage(flow).getBodyAsStreamDecoded(), Object.class));
     }
 }

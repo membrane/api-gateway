@@ -13,20 +13,20 @@
    limitations under the License. */
 package com.predic8.membrane.core.util.xml;
 
-import com.predic8.membrane.core.http.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
-import org.w3c.dom.*;
-import org.xml.sax.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
-import javax.xml.namespace.*;
+import javax.xml.namespace.QName;
 import javax.xml.transform.*;
-import javax.xml.transform.dom.*;
-import javax.xml.transform.stream.*;
-import java.io.*;
-import java.util.*;
-import java.util.concurrent.atomic.*;
-import java.util.regex.*;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import java.io.StringWriter;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static javax.xml.XMLConstants.*;
 import static javax.xml.transform.OutputKeys.*;
@@ -100,23 +100,6 @@ public class XMLUtil {
 
     public static QName groovyToJavaxQName(groovy.namespace.QName qName) {
         return new QName(qName.getNamespaceURI(), qName.getLocalPart(), qName.getPrefix());
-    }
-
-    /**
-     * For XML processing sometimes an InputSource is needed.
-     * Passes the body as a byte stream so the parser can determine the encoding
-     * itself (from the message's charset or, failing that, the XML declaration/BOM)
-     * instead of it being pre-decoded with the JVM default charset.
-     * @param msg Message with body
-     * @return InputSource of the message body
-     */
-    public static @NotNull InputSource getInputSource(Message msg) {
-        InputSource source = new InputSource(msg.getBodyAsStreamDecoded());
-        String charset = msg.getHeader().getCharset();
-        if (charset != null) {
-            source.setEncoding(charset);
-        }
-        return source;
     }
 
     public static void mapToXml(Document doc, Element parent, Map<String, Object> map) {
