@@ -440,7 +440,7 @@ public class Response extends Message {
 		if (isRedirect() && mayHaveNoBody())
 			return;
 
-		if (statusCode == 205 && (header.getContentLength() > 0 || header.isChunked())) {
+		if (statusCode == 205 && (header.isChunked() || header.getContentLength() > 0)) {
 			log.info("Backend sent a 205 response announcing content, which it must not have (RFC 9110 §15.3.6). Dropping the content and closing the connection. Content-Length: {}, Transfer-Encoding: {}",
 					header.getFirstValue(CONTENT_LENGTH), header.getFirstValue(TRANSFER_ENCODING));
 			body = new EmptyBody();

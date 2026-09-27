@@ -172,13 +172,18 @@ public class Http1ProtocolHandler extends AbstractProtocolHandler {
     /**
      * The response was read without the content its framing announced, see {@link Response#hasUnreadContent()},
      * so the connection is out of sync. It is detached before closing, as {@link Connection#close()} already
-     * hands it back to the connection manager.
+     * hands it back to the connection manager. The response is complete by then, so a failing close must not
+     * turn it into an error.
      */
-    private static void closeIfContentLeftUnread(Exchange exchange, Connection c) throws IOException {
+    private static void closeIfContentLeftUnread(Exchange exchange, Connection c) {
         if (!exchange.getResponse().hasUnreadContent())
             return;
         exchange.setTargetConnection(null);
-        c.close();
+        try {
+            c.close();
+        } catch (IOException e) {
+            log.debug("Could not close connection with unread content: {}", e.getMessage());
+        }
     }
 
     private static @NotNull AbstractBodyTransferer getBodyTransferer(Exchange exchange, Connection c) {

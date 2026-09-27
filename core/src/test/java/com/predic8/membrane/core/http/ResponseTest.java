@@ -506,7 +506,9 @@ public class ResponseTest {
                     of("Content-Length: 5", "hello"),
                     of("Content-Length: 5", ""),
                     of("Transfer-Encoding: chunked", "5\r\nhello\r\n0\r\n\r\n"),
-                    of("Transfer-Encoding: chunked", "0\r\n\r\n"));
+                    of("Transfer-Encoding: chunked", "0\r\n\r\n"),
+                    // RFC 9112 §6.3 rule 3: Transfer-Encoding overrides Content-Length, even an invalid one
+                    of("Transfer-Encoding: chunked\r\nContent-Length: 5, 6", "0\r\n\r\n"));
         }
 
         @ParameterizedTest

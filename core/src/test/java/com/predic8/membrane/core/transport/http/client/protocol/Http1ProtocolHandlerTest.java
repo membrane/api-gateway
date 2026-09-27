@@ -26,10 +26,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.Socket;
 
 import static com.predic8.membrane.core.http.Header.EXPECT;
@@ -252,6 +249,22 @@ class Http1ProtocolHandlerTest {
             Exchange exc = handle205(ct);
             verify(ct.con()).close();
             assertNull(exc.getTargetConnection(), "a closed connection must not be released again");
+        }
+
+        /**
+         * The response is complete when the connection is closed, so a failing close must not turn it into an
+         * error, which the retry handler would act on.
+         */
+        @Test
+        void failingCloseKeepsResponse() throws Exception {
+            OutgoingConnectionType ct = getConnectionType(getInputStreamFor("""
+                    HTTP/1.1 205 Reset Content\r
+                    Content-Length: 5\r
+                    \r
+                    """), new CollectingOutputStream());
+            doThrow(new IOException("close failed")).when(ct.con()).close();
+            Exchange exc = handle205(ct);
+            assertNull(exc.getTargetConnection());
         }
 
         @Test
