@@ -433,7 +433,7 @@ public class Response extends Message {
 			return;
 		}
 
-		header = new Header(in);
+		header = new Header(in, true);
 
 		if (createBody)
 			createBody(in);

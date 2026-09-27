@@ -15,24 +15,33 @@
 package com.predic8.membrane.core.util;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.http.Response.*;
-import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.http.Response.ResponseBuilder;
+import com.predic8.membrane.core.transport.http.EOFWhileReadingLineException;
+import com.predic8.membrane.core.transport.http.LineTooLongException;
 
-import java.io.*;
-import java.net.*;
-import java.text.*;
-import java.util.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.TimeZone;
 
-import static com.predic8.membrane.annot.Constants.*;
+import static com.predic8.membrane.annot.Constants.HTML_FOOTER;
+import static com.predic8.membrane.annot.Constants.PRODUCT_NAME;
 import static com.predic8.membrane.core.http.Header.X_FORWARDED_FOR;
-import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.MimeType.TEXT_HTML_UTF8;
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.util.Util.splitStringByComma;
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptyList;
 import static java.util.Locale.US;
-import static org.apache.commons.text.StringEscapeUtils.*;
+import static org.apache.commons.text.StringEscapeUtils.escapeHtml4;
 
 public class HttpUtil {
 
@@ -94,6 +103,22 @@ public class HttpUtil {
 		}
 
 		throw new EOFWhileReadingLineException(line.toString());
+	}
+
+	/**
+	 * Whether the character is an RFC 9110 &sect;5.6.2 tchar, the character a token such as a field
+	 * name or a method is made of.
+	 */
+	public static boolean isTchar(int c) {
+		return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')
+			   || "!#$%&'*+-.^_`|~".indexOf(c) >= 0;
+	}
+
+	/**
+	 * Whether the character is RFC 9110 &sect;5.6.3 optional whitespace: SP or HTAB.
+	 */
+	public static boolean isOptionalWhitespace(char c) {
+		return c == ' ' || c == '\t';
 	}
 
     public static Response setHTMLErrorResponse(ResponseBuilder responseBuilder, String message, String comment) {
