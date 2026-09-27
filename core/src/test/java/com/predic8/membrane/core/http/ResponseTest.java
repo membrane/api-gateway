@@ -17,6 +17,8 @@ package com.predic8.membrane.core.http;
 
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.StringTestUtil;
+import com.predic8.membrane.test.TestAppender;
+import org.apache.logging.log4j.LogManager;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -40,6 +42,9 @@ import static com.predic8.membrane.test.TestUtil.getResourceAsStream;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.params.provider.Arguments.of;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 public class ResponseTest {
 
@@ -301,14 +306,6 @@ public class ResponseTest {
         assertInstanceOf(EmptyBody.class, res.getBody());
     }
 
-    @Test
-    void readResponseNoBodyContent205() throws IOException, EndOfStreamException {
-        Response res = new Response();
-        res.read(getResourceAsStream(this,"response-205-reset.http"),true);
-        assertTrue(res.isBodyEmpty());
-        assertInstanceOf(EmptyBody.class, res.getBody());
-    }
-
     /**
      * RFC 9112 §6.3: a 1xx, 204 or 304 response is terminated by the empty line after the
      * header fields, regardless of Content-Length or Transfer-Encoding.
@@ -476,6 +473,136 @@ public class ResponseTest {
         String written = out.toString(ISO_8859_1);
         assertTrue(written.matches("(?s)HTTP/1\\.1 200 [^\\r\\n]*\\r\\n.*"), written);
         assertFalse(written.contains("null"), written);
+    }
+
+    /**
+     * RFC 9112 §6.3 ends only 1xx, 204 and 304 responses at the header fields; a 205 is framed like any
+     * other response. RFC 9110 §15.3.6 forbids it content, though, so a backend that announces some anyway
+     * is broken and may or may not send it. Membrane therefore does not read it: the response is left
+     * without a body and marked, so the connection it came from gets closed instead of pooled.
+     */
+    @Nested
+    class ReadResetContent {
+
+        private org.apache.logging.log4j.core.Logger logger;
+        private TestAppender appender;
+
+        @BeforeEach
+        void attachAppender() {
+            logger = (org.apache.logging.log4j.core.Logger) LogManager.getLogger(Response.class.getName());
+            appender = new TestAppender("ReadResetContent");
+            appender.start();
+            logger.addAppender(appender);
+        }
+
+        @AfterEach
+        void detachAppender() {
+            logger.removeAppender(appender);
+            appender.stop();
+        }
+
+        static Stream<Arguments> announcedContent() {
+            return Stream.of(
+                    of("Content-Length: 5", "hello"),
+                    of("Content-Length: 5", ""),
+                    of("Transfer-Encoding: chunked", "5\r\nhello\r\n0\r\n\r\n"),
+                    of("Transfer-Encoding: chunked", "0\r\n\r\n"));
+        }
+
+        @ParameterizedTest
+        @MethodSource("announcedContent")
+        void announcedContentIsLeftUnread(String framing, String content) throws Exception {
+            InputStream in = new ByteArrayInputStream(("HTTP/1.1 205 Reset Content\r\n" + framing + "\r\n\r\n" + content).getBytes(ISO_8859_1));
+            Response res = read(in);
+            assertTrue(res.hasUnreadContent());
+            assertInstanceOf(EmptyBody.class, res.getBody());
+            assertEquals(content, new String(in.readAllBytes(), ISO_8859_1), "content must not be read");
+            assertEquals(0, res.getHeader().getContentLength());
+            assertFalse(res.getHeader().isChunked());
+            assertTrue(appender.contains("205"), appender.getMessages().toString());
+        }
+
+        @Test
+        void contentLengthZero() throws Exception {
+            InputStream in = stream("""
+                HTTP/1.1 205 Reset Content
+                Content-Length: 0
+
+                HTTP/1.1 200 OK
+                Content-Length: 2
+
+                ok""");
+            Response res = read(in);
+            assertFalse(res.hasUnreadContent());
+            assertEquals("", res.getBodyAsStringDecoded());
+            assertFalse(appender.contains("205"), appender.getMessages().toString());
+
+            Response next = fromStream(in, true);
+            assertEquals(200, next.getStatusCode());
+            assertEquals("ok", next.getBodyAsStringDecoded());
+        }
+
+        /**
+         * RFC 9112 §6.3 rule 8: without Content-Length or Transfer-Encoding the content runs until the
+         * connection closes, so the connection is not reused anyway.
+         */
+        @Test
+        void noFramingReadsUntilClose() throws Exception {
+            InputStream in = stream("""
+                HTTP/1.1 205 Reset Content
+
+                hello""");
+            Response res = read(in);
+            assertFalse(res.hasUnreadContent());
+            assertEquals("hello", res.getBodyAsStringDecoded());
+            assertEquals(-1, in.read());
+        }
+
+        /**
+         * Forwarding an unframed 205 must not wait for the backend to close: the client gets the response
+         * at once, and the body fails instead of being drained, which makes the connection close.
+         */
+        @Test
+        void unframedIsForwardedWithoutWaitingForTheBackend() throws Exception {
+            byte[] head = "HTTP/1.1 205 Reset Content\r\n\r\n".getBytes(ISO_8859_1);
+            InputStream backendKeepsConnectionOpen = new InputStream() {
+                private int pos;
+
+                @Override
+                public int read() {
+                    if (pos < head.length)
+                        return head[pos++];
+                    throw new AssertionError("must not wait for the content of an unframed 205");
+                }
+            };
+            Response res = read(backendKeepsConnectionOpen);
+            MessageObserver connection = mock(MessageObserver.class);
+            res.addObserver(connection);
+
+            assertEquals("HTTP/1.1 205 Reset Content\r\nContent-Length: 0\r\n\r\n", writeToString(res));
+            assertTrue(res.getBody().hasFailed());
+            verify(connection).bodyFailed(any());
+        }
+
+        /**
+         * Only content announced by a backend is reported; a 205 built in a flow is simply written without it.
+         */
+        @Test
+        void writingBuiltResponseDoesNotLog() throws Exception {
+            writeToString(Response.statusCode(205).body("hello").build());
+            assertFalse(appender.contains("205"), appender.getMessages().toString());
+        }
+
+        private static InputStream stream(String response) {
+            return new ByteArrayInputStream(StringTestUtil.normalizeCRLF(response).getBytes(ISO_8859_1));
+        }
+
+        private static Response read(InputStream in) throws Exception {
+            Response res = new Response();
+            res.read(in, true);
+            assertEquals(205, res.getStatusCode());
+            return res;
+        }
     }
 
     @Nested

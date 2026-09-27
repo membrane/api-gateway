@@ -53,6 +53,7 @@ public class Response extends Message {
 
 	private int statusCode;
 	private String statusMessage;
+	private boolean unreadContent;
 
 	public static class ResponseBuilder {
 		private final Response res = new Response();
@@ -439,7 +440,26 @@ public class Response extends Message {
 		if (isRedirect() && mayHaveNoBody())
 			return;
 
+		if (statusCode == 205 && (header.getContentLength() > 0 || header.isChunked())) {
+			log.info("Backend sent a 205 response announcing content, which it must not have (RFC 9110 §15.3.6). Dropping the content and closing the connection. Content-Length: {}, Transfer-Encoding: {}",
+					header.getFirstValue(CONTENT_LENGTH), header.getFirstValue(TRANSFER_ENCODING));
+			body = new EmptyBody();
+			adjustFramingForNoBody();
+			unreadContent = true;
+			return;
+		}
+
 		super.createBody(in);
+	}
+
+	/**
+	 * A backend that announces content in a 205 is broken and may not send it, so the content is not read.
+	 *
+	 * @return true if content announced by the framing is still in the stream, so the connection this
+	 *         response was read from must not be reused
+	 */
+	public boolean hasUnreadContent() {
+		return unreadContent;
 	}
 
 	public boolean isRedirect() {
@@ -457,11 +477,21 @@ public class Response extends Message {
 	}
 
 	/**
-	 * RFC 9112 §6.3: a 1xx, 204 or 304 response ends with the empty line after the header fields,
-	 * whatever Content-Length or Transfer-Encoding says. RFC 9110 §15.3.6: a 205 carries no content either.
+	 * RFC 9110 §15.3.6: a 205 carries no content, like a 1xx, 204 or 304. Unlike those it is still framed,
+	 * see {@link #endsAfterHeaderFields()}.
 	 */
 	public boolean shouldNotContainBody()  {
-		return (statusCode >= 100 && statusCode < 200) || statusCode == 204 || statusCode == 205 || statusCode == 304;
+		return endsAfterHeaderFields() || statusCode == 205;
+	}
+
+	/**
+	 * RFC 9112 §6.3: a 1xx, 204 or 304 response ends with the empty line after the header fields,
+	 * whatever Content-Length or Transfer-Encoding says. A 205 is not in that set: it is framed like any
+	 * other response, see {@link #hasUnreadContent()}.
+	 */
+	@Override
+	protected boolean endsAfterHeaderFields() {
+		return (statusCode >= 100 && statusCode < 200) || statusCode == 204 || statusCode == 304;
 	}
 
 	@Override
@@ -473,7 +503,7 @@ public class Response extends Message {
 	}
 
 	/**
-	 * Makes the framing fields agree with a response that is written without a body. RFC 9110 §8.6 and
+	 * Makes the framing fields agree with a response that has no body. RFC 9110 §8.6 and
 	 * RFC 9112 §6.1: a 1xx or 204 carries neither Content-Length nor Transfer-Encoding. A 205 is not ended
 	 * by the header fields (RFC 9112 §6.3), so it announces zero-length content. A 304 keeps the fields of
 	 * the representation it stands for.

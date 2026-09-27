@@ -85,6 +85,7 @@ public class Http1ProtocolHandler extends AbstractProtocolHandler {
         trace(exchange.getResponse());
 
         readFinalResponse(exchange, ct.con());
+        closeIfContentLeftUnread(exchange, ct.con());
 
         // Only HTTP 1?
         exchange.setReceived();
@@ -166,6 +167,18 @@ public class Http1ProtocolHandler extends AbstractProtocolHandler {
             }
             response.read(c.in, !exchange.getRequest().isHEADRequest());
         }
+    }
+
+    /**
+     * The response was read without the content its framing announced, see {@link Response#hasUnreadContent()},
+     * so the connection is out of sync. It is detached before closing, as {@link Connection#close()} already
+     * hands it back to the connection manager.
+     */
+    private static void closeIfContentLeftUnread(Exchange exchange, Connection c) throws IOException {
+        if (!exchange.getResponse().hasUnreadContent())
+            return;
+        exchange.setTargetConnection(null);
+        c.close();
     }
 
     private static @NotNull AbstractBodyTransferer getBodyTransferer(Exchange exchange, Connection c) {

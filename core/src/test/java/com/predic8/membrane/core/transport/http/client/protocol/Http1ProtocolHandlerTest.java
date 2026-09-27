@@ -235,6 +235,46 @@ class Http1ProtocolHandlerTest {
         assertEquals("hello", exc.getResponse().getBodyAsStringDecoded());
     }
 
+    /**
+     * A backend that announces content in a 205 may not send it, so the content is not read. The connection
+     * is then out of sync and must be closed rather than pooled.
+     */
+    @Nested
+    class ResetContent {
+
+        @Test
+        void announcedContentClosesConnection() throws Exception {
+            OutgoingConnectionType ct = getConnectionType(getInputStreamFor("""
+                    HTTP/1.1 205 Reset Content\r
+                    Content-Length: 5\r
+                    \r
+                    """), new CollectingOutputStream());
+            Exchange exc = handle205(ct);
+            verify(ct.con()).close();
+            assertNull(exc.getTargetConnection(), "a closed connection must not be released again");
+        }
+
+        @Test
+        void zeroLengthKeepsConnection() throws Exception {
+            OutgoingConnectionType ct = getConnectionType(getInputStreamFor("""
+                    HTTP/1.1 205 Reset Content\r
+                    Content-Length: 0\r
+                    \r
+                    """), new CollectingOutputStream());
+            Exchange exc = handle205(ct);
+            verify(ct.con(), never()).close();
+            assertSame(ct.con(), exc.getTargetConnection());
+        }
+
+        private Exchange handle205(OutgoingConnectionType ct) throws Exception {
+            Exchange exc = get("/foo").buildExchange();
+            exc.setTargetConnection(ct.con());
+            handler.handle(exc, ct, new HostColonPort("localhost", 8080));
+            assertEquals(205, exc.getResponse().getStatusCode());
+            return exc;
+        }
+    }
+
     @Nested
     class RetryBodyRetention {
 

@@ -207,7 +207,7 @@ public abstract class Message {
 	protected void createBody(InputStream in) throws IOException {
 		log.debug("createBody");
 
-		if (shouldNotContainBody()) {
+		if (endsAfterHeaderFields()) {
 			log.debug("empty body created");
 			body = new EmptyBody();
 			return;
@@ -367,6 +367,14 @@ public abstract class Message {
 	}
 
 	public abstract boolean shouldNotContainBody();
+
+	/**
+	 * @return true if a message read from the wire ends with the empty line after the header fields,
+	 *         whatever Content-Length or Transfer-Encoding says
+	 */
+	protected boolean endsAfterHeaderFields() {
+		return shouldNotContainBody();
+	}
 
 	public boolean isImage() {
 		return MimeType.isImage(getHeader().getContentType());
