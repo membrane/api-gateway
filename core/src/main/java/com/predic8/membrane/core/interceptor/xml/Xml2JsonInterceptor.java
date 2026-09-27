@@ -22,6 +22,7 @@ import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.xml.XMLEncodingUtil;
+import org.apache.commons.io.ByteOrderMark;
 import org.json.XML;
 import org.json.XMLParserConfiguration;
 import org.slf4j.Logger;
@@ -34,6 +35,7 @@ import java.util.HashSet;
 import java.util.List;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
+import static com.predic8.membrane.core.util.MessageUtil.getContent;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON_UTF8;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
@@ -128,11 +130,19 @@ public class Xml2JsonInterceptor extends AbstractInterceptor {
     }
 
     private static String getBodyAsString(Message msg) throws IOException {
-        if (msg.getHeader().getCharset() != null) return msg.getBodyAsStringDecoded();
-
         // Conversion is expensive but needed to get encoding from XML
         // because org.json.XML ignores the encoding specified in the XML prolog
-        byte[] body = msg.getBody().getContent();
+        byte[] body = getContent(msg);
+
+        // A byte order mark identifies the byte stream's encoding directly, so it wins over a
+        // declared charset - the same precedence every other XML consumer gets through
+        // XMLInputSourceUtil. The mark itself is dropped: org.json.XML would take it for content.
+        ByteOrderMark bom = XMLEncodingUtil.getByteOrderMark(body);
+        if (bom != null)
+            return new String(body, bom.length(), body.length - bom.length(), bom.getCharsetName());
+
+        if (msg.getHeader().getCharset() != null) return msg.getBodyAsStringDecoded();
+
         var fromProlog = XMLEncodingUtil.getEncodingFromXMLProlog(body);
         return new String(body, fromProlog != null ? fromProlog : UTF_8.name());
     }
