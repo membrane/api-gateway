@@ -17,7 +17,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.ResourceLock;
 import org.junit.jupiter.api.parallel.Resources;
 
+import java.util.HashSet;
 import java.util.Locale;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -55,6 +57,20 @@ class HeaderNameTest {
         } finally {
             Locale.setDefault(previous);
         }
+    }
+
+    /**
+     * equalsIgnoreCase() also matches characters whose upper case forms agree: the dotless "ı"
+     * uppercases to "I", while toLowerCase() leaves it alone, so equal names must not hash apart.
+     */
+    @Test
+    void namesEqualIgnoringCaseAreEqualSetKeys() {
+        HeaderName dotless = new HeaderName("Apı-Key");
+        HeaderName dotted = new HeaderName("Api-Key");
+
+        assertEquals(dotless, dotted);
+        assertEquals(dotless.hashCode(), dotted.hashCode());
+        assertTrue(new HashSet<>(Set.of(dotless)).contains(dotted));
     }
 
     @Test
