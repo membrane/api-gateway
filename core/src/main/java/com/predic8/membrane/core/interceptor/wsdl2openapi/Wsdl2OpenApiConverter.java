@@ -96,6 +96,7 @@ public class Wsdl2OpenApiConverter {
     private static final String PROBLEM_DETAILS_REF = "#/components/schemas/" + PROBLEM_DETAILS_SCHEMA;
 
     private final Definitions definitions;
+    private final SelectedPort port;
     private final String basePath;
     private final XsdToSchema converter;
     private final Map<String, OperationSettings> operations;
@@ -116,9 +117,13 @@ public class Wsdl2OpenApiConverter {
      */
     private final Map<String, Map<String, String>> urlParamProperties = new LinkedHashMap<>();
 
-    public Wsdl2OpenApiConverter(Definitions definitions, String basePath,
+    /**
+     * @param port the port whose operations the document describes; see {@link SelectedPort#select}.
+     */
+    public Wsdl2OpenApiConverter(Definitions definitions, SelectedPort port, String basePath,
                                  Map<String, OperationSettings> operations, ApiInfo info) {
         this.definitions = definitions;
+        this.port = port;
         this.basePath = stripTrailingSlash(basePath);
         this.converter = new XsdToSchema(definitions, Set.of(PROBLEM_DETAILS_SCHEMA));
         this.operations = operations;
@@ -230,7 +235,7 @@ public class Wsdl2OpenApiConverter {
 
     /**
      * What the document says about the API as a whole: the configured description where there is one,
-     * otherwise what the WSDL documents its service — or, where the service documents nothing, its
+     * otherwise what the WSDL documents the selected service — or, where it documents nothing, its
      * definitions — with. The generated note about Membrane follows below it.
      */
     private String infoDescription() {
@@ -239,10 +244,8 @@ public class Wsdl2OpenApiConverter {
     }
 
     private String wsdlDocumentation() {
-        return definitions.getServices().stream()
+        return Optional.ofNullable(port.service())
                 .map(Service::getDocumentation)
-                .filter(Objects::nonNull)
-                .findFirst()
                 .orElseGet(definitions::getDocumentation);
     }
 
@@ -258,10 +261,10 @@ public class Wsdl2OpenApiConverter {
         return paths;
     }
 
-    /** The WSDL's operations across all port types; unnamed ones cannot be mapped to a path. */
+    /** The operations of the selected port; unnamed ones cannot be mapped to a path. */
     private List<Operation> namedWsdlOperations() {
         var named = new ArrayList<Operation>();
-        for (var wsdlOp : definitions.getOperations()) {
+        for (var wsdlOp : port.operations()) {
             if (wsdlOp.getName() == null) {
                 log.debug("Skipping WSDL operation with null name");
                 continue;
@@ -274,8 +277,8 @@ public class Wsdl2OpenApiConverter {
     private void addConfiguredPath(Paths paths, List<Operation> wsdlOps, String name, OperationSettings opSettings) {
         var wsdlOp = wsdlOps.stream().filter(op -> name.equals(op.getName())).findFirst()
                 .orElseThrow(() -> new ConfigurationException(
-                        "Operation '%s' is not defined in the WSDL. Available operations: %s".formatted(
-                                name, wsdlOps.stream().map(Operation::getName).toList())));
+                        "Operation '%s' is not defined by port '%s' of the WSDL. Available operations: %s".formatted(
+                                name, port.name(), wsdlOps.stream().map(Operation::getName).toList())));
         var pathKey = "/" + (opSettings.getPath() != null ? opSettings.getPath() : camelToKebab(name));
         var existing = paths.get(pathKey);
         if (existing == null) {
@@ -313,7 +316,7 @@ public class Wsdl2OpenApiConverter {
 
     private io.swagger.v3.oas.models.Operation buildApiOperation(String name, Operation wsdlOp, OperationSettings settings) {
         var inputParts = getInputParts(wsdlOp);
-        var headerParts = definitions.findBindingOperation(name).map(this::getHeaderParts).orElse(List.of());
+        var headerParts = port.findBindingOperation(name).map(this::getHeaderParts).orElse(List.of());
         warnAboutHeaderParts(name, headerParts);
 
         // No summary: it could only repeat the operation name, which operationId and the path already
@@ -654,11 +657,7 @@ public class Wsdl2OpenApiConverter {
     }
 
     private String getServiceName() {
-        List<Service> services = definitions.getServices();
-        if (!services.isEmpty()) {
-            return services.getFirst().getName();
-        }
-        return "SOAP Service";
+        return port.service() != null ? port.service().getName() : "SOAP Service";
     }
 
 }

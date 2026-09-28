@@ -40,8 +40,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import static com.predic8.membrane.annot.Constants.SOAP11_NS;
+import static com.predic8.membrane.annot.Constants.SOAP12_NS;
 import static com.predic8.membrane.core.http.Header.CONTENT_LENGTH;
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.http.Header.SOAP_ACTION;
+import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.Wsdl2OpenApiConverter.ApiInfo;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.camelToKebab;
 import static com.predic8.membrane.test.TestUtil.getPathFromResource;
@@ -76,7 +79,7 @@ class Wsdl2OpenapiInterceptorTest {
         var settings = new OperationSettings();
         settings.setMethod("GET");
         settings.setPath("/search/{byId}");
-        var api = new Wsdl2OpenApiConverter(definitions, "/", Map.of("search", settings), ApiInfo.NONE).generate();
+        var api = new Wsdl2OpenApiConverter(definitions, SelectedPort.select(definitions, null, null), "/", Map.of("search", settings), ApiInfo.NONE).generate();
 
         assertEquals(Map.of("search", Set.of("byName", "code")),
                 Wsdl2OpenapiInterceptor.collectQueryParamNames(api));
@@ -814,6 +817,164 @@ class Wsdl2OpenapiInterceptorTest {
         String soap = exc.getRequest().getBodyAsStringDecoded();
         assertTrue(soap.contains("Berlin"), "the value from the URL must reach the service: " + soap);
         assertFalse(soap.contains("Atlantis"), "the value from the body must not: " + soap);
+    }
+
+    @Test
+    void aWsdlWithSeveralServicesRequiresOneToBeSelected() {
+        var interceptor = wsdl2openapi("classpath:/ws/cities-2-services.wsdl");
+
+        var e = assertThrows(ConfigurationException.class,
+                () -> interceptor.init(new DummyTestRouter(), apiProxyWith(interceptor)));
+        assertTrue(e.getMessage().contains("CityServiceA"), e.getMessage());
+        assertTrue(e.getMessage().contains("CityServiceB"), e.getMessage());
+    }
+
+    @Test
+    void aPortAloneDoesNotSelectAmongSeveralServices() {
+        // Both services name their port CityPort, so a port name is only meaningful within a service.
+        var interceptor = wsdl2openapi("classpath:/ws/cities-2-services.wsdl");
+        interceptor.setPort("CityPort");
+
+        assertThrows(ConfigurationException.class,
+                () -> interceptor.init(new DummyTestRouter(), apiProxyWith(interceptor)));
+    }
+
+    @Test
+    void anUnknownServiceIsRejected() {
+        var interceptor = wsdl2openapi("classpath:/ws/cities-2-services.wsdl");
+        interceptor.setService("CityServiceC");
+
+        var e = assertThrows(ConfigurationException.class,
+                () -> interceptor.init(new DummyTestRouter(), apiProxyWith(interceptor)));
+        assertTrue(e.getMessage().contains("CityServiceC"), e.getMessage());
+        assertTrue(e.getMessage().contains("CityServiceA"), e.getMessage());
+        assertTrue(e.getMessage().contains("CityServiceB"), e.getMessage());
+    }
+
+    @Test
+    void theSelectedServiceDecidesOperationsAndAddress() throws Exception {
+        var interceptor = wsdl2openapi("classpath:/ws/cities-2-services.wsdl");
+        interceptor.setService("CityServiceB");
+        interceptor.init(new DummyTestRouter(), apiProxyWith(interceptor));
+
+        assertEquals(List.of("POST"), interceptor.getOperationRouter().allowedMethods("/get-city-b"));
+        assertEquals(List.of(), interceptor.getOperationRouter().allowedMethods("/get-city"),
+                "an operation of the other service must not be exposed");
+
+        var api = generatedOpenApi(interceptor);
+        assertEquals(Set.of("/get-city-b"), api.getPaths().keySet());
+        assertEquals(List.of("CityServiceB"), api.getPaths().get("/get-city-b").getPost().getTags());
+
+        var exc = new Exchange(null);
+        exc.setRequest(new Request.Builder().post("/get-city-b").body("{\"name\":\"Bonn\"}").build());
+        assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exc));
+        assertEquals(List.of("http://localhost:2001/city-service"), exc.getDestinations());
+    }
+
+    @Test
+    void portsOfDifferentPortTypesRequireOneToBeSelected() {
+        var interceptor = wsdl2openapi("classpath:/ws/multiple-ports-in-a-service.wsdl");
+
+        var e = assertThrows(ConfigurationException.class,
+                () -> interceptor.init(new DummyTestRouter(), apiProxyWith(interceptor)));
+        assertTrue(e.getMessage().contains("SOAP11Port"), e.getMessage());
+        assertTrue(e.getMessage().contains("SOAP12Port"), e.getMessage());
+    }
+
+    @Test
+    void theSelectedSoap12PortDecidesOperationsEnvelopeAndAction() throws Exception {
+        var interceptor = wsdl2openapi("classpath:/ws/multiple-ports-in-a-service.wsdl");
+        interceptor.setPort("SOAP12Port");
+        interceptor.init(new DummyTestRouter(), apiProxyWith(interceptor));
+
+        assertEquals(List.of(), interceptor.getOperationRouter().allowedMethods("/a"),
+                "an operation of another port type must not be exposed");
+
+        var exc = new Exchange(null);
+        exc.setRequest(new Request.Builder().post("/b").body("42").build());
+        assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exc));
+
+        assertTrue(exc.getRequest().getBodyAsStringDecoded().contains(SOAP12_NS),
+                "the port's binding is SOAP 1.2: " + exc.getRequest().getBodyAsStringDecoded());
+        // SOAP 1.2 carries the action as a media type parameter instead of a SOAPAction header.
+        assertEquals("application/soap+xml; action=\"https://predic8.de/\"", exc.getRequest().getHeader().getContentType());
+        assertNull(exc.getRequest().getHeader().getFirstValue(SOAP_ACTION));
+        assertEquals(List.of("http://localhost:2002/port-b-path"), exc.getDestinations());
+    }
+
+    @Test
+    void portsOfOnePortTypeDefaultToTheSoap11Port() throws Exception {
+        var exc = getBankRequest(wsdl2openapi("classpath:/blz-service.wsdl"));
+
+        assertTrue(exc.getRequest().getBodyAsStringDecoded().contains(SOAP11_NS),
+                exc.getRequest().getBodyAsStringDecoded());
+        assertEquals(TEXT_XML, exc.getRequest().getHeader().getContentType());
+        assertNotNull(exc.getRequest().getHeader().getFirstValue(SOAP_ACTION));
+    }
+
+    @Test
+    void theSoap12PortOfOnePortTypeCanBeSelected() throws Exception {
+        var interceptor = wsdl2openapi("classpath:/blz-service.wsdl");
+        interceptor.setPort("BLZServiceSOAP12port_http");
+        var exc = getBankRequest(interceptor);
+
+        assertTrue(exc.getRequest().getBodyAsStringDecoded().contains(SOAP12_NS),
+                exc.getRequest().getBodyAsStringDecoded());
+        // The binding declares an empty soapAction, so there is no action to announce.
+        assertEquals(APPLICATION_SOAP_XML, exc.getRequest().getHeader().getContentType());
+        assertNull(exc.getRequest().getHeader().getFirstValue(SOAP_ACTION));
+    }
+
+    @Test
+    void aPortWithoutSoapBindingIsRejected() {
+        var interceptor = wsdl2openapi("classpath:/blz-service.wsdl");
+        interceptor.setPort("BLZServiceHttpport");
+
+        var e = assertThrows(ConfigurationException.class,
+                () -> interceptor.init(new DummyTestRouter(), apiProxyWith(interceptor)));
+        assertTrue(e.getMessage().contains("BLZServiceHttpport"), e.getMessage());
+        assertTrue(e.getMessage().contains("SOAP"), e.getMessage());
+    }
+
+    @Test
+    void anUnknownPortIsRejected() {
+        var interceptor = wsdl2openapi("classpath:/blz-service.wsdl");
+        interceptor.setPort("BLZServicePort");
+
+        var e = assertThrows(ConfigurationException.class,
+                () -> interceptor.init(new DummyTestRouter(), apiProxyWith(interceptor)));
+        assertTrue(e.getMessage().contains("BLZServicePort"), e.getMessage());
+        assertTrue(e.getMessage().contains("BLZServiceSOAP11port_http"), e.getMessage());
+    }
+
+    @Test
+    void aWsdlWithoutServiceExposesItsBindingAndLeavesTheAddressToTheApi() throws Exception {
+        var interceptor = wsdl2openapi("classpath:/ws/no-service.wsdl");
+        interceptor.init(new DummyTestRouter(), apiProxyWith(interceptor));
+
+        var exc = new Exchange(null);
+        exc.setRequest(new Request.Builder().post("/greet").body("{\"name\":\"Alice\"}").build());
+        assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exc));
+        assertEquals("http://example.com/greeting/greet", exc.getRequest().getHeader().getFirstValue(SOAP_ACTION));
+        assertEquals(List.of(), exc.getDestinations(), "the WSDL has no address to call");
+    }
+
+    @Test
+    void aWsdlWithoutServiceCannotSelectOne() {
+        var interceptor = wsdl2openapi("classpath:/ws/no-service.wsdl");
+        interceptor.setService("GreetingService");
+
+        assertThrows(ConfigurationException.class,
+                () -> interceptor.init(new DummyTestRouter(), apiProxyWith(interceptor)));
+    }
+
+    /** Inits the interceptor and runs a getBank request through handleRequest. */
+    private static Exchange getBankRequest(Wsdl2OpenapiInterceptor interceptor) throws Exception {
+        interceptor.init(new DummyTestRouter(), apiProxyWith(interceptor));
+        var exc = new Exchange(null);
+        exc.setRequest(new Request.Builder().post("/get-bank").body("{\"blz\":\"38060186\"}").build());
+        assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exc));
+        return exc;
     }
 
     /** Runs a request body through handleRequest on getCity and returns the aborting response. */

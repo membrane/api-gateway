@@ -16,7 +16,6 @@ package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.predic8.membrane.core.util.wsdl.parser.Definitions;
 import com.predic8.membrane.core.util.wsdl.parser.Message;
 import com.predic8.membrane.core.util.wsdl.parser.Operation;
 import com.predic8.membrane.core.util.wsdl.parser.Part;
@@ -38,7 +37,6 @@ import static com.predic8.membrane.annot.Constants.SOAP11_NS;
 import static com.predic8.membrane.annot.Constants.SOAP12_NS;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdContentModel.*;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.*;
-import static com.predic8.membrane.core.util.wsdl.parser.Definitions.SOAPVersion.SOAP_11;
 import static com.predic8.membrane.core.util.wsdl.parser.Definitions.SOAPVersion.SOAP_12;
 import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.INPUT;
 
@@ -88,19 +86,21 @@ public class Json2SoapTransformer {
      *                           {@link XsdToSchema#getSchemasByNamespace()}. One transformer is built
      *                           per operation, so deriving it here would walk the graph once per
      *                           operation instead of once per API.
+     * @param port               the port whose port type declares the operation, and whose binding
+     *                           decides the SOAP version of the envelope.
      */
-    public Json2SoapTransformer(Definitions definitions, String operationName,
+    public Json2SoapTransformer(SelectedPort port, String operationName,
                                 Map<String, List<Element>> schemasByNamespace) {
         this.operationName = operationName;
         this.schemasByNamespace = schemasByNamespace;
         this.contentModel = new XsdContentModel(schemasByNamespace);
-        this.soap12 = useSoap12(definitions);
+        this.soap12 = port.soapVersion() == SOAP_12;
 
         var contexts = new HashMap<XsdContext, FieldContext>();
         RequestElement resolved = null;
         String reason = null;
         try {
-            resolved = resolveRequestElement(definitions, contexts);
+            resolved = resolveRequestElement(port, contexts);
         } catch (IllegalArgumentException e) {
             // Reported per request, as before: one unusable operation must not stop the others.
             reason = e.getMessage();
@@ -138,8 +138,8 @@ public class Json2SoapTransformer {
      * @throws IllegalArgumentException if the operation, its input message, or the element of its
      *                                  first part cannot be found
      */
-    private RequestElement resolveRequestElement(Definitions definitions, Map<XsdContext, FieldContext> contexts) {
-        Operation operation = definitions.findOperation(operationName)
+    private RequestElement resolveRequestElement(SelectedPort port, Map<XsdContext, FieldContext> contexts) {
+        Operation operation = port.findOperation(operationName)
                 .orElseThrow(() -> new IllegalArgumentException("Operation not found: " + operationName));
 
         List<Message> inputMessages = operation.getMessagesByDirection(INPUT);
@@ -207,11 +207,6 @@ public class Json2SoapTransformer {
         envelope.appendChild(body);
 
         return new Envelope(doc, body);
-    }
-
-    private static boolean useSoap12(Definitions definitions) {
-        Set<Definitions.SOAPVersion> versions = definitions.getSoapVersions();
-        return versions.contains(SOAP_12) && !versions.contains(SOAP_11);
     }
 
     private Element createOperationElement(Document doc) {

@@ -40,7 +40,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class Json2SoapTransformerTest {
 
     private static Json2SoapTransformer transformer(Definitions definitions, String operationName) {
-        return new Json2SoapTransformer(definitions, operationName, buildSchemaMap(definitions));
+        return new Json2SoapTransformer(SelectedPort.select(definitions, null, null), operationName, buildSchemaMap(definitions));
     }
 
     static Definitions citiesDefinitions;
