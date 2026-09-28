@@ -42,7 +42,7 @@ record SelectedPort(Service service, String name, PortType portType, Binding bin
     /**
      * Selects the port by the configured service and port names, either of which may be
      * {@code null}. Without a service name, the WSDL must declare exactly one service. Without a
-     * port name, the service's SOAP ports must all implement one port type, and the SOAP 1.1 port is
+     * port name, the service's ports for SOAP over HTTP must all implement one port type, and the SOAP 1.1 port is
      * preferred: those are the SOAP 1.1 and 1.2 flavours of one interface many toolkits publish.
      * Without a service, the WSDL must declare exactly one port type.
      *
@@ -63,7 +63,7 @@ record SelectedPort(Service service, String name, PortType portType, Binding bin
         String where = "Service '%s'".formatted(service.getName());
 
         if (portName == null) {
-            return choose(ports.stream().filter(p -> p.binding().isSoap()).toList(), where);
+            return choose(ports.stream().filter(p -> p.binding().isSoapOverHttp()).toList(), where);
         }
         SelectedPort port = ports.stream().filter(p -> portName.equals(p.name())).findFirst()
                 .orElseThrow(() -> new ConfigurationException("%s has no port '%s'. Available ports: %s"
@@ -71,6 +71,10 @@ record SelectedPort(Service service, String name, PortType portType, Binding bin
         if (!port.binding().isSoap()) {
             throw new ConfigurationException("Port '%s' of service '%s' is not bound to SOAP, so it cannot be called with SOAP messages."
                     .formatted(portName, service.getName()));
+        }
+        if (!port.binding().isSoapOverHttp()) {
+            throw new ConfigurationException("Port '%s' of service '%s' uses the transport %s; only SOAP over HTTP can be called."
+                    .formatted(portName, service.getName(), port.binding().getTransport()));
         }
         return port;
     }
@@ -92,7 +96,7 @@ record SelectedPort(Service service, String name, PortType portType, Binding bin
         }
         PortType portType = portTypes.getFirst();
         List<Binding> bindings = definitions.getBindings(portType).stream()
-                .filter(Binding::isSoap)
+                .filter(Binding::isSoapOverHttp)
                 .toList();
         Binding binding = bindings.stream().filter(b -> b.getSoapVersion() == SOAP_11).findFirst()
                 .orElse(bindings.isEmpty() ? null : bindings.getFirst());
@@ -117,7 +121,7 @@ record SelectedPort(Service service, String name, PortType portType, Binding bin
     /** The only candidate, or the SOAP 1.1 one among the flavours of a single port type. */
     private static SelectedPort choose(List<SelectedPort> candidates, String where) {
         if (candidates.isEmpty()) {
-            throw new ConfigurationException("%s has no SOAP port.".formatted(where));
+            throw new ConfigurationException("%s has no SOAP port over HTTP.".formatted(where));
         }
         long portTypes = candidates.stream().map(p -> p.portType().getName()).distinct().count();
         if (portTypes > 1) {

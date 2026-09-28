@@ -766,7 +766,7 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
      * @description The port of the service to expose; it decides the operations, the SOAP version
      * and the address that is called. Required when the SOAP ports of the service implement
      * different port types. Otherwise the SOAP 1.1 port is used, or the SOAP 1.2 port when there is
-     * none. A port that is not bound to SOAP cannot be selected.
+     * none. A port that is not bound to SOAP over HTTP cannot be selected.
      * @example OrderServiceSoap12
      */
     @MCAttribute

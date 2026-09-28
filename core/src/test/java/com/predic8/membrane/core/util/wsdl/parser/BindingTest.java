@@ -37,8 +37,22 @@ class BindingTest {
         assertFalse(binding("OrderHttpBinding").isSoap());
     }
 
+    @Test
+    void soapOverHttp() throws Exception {
+        assertTrue(binding("soap-transports", "OrderHttpBinding").isSoapOverHttp());
+        assertTrue(binding("soap-transports", "OrderSoap12Binding").isSoapOverHttp(), "the SOAP 1.2 HTTP binding URI");
+        assertTrue(binding("soap-transports", "OrderNoTransportBinding").isSoapOverHttp(), "no transport counts as HTTP");
+        assertTrue(binding("soap-transports", "OrderSoap12NonstandardBinding").isSoapOverHttp(), "a nonstandard SOAP 1.2 HTTP URI");
+        assertFalse(binding("soap-transports", "OrderJmsBinding").isSoapOverHttp());
+        assertFalse(binding("navigation", "OrderHttpBinding").isSoapOverHttp(), "an http:binding is not SOAP");
+    }
+
     private static Binding binding(String name) throws Exception {
-        return Definitions.parse(new ResolverMap(), "classpath:/ws/navigation.wsdl").getBindings().stream()
+        return binding("navigation", name);
+    }
+
+    private static Binding binding(String wsdl, String name) throws Exception {
+        return Definitions.parse(new ResolverMap(), "classpath:/ws/%s.wsdl".formatted(wsdl)).getBindings().stream()
                 .filter(b -> name.equals(b.getName())).findFirst().orElseThrow();
     }
 }

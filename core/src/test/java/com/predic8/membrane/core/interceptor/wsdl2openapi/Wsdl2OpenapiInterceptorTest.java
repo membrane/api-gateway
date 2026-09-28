@@ -994,6 +994,29 @@ class Wsdl2OpenapiInterceptorTest {
                 "port cannot be set without a service, so the message must not suggest it: " + e.getMessage());
     }
 
+    @Test
+    void theDefaultPortIsOneOverHttp() throws Exception {
+        var interceptor = wsdl2openapi("classpath:/ws/soap-transports.wsdl");
+        interceptor.init(new DummyTestRouter(), apiProxyWith(interceptor));
+
+        var exc = new Exchange(null);
+        exc.setRequest(new Request.Builder().post("/order").body("{\"item\":\"book\"}").build());
+        assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exc));
+        assertEquals(List.of("http://example.com/orders"), exc.getDestinations(),
+                "the JMS port comes first, but cannot be called");
+    }
+
+    @Test
+    void aSoapPortOverAnotherTransportIsRejected() {
+        var interceptor = wsdl2openapi("classpath:/ws/soap-transports.wsdl");
+        interceptor.setPort("OrderJmsPort");
+
+        var e = assertThrows(ConfigurationException.class,
+                () -> interceptor.init(new DummyTestRouter(), apiProxyWith(interceptor)));
+        assertTrue(e.getMessage().contains("OrderJmsPort"), e.getMessage());
+        assertTrue(e.getMessage().contains("http://www.w3.org/2010/soapjms/"), e.getMessage());
+    }
+
     /** Inits the interceptor and runs a getBank request through handleRequest. */
     private static Exchange getBankRequest(Wsdl2OpenapiInterceptor interceptor) throws Exception {
         interceptor.init(new DummyTestRouter(), apiProxyWith(interceptor));
