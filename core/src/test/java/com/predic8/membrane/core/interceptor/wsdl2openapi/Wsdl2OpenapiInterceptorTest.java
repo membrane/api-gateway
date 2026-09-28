@@ -903,6 +903,19 @@ class Wsdl2OpenapiInterceptorTest {
     }
 
     @Test
+    void theSoap12ActionIsEscapedInTheQuotedParameter() throws Exception {
+        var interceptor = wsdl2openapi("classpath:/ws/soap12-action-quoted-string.wsdl");
+        interceptor.init(new DummyTestRouter(), apiProxyWith(interceptor));
+
+        var exc = new Exchange(null);
+        exc.setRequest(new Request.Builder().post("/say-hello").body("{\"name\":\"Alice\"}").build());
+        assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exc));
+
+        // RFC 9110 section 5.6.4: a quote or backslash inside a quoted-string is a quoted-pair.
+        assertEquals("application/soap+xml; action=\"urn:say\\\"Hello\\\\x\"", exc.getRequest().getHeader().getContentType());
+    }
+
+    @Test
     void portsOfOnePortTypeDefaultToTheSoap11Port() throws Exception {
         var exc = getBankRequest(wsdl2openapi("classpath:/blz-service.wsdl"));
 

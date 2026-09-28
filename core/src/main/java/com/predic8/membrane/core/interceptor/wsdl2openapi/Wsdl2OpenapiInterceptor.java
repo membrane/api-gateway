@@ -682,12 +682,15 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
                 .orElse("");
     }
 
-    /** SOAP 1.2 announces the action in the media type (RFC 3902), where SOAP 1.1 uses a header. */
+    /**
+     * SOAP 1.2 announces the action in the media type (RFC 3902), where SOAP 1.1 uses a header. The
+     * action is a quoted-string, so a quote or backslash in it is escaped (RFC 9110 section 5.6.4).
+     */
     private static String requestContentType(SelectedPort port, String operationName) {
         if (port.soapVersion() != SOAP_12) return TEXT_XML;
         String action = getSOAPAction(port, operationName);
         return action == null || action.isEmpty() ? APPLICATION_SOAP_XML
-                : "%s; action=\"%s\"".formatted(APPLICATION_SOAP_XML, action);
+                : "%s; action=\"%s\"".formatted(APPLICATION_SOAP_XML, action.replace("\\", "\\\\").replace("\"", "\\\""));
     }
 
     /**
