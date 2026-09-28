@@ -27,7 +27,7 @@ public class Port extends WSDLElement {
     }
 
     public Address getAddress() {
-        return instantiateElements(element,"address",Address.class).getFirst();
+        return findAddress().orElseThrow(() -> new WSDLParserException("No address found for port: " + getName()));
     }
 
     /** The port's address element; empty if it has none. */

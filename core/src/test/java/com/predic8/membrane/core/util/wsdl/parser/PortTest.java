@@ -17,8 +17,7 @@ package com.predic8.membrane.core.util.wsdl.parser;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class PortTest {
 
@@ -26,6 +25,12 @@ class PortTest {
     void findAddress() throws Exception {
         assertEquals("http://example.com/order", port("OrderSoapPort").findAddress().orElseThrow().getLocation());
         assertTrue(port("OrderPortWithoutAddress").findAddress().isEmpty());
+    }
+
+    @Test
+    void getAddressOfAPortWithoutOneNamesThePort() throws Exception {
+        var e = assertThrows(WSDLParserException.class, () -> port("OrderPortWithoutAddress").getAddress());
+        assertTrue(e.getMessage().contains("OrderPortWithoutAddress"), e.getMessage());
     }
 
     private static Port port(String name) throws Exception {
