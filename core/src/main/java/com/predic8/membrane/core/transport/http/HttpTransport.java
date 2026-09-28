@@ -14,25 +14,31 @@
 
 package com.predic8.membrane.core.transport.http;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.model.*;
-import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.transport.*;
-import com.predic8.membrane.core.transport.ssl.*;
-import com.predic8.membrane.core.util.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.proxies.SSLableProxy;
+import com.predic8.membrane.core.router.DefaultRouter;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.transport.Transport;
+import com.predic8.membrane.core.transport.ssl.SSLProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.lang.ref.*;
+import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.net.InetAddress;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 
-import static com.google.common.base.Objects.*;
-import static java.lang.Integer.*;
-import static java.lang.String.*;
-import static java.util.concurrent.TimeUnit.*;
+import static com.google.common.base.Objects.equal;
+import static java.lang.Integer.MAX_VALUE;
+import static java.lang.String.format;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * HttpTransport is responsible for opening and closing ports. Besides HttpTransport there is also a ServletTransport.
@@ -50,11 +56,6 @@ public class HttpTransport extends Transport {
 
 	private static final Logger log = LoggerFactory.getLogger(HttpTransport.class.getName());
 
-	private int socketTimeout = 30000;
-	private int forceSocketCloseOnHotDeployAfter = 30000;
-	private boolean tcpNoDelay = true;
-	private int backlog = 50;
-
 	private final Map<Integer, Map<IpPort, HttpEndpointListener>> portListenerMapping = new HashMap<>();
 	private final List<WeakReference<HttpEndpointListener>> stillRunning = new ArrayList<>();
 
@@ -65,6 +66,9 @@ public class HttpTransport extends Transport {
 	@Override
 	public void init(Router router) {
 		super.init(router);
+		// Core first: the maximum must never drop below the current core size.
+		executorService.setCorePoolSize(getSettings().getCoreThreadPoolSize());
+		executorService.setMaximumPoolSize(getSettings().getMaxThreadPoolSize());
 	}
 
 	/**
@@ -120,7 +124,7 @@ public class HttpTransport extends Transport {
                     closeConnections(closeOnlyIdleConnections(now));
 					if (executorService.awaitTermination(5, SECONDS))
 						break;
-					log.warn("Still waiting for running exchanges to finish. (Set <transport forceSocketCloseOnHotDeployAfter=\"{}\"> to a lower value to forcibly close connections more quickly.",forceSocketCloseOnHotDeployAfter);
+					log.warn("Still waiting for running exchanges to finish. Set configuration.transport.forceSocketCloseOnHotDeployAfter (currently {} ms) to a lower value to forcibly close connections more quickly.",getForceSocketCloseOnHotDeployAfter());
 				}
 			} catch (InterruptedException e) {
 				Thread.currentThread().interrupt();
@@ -132,7 +136,7 @@ public class HttpTransport extends Transport {
 	 * Close all connections after some time
 	 */
 	private boolean closeOnlyIdleConnections(long now) {
-		return System.currentTimeMillis() - now <= forceSocketCloseOnHotDeployAfter;
+		return System.currentTimeMillis() - now <= getForceSocketCloseOnHotDeployAfter();
 	}
 
 	private void closeConnections(boolean onlyIdle) {
@@ -205,7 +209,7 @@ public class HttpTransport extends Transport {
 	}
 
 	public int getCoreThreadPoolSize() {
-		return executorService.getCorePoolSize();
+		return getSettings().getCoreThreadPoolSize();
 	}
 
 	/**
@@ -215,11 +219,11 @@ public class HttpTransport extends Transport {
 	 */
 	@MCAttribute
 	public void setCoreThreadPoolSize(int corePoolSize) {
-		executorService.setCorePoolSize(corePoolSize);
+		getOwnSettings().setCoreThreadPoolSize(corePoolSize);
 	}
 
 	public int getMaxThreadPoolSize() {
-		return executorService.getMaximumPoolSize();
+		return getSettings().getMaxThreadPoolSize();
 	}
 
 	/**
@@ -229,7 +233,7 @@ public class HttpTransport extends Transport {
 	 */
 	@MCAttribute
 	public void setMaxThreadPoolSize(int value) {
-		executorService.setMaximumPoolSize(value);
+		getOwnSettings().setMaxThreadPoolSize(value);
 	}
 
 	public ExecutorService getExecutorService() {
@@ -237,7 +241,7 @@ public class HttpTransport extends Transport {
 	}
 
 	public int getSocketTimeout() {
-		return socketTimeout;
+		return getSettings().getSocketTimeout();
 	}
 
 	/**
@@ -246,11 +250,11 @@ public class HttpTransport extends Transport {
 	 */
 	@MCAttribute
 	public void setSocketTimeout(int timeout) {
-		this.socketTimeout = timeout;
+		getOwnSettings().setSocketTimeout(timeout);
 	}
 
 	public boolean isTcpNoDelay() {
-		return tcpNoDelay;
+		return getSettings().isTcpNoDelay();
 	}
 
 	/**
@@ -263,7 +267,7 @@ public class HttpTransport extends Transport {
 	 */
 	@MCAttribute
 	public void setTcpNoDelay(boolean tcpNoDelay) {
-		this.tcpNoDelay = tcpNoDelay;
+		getOwnSettings().setTcpNoDelay(tcpNoDelay);
 	}
 
 	@Override
@@ -272,7 +276,7 @@ public class HttpTransport extends Transport {
 	}
 
 	public int getForceSocketCloseOnHotDeployAfter() {
-		return forceSocketCloseOnHotDeployAfter;
+		return getSettings().getForceSocketCloseOnHotDeployAfter();
 	}
 
 	/**
@@ -284,20 +288,22 @@ public class HttpTransport extends Transport {
 	 */
 	@MCAttribute
 	public void setForceSocketCloseOnHotDeployAfter(int forceSocketCloseOnHotDeployAfter) {
-		this.forceSocketCloseOnHotDeployAfter = forceSocketCloseOnHotDeployAfter;
+		getOwnSettings().setForceSocketCloseOnHotDeployAfter(forceSocketCloseOnHotDeployAfter);
 	}
 
 	public int getBacklog() {
-		return backlog;
+		return getSettings().getBacklog();
 	}
 
 	/**
 	 * @description The backlog value passed to {@link java.net.ServerSocket#ServerSocket(int, int, InetAddress)}. The
-	 * maximum length of the queue of incoming connections.
-	 * @default 50
+	 * maximum length of the queue of incoming connections. The operating system silently caps it, e.g. Linux at
+	 * <code>net.core.somaxconn</code> (4096 by default since kernel 5.4, 128 before), macOS at
+	 * <code>kern.ipc.somaxconn</code> (128) and Windows at 200.
+	 * @default 500
 	 */
 	@MCAttribute
 	public void setBacklog(int backlog) {
-		this.backlog = backlog;
+		getOwnSettings().setBacklog(backlog);
 	}
 }

@@ -39,12 +39,17 @@ public abstract class Transport {
      */
     private List<Interceptor> interceptors = new Vector<>();
 
+    private static final TransportConfiguration DEFAULT_TRANSPORT_CONFIG = new TransportConfiguration();
+
     private Router router;
-    private boolean reverseDNS = true;
 
     private MethodValidator methodValidator = new DefaultMethodValidator();
 
-    private int concurrentConnectionLimitPerIp = -1;
+    /**
+     * null: not configured on this transport, the defaults apply. Set by {@link #setTransportConfig} or created by
+     * the first setter call on this transport (e.g. an XML attribute).
+     */
+    private TransportConfiguration transportConfig;
 
     public String getOpenBackendConnections(int port) {
         return "N/A";
@@ -61,6 +66,7 @@ public abstract class Transport {
 
     public void init(Router router) {
         this.router = router;
+        getSettings().validate();
 
         if (router != null && router.getRegistry() != null)
             router.getRegistry().getBean(MethodValidator.class).ifPresent(v -> methodValidator = v);
@@ -148,7 +154,7 @@ public abstract class Transport {
     public abstract boolean isOpeningPorts();
 
     public boolean isReverseDNS() {
-        return reverseDNS;
+        return getSettings().isReverseDNS();
     }
 
     /**
@@ -157,11 +163,11 @@ public abstract class Transport {
      */
     @MCAttribute
     public void setReverseDNS(boolean reverseDNS) {
-        this.reverseDNS = reverseDNS;
+        getOwnSettings().setReverseDNS(reverseDNS);
     }
 
     public int getConcurrentConnectionLimitPerIp() {
-        return concurrentConnectionLimitPerIp;
+        return getSettings().getConcurrentConnectionLimitPerIp();
     }
 
     /**
@@ -170,6 +176,33 @@ public abstract class Transport {
      */
     @MCAttribute
     public void setConcurrentConnectionLimitPerIp(int concurrentConnectionLimitPerIp) {
-        this.concurrentConnectionLimitPerIp = concurrentConnectionLimitPerIp;
+        getOwnSettings().setConcurrentConnectionLimitPerIp(concurrentConnectionLimitPerIp);
+    }
+
+    /**
+     * @return the settings configured on this transport, or null if none were configured and the defaults apply
+     */
+    public TransportConfiguration getTransportConfig() {
+        return transportConfig;
+    }
+
+    public void setTransportConfig(TransportConfiguration transportConfig) {
+        this.transportConfig = transportConfig;
+    }
+
+    /**
+     * The settings in effect: the configured ones, or the defaults.
+     */
+    protected TransportConfiguration getSettings() {
+        return transportConfig != null ? transportConfig : DEFAULT_TRANSPORT_CONFIG;
+    }
+
+    /**
+     * The settings of this transport, created on first use, for the setters to write into.
+     */
+    protected TransportConfiguration getOwnSettings() {
+        if (transportConfig == null)
+            transportConfig = new TransportConfiguration();
+        return transportConfig;
     }
 }

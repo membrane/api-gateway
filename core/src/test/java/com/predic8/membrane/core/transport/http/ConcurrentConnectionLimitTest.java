@@ -14,17 +14,27 @@
 
 package com.predic8.membrane.core.transport.http;
 
-import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.router.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.proxies.ServiceProxy;
+import com.predic8.membrane.core.proxies.ServiceProxyKey;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.router.TestRouter;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import java.net.*;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.stream.*;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.IntStream;
 
-import static com.predic8.membrane.core.interceptor.flow.invocation.FlowTestInterceptors.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static com.predic8.membrane.core.interceptor.flow.invocation.FlowTestInterceptors.GROOVY;
+import static com.predic8.membrane.core.interceptor.flow.invocation.FlowTestInterceptors.RETURN;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ConcurrentConnectionLimitTest {
 
@@ -58,8 +68,8 @@ public class ConcurrentConnectionLimitTest {
         sp.getFlow().add(RETURN);
 
         router.add(sp);
-        // The default TCP accept backlog (50, HttpTransport.backlog) is smaller than the
-        // `concurrency` burst (100) this test fires. When the backlog is exceeded, the OS queues
+        // The TCP accept backlog must not be smaller than the `concurrency` burst (100) this
+        // test fires, so it is set explicitly here. When the backlog is exceeded, the OS queues
         // /paces the excess SYNs instead of making them all available to accept() at once, which
         // spreads acceptance across multiple 1s admission windows and lets more than
         // `concurrentLimit` connections succeed. Match the backlog to the burst size so the

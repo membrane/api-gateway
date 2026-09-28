@@ -44,6 +44,10 @@ PRIO 3:
 ## Membrane 8.0.0 (Java 25)
 
 - Remove XML configuration
+- Remove the transport setting shims (with XML configuration)
+  - Story: the eight inbound settings live in `TransportConfiguration` (`configuration: transport:` in YAML). `Transport` and `HttpTransport` still carry `@MCAttribute` setters (`backlog`, `socketTimeout`, `tcpNoDelay`, `forceSocketCloseOnHotDeployAfter`, `coreThreadPoolSize`, `maxThreadPoolSize`, `reverseDNS`, `concurrentConnectionLimitPerIp`) plus matching getters, only so that XML `<transport backlog="…">` keeps working. They write into the transport's own lazily created `TransportConfiguration`.
+  - Once XML is gone: delete the shim setters and getters, the lazy `getOwnSettings()`, and the "configured twice" check in `DefaultMainComponents.applyTransportConfig`. Make the effective-settings accessor public and switch the readers (`HttpServerHandler`, `HttpEndpointListener`, `Http2ServerHandler`, `war`'s `HttpServletHandler`) to it.
+  - Tests that call `router.getTransport().setBacklog(…)` and similar (~30 call sites) move to the settings object.
 - configure log4j with YAML
 - Remove SOAP2REST XSLT Interceptor:
   - rm HTTP2XMLInterceptor

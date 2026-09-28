@@ -14,11 +14,14 @@
 
 package com.predic8.membrane.core.router;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.interceptor.administration.*;
-import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.interceptor.administration.AdminConsoleInterceptor;
+import com.predic8.membrane.core.proxies.Proxy;
+import com.predic8.membrane.core.transport.TransportConfiguration;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
-import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.core.util.URIFactory;
 
 /**
  * Global Membrane configuration.
@@ -46,6 +49,11 @@ public class Configuration {
     private String baseLocation;
 
     private HttpClientConfiguration httpClientConfig = new HttpClientConfiguration();
+
+    /**
+     * null: not configured here; the transport keeps its own settings.
+     */
+    private TransportConfiguration transportConfig;
 
     /**
      * @param hotDeploy If true the hot deploy feature will be activated during init of the Router.
@@ -159,6 +167,20 @@ public class Configuration {
 
     public HttpClientConfiguration getHttpClientConfig() {
         return httpClientConfig;
+    }
+
+    /**
+     * @description Settings for incoming connections, e.g. the backlog of the server sockets and the size of the
+     * thread pool that serves them. The inbound counterpart of <code>httpClientConfig</code>.
+     */
+    @MCChildElement(order = 1)
+    public void setTransportConfig(TransportConfiguration transportConfig) {
+        transportConfig.validate();
+        this.transportConfig = transportConfig;
+    }
+
+    public TransportConfiguration getTransportConfig() {
+        return transportConfig;
     }
 
     /**
