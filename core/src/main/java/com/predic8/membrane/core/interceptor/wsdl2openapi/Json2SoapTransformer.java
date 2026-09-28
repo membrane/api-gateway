@@ -63,6 +63,11 @@ public class Json2SoapTransformer {
      * Looked up once: {@code newInstance()} scans the classpath for a provider under a JVM-wide
      * class-loader lock, which serialized all request threads. Builders and transformers are not
      * thread-safe and are still created per request.
+     * <p>
+     * Sharing the factories is safe (deliberately not {@code ThreadLocal}): they are fully
+     * configured here in the static initializer and never modified afterwards; request threads only
+     * call {@code newDocumentBuilder()} / {@code newTransformer()}, which read the configuration.
+     * Keep it that way — do not call a factory setter outside this initialization.
      */
     private static final DocumentBuilderFactory DOCUMENT_BUILDER_FACTORY = createDocumentBuilderFactory();
     private static final TransformerFactory TRANSFORMER_FACTORY = TransformerFactory.newInstance();
