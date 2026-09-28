@@ -164,7 +164,7 @@ public class Definitions extends WSDLElement {
     /** The bindings of that port type, in document order. */
     public List<Binding> getBindings(PortType portType) {
         return bindings.stream()
-                .filter(b -> b.getPortType().getName().equals(portType.getName()))
+                .filter(b -> b.findPortType().filter(pt -> pt.getName().equals(portType.getName())).isPresent())
                 .toList();
     }
 

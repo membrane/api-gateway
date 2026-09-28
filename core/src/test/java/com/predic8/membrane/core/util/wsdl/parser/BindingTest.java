@@ -47,6 +47,14 @@ class BindingTest {
         assertFalse(binding("navigation", "OrderHttpBinding").isSoapOverHttp(), "an http:binding is not SOAP");
     }
 
+    @Test
+    void portTypeIsMatchedByQName() throws Exception {
+        assertEquals("OrderPortType", binding("port-type-namespaces", "PrefixedBinding").getPortType().getName());
+        assertEquals("OrderPortType", binding("port-type-namespaces", "DefaultNamespaceBinding").getPortType().getName());
+        assertThrows(WSDLParserException.class, () -> binding("port-type-namespaces", "ForeignBinding").getPortType(),
+                "same local name, other namespace");
+    }
+
     private static Binding binding(String name) throws Exception {
         return binding("navigation", name);
     }

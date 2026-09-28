@@ -22,8 +22,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
-import static com.predic8.membrane.core.util.wsdl.parser.WSDLParserUtil.getLocalName;
-
 public class Binding extends WSDLElement {
 
     public enum Style {
@@ -100,8 +98,19 @@ public class Binding extends WSDLElement {
     }
 
     public PortType getPortType() {
+        return findPortType().orElseThrow(() -> new WSDLParserException("No portType found for binding: " + getName()));
+    }
+
+    /**
+     * The port type the binding's type names; empty if it names none of this WSDL's. The type is a
+     * QName, and all port types of the WSDL are in its target namespace.
+     */
+    Optional<PortType> findPortType() {
+        var type = resolveQName(getAttribute("type"));
+        if (!Objects.equals(ctx.definitions().getTargetNamespace(), type.getNamespaceURI()))
+            return Optional.empty();
         return ctx.definitions().getPortTypes().stream()
-                .filter(pt -> getLocalName(getAttribute("type")).equals(pt.getName()))
-                .findFirst().orElseThrow(() -> new WSDLParserException("No portType found for binding: " + getName()));
+                .filter(pt -> type.getLocalPart().equals(pt.getName()))
+                .findFirst();
     }
 }

@@ -53,6 +53,13 @@ class DefinitionsTest {
     }
 
     @Test
+    void bindingsOfAPortTypeMatchTheNamespace() throws Exception {
+        var defs = Definitions.parse(new ResolverMap(), "classpath:/ws/port-type-namespaces.wsdl");
+        assertEquals(List.of("PrefixedBinding", "DefaultNamespaceBinding"),
+                defs.getBindings(defs.getPortTypes().getFirst()).stream().map(Binding::getName).toList());
+    }
+
+    @Test
     void documentationIsReadPerElement() throws Exception {
         var defs = Definitions.parse(new ResolverMap(), "classpath:/ws/documented.wsdl");
 
