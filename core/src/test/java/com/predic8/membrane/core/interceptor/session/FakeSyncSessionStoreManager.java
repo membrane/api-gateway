@@ -21,6 +21,11 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * This class emulates systems like Redis or MemcacheD.
+ * <p>
+ * It replaces only where the bytes are kept, so the copy-on-read and conditional-write semantics a real
+ * deployment has are preserved. The stored value doubles as the version: comparing it is exactly what
+ * memcached's CAS token achieves, apart from an ABA that cannot happen here because every write of a
+ * session differs from the last.
  */
 public class FakeSyncSessionStoreManager extends MemcachedSessionManager {
 
@@ -30,18 +35,29 @@ public class FakeSyncSessionStoreManager extends MemcachedSessionManager {
     public void init(Router router) throws Exception {}
 
     @Override
-    protected void addSessions(Session[] sessions) {
-        Arrays.stream(sessions).forEach(s -> remoteContent.put(s.get(ID_NAME), stringify(s)));
+    protected Optional<SessionCasWriter.VersionedValue> readVersioned(String key) {
+        return Optional.ofNullable(remoteContent.get(key))
+                .map(value -> new SessionCasWriter.VersionedValue(value, value));
+    }
+
+    @Override
+    protected boolean createIfAbsent(String key, String value, int ttlSeconds) {
+        return remoteContent.putIfAbsent(key, value) == null;
+    }
+
+    @Override
+    protected boolean compareAndSet(String key, Object version, String value, int ttlSeconds) {
+        return remoteContent.replace(key, (String) version, value);
+    }
+
+    @Override
+    protected void blindSet(String key, String value, int ttlSeconds) {
+        remoteContent.put(key, value);
     }
 
     @Override
     public void removeSession(Exchange exc) {
         getInvalidCookies(exc, UUID.randomUUID().toString()).forEach(remoteContent::remove);
         super.superRemoveSession(exc);
-    }
-
-    @Override
-    protected Optional<String> getCachedSession(String cookie) {
-        return Optional.ofNullable(remoteContent.get(cookie.split("=true")[0]));
     }
 }
