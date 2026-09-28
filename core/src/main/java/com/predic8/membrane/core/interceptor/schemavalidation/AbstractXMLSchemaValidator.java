@@ -63,8 +63,8 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
 
     /**
      * The embedded schemas, compiled once. A {@link Schema} is thread-safe, so new pool entries
-     * only need a cheap {@link Schema#newValidator()}. Set by the first {@link #createValidators()}
-     * call, which comes from {@link #init()} filling the pool, before any request thread runs.
+     * only need a cheap {@link Schema#newValidator()}. Set in {@link #init()} before the pool is
+     * built, so a bad schema fails at startup and request threads only ever read it.
      */
     private List<Schema> compiledSchemas;
 
@@ -92,6 +92,7 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
 
     public void init() {
         super.init();
+        compiledSchemas = compileSchemas();
         validators = new ValidatorPool<>(this::createValidators, poolConcurrency());
     }
 
@@ -264,8 +265,6 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
      * when the pool is exhausted, from request threads.
      */
     protected List<Validator> createValidators() {
-        if (compiledSchemas == null)
-            compiledSchemas = compileSchemas();
         var validators = new ArrayList<Validator>(compiledSchemas.size());
         for (var schema : compiledSchemas)
             validators.add(createValidator(schema));
