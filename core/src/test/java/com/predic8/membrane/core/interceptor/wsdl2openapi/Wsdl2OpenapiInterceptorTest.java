@@ -902,6 +902,19 @@ class Wsdl2OpenapiInterceptorTest {
         assertEquals(List.of("http://localhost:2002/port-b-path"), exc.getDestinations());
     }
 
+    @Test
+    void aClientSoapActionIsNotForwardedToASoap12Service() throws Exception {
+        var interceptor = wsdl2openapi("classpath:/ws/multiple-ports-in-a-service.wsdl");
+        interceptor.setPort("SOAP12Port");
+        interceptor.init(new DummyTestRouter(), apiProxyWith(interceptor));
+
+        var exc = new Exchange(null);
+        exc.setRequest(new Request.Builder().post("/b").header(SOAP_ACTION, "\"urn:client-supplied\"").body("42").build());
+        assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exc));
+
+        assertNull(exc.getRequest().getHeader().getFirstValue(SOAP_ACTION));
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {"classpath:/ws/soap11-invalid-action.wsdl", "classpath:/ws/soap12-invalid-action.wsdl"})
     void aSoapActionThatIsNotAUriIsRejected(String wsdl) {

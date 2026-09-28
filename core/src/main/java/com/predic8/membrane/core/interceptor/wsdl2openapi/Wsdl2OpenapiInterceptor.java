@@ -51,8 +51,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.http.Header.CONTENT_LENGTH;
-import static com.predic8.membrane.core.http.Header.CONTENT_TYPE;
+import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.InterceptorUtil.getInterceptors;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
@@ -632,6 +631,9 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
             exc.getRequest().getHeader().setContentType(runtime.contentType());
             if (runtime.soapAction() != null) {
                 exc.getRequest().getHeader().setSOAPAction(runtime.soapAction());
+            } else {
+                // SOAP 1.2 sends no SOAPAction header: one the client sent must not reach the service.
+                exc.getRequest().getHeader().removeFields(SOAP_ACTION);
             }
 
             exc.setProperty(operationPropertyKey, operationName);
