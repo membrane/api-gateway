@@ -102,7 +102,7 @@ public class DefaultMainComponents implements MainComponents {
     }
 
     private void applyTransportConfig(TransportConfiguration transportConfig) {
-        if (transportConfig == null)
+        if (transportConfig == null || transport.getTransportConfig() == transportConfig)
             return;
         if (transport.getTransportConfig() != null)
             throw new ConfigurationException("Transport settings are configured twice: as attributes of <transport> and in <configuration><transport>. Configure them in one place only, preferably in <configuration><transport>.");

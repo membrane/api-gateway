@@ -56,6 +56,25 @@ class DefaultMainComponentsTest {
     }
 
     @Test
+    void sameTransportConfigInBothPlacesIsAccepted() {
+        DefaultRouter router = new DefaultRouter();
+        try {
+            var config = transportConfigWithBacklog(1024);
+            HttpTransport transport = new HttpTransport();
+            transport.setTransportConfig(config);
+            router.setTransport(transport);
+            router.getConfiguration().setTransportConfig(config);
+
+            router.init();
+
+            assertSame(config, transport.getTransportConfig());
+            assertEquals(1024, transport.getBacklog());
+        } finally {
+            router.stop();
+        }
+    }
+
+    @Test
     void explicitTransportSettingsAreKeptWithoutTransportConfig() {
         DefaultRouter router = new DefaultRouter();
         try {
