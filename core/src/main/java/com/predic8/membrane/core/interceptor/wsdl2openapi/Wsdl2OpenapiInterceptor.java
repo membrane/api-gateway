@@ -45,6 +45,8 @@ import org.xml.sax.InputSource;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -287,6 +289,7 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
     }
 
     private OperationRuntime buildOperationRuntime(SelectedPort port, String operationName) {
+        validateSoapAction(port, operationName);
         Optional<Operation> wsdlOp = port.findOperation(operationName);
         return new OperationRuntime(
                 new Json2SoapTransformer(port, operationName, xsdToSchema.getSchemasByNamespace()),
@@ -683,14 +686,27 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * SOAP 1.2 announces the action in the media type (RFC 3902), where SOAP 1.1 uses a header. The
-     * action is a quoted-string, so a quote or backslash in it is escaped (RFC 9110 section 5.6.4).
+     * Both SOAP versions require the action to be a URI (SOAP 1.1 section 6.1.1, RFC 3902), which
+     * is what lets it go between quotes unescaped: a URI cannot contain a quote or a backslash.
      */
+    private void validateSoapAction(SelectedPort port, String operationName) {
+        String action = getSOAPAction(port, operationName);
+        if (action == null || action.isEmpty()) return;
+        try {
+            new URI(action);
+        } catch (URISyntaxException e) {
+            throw new ConfigurationException("""
+                    The WSDL '%s' gives operation '%s' the SOAP action '%s', which is not a URI.
+                    SOAP requires the action to be a URI. Percent-encode characters such as quotes, backslashes or spaces.""".formatted(wsdl, operationName, action), e);
+        }
+    }
+
+    /** SOAP 1.2 announces the action in the media type (RFC 3902), where SOAP 1.1 uses a header. */
     private static String requestContentType(SelectedPort port, String operationName) {
         if (port.soapVersion() != SOAP_12) return TEXT_XML;
         String action = getSOAPAction(port, operationName);
         return action == null || action.isEmpty() ? APPLICATION_SOAP_XML
-                : "%s; action=\"%s\"".formatted(APPLICATION_SOAP_XML, action.replace("\\", "\\\\").replace("\"", "\\\""));
+                : "%s; action=\"%s\"".formatted(APPLICATION_SOAP_XML, action);
     }
 
     /**

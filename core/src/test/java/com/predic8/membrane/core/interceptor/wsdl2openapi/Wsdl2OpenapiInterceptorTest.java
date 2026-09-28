@@ -902,17 +902,16 @@ class Wsdl2OpenapiInterceptorTest {
         assertEquals(List.of("http://localhost:2002/port-b-path"), exc.getDestinations());
     }
 
-    @Test
-    void theSoap12ActionIsEscapedInTheQuotedParameter() throws Exception {
-        var interceptor = wsdl2openapi("classpath:/ws/soap12-action-quoted-string.wsdl");
-        interceptor.init(new DummyTestRouter(), apiProxyWith(interceptor));
+    @ParameterizedTest
+    @ValueSource(strings = {"classpath:/ws/soap11-invalid-action.wsdl", "classpath:/ws/soap12-invalid-action.wsdl"})
+    void aSoapActionThatIsNotAUriIsRejected(String wsdl) {
+        var interceptor = wsdl2openapi(wsdl);
 
-        var exc = new Exchange(null);
-        exc.setRequest(new Request.Builder().post("/say-hello").body("{\"name\":\"Alice\"}").build());
-        assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exc));
-
-        // RFC 9110 section 5.6.4: a quote or backslash inside a quoted-string is a quoted-pair.
-        assertEquals("application/soap+xml; action=\"urn:say\\\"Hello\\\\x\"", exc.getRequest().getHeader().getContentType());
+        // SOAP 1.1 section 6.1.1 and RFC 3902: the action is a URI, so it is sent between quotes unescaped.
+        var e = assertThrows(ConfigurationException.class,
+                () -> interceptor.init(new DummyTestRouter(), apiProxyWith(interceptor)));
+        assertTrue(e.getMessage().contains("urn:say\"Hello\\x"), e.getMessage());
+        assertTrue(e.getMessage().contains("not a URI"), e.getMessage());
     }
 
     @Test
