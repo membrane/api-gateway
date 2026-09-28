@@ -18,9 +18,42 @@ import java.nio.charset.*;
 import java.util.*;
 import java.util.regex.*;
 
+import org.apache.commons.io.ByteOrderMark;
+import org.apache.commons.io.input.BOMInputStream;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static org.apache.commons.io.ByteOrderMark.*;
 
 public class XMLEncodingUtil {
+
+    /**
+     * The byte order marks an XML parser detects on its own, and therefore the only ones Membrane
+     * lets override a declared charset. UTF-32 is left out deliberately: the parsers in use do not
+     * decode it, so detecting it would only replace a declared charset with a failure.
+     */
+    public static final ByteOrderMark[] XML_BYTE_ORDER_MARKS = {UTF_8, UTF_16BE, UTF_16LE};
+
+    /**
+     * The byte order mark {@code bytes} starts with, or null. A BOM identifies the byte stream's
+     * encoding directly, so it takes precedence over both a declared charset and the XML
+     * declaration - see {@link XMLInputSourceUtil#getInputSource(java.io.InputStream, String)},
+     * which applies the same rule to the streaming path.
+     */
+    public static ByteOrderMark getByteOrderMark(byte[] bytes) {
+        if (bytes == null || bytes.length == 0) return null;
+        try (BOMInputStream in = BOMInputStream.builder()
+                .setInputStream(new ByteArrayInputStream(bytes))
+                .setByteOrderMarks(XML_BYTE_ORDER_MARKS)
+                .get()) {
+            return in.getBOM();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e); // Cannot happen: the source is a byte array.
+        }
+    }
 
     // XML declaration must be ASCII-compatible
     private static final Pattern XML_DECL_PATTERN =
@@ -40,15 +73,8 @@ public class XMLEncodingUtil {
     public static String getEncodingFromXMLProlog(byte[] bytes) {
         if (bytes == null || bytes.length == 0) return null;
 
-        int offset = 0;
-
-        // UTF-8 BOM
-        if (bytes.length >= 3
-                && (bytes[0] & 0xFF) == 0xEF
-                && (bytes[1] & 0xFF) == 0xBB
-                && (bytes[2] & 0xFF) == 0xBF) {
-            offset = 3;
-        }
+        ByteOrderMark bom = getByteOrderMark(bytes);
+        int offset = bom != null ? bom.length() : 0;
 
         // XML declaration must appear at the start (after BOM + whitespace)
         int max = Math.min(bytes.length, offset + 1024);

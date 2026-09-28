@@ -14,7 +14,8 @@
 
 package com.predic8.membrane.core.http;
 
-import static java.util.Objects.hash;
+import static java.lang.Character.toLowerCase;
+import static java.lang.Character.toUpperCase;
 
 /**
  * This class is used by {@link Header} a key for header fields.
@@ -39,9 +40,20 @@ public class HeaderName {
 		return name.equalsIgnoreCase(str);
 	}
 
+	/**
+	 * Folds each character the way {@link String#equalsIgnoreCase(String)} does, uppercase then
+	 * lowercase, so names it considers equal hash alike: toLowerCase() alone keeps the dotless "ı"
+	 * apart from the "i" that equalsIgnoreCase() matches it with.
+	 */
 	@Override
 	public int hashCode() {
-		return hash(name.toLowerCase());
+		int hash = 0;
+		for (int i = 0; i < name.length(); ) {
+			final int c = name.codePointAt(i);
+			hash = 31 * hash + toLowerCase(toUpperCase(c));
+			i += Character.charCount(c);
+		}
+		return hash;
 	}
 
 	public String getName() {

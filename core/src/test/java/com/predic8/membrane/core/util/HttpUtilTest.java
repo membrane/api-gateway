@@ -14,17 +14,21 @@
 
 package com.predic8.membrane.core.util;
 
-import com.predic8.membrane.core.http.*;
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.params.*;
-import org.junit.jupiter.params.provider.*;
+import com.predic8.membrane.core.http.Request;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.util.List;
 
-import static com.predic8.membrane.annot.Constants.*;
-import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.annot.Constants.CRLF;
+import static com.predic8.membrane.core.http.Header.X_FORWARDED_FOR;
 import static com.predic8.membrane.core.util.HttpTestUtil.convertMessage;
 import static com.predic8.membrane.core.util.HttpUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -170,6 +174,30 @@ public class HttpUtilTest {
     })
     void unlistedCodeFallsBackToItsStatusClass(int code, String message) {
         assertEquals(message, getMessageForStatusCode(code));
+    }
+
+    @ParameterizedTest
+    @ValueSource(chars = {'a', 'z', 'A', 'Z', '0', '9', '!', '#', '$', '%', '&', '\'', '*', '+', '-', '.', '^', '_', '`', '|', '~'})
+    void tcharIsAccepted(char c) {
+        assertTrue(isTchar(c));
+    }
+
+    @ParameterizedTest
+    @ValueSource(chars = {' ', '\t', ':', '"', '(', ')', ',', '/', ';', '<', '=', '>', '?', '@', '[', '\\', ']', '{', '}', '\u0000', '\u000B', '\u007F', 'ö'})
+    void nonTcharIsRejected(char c) {
+        assertFalse(isTchar(c));
+    }
+
+    @ParameterizedTest
+    @ValueSource(chars = {' ', '\t'})
+    void spaceAndTabAreOptionalWhitespace(char c) {
+        assertTrue(isOptionalWhitespace(c));
+    }
+
+    @ParameterizedTest
+    @ValueSource(chars = {'\u000B', '\f', '\r', '\n', ' ', 'a'})
+    void otherCharactersAreNotOptionalWhitespace(char c) {
+        assertFalse(isOptionalWhitespace(c));
     }
 
     @Test
