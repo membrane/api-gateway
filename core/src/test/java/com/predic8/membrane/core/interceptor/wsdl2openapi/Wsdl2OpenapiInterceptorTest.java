@@ -1017,6 +1017,17 @@ class Wsdl2OpenapiInterceptorTest {
         assertTrue(e.getMessage().contains("http://www.w3.org/2010/soapjms/"), e.getMessage());
     }
 
+    @Test
+    void anOperationWithoutSoapOperationIsCalledWithAnEmptyAction() throws Exception {
+        var interceptor = wsdl2openapi("classpath:/ws/no-soap-operation.wsdl");
+        interceptor.init(new DummyTestRouter(), apiProxyWith(interceptor));
+
+        var exc = new Exchange(null);
+        exc.setRequest(new Request.Builder().post("/greet").body("{\"name\":\"Alice\"}").build());
+        assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exc));
+        assertEquals("", exc.getRequest().getHeader().getFirstValue(SOAP_ACTION));
+    }
+
     /** Inits the interceptor and runs a getBank request through handleRequest. */
     private static Exchange getBankRequest(Wsdl2OpenapiInterceptor interceptor) throws Exception {
         interceptor.init(new DummyTestRouter(), apiProxyWith(interceptor));
