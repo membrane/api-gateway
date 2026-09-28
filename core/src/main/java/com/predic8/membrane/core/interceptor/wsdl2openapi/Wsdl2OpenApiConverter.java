@@ -40,7 +40,6 @@ import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_PROBLEM_JSON;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.OperationRouter.extractParamNames;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.*;
-import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.INPUT;
 import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.OUTPUT;
 
 /**
@@ -411,8 +410,7 @@ public class Wsdl2OpenApiConverter {
     }
 
     private List<Part> getInputParts(Operation wsdlOp) {
-        var inputs = wsdlOp.getMessagesByDirection(INPUT);
-        return inputs.isEmpty() ? List.of() : inputs.getFirst().getParts();
+        return wsdlOp.getInputMessage().map(Message::getParts).orElse(List.of());
     }
 
     private List<Part> getBodyParts(List<Part> inputParts, List<Part> headerParts) {
@@ -434,10 +432,7 @@ public class Wsdl2OpenApiConverter {
     }
 
     private Part resolveHeaderPart(SoapHeader header) {
-        Optional<Part> part = definitions.findMessage(WSDLParserUtil.getLocalName(header.getMessage()))
-                .flatMap(message -> message.getParts().stream()
-                        .filter(p -> header.getPart().equals(p.getName()))
-                        .findFirst());
+        Optional<Part> part = header.resolvePart();
         if (part.isEmpty()) {
             log.debug("soap:header part '{}' of message '{}' could not be resolved, skipping",
                     header.getPart(), header.getMessage());

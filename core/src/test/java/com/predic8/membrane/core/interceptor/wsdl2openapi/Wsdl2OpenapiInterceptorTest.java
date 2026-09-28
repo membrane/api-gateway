@@ -831,9 +831,9 @@ class Wsdl2OpenapiInterceptorTest {
 
     @Test
     void aPortAloneDoesNotSelectAmongSeveralServices() {
-        // Both services name their port CityPort, so a port name is only meaningful within a service.
+        // The port name is unique in the WSDL, but a port is only looked up within the selected service.
         var interceptor = wsdl2openapi("classpath:/ws/cities-2-services.wsdl");
-        interceptor.setPort("CityPort");
+        interceptor.setPort("CityServiceBPort");
 
         assertThrows(ConfigurationException.class,
                 () -> interceptor.init(new DummyTestRouter(), apiProxyWith(interceptor)));
@@ -966,6 +966,32 @@ class Wsdl2OpenapiInterceptorTest {
 
         assertThrows(ConfigurationException.class,
                 () -> interceptor.init(new DummyTestRouter(), apiProxyWith(interceptor)));
+    }
+
+    @Test
+    void aPortTypeWithoutBindingIsCalledWithSoap11AndAnEmptyAction() throws Exception {
+        var interceptor = wsdl2openapi("classpath:/ws/no-service-no-binding.wsdl");
+        interceptor.init(new DummyTestRouter(), apiProxyWith(interceptor));
+
+        var exc = new Exchange(null);
+        exc.setRequest(new Request.Builder().post("/greet").body("{\"name\":\"Alice\"}").build());
+        assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exc));
+        assertTrue(exc.getRequest().getBodyAsStringDecoded().contains(SOAP11_NS),
+                exc.getRequest().getBodyAsStringDecoded());
+        assertEquals(TEXT_XML, exc.getRequest().getHeader().getContentType());
+        assertEquals("", exc.getRequest().getHeader().getFirstValue(SOAP_ACTION));
+    }
+
+    @Test
+    void aWsdlWithoutServiceAndSeveralPortTypesIsRejected() {
+        var interceptor = wsdl2openapi("classpath:/ws/no-service-two-port-types.wsdl");
+
+        var e = assertThrows(ConfigurationException.class,
+                () -> interceptor.init(new DummyTestRouter(), apiProxyWith(interceptor)));
+        assertTrue(e.getMessage().contains("GreetingPortType"), e.getMessage());
+        assertTrue(e.getMessage().contains("FarewellPortType"), e.getMessage());
+        assertFalse(e.getMessage().contains("Set port"),
+                "port cannot be set without a service, so the message must not suggest it: " + e.getMessage());
     }
 
     /** Inits the interceptor and runs a getBank request through handleRequest. */

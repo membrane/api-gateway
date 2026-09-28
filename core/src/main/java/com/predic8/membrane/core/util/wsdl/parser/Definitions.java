@@ -14,15 +14,18 @@
 
 package com.predic8.membrane.core.util.wsdl.parser;
 
-import com.predic8.membrane.core.resolver.*;
-import com.predic8.membrane.core.util.wsdl.parser.schema.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
-import org.w3c.dom.*;
+import com.predic8.membrane.core.resolver.Resolver;
+import com.predic8.membrane.core.util.wsdl.parser.schema.Schema;
+import com.predic8.membrane.core.util.wsdl.parser.schema.Types;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 import java.util.*;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.toSet;
 
 /**
  * WSDL elements register themselves via WSDLParserContext. This is more convenient, e.g. binding is not
@@ -105,6 +108,39 @@ public class Definitions extends WSDLElement {
         return schemas;
     }
 
+    /**
+     * Builds namespace -> schema-root-element list by BFS over imports and includes.
+     * Uses identity-based dedup. Schemas with a non-null targetNamespace are added to the map;
+     * schemas included without their own targetNamespace are still queued for traversal so their
+     * sub-imports and sub-includes are discovered.
+     */
+    public Map<String, List<Element>> getSchemasByNamespace() {
+        var map = new LinkedHashMap<String, List<Element>>();
+        var queue = new ArrayDeque<>(schemas);
+        var seen = Collections.newSetFromMap(new IdentityHashMap<>());
+        seen.addAll(schemas);
+        while (!queue.isEmpty()) {
+            var schema = queue.poll();
+            var ns = schema.getTargetNamespace();
+            if (ns != null) {
+                map.computeIfAbsent(ns, k -> new ArrayList<>()).add(schema.getSchemaElement());
+            }
+            for (var imp : schema.getImports()) {
+                var imported = imp.getSchema();
+                if (imported != null && imported.getTargetNamespace() != null && seen.add(imported)) {
+                    queue.add(imported);
+                }
+            }
+            for (var inc : schema.getIncludes()) {
+                var included = inc.getSchema();
+                if (included != null && seen.add(included)) {
+                    queue.add(included);
+                }
+            }
+        }
+        return map;
+    }
+
     public List<Element> getSchemaElements() {
         return schemas.stream().map(Schema::getSchemaElement).toList();
     }
@@ -121,26 +157,15 @@ public class Definitions extends WSDLElement {
         return portTypes;
     }
 
-    /**
-     * The operations of all port types, in document order. Operations without a name are included.
-     */
-    public List<Operation> getOperations() {
-        return portTypes.stream().flatMap(pt -> pt.getOperations().stream()).toList();
-    }
-
-    public Optional<Operation> findOperation(String name) {
-        return getOperations().stream().filter(op -> Objects.equals(name, op.getName())).findFirst();
-    }
-
     public List<Binding> getBindings() {
         return bindings;
     }
 
-    public Optional<BindingOperation> findBindingOperation(String name) {
+    /** The bindings of that port type, in document order. */
+    public List<Binding> getBindings(PortType portType) {
         return bindings.stream()
-                .flatMap(b -> b.getBindingOperations().stream())
-                .filter(bo -> Objects.equals(name, bo.getName()))
-                .findFirst();
+                .filter(b -> b.getPortType().getName().equals(portType.getName()))
+                .toList();
     }
 
     public List<Service> getServices() {

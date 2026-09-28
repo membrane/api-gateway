@@ -38,7 +38,6 @@ import static com.predic8.membrane.annot.Constants.SOAP12_NS;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdContentModel.*;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.*;
 import static com.predic8.membrane.core.util.wsdl.parser.Definitions.SOAPVersion.SOAP_12;
-import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.INPUT;
 
 /**
  * Transforms JSON request to SOAP XML envelope.
@@ -142,11 +141,9 @@ public class Json2SoapTransformer {
         Operation operation = port.findOperation(operationName)
                 .orElseThrow(() -> new IllegalArgumentException("Operation not found: " + operationName));
 
-        List<Message> inputMessages = operation.getMessagesByDirection(INPUT);
-        if (inputMessages.isEmpty()) {
-            throw new IllegalArgumentException("No input message found for operation: " + operationName);
-        }
-        List<Part> parts = inputMessages.getFirst().getParts();
+        Message inputMessage = operation.getInputMessage()
+                .orElseThrow(() -> new IllegalArgumentException("No input message found for operation: " + operationName));
+        List<Part> parts = inputMessage.getParts();
         if (parts.isEmpty()) {
             throw new IllegalArgumentException("Input message has no parts for operation: " + operationName);
         }

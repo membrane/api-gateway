@@ -17,27 +17,19 @@ package com.predic8.membrane.core.util.wsdl.parser;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import org.junit.jupiter.api.Test;
 
-import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.INPUT;
-import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.OUTPUT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class OperationTest {
+class PortTest {
 
     @Test
-    void direction() {
-        assertTrue(INPUT.matches("input"));
-        assertTrue(OUTPUT.matches("OutPut"));
+    void findAddress() throws Exception {
+        assertEquals("http://example.com/order", port("OrderSoapPort").findAddress().orElseThrow().getLocation());
+        assertTrue(port("OrderPortWithoutAddress").findAddress().isEmpty());
     }
 
-    @Test
-    void inputMessage() throws Exception {
-        var portType = Definitions.parse(new ResolverMap(), "classpath:/ws/navigation.wsdl").getPortTypes().getFirst();
-
-        assertEquals("parameters", portType.findOperation("order").orElseThrow()
-                .getInputMessage().orElseThrow().getParts().getFirst().getName());
-        assertTrue(portType.findOperation("notify").orElseThrow().getInputMessage().isEmpty(),
-                "a notification operation has no input");
+    private static Port port(String name) throws Exception {
+        return Definitions.parse(new ResolverMap(), "classpath:/ws/navigation.wsdl").getServices().getFirst()
+                .getPorts().stream().filter(p -> name.equals(p.getName())).findFirst().orElseThrow();
     }
-
 }

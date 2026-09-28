@@ -14,7 +14,9 @@
 
 package com.predic8.membrane.core.util.wsdl.parser;
 
-import org.w3c.dom.*;
+import org.w3c.dom.Node;
+
+import java.util.Optional;
 
 import static com.predic8.membrane.core.util.wsdl.parser.WSDLParserUtil.getLocalName;
 
@@ -26,6 +28,11 @@ public class Port extends WSDLElement {
 
     public Address getAddress() {
         return instantiateElements(element,"address",Address.class).getFirst();
+    }
+
+    /** The port's address element; empty if it has none. */
+    public Optional<Address> findAddress() {
+        return instantiateElements(element,"address",Address.class).stream().findFirst();
     }
 
     public Binding getBinding() {

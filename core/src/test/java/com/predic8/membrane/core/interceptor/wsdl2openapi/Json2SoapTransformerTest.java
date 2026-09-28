@@ -34,13 +34,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.buildSchemaMap;
 import static org.junit.jupiter.api.Assertions.*;
 
 class Json2SoapTransformerTest {
 
     private static Json2SoapTransformer transformer(Definitions definitions, String operationName) {
-        return new Json2SoapTransformer(SelectedPort.select(definitions, null, null), operationName, buildSchemaMap(definitions));
+        return new Json2SoapTransformer(SelectedPort.select(definitions, null, null), operationName, definitions.getSchemasByNamespace());
     }
 
     static Definitions citiesDefinitions;

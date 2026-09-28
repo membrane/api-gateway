@@ -14,12 +14,14 @@
 
 package com.predic8.membrane.core.util.wsdl.parser;
 
-import com.predic8.membrane.core.util.wsdl.parser.Definitions.*;
-import org.w3c.dom.*;
+import com.predic8.membrane.core.util.wsdl.parser.Definitions.SOAPVersion;
+import org.w3c.dom.Node;
 
-import java.util.*;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
-import static com.predic8.membrane.core.util.wsdl.parser.WSDLParserUtil.*;
+import static com.predic8.membrane.core.util.wsdl.parser.WSDLParserUtil.getLocalName;
 
 public class Binding extends WSDLElement {
 
@@ -46,10 +48,16 @@ public class Binding extends WSDLElement {
         return getBindingStyle().getSoapVersion();
     }
 
-    public BindingOperation getBindingOperation(String name) {
+    /** Whether the binding binds to SOAP 1.1 or SOAP 1.2. */
+    public boolean isSoap() {
+        return getSoapVersion() != SOAPVersion.UNKNOWN;
+    }
+
+    /** The binding's operation of that name; empty if the binding does not cover it. */
+    public Optional<BindingOperation> findBindingOperation(String name) {
         return getBindingOperations().stream()
-                .filter(bo -> bo.getName().equals(name))
-                .findFirst().orElseThrow(() -> new WSDLParserException("No bindingOperation found for name: " + name));
+                .filter(bo -> Objects.equals(name, bo.getName()))
+                .findFirst();
     }
 
     public List<BindingOperation> getBindingOperations() {
