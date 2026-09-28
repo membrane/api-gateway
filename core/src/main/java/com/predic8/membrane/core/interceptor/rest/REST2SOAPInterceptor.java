@@ -135,7 +135,7 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
         if (accept == null)
             return;
 
-        List<MediaType> types = sortMimeTypeByQualityFactorAscending(accept);
+        List<MediaType> types = sortMimeTypeByQualityFactorDescending(accept);
         if (types.isEmpty())
             return;
 
