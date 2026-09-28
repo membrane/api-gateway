@@ -157,7 +157,7 @@ public class Http1ProtocolHandler extends AbstractProtocolHandler {
     private void readFinalResponse(Exchange exchange, Connection c) throws IOException, EndOfStreamException {
         Response response = exchange.getResponse();
         boolean bodyPending = exchange.getRequest().getHeader().is100ContinueExpected();
-        while (response.getStatusCode() >= 100 && response.getStatusCode() < 200 && response.getStatusCode() != 101) {
+        while (response.getStatusCode() < 200 && response.getStatusCode() >= 100 && response.getStatusCode() != 101) {
             if (response.getStatusCode() == 100 && bodyPending) {
                 exchange.getRequest().getBody().write(getBodyTransferer(exchange, c), retainBodyForRetry());
                 c.out.flush();
