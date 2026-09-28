@@ -228,9 +228,7 @@ public abstract class Message {
 			return;
 		}
 
-		if (log.isDebugEnabled()) {
-			log.error("Message has no content length: {}",this);
-		}
+		log.debug("Message has no content-length: {}",this);
 
 		if (this instanceof Request req && (req.isOPTIONSRequest())) {
 			// OPTIONS without Transfer-Encoding and Content-Length has no body,
