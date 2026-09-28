@@ -22,12 +22,15 @@ SUBSCRIPTION=$(az account show --query id -o tsv)
 SCOPE="/subscriptions/$SUBSCRIPTION/providers/Microsoft.Compute/locations/$LOCATION"
 echo "Subscription: $(az account show --query name -o tsv) ($SUBSCRIPTION), location: $LOCATION"
 
-# "family vCPUs" per size, one line each. A single list-skus call for all sizes, since it is slow.
+# "family vCPUs restrictionReasons" per size, one line each. A single list-skus call for all sizes,
+# since it is slow. --all keeps SKUs restricted for this subscription (otherwise silently dropped,
+# which would be misreported as "not offered"). Only Location restrictions block provisioning;
+# Zone restrictions don't, since provision.sh doesn't pin a zone.
 SKU_FILTER=$(printf "name=='%s' || " "${SIZES[@]}")
 SKU_FILTER=${SKU_FILTER% || }
 echo "Resolving VM families and vCPU counts (az vm list-skus is slow)..."
-SKUS=$(az vm list-skus -l "$LOCATION" --resource-type virtualMachines \
-  --query "[?$SKU_FILTER].[name, family, capabilities[?name=='vCPUs'].value | [0], length(restrictions)]" -o tsv)
+SKUS=$(az vm list-skus -l "$LOCATION" --resource-type virtualMachines --all \
+  --query "[?$SKU_FILTER].[name, family, capabilities[?name=='vCPUs'].value | [0], join(',', restrictions[?type=='Location'].reasonCode)]" -o tsv)
 
 NEEDED=""   # lines of "quotaName vCPUs", summed per family below
 TOTAL=0
@@ -38,8 +41,8 @@ for size in "${SIZES[@]}"; do
     exit 1
   fi
   read -r _ family vcpus restrictions <<< "$line"
-  if [[ "$restrictions" != 0 ]]; then
-    echo "VM size $size is restricted for this subscription in $LOCATION -- pick another size or LOCATION." >&2
+  if [[ -n "$restrictions" ]]; then
+    echo "VM size $size is restricted for this subscription in $LOCATION ($restrictions) -- a quota increase can't lift this; pick another size or LOCATION." >&2
     exit 1
   fi
   NEEDED+="$family $vcpus"$'\n'

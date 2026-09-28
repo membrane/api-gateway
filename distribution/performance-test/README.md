@@ -6,7 +6,7 @@ setup used by `distribution/src/test/java/com/predic8/membrane/load/LoadTester.j
 numbers conflate raw throughput with CPU contention between roles sharing one machine's cores;
 running each role on its own machine isolates what the gateway itself adds to a request.
 
-Six scenarios are included. The first three are of increasing realism (`shortcircuit` -->
+Seven scenarios are included. The first three are of increasing realism (`shortcircuit` -->
 `fullproxy` --> `openapi-validation`); `rate-limit-basic-auth` is a sibling of
 `openapi-validation`, built on `fullproxy`'s topology/body/backlog plus two added gateway tasks,
 so its RPS can be subtracted directly against `fullproxy`'s to isolate those tasks' combined cost;
