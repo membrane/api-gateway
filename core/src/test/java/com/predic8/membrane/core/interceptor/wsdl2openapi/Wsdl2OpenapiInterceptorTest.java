@@ -909,7 +909,7 @@ class Wsdl2OpenapiInterceptorTest {
         assertTrue(exc.getRequest().getBodyAsStringDecoded().contains(SOAP11_NS),
                 exc.getRequest().getBodyAsStringDecoded());
         assertEquals(TEXT_XML, exc.getRequest().getHeader().getContentType());
-        assertNotNull(exc.getRequest().getHeader().getFirstValue(SOAP_ACTION));
+        assertEquals("\"\"", exc.getRequest().getHeader().getFirstValue(SOAP_ACTION), "the WSDL's soapAction is empty");
     }
 
     @Test
@@ -955,7 +955,8 @@ class Wsdl2OpenapiInterceptorTest {
         var exc = new Exchange(null);
         exc.setRequest(new Request.Builder().post("/greet").body("{\"name\":\"Alice\"}").build());
         assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exc));
-        assertEquals("http://example.com/greeting/greet", exc.getRequest().getHeader().getFirstValue(SOAP_ACTION));
+        assertEquals("\"http://example.com/greeting/greet\"", exc.getRequest().getHeader().getFirstValue(SOAP_ACTION),
+                "SOAP 1.1 section 6.1.1 and WS-I BP R2744: the action is quoted");
         assertEquals(List.of(), exc.getDestinations(), "the WSDL has no address to call");
     }
 
@@ -979,7 +980,8 @@ class Wsdl2OpenapiInterceptorTest {
         assertTrue(exc.getRequest().getBodyAsStringDecoded().contains(SOAP11_NS),
                 exc.getRequest().getBodyAsStringDecoded());
         assertEquals(TEXT_XML, exc.getRequest().getHeader().getContentType());
-        assertEquals("", exc.getRequest().getHeader().getFirstValue(SOAP_ACTION));
+        assertEquals("\"\"", exc.getRequest().getHeader().getFirstValue(SOAP_ACTION),
+                "WS-I BP R2745: no action is sent as a quoted empty string");
     }
 
     @Test
@@ -1025,7 +1027,8 @@ class Wsdl2OpenapiInterceptorTest {
         var exc = new Exchange(null);
         exc.setRequest(new Request.Builder().post("/greet").body("{\"name\":\"Alice\"}").build());
         assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exc));
-        assertEquals("", exc.getRequest().getHeader().getFirstValue(SOAP_ACTION));
+        assertEquals("\"\"", exc.getRequest().getHeader().getFirstValue(SOAP_ACTION),
+                "WS-I BP R2745: no action is sent as a quoted empty string");
     }
 
     /** Inits the interceptor and runs a getBank request through handleRequest. */

@@ -143,7 +143,7 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
      *
      * @param contentType       the Content-Type of the SOAP request. For SOAP 1.2, it carries the
      *                          operation's action as a parameter.
-     * @param soapAction        the SOAPAction header of a SOAP 1.1 request, or empty; {@code null}
+     * @param soapAction        the SOAPAction header of a SOAP 1.1 request, quoted; {@code null}
      *                          for SOAP 1.2, which sends no such header.
      * @param faultDetailSchema types the content of a SOAP fault detail, one property per fault the
      *                          operation declares; empty for an operation that declares none, in
@@ -690,8 +690,12 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
                 : "%s; action=\"%s\"".formatted(APPLICATION_SOAP_XML, action);
     }
 
+    /**
+     * The SOAPAction header value: quoted, as SOAP 1.1 section 6.1.1 requires, and a quoted empty
+     * string where the WSDL gives no action (WS-I Basic Profile R2744, R2745).
+     */
     private static String soapActionHeader(SelectedPort port, String operationName) {
-        return port.soapVersion() == SOAP_12 ? null : getSOAPAction(port, operationName);
+        return port.soapVersion() == SOAP_12 ? null : "\"%s\"".formatted(getSOAPAction(port, operationName));
     }
 
     private String getServiceAddress() {
