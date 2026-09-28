@@ -96,7 +96,7 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
     }
 
     /**
-     * Number of validators a pool creates up front; it grows beyond that on demand. Exposed so subclasses that keep an additional pool of their own
+     * Number of validators a pool creates up front and keeps idle at most; it grows beyond that on demand. Exposed so subclasses that keep an additional pool of their own
      * (e.g. {@link WSDLValidator}'s SOAP fault structure validators) size it identically.
      */
     protected static int poolConcurrency() {

@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.schemavalidation;
 
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 /**
@@ -23,23 +24,27 @@ import java.util.function.Supplier;
  * {@link javax.xml.validation.Validator}s or XSLT {@link javax.xml.transform.Transformer}s.
  * <p>
  * A caller never waits: when no idle object is available, a new one is created, so the pool grows
- * to the peak number of concurrent users. A fixed-size blocking pool instead serialized all
- * request threads on its single lock under load. The factory should therefore be cheap, e.g.
+ * to the peak number of concurrent users. Only up to {@code maxIdle} returned objects are kept for
+ * reuse; the rest are discarded, so a burst does not pin its peak count in memory. A fixed-size
+ * blocking pool instead serialized all request threads on its single lock under load. The factory should therefore be cheap, e.g.
  * create a validator from an already compiled, thread-safe {@link javax.xml.validation.Schema}.
  */
 final class ValidatorPool<T> {
 
     private final Queue<T> idle = new ConcurrentLinkedQueue<>();
+    private final AtomicInteger idleCount = new AtomicInteger();
     private final Supplier<T> factory;
+    private final int maxIdle;
 
     /**
      * @param factory creates a new object when no idle one is available
-     * @param initialSize number of objects created up front
+     * @param maxIdle number of objects created up front, and the most idle objects kept for reuse
      */
-    ValidatorPool(Supplier<T> factory, int initialSize) {
+    ValidatorPool(Supplier<T> factory, int maxIdle) {
         this.factory = factory;
-        for (int i = 0; i < initialSize; i++)
-            idle.add(factory.get());
+        this.maxIdle = maxIdle;
+        for (int i = 0; i < maxIdle; i++)
+            release(factory.get());
     }
 
     /**
@@ -48,10 +53,21 @@ final class ValidatorPool<T> {
      */
     T borrow() {
         var object = idle.poll();
-        return object != null ? object : factory.get();
+        if (object == null)
+            return factory.get();
+        idleCount.decrementAndGet();
+        return object;
     }
 
+    /**
+     * Returns an object to the pool, or discards it if {@code maxIdle} objects are already idle.
+     */
     void release(T object) {
+        // Reserve a slot before offering, so concurrent releases never keep more than maxIdle.
+        if (idleCount.incrementAndGet() > maxIdle) {
+            idleCount.decrementAndGet();
+            return;
+        }
         idle.offer(object);
     }
 }

@@ -18,7 +18,8 @@ import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 class ValidatorPoolTest {
 
@@ -51,5 +52,20 @@ class ValidatorPoolTest {
 
         assertEquals(first, pool.borrow());
         assertEquals(1, created.get());
+    }
+
+    @Test
+    void discardsReleasedObjectsBeyondTheIdleLimit() {
+        var created = new AtomicInteger();
+        var pool = new ValidatorPool<>(created::incrementAndGet, 1);
+
+        var first = pool.borrow();
+        var second = pool.borrow();
+        pool.release(first);
+        pool.release(second);
+
+        assertEquals(first, pool.borrow());
+        assertEquals(3, pool.borrow());
+        assertEquals(3, created.get());
     }
 }
