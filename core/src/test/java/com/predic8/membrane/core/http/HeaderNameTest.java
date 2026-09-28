@@ -14,8 +14,15 @@
 package com.predic8.membrane.core.http;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.ResourceLock;
+import org.junit.jupiter.api.parallel.Resources;
 
-import static org.junit.jupiter.api.Assertions.*;
+import java.util.HashSet;
+import java.util.Locale;
+import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class HeaderNameTest {
 
@@ -34,6 +41,36 @@ class HeaderNameTest {
     @Test
     void testHashCode() {
         assertEquals(hn.hashCode(), new HeaderName("test-Header").hashCode());
+    }
+
+    /**
+     * equalsIgnoreCase() is locale independent, toLowerCase() is not: under tr-TR "X-ID"
+     * lowercases to "x-ıd" (dotless i), so equal names would hash differently.
+     */
+    @Test
+    @ResourceLock(Resources.LOCALE)
+    void hashCodeIsLocaleIndependent() {
+        Locale previous = Locale.getDefault();
+        try {
+            Locale.setDefault(Locale.of("tr", "TR"));
+            assertEquals(new HeaderName("X-ID").hashCode(), new HeaderName("x-id").hashCode());
+        } finally {
+            Locale.setDefault(previous);
+        }
+    }
+
+    /**
+     * equalsIgnoreCase() also matches characters whose upper case forms agree: the dotless "ı"
+     * uppercases to "I", while toLowerCase() leaves it alone, so equal names must not hash apart.
+     */
+    @Test
+    void namesEqualIgnoringCaseAreEqualSetKeys() {
+        HeaderName dotless = new HeaderName("Apı-Key");
+        HeaderName dotted = new HeaderName("Api-Key");
+
+        assertEquals(dotless, dotted);
+        assertEquals(dotless.hashCode(), dotted.hashCode());
+        assertTrue(new HashSet<>(Set.of(dotless)).contains(dotted));
     }
 
     @Test

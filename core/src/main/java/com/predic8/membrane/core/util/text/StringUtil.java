@@ -14,7 +14,9 @@
 
 package com.predic8.membrane.core.util.text;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import static java.lang.Math.min;
 
