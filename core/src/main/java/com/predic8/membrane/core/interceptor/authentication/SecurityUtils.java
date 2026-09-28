@@ -19,7 +19,6 @@ import org.bouncycastle.crypto.generators.Argon2BytesGenerator;
 import org.bouncycastle.crypto.generators.OpenBSDBCrypt;
 import org.bouncycastle.crypto.params.Argon2Parameters;
 
-import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Map;
@@ -148,10 +147,7 @@ public final class SecurityUtils {
     }
 
     public static void verifyLoginOrThrow(Map<String, String> postData, String storedPassword) {
-        verifyLoginOrThrow(postData.get(PASSWORD), storedPassword);
-    }
-
-    public static void verifyLoginOrThrow(String password, String storedPassword) {
+        String password = postData.get(PASSWORD);
         if (password == null) throw new NoSuchElementException();
 
         requirePlaintextPasswordInput(password);

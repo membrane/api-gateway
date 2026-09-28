@@ -25,9 +25,6 @@ import java.util.NoSuchElementException;
 import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.interceptor.authentication.SecurityUtils.*;
-import static com.predic8.membrane.core.interceptor.authentication.SecurityUtils.PASSWORD;
-import static com.predic8.membrane.core.interceptor.authentication.SecurityUtils.hashPasswordBcrypt;
-import static com.predic8.membrane.core.interceptor.authentication.SecurityUtils.verifyLoginOrThrow;
 import static org.apache.commons.codec.digest.Crypt.crypt;
 import static org.bouncycastle.crypto.generators.OpenBSDBCrypt.generate;
 import static org.junit.jupiter.api.Assertions.*;
@@ -102,16 +99,6 @@ class SecurityUtilsTest {
     void verifyPassword_plaintextStartingWithDollar() {
         assertTrue(verifyPassword("$abc", "$abc"));
         assertFalse(verifyPassword("abc", "$abc"));
-    }
-
-    @Test
-    void verifyLoginOrThrow_withPasswordString() {
-        String stored = hashPasswordBcrypt("2y", 10, DEMO_PASSWORD);
-
-        assertThrows(NoSuchElementException.class, () -> verifyLoginOrThrow((String) null, stored));
-        assertThrows(IllegalArgumentException.class, () -> verifyLoginOrThrow(stored, stored));
-        assertThrows(NoSuchElementException.class, () -> verifyLoginOrThrow(WRONG_PASSWORD, stored));
-        assertDoesNotThrow(() -> verifyLoginOrThrow(DEMO_PASSWORD, stored));
     }
 
     @Test

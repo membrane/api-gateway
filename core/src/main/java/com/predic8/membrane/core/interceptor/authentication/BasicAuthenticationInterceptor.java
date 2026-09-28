@@ -122,7 +122,7 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
     private boolean validUser(Exchange exc, String authorization) {
         try {
             var credentials = BasicAuthenticationUtil.getCredentials(authorization);
-            userDataProvider.verify(credentials.username(), credentials.password());
+            userDataProvider.verify(credentials.toMap());
             exc.setProperty(SECURITY_SCHEMES, List.of(BASIC().username(credentials.username())));
             return true;
         } catch (NoSuchElementException e) {

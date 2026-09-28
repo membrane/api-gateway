@@ -117,11 +117,15 @@ class BasicAuthenticationInterceptorPerformanceTest {
         long durationNanos = 0;
         for (int done = 0; done < requests; done += BATCH_SIZE) {
             Exchange[] exchanges = buildExchanges(username, password, Math.min(BATCH_SIZE, requests - done));
+            Outcome[] outcomes = new Outcome[exchanges.length];
             long start = System.nanoTime();
-            for (Exchange exchange : exchanges) {
-                assertEquals(expected, interceptor.handleRequest(exchange));
+            for (int i = 0; i < exchanges.length; i++) {
+                outcomes[i] = interceptor.handleRequest(exchanges[i]);
             }
             durationNanos += System.nanoTime() - start;
+            for (Outcome outcome : outcomes) {
+                assertEquals(expected, outcome);
+            }
         }
         return durationNanos;
     }

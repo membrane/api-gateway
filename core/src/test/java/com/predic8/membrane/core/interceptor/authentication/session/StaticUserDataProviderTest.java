@@ -14,12 +14,18 @@
 package com.predic8.membrane.core.interceptor.authentication.session;
 
 import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider.UserConfig;
-import com.predic8.membrane.core.router.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.router.DummyTestRouter;
+import com.predic8.membrane.core.router.Router;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
 
-import static com.predic8.membrane.core.util.SecurityUtils.*;
+import static com.predic8.membrane.core.util.SecurityUtils.AlgoSalt;
+import static com.predic8.membrane.core.util.SecurityUtils.isHashedPassword;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class StaticUserDataProviderTest {
@@ -49,17 +55,6 @@ public class StaticUserDataProviderTest {
         // Then
         assertNotNull(result);
         assertEquals("alice", result.get("username"));
-    }
-
-    @Test
-    void verifyWithUsernameAndPassword() {
-        provider.setUsers(List.of(new UserConfig("alice", "secret123")));
-
-        assertEquals("alice", provider.verify("alice", "secret123").get("username"));
-        assertThrows(NoSuchElementException.class, () -> provider.verify("alice", "wrong"));
-        assertThrows(NoSuchElementException.class, () -> provider.verify("unknown", "secret123"));
-        assertThrows(NoSuchElementException.class, () -> provider.verify(null, "secret123"));
-        assertThrows(NoSuchElementException.class, () -> provider.verify("alice", null));
     }
 
     @Test

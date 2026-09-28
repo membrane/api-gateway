@@ -14,11 +14,11 @@
 
 package com.predic8.membrane.core.interceptor.authentication.session;
 
-import com.predic8.membrane.annot.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.NoSuchElementException;
 
-import java.util.*;
-
-import static com.predic8.membrane.core.interceptor.authentication.SecurityUtils.*;
+import static com.predic8.membrane.core.interceptor.authentication.SecurityUtils.verifyLoginOrThrow;
 
 public abstract class AbstractUserDataProvider implements UserDataProvider {
 
@@ -26,17 +26,13 @@ public abstract class AbstractUserDataProvider implements UserDataProvider {
 
     @Override
     public Map<String, String> verify(Map<String, String> postData) {
-        return verify(postData.get("username"), postData.get(PASSWORD));
-    }
-
-    @Override
-    public Map<String, String> verify(String username, String password) {
+        var username = postData.get("username");
         if (username == null) throw new NoSuchElementException();
 
         var userAttributes = getUsersByName().get(username);
         if (userAttributes == null) throw new NoSuchElementException();
 
-        verifyLoginOrThrow(password, userAttributes.getPassword());
+        verifyLoginOrThrow(postData, userAttributes.getPassword());
         return userAttributes.getAttributes();
     }
 
