@@ -63,10 +63,19 @@ public class Rewrite implements Cloneable {
         // Caching should not be needed cause the OpenAPI is not so often retrieved. Maybe practice
         // will prove that wrong.
         JsonNode rewritten = node.deepCopy();
-        for (JsonNode server : rewritten.get("servers")) {
+        for (JsonNode server : getOrCreateServers((ObjectNode) rewritten)) {
             rewriteServerEntry(exc, uriFactory, server);
         }
         return rewritten;
+    }
+
+    private static JsonNode getOrCreateServers(ObjectNode node) {
+        JsonNode servers = node.get("servers");
+        if (servers != null && !servers.isEmpty())
+            return servers;
+        ArrayNode created = node.putArray("servers");
+        created.addObject().put("url", "/");
+        return created;
     }
 
     private void rewriteServerEntry(Exchange exc, URIFactory uriFactory, JsonNode server) throws URISyntaxException {

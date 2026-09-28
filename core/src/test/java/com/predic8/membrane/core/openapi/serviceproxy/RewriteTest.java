@@ -174,4 +174,15 @@ class RewriteTest {
         JsonNode jsonNode = openAPIRecord.rewriteOpenAPI(get, new URIFactory());
         assertEquals("http://api.predic8.de/", jsonNode.get("servers").get(0).get("url").textValue());
     }
+
+    /**
+     * OpenAPI 3.2 documents are published from their original node, which - unlike the swagger
+     * model - has no server added by the parser. See OpenAPIRecordFactory.create().
+     */
+    @Test
+    void rewriteOpenAPI32WithNoServers() throws Exception {
+        OpenAPIRecord openAPIRecord = records.get("oas32-no-servers-v1-0");
+        JsonNode jsonNode = openAPIRecord.rewriteOpenAPI(get, new URIFactory());
+        assertEquals("http://api.predic8.de/", jsonNode.get("servers").get(0).get("url").textValue());
+    }
 }
