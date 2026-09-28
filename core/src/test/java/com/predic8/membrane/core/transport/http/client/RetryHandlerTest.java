@@ -186,14 +186,34 @@ class RetryHandlerTest {
             assertEquals(1, mock.attempts);
         }
 
+    }
+
+    @Nested
+    class ConnectFailures {
+
         @Test
-        void connectionRefusedOneNode() {
-            RetryHandler rh = new RetryHandler();
+        void connectionRefusedIsRetriedForPostOnOneNode() {
+            RetryableExchangeCallMock mock = new RetryableExchangeCallMock(new ConnectException("Firewall blocks!"));
+            assertThrows(ConnectException.class, () -> rh.executeWithRetries(post("/foo").buildExchange(), mock));
+            assertEquals(3, mock.attempts);
+        }
+
+        @Test
+        void connectionRefusedIsNotRetriedWhenDisabled() {
+            rh.setRetryOnConnectFailure(false);
             RetryableExchangeCallMock mock = new RetryableExchangeCallMock(new ConnectException("Firewall blocks!"));
             assertThrows(ConnectException.class, () -> rh.executeWithRetries(post("/foo").buildExchange(), mock));
             assertEquals(1, mock.attempts);
         }
 
+        @Test
+        void connectionRefusedIsRetriedOnMultipleNodes() throws Exception {
+            RetryableExchangeCallMock mock = new RetryableExchangeCallMock(new ConnectException("Firewall blocks!"));
+            Exchange exc = post("/foo").buildExchange();
+            exc.setDestinations(List.of("http://node1.example.com/", "http://node2.example.com/"));
+            assertThrows(ConnectException.class, () -> rh.executeWithRetries(exc, mock));
+            assertEquals(3, mock.attempts);
+        }
     }
 
     /**
@@ -303,6 +323,15 @@ class RetryHandlerTest {
             RetryHandler withRetry = new RetryHandler();
             RetryHandler withoutRetry = new RetryHandler();
             withoutRetry.setRetryOnConnectTimeout(false);
+            assertNotEquals(withRetry, withoutRetry);
+            assertNotEquals(withRetry.hashCode(), withoutRetry.hashCode());
+        }
+
+        @Test
+        void equals_returnsFalseForDifferentRetryOnConnectFailure() {
+            RetryHandler withRetry = new RetryHandler();
+            RetryHandler withoutRetry = new RetryHandler();
+            withoutRetry.setRetryOnConnectFailure(false);
             assertNotEquals(withRetry, withoutRetry);
             assertNotEquals(withRetry.hashCode(), withoutRetry.hashCode());
         }

@@ -50,6 +50,13 @@ public class Session {
 
     volatile boolean isDirty;
 
+    /**
+     * The content as it was read at the start of the request, so that a session manager can tell this
+     * request's own changes from those another request made in the meantime. Empty for a Session that
+     * was not read from a store - a freshly deserialized one, for instance.
+     */
+    private volatile Map<String, Object> baseSnapshot = Map.of();
+
     public Session(String usernameKeyName, Map<String, Object> content) {
         this.usernameKeyName = usernameKeyName;
         this.content = withoutNullEntries(content);
@@ -239,6 +246,18 @@ public class Session {
 
     public Map<String, Object> getContent() {
         return unmodifiableMap(content);
+    }
+
+    @JsonIgnore
+    public Map<String, Object> getBaseSnapshot() {
+        return baseSnapshot;
+    }
+
+    @JsonIgnore
+    public void setBaseSnapshot(Map<String, Object> baseSnapshot) {
+        // A copy: the caller usually passes getContent(), which is a view of the live map and would
+        // therefore track the very changes the snapshot exists to detect.
+        this.baseSnapshot = Map.copyOf(baseSnapshot);
     }
 
     public void setContent(Map<String, Object> content) {
