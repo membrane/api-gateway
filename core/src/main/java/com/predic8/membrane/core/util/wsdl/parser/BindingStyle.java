@@ -14,10 +14,11 @@
 
 package com.predic8.membrane.core.util.wsdl.parser;
 
-import com.predic8.membrane.core.util.wsdl.parser.Binding.*;
-import com.predic8.membrane.core.util.wsdl.parser.Definitions.*;
-import org.slf4j.*;
-import org.w3c.dom.*;
+import com.predic8.membrane.core.util.wsdl.parser.Binding.Style;
+import com.predic8.membrane.core.util.wsdl.parser.Definitions.SOAPVersion;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.Node;
 
 import static com.predic8.membrane.core.util.wsdl.parser.Definitions.SOAPVersion.*;
 
@@ -31,6 +32,11 @@ public class BindingStyle extends WSDLElement {
 
     public Style getStyle() {
         return Style.fromString(getAttribute("style"));
+    }
+
+    /** The transport URI of a SOAP binding; empty if the binding does not declare one. */
+    public String getTransport() {
+        return getAttribute("transport");
     }
 
     public SOAPVersion getSoapVersion() {

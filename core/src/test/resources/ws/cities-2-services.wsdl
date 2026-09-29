@@ -77,12 +77,12 @@
         </wsdl:operation>
     </wsdl:binding>
     <wsdl:service name="CityServiceA">
-        <wsdl:port name="CityPort" binding="cs:CitySoapBindingA">
+        <wsdl:port name="CityServiceAPort" binding="cs:CitySoapBindingA">
             <s:address location="http://localhost:2001/services/cities"/>
         </wsdl:port>
     </wsdl:service>
     <wsdl:service name="CityServiceB">
-        <wsdl:port name="CityPort" binding="cs:CitySoapBindingB">
+        <wsdl:port name="CityServiceBPort" binding="cs:CitySoapBindingB">
             <s:address location="http://localhost:2001/city-service"/>
         </wsdl:port>
     </wsdl:service>

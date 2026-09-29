@@ -31,6 +31,7 @@ import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.util.ConfigurationException;
+import com.predic8.membrane.core.util.wsdl.parser.Address;
 import com.predic8.membrane.core.util.wsdl.parser.Definitions;
 import com.predic8.membrane.core.util.wsdl.parser.Service;
 import org.apache.commons.lang3.StringUtils;
@@ -215,11 +216,10 @@ public class SOAPProxy extends AbstractServiceProxy {
     }
 
     private @NotNull String getLocation(com.predic8.membrane.core.util.wsdl.parser.Service service) {
-        var location = service.getPorts().getFirst().getAddress().getLocation();
-
-        if (location == null)
-            throw new ConfigurationException("In the WSDL %s, there is no @location defined on the port.".formatted(wsdl));
-        return location;
+        return service.getPorts().getFirst().findAddress()
+                .map(Address::getLocation)
+                .filter(location -> !location.isEmpty())
+                .orElseThrow(() -> new ConfigurationException("In the WSDL %s, there is no @location defined on the port.".formatted(wsdl)));
     }
 
     private void setTarget(URL url) {

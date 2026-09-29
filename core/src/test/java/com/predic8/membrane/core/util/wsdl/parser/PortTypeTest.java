@@ -14,24 +14,20 @@
 
 package com.predic8.membrane.core.util.wsdl.parser;
 
-import org.w3c.dom.Node;
+import com.predic8.membrane.core.resolver.ResolverMap;
+import org.junit.jupiter.api.Test;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class PortType extends WSDLElement {
+class PortTypeTest {
 
-    public PortType(WSDLParserContext ctx, Node node) {
-        super(ctx, node);
-    }
+    @Test
+    void findOperationByName() throws Exception {
+        var portType = Definitions.parse(new ResolverMap(), "classpath:/ws/navigation.wsdl").getPortTypes().getFirst();
 
-    public List<Operation> getOperations() {
-        return instantiateWSDLChildren( "operation", Operation.class);
-    }
-
-    /** The operation of that name, in document order the first; empty if there is none. */
-    public Optional<Operation> findOperation(String name) {
-        return getOperations().stream().filter(op -> Objects.equals(name, op.getName())).findFirst();
+        assertEquals("notify", portType.findOperation("notify").orElseThrow().getName());
+        assertTrue(portType.findOperation("doesNotExist").isEmpty());
+        assertTrue(portType.findOperation(null).isEmpty());
     }
 }

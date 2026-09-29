@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- A port type alone: no binding and no service. The api's target supplies the address. -->
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:tns="http://example.com/greeting"
+                  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                  targetNamespace="http://example.com/greeting">
+    <wsdl:types>
+        <xsd:schema targetNamespace="http://example.com/greeting" elementFormDefault="qualified">
+            <xsd:element name="greet">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="name" type="xsd:string"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="greetResponse" type="xsd:string"/>
+        </xsd:schema>
+    </wsdl:types>
+    <wsdl:message name="greet">
+        <wsdl:part name="parameters" element="tns:greet"/>
+    </wsdl:message>
+    <wsdl:message name="greetResponse">
+        <wsdl:part name="parameters" element="tns:greetResponse"/>
+    </wsdl:message>
+    <wsdl:portType name="GreetingPortType">
+        <wsdl:operation name="greet">
+            <wsdl:input message="tns:greet"/>
+            <wsdl:output message="tns:greetResponse"/>
+        </wsdl:operation>
+    </wsdl:portType>
+</wsdl:definitions>

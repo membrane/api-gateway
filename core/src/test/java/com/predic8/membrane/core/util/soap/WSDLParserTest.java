@@ -53,7 +53,7 @@ class WSDLParserTest {
         assertEquals("CitySoapBinding", binding.getName());
         assertEquals(DOCUMENT, binding.getStyle());
 
-        assertEquals("https://predic8.de/cities", binding.getBindingOperation("getCity").getSoapAction());
+        assertEquals("https://predic8.de/cities", binding.findBindingOperation("getCity").orElseThrow().getSoapAction());
 
 
         var portType = binding.getPortType();
@@ -156,7 +156,7 @@ class WSDLParserTest {
         assertEquals("HelloBinding", binding.getName());
         assertEquals(DOCUMENT, binding.getStyle());
 
-        assertEquals("sayHello", binding.getBindingOperation("sayHello").getSoapAction());
+        assertEquals("sayHello", binding.findBindingOperation("sayHello").orElseThrow().getSoapAction());
 
         var portType = binding.getPortType();
         assertEquals("HelloPortType", portType.getName());
