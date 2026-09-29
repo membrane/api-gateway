@@ -67,7 +67,20 @@ public class BasicAuthenticationUtil {
      *         has invalid Base64, or is missing the colon separator
      */
     public static BasicCredentials getCredentials(Exchange exc) {
-        return parseCredentials(decodeAuthorizationHeader(exc));
+        return getCredentials(exc.getRequest().getHeader().getAuthorization());
+    }
+
+    /**
+     * Same as {@link #getCredentials(Exchange)} for an <code>Authorization</code> header value that was already
+     * read from the request.
+     *
+     * @param authorizationHeader The value of the Authorization header, may be null
+     * @return BasicCredentials record with username and password
+     * @throws IllegalArgumentException if the header is missing, invalid, not Basic auth,
+     *         has invalid Base64, or is missing the colon separator
+     */
+    public static BasicCredentials getCredentials(String authorizationHeader) {
+        return parseCredentials(decodeAuthorizationHeader(authorizationHeader));
     }
 
     public static String createAuthorizationHeader(String username, String password) {
@@ -86,13 +99,11 @@ public class BasicAuthenticationUtil {
     /**
      * Decodes the Authorization header and returns the raw credentials string.
      *
-     * @param exc The exchange
+     * @param header The value of the Authorization header, may be null
      * @return The decoded credentials string in format "username:password"
      * @throws IllegalArgumentException if the header is missing or invalid
      */
-    private static String decodeAuthorizationHeader(Exchange exc) {
-        var header = exc.getRequest().getHeader().getAuthorization();
-
+    private static String decodeAuthorizationHeader(String header) {
         if (header == null || header.isEmpty()) {
             throw new IllegalArgumentException("Authorization header is required");
         }

@@ -14,11 +14,11 @@
 
 package com.predic8.membrane.core.interceptor.authentication.session;
 
-import com.predic8.membrane.annot.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.NoSuchElementException;
 
-import java.util.*;
-
-import static com.predic8.membrane.core.interceptor.authentication.SecurityUtils.*;
+import static com.predic8.membrane.core.interceptor.authentication.SecurityUtils.verifyLoginOrThrow;
 
 public abstract class AbstractUserDataProvider implements UserDataProvider {
 
