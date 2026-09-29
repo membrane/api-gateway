@@ -49,6 +49,21 @@ class BasicAuthenticationUtilTest {
         }
 
         @Test
+        void validCredentialsFromHeaderValue() {
+            var credentials = BasicAuthenticationUtil.getCredentials(encodeBasicAuth("alice", "secret123"));
+
+            assertEquals("alice", credentials.username());
+            assertEquals("secret123", credentials.password());
+        }
+
+        @Test
+        void invalidHeaderValue() {
+            assertThrows(IllegalArgumentException.class, () -> BasicAuthenticationUtil.getCredentials((String) null));
+            assertThrows(IllegalArgumentException.class, () -> BasicAuthenticationUtil.getCredentials(""));
+            assertThrows(IllegalArgumentException.class, () -> BasicAuthenticationUtil.getCredentials("Bearer abc"));
+        }
+
+        @Test
         void emptyPassword() {
             var exc = createExchange(encodeBasicAuth("user", ""));
 
