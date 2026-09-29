@@ -46,6 +46,12 @@ PRIO 3:
   - method: Suggest GET, POST, ...
   - openapi/rewrite/protocol provide http and https options
 - Refactor: File-, JDBC-, LDAP- and StaticUserProvider
+- Make the maximum HTTP line length configurable in YAML
+  - Story: the limit for a single start line or header line (default 8092) can only be set with the JVM system property `membrane.core.http.body.maxlinelength`, e.g. through `JAVA_OPTS`. It is read once into static fields of `HttpUtil` and `Http2Logic` (HTTP/2 header decoder), so it is global, undocumented, and needs a restart to change. The name is misleading: it limits start and header lines, not the body.
+  - Move it into the configuration, e.g. the transport configuration from #3315, and pass it down to `HttpUtil.readLine(InputStream, int)`, which takes the limit as a parameter once #3379 is merged.
+  - Keep the system property as a fallback, or deprecate it.
+  - Document that zero or less means no limit.
+  - Related: #3382 (a line over the limit gets a connection reset instead of 414/431), #3378 item 3 (8092 is probably a typo for 8192).
 
 ## Membrane 8.0.0 (Java 25)
 
