@@ -13,25 +13,34 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.soap;
 
-import com.googlecode.jatl.*;
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.administration.*;
-import com.predic8.membrane.core.interceptor.rest.*;
+import com.googlecode.jatl.Html;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.Required;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.administration.Mapping;
+import com.predic8.membrane.core.interceptor.rest.QueryParameter;
+import com.predic8.membrane.core.interceptor.rest.RESTInterceptor;
 import com.predic8.membrane.core.util.wsdl.parser.*;
-import org.slf4j.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
-import java.util.regex.*;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.List;
+import java.util.regex.Pattern;
 
-import static com.predic8.membrane.annot.Constants.*;
-import static com.predic8.membrane.core.http.Response.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static java.util.regex.Pattern.*;
+import static com.predic8.membrane.annot.Constants.HTML_FOOTER;
+import static com.predic8.membrane.annot.Constants.PRODUCT_NAME;
+import static com.predic8.membrane.core.http.Response.ok;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static java.util.regex.Pattern.CASE_INSENSITIVE;
+import static java.util.regex.Pattern.compile;
 
 /**
  * @description Serves an HTML “web service explorer”.
@@ -183,7 +192,7 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 						tr();
 						td().text(p.getName()).end();
 						td().text(p.getBinding().getSoapVersion().name()).end();
-						td().text(p.getAddress().getLocation()).end();
+						td().text(p.findAddress().map(Address::getLocation).orElse("")).end();
 						td();
 						if (matchingPorts.contains(p))
 							text("*");

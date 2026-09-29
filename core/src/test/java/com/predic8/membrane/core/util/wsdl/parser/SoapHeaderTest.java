@@ -17,27 +17,24 @@ package com.predic8.membrane.core.util.wsdl.parser;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import org.junit.jupiter.api.Test;
 
-import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.INPUT;
-import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.OUTPUT;
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class OperationTest {
+class SoapHeaderTest {
 
     @Test
-    void direction() {
-        assertTrue(INPUT.matches("input"));
-        assertTrue(OUTPUT.matches("OutPut"));
+    void resolvePart() throws Exception {
+        var headers = headers();
+
+        assertEquals("token", headers.getFirst().resolvePart().orElseThrow().getName());
+        assertTrue(headers.get(1).resolvePart().isEmpty(), "the message has no part 'missing'");
     }
 
-    @Test
-    void inputMessage() throws Exception {
-        var portType = Definitions.parse(new ResolverMap(), "classpath:/ws/navigation.wsdl").getPortTypes().getFirst();
-
-        assertEquals("parameters", portType.findOperation("order").orElseThrow()
-                .getInputMessage().orElseThrow().getParts().getFirst().getName());
-        assertTrue(portType.findOperation("notify").orElseThrow().getInputMessage().isEmpty(),
-                "a notification operation has no input");
+    private static List<SoapHeader> headers() throws Exception {
+        return Definitions.parse(new ResolverMap(), "classpath:/ws/navigation.wsdl").getBindings().getFirst()
+                .findBindingOperation("order").orElseThrow()
+                .getInputs().getFirst().getHeaders();
     }
-
 }

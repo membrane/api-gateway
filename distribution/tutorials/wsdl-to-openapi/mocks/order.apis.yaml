@@ -23,7 +23,7 @@ global:
 api:
   port: 2002
   name: cancel
-  test: header.SOAPAction == 'cancel'
+  test: header.SOAPAction == '"cancel"'
   flow:
     - setProperty:
         name: orderId
