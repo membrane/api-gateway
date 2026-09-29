@@ -23,8 +23,8 @@
          passwords look like a bcrypt/crypt(3) hash (they never do here) before falling through to
          the actual MessageDigest.isEqual compare, plus a BasicHttpSecurityScheme and a List.of
          allocation on success. removeAuthorizationHeader is left at its default (true).
-         rateLimiter's requestLimit is set far above this test's total request count (1,010,000
-         with warmup) so no request is ever actually rejected with 429; default keying (client IP)
+         rateLimiter's requestLimit is set far above this test's total request count (up to
+         11,000,000 with the default 1,000,000 warmup at LOAD_TOTAL=10000000) so no request is ever actually rejected with 429; default keying (client IP)
          is used, and since all load comes from one client VM, every request hits the same counter
          key, the worst case for the interceptor's internal lock contention (LazyRateLimit: a
          ConcurrentHashMap increment plus a synchronized clock check on every single request, with
@@ -39,13 +39,17 @@
          cheaper than a proxied request and would inflate RPS rather than deflate it.
          __BACKEND_PRIVATE_IP__ is filled in by deploy-and-run.sh once the backend VM's private IP
          is known. -->
-    <router>
+    <!-- No exchange store: the default LimitedMemoryExchangeStore keeps recent exchanges for the
+         admin console and serializes request threads on its lock; nothing here reads them. -->
+    <forgetfulExchangeStore id="forgetful"/>
+
+    <router exchangeStore="forgetful">
         <transport backlog="1024"/>
         <api port="2000">
             <basicAuthentication>
                 <user name="loadtest" password="loadtest-secret"/>
             </basicAuthentication>
-            <rateLimiter requestLimit="2000000" requestLimitDuration="PT1H"/>
+            <rateLimiter requestLimit="100000000" requestLimitDuration="PT1H"/>
             <target host="__BACKEND_PRIVATE_IP__" port="2010"/>
         </api>
     </router>

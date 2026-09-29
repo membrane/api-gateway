@@ -13,12 +13,15 @@ LOCATION=${LOCATION:-swedencentral}
 # TESTED-CONFIGURATIONS.md for the comparisons that led here) -- override via env vars if your
 # subscription's quota doesn't support them, or to go back to a uniform size for a cleaner
 # single-variable comparison (all three were `Standard_F16as_v6` in earlier rounds).
-# NOTE: these are non-default quota families; you will likely need `az quota update` for
-# `StandardFasv7Family` and `StandardFXmdsv2Family` in your target region before `az vm create`
-# below succeeds -- see the quota check this script runs next.
+# The gateway was `Standard_FX16mds_v2` until 2026-09-25; `Standard_F16as_v7` (16 physical
+# cores vs. FX16mds_v2's 8 hyperthreaded ones) measured +7% (fullproxy) to +34%
+# (openapi-validation) on the same setup. The client was `Standard_F16as_v6` until 2026-09-26;
+# it now matches the gateway, so it has the same CPU headroom at high concurrency.
+# NOTE: all three together need 48 vCPUs of `StandardFasv7Family`, a non-default quota family;
+# run ./request-quotas.sh first to check and, if needed, request it.
 BACKEND_SIZE=${BACKEND_SIZE:-Standard_F16as_v7}
-GATEWAY_SIZE=${GATEWAY_SIZE:-Standard_FX16mds_v2}
-CLIENT_SIZE=${CLIENT_SIZE:-Standard_F16as_v6}
+GATEWAY_SIZE=${GATEWAY_SIZE:-Standard_F16as_v7}
+CLIENT_SIZE=${CLIENT_SIZE:-Standard_F16as_v7}
 IMAGE=Canonical:ubuntu-24_04-lts:server:latest
 ADMIN_USER=azureuser
 VNET=lt-vnet
@@ -35,13 +38,18 @@ echo "If IMAGE above looks wrong, edit provision.sh before continuing."
 
 echo ""
 echo "Checking vCPU quota in $LOCATION..."
-az vm list-usage --location "$LOCATION" -o table | grep -Ei "Total Regional vCPUs|Fasv6 Family|Fasv7 Family|FXmdsv2 Family" || true
+az vm list-usage --location "$LOCATION" -o table | grep -Ei "Total Regional vCPUs|Fasv6 Family|Fasv7 Family" || true
 echo "(If CurrentValue + this test's needed cores > Limit above, request a quota increase, e.g.:"
-echo "   az quota update --resource-name StandardFasv7Family --scope \"/subscriptions/\$(az account show --query id -o tsv)/providers/Microsoft.Compute/locations/$LOCATION\" --limit-object value=32 --resource-type dedicated"
-echo "   az quota update --resource-name StandardFXmdsv2Family --scope \"/subscriptions/\$(az account show --query id -o tsv)/providers/Microsoft.Compute/locations/$LOCATION\" --limit-object value=32 --resource-type dedicated"
+echo "   az quota update --resource-name StandardFasv7Family --scope \"/subscriptions/\$(az account show --query id -o tsv)/providers/Microsoft.Compute/locations/$LOCATION\" --limit-object value=48 --resource-type dedicated"
 echo " -- or pick different sizes/LOCATION.)"
 
 az group create -n "$RG" -l "$LOCATION"
+
+# Proximity placement group: puts all three VMs physically close together, for low and steady
+# network latency between them, as is usual for a latency-sensitive benchmark.
+PPG=membrane-perftest-ppg
+az ppg create -g "$RG" -n "$PPG" -l "$LOCATION" -t Standard \
+  --intent-vm-sizes "$BACKEND_SIZE" "$GATEWAY_SIZE" "$CLIENT_SIZE" -o none
 
 az network vnet create -g "$RG" -n "$VNET" --address-prefix 10.10.0.0/24 \
   --subnet-name "$SUBNET" --subnet-prefix 10.10.0.0/24
@@ -66,6 +74,11 @@ az network nsg rule create -g "$RG" --nsg-name "$NSG" -n AllowBackendPort \
 az network nsg rule create -g "$RG" --nsg-name "$NSG" -n AllowBackendTlsPort \
   --priority 121 --access Allow --protocol Tcp --direction Inbound \
   --source-address-prefixes 10.10.0.0/24 --destination-port-ranges 2011
+
+# Backend's SOAP listener, used by the wsdl2openapi scenario.
+az network nsg rule create -g "$RG" --nsg-name "$NSG" -n AllowBackendSoapPort \
+  --priority 122 --access Allow --protocol Tcp --direction Inbound \
+  --source-address-prefixes 10.10.0.0/24 --destination-port-ranges 2012
 
 declare -A SIZES=( [lt-backend]="$BACKEND_SIZE" [lt-gateway]="$GATEWAY_SIZE" [lt-client]="$CLIENT_SIZE" )
 
@@ -111,6 +124,7 @@ for NAME in lt-backend lt-gateway lt-client; do
     --generate-ssh-keys \
     --public-ip-sku Standard \
     --accelerated-networking true \
+    --ppg "$PPG" \
     --custom-data "$CLOUDINIT_FILE"
 done
 

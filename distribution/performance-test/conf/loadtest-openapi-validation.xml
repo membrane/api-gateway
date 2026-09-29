@@ -12,7 +12,11 @@
          __BACKEND_PRIVATE_IP__ and __OAS_PATH__ are filled in by deploy-and-run.sh (the spec is
          scp'd from distribution/router/conf/openapi/fruitshop-v2-2-0.oas.yml onto this VM; a
          relative `location` resolves under the distribution's own conf/, not conf_override/). -->
-    <router>
+    <!-- No exchange store: the default LimitedMemoryExchangeStore keeps recent exchanges for the
+         admin console and serializes request threads on its lock; nothing here reads them. -->
+    <forgetfulExchangeStore id="forgetful"/>
+
+    <router exchangeStore="forgetful">
         <transport backlog="1024"/>
         <api port="2000" name="fruitshop">
             <openapi location="__OAS_PATH__" validateRequests="yes" validateResponses="no" validationDetails="yes"/>
