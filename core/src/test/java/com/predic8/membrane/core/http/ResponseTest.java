@@ -697,6 +697,8 @@ public class ResponseTest {
      */
     @ParameterizedTest
     @ValueSource(strings = {
+            "103 Early Hints\nTransfer-Encoding: chunked\nContent-Length: 5",
+            "103 Early Hints\nTransfer-Encoding: gzip",
             "204 No Content\nTransfer-Encoding: chunked\nContent-Length: 5",
             "204 No Content\nTransfer-Encoding: gzip",
             "304 Not Modified\nTransfer-Encoding: chunked\nContent-Length: 5",
