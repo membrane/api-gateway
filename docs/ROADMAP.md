@@ -135,4 +135,4 @@ PRIO 3:
   - Store body as parsed JsonNode or Document
     - If JSON is needed by an interceptor use already parsed JSON
 
-  
+- replaced `ApisJsonInterceptor` with `ApiDiscoveryInterceptor`
