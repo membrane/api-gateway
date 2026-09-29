@@ -331,7 +331,7 @@ public class Header {
     }
 
     public void removeFields(String name) {
-        fields.removeAll(filterByHeaderName(name).toList());
+        fields.removeIf(hf -> hf.getHeaderName().hasName(name));
     }
 
     /**

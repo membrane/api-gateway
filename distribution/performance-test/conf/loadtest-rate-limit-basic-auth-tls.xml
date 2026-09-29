@@ -32,7 +32,11 @@
          client's CPU-busy figure too: if it's saturated (close to the gateway's), the RPS number is
          measuring the load generator, not the gateway, and concurrency/client VM size need
          adjusting before the run is trustworthy. -->
-    <router>
+    <!-- No exchange store: the default LimitedMemoryExchangeStore keeps recent exchanges for the
+         admin console and serializes request threads on its lock; nothing here reads them. -->
+    <forgetfulExchangeStore id="forgetful"/>
+
+    <router exchangeStore="forgetful">
         <transport backlog="1024"/>
         <api port="2000">
             <ssl>
@@ -41,7 +45,7 @@
             <basicAuthentication>
                 <user name="loadtest" password="loadtest-secret"/>
             </basicAuthentication>
-            <rateLimiter requestLimit="2000000" requestLimitDuration="PT1H"/>
+            <rateLimiter requestLimit="100000000" requestLimitDuration="PT1H"/>
             <target host="__BACKEND_PRIVATE_IP__" port="2011">
                 <ssl>
                     <truststore location="__GATEWAY_TRUSTSTORE_PATH__" password="changeit"/>

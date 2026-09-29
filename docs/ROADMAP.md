@@ -3,6 +3,12 @@
 
 
 PRIO 1:
+- Add performance tutorial or tuning guide
+  - forgetful exchange store
+- set backlog to 1000
+  - provide production tutorial with backlog = 100
+  - production = true
+  - not hotreload
 - When released:
   - Add SqlProtection to README.md
   - Udate OAuth2 sections in README.md
