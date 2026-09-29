@@ -15,22 +15,31 @@
 package com.predic8.membrane.core.util;
 
 import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.transport.http.EOFWhileReadingLineException;
+import com.predic8.membrane.core.transport.http.LineTooLongException;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 import static com.predic8.membrane.annot.Constants.CRLF;
 import static com.predic8.membrane.core.http.Header.X_FORWARDED_FOR;
 import static com.predic8.membrane.core.util.HttpTestUtil.convertMessage;
 import static com.predic8.membrane.core.util.HttpUtil.*;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class HttpUtilTest {
@@ -63,6 +72,131 @@ public class HttpUtilTest {
     @Test
     void readLineMessage() throws Exception {
         assertEquals("POST /operation/call HTTP/1.1", readLine( convertMessage(POST_REQUEST)));
+    }
+
+    /**
+     * readLine reads a BufferedInputStream or ByteArrayInputStream in bulk and any other stream
+     * byte by byte. Every stream kind must return the same lines, throw the same exceptions and
+     * leave the same bytes in the stream.
+     */
+    @Nested
+    class ReadLine {
+
+        @Test
+        void crlf() throws IOException {
+            assertSameOnAllStreams("foo\r\nbar\r\n\r\n");
+        }
+
+        @Test
+        void lf() throws IOException {
+            assertSameOnAllStreams("foo\nbar\n\n");
+        }
+
+        @Test
+        void lfCrIsOneTerminator() throws IOException {
+            assertEquals(List.of("line:foo", "line:bar", "eof:", "rest:"), readAll(byteByByte("foo\n\rbar\r\n".getBytes(ISO_8859_1))));
+            assertSameOnAllStreams("foo\n\rbar\r\n");
+        }
+
+        @Test
+        void crSwallowsTheNextByte() throws IOException {
+            assertEquals(List.of("line:foo", "line:ar", "eof:", "rest:"), readAll(byteByByte("foo\rbar\r\n".getBytes(ISO_8859_1))));
+            assertSameOnAllStreams("foo\rbar\r\n");
+        }
+
+        @Test
+        void terminatorAtEndOfStream() throws IOException {
+            assertSameOnAllStreams("foo\r");
+            assertSameOnAllStreams("foo\n");
+        }
+
+        @Test
+        void eofInsideLine() throws IOException {
+            assertEquals(List.of("line:foo", "eof:ba", "rest:"), readAll(byteByByte("foo\r\nba".getBytes(ISO_8859_1))));
+            assertSameOnAllStreams("foo\r\nba");
+        }
+
+        @Test
+        void emptyStream() throws IOException {
+            assertSameOnAllStreams("");
+        }
+
+        @Test
+        void bytesAreLatin1() throws IOException {
+            byte[] bytes = {'/', (byte) 0xC3, (byte) 0xA4, (byte) 0xFF, 13, 10};
+            assertEquals("/Ã¤ÿ", readLine(new ByteArrayInputStream(bytes)));
+            assertSameOnAllStreams(bytes);
+        }
+
+        @Test
+        void leavesFollowingBytesInStream() throws IOException {
+            InputStream in = new BufferedInputStream(new ByteArrayInputStream("GET / HTTP/1.1\r\nHost: a\r\n\r\nbody".getBytes(ISO_8859_1)));
+            assertEquals("GET / HTTP/1.1", readLine(in));
+            assertEquals("Host: a\r\n\r\nbody", new String(in.readAllBytes(), ISO_8859_1));
+        }
+
+        @Test
+        void lineLongerThanBulkReadLimit() throws IOException {
+            assertSameOnAllStreams("a".repeat(5_000) + "\r\nb\r\n");
+        }
+
+        @Test
+        void lineTooLong() throws IOException {
+            assertSameOnAllStreams("a".repeat(9_000) + "\r\n");
+        }
+
+        @Test
+        void randomInput() throws IOException {
+            byte[] alphabet = {'a', 'b', ' ', 13, 13, 10, 10, (byte) 0xE4};
+            for (int seed = 0; seed < 300; seed++) {
+                Random random = new Random(seed);
+                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                int length = random.nextInt(3_000);
+                while (out.size() < length) {
+                    if (random.nextInt(50) == 0)
+                        out.writeBytes("x".repeat(random.nextInt(9_000)).getBytes(ISO_8859_1));
+                    else
+                        out.write(alphabet[random.nextInt(alphabet.length)]);
+                }
+                assertSameOnAllStreams(out.toByteArray());
+            }
+        }
+
+        private static void assertSameOnAllStreams(String content) throws IOException {
+            assertSameOnAllStreams(content.getBytes(ISO_8859_1));
+        }
+
+        private static void assertSameOnAllStreams(byte[] content) throws IOException {
+            List<String> expected = readAll(byteByByte(content));
+            assertEquals(expected, readAll(new ByteArrayInputStream(content)), "ByteArrayInputStream");
+            for (int size : new int[]{1, 2, 3, 16, 2048, 8192}) {
+                assertEquals(expected, readAll(new BufferedInputStream(new ByteArrayInputStream(content), size)), "BufferedInputStream(" + size + ")");
+            }
+        }
+
+        /**
+         * Reads lines until the stream fails, then the bytes left in it.
+         */
+        private static List<String> readAll(InputStream in) throws IOException {
+            List<String> events = new ArrayList<>();
+            try {
+                while (true)
+                    events.add("line:" + readLine(in));
+            } catch (EOFWhileReadingLineException e) {
+                events.add("eof:" + e.getLineSoFar());
+            } catch (LineTooLongException e) {
+                events.add("tooLong:" + e.getMessage());
+            }
+            events.add("rest:" + new String(in.readAllBytes(), ISO_8859_1));
+            return events;
+        }
+
+        /**
+         * Not one of the classes read in bulk, so readLine takes the byte-by-byte path.
+         */
+        private static InputStream byteByByte(byte[] content) {
+            return new FilterInputStream(new ByteArrayInputStream(content)) {};
+        }
     }
 
     @Test

@@ -21,6 +21,8 @@ import com.predic8.membrane.core.http.Response.ResponseBuilder;
 import com.predic8.membrane.core.transport.http.EOFWhileReadingLineException;
 import com.predic8.membrane.core.transport.http.LineTooLongException;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -28,6 +30,7 @@ import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
@@ -38,6 +41,7 @@ import static com.predic8.membrane.core.http.Header.X_FORWARDED_FOR;
 import static com.predic8.membrane.core.http.MimeType.TEXT_HTML_UTF8;
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.util.Util.splitStringByComma;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptyList;
 import static java.util.Locale.US;
@@ -52,6 +56,10 @@ public class HttpUtil {
 		String maxLineLength = System.getProperty("membrane.core.http.body.maxlinelength");
 		MAX_LINE_LENGTH = maxLineLength == null ? 8092 : Integer.parseInt(maxLineLength);
 	}
+
+	// Longer lines fall back to reading byte by byte. Equal to the default buffer size of the
+	// connection streams, so marking never makes a BufferedInputStream grow its buffer.
+	private static final int BULK_READ_LIMIT = 2048;
 
 	/**
 	 * Take out the last entry added by Membrane.
@@ -78,7 +86,57 @@ public class HttpUtil {
 		return gmtDateFormat;
 	}
 
+	/**
+	 * Reads a line terminated by CR or LF and consumes its terminator: a CR always takes the byte
+	 * after it along, an LF only a CR directly after it. Bytes are converted to chars as ISO-8859-1.
+	 */
 	public static String readLine(InputStream in) throws IOException {
+		// Exact classes only: a subclass may override read() and behave differently.
+		if (in.getClass() == BufferedInputStream.class || in.getClass() == ByteArrayInputStream.class) {
+			String line = readLineInBulk(in);
+			if (line != null)
+				return line;
+		}
+		return readLineByteByByte(in);
+	}
+
+	/**
+	 * Reads ahead with bulk reads instead of one read() per byte, which takes the stream's lock
+	 * every time, then rewinds and skips exactly the bytes {@link #readLineByteByByte(InputStream)}
+	 * would have consumed. Both stream classes return the bytes already available rather than
+	 * blocking to fill the array, so this only waits where reading byte by byte would wait too.
+	 *
+	 * @return the line, or <code>null</code> with the stream rewound if the stream ends or the
+	 * line does not end within {@link #BULK_READ_LIMIT} bytes
+	 */
+	private static String readLineInBulk(InputStream in) throws IOException {
+		int limit = Math.min(BULK_READ_LIMIT, MAX_LINE_LENGTH);
+		byte[] bytes = new byte[Math.min(256, limit)];
+		in.mark(limit);
+		int n = 0;
+		int i = 0;
+		while (n < limit) {
+			if (n == bytes.length)
+				bytes = Arrays.copyOf(bytes, Math.min(2 * bytes.length, limit));
+			int read = in.read(bytes, n, bytes.length - n);
+			if (read == -1)
+				break;
+			n += read;
+			// The last byte read waits for the next read: a CR or LF needs the byte after it to
+			// decide what to consume.
+			for (; i < n - 1; i++) {
+				if (bytes[i] == 13 || bytes[i] == 10) {
+					in.reset();
+					in.skipNBytes(bytes[i] == 13 || bytes[i + 1] == 13 ? i + 2 : i + 1);
+					return new String(bytes, 0, i, ISO_8859_1);
+				}
+			}
+		}
+		in.reset();
+		return null;
+	}
+
+	private static String readLineByteByByte(InputStream in) throws IOException {
 
 		StringBuilder line = new StringBuilder(128);
 
