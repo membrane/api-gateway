@@ -327,6 +327,29 @@ public class BodyTest {
 		assertEquals(0, in.available());
 	}
 
+	@Test
+	void pipelinedRequestSurvivesDiscardOfPreviousBodyWithObserver() throws Exception {
+		ByteArrayInputStream in = new ByteArrayInputStream(("""
+				POST /first HTTP/1.1\r
+				Host: example.com\r
+				Content-Length: 7\r
+				\r
+				1234567\
+				GET /second HTTP/1.1\r
+				Host: example.com\r
+				\r
+				""").getBytes(UTF_8));
+
+		Request first = new Request();
+		first.read(in, true);
+		first.getBody().addObserver(new RecordingObserver());
+		first.getBody().discard();
+
+		Request second = new Request();
+		second.read(in, true);
+		assertEquals("/second", second.getUri());
+	}
+
 	private static class RecordingObserver extends AbstractMessageObserver {
 		final ByteArrayOutputStream observed = new ByteArrayOutputStream();
 		boolean completed;
