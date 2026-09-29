@@ -114,6 +114,11 @@ example/tutorial discovery and scaffolding.
   collections: `List.of` or `List.copyOf` for an immutable snapshot;
   `Collections.unmodifiableList` only as a read-only *view* — it still reflects later changes to
   the backing list, so use it when that live behaviour is intended, not as a defensive copy.
+- Use `var` for local variables in new or changed code instead of repeating the concrete type
+  (`var list = new ArrayList<String>()`, `var exc = get("/foo").buildExchange()`). Keep explicit
+  types for fields, parameters and return types, which `var` can't replace anyway, and where the
+  initializer doesn't show the type (e.g. `null`, or a lambda that needs a target type). Don't
+  convert untouched existing code.
 - SLF4J everywhere; no `System.out` in production code.
 - Attack/validation-detection log lines (e.g. XXE/DOCTYPE detection) are intentionally `info`,
   not `warn` — that's an ops-tunable level, not a severity bug to flag in review.
