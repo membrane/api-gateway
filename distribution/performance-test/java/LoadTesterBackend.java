@@ -4,6 +4,7 @@ import com.predic8.membrane.core.config.security.KeyStore;
 import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.exchangestore.ForgetfulExchangeStore;
 import com.predic8.membrane.core.interceptor.flow.ReturnInterceptor;
+import com.predic8.membrane.core.interceptor.templating.StaticInterceptor;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxyKey;
 import com.predic8.membrane.core.router.DefaultRouter;
@@ -23,8 +24,18 @@ import com.predic8.membrane.core.transport.http.HttpTransport;
  * keep sharing one already-running backend process instead of each needing their own. Its port
  * defaults to env var BACKEND_TLS_PORT, then 2011; its keystore password to BACKEND_TLS_KEYSTORE_PASSWORD,
  * then "changeit".
+ * <p>
+ * A third, plaintext listener (for the wsdl2openapi scenario) plays a legacy SOAP service: it
+ * answers every request with a fixed SOAP 1.1 envelope carrying an empty createPersonResponse
+ * element (see ../conf/person-service.wsdl) instead of echoing the request. Its port defaults to
+ * env var BACKEND_SOAP_PORT, then 2012.
  */
 public class LoadTesterBackend {
+
+    private static final String CREATE_PERSON_RESPONSE =
+            "<s11:Envelope xmlns:s11=\"http://schemas.xmlsoap.org/soap/envelope/\"><s11:Body>"
+            + "<p:createPersonResponse xmlns:p=\"http://example.com/person\"/>"
+            + "</s11:Body></s11:Envelope>";
 
     public static void main(String[] args) throws Exception {
         int port = args.length > 0
@@ -45,6 +56,16 @@ public class LoadTesterBackend {
         backend.getFlow().add(new ReturnInterceptor());
         r.add(backend);
 
+        int soapPort = Integer.parseInt(System.getenv().getOrDefault("BACKEND_SOAP_PORT", "2012"));
+        var soapResponse = new StaticInterceptor();
+        soapResponse.setContentType("text/xml");
+        soapResponse.setSrc(CREATE_PERSON_RESPONSE);
+        var soapBackend = new APIProxy();
+        soapBackend.setKey(new APIProxyKey(soapPort));
+        soapBackend.getFlow().add(soapResponse);
+        soapBackend.getFlow().add(new ReturnInterceptor());
+        r.add(soapBackend);
+
         String tlsKeystore = System.getenv("BACKEND_TLS_KEYSTORE");
         if (tlsKeystore != null && !tlsKeystore.isEmpty()) {
             int tlsPort = Integer.parseInt(System.getenv().getOrDefault("BACKEND_TLS_PORT", "2011"));
@@ -64,10 +85,10 @@ public class LoadTesterBackend {
             r.add(tlsBackend);
 
             r.start();
-            System.out.println("LoadTesterBackend listening on 0.0.0.0:" + port + " (plain) and 0.0.0.0:" + tlsPort + " (TLS)");
+            System.out.println("LoadTesterBackend listening on 0.0.0.0:" + port + " (plain), 0.0.0.0:" + tlsPort + " (TLS) and 0.0.0.0:" + soapPort + " (SOAP)");
         } else {
             r.start();
-            System.out.println("LoadTesterBackend listening on 0.0.0.0:" + port);
+            System.out.println("LoadTesterBackend listening on 0.0.0.0:" + port + " (plain) and 0.0.0.0:" + soapPort + " (SOAP)");
         }
 
         Thread.currentThread().join();

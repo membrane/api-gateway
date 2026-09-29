@@ -14,8 +14,6 @@
 
 package com.predic8.membrane.core.util.text;
 
-import org.jspecify.annotations.NonNull;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -111,16 +109,12 @@ public class StringUtil {
         };
     }
 
-    public static boolean isWhitespace(char c) {
-        return c == ' ' || c == '\t';
-    }
-
     /**
      * Returns the last non-empty element of a comma-separated HTTP list value, or the empty
      * string if the value has none. Empty list elements are legal and have to be ignored
      * (RFC 9110 5.6.1.2), so "gzip, chunked," yields "chunked" and "," yields "".
      */
-    public static @NonNull String getLastNonEmptyOfCommaSeparatedString(String value) {
+    public static String getLastNonEmptyOfCommaSeparatedString(String value) {
         String[] elements = value.split(",", -1);
         for (int i = elements.length - 1; i >= 0; i--) {
             String element = elements[i].trim();

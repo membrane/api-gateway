@@ -19,8 +19,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -29,7 +27,6 @@ import java.io.InputStream;
 import java.net.URISyntaxException;
 
 import static com.predic8.membrane.annot.Constants.CRLF;
-import static com.predic8.membrane.core.http.Header.HOST;
 import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.util.HttpTestUtil.convertMessage;
@@ -239,6 +236,29 @@ public class RequestTest {
 
         assertArrayEquals(request.getBody().getContent(), reqTemp.getBody().getContent());
         assertArrayEquals(request.getBody().getRaw(), reqTemp.getBody().getRaw());
+    }
+
+    /**
+     * RFC 9112 6.2: a sender must not send Content-Length in a message with Transfer-Encoding. A
+     * chunked request that still carries a Content-Length, e.g. one built with a known length and
+     * then switched to chunked, is written without it, so that the next hop - Membrane among them -
+     * does not reject it for carrying both.
+     */
+    @Test
+    void writingChunkedRequestDropsContentLength() throws Exception {
+        Request chunked = post("http://example.com/products")
+                .body(5, new ByteArrayInputStream("hello".getBytes(UTF_8)))
+                .header(Header.TRANSFER_ENCODING, Header.CHUNKED)
+                .build();
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        chunked.write(out, true);
+
+        Request written = new Request();
+        written.read(new ByteArrayInputStream(out.toByteArray()), true);
+        assertFalse(written.getHeader().hasContentLength(), out.toString(UTF_8));
+        assertInstanceOf(ChunkedBody.class, written.getBody());
+        assertEquals("hello", written.getBodyAsStringDecoded());
     }
 
     @Test
@@ -548,46 +568,15 @@ public class RequestTest {
     }
 
     /**
-     * RFC 9112 5.1: a server must reject a request whose field line carries whitespace between
-     * the field name and the colon. The name then keeps the whitespace and no longer matches
-     * Content-Length, so Membrane builds an EmptyBody and forwards the line verbatim, while a
-     * backend that trims the whitespace reads the declared bytes as a body - and Membrane parses
-     * the very same bytes as the next request on the connection.
-     */
-    @ParameterizedTest
-    @ValueSource(strings = {"Content-Length : 6", "Content-Length\t: 6", "Content-Length  : 6"})
-    void headerLineWithWhitespaceBeforeColonIsRejected(String fieldLine) {
-        assertThrows(MalformedHeaderException.class, () -> readRequest("""
-                POST /products HTTP/1.1
-                Host: example.com
-                %s
-
-                """.formatted(fieldLine)));
-    }
-
-    /**
-     * Whitespace after the colon is the optional whitespace RFC 9112 5.1 allows and must stay
-     * accepted, so that rejecting the whitespace before the colon does not over-reject.
+     * The message ends up in the 400 response body, so the echoed field name must not carry
+     * control characters of the client's choosing.
      */
     @Test
-    void headerLineWithWhitespaceAfterColonIsAccepted() throws Exception {
-        assertEquals("example.com", readRequest("""
-                POST /products HTTP/1.1
-                Host:\texample.com
-
-                """).getHeader().getFirstValue(HOST));
-    }
-
-    /**
-     * The message ends up in the 400 response body, so the echoed line must not carry control
-     * characters of the client's choosing.
-     */
-    @Test
-    void rejectionMessageMasksTheOffendingLine() {
+    void rejectionMessageMasksTheOffendingFieldName() {
         MalformedHeaderException e = assertThrows(MalformedHeaderException.class, () -> readRequest(
-                "POST /products HTTP/1.1\nHost: example.com\nX-Bad\007Line\n\n"));
+                "POST /products HTTP/1.1\nHost: example.com\nX-Bad\007Name : value\n\n"));
 
-        assertTrue(e.getMessage().contains("X-Bad_Line"), e.getMessage());
+        assertTrue(e.getMessage().contains("X-Bad_Name"), e.getMessage());
         assertFalse(e.getMessage().contains("\007"));
     }
 

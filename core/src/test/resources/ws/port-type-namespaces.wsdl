@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Bindings whose type names a port type by QName. ForeignBinding's type has the local name of
+     this WSDL's port type, but another namespace, so it is not a binding of it. -->
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns="http://example.com/orders"
+                  xmlns:tns="http://example.com/orders"
+                  xmlns:other="http://example.com/other"
+                  xmlns:s="http://schemas.xmlsoap.org/wsdl/soap/"
+                  targetNamespace="http://example.com/orders">
+    <wsdl:portType name="OrderPortType"/>
+    <wsdl:binding name="PrefixedBinding" type="tns:OrderPortType">
+        <s:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    </wsdl:binding>
+    <wsdl:binding name="DefaultNamespaceBinding" type="OrderPortType">
+        <s:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    </wsdl:binding>
+    <wsdl:binding name="ForeignBinding" type="other:OrderPortType">
+        <s:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    </wsdl:binding>
+</wsdl:definitions>

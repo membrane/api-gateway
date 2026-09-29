@@ -3,6 +3,12 @@
 
 
 PRIO 1:
+- Add performance tutorial or tuning guide
+  - forgetful exchange store
+- set backlog to 1000
+  - provide production tutorial with backlog = 100
+  - production = true
+  - not hotreload
 - When released:
   - Add SqlProtection to README.md
   - Udate OAuth2 sections in README.md
@@ -43,6 +49,11 @@ PRIO 3:
 
 ## Membrane 8.0.0 (Java 25)
 
+- Remove XML configuration
+- configure log4j with YAML
+- Remove SOAP2REST XSLT Interceptor:
+  - rm HTTP2XMLInterceptor
+  - rm com.predic8.membrane.core.http.xml
 - Log harmonization:
   - Decide if log message start with uppercase or lowercase.
      - e.g.:  Error loading log configuration., Started 1 API:, Closing server port:, listening at '*:2000'

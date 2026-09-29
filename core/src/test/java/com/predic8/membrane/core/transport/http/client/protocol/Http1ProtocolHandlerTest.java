@@ -26,13 +26,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.Socket;
 
 import static com.predic8.membrane.core.http.Header.EXPECT;
+import static com.predic8.membrane.core.http.Header.KEEP_ALIVE;
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.http.Response.continue100;
 import static com.predic8.membrane.core.transport.http.client.protocol.AbstractProtocolHandler.UPGRADED_PROTOCOL;
@@ -129,6 +127,165 @@ class Http1ProtocolHandlerTest {
             assertTrue(sent.contains("hello"), "body must be streamed after 100‑Continue");
         }
 
+        /**
+         * The 100 Continue that releases the body need not be the first interim response.
+         */
+        @Test
+        void continueAfterOtherInterimResponse() throws Exception {
+            String sent = sendExpectingContinue("""
+                    HTTP/1.1 103 Early Hints\r
+                    \r
+                    HTTP/1.1 100 Continue\r
+                    \r
+                    HTTP/1.1 200 OK\r
+                    Content-Length: 0\r
+                    \r
+                    """, true);
+            assertEquals(1, countOf("hello", sent), sent);
+        }
+
+        /**
+         * A 100 Continue may carry header fields; all of them must be consumed before the next response is read.
+         */
+        @Test
+        void continueWithHeaderFields() throws Exception {
+            String sent = sendExpectingContinue("""
+                    HTTP/1.1 103 Early Hints\r
+                    Link: </style.css>; rel=preload; as=style\r
+                    \r
+                    HTTP/1.1 100 Continue\r
+                    Server: example\r
+                    X-Trace: abc\r
+                    \r
+                    HTTP/1.1 200 OK\r
+                    Content-Length: 0\r
+                    \r
+                    """, true);
+            assertEquals(1, countOf("hello", sent), sent);
+        }
+
+        @Test
+        void repeatedContinueSendsBodyOnce() throws Exception {
+            String sent = sendExpectingContinue("""
+                    HTTP/1.1 100 Continue\r
+                    \r
+                    HTTP/1.1 100 Continue\r
+                    \r
+                    HTTP/1.1 200 OK\r
+                    Content-Length: 0\r
+                    \r
+                    """, true);
+            assertEquals(1, countOf("hello", sent), sent);
+        }
+
+        /**
+         * Without <code>Expect: 100-continue</code> the body went out with the request, so a 100 must
+         * not send it a second time.
+         */
+        @Test
+        void unsolicitedContinueDoesNotResendBody() throws Exception {
+            String sent = sendExpectingContinue("""
+                    HTTP/1.1 100 Continue\r
+                    \r
+                    HTTP/1.1 200 OK\r
+                    Content-Length: 0\r
+                    \r
+                    """, false);
+            assertEquals(1, countOf("hello", sent), sent);
+        }
+
+        private String sendExpectingContinue(String responses, boolean expectContinue) throws Exception {
+            var builder = post("/foo").body("hello");
+            if (expectContinue)
+                builder.header(EXPECT, "100-continue");
+            Exchange exc = builder.buildExchange();
+            CollectingOutputStream wire = new CollectingOutputStream();
+            handler.handle(exc, getConnectionType(getInputStreamFor(responses), wire), new HostColonPort("localhost", 8080));
+            assertEquals(200, exc.getResponse().getStatusCode());
+            return new String(wire.toByteArray(), ISO_8859_1);
+        }
+
+        private static int countOf(String needle, String haystack) {
+            return haystack.split(needle, -1).length - 1;
+        }
+    }
+
+    /**
+     * An interim response is followed by the final one on the same connection. Taking it as the final
+     * response would leave the real one unread for the next request on that connection.
+     */
+    @Test
+    void interimResponseIsSkipped() throws Exception {
+        Exchange exc = get("/foo").buildExchange();
+        handler.handle(exc, getConnectionType(getInputStreamFor("""
+                HTTP/1.1 103 Early Hints\r
+                Link: </style.css>; rel=preload; as=style\r
+                \r
+                HTTP/1.1 102 Processing\r
+                \r
+                HTTP/1.1 200 OK\r
+                Content-Length: 5\r
+                \r
+                hello"""), new CollectingOutputStream()), new HostColonPort("localhost", 8080));
+
+        assertEquals(200, exc.getResponse().getStatusCode());
+        assertEquals("hello", exc.getResponse().getBodyAsStringDecoded());
+    }
+
+    /**
+     * A backend that announces content in a 205 may not send it, so the content is not read. The connection
+     * is then out of sync and must be closed rather than pooled.
+     */
+    @Nested
+    class ResetContent {
+
+        @Test
+        void announcedContentClosesConnection() throws Exception {
+            OutgoingConnectionType ct = getConnectionType(getInputStreamFor("""
+                    HTTP/1.1 205 Reset Content\r
+                    Content-Length: 5\r
+                    \r
+                    """), new CollectingOutputStream());
+            Exchange exc = handle205(ct);
+            verify(ct.con()).close();
+            assertNull(exc.getTargetConnection(), "a closed connection must not be released again");
+        }
+
+        /**
+         * The response is complete when the connection is closed, so a failing close must not turn it into an
+         * error, which the retry handler would act on.
+         */
+        @Test
+        void failingCloseKeepsResponse() throws Exception {
+            OutgoingConnectionType ct = getConnectionType(getInputStreamFor("""
+                    HTTP/1.1 205 Reset Content\r
+                    Content-Length: 5\r
+                    \r
+                    """), new CollectingOutputStream());
+            doThrow(new IOException("close failed")).when(ct.con()).close();
+            Exchange exc = handle205(ct);
+            assertNull(exc.getTargetConnection());
+        }
+
+        @Test
+        void zeroLengthKeepsConnection() throws Exception {
+            OutgoingConnectionType ct = getConnectionType(getInputStreamFor("""
+                    HTTP/1.1 205 Reset Content\r
+                    Content-Length: 0\r
+                    \r
+                    """), new CollectingOutputStream());
+            Exchange exc = handle205(ct);
+            verify(ct.con(), never()).close();
+            assertSame(ct.con(), exc.getTargetConnection());
+        }
+
+        private Exchange handle205(OutgoingConnectionType ct) throws Exception {
+            Exchange exc = get("/foo").buildExchange();
+            exc.setTargetConnection(ct.con());
+            handler.handle(exc, ct, new HostColonPort("localhost", 8080));
+            assertEquals(205, exc.getResponse().getStatusCode());
+            return exc;
+        }
     }
 
     @Nested
@@ -180,6 +337,40 @@ class Http1ProtocolHandlerTest {
             CollectingOutputStream wire = new CollectingOutputStream();
             handler.handle(exc, getConnectionType(getInputStreamFor(RESPONSE), wire), new HostColonPort("localhost", 8080));
             return new String(wire.toByteArray(), ISO_8859_1);
+        }
+    }
+
+    @Nested
+    class KeepAliveTimeout {
+
+        @Test
+        void timeoutFromBackendIsApplied() throws Exception {
+            assertEquals(5_000, timeoutAfterResponseWith("timeout=5"));
+        }
+
+        @Test
+        void timeoutIsCappedAtOneHour() throws Exception {
+            assertEquals(3_600_000, timeoutAfterResponseWith("timeout=100000000"));
+        }
+
+        /**
+         * 10^16 seconds fits into a long, but multiplied by 1000 it does not.
+         */
+        @Test
+        void hugeTimeoutDoesNotOverflow() throws Exception {
+            assertEquals(3_600_000, timeoutAfterResponseWith("timeout=10000000000000000"));
+        }
+
+        private long timeoutAfterResponseWith(String keepAlive) throws Exception {
+            Exchange exc = get("/foo").buildExchange();
+            exc.setResponse(Response.ok().header(KEEP_ALIVE, keepAlive).build());
+            // setTimeout()/getTimeout() are final, so the mock runs the real implementations
+            Connection con = mock(Connection.class);
+            exc.setTargetConnection(con);
+
+            handler.cleanup(exc);
+
+            return con.getTimeout();
         }
     }
 

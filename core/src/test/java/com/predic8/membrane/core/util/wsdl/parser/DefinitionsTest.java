@@ -19,6 +19,7 @@ import com.predic8.membrane.core.util.xml.parser.XmlParseException;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -33,27 +34,29 @@ class DefinitionsTest {
     }
 
     @Test
-    void operationsAreFlattenedAcrossPortTypes() throws Exception {
+    void schemasByNamespaceFollowImportsAndIncludes() throws Exception {
         var defs = Definitions.parse(new ResolverMap(), "classpath:/validation/ArticleService.wsdl");
 
-        assertEquals(List.of("create", "get", "getAll"), defs.getOperations().stream().map(Operation::getName).toList());
+        assertEquals(Set.of("http://predic8.com/wsdl/material/ArticleService/1/",
+                        "http://predic8.com/material/1/",
+                        "http://predic8.com/common/1/"),
+                defs.getSchemasByNamespace().keySet());
     }
 
     @Test
-    void findOperationByName() throws Exception {
-        var defs = Definitions.parse(new ResolverMap(), "classpath:/validation/ArticleService.wsdl");
+    void bindingsOfAPortType() throws Exception {
+        var defs = Definitions.parse(new ResolverMap(), "classpath:/ws/navigation.wsdl");
 
-        assertEquals("get", defs.findOperation("get").orElseThrow().getName());
-        assertTrue(defs.findOperation("doesNotExist").isEmpty());
-        assertTrue(defs.findOperation(null).isEmpty());
+        assertEquals(List.of("OrderSoapBinding", "OrderHttpBinding"),
+                defs.getBindings(defs.getPortTypes().getFirst()).stream().map(Binding::getName).toList());
+        assertEquals(List.of(), defs.getBindings(defs.getPortTypes().get(1)), "UnboundPortType has no binding");
     }
 
     @Test
-    void findBindingOperationByName() throws Exception {
-        var defs = Definitions.parse(new ResolverMap(), "classpath:/validation/ArticleService.wsdl");
-
-        assertEquals("getAll", defs.findBindingOperation("getAll").orElseThrow().getName());
-        assertTrue(defs.findBindingOperation("doesNotExist").isEmpty());
+    void bindingsOfAPortTypeMatchTheNamespace() throws Exception {
+        var defs = Definitions.parse(new ResolverMap(), "classpath:/ws/port-type-namespaces.wsdl");
+        assertEquals(List.of("PrefixedBinding", "DefaultNamespaceBinding"),
+                defs.getBindings(defs.getPortTypes().getFirst()).stream().map(Binding::getName).toList());
     }
 
     @Test

@@ -14,9 +14,11 @@
 
 package com.predic8.membrane.core.util.wsdl.parser;
 
-import org.w3c.dom.*;
+import org.w3c.dom.Node;
 
-import java.util.*;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 public class PortType extends WSDLElement {
 
@@ -26,5 +28,10 @@ public class PortType extends WSDLElement {
 
     public List<Operation> getOperations() {
         return instantiateWSDLChildren( "operation", Operation.class);
+    }
+
+    /** The operation of that name, in document order the first; empty if there is none. */
+    public Optional<Operation> findOperation(String name) {
+        return getOperations().stream().filter(op -> Objects.equals(name, op.getName())).findFirst();
     }
 }

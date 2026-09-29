@@ -257,7 +257,7 @@ public abstract class Message {
 	protected void createBody(InputStream in) throws IOException {
 		log.debug("createBody");
 
-		if (shouldNotContainBody()) {
+		if (endsAfterHeaderFields()) {
 			log.debug("empty body created");
 			body = new EmptyBody();
 			return;
@@ -278,9 +278,7 @@ public abstract class Message {
 			return;
 		}
 
-		if (log.isDebugEnabled()) {
-			log.error("Message has no content length: {}",this);
-		}
+		log.debug("Message has no content-length: {}",this);
 
 		if (this instanceof Request req && (req.isOPTIONSRequest())) {
 			// OPTIONS without Transfer-Encoding and Content-Length has no body,
@@ -314,6 +312,13 @@ public abstract class Message {
 	}
 
 	public final void write(OutputStream out, boolean retainBody) throws IOException {
+		final boolean writeBody = prepareBodyForWrite();
+
+		// RFC 9112 §6.2: a sender must not send Content-Length in a message with Transfer-Encoding, and a
+		// receiver - Membrane included, see rejectIfChunkedWithContentLength - may reject one that has both.
+		if (writeBody && header.isChunked())
+			header.removeFields(CONTENT_LENGTH);
+
 		writeStartLine(out);
 		header.write(out);
 		out.write(CRLF_BYTES);
@@ -323,9 +328,27 @@ public abstract class Message {
 			return;
 		}
 
+		// A client stops reading after the header fields; a body written anyway would desync keep-alive.
+		// Still consume it: that is what frees the connection it is read from.
+		if (!writeBody) {
+			out.flush();
+			discardBody();
+			return;
+		}
+
 		body.write(getHeader().isChunked() ? new ChunkedBodyTransferer(out) : new PlainBodyTransferer(out), retainBody);
 
 		out.flush();
+	}
+
+	/**
+	 * Called by {@link #write(OutputStream, boolean)} before the header is written.
+	 *
+	 * @return false if the body must not go on the wire. The implementation then adjusts the framing
+	 *         header fields to match; the body is still consumed.
+	 */
+	protected boolean prepareBodyForWrite() {
+		return true;
 	}
 
 	/**
@@ -397,6 +420,14 @@ public abstract class Message {
 	}
 
 	public abstract boolean shouldNotContainBody();
+
+	/**
+	 * @return true if a message read from the wire ends with the empty line after the header fields,
+	 *         whatever Content-Length or Transfer-Encoding says
+	 */
+	protected boolean endsAfterHeaderFields() {
+		return shouldNotContainBody();
+	}
 
 	public boolean isImage() {
 		return MimeType.isImage(getHeader().getContentType());
