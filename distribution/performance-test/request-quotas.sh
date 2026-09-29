@@ -25,7 +25,8 @@ echo "Subscription: $(az account show --query name -o tsv) ($SUBSCRIPTION), loca
 # "family vCPUs restrictionReasons" per size, one line each. A single list-skus call for all sizes,
 # since it is slow. --all keeps SKUs restricted for this subscription (otherwise silently dropped,
 # which would be misreported as "not offered"). Only Location restrictions block provisioning;
-# Zone restrictions don't, since provision.sh doesn't pin a zone.
+# Zone restrictions don't, since provision.sh doesn't pin a zone. A QuotaId restriction is left to
+# the quota check below; any other reason code (e.g. NotAvailableForSubscription) is fatal.
 SKU_FILTER=$(printf "name=='%s' || " "${SIZES[@]}")
 SKU_FILTER=${SKU_FILTER% || }
 echo "Resolving VM families and vCPU counts (az vm list-skus is slow)..."
@@ -41,9 +42,17 @@ for size in "${SIZES[@]}"; do
     exit 1
   fi
   read -r _ family vcpus restrictions <<< "$line"
-  if [[ -n "$restrictions" ]]; then
-    echo "VM size $size is restricted for this subscription in $LOCATION ($restrictions) -- a quota increase can't lift this; pick another size or LOCATION." >&2
+  blocking=""
+  IFS=, read -ra codes <<< "$restrictions"
+  for code in ${codes[@]+"${codes[@]}"}; do   # +-guard: bash 3.2 (macOS) treats an empty array as unset
+    [[ "$code" == QuotaId ]] || blocking+="${blocking:+,}$code"
+  done
+  if [[ -n "$blocking" ]]; then
+    echo "VM size $size is not available to this subscription in $LOCATION ($blocking) -- request SKU access from Azure Support, or pick another size or LOCATION." >&2
     exit 1
+  fi
+  if [[ -n "$restrictions" ]]; then
+    echo "VM size $size has a QuotaId restriction in $LOCATION -- leaving it to the quota check below."
   fi
   NEEDED+="$family $vcpus"$'\n'
   TOTAL=$((TOTAL + vcpus))
