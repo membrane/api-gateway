@@ -17,9 +17,10 @@ package com.predic8.membrane.core.http;
 
 import com.predic8.membrane.annot.Constants;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.OutputStream;
 
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * A chunk of a HTTP message body.
@@ -66,7 +67,7 @@ public record Chunk(byte[] content) {
 		return destPos + getLength();
 	}
 
-	public int copyChunkLength(byte[] raw, int destPos, AbstractBody body) {
+	public int copyChunkLength(byte[] raw, int destPos) {
 		System.arraycopy(getLengthBytes(), 0, raw, destPos, getLengthBytes().length);
 		return destPos + getLengthBytes().length;
 	}
