@@ -14,24 +14,18 @@
 
 package com.predic8.membrane.core.util.wsdl.parser;
 
-import org.w3c.dom.Node;
+import com.predic8.membrane.core.resolver.ResolverMap;
+import org.junit.jupiter.api.Test;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class PortType extends WSDLElement {
+class BindingOperationTest {
 
-    public PortType(WSDLParserContext ctx, Node node) {
-        super(ctx, node);
-    }
+    @Test
+    void soapActionIsEmptyWithoutSoapOperation() throws Exception {
+        var bindingOperation = Definitions.parse(new ResolverMap(), "classpath:/ws/no-soap-operation.wsdl")
+                .getBindings().getFirst().findBindingOperation("greet").orElseThrow();
 
-    public List<Operation> getOperations() {
-        return instantiateWSDLChildren( "operation", Operation.class);
-    }
-
-    /** The operation of that name, in document order the first; empty if there is none. */
-    public Optional<Operation> findOperation(String name) {
-        return getOperations().stream().filter(op -> Objects.equals(name, op.getName())).findFirst();
+        assertEquals("", bindingOperation.getSoapAction());
     }
 }

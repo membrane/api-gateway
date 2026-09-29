@@ -39,7 +39,7 @@ class Wsdl2OpenApiConverterWsdlStyleTest {
 
     private static Wsdl2OpenApiConverter converter(Definitions definitions, String basePath,
                                                    Map<String, OperationSettings> operations) {
-        return new Wsdl2OpenApiConverter(definitions, basePath, operations, ApiInfo.NONE);
+        return new Wsdl2OpenApiConverter(definitions, SelectedPort.select(definitions, null, null), basePath, operations, ApiInfo.NONE);
     }
 
     /** Wrapped document style, service name "GreetingService" — shared by the Info-related tests below. */
@@ -133,7 +133,7 @@ class Wsdl2OpenApiConverterWsdlStyleTest {
     @Test
     void titleOverrideReplacesServiceName() throws Exception {
         var definitions = Definitions.parse(new StaticStringResolver(), GREETING_WSDL);
-        var openAPI = new Wsdl2OpenApiConverter(definitions, "/", Map.of(), new ApiInfo("Custom Title", null, null)).generate();
+        var openAPI = new Wsdl2OpenApiConverter(definitions, SelectedPort.select(definitions, null, null), "/", Map.of(), new ApiInfo("Custom Title", null, null)).generate();
 
         assertEquals("Custom Title", openAPI.getInfo().getTitle(),
                 "an explicit title must override the WSDL service name");
@@ -150,7 +150,7 @@ class Wsdl2OpenApiConverterWsdlStyleTest {
     @Test
     void descriptionAppearsBeforeGeneratedAdText() throws Exception {
         var definitions = Definitions.parse(new StaticStringResolver(), GREETING_WSDL);
-        var openAPI = new Wsdl2OpenApiConverter(definitions, "/", Map.of(), new ApiInfo(null, "Say hello to the world.", null)).generate();
+        var openAPI = new Wsdl2OpenApiConverter(definitions, SelectedPort.select(definitions, null, null), "/", Map.of(), new ApiInfo(null, "Say hello to the world.", null)).generate();
 
         String description = openAPI.getInfo().getDescription();
         int userTextIndex = description.indexOf("Say hello to the world.");

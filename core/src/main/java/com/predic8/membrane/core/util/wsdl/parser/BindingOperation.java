@@ -24,10 +24,14 @@ public class BindingOperation extends WSDLElement{
         super(ctx,node);
     }
 
+    /**
+     * The soapAction of the operation's soap:operation; empty if there is none, as the element is
+     * optional in the SOAP 1.1 and SOAP 1.2 bindings of WSDL 1.1.
+     */
     public String getSoapAction() {
-        return  instantiateChild("operation",ProtocolOperation.class).orElseThrow(() ->
-            new WSDLParserException("No operation found for binding operation: " + getName())
-        ).getSoapAction();
+        return instantiateChild("operation", ProtocolOperation.class)
+                .map(ProtocolOperation::getSoapAction)
+                .orElse("");
     }
 
     public List<BindingOperationMessage> getInputs() {
