@@ -313,10 +313,14 @@ public abstract class Message {
 
 	public final void write(OutputStream out, boolean retainBody) throws IOException {
 		final boolean writeBody = prepareBodyForWrite();
+		final boolean chunked = header.isChunked();
 
 		// RFC 9112 §6.2: a sender must not send Content-Length in a message with Transfer-Encoding, and a
 		// receiver - Membrane included, see rejectIfChunkedWithContentLength - may reject one that has both.
-		if (writeBody && header.isChunked())
+		// setBodyContent keeps the two consistent, but not every path goes through it: Http2Client presets
+		// chunked on a backend response and then adds the backend's content-length, and setBody or plain
+		// header edits leave the framing fields to the caller.
+		if (writeBody && chunked)
 			header.removeFields(CONTENT_LENGTH);
 
 		writeStartLine(out);
@@ -336,7 +340,7 @@ public abstract class Message {
 			return;
 		}
 
-		body.write(getHeader().isChunked() ? new ChunkedBodyTransferer(out) : new PlainBodyTransferer(out), retainBody);
+		body.write(chunked ? new ChunkedBodyTransferer(out) : new PlainBodyTransferer(out), retainBody);
 
 		out.flush();
 	}

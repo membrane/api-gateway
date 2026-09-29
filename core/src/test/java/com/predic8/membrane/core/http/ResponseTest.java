@@ -421,6 +421,25 @@ public class ResponseTest {
         assertTrue(closed[0]);
     }
 
+    /**
+     * RFC 9112 §6.2: a sender must not send Content-Length in a message with Transfer-Encoding. Built
+     * the way Http2Client builds a response from an HTTP/2 backend: chunked preset, the backend's
+     * content-length added on top, the body set without touching the header.
+     */
+    @Test
+    void writeChunkedDropsContentLength() throws Exception {
+        Response res = new Response();
+        res.setStatusCode(200);
+        res.getHeader().setValue(Header.TRANSFER_ENCODING, Header.CHUNKED);
+        res.getHeader().add(Header.CONTENT_LENGTH, "5");
+        res.setBody(new Body(new ByteArrayInputStream("hello".getBytes())));
+
+        String written = writeToString(res);
+        assertFalse(written.contains("Content-Length"), written);
+        assertTrue(written.contains("Transfer-Encoding: chunked\r\n"), written);
+        assertTrue(written.endsWith("\r\n\r\n5\r\nhello\r\n0\r\n\r\n"), written);
+    }
+
     private static String writeToString(Response res) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         res.write(out, true);
