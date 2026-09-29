@@ -52,8 +52,11 @@ class CatalogCollectorTest {
     }
 
     private static Exchange exchange(String uri) throws Exception {
-        return new Request.Builder().get(uri).header("Host", "gateway.example.com:2000")
-                .buildExchange();
+        return exchange(uri, "gateway.example.com:2000");
+    }
+
+    private static Exchange exchange(String uri, String hostHeader) throws Exception {
+        return new Request.Builder().get(uri).header("Host", hostHeader).buildExchange();
     }
 
     private void add(Proxy proxy) throws Exception {
@@ -199,6 +202,32 @@ class CatalogCollectorTest {
         CatalogEntry entry = only(collector().collect(router, exchange("/apis.json")));
 
         assertEquals("gateway.example.com", entry.endpoint().host());
+    }
+
+    @Test
+    void aBracketedIpv6HostHeaderKeepsItsBrackets() throws Exception {
+        add(new ServiceProxy(new ServiceProxyKey("*", "*", "/shop", 2000), null, 0));
+
+        CatalogEntry entry = only(collector().collect(router, exchange("/apis.json", "[::1]")));
+
+        assertEquals("[::1]", entry.endpoint().host());
+        assertEquals("http://[::1]:2000/shop", entry.endpoint().url());
+    }
+
+    @Test
+    void thePortAfterABracketedIpv6HostIsDropped() throws Exception {
+        add(new ServiceProxy(new ServiceProxyKey("*", "*", "/shop", 2000), null, 0));
+
+        assertEquals("[::1]", only(collector().collect(router,
+                exchange("/apis.json", "[::1]:8080"))).endpoint().host());
+    }
+
+    @Test
+    void aHostHeaderWithoutAPortIsUsedAsItIs() throws Exception {
+        add(new ServiceProxy(new ServiceProxyKey("*", "*", "/shop", 2000), null, 0));
+
+        assertEquals("gateway.example.com", only(collector().collect(router,
+                exchange("/apis.json", "gateway.example.com"))).endpoint().host());
     }
 
     @Test

@@ -17,7 +17,6 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.transport.http.*;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.info.*;
 import io.swagger.v3.oas.models.tags.*;
@@ -183,9 +182,25 @@ public class CatalogCollector {
     private static String hostOf(RuleKey key, Exchange exchange) {
         if (key.getHost() != null && !WILDCARD_HOST.equals(key.getHost())) return key.getHost();
         String hostHeader = exchange.getOriginalHostHeader();
-        if (hostHeader != null && !hostHeader.isBlank()) return new HostColonPort(false, hostHeader).host();
+        if (hostHeader != null && !hostHeader.isBlank()) return hostWithoutPort(hostHeader);
         if (exchange.getHandler() != null) return exchange.getHandler().getLocalAddress().getHostAddress();
         return "localhost";
+    }
+
+    /**
+     * Host part of a <code>Host</code> header. An IPv6 literal arrives bracketed
+     * (<code>[::1]</code>) and keeps its brackets, because that is the form a URL needs. The colons
+     * inside it are not port separators, so a port only counts when it follows the closing bracket,
+     * or when an unbracketed value carries exactly one colon.
+     */
+    private static String hostWithoutPort(String hostHeader) {
+        if (hostHeader.startsWith("[")) {
+            int bracket = hostHeader.indexOf(']');
+            return bracket == -1 ? hostHeader : hostHeader.substring(0, bracket + 1);
+        }
+        int colon = hostHeader.indexOf(':');
+        if (colon == -1 || colon != hostHeader.lastIndexOf(':')) return hostHeader;
+        return hostHeader.substring(0, colon);
     }
 
     private static int portOf(RuleKey key, String protocol) {
