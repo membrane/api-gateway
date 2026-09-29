@@ -29,11 +29,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.TimeZone;
+import java.util.*;
 
 import static com.predic8.membrane.annot.Constants.HTML_FOOTER;
 import static com.predic8.membrane.annot.Constants.PRODUCT_NAME;
@@ -91,26 +87,39 @@ public class HttpUtil {
 	 * after it along, an LF only a CR directly after it. Bytes are converted to chars as ISO-8859-1.
 	 */
 	public static String readLine(InputStream in) throws IOException {
+		return readLine(in, MAX_LINE_LENGTH);
+	}
+
+	/**
+	 * @param maxLineLength a line of this many chars or more throws {@link LineTooLongException};
+	 *                      zero or less means no limit
+	 */
+	static String readLine(InputStream in, int maxLineLength) throws IOException {
 		// Exact classes only: a subclass may override read() and behave differently.
 		if (in.getClass() == BufferedInputStream.class || in.getClass() == ByteArrayInputStream.class) {
-			String line = readLineInBulk(in);
+			StringBuilder start = new StringBuilder();
+			String line = readLineInBulk(in, maxLineLength, start);
 			if (line != null)
 				return line;
+			return readLineByteByByte(in, maxLineLength, start);
 		}
-		return readLineByteByByte(in);
+		return readLineByteByByte(in, maxLineLength, new StringBuilder(128));
 	}
 
 	/**
 	 * Reads ahead with bulk reads instead of one read() per byte, which takes the stream's lock
-	 * every time, then rewinds and skips exactly the bytes {@link #readLineByteByByte(InputStream)}
-	 * would have consumed. Both stream classes return the bytes already available rather than
-	 * blocking to fill the array, so this only waits where reading byte by byte would wait too.
+	 * every time, then rewinds and skips exactly the bytes
+	 * {@link #readLineByteByByte(InputStream, int, StringBuilder)} would have consumed. Both stream
+	 * classes return the bytes already available rather than blocking to fill the array, so this
+	 * only waits where reading byte by byte would wait too.
 	 *
-	 * @return the line, or <code>null</code> with the stream rewound if the stream ends or the
-	 * line does not end within {@link #BULK_READ_LIMIT} bytes
+	 * @param start receives the bytes known to belong to the line if no line is returned
+	 * @return the line, or <code>null</code> if the stream ends or the line does not end within
+	 * {@link #BULK_READ_LIMIT} bytes. The stream is then positioned after the bytes appended to
+	 * <code>start</code>, so reading byte by byte can go on from there without reading them again.
 	 */
-	private static String readLineInBulk(InputStream in) throws IOException {
-		int limit = Math.min(BULK_READ_LIMIT, MAX_LINE_LENGTH);
+	static String readLineInBulk(InputStream in, int maxLineLength, StringBuilder start) throws IOException {
+		int limit = maxLineLength > 0 ? Math.min(BULK_READ_LIMIT, maxLineLength) : BULK_READ_LIMIT;
 		byte[] bytes = new byte[Math.min(256, limit)];
 		in.mark(limit);
 		int n = 0;
@@ -132,16 +141,21 @@ public class HttpUtil {
 				}
 			}
 		}
+		// The first i bytes are checked and contain no terminator. Fewer than maxLineLength, so
+		// they cannot make the line too long.
 		in.reset();
+		in.skipNBytes(i);
+		start.append(new String(bytes, 0, i, ISO_8859_1));
 		return null;
 	}
 
-	private static String readLineByteByByte(InputStream in) throws IOException {
-
-		StringBuilder line = new StringBuilder(128);
+	/**
+	 * @param line the start of the line, already consumed from the stream
+	 */
+	private static String readLineByteByByte(InputStream in, int maxLineLength, StringBuilder line) throws IOException {
 
 		int b;
-		int l = 0;
+		int l = line.length();
 		while ((b = in.read()) != -1) {
 			if (b == 13) {
 				//noinspection ResultOfMethodCallIgnored
@@ -156,7 +170,7 @@ public class HttpUtil {
 			}
 
 			line.append((char) b);
-			if (++l == MAX_LINE_LENGTH)
+			if (++l == maxLineLength)
 				throw new LineTooLongException(line.toString());
 		}
 

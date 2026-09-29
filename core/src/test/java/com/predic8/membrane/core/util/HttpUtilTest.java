@@ -24,12 +24,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.FilterInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -162,15 +157,89 @@ public class HttpUtilTest {
             }
         }
 
+        @ParameterizedTest
+        @ValueSource(ints = {-1, 0})
+        void nonPositiveLimitMeansNoLimit(int maxLineLength) throws IOException {
+            String line = "a".repeat(9_000);
+            assertEquals(List.of("line:" + line, "eof:", "rest:"), readAll(byteByByte((line + "\r\n").getBytes(ISO_8859_1)), maxLineLength));
+            assertSameOnAllStreams(line + "\r\nb\r\n", maxLineLength);
+        }
+
+        @Test
+        void limitBelowBulkReadLimit() throws IOException {
+            assertSameOnAllStreams("a".repeat(99) + "\r\n" + "b".repeat(100) + "\r\n", 100);
+        }
+
+        @Nested
+        class InBulk {
+
+            @ParameterizedTest
+            @ValueSource(ints = {-1, 0, 8092})
+            void readsLine(int maxLineLength) throws IOException {
+                assertInBulk(new ByteArrayInputStream(bytes("GET / HTTP/1.1\r\nHost: a\r\n")), maxLineLength);
+                assertInBulk(new BufferedInputStream(new ByteArrayInputStream(bytes("GET / HTTP/1.1\r\nHost: a\r\n"))), maxLineLength);
+            }
+
+            @Test
+            void handsOverLineLongerThanBulkReadLimit() throws IOException {
+                assertHandsOver("a".repeat(3_000) + "\r\n", 8092, 2047);
+            }
+
+            @Test
+            void handsOverLineTooLong() throws IOException {
+                assertHandsOver("a".repeat(100) + "\r\n", 100, 99);
+            }
+
+            @Test
+            void handsOverLineWithoutTerminator() throws IOException {
+                assertHandsOver("GET / HT", 8092, 7);
+            }
+
+            @Test
+            void handsOverNothingOnEmptyStream() throws IOException {
+                assertHandsOver("", 8092, 0);
+            }
+
+            private static void assertInBulk(InputStream in, int maxLineLength) throws IOException {
+                StringBuilder start = new StringBuilder();
+                assertEquals("GET / HTTP/1.1", readLineInBulk(in, maxLineLength, start));
+                assertEquals("", start.toString());
+                assertEquals("Host: a\r\n", new String(in.readAllBytes(), ISO_8859_1));
+            }
+
+            /**
+             * The bytes checked without finding a terminator go to start, the rest stays in the stream.
+             */
+            private static void assertHandsOver(String content, int maxLineLength, int checked) throws IOException {
+                InputStream in = new BufferedInputStream(new ByteArrayInputStream(bytes(content)));
+                StringBuilder start = new StringBuilder();
+                assertNull(readLineInBulk(in, maxLineLength, start));
+                assertEquals(content.substring(0, checked), start.toString());
+                assertEquals(content.substring(checked), new String(in.readAllBytes(), ISO_8859_1));
+            }
+
+            private static byte[] bytes(String content) {
+                return content.getBytes(ISO_8859_1);
+            }
+        }
+
         private static void assertSameOnAllStreams(String content) throws IOException {
-            assertSameOnAllStreams(content.getBytes(ISO_8859_1));
+            assertSameOnAllStreams(content, 8092);
+        }
+
+        private static void assertSameOnAllStreams(String content, int maxLineLength) throws IOException {
+            assertSameOnAllStreams(content.getBytes(ISO_8859_1), maxLineLength);
         }
 
         private static void assertSameOnAllStreams(byte[] content) throws IOException {
-            List<String> expected = readAll(byteByByte(content));
-            assertEquals(expected, readAll(new ByteArrayInputStream(content)), "ByteArrayInputStream");
+            assertSameOnAllStreams(content, 8092);
+        }
+
+        private static void assertSameOnAllStreams(byte[] content, int maxLineLength) throws IOException {
+            List<String> expected = readAll(byteByByte(content), maxLineLength);
+            assertEquals(expected, readAll(new ByteArrayInputStream(content), maxLineLength), "ByteArrayInputStream");
             for (int size : new int[]{1, 2, 3, 16, 2048, 8192}) {
-                assertEquals(expected, readAll(new BufferedInputStream(new ByteArrayInputStream(content), size)), "BufferedInputStream(" + size + ")");
+                assertEquals(expected, readAll(new BufferedInputStream(new ByteArrayInputStream(content), size), maxLineLength), "BufferedInputStream(" + size + ")");
             }
         }
 
@@ -178,10 +247,14 @@ public class HttpUtilTest {
          * Reads lines until the stream fails, then the bytes left in it.
          */
         private static List<String> readAll(InputStream in) throws IOException {
+            return readAll(in, 8092);
+        }
+
+        private static List<String> readAll(InputStream in, int maxLineLength) throws IOException {
             List<String> events = new ArrayList<>();
             try {
                 while (true)
-                    events.add("line:" + readLine(in));
+                    events.add("line:" + readLine(in, maxLineLength));
             } catch (EOFWhileReadingLineException e) {
                 events.add("eof:" + e.getLineSoFar());
             } catch (LineTooLongException e) {
