@@ -1,18 +1,18 @@
 # Performance Test Results
 
 Seven scenarios, each run 5 times with 10,000,000 measured requests per run, on three Azure VMs
-(client, gateway, backend) connected over a real network. Measured on 2026-09-26 between 14:01 and
-14:54 CEST. All 35 runs completed with **0 errors**.
+(client, gateway, backend) connected over a real network. Measured on 2026-09-29 between 11:13 and
+12:07 CEST. All 35 runs completed with **0 errors**.
 
 | Scenario | What the gateway does | Concurrency | Mean RPS | CV | p50 ms | p95 ms | p99 ms |
 |---|---|---:|---:|---:|---:|---:|---:|
-| `shortcircuit` | Answers directly, no backend | 350 | **558,640** | 1.4 % | 0.34 | 1.80 | 5.55 |
-| `fullproxy` | Forwards to the backend | 100 | **208,758** | 1.0 % | 0.31 | 1.63 | 3.33 |
-| `openapi-validation` | Validates against an OpenAPI spec, then forwards | 100 | **172,366** | 1.4 % | 0.37 | 1.97 | 4.54 |
-| `rate-limit-basic-auth` | Basic Auth + rate limiting, then forwards | 100 | **204,728** | 1.8 % | 0.32 | 1.61 | 3.31 |
-| `rate-limit-basic-auth-tls` | Same, with TLS on both hops | 100 | **188,589** | 1.5 % | 0.36 | 1.67 | 3.44 |
-| `wsdl2openapi` | JSON protection, 5 JSONPath headers, JSON to SOAP and back | 100 | **118,182** | 1.6 % | 0.55 | 2.48 | 7.70 |
-| `soap-validation` | XML protection, WSDL validation of request and response | 100 | **95,513** | 4.2 % | 0.76 | 2.13 | 9.31 |
+| `shortcircuit` | Answers directly, no backend | 350 | **539,940** | 1.3 % | 0.41 | 1.24 | 6.38 |
+| `fullproxy` | Forwards to the backend | 100 | **216,912** | 1.7 % | 0.31 | 1.57 | 3.07 |
+| `openapi-validation` | Validates against an OpenAPI spec, then forwards | 100 | **167,211** | 1.2 % | 0.37 | 2.17 | 4.67 |
+| `rate-limit-basic-auth` | Basic Auth + rate limiting, then forwards | 100 | **214,125** | 2.7 % | 0.32 | 1.49 | 3.00 |
+| `rate-limit-basic-auth-tls` | Same, with TLS on both hops | 100 | **196,028** | 3.1 % | 0.34 | 1.61 | 3.20 |
+| `wsdl2openapi` | JSON protection, 5 JSONPath headers, JSON to SOAP and back | 100 | **120,417** | 2.9 % | 0.58 | 2.01 | 7.04 |
+| `soap-validation` | XML protection, WSDL validation of request and response | 100 | **97,884** | 1.4 % | 0.77 | 1.86 | 8.48 |
 
 CV is the coefficient of variation of RPS over the 5 runs (standard deviation ÷ mean). Latencies
 are the mean of the 5 runs' percentiles.
@@ -50,7 +50,7 @@ all three VMs.
 | Component | Details |
 |---|---|
 | JVM (all roles) | Eclipse Temurin 21.0.12.1+1 LTS |
-| Gateway | Membrane API Gateway 7.6.3-SNAPSHOT distribution, started with `membrane.sh`. Built from master `d3f9bbb31` plus uncommitted working-tree changes: Basic Authentication and `Header`; `Json2SoapTransformer`/`Wsdl2OpenapiInterceptor` resolving the WSDL once and reusing XML factories (#3357); `JsonpathExchangeExpression` compiling its JSONPath once; the XML Schema, WSDL and Schematron validators using a non-blocking validator pool with schemas compiled once |
+| Gateway | Membrane API Gateway 7.6.3-SNAPSHOT distribution, started with `membrane.sh`. Built from master `11e25b79d` plus #3379 (not yet merged at the time): `HttpUtil.readLine` reads the start line and header lines in bulk from the connection's `BufferedInputStream` instead of byte by byte |
 | Gateway JVM options | `-Xms32g -Xmx32g -XX:+AlwaysPreTouch -XX:+UseParallelGC` (plus GC logging to `gc.log`) |
 | Gateway router | `<router exchangeStore="forgetful">` with a `<forgetfulExchangeStore>`: exchanges are not kept for the admin console. `<transport backlog="1024"/>`, API on port 2000 |
 | Backend | `java/LoadTesterBackend.java`: an embedded Membrane router. Ports 2010 (HTTP) and 2011 (TLS) answer every request with `200 OK` via a `return` interceptor; port 2012 answers every request with a fixed SOAP 1.1 envelope containing an empty `createPersonResponse`. Backlog 1024, default JVM options |
@@ -93,20 +93,20 @@ warmup), so no request is rejected.
   arrives, over all 10,000,000 measured requests of a run, as nearest-rank percentiles. The client
   is closed loop, so latencies are not corrected for coordinated omission.
 - **CPU**: sampled from `/proc/stat` once per second on each VM. Only complete sampling intervals
-  inside the measured phase count (16 to 111 intervals per run). Busy = 100 % minus idle. Steal time
+  inside the measured phase count (17 to 102 intervals per run). Busy = 100 % minus idle. Steal time
   was 0 on all VMs over the whole test.
 
 ## Results
 
 | Scenario | Mean RPS | Median | Min | Max | Std dev | CV | p50 ms | p95 ms | p99 ms | Max ms | CPU gw | CPU be | CPU cl |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| `shortcircuit` | **558,640** | 553,905 | 552,826 | 571,005 | 7,889 | 1.4 % | 0.34 | 1.80 | 5.55 | 48.5 | 93.0 % | 0.0 % | 90.5 % |
-| `fullproxy` | **208,758** | 208,646 | 206,404 | 211,463 | 2,039 | 1.0 % | 0.31 | 1.63 | 3.33 | 14.4 | 85.6 % | 41.5 % | 56.9 % |
-| `openapi-validation` | **172,366** | 173,076 | 168,919 | 174,893 | 2,353 | 1.4 % | 0.37 | 1.97 | 4.54 | 17.8 | 88.6 % | 27.1 % | 41.9 % |
-| `rate-limit-basic-auth` | **204,728** | 204,975 | 200,799 | 209,285 | 3,611 | 1.8 % | 0.32 | 1.61 | 3.31 | 19.2 | 85.9 % | 40.2 % | 57.1 % |
-| `rate-limit-basic-auth-tls` | **188,589** | 188,602 | 186,159 | 193,002 | 2,784 | 1.5 % | 0.36 | 1.67 | 3.44 | 21.5 | 87.3 % | 38.9 % | 56.9 % |
-| `wsdl2openapi` | **118,182** | 117,753 | 116,361 | 120,807 | 1,837 | 1.6 % | 0.55 | 2.48 | 7.70 | 37.4 | 92.2 % | 20.9 % | 29.7 % |
-| `soap-validation` | **95,513** | 97,578 | 88,498 | 97,936 | 4,038 | 4.2 % | 0.76 | 2.13 | 9.31 | 49.1 | 94.5 % | 14.3 % | 25.2 % |
+| `shortcircuit` | **539,940** | 540,602 | 530,480 | 549,776 | 7,119 | 1.3 % | 0.41 | 1.24 | 6.38 | 68.4 | 94.9 % | 0.1 % | 90.8 % |
+| `fullproxy` | **216,912** | 216,757 | 212,322 | 222,629 | 3,703 | 1.7 % | 0.31 | 1.57 | 3.07 | 11.6 | 89.4 % | 44.4 % | 60.5 % |
+| `openapi-validation` | **167,211** | 167,065 | 164,438 | 169,868 | 2,019 | 1.2 % | 0.37 | 2.17 | 4.67 | 22.7 | 90.5 % | 28.6 % | 41.0 % |
+| `rate-limit-basic-auth` | **214,125** | 212,882 | 207,392 | 220,142 | 5,775 | 2.7 % | 0.32 | 1.49 | 3.00 | 13.4 | 89.2 % | 44.6 % | 59.1 % |
+| `rate-limit-basic-auth-tls` | **196,028** | 196,628 | 186,398 | 203,433 | 6,121 | 3.1 % | 0.34 | 1.61 | 3.20 | 1417.4 | 89.6 % | 44.0 % | 58.6 % |
+| `wsdl2openapi` | **120,417** | 120,595 | 114,933 | 124,144 | 3,548 | 2.9 % | 0.58 | 2.01 | 7.04 | 32.8 | 94.5 % | 23.4 % | 30.5 % |
+| `soap-validation` | **97,884** | 97,844 | 96,344 | 99,544 | 1,349 | 1.4 % | 0.77 | 1.86 | 8.48 | 46.1 | 95.9 % | 15.5 % | 24.8 % |
 
 Max ms is the highest single latency over all 5 runs; CPU columns are the mean over the 5 runs.
 Per-run figures are listed under [Per-run results](#per-run-results).
@@ -118,24 +118,27 @@ RPS can be compared directly:
 
 | Added on top of | Added | Mean RPS | Change |
 |---|---|---|---:|
-| `fullproxy` | Basic Auth + rate limiting | 208,758 → 204,728 | −1.9 % |
-| `rate-limit-basic-auth` | TLS on both hops | 204,728 → 188,589 | −7.9 % |
-| `fullproxy` | Basic Auth + rate limiting + TLS | 208,758 → 188,589 | −9.7 % |
+| `fullproxy` | Basic Auth + rate limiting | 216,912 → 214,125 | −1.3 % |
+| `rate-limit-basic-auth` | TLS on both hops | 214,125 → 196,028 | −8.5 % |
+| `fullproxy` | Basic Auth + rate limiting + TLS | 216,912 → 196,028 | −9.6 % |
 
-The −1.9 % for Basic Auth + rate limiting is within the run-to-run spread of the two scenarios (CV
-1.0 and 1.8 %; their ranges overlap).
+The −1.3 % for Basic Auth + rate limiting is within the run-to-run spread of the two scenarios (CV
+1.7 and 2.7 %; their ranges overlap).
 
 Gateway CPU time per request (gateway busy × 16 cores ÷ RPS; includes kernel network processing):
 
-| Scenario | Gateway CPU per request |
-|---|---:|
-| `shortcircuit` | 27 µs |
-| `fullproxy` | 66 µs |
-| `rate-limit-basic-auth` | 67 µs |
-| `rate-limit-basic-auth-tls` | 74 µs |
-| `openapi-validation` | 82 µs |
-| `wsdl2openapi` | 125 µs |
-| `soap-validation` | 158 µs |
+| Scenario | Gateway CPU per request | Of which user space |
+|---|---:|---:|
+| `shortcircuit` | 28 µs | 9 µs |
+| `fullproxy` | 66 µs | 25 µs |
+| `rate-limit-basic-auth` | 67 µs | 26 µs |
+| `rate-limit-basic-auth-tls` | 73 µs | 33 µs |
+| `openapi-validation` | 87 µs | 45 µs |
+| `wsdl2openapi` | 126 µs | 82 µs |
+| `soap-validation` | 157 µs | 114 µs |
+
+User space is the gateway's `usr` CPU share, converted the same way: the time spent in Membrane and
+the JVM rather than in the kernel's network stack.
 
 `openapi-validation` sends a 30-byte body instead of 1,066 bytes, and the two SOAP scenarios send
 different bodies to a different backend service, so none of them is directly comparable to
@@ -143,19 +146,40 @@ different bodies to a different backend service, so none of them is directly com
 
 ### Observations
 
-- **The gateway does most of the work.** It runs at 86 to 95 % CPU in every scenario, while the
-  backend stays at 14 to 42 %. The client stays at 25 to 57 %, except in `shortcircuit`, where it
+- **The gateway does most of the work.** It runs at 89 to 96 % CPU in every scenario, while the
+  backend stays at 15 to 45 %. The client stays at 25 to 61 %, except in `shortcircuit`, where it
   runs at 91 %: that scenario is close to the limit of both VMs.
 - **The proxying scenarios stop short of full gateway CPU.** `fullproxy`, `openapi-validation` and
-  both rate-limit scenarios level off at 86 to 89 % gateway CPU; the two SOAP scenarios reach 92 to
-  95 %.
-- **Tail latency.** p99 is 3.3 to 4.5 ms in the proxying scenarios, 5.6 ms in `shortcircuit`, and
-  7.7 and 9.3 ms in the two SOAP scenarios. No single request took longer than 50 ms.
-- **Run-to-run spread.** The CV is 1.0 to 1.8 % in six scenarios. `soap-validation` has 4.2 %
-  because of one slower run (88,498 RPS in round 3); the other four runs are within 2.4 % of each
-  other.
+  both rate-limit scenarios level off at 89 to 91 % gateway CPU; the two SOAP scenarios reach 94 to
+  96 %.
+- **Tail latency.** p99 is 3.0 to 4.7 ms in the proxying scenarios, 6.4 ms in `shortcircuit`, and
+  7.0 and 8.5 ms in the two SOAP scenarios. One request took 1,417 ms (`rate-limit-basic-auth-tls`,
+  round 2; that run's p99 is 3.5 ms); every other request finished within 69 ms.
+- **Run-to-run spread.** The CV is 1.2 to 3.1 %. The highest are `rate-limit-basic-auth-tls`
+  (3.1 %, round 2 at 186,398 RPS), `wsdl2openapi` (2.9 %, round 3 at 114,933 RPS) and
+  `rate-limit-basic-auth` (2.7 %).
 - **TLS.** Connections are kept alive, so the TLS scenario mostly measures encrypting and
   decrypting on established connections, not a handshake per request.
+
+### Compared with the previous results
+
+The previous results were measured on 2026-09-26 with the same sizes, OS, kernel, JVM, scripts and
+load, but on other VMs (the resource group was deleted and provisioned again) and with older code
+(master `d3f9bbb31` plus the changes since merged into master):
+
+| Scenario | 2026-09-26 | 2026-09-29 | Change |
+|---|---:|---:|---:|
+| `shortcircuit` | 558,640 | 539,940 | −3.3 % |
+| `fullproxy` | 208,758 | 216,912 | +3.9 % |
+| `openapi-validation` | 172,366 | 167,211 | −3.0 % |
+| `rate-limit-basic-auth` | 204,728 | 214,125 | +4.6 % |
+| `rate-limit-basic-auth-tls` | 188,589 | 196,028 | +3.9 % |
+| `wsdl2openapi` | 118,182 | 120,417 | +1.9 % |
+| `soap-validation` | 95,513 | 97,884 | +2.5 % |
+
+Both the VMs and the code changed, so the differences can't be attributed to either. The proxying
+scenarios ran at 2 to 4 percentage points more gateway CPU than before. Their CPU time per request
+stayed the same, except for `openapi-validation`, which rose from 82 to 87 µs.
 
 ## Per-run results
 
@@ -163,71 +187,71 @@ different bodies to a different backend service, so none of them is directly com
 
 | Round | RPS | OK | ERR | Measured window | p50 ms | p95 ms | p99 ms | Max ms | CPU gw (usr/sys/soft) | CPU be | CPU cl |
 |---:|---:|---:|---:|---:|---:|---:|---:|---:|---|---:|---:|
-| 1 | 562,099 | 10,000,000 | 0 | 17.8 s | 0.345 | 1.709 | 5.534 | 37.2 | 93.4 % (34.9/39.5/19.0) | 0.0 % | 90.2 % |
-| 2 | 552,826 | 10,000,000 | 0 | 18.1 s | 0.359 | 1.754 | 5.486 | 34.8 | 93.2 % (34.4/36.5/22.3) | 0.0 % | 90.7 % |
-| 3 | 553,364 | 10,000,000 | 0 | 18.1 s | 0.341 | 1.807 | 5.839 | 43.9 | 92.6 % (33.1/36.9/22.6) | 0.1 % | 90.7 % |
-| 4 | 571,005 | 10,000,000 | 0 | 17.5 s | 0.363 | 1.565 | 4.929 | 48.5 | 93.7 % (32.9/37.2/23.6) | 0.0 % | 91.3 % |
-| 5 | 553,905 | 10,000,000 | 0 | 18.1 s | 0.314 | 2.155 | 5.947 | 38.9 | 92.1 % (34.4/38.8/18.9) | 0.0 % | 89.5 % |
+| 1 | 549,776 | 10,000,000 | 0 | 18.2 s | 0.423 | 1.271 | 5.127 | 53.0 | 95.1 % (29.9/43.1/22.1) | 0.0 % | 91.4 % |
+| 2 | 536,636 | 10,000,000 | 0 | 18.6 s | 0.405 | 1.209 | 6.965 | 61.5 | 94.3 % (30.6/42.1/21.6) | 0.1 % | 91.7 % |
+| 3 | 530,480 | 10,000,000 | 0 | 18.9 s | 0.416 | 1.260 | 6.463 | 65.5 | 95.4 % (30.3/42.2/22.9) | 0.1 % | 88.5 % |
+| 4 | 542,203 | 10,000,000 | 0 | 18.4 s | 0.403 | 1.203 | 6.838 | 68.4 | 94.6 % (31.4/43.2/20.0) | 0.0 % | 91.5 % |
+| 5 | 540,602 | 10,000,000 | 0 | 18.5 s | 0.408 | 1.243 | 6.516 | 56.8 | 95.0 % (30.7/42.4/21.9) | 0.1 % | 91.1 % |
 
 ### `fullproxy`
 
 | Round | RPS | OK | ERR | Measured window | p50 ms | p95 ms | p99 ms | Max ms | CPU gw (usr/sys/soft) | CPU be | CPU cl |
 |---:|---:|---:|---:|---:|---:|---:|---:|---:|---|---:|---:|
-| 1 | 208,646 | 10,000,000 | 0 | 47.9 s | 0.311 | 1.631 | 3.334 | 12.1 | 85.3 % (33.7/31.2/20.4) | 40.5 % | 58.1 % |
-| 2 | 207,271 | 10,000,000 | 0 | 48.2 s | 0.311 | 1.677 | 3.373 | 14.0 | 85.3 % (34.2/31.1/19.9) | 41.7 % | 57.3 % |
-| 3 | 206,404 | 10,000,000 | 0 | 48.4 s | 0.304 | 1.753 | 3.510 | 13.1 | 84.7 % (33.8/30.9/20.0) | 41.0 % | 55.9 % |
-| 4 | 211,463 | 10,000,000 | 0 | 47.3 s | 0.317 | 1.523 | 3.189 | 11.9 | 86.7 % (35.7/31.9/19.2) | 41.6 % | 58.4 % |
-| 5 | 210,005 | 10,000,000 | 0 | 47.6 s | 0.315 | 1.571 | 3.266 | 14.4 | 85.9 % (34.4/31.6/20.0) | 42.9 % | 54.9 % |
+| 1 | 212,322 | 10,000,000 | 0 | 47.1 s | 0.305 | 1.713 | 3.287 | 11.6 | 88.9 % (33.6/34.5/20.8) | 41.9 % | 58.9 % |
+| 2 | 215,870 | 10,000,000 | 0 | 46.3 s | 0.304 | 1.630 | 3.129 | 11.1 | 88.9 % (33.1/34.5/21.2) | 43.7 % | 60.4 % |
+| 3 | 216,981 | 10,000,000 | 0 | 46.1 s | 0.307 | 1.586 | 3.093 | 10.3 | 89.2 % (33.3/34.4/21.5) | 45.0 % | 60.3 % |
+| 4 | 222,629 | 10,000,000 | 0 | 44.9 s | 0.314 | 1.395 | 2.813 | 11.2 | 90.1 % (35.2/37.5/17.4) | 45.9 % | 62.4 % |
+| 5 | 216,757 | 10,000,000 | 0 | 46.1 s | 0.312 | 1.525 | 3.033 | 11.1 | 89.8 % (33.7/34.6/21.5) | 45.7 % | 60.4 % |
 
 ### `openapi-validation`
 
 | Round | RPS | OK | ERR | Measured window | p50 ms | p95 ms | p99 ms | Max ms | CPU gw (usr/sys/soft) | CPU be | CPU cl |
 |---:|---:|---:|---:|---:|---:|---:|---:|---:|---|---:|---:|
-| 1 | 171,176 | 10,000,000 | 0 | 58.4 s | 0.361 | 2.057 | 4.656 | 14.9 | 88.3 % (46.8/24.4/17.1) | 27.2 % | 41.7 % |
-| 2 | 174,893 | 10,000,000 | 0 | 57.2 s | 0.370 | 1.873 | 4.358 | 15.9 | 88.9 % (47.4/24.8/16.6) | 30.5 % | 42.2 % |
-| 3 | 173,764 | 10,000,000 | 0 | 57.5 s | 0.373 | 1.877 | 4.400 | 16.4 | 89.0 % (47.8/24.6/16.5) | 23.0 % | 42.9 % |
-| 4 | 173,076 | 10,000,000 | 0 | 57.8 s | 0.363 | 1.988 | 4.589 | 17.8 | 88.8 % (48.1/24.3/16.4) | 27.4 % | 41.5 % |
-| 5 | 168,919 | 10,000,000 | 0 | 59.2 s | 0.367 | 2.062 | 4.692 | 13.7 | 88.2 % (48.2/24.0/16.0) | 27.4 % | 41.3 % |
+| 1 | 168,205 | 10,000,000 | 0 | 59.5 s | 0.372 | 2.091 | 4.578 | 22.7 | 90.7 % (47.0/27.4/16.4) | 29.3 % | 41.2 % |
+| 2 | 166,477 | 10,000,000 | 0 | 60.1 s | 0.364 | 2.227 | 4.826 | 13.4 | 90.2 % (46.9/27.2/16.1) | 27.1 % | 42.5 % |
+| 3 | 164,438 | 10,000,000 | 0 | 60.8 s | 0.364 | 2.284 | 4.864 | 15.5 | 89.9 % (45.9/27.2/16.7) | 27.5 % | 40.2 % |
+| 4 | 169,868 | 10,000,000 | 0 | 58.9 s | 0.375 | 2.041 | 4.438 | 17.0 | 91.4 % (49.6/28.7/13.1) | 29.7 % | 41.3 % |
+| 5 | 167,065 | 10,000,000 | 0 | 59.9 s | 0.365 | 2.200 | 4.638 | 13.0 | 90.4 % (47.0/27.2/16.1) | 29.3 % | 39.9 % |
 
 ### `rate-limit-basic-auth`
 
 | Round | RPS | OK | ERR | Measured window | p50 ms | p95 ms | p99 ms | Max ms | CPU gw (usr/sys/soft) | CPU be | CPU cl |
 |---:|---:|---:|---:|---:|---:|---:|---:|---:|---|---:|---:|
-| 1 | 200,799 | 10,000,000 | 0 | 49.8 s | 0.320 | 1.693 | 3.450 | 13.3 | 85.1 % (35.5/29.3/20.4) | 38.1 % | 57.0 % |
-| 2 | 204,975 | 10,000,000 | 0 | 48.8 s | 0.327 | 1.555 | 3.238 | 13.3 | 86.4 % (36.5/30.3/19.6) | 40.7 % | 58.5 % |
-| 3 | 209,285 | 10,000,000 | 0 | 47.8 s | 0.326 | 1.483 | 3.100 | 11.2 | 86.5 % (35.5/31.1/19.9) | 42.0 % | 57.1 % |
-| 4 | 207,076 | 10,000,000 | 0 | 48.3 s | 0.326 | 1.500 | 3.177 | 12.1 | 86.3 % (35.9/30.8/19.6) | 40.6 % | 57.4 % |
-| 5 | 201,505 | 10,000,000 | 0 | 49.6 s | 0.312 | 1.798 | 3.579 | 19.2 | 85.3 % (36.1/30.0/19.2) | 39.7 % | 55.6 % |
+| 1 | 212,882 | 10,000,000 | 0 | 47.0 s | 0.319 | 1.515 | 3.080 | 11.7 | 89.9 % (35.1/33.8/21.0) | 44.3 % | 59.9 % |
+| 2 | 220,023 | 10,000,000 | 0 | 45.5 s | 0.325 | 1.329 | 2.769 | 9.7 | 89.8 % (34.0/34.3/21.6) | 46.1 % | 57.1 % |
+| 3 | 220,142 | 10,000,000 | 0 | 45.4 s | 0.324 | 1.331 | 2.773 | 9.9 | 90.1 % (35.5/35.8/18.7) | 46.1 % | 61.5 % |
+| 4 | 210,185 | 10,000,000 | 0 | 47.6 s | 0.320 | 1.543 | 3.136 | 12.2 | 88.8 % (33.2/34.0/21.6) | 42.8 % | 58.1 % |
+| 5 | 207,392 | 10,000,000 | 0 | 48.2 s | 0.311 | 1.712 | 3.230 | 13.4 | 87.3 % (33.5/33.3/20.5) | 43.7 % | 58.8 % |
 
 ### `rate-limit-basic-auth-tls`
 
 | Round | RPS | OK | ERR | Measured window | p50 ms | p95 ms | p99 ms | Max ms | CPU gw (usr/sys/soft) | CPU be | CPU cl |
 |---:|---:|---:|---:|---:|---:|---:|---:|---:|---|---:|---:|
-| 1 | 186,159 | 10,000,000 | 0 | 53.7 s | 0.352 | 1.756 | 3.544 | 13.0 | 86.7 % (41.3/27.1/18.2) | 38.6 % | 57.3 % |
-| 2 | 188,940 | 10,000,000 | 0 | 52.9 s | 0.356 | 1.660 | 3.421 | 12.1 | 87.9 % (41.8/27.9/18.2) | 33.5 % | 53.4 % |
-| 3 | 186,242 | 10,000,000 | 0 | 53.7 s | 0.351 | 1.754 | 3.622 | 13.9 | 87.0 % (42.0/27.8/17.2) | 40.2 % | 57.1 % |
-| 4 | 193,002 | 10,000,000 | 0 | 51.8 s | 0.359 | 1.540 | 3.183 | 21.5 | 87.8 % (40.9/28.2/18.7) | 41.0 % | 58.9 % |
-| 5 | 188,602 | 10,000,000 | 0 | 53.0 s | 0.359 | 1.623 | 3.444 | 18.8 | 87.3 % (41.4/27.6/18.3) | 41.4 % | 57.7 % |
+| 1 | 197,404 | 10,000,000 | 0 | 50.7 s | 0.337 | 1.673 | 3.349 | 11.5 | 90.3 % (40.3/30.2/19.8) | 45.3 % | 57.6 % |
+| 2 | 186,398 | 10,000,000 | 0 | 53.6 s | 0.338 | 1.807 | 3.496 | 1417.4 | 87.0 % (39.5/28.6/18.5) | 41.3 % | 56.7 % |
+| 3 | 196,276 | 10,000,000 | 0 | 50.9 s | 0.345 | 1.617 | 3.265 | 11.8 | 89.6 % (42.0/31.0/16.6) | 44.2 % | 60.2 % |
+| 4 | 196,628 | 10,000,000 | 0 | 50.9 s | 0.347 | 1.606 | 3.126 | 10.8 | 90.2 % (40.0/29.7/20.5) | 42.4 % | 56.7 % |
+| 5 | 203,433 | 10,000,000 | 0 | 49.2 s | 0.357 | 1.372 | 2.778 | 33.8 | 91.0 % (40.0/30.4/20.5) | 46.7 % | 61.9 % |
 
 ### `wsdl2openapi`
 
 | Round | RPS | OK | ERR | Measured window | p50 ms | p95 ms | p99 ms | Max ms | CPU gw (usr/sys/soft) | CPU be | CPU cl |
 |---:|---:|---:|---:|---:|---:|---:|---:|---:|---|---:|---:|
-| 1 | 120,807 | 10,000,000 | 0 | 82.8 s | 0.527 | 2.538 | 7.743 | 26.0 | 91.9 % (61.2/18.0/12.7) | 21.4 % | 29.2 % |
-| 2 | 119,225 | 10,000,000 | 0 | 83.9 s | 0.573 | 2.192 | 7.283 | 32.0 | 93.0 % (62.3/18.1/12.6) | 21.5 % | 28.5 % |
-| 3 | 116,361 | 10,000,000 | 0 | 85.9 s | 0.549 | 2.671 | 7.924 | 29.6 | 91.9 % (61.7/17.7/12.5) | 20.3 % | 29.9 % |
-| 4 | 117,753 | 10,000,000 | 0 | 84.9 s | 0.558 | 2.430 | 7.678 | 37.4 | 92.4 % (61.8/17.9/12.7) | 20.4 % | 30.4 % |
-| 5 | 116,761 | 10,000,000 | 0 | 85.6 s | 0.554 | 2.578 | 7.848 | 29.8 | 92.0 % (61.7/17.8/12.6) | 21.1 % | 30.4 % |
+| 1 | 124,144 | 10,000,000 | 0 | 80.6 s | 0.587 | 1.701 | 6.544 | 23.6 | 94.9 % (61.7/19.8/13.4) | 22.9 % | 31.0 % |
+| 2 | 120,595 | 10,000,000 | 0 | 82.9 s | 0.596 | 1.856 | 6.851 | 26.7 | 94.9 % (61.8/19.5/13.5) | 23.9 % | 30.7 % |
+| 3 | 114,933 | 10,000,000 | 0 | 87.0 s | 0.566 | 2.620 | 7.969 | 32.8 | 93.3 % (60.9/19.1/13.3) | 22.6 % | 29.4 % |
+| 4 | 122,804 | 10,000,000 | 0 | 81.4 s | 0.576 | 1.963 | 6.811 | 28.8 | 94.6 % (61.8/19.5/13.3) | 23.9 % | 31.0 % |
+| 5 | 119,607 | 10,000,000 | 0 | 83.6 s | 0.593 | 1.911 | 7.045 | 26.4 | 94.8 % (62.0/19.5/13.3) | 23.6 % | 30.3 % |
 
 ### `soap-validation`
 
 | Round | RPS | OK | ERR | Measured window | p50 ms | p95 ms | p99 ms | Max ms | CPU gw (usr/sys/soft) | CPU be | CPU cl |
 |---:|---:|---:|---:|---:|---:|---:|---:|---:|---|---:|---:|
-| 1 | 97,936 | 10,000,000 | 0 | 102.1 s | 0.724 | 2.234 | 9.199 | 35.6 | 94.0 % (68.9/14.6/10.5) | 14.8 % | 25.6 % |
-| 2 | 97,931 | 10,000,000 | 0 | 102.1 s | 0.762 | 1.952 | 8.578 | 37.6 | 95.0 % (69.5/14.6/10.9) | 14.7 % | 26.4 % |
-| 3 | 88,498 | 10,000,000 | 0 | 113.0 s | 0.817 | 2.172 | 10.304 | 49.1 | 94.9 % (72.7/12.9/9.3) | 13.2 % | 23.2 % |
-| 4 | 97,578 | 10,000,000 | 0 | 102.5 s | 0.736 | 2.115 | 9.160 | 34.5 | 94.2 % (69.2/14.7/10.3) | 14.1 % | 25.8 % |
-| 5 | 95,623 | 10,000,000 | 0 | 104.6 s | 0.752 | 2.168 | 9.326 | 39.3 | 94.4 % (69.4/14.7/10.3) | 14.7 % | 24.9 % |
+| 1 | 97,844 | 10,000,000 | 0 | 102.2 s | 0.771 | 1.925 | 8.435 | 37.3 | 95.9 % (69.5/15.9/10.6) | 15.6 % | 24.8 % |
+| 2 | 96,808 | 10,000,000 | 0 | 103.3 s | 0.792 | 1.834 | 8.363 | 40.8 | 96.2 % (69.6/15.9/10.7) | 15.2 % | 25.5 % |
+| 3 | 96,344 | 10,000,000 | 0 | 103.8 s | 0.763 | 1.947 | 9.149 | 35.1 | 95.5 % (69.7/15.5/10.4) | 15.0 % | 24.4 % |
+| 4 | 99,544 | 10,000,000 | 0 | 100.5 s | 0.770 | 1.779 | 8.176 | 46.1 | 96.0 % (69.4/15.9/10.8) | 15.9 % | 25.5 % |
+| 5 | 98,878 | 10,000,000 | 0 | 101.1 s | 0.772 | 1.804 | 8.295 | 35.5 | 96.0 % (69.7/15.7/10.7) | 15.7 % | 23.6 % |
 
 ## Reproducing
 
