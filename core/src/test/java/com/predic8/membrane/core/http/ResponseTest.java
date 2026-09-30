@@ -421,6 +421,25 @@ public class ResponseTest {
         assertTrue(closed[0]);
     }
 
+    /**
+     * RFC 9112 §6.2: a sender must not send Content-Length in a message with Transfer-Encoding. Built
+     * the way Http2Client builds a response from an HTTP/2 backend: chunked preset, the backend's
+     * content-length added on top, the body set without touching the header.
+     */
+    @Test
+    void writeChunkedDropsContentLength() throws Exception {
+        Response res = new Response();
+        res.setStatusCode(200);
+        res.getHeader().setValue(Header.TRANSFER_ENCODING, Header.CHUNKED);
+        res.getHeader().add(Header.CONTENT_LENGTH, "5");
+        res.setBody(new Body(new ByteArrayInputStream("hello".getBytes())));
+
+        String written = writeToString(res);
+        assertFalse(written.contains("Content-Length"), written);
+        assertTrue(written.contains("Transfer-Encoding: chunked\r\n"), written);
+        assertTrue(written.endsWith("\r\n\r\n5\r\nhello\r\n0\r\n\r\n"), written);
+    }
+
     private static String writeToString(Response res) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         res.write(out, true);
@@ -605,6 +624,103 @@ public class ResponseTest {
             assertEquals(205, res.getStatusCode());
             return res;
         }
+    }
+
+    /**
+     * The two field lines combine to "gzip, chunked", whose final coding is "chunked", so the
+     * response is chunked-framed. Reading only the first field line makes Membrane frame it as a
+     * plain body and hand the chunk sizes through as content (#3327).
+     */
+    @Test
+    void transferEncodingEndingInChunkedAcrossSeveralFieldsIsChunkedFramed() throws Exception {
+        assertInstanceOf(ChunkedBody.class, readResponse("""
+                HTTP/1.1 200 Ok
+                Transfer-Encoding: gzip
+                Transfer-Encoding: chunked
+
+                0
+
+                """).getBody());
+    }
+
+    /**
+     * A present but empty Transfer-Encoding carries no coding and therefore does not end in
+     * "chunked", so the body length of the response cannot be determined and it is rejected
+     * instead of being framed by its Content-Length.
+     */
+    @Test
+    void emptyTransferEncodingIsRejected() {
+        assertThrows(MalformedHeaderException.class, () -> readResponse("""
+                HTTP/1.1 200 Ok
+                Transfer-Encoding:
+                Content-Length: 3
+
+                abc
+                """));
+    }
+
+    /**
+     * RFC 9112 6.3: a response with both Transfer-Encoding and Content-Length might indicate an
+     * attempt at response splitting and ought to be handled as an error, so it is rejected.
+     */
+    @Test
+    void chunkedWithContentLengthIsRejected() {
+        assertThrows(MalformedHeaderException.class, () -> readResponse("""
+                HTTP/1.1 200 Ok
+                Transfer-Encoding: chunked
+                Content-Length: 0
+
+                5
+                abcde
+                0
+
+                """));
+    }
+
+    @Test
+    void chunkedAcrossSeveralFieldsWithContentLengthIsRejected() {
+        assertThrows(MalformedHeaderException.class, () -> readResponse("""
+                HTTP/1.1 302 Found
+                Location: https://example.com/
+                Transfer-Encoding: gzip
+                Transfer-Encoding: chunked
+                Content-Length: 3
+
+                0
+
+                """));
+    }
+
+    /**
+     * A response that must not contain a body carries no framing to validate, so framing fields
+     * it happens to carry are not rejected - and the next response on the connection is read intact.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "103 Early Hints\nTransfer-Encoding: chunked\nContent-Length: 5",
+            "103 Early Hints\nTransfer-Encoding: gzip",
+            "204 No Content\nTransfer-Encoding: chunked\nContent-Length: 5",
+            "204 No Content\nTransfer-Encoding: gzip",
+            "304 Not Modified\nTransfer-Encoding: chunked\nContent-Length: 5",
+            "304 Not Modified\nTransfer-Encoding: gzip",
+    })
+    void responseWithoutBodyIgnoresFraming(String statusAndFraming) throws Exception {
+        InputStream in = convertMessage("""
+                HTTP/1.1 %s
+
+                HTTP/1.1 200 Ok
+                Content-Length: 2
+
+                ok""".formatted(statusAndFraming));
+
+        Response first = new Response();
+        first.read(in, true);
+        assertInstanceOf(EmptyBody.class, first.getBody());
+
+        Response next = new Response();
+        next.read(in, true);
+        assertEquals(200, next.getStatusCode());
+        assertEquals("ok", next.getBodyAsStringDecoded());
     }
 
     @Nested
