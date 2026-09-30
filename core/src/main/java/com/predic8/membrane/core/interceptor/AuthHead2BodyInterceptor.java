@@ -35,6 +35,12 @@ import java.nio.charset.Charset;
 
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
+/**
+ * @description Moves the credentials of a SOAP <code>authorization</code> element out of the request
+ * body into <code>username</code>/<code>password</code> child elements of the payload element, for a
+ * backend that expects them inline. Requests without an <code>authorization</code> element pass
+ * through unchanged.
+ */
 @MCElement(name="authHead2Body")
 public class AuthHead2BodyInterceptor extends AbstractInterceptor {
 	static final String COM_NS  = "test";
