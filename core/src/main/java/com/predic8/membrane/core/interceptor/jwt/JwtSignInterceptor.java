@@ -60,6 +60,10 @@ public class JwtSignInterceptor extends AbstractInterceptor {
 
     private final ObjectMapper om = new ObjectMapper();
 
+    public JwtSignInterceptor() {
+        name = "jwt sign";
+    }
+
     @Override
     public void init() {
         super.init();
