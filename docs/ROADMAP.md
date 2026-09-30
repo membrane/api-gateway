@@ -66,6 +66,7 @@ PRIO 3:
   - Story: HTTP/2 (`Http2ServerHandler`, `Http2Client`) already runs on virtual threads via `Util.createNewThreadPool()`. HTTP/1 connections still go through the `ThreadPoolExecutor` in `HttpTransport` (platform threads, core 20, unbounded max). On Java 21 this was left alone deliberately: a virtual thread blocking inside a `synchronized` block pins its carrier thread, which is risky for connection handling under load. JEP 491 (Java 24) removed monitor pinning, so with a Java 25 baseline that argument is gone.
   - Check whether switching `HttpTransport` to a virtual-thread-per-task executor makes sense. If yes, account for what the pool currently provides:
     - Backpressure: `maxThreadPoolSize` is a documented attribute and `HttpEndpointListener` handles `RejectedExecutionException` by closing the socket. A per-task executor never rejects — replace with a `Semaphore` or rely on `concurrentConnectionLimitPerIp`. Dropping the attribute is a breaking change.
+    - `coreThreadPoolSize`: meaningless without a pool (virtual threads are not pooled). Deprecate/ignore it with a warning; removing it is a breaking change.
     - Thread naming: keep "router" thread names via `Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("router-", 0).factory())`.
     - Graceful shutdown / hot deploy: `shutdown()` + `awaitTermination()` in `closeAll()` works unchanged with a per-task executor.
 - `RuleManager.addProxy`/`addProxyAndOpenPortIfNew`: drop the unused `RuleDefinitionSource source` parameter
