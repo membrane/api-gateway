@@ -48,8 +48,11 @@ az group create -n "$RG" -l "$LOCATION"
 # Proximity placement group: puts all three VMs physically close together, for low and steady
 # network latency between them, as is usual for a latency-sensitive benchmark.
 PPG=membrane-perftest-ppg
+# Azure rejects duplicate sizes in the intent, so pass each distinct size once.
+PPG_SIZES=$(printf '%s\n' "$BACKEND_SIZE" "$GATEWAY_SIZE" "$CLIENT_SIZE" | sort -u)
+# shellcheck disable=SC2086
 az ppg create -g "$RG" -n "$PPG" -l "$LOCATION" -t Standard \
-  --intent-vm-sizes "$BACKEND_SIZE" "$GATEWAY_SIZE" "$CLIENT_SIZE" -o none
+  --intent-vm-sizes $PPG_SIZES -o none
 
 az network vnet create -g "$RG" -n "$VNET" --address-prefix 10.10.0.0/24 \
   --subnet-name "$SUBNET" --subnet-prefix 10.10.0.0/24
