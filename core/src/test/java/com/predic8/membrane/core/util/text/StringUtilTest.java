@@ -14,10 +14,12 @@
 
 package com.predic8.membrane.core.util.text;
 
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
+import static com.predic8.membrane.core.util.text.StringUtil.getLastNonEmptyOfCommaSeparatedString;
 import static com.predic8.membrane.core.util.text.StringUtil.tail;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class StringUtilTest {
 
@@ -26,5 +28,79 @@ class StringUtilTest {
         assertEquals("def", tail("abcdef",3));
         assertEquals("abcdef", tail("abcdef",10));
         assertEquals("", tail("",10));
+    }
+
+    @Nested
+    class GetLastNonEmptyOfCommaSeparatedString {
+
+        @Test
+        void valueWithoutCommaIsTheLastElement() {
+            assertEquals("chunked", getLastNonEmptyOfCommaSeparatedString("chunked"));
+        }
+
+        @Test
+        void lastElementOfAList() {
+            assertEquals("chunked", getLastNonEmptyOfCommaSeparatedString("gzip, chunked"));
+            assertEquals("c", getLastNonEmptyOfCommaSeparatedString("a,b,c"));
+        }
+
+        /**
+         * HTTP list elements may be surrounded by optional whitespace (RFC 9110 5.6.1), which is
+         * not part of the element.
+         */
+        @Test
+        void surroundingWhitespaceIsStripped() {
+            assertEquals("chunked", getLastNonEmptyOfCommaSeparatedString("gzip,   chunked  "));
+            assertEquals("chunked", getLastNonEmptyOfCommaSeparatedString("  chunked\t"));
+        }
+
+        @Test
+        void separatorWithoutWhitespace() {
+            assertEquals("chunked", getLastNonEmptyOfCommaSeparatedString("gzip,chunked"));
+        }
+
+        /**
+         * Only the separators are split on, so anything else the element carries survives.
+         */
+        @Test
+        void innerPunctuationOfTheLastElementIsKept() {
+            assertEquals("b;q=0.5", getLastNonEmptyOfCommaSeparatedString("a, b;q=0.5"));
+        }
+
+        /**
+         * Empty list elements are legal and are ignored (RFC 9110 5.6.1.2), so a trailing
+         * separator does not hide the coding in front of it.
+         */
+        @Test
+        void trailingSeparatorIsIgnored() {
+            assertEquals("gzip", getLastNonEmptyOfCommaSeparatedString("gzip,"));
+            assertEquals("gzip", getLastNonEmptyOfCommaSeparatedString("gzip, "));
+            assertEquals("chunked", getLastNonEmptyOfCommaSeparatedString("gzip, chunked,,"));
+        }
+
+        @Test
+        void interiorEmptyElementIsIgnored() {
+            assertEquals("chunked", getLastNonEmptyOfCommaSeparatedString("gzip,, chunked"));
+        }
+
+        /**
+         * Only empty elements are skipped: a non-empty last element stays the last one.
+         */
+        @Test
+        void nonEmptyLastElementIsNotSkipped() {
+            assertEquals("gzip", getLastNonEmptyOfCommaSeparatedString("chunked, gzip,"));
+        }
+
+        @Test
+        void separatorsOnlyYieldAnEmptyString() {
+            assertEquals("", getLastNonEmptyOfCommaSeparatedString(","));
+            assertEquals("", getLastNonEmptyOfCommaSeparatedString(" , "));
+        }
+
+        @Test
+        void emptyValue() {
+            assertEquals("", getLastNonEmptyOfCommaSeparatedString(""));
+            assertEquals("", getLastNonEmptyOfCommaSeparatedString("   "));
+        }
     }
 }

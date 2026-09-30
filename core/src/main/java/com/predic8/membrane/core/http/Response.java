@@ -441,10 +441,24 @@ public class Response extends Message {
 			createBody(in);
 	}
 
+	/**
+	 * A backend response whose <tt>Transfer-Encoding</tt> does not end in <tt>chunked</tt> is
+	 * rejected for the same reason as such a request: its body length is undeterminable. The
+	 * check runs before the redirect shortcut, so a redirect does not skip it. The same goes for a
+	 * response that is chunked-framed and also carries a <tt>Content-Length</tt>, see
+	 * {@link #rejectIfChunkedWithContentLength(String)}.
+	 * <p>
+	 * A response that {@link #endsAfterHeaderFields() ends after its header fields} is not
+	 * validated: it has no framing, so the framing fields it carries are ignored. Nor is a 205 that
+	 * announces content: its content is left unread and its connection closed, so its framing
+	 * cannot desynchronize the connection either.
+	 */
 	@Override
 	protected void createBody(InputStream in) throws IOException {
-		if (isRedirect() && mayHaveNoBody())
+		if (endsAfterHeaderFields()) {
+			body = new EmptyBody();
 			return;
+		}
 
 		// A 205 must not have content (RFC 9110 §15.3.6), so a backend announcing some may not send it:
 		// do not read it. Chunked is checked first, as Transfer-Encoding overrides Content-Length (RFC 9112 §6.3).
@@ -456,6 +470,12 @@ public class Response extends Message {
 			unreadContent = true;
 			return;
 		}
+
+		rejectIfBodyLengthUndeterminable("response");
+		rejectIfChunkedWithContentLength("response");
+
+		if (isRedirect() && mayHaveNoBody())
+			return;
 
 		super.createBody(in);
 	}
