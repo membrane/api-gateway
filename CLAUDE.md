@@ -115,10 +115,15 @@ example/tutorial discovery and scaffolding.
   `Collections.unmodifiableList` only as a read-only *view* — it still reflects later changes to
   the backing list, so use it when that live behaviour is intended, not as a defensive copy.
 - Use `var` for local variables in new or changed code instead of repeating the concrete type
-  (`var list = new ArrayList<String>()`, `var exc = get("/foo").buildExchange()`). Keep explicit
+  (`final var list = new ArrayList<String>()`, `final var exc = get("/foo").buildExchange()`;
+  the `final` comes from the rule above, `var` only replaces the type). Keep explicit
   types for fields, parameters and return types, which `var` can't replace anyway, and where the
   initializer doesn't show the type (e.g. `null`, or a lambda that needs a target type). Don't
   convert untouched existing code.
+- Prefer `String.formatted()` (or `String.format`) over `+` concatenation once a string mixes
+  several values with literal text (`"%s %s failed with status %d".formatted(method, uri, status)`).
+  Keep `+` for simple joins of two or three parts (`host + ":" + port`). In SLF4J calls use
+  `{}` placeholders, not either of these.
 - SLF4J everywhere; no `System.out` in production code.
 - Attack/validation-detection log lines (e.g. XXE/DOCTYPE detection) are intentionally `info`,
   not `warn` — that's an ops-tunable level, not a severity bug to flag in review.
