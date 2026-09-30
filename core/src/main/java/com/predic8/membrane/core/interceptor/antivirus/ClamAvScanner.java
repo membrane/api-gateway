@@ -43,20 +43,33 @@ public final class ClamAvScanner implements ContentScanner {
 
     @Override
     public ScanResult scan(Message message) throws IOException {
-        boolean multipart = validateContent(message);
+        boolean bodyEmpty = message.isBodyEmpty();
+        boolean multipart = bodyEmpty ? false : validateContent(message);
         log.debug("Scanning message headers with ClamAV");
         if (!isNotMalicious(IOUtils.toInputStream(message.getHeader().toString(), UTF_8))) {
             log.info("Harmful content detected in message headers; skipping body scan");
             return INFECTED;
         }
+
+        if (bodyEmpty) {
+            log.debug("Body is empty; skipping body scan");
+            return CLEAN;
+        }
+
         try {
             boolean clean;
             if (multipart) {
-                log.debug("Scanning decoded multipart leaf parts with ClamAV; maximum encoded part size is {} bytes", MAX_PART_SIZE);
-                clean = MultipartUtil.allDecodedPartsMatch(message, MAX_PART_SIZE, part -> {
-                    log.debug("Scanning decoded multipart leaf part: {} bytes", part.getBody().length);
-                    return isNotMalicious(part.getInputStream());
-                });
+                // Scan the complete MIME representation so preambles, epilogues, and part headers
+                // are covered too. Then scan decoded leaf parts to catch transfer-encoded content.
+                log.debug("Scanning complete multipart body with ClamAV");
+                clean = isNotMalicious(MessageUtil.getContentAsStream(message));
+                if (clean) {
+                    log.debug("Scanning decoded multipart leaf parts with ClamAV; maximum encoded part size is {} bytes", MAX_PART_SIZE);
+                    clean = MultipartUtil.allDecodedPartsMatch(message, MAX_PART_SIZE, part -> {
+                        log.debug("Scanning decoded multipart leaf part: {} bytes", part.getBody().length);
+                        return isNotMalicious(part.getInputStream());
+                    });
+                }
             } else {
                 log.debug("Scanning content-decoded message body with ClamAV");
                 clean = isNotMalicious(MessageUtil.getContentAsStream(message));

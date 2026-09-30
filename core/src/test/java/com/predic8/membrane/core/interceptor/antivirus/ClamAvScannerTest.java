@@ -68,6 +68,20 @@ class ClamAvScannerTest {
     }
 
     @ParameterizedTest
+    @ValueSource(ints = {100, 204, 205, 304})
+    void doesNotDecodeOrValidateBodylessResponseMetadata(int status) throws Exception {
+        var response = Response.ok().status(status)
+                .header("Content-Encoding", "gzip")
+                .contentType("multipart/mixed") // Deliberately has no boundary.
+                .build();
+        when(client.scan(any(InputStream.class))).thenReturn("stream: OK\0".getBytes(US_ASCII));
+
+        assertEquals(CLEAN, scanner.scan(response));
+        verify(client).scan(any(InputStream.class)); // Headers are still scanned.
+        verifyNoMoreInteractions(client);
+    }
+
+    @ParameterizedTest
     @CsvSource({"false, false", "false, true", "true, false", "true, true"})
     void scansBinaryMessageBodyWithoutChangingBytes(boolean gzip, boolean request) throws Exception {
         // Include bytes that cannot survive decoding as UTF-8 and encoding back to bytes.
@@ -130,10 +144,12 @@ class ClamAvScannerTest {
         });
 
         assertEquals(CLEAN, scanner.scan(request ? exchange.getRequest() : exchange.getResponse()));
-        assertEquals(4, scanned.size()); // Outer headers, XML, binary attachment, text part.
-        assertArrayEquals("<Envelope/>".getBytes(UTF_8), scanned.get(1));
-        assertArrayEquals(binary, scanned.get(2));
-        assertArrayEquals(new byte[]{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', (byte) 0xff}, scanned.get(3));
+        assertEquals(5, scanned.size()); // Headers, complete MIME body, XML, binary attachment, text part.
+        assertTrue(new String(scanned.get(1), UTF_8).contains("Content-Transfer-Encoding: base64"));
+        assertArrayEquals(body.getBytes(UTF_8), scanned.get(1));
+        assertArrayEquals("<Envelope/>".getBytes(UTF_8), scanned.get(2));
+        assertArrayEquals(binary, scanned.get(3));
+        assertArrayEquals(new byte[]{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', (byte) 0xff}, scanned.get(4));
         assertSame(message, request ? exchange.getRequest() : exchange.getResponse());
         assertArrayEquals(responseBody, message.getBody().getContent());
     }
@@ -154,7 +170,21 @@ class ClamAvScannerTest {
         });
 
         assertEquals(INFECTED, scanner.scan(exchange.getResponse()));
-        verify(client, times(3)).scan(any(InputStream.class));
+        verify(client, times(4)).scan(any(InputStream.class));
+    }
+
+    @Test
+    void blocksVirusSignatureInMultipartPartHeader() throws Exception {
+        exchange.setResponse(Response.ok().contentType("multipart/mixed; boundary=outer").body(
+                multipart("outer", "X-Test: test-virus\r\n\r\nclean")).build());
+        when(client.scan(any(InputStream.class))).thenAnswer(invocation -> {
+            InputStream input = invocation.getArgument(0);
+            return (new String(input.readAllBytes(), US_ASCII).contains("test-virus")
+                    ? "stream: Test FOUND\0" : "stream: OK\0").getBytes(US_ASCII);
+        });
+
+        assertEquals(INFECTED, scanner.scan(exchange.getResponse()));
+        verify(client, times(2)).scan(any(InputStream.class)); // Message headers, then full MIME body.
     }
 
     @ParameterizedTest
