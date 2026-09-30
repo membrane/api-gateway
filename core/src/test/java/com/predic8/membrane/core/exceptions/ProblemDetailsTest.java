@@ -23,8 +23,8 @@ import org.xml.sax.InputSource;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import java.io.EOFException;
-import java.net.URISyntaxException;
 import java.io.StringReader;
+import java.net.URISyntaxException;
 import java.util.List;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
@@ -300,6 +300,22 @@ public class ProblemDetailsTest {
             assertTrue(body.contains("No matching API found!"), body);
             assertTrue(body.contains("There is no API on the path /shop/v2 deployed."), body);
             assertTrue(body.contains("https://github.com/membrane/api-gateway"), body);
+        }
+
+        @Test
+        @DisplayName("The see URL is rendered as a link")
+        void seeIsLink() throws Exception {
+            Exchange exc = get("/foo").buildExchange();
+
+            user(false, "openapi-publisher")
+                    .addSubType("openapi")
+                    .addSubSee("wrong-id")
+                    .status(404)
+                    .buildAndSetResponse(exc);
+
+            String body = exc.getResponse().getBodyAsStringDecoded();
+            String url = "https://membrane-api.io/problems/user/openapi/openapi-publisher/wrong-id";
+            assertTrue(body.contains("<a href=\"" + url + "\">" + url + "</a>"), body);
         }
 
         @Test
