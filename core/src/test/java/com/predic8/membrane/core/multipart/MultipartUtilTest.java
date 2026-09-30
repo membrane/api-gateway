@@ -20,6 +20,8 @@ import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
@@ -28,6 +30,58 @@ class MultipartUtilTest {
 
     private static final String BOUNDARY = "test-boundary-123";
     private static final String CRLF = "\r\n";
+
+    @Test
+    void decodedTraversalPreservesRawBinaryParts() throws Exception {
+        byte[] binary = {0, (byte) 0xff, (byte) 0x80};
+        for (String encoding : new String[]{"binary", "7bit", "8bit"}) {
+            var body = new java.io.ByteArrayOutputStream();
+            body.write(("--" + BOUNDARY + CRLF + "Content-Transfer-Encoding: " + encoding + CRLF + CRLF).getBytes(UTF_8));
+            body.write(binary);
+            body.write((CRLF + "--" + BOUNDARY + "--" + CRLF).getBytes(UTF_8));
+            var message = Response.ok().contentType("multipart/mixed; boundary=" + BOUNDARY).body(body.toByteArray()).build();
+            var parts = new ArrayList<Part>();
+            assertTrue(MultipartUtil.allDecodedPartsMatch(message, 32, parts::add));
+            assertEquals(1, parts.size());
+            assertArrayEquals(binary, parts.getFirst().getBody());
+        }
+    }
+
+    @Test
+    void decodedTraversalEnforcesPartSize() {
+        var message = response(multipartBody("Content-Type: text/plain" + CRLF + CRLF + "12345"));
+        assertThrows(PartTooLargeException.class,
+                () -> MultipartUtil.allDecodedPartsMatch(message, 4, part -> true));
+    }
+
+    @Test
+    void decodedTraversalEnforcesNestingLimit() {
+        String body = "Content-Type: text/plain" + CRLF + CRLF + "leaf";
+        for (int i = 0; i < 16; i++) {
+            String boundary = "level-" + i;
+            body = "Content-Type: multipart/mixed; boundary=" + boundary + CRLF + CRLF
+                    + "--" + boundary + CRLF + body + CRLF + "--" + boundary + "--" + CRLF;
+        }
+        var message = response(multipartBody(body));
+        var error = assertThrows(IOException.class,
+                () -> MultipartUtil.allDecodedPartsMatch(message, 10000, part -> true));
+        assertEquals("Multipart nesting limit exceeded", error.getMessage());
+    }
+
+    @Test
+    void decodedTraversalEnforcesPartCount() {
+        String part = "Content-Type: text/plain" + CRLF + CRLF + "data";
+        String[] parts = new String[1001];
+        java.util.Arrays.fill(parts, part);
+        var message = response(multipartBody(parts));
+        var visited = new AtomicInteger();
+        var error = assertThrows(IOException.class, () -> MultipartUtil.allDecodedPartsMatch(message, 32, p -> {
+            visited.incrementAndGet();
+            return true;
+        }));
+        assertEquals("Multipart part count limit exceeded", error.getMessage());
+        assertEquals(1000, visited.get());
+    }
 
     // -------------------------------------------------------------------------
     // Helpers

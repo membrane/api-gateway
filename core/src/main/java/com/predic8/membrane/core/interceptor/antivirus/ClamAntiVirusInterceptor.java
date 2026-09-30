@@ -19,18 +19,17 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import fi.solita.clamav.ClamAVClient;
-import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.io.InputStream;
-
 import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.security;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static com.predic8.membrane.core.interceptor.antivirus.ScanResult.CLEAN;
+import static java.util.Objects.requireNonNull;
 
 /**
  * @description Delegates virus checks to an external Virus Scanner.
@@ -43,8 +42,13 @@ public class ClamAntiVirusInterceptor extends AbstractInterceptor {
 
     private String host = "localhost";
     private String port = "3310";
+    private ScanFailureAction onScanFailure = ScanFailureAction.BLOCK;
 
-    ClamAVClient client;
+    public enum ScanFailureAction {
+        BLOCK, PASS
+    }
+
+    ContentScanner scanner;
 
     public ClamAntiVirusInterceptor() {
         name = "clam av";
@@ -52,38 +56,56 @@ public class ClamAntiVirusInterceptor extends AbstractInterceptor {
 
     @Override
     public String getShortDescription() {
-        return "Scans responses for malicious content.";
+        return "Scans requests and responses for malicious content.";
     }
 
     @Override
     public void init() {
         super.init();
-        client = new ClamAVClient(getHost(), Integer.parseInt(getPort()));
+        scanner = new ClamAvScanner(new ClamAVClient(getHost(), Integer.parseInt(getPort())));
         log.info("Using clamav daemon on [{}:{}]",getHost(),getPort());
     }
 
     @Override
+    public Outcome handleRequest(Exchange exc) {
+        return scan(exc, REQUEST);
+    }
+
+    @Override
     public Outcome handleResponse(Exchange exc) {
+        return scan(exc, RESPONSE);
+    }
+
+    private Outcome scan(Exchange exc, Flow flow) {
+        log.debug("Starting antivirus scan for {} flow", flow);
         try {
-            if (isNotMalicious(getHeaders(exc)) && isNotMalicious(getBody(exc)))
+            if (scanner.scan(getMessage(exc, flow)) == CLEAN) {
+                log.debug("Antivirus scan clean for {} flow; continuing processing", flow);
                 return CONTINUE;
+            }
+        } catch (InvalidScanContentException e) {
+            log.info("Invalid content in {} flow; blocking regardless of onScanFailure", flow);
+            return scannerFailure(exc, e);
         } catch (Exception e) {
+            if (onScanFailure == ScanFailureAction.PASS) {
+                log.warn("Antivirus scan failed for {} flow; passing message without a completed scan (onScanFailure=pass)", flow, e);
+                return CONTINUE;
+            }
+            log.info("Antivirus scan failed for {} flow; returning an internal error", flow);
             return scannerFailure(exc, e);
         }
+        log.debug("Antivirus detected harmful content in {} flow; returning a security error", flow);
         security(router.getConfiguration().isProduction(), null)
                 .addSubType("potentially-harmful-content")
-                .title("Request blocked")
-                .detail("The request contains potentially harmful content.")
+                .title(flow == REQUEST ? "Request blocked" : "Response blocked")
+                .detail(flow == REQUEST ? "The request contains potentially harmful content."
+                        : "The response contains potentially harmful content.")
                 .buildAndSetResponse(exc);
         return RETURN;
     }
 
-    private String getBody(Exchange exc) {
-        return exc.getResponse().getBodyAsStringDecoded();
-    }
-
     private Outcome scannerFailure(Exchange exc, Exception cause) {
-        log.error("Could not execute virus scan using clamav daemon on {}:{}", host, port, cause);
+        log.warn("Could not execute virus scan using clamav daemon on {}:{}", host, port, cause);
         internal(router.getConfiguration().isProduction(), null)
                 .title("Request processing failed")
                 .detail("Could not execute virus scan.")
@@ -91,29 +113,24 @@ public class ClamAntiVirusInterceptor extends AbstractInterceptor {
         return RETURN;
     }
 
-    public boolean isNotMalicious(String str) throws IOException {
-        try(InputStream input = toInputStream(str)) {
-            byte[] reply = client.scan(input);
-            if (ClamAVClient.isCleanReply(reply))
-                return true;
-            String result = new String(reply, UTF_8).trim();
-            if (!result.endsWith(" FOUND"))
-                throw new IOException("ClamAV scan failed: " + result);
-            log.warn("ClamAV detected malicious content: {}", result);
-            return false;
-        }
-    }
-
-    private InputStream toInputStream(String str) {
-        return IOUtils.toInputStream(str, UTF_8);
-    }
-
-    private String getHeaders(Exchange exc) {
-         return exc.getResponse().getHeader().toString();
-    }
-
     public String getHost() {
         return host;
+    }
+
+    public ScanFailureAction getOnScanFailure() {
+        return onScanFailure;
+    }
+
+    /**
+     * @description Action when scanning cannot complete, such as a scanner connection failure,
+     * or timeout. Block returns an error; pass continues with the original message and logs
+     * a warning. Confirmed harmful content and invalid multipart content are always blocked.
+     * Applies to both requests and responses.
+     * @default block
+     */
+    @MCAttribute
+    public void setOnScanFailure(ScanFailureAction onScanFailure) {
+        this.onScanFailure = requireNonNull(onScanFailure);
     }
 
     /**

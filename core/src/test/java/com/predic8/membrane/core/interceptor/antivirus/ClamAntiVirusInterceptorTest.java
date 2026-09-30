@@ -13,7 +13,10 @@ package com.predic8.membrane.core.interceptor.antivirus;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.Interceptor.Flow;
+import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.router.DummyTestRouter;
 import com.predic8.membrane.test.TestAppender;
 import fi.solita.clamav.ClamAVClient;
@@ -24,30 +27,30 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
 import static com.predic8.membrane.core.http.Request.post;
+import static com.predic8.membrane.core.interceptor.AbstractInterceptor.getMessage;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
-import static java.nio.charset.StandardCharsets.US_ASCII;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static com.predic8.membrane.core.interceptor.antivirus.ScanResult.CLEAN;
+import static com.predic8.membrane.core.interceptor.antivirus.ScanResult.INFECTED;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 class ClamAntiVirusInterceptorTest {
-
     private final ClamAntiVirusInterceptor interceptor = new ClamAntiVirusInterceptor();
-    private final ClamAVClient client = mock(ClamAVClient.class);
+    private final ContentScanner scanner = mock(ContentScanner.class);
     private final DummyTestRouter router = new DummyTestRouter();
     private final Logger logger = (Logger) LogManager.getLogger(ClamAntiVirusInterceptor.class);
-    private final TestAppender appender = new TestAppender("clamav-test");
+    private final TestAppender appender = new TestAppender("clamav-interceptor-test");
     private Exchange exchange;
 
     @BeforeEach
@@ -56,9 +59,9 @@ class ClamAntiVirusInterceptorTest {
         logger.addAppender(appender);
         router.getConfiguration().setProduction(false);
         interceptor.init(router);
-        interceptor.client = client;
+        interceptor.scanner = scanner;
         exchange = post("/scan").header("Accept", "application/json").body("request content").buildExchange();
-        exchange.setResponse(Response.ok().body("response content ä").build());
+        exchange.setResponse(Response.ok().body("response content").build());
     }
 
     @AfterEach
@@ -67,119 +70,168 @@ class ClamAntiVirusInterceptorTest {
         appender.stop();
     }
 
-    @Test
-    void cleanContentContinuesWithoutReplacingResponse() throws Exception {
-        when(client.scan(any(InputStream.class))).thenReturn("stream: OK\0".getBytes(US_ASCII));
-        var response = exchange.getResponse();
+    @ParameterizedTest
+    @EnumSource(value = Flow.class, names = {"REQUEST", "RESPONSE"})
+    void cleanMessageContinuesUnchanged(Flow flow) throws Exception {
+        if (flow == REQUEST)
+            exchange.setResponse(null);
+        var message = getMessage(exchange, flow);
+        when(scanner.scan(message)).thenReturn(CLEAN);
 
-        assertEquals(CONTINUE, interceptor.handleResponse(exchange));
-        assertSame(response, exchange.getResponse());
-        verify(client, times(2)).scan(any(InputStream.class));
+        assertEquals(CONTINUE, handle(flow));
+        assertSame(message, getMessage(exchange, flow));
+        if (flow == REQUEST)
+            assertNull(exchange.getResponse());
+        verify(scanner).scan(same(message));
+        verifyNoMoreInteractions(scanner);
     }
 
-    @Test
-    void detectedVirusIsReportedAsSecurityProblemInsteadOfDaemonFailure() throws Exception {
-        // Regression for https://github.com/membrane/api-gateway/issues/3386:
-        // headers are clean, but scanning the body returns a virus signature.
-        when(client.scan(any(InputStream.class))).thenReturn(
-                "stream: OK\0".getBytes(US_ASCII),
-                "stream: Win.Test.EICAR_HDB-1 FOUND\0".getBytes(US_ASCII));
+    @ParameterizedTest
+    @EnumSource(value = Flow.class, names = {"REQUEST", "RESPONSE"})
+    void detectionProducesDirectionSpecificSecurityProblem(Flow flow) throws Exception {
+        if (flow == REQUEST)
+            exchange.setResponse(null);
+        var message = getMessage(exchange, flow);
+        when(scanner.scan(message)).thenReturn(INFECTED);
 
-        assertEquals(RETURN, interceptor.handleResponse(exchange));
-        verify(client, times(2)).scan(any(InputStream.class));
-        var body = exchange.getResponse().getBodyAsStringDecoded();
-        var problem = new ObjectMapper().readTree(body);
-        assertEquals(500, exchange.getResponse().getStatusCode(), body);
-        assertEquals("Request blocked", problem.path("title").asText());
-        assertEquals("The request contains potentially harmful content.", problem.path("detail").asText());
-        assertTrue(appender.contains("Win.Test.EICAR_HDB-1 FOUND"));
+        assertEquals(RETURN, handle(flow));
+        assertEquals(500, exchange.getResponse().getStatusCode());
+        var problem = new ObjectMapper().readTree(exchange.getResponse().getBodyAsStringDecoded());
+        assertEquals(flow == REQUEST ? "Request blocked" : "Response blocked", problem.path("title").asText());
+        assertEquals(flow == REQUEST ? "The request contains potentially harmful content."
+                : "The response contains potentially harmful content.", problem.path("detail").asText());
+        assertEquals("https://membrane-api.io/problems/security/potentially-harmful-content", problem.path("type").asText());
         assertFalse(appender.contains("Could not execute virus scan"));
-        assertAll(
-                () -> assertEquals("https://membrane-api.io/problems/security/potentially-harmful-content",
-                        problem.path("type").asText()),
-                () -> assertFalse(body.contains("Could not reach clamav daemon"),
-                        "A successful virus detection must not be reported as an unreachable daemon"));
+        verify(scanner).scan(same(message));
     }
 
-    @Test
-    void unreachableDaemonIsReportedAsScannerFailure() throws Exception {
-        when(client.scan(any(InputStream.class))).thenThrow(new IOException("Connection refused"));
+    @ParameterizedTest
+    @EnumSource(value = Flow.class, names = {"REQUEST", "RESPONSE"})
+    void scannerFailureBlocksMessageAndLogsError(Flow flow) throws Exception {
+        assertEquals(ClamAntiVirusInterceptor.ScanFailureAction.BLOCK, interceptor.getOnScanFailure());
+        when(scanner.scan(any(Message.class))).thenThrow(new IOException("Connection refused"));
 
-        assertEquals(RETURN, interceptor.handleResponse(exchange));
+        assertEquals(RETURN, handle(flow));
         assertEquals(500, exchange.getResponse().getStatusCode());
         var problem = new ObjectMapper().readTree(exchange.getResponse().getBodyAsStringDecoded());
         assertEquals("https://membrane-api.io/problems/internal", problem.path("type").asText());
         assertEquals("Request processing failed", problem.path("title").asText());
         assertEquals("Could not execute virus scan.", problem.path("detail").asText());
         assertTrue(appender.contains("Could not execute virus scan"));
-        assertFalse(appender.contains("detected malicious content"));
-    }
-
-    @Test
-    void scansResponseHeadersAndBody() throws Exception {
-        List<String> scanned = new ArrayList<>();
-        when(client.scan(any(InputStream.class))).thenAnswer(invocation -> {
-            InputStream input = invocation.getArgument(0);
-            scanned.add(new String(input.readAllBytes(), UTF_8));
-            return "stream: OK\0".getBytes(US_ASCII);
-        });
-        var expectedHeaders = exchange.getResponse().getHeader().toString();
-
-        assertEquals(CONTINUE, interceptor.handleResponse(exchange));
-        assertEquals(List.of(expectedHeaders, "response content ä"), scanned);
-    }
-
-    @Test
-    void virusInHeadersIsBlockedAsSecurityProblemInProduction() throws Exception {
-        router.getConfiguration().setProduction(true);
-        when(client.scan(any(InputStream.class))).thenReturn("stream: Win.Test.EICAR_HDB-1 FOUND\0".getBytes(US_ASCII));
-
-        assertEquals(RETURN, interceptor.handleResponse(exchange));
-        assertEquals(500, exchange.getResponse().getStatusCode());
-        var problem = new ObjectMapper().readTree(exchange.getResponse().getBodyAsStringDecoded());
-        assertEquals("https://membrane-api.io/problems/security", problem.path("type").asText());
-        assertTrue(appender.contains("Win.Test.EICAR_HDB-1 FOUND"));
-        verify(client).scan(any(InputStream.class));
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"stream: scanning failed ERROR\0", "unexpected reply\0"})
-    void scannerErrorReplyIsNotReportedAsVirus(String reply) throws Exception {
-        when(client.scan(any(InputStream.class))).thenReturn(reply.getBytes(US_ASCII));
+    @EnumSource(value = Flow.class, names = {"REQUEST", "RESPONSE"})
+    void passOnScanFailurePreservesMessage(Flow flow) throws Exception {
+        interceptor.setOnScanFailure(ClamAntiVirusInterceptor.ScanFailureAction.PASS);
+        if (flow == REQUEST)
+            exchange.setResponse(null);
+        var message = getMessage(exchange, flow);
+        var originalResponse = exchange.getResponse();
+        byte[] body = message.getBody().getContent();
+        String headers = message.getHeader().toString();
+        when(scanner.scan(message)).thenThrow(new IOException("Connection refused"));
 
-        assertEquals(RETURN, interceptor.handleResponse(exchange));
+        assertEquals(CONTINUE, handle(flow));
+        assertSame(message, getMessage(exchange, flow));
+        assertSame(originalResponse, exchange.getResponse());
+        assertArrayEquals(body, message.getBody().getContent());
+        assertEquals(headers, message.getHeader().toString());
+        assertTrue(appender.contains("passing message without a completed scan"));
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = Flow.class, names = {"REQUEST", "RESPONSE"})
+    void passOnScanFailureStillBlocksDetections(Flow flow) throws Exception {
+        interceptor.setOnScanFailure(ClamAntiVirusInterceptor.ScanFailureAction.PASS);
+        detectionProducesDirectionSpecificSecurityProblem(flow);
+    }
+
+    @Test
+    void scanFailureActionCannotBeNull() {
+        assertThrows(NullPointerException.class, () -> interceptor.setOnScanFailure(null));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"REQUEST, block", "REQUEST, pass", "RESPONSE, block", "RESPONSE, pass"})
+    void invalidMultipartAlwaysBlocksBeforeContactingScanner(Flow flow, String action) throws Exception {
+        interceptor.setOnScanFailure(ClamAntiVirusInterceptor.ScanFailureAction.valueOf(action.toUpperCase(Locale.ROOT)));
+        var client = mock(ClamAVClient.class);
+        interceptor.scanner = new ClamAvScanner(client);
+        var message = getMessage(exchange, flow);
+        message.getHeader().setContentType("multipart/mixed; boundary=outer");
+        // A clean first part must not hide an invalid later part when the scanner is offline.
+        message.setBodyContent(("--outer\r\nContent-Type: text/plain\r\n\r\nclean\r\n"
+                + "--outer\r\nContent-Transfer-Encoding: base64\r\n\r\n%%%\r\n--outer--\r\n")
+                .getBytes(java.nio.charset.StandardCharsets.US_ASCII));
+        when(client.scan(any(InputStream.class))).thenThrow(new IOException("Connection refused"));
+
+        assertEquals(RETURN, handle(flow));
         assertEquals(500, exchange.getResponse().getStatusCode());
+        assertFalse(appender.contains("passing message without a completed scan"));
+        verifyNoInteractions(client);
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = Flow.class, names = {"REQUEST", "RESPONSE"})
+    void validMultipartCanPassWhenScannerIsUnavailable(Flow flow) throws Exception {
+        interceptor.setOnScanFailure(ClamAntiVirusInterceptor.ScanFailureAction.PASS);
+        var client = mock(ClamAVClient.class);
+        interceptor.scanner = new ClamAvScanner(client);
+        var message = getMessage(exchange, flow);
+        message.getHeader().setContentType("multipart/mixed; boundary=outer");
+        byte[] body = "--outer\r\nContent-Type: text/plain\r\n\r\nclean\r\n--outer--\r\n"
+                .getBytes(java.nio.charset.StandardCharsets.US_ASCII);
+        message.setBodyContent(body);
+        when(client.scan(any(InputStream.class))).thenThrow(new IOException("Connection refused"));
+
+        assertEquals(CONTINUE, handle(flow));
+        assertSame(message, getMessage(exchange, flow));
+        assertArrayEquals(body, message.getBody().getContent());
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = Flow.class, names = {"REQUEST", "RESPONSE"})
+    void productionDetectionHidesSubtype(Flow flow) throws Exception {
+        router.getConfiguration().setProduction(true);
+        when(scanner.scan(any(Message.class))).thenReturn(INFECTED);
+
+        assertEquals(RETURN, handle(flow));
         var problem = new ObjectMapper().readTree(exchange.getResponse().getBodyAsStringDecoded());
-        assertEquals("https://membrane-api.io/problems/internal", problem.path("type").asText());
-        assertFalse(appender.contains("detected malicious content"));
+        assertEquals("https://membrane-api.io/problems/security", problem.path("type").asText());
+        assertNoScannerDetails();
     }
 
     @ParameterizedTest
     @CsvSource({
-            "false, application/json", "true, application/json",
-            "false, application/xml", "true, application/xml",
-            "false, text/html", "true, text/html"
+            "REQUEST, false, application/json", "REQUEST, true, application/json",
+            "REQUEST, false, application/xml", "REQUEST, true, application/xml",
+            "REQUEST, false, text/html", "REQUEST, true, text/html",
+            "RESPONSE, false, application/json", "RESPONSE, true, application/json",
+            "RESPONSE, false, application/xml", "RESPONSE, true, application/xml",
+            "RESPONSE, false, text/html", "RESPONSE, true, text/html"
     })
-    void responsesDoNotExposeScannerDetails(boolean production, String accept) throws Exception {
+    void responsesDoNotExposeScannerDetails(Flow flow, boolean production, String accept) throws Exception {
         router.getConfiguration().setProduction(production);
         exchange.getRequest().getHeader().setValue("Accept", accept);
-        when(client.scan(any(InputStream.class)))
-                .thenReturn("stream: Win.Test.EICAR_HDB-1 FOUND\0".getBytes(US_ASCII))
+        when(scanner.scan(any(Message.class))).thenReturn(INFECTED)
                 .thenThrow(new IOException("ClamAV scanner antivirus.internal:3310 unavailable"));
 
-        assertEquals(RETURN, interceptor.handleResponse(exchange));
+        assertEquals(RETURN, handle(flow));
         assertNoScannerDetails();
-
         exchange.setResponse(Response.ok().body("response content").build());
-        assertEquals(RETURN, interceptor.handleResponse(exchange));
+        assertEquals(RETURN, handle(flow));
         if (production)
             assertNoScannerDetails();
     }
 
+    private Outcome handle(Flow flow) {
+        return flow == REQUEST ? interceptor.handleRequest(exchange) : interceptor.handleResponse(exchange);
+    }
+
     private void assertNoScannerDetails() {
         var body = exchange.getResponse().getBodyAsStringDecoded().toLowerCase(Locale.ROOT);
-        for (String sensitive : List.of("virus", "scan", "clam", "daemon", "eicar", "3310", "localhost")) {
+        for (String sensitive : List.of("virus", "scan", "clam", "daemon", "eicar", "3310", "localhost"))
             assertFalse(body.contains(sensitive), "Response exposes " + sensitive + ": " + body);
-        }
     }
 }
