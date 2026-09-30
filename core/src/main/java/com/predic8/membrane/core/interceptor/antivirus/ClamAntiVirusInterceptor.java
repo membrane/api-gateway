@@ -32,8 +32,25 @@ import static com.predic8.membrane.core.interceptor.antivirus.ScanResult.CLEAN;
 import static java.util.Objects.requireNonNull;
 
 /**
- * @description Delegates virus checks to an external Virus Scanner.
+ * @description ClamAV is an open-source antivirus engine whose daemon, clamd, scans data sent to it
+ * over TCP. This plugin streams the headers and body of each message to clamd and blocks the
+ * message if a signature matches.
+ * <p>Compressed bodies are decompressed before scanning. Multipart bodies are scanned as a whole
+ * and part by part after decoding base64 and quoted-printable parts, including nested multiparts.</p>
+ * <p>Harmful content is answered with a 500 Problem Details response of type
+ * <code>security/potentially-harmful-content</code>, and the message is not forwarded. Malformed
+ * multipart content, or content with an invalid Content-Type, is always rejected with a 500 error.</p>
  * @topic 3. Security and Validation
+ * @yaml
+ * <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - clamav:
+ *         host: clamav.example.com
+ *   target:
+ *     url: https://api.predic8.de
+ * </code></pre>
  */
 @MCElement(name="clamav")
 public class ClamAntiVirusInterceptor extends AbstractInterceptor {
@@ -122,11 +139,11 @@ public class ClamAntiVirusInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description Action when scanning cannot complete, such as a scanner connection failure,
-     * or timeout. Block returns an error; pass continues with the original message and logs
-     * a warning. Confirmed harmful content and invalid multipart content are always blocked.
-     * Applies to both requests and responses.
+     * @description What to do when a scan cannot complete, e.g. clamd is unreachable, times out or
+     * returns an error. <code>block</code> answers with a 500 error; <code>pass</code> forwards the
+     * unscanned message and logs a warning. Harmful and malformed content is blocked either way.
      * @default block
+     * @example pass
      */
     @MCAttribute
     public void setOnScanFailure(ScanFailureAction onScanFailure) {
@@ -134,8 +151,9 @@ public class ClamAntiVirusInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description the host of the clamav daemon
+     * @description Hostname or IP address of the clamd daemon.
      * @default localhost
+     * @example clamav.example.com
      */
     @MCAttribute
     public void setHost(String host) {
@@ -147,7 +165,7 @@ public class ClamAntiVirusInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description the port of the clamav daemon
+     * @description TCP port of the clamd daemon.
      * @default 3310
      */
     @MCAttribute

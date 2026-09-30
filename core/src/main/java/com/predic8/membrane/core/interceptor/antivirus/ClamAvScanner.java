@@ -30,17 +30,42 @@ import static com.predic8.membrane.core.interceptor.antivirus.ScanResult.INFECTE
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 
+/**
+ * {@link ContentScanner} that streams message content to a ClamAV daemon (clamd) via INSTREAM.
+ * <p>
+ * The headers are always scanned. A non-empty body is scanned after removing any
+ * {@code Content-Encoding}. A multipart body is scanned twice: once as a whole, so preambles,
+ * epilogues and part headers are covered, and once per leaf part after decoding its
+ * {@code Content-Transfer-Encoding}. Nested multiparts are descended into.
+ * <p>
+ * Multipart content is validated before ClamAV is contacted, so malformed content is rejected
+ * with {@link InvalidScanContentException} even when the scanner is unavailable.
+ * <p>
+ * Thread safe: the only state is the {@link ClamAVClient}, which opens a new connection per scan.
+ */
 public final class ClamAvScanner implements ContentScanner {
 
     private static final Logger log = LoggerFactory.getLogger(ClamAvScanner.class);
+    /** Maximum size of a single encoded multipart part, in bytes. */
     private static final int MAX_PART_SIZE = 100 * 1024 * 1024;
 
     private final ClamAVClient client;
 
+    /**
+     * @param client connection to the ClamAV daemon
+     */
     public ClamAvScanner(ClamAVClient client) {
         this.client = requireNonNull(client);
     }
 
+    /**
+     * Scans headers first, then the body; stops at the first detection.
+     *
+     * @return {@link ScanResult#INFECTED} if ClamAV reports a signature, otherwise {@link ScanResult#CLEAN}
+     * @throws InvalidScanContentException if the Content-Type or multipart structure is invalid,
+     *         an encoded part exceeds 100 MiB or uses an unsupported transfer encoding
+     * @throws IOException if ClamAV cannot be reached or returns an error reply
+     */
     @Override
     public ScanResult scan(Message message) throws IOException {
         boolean bodyEmpty = message.isBodyEmpty();
@@ -82,6 +107,12 @@ public final class ClamAvScanner implements ContentScanner {
         }
     }
 
+    /**
+     * Fully decodes every multipart part without scanning it.
+     *
+     * @return whether the body is multipart
+     * @throws InvalidScanContentException if the content cannot be parsed or decoded
+     */
     private boolean validateContent(Message message) throws InvalidScanContentException {
         try {
             boolean multipart = MultipartUtil.isMultipart(message);
@@ -97,6 +128,12 @@ public final class ClamAvScanner implements ContentScanner {
         }
     }
 
+    /**
+     * Sends the stream to ClamAV and closes it.
+     *
+     * @return {@code true} for an {@code OK} reply, {@code false} for a {@code FOUND} reply
+     * @throws IOException for any other reply, e.g. an error or size-limit message
+     */
     private boolean isNotMalicious(InputStream input) throws IOException {
         try (input) {
             byte[] reply = client.scan(input);
