@@ -35,8 +35,10 @@ import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidF
 import static com.predic8.membrane.core.util.URLParamUtil.parseQueryString;
 
 /**
- * @description Receives control messages to dynamically modify the configuration of a {@link LoadBalancingInterceptor}.
- * @explanation See also examples/loadbalancer-client-2 in the Membrane API Gateway distribution.
+ * @description Receives control requests at <code>/clustermanager/{up|down|takeout}</code>, with <code>host</code>
+ * and <code>port</code> (and optional <code>balancer</code>/<code>cluster</code>) query parameters, and applies
+ * them to update a load balancer's node status. Responds with 204 on success, 400 when required parameters are
+ * missing or invalid, and 403 when the request's <code>time</code> parameter is older than <code>timeout</code>.
  * @topic 2. Enterprise Integration Patterns
  */
 @MCElement(name = "clusterNotification")

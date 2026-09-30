@@ -14,15 +14,65 @@
 
 package com.predic8.membrane.core.interceptor.flow.choice;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.router.DummyTestRouter;
 import com.predic8.membrane.core.util.ConfigurationException;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.flow.choice.ChooseInterceptor.validateChoices;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ChooseInterceptorTest {
+
+    // Regression for https://github.com/membrane/api-gateway/issues/3385
+    @ParameterizedTest(name = "expression failure with otherwise={0}")
+    @ValueSource(booleans = {false, true})
+    void expressionFailureAbortsWithoutRunningOtherwise(boolean withOtherwise) throws Exception {
+        var failingCase = new Case();
+        // Valid SpEL syntax that fails when evaluated on the exchange.
+        failingCase.setTest("request.nonexistentProperty == true");
+        failingCase.setFlow(List.of());
+
+        var otherwiseInvoked = new AtomicBoolean();
+        var otherwise = new Otherwise();
+        otherwise.setFlow(List.of(new AbstractInterceptor() {
+            @Override
+            public Outcome handleRequest(Exchange exc) {
+                otherwiseInvoked.set(true);
+                return CONTINUE;
+            }
+        }));
+
+        var choose = new ChooseInterceptor();
+        choose.setChoices(withOtherwise ? List.of(failingCase, otherwise) : List.of(failingCase));
+        choose.init(new DummyTestRouter());
+
+        var exc = new Exchange(null);
+        exc.setRequest(Request.get("/").build());
+        var outcome = choose.handleRequest(exc);
+        var problem = new ObjectMapper().readTree(exc.getResponse().getBodyAsStringDecoded());
+
+        assertAll(
+            () -> assertEquals(ABORT, outcome, "An evaluation error must stop the request flow"),
+            () -> assertFalse(otherwiseInvoked.get(), "An evaluation error must not run otherwise"),
+            () -> assertEquals(500, exc.getResponse().getStatusCode()),
+            () -> assertEquals("https://membrane-api.io/problems/internal/choose/expression-evaluation",
+                problem.path("see").asText()),
+            () -> assertEquals("Error evaluating expression on exchange in choose plugin.",
+                problem.path("detail").asText())
+        );
+    }
 
     @Test
     void validateChoices_acceptsValidAndRejectsInvalid() {
