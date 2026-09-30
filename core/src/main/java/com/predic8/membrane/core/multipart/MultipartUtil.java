@@ -28,7 +28,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Locale;
 
-import static java.nio.charset.StandardCharsets.US_ASCII;
+import static com.predic8.membrane.core.util.ByteUtil.removeWhitespace;
 
 /**
  * Utility for splitting multipart HTTP messages into their individual {@link Part}s.
@@ -110,8 +110,7 @@ public class MultipartUtil {
         try {
             byte[] body = switch (encoding.trim().toLowerCase(Locale.ROOT)) {
                 case "binary", "7bit", "8bit" -> part.getBody();
-                case "base64" -> Base64.getDecoder().decode(
-                        new String(part.getBody(), US_ASCII).replaceAll("[\\r\\n\\t ]", ""));
+                case "base64" -> Base64.getDecoder().decode(removeWhitespace(part.getBody()));
                 case "quoted-printable" -> QuotedPrintableCodec.decodeQuotedPrintable(part.getBody());
                 default -> throw new IOException("Unsupported Content-Transfer-Encoding: " + encoding);
             };

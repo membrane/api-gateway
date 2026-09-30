@@ -48,6 +48,25 @@ class MultipartUtilTest {
     }
 
     @Test
+    void decodedTraversalDecodesFoldedBase64() throws Exception {
+        var message = response(multipartBody("Content-Transfer-Encoding: base64" + CRLF + CRLF
+                + "MDEy MzQ1" + CRLF + "\tNjc4OQ=="));
+        var parts = new ArrayList<Part>();
+        assertTrue(MultipartUtil.allDecodedPartsMatch(message, 64, parts::add));
+        assertEquals("0123456789", new String(parts.getFirst().getBody(), UTF_8));
+    }
+
+    @Test
+    void decodedTraversalRejectsInvalidBase64Characters() {
+        for (String invalid : new String[]{"MDEy*MzQ1", "MDEyäMzQ1", "MDEy\fMzQ1"}) {
+            var message = response(multipartBody("Content-Transfer-Encoding: base64" + CRLF + CRLF + invalid));
+            var error = assertThrows(IOException.class,
+                    () -> MultipartUtil.allDecodedPartsMatch(message, 64, part -> true));
+            assertEquals("Invalid Content-Transfer-Encoding: base64", error.getMessage());
+        }
+    }
+
+    @Test
     void decodedTraversalEnforcesPartSize() {
         var message = response(multipartBody("Content-Type: text/plain" + CRLF + CRLF + "12345"));
         assertThrows(PartTooLargeException.class,
