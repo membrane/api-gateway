@@ -14,12 +14,13 @@
 
 package com.predic8.membrane.core.util.wsdl.parser;
 
-import com.predic8.membrane.core.util.wsdl.parser.Definitions.*;
-import org.w3c.dom.*;
+import com.predic8.membrane.core.util.wsdl.parser.Definitions.SOAPVersion;
+import org.w3c.dom.Node;
 
-import java.util.*;
-
-import static com.predic8.membrane.core.util.wsdl.parser.WSDLParserUtil.*;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 
 public class Binding extends WSDLElement {
 
@@ -46,10 +47,43 @@ public class Binding extends WSDLElement {
         return getBindingStyle().getSoapVersion();
     }
 
-    public BindingOperation getBindingOperation(String name) {
+    /** The transport of WSDL 1.1 and its SOAP 1.2 binding: HTTP. */
+    public static final String SOAP_HTTP_TRANSPORT = "http://schemas.xmlsoap.org/soap/http";
+
+    /** The identifier of SOAP 1.2's own HTTP binding, which some WSDLs use as the transport. */
+    public static final String SOAP12_HTTP_BINDING = "http://www.w3.org/2003/05/soap/bindings/HTTP/";
+
+    /** Not defined by any specification, but found in SOAP 1.2 bindings in the wild. */
+    public static final String SOAP12_HTTP_TRANSPORT_NONSTANDARD = "http://schemas.xmlsoap.org/soap12/http";
+
+    private static final Set<String> HTTP_TRANSPORTS = Set.of(SOAP_HTTP_TRANSPORT, SOAP12_HTTP_BINDING, SOAP12_HTTP_TRANSPORT_NONSTANDARD);
+
+    /** The transport URI of the binding; empty if it declares none. */
+    public String getTransport() {
+        return getBindingStyle().getTransport();
+    }
+
+    /**
+     * Whether the binding sends SOAP over HTTP. WSDL 1.1 requires the transport, but a binding
+     * without one is taken to mean HTTP, as hand-written WSDLs often leave it out. For the same
+     * reason, a nonstandard SOAP 1.2 HTTP transport URI is accepted too.
+     */
+    public boolean isSoapOverHttp() {
+        if (!isSoap()) return false;
+        String transport = getTransport();
+        return transport.isEmpty() || HTTP_TRANSPORTS.contains(transport);
+    }
+
+    /** Whether the binding binds to SOAP 1.1 or SOAP 1.2. */
+    public boolean isSoap() {
+        return getSoapVersion() != SOAPVersion.UNKNOWN;
+    }
+
+    /** The binding's operation of that name; empty if the binding does not cover it. */
+    public Optional<BindingOperation> findBindingOperation(String name) {
         return getBindingOperations().stream()
-                .filter(bo -> bo.getName().equals(name))
-                .findFirst().orElseThrow(() -> new WSDLParserException("No bindingOperation found for name: " + name));
+                .filter(bo -> Objects.equals(name, bo.getName()))
+                .findFirst();
     }
 
     public List<BindingOperation> getBindingOperations() {
@@ -64,8 +98,19 @@ public class Binding extends WSDLElement {
     }
 
     public PortType getPortType() {
+        return findPortType().orElseThrow(() -> new WSDLParserException("No portType found for binding: " + getName()));
+    }
+
+    /**
+     * The port type the binding's type names; empty if it names none of this WSDL's. The type is a
+     * QName, and all port types of the WSDL are in its target namespace.
+     */
+    Optional<PortType> findPortType() {
+        var type = resolveQName(getAttribute("type"));
+        if (!Objects.equals(ctx.definitions().getTargetNamespace(), type.getNamespaceURI()))
+            return Optional.empty();
         return ctx.definitions().getPortTypes().stream()
-                .filter(pt -> getLocalName(getAttribute("type")).equals(pt.getName()))
-                .findFirst().orElseThrow(() -> new WSDLParserException("No portType found for binding: " + getName()));
+                .filter(pt -> type.getLocalPart().equals(pt.getName()))
+                .findFirst();
     }
 }

@@ -23,6 +23,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 
@@ -67,6 +68,21 @@ class HeaderTest {
     void authorization() {
         assertEquals("Basic YWxpY2U6c2VjcmV0",
                 header.getFirstValue(AUTHORIZATION));
+    }
+
+    @Test
+    void removeFieldsRemovesAllMatchingFieldsIgnoringCase() {
+        var h = new Header();
+        h.add("X-Foo", "1");
+        h.add("Host", "example.com");
+        h.add("x-foo", "2");
+        h.add("X-FOO", "3");
+
+        h.removeFields("X-Foo");
+
+        assertNull(h.getFirstValue("X-Foo"));
+        assertEquals(1, h.getAllHeaderFields().length);
+        assertEquals("example.com", h.getFirstValue("Host"));
     }
 
     @Test
@@ -613,5 +629,86 @@ class HeaderTest {
 
         h.add("X-Normal", "regular value");
         assertEquals("regular value", h.getFirstValue("X-Normal"));
+    }
+
+    @Nested
+    class SetValue {
+
+        @Test
+        void collapsingDuplicatesPreservesOrderOfOtherFields() {
+            Header h = new Header();
+            h.add("A", "a");
+            h.add("Dup", "1");
+            h.add("B", "b");
+            h.add("Dup", "2");
+            h.add("C", "c");
+            h.add("D", "d");
+
+            h.setValue("Dup", "new");
+
+            assertEquals(List.of("A: a", "Dup: new", "B: b", "C: c", "D: d"), fields(h));
+        }
+
+        @Test
+        void collapsingTrailingDuplicatesPreservesOrderOfOtherFields() {
+            Header h = new Header();
+            h.add("Dup", "1");
+            h.add("A", "a");
+            h.add("Dup", "2");
+            h.add("Dup", "3");
+            h.add("B", "b");
+            h.add("C", "c");
+
+            h.setValue("Dup", "new");
+
+            assertEquals(List.of("Dup: new", "A: a", "B: b", "C: c"), fields(h));
+        }
+
+        /**
+         * RFC 9110 §5.3: the order of field lines with the same name is significant.
+         */
+        @Test
+        void collapsingDuplicatesPreservesOrderOfSameNamedFields() {
+            Header h = new Header();
+            h.add("Dup", "1");
+            h.add("Dup", "2");
+            h.add("Set-Cookie", "a=1");
+            h.add("Set-Cookie", "b=2");
+
+            h.setValue("Dup", "new");
+
+            assertEquals(List.of("Dup: new", "Set-Cookie: a=1", "Set-Cookie: b=2"), fields(h));
+        }
+
+        private static List<String> fields(Header h) {
+            return Arrays.stream(h.getAllHeaderFields())
+                    .map(f -> f.getHeaderName() + ": " + f.getValue())
+                    .toList();
+        }
+    }
+
+    @Nested
+    class ParseKeepAliveHeader {
+
+        @Test
+        void timeoutAndMax() {
+            assertEquals(5, parseKeepAliveHeader("timeout=5, max=100", TIMEOUT));
+            assertEquals(100, parseKeepAliveHeader("timeout=5, max=100", MAX));
+        }
+
+        @Test
+        void missingParameter() {
+            assertEquals(-1, parseKeepAliveHeader("timeout=5", MAX));
+        }
+
+        @Test
+        void timeoutOverflow() {
+            assertEquals(-1, parseKeepAliveHeader("timeout=99999999999999999999", TIMEOUT));
+        }
+
+        @Test
+        void maxOverflow() {
+            assertEquals(-1, parseKeepAliveHeader("max=99999999999999999999", MAX));
+        }
     }
 }

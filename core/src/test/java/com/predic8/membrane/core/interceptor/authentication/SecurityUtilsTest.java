@@ -25,9 +25,6 @@ import java.util.NoSuchElementException;
 import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.interceptor.authentication.SecurityUtils.*;
-import static com.predic8.membrane.core.interceptor.authentication.SecurityUtils.PASSWORD;
-import static com.predic8.membrane.core.interceptor.authentication.SecurityUtils.hashPasswordBcrypt;
-import static com.predic8.membrane.core.interceptor.authentication.SecurityUtils.verifyLoginOrThrow;
 import static org.apache.commons.codec.digest.Crypt.crypt;
 import static org.bouncycastle.crypto.generators.OpenBSDBCrypt.generate;
 import static org.junit.jupiter.api.Assertions.*;
@@ -96,6 +93,12 @@ class SecurityUtilsTest {
     void verifyPassword_plaintextFallback_small() {
         assertTrue(verifyPassword("abc", "abc"));
         assertFalse(verifyPassword("abc", "def"));
+    }
+
+    @Test
+    void verifyPassword_plaintextStartingWithDollar() {
+        assertTrue(verifyPassword("$abc", "$abc"));
+        assertFalse(verifyPassword("abc", "$abc"));
     }
 
     @Test

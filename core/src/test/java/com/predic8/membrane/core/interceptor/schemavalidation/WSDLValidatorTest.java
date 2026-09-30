@@ -626,17 +626,17 @@ public class WSDLValidatorTest {
     }
 
     /**
-     * More concurrent faults per SOAP version than that version's pool holds, all released at
-     * once: every message must get its own validator, callers that find the pool empty must block
-     * on take() rather than fail, and the abort path must return its validator to the pool like
-     * the success path does. Uses a WSDL declaring both SOAP versions so both pools are exercised
+     * More concurrent faults per SOAP version than that version's pool initially holds, all
+     * released at once: every message must get its own validator, callers that find the pool empty
+     * must get a newly created one rather than fail, and the abort path must return its validator
+     * to the pool like the success path does. Uses a WSDL declaring both SOAP versions so both pools are exercised
      * by one validator instance.
      */
     @Test
     void faultValidationIsConcurrencySafe() throws Exception {
         var validator = createValidator(MULTIPLE_PORTS_WSDL, "Service", false);
-        // Two more tasks per version than that version's pool has validators, so at least two
-        // take() calls per pool find it empty.
+        // Two more tasks per version than that version's pool initially has validators, so at
+        // least two borrow() calls per pool find it empty.
         int tasksPerVersion = AbstractXMLSchemaValidator.poolConcurrency() + 2;
         int tasks = tasksPerVersion * 2;
         var start = new CountDownLatch(1);

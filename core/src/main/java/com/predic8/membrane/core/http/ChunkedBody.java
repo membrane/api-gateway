@@ -307,7 +307,7 @@ public class ChunkedBody extends AbstractBody {
         byte[] raw = new byte[getRawLength()];
         int destPos = 0;
         for (Chunk chunk : chunks) {
-            destPos = chunk.copyChunkLength(raw, destPos, this);
+            destPos = chunk.copyChunkLength(raw, destPos);
             destPos = copyCRLF(raw, destPos);
             destPos = chunk.copyChunk(raw, destPos);
             destPos = copyCRLF(raw, destPos);

@@ -1,0 +1,36 @@
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+              xmlns:spring="http://www.springframework.org/schema/beans"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://www.springframework.org/schema/beans
+                    http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+                    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+    <!-- Scenario 6: legacy integration. The client calls a REST/JSON API (POST /create-person);
+         jsonProtection checks the JSON body against its default limits (size, depth, tokens, ...),
+         five setHeader elements copy fields of the JSON body into request headers via JSONPath
+         (e.g. X-Name: Jane), then wsdl2openapi converts the JSON body into a SOAP request for the createPerson operation of
+         person-service.wsdl, forwards it to the backend's SOAP listener, and converts the SOAP
+         response (an empty createPersonResponse element) back into JSON ({}). __WSDL_PATH__ and
+         __BACKEND_PRIVATE_IP__ are filled in by deploy-and-run.sh. wsdl2openapi sends to the
+         target's url (falling back to the WSDL's soap:address), so the target needs url, not
+         host/port. -->
+    <!-- No exchange store: the default LimitedMemoryExchangeStore keeps recent exchanges for the
+         admin console and serializes request threads on its lock; nothing here reads them. -->
+    <forgetfulExchangeStore id="forgetful"/>
+
+    <router exchangeStore="forgetful">
+        <transport backlog="1024"/>
+        <api port="2000">
+            <jsonProtection/>
+            <request>
+                <setHeader name="X-Name" value="${$.person.firstName}" language="jsonpath"/>
+                <setHeader name="X-Last-Name" value="${$.person.lastName}" language="jsonpath"/>
+                <setHeader name="X-Email" value="${$.person.email}" language="jsonpath"/>
+                <setHeader name="X-Customer-Number" value="${$.person.customerNumber}" language="jsonpath"/>
+                <setHeader name="X-City" value="${$.person.address.city}" language="jsonpath"/>
+            </request>
+            <wsdl2openapi wsdl="__WSDL_PATH__"/>
+            <target url="http://__BACKEND_PRIVATE_IP__:2012/person-service"/>
+        </api>
+    </router>
+</spring:beans>

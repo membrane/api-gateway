@@ -1,0 +1,27 @@
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+              xmlns:spring="http://www.springframework.org/schema/beans"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://www.springframework.org/schema/beans
+                    http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+                    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+    <!-- Scenario 7: SOAP with WSDL validation. The client sends a SOAP 1.1 createPerson request
+         (the same person as the wsdl2openapi scenario, as XML); xmlProtection checks it against its
+         default limits (depth, attributes, name lengths, DTDs, ...), the validator checks it against
+         person-service.wsdl, the gateway forwards it to the backend's SOAP listener, and the same
+         validator checks the SOAP response (an empty createPersonResponse element) on the way
+         back. A validator outside <request>/<response> runs in both flows. __WSDL_PATH__ and
+         __BACKEND_PRIVATE_IP__ are filled in by deploy-and-run.sh. -->
+    <!-- No exchange store: the default LimitedMemoryExchangeStore keeps recent exchanges for the
+         admin console and serializes request threads on its lock; nothing here reads them. -->
+    <forgetfulExchangeStore id="forgetful"/>
+
+    <router exchangeStore="forgetful">
+        <transport backlog="1024"/>
+        <api port="2000">
+            <xmlProtection/>
+            <validator wsdl="__WSDL_PATH__"/>
+            <target host="__BACKEND_PRIVATE_IP__" port="2012"/>
+        </api>
+    </router>
+</spring:beans>

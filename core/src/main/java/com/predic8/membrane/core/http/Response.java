@@ -54,6 +54,13 @@ public class Response extends Message {
 	private int statusCode;
 	private String statusMessage;
 
+	/**
+	 * Set by {@link #createBody(InputStream)} when a 205 announced content that was deliberately not read:
+	 * those bytes, if the backend sent any, are still in the stream. Read by the HTTP client, which then
+	 * closes the connection instead of pooling it, see {@link #hasUnreadContent()}.
+	 */
+	private boolean unreadContent;
+
 	public static class ResponseBuilder {
 		private final Response res = new Response();
 
@@ -428,11 +435,6 @@ public class Response extends Message {
 	EndOfStreamException {
 		parseStartLine(in);
 
-		if (getStatusCode() == 100) {
-			readLine(in);
-			return;
-		}
-
 		header = new Header(in, true);
 
 		if (createBody)
@@ -444,7 +446,28 @@ public class Response extends Message {
 		if (isRedirect() && mayHaveNoBody())
 			return;
 
+		// A 205 must not have content (RFC 9110 §15.3.6), so a backend announcing some may not send it:
+		// do not read it. Chunked is checked first, as Transfer-Encoding overrides Content-Length (RFC 9112 §6.3).
+		if (statusCode == 205 && (header.isChunked() || header.getContentLength() > 0)) {
+			log.info("Backend sent a 205 response announcing content, which it must not have (RFC 9110 §15.3.6). Dropping the content and closing the connection. Content-Length: {}, Transfer-Encoding: {}",
+					header.getFirstValue(CONTENT_LENGTH), header.getFirstValue(TRANSFER_ENCODING));
+			body = new EmptyBody();
+			adjustFramingForNoBody();
+			unreadContent = true;
+			return;
+		}
+
 		super.createBody(in);
+	}
+
+	/**
+	 * A backend that announces content in a 205 is broken and may not send it, so the content is not read.
+	 *
+	 * @return true if content announced by the framing is still in the stream, so the connection this
+	 *         response was read from must not be reused
+	 */
+	public boolean hasUnreadContent() {
+		return unreadContent;
 	}
 
 	public boolean isRedirect() {
@@ -461,8 +484,57 @@ public class Response extends Message {
 		return " " + statusCode;
 	}
 
+	/**
+	 * RFC 9110 §15.3.6: a 205 carries no content, like a 1xx, 204 or 304. Unlike those it is still framed,
+	 * see {@link #endsAfterHeaderFields()}.
+	 */
 	public boolean shouldNotContainBody()  {
-		return statusCode == 100 || statusCode == 101 || statusCode == 204 || statusCode == 205 ;
+		return endsAfterHeaderFields() || statusCode == 205;
+	}
+
+	/**
+	 * RFC 9112 §6.3: a 1xx, 204 or 304 response ends with the empty line after the header fields,
+	 * whatever Content-Length or Transfer-Encoding says. A 205 is not in that set: it is framed like any
+	 * other response, see {@link #hasUnreadContent()}.
+	 */
+	@Override
+	protected boolean endsAfterHeaderFields() {
+		return (statusCode >= 100 && statusCode < 200) || statusCode == 204 || statusCode == 304;
+	}
+
+	@Override
+	protected boolean prepareBodyForWrite() {
+		if (!shouldNotContainBody())
+			return true;
+		adjustFramingForNoBody();
+		return false;
+	}
+
+	/**
+	 * Makes the framing fields agree with a response that has no body. RFC 9110 §8.6 and
+	 * RFC 9112 §6.1: a 1xx or 204 carries neither Content-Length nor Transfer-Encoding. A 205 is not ended
+	 * by the header fields (RFC 9112 §6.3), so it announces zero-length content.
+	 */
+	private void adjustFramingForNoBody() {
+		// 304 keeps the fields of the representation it stands for.
+		if (statusCode == 304)
+			return;
+		header.removeFields(TRANSFER_ENCODING);
+		if (statusCode == 205)
+			header.setContentLength(0);
+		else
+			header.removeFields(CONTENT_LENGTH);
+	}
+
+	/**
+	 * A parsed 304 may keep the Content-Length of the representation it stands for; the message itself
+	 * has no body, see {@link #shouldNotContainBody()}.
+	 */
+	@Override
+	public boolean isBodyEmpty() throws ReadingBodyException {
+		if (shouldNotContainBody() && getBody() instanceof EmptyBody)
+			return true;
+		return super.isBodyEmpty();
 	}
 
 	public boolean isOk(){
