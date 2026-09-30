@@ -13,17 +13,24 @@
 
 package com.predic8.membrane.core.interceptor.antivirus;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.*;
-import fi.solita.clamav.*;
-import org.apache.commons.io.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import fi.solita.clamav.ClamAVClient;
+import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.security;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * @description Delegates virus checks to an external Virus Scanner.
@@ -60,40 +67,49 @@ public class ClamAntiVirusInterceptor extends AbstractInterceptor {
         try {
             if (isNotMalicious(getHeaders(exc)) && isNotMalicious(getBody(exc)))
                 return CONTINUE;
-        }catch(Exception ignored){
-            // happens only when daemon is not available and then we also want a gateway timeout
+        } catch (Exception e) {
+            return scannerFailure(exc, e);
         }
-        return gatewayTimeout(exc);
+        security(router.getConfiguration().isProduction(), null)
+                .addSubType("potentially-harmful-content")
+                .title("Request blocked")
+                .detail("The request contains potentially harmful content.")
+                .buildAndSetResponse(exc);
+        return RETURN;
     }
 
     private String getBody(Exchange exc) {
-        return exc.getRequest().getBodyAsStringDecoded();
+        return exc.getResponse().getBodyAsStringDecoded();
     }
 
-    private Outcome gatewayTimeout(Exchange exc) {
-        log.error("Could not reach clamav daemon on {}:{}",host,port );
-        internal(router.getConfiguration().isProduction(),getDisplayName())
-                .title("Virus scanner error!")
+    private Outcome scannerFailure(Exchange exc, Exception cause) {
+        log.error("Could not execute virus scan using clamav daemon on {}:{}", host, port, cause);
+        internal(router.getConfiguration().isProduction(), null)
+                .title("Request processing failed")
                 .detail("Could not execute virus scan.")
-                .internal("message","Could not reach clamav daemon.")
-                .internal("scanner-host", host)
-                .internal("scanner-port", port)
                 .buildAndSetResponse(exc);
         return RETURN;
     }
 
     public boolean isNotMalicious(String str) throws IOException {
         try(InputStream input = toInputStream(str)) {
-            return ClamAVClient.isCleanReply(client.scan(input));
+            byte[] reply = client.scan(input);
+            if (ClamAVClient.isCleanReply(reply))
+                return true;
+            String result = new String(reply, UTF_8).trim();
+            if (!result.endsWith(" FOUND"))
+                throw new IOException("ClamAV scan failed: " + result);
+            log.warn("ClamAV detected malicious content: {}", result);
+            return false;
         }
     }
 
     private InputStream toInputStream(String str) {
-        return IOUtils.toInputStream(str);
+        return IOUtils.toInputStream(str, UTF_8);
     }
 
     private String getHeaders(Exchange exc) {
-         return exc.getRequest().getHeader().toString();
+         return exc.getResponse().getHeader().toString();
     }
 
     public String getHost() {
