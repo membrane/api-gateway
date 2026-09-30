@@ -58,7 +58,7 @@ public abstract class AbstractCORSHandler {
     public Outcome handle(Exchange exc) {
         String origin = getNormalizedOrigin(exc);
 
-        // Ordinary non CORS request -> let pass
+        // Ordinary none CORS request -> let pass
         if (origin == null)
             return CONTINUE;
 
