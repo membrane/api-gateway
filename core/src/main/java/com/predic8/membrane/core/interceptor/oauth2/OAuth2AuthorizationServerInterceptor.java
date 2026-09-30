@@ -31,6 +31,7 @@ import java.util.*;
 
 /**
  * @description OAuth2/OIDC authorization server endpoints (auth/token/userinfo/revocation/.well-known) with session + consent/login UI.
+ * <p>See <a href="https://github.com/membrane/api-gateway/blob/master/distribution/tutorials/oauth2/10-OAuth2-Basics.yaml">tutorials/oauth2/10-OAuth2-Basics.yaml</a>.</p>
  * @yaml
  * <pre><code>
  *  oauth2authserver:
@@ -226,6 +227,11 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
         return path;
     }
 
+    /**
+     * @description Sub-path, appended to the element's base path, at which the login dialog endpoint is served
+     * and matched.
+     * @default /login/
+     */
     @MCAttribute
     public void setPath(String path) {
         this.path = path;
@@ -235,6 +241,10 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
         return message;
     }
 
+    /**
+     * @description HTML body shown on the intermediate 200-status redirect page the login dialog uses instead
+     * of a 30x redirect. When omitted, a generic "This page has moved" message is used.
+     */
     @MCAttribute
     public void setMessage(String message) {
         this.message = message;
@@ -253,6 +263,12 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
         return exposeUserCredentialsToSession;
     }
 
+    /**
+     * @description Whether the parameters submitted on the login dialog, the password included, are copied
+     * into the session's user attributes. Attributes the <code>userDataProvider</code> has already supplied
+     * are kept.
+     * @default false
+     */
     @MCAttribute
     public void setExposeUserCredentialsToSession(boolean exposeUserCredentialsToSession) {
         this.exposeUserCredentialsToSession = exposeUserCredentialsToSession;
@@ -340,6 +356,11 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
         return consentFile;
     }
 
+    /**
+     * @description Path to the consent page HTML file shown to the user before granting access. Required for the
+     * authorization code and implicit flows; without it those flows are disabled.
+     * @example conf/consent.html
+     */
     @MCAttribute
     public void setConsentFile(String consentFile) {
         this.consentFile = consentFile;

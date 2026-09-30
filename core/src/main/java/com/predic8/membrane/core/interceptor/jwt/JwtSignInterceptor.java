@@ -42,6 +42,30 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.jose4j.jws.AlgorithmIdentifiers.RSA_USING_SHA256;
 
+/**
+ * @description Signs the request or response body as a JWT, replacing the body with the compact JWS
+ * serialization (or storing it in a property instead, when <code>property</code> is set). The body
+ * must be a JSON object; <code>iat</code>, <code>exp</code> and <code>nbf</code> claims are added
+ * automatically before signing.
+ * <p>See <a href="https://github.com/membrane/api-gateway/blob/master/distribution/tutorials/jwt/20-JWT-Signing.yaml">tutorials/jwt/20-JWT-Signing.yaml</a>.</p>
+ * @yaml
+ * <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - template:
+ *         contentType: application/json
+ *         src: |
+ *           {
+ *             "sub": "alice",
+ *             "aud": "demo-resource"
+ *           }
+ *     - jwtSign:
+ *         property: token
+ *         jwk:
+ *           location: jwk.json
+ * </code></pre>
+ */
 @MCElement(name = "jwtSign")
 public class JwtSignInterceptor extends AbstractInterceptor {
 
@@ -132,6 +156,9 @@ public class JwtSignInterceptor extends AbstractInterceptor {
         return jwk;
     }
 
+    /**
+     * @description The RSA key used to sign the JWT.
+     */
     @MCChildElement
     public void setJwk(JwtSessionManager.Jwk jwk) {
         this.jwk = jwk;
@@ -142,7 +169,8 @@ public class JwtSignInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * Time in seconds the token will expire after.
+     * @description Time in seconds after which the signed token expires (used to compute the
+     * <code>exp</code> claim).
      * @default 300
      */
     @MCAttribute
@@ -155,9 +183,9 @@ public class JwtSignInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * To account for clock skew between different systems, the beginning of the validity time period (nbf - "not before")
-     * will be set to a point in time in the past. This point in time will be "issued at" - "clock skew".
-     * @param clockSkewSeconds
+     * @description To account for clock skew between systems, the token's validity start (the
+     * <code>nbf</code> claim) is backdated from "issued at" by this many seconds.
+     * @default 120
      */
     @MCAttribute
     public void setClockSkewSeconds(int clockSkewSeconds) {
@@ -169,8 +197,8 @@ public class JwtSignInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * The name of a property to be set with the signed JWT instead of the body.
-     * @param property Name of the property
+     * @description Name of an exchange property to receive the signed JWT instead of replacing the
+     * message body.
      */
     @MCAttribute
     public void setProperty(String property) {
