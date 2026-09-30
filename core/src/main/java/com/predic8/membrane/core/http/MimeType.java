@@ -52,6 +52,8 @@ public class MimeType {
 
     public static final String APPLICATION_JOSE_JSON = "application/jose+json";
 
+    public static final String APPLICATION_LINKSET_JSON = "application/linkset+json";
+
     public static final String APPLICATION_X_YAML = "application/x-yaml";
 
     /**
