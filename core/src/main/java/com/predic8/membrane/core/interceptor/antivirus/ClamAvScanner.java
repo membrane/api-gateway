@@ -17,6 +17,7 @@ import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.multipart.MultipartUtil;
 import com.predic8.membrane.core.util.MessageUtil;
 import fi.solita.clamav.ClamAVClient;
+import fi.solita.clamav.ClamAVSizeLimitException;
 import jakarta.mail.internet.ParseException;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
@@ -24,6 +25,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.predic8.membrane.core.interceptor.antivirus.ScanResult.CLEAN;
 import static com.predic8.membrane.core.interceptor.antivirus.ScanResult.INFECTED;
@@ -65,6 +68,8 @@ public final class ClamAvScanner implements ContentScanner {
      * @throws InvalidScanContentException if the Content-Type or multipart structure is invalid,
      *         an encoded part exceeds 100 MiB or uses an unsupported transfer encoding
      * @throws IOException if ClamAV cannot be reached or returns an error reply
+     * @throws ClamAVSizeLimitException if a stream exceeds clamd's size limit and no multipart
+     *         stream is reported infected
      */
     @Override
     public ScanResult scan(Message message) throws IOException {
@@ -86,15 +91,20 @@ public final class ClamAvScanner implements ContentScanner {
             if (multipart) {
                 // Scan the complete MIME representation so preambles, epilogues, and part headers
                 // are covered too. Then scan decoded leaf parts to catch transfer-encoded content.
+                // A stream exceeding clamd's size limit does not stop the remaining scans, because a
+                // detection elsewhere must win; the failure is rethrown only if nothing is infected.
+                List<ClamAVSizeLimitException> sizeLimitFailures = new ArrayList<>();
                 log.debug("Scanning complete multipart body with ClamAV");
-                clean = isNotMalicious(MessageUtil.getContentAsStream(message));
+                clean = isNotMaliciousWithinSizeLimit(MessageUtil.getContentAsStream(message), sizeLimitFailures);
                 if (clean) {
                     log.debug("Scanning decoded multipart leaf parts with ClamAV; maximum encoded part size is {} bytes", MAX_PART_SIZE);
                     clean = MultipartUtil.allDecodedPartsMatch(message, MAX_PART_SIZE, part -> {
                         log.debug("Scanning decoded multipart leaf part: {} bytes", part.getBody().length);
-                        return isNotMalicious(part.getInputStream());
+                        return isNotMaliciousWithinSizeLimit(part.getInputStream(), sizeLimitFailures);
                     });
                 }
+                if (clean && !sizeLimitFailures.isEmpty())
+                    throw sizeLimitFailures.getFirst();
             } else {
                 log.debug("Scanning content-decoded message body with ClamAV");
                 clean = isNotMalicious(MessageUtil.getContentAsStream(message));
@@ -125,6 +135,21 @@ public final class ClamAvScanner implements ContentScanner {
             return multipart;
         } catch (IOException | ParseException | RuntimeException e) {
             throw new InvalidScanContentException("Invalid content for virus scan", e);
+        }
+    }
+
+    /**
+     * Like {@link #isNotMalicious(InputStream)}, but records a size-limit failure instead of throwing it.
+     *
+     * @return {@code false} for a {@code FOUND} reply, otherwise {@code true}
+     */
+    private boolean isNotMaliciousWithinSizeLimit(InputStream input, List<ClamAVSizeLimitException> sizeLimitFailures) throws IOException {
+        try {
+            return isNotMalicious(input);
+        } catch (ClamAVSizeLimitException e) {
+            log.info("Content exceeds the ClamAV stream size limit; continuing with the remaining scans");
+            sizeLimitFailures.add(e);
+            return true;
         }
     }
 

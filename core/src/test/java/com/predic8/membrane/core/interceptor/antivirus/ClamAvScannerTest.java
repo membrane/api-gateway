@@ -16,6 +16,7 @@ import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.test.TestAppender;
 import fi.solita.clamav.ClamAVClient;
+import fi.solita.clamav.ClamAVSizeLimitException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.Logger;
 import org.junit.jupiter.api.BeforeEach;
@@ -185,6 +186,40 @@ class ClamAvScannerTest {
 
         assertEquals(INFECTED, scanner.scan(exchange.getResponse()));
         verify(client, times(2)).scan(any(InputStream.class)); // Message headers, then full MIME body.
+    }
+
+    @Test
+    void scansDecodedPartsWhenCompleteMultipartBodyExceedsSizeLimit() throws Exception {
+        byte[] signature = "test-virus".getBytes(US_ASCII);
+        exchange.setResponse(Response.ok().contentType("multipart/mixed; boundary=outer").body(multipart("outer",
+                "Content-Type: text/plain\r\n\r\nclean",
+                "Content-Transfer-Encoding: base64\r\n\r\n" + Base64.getEncoder().encodeToString(signature))).build());
+        when(client.scan(any(InputStream.class))).thenAnswer(invocation -> {
+            byte[] content = ((InputStream) invocation.getArgument(0)).readAllBytes();
+            if (new String(content, US_ASCII).startsWith("--outer"))
+                throw new ClamAVSizeLimitException("Clamd size limit exceeded");
+            return (Arrays.equals(signature, content) ? "stream: Test FOUND\0" : "stream: OK\0").getBytes(US_ASCII);
+        });
+
+        assertEquals(INFECTED, scanner.scan(exchange.getResponse()));
+        verify(client, times(4)).scan(any(InputStream.class)); // Headers, complete body, both parts.
+    }
+
+    @Test
+    void sizeLimitFailureIsPropagatedWhenNoDecodedPartIsInfected() throws Exception {
+        exchange.setResponse(Response.ok().contentType("multipart/mixed; boundary=outer").body(multipart("outer",
+                "Content-Type: text/plain\r\n\r\nlarge",
+                "Content-Type: text/plain\r\n\r\nclean")).build());
+        var failure = new ClamAVSizeLimitException("Clamd size limit exceeded");
+        when(client.scan(any(InputStream.class))).thenAnswer(invocation -> {
+            String content = new String(((InputStream) invocation.getArgument(0)).readAllBytes(), US_ASCII);
+            if (content.startsWith("--outer") || content.equals("large"))
+                throw failure;
+            return "stream: OK\0".getBytes(US_ASCII);
+        });
+
+        assertSame(failure, assertThrows(ClamAVSizeLimitException.class, () -> scanner.scan(exchange.getResponse())));
+        verify(client, times(4)).scan(any(InputStream.class)); // A too-large part does not stop the other parts.
     }
 
     @ParameterizedTest
