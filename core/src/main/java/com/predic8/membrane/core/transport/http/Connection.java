@@ -162,9 +162,9 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 
 	private void setupStreams() throws IOException {
 		if (ByteStreamLogging.isLoggingEnabled()) {
-			String connectionName = chooseNewConnectionName();
-			out = new BufferedOutputStream(wrapConnectionOutputStream(socket.getOutputStream(), connectionName + " out"), BUFFER_SIZE);
-            in = new BufferedInputStream(wrapConnectionInputStream(socket.getInputStream(), connectionName + " in"), BUFFER_SIZE);
+			int id = chooseNewConnectionId();
+			out = new BufferedOutputStream(wrapConnectionOutputStream(socket.getOutputStream(), "membrane=>backend " + id), BUFFER_SIZE);
+            in = new BufferedInputStream(wrapConnectionInputStream(socket.getInputStream(), "backend=>membrane " + id), BUFFER_SIZE);
 		} else {
 			out = new BufferedOutputStream(socket.getOutputStream(), BUFFER_SIZE);
 			in = new BufferedInputStream(socket.getInputStream(), BUFFER_SIZE);
@@ -177,13 +177,13 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 		return 2048;
 	}
 
-	private static String chooseNewConnectionName() {
+	private static int chooseNewConnectionId() {
 		Random rand = random.get();
 		if (rand == null) {
 			rand = new Random();
 			random.set(rand);
 		}
-		return "c" + rand.nextInt();
+		return rand.nextInt(Integer.MAX_VALUE);
 	}
 
 	public static Connection open(String host, int port, String localHost, SSLProvider sslProvider, ConnectionManager mgr, int connectTimeout) throws IOException {

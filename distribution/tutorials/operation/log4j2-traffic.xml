@@ -6,7 +6,8 @@
                            disableAnsi="${sys:membrane.disable.term.colors:-false}"
                            pattern="%d{ABSOLUTE} %highlight{%5p}{ERROR=red, WARN=yellow, INFO=cyan} %tid %tn %c{1}:%L %X - %m%n"/>
         </Console>
-        <RollingFile name="TRAFFIC" fileName="traffic.log" filePattern="traffic-%i.log">
+        <!-- filePermissions: the log contains headers and bodies, readable by the owner only -->
+        <RollingFile name="TRAFFIC" fileName="traffic.log" filePattern="traffic-%i.log" filePermissions="rw-------">
             <PatternLayout pattern="%d{ABSOLUTE} %5p %tid %tn %c{1}:%L - %m%n" />
             <Policies>
                 <SizeBasedTriggeringPolicy size="100 MB" />

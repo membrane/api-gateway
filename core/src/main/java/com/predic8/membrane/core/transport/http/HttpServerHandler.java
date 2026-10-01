@@ -95,9 +95,9 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
 
     private void setupInAndOut() throws IOException {
         if (ByteStreamLogging.isLoggingEnabled()) {
-            String c = "s-" + new Random().nextInt();
-            srcIn = new BufferedInputStream(wrapConnectionInputStream(sourceSocket.getInputStream(), c + " in"), BUFFER_SIZE);
-            srcOut = new BufferedOutputStream(wrapConnectionOutputStream(sourceSocket.getOutputStream(), c + " out"), BUFFER_SIZE);
+            int id = new Random().nextInt(Integer.MAX_VALUE);
+            srcIn = new BufferedInputStream(wrapConnectionInputStream(sourceSocket.getInputStream(), "client=>membrane " + id), BUFFER_SIZE);
+            srcOut = new BufferedOutputStream(wrapConnectionOutputStream(sourceSocket.getOutputStream(), "membrane=>client " + id), BUFFER_SIZE);
             return;
         }
         srcIn = new BufferedInputStream(sourceSocket.getInputStream(), BUFFER_SIZE);

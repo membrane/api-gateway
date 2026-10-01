@@ -39,8 +39,10 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 public class ByteStreamLoggingTutorialTest extends AbstractOperationTutorialTest {
 
-    /** Matches the head of an entry, e.g. "[c-899486797 out] [ 71 69 84 ]". */
-    private static final Pattern ENTRY = Pattern.compile("\\[([cs]-\\S+ (?:in|out))] \\[ ((?:-?\\d+ )*)]");
+    /**
+     * Matches the head of an entry, e.g. "[membrane=>backend 899486797] [ 71 69 84 ]".
+     */
+    private static final Pattern ENTRY = Pattern.compile("\\[((?:client|membrane|backend)=>(?:client|membrane|backend) \\d+)] \\[ ((?:-?\\d+ )*)]");
 
     @Override
     protected String getTutorialYaml() {
@@ -64,10 +66,10 @@ public class ByteStreamLoggingTutorialTest extends AbstractOperationTutorialTest
         // @formatter:on
 
         waitForStreams(baseDir.toPath().resolve("traffic.log"), streams ->
-                anyStream(streams, "s-", "in", "GET / HTTP/1.1")
-                && anyStream(streams, "c-", "out", "GET / HTTP/1.1", "Host: apibin.io:443")
-                && anyStream(streams, "c-", "in", "\"api\": \"apibin\"")
-                && anyStream(streams, "s-", "out", "\"api\": \"apibin\""));
+                anyStream(streams, "client=>membrane", "GET / HTTP/1.1")
+                && anyStream(streams, "membrane=>backend", "GET / HTTP/1.1", "Host: apibin.io:443")
+                && anyStream(streams, "backend=>membrane", "\"api\": \"apibin\"")
+                && anyStream(streams, "membrane=>client", "\"api\": \"apibin\""));
     }
 
     /**
@@ -89,7 +91,7 @@ public class ByteStreamLoggingTutorialTest extends AbstractOperationTutorialTest
     }
 
     /**
-     * @return key "connection direction", e.g. "c-899486797 out", mapped to the concatenated bytes
+     * @return key "direction connection", e.g. "membrane=>backend 899486797", mapped to the concatenated bytes
      */
     private static Map<String, String> reconstructStreams(String log) {
         Map<String, ByteArrayOutputStream> streams = new LinkedHashMap<>();
@@ -106,9 +108,9 @@ public class ByteStreamLoggingTutorialTest extends AbstractOperationTutorialTest
         return result;
     }
 
-    private static boolean anyStream(Map<String, String> streams, String connectionPrefix, String direction, String... parts) {
+    private static boolean anyStream(Map<String, String> streams, String direction, String... parts) {
         return streams.entrySet().stream()
-                .filter(e -> e.getKey().startsWith(connectionPrefix) && e.getKey().endsWith(" " + direction))
+                .filter(e -> e.getKey().startsWith(direction + " "))
                 .anyMatch(e -> Arrays.stream(parts).allMatch(e.getValue()::contains));
     }
 }
