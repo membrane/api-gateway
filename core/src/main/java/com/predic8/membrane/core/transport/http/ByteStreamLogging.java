@@ -19,9 +19,8 @@ package com.predic8.membrane.core.transport.http;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
+import java.util.concurrent.ThreadLocalRandom;
 
 import static java.lang.System.lineSeparator;
 import static java.nio.charset.StandardCharsets.US_ASCII;
@@ -66,6 +65,9 @@ public class ByteStreamLogging {
     }
 
     public static void log(String name, byte[] b, int off, int len){
+        // TRACE can be switched off while connections wrapped earlier are still open
+        if (!log.isTraceEnabled())
+            return;
         StringBuilder sb = new StringBuilder();
         sb.append("[").append(name).append("] ").append("[ ");
         for(int i = off; i < off+len; i++) {
@@ -78,96 +80,77 @@ public class ByteStreamLogging {
     }
 
     public static OutputStream wrapConnectionOutputStream(OutputStream out, String name) {
-        return new OutputStream() {
-            @Override
-            public void write(int b) throws IOException {
-                log(name, b);
-                out.write(b);
-            }
-
-            @Override
-            public void write(byte[] b) throws IOException {
-                log(name, b);
-                out.write(b);
-            }
-
-            @Override
-            public void write(byte[] b, int off, int len) throws IOException {
-                log(name, b, off, len);
-                out.write(b, off, len);
-            }
-
-            @Override
-            public void close() throws IOException {
-                out.close();
-            }
-
-            @Override
-            public void flush() throws IOException {
-                out.flush();
-            }
-        };
+        return new LoggingOutputStream(out, name);
     }
 
     public static InputStream wrapConnectionInputStream(InputStream in, String name) {
-        return new InputStream() {
-            @Override
-            public int read() throws IOException {
-                int res = in.read();
-                if (res != -1)
-                    log(name, res);
-                return res;
-            }
+        return new LoggingInputStream(in, name);
+    }
 
-            @Override
-            public int read(byte[] b) throws IOException {
-                int res = in.read(b);
-                if (res != -1)
-                    log(name, b, 0, res);
-                return res;
-            }
+    /**
+     * {@link FilterOutputStream} delegates everything but writes; the array write is overridden as
+     * well, because the inherited one would forward the bytes one at a time.
+     */
+    private static class LoggingOutputStream extends FilterOutputStream {
 
-            @Override
-            public int read(byte[] b, int off, int len) throws IOException {
-                int res = in.read(b, off, len);
-                if (res != -1)
-                    log(name, b, off, res);
-                return res;
-            }
+        private final String name;
 
-            @Override
-            public void close() throws IOException {
-                in.close();
-            }
+        LoggingOutputStream(OutputStream out, String name) {
+            super(out);
+            this.name = name;
+        }
 
-            @Override
-            public boolean markSupported() {
-                return in.markSupported();
-            }
+        @Override
+        public void write(int b) throws IOException {
+            log(name, b);
+            out.write(b);
+        }
 
-            @Override
-            public int available() throws IOException {
-                return in.available();
-            }
+        @Override
+        public void write(byte[] b, int off, int len) throws IOException {
+            log(name, b, off, len);
+            out.write(b, off, len);
+        }
+    }
 
-            @Override
-            public long skip(long n) throws IOException {
-                return in.skip(n);
-            }
+    /**
+     * {@link FilterInputStream} delegates everything but reads. The inherited {@code read(byte[])}
+     * goes through {@link #read(byte[], int, int)}.
+     */
+    private static class LoggingInputStream extends FilterInputStream {
 
-            @Override
-            public synchronized void mark(int readlimit) {
-                in.mark(readlimit);
-            }
+        private final String name;
 
-            @Override
-            public synchronized void reset() throws IOException {
-                in.reset();
-            }
-        };
+        LoggingInputStream(InputStream in, String name) {
+            super(in);
+            this.name = name;
+        }
+
+        @Override
+        public int read() throws IOException {
+            int res = in.read();
+            if (res != -1)
+                log(name, res);
+            return res;
+        }
+
+        @Override
+        public int read(byte[] b, int off, int len) throws IOException {
+            int res = in.read(b, off, len);
+            if (res != -1)
+                log(name, b, off, res);
+            return res;
+        }
     }
 
     public static boolean isLoggingEnabled() {
         return log.isTraceEnabled();
+    }
+
+    /**
+     * @return a random identifier for a connection, shared by both of its directions in the log
+     */
+    public static int newConnectionId() {
+        return ThreadLocalRandom.current().nextInt(Integer.MAX_VALUE);
     }
 }

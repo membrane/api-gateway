@@ -35,15 +35,13 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
-import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
 import static com.predic8.membrane.core.http.Header.CONNECTION;
 import static com.predic8.membrane.core.http.Header.PROXY_CONNECTION;
 import static com.predic8.membrane.core.http.Response.notImplemented;
-import static com.predic8.membrane.core.transport.http.ByteStreamLogging.wrapConnectionInputStream;
-import static com.predic8.membrane.core.transport.http.ByteStreamLogging.wrapConnectionOutputStream;
+import static com.predic8.membrane.core.transport.http.ByteStreamLogging.*;
 import static com.predic8.membrane.core.transport.http.HttpServerHandler.RequestProcessingResult.*;
 import static com.predic8.membrane.core.transport.http.HttpServerThreadFactory.DEFAULT_THREAD_NAME;
 import static com.predic8.membrane.core.util.text.StringUtil.maskNonPrintableCharacters;
@@ -95,7 +93,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
 
     private void setupInAndOut() throws IOException {
         if (ByteStreamLogging.isLoggingEnabled()) {
-            int id = new Random().nextInt(Integer.MAX_VALUE);
+            int id = newConnectionId();
             srcIn = new BufferedInputStream(wrapConnectionInputStream(sourceSocket.getInputStream(), "client=>membrane " + id), BUFFER_SIZE);
             srcOut = new BufferedOutputStream(wrapConnectionOutputStream(sourceSocket.getOutputStream(), "membrane=>client " + id), BUFFER_SIZE);
             return;

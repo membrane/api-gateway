@@ -28,11 +28,9 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
-import java.util.Random;
 
 import static com.predic8.membrane.annot.Constants.USERAGENT;
-import static com.predic8.membrane.core.transport.http.ByteStreamLogging.wrapConnectionInputStream;
-import static com.predic8.membrane.core.transport.http.ByteStreamLogging.wrapConnectionOutputStream;
+import static com.predic8.membrane.core.transport.http.ByteStreamLogging.*;
 import static com.predic8.membrane.core.util.text.TextUtil.isNullOrEmpty;
 
 /**
@@ -60,7 +58,6 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 
 	private static final Logger log = LoggerFactory.getLogger(Connection.class.getName());
 	public static final String MEMBRANE_HTTPCLIENT_BUFFER_SIZE = "membrane.httpclient.buffer.size";
-	private static volatile ThreadLocal<Random> random = ByteStreamLogging.isLoggingEnabled() ? new ThreadLocal<>() : null;
 	private static final int BUFFER_SIZE = getDefaultBufferSize();
 
 	public final ConnectionManager mgr;
@@ -162,7 +159,7 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 
 	private void setupStreams() throws IOException {
 		if (ByteStreamLogging.isLoggingEnabled()) {
-			int id = chooseNewConnectionId();
+			int id = newConnectionId();
 			out = new BufferedOutputStream(wrapConnectionOutputStream(socket.getOutputStream(), "membrane=>backend " + id), BUFFER_SIZE);
             in = new BufferedInputStream(wrapConnectionInputStream(socket.getInputStream(), "backend=>membrane " + id), BUFFER_SIZE);
 		} else {
@@ -175,15 +172,6 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 		if (System.getProperty(MEMBRANE_HTTPCLIENT_BUFFER_SIZE) != null)
 			return Integer.parseInt(System.getProperty(MEMBRANE_HTTPCLIENT_BUFFER_SIZE));
 		return 2048;
-	}
-
-	private static int chooseNewConnectionId() {
-		Random rand = random.get();
-		if (rand == null) {
-			rand = new Random();
-			random.set(rand);
-		}
-		return rand.nextInt(Integer.MAX_VALUE);
 	}
 
 	public static Connection open(String host, int port, String localHost, SSLProvider sslProvider, ConnectionManager mgr, int connectTimeout) throws IOException {

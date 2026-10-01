@@ -23,6 +23,9 @@ import com.predic8.membrane.core.proxies.ServiceProxy;
 import com.predic8.membrane.core.proxies.ServiceProxyKey;
 import com.predic8.membrane.core.router.Router;
 import com.predic8.membrane.core.router.TestRouter;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -152,5 +155,22 @@ public class ConnectionTest {
 
 		assertTrue(conLocalhost.isClosed());
 		assertNull(exc.getTargetConnection());
+	}
+
+	/**
+	 * Byte stream logging can be switched on at runtime, after Connection was loaded with TRACE off
+	 * (setUp() has already opened connections at this point).
+	 */
+	@Test
+	void openingAConnectionWorksAfterByteStreamLoggingIsEnabledAtRuntime() throws Exception {
+		String logger = ByteStreamLogging.class.getName();
+		Level original = LogManager.getLogger(logger).getLevel();
+		Configurator.setLevel(logger, Level.TRACE);
+		try {
+			assertTrue(ByteStreamLogging.isLoggingEnabled());
+			Connection.open("localhost", 2000, null, null, 30000).close();
+		} finally {
+			Configurator.setLevel(logger, original);
+		}
 	}
 }
