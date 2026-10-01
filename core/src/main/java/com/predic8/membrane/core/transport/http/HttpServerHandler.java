@@ -30,7 +30,10 @@ import org.slf4j.LoggerFactory;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLSocket;
-import java.io.*;
+import java.io.BufferedOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
@@ -96,11 +99,11 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
     private void setupInAndOut() throws IOException {
         if (ByteStreamLogging.isLoggingEnabled()) {
             String c = "s-" + new Random().nextInt();
-            srcIn = new BufferedInputStream(wrapConnectionInputStream(sourceSocket.getInputStream(), c + " in"), BUFFER_SIZE);
+            srcIn = new BufferedConnectionInputStream(wrapConnectionInputStream(sourceSocket.getInputStream(), c + " in"), BUFFER_SIZE);
             srcOut = new BufferedOutputStream(wrapConnectionOutputStream(sourceSocket.getOutputStream(), c + " out"), BUFFER_SIZE);
             return;
         }
-        srcIn = new BufferedInputStream(sourceSocket.getInputStream(), BUFFER_SIZE);
+        srcIn = new BufferedConnectionInputStream(sourceSocket.getInputStream(), BUFFER_SIZE);
         srcOut = new BufferedOutputStream(sourceSocket.getOutputStream(), BUFFER_SIZE);
     }
 

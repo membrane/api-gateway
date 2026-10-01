@@ -18,10 +18,10 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.http.Response.ResponseBuilder;
+import com.predic8.membrane.core.transport.http.BufferedConnectionInputStream;
 import com.predic8.membrane.core.transport.http.EOFWhileReadingLineException;
 import com.predic8.membrane.core.transport.http.LineTooLongException;
 
-import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -96,7 +96,7 @@ public class HttpUtil {
 	 */
 	static String readLine(InputStream in, int maxLineLength) throws IOException {
 		// Exact classes only: a subclass may override read() and behave differently.
-		if (in.getClass() == BufferedInputStream.class || in.getClass() == ByteArrayInputStream.class) {
+		if (in.getClass() == BufferedConnectionInputStream.class || in.getClass() == ByteArrayInputStream.class) {
 			StringBuilder start = new StringBuilder();
 			String line = readLineInBulk(in, maxLineLength, start);
 			if (line != null)
@@ -109,9 +109,11 @@ public class HttpUtil {
 	/**
 	 * Reads ahead with bulk reads instead of one read() per byte, which takes the stream's lock
 	 * every time, then rewinds and skips exactly the bytes
-	 * {@link #readLineByteByByte(InputStream, int, StringBuilder)} would have consumed. Both stream
-	 * classes return the bytes already available rather than blocking to fill the array, so this
-	 * only waits where reading byte by byte would wait too.
+	 * {@link #readLineByteByByte(InputStream, int, StringBuilder)} would have consumed. A read never
+	 * asks for more than the bytes buffered, or for a single byte if there are none: a
+	 * {@link BufferedConnectionInputStream} asked for more keeps reading from the underlying stream
+	 * as long as its available() is positive, which may block although the line is complete. So
+	 * this only waits where reading byte by byte would wait too.
 	 *
 	 * @param start receives the bytes known to belong to the line if no line is returned
 	 * @return the line, or <code>null</code> if the stream ends or the line does not end within
@@ -127,7 +129,10 @@ public class HttpUtil {
 		while (n < limit) {
 			if (n == bytes.length)
 				bytes = Arrays.copyOf(bytes, Math.min(2 * bytes.length, limit));
-			int read = in.read(bytes, n, bytes.length - n);
+			int want = bytes.length - n;
+			if (in instanceof BufferedConnectionInputStream b)
+				want = Math.min(want, Math.max(1, b.buffered()));
+			int read = in.read(bytes, n, want);
 			if (read == -1)
 				break;
 			n += read;

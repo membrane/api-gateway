@@ -164,10 +164,10 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 		if (ByteStreamLogging.isLoggingEnabled()) {
 			String connectionName = chooseNewConnectionName();
 			out = new BufferedOutputStream(wrapConnectionOutputStream(socket.getOutputStream(), connectionName + " out"), BUFFER_SIZE);
-            in = new BufferedInputStream(wrapConnectionInputStream(socket.getInputStream(), connectionName + " in"), BUFFER_SIZE);
+            in = new BufferedConnectionInputStream(wrapConnectionInputStream(socket.getInputStream(), connectionName + " in"), BUFFER_SIZE);
 		} else {
 			out = new BufferedOutputStream(socket.getOutputStream(), BUFFER_SIZE);
-			in = new BufferedInputStream(socket.getInputStream(), BUFFER_SIZE);
+			in = new BufferedConnectionInputStream(socket.getInputStream(), BUFFER_SIZE);
 		}
 	}
 

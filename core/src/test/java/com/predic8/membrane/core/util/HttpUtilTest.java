@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.util;
 
 import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.transport.http.BufferedConnectionInputStream;
 import com.predic8.membrane.core.transport.http.EOFWhileReadingLineException;
 import com.predic8.membrane.core.transport.http.LineTooLongException;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,6 +23,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.*;
@@ -29,12 +31,17 @@ import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.Executors;
+import java.util.function.Function;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 import static com.predic8.membrane.annot.Constants.CRLF;
 import static com.predic8.membrane.core.http.Header.X_FORWARDED_FOR;
 import static com.predic8.membrane.core.util.HttpTestUtil.convertMessage;
 import static com.predic8.membrane.core.util.HttpUtil.*;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class HttpUtilTest {
@@ -70,7 +77,7 @@ public class HttpUtilTest {
     }
 
     /**
-     * readLine reads a BufferedInputStream or ByteArrayInputStream in bulk and any other stream
+     * readLine reads a BufferedConnectionInputStream or ByteArrayInputStream in bulk and any other stream
      * byte by byte. Every stream kind must return the same lines, throw the same exceptions and
      * leave the same bytes in the stream.
      */
@@ -125,9 +132,67 @@ public class HttpUtilTest {
 
         @Test
         void leavesFollowingBytesInStream() throws IOException {
-            InputStream in = new BufferedInputStream(new ByteArrayInputStream("GET / HTTP/1.1\r\nHost: a\r\n\r\nbody".getBytes(ISO_8859_1)));
+            InputStream in = new BufferedConnectionInputStream(new ByteArrayInputStream("GET / HTTP/1.1\r\nHost: a\r\n\r\nbody".getBytes(ISO_8859_1)), 2048);
             assertEquals("GET / HTTP/1.1", readLine(in));
             assertEquals("Host: a\r\n\r\nbody", new String(in.readAllBytes(), ISO_8859_1));
+        }
+
+        /**
+         * GZIPInputStream.available() can return 1 even when its next read would block.
+         * A BufferedInputStream asked for more bytes than it holds can therefore receive the
+         * complete CRLF line and then block on another refill before HttpUtil gets to scan those bytes. The original
+         * byte-by-byte reader returns the line immediately; it does not need the gzip trailer
+         * or EOF. Keep the producer open to reproduce a peer waiting for our response.
+         */
+        @ParameterizedTest
+        @MethodSource("flushedLines")
+        void returnsCompleteLinesBeforeGzipStreamFinishes(String content) throws IOException {
+            assertReturnsLinesBeforeGzipStreamFinishes(content, gzip -> new BufferedConnectionInputStream(gzip, 2048));
+        }
+
+        /**
+         * A plain BufferedInputStream is read byte by byte, so it must not block either.
+         */
+        @ParameterizedTest
+        @MethodSource("flushedLines")
+        void returnsCompleteLinesBeforeGzipStreamFinishesOnPlainBufferedInputStream(String content) throws IOException {
+            assertReturnsLinesBeforeGzipStreamFinishes(content, gzip -> new BufferedInputStream(gzip, 2048));
+        }
+
+        /**
+         * One line; a second line already buffered when the first is returned; a line longer than
+         * the bulk read limit, which is handed over to reading byte by byte.
+         */
+        static List<String> flushedLines() {
+            return List.of("foo\r\n", "foo\r\nbar\r\n", "a".repeat(3_000) + "\r\n");
+        }
+
+        private static void assertReturnsLinesBeforeGzipStreamFinishes(String content, Function<InputStream, InputStream> buffer) throws IOException {
+            List<String> expected = List.of(content.split("\r\n"));
+            try (var pipe = new PipedInputStream(8192);
+                 var writer = new PipedOutputStream(pipe);
+                 var gzip = new GZIPOutputStream(writer, true)) {
+                gzip.write(content.getBytes(ISO_8859_1));
+                gzip.flush();
+
+                // Keep the compressed stream open, as a peer waiting for a response would.
+                try (var in = buffer.apply(new GZIPInputStream(pipe));
+                     var executor = Executors.newSingleThreadExecutor()) {
+                    var lines = executor.submit(() -> {
+                        List<String> read = new ArrayList<>();
+                        for (int i = 0; i < expected.size(); i++)
+                            read.add(readLine(in));
+                        return read;
+                    });
+                    try {
+                        assertEquals(expected, assertDoesNotThrow(() -> lines.get(2, SECONDS),
+                                "Complete flushed CRLF lines must be returned before gzip finishes"));
+                    } finally {
+                        // Release a blocked reader before closing the executor, even on failure.
+                        gzip.close();
+                    }
+                }
+            }
         }
 
         @Test
@@ -177,7 +242,7 @@ public class HttpUtilTest {
             @ValueSource(ints = {-1, 0, 8092})
             void readsLine(int maxLineLength) throws IOException {
                 assertInBulk(new ByteArrayInputStream(bytes("GET / HTTP/1.1\r\nHost: a\r\n")), maxLineLength);
-                assertInBulk(new BufferedInputStream(new ByteArrayInputStream(bytes("GET / HTTP/1.1\r\nHost: a\r\n"))), maxLineLength);
+                assertInBulk(new BufferedConnectionInputStream(new ByteArrayInputStream(bytes("GET / HTTP/1.1\r\nHost: a\r\n")), 2048), maxLineLength);
             }
 
             @Test
@@ -211,7 +276,7 @@ public class HttpUtilTest {
              * The bytes checked without finding a terminator go to start, the rest stays in the stream.
              */
             private static void assertHandsOver(String content, int maxLineLength, int checked) throws IOException {
-                InputStream in = new BufferedInputStream(new ByteArrayInputStream(bytes(content)));
+                InputStream in = new BufferedConnectionInputStream(new ByteArrayInputStream(bytes(content)), 2048);
                 StringBuilder start = new StringBuilder();
                 assertNull(readLineInBulk(in, maxLineLength, start));
                 assertEquals(content.substring(0, checked), start.toString());
@@ -238,8 +303,9 @@ public class HttpUtilTest {
         private static void assertSameOnAllStreams(byte[] content, int maxLineLength) throws IOException {
             List<String> expected = readAll(byteByByte(content), maxLineLength);
             assertEquals(expected, readAll(new ByteArrayInputStream(content), maxLineLength), "ByteArrayInputStream");
+            assertEquals(expected, readAll(new BufferedInputStream(new ByteArrayInputStream(content)), maxLineLength), "BufferedInputStream");
             for (int size : new int[]{1, 2, 3, 16, 2048, 8192}) {
-                assertEquals(expected, readAll(new BufferedInputStream(new ByteArrayInputStream(content), size), maxLineLength), "BufferedInputStream(" + size + ")");
+                assertEquals(expected, readAll(new BufferedConnectionInputStream(new ByteArrayInputStream(content), size), maxLineLength), "BufferedConnectionInputStream(" + size + ")");
             }
         }
 
