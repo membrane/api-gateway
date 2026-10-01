@@ -13,7 +13,9 @@
 
 package com.predic8.membrane.core.interceptor.antivirus;
 
+import com.predic8.membrane.core.http.DecodingException;
 import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.multipart.MultipartUtil;
 import com.predic8.membrane.core.util.MessageUtil;
 import fi.solita.clamav.ClamAVClient;
@@ -66,7 +68,7 @@ public final class ClamAvScanner implements ContentScanner {
      *
      * @return {@link ScanResult#INFECTED} if ClamAV reports a signature, otherwise {@link ScanResult#CLEAN}
      * @throws InvalidScanContentException if the Content-Type or multipart structure is invalid,
-     *         an encoded part exceeds 100 MiB or uses an unsupported transfer encoding
+     *         the Content-Encoding cannot be decoded, an encoded part exceeds 100 MiB or uses an unsupported transfer encoding
      * @throws IOException if ClamAV cannot be reached or returns an error reply
      * @throws ClamAVSizeLimitException if a stream exceeds clamd's size limit and no multipart
      *         stream is reported infected
@@ -114,6 +116,10 @@ public final class ClamAvScanner implements ContentScanner {
             return result;
         } catch (ParseException e) {
             throw new InvalidScanContentException("Invalid Content-Type for virus scan", e);
+        } catch (ReadingBodyException e) {
+            if (e.getCause() instanceof DecodingException)
+                throw new InvalidScanContentException("Invalid content encoding for virus scan", e);
+            throw e;
         }
     }
 

@@ -237,6 +237,17 @@ class ClamAvScannerTest {
         verifyNoInteractions(client);
     }
 
+    @Test
+    void malformedContentEncodingIsInvalidContent() throws Exception {
+        exchange.setResponse(Response.ok().header("Content-Encoding", "gzip").body("not gzip").build());
+        when(client.scan(any(InputStream.class))).thenAnswer(invocation -> {
+            ((InputStream) invocation.getArgument(0)).readAllBytes();
+            return "stream: OK\0".getBytes(US_ASCII);
+        });
+
+        assertThrows(InvalidScanContentException.class, () -> scanner.scan(exchange.getResponse()));
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {"stream: scanning failed ERROR\0", "unexpected reply\0"})
     void scannerErrorReplyIsNotReportedAsVirus(String reply) throws Exception {
