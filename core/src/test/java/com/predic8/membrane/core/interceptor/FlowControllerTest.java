@@ -39,6 +39,7 @@ import java.util.List;
 import static com.predic8.membrane.annot.Constants.CRLF;
 import static com.predic8.membrane.core.interceptor.FlowController.ABORTION_REASON;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.util.RecordingServerTestUtil.freePort;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -47,9 +48,6 @@ import static org.junit.jupiter.api.Assertions.*;
  * back to its caller when the response flow aborts.
  */
 class FlowControllerTest {
-
-    private static final int FRONTEND_PORT = 3080;
-    private static final int BACKEND_PORT = 3081;
 
     private final List<String> calls = new ArrayList<>();
 
@@ -145,7 +143,9 @@ class FlowControllerTest {
      */
     @Test
     void backendBodyTruncatedOverNetworkInProductionGivesLogKey() throws Exception {
-        try (ServerSocket backend = new ServerSocket(BACKEND_PORT)) {
+        try (ServerSocket backend = new ServerSocket(0)) {
+            final int backendPort = backend.getLocalPort();
+            final int frontendPort = freePort();
             Thread backendThread = new Thread(() -> {
                 while (!backend.isClosed()) {
                     try (Socket socket = backend.accept()) {
@@ -165,7 +165,7 @@ class FlowControllerTest {
             Router gateway = new TestRouter();
             gateway.getConfiguration().setProduction(true);
             try {
-                ServiceProxy proxy = new ServiceProxy(new ServiceProxyKey(FRONTEND_PORT), "localhost", BACKEND_PORT);
+                ServiceProxy proxy = new ServiceProxy(new ServiceProxyKey(frontendPort), "localhost", backendPort);
                 proxy.getFlow().add(new AbstractInterceptor() {
                     @Override
                     public Outcome handleResponse(Exchange exc) {
@@ -177,7 +177,7 @@ class FlowControllerTest {
                 gateway.start();
 
                 HttpResponse<String> response = HttpClient.newHttpClient().send(
-                        HttpRequest.newBuilder(URI.create("http://localhost:" + FRONTEND_PORT + "/")).GET().build(),
+                        HttpRequest.newBuilder(URI.create("http://localhost:" + frontendPort + "/")).GET().build(),
                         HttpResponse.BodyHandlers.ofString());
 
                 assertEquals(500, response.statusCode(), response.body());
