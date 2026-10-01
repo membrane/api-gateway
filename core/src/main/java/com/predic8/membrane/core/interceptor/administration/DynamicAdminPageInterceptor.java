@@ -45,6 +45,11 @@ import static java.nio.charset.StandardCharsets.*;
  * Handles the dynamic part of the admin console (= requests starting with "/admin/").
  */
 public class DynamicAdminPageInterceptor extends AbstractInterceptor {
+
+	public DynamicAdminPageInterceptor() {
+		name = "dynamicAdminPage";
+	}
+
 	private static final Logger log = LoggerFactory.getLogger(DynamicAdminPageInterceptor.class.getName());
 	private boolean readOnly;
 	private boolean useXForwardedForAsClientAddr;

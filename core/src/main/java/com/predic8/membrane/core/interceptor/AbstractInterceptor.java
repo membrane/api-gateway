@@ -28,7 +28,17 @@ import static com.predic8.membrane.core.util.BeanDefinitionBasePathUtil.resolveB
 
 public class AbstractInterceptor implements Interceptor {
 
-	protected String name = this.getClass().getName();
+	protected String name = initName();
+
+	private String initName() {
+		for (Class<?> c = getClass(); c != null && c != Object.class; c = c.getSuperclass()) {
+			MCElement annotation = c.getAnnotation(MCElement.class);
+			if (annotation != null && !annotation.name().isEmpty()) {
+				return annotation.name();
+			}
+		}
+		return getClass().getName();
+	}
 
 	private EnumSet<Flow> flow = REQUEST_RESPONSE_ABORT_FLOW;
 

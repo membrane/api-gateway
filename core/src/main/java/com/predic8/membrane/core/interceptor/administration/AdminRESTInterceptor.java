@@ -42,6 +42,10 @@ import static java.nio.charset.StandardCharsets.*;
 @SuppressWarnings("unused")
 public class AdminRESTInterceptor extends RESTInterceptor {
 
+	public AdminRESTInterceptor() {
+		name = "adminREST";
+	}
+
 	@SuppressWarnings("unused")
 	private static final Logger log = LoggerFactory.getLogger(AdminRESTInterceptor.class.getName());
 

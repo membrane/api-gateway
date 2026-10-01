@@ -84,7 +84,6 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     @Override
     public void init() {
         super.init();
-        name = "oauth2 client";
         setAppliedFlow(Flow.Set.REQUEST_RESPONSE_ABORT_FLOW);
 
         if (originalExchangeStore == null) {
