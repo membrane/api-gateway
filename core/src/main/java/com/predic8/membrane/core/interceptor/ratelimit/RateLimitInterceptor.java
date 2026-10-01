@@ -153,7 +153,7 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
             log.info("Error evaluating expression {} for rate limit. Fallback to 'unknown'",expression); // Can be pretty common
             return "unknown";
         }
-        if (!value.isEmpty())
+        if (value != null && !value.isEmpty())
             return value;
 
         log.warn("The expression {} evaluates to null or there is an error in the expression. This may result in a wrong counting for the ratelimiter.", expression);

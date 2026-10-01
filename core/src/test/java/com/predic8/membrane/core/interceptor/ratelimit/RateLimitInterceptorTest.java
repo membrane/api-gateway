@@ -132,6 +132,21 @@ public class RateLimitInterceptorTest {
 	}
 
 	@Test
+	void keyExpressionEvaluatingToNullFallsBackToUnknown() throws Exception {
+		var interceptor = new RateLimitInterceptor(ofMinutes(1), 1);
+		interceptor.setLanguage(JSONPATH);
+		interceptor.setKeyExpression("$.missing");
+		interceptor.init();
+
+		// JSONPath returns null for a path that does not exist
+		var exc = createJsonExchange("a");
+
+		assertEquals(CONTINUE, interceptor.handleRequest(exc));
+		assertEquals(RETURN, interceptor.handleRequest(exc));
+		assertEquals(429, exc.getResponse().getStatusCode());
+	}
+
+	@Test
 	void jsonpathExpression() throws URISyntaxException {
 		Exchange excA = createJsonExchange("a");
 		Exchange excB = createJsonExchange("b");
