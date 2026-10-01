@@ -19,13 +19,16 @@ Use the -c option to start Membrane with a different configuration file, includi
 
 ./run-docker.sh -c tutorials/getting-started/10-First-API.yaml
 
-Ports 2000-2010 and 9000 (the admin console) are published. A configuration listening on a
-different port needs that port published too:
+Ports 2000-2010, 8443 (TLS) and 9000 (the admin console) are published. A configuration
+listening on a different port needs that port published too:
 
 MEMBRANE_DOCKER_OPTS="-p 3128:3128"
 ./run-docker.sh -c tutorials/forward-proxy/10-Forward-Proxy.yaml
 
 On Windows, set the variable first:  set "MEMBRANE_DOCKER_OPTS=-p 3128:3128"
+
+JAVA_OPTS from your environment is passed on to the JVM in the container. Paths in it must be
+valid inside the container; relative ones resolve against /opt/membrane.
 With Docker Compose, add the port to the ports list in docker-compose.yml.
 
 To stop: press Ctrl+C. When started with 'docker compose up', also run 'docker compose down'
