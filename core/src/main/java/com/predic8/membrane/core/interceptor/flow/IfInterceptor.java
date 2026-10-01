@@ -14,28 +14,36 @@
 
 package com.predic8.membrane.core.interceptor.flow;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.config.xml.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.lang.*;
-import com.predic8.membrane.core.lang.ExchangeExpression.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.Required;
+import com.predic8.membrane.core.config.xml.XmlConfig;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.XMLSupport;
+import com.predic8.membrane.core.lang.ExchangeExpression;
+import com.predic8.membrane.core.lang.ExchangeExpression.Language;
+import com.predic8.membrane.core.lang.ExchangeExpressionException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
+import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
 import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
 
 /**
  * @description <p>
  * if allows conditional execution of nested interceptors.
  * </p>
+ * <p>See <a href="https://github.com/membrane/api-gateway/blob/master/distribution/tutorials/advanced/50-if.yaml">tutorials/advanced/50-if.yaml</a>.</p>
  * @yaml <pre><code>
  * if:
  *   test: method == 'POST'
@@ -154,8 +162,7 @@ public class IfInterceptor extends AbstractFlowWithChildrenInterceptor implement
     }
 
     /**
-     * XML Configuration e.g. declaration of XML namespaces for XPath expressions, ...
-     * @param xmlConfig
+     * @description XML configuration, e.g. namespace declarations for XPath expressions used in <code>test</code>.
      */
     @Override
     @MCChildElement(allowForeign = true,order = 10)
@@ -169,9 +176,7 @@ public class IfInterceptor extends AbstractFlowWithChildrenInterceptor implement
     }
 
     /**
-     * Sets the list of interceptors to be executed when the test condition evaluates to false.
-     *
-     * @param elseFlow the list of {@link Interceptor} instances to be executed in the "else" case
+     * @description Plugins to run when <code>test</code> evaluates to false, instead of the main flow.
      */
     @MCChildElement(order = 100)
     public void setElse(List<Interceptor> elseFlow) {

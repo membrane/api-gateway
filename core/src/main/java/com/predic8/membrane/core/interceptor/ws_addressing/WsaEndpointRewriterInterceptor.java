@@ -70,6 +70,9 @@ public class WsaEndpointRewriterInterceptor extends AbstractInterceptor {
 		return protocol;
 	}
 
+	/**
+	 * @description Protocol (e.g. <code>http</code> or <code>https</code>) the rewritten endpoint URLs will use.
+	 */
 	@MCAttribute
 	public void setProtocol(String protocol) {
 		this.protocol = protocol;
@@ -79,6 +82,9 @@ public class WsaEndpointRewriterInterceptor extends AbstractInterceptor {
 		return host;
 	}
 
+	/**
+	 * @description Host name the rewritten endpoint URLs will use.
+	 */
 	@MCAttribute
 	public void setHost(String host) {
 		this.host = host;
@@ -89,8 +95,8 @@ public class WsaEndpointRewriterInterceptor extends AbstractInterceptor {
 	}
 
 	/**
-	 * -1 = do not change port
-	 * @param port
+	 * @description Port the rewritten endpoint URLs will use.
+	 * @default -1 (no port in the rewritten URL)
 	 */
 	@MCAttribute
 	public void setPort(int port) {
