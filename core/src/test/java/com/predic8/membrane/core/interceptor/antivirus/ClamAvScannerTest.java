@@ -239,7 +239,8 @@ class ClamAvScannerTest {
 
     @Test
     void malformedContentEncodingIsInvalidContent() throws Exception {
-        exchange.setResponse(Response.ok().header("Content-Encoding", "gzip").body("not gzip").build());
+        exchange.setResponse(Response.ok().body("not gzip").build());
+        exchange.getResponse().getHeader().setValue("Content-Encoding", "gzip");
         when(client.scan(any(InputStream.class))).thenAnswer(invocation -> {
             ((InputStream) invocation.getArgument(0)).readAllBytes();
             return "stream: OK\0".getBytes(US_ASCII);
