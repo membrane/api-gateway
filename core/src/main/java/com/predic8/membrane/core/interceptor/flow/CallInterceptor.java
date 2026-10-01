@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.interceptor.flow;
 
 import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.Required;
 import com.predic8.membrane.core.exceptions.ProblemDetails;
@@ -24,6 +25,7 @@ import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.lang.AbstractExchangeExpressionInterceptor;
 import com.predic8.membrane.core.transport.http.HttpClient;
+import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.util.ConfigurationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -79,9 +81,21 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
 
     private String method = GET;
 
+    /**
+     * Optional per-element config; the router's global config applies if null.
+     */
+    private HttpClientConfiguration httpClientConfig;
+
+    /**
+     * Shared client created from the router's httpClientConfig; written in init(), read-only afterwards.
+     */
+    private HttpClient httpClient;
+
     @Override
     public void init() {
         super.init();
+
+        httpClient = router.getHttpClientFactory().createClient(httpClientConfig != null ? httpClientConfig : router.getHttpClientConfig());
 
         if (router.getConfiguration().getUriFactory().isAllowIllegalCharacters()) {
              throw new ConfigurationException("""
@@ -115,8 +129,8 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
 
         final Exchange newExc = createNewExchange(dest, getNewRequest(exc));
 
-        try (HttpClient client = new HttpClient()) {
-            client.call(newExc);
+        try {
+            httpClient.call(newExc);
         } catch (UnknownHostException e) {
             log.error("Error calling: {} Unknown host: {}", dest, e.getMessage());
             createProblemDetails(dest)
@@ -249,6 +263,19 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
 
     public String getMethod() {
         return method;
+    }
+
+    public HttpClientConfiguration getHttpClientConfig() {
+        return httpClientConfig;
+    }
+
+    /**
+     * @description Connection pooling, timeout, retry, and proxy settings for outgoing HTTP connections made by
+     * this element. When omitted, the router's global <code>httpClientConfig</code> applies.
+     */
+    @MCChildElement
+    public void setHttpClientConfig(HttpClientConfiguration httpClientConfig) {
+        this.httpClientConfig = httpClientConfig;
     }
 
     @Override

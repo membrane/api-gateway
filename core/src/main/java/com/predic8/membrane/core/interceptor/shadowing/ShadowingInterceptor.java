@@ -21,6 +21,7 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.proxies.Target;
 import com.predic8.membrane.core.transport.http.HttpClient;
+import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.util.URIFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,12 +48,27 @@ import static java.util.concurrent.Executors.newCachedThreadPool;
 @MCElement(name="shadowing")
 public class ShadowingInterceptor extends AbstractInterceptor {
 
-    private static final HttpClient client = new HttpClient();
     private static final Logger log = LoggerFactory.getLogger(ShadowingInterceptor.class);
 
     private List<Target> targets = new ArrayList<>();
 
     private final ExecutorService executor = newCachedThreadPool();
+
+    /**
+     * Optional per-element config; the router's global config applies if null.
+     */
+    private HttpClientConfiguration httpClientConfig;
+
+    /**
+     * Created from the router's httpClientConfig; written in init(), read-only afterwards.
+     */
+    private HttpClient client;
+
+    @Override
+    public void init() {
+        super.init();
+        client = router.getHttpClientFactory().createClient(httpClientConfig != null ? httpClientConfig : router.getHttpClientConfig());
+    }
 
     @Override
     public Outcome handleRequest(Exchange exc) {
@@ -137,7 +153,7 @@ public class ShadowingInterceptor extends AbstractInterceptor {
                 (path != null ? path : "");
     }
 
-    static Exchange performCall(Exchange exchange) {
+    Exchange performCall(Exchange exchange) {
         try {
             client.call(exchange);
             return exchange;
@@ -151,12 +167,25 @@ public class ShadowingInterceptor extends AbstractInterceptor {
      * once its body has been read completely. A request whose body could not be read is not shadowed.
      * Responses from the shadow hosts are not returned to the client. A 5xx response is only logged.
      */
-    @MCChildElement
+    @MCChildElement(order = 1)
     public void setTargets(List<Target> targets) {
         this.targets = targets;
     }
 
     public List<Target> getTargets() {
         return targets;
+    }
+
+    public HttpClientConfiguration getHttpClientConfig() {
+        return httpClientConfig;
+    }
+
+    /**
+     * @description Connection pooling, timeout, retry, and proxy settings for outgoing HTTP connections made by
+     * this element. When omitted, the router's global <code>httpClientConfig</code> applies.
+     */
+    @MCChildElement(order = 2)
+    public void setHttpClientConfig(HttpClientConfiguration httpClientConfig) {
+        this.httpClientConfig = httpClientConfig;
     }
 }
