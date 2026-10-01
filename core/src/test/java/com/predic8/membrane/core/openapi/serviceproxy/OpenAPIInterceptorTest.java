@@ -18,10 +18,7 @@ package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.predic8.membrane.core.exceptions.ProblemDetails;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Body;
-import com.predic8.membrane.core.http.ReadingBodyException;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.openapi.OpenAPIValidator;
 import com.predic8.membrane.core.router.DummyTestRouter;
 import com.predic8.membrane.core.router.Router;
@@ -33,8 +30,10 @@ import org.junit.jupiter.api.Test;
 
 import java.util.*;
 
+import static com.predic8.membrane.core.http.Header.CONTENT_LENGTH;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.Request.post;
+import static com.predic8.membrane.core.http.Request.put;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.NO;
@@ -309,6 +308,53 @@ class OpenAPIInterceptorTest {
         } finally {
             productionRouter.stop();
         }
+    }
+
+    /**
+     * An unexpected error while validating is the gateway's fault, not the caller's.
+     */
+    @Test
+    void unexpectedValidationErrorIsInternal() throws Exception {
+        specCustomers.validateRequests = YES;
+
+        var requestExc = post("/customers").contentType(APPLICATION_JSON).buildExchange();
+        requestExc.getRequest().setBody(new Body(new byte[0]) {
+            @Override
+            public void read() {
+                throw new IllegalStateException("validator bug");
+            }
+        });
+
+        var interceptor = new OpenAPIInterceptor(createProxy(router, specCustomers));
+        interceptor.init(router);
+
+        assertEquals(RETURN, interceptor.handleRequest(requestExc));
+        assertEquals(500, requestExc.getResponse().getStatusCode());
+        assertEquals("https://membrane-api.io/problems/internal", parse(requestExc.getResponse()).getType());
+    }
+
+    /**
+     * The response flow does not answer a body failure itself. It lets the FlowController report it,
+     * which tells the backend's body from the sender's.
+     */
+    @Test
+    void responseBodyFailureIsLeftToTheFlowController() throws Exception {
+        specCustomers.validateResponses = YES;
+
+        var interceptor = new OpenAPIInterceptor(createProxy(router, specCustomers));
+        interceptor.init(router);
+
+        var exc = put("/customers").contentType(APPLICATION_JSON).buildExchange();
+        exc.setOriginalRequestUri("/customers");
+        assertEquals(CONTINUE, interceptor.handleRequest(exc));
+
+        var response = Response.ok().contentType(APPLICATION_JSON).build();
+        // A Content-Length of 0 makes the validator skip the body
+        response.getHeader().removeFields(CONTENT_LENGTH);
+        response.setBody(new Body(ThrowingInputStream.closedChannel("{"), 1000));
+        exc.setResponse(response);
+
+        assertThrows(ReadingBodyException.class, () -> interceptor.handleResponse(exc));
     }
 
     @NotNull

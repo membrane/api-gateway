@@ -454,11 +454,11 @@ public class ProblemDetailsTest {
         }
 
         @Test
-        @DisplayName("Other failures on a backend body keep their stack trace")
+        @DisplayName("A backend body failure that is not an I/O error keeps its stack trace")
         void otherFailureOnBackendBodyKeepsStackTrace() throws Exception {
             Exchange exc = Request.post("/").body("x").buildExchange();
             exc.setResponse(Response.ok().body("x").build());
-            var failure = new ReadingBodyException(new EOFException("peer went away"), exc.getResponse());
+            var failure = new ReadingBodyException(new IllegalStateException("decoder bug"), exc.getResponse());
 
             assertTrue(parseJson(bodyFailure(false, "validator", exc, failure).build()).has("stackTrace"));
         }
