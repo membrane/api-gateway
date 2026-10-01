@@ -1,0 +1,51 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.6.2.json
+#
+# Tutorial: Byte Stream Logging
+#
+# Write every byte Membrane sends and receives on the wire to a log file.
+#
+# For most tracing needs, a 'log' plugin in the flow is good enough: it shows
+# messages at the HTTP level. Use byte stream logging when you really need to
+# see what goes over the wire byte by byte, including every CR, LF and the
+# exact encoding.
+#
+# 1.) Start Membrane with the log configuration log4j2-traffic.xml:
+#     Linux/Mac:
+#       JAVA_OPTS="-Dlog4j.configurationFile=$PWD/log4j2-traffic.xml" ./membrane.sh -c 80-Byte-Stream-Logging.yaml
+#     Windows:
+#       set JAVA_OPTS=-Dlog4j.configurationFile=%CD%\log4j2-traffic.xml
+#       membrane.cmd -c 80-Byte-Stream-Logging.yaml
+#
+#     Membrane warns that TRACE logging is enabled. That is expected here.
+#
+# 2.) Call the API:
+#       curl http://localhost:2000
+#
+# 3.) Open traffic.log in this directory:
+#       ... ByteStreamLogging:76 - [s--244640458 in] [ 71 69 84 32 47 32 ... ]
+#       GET / HTTP/1.1
+#       Host: localhost:2000
+#       ...
+#       ... ByteStreamLogging:76 - [c-899486797 out] [ 71 69 84 32 47 32 ... ]
+#       GET / HTTP/1.1
+#       Host: apibin.io:443
+#       ...
+#       ... ByteStreamLogging:76 - [c-899486797 in] [ 72 84 84 80 47 49 ... ]
+#       HTTP/1.1 200 OK
+#       Content-Type: application/json
+#       ...
+#       {
+#         "api": "apibin",
+#       ...
+#       ... ByteStreamLogging:76 - [s--244640458 out] [ 72 84 84 80 47 49 ... ]
+#       HTTP/1.1 200 OK
+#       ...
+#
+#     s-... is a connection accepted by Membrane, c-... one Membrane opened to
+#     the backend. in/out is the direction seen from Membrane. The connection
+#     to apibin.io uses HTTPS, but is logged unencrypted.
+
+api:
+  port: 2000
+  target:
+    url: https://apibin.io
