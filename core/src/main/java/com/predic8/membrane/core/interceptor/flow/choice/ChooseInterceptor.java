@@ -13,27 +13,35 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.flow.choice;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.flow.*;
-import com.predic8.membrane.core.lang.*;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.flow.AbstractFlowInterceptor;
+import com.predic8.membrane.core.lang.ExchangeExpressionException;
 import com.predic8.membrane.core.util.ConfigurationException;
-import org.jetbrains.annotations.*;
+import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_RESPONSE_ABORT_FLOW;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static java.util.stream.Stream.*;
+import static java.util.stream.Stream.concat;
+import static java.util.stream.Stream.empty;
 
 /**
  * @description Enables conditional branching.
  * Evaluates {@link Case} elements in order and runs the first matching flow.
  * If no case matches, an optional trailing {@link Otherwise} is executed.
  * The "otherwise" element must be the last element of the list.
+ * <p>See <a href="https://github.com/membrane/api-gateway/blob/master/distribution/tutorials/advanced/70-Choose.yaml">tutorials/advanced/70-Choose.yaml</a>.</p>
  * @yaml <pre><code>
  * api:
  *   port: 2000
@@ -95,18 +103,24 @@ public class ChooseInterceptor extends AbstractFlowInterceptor {
     }
 
     private Outcome handleInternal(Exchange exc, Flow flow) {
-        return Optional.ofNullable(findTrueCase(exc, flow))
+
+        // Don't inline it! Exception must fly
+        Case matchingCase;
+        try {
+            matchingCase = findTrueCase(exc, flow);
+        } catch (ExchangeExpressionException e) {
+            handleExpressionProblemDetails(e, exc);
+            return ABORT;
+        }
+
+        return Optional.ofNullable(matchingCase)
                 .map(choice -> choice.invokeFlow(exc, flow, router))
                 .orElseGet(() -> otherwise != null ? otherwise.invokeFlow(exc, flow, router) : CONTINUE);
     }
 
     private @Nullable Case findTrueCase(Exchange exc, Flow flow) {
-        try {
-            for (Case c : cases) {
-                if (c.evaluate(exc, flow)) return c;
-            }
-        } catch (ExchangeExpressionException e) {
-            handleExpressionProblemDetails(e, exc);
+        for (Case c : cases) {
+            if (c.evaluate(exc, flow)) return c;
         }
         return null;
     }
@@ -136,7 +150,7 @@ public class ChooseInterceptor extends AbstractFlowInterceptor {
     private void handleExpressionProblemDetails(ExchangeExpressionException e, Exchange exc) {
         e.provideDetails(internal(router.getConfiguration().isProduction(),getDisplayName()))
             .addSubSee("expression-evaluation")
-            .detail("Error evaluating expression on exchange in if plugin.")
+            .detail("Error evaluating expression on exchange in choose plugin.")
             .buildAndSetResponse(exc);
     }
 

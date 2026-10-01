@@ -32,37 +32,43 @@ import static com.predic8.membrane.annot.Constants.CRLF;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
 /**
- * A backend response with conflicting Content-Length headers (RFC 9112 §6.3)
- * must not be forwarded. The gateway rejects it with 502 Bad Gateway — as opposed
- * to a malformed *request*, which is answered with 400 by the HttpServerHandler.
+ * A backend response whose framing cannot be determined (RFC 9112 §6.3) must not be forwarded.
+ * The gateway rejects it with 502 Bad Gateway — as opposed to a malformed *request*, which is
+ * answered with 400 by the HttpServerHandler.
  */
 class InvalidResponseFramingTest {
 
     private static final int FRONTEND_PORT = 3070;
     private static final int BACKEND_PORT  = 3071;
 
+    private static final String CONFLICTING_CONTENT_LENGTH =
+            "HTTP/1.1 200 OK" + CRLF +
+            "Content-Type: text/plain" + CRLF +
+            "Content-Length: 5" + CRLF +
+            "Content-Length: 6" + CRLF +
+            "Connection: close" + CRLF +
+            CRLF +
+            "hello";
+
     private Router router;
     private ServerSocket backend;
     private volatile boolean running;
 
+    /** The raw bytes the backend answers with. Set by a test before it sends its request. */
+    private volatile String backendResponse;
+
     @BeforeEach
     void setUp() throws IOException {
-        // Raw backend: answers every connection with two conflicting Content-Length values.
+        // Raw backend: answers every connection with backendResponse.
         // An accept-loop is used because the client retries idempotent GETs (retries=2 by default).
+        backendResponse = CONFLICTING_CONTENT_LENGTH;
         backend = new ServerSocket(BACKEND_PORT);
         running = true;
         Thread t = new Thread(() -> {
             while (running) {
                 try (Socket s = backend.accept()) {
                     OutputStream out = s.getOutputStream();
-                    out.write((
-                            "HTTP/1.1 200 OK" + CRLF +
-                            "Content-Type: text/plain" + CRLF +
-                            "Content-Length: 5" + CRLF +
-                            "Content-Length: 6" + CRLF +
-                            "Connection: close" + CRLF +
-                            CRLF +
-                            "hello").getBytes(US_ASCII));
+                    out.write(backendResponse.getBytes(US_ASCII));
                     out.flush();
                 } catch (IOException e) {
                     // ServerSocket closed on teardown -> leave the loop.
@@ -86,6 +92,73 @@ class InvalidResponseFramingTest {
 
     @Test
     void backendWithConflictingContentLengthYields502() throws Exception {
+        assertGatewayRejects();
+    }
+
+    /**
+     * The two field lines combine to "chunked, identity", whose final coding is not "chunked", so
+     * the body length is undetermined. Reading only the first field line makes Membrane frame the
+     * response as chunked and forward it, while an RFC-correct backend framed it differently -
+     * the disagreement response smuggling relies on (#3327).
+     */
+    @Test
+    void backendWithChunkedNotFinalTransferCodingYields502() throws Exception {
+        backendResponse =
+                "HTTP/1.1 200 OK" + CRLF +
+                "Content-Type: text/plain" + CRLF +
+                "Transfer-Encoding: chunked" + CRLF +
+                "Transfer-Encoding: identity" + CRLF +
+                "Connection: close" + CRLF +
+                CRLF +
+                "5" + CRLF +
+                "hello" + CRLF +
+                "0" + CRLF +
+                CRLF;
+
+        assertGatewayRejects();
+    }
+
+    /**
+     * RFC 9112 §6.3: Transfer-Encoding overrides Content-Length. A Transfer-Encoding that does not
+     * end in "chunked" leaves the body length undetermined, so the Content-Length must not be used
+     * to frame the response instead (#3327).
+     */
+    @Test
+    void backendWithNonChunkedTransferCodingAndContentLengthYields502() throws Exception {
+        backendResponse =
+                "HTTP/1.1 200 OK" + CRLF +
+                "Content-Type: text/plain" + CRLF +
+                "Transfer-Encoding: gzip" + CRLF +
+                "Content-Length: 4" + CRLF +
+                "Connection: close" + CRLF +
+                CRLF +
+                "abcd";
+
+        assertGatewayRejects();
+    }
+
+    /**
+     * RFC 9112 §6.3: a response with both Transfer-Encoding and Content-Length might indicate an
+     * attempt at response splitting and ought to be handled as an error.
+     */
+    @Test
+    void backendWithChunkedTransferCodingAndContentLengthYields502() throws Exception {
+        backendResponse =
+                "HTTP/1.1 200 OK" + CRLF +
+                "Content-Type: text/plain" + CRLF +
+                "Transfer-Encoding: chunked" + CRLF +
+                "Content-Length: 0" + CRLF +
+                "Connection: close" + CRLF +
+                CRLF +
+                "5" + CRLF +
+                "hello" + CRLF +
+                "0" + CRLF +
+                CRLF;
+
+        assertGatewayRejects();
+    }
+
+    private static void assertGatewayRejects() throws Exception {
         try (HttpAssertions ha = new HttpAssertions()) {
             ha.getAndAssert(502, "http://localhost:" + FRONTEND_PORT + "/");
         }

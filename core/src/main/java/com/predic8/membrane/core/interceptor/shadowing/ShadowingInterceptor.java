@@ -147,14 +147,9 @@ public class ShadowingInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * Sets the list of shadow hosts to which requests will be cloned and sent.
-     * <p>
-     * Each target in the list represents a shadow host where the request will be forwarded.
-     * These shadow hosts are processed in the background, and if a response from any shadow host
-     * contains a 5XX status code, it will be logged.
-     * </p>
-     *
-     * @param targets a list of {@link Target} objects representing the shadow hosts.
+     * @description Shadow hosts each incoming request is additionally cloned and sent to in the background,
+     * once its body has been read completely. A request whose body could not be read is not shadowed.
+     * Responses from the shadow hosts are not returned to the client. A 5xx response is only logged.
      */
     @MCChildElement
     public void setTargets(List<Target> targets) {
