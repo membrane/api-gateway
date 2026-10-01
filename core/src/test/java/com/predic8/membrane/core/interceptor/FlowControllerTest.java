@@ -16,18 +16,30 @@ package com.predic8.membrane.core.interceptor;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
+import com.predic8.membrane.core.proxies.ServiceProxy;
+import com.predic8.membrane.core.proxies.ServiceProxyKey;
 import com.predic8.membrane.core.router.DummyTestRouter;
 import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.router.TestRouter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 
+import static com.predic8.membrane.annot.Constants.CRLF;
 import static com.predic8.membrane.core.interceptor.FlowController.ABORTION_REASON;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -35,6 +47,9 @@ import static org.junit.jupiter.api.Assertions.*;
  * back to its caller when the response flow aborts.
  */
 class FlowControllerTest {
+
+    private static final int FRONTEND_PORT = 3080;
+    private static final int BACKEND_PORT = 3081;
 
     private final List<String> calls = new ArrayList<>();
 
@@ -121,6 +136,57 @@ class FlowControllerTest {
 
         String body = exchange.getResponse().getBodyAsStringDecoded();
         assertFalse(body.contains("boom"), body);
+    }
+
+    /**
+     * The backend announces more body bytes than it sends and closes the connection, so reading the
+     * body fails on the gateway's side of the exchange, not the client's. In production the detail
+     * is hidden, so the response has to point to the log entry through a log key.
+     */
+    @Test
+    void backendBodyTruncatedOverNetworkInProductionGivesLogKey() throws Exception {
+        try (ServerSocket backend = new ServerSocket(BACKEND_PORT)) {
+            Thread backendThread = new Thread(() -> {
+                while (!backend.isClosed()) {
+                    try (Socket socket = backend.accept()) {
+                        socket.getOutputStream().write(("HTTP/1.1 200 OK" + CRLF +
+                                "Content-Type: application/json" + CRLF +
+                                "Content-Length: 1000" + CRLF +
+                                "Connection: close" + CRLF + CRLF +
+                                "[{\"id\":").getBytes(US_ASCII));
+                    } catch (IOException e) {
+                        // Socket closed on teardown
+                    }
+                }
+            });
+            backendThread.setDaemon(true);
+            backendThread.start();
+
+            Router gateway = new TestRouter();
+            gateway.getConfiguration().setProduction(true);
+            try {
+                ServiceProxy proxy = new ServiceProxy(new ServiceProxyKey(FRONTEND_PORT), "localhost", BACKEND_PORT);
+                proxy.getFlow().add(new AbstractInterceptor() {
+                    @Override
+                    public Outcome handleResponse(Exchange exc) {
+                        exc.getResponse().getBody().getContent();
+                        return CONTINUE;
+                    }
+                });
+                gateway.add(proxy);
+                gateway.start();
+
+                HttpResponse<String> response = HttpClient.newHttpClient().send(
+                        HttpRequest.newBuilder(URI.create("http://localhost:" + FRONTEND_PORT + "/")).GET().build(),
+                        HttpResponse.BodyHandlers.ofString());
+
+                assertEquals(500, response.statusCode(), response.body());
+                assertTrue(response.body().contains("See server log (key:"),
+                        "Expected a log key in the hidden detail, but got: " + response.body());
+            } finally {
+                gateway.stop();
+            }
+        }
     }
 
     private Probe probe(String name) {

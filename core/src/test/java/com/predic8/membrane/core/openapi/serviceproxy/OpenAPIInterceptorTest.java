@@ -18,6 +18,8 @@ package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.predic8.membrane.core.exceptions.ProblemDetails;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Body;
+import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.openapi.OpenAPIValidator;
@@ -32,6 +34,7 @@ import org.junit.jupiter.api.Test;
 import java.util.*;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.http.Request.post;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.NO;
@@ -275,6 +278,37 @@ class OpenAPIInterceptorTest {
         specCustomers.validateResponses = YES;
         specCustomers.validationDetails = NO;
         assertEquals("Message validation failed!", getMapFromResponse(callPut(specCustomers)).get("validation").get("error"));
+    }
+
+    /**
+     * A body failure that is not the request's (here: unattributed) is an internal error. Production
+     * hides its detail, so the response has to point to the log entry through a log key.
+     */
+    @Test
+    void nonRequestBodyFailureInProductionGivesLogKey() throws Exception {
+        specCustomers.validateRequests = YES;
+
+        var productionRouter = DummyTestRouter.productionRouter();
+        try {
+            var interceptor = new OpenAPIInterceptor(createProxy(productionRouter, specCustomers));
+            interceptor.init(productionRouter);
+
+            var requestExc = post("/customers").contentType(APPLICATION_JSON).buildExchange();
+            requestExc.getRequest().setBody(new Body(new byte[0]) {
+                @Override
+                public void read() {
+                    throw new ReadingBodyException("backend went away");
+                }
+            });
+
+            assertEquals(RETURN, interceptor.handleRequest(requestExc));
+            assertEquals(500, requestExc.getResponse().getStatusCode());
+            assertEquals("https://membrane-api.io/problems/internal", parse(requestExc.getResponse()).getType());
+            assertTrue(requestExc.getResponse().getBodyAsStringDecoded().contains("See server log (key:"),
+                    "Expected a log key in the hidden detail, but got: " + requestExc.getResponse().getBodyAsStringDecoded());
+        } finally {
+            productionRouter.stop();
+        }
     }
 
     @NotNull

@@ -21,6 +21,7 @@ import com.predic8.membrane.core.router.Router;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.SocketException;
 import java.util.List;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.bodyFailure;
@@ -128,10 +129,15 @@ public class FlowController {
         var bodyFailure = throwableOfType(e, ReadingBodyException.class);
         if (bodyFailure == null) {
             log.warn(detail, e);
-            return internal(production, component).detail(detail);
+            return internal(production, component).detail(detail).exception(e);
         }
-        if (!bodyFailure.isRequestBodyFailure(exchange))
-            log.warn(detail, e);  // Not exclusively attributable to the request body.
+        if (!bodyFailure.isRequestBodyFailure(exchange)) {
+            // Not exclusively attributable to the request body.
+            if (throwableOfType(bodyFailure, SocketException.class) != null)
+                log.info("{} {}", detail, bodyFailure.getMessage()); // The message explains a broken connection
+            else
+                log.info(detail, e);
+        }
         return bodyFailure(production, component, exchange, bodyFailure);
     }
 
