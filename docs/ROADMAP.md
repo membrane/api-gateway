@@ -49,6 +49,7 @@ PRIO 3:
 
 ## Membrane 8.0.0 (Java 25)
 
+- Remove deprecated finalize blocks
 - Remove XML configuration
 - configure log4j with YAML
 - Remove SOAP2REST XSLT Interceptor:
