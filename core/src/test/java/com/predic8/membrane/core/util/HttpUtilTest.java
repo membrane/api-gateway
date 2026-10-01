@@ -29,6 +29,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.Executors;
@@ -195,6 +196,130 @@ public class HttpUtilTest {
             }
         }
 
+        /**
+         * What the tests above cannot reach: a ByteArrayInputStream delivers everything at once and never waits,
+         * while a socket delivers what has arrived, in packets, and waits when nothing is left. Here the peer has
+         * sent only the first bytes of a message, in packets that end between any two of them, and now waits for
+         * our response. Reading in bulk may only wait for a byte that reading byte by byte waits for too, so both
+         * must return the same lines and then stall. This must hold while available() lies, as GZIPInputStream's
+         * does, and while a small buffer refills with a mark pending.
+         * {@link PacketStream} throws {@link Stall} where a real stream would block, so a regression fails the
+         * test instead of hanging it.
+         */
+        @ParameterizedTest(name = "message {index}")
+        @ValueSource(strings = {"GET / HTTP/1.1\r\nHost: a\r\n\r\n", "ab\nabc\n\rabcd\rXe\r\n"})
+        void waitsOnlyWhereByteByByteWaits(String message) throws IOException {
+            for (int received = 0; received <= message.length(); received++)
+                for (int[] packetEnds : packetLayouts(received))
+                    for (boolean lyingAvailable : new boolean[]{false, true})
+                        assertSameUntilStall(message.substring(0, received), packetEnds, lyingAvailable);
+        }
+
+        /**
+         * Two packets that end at every possible position, and one byte per packet.
+         */
+        private static List<int[]> packetLayouts(int received) {
+            List<int[]> layouts = new ArrayList<>();
+            for (int firstPacketEnd = 1; firstPacketEnd <= received; firstPacketEnd++)
+                layouts.add(new int[]{firstPacketEnd});
+            int[] onePerPacket = new int[received];
+            for (int i = 0; i < received; i++)
+                onePerPacket[i] = i + 1;
+            layouts.add(onePerPacket);
+            return layouts;
+        }
+
+        private static void assertSameUntilStall(String received, int[] packetEnds, boolean lyingAvailable) throws IOException {
+            byte[] bytes = received.getBytes(ISO_8859_1);
+            String shown = received.replace("\r", "\\r").replace("\n", "\\n");
+            for (int maxLineLength : new int[]{8092, 4}) {
+                List<String> expected = readUntilStall(byteByByte(new BufferedInputStream(new PacketStream(bytes, packetEnds, lyingAvailable))), maxLineLength);
+                for (int size : new int[]{1, 3, 16, 2048})
+                    assertEquals(expected, readUntilStall(new BufferedConnectionInputStream(new PacketStream(bytes, packetEnds, lyingAvailable), size), maxLineLength),
+                            () -> "received \"%s\" in packets ending at %s, lyingAvailable=%b, maxLineLength=%d, buffer %d"
+                                    .formatted(shown, Arrays.toString(packetEnds), lyingAvailable, maxLineLength, size));
+            }
+        }
+
+        /**
+         * Reads lines until the stream stalls or readLine reports a line that is too long. Nothing else is
+         * caught: any other IOException, such as a BufferedInputStream that lost its mark, fails the test.
+         */
+        private static List<String> readUntilStall(InputStream in, int maxLineLength) throws IOException {
+            List<String> events = new ArrayList<>();
+            try {
+                for (int i = 0; i < 100; i++)
+                    events.add("line:" + readLine(in, maxLineLength));
+                fail("readLine neither stalled nor failed after 100 lines");
+            } catch (LineTooLongException e) {
+                events.add("tooLong:" + e.getMessage());
+            } catch (Stall e) {
+                events.add("stall");
+            }
+            return events;
+        }
+
+        /**
+         * A socket the peer has sent {@code sent} to, in packets that end at {@code packetEnds}, the last one at the
+         * end of {@code sent}. A read returns the rest of the current packet at most and does not wait while one is
+         * left. Once all bytes are used up the peer waits for our response, so a read would block: it throws
+         * {@link Stall}. {@code lyingAvailable} makes available() return 1 although the next read would block.
+         */
+        private static final class PacketStream extends InputStream {
+
+            private final byte[] sent;
+            private final int[] packetEnds;
+            private final boolean lyingAvailable;
+            private int position;
+
+            PacketStream(byte[] sent, int[] packetEnds, boolean lyingAvailable) {
+                this.sent = sent;
+                this.packetEnds = packetEnds;
+                this.lyingAvailable = lyingAvailable;
+            }
+
+            @Override
+            public int read() throws IOException {
+                byte[] one = new byte[1];
+                read(one, 0, 1);
+                return one[0] & 0xFF;
+            }
+
+            @Override
+            public int read(byte[] buffer, int offset, int length) throws IOException {
+                if (length == 0)
+                    return 0;
+                if (position == sent.length)
+                    throw new Stall();
+                int count = Math.min(length, packetEnd() - position);
+                System.arraycopy(sent, position, buffer, offset, count);
+                position += count;
+                return count;
+            }
+
+            @Override
+            public int available() {
+                return lyingAvailable ? 1 : packetEnd() - position;
+            }
+
+            private int packetEnd() {
+                for (int end : packetEnds)
+                    if (end > position)
+                        return end;
+                return sent.length;
+            }
+        }
+
+        /**
+         * A read that would block. It has no stack trace because the sweep throws it many thousand times.
+         */
+        private static final class Stall extends IOException {
+            @Override
+            public Throwable fillInStackTrace() {
+                return this;
+            }
+        }
+
         @Test
         void lineLongerThanBulkReadLimit() throws IOException {
             assertSameOnAllStreams("a".repeat(5_000) + "\r\nb\r\n");
@@ -335,6 +460,10 @@ public class HttpUtilTest {
          */
         private static InputStream byteByByte(byte[] content) {
             return new FilterInputStream(new ByteArrayInputStream(content)) {};
+        }
+
+        private static InputStream byteByByte(InputStream in) {
+            return new FilterInputStream(in) {};
         }
     }
 

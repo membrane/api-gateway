@@ -54,7 +54,8 @@ public class HttpUtil {
 	}
 
 	// Longer lines fall back to reading byte by byte. Equal to the default buffer size of the
-	// connection streams, so marking never makes a BufferedInputStream grow its buffer.
+	// connection streams: a buffer this big or bigger never grows because of the mark, a smaller
+	// configured one grows up to this size for a line longer than itself.
 	private static final int BULK_READ_LIMIT = 2048;
 
 	/**
@@ -116,9 +117,11 @@ public class HttpUtil {
 	 * this only waits where reading byte by byte would wait too.
 	 *
 	 * @param start receives the bytes known to belong to the line if no line is returned
-	 * @return the line, or <code>null</code> if the stream ends or the line does not end within
-	 * {@link #BULK_READ_LIMIT} bytes. The stream is then positioned after the bytes appended to
-	 * <code>start</code>, so reading byte by byte can go on from there without reading them again.
+	 * @return the line, or <code>null</code> if the stream ends or the first <code>limit - 1</code>
+	 * bytes hold no terminator, where <code>limit</code> is {@link #BULK_READ_LIMIT}, or
+	 * <code>maxLineLength</code> if that is positive and smaller. The stream is then positioned
+	 * after the bytes appended to <code>start</code>, so reading byte by byte can go on from there
+	 * without reading them again.
 	 */
 	static String readLineInBulk(InputStream in, int maxLineLength, StringBuilder start) throws IOException {
 		int limit = maxLineLength > 0 ? Math.min(BULK_READ_LIMIT, maxLineLength) : BULK_READ_LIMIT;
