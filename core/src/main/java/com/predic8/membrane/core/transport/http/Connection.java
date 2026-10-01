@@ -32,6 +32,7 @@ import java.net.SocketTimeoutException;
 import static com.predic8.membrane.annot.Constants.USERAGENT;
 import static com.predic8.membrane.core.transport.http.ByteStreamLogging.*;
 import static com.predic8.membrane.core.util.text.TextUtil.isNullOrEmpty;
+import static java.nio.charset.StandardCharsets.US_ASCII;
 
 /**
  * A {@link Connection} is an outbound TCP/IP (with or without TLS) connection, possibly managed
@@ -452,12 +453,7 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
        * in the case where the connection was successful, but it's
        * insignificant compared to the network overhead.
        */
-		String replyStr;
-		try {
-			replyStr = new String(reply, 0, replyLen, "ASCII7");
-		} catch (UnsupportedEncodingException ignored) {
-			replyStr = new String(reply, 0, replyLen);
-		}
+		String replyStr = new String(reply, 0, replyLen, US_ASCII);
 
         /* Look for '200 OK' response. Probably, some proxies may return HTTP/1.1 back */
 		if (!replyStr.startsWith("HTTP/1.0 200") && !replyStr.startsWith("HTTP/1.1 200")) {
@@ -475,21 +471,8 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 	private static byte @NotNull [] createConnectMessage(ProxyConfiguration proxy, String host, int port) {
 		var msg = "CONNECT %s:%d HTTP/1.0\r\nUser-Agent: %s\r\n%s\r\n"
 				.formatted(host, port, USERAGENT, getProxyAuthenticationHeader(proxy));
-		byte[] b;
-		try {
-          /*
-           * We really do want ASCII7 -- the http protocol doesn't change
-           * with locale.
-           */
-			b = msg.getBytes("ASCII7");
-		} catch (UnsupportedEncodingException ignored) {
-          /*
-           * If ASCII7 isn't there, something serious is wrong, but
-           * Paranoia Is Good (tm)
-           */
-			b = msg.getBytes();
-		}
-		return b;
+		// We really do want ASCII -- the http protocol doesn't change with locale.
+		return msg.getBytes(US_ASCII);
 	}
 
 	private static @NotNull String getProxyAuthenticationHeader(ProxyConfiguration proxy) {
