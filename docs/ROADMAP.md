@@ -22,6 +22,18 @@ PRIO 1:
   - @coderabbitai look through the code base for usages of these variables and suggest documentation 
 
 PRIO 2:
+- Improve Grafana Dashboard
+    - Membrane's Prometheus Metrics can be used to diagnose several failure conditions:
+      - membrane_duplicate_rule_name == 1
+        -> Membrane exposes several metrics 'per rule name'. If the rule name is not unique, as this condition signals, the metrics might not work as expected.
+  
+      - membrane_rule_active == 0
+        -> If not all rules eventually become active, this usually signals a setup error.
+  
+      - membrane_count - sum(membrane_good_count) >= 0
+        -> 'membrane_good' measures Exchange objects (=request + reponse) which were successfully processed. 'membrane' measures all inbound communication attempts. The difference indicates e.g. protocol errors.
+  
+  There might be more (OpenAPI valdiation, unrenewed expiring Let's Encrypt "ACME" certificates, ...).
 - Remove MemoryExchangeStore
   - It was used only by Membrane Monitor
 - Tutorial: Replace httpbin and catfact TB
