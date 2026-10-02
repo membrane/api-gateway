@@ -44,6 +44,9 @@ Keep this file in sync when adding, renaming or removing a util class.
 | `util/wsdl/parser/*` | Lightweight WSDL model (`Definitions`, `Binding`, `Operation`, `Port`, ...) |
 | `util/json/JsonUtil` | Parse body to `ObjectNode`, set JSON body, scalar → `JsonNode` |
 | `util/json/JsonToXml` | JSON → XML conversion |
+| `util/xml/XMLUtil` | XML operations (parsing, namespaces, XPath) |
+| `util/xml/XMLEncodingUtil` | XML character encoding |
+| `util/xml/NormalizeXMLForJsonUtil` | Normalize XML for JSON conversion |
 | `util/MapNamespaceContext` | `NamespaceContext` backed by a map (XPath) |
 | `util/LSInputImpl` | `LSInput` implementation for schema resolvers |
 
