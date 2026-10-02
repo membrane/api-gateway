@@ -36,6 +36,8 @@ import java.io.IOException;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.gateway;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 
 /**
  * @description Forwards STOMP requests to a STOMP broker and then tunnels the connection between client and broker.
@@ -66,6 +68,10 @@ public class STOMPClient extends AbstractInterceptor {
 	// operational
 	private ConnectionManager connectionManager;
 	private SSLProvider sslOutboundProvider;
+
+	public STOMPClient() {
+		name = "stomp client";
+	}
 
 	public int getPort() {
 		return port;

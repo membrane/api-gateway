@@ -14,30 +14,41 @@
 
 package com.predic8.membrane.core.interceptor.administration;
 
-import com.fasterxml.jackson.core.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.exchangestore.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.http.Response.*;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.predic8.membrane.core.exchange.AbstractExchange;
+import com.predic8.membrane.core.exchange.ExchangeState;
+import com.predic8.membrane.core.exchange.ExchangesUtil;
+import com.predic8.membrane.core.exchangestore.ClientStatistics;
+import com.predic8.membrane.core.exchangestore.ExchangeQueryResult;
+import com.predic8.membrane.core.http.HeaderField;
+import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.http.Response.ResponseBuilder;
 import com.predic8.membrane.core.interceptor.adminapi.AdminApiInterceptor;
-import com.predic8.membrane.core.interceptor.rest.*;
-import com.predic8.membrane.core.interceptor.statistics.util.*;
-import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.interceptor.rest.QueryParameter;
+import com.predic8.membrane.core.interceptor.rest.RESTInterceptor;
+import com.predic8.membrane.core.interceptor.statistics.util.JDBCUtil;
+import com.predic8.membrane.core.proxies.AbstractServiceProxy;
 import com.predic8.membrane.core.proxies.Proxy;
-import org.slf4j.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 
-import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.Header.CONTENT_ENCODING;
+import static com.predic8.membrane.core.http.MimeType.TEXT_HTML_UTF8;
+import static com.predic8.membrane.core.http.MimeType.TEXT_PLAIN_UTF8;
 import static com.predic8.membrane.core.http.Response.noContent;
 import static com.predic8.membrane.core.http.Response.ok;
-import static com.predic8.membrane.core.transport.http2.Http2ServerHandler.*;
-import static com.predic8.membrane.core.util.ComparatorFactory.*;
+import static com.predic8.membrane.core.transport.http2.Http2ServerHandler.HTTP2_SERVER;
+import static com.predic8.membrane.core.util.ComparatorFactory.getAbstractServiceProxyComparator;
+import static com.predic8.membrane.core.util.ComparatorFactory.getClientStatisticsComparator;
 import static com.predic8.membrane.core.util.xml.XMLTextUtil.formatXML;
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 @SuppressWarnings("unused")
 public class AdminRESTInterceptor extends RESTInterceptor {
@@ -46,6 +57,10 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 	private static final Logger log = LoggerFactory.getLogger(AdminRESTInterceptor.class.getName());
 
 	private boolean useXForwardedForAsClientAddr;
+
+	public AdminRESTInterceptor() {
+		name = "admin rest";
+	}
 
 	@Mapping("/admin/rest/clients(/?\\?.*)?")
 	public Response getClients(QueryParameter params, String relativeRootPath) throws Exception {
