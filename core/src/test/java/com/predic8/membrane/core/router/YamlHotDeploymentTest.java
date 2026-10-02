@@ -16,6 +16,8 @@ package com.predic8.membrane.core.router;
 
 import com.predic8.membrane.core.proxies.Proxy;
 import com.predic8.membrane.core.router.hotdeploy.YamlRouterReloader;
+import com.predic8.membrane.core.transport.Transport;
+import com.predic8.membrane.core.transport.http.HttpTransport;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -24,9 +26,7 @@ import java.nio.file.Path;
 import java.util.List;
 
 import static com.predic8.membrane.core.router.YamlRouterBootstrap.loadIntoRouter;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class YamlHotDeploymentTest {
 
@@ -126,6 +126,59 @@ class YamlHotDeploymentTest {
         }
     }
 
+    @Test
+    void shouldApplyTransportComponentOnReload() throws Exception {
+        Path config = tempDir.resolve("apis.yaml");
+        Files.writeString(config, configWithTransport(100));
+
+        DefaultRouter router = new DefaultRouter();
+        try {
+            YamlRouterReloader reloader = new YamlRouterReloader(router, loadIntoRouter(router, config.toString()));
+            router.setConfigurationReloader(reloader);
+            router.start();
+            assertEquals(100, ((HttpTransport) router.getTransport()).getBacklog());
+
+            Files.writeString(config, configWithTransport(200));
+
+            assertTrue(reloader.reload());
+            assertEquals(200, ((HttpTransport) router.getTransport()).getBacklog());
+        } finally {
+            router.stop();
+        }
+    }
+
+    @Test
+    void shouldKeepPreviousRuntimeWhenReloadHasTwoTransportComponents() throws Exception {
+        Path config = tempDir.resolve("apis.yaml");
+        Files.writeString(config, configWithTransport(100));
+
+        DefaultRouter router = new DefaultRouter();
+        try {
+            YamlRouterReloader reloader = new YamlRouterReloader(router, loadIntoRouter(router, config.toString()));
+            router.setConfigurationReloader(reloader);
+            router.start();
+            Transport before = router.getTransport();
+
+            Files.writeString(config, """
+                    components:
+                      first:
+                        transport:
+                          backlog: 100
+                      second:
+                        transport:
+                          backlog: 200
+                    ---
+                    """ + configWithInternal("second", "https://example.org"));
+
+            assertTrue(reloader.reload());
+            assertTrue(router.isRunning());
+            assertSame(before, router.getTransport());
+            assertEquals(List.of("first"), getRuleNames(router));
+        } finally {
+            router.stop();
+        }
+    }
+
     private static List<String> getRuleNames(DefaultRouter router) {
         return router.getRuleManager().getRules().stream()
                 .map(Proxy::getName)
@@ -142,6 +195,16 @@ class YamlHotDeploymentTest {
                   target:
                     url: %s
                 """.formatted(name, url);
+    }
+
+    private static String configWithTransport(int backlog) {
+        return """
+                components:
+                  inbound:
+                    transport:
+                      backlog: %d
+                ---
+                %s""".formatted(backlog, configWithInternal("first", "https://example.com"));
     }
 
     private static class FailingReloadStartRouter extends DefaultRouter {
