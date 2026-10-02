@@ -153,6 +153,10 @@ public class WsSecurityInterceptor extends AbstractInterceptor {
     private ValidateGroup validate;
     private SecureGroup secure;
 
+    public WsSecurityInterceptor() {
+        name = "ws security";
+    }
+
     @Override
     public void init() {
         super.init();
