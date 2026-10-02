@@ -74,6 +74,12 @@ PRIO 3:
     - Backpressure: `maxThreadPoolSize` is a documented attribute and `HttpEndpointListener` handles `RejectedExecutionException` by closing the socket. A per-task executor never rejects — replace with a `Semaphore` or rely on `concurrentConnectionLimitPerIp`. Dropping the attribute is a breaking change.
     - Thread naming: keep "router" thread names via `Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("router-", 0).factory())`.
     - Graceful shutdown / hot deploy: `shutdown()` + `awaitTermination()` in `closeAll()` works unchanged with a per-task executor.
+- Read HTTP start lines and header lines in bulk (`HttpUtil.readLine`)
+  - Story: `readLine` calls `read()` once per byte, and every call takes the stream's lock. Reading ahead into an array and scanning it took 23–28 instead of 93–294 ns per line in a JDK 25 micro-benchmark, and saved about 1.8 µs of gateway user CPU per request in the Azure fullproxy test; throughput stayed within noise (measured on an earlier variant of PR #3379).
+  - Parked for 8.0: so it never blocks where the byte-by-byte loop would not, the bulk read has to know how many bytes the `BufferedInputStream` holds, which needs a subclass. On Java 21–23 a subclass locks with `synchronized`, so an HTTP/2 virtual thread that reads a backend response pins its carrier thread; with as many slow backend reads as CPU cores, every virtual thread stalls. JEP 491 (Java 24) removed monitor pinning.
+  - Do it after the line-parsing fixes in #3378, so the bulk path follows the corrected terminator rules instead of mirroring each fix.
+  - Design: let the connection stream scan its own buffer for the terminator instead of mark/reset/skip. That also avoids leaving a mark pending after the headers, which makes the first body reads refill in small pieces.
+  - Starting point: branch `perf/http-util-readline-bulk-read` (implementation, comparison tests across stream types, packet/stall sweep with a misreported `available()`).
 - `RuleManager.addProxy`/`addProxyAndOpenPortIfNew`: drop the unused `RuleDefinitionSource source` parameter
   - Story: `source` (`SPRING` vs `MANUAL`) is threaded through both methods and ~10 call sites across `main` and `test` but never read anywhere in `RuleManager` — no field stores it, no branch or log line depends on it. Either wire it into an actual behavior/log distinction, or remove the parameter and the `RuleDefinitionSource` enum from all callers in one cleanup pass.
 - `xmlProtection` and `jsonProtection`: inspect responses, not only requests
