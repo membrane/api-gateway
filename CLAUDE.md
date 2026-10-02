@@ -128,6 +128,14 @@ example/tutorial discovery and scaffolding.
 - Attack/validation-detection log lines (e.g. XXE/DOCTYPE detection) are intentionally `info`,
   not `warn` — that's an ops-tunable level, not a severity bug to flag in review.
 
+## Utility classes
+
+Before writing a new helper, or when refactoring, check `docs/UTILITIES.md` — a catalog of the `core` util classes
+(text/string, HTTP/URI, SOAP/JSON, collections, files/network, OpenAPI, test helpers) with a one-line purpose each.
+Read it when a task touches such code; reuse or extend these classes instead of adding private duplicates. Open
+individual classes by name or grep by behavior rather than browsing the packages. When you add, rename or remove a
+util class, update that file.
+
 ## Release notes
 
 When drafting release notes (`release-notes` skill), exclude internal refactors with no
