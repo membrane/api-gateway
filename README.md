@@ -9,7 +9,7 @@
 
 <img src="docs/images/api-gateway-demo.gif" alt="Animated demo of Membrane API Gateway" width="800">
 
-Deploy APIs directly from [OpenAPI](#1-openapi-deployment-validation-and-swagger-ui), secure them with [OAuth2](#oauth2) and [JWT](#json-web-tokens), or turn legacy [SOAP web services into JSON APIs](#wsdl-to-openapi-conversion), all with a few lines of YAML. Lightweight and easy to run as a single **container** or **Java** application. No database required.
+Deploy APIs directly from [OpenAPI](#1-openapi-deployment-validation-and-swagger-ui), secure them with [OAuth2](#oauth2) and [JWT](#json-web-tokens), or turn legacy [SOAP web services into JSON APIs](#wsdl-to-openapi-conversion), all with a few lines of YAML. [Lightweight](#high-throughput-small-footprint) and easy to run as a single **container** or **Java** application. No database required.
 
 ## Start Membrane
 
@@ -66,11 +66,11 @@ Deploy APIs from [OpenAPI](https://www.membrane-api.io/openapi/configuration-and
 
 ## Legacy XML and Web Services Integration
 
-Expose existing SOAP web services as JSON APIs without changing the backend. Membrane’s [wsdl2openapi](#wsdl-to-openapi-conversio) generates OpenAPI descriptions from WSDL and uses it to convert between JSON and XML.
+Expose existing [SOAP web services as JSON APIs](#manual-soap-to-rest-conversion) without changing the backend. Membrane’s [wsdl2openapi](#wsdl-to-openapi-conversion) generates OpenAPI descriptions from WSDL and uses it to convert between JSON and XML.
 
-Use **XPath** and **JSONPath** to access message data for routing, filtering, and transformation. Templates and XSLT handle custom formats and more complex conversions.
+Use **XPath** and **JSONPath** to access message data for [routing](#4-routing), filtering, and transformation. Templates and XSLT handle custom formats and more complex conversions.
 
-Apply the same routing, transformation, and orchestration capabilities to legacy SOAP services and modern JSON APIs.
+Apply the same routing, [transformation](#5-message-transformation), and orchestration capabilities to legacy SOAP services and modern JSON APIs.
 
 ## Protect APIs and Legacy Services
 
@@ -80,13 +80,13 @@ Secure APIs with **API keys**, **OAuth2**, and **JWT**, and protect SOAP service
 
 ## API Orchestration
 
-Combine calls to multiple APIs in a single flow. Process collections with loops and control execution with conditions.
+[Combine calls](#6-orchestration-and-call-outs) to multiple APIs in a single flow. Process collections with loops and control execution with conditions.
 
 ## Simple Configuration, Flexible Extensions
 
-Configure routing, security, and transformations with a few lines of YAML. Explore the examples below and the tutorials to get started.
+Configure routing, security, and transformations with a few lines of YAML. Explore the examples below and the [tutorials](https://www.membrane-api.io/api-gateway-tutorial.html) to [get started](https://www.membrane-api.io/getting-started.html).
 
-For custom logic, use **Groovy scripts** or expressions with **SpEL**, **JSONPath**, and **XPath**. When you need deeper integration, write your own Java plugin. No need to learn Lua.
+For custom logic, use [Groovy scripts](#7-scripting) or expressions with **SpEL**, **JSONPath**, and **XPath**. When you need deeper integration, write your own Java plugin. No need to learn Lua.
 
 ## High Throughput, Small Footprint
 
@@ -107,16 +107,16 @@ See the [benchmark setup and results](https://www.membrane-api.io/api-gateway-pe
 # What Can You Do With Membrane?
 
 * **Expose and protect APIs** for partners over the public Internet.
-* **Secure APIs** with OAuth 2.0, JWT, API keys, TLS, and message validation.
-* **Modernize legacy services** by integrating SOAP, XML, and WSDL with REST, JSON, and OpenAPI.
-* **Transform messages** between JSON, XML, SOAP, HTTP headers, query parameters, and other formats.
-* **Route and control traffic** with flexible rules, rate limiting, load balancing, and conditional processing.
+* [Secure APIs](#8-security) with [OAuth 2](#oauth2), [JWT](#json-web-tokens), [API keys](#api-keys), TLS, and message validation.
+* [Modernize legacy services](#legacy-xml-and-web-services-integration) by integrating SOAP, XML, and WSDL with REST, JSON, and OpenAPI.
+* [Transform messages](#5-message-transformation) between JSON, XML, SOAP, HTTP headers, query parameters, and other formats.
+* [Route](#4-routing) and [control traffic](#9-traffic-control) with flexible rules, rate limiting, load balancing, and conditional processing.
 * Use Membrane as an **outgoing gateway** to control access to partner and public APIs.
-* **Observe API traffic** with logging, metrics, Prometheus, and OpenTelemetry tracing.
-* Use Membrane as an **AI Gateway** for LLM providers and MCP servers.
+* **Observe API traffic** with logging, metrics, [Prometheus, Grafana](#monitoring-with-prometheus-and-grafana) and [OpenTelemetry](#opentelemetry-integration) tracing.
+* Use Membrane as an [AI Gateway](#3-ai-and-llm-gateway) for LLM providers and MCP servers.
 * Replace maintenance-intensive **Backend for Frontend (BFF)** services with declarative gateway configuration where appropriate.
 * **Embed Membrane** into your own Java applications and products.
-* Deploy Membrane in **containers, virtual machines, private clouds, or public clouds**.
+* Deploy Membrane in **containers**, **virtual machines**, **private clouds**, or **public clouds**.
 
 
 # Membrane Features with Examples 
