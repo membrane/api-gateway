@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 
 public class ByteUtil {
 
@@ -101,5 +102,20 @@ public class ByteUtil {
 
 	public static byte setBitValuesBigEndian(byte b, int beginning, int end, int value){
     	return setBitValues(b,beginning, end,value);
+	}
+
+	/**
+	 * Removes space, tab, CR and LF bytes, e.g. from folded base64 content. Other bytes are kept.
+	 *
+	 * @return <code>bytes</code> itself if it contains none of these bytes, otherwise a new array
+	 */
+	public static byte[] removeWhitespace(byte[] bytes) {
+		byte[] result = new byte[bytes.length];
+		int length = 0;
+		for (byte b : bytes) {
+			if (b != '\r' && b != '\n' && b != '\t' && b != ' ')
+				result[length++] = b;
+		}
+		return length == bytes.length ? bytes : Arrays.copyOf(result, length);
 	}
 }

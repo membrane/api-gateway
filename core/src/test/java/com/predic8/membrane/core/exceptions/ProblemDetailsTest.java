@@ -304,6 +304,22 @@ public class ProblemDetailsTest {
         }
 
         @Test
+        @DisplayName("The see URL is rendered as a link")
+        void seeIsLink() throws Exception {
+            Exchange exc = get("/foo").buildExchange();
+
+            user(false, "openapi-publisher")
+                    .addSubType("openapi")
+                    .addSubSee("wrong-id")
+                    .status(404)
+                    .buildAndSetResponse(exc);
+
+            String body = exc.getResponse().getBodyAsStringDecoded();
+            String url = "https://membrane-api.io/problems/user/openapi/openapi-publisher/wrong-id";
+            assertTrue(body.contains("<a href=\"" + url + "\">" + url + "</a>"), body);
+        }
+
+        @Test
         @DisplayName("Fields beyond the headline are listed, nested ones included")
         void fieldsAreListed() throws Exception {
             Exchange exc = get("/foo").buildExchange();
@@ -454,11 +470,11 @@ public class ProblemDetailsTest {
         }
 
         @Test
-        @DisplayName("Other failures on a backend body keep their stack trace")
+        @DisplayName("A backend body failure that is not an I/O error keeps its stack trace")
         void otherFailureOnBackendBodyKeepsStackTrace() throws Exception {
             Exchange exc = Request.post("/").body("x").buildExchange();
             exc.setResponse(Response.ok().body("x").build());
-            var failure = new ReadingBodyException(new EOFException("peer went away"), exc.getResponse());
+            var failure = new ReadingBodyException(new IllegalStateException("decoder bug"), exc.getResponse());
 
             assertTrue(parseJson(bodyFailure(false, "validator", exc, failure).build()).has("stackTrace"));
         }

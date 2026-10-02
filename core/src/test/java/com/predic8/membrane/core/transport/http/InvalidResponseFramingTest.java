@@ -29,6 +29,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 import static com.predic8.membrane.annot.Constants.CRLF;
+import static com.predic8.membrane.core.util.RecordingServerTestUtil.freePort;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
 /**
@@ -37,9 +38,6 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
  * answered with 400 by the HttpServerHandler.
  */
 class InvalidResponseFramingTest {
-
-    private static final int FRONTEND_PORT = 3070;
-    private static final int BACKEND_PORT  = 3071;
 
     private static final String CONFLICTING_CONTENT_LENGTH =
             "HTTP/1.1 200 OK" + CRLF +
@@ -52,6 +50,7 @@ class InvalidResponseFramingTest {
 
     private Router router;
     private ServerSocket backend;
+    private int frontendPort;
     private volatile boolean running;
 
     /** The raw bytes the backend answers with. Set by a test before it sends its request. */
@@ -62,7 +61,7 @@ class InvalidResponseFramingTest {
         // Raw backend: answers every connection with backendResponse.
         // An accept-loop is used because the client retries idempotent GETs (retries=2 by default).
         backendResponse = CONFLICTING_CONTENT_LENGTH;
-        backend = new ServerSocket(BACKEND_PORT);
+        backend = new ServerSocket(0);
         running = true;
         Thread t = new Thread(() -> {
             while (running) {
@@ -78,8 +77,9 @@ class InvalidResponseFramingTest {
         t.setDaemon(true);
         t.start();
 
+        frontendPort = freePort();
         router = new TestRouter();
-        router.add(new ServiceProxy(new ServiceProxyKey(FRONTEND_PORT), "localhost", BACKEND_PORT));
+        router.add(new ServiceProxy(new ServiceProxyKey(frontendPort), "localhost", backend.getLocalPort()));
         router.start();
     }
 
@@ -158,9 +158,9 @@ class InvalidResponseFramingTest {
         assertGatewayRejects();
     }
 
-    private static void assertGatewayRejects() throws Exception {
+    private void assertGatewayRejects() throws Exception {
         try (HttpAssertions ha = new HttpAssertions()) {
-            ha.getAndAssert(502, "http://localhost:" + FRONTEND_PORT + "/");
+            ha.getAndAssert(502, "http://localhost:" + frontendPort + "/");
         }
     }
 }

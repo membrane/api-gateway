@@ -14,22 +14,46 @@ limitations under the License. */
 
 package com.predic8.membrane.core.interceptor.stomp;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.config.security.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.transport.http.*;
-import com.predic8.membrane.core.transport.http.client.*;
-import com.predic8.membrane.core.transport.http.streampump.*;
-import com.predic8.membrane.core.transport.ssl.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.Required;
+import com.predic8.membrane.core.config.security.SSLParser;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.transport.http.Connection;
+import com.predic8.membrane.core.transport.http.ConnectionManager;
+import com.predic8.membrane.core.transport.http.client.ConnectionConfiguration;
+import com.predic8.membrane.core.transport.http.streampump.StreamPump;
+import com.predic8.membrane.core.transport.ssl.SSLProvider;
+import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.IOException;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.gateway;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 
+/**
+ * @description Forwards STOMP requests to a STOMP broker and then tunnels the connection between client and broker.
+ * A request without STOMP credentials (<code>login</code> and <code>passcode</code>, or <code>host</code> and
+ * <code>accept-version</code> headers) gets 400. If the broker cannot be reached or the connection fails, the
+ * response is a 502 <code>gateway</code> problem detail.
+ * @topic 7. Transports and Clients
+ * @yaml <pre><code>
+ * api:
+ *   port: 61614
+ *   flow:
+ *     - stompClient:
+ *         host: broker.example.com
+ *         port: 61613
+ * </code></pre>
+ */
 @MCElement(name="stompClient")
 public class STOMPClient extends AbstractInterceptor {
 
@@ -44,6 +68,10 @@ public class STOMPClient extends AbstractInterceptor {
 	// operational
 	private ConnectionManager connectionManager;
 	private SSLProvider sslOutboundProvider;
+
+	public STOMPClient() {
+		name = "stomp client";
+	}
 
 	public int getPort() {
 		return port;
@@ -110,7 +138,8 @@ public class STOMPClient extends AbstractInterceptor {
             return handleRequestInternal(exc);
         } catch (IOException e) {
 			log.error("", e);
-			user(router.getConfiguration().isProduction(),getDisplayName())
+			gateway(router.getConfiguration().isProduction(),getDisplayName())
+					.status(502)
 					.detail("Error in STOMP client!")
 					.exception(e)
 					.buildAndSetResponse(exc);

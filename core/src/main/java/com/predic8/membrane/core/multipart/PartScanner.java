@@ -96,29 +96,45 @@ public class PartScanner {
      */
     @SuppressWarnings("deprecation")
     public static void forEachPart(Message message, String boundary, int maxPartSize, PartHandler handler) throws IOException {
-        MultipartStream ms = new MultipartStream(MessageUtil.getContentAsStream(message), boundary.getBytes(UTF_8));
-        boolean hasNext = ms.skipPreamble();
-        while (hasNext) {
-            Header partHeader = new Header(ms.readHeaders());
-            // Everything that can reject a part is decided from its header, before any body byte is buffered.
-            checkSupported(partHeader);
+        forEachPart(message, boundary, maxPartSize, handler, true);
+    }
 
-            switch (handler.decide(partHeader)) {
-                case STOP -> {
-                    return;
-                }
-                case SKIP -> ms.discardBodyData();
-                case INSPECT -> {
-                    BoundedOutputStream body = new BoundedOutputStream(maxPartSize);
-                    try {
-                        ms.readBodyData(body);
-                    } catch (LimitExceeded e) {
-                        throw new PartTooLargeException(partHeader, maxPartSize, e);
+    // Raw traversal for MultipartUtil's recursive transfer-decoding path.
+    static void forEachRawPart(Message message, int maxPartSize, PartHandler handler) throws IOException, ParseException {
+        forEachPart(message, boundaryOf(message), maxPartSize, handler, false);
+    }
+
+    @SuppressWarnings("deprecation")
+    private static void forEachPart(Message message, String boundary, int maxPartSize, PartHandler handler,
+                                    boolean checkSupported) throws IOException {
+        if (boundary.isBlank())
+            throw new IOException("Empty multipart boundary");
+        try (var input = MessageUtil.getContentAsStream(message)) {
+            MultipartStream ms = new MultipartStream(input, boundary.getBytes(UTF_8));
+            boolean hasNext = ms.skipPreamble();
+            while (hasNext) {
+                Header partHeader = new Header(ms.readHeaders());
+                // Everything that can reject a part is decided from its header, before any body byte is buffered.
+                if (checkSupported)
+                    checkSupported(partHeader);
+
+                switch (handler.decide(partHeader)) {
+                    case STOP -> {
+                        return;
                     }
-                    handler.handle(new Part(partHeader, body.toByteArray()));
+                    case SKIP -> ms.discardBodyData();
+                    case INSPECT -> {
+                        BoundedOutputStream body = new BoundedOutputStream(maxPartSize);
+                        try {
+                            ms.readBodyData(body);
+                        } catch (LimitExceeded e) {
+                            throw new PartTooLargeException(partHeader, maxPartSize, e);
+                        }
+                        handler.handle(new Part(partHeader, body.toByteArray()));
+                    }
                 }
+                hasNext = ms.readBoundary();
             }
-            hasNext = ms.readBoundary();
         }
     }
 

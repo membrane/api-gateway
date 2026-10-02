@@ -14,31 +14,34 @@
 
 package com.predic8.membrane.core.interceptor.cors;
 
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.util.*;
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.params.*;
-import org.junit.jupiter.params.provider.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.util.CollectionsUtil;
+import com.predic8.membrane.core.util.ConfigurationException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
-import java.net.*;
-import java.util.*;
+import java.net.URISyntaxException;
+import java.util.Set;
 
 import static com.predic8.membrane.core.http.Header.COOKIE;
 import static com.predic8.membrane.core.http.Header.ORIGIN;
-import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_PROBLEM_JSON;
 import static com.predic8.membrane.core.http.Request.*;
-import static com.predic8.membrane.core.http.Response.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.interceptor.cors.AbstractCORSHandler.*;
-import static com.predic8.membrane.core.interceptor.cors.CorsInterceptor.*;
-import static com.predic8.membrane.core.interceptor.cors.CorsTestUtil.*;
-import static java.util.Collections.*;
+import static com.predic8.membrane.core.http.Response.ok;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.interceptor.cors.AbstractCORSHandler.NULL_STRING;
+import static com.predic8.membrane.core.interceptor.cors.CorsInterceptor.WILDCARD;
+import static com.predic8.membrane.core.interceptor.cors.CorsTestUtil.getAccessControlAllowHeaderNames;
+import static java.util.Collections.emptySet;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.springframework.http.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
-import static org.springframework.http.HttpHeaders.AUTHORIZATION;
-import static org.springframework.http.HttpHeaders.VARY;
 import static org.springframework.http.HttpHeaders.*;
 
 class CorsInterceptorTest {
@@ -341,6 +344,21 @@ class CorsInterceptorTest {
 
             Header h = exc.getResponse().getHeader();
             checkAllowHeaders(h, emptySet());
+        }
+
+        @Test
+        void disallowedHeaderPreflightDetailNamesRejectedHeader() throws Exception {
+            i.setOrigins("https://app.example.com");
+            i.setMethods(METHOD_POST);
+            i.setHeaders("X-Allowed");
+            i.init();
+
+            Exchange exc = makePreflight(createPreflight("https://app.example.com", METHOD_POST, "X-Not-Allowed"), 403);
+
+            assertEquals(APPLICATION_PROBLEM_JSON, exc.getResponse().getHeader().getContentType());
+            JsonNode jn = om.readTree(exc.getResponse().getBodyAsStringDecoded());
+            assertEquals("https://membrane-api.io/problems/security/headers-not-allowed", jn.get("type").asText());
+            assertEquals("Not allowed by CORS policy: headers: X-Not-Allowed", jn.get("detail").asText());
         }
 
         @Test

@@ -106,7 +106,6 @@ Samples of scripting with JSONPath, XPath and the expression language you can fi
 
 ### [Logging](logging#logging-requests-and-responses)
 
-* Access log
 * Log into console, CSV or databases
 * Structured JSON logs
 

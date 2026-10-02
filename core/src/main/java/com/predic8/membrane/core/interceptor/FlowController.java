@@ -21,7 +21,6 @@ import com.predic8.membrane.core.router.Router;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.SocketException;
 import java.util.List;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.bodyFailure;
@@ -35,26 +34,26 @@ import static org.apache.commons.lang3.exception.ExceptionUtils.throwableOfType;
  * Controls the flow of an exchange through a chain of interceptors. What the outcomes mean and
  * when an interceptor should return which is documented on {@link Interceptor} and
  * {@link Outcome}.
- *
+ * <p>
  * In the trivial setup, an exchange passes through two chains until it hits RETURN: the main
  * chain owned by the Transport (rule matching, dispatching, the UserFeatureInterceptor and the
  * HTTP client, among others) and the inner chain owned by the UserFeatureInterceptor, holding
  * the interceptors configured for the matched proxy.
- *
+ * <p>
  * The {@link HTTPClientInterceptor}, the last interceptor in the main chain, always returns
  * {@link Outcome#RETURN} or {@link Outcome#ABORT}, never {@link Outcome#CONTINUE}.
- *
+ * <p>
  * A chain is followed calling {@link Interceptor#handleRequest(Exchange)} on every interceptor
  * that {@link Interceptor#handlesRequests()}, until one of them does not return
  * {@link Outcome#CONTINUE}. The position it stopped at is the index the flow is reversed from.
- *
+ * <p>
  * When {@link Outcome#RETURN} is hit, the chain is walked backwards from that position, calling
  * {@link Interceptor#handleResponse(Exchange)} on the interceptors before it.
- *
+ * <p>
  * When {@link Outcome#ABORT} is hit, or an interceptor throws, the chain is walked backwards the
  * same way, calling {@link Interceptor#handleAbort(Exchange)} instead. An exception is turned
  * into an error response first and is kept in the exchange property {@link #ABORTION_REASON}.
- *
+ * <p>
  * This applies to the response flow as well: an interceptor that returns {@link Outcome#ABORT}
  * from {@link Interceptor#handleResponse(Exchange)}, or throws there, switches the rest of the
  * backwards walk to {@link Interceptor#handleAbort(Exchange)}. The interceptor that aborted does
@@ -131,13 +130,12 @@ public class FlowController {
             log.warn(detail, e);
             return internal(production, component).detail(detail).exception(e);
         }
-        if (!bodyFailure.isRequestBodyFailure(exchange)) {
-            // Not exclusively attributable to the request body.
-            if (throwableOfType(bodyFailure, SocketException.class) != null)
-                log.info("{} {}", detail, bodyFailure.getMessage()); // The message explains a broken connection
-            else
-                log.info(detail, e);
-        }
+
+        if (bodyFailure.exceptionMessageIsSufficient())
+            log.info("{} {}", detail, bodyFailure.getMessage()); // The message explains a broken connection
+        else
+            log.info(detail, e);
+
         return bodyFailure(production, component, exchange, bodyFailure);
     }
 
@@ -151,9 +149,9 @@ public class FlowController {
      * {@link Interceptor#handleAbort(Exchange)}, unwinding exactly as {@link #invokeAbortHandlers}
      * does: without looking at the applied flow.
      *
-     * @param exchange Exchange
+     * @param exchange     Exchange
      * @param interceptors List of all interceptors
-     * @param pos Position of called interceptors in the interceptors list
+     * @param pos          Position of called interceptors in the interceptors list
      */
     public Outcome invokeResponseHandlers(Exchange exchange, List<Interceptor> interceptors, int pos) {
         for (int i = pos - 1; i >= 0; i--) {
@@ -177,13 +175,13 @@ public class FlowController {
         invokeAbortHandlers(exchange, interceptors, interceptors.size());
     }
 
-        /**
-         * Run interceptors backward from current position and calls handleAbort
-         *
-         * @param exchange
-         * @param interceptors
-         * @param pos          Position of called interceptors in the interceptors list
-         */
+    /**
+     * Run interceptors backward from current position and calls handleAbort
+     *
+     * @param exchange
+     * @param interceptors
+     * @param pos          Position of called interceptors in the interceptors list
+     */
     public void invokeAbortHandlers(Exchange exchange, List<Interceptor> interceptors, int pos) {
         for (int i = pos - 1; i >= 0; i--) {
             try {
