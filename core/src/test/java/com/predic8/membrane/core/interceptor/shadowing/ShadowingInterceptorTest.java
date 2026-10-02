@@ -23,6 +23,8 @@ import com.predic8.membrane.core.proxies.ServiceProxyKey;
 import com.predic8.membrane.core.proxies.Target;
 import com.predic8.membrane.core.router.DefaultRouter;
 import com.predic8.membrane.core.transport.http.HttpTransport;
+import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
+import com.predic8.membrane.core.transport.http.client.ProxyConfiguration;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -203,5 +205,62 @@ class ShadowingInterceptorTest {
         body.read();
 
         assertEquals(List.of(body), shadowed);
+    }
+
+    @Test
+    void usesRouterHttpClientConfig() throws Exception {
+        // The shadow backend mock is shared by all tests of this class
+        clearInvocations(returnInterceptorMock);
+        var proxy = new ProxyConfiguration();
+        proxy.setHost("localhost");
+        proxy.setPort(3000);
+        var httpClientConfig = new HttpClientConfiguration();
+        httpClientConfig.setProxy(proxy);
+        interceptorRouter.getConfiguration().setHttpClientConfig(httpClientConfig);
+
+        var interceptor = new ShadowingInterceptor();
+        interceptor.setTargets(List.of(new Target() {{
+            setHost("localhost");
+            setPort(3001);
+        }}));
+        interceptor.init(interceptorRouter);
+
+        Exchange exchange = new Request.Builder().post("http://localhost:2000").buildExchange();
+        Body body = new Body(new ByteArrayInputStream("foo".getBytes()), 3);
+        exchange.getRequest().setBody(body);
+
+        interceptor.handleRequest(exchange);
+        body.read();
+
+        verify(returnInterceptorMock, timeout(10000).times(1)).handleRequest(any(Exchange.class));
+        clearInvocations(returnInterceptorMock);
+    }
+
+    @Test
+    void elementHttpClientConfigOverridesRouterConfig() throws Exception {
+        clearInvocations(returnInterceptorMock);
+        var proxy = new ProxyConfiguration();
+        proxy.setHost("localhost");
+        proxy.setPort(3000);
+        var httpClientConfig = new HttpClientConfiguration();
+        httpClientConfig.setProxy(proxy);
+
+        var interceptor = new ShadowingInterceptor();
+        interceptor.setHttpClientConfig(httpClientConfig);
+        interceptor.setTargets(List.of(new Target() {{
+            setHost("localhost");
+            setPort(3001);
+        }}));
+        interceptor.init(interceptorRouter);
+
+        Exchange exchange = new Request.Builder().post("http://localhost:2000").buildExchange();
+        Body body = new Body(new ByteArrayInputStream("foo".getBytes()), 3);
+        exchange.getRequest().setBody(body);
+
+        interceptor.handleRequest(exchange);
+        body.read();
+
+        verify(returnInterceptorMock, timeout(10000).times(1)).handleRequest(any(Exchange.class));
+        clearInvocations(returnInterceptorMock);
     }
 }

@@ -54,6 +54,13 @@ public abstract class Transport {
         return interceptors;
     }
 
+    /**
+     * @description Flow every exchange runs through. Without it, Membrane uses a built-in flow that matches the
+     * request to an API, runs the API's flow and forwards the request to the target. A configured flow replaces that
+     * built-in flow completely, so it has to contain those steps itself.
+     * <p><b>Attention:</b> Changing this flow changes Membrane's internal architecture. Normally it never needs to be
+     * changed; only configure it if you know exactly what you are doing.</p>
+     */
     @MCChildElement(allowForeign = true)
     public void setFlow(List<Interceptor> flow) {
         this.interceptors = flow;
@@ -152,8 +159,11 @@ public abstract class Transport {
     }
 
     /**
-     * @description Whether the remote address should automatically reverse-looked up for incoming connections.
+     * @description Whether to resolve the client IP address to a host name via reverse DNS lookup. The result is cached
+     * and becomes the remote address of the exchange, e.g. in logs. When <code>false</code>, the IP address is used
+     * and no lookup is made.
      * @default true
+     * @example false
      */
     @MCAttribute
     public void setReverseDNS(boolean reverseDNS) {
@@ -165,8 +175,11 @@ public abstract class Transport {
     }
 
     /**
-     * @description Limits the number of concurrent connections from one ip
-     * @default -1 No Limit
+     * @description Maximum number of concurrent connections from a single client IP address. A connection beyond the
+     * limit is closed after a <code>429</code> Problem Details response, or a TLS alert on TLS ports.
+     * <code>-1</code> disables the limit.
+     * @default -1
+     * @example 100
      */
     @MCAttribute
     public void setConcurrentConnectionLimitPerIp(int concurrentConnectionLimitPerIp) {

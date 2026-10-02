@@ -15,18 +15,24 @@
 package com.predic8.membrane.core.util.text;
 
 
-import com.predic8.xml.beautifier.*;
-import org.apache.commons.text.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
+import com.predic8.xml.beautifier.HtmlBeautifierFormatter;
+import com.predic8.xml.beautifier.StandardXMLBeautifierFormatter;
+import com.predic8.xml.beautifier.XMLBeautifier;
+import com.predic8.xml.beautifier.XMLBeautifierFormatter;
+import org.apache.commons.text.StringEscapeUtils;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.xml.stream.*;
-import java.io.*;
-import java.nio.charset.*;
-import java.util.*;
+import javax.xml.stream.XMLStreamException;
+import java.io.Reader;
+import java.io.StringWriter;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Optional;
 
-import static java.lang.Integer.*;
-import static java.nio.charset.StandardCharsets.*;
+import static java.lang.Integer.MAX_VALUE;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 
 public class TextUtil {
@@ -181,8 +187,36 @@ public class TextUtil {
         return lines[lineNumber - 1];
     }
 
-    public static String escapeQuotes(String s) {
-        return s.replace("\"", "\\\"");
+    /**
+     * Escapes a value for a single-line log entry so that user-provided content cannot forge log lines or inject
+     * terminal escape sequences: backslashes and quotes are backslash-escaped, CR/LF/TAB become \r, \n, \t, and
+     * other control characters and the Unicode line separators U+2028/U+2029 become \\uXXXX.
+     */
+    public static String escapeForLog(String s) {
+        StringBuilder sb = null;
+        for (int i = 0; i < s.length(); i++) {
+            String replacement = logEscape(s.charAt(i));
+            if (replacement == null) {
+                if (sb != null) sb.append(s.charAt(i));
+                continue;
+            }
+            if (sb == null) sb = new StringBuilder(s.length() + 16).append(s, 0, i);
+            sb.append(replacement);
+        }
+        return sb == null ? s : sb.toString();
+    }
+
+    private static String logEscape(char c) {
+        return switch (c) {
+            case '\\' -> "\\\\";
+            case '"' -> "\\\"";
+            case '\n' -> "\\n";
+            case '\r' -> "\\r";
+            case '\t' -> "\\t";
+            default -> Character.isISOControl(c) || c == ' ' || c == ' '
+                    ? "\\u%04x".formatted((int) c)
+                    : null;
+        };
     }
 
     /**
