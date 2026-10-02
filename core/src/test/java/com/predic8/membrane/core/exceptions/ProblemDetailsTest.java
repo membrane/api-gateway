@@ -304,6 +304,22 @@ public class ProblemDetailsTest {
         }
 
         @Test
+        @DisplayName("The see URL is rendered as a link")
+        void seeIsLink() throws Exception {
+            Exchange exc = get("/foo").buildExchange();
+
+            user(false, "openapi-publisher")
+                    .addSubType("openapi")
+                    .addSubSee("wrong-id")
+                    .status(404)
+                    .buildAndSetResponse(exc);
+
+            String body = exc.getResponse().getBodyAsStringDecoded();
+            String url = "https://membrane-api.io/problems/user/openapi/openapi-publisher/wrong-id";
+            assertTrue(body.contains("<a href=\"" + url + "\">" + url + "</a>"), body);
+        }
+
+        @Test
         @DisplayName("Fields beyond the headline are listed, nested ones included")
         void fieldsAreListed() throws Exception {
             Exchange exc = get("/foo").buildExchange();

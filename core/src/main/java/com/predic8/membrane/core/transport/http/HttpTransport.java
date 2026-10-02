@@ -14,36 +14,48 @@
 
 package com.predic8.membrane.core.transport.http;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.model.*;
-import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.transport.*;
-import com.predic8.membrane.core.transport.ssl.*;
-import com.predic8.membrane.core.util.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.proxies.SSLableProxy;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.transport.Transport;
+import com.predic8.membrane.core.transport.ssl.SSLProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.lang.ref.*;
-import java.net.InetAddress;
-import java.util.*;
-import java.util.concurrent.*;
+import java.io.IOException;
+import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 
-import static com.google.common.base.Objects.*;
-import static java.lang.Integer.*;
-import static java.lang.String.*;
-import static java.util.concurrent.TimeUnit.*;
+import static com.google.common.base.Objects.equal;
+import static java.lang.Integer.MAX_VALUE;
+import static java.lang.String.format;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
- * HttpTransport is responsible for opening and closing ports. Besides HttpTransport there is also a ServletTransport.
- *
- * @description <p>
- *              The transport receives messages from clients and invokes interceptors in the request and response flow.
- *              The interceptors that are engaged with the transport are global and are invoked for each message flowing
- *              through the router.
- *              </p>
- *
- *
+ * @description <p>Opens the listening ports of all APIs, accepts client connections and runs every exchange
+ * through the global flow. Each connection is served by its own thread from a shared pool.</p>
+ * <p>Declaring a transport under <code>components</code> overrides the default settings for inbound HTTP
+ * connections, such as timeouts, thread pool sizes and TCP options. A configuration may declare at most one
+ * transport; without one, Membrane uses a transport with default settings.</p>
+ * @yaml <pre><code>
+ * components:
+ *   inbound:
+ *     transport:
+ *       socketTimeout: 60000
+ *       maxThreadPoolSize: 300
+ * ---
+ * api:
+ *   port: 2000
+ *   target:
+ *     url: https://api.predic8.de
+ * </code></pre>
  */
 @MCElement(name="transport")
 public class HttpTransport extends Transport {
@@ -209,7 +221,8 @@ public class HttpTransport extends Transport {
 	}
 
 	/**
-	 * @description <p>Membrane uses a thread pool to allocate threads to incomming clients connections. The core thread pool size is the minimum number of threads that are created in advance to serve client requests.</p>
+	 * @description Number of threads the pool keeps alive while idle. Threads are created on demand; beyond this
+	 * number, idle threads are released after 60 seconds.
 	 * @default 20
 	 * @example 5
 	 */
@@ -223,8 +236,9 @@ public class HttpTransport extends Transport {
 	}
 
 	/**
-	 * @description Maximum number of threads to handle incoming connections. (Membrane uses 1 thread per incoming connection.)
-	 * @default <i>no limit</i>
+	 * @description Maximum number of threads, and therefore of concurrent client connections, since each connection
+	 * occupies one thread. A connection accepted while all threads are busy is closed immediately.
+	 * @default unlimited
 	 * @example 300
 	 */
 	@MCAttribute
@@ -241,8 +255,10 @@ public class HttpTransport extends Transport {
 	}
 
 	/**
-	 * @description Socket timout in ms.
+	 * @description Read timeout for client connections in milliseconds. A connection that sends no data for this
+	 * long, e.g. an idle keep-alive connection, is closed. <code>0</code> disables the timeout.
 	 * @default 30000
+	 * @example 60000
 	 */
 	@MCAttribute
 	public void setSocketTimeout(int timeout) {
@@ -254,12 +270,10 @@ public class HttpTransport extends Transport {
 	}
 
 	/**
-	 * @description Whether to use the "TCP no delay" option. (=A TCP/IP packet should be constructed as soon as any
-	 *              data has been written to the network buffer. With "TCP no delay" set to false, the network hardware
-	 *              waits a short period of time wether the software will write more data. When the packet constructed
-	 *              from the data in the buffer would exceed the MTU in size, the packet is always constructed and sent
-	 *              immediately.)
+	 * @description Sets <code>TCP_NODELAY</code> on client connections, which sends data immediately instead of
+	 * buffering small writes into larger packets (Nagle's algorithm). Lowers latency at the cost of more packets.
 	 * @default true
+	 * @example false
 	 */
 	@MCAttribute
 	public void setTcpNoDelay(boolean tcpNoDelay) {
@@ -276,11 +290,11 @@ public class HttpTransport extends Transport {
 	}
 
 	/**
-	 * @description When proxies.xml is changed and &lt;router hotDeploy="true"&gt;, the Spring Context is automatically refreshed,
-	 * which restarts the {@link DefaultRouter} object (=Membrane API Gateway). Before the context refresh, all open socket connections
-	 * have to be closed. Exchange objects which are still running might delay this process. Setting forceSocketCloseOnHotDeployAfter
-	 * to a non-zero number of milliseconds forces connections to be closed after this time.
+	 * @description Grace period in milliseconds when Membrane stops or reloads its configuration (hot deployment).
+	 * During this period only idle connections are closed, so running exchanges can finish; afterwards all remaining
+	 * connections are closed.
 	 * @default 30000
+	 * @example 5000
 	 */
 	@MCAttribute
 	public void setForceSocketCloseOnHotDeployAfter(int forceSocketCloseOnHotDeployAfter) {
@@ -292,9 +306,10 @@ public class HttpTransport extends Transport {
 	}
 
 	/**
-	 * @description The backlog value passed to {@link java.net.ServerSocket#ServerSocket(int, int, InetAddress)}. The
-	 * maximum length of the queue of incoming connections.
+	 * @description Maximum number of incoming connections the operating system queues on a listening port before
+	 * Membrane accepts them. Beyond that, the operating system refuses or drops new connection attempts.
 	 * @default 50
+	 * @example 200
 	 */
 	@MCAttribute
 	public void setBacklog(int backlog) {

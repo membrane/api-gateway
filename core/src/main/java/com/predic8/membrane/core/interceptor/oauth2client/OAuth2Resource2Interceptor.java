@@ -13,35 +13,49 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.oauth2client;
 
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.exchange.snapshots.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.oauth2.*;
-import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.Required;
+import com.predic8.membrane.core.exchange.AbstractExchange;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchange.snapshots.AbstractExchangeSnapshot;
+import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.AbstractInterceptorWithSession;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.oauth2.OAuth2AnswerParameters;
+import com.predic8.membrane.core.interceptor.oauth2.OAuth2Statistics;
+import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService;
+import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.FlowContext;
 import com.predic8.membrane.core.interceptor.oauth2client.rf.*;
-import com.predic8.membrane.core.interceptor.oauth2client.rf.token.*;
-import com.predic8.membrane.core.interceptor.session.*;
-import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.core.interceptor.oauth2client.rf.token.AccessTokenRefresher;
+import com.predic8.membrane.core.interceptor.oauth2client.rf.token.AccessTokenRevalidator;
+import com.predic8.membrane.core.interceptor.session.Session;
+import com.predic8.membrane.core.util.ConfigurationException;
+import com.predic8.membrane.core.util.URI;
+import com.predic8.membrane.core.util.URIFactory;
+import com.predic8.membrane.core.util.URLParamUtil;
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
-import static com.predic8.membrane.core.exchange.Exchange.*;
 import static com.predic8.membrane.core.exchange.Exchange.OAUTH2;
 import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.interceptor.oauth2.ParamNames.*;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.interceptor.oauth2.ParamNames.STATE;
 import static com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService.MEMBRANE_OAUTH2_SERVER_COMMUNICATION_ERROR;
 import static com.predic8.membrane.core.interceptor.oauth2client.LoginParameter.copyLoginParameters;
-import static com.predic8.membrane.core.interceptor.oauth2client.rf.OAuthUtils.*;
-import static com.predic8.membrane.core.interceptor.oauth2client.temp.OAuth2Constants.*;
-import static com.predic8.membrane.core.interceptor.session.SessionManager.*;
-import static java.net.URLEncoder.*;
-import static java.nio.charset.StandardCharsets.*;
+import static com.predic8.membrane.core.interceptor.oauth2client.rf.OAuthUtils.isOAuth2RedirectRequest;
+import static com.predic8.membrane.core.interceptor.oauth2client.temp.OAuth2Constants.OA2REDIRECT;
+import static com.predic8.membrane.core.interceptor.session.SessionManager.SESSION;
+import static com.predic8.membrane.core.interceptor.session.SessionManager.SESSION_COOKIE_ORIGINAL;
+import static java.net.URLEncoder.encode;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * @description Allows only authorized HTTP requests to pass through. Unauthorized requests get a redirect to the
@@ -81,10 +95,13 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     private boolean appendAccessTokenToRequest;
     private boolean onlyRefreshToken = false;
 
+    public OAuth2Resource2Interceptor() {
+        name = "oauth2 resource";
+    }
+
     @Override
     public void init() {
         super.init();
-        name = "oauth2 client";
         setAppliedFlow(Flow.Set.REQUEST_RESPONSE_ABORT_FLOW);
 
         if (originalExchangeStore == null) {

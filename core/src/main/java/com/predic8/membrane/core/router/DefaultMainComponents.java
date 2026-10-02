@@ -14,23 +14,31 @@
 
 package com.predic8.membrane.core.router;
 
-import com.predic8.membrane.annot.beanregistry.*;
-import com.predic8.membrane.core.config.spring.*;
-import com.predic8.membrane.core.exchangestore.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.kubernetes.client.*;
-import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.resolver.*;
-import com.predic8.membrane.core.transport.*;
-import com.predic8.membrane.core.transport.http.*;
-import com.predic8.membrane.core.transport.http.client.*;
-import com.predic8.membrane.core.transport.http.streampump.*;
-import com.predic8.membrane.core.util.*;
-import org.slf4j.*;
-import org.springframework.beans.*;
-import org.springframework.context.*;
+import com.predic8.membrane.annot.beanregistry.BeanRegistry;
+import com.predic8.membrane.annot.beanregistry.BeanRegistryImplementation;
+import com.predic8.membrane.core.config.spring.BaseLocationApplicationContext;
+import com.predic8.membrane.core.exchangestore.ExchangeStore;
+import com.predic8.membrane.core.exchangestore.LimitedMemoryExchangeStore;
+import com.predic8.membrane.core.interceptor.FlowController;
+import com.predic8.membrane.core.interceptor.GlobalInterceptor;
+import com.predic8.membrane.core.kubernetes.client.KubernetesClientFactory;
+import com.predic8.membrane.core.proxies.Proxy;
+import com.predic8.membrane.core.proxies.RuleManager;
+import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.transport.Transport;
+import com.predic8.membrane.core.transport.http.HttpClient;
+import com.predic8.membrane.core.transport.http.HttpClientFactory;
+import com.predic8.membrane.core.transport.http.HttpTransport;
+import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
+import com.predic8.membrane.core.transport.http.streampump.Statistics;
+import com.predic8.membrane.core.util.DNSCache;
+import com.predic8.membrane.core.util.TimerManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
 
-import java.util.*;
+import java.util.Collection;
 
 public class DefaultMainComponents implements MainComponents {
 
@@ -84,7 +92,8 @@ public class DefaultMainComponents implements MainComponents {
 
         // Transport last
         if (transport == null) {
-            transport = new HttpTransport();
+            // A transport declared under components: in YAML
+            transport = registry.getBean(Transport.class).orElseGet(HttpTransport::new);
         }
         transport.init(router);
 

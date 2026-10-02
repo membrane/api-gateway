@@ -20,9 +20,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.DETAIL;
-import static com.predic8.membrane.core.exceptions.ProblemDetails.STATUS;
-import static com.predic8.membrane.core.exceptions.ProblemDetails.TITLE;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.MimeType.TEXT_HTML_UTF8;
 import static com.predic8.membrane.core.util.HttpUtil.getMessageForStatusCode;
 import static org.apache.commons.text.StringEscapeUtils.escapeHtml4;
@@ -133,7 +131,17 @@ public class ProblemDetailsHTML {
             return;
         }
         sb.append("<div class=\"field\"").append(indent).append("><span class=\"key\">")
-                .append(escapeHtml4(key)).append(":</span> ").append(renderValue(value)).append("</div>\n");
+                .append(escapeHtml4(key)).append(":</span> ")
+                .append(depth == 0 && SEE.equals(key) ? renderSee(value) : renderValue(value))
+                .append("</div>\n");
+    }
+
+    private static String renderSee(Object value) {
+        String url = String.valueOf(value);
+        if (!url.startsWith("http://") && !url.startsWith("https://"))
+            return renderValue(value);
+        String escaped = escapeHtml4(url);
+        return String.format("<a href=\"%s\">%s</a>", escaped, escaped);
     }
 
     private static String renderValue(Object value) {

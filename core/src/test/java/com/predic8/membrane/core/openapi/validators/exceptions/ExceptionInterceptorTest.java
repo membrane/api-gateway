@@ -84,6 +84,7 @@ public class ExceptionInterceptorTest extends AbstractSecurityValidatorTest {
         assertEquals(500,exc.getResponse().getStatusCode());
         JsonNode json = om.readTree(exc.getResponse().getBodyAsStream());
         assertEquals("https://membrane-api.io/problems/internal",json.get("type").asText());
+        assertEquals("https://membrane-api.io/problems/internal/openapi/response/openapi-parsing",json.get("see").asText());
     }
 
 
