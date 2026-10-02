@@ -13,21 +13,28 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.flow;
 
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.templating.*;
-import com.predic8.membrane.core.openapi.serviceproxy.*;
-import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.util.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.templating.TemplateInterceptor;
+import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
+import com.predic8.membrane.core.openapi.serviceproxy.APIProxyKey;
+import com.predic8.membrane.core.router.DefaultRouter;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
+import com.predic8.membrane.core.transport.http.client.ProxyConfiguration;
+import com.predic8.membrane.core.util.ConfigurationException;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import java.io.*;
-import java.net.*;
+import java.io.IOException;
+import java.net.URISyntaxException;
 
 import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.http.Request.*;
-import static com.predic8.membrane.core.interceptor.flow.CallInterceptor.*;
+import static com.predic8.membrane.core.http.Request.get;
+import static com.predic8.membrane.core.interceptor.flow.CallInterceptor.copyHeadersFromResponseToRequest;
 import static org.junit.jupiter.api.Assertions.*;
 
 class CallInterceptorTest {
@@ -76,6 +83,56 @@ class CallInterceptorTest {
     void urlTemplateAndAllowIllegalCharactersInURL() {
         router.getConfiguration().getUriFactory().setAllowIllegalCharacters(true);
         assertThrows(ConfigurationException.class, () -> extracted("dummy"));
+    }
+
+    @Test
+    void usesRouterHttpClientConfig() throws Exception {
+        var proxyApi = new APIProxy();
+        proxyApi.setKey(new APIProxyKey(2001));
+        proxyApi.getFlow().add(new TemplateInterceptor() {{
+            setSrc("via proxy");
+        }});
+        proxyApi.getFlow().add(new ReturnInterceptor());
+        router.add(proxyApi);
+
+        var proxy = new ProxyConfiguration();
+        proxy.setHost("localhost");
+        proxy.setPort(2001);
+        var httpClientConfig = new HttpClientConfiguration();
+        httpClientConfig.setProxy(proxy);
+        router.getConfiguration().setHttpClientConfig(httpClientConfig);
+        router.start();
+
+        var ci = new CallInterceptor();
+        ci.setUrl("http://example.com/foo");
+        ci.init(router);
+        ci.handleRequest(exc);
+        assertEquals("via proxy", exc.getRequest().getBodyAsStringDecoded());
+    }
+
+    @Test
+    void elementHttpClientConfigOverridesRouterConfig() throws Exception {
+        var proxyApi = new APIProxy();
+        proxyApi.setKey(new APIProxyKey(2001));
+        proxyApi.getFlow().add(new TemplateInterceptor() {{
+            setSrc("via element proxy");
+        }});
+        proxyApi.getFlow().add(new ReturnInterceptor());
+        router.add(proxyApi);
+        router.start();
+
+        var proxy = new ProxyConfiguration();
+        proxy.setHost("localhost");
+        proxy.setPort(2001);
+        var httpClientConfig = new HttpClientConfiguration();
+        httpClientConfig.setProxy(proxy);
+
+        var ci = new CallInterceptor();
+        ci.setUrl("http://example.com/foo");
+        ci.setHttpClientConfig(httpClientConfig);
+        ci.init(router);
+        ci.handleRequest(exc);
+        assertEquals("via element proxy", exc.getRequest().getBodyAsStringDecoded());
     }
 
     private void extracted(String expected) throws IOException {
