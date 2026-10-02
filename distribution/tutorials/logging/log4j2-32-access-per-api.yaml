@@ -27,3 +27,6 @@ Configuration:
       level: info
       AppenderRef:
         ref: STDOUT
+
+# Note: %X{uri} contains the full request URI including the query string. If query
+# parameters may carry secrets such as tokens or API keys, do not log them.
