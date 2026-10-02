@@ -62,7 +62,7 @@ Requests to http://localhost:2000 are now forwarded to https://apibin.io.
 
 ## Native OpenAPI Support
 
-Deploy APIs from [OpenAPI](https://www.membrane-api.io/openapi/configuration-and-validation) descriptions and use [OpenAPI for messge validation](distribution/examples/openapi/validation-simple). Membrane supports OpenAPI 3.0, 3.1, and **3.2**.
+Deploy APIs from [OpenAPI](https://www.membrane-api.io/openapi/configuration-and-validation) descriptions and use [OpenAPI for message validation](distribution/examples/openapi/validation-simple). Membrane supports OpenAPI 3.0, 3.1, and **3.2**.
 
 ## Legacy XML and Web Services Integration
 
