@@ -13,10 +13,19 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.log;
 
-import com.predic8.membrane.core.http.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.http.Request;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.Logger;
+import org.apache.logging.log4j.core.appender.AbstractAppender;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class AccessLogInterceptorTest {
 
@@ -33,8 +42,12 @@ public class AccessLogInterceptorTest {
         AdditionalVariable av2 = new AdditionalVariable();
         av2.setExpression("headers['X-Forwarded-For']");
         av2.setName("Forwarded");
+        AdditionalVariable av3 = new AdditionalVariable();
+        av3.setName("orderId");
+        av3.setExpression("jsonPath('$.orderId')");
         variables.add(av1);
         variables.add(av2);
+        variables.add(av3);
 
         interceptor.setAdditionalPatternList(variables);
         interceptor.init();
@@ -45,4 +58,34 @@ public class AccessLogInterceptorTest {
         interceptor.handleResponse(Request.get("/foo").header("foo","bar").header("X-Forwarded-For","bazf").buildExchange());
     }
 
+    @Test
+    void userProvidedValuesAreEscaped() throws Exception {
+        var mdc = captureMDC(Request.post("/orders")
+                .json("""
+                        {"orderId":"A-1\\n10.0.0.1 \\"GET /admin\\"\\r\\u001b[31m\\\\"}""")
+                .buildExchange());
+
+        assertEquals("A-1\\n10.0.0.1 \\\"GET /admin\\\"\\r\\u001b[31m\\\\", mdc.get("orderId"));
+    }
+
+    private Map<String, String> captureMDC(com.predic8.membrane.core.exchange.Exchange exc) {
+        var captured = new CopyOnWriteArrayList<Map<String, String>>();
+        var appender = new AbstractAppender("AccessLogInterceptorTest", null, null, false, null) {
+            @Override
+            public void append(LogEvent event) {
+                captured.add(event.getContextData().toMap());
+            }
+        };
+        appender.start();
+        var logger = (Logger) LogManager.getLogger("com.predic8.membrane.core.interceptor.log.access.AccessLogInterceptorService");
+        logger.addAppender(appender);
+        try {
+            interceptor.handleResponse(exc);
+        } finally {
+            logger.removeAppender(appender);
+            appender.stop();
+        }
+        assertEquals(1, captured.size());
+        return captured.getFirst();
+    }
 }

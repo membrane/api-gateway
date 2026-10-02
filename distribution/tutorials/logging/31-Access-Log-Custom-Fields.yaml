@@ -28,6 +28,10 @@
 #
 # Be careful when logging bodies or URLs: they may contain personal or confidential
 # information that does not belong in a log file.
+#
+# Values from the body are user provided. To prevent forged log lines, Membrane escapes
+# line breaks, quotes, backslashes and other control characters, e.g. a newline is
+# logged as \n.
 
 global:
   - accessLog:

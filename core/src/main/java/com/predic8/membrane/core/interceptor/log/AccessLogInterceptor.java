@@ -91,7 +91,8 @@ public class AccessLogInterceptor extends AbstractInterceptor {
 
     /**
      * @description Extra fields appended to each log line. Each additionalVariable binds a name, referenced in
-     * log4j2.xml as %X{name}, to a SpEL expression evaluated against the exchange.
+     * log4j2.xml as %X{name}, to a SpEL expression evaluated against the exchange. Line breaks, quotes, backslashes
+     * and other control characters in the value are escaped, e.g. a newline is logged as \n.
      */
     @SuppressWarnings("unused")
     @MCChildElement
