@@ -123,7 +123,7 @@ class FailureReportingSpanExporterTest {
 
     @Test
     void httpResponseBodyIsReportedBoundedAndOnOneLine() {
-        var body = ("bad\nrequest " + "x".repeat(500)).getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        var body = ("bad\nrequest " + "x".repeat(2000)).getBytes(java.nio.charset.StandardCharsets.UTF_8);
         var exporter = exporter(() -> ofExceptionalFailure(httpFailedWithResponse(new HttpResponse() {
             public int getStatusCode() { return 400; }
             public String getStatusMessage() { return "Bad Request"; }
@@ -136,7 +136,7 @@ class FailureReportingSpanExporterTest {
         assertTrue(warning.contains("HTTP status 400 Bad Request (response body: bad request xxx"), warning);
         assertTrue(warning.endsWith("...)"), warning);
         assertFalse(warning.contains("\n"), warning);
-        assertTrue(warning.length() < 450, warning);
+        assertTrue(warning.length() < 1250, warning);
     }
 
     @Test
