@@ -48,7 +48,7 @@ public class OpenTelemetryConfigurator {
 
     private static SdkTracerProvider getSdkTracerProvider(String serviceName, OtelExporter exporter, double sampleRate) {
         return SdkTracerProvider.builder()
-                .addSpanProcessor(builder(exporter.get()).build())
+                .addSpanProcessor(builder(new FailureReportingSpanExporter(exporter.get(), exporter.getEndpointUrl())).build())
                 .setSampler(traceIdRatioBased(sampleRate))
                 .setResource(Resource.getDefault().toBuilder().put(SERVICE_NAME, serviceName).put(SERVICE_VERSION, VERSION).build())
                 .build();
