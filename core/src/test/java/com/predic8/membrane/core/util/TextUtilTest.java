@@ -13,13 +13,16 @@
    limitations under the License. */
 package com.predic8.membrane.core.util;
 
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
-import java.nio.charset.*;
-import java.util.regex.*;
+import java.nio.charset.Charset;
+import java.util.regex.Pattern;
 
 import static com.predic8.membrane.core.util.text.TextUtil.*;
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class TextUtilTest {
@@ -95,8 +98,28 @@ public class TextUtilTest {
     }
 
     @Test
-    void escapeQuoteSimple() {
-        assertEquals("Test text with \\\" quotes", escapeQuotes("Test text with \" quotes"));
+    void escapeForLogQuotes() {
+        assertEquals("Test text with \\\" quotes", escapeForLog("Test text with \" quotes"));
+    }
+
+    @Test
+    void escapeForLogBackslash() {
+        assertEquals("C:\\\\temp\\\\\\\"", escapeForLog("C:\\temp\\\""));
+    }
+
+    @Test
+    void escapeForLogLineBreaks() {
+        assertEquals("a\\nb\\rc\\td", escapeForLog("a\nb\rc\td"));
+    }
+
+    @Test
+    void escapeForLogControlCharacters() {
+        assertEquals("\\u001b[31m\\u0000\\u007f\\u0085\\u2028\\u2029", escapeForLog("\u001b[31m\u0000\u007f\u0085\u2028\u2029"));
+    }
+
+    @Test
+    void escapeForLogKeepsPrintableUnicode() {
+        assertEquals("Grüße 日本 😀", escapeForLog("Grüße 日本 😀"));
     }
 
     @Test

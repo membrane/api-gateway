@@ -15,22 +15,28 @@
 package com.predic8.membrane.core.util;
 
 import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.transport.http.EOFWhileReadingLineException;
+import com.predic8.membrane.core.transport.http.LineTooLongException;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.predic8.membrane.annot.Constants.CRLF;
 import static com.predic8.membrane.core.http.Header.X_FORWARDED_FOR;
 import static com.predic8.membrane.core.util.HttpTestUtil.convertMessage;
 import static com.predic8.membrane.core.util.HttpUtil.*;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class HttpUtilTest {
@@ -63,6 +69,76 @@ public class HttpUtilTest {
     @Test
     void readLineMessage() throws Exception {
         assertEquals("POST /operation/call HTTP/1.1", readLine( convertMessage(POST_REQUEST)));
+    }
+
+    /**
+     * Baseline of the current line reading, including its quirks listed in #3378: a CR swallows the
+     * byte after it, whatever it is, and an LF takes a CR directly after it along.
+     */
+    @Nested
+    class ReadLine {
+
+        @Test
+        void lfCrIsOneTerminator() throws IOException {
+            assertEquals(List.of("line:foo", "line:bar", "eof:", "rest:"), readAll("foo\n\rbar\r\n"));
+        }
+
+        @Test
+        void crSwallowsTheNextByte() throws IOException {
+            assertEquals(List.of("line:foo", "line:ar", "eof:", "rest:"), readAll("foo\rbar\r\n"));
+        }
+
+        @Test
+        void eofInsideLine() throws IOException {
+            assertEquals(List.of("line:foo", "eof:ba", "rest:"), readAll("foo\r\nba"));
+        }
+
+        @Test
+        void bytesAreLatin1() throws IOException {
+            byte[] bytes = {'/', (byte) 0xC3, (byte) 0xA4, (byte) 0xFF, 13, 10};
+            assertEquals("/Ã¤ÿ", readLine(new ByteArrayInputStream(bytes)));
+        }
+
+        @Test
+        void leavesFollowingBytesInStream() throws IOException {
+            InputStream in = new BufferedInputStream(new ByteArrayInputStream("GET / HTTP/1.1\r\nHost: a\r\n\r\nbody".getBytes(ISO_8859_1)), 2048);
+            assertEquals("GET / HTTP/1.1", readLine(in));
+            assertEquals("Host: a\r\n\r\nbody", new String(in.readAllBytes(), ISO_8859_1));
+        }
+
+        @Test
+        void lineTooLong() throws IOException {
+            assertEquals(List.of("tooLong:" + "a".repeat(8_092), "rest:" + "a".repeat(908) + "\r\n"), readAll("a".repeat(9_000) + "\r\n"));
+        }
+
+        @ParameterizedTest
+        @ValueSource(ints = {-1, 0})
+        void nonPositiveLimitMeansNoLimit(int maxLineLength) throws IOException {
+            String line = "a".repeat(9_000);
+            assertEquals(List.of("line:" + line, "eof:", "rest:"), readAll(line + "\r\n", maxLineLength));
+        }
+
+        private static List<String> readAll(String content) throws IOException {
+            return readAll(content, 8092);
+        }
+
+        /**
+         * Reads lines until the stream fails, then the bytes left in it.
+         */
+        private static List<String> readAll(String content, int maxLineLength) throws IOException {
+            InputStream in = new ByteArrayInputStream(content.getBytes(ISO_8859_1));
+            List<String> events = new ArrayList<>();
+            try {
+                while (true)
+                    events.add("line:" + readLine(in, maxLineLength));
+            } catch (EOFWhileReadingLineException e) {
+                events.add("eof:" + e.getLineSoFar());
+            } catch (LineTooLongException e) {
+                events.add("tooLong:" + e.getMessage());
+            }
+            events.add("rest:" + new String(in.readAllBytes(), ISO_8859_1));
+            return events;
+        }
     }
 
     @Test

@@ -26,7 +26,6 @@ import org.slf4j.MDC;
 import org.springframework.http.InvalidMediaTypeException;
 import org.springframework.http.MediaType;
 
-import java.net.SocketException;
 import java.util.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetailsHTML.createHTMLContent;
@@ -167,8 +166,8 @@ public class ProblemDetails {
                             ? "Could not read the response body from the backend."
                             : "Could not read the message body.")
                     .exception(failure)
-                    // A broken connection is explained by its message and the place named in the detail.
-                    .stacktrace(throwableOfType(failure, SocketException.class) == null);
+                    // An I/O error is explained by its message and the place named in the detail.
+                    .stacktrace(!failure.exceptionMessageIsSufficient());
 
         var problem = user(production, component).flow(REQUEST).addSubSee("reading-body");
         var decoding = throwableOfType(failure, DecodingException.class);

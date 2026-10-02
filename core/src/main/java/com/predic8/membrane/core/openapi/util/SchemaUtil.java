@@ -41,11 +41,11 @@ public class SchemaUtil {
 
         Components components = api.getComponents();
         if (components == null)
-            throw new OpenAPIParsingException("OpenAPI with title %s has no #/components field.");
+            throw new OpenAPIParsingException("OpenAPI %s has no #/components field.".formatted(api.getInfo().getTitle()));
 
         Map<String, Schema> schemas = components.getSchemas();
         if(schemas == null)
-            throw new OpenAPIParsingException("OpenAPI with title %s has no #/components/schemas field.");
+            throw new OpenAPIParsingException("OpenAPI %s has no #/components/schemas field.".formatted(api.getInfo().getTitle()));
 
         ObjectHolder<Schema> oh = new ObjectHolder<>();
         schemas.forEach((schemaName, refSchema) -> {
