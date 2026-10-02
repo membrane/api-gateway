@@ -13,23 +13,32 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.kubernetes;
 
-import com.fasterxml.jackson.databind.*;
-import com.google.common.collect.*;
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.kubernetes.model.*;
-import com.predic8.membrane.core.interceptor.schemavalidation.*;
-import com.predic8.membrane.core.resolver.*;
-import org.slf4j.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableList;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.kubernetes.model.AdmissionResponse;
+import com.predic8.membrane.core.interceptor.kubernetes.model.AdmissionReview;
+import com.predic8.membrane.core.interceptor.kubernetes.model.JSONValidatorError;
+import com.predic8.membrane.core.interceptor.kubernetes.model.ResponseStatus;
+import com.predic8.membrane.core.interceptor.schemavalidation.JSONSchemaValidator;
+import com.predic8.membrane.core.interceptor.schemavalidation.MessageValidator;
+import com.predic8.membrane.core.resolver.ResolverMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
-import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
@@ -152,6 +161,10 @@ public class KubernetesValidationInterceptor extends AbstractInterceptor {
     private List<String> resources;
     private final ConcurrentMap<String, MessageValidator> validators = new ConcurrentHashMap<>();
     private List<String> namespaces = ImmutableList.of("membrane-soa");
+
+    public KubernetesValidationInterceptor() {
+        name = "kubernetes validation";
+    }
 
     @Override
     public void init() {

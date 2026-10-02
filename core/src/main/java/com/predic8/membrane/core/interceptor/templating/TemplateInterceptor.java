@@ -14,29 +14,39 @@
 
 package com.predic8.membrane.core.interceptor.templating;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exceptions.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exceptions.ProblemDetails;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.lang.groovy.adapted.StreamingTemplateEngine;
-import com.predic8.membrane.core.util.*;
-import com.predic8.membrane.core.util.text.*;
-import groovy.lang.*;
-import groovy.text.*;
-import org.jetbrains.annotations.*;
+import com.predic8.membrane.core.util.ConfigurationException;
+import com.predic8.membrane.core.util.ExceptionUtil;
+import com.predic8.membrane.core.util.FileUtil;
+import com.predic8.membrane.core.util.text.SerializationFunction;
+import groovy.lang.GroovyRuntimeException;
+import groovy.lang.MissingMethodException;
+import groovy.lang.MissingPropertyException;
+import groovy.text.Template;
+import groovy.text.TemplateEngine;
+import groovy.text.TemplateExecutionException;
+import groovy.text.XmlTemplateEngine;
+import org.jetbrains.annotations.NotNull;
 
-import java.io.*;
-import java.util.*;
+import java.io.StringReader;
+import java.util.Map;
+import java.util.Optional;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.lang.ScriptingUtils.*;
-import static com.predic8.membrane.core.util.FileUtil.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_XML;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.lang.ScriptingUtils.createParameterBindings;
+import static com.predic8.membrane.core.util.FileUtil.isXml;
 import static com.predic8.membrane.core.util.text.SerializationFunction.TEXT_SERIALIZATION;
-import static com.predic8.membrane.core.util.text.SerializationUtil.*;
-import static com.predic8.membrane.core.util.text.StringUtil.*;
-import static java.nio.charset.StandardCharsets.*;
+import static com.predic8.membrane.core.util.text.SerializationUtil.getSerialization;
+import static com.predic8.membrane.core.util.text.StringUtil.addLineNumbers;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * @description Renders the body content of a message from a template. The template can
@@ -112,7 +122,7 @@ public class TemplateInterceptor extends AbstractTemplateInterceptor {
                     .topLevel("line",tee.getLineNumber())
                     .topLevel("message", tee.getMessage())
                     .stacktrace(false)
-                    .addSubSee("template");
+                    .addSubSee("execution");
             Throwable root = ExceptionUtil.getRootCause(tee);
             if (root instanceof MissingPropertyException mpe) {
                 log.warn("{}\n{}" ,root.getMessage(),tee.getMessage());
@@ -131,13 +141,12 @@ public class TemplateInterceptor extends AbstractTemplateInterceptor {
             log.warn("Root cause: {}\n{}",root.getMessage(),tee.getMessage());
             pd.exception(tee)
                     .detail(root.getMessage())
-                    .addSubSee("template")
                     .buildAndSetResponse(exc);
             return ABORT;
         } catch (Exception e) {
             log.warn("Error executing template"  , e);
             internal(router.getConfiguration().isProduction(), getDisplayName())
-                    .addSubSee("template")
+                    .addSubSee("rendering")
                     .exception(e)
                     .buildAndSetResponse(exc);
             return ABORT;
