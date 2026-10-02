@@ -34,9 +34,26 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.gateway;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 
+/**
+ * @description Forwards STOMP requests to a STOMP broker and then tunnels the connection between client and broker.
+ * A request without STOMP credentials (<code>login</code> and <code>passcode</code>, or <code>host</code> and
+ * <code>accept-version</code> headers) gets 400. If the broker cannot be reached or the connection fails, the
+ * response is a 502 <code>gateway</code> problem detail.
+ * @topic 7. Transports and Clients
+ * @yaml <pre><code>
+ * api:
+ *   port: 61614
+ *   flow:
+ *     - stompClient:
+ *         host: broker.example.com
+ *         port: 61613
+ * </code></pre>
+ */
 @MCElement(name="stompClient")
 public class STOMPClient extends AbstractInterceptor {
 
@@ -121,7 +138,8 @@ public class STOMPClient extends AbstractInterceptor {
             return handleRequestInternal(exc);
         } catch (IOException e) {
 			log.error("", e);
-			user(router.getConfiguration().isProduction(),getDisplayName())
+			gateway(router.getConfiguration().isProduction(),getDisplayName())
+					.status(502)
 					.detail("Error in STOMP client!")
 					.exception(e)
 					.buildAndSetResponse(exc);

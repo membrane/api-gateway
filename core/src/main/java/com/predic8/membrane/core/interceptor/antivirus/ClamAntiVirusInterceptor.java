@@ -13,21 +13,44 @@
 
 package com.predic8.membrane.core.interceptor.antivirus;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.*;
-import fi.solita.clamav.*;
-import org.apache.commons.io.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import fi.solita.clamav.ClamAVClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
-
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.security;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.interceptor.antivirus.ScanResult.CLEAN;
+import static java.util.Objects.requireNonNull;
 
 /**
- * @description Delegates virus checks to an external Virus Scanner.
+ * @description ClamAV is an open-source antivirus engine whose daemon, clamd, scans data sent to it
+ * over TCP. This plugin streams the headers and body of each message to clamd and blocks the
+ * message if a signature matches.
+ * <p>Compressed bodies are decompressed before scanning. Multipart bodies are scanned as a whole
+ * and part by part after decoding base64 and quoted-printable parts, including nested multiparts.</p>
+ * <p>Harmful content is answered with a 500 Problem Details response of type
+ * <code>security/potentially-harmful-content</code>, and the message is not forwarded. Malformed
+ * multipart content, or content with an invalid Content-Type, is always rejected with a 500 error.</p>
  * @topic 3. Security and Validation
+ * @yaml
+ * <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - clamav:
+ *         host: clamav.example.com
+ *   target:
+ *     url: https://api.predic8.de
+ * </code></pre>
  */
 @MCElement(name="clamav")
 public class ClamAntiVirusInterceptor extends AbstractInterceptor {
@@ -36,8 +59,13 @@ public class ClamAntiVirusInterceptor extends AbstractInterceptor {
 
     private String host = "localhost";
     private String port = "3310";
+    private ScanFailureAction onScanFailure = ScanFailureAction.BLOCK;
 
-    ClamAVClient client;
+    public enum ScanFailureAction {
+        BLOCK, PASS
+    }
+
+    ContentScanner scanner;
 
     public ClamAntiVirusInterceptor() {
         name = "clam av";
@@ -45,64 +73,87 @@ public class ClamAntiVirusInterceptor extends AbstractInterceptor {
 
     @Override
     public String getShortDescription() {
-        return "Scans responses for malicious content.";
+        return "Scans requests and responses for malicious content.";
     }
 
     @Override
     public void init() {
         super.init();
-        client = new ClamAVClient(getHost(), Integer.parseInt(getPort()));
+        scanner = new ClamAvScanner(new ClamAVClient(getHost(), Integer.parseInt(getPort())));
         log.info("Using clamav daemon on [{}:{}]",getHost(),getPort());
     }
 
     @Override
+    public Outcome handleRequest(Exchange exc) {
+        return scan(exc, REQUEST);
+    }
+
+    @Override
     public Outcome handleResponse(Exchange exc) {
+        return scan(exc, RESPONSE);
+    }
+
+    private Outcome scan(Exchange exc, Flow flow) {
+        log.debug("Starting antivirus scan for {} flow", flow);
         try {
-            if (isNotMalicious(getHeaders(exc)) && isNotMalicious(getBody(exc)))
+            if (scanner.scan(getMessage(exc, flow)) == CLEAN) {
+                log.debug("Antivirus scan clean for {} flow; continuing processing", flow);
                 return CONTINUE;
-        }catch(Exception ignored){
-            // happens only when daemon is not available and then we also want a gateway timeout
+            }
+        } catch (InvalidScanContentException e) {
+            log.info("Invalid content in {} flow; blocking regardless of onScanFailure", flow);
+            return scannerFailure(exc, e);
+        } catch (Exception e) {
+            if (onScanFailure == ScanFailureAction.PASS) {
+                log.warn("Antivirus scan failed for {} flow; passing message without a completed scan (onScanFailure=pass)", flow, e);
+                return CONTINUE;
+            }
+            log.info("Antivirus scan failed for {} flow; returning an internal error", flow);
+            return scannerFailure(exc, e);
         }
-        return gatewayTimeout(exc);
-    }
-
-    private String getBody(Exchange exc) {
-        return exc.getRequest().getBodyAsStringDecoded();
-    }
-
-    private Outcome gatewayTimeout(Exchange exc) {
-        log.error("Could not reach clamav daemon on {}:{}",host,port );
-        internal(router.getConfiguration().isProduction(),getDisplayName())
-                .title("Virus scanner error!")
-                .detail("Could not execute virus scan.")
-                .internal("message","Could not reach clamav daemon.")
-                .internal("scanner-host", host)
-                .internal("scanner-port", port)
+        log.debug("Antivirus detected harmful content in {} flow; returning a security error", flow);
+        security(router.getConfiguration().isProduction(), null)
+                .addSubType("potentially-harmful-content")
+                .title(flow == REQUEST ? "Request blocked" : "Response blocked")
+                .detail(flow == REQUEST ? "The request contains potentially harmful content."
+                        : "The response contains potentially harmful content.")
                 .buildAndSetResponse(exc);
         return RETURN;
     }
 
-    public boolean isNotMalicious(String str) throws IOException {
-        try(InputStream input = toInputStream(str)) {
-            return ClamAVClient.isCleanReply(client.scan(input));
-        }
-    }
-
-    private InputStream toInputStream(String str) {
-        return IOUtils.toInputStream(str);
-    }
-
-    private String getHeaders(Exchange exc) {
-         return exc.getRequest().getHeader().toString();
+    private Outcome scannerFailure(Exchange exc, Exception cause) {
+        log.warn("Could not execute virus scan using clamav daemon on {}:{}", host, port, cause);
+        internal(router.getConfiguration().isProduction(), null)
+                .title("Request processing failed")
+                .detail("Could not execute virus scan.")
+                .buildAndSetResponse(exc);
+        return RETURN;
     }
 
     public String getHost() {
         return host;
     }
 
+    public ScanFailureAction getOnScanFailure() {
+        return onScanFailure;
+    }
+
     /**
-     * @description the host of the clamav daemon
+     * @description What to do when a scan cannot complete, e.g. clamd is unreachable, times out or
+     * returns an error. <code>block</code> answers with a 500 error; <code>pass</code> forwards the
+     * unscanned message and logs a warning. Harmful and malformed content is blocked either way.
+     * @default block
+     * @example pass
+     */
+    @MCAttribute
+    public void setOnScanFailure(ScanFailureAction onScanFailure) {
+        this.onScanFailure = requireNonNull(onScanFailure);
+    }
+
+    /**
+     * @description Hostname or IP address of the clamd daemon.
      * @default localhost
+     * @example clamav.example.com
      */
     @MCAttribute
     public void setHost(String host) {
@@ -114,7 +165,7 @@ public class ClamAntiVirusInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description the port of the clamav daemon
+     * @description TCP port of the clamd daemon.
      * @default 3310
      */
     @MCAttribute
