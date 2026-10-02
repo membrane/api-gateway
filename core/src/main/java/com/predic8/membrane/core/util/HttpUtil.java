@@ -78,7 +78,19 @@ public class HttpUtil {
 		return gmtDateFormat;
 	}
 
+	/**
+	 * Reads a line terminated by CR or LF and consumes its terminator: a CR always takes the byte
+	 * after it along, an LF only a CR directly after it. Bytes are converted to chars as ISO-8859-1.
+	 */
 	public static String readLine(InputStream in) throws IOException {
+		return readLine(in, MAX_LINE_LENGTH);
+	}
+
+	/**
+	 * @param maxLineLength a line of this many chars or more throws {@link LineTooLongException};
+	 *                      zero or less means no limit
+	 */
+	static String readLine(InputStream in, int maxLineLength) throws IOException {
 
 		StringBuilder line = new StringBuilder(128);
 
@@ -98,7 +110,7 @@ public class HttpUtil {
 			}
 
 			line.append((char) b);
-			if (++l == MAX_LINE_LENGTH)
+			if (++l == maxLineLength)
 				throw new LineTooLongException(line.toString());
 		}
 
