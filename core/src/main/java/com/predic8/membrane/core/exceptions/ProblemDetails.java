@@ -162,10 +162,15 @@ public class ProblemDetails {
         if (!failure.isRequestBodyFailure(exchange))
             return internal(production, component)
                     .addSubSee("reading-body")
-                    .detail("Could not read the message body.");
+                    .detail(failure.belongsTo(exchange.getResponse())
+                            ? "Could not read the response body from the backend."
+                            : "Could not read the message body.")
+                    .exception(failure)
+                    // An I/O error is explained by its message and the place named in the detail.
+                    .stacktrace(!failure.exceptionMessageIsSufficient());
 
-        ProblemDetails problem = user(production, component).flow(REQUEST).addSubSee("reading-body");
-        DecodingException decoding = throwableOfType(failure, DecodingException.class);
+        var problem = user(production, component).flow(REQUEST).addSubSee("reading-body");
+        var decoding = throwableOfType(failure, DecodingException.class);
         if (decoding == null)
             return problem.detail(getRootCause(failure).getMessage());
 
@@ -306,17 +311,19 @@ public class ProblemDetails {
         if (internalFields.isEmpty() && exception == null)
             return;
 
-        String logKey = randomUUID().toString();
+        var logKey = randomUUID().toString();
 
         try {
             MDC.put(LOG_KEY, logKey);
-            log.info("ProblemDetails hidden. type={}, title={}, detail={}, internal={}",
-                    getTypeSubtypeString(), title, detail, internalFields);
             if (exception != null) {
-                log.info("Message={}", exception.getMessage());
+                log.info("type={}, title={}, detail={}, internal={} message={}",
+                        getTypeSubtypeString(), title, detail, internalFields, exception.getMessage());
                 if (stacktrace) {
                     log.info("Stacktrace for hidden details:", exception);
                 }
+            } else {
+                log.info("type={}, title={}, detail={}, internal={}",
+                        getTypeSubtypeString(), title, detail, internalFields);
             }
         } finally {
             MDC.remove(LOG_KEY);

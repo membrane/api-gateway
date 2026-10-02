@@ -16,8 +16,11 @@ package com.predic8.membrane.core.http;
 
 import com.predic8.membrane.core.exchange.Exchange;
 
+import java.io.IOException;
+
 import static com.predic8.membrane.core.util.ExceptionUtil.getRootCause;
 import static com.predic8.membrane.core.util.ExceptionUtil.hasCauseMatching;
+import static org.apache.commons.lang3.exception.ExceptionUtils.throwableOfType;
 
 /**
  * Indicates that an error occurred while reading the body of a message.
@@ -73,5 +76,33 @@ public class ReadingBodyException extends RuntimeException {
      */
     public boolean isRequestBodyFailure(Exchange exchange) {
         return belongsTo(exchange.getRequest()) && !belongsTo(exchange.getResponse());
+    }
+
+    /**
+     * Does the message of the exception provide all details? This method can be consulted to
+     * decide whether to log the stacktrace.
+     * <p>
+     * True when an {@link IOException} is in the cause chain. Their messages name what happened and
+     * the frames only show the read path, which is the same for client and backend:
+     * </p>
+     * <ul>
+     *     <li>{@link java.net.SocketException}: connection reset, broken pipe, socket closed</li>
+     *     <li>{@link java.net.SocketTimeoutException}: read timed out</li>
+     *     <li>{@link java.io.EOFException}: stream ended before the announced Content-Length or chunk size</li>
+     *     <li>{@link javax.net.ssl.SSLException}: TLS failure while reading</li>
+     *     <li>{@link DecodingException}: the message names the Content-Encoding that failed</li>
+     *     <li>{@link IOException} from the body framing, for example an invalid chunk size</li>
+     * </ul>
+     * <p>
+     * Also true for a failure without a cause: its message is the whole explanation.
+     * </p>
+     * <p>
+     * False for causes that are not I/O errors, such as a {@link RuntimeException} from a decoder
+     * or the chunk parser. A trace shows where such a bug sits.
+     * </p>
+     * @return boolean indicating whether the message of the exception provides all details
+     */
+    public boolean exceptionMessageIsSufficient() {
+        return getCause() == null || throwableOfType(this, IOException.class) != null;
     }
 }

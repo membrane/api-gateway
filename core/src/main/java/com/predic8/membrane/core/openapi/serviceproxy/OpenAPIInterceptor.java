@@ -156,7 +156,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         } catch (Throwable t /* On purpose! Catch absolutely all */) {
             final String LOG_MESSAGE = "Message could not be validated against OpenAPI cause of an error during validation. Please check the OpenAPI with title %s.";
             log.error(LOG_MESSAGE.formatted(rec.api.getInfo().getTitle()), t);
-            user(router.getConfiguration().isProduction(), getDisplayName())
+            internal(router.getConfiguration().isProduction(), getDisplayName())
                     .addSubSee("generic")
                     .flow(REQUEST)
                     .detail(LOG_MESSAGE.formatted(rec.api.getInfo().getTitle()))
@@ -202,9 +202,11 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
                     .exception(e)
                     .buildAndSetResponse(exc);
             return RETURN;
+        } catch (ReadingBodyException e) {
+            throw e;
         } catch (Throwable t /* On Purpose! Catch absolutely all */) {
             log.error("", t);
-            user(router.getConfiguration().isProduction(), getDisplayName())
+            internal(router.getConfiguration().isProduction(), getDisplayName())
                     .addSubSee("generic")
                     .flow(RESPONSE)
                     .detail("Message could not be validated against OpenAPI cause of an error during validation. Please check the OpenAPI with title %s.".formatted(rec.api.getInfo().getTitle()))
