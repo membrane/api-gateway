@@ -14,21 +14,21 @@
 
 package com.predic8.membrane.core.interceptor.cors;
 
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.util.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.util.CollectionsUtil;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.security;
 import static com.predic8.membrane.core.http.Header.COOKIE;
 import static com.predic8.membrane.core.http.Header.ORIGIN;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.interceptor.cors.CorsInterceptor.*;
-import static com.predic8.membrane.core.interceptor.cors.CorsUtil.*;
-import static org.springframework.http.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
-import static org.springframework.http.HttpHeaders.VARY;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.interceptor.cors.CorsInterceptor.WILDCARD;
+import static com.predic8.membrane.core.interceptor.cors.CorsUtil.getNormalizedOrigin;
 import static org.springframework.http.HttpHeaders.*;
 
 public abstract class AbstractCORSHandler {
@@ -58,7 +58,7 @@ public abstract class AbstractCORSHandler {
     public Outcome handle(Exchange exc) {
         String origin = getNormalizedOrigin(exc);
 
-        // Ordinary non CORS request -> let pass
+        // Ordinary none CORS request -> let pass
         if (origin == null)
             return CONTINUE;
 
@@ -80,9 +80,9 @@ public abstract class AbstractCORSHandler {
         security(false, "cors")
                 .status(403)
                 .addSubType("%s-not-allowed".formatted(type))
-                .detail("The %s '%s' is not allowed by the CORS policy.".formatted(type, value))
+                .detail("Not allowed by CORS policy: %s: %s".formatted(type, value))
                 .buildAndSetResponse(exc);
-        log.info("CORS request denied: type={}, origin={}", type, value);
+        log.info("CORS request denied: type={}, value={}", type, value);
         return RETURN;
     }
 

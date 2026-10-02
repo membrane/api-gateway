@@ -61,6 +61,10 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 
     private final AccessControl accessControl = new AccessControl();
 
+    public AccessControlInterceptor() {
+        name = "access control";
+    }
+
     @Override
     public void init() {
         super.init();
