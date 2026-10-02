@@ -30,6 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.google.common.base.Objects.equal;
+import static com.predic8.membrane.core.exchange.Exchange.SSL_CONTEXT;
 import static com.predic8.membrane.core.interceptor.balancer.Node.Status.DOWN;
 import static com.predic8.membrane.core.interceptor.balancer.Node.Status.UP;
 import static java.lang.System.currentTimeMillis;
@@ -276,7 +277,7 @@ public class Node extends AbstractXmlElement {
 	}
 
 	public String getDestinationURL(Exchange exc) {
-		return "http://" + getHost() + (getPort() == 0 ? "" : ":" + getPort()) + exc.getRequest().getUri();
+		return (exc.getProperty(SSL_CONTEXT) != null ? "https://" : "http://") + getHost() + (getPort() == 0 ? "" : ":" + getPort()) + exc.getRequest().getUri();
 	}
 
 }
