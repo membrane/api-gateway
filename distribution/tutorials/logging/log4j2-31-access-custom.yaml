@@ -13,7 +13,7 @@ Configuration:
         # are used like the built-in ones:
         #   %X{contentType}  Content-Type header of the request
         #   %X{orderId}      orderId taken from the JSON body with jsonPath('$.orderId')
-        pattern: '%X{ip} [%X{time.req.received.format}] "%X{http.method} %X{uri} %X{proto}/%X{http.version}" %X{statusCode} %X{res.payload.size} [%X{contentType}] order=%X{orderId}%n'
+        pattern: '%X{ip} [%X{time.req.received.format}] "%X{http.method} %X{uri} HTTP/%X{http.version}" %X{statusCode} %X{res.payload.size} [%X{contentType}] order=%X{orderId}%n'
   Loggers:
     Logger:
       name: com.predic8.membrane.core.interceptor.log.access

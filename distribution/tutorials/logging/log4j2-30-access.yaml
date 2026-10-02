@@ -14,7 +14,7 @@ Configuration:
       # ${date:...} is resolved once at startup, so every start gets its own file
       fileName: 'access-${date:yyyy-MM-dd_HH-mm-ss}.log'
       PatternLayout:
-        pattern: '%X{ip} [%X{time.req.received.format}] "%X{http.method} %X{uri} %X{proto}/%X{http.version}" %X{statusCode} %X{res.payload.size}%n'
+        pattern: '%X{ip} [%X{time.req.received.format}] "%X{http.method} %X{uri} HTTP/%X{http.version}" %X{statusCode} %X{res.payload.size}%n'
   Loggers:
     Logger:
       name: com.predic8.membrane.core.interceptor.log.access
