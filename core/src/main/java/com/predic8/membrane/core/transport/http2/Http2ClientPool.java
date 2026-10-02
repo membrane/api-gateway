@@ -21,7 +21,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.concurrent.GuardedBy;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Timer;
 
 import static com.predic8.membrane.core.util.TimerTaskUtil.createTimerTask;
 
@@ -34,6 +37,8 @@ public class Http2ClientPool {
     private final HashMap<ConnectionKey, ArrayList<Http2Client>> availableConnections = new HashMap<>();
     private final Timer timer;
     private volatile boolean shutdownWhenDone = false;
+    @GuardedBy("availableConnections")
+    private boolean closed;
 
     public Http2ClientPool(long keepAliveTimeout) {
         this.keepAliveTimeout = keepAliveTimeout;
@@ -48,6 +53,8 @@ public class Http2ClientPool {
     public Http2Client reserveStream(String host, int port, SSLProvider sslProvider, String sniServerName, ProxyConfiguration proxy, SSLContext proxySSLContext) {
         ConnectionKey key = new ConnectionKey(host, port, sslProvider, sniServerName, proxy, proxySSLContext);
         synchronized(availableConnections) {
+            if (closed)
+                return null;
             ArrayList<Http2Client> http2Clients = availableConnections.get(key);
             if (http2Clients == null)
                 return null;
@@ -62,8 +69,29 @@ public class Http2ClientPool {
     public void share(String host, int port, SSLProvider sslProvider, String sniServerName, ProxyConfiguration proxy, SSLContext proxySSLContext, Http2Client h2c) {
         ConnectionKey key = new ConnectionKey(host, port, sslProvider, sniServerName, proxy, proxySSLContext);
         synchronized(availableConnections) {
-            ArrayList<Http2Client> http2Clients = availableConnections.computeIfAbsent(key, k -> new ArrayList<>());
-            http2Clients.add(h2c);
+            if (!closed) {
+                availableConnections.computeIfAbsent(key, k -> new ArrayList<>()).add(h2c);
+                return;
+            }
+        }
+        h2c.close();
+    }
+
+    /** Closes pooled clients now and prevents connections from being shared after shutdown. */
+    public void closeAll() {
+        ArrayList<Http2Client> toClose = new ArrayList<>();
+        synchronized (availableConnections) {
+            closed = true;
+            availableConnections.values().forEach(toClose::addAll);
+            availableConnections.clear();
+        }
+        timer.cancel();
+        for (Http2Client client : toClose) {
+            try {
+                client.close();
+            } catch (Exception e) {
+                log.debug("Could not close pooled HTTP/2 client", e);
+            }
         }
     }
 

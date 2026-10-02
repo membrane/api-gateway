@@ -14,22 +14,21 @@ limitations under the License. */
 
 package com.predic8.membrane.core.transport.http;
 
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.transport.http.ConnectionFactory.*;
-import com.predic8.membrane.core.transport.http.client.*;
-import com.predic8.membrane.core.transport.http.client.protocol.*;
-import com.predic8.membrane.core.transport.http.streampump.*;
-import com.predic8.membrane.core.util.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
+import com.predic8.membrane.core.transport.http.client.protocol.ProtocolHandlerFactory;
+import com.predic8.membrane.core.transport.http.streampump.StreamPump;
+import com.predic8.membrane.core.util.TimerManager;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
-import java.io.*;
-import java.net.*;
+import java.net.MalformedURLException;
 
-import static com.predic8.membrane.core.transport.http.client.protocol.Http2ProtocolHandler.*;
-import static com.predic8.membrane.core.util.HttpUtil.*;
+import static com.predic8.membrane.core.transport.http.client.protocol.Http2ProtocolHandler.UPGRADED_PROTOCOL;
+import static com.predic8.membrane.core.util.HttpUtil.getPathAndQueryString;
 
 /**
  * HTTP client supporting:
@@ -141,6 +140,13 @@ public class HttpClient implements AutoCloseable {
         connectionFactory.getConnectionManager().shutdownWhenDone();
         if (connectionFactory.getHttp2ClientPool() != null)
             connectionFactory.getHttp2ClientPool().shutdownWhenDone();
+    }
+
+    /** Closes pooled connections without depending on a later timer tick. */
+    public void closeImmediately() {
+        connectionFactory.getConnectionManager().closeAll();
+        if (connectionFactory.getHttp2ClientPool() != null)
+            connectionFactory.getHttp2ClientPool().closeAll();
     }
 
     public ConnectionFactory getConnectionFactory() {
