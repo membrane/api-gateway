@@ -96,6 +96,7 @@ PRIO 3:
   - **Breaking**: scripts calling `cookie.put(...)` fail instead of silently doing nothing.
   - Related: in the response flow `cookie` is always empty (it only parses `Cookie`, not `Set-Cookie`). Document or address separately.
   - What about setting cookies?
+- Reorganisation of *Util* classes. Check for duplicates and right place.
 
 ## Breaking Changes
 
