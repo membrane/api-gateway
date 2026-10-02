@@ -157,6 +157,23 @@ public class Http2Client implements Runnable, AutoCloseable {
         return max;
     }
 
+    /**
+     * Aborts transport I/O without waiting for the frame sender. Router teardown
+     * must not depend on the peer reading queued frames (including GOAWAY).
+     */
+    public void closeImmediately() {
+        logic.receiving = false;
+        try {
+            con.abort();
+        } catch (IOException e) {
+            LOG.debug("Could not abort HTTP/2 connection", e);
+        } finally {
+            // Also wake a sender waiting for work. This is safe before init()
+            // has published senderFuture and does not require joining it.
+            logic.sender.stop();
+        }
+    }
+
     public void close() {
         try {
             LOG.debug("stop receiving frames.");

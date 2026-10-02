@@ -307,6 +307,7 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
             reinitializer.stop();
         if (mainComponents.getTransport() != null)
             mainComponents.getTransport().closeAll();
+        mainComponents.getHttpClientFactory().closeAll();
         mainComponents.getTimerManager().shutdown();
         closeRegistryIfSupported();
 
@@ -508,6 +509,7 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
     public void shutdownRuntimeComponents() {
         if (reinitializer != null)
             reinitializer.stop();
+        mainComponents.getHttpClientFactory().closeAll();
         mainComponents.getTimerManager().shutdown();
         closeRegistryIfSupported();
     }
