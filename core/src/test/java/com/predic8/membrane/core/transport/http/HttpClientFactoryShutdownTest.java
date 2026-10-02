@@ -21,13 +21,96 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
+import java.time.Duration;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class HttpClientFactoryShutdownTest {
+
+    @Test
+    void stalledHttp2SenderDoesNotBlockShutdownOrRuntimeReplacement() throws Exception {
+        var router = new DefaultRouter();
+        Connection connection = null;
+        try (var backend = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
+            backend.setSoTimeout(2000);
+            var config = new HttpClientConfiguration();
+            config.setUseExperimentalHttp2(true);
+            config.getConnection().setKeepAliveTimeout(60_000);
+            var factory = router.getHttpClientFactory();
+            var client = factory.createClient(config);
+            var connections = client.getConnectionFactory();
+            connection = connections.getConnectionManager().getConnection(
+                    backend.getInetAddress().getHostAddress(), backend.getLocalPort(), null, null, 2000);
+            try (var peer = backend.accept()) {
+                var socket = connection.socket;
+                var writing = new CountDownLatch(1);
+                var writerExited = new CountDownLatch(1);
+                var preface = new AtomicBoolean(true);
+                // Let the client write its preface, then stall the actual frame
+                // sender until the socket is closed. Interrupts alone do not help.
+                connection.out = new OutputStream() {
+                    @Override
+                    public void write(byte[] bytes, int offset, int length) throws IOException {
+                        if (!preface.getAndSet(false))
+                            write(0);
+                    }
+
+                    @Override
+                    public void write(int value) throws IOException {
+                        writing.countDown();
+                        try {
+                            while (!socket.isClosed()) {
+                                try {
+                                    Thread.sleep(10);
+                                } catch (InterruptedException ignored) {
+                                    // Model a socket write that requires socket closure to unblock.
+                                }
+                            }
+                            throw new IOException("Socket closed");
+                        } finally {
+                            writerExited.countDown();
+                        }
+                    }
+
+                    @Override
+                    public void flush() throws IOException {
+                        write(0);
+                    }
+                };
+                var stalled = new Http2Client(connection, false);
+                var other = mock(Http2Client.class);
+                var pool = connections.getHttp2ClientPool();
+                pool.share("localhost", 443, null, null, null, null, stalled);
+                pool.share("localhost", 443, null, null, null, null, other);
+                try {
+                    assertTrue(writing.await(2, TimeUnit.SECONDS), "Frame sender must be stalled before shutdown");
+                    assertTimeoutPreemptively(Duration.ofSeconds(2), () -> {
+                        router.shutdownRuntimeComponents();
+                        router.resetRuntime();
+                    });
+                    assertTrue(socket.isClosed());
+                    assertTrue(writerExited.await(2, TimeUnit.SECONDS));
+                    assertNotSame(factory, router.getHttpClientFactory());
+                    verify(other).closeImmediately();
+                } finally {
+                    socket.close();
+                    assertTrue(writerExited.await(2, TimeUnit.SECONDS));
+                }
+            }
+        } finally {
+            if (connection != null)
+                connection.close();
+            router.stop();
+        }
+    }
 
     @Test
     void connectionReturnedAfterShutdownIsClosed() throws Exception {
@@ -72,12 +155,12 @@ class HttpClientFactoryShutdownTest {
         try {
             pool.share("localhost", 443, null, null, null, null, pooled);
             router.stop();
-            verify(pooled).close();
+            verify(pooled).closeImmediately();
             assertNull(pool.reserveStream("localhost", 443, null, null, null, null));
             pool.share("localhost", 443, null, null, null, null, late);
-            verify(late).close();
+            verify(late).closeImmediately();
             router.stop();
-            verify(pooled, times(1)).close();
+            verify(pooled, times(1)).closeImmediately();
         } finally {
             pool.closeAll();
             router.stop();

@@ -74,7 +74,7 @@ public class Http2ClientPool {
                 return;
             }
         }
-        h2c.close();
+        h2c.closeImmediately();
     }
 
     /** Closes pooled clients now and prevents connections from being shared after shutdown. */
@@ -88,7 +88,7 @@ public class Http2ClientPool {
         timer.cancel();
         for (Http2Client client : toClose) {
             try {
-                client.close();
+                client.closeImmediately();
             } catch (Exception e) {
                 log.debug("Could not close pooled HTTP/2 client", e);
             }
