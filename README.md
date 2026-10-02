@@ -58,44 +58,37 @@ Requests to http://localhost:2000 are now forwarded to https://apibin.io.
 2. Open [tutorials/getting-started/10-First-API.yaml](distribution/tutorials/getting-started/10-First-API.yaml) in a text editor and work through the steps.
 3. Continue with the other [tutorials](distribution/tutorials/README.md) on OpenAPI, security, SOAP, AI, and more.
 
-
 # Why Membrane
 
 From OpenAPI and OAuth to SOAP, XML, LLMs, and MCP, Membrane bridges modern APIs and enterprise integration.
 
 ## Native OpenAPI Support
 
-Deploy APIs directly from [OpenAPI](https://www.membrane-api.io/openapi/configuration-and-validation) documents, [validate](distribution/examples/openapi/validation-simple) messages against them and even generate OpenAPI specifications from legacy WSDL. In addition to OpenAPI 3.0, and 3.1, Membrane also supports **OpenAPI 3.2**.
+Deploy APIs from [OpenAPI](https://www.membrane-api.io/openapi/configuration-and-validation) descriptions and use the [OpenAPI for messge validation](distribution/examples/openapi/validation-simple). Membrane supports OpenAPI 3.0, 3.1, and **3.2**.
 
 ## Legacy XML and Web Services Integration
 
-`wsdl2openapi` transforms a Web Service's WSDL into an OpenAPI and uses the underlying XSD schema for the conversion between XML and JSON. Deploy a WSDL, and Membrane exposes the service as an API with an OpenAPI description.
+Expose existing SOAP web services as JSON APIs without changing the backend. Membrane’s [wsdl2openapi](#wsdl-to-openapi-conversio) generates an OpenAPI description from WSDL and uses the underlying XSD schemas to convert between JSON and XML.
 
-XML and JSON are deeply integrated into Membrane. **XPath** and **JSONPath** expressions provide direct access to message data for routing, filtering, and transformation.
+Use **XPath** and **JSONPath** to access message data for routing, filtering, and transformation. Templates and XSLT handle custom formats and more complex conversions.
 
-Templates and XSLT allow for flexible message transformation and SOAP-to-REST conversion.
+## Protect APIs and Legacy Services
 
-## XML and Web Services Security
-
-Secure legacy services with WSDL and XSD message validation, XML message protection, and XML signatures.
-
-## OpenAPI, JSON Schema, XSD, and WSDL Validation
-
-Validate messages against API and service specifications. Don't let invalid messages slip into your organization.
+Validate messages against **OpenAPI**, **JSON Schema**, **XSD**, and **WSDL** to reject invalid requests before they reach your backend. Protect SOAP services with XML message protection and XML signatures.
 
 ## API Orchestration
 
-Orchestrate **calls to external APIs** and process collections with loops and conditional flows.
+Combine calls to multiple APIs in a single flow. Process collections with loops and control execution with conditions.
 
-## Easy Configuration and Extensibility
+## Simple Configuration, Flexible Extensions
 
-Take a look at the samples below and the tutorials to see what just a few lines of configuration can do.
+Configure routing, security, and transformations with a few lines of YAML. Explore the examples below and the tutorials to get started.
 
-When you need more flexibility, extend Membrane with expressions and scripting using **JSONPath**, **XPath**, **Groovy**, or **SpEL**, or write your own plugin in **Java**. In most cases, custom Java code is not necessary.
+For custom logic, use **Groovy scripts** or expressions with **SpEL**, **JSONPath**, and **XPath**. When you need deeper integration, write your own Java plugin. No need to learn Lua.
 
-## Speed & Footprint
+## High Throughput, Small Footprint
 
-Membrane is one of the fastest API gateways available, and it stays fast when it does real work. On a 16-vCPU machine, it handles:
+Membrane stays fast with security and validation enabled. In benchmarks on a 16-vCPU Azure VM, it achieved:
 
 | Configuration                             | Requests/sec |
 |-------------------------------------------|-------------:|
@@ -103,9 +96,9 @@ Membrane is one of the fastest API gateways available, and it stays fast when it
 | Basic Auth + rate limiting + TLS          |  **109,542** |
 | OpenAPI validation of every request       |   **89,197** |
 
-Plain proxying numbers say little about a gateway, because what it does with each request matters far more than its raw speed. Membrane's HTTP engine and all of its plugins are written in Java and run in the same process, so a request never crosses from a native proxy core into a separate plugin runtime. Optimizations such as streaming or caching of parsed payloads keep the cost per request low, so even CPU-intensive OpenAPI validation processes almost 90,000 requests per second. 
+Membrane’s HTTP engine was built specifically for API gateway workloads. Its Java plugins run in the same process, keeping overhead low. This integrated design gives Membrane an architectural advantage over gateways built on general-purpose HTTP servers and helps it deliver outstanding performance.
 
-The distribution is only about 55 MB and needs no database.
+The distribution is approximately 55 MB, runs as a container or Java application, and requires no database.
 
 See the [benchmark setup and results](https://www.membrane-api.io/api-gateway-performance.html), or [run the tests yourself](distribution/performance-test/README.md).
 
