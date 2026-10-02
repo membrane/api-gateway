@@ -1,7 +1,7 @@
 
 # Membrane API Gateway
 
-**The open-source API gateway that speaks both REST and SOAP.**
+**Open-source API gateway that speaks both REST and SOAP.**
 
 [![GitHub release](https://img.shields.io/github/v/release/membrane/api-gateway?display_name=tag)](https://github.com/membrane/api-gateway/releases/latest)
 [![Docker Pulls](https://img.shields.io/docker/pulls/predic8/membrane)](https://hub.docker.com/r/predic8/membrane)
@@ -9,28 +9,21 @@
 
 <img src="docs/images/api-gateway-demo.gif" alt="Animated demo of Membrane API Gateway" width="800">
 
-Deploy APIs straight from [OpenAPI](#1-openapi-deployment-validation-and-swagger-ui), secure them with [OAuth2](#oauth2), [JWT](#json-web-tokens), and [API keys](#api-keys), and turn legacy
-[SOAP web services into JSON APIs](#wsdl-to-openapi-conversion), all with a few lines of YAML. Membrane runs as a single
-container or Java application, is Apache 2.0 licensed, and needs no database.
+Deploy APIs directly from [OpenAPI](#1-openapi-deployment-validation-and-swagger-ui), secure them with [OAuth2](#oauth2) and [JWT](#json-web-tokens), or turn legacy [SOAP web services into JSON APIs](#wsdl-to-openapi-conversion), all with a few lines of YAML. Lightweight and easy to run as a single **container** or **Java** application. No database required.
 
-## Try Membrane in 5 Minutes
-
-Start the gateway as a container or as a [Java application](https://www.membrane-api.io/getting-started.html):
+## Start Membrane
 
 ```bash
 docker run --rm -it -p 2000:2000 predic8/membrane
 ```
 
-Open these URLs in your browser to access sample APIs:
+Explore the sample APIs in your browser:
 
 - http://localhost:2000 (Current time)
 - http://localhost:2000/api-docs (API deployed from OpenAPI)
+- http://localhost:2000/shop/v2/products
 
-Or call an API from the command line:
-
-```bash
-curl http://localhost:2000/shop/v2/products
-```
+Prefer Java instead of Docker? Follow the [Java quickstart](https://www.membrane-api.io/getting-started.html).
 
 ### Proxy Your First API
 
@@ -110,7 +103,7 @@ Membrane is one of the fastest API gateways available, and it stays fast when it
 | Basic Auth + rate limiting + TLS          |  **109,542** |
 | OpenAPI validation of every request       |   **89,197** |
 
-Plain proxying numbers say little about a gateway, because what it does with each request matters far more than its raw speed. Membrane's HTTP engine and all of its plugins are written in Java and run in the same process, so a request never crosses from a native proxy core into a separate plugin runtime. Optimizations such as streaming or caching of parsed payloads keep the cost per request low, so even CPU-intensive OpenAPI validation processes almost 90,000 requests per second.
+Plain proxying numbers say little about a gateway, because what it does with each request matters far more than its raw speed. Membrane's HTTP engine and all of its plugins are written in Java and run in the same process, so a request never crosses from a native proxy core into a separate plugin runtime. Optimizations such as streaming or caching of parsed payloads keep the cost per request low, so even CPU-intensive OpenAPI validation processes almost 90,000 requests per second. 
 
 The distribution is only about 55 MB and needs no database.
 
