@@ -39,8 +39,7 @@ import static com.predic8.membrane.core.interceptor.opentelemetry.FailureReporti
 import static io.opentelemetry.exporter.internal.FailedExportException.*;
 import static io.opentelemetry.sdk.common.CompletableResultCode.ofExceptionalFailure;
 import static io.opentelemetry.sdk.common.CompletableResultCode.ofSuccess;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class FailureReportingSpanExporterTest {
 
@@ -120,6 +119,24 @@ class FailureReportingSpanExporterTest {
 
         assertEquals(List.of("Cannot export spans to OpenTelemetry collector at " + ENDPOINT + ": collector responded with HTTP status 401 Unauthorized"),
                 warnings());
+    }
+
+    @Test
+    void httpResponseBodyIsReportedBoundedAndOnOneLine() {
+        var body = ("bad\nrequest " + "x".repeat(500)).getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        var exporter = exporter(() -> ofExceptionalFailure(httpFailedWithResponse(new HttpResponse() {
+            public int getStatusCode() { return 400; }
+            public String getStatusMessage() { return "Bad Request"; }
+            public byte[] getResponseBody() { return body; }
+        })));
+
+        exporter.export(List.of());
+
+        var warning = warnings().getFirst();
+        assertTrue(warning.contains("HTTP status 400 Bad Request (response body: bad request xxx"), warning);
+        assertTrue(warning.endsWith("...)"), warning);
+        assertFalse(warning.contains("\n"), warning);
+        assertTrue(warning.length() < 450, warning);
     }
 
     @Test

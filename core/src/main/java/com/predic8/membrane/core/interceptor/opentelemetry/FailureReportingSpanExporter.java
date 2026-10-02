@@ -32,6 +32,7 @@ import java.util.function.LongSupplier;
 import java.util.logging.Level;
 
 import static com.predic8.membrane.core.util.ExceptionUtil.concatMessageAndCauseMessages;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Reports failed span exports as one short, throttled line instead of the OTel exporter's
@@ -44,6 +45,8 @@ class FailureReportingSpanExporter implements SpanExporter {
     private static final Logger log = LoggerFactory.getLogger(FailureReportingSpanExporter.class);
 
     static final Duration REPORT_INTERVAL = Duration.ofMinutes(5);
+
+    private static final int MAX_BODY_BYTES = 1024;
 
     /**
      * The OTel exporters log every failed export with a stack trace through java.util.logging.
@@ -123,7 +126,7 @@ class FailureReportingSpanExporter implements SpanExporter {
 
     static String describe(@Nullable Throwable failure) {
         if (failure instanceof HttpExportException e && e.getResponse() != null)
-            return "collector responded with HTTP status %d %s".formatted(e.getResponse().getStatusCode(), e.getResponse().getStatusMessage());
+            return "collector responded with HTTP status %d %s%s".formatted(e.getResponse().getStatusCode(), e.getResponse().getStatusMessage(), describeBody(e.getResponse().getResponseBody()));
         if (failure instanceof GrpcExportException e && e.getResponse() != null)
             return "collector responded with gRPC status %s %s".formatted(e.getResponse().getStatusCode(), e.getResponse().getStatusDescription());
         if (failure == null)
@@ -132,6 +135,20 @@ class FailureReportingSpanExporter implements SpanExporter {
         Throwable cause = failure instanceof FailedExportException && failure.getCause() != null ? failure.getCause() : failure;
         String messages = concatMessageAndCauseMessages(cause);
         return messages.isBlank() ? cause.getClass().getName() : messages;
+    }
+
+    /**
+     * The start of the collector's response body, which usually names the reason for a rejection.
+     * Truncated, and control characters are replaced so the body cannot inject log lines.
+     */
+    private static String describeBody(byte @Nullable [] body) {
+        if (body == null || body.length == 0)
+            return "";
+        final var text = new String(body, 0, Math.min(body.length, MAX_BODY_BYTES), UTF_8)
+                .replaceAll("[\\p{Cntrl}\\uFFFD]+", " ").strip();
+        if (text.isEmpty())
+            return "";
+        return " (response body: %s%s)".formatted(text, body.length > MAX_BODY_BYTES ? "..." : "");
     }
 
     @Override
