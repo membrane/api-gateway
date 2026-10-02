@@ -4,10 +4,13 @@
 #
 # Write every byte Membrane sends and receives on the wire to a log file.
 #
+# This is a debugging tool for problems in the underlying HTTP protocol, where
+# you need to see each character exactly as it is transmitted or received over
+# the wire, including every CR, LF and the exact encoding. It is not meant for
+# regular operation.
+#
 # For most tracing needs, a 'log' plugin in the flow is good enough: it shows
-# messages at the HTTP level. Use byte stream logging when you really need to
-# see what goes over the wire byte by byte, including every CR, LF and the
-# exact encoding.
+# messages at the HTTP level.
 #
 # 1.) Start Membrane with the log configuration log4j2-traffic.xml:
 #     Linux/Mac:
