@@ -14,25 +14,31 @@
 
 package com.predic8.membrane.core.interceptor.ratelimit;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.lang.*;
-import com.predic8.membrane.core.lang.*;
-import org.slf4j.*;
-import org.springframework.expression.spel.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.lang.AbstractExchangeExpressionInterceptor;
+import com.predic8.membrane.core.lang.ExchangeExpression;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.expression.spel.SpelEvaluationException;
 
-import java.time.*;
-import java.util.*;
+import java.time.Duration;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_FLOW;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
-import static com.predic8.membrane.core.util.HttpUtil.*;
-import static java.lang.String.*;
+import static com.predic8.membrane.core.util.HttpUtil.getForwardedForList;
+import static java.lang.String.join;
 
 /**
  * @description <p>The <i>rateLimiter</i> plugin limits the number of requests of a client in a period of time.
@@ -126,7 +132,7 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
                 .status(429)
                 .title("Rate limit is exceeded.")
                 .addSubType("rate-limit")
-                .detail("The quota of the rate limit is exceeded. Try again in %s seconds.".formatted(strategy.getLimitReset(exc.getRemoteAddrIp())))
+                .detail("The quota of the rate limit is exceeded. Try again in %s seconds.".formatted(strategy.getLimitReset(getKey(exc))))
                 .internal("limit", getRequestLimit())
                 .internal("duration", getRequestLimitDuration())
                 .buildAndSetResponse(exc);
@@ -147,7 +153,7 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
             log.info("Error evaluating expression {} for rate limit. Fallback to 'unknown'",expression); // Can be pretty common
             return "unknown";
         }
-        if (!value.isEmpty())
+        if (value != null && !value.isEmpty())
             return value;
 
         log.warn("The expression {} evaluates to null or there is an error in the expression. This may result in a wrong counting for the ratelimiter.", expression);
@@ -228,7 +234,7 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
         Header h = exc.getResponse().getHeader();
         h.add(X_RATELIMIT_DURATION, strategy.getLimitDurationPeriod());
         h.add(X_RATELIMIT_LIMIT, Integer.toString(strategy.requestLimit));
-        h.add(X_RATELIMIT_RESET, strategy.getLimitReset(exc.getRemoteAddrIp()));
+        h.add(X_RATELIMIT_RESET, strategy.getLimitReset(getKey(exc)));
     }
 
     @SuppressWarnings("unused")

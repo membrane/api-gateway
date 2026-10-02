@@ -55,6 +55,10 @@ public class FlowInitiator extends AbstractInterceptor {
     private List<LoginParameter> loginParameters = new ArrayList<>();
     private boolean logoutBeforeFlow = true;
 
+    public FlowInitiator() {
+        name = "flow initiator";
+    }
+
     public String getTriggerFlow() {
         return triggerFlow;
     }

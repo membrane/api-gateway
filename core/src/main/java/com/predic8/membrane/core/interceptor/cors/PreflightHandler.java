@@ -14,19 +14,22 @@
 
 package com.predic8.membrane.core.interceptor.cors;
 
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.Outcome;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.List;
+import java.util.Set;
 
-import static com.predic8.membrane.core.http.Response.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.interceptor.cors.AbstractCORSHandler.ResponseHeaderBuilder.*;
-import static com.predic8.membrane.core.interceptor.cors.CorsInterceptor.*;
-import static com.predic8.membrane.core.util.CollectionsUtil.*;
-import static com.predic8.membrane.core.util.StringList.*;
-import static org.springframework.http.HttpHeaders.*;
+import static com.predic8.membrane.core.http.Response.noContent;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.interceptor.cors.AbstractCORSHandler.ResponseHeaderBuilder.responseBuilder;
+import static com.predic8.membrane.core.interceptor.cors.CorsInterceptor.WILDCARD;
+import static com.predic8.membrane.core.util.CollectionsUtil.join;
+import static com.predic8.membrane.core.util.CollectionsUtil.toLowerCaseSet;
+import static com.predic8.membrane.core.util.StringList.parseToSet;
+import static org.springframework.http.HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD;
 
 public class PreflightHandler extends AbstractCORSHandler {
 
@@ -63,7 +66,7 @@ public class PreflightHandler extends AbstractCORSHandler {
         }
 
         if (!headersAllowed(getAccessControlRequestHeaderValue(exc))) {
-            return createProblemDetails(exc, origin, "headers");
+            return createProblemDetails(exc, getAccessControlRequestHeaderValue(exc), "headers");
         }
 
         if (isWildcardOriginAllowed() && interceptor.getCredentials()) {
