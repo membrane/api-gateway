@@ -16,12 +16,19 @@ package com.predic8.membrane.core.multipart;
 
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.Response;
 import jakarta.mail.internet.ContentType;
 import jakarta.mail.internet.ParseException;
+import org.apache.commons.codec.DecoderException;
+import org.apache.commons.codec.net.QuotedPrintableCodec;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
+import java.util.Locale;
+
+import static com.predic8.membrane.core.util.ByteUtil.removeWhitespace;
 
 /**
  * Utility for splitting multipart HTTP messages into their individual {@link Part}s.
@@ -39,6 +46,79 @@ import java.util.List;
  * <p>Every part is buffered; see {@link PartScanner} to traverse a message without doing that.</p>
  */
 public class MultipartUtil {
+
+    @FunctionalInterface
+    public interface DecodedPartPredicate {
+        boolean test(Part part) throws IOException;
+    }
+
+    /**
+     * Visits transfer-decoded leaf parts in wire order, including nested multipart bodies.
+     * Stops visiting parts when the predicate returns false. The original message is
+     * preserved. Each encoded part is bounded by maxPartSize; base64 and quoted-printable
+     * decoding cannot increase that size. Traversal is limited to 16 levels and 1000 parts.
+     * Malformed or unsupported encodings and empty multipart containers fail with IOException.
+     */
+    public static boolean allDecodedPartsMatch(Message message, int maxPartSize,
+                                               DecodedPartPredicate predicate) throws IOException, ParseException {
+        if (maxPartSize < 0)
+            throw new IllegalArgumentException("maxPartSize must not be negative");
+        return allDecodedPartsMatch(message, maxPartSize, predicate, 0, new int[1]);
+    }
+
+    private static boolean allDecodedPartsMatch(Message message, int maxPartSize,
+                                                DecodedPartPredicate predicate, int depth, int[] count)
+            throws IOException, ParseException {
+        if (depth >= 16)
+            throw new IOException("Multipart nesting limit exceeded");
+        boolean[] accepted = {true};
+        int before = count[0];
+        PartScanner.forEachRawPart(message, maxPartSize, new PartScanner.PartHandler() {
+            @Override
+            public PartScanner.PartAction decide(Header header) {
+                return accepted[0] ? PartScanner.PartAction.INSPECT : PartScanner.PartAction.STOP;
+            }
+
+            @Override
+            public void handle(Part part) throws IOException {
+                if (++count[0] > 1000)
+                    throw new IOException("Multipart part count limit exceeded");
+                Part decoded = decodePart(part);
+                try {
+                    var type = decoded.getHeader().getContentTypeObject();
+                    if (type != null && "multipart".equalsIgnoreCase(type.getPrimaryType())) {
+                        var nested = Response.ok().body(decoded.getBody()).build();
+                        nested.setHeader(decoded.getHeader());
+                        accepted[0] = allDecodedPartsMatch(nested, maxPartSize, predicate, depth + 1, count);
+                    } else {
+                        accepted[0] = predicate.test(decoded);
+                    }
+                } catch (ParseException e) {
+                    throw new IOException("Invalid multipart part Content-Type", e);
+                }
+            }
+        });
+        if (count[0] == before)
+            throw new IOException("Multipart body contains no parts");
+        return accepted[0];
+    }
+
+    private static Part decodePart(Part part) throws IOException {
+        String encoding = part.getHeader().getFirstValue("Content-Transfer-Encoding");
+        if (encoding == null)
+            return part;
+        try {
+            byte[] body = switch (encoding.trim().toLowerCase(Locale.ROOT)) {
+                case "binary", "7bit", "8bit" -> part.getBody();
+                case "base64" -> Base64.getDecoder().decode(removeWhitespace(part.getBody()));
+                case "quoted-printable" -> QuotedPrintableCodec.decodeQuotedPrintable(part.getBody());
+                default -> throw new IOException("Unsupported Content-Transfer-Encoding: " + encoding);
+            };
+            return new Part(part.getHeader(), body);
+        } catch (IllegalArgumentException | DecoderException e) {
+            throw new IOException("Invalid Content-Transfer-Encoding: " + encoding, e);
+        }
+    }
 
     /**
      * @return whether the message's Content-Type has a primary type of {@code multipart}

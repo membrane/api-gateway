@@ -15,12 +15,16 @@
 
 package com.predic8.membrane.core.util;
 
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.*;
 
-import static com.predic8.membrane.annot.Constants.*;
-import static com.predic8.membrane.core.util.ByteUtil.*;
+import static com.predic8.membrane.annot.Constants.CRLF;
+import static com.predic8.membrane.core.util.ByteUtil.readByteArray;
+import static com.predic8.membrane.core.util.ByteUtil.removeWhitespace;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ByteUtilTest {
@@ -80,5 +84,16 @@ public class ByteUtilTest {
 				return super.read(b, off, 1); // force the caller to loop
 			}
 		};
+	}
+
+	@Test
+	void removeWhitespaceKeepsOtherBytes() {
+		assertArrayEquals("ab*\fc\u00e4".getBytes(UTF_8), removeWhitespace(" a\tb\r\n*\fc \u00e4\n".getBytes(UTF_8)));
+	}
+
+	@Test
+	void removeWhitespaceReturnsInputWithoutWhitespace() {
+		byte[] bytes = "abc".getBytes(UTF_8);
+		assertSame(bytes, removeWhitespace(bytes));
 	}
 }
