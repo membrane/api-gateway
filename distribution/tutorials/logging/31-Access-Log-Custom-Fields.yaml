@@ -1,0 +1,51 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.6.2.json
+#
+# Tutorial: Access Log with Custom Fields
+#
+# Are you missing some information in the access log? Custom fields can provide it:
+# anything available in Membrane, like a header, a tenant or an API key ID, can be logged.
+# With jsonPath() or xpath() you can even log values from a JSON or XML body.
+#
+# 1.) Start Membrane:
+#       export JAVA_OPTS="-Dlog4j.configurationFile=tutorials/logging/log4j2-31-access-custom.yaml"   (Linux/Mac)
+#       ./membrane.sh -c 31-Access-Log-Custom-Fields.yaml
+#
+#       $env:JAVA_OPTS="-Dlog4j.configurationFile=tutorials/logging/log4j2-31-access-custom.yaml"     (Windows PowerShell)
+#       membrane.cmd -c 31-Access-Log-Custom-Fields.yaml
+#
+# 2.) Send an order:
+#       curl http://localhost:2000/shop/orders -H "Content-Type: application/json" -d '{"orderId":"A-1042","items":3}'
+#
+# 3.) Look at the access log file. The line now ends with the custom fields:
+#       cat access-custom-*.log
+#
+#       0:0:0:0:0:0:0:1 - - [02/Oct/2026:10:14:23 +0200] "POST /shop/orders HTTP/1.1" 200 30 [application/json] order=A-1042
+#
+# 4.) Open log4j2-31-access-custom.yaml: a field only shows up when the pattern
+#     references it as %X{name}.
+#
+# 5.) Continue with file 32-Access-Log-Per-Api.yaml
+#
+# Be careful when logging bodies or URLs: they may contain personal or confidential
+# information that does not belong in a log file.
+#
+# Values from the body are user provided. To prevent forged log lines, Membrane escapes
+# line breaks, quotes, backslashes and other control characters, e.g. a newline is
+# logged as \n.
+
+global:
+  - accessLog:
+      dateTimePattern: dd/MMM/yyyy:HH:mm:ss Z
+      additionalPatternList:
+        - name: contentType
+          expression: headers['Content-Type']
+        - name: orderId
+          expression: jsonPath('$.orderId')
+
+---
+api:
+  name: Access Log with Custom Fields
+  port: 2000
+  flow:
+    - return:
+        status: 200

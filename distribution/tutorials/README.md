@@ -31,6 +31,11 @@ Use Membrane as a classic HTTP forward proxy that forwards to whatever host the 
 own request names, including tunneling HTTPS traffic to a TLS-protected backend.
 
 
+## [Logging](logging)
+
+Configure Membrane's log output, e.g. as JSON for log aggregators, and write access logs.
+
+
 ## [Operation](operation)
 
 Run and observe Membrane in production. 

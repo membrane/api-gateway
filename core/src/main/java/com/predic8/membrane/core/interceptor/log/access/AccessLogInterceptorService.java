@@ -15,25 +15,28 @@
 
 package com.predic8.membrane.core.interceptor.log.access;
 
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.log.*;
-import com.predic8.membrane.core.lang.spel.*;
-import com.predic8.membrane.core.router.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.ReadingBodyException;
+import com.predic8.membrane.core.interceptor.log.AdditionalVariable;
+import com.predic8.membrane.core.lang.spel.SpELExchangeEvaluationContext;
+import com.predic8.membrane.core.router.Router;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
-import java.io.*;
-import java.time.format.*;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.function.*;
-import java.util.stream.*;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
-import static com.predic8.membrane.core.util.text.TextUtil.*;
-import static java.lang.Long.*;
-import static java.time.Instant.*;
-import static java.time.ZoneId.*;
-import static java.time.format.DateTimeFormatter.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.util.text.TextUtil.escapeForLog;
+import static java.lang.Long.parseLong;
+import static java.time.Instant.ofEpochMilli;
+import static java.time.ZoneId.systemDefault;
+import static java.time.format.DateTimeFormatter.ofPattern;
 
 public class AccessLogInterceptorService {
 
@@ -53,7 +56,7 @@ public class AccessLogInterceptorService {
             boolean excludePayloadSize,
             Router router
     ) {
-        this.dateTimeFormat = ofPattern(dateTimePattern).withZone(systemDefault());
+        this.dateTimeFormat = ofPattern(dateTimePattern, Locale.ENGLISH).withZone(systemDefault());
         this.defaultValue = defaultValue;
         this.additionalVariables = additionalVariables;
         this.excludePayloadSize = excludePayloadSize;
@@ -143,7 +146,7 @@ public class AccessLogInterceptorService {
 
     private String safe(Supplier<Object> access, String defaultValue) {
         try {
-            return escapeQuotes(String.valueOf(access.get()));
+            return escapeForLog(String.valueOf(access.get()));
         } catch (Exception e) {
             return defaultValue;
         }
@@ -168,7 +171,7 @@ public class AccessLogInterceptorService {
 
     private String convert(String timestamp) {
         try {
-            return escapeQuotes(dateTimeFormat.format(ofEpochMilli(parseLong(timestamp))));
+            return escapeForLog(dateTimeFormat.format(ofEpochMilli(parseLong(timestamp))));
         } catch (Exception e) {
             return defaultValue;
         }
