@@ -1,0 +1,42 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.6.2.json
+#
+# Tutorial: Access Log
+#
+# Do you want to know which APIs are called, by whom, and with which result?
+# The access log answers that with one line per request, by default in the Apache
+# Common Log Format, ready for tools like GoAccess or a log aggregator.
+#
+# Log vs. access log: the log is Membrane's diary (startup, warnings, errors and
+# messages of the log plugin). The access log is a record of the traffic, exactly
+# one line per request. Both go through Log4j2 and can be routed to different places.
+# The line layout lives in log4j2-30-access.yaml.
+#
+# 1.) Start Membrane with the access log configuration:
+#       export JAVA_OPTS="-Dlog4j.configurationFile=tutorials/logging/log4j2-30-access.yaml"   (Linux/Mac)
+#       ./membrane.sh -c 30-Access-Log.yaml
+#
+#       $env:JAVA_OPTS="-Dlog4j.configurationFile=tutorials/logging/log4j2-30-access.yaml"     (Windows PowerShell)
+#       membrane.cmd -c 30-Access-Log.yaml
+#
+# 2.) Call the API:
+#       curl http://localhost:2000/shop/products/7
+#
+# 3.) Look at the access log file. Its name contains the start time, e.g. access-2026-10-02_09-56-04.log:
+#       cat access-*.log
+#
+#       0:0:0:0:0:0:0:1 [02/10/2026:09:56:04 +0200] "GET /shop/products/7 HTTP/1.1" 200 0
+#
+# 4.) Open log4j2-30-access.yaml to see the fields you can put into the line.
+#
+# 5.) Continue with file 31-Access-Log-Custom-Fields.yaml
+
+global:
+  - accessLog: {}
+
+---
+api:
+  name: Access Log
+  port: 2000
+  flow:
+    - return:
+        status: 200

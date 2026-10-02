@@ -1,0 +1,27 @@
+Configuration:
+  Appenders:
+    Console:
+      name: STDOUT
+      target: SYSTEM_OUT
+      PatternLayout:
+        pattern: "%d{ABSOLUTE} %5p %c{1}:%L - %m%n"
+    File:
+      name: ACCESS
+      fileName: 'access-custom-${date:yyyy-MM-dd_HH-mm-ss}.log'
+      PatternLayout:
+        # The custom fields from additionalPatternList in 31-Access-Log-Custom-Fields.yaml
+        # are used like the built-in ones:
+        #   %X{contentType}  Content-Type header of the request
+        #   %X{orderId}      orderId taken from the JSON body with jsonPath('$.orderId')
+        pattern: '%X{ip} [%X{time.req.received.format}] "%X{http.method} %X{uri} %X{proto}/%X{http.version}" %X{statusCode} %X{res.payload.size} [%X{contentType}] order=%X{orderId}%n'
+  Loggers:
+    Logger:
+      name: com.predic8.membrane.core.interceptor.log.access
+      level: info
+      additivity: false
+      AppenderRef:
+        ref: ACCESS
+    Root:
+      level: info
+      AppenderRef:
+        ref: STDOUT

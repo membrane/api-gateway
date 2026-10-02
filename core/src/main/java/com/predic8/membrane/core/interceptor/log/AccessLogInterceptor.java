@@ -31,7 +31,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
  * @description Writes one access-log line per completed exchange through a Log4j appender. The line follows the Apache
  * Common Log Format by default; add additionalPatternList entries to append your own SpEL-evaluated fields. Where the
  * line is written and in which format is controlled by the Log4j configuration (log4j2.xml). Typically configured under
- * <code>global</code> so it covers every API. See the examples under examples/logging/access.
+ * <code>global</code> so it covers every API. See the tutorials under tutorials/logging.
  * @topic 4. Monitoring, Logging and Statistics
  * @yaml
  * <pre><code>

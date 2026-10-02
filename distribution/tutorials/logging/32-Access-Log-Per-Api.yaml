@@ -1,0 +1,61 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.6.2.json
+#
+# Tutorial: One Access Log File per API
+#
+# The traffic from all APIs written to the same log file gets messed up quickly. Get
+# order in your logs by separating the log from each API in its own log file.
+#
+# Here each API writes its access log into its own file: access-orders.log,
+# access-products.log and access-users.log.
+#
+# 1.) Start Membrane:
+#       export JAVA_OPTS="-Dlog4j.configurationFile=tutorials/logging/log4j2-32-access-per-api.yaml"   (Linux/Mac)
+#       ./membrane.sh -c 32-Access-Log-Per-Api.yaml
+#
+#       $env:JAVA_OPTS="-Dlog4j.configurationFile=tutorials/logging/log4j2-32-access-per-api.yaml"     (Windows PowerShell)
+#       membrane.cmd -c 32-Access-Log-Per-Api.yaml
+#
+# 2.) Call the APIs:
+#       curl http://localhost:2000/orders/1
+#       curl http://localhost:2000/products/7
+#       curl http://localhost:2000/users/alice
+#
+# 3.) Look at the log files:
+#       cat access-products.log
+#
+#       0:0:0:0:0:0:0:1 [02/10/2026:09:56:10 +0200] "GET /products/7 HTTP/1.1" 200 0
+#
+# 4.) Open log4j2-32-access-per-api.yaml: a Routing appender picks the file by the "api" field.
+
+global:
+  - accessLog:
+      additionalPatternList:
+        - name: api
+          expression: exchange.proxy.name
+---
+api:
+  name: orders
+  port: 2000
+  path:
+    uri: /orders
+  flow:
+    - return:
+        status: 200
+---
+api:
+  name: products
+  port: 2000
+  path:
+    uri: /products
+  flow:
+    - return:
+        status: 200
+---
+api:
+  name: users
+  port: 2000
+  path:
+    uri: /users
+  flow:
+    - return:
+        status: 200

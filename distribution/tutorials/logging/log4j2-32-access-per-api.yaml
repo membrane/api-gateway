@@ -1,0 +1,29 @@
+Configuration:
+  Appenders:
+    Console:
+      name: STDOUT
+      target: SYSTEM_OUT
+      PatternLayout:
+        pattern: "%d{ABSOLUTE} %5p %c{1}:%L - %m%n"
+    Routing:
+      name: ACCESS
+      Routes:
+        # $${ctx:api} is resolved per log event, from the "api" field set in 32-Access-Log-Per-Api.yaml
+        pattern: "$${ctx:api}"
+        Route:
+          File:
+            name: "access-${ctx:api}"
+            fileName: "access-${ctx:api}.log"
+            PatternLayout:
+              pattern: '%X{ip} [%X{time.req.received.format}] "%X{http.method} %X{uri} %X{proto}/%X{http.version}" %X{statusCode} %X{res.payload.size}%n'
+  Loggers:
+    Logger:
+      name: com.predic8.membrane.core.interceptor.log.access
+      level: info
+      additivity: false
+      AppenderRef:
+        ref: ACCESS
+    Root:
+      level: info
+      AppenderRef:
+        ref: STDOUT

@@ -1,0 +1,28 @@
+Configuration:
+  Appenders:
+    Console:
+      name: STDOUT
+      target: SYSTEM_OUT
+      PatternLayout:
+        pattern: "%d{ABSOLUTE} %5p %c{1}:%L - %m%n"
+    # The %X{...} placeholders are filled by accessLog, e.g.:
+    #   ip, host, port, uri, http.method, http.version, proto, statusCode,
+    #   req.payload.size, res.payload.size,
+    #   time.req.received.format, time.res.sent.format, time.diff.received.raw
+    File:
+      name: ACCESS
+      # ${date:...} is resolved once at startup, so every start gets its own file
+      fileName: 'access-${date:yyyy-MM-dd_HH-mm-ss}.log'
+      PatternLayout:
+        pattern: '%X{ip} [%X{time.req.received.format}] "%X{http.method} %X{uri} %X{proto}/%X{http.version}" %X{statusCode} %X{res.payload.size}%n'
+  Loggers:
+    Logger:
+      name: com.predic8.membrane.core.interceptor.log.access
+      level: info
+      additivity: false
+      AppenderRef:
+        ref: ACCESS
+    Root:
+      level: info
+      AppenderRef:
+        ref: STDOUT
