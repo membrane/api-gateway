@@ -23,12 +23,13 @@
 # 3.) Look at the log files:
 #       cat access-products.log
 #
-#       0:0:0:0:0:0:0:1 [02/10/2026:09:56:10 +0200] "GET /products/7 HTTP/1.1" 200 0
+#       0:0:0:0:0:0:0:1 - - [02/Oct/2026:09:56:10 +0200] "GET /products/7 HTTP/1.1" 200 0
 #
 # 4.) Open log4j2-32-access-per-api.yaml: a Routing appender picks the file by the "api" field.
 
 global:
   - accessLog:
+      dateTimePattern: dd/MMM/yyyy:HH:mm:ss Z
       additionalPatternList:
         - name: api
           expression: exchange.proxy.name

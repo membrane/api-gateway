@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class AccessLogInterceptorTest {
 
@@ -66,6 +67,16 @@ public class AccessLogInterceptorTest {
                 .buildExchange());
 
         assertEquals("A-1\\n10.0.0.1 \\\"GET /admin\\\"\\r\\u001b[31m\\\\", mdc.get("orderId"));
+    }
+
+    @Test
+    void timestampPatternCanFollowCommonLogFormat() throws Exception {
+        interceptor.setDateTimePattern("dd/MMM/yyyy:HH:mm:ss Z");
+        interceptor.init();
+        var exc = Request.get("/foo").buildExchange();
+        exc.setTimeReqReceived(1759393665000L);
+
+        assertTrue(captureMDC(exc).get("time.req.received.format").matches("\\d{2}/Oct/2025:\\d{2}:\\d{2}:\\d{2} [+-]\\d{4}"));
     }
 
     private Map<String, String> captureMDC(com.predic8.membrane.core.exchange.Exchange exc) {

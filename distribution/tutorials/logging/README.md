@@ -14,7 +14,7 @@ Both are written through Log4j2, so each can have its own format and destination
 | Step | Topic |
 |---|---|
 | [10-Json-Logging.yaml](10-Json-Logging.yaml) | Log as JSON for log aggregators |
-| [30-Access-Log.yaml](30-Access-Log.yaml) | Access log file in Apache Common Log Format |
+| [30-Access-Log.yaml](30-Access-Log.yaml) | Access log file in Apache Combined Log Format |
 | [31-Access-Log-Custom-Fields.yaml](31-Access-Log-Custom-Fields.yaml) | Own fields in the access log, e.g. a header or a value from the JSON body |
 | [32-Access-Log-Per-Api.yaml](32-Access-Log-Per-Api.yaml) | One access log file per API |
 

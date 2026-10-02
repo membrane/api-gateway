@@ -5,6 +5,10 @@ Configuration:
       target: SYSTEM_OUT
       PatternLayout:
         pattern: "%d{ABSOLUTE} %5p %c{1}:%L - %m%n"
+    # Combined Log Format: Common Log Format plus the quoted Referer and User-Agent,
+    # which 30-Access-Log.yaml provides as custom fields. The two "-" after the IP
+    # are the RFC 1413 identity and the authenticated user, which Membrane does not log.
+    #
     # The %X{...} placeholders are filled by accessLog, e.g.:
     #   ip, host, port, uri, http.method, http.version, proto, statusCode,
     #   req.payload.size, res.payload.size,
@@ -14,7 +18,7 @@ Configuration:
       # ${date:...} is resolved once at startup, so every start gets its own file
       fileName: 'access-${date:yyyy-MM-dd_HH-mm-ss}.log'
       PatternLayout:
-        pattern: '%X{ip} [%X{time.req.received.format}] "%X{http.method} %X{uri} HTTP/%X{http.version}" %X{statusCode} %X{res.payload.size}%n'
+        pattern: '%X{ip} - - [%X{time.req.received.format}] "%X{http.method} %X{uri} HTTP/%X{http.version}" %X{statusCode} %X{res.payload.size} "%X{referer}" "%X{userAgent}"%n'
   Loggers:
     Logger:
       name: com.predic8.membrane.core.interceptor.log.access

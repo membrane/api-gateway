@@ -18,12 +18,12 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
-import static io.restassured.RestAssured.when;
+import static io.restassured.RestAssured.given;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.matchesPattern;
 
 /**
- * Verifies tutorial step 30-Access-Log.yaml: accessLog writes a Common Log Format line into access-<start time>.log through log4j2-30-access.yaml.
+ * Verifies tutorial step 30-Access-Log.yaml: accessLog writes a Combined Log Format line into access-<start time>.log through log4j2-30-access.yaml.
  */
 public class AccessLogTutorialTest extends AbstractLoggingTutorialTest {
 
@@ -39,8 +39,10 @@ public class AccessLogTutorialTest extends AbstractLoggingTutorialTest {
 
     @Test
     void accessLogLineIsWrittenToFile() throws Exception {
-        when().get("http://localhost:2000/shop/products/7").then().statusCode(200);
+        given().header("Referer", "https://example.com/shop").header("User-Agent", "tutorial-test")
+            .when().get("http://localhost:2000/shop/products/7").then().statusCode(200);
 
-        assertThat(readLogFileStartingWith("access-2"), containsString("\"GET /shop/products/7 HTTP/1.1\" 200 0"));
+        assertThat(readLogFileStartingWith("access-2"), matchesPattern(
+                "(?s).*\\S+ - - \\[\\d{2}/[A-Z][a-z]{2}/\\d{4}:\\d{2}:\\d{2}:\\d{2} [+-]\\d{4}\\] \"GET /shop/products/7 HTTP/1\\.1\" 200 0 \"https://example.com/shop\" \"tutorial-test\".*"));
     }
 }

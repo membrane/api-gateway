@@ -26,10 +26,7 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
 import java.time.format.DateTimeFormatter;
-import java.util.AbstractMap;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -59,7 +56,7 @@ public class AccessLogInterceptorService {
             boolean excludePayloadSize,
             Router router
     ) {
-        this.dateTimeFormat = ofPattern(dateTimePattern).withZone(systemDefault());
+        this.dateTimeFormat = ofPattern(dateTimePattern, Locale.ENGLISH).withZone(systemDefault());
         this.defaultValue = defaultValue;
         this.additionalVariables = additionalVariables;
         this.excludePayloadSize = excludePayloadSize;

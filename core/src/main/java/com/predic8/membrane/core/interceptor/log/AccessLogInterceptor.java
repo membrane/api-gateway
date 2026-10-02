@@ -120,7 +120,8 @@ public class AccessLogInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description Pattern used to format the request timestamp in the log line.
+     * @description Pattern used to format the request timestamp in the log line. Month names are English. Use
+     * <code>dd/MMM/yyyy:HH:mm:ss Z</code> for the timestamp of the Apache Common Log Format.
      * @default dd/MM/yyyy:HH:mm:ss Z
      */
     @MCAttribute

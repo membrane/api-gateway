@@ -19,7 +19,7 @@
 # 3.) Look at the access log file. The line now ends with the custom fields:
 #       cat access-custom-*.log
 #
-#       0:0:0:0:0:0:0:1 [02/10/2026:10:14:23 +0200] "POST /shop/orders HTTP/1.1" 200 30 [application/json] order=A-1042
+#       0:0:0:0:0:0:0:1 - - [02/Oct/2026:10:14:23 +0200] "POST /shop/orders HTTP/1.1" 200 30 [application/json] order=A-1042
 #
 # 4.) Open log4j2-31-access-custom.yaml: a field only shows up when the pattern
 #     references it as %X{name}.
@@ -35,6 +35,7 @@
 
 global:
   - accessLog:
+      dateTimePattern: dd/MMM/yyyy:HH:mm:ss Z
       additionalPatternList:
         - name: contentType
           expression: headers['Content-Type']
