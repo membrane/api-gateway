@@ -60,21 +60,23 @@ Requests to http://localhost:2000 are now forwarded to https://apibin.io.
 
 # Why Membrane
 
-From OpenAPI and OAuth to SOAP, XML, LLMs, and MCP, Membrane bridges modern APIs and enterprise integration.
-
 ## Native OpenAPI Support
 
-Deploy APIs from [OpenAPI](https://www.membrane-api.io/openapi/configuration-and-validation) descriptions and use the [OpenAPI for messge validation](distribution/examples/openapi/validation-simple). Membrane supports OpenAPI 3.0, 3.1, and **3.2**.
+Deploy APIs from [OpenAPI](https://www.membrane-api.io/openapi/configuration-and-validation) descriptions and use [OpenAPI for messge validation](distribution/examples/openapi/validation-simple). Membrane supports OpenAPI 3.0, 3.1, and **3.2**.
 
 ## Legacy XML and Web Services Integration
 
-Expose existing SOAP web services as JSON APIs without changing the backend. Membrane’s [wsdl2openapi](#wsdl-to-openapi-conversio) generates an OpenAPI description from WSDL and uses the underlying XSD schemas to convert between JSON and XML.
+Expose existing SOAP web services as JSON APIs without changing the backend. Membrane’s [wsdl2openapi](#wsdl-to-openapi-conversio) generates OpenAPI descriptions from WSDL and uses it to convert between JSON and XML.
 
 Use **XPath** and **JSONPath** to access message data for routing, filtering, and transformation. Templates and XSLT handle custom formats and more complex conversions.
 
+Apply the same routing, transformation, and orchestration capabilities to legacy SOAP services and modern JSON APIs.
+
 ## Protect APIs and Legacy Services
 
-Validate messages against **OpenAPI**, **JSON Schema**, **XSD**, and **WSDL** to reject invalid requests before they reach your backend. Protect SOAP services with XML message protection and XML signatures.
+Validate messages against **OpenAPI**, **JSON Schema**, **XSD**, and **WSDL** to reject invalid requests before they reach your backend. Apply XML, JSON, and GraphQL protection to guard against malicious payloads.
+
+Secure APIs with **API keys**, **OAuth2**, and **JWT**, and protect SOAP services with **WS-Security**, including **XML signatures and encryption**.
 
 ## API Orchestration
 
