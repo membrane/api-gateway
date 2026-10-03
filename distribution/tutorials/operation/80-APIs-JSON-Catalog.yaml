@@ -1,0 +1,80 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.6.2.json
+#
+# Tutorial: Publishing an APIs.json catalog
+#
+# /api-docs describes one API. The 'APIsJSON' plugin publishes a single
+# APIs.json document describing every API the gateway runs, including APIs that
+# have no OpenAPI description, so an API catalog can inventory a whole gateway
+# from one URL.
+#
+# 1.) Start Membrane:
+#     with Docker:
+#       ./run-docker.sh -c 80-APIs-JSON-Catalog.yaml   (Linux/Mac)
+#       run-docker.cmd -c 80-APIs-JSON-Catalog.yaml    (Windows)
+#     or with Java:
+#       ./membrane.sh -c 80-APIs-JSON-Catalog.yaml     (Linux/Mac)
+#       membrane.cmd -c 80-APIs-JSON-Catalog.yaml      (Windows)
+#
+# 2.) Fetch the catalog:
+#       curl -s http://localhost:2000/apis.json | jq '.apis[] | {name, baseUrl, humanUrl}'
+#
+#     {
+#       "name": "Fruit Shop API",
+#       "baseUrl": "http://localhost:2000/shop/v2",
+#       "humanUrl": "http://localhost:2000/api-docs/ui/fruit-shop-api-v2-2-0"
+#     }
+#     {
+#       "name": "Order Service",
+#       "baseUrl": "http://localhost:2000/orders",
+#       "humanUrl": null
+#     }
+#     {
+#       "name": "API Catalog",
+#       "baseUrl": "http://localhost:2000/",
+#       "humanUrl": null
+#     }
+#
+#     Name, description and version of the Fruit Shop API come from the info
+#     block of its OpenAPI document, and humanUrl points at its Swagger UI page.
+#     The Order Service has no OpenAPI description, so name and description come
+#     from the api element, and it has neither a version nor a humanUrl.
+#
+# 3.) Open a humanUrl in the browser to land in that API's Swagger UI:
+#       http://localhost:2000/api-docs/ui/fruit-shop-api-v2-2-0
+
+api:
+  port: 2000
+  path:
+    uri: /shop/v2
+  openapi:
+    - location: https://api.predic8.de/api-docs/fruit-shop-api-v2-2-0
+
+---
+api:
+  name: Order Service
+  # Overrides the aid the plugin would otherwise derive
+  id: example.com:orders
+  port: 2000
+  path:
+    uri: /orders
+  description: Accepts orders and hands them to the order backend.
+  flow:
+    - static:
+        contentType: application/json
+        src: '{ "status": "accepted" }'
+    - return:
+        status: 200
+
+---
+# Listed in its own catalog, with an aid derived from host, port and path
+api:
+  name: API Catalog
+  port: 2000
+  flow:
+    - APIsJSON:
+        rootDomain: example.com
+        collectionId: gateway
+        name: Membrane Gateway APIs
+        description: Every API served by this gateway
+        created: "2026-01-15"
+        modified: "2026-01-15"
