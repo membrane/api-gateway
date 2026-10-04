@@ -1,6 +1,9 @@
 @echo off
 setlocal EnableExtensions
 
+rem A local config is the default; explicit JAVA_OPTS properties come last and win.
+if exist ".\log4j2.yaml" set "JAVA_OPTS=-Dlog4j.configurationFile=file:./log4j2.yaml %JAVA_OPTS%"
+
 set "SCRIPT_DIR=%~dp0"
 if "%SCRIPT_DIR:~-1%"=="\" set "SCRIPT_DIR=%SCRIPT_DIR:~0,-1%"
 

@@ -3,6 +3,11 @@ setlocal
 if not defined MEMBRANE_HOME (>&2 echo start_router.cmd: MEMBRANE_HOME not set & exit /b 1)
 set "CLASSPATH=%MEMBRANE_HOME%\conf;%MEMBRANE_HOME%\lib\*"
 
+rem Prefer a configuration in the current directory. Put this default before
+rem JAVA_OPTS so an explicit -Dlog4j.configurationFile still takes precedence.
+set "LOCAL_LOG4J_OPT="
+if exist ".\log4j2.yaml" set "LOCAL_LOG4J_OPT=-Dlog4j.configurationFile=./log4j2.yaml"
+
 rem === Terminal Color Detection ==============================================
 
 set "DISABLE_COLORS=true"
@@ -46,7 +51,7 @@ set "DISABLE_COLORS=true"
 
 set "JAVA_OPTS=%JAVA_OPTS% -Dmembrane.disable.term.colors=%DISABLE_COLORS% -Djdk.xml.maxGeneralEntitySizeLimit=0 -Djdk.xml.totalEntitySizeLimit=0"
 
-java %JAVA_OPTS% -cp "%CLASSPATH%" com.predic8.membrane.core.cli.RouterCLI %*
+java %LOCAL_LOG4J_OPT% %JAVA_OPTS% -cp "%CLASSPATH%" com.predic8.membrane.core.cli.RouterCLI %*
 set "status=%ERRORLEVEL%"
 if not "%status%"=="0" (
   >&2 echo Membrane terminated with exit code %status%

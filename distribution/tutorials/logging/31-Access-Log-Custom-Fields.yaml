@@ -6,12 +6,26 @@
 # anything available in Membrane, like a header, a tenant or an API key ID, can be logged.
 # With jsonPath() or xpath() you can even log values from a JSON or XML body.
 #
-# 1.) Start Membrane:
-#       export JAVA_OPTS="-Dlog4j.configurationFile=tutorials/logging/log4j2-31-access-custom.yaml"   (Linux/Mac)
+# 1.) Run from this folder. Copy the logging configuration to log4j2.yaml,
+#     which Membrane loads automatically, and disable terminal colors:
+#       cp log4j2-31-access-custom.yaml log4j2.yaml                                          (Linux/Mac)
+#       export MEMBRANE_DISABLE_TERM_COLORS=true
 #       ./membrane.sh -c 31-Access-Log-Custom-Fields.yaml
 #
-#       $env:JAVA_OPTS="-Dlog4j.configurationFile=tutorials/logging/log4j2-31-access-custom.yaml"     (Windows PowerShell)
-#       membrane.cmd -c 31-Access-Log-Custom-Fields.yaml
+#       Copy-Item log4j2-31-access-custom.yaml log4j2.yaml                                   (Windows PowerShell)
+#       $env:MEMBRANE_DISABLE_TERM_COLORS="true"
+#       .\membrane.cmd -c 31-Access-Log-Custom-Fields.yaml
+#
+#     With Docker, copy the same file first, then run:
+#       export MEMBRANE_DOCKER_OPTS="--env-file docker.env"
+#       ./run-docker.sh -c 31-Access-Log-Custom-Fields.yaml
+#
+#       $env:MEMBRANE_DOCKER_OPTS="--env-file docker.env"
+#       .\run-docker.cmd -c 31-Access-Log-Custom-Fields.yaml
+#
+#     docker.env disables colors. Use an image with local log4j2.yaml discovery
+#     (see README.md). Clear any previous logging configuration in JAVA_OPTS,
+#     since an explicit setting overrides the copied file.
 #
 # 2.) Send an order:
 #       curl http://localhost:2000/shop/orders -H "Content-Type: application/json" -d '{"orderId":"A-1042","items":3}'
@@ -21,7 +35,7 @@
 #
 #       0:0:0:0:0:0:0:1 - - [02/Oct/2026:10:14:23 +0200] "POST /shop/orders HTTP/1.1" 200 30 [application/json] order=A-1042
 #
-# 4.) Open log4j2-31-access-custom.yaml: a field only shows up when the pattern
+# 4.) Open log4j2.yaml: a field only shows up when the pattern
 #     references it as %X{name}.
 #
 # 5.) Continue with file 32-Access-Log-Per-Api.yaml

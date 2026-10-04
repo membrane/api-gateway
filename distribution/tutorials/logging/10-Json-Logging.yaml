@@ -4,14 +4,28 @@
 #
 # Log aggregators like Loki or Elasticsearch parse JSON log lines far more reliably
 # than free text. Membrane logs through Log4j2, so switching the console to JSON is
-# a matter of pointing Log4j2 at a different configuration file.
+# a matter of copying the desired configuration to log4j2.yaml.
 #
-# 1.) Start Membrane with the JSON log configuration:
-#       export JAVA_OPTS="-Dlog4j.configurationFile=tutorials/logging/log4j2-json.xml"   (Linux/Mac)
+# 1.) Run from this folder. Copy the logging configuration to log4j2.yaml,
+#     which Membrane loads automatically, and disable terminal colors:
+#       cp log4j2-10-json.yaml log4j2.yaml                                          (Linux/Mac)
+#       export MEMBRANE_DISABLE_TERM_COLORS=true
 #       ./membrane.sh -c 10-Json-Logging.yaml
 #
-#       $env:JAVA_OPTS="-Dlog4j.configurationFile=tutorials/logging/log4j2-json.xml"     (Windows PowerShell)
-#       membrane.cmd -c 10-Json-Logging.yaml
+#       Copy-Item log4j2-10-json.yaml log4j2.yaml                                   (Windows PowerShell)
+#       $env:MEMBRANE_DISABLE_TERM_COLORS="true"
+#       .\membrane.cmd -c 10-Json-Logging.yaml
+#
+#     With Docker, copy the same file first, then run:
+#       export MEMBRANE_DOCKER_OPTS="--env-file docker.env"
+#       ./run-docker.sh -c 10-Json-Logging.yaml
+#
+#       $env:MEMBRANE_DOCKER_OPTS="--env-file docker.env"
+#       .\run-docker.cmd -c 10-Json-Logging.yaml
+#
+#     docker.env disables colors. Use an image with local log4j2.yaml discovery
+#     (see README.md). Clear any previous logging configuration in JAVA_OPTS,
+#     since an explicit setting overrides the copied file.
 #
 # 2.) Call the API and watch the console:
 #       curl http://localhost:2000
@@ -19,7 +33,7 @@
 #     Every log line is now one JSON object:
 #       {"@timestamp":"2026-10-02T05:54:31.395Z","message":"What happens in production stays in the logs.","process.thread.name":"router /127.0.0.1:62604","log.logger":"com.predic8.membrane.core.interceptor.log.LogInterceptor"}
 #
-# 3.) Open tutorials/logging/log4j2-json.xml to see the layout and edit it to change the fields.
+# 3.) Open log4j2.yaml to see the layout and edit it to change the fields.
 #
 # 4.) Continue with file 30-Access-Log.yaml
 

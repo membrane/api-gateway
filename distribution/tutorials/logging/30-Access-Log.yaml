@@ -12,12 +12,26 @@
 # one line per request. Both go through Log4j2 and can be routed to different places.
 # The line layout lives in log4j2-30-access.yaml.
 #
-# 1.) Start Membrane with the access log configuration:
-#       export JAVA_OPTS="-Dlog4j.configurationFile=tutorials/logging/log4j2-30-access.yaml"   (Linux/Mac)
+# 1.) Run from this folder. Copy the logging configuration to log4j2.yaml,
+#     which Membrane loads automatically, and disable terminal colors:
+#       cp log4j2-30-access.yaml log4j2.yaml                                          (Linux/Mac)
+#       export MEMBRANE_DISABLE_TERM_COLORS=true
 #       ./membrane.sh -c 30-Access-Log.yaml
 #
-#       $env:JAVA_OPTS="-Dlog4j.configurationFile=tutorials/logging/log4j2-30-access.yaml"     (Windows PowerShell)
-#       membrane.cmd -c 30-Access-Log.yaml
+#       Copy-Item log4j2-30-access.yaml log4j2.yaml                                   (Windows PowerShell)
+#       $env:MEMBRANE_DISABLE_TERM_COLORS="true"
+#       .\membrane.cmd -c 30-Access-Log.yaml
+#
+#     With Docker, copy the same file first, then run:
+#       export MEMBRANE_DOCKER_OPTS="--env-file docker.env"
+#       ./run-docker.sh -c 30-Access-Log.yaml
+#
+#       $env:MEMBRANE_DOCKER_OPTS="--env-file docker.env"
+#       .\run-docker.cmd -c 30-Access-Log.yaml
+#
+#     docker.env disables colors. Use an image with local log4j2.yaml discovery
+#     (see README.md). Clear any previous logging configuration in JAVA_OPTS,
+#     since an explicit setting overrides the copied file.
 #
 # 2.) Call the API:
 #       curl http://localhost:2000/shop/products/7 -H "Referer: https://example.com/shop"
@@ -27,7 +41,7 @@
 #
 #       0:0:0:0:0:0:0:1 - - [02/Oct/2026:09:56:04 +0200] "GET /shop/products/7 HTTP/1.1" 200 0 "https://example.com/shop" "curl/8.7.1"
 #
-# 4.) Open log4j2-30-access.yaml to see how the line is put together. The two "-" after the
+# 4.) Open log4j2.yaml to see how the line is put together. The two "-" after the
 #     IP address are the identity and user fields of the Common Log Format. Membrane does not
 #     log them, so the pattern writes a "-" for each. A header that is not sent is logged as "-".
 #
