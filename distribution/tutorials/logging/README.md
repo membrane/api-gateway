@@ -38,11 +38,11 @@ Remove the copied file when finished to restore the default logging setup.
 To run with Docker after copying the configuration:
 
 ```sh
-export MEMBRANE_DOCKER_OPTS="--env-file docker.env"
+export MEMBRANE_DOCKER_OPTS="-e MEMBRANE_DISABLE_TERM_COLORS=true"
 ./run-docker.sh -c 10-Json-Logging.yaml
 ```
 
-The shared `docker.env` disables terminal colors for all steps. The launchers mount
+`MEMBRANE_DISABLE_TERM_COLORS` disables terminal colors for all steps. The launchers mount
 this folder at `/opt/membrane/work` and use it as the working directory. They stay
 identical to the other tutorial launchers.
 

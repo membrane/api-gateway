@@ -17,12 +17,10 @@ package com.predic8.membrane.tutorials.logging;
 import com.predic8.membrane.examples.util.SubstringWaitableConsoleEvent;
 import org.junit.jupiter.api.Test;
 
-import java.util.Map;
-
 import static io.restassured.RestAssured.given;
 
 /**
- * Verifies tutorial step 10-Json-Logging.yaml: with log4j2-json.xml selected via JAVA_OPTS
+ * Verifies tutorial step 10-Json-Logging.yaml: with log4j2-10-json.yaml copied to log4j2.yaml
  * the message of the 'log' plugin is printed as a JSON object.
  */
 public class JsonLoggingTutorialTest extends AbstractLoggingTutorialTest {
@@ -33,8 +31,8 @@ public class JsonLoggingTutorialTest extends AbstractLoggingTutorialTest {
     }
 
     @Override
-    protected Map<String, String> getEnvs() {
-        return Map.of("JAVA_OPTS", "-Dlog4j.configurationFile=tutorials/logging/log4j2-json.xml");
+    protected String getLoggingConfig() {
+        return "log4j2-10-json.yaml";
     }
 
     @Test

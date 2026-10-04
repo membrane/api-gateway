@@ -23,13 +23,13 @@
 #       .\membrane.cmd -c 30-Access-Log.yaml
 #
 #     With Docker, copy the same file first, then run:
-#       export MEMBRANE_DOCKER_OPTS="--env-file docker.env"
+#       export MEMBRANE_DOCKER_OPTS="-e MEMBRANE_DISABLE_TERM_COLORS=true"
 #       ./run-docker.sh -c 30-Access-Log.yaml
 #
-#       $env:MEMBRANE_DOCKER_OPTS="--env-file docker.env"
+#       $env:MEMBRANE_DOCKER_OPTS="-e MEMBRANE_DISABLE_TERM_COLORS=true"
 #       .\run-docker.cmd -c 30-Access-Log.yaml
 #
-#     docker.env disables colors. Use an image with local log4j2.yaml discovery
+#     The environment variable disables colors. Use an image with local log4j2.yaml discovery
 #     (see README.md). Clear any previous logging configuration in JAVA_OPTS,
 #     since an explicit setting overrides the copied file.
 #
