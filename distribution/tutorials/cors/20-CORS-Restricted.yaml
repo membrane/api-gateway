@@ -2,10 +2,16 @@
 #
 # Tutorial: CORS - Restricted
 #
-# Allow cross-origin calls only from listed origins, with listed methods and headers.
+# In production, allow cross-origin calls only from trusted origins, and only with the
+# methods and headers your API needs.
 #
 # 1.) Start Membrane:
-#     ./membrane.sh -c 20-CORS-Restricted.yaml
+#     with Docker:
+#       ./run-docker.sh -c 20-CORS-Restricted.yaml   (Linux/Mac)
+#       run-docker.cmd -c 20-CORS-Restricted.yaml    (Windows)
+#     or with Java:
+#       ./membrane.sh -c 20-CORS-Restricted.yaml     (Linux/Mac)
+#       membrane.cmd -c 20-CORS-Restricted.yaml      (Windows)
 #
 # 2.) Open page.html in your browser, open the developer tools (Network tab) and click "Call API".
 #     Calls with PUT or X-Bar fail in the preflight; the Console shows the CORS error.

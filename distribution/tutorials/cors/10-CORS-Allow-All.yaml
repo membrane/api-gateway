@@ -2,12 +2,21 @@
 #
 # Tutorial: CORS - Allow All
 #
-# Let browsers call an API from any origin with any method and header.
+# Browsers block a web page from reading responses from a different origin (same-origin policy).
+# CORS lets an API tell the browser which origins, methods and headers it accepts.
+# The simplest setup allows everything: any origin, any method, any header.
+# Use it for development only, never in production.
 #
 # 1.) Start Membrane:
-#     ./membrane.sh -c 10-CORS-Allow-All.yaml
+#     with Docker:
+#       ./run-docker.sh -c 10-CORS-Allow-All.yaml   (Linux/Mac)
+#       run-docker.cmd -c 10-CORS-Allow-All.yaml    (Windows)
+#     or with Java:
+#       ./membrane.sh -c 10-CORS-Allow-All.yaml     (Linux/Mac)
+#       membrane.cmd -c 10-CORS-Allow-All.yaml      (Windows)
 #
-# 2.) Open page.html in your browser, open the developer tools (Network tab) and click "Call API".
+# 2.) Open page.html from this directory as a file in your browser (File > Open File...,
+#     or Ctrl+O / Cmd+O), open the developer tools (Network tab) and click "Call API".
 #     Every combination of method and headers succeeds.
 #
 # 3.) Send a preflight request, as a browser would before a PUT with a custom header:
