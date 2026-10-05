@@ -10,7 +10,11 @@
          backend VM's private IP is known. Realistic topology, but not a realistic *use* of an
          API gateway: a plain reverse proxy would do the same job. This scenario measures the
          pure cost of the extra network hop, as a baseline for the openapi-validation scenario. -->
-    <router>
+    <!-- No exchange store: the default LimitedMemoryExchangeStore keeps recent exchanges for the
+         admin console and serializes request threads on its lock; nothing here reads them. -->
+    <forgetfulExchangeStore id="forgetful"/>
+
+    <router exchangeStore="forgetful">
         <!-- 1024 is the kernel default backlog; TESTED-CONFIGURATIONS.md's backlog experiment
              (section 4) found no measurable throughput difference against 8192 either (0 errors
              at either value), so this is a plain default, not a tuned setting. -->

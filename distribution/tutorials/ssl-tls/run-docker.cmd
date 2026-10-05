@@ -3,9 +3,23 @@ setlocal EnableExtensions DisableDelayedExpansion
 
 set "DIR=%~dp0"
 if "%DIR:~-1%"=="\" set "DIR=%DIR:~0,-1%"
-set "IMAGE=predic8/membrane:7.6.2"
+set "IMAGE=predic8/membrane:7.7.0"
 
-for /f "delims=" %%i in ('docker create -p 2000-2010:2000-2010 -p 8443:8443 -v "%DIR%:/opt/membrane/tutorial" -w /opt/membrane/tutorial --entrypoint /opt/membrane/membrane.sh %IMAGE% %*') do set "CID=%%i"
+rem Without an explicit -c the container falls back to its own baked-in
+rem conf/apis.yaml and silently ignores the one in this directory.
+set "ARGS=%*"
+if not defined ARGS if exist "%DIR%\conf\apis.yaml" set "ARGS=-c conf/apis.yaml"
+
+rem Ports 2000-2010, 8443 (TLS) and 9000 (admin console) are published.
+rem For a configuration listening elsewhere, publish it additionally, e.g.:
+rem   set "MEMBRANE_DOCKER_OPTS=-p 3128:3128"
+rem JAVA_OPTS from the host environment is passed on to the JVM in the container.
+rem Paths in it must be valid inside the container, relative ones resolve against /opt/membrane.
+
+rem Bind-mount this directory so config edits on the host are picked up live.
+rem Mounted at /opt/membrane/work, not /opt/membrane/conf: the image ships its own
+rem console-only conf/log4j2.xml that must not be shadowed.
+for /f "delims=" %%i in ('docker create -p 2000-2010:2000-2010 -p 8443:8443 -p 9000:9000 -e JAVA_OPTS %MEMBRANE_DOCKER_OPTS% -v "%DIR%:/opt/membrane/work" -w /opt/membrane/work --entrypoint /opt/membrane/membrane.sh %IMAGE% %ARGS%') do set "CID=%%i"
 
 set "CLEANUP_CMD=docker rm -f %CID% >nul 2>nul"
 

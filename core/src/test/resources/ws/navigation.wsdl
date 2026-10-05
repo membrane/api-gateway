@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- For the WSDL parser's lookups: a SOAP header, an operation without input, a non-SOAP binding
+     and a port without address. -->
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:tns="http://example.com/navigation"
+                  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                  xmlns:s="http://schemas.xmlsoap.org/wsdl/soap/"
+                  xmlns:http="http://schemas.xmlsoap.org/wsdl/http/"
+                  targetNamespace="http://example.com/navigation">
+    <wsdl:types>
+        <xsd:schema targetNamespace="http://example.com/navigation" elementFormDefault="qualified">
+            <xsd:element name="order" type="xsd:string"/>
+            <xsd:element name="orderResponse" type="xsd:string"/>
+            <xsd:element name="token" type="xsd:string"/>
+            <xsd:element name="notice" type="xsd:string"/>
+        </xsd:schema>
+    </wsdl:types>
+    <wsdl:message name="order">
+        <wsdl:part name="parameters" element="tns:order"/>
+    </wsdl:message>
+    <wsdl:message name="orderResponse">
+        <wsdl:part name="parameters" element="tns:orderResponse"/>
+    </wsdl:message>
+    <wsdl:message name="security">
+        <wsdl:part name="token" element="tns:token"/>
+    </wsdl:message>
+    <wsdl:message name="notice">
+        <wsdl:part name="parameters" element="tns:notice"/>
+    </wsdl:message>
+    <wsdl:portType name="OrderPortType">
+        <wsdl:operation name="order">
+            <wsdl:input message="tns:order"/>
+            <wsdl:output message="tns:orderResponse"/>
+        </wsdl:operation>
+        <wsdl:operation name="notify">
+            <wsdl:output message="tns:notice"/>
+        </wsdl:operation>
+    </wsdl:portType>
+    <wsdl:portType name="UnboundPortType">
+        <wsdl:operation name="order">
+            <wsdl:input message="tns:order"/>
+        </wsdl:operation>
+    </wsdl:portType>
+    <wsdl:binding name="OrderSoapBinding" type="tns:OrderPortType">
+        <s:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+        <wsdl:operation name="order">
+            <s:operation soapAction="http://example.com/navigation/order"/>
+            <wsdl:input>
+                <s:header message="tns:security" part="token" use="literal"/>
+                <s:header message="tns:security" part="missing" use="literal"/>
+                <s:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output><s:body use="literal"/></wsdl:output>
+        </wsdl:operation>
+    </wsdl:binding>
+    <wsdl:binding name="OrderHttpBinding" type="tns:OrderPortType">
+        <http:binding verb="POST"/>
+        <wsdl:operation name="order">
+            <http:operation location="/order"/>
+            <wsdl:input><http:urlEncoded/></wsdl:input>
+            <wsdl:output><http:urlEncoded/></wsdl:output>
+        </wsdl:operation>
+    </wsdl:binding>
+    <wsdl:service name="OrderService">
+        <wsdl:port name="OrderSoapPort" binding="tns:OrderSoapBinding">
+            <s:address location="http://example.com/order"/>
+        </wsdl:port>
+        <wsdl:port name="OrderPortWithoutAddress" binding="tns:OrderSoapBinding"/>
+    </wsdl:service>
+</wsdl:definitions>

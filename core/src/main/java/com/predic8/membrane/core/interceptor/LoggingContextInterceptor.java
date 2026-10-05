@@ -20,7 +20,9 @@ import org.apache.logging.log4j.ThreadContext;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
 /**
- * Adds the proxy name to log lines
+ * @description Puts the current API proxy's name into the logging <code>ThreadContext</code> under
+ * the key <code>api</code> for the duration of the exchange, so it can be included in log output
+ * (e.g. via a pattern layout); the entry is removed once the exchange finishes or aborts.
  */
 @MCElement(name="logContext")
 public class LoggingContextInterceptor extends AbstractInterceptor{

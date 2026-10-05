@@ -41,6 +41,7 @@ import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.http.MimeType.isBinary;
 import static com.predic8.membrane.core.util.HttpUtil.*;
+import static com.predic8.membrane.core.util.text.StringUtil.getLastNonEmptyOfCommaSeparatedString;
 import static com.predic8.membrane.core.util.text.StringUtil.maskNonPrintableCharacters;
 import static com.predic8.membrane.core.util.text.StringUtil.truncateAfter;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
@@ -435,19 +436,22 @@ public class Header {
     /**
      * Whether the message body uses chunked transfer framing.
      * <p>
-     * Per RFC 7230 section 3.3.1 the body is chunked-framed if "chunked" is the
+     * Per RFC 9112 section 6.1 the body is chunked-framed if "chunked" is the
      * <em>final</em> transfer-coding. Transfer-coding names are case-insensitive,
      * and codings may be combined in a comma-separated list (e.g. "gzip, chunked"),
-     * so this looks at the last token case-insensitively rather than requiring an
-     * exact "chunked" match.
+     * so this looks at the last coding case-insensitively rather than requiring an
+     * exact "chunked" match. Empty list elements are legal and are ignored
+     * (RFC 9110 5.6.1.2), so "chunked," is still chunked-framed.
+     * <p>
+     * Repeated field lines carry one coding list between them and are combined before the
+     * final coding is taken, so "chunked" in a field line that is not the last one does
+     * <em>not</em> make the body chunked-framed.
      */
     public boolean isChunked() {
-        String value = getFirstValue(TRANSFER_ENCODING);
+        String value = getNormalizedValue(TRANSFER_ENCODING);
         if (value == null)
             return false;
-        int lastComma = value.lastIndexOf(',');
-        String last = (lastComma == -1 ? value : value.substring(lastComma + 1)).trim();
-        return CHUNKED.equalsIgnoreCase(last);
+        return CHUNKED.equalsIgnoreCase(getLastNonEmptyOfCommaSeparatedString(value));
     }
 
     /**

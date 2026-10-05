@@ -11,7 +11,11 @@
          isolates gateway-only overhead (transport, routing, thread handling) for direct
          comparison against the other two scenarios (same client, same request shape, one fewer
          network hop). Best-case, but unrealistic: no gateway is run only to talk to itself. -->
-    <router>
+    <!-- No exchange store: the default LimitedMemoryExchangeStore keeps recent exchanges for the
+         admin console and serializes request threads on its lock; nothing here reads them. -->
+    <forgetfulExchangeStore id="forgetful"/>
+
+    <router exchangeStore="forgetful">
         <transport backlog="1024"/>
         <api port="2000">
             <return statusCode="200"/>

@@ -16,6 +16,10 @@ package com.predic8.membrane.core.util.wsdl.parser;
 
 import org.w3c.dom.Node;
 
+import java.util.Optional;
+
+import static com.predic8.membrane.core.util.wsdl.parser.WSDLParserUtil.getLocalName;
+
 public class SoapHeader extends WSDLElement {
 
     public SoapHeader(WSDLParserContext ctx, Node node) {
@@ -28,5 +32,13 @@ public class SoapHeader extends WSDLElement {
 
     public String getMessage() {
         return getAttribute("message");
+    }
+
+    /** The message part the header carries; empty if the message or the part cannot be found. */
+    public Optional<Part> resolvePart() {
+        return ctx.definitions().findMessage(getLocalName(getMessage()))
+                .flatMap(message -> message.getParts().stream()
+                        .filter(p -> getPart().equals(p.getName()))
+                        .findFirst());
     }
 }

@@ -14,6 +14,9 @@
 
 package com.predic8.membrane.core.http;
 
+import com.predic8.membrane.core.transport.http.EOFWhileReadingFirstLineException;
+import com.predic8.membrane.core.transport.http.LineTooLongException;
+import com.predic8.membrane.core.transport.http.NoMoreRequestsException;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,6 +35,7 @@ import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.util.HttpTestUtil.convertMessage;
 import static com.predic8.membrane.core.util.StringTestUtil.inputStreamFrom;
 import static com.predic8.membrane.test.TestUtil.getResourceAsStream;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -238,6 +242,29 @@ public class RequestTest {
         assertArrayEquals(request.getBody().getRaw(), reqTemp.getBody().getRaw());
     }
 
+    /**
+     * RFC 9112 6.2: a sender must not send Content-Length in a message with Transfer-Encoding. A
+     * chunked request that still carries a Content-Length, e.g. one built with a known length and
+     * then switched to chunked, is written without it, so that the next hop - Membrane among them -
+     * does not reject it for carrying both.
+     */
+    @Test
+    void writingChunkedRequestDropsContentLength() throws Exception {
+        Request chunked = post("http://example.com/products")
+                .body(5, new ByteArrayInputStream("hello".getBytes(UTF_8)))
+                .header(Header.TRANSFER_ENCODING, Header.CHUNKED)
+                .build();
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        chunked.write(out, true);
+
+        Request written = new Request();
+        written.read(new ByteArrayInputStream(out.toByteArray()), true);
+        assertFalse(written.getHeader().hasContentLength(), out.toString(UTF_8));
+        assertInstanceOf(ChunkedBody.class, written.getBody());
+        assertEquals("hello", written.getBodyAsStringDecoded());
+    }
+
     @Test
     void isHTTP11() {
         assertTrue(request.isHTTP11());
@@ -404,16 +431,88 @@ public class RequestTest {
     }
 
     /**
-     * Header.isChunked() only inspects the first Transfer-Encoding field, so a chunked coding
-     * split off into a second field line is not recognized as framing and must be rejected.
+     * The two field lines combine to "gzip, chunked", which ends in "chunked" and is therefore
+     * valid chunked framing - exactly like the single-field form in
+     * {@link #transferEncodingEndingInChunkedIsAccepted()}. This used to assert rejection, which
+     * only described what Header.isChunked() did when it read the first field line alone (#3327).
      */
     @Test
-    void transferEncodingSplitOverSeveralFieldsIsRejected() {
+    void transferEncodingEndingInChunkedAcrossSeveralFieldsIsAccepted() throws Exception {
+        assertInstanceOf(ChunkedBody.class, readRequest("""
+                POST /products HTTP/1.1
+                Host: example.com
+                Transfer-Encoding: gzip
+                Transfer-Encoding: chunked
+
+                0
+
+                """).getBody());
+    }
+
+    /**
+     * RFC 9112 6.3: the Transfer-Encoding field is present, so its coding list determines the
+     * framing - and an empty list does not end in "chunked". Reading the field as absent and
+     * falling back to the Content-Length lets Membrane and the backend disagree about where the
+     * body ends, which is what request smuggling relies on.
+     */
+    @Test
+    void emptyTransferEncodingIsRejected() {
+        assertThrows(MalformedHeaderException.class, () -> readRequest("""
+                POST /products HTTP/1.1
+                Host: example.com
+                Transfer-Encoding:
+                Content-Length: 3
+
+                abc
+                """));
+    }
+
+    /**
+     * The smuggling guard in Request.createBody must not be walked past by moving "chunked" into
+     * its own field line: combined the codings are "chunked, identity", whose final coding is not
+     * "chunked", so the body length cannot be determined and the request must be rejected.
+     */
+    @Test
+    void transferEncodingWithChunkedNotFinalAcrossSeveralFieldsIsRejected() {
+        assertThrows(MalformedHeaderException.class, () -> readRequest("""
+                POST /products HTTP/1.1
+                Host: example.com
+                Transfer-Encoding: chunked
+                Transfer-Encoding: identity
+
+                """));
+    }
+
+    /**
+     * RFC 9112 6.1: a request with both Content-Length and Transfer-Encoding may be rejected. Taking
+     * "Content-Length: 0" to mean an empty body would leave the chunked bytes unread on the
+     * connection, where they would be parsed as the next request - request smuggling.
+     */
+    @Test
+    void chunkedWithContentLengthIsRejected() {
+        assertThrows(MalformedHeaderException.class, () -> readRequest("""
+                POST /products HTTP/1.1
+                Host: example.com
+                Transfer-Encoding: chunked
+                Content-Length: 0
+
+                5
+                abcde
+                0
+
+                """));
+    }
+
+    @Test
+    void chunkedAcrossSeveralFieldsWithContentLengthIsRejected() {
         assertThrows(MalformedHeaderException.class, () -> readRequest("""
                 POST /products HTTP/1.1
                 Host: example.com
                 Transfer-Encoding: gzip
                 Transfer-Encoding: chunked
+                Content-Length: 3
+
+                0
 
                 """));
     }
@@ -530,6 +629,179 @@ public class RequestTest {
         // Not one of the codecs MessageUtil can decode, but still not plain bytes.
         assertTrue(post("/foo").header("Content-Encoding", "zstd").build().isEncoded());
         assertTrue(post("/foo").contentType("multipart/related; boundary=b").build().isEncoded());
+    }
+
+    /**
+     * Baseline of the current start-line parsing, including its quirks listed in #3378: anything
+     * that is not {@code <method> <uri> HTTP/<version>} falls back to STOMP, and an empty line
+     * reads as the end of a keep-alive connection.
+     */
+    @Nested
+    class ParseStartLine {
+
+        @Test
+        void originForm() throws IOException {
+            assertStartLine("GET /foo HTTP/1.1", "GET", "/foo", "1.1");
+        }
+
+        @Test
+        void queryIsPartOfUri() throws IOException {
+            assertStartLine("GET /foo?a=1&b=%20 HTTP/1.1", "GET", "/foo?a=1&b=%20", "1.1");
+        }
+
+        @Test
+        void absoluteForm() throws IOException {
+            assertStartLine("GET http://example.com:8080/foo HTTP/1.1", "GET", "http://example.com:8080/foo", "1.1");
+        }
+
+        @Test
+        void authorityForm() throws IOException {
+            assertStartLine("CONNECT example.com:443 HTTP/1.1", "CONNECT", "example.com:443", "1.1");
+        }
+
+        @Test
+        void asteriskForm() throws IOException {
+            assertStartLine("OPTIONS * HTTP/1.1", "OPTIONS", "*", "1.1");
+        }
+
+        @Test
+        void http10() throws IOException {
+            assertStartLine("POST /foo HTTP/1.0", "POST", "/foo", "1.0");
+        }
+
+        @Test
+        void extensionMethod() throws IOException {
+            assertStartLine("QUERY /foo HTTP/1.1", "QUERY", "/foo", "1.1");
+        }
+
+        @Test
+        void methodCaseIsKept() throws IOException {
+            assertStartLine("get /foo HTTP/1.1", "get", "/foo", "1.1");
+        }
+
+        @Test
+        void versionIsNotValidated() throws IOException {
+            assertStartLine("GET /foo HTTP/abc", "GET", "/foo", "abc");
+        }
+
+        @Test
+        void trailingWhitespaceIsPartOfVersion() throws IOException {
+            assertStartLine("GET /foo HTTP/1.1 ", "GET", "/foo", "1.1 ");
+        }
+
+        @Test
+        void spaceInUriIsPartOfUri() throws IOException {
+            assertStartLine("GET /a b HTTP/1.1", "GET", "/a b", "1.1");
+        }
+
+        @Test
+        void extraSpaceAfterMethodIsPartOfUri() throws IOException {
+            assertStartLine("GET  /foo HTTP/1.1", "GET", " /foo", "1.1");
+        }
+
+        @Test
+        void methodEndsAtFirstSpace() throws IOException {
+            assertStartLine("X GET /foo HTTP/1.1", "X", "GET /foo", "1.1");
+        }
+
+        @Test
+        void uriEndsAtFirstHttpVersion() throws IOException {
+            assertStartLine("GET /foo HTTP/1.1 HTTP/2", "GET", "/foo", "1.1 HTTP/2");
+        }
+
+        @Test
+        void bytesAreReadAsLatin1() throws IOException {
+            Request req = parse("GET /ä HTTP/1.1\r\n".getBytes(UTF_8));
+            assertEquals(new String("/ä".getBytes(UTF_8), ISO_8859_1), req.getUri());
+        }
+
+        @Test
+        void lfLineEnding() throws IOException {
+            Request req = parse("GET /foo HTTP/1.1\nHost: example.com\n".getBytes(UTF_8));
+            assertEquals("/foo", req.getUri());
+            assertEquals("1.1", req.getVersion());
+        }
+
+        @Test
+        void consumesOnlyTheStartLine() throws IOException {
+            InputStream in = new ByteArrayInputStream("GET /foo HTTP/1.1\r\nHost: example.com\r\n".getBytes(UTF_8));
+            new Request().parseStartLine(in);
+            assertEquals("Host: example.com\r\n", new String(in.readAllBytes(), UTF_8));
+        }
+
+        @Test
+        void longUri() throws IOException {
+            String uri = "/" + "a".repeat(8000);
+            assertStartLine("GET " + uri + " HTTP/1.1", "GET", uri, "1.1");
+        }
+
+        @Test
+        void lineTooLong() {
+            assertThrows(LineTooLongException.class, () -> parse(("GET /" + "a".repeat(9000) + " HTTP/1.1\r\n").getBytes(UTF_8)));
+        }
+
+        @Nested
+        class StompFallback {
+
+            @Test
+            void stompCommand() throws IOException {
+                assertStartLine("CONNECT", "CONNECT", "", "STOMP");
+            }
+
+            @Test
+            void missingVersion() throws IOException {
+                assertStartLine("GET /foo", "GET /foo", "", "STOMP");
+            }
+
+            @Test
+            void emptyVersion() throws IOException {
+                assertStartLine("GET /foo HTTP/", "GET /foo HTTP/", "", "STOMP");
+            }
+
+            @Test
+            void lowercaseProtocol() throws IOException {
+                assertStartLine("GET /foo http/1.1", "GET /foo http/1.1", "", "STOMP");
+            }
+
+            @Test
+            void tabSeparator() throws IOException {
+                assertStartLine("GET\t/foo HTTP/1.1", "GET\t/foo HTTP/1.1", "", "STOMP");
+            }
+        }
+
+        @Nested
+        class EndOfStream {
+
+            @Test
+            void emptyStream() {
+                assertThrows(NoMoreRequestsException.class, () -> parse(new byte[0]));
+            }
+
+            @Test
+            void emptyLine() {
+                assertThrows(NoMoreRequestsException.class, () -> parse("\r\n".getBytes(UTF_8)));
+            }
+
+            @Test
+            void eofInsideLine() {
+                EOFWhileReadingFirstLineException e = assertThrows(EOFWhileReadingFirstLineException.class,
+                        () -> parse("GET /foo HT".getBytes(UTF_8)));
+                assertEquals("GET /foo HT", e.getLineSoFar());
+            }
+        }
+
+        private static void assertStartLine(String startLine, String method, String uri, String version) throws IOException {
+            Request req = parse((startLine + "\r\n").getBytes(UTF_8));
+            assertEquals(method, req.getMethod());
+            assertEquals(uri, req.getUri());
+            assertEquals(version, req.getVersion());
+        }
+
+        private static Request parse(byte[] startLine) throws IOException {
+            Request req = new Request();
+            req.parseStartLine(new ByteArrayInputStream(startLine));
+            return req;
+        }
     }
 
     @Nested

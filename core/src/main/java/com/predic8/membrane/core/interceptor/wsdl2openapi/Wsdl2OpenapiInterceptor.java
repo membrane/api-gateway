@@ -34,6 +34,7 @@ import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.wsdl.parser.BindingOperation;
 import com.predic8.membrane.core.util.wsdl.parser.Definitions;
 import com.predic8.membrane.core.util.wsdl.parser.Operation;
+import com.predic8.membrane.core.util.wsdl.parser.WSDLParserException;
 import com.predic8.membrane.core.util.xml.XMLInputSourceUtil;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.Schema;
@@ -44,14 +45,14 @@ import org.xml.sax.InputSource;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.http.Header.CONTENT_LENGTH;
-import static com.predic8.membrane.core.http.Header.CONTENT_TYPE;
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
-import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
+import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.InterceptorUtil.getInterceptors;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
@@ -63,6 +64,7 @@ import static com.predic8.membrane.core.resolver.ResolverMap.combine;
 import static com.predic8.membrane.core.util.HttpUtil.getMessageForStatusCode;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
 import static com.predic8.membrane.core.util.URLParamUtil.getParams;
+import static com.predic8.membrane.core.util.wsdl.parser.Definitions.SOAPVersion.SOAP_12;
 import static com.predic8.membrane.core.util.wsdl.parser.Definitions.parse;
 import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.OUTPUT;
 import static org.w3c.dom.DOMException.INVALID_CHARACTER_ERR;
@@ -78,6 +80,10 @@ import static org.w3c.dom.DOMException.INVALID_CHARACTER_ERR;
  * WSDLs, declare one API per WSDL.
  * </p>
  * <p>
+ * An API exposes a single port of a single service of the WSDL. To expose several services of one
+ * WSDL, declare one API per service.
+ * </p>
+ * <p>
  * The generated OpenAPI document's title is the enclosing <i>api</i>'s <code>name</code>.
  * </p>
  * <p>
@@ -87,6 +93,7 @@ import static org.w3c.dom.DOMException.INVALID_CHARACTER_ERR;
  * such as 400 for a request it cannot map or 405 for a method the path does not support. Nothing in
  * the response reveals that a SOAP service is being called.
  * </p>
+ * <p>See <a href="https://github.com/membrane/api-gateway/blob/master/distribution/tutorials/wsdl-to-openapi/10-WSDL-to-OpenAPI.yaml">tutorials/wsdl-to-openapi/10-WSDL-to-OpenAPI.yaml</a>.</p>
  * @yaml <pre><code>
  * api:
  *   name: Purchasing API
@@ -116,6 +123,8 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
     private String wsdl;
     private String description;
     private String version;
+    private String service;
+    private String port;
     /** The api this plugin lives in. Set by init(), which rejects anything that is not an APIProxy. */
     private APIProxy apiProxy;
     private Definitions definitions;
@@ -134,7 +143,10 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
      * WSDL does not change, and every request and response needs it. Requests must never read the
      * WSDL model itself — it is a Xerces DOM, which concurrent reads corrupt.
      *
-     * @param soapAction        the SOAPAction header of the operation's binding, or empty.
+     * @param contentType       the Content-Type of the SOAP request. For SOAP 1.2, it carries the
+     *                          operation's action as a parameter.
+     * @param soapAction        the SOAPAction header of a SOAP 1.1 request, quoted; {@code null}
+     *                          for SOAP 1.2, which sends no such header.
      * @param faultDetailSchema types the content of a SOAP fault detail, one property per fault the
      *                          operation declares; empty for an operation that declares none, in
      *                          which case the detail is still converted, just with every scalar as
@@ -145,6 +157,7 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
      *                          no parts alike.
      */
     record OperationRuntime(Json2SoapTransformer requestTransformer,
+                            String contentType,
                             String soapAction,
                             Schema<?> responseSchema,
                             Schema<?> faultDetailSchema,
@@ -171,21 +184,22 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
         basePath = getBasePath();
 
         definitions = parseWsdl();
+        var selectedPort = selectPort();
         operationsByName = operations != null ? operations.getMap() : Map.of();
         initOperationFlows();
 
         // One converter for the document and the runtime alike: the schemas used to convert a
         // response refer to the named types by the very names the document publishes them under.
-        var wsdl2OpenApi = new Wsdl2OpenApiConverter(definitions, basePath, operationsByName,
+        var wsdl2OpenApi = new Wsdl2OpenApiConverter(definitions, selectedPort, basePath, operationsByName,
                 new ApiInfo(apiProxy.getName(), description, version));
         xsdToSchema = wsdl2OpenApi.getSchemaConverter();
 
         // init() can run more than once on the same instance: AbstractProxy.clone() and
         // RuleManager.replaceRule both init, and the clone shares this interceptor. Both the router
         // and the runtimes are replaced wholesale, so nothing of the previous WSDL can survive.
-        operationRouter = new OperationRouter(basePath, buildRoutes(definitions, operationsByName));
-        operationRuntimes = buildOperationRuntimes(operationRouter.getRoutes());
-        wsdlServiceAddress = wsdlServiceAddress(definitions);
+        operationRouter = new OperationRouter(basePath, buildRoutes(selectedPort, operationsByName));
+        operationRuntimes = buildOperationRuntimes(selectedPort, operationRouter.getRoutes());
+        wsdlServiceAddress = selectedPort.address();
 
         var openApiModel = wsdl2OpenApi.generate();
         queryParamNames = collectQueryParamNames(openApiModel);
@@ -194,7 +208,8 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
 
         registerApiDocsPaths();
 
-        log.info("Loaded WSDL from {} with {} services", wsdl, definitions.getServices().size());
+        log.info("Loaded WSDL from {}, exposing port {}{}", wsdl, selectedPort.name(),
+                selectedPort.service() != null ? " of service " + selectedPort.service().getName() : "");
     }
 
     private APIProxy validateAndGetApiProxy() {
@@ -234,6 +249,14 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
         }
     }
 
+    private SelectedPort selectPort() {
+        try {
+            return SelectedPort.select(definitions, service, port);
+        } catch (WSDLParserException e) {
+            throw new ConfigurationException("Cannot select a port of WSDL '%s': %s".formatted(wsdl, e.getMessage()), e);
+        }
+    }
+
     private void initOperationFlows() {
         for (OperationSettings settings : operationsByName.values()) {
             for (Interceptor i : settings.getFlow()) {
@@ -242,9 +265,9 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
         }
     }
 
-    /** One route per exposed operation: all of them, or only those named in {@code operationsByName}. */
-    static List<RouteEntry> buildRoutes(Definitions definitions, Map<String, OperationSettings> operationsByName) {
-        return definitions.getOperations().stream()
+    /** One route per exposed operation of the port: all of them, or only those named in {@code operationsByName}. */
+    static List<RouteEntry> buildRoutes(SelectedPort port, Map<String, OperationSettings> operationsByName) {
+        return port.operations().stream()
                 .map(op -> op.getName())
                 .filter(name -> operationsByName.isEmpty() || operationsByName.containsKey(name))
                 .map(name -> toRoute(name, operationsByName.get(name)))
@@ -257,19 +280,21 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
         return new RouteEntry(buildPathPattern(segment), extractParamNames(segment), method, operationName);
     }
 
-    private Map<String, OperationRuntime> buildOperationRuntimes(List<RouteEntry> routes) {
+    private Map<String, OperationRuntime> buildOperationRuntimes(SelectedPort port, List<RouteEntry> routes) {
         var runtimes = new LinkedHashMap<String, OperationRuntime>();
         for (RouteEntry route : routes) {
-            runtimes.put(route.operationName(), buildOperationRuntime(route.operationName()));
+            runtimes.put(route.operationName(), buildOperationRuntime(port, route.operationName()));
         }
         return Map.copyOf(runtimes);
     }
 
-    private OperationRuntime buildOperationRuntime(String operationName) {
-        Optional<Operation> wsdlOp = definitions.findOperation(operationName);
+    private OperationRuntime buildOperationRuntime(SelectedPort port, String operationName) {
+        validateSoapAction(port, operationName);
+        Optional<Operation> wsdlOp = port.findOperation(operationName);
         return new OperationRuntime(
-                new Json2SoapTransformer(definitions, operationName, xsdToSchema.getSchemasByNamespace()),
-                getSOAPAction(operationName),
+                new Json2SoapTransformer(port, operationName, xsdToSchema.getSchemasByNamespace()),
+                requestContentType(port, operationName),
+                soapActionHeader(port, operationName),
                 xsdToSchema.convertMessageParts(wsdlOp.map(op -> op.getMessagesByDirection(OUTPUT)).orElse(List.of())),
                 xsdToSchema.convertFaultDetail(wsdlOp.map(Operation::getFaults).orElse(List.of())),
                 // An operation the WSDL does not resolve keeps the two-way path: it is the one that
@@ -604,8 +629,13 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
 
             exc.getRequest().setBodyContent(soapRequest);
             exc.getRequest().setMethod("POST");
-            exc.getRequest().getHeader().setContentType(TEXT_XML);
-            exc.getRequest().getHeader().setSOAPAction(runtime.soapAction());
+            exc.getRequest().getHeader().setContentType(runtime.contentType());
+            if (runtime.soapAction() != null) {
+                exc.getRequest().getHeader().setSOAPAction(runtime.soapAction());
+            } else {
+                // SOAP 1.2 sends no SOAPAction header: one the client sent must not reach the service.
+                exc.getRequest().getHeader().removeFields(SOAP_ACTION);
+            }
 
             exc.setProperty(operationPropertyKey, operationName);
 
@@ -652,10 +682,42 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
         return ABORT;
     }
 
-    private String getSOAPAction(String operationName) {
-        return definitions.findBindingOperation(operationName)
+    private static String getSOAPAction(SelectedPort port, String operationName) {
+        return port.findBindingOperation(operationName)
                 .map(BindingOperation::getSoapAction)
                 .orElse("");
+    }
+
+    /**
+     * Both SOAP versions require the action to be a URI (SOAP 1.1 section 6.1.1, RFC 3902), which
+     * is what lets it go between quotes unescaped: a URI cannot contain a quote or a backslash.
+     */
+    private void validateSoapAction(SelectedPort port, String operationName) {
+        String action = getSOAPAction(port, operationName);
+        if (action == null || action.isEmpty()) return;
+        try {
+            new URI(action);
+        } catch (URISyntaxException e) {
+            throw new ConfigurationException("""
+                    The WSDL '%s' gives operation '%s' the SOAP action '%s', which is not a URI.
+                    SOAP requires the action to be a URI. Percent-encode characters such as quotes, backslashes or spaces.""".formatted(wsdl, operationName, action), e);
+        }
+    }
+
+    /** SOAP 1.2 announces the action in the media type (RFC 3902), where SOAP 1.1 uses a header. */
+    private static String requestContentType(SelectedPort port, String operationName) {
+        if (port.soapVersion() != SOAP_12) return TEXT_XML;
+        String action = getSOAPAction(port, operationName);
+        return action == null || action.isEmpty() ? APPLICATION_SOAP_XML
+                : "%s; action=\"%s\"".formatted(APPLICATION_SOAP_XML, action);
+    }
+
+    /**
+     * The SOAPAction header value: quoted, as SOAP 1.1 section 6.1.1 requires, and a quoted empty
+     * string where the WSDL gives no action (WS-I Basic Profile R2744, R2745).
+     */
+    private static String soapActionHeader(SelectedPort port, String operationName) {
+        return port.soapVersion() == SOAP_12 ? null : "\"%s\"".formatted(getSOAPAction(port, operationName));
     }
 
     private String getServiceAddress() {
@@ -664,15 +726,6 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
             return url;
         }
         return wsdlServiceAddress;
-    }
-
-    private static String wsdlServiceAddress(Definitions definitions) {
-        var services = definitions.getServices();
-        if (services.isEmpty()) return null;
-        var ports = services.getFirst().getPorts();
-        if (ports.isEmpty()) return null;
-        var address = ports.getFirst().getAddress();
-        return address != null ? address.getLocation() : null;
     }
 
     public String getWsdl() {
@@ -715,6 +768,36 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
     @MCAttribute
     public void setVersion(String version) {
         this.version = version;
+    }
+
+    public String getService() {
+        return service;
+    }
+
+    /**
+     * @description The WSDL service to expose. Required when the WSDL declares more than one
+     * service; with a single service, that one is used.
+     * @example OrderService
+     */
+    @MCAttribute
+    public void setService(String service) {
+        this.service = service;
+    }
+
+    public String getPort() {
+        return port;
+    }
+
+    /**
+     * @description The port of the service to expose; it decides the operations, the SOAP version
+     * and the address that is called. Required when the SOAP ports of the service implement
+     * different port types. Otherwise the SOAP 1.1 port is used, or the SOAP 1.2 port when there is
+     * none. A port that is not bound to SOAP over HTTP cannot be selected.
+     * @example OrderServiceSoap12
+     */
+    @MCAttribute
+    public void setPort(String port) {
+        this.port = port;
     }
 
     public OperationsConfig getOperations() {

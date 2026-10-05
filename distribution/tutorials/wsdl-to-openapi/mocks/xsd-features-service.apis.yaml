@@ -1,11 +1,12 @@
-# yaml-language-server: $schema=https://www.membrane-api.io/v7.6.2.json
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.7.0.json
 #
 # XsdFeaturesService Mock
 #
 # Start standalone:
 #   ./membrane.sh -c mocks/xsd-features-service.apis.yaml
 #
-# Routes by SOAPAction and returns a static SOAP response for each operation.
+# Routes by SOAPAction and returns a static SOAP response for each operation. The gateway
+# sends the SOAPAction quoted, as SOAP 1.1 requires.
 
 global:
   - beautifier: {}
@@ -16,7 +17,7 @@ global:
 api:
   port: 2001
   name: getPrimitiveTypes
-  test: header.SOAPAction == 'getPrimitiveTypes'
+  test: header.SOAPAction == '"getPrimitiveTypes"'
   flow:
     - static:
         contentType: text/xml
@@ -41,7 +42,7 @@ api:
 api:
   port: 2001
   name: getSequence
-  test: header.SOAPAction == 'getSequence'
+  test: header.SOAPAction == '"getSequence"'
   flow:
     - static:
         contentType: text/xml
@@ -60,7 +61,7 @@ api:
 api:
   port: 2001
   name: getAll
-  test: header.SOAPAction == 'getAll'
+  test: header.SOAPAction == '"getAll"'
   flow:
     - static:
         contentType: text/xml
@@ -79,7 +80,7 @@ api:
 api:
   port: 2001
   name: getChoice
-  test: header.SOAPAction == 'getChoice'
+  test: header.SOAPAction == '"getChoice"'
   flow:
     - static:
         contentType: text/xml
@@ -98,7 +99,7 @@ api:
 api:
   port: 2001
   name: getGroupRef
-  test: header.SOAPAction == 'getGroupRef'
+  test: header.SOAPAction == '"getGroupRef"'
   flow:
     - static:
         contentType: text/xml
@@ -120,7 +121,7 @@ api:
   port: 2001
   name: getArray
   # deliberately ONE occurrence: the schema decides this is an array, not the number of elements
-  test: header.SOAPAction == 'getArray'
+  test: header.SOAPAction == '"getArray"'
   flow:
     - static:
         contentType: text/xml
@@ -139,7 +140,7 @@ api:
 api:
   port: 2001
   name: getNillable
-  test: header.SOAPAction == 'getNillable'
+  test: header.SOAPAction == '"getNillable"'
   flow:
     - static:
         contentType: text/xml
@@ -160,7 +161,7 @@ api:
 api:
   port: 2001
   name: getAttributes
-  test: header.SOAPAction == 'getAttributes'
+  test: header.SOAPAction == '"getAttributes"'
   flow:
     - static:
         contentType: text/xml
@@ -181,7 +182,7 @@ api:
 api:
   port: 2001
   name: getSimpleContent
-  test: header.SOAPAction == 'getSimpleContent'
+  test: header.SOAPAction == '"getSimpleContent"'
   flow:
     - static:
         contentType: text/xml
@@ -200,7 +201,7 @@ api:
 api:
   port: 2001
   name: getExtension
-  test: header.SOAPAction == 'getExtension'
+  test: header.SOAPAction == '"getExtension"'
   flow:
     - static:
         contentType: text/xml
@@ -224,7 +225,7 @@ api:
   port: 2001
   name: getRestriction
   # customer is restricted away, so the response carries orderId only
-  test: header.SOAPAction == 'getRestriction'
+  test: header.SOAPAction == '"getRestriction"'
   flow:
     - static:
         contentType: text/xml
@@ -245,7 +246,7 @@ api:
 api:
   port: 2001
   name: getFacets
-  test: header.SOAPAction == 'getFacets'
+  test: header.SOAPAction == '"getFacets"'
   flow:
     - static:
         contentType: text/xml
@@ -264,7 +265,7 @@ api:
 api:
   port: 2001
   name: getFixedAndDefault
-  test: header.SOAPAction == 'getFixedAndDefault'
+  test: header.SOAPAction == '"getFixedAndDefault"'
   flow:
     - static:
         contentType: text/xml
@@ -283,7 +284,7 @@ api:
 api:
   port: 2001
   name: getImportedType
-  test: header.SOAPAction == 'getImportedType'
+  test: header.SOAPAction == '"getImportedType"'
   flow:
     - static:
         contentType: text/xml

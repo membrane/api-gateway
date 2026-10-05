@@ -13,13 +13,15 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Response;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 
 /**
  * @description Returns the flow of plugins and copies the content of the
@@ -30,6 +32,10 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
 public class EchoInterceptor extends AbstractInterceptor {
 
 	private static final Logger log = LoggerFactory.getLogger(EchoInterceptor.class.getName());
+
+	public EchoInterceptor() {
+		name = "echo";
+	}
 
 	@Override
 	public Outcome handleRequest(Exchange exc) {

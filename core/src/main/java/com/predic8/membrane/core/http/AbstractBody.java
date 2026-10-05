@@ -350,8 +350,8 @@ public abstract class AbstractBody {
 		try {
 			return new String(getRaw(), UTF_8);
 		} catch (ReadingBodyException e) {
-			log.error(e.getMessage());
-			return "Error in body: " + e.getMessage();
+			log.info("Error reading body: {}", e.getMessage());
+			return "Error reading body: " + e.getMessage();
 		}
 	}
 

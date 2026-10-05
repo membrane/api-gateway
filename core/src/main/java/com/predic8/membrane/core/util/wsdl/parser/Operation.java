@@ -14,9 +14,10 @@
 
 package com.predic8.membrane.core.util.wsdl.parser;
 
-import org.w3c.dom.*;
+import org.w3c.dom.Node;
 
-import java.util.*;
+import java.util.List;
+import java.util.Optional;
 
 public class Operation extends WSDLElement {
 
@@ -42,6 +43,11 @@ public class Operation extends WSDLElement {
 
     public List<Fault> getFaults() {
         return instantiateChildren("fault", Fault.class);
+    }
+
+    /** The message of the operation's input; empty for an operation without one. */
+    public Optional<Message> getInputMessage() {
+        return getInputs().stream().findFirst().map(Input::getMessage);
     }
 
     public List<Message> getMessagesByDirection(Direction direction) {

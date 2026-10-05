@@ -1,0 +1,34 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.7.0.json
+#
+# Tutorial: JSON Logging
+#
+# Log aggregators like Loki or Elasticsearch parse JSON log lines far more reliably
+# than free text. Membrane logs through Log4j2, so switching the console to JSON is
+# a matter of pointing Log4j2 at a different configuration file.
+#
+# 1.) Start Membrane with the JSON log configuration:
+#       export JAVA_OPTS="-Dlog4j.configurationFile=tutorials/logging/log4j2-json.xml"   (Linux/Mac)
+#       ./membrane.sh -c 10-Json-Logging.yaml
+#
+#       $env:JAVA_OPTS="-Dlog4j.configurationFile=tutorials/logging/log4j2-json.xml"     (Windows PowerShell)
+#       membrane.cmd -c 10-Json-Logging.yaml
+#
+# 2.) Call the API and watch the console:
+#       curl http://localhost:2000
+#
+#     Every log line is now one JSON object:
+#       {"@timestamp":"2026-10-02T05:54:31.395Z","message":"What happens in production stays in the logs.","process.thread.name":"router /127.0.0.1:62604","log.logger":"com.predic8.membrane.core.interceptor.log.LogInterceptor"}
+#
+# 3.) Open tutorials/logging/log4j2-json.xml to see the layout and edit it to change the fields.
+#
+# 4.) Continue with file 30-Access-Log.yaml
+
+api:
+  name: JSON Logging
+  port: 2000
+  flow:
+    - request:
+        - log:
+            message: What happens in production stays in the logs.
+        - return:
+            status: 200

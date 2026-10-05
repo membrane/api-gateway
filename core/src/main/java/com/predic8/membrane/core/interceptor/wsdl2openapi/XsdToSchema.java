@@ -147,7 +147,7 @@ public class XsdToSchema {
     }
 
     public XsdToSchema(Definitions definitions, Set<String> reservedComponentNames) {
-        this(buildSchemaMap(definitions), reservedComponentNames);
+        this(definitions.getSchemasByNamespace(), reservedComponentNames);
     }
 
     /**

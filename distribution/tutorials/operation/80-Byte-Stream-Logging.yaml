@@ -1,0 +1,55 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.7.0.json
+#
+# Tutorial: Byte Stream Logging
+#
+# Write every byte Membrane sends and receives on the wire to a log file.
+#
+# This is a debugging tool for problems in the underlying HTTP protocol, where
+# you need to see each character exactly as it is transmitted or received over
+# the wire, including every CR, LF and the exact encoding. It is not meant for
+# regular operation.
+#
+# For most tracing needs, a 'log' plugin in the flow is good enough: it shows
+# messages at the HTTP level.
+#
+# 1.) Start Membrane with the log configuration log4j2-traffic.xml:
+#     Linux/Mac:
+#       JAVA_OPTS="-Dlog4j.configurationFile=$PWD/log4j2-traffic.xml" ./membrane.sh -c 80-Byte-Stream-Logging.yaml
+#     Windows:
+#       set JAVA_OPTS=-Dlog4j.configurationFile=%CD%\log4j2-traffic.xml
+#       membrane.cmd -c 80-Byte-Stream-Logging.yaml
+#
+#     Membrane warns that TRACE logging is enabled. That is expected here.
+#
+# 2.) Call the API:
+#       curl http://localhost:2000
+#
+# 3.) Open traffic.log in this directory:
+#       ... ByteStreamLogging:76 - [client=>membrane 244640458] [ 71 69 84 32 47 32 ... ]
+#       GET / HTTP/1.1
+#       Host: localhost:2000
+#       ...
+#       ... ByteStreamLogging:76 - [membrane=>backend 899486797] [ 71 69 84 32 47 32 ... ]
+#       GET / HTTP/1.1
+#       Host: apibin.io:443
+#       ...
+#       ... ByteStreamLogging:76 - [backend=>membrane 899486797] [ 72 84 84 80 47 49 ... ]
+#       HTTP/1.1 200 OK
+#       Content-Type: application/json
+#       ...
+#       {
+#         "api": "apibin",
+#       ...
+#       ... ByteStreamLogging:76 - [membrane=>client 244640458] [ 72 84 84 80 47 49 ... ]
+#       HTTP/1.1 200 OK
+#       ...
+#
+#     The arrow shows which way the bytes flow, the number identifies the
+#     connection. The connection to apibin.io uses HTTPS, but is logged
+#     unencrypted: the bytes are logged before they are encrypted and after
+#     they are decrypted.
+
+api:
+  port: 2000
+  target:
+    url: https://apibin.io

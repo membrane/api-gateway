@@ -14,32 +14,39 @@
 package com.predic8.membrane.core.interceptor.administration;
 
 import com.predic8.membrane.annot.Constants;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.exchangestore.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.balancer.*;
-import com.predic8.membrane.core.proxies.Proxy;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchangestore.LimitedMemoryExchangeStore;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.balancer.Balancer;
+import com.predic8.membrane.core.interceptor.balancer.BalancerUtil;
+import com.predic8.membrane.core.interceptor.balancer.Node;
 import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.transport.*;
-import com.predic8.membrane.core.util.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.transport.PortOccupiedException;
+import com.predic8.membrane.core.util.DateAndTimeUtil;
+import com.predic8.membrane.core.util.URLParamUtil;
+import com.predic8.membrane.core.util.URLUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.lang.reflect.*;
-import java.net.*;
-import java.text.*;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.net.URISyntaxException;
+import java.text.DecimalFormat;
 import java.util.*;
-import java.util.regex.*;
+import java.util.regex.Pattern;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
+import static com.predic8.membrane.core.http.MimeType.TEXT_HTML_UTF8;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.interceptor.administration.AdminPageBuilder.*;
-import static com.predic8.membrane.core.interceptor.rest.RESTInterceptor.*;
-import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
-import static com.predic8.membrane.core.util.URLParamUtil.*;
-import static java.nio.charset.StandardCharsets.*;
+import static com.predic8.membrane.core.interceptor.administration.AdminPageBuilder.createHRef;
+import static com.predic8.membrane.core.interceptor.rest.RESTInterceptor.getRelativeRootPath;
+import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
+import static com.predic8.membrane.core.util.URLParamUtil.createQueryString;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Handles the dynamic part of the admin console (= requests starting with "/admin/").
@@ -48,6 +55,10 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	private static final Logger log = LoggerFactory.getLogger(DynamicAdminPageInterceptor.class.getName());
 	private boolean readOnly;
 	private boolean useXForwardedForAsClientAddr;
+
+	public DynamicAdminPageInterceptor() {
+		name = "dynamic admin page";
+	}
 
 	@Override
 	public Outcome handleRequest(Exchange exc) {
