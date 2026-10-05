@@ -9,23 +9,17 @@
 # 1.) Run from this folder. Copy the logging configuration to log4j2.yaml,
 #     which Membrane loads automatically, and disable terminal colors:
 #       cp log4j2-31-access-custom.yaml log4j2.yaml                                          (Linux/Mac)
-#       export MEMBRANE_DISABLE_TERM_COLORS=true
 #       ./membrane.sh -c 31-Access-Log-Custom-Fields.yaml
 #
 #       Copy-Item log4j2-31-access-custom.yaml log4j2.yaml                                   (Windows PowerShell)
-#       $env:MEMBRANE_DISABLE_TERM_COLORS="true"
 #       .\membrane.cmd -c 31-Access-Log-Custom-Fields.yaml
 #
 #     With Docker, copy the same file first, then run:
-#       export MEMBRANE_DOCKER_OPTS="-e MEMBRANE_DISABLE_TERM_COLORS=true"
+#       cp log4j2-31-access-custom.yaml log4j2.yaml                                          (Linux/Mac)
 #       ./run-docker.sh -c 31-Access-Log-Custom-Fields.yaml
 #
-#       $env:MEMBRANE_DOCKER_OPTS="-e MEMBRANE_DISABLE_TERM_COLORS=true"
+#       Copy-Item log4j2-31-access-custom.yaml log4j2.yaml                                   (Windows PowerShell)
 #       .\run-docker.cmd -c 31-Access-Log-Custom-Fields.yaml
-#
-#     The environment variable disables colors. Use an image with local log4j2.yaml discovery
-#     (see README.md). Clear any previous logging configuration in JAVA_OPTS,
-#     since an explicit setting overrides the copied file.
 #
 # 2.) Send an order:
 #       curl http://localhost:2000/shop/orders -H "Content-Type: application/json" -d '{"orderId":"A-1042","items":3}'

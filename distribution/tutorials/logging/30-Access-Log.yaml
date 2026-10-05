@@ -3,35 +3,26 @@
 # Tutorial: Access Log
 #
 # Do you want to know which APIs are called, by whom, and with which result?
-# The access log answers that with one line per request, in the Apache
-# Combined Log Format (the Common Log Format plus Referer and User-Agent), ready for
-# tools like GoAccess or a log aggregator.
+# The access log answers that with one line per request.
 #
-# Log vs. access log: the log is Membrane's diary (startup, warnings, errors and
-# messages of the log plugin). The access log is a record of the traffic, exactly
-# one line per request. Both go through Log4j2 and can be routed to different places.
-# The line layout lives in log4j2-30-access.yaml.
+# Log vs. access log: the log is Membrane's diary (startup, warnings and errors).
+# The access log is a record of the traffic, exactly one line per request.
+# Both go through Log4j2 and can be routed to different places.
 #
 # 1.) Run from this folder. Copy the logging configuration to log4j2.yaml,
 #     which Membrane loads automatically, and disable terminal colors:
 #       cp log4j2-30-access.yaml log4j2.yaml                                          (Linux/Mac)
-#       export MEMBRANE_DISABLE_TERM_COLORS=true
 #       ./membrane.sh -c 30-Access-Log.yaml
 #
 #       Copy-Item log4j2-30-access.yaml log4j2.yaml                                   (Windows PowerShell)
-#       $env:MEMBRANE_DISABLE_TERM_COLORS="true"
 #       .\membrane.cmd -c 30-Access-Log.yaml
 #
 #     With Docker, copy the same file first, then run:
-#       export MEMBRANE_DOCKER_OPTS="-e MEMBRANE_DISABLE_TERM_COLORS=true"
+#       cp log4j2-30-access.yaml log4j2.yaml                                          (Linux/Mac)
 #       ./run-docker.sh -c 30-Access-Log.yaml
 #
-#       $env:MEMBRANE_DOCKER_OPTS="-e MEMBRANE_DISABLE_TERM_COLORS=true"
+#       Copy-Item log4j2-30-access.yaml log4j2.yaml                                   (Windows PowerShell)
 #       .\run-docker.cmd -c 30-Access-Log.yaml
-#
-#     The environment variable disables colors. Use an image with local log4j2.yaml discovery
-#     (see README.md). Clear any previous logging configuration in JAVA_OPTS,
-#     since an explicit setting overrides the copied file.
 #
 # 2.) Call the API:
 #       curl http://localhost:2000/shop/products/7 -H "Referer: https://example.com/shop"
