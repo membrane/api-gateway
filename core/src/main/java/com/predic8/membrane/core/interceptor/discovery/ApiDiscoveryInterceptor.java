@@ -19,9 +19,12 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.util.*;
 import org.slf4j.*;
+import org.springframework.http.InvalidMediaTypeException;
+import org.springframework.http.MediaType;
 
 import java.time.*;
 import java.time.format.*;
+import java.util.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.Header.*;
@@ -153,9 +156,29 @@ public class ApiDiscoveryInterceptor extends AbstractInterceptor {
         }
     }
 
+    /**
+     * Whether <code>text/html</code> is among the media types the client prefers most. Media types
+     * are compared case-insensitively, and a quality of 0 means "not this". A malformed header
+     * counts as not asking for HTML, so the client still gets the JSON.
+     */
     private static boolean acceptsHtml(Exchange exc) {
         String accept = exc.getRequest().getHeader().getAccept();
-        return accept != null && accept.contains("html");
+        if (accept == null)
+            return false;
+        try {
+            List<MediaType> types = MimeType.sortMimeTypeByQualityFactorDescending(accept);
+            if (types.isEmpty())
+                return false;
+            double preferred = types.getFirst().getQualityValue();
+            if (preferred <= 0.0)
+                return false;
+            return types.stream()
+                    .filter(type -> type.getQualityValue() == preferred)
+                    .anyMatch(MediaType.TEXT_HTML::equalsTypeAndSubtype);
+        } catch (InvalidMediaTypeException e) {
+            log.debug("Ignoring malformed Accept header '{}'.", accept);
+            return false;
+        }
     }
 
     public DiscoveryFormat getFormat() {

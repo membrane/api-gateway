@@ -22,6 +22,8 @@ import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.util.*;
 import com.predic8.membrane.test.*;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.*;
+import org.junit.jupiter.params.provider.*;
 
 import java.util.*;
 
@@ -159,6 +161,32 @@ class ApiDiscoveryInterceptorTest {
 
         assertEquals(TEXT_HTML_UTF8, exc.getResponse().getHeader().getContentType());
         assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("<h2>Shop"));
+    }
+
+    @Test
+    void mediaTypesInAcceptAreMatchedCaseInsensitively() throws Exception {
+        assertEquals(TEXT_HTML_UTF8, membraneContentTypeFor("TEXT/HTML"));
+    }
+
+    /**
+     * HTML only wins when the client prefers it. <code>q=0</code> means "not this", and a lower
+     * quality than JSON means JSON is preferred.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "text/html;q=0",
+            "application/json, text/html;q=0.5",
+            "application/xhtml+xml",
+            "not a media type"})
+    void htmlIsOnlyServedWhenTheClientPrefersIt(String accept) throws Exception {
+        assertEquals(APPLICATION_JSON, membraneContentTypeFor(accept));
+    }
+
+    private String membraneContentTypeFor(String accept) throws Exception {
+        Exchange exc = request("GET");
+        exc.getRequest().getHeader().setValue(ACCEPT, accept);
+        interceptor(MEMBRANE).handleRequest(exc);
+        return exc.getResponse().getHeader().getContentType();
     }
 
     @Test
