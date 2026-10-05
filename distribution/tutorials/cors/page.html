@@ -28,12 +28,25 @@
         <label class="checkbox"><input type="checkbox" id="xBar"> X-Bar: 7</label>
     </div>
 
+    <strong>Request:</strong>
+    <div class="request" id="request"></div>
+
     <button onclick="call()">Call API</button>
-    <div class="response" id="response">No response yet!</div>
+    <div class="response" id="response">Not called yet.</div>
+
+    <h3>Further reading</h3>
+    <ul>
+        <li><a href="https://www.membrane-api.io/cors-api-gateway.html" target="_blank">CORS Guide for API Developers</a></li>
+        <li><a href="https://www.membrane-api.io/ebook/API-Gateway-Handbook-v2.0.0.pdf#page=161" target="_blank">API Gateway Handbook, §21 Cross-Origin Resource Sharing (CORS)</a></li>
+        <li><a href="https://www.youtube.com/watch?v=sBiIqtjd_xw" target="_blank">Video: CORS für API-Entwickler</a> (German)</li>
+    </ul>
 </div>
 
 <script>
-    function call() {
+    const API_URL = "http://localhost:2000";
+    let callCount = 0;
+
+    function buildRequest() {
         const method = document.getElementById("methodSelect").value;
 
         const headers = {};
@@ -55,17 +68,64 @@
         if (method !== "GET") {
             options.body = JSON.stringify({test: "test"});
         }
+        return options;
+    }
 
-        fetch("http://localhost:2000", options)
-            .then(res => res.text())
-            .then(data => {
-                document.getElementById("response").textContent = data;
-            })
+    // None of the selectable headers is CORS-safelisted (Content-Type: application/json isn't either),
+    // so any checked header, or a method other than GET/POST, makes the browser send a preflight.
+    function needsPreflight(options) {
+        return !["GET", "POST"].includes(options.method) || Object.keys(options.headers).length > 0;
+    }
+
+    function showRequest() {
+        const options = buildRequest();
+        let text = options.method + " " + API_URL + "\n";
+        for (const [name, value] of Object.entries(options.headers)) {
+            text += name + ": " + value + "\n";
+        }
+        if (options.body) {
+            text += "\n" + options.body + "\n";
+        }
+        text += "\nPreflight (OPTIONS): " + (needsPreflight(options) ? "yes" : "no");
+        document.getElementById("request").textContent = text;
+    }
+
+    function showResponse(state, text) {
+        const response = document.getElementById("response");
+        response.className = "response " + state;
+        response.textContent = text;
+        // Restart the flash animation so repeated identical results are still noticeable
+        void response.offsetWidth;
+        response.classList.add("flash");
+    }
+
+    function resetResponse() {
+        showRequest();
+        const response = document.getElementById("response");
+        response.className = "response";
+        response.textContent = "Not called yet.";
+    }
+
+    function call() {
+        const options = buildRequest();
+        const label = "#" + (++callCount) + " at " + new Date().toLocaleTimeString() + " - " + options.method + "\n";
+        showResponse("pending", label + "Calling...");
+
+        fetch(API_URL, options)
+            .then(res => res.text().then(data => {
+                showResponse(res.ok ? "success" : "error", label + res.status + " " + res.statusText + "\n\n" + data);
+            }))
             .catch(err => {
                 console.error("Request failed:", err);
-                document.getElementById("response").textContent = "Request failed (check the console)";
+                showResponse("error", label + "Request failed: blocked by CORS or Membrane is not running.\n"
+                    + "Check the Console and Network tabs of the developer tools.");
             });
     }
+
+    for (const id of ["methodSelect", "contentType", "xFoo", "xBar"]) {
+        document.getElementById(id).addEventListener("change", resetResponse);
+    }
+    showRequest();
 </script>
 
 </body>
