@@ -1,0 +1,77 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.7.0.json
+#
+# Tutorial: HTTP Basic Authentication with a Database
+#
+# Users are read via JDBC from a database table. Any database with a JDBC driver
+# can be used, like MySQL, SQL Server or Oracle. This tutorial uses PostgreSQL.
+#
+# 1.) Install the PostgreSQL JDBC driver into Membrane's lib/ directory:
+#     curl -o ../../lib/postgresql-42.7.13.jar https://repo1.maven.org/maven2/org/postgresql/postgresql/42.7.13/postgresql-42.7.13.jar
+#
+#     Newer versions should work as well: https://jdbc.postgresql.org/download/
+#
+# 2.) Start PostgreSQL with the users from basic-auth-users.sql:
+#     docker run -d --name postgres -e POSTGRES_PASSWORD=secret -p 5432:5432 \
+#       -v "$PWD/basic-auth-users.sql:/docker-entrypoint-initdb.d/basic-auth-users.sql" postgres
+#
+# 3.) Start Membrane:
+#     ./membrane.sh -c 12-Basic-Authentication-database.yaml
+#
+#     Table users already exists.
+#
+# 4.) Without credentials:
+#     curl -i localhost:2000
+#
+#     HTTP/1.1 401 Unauthorized
+#
+# 5.) Valid credentials:
+#     curl -u membrane localhost:2000
+#     enter password: gateway
+#
+#     You're in!
+#
+# 6.) Add a user, no restart needed:
+#     docker exec postgres psql -U postgres -c "INSERT INTO users VALUES ('alice', 'secret')"
+#
+#     curl -u alice localhost:2000
+#     enter password: secret
+#
+#     You're in!
+#
+# 7.) Stop PostgreSQL:
+#     docker rm -f postgres
+#
+# NOTE: For another database, put its JDBC driver into lib/ and change
+# driverClassName and url, e.g.:
+#     MySQL:      com.mysql.cj.jdbc.Driver                      jdbc:mysql://localhost:3306/demo
+#     SQL Server: com.microsoft.sqlserver.jdbc.SQLServerDriver  jdbc:sqlserver://localhost:1433;encrypt=false
+#     Oracle:     oracle.jdbc.OracleDriver                      jdbc:oracle:thin:@localhost:1521/FREEPDB1
+
+components:
+  dataSource:
+    bean:
+      class: org.apache.commons.dbcp2.BasicDataSource
+      properties:
+        - name: driverClassName
+          value: org.postgresql.Driver
+        - name: url
+          value: jdbc:postgresql://localhost:5432/postgres
+        - name: username
+          value: postgres
+        - name: password
+          value: secret
+
+---
+api:
+  port: 2000
+  flow:
+    - basicAuthentication:
+        jdbcUserDataProvider:
+          datasource: '#/components/dataSource'
+          tableName: users
+          userColumnName: nickname
+          passwordColumnName: password
+    - static:
+        src: You're in!
+    - return:
+        status: 200

@@ -10,15 +10,33 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.authentication.session;
 
-import com.predic8.membrane.core.router.*;
-import org.h2.jdbcx.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.router.DefaultRouter;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.test.TestAppender;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.Logger;
+import org.h2.jdbcx.JdbcDataSource;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
-import java.sql.*;
-import java.util.*;
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Set;
 
-import static com.predic8.membrane.core.util.SecurityUtils.*;
+import static com.predic8.membrane.core.util.SecurityUtils.AlgoSalt;
+import static com.predic8.membrane.core.util.SecurityUtils.createPasswdCompatibleHash;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.AdditionalAnswers.delegatesTo;
+import static org.mockito.ArgumentMatchers.startsWith;
+import static org.mockito.Mockito.*;
 
 class JdbcUserDataProviderTest {
 
@@ -81,6 +99,51 @@ class JdbcUserDataProviderTest {
         try (var con = dataSource.getConnection();
              var rs = con.getMetaData().getTables(null, null, TABLE_NAME.toUpperCase(), null)) {
             assertTrue(rs.next());
+        }
+    }
+
+    @Test
+    void initSkipsCreationWhenTableExists() throws SQLException {
+        createUsersTable(dataSource);
+        provider.setDatasource(rejectingCreateTable(dataSource));
+
+        assertLogsTableExistsWithoutError(captureLog(() -> provider.init(router)));
+    }
+
+    @Test
+    void initSkipsCreationWhenTableExistsInLowerCaseDatabase() throws SQLException {
+        // PostgreSQL folds unquoted identifiers to lower case
+        final var lowerCaseDataSource = new JdbcDataSource();
+        lowerCaseDataSource.setURL("jdbc:h2:mem:lower;DATABASE_TO_LOWER=TRUE");
+        lowerCaseDataSource.setUser("sa");
+        lowerCaseDataSource.setPassword("");
+
+        try (var ignored = lowerCaseDataSource.getConnection()) { // keeps the in-memory database alive
+            createUsersTable(lowerCaseDataSource);
+            provider.setDatasource(rejectingCreateTable(lowerCaseDataSource));
+
+            assertLogsTableExistsWithoutError(captureLog(() -> provider.init(router)));
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "",                         // stores upper case, like Oracle
+            ";DATABASE_TO_LOWER=TRUE",  // stores lower case, like PostgreSQL
+            ";DATABASE_TO_UPPER=FALSE"  // stores as written, like MySQL on Linux
+    })
+    void secondInitFindsTableCreatedByFirst(String mode) throws SQLException {
+        final var ds = new JdbcDataSource();
+        ds.setURL("jdbc:h2:mem:restart" + mode);
+        ds.setUser("sa");
+        ds.setPassword("");
+
+        try (var ignored = ds.getConnection()) { // keeps the in-memory database alive
+            provider.setDatasource(ds);
+            final var firstStart = captureLog(() -> provider.init(router));
+            assertFalse(firstStart.contains("Error creating table"), firstStart.getMessages()::toString);
+
+            assertLogsTableExistsWithoutError(captureLog(() -> provider.init(router)));
         }
     }
 
@@ -247,10 +310,7 @@ class JdbcUserDataProviderTest {
         var result = provider.verify(postData);
 
         // Should contain all columns from the table
-        assertTrue(result.containsKey("id"));
-        assertTrue(result.containsKey(USER_COLUMN.toLowerCase()));
-        assertTrue(result.containsKey(PASSWORD_COLUMN.toLowerCase()));
-        assertTrue(result.containsKey("verified"));
+        assertEquals(Set.of(USER_COLUMN.toLowerCase(), PASSWORD_COLUMN.toLowerCase()), result.keySet());
     }
 
     @Test
@@ -327,12 +387,11 @@ class JdbcUserDataProviderTest {
         // Insert user with additional data
         try (Connection con = dataSource.getConnection();
              var ps = con.prepareStatement(
-                     "INSERT INTO %s (%s, %s, email, role, verified) VALUES (?, ?, ?, ?, ?)".formatted(TABLE_NAME, USER_COLUMN, PASSWORD_COLUMN))) {
+                     "INSERT INTO %s (%s, %s, email, role) VALUES (?, ?, ?, ?)".formatted(TABLE_NAME, USER_COLUMN, PASSWORD_COLUMN))) {
             ps.setString(1, TEST_USER);
             ps.setString(2, hashedPassword);
             ps.setString(3, "alice@example.com");
             ps.setString(4, "admin");
-            ps.setBoolean(5, true);
             ps.executeUpdate();
         }
 
@@ -342,7 +401,6 @@ class JdbcUserDataProviderTest {
         // Verify additional columns are returned
         assertEquals("alice@example.com", result.get("email"));
         assertEquals("admin", result.get("role"));
-        assertEquals("true", result.get("verified"));
     }
 
     @Test
@@ -379,14 +437,61 @@ class JdbcUserDataProviderTest {
         assertEquals("LOWERCASE_PASSWORD", provider.getPasswordColumnName());
     }
 
+    private static void assertLogsTableExistsWithoutError(TestAppender log) {
+        assertTrue(log.contains("already exists"), log.getMessages()::toString);
+        assertFalse(log.contains("Error creating table"), log.getMessages()::toString);
+    }
+
+    private static void createUsersTable(DataSource dataSource) throws SQLException {
+        try (var con = dataSource.getConnection();
+             var stmt = con.createStatement()) {
+            stmt.execute("CREATE TABLE %s (%s VARCHAR(255) PRIMARY KEY, %s VARCHAR(255) NOT NULL)".formatted(TABLE_NAME, USER_COLUMN, PASSWORD_COLUMN));
+        }
+    }
+
+    /**
+     * Like PostgreSQL with Membrane's H2-style DDL: every CREATE statement fails.
+     */
+    private static DataSource rejectingCreateTable(DataSource dataSource) throws SQLException {
+        final var ds = mock(DataSource.class);
+        when(ds.getConnection()).thenAnswer(i -> rejectingCreateTableConnection(dataSource.getConnection()));
+        return ds;
+    }
+
+    private static Connection rejectingCreateTableConnection(Connection real) throws SQLException {
+        final var con = mock(Connection.class, delegatesTo(real));
+        doAnswer(i -> rejectingCreateTableStatement(real.createStatement())).when(con).createStatement();
+        return con;
+    }
+
+    private static Statement rejectingCreateTableStatement(Statement real) throws SQLException {
+        final var stmt = mock(Statement.class, delegatesTo(real));
+        doThrow(new SQLException("syntax error at or near \"AUTO_INCREMENT\""))
+                .when(stmt).executeUpdate(startsWith("CREATE"));
+        return stmt;
+    }
+
+    private static TestAppender captureLog(Runnable action) {
+        final var root = (Logger) LogManager.getRootLogger();
+        final var appender = new TestAppender("JdbcUserDataProviderTest");
+        appender.start();
+        root.addAppender(appender);
+        try {
+            action.run();
+        } finally {
+            root.removeAppender(appender);
+            appender.stop();
+        }
+        return appender;
+    }
+
     // Helper method to insert a user into the database
     private void insertUser(String username, String password) throws SQLException {
         try (var con = dataSource.getConnection();
              var ps = con.prepareStatement(
-                     "INSERT INTO %s (%s, %s, verified) VALUES (?, ?, ?)".formatted(TABLE_NAME, USER_COLUMN, PASSWORD_COLUMN))) {
+                     "INSERT INTO %s (%s, %s) VALUES (?, ?)".formatted(TABLE_NAME, USER_COLUMN, PASSWORD_COLUMN))) {
             ps.setString(1, username);
             ps.setString(2, password);
-            ps.setBoolean(3, false);
             ps.executeUpdate();
         }
     }
