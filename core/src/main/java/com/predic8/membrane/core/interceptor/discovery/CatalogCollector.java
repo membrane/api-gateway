@@ -177,13 +177,14 @@ public class CatalogCollector {
      * A proxy bound to every host is reported under the host the client used, so that the
      * published URLs work for whoever fetched the document. Falls back to the address the
      * connection was accepted on, and finally to <code>localhost</code> when there is neither a
-     * Host header nor a connection, as in unit tests.
+     * Host header nor a local address, as in unit tests or a resent exchange.
      */
     private static String hostOf(RuleKey key, Exchange exchange) {
         if (key.getHost() != null && !WILDCARD_HOST.equals(key.getHost())) return key.getHost();
         String hostHeader = exchange.getOriginalHostHeader();
         if (hostHeader != null && !hostHeader.isBlank()) return hostWithoutPort(hostHeader);
-        if (exchange.getHandler() != null) return exchange.getHandler().getLocalAddress().getHostAddress();
+        if (exchange.getHandler() != null && exchange.getHandler().getLocalAddress() != null)
+            return exchange.getHandler().getLocalAddress().getHostAddress();
         return "localhost";
     }
 

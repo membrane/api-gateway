@@ -18,6 +18,7 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.test.*;
 import org.junit.jupiter.api.*;
 
@@ -258,6 +259,16 @@ class CatalogCollectorTest {
     void collectingWorksWithoutAHostHeaderAndWithoutAConnection() throws Exception {
         add(new ServiceProxy(new ServiceProxyKey("*", "*", "/shop", 2000), null, 0));
         Exchange exc = new Request.Builder().get("/apis.json").buildExchange();
+
+        assertEquals("http://localhost:2000/shop",
+                only(collector().collect(router, exc)).endpoint().url());
+    }
+
+    @Test
+    void aConnectionWithoutALocalAddressFallsBackToLocalhost() throws Exception {
+        add(new ServiceProxy(new ServiceProxyKey("*", "*", "/shop", 2000), null, 0));
+        Exchange exc = new Exchange(new FakeHttpHandler(2000));
+        exc.setRequest(new Request.Builder().get("/apis.json").build());
 
         assertEquals("http://localhost:2000/shop",
                 only(collector().collect(router, exc)).endpoint().url());
