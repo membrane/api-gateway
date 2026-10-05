@@ -1,0 +1,80 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.7.0.json
+#
+# Tutorial: Outgoing API Gateway
+#
+# Route calls from internal clients to external APIs through Membrane and only
+# let safe headers leave your network.
+#
+# 1.) Start Membrane:
+#     with Docker:
+#       ./run-docker.sh -c 50-Outgoing-API-Gateway.yaml   (Linux/Mac)
+#       run-docker.cmd -c 50-Outgoing-API-Gateway.yaml    (Windows)
+#     or with Java:
+#       ./membrane.sh -c 50-Outgoing-API-Gateway.yaml     (Linux/Mac)
+#       membrane.cmd -c 50-Outgoing-API-Gateway.yaml      (Windows)
+#
+# 2.) Call the external API through the gateway. apibin.io answers with the
+#     headers it received:
+#       curl -X POST "localhost:2000/?action=analyze" -H "X-Api-Key: abc123" -H "User-Agent: secret" -H "Authorization: secret"
+#
+#       "headers" : {
+#         "Accept" : [ "*/*" ],
+#         ...
+#         "X-Api-Key" : [ "abc123" ],
+#         ...
+#
+#     User-Agent and Authorization did not leave the gateway. The other headers,
+#     including X-Forwarded-For, are added by apibin.io's own hosting infrastructure.
+#
+# 3.) Read "How it works" at the end of this file.
+#
+# 4.) Continue with file 70-Throttling.yaml
+
+components:
+  ruleMatching:
+    ruleMatching:
+      xForwardedForEnabled: false  # X-Forwarded-For would leak internal client IPs
+
+---
+global:
+  - request:
+      - headerFilter:
+          - include: Accept.*
+          - include: Cache-Control
+          - include: Content-Type
+          - include: Content-Length
+          - include: Cookie
+          - include: X-Requested-With
+          - include: X-Api-Key  # Remove if the external API must not get the client's API key
+          - exclude: .*
+
+---
+api:
+  name: Outgoing API
+  port: 2000
+  target:
+    url: https://apibin.io  # Replace with the address of the external API
+
+# ---------------------------------------------------------------------------
+# How it works
+# ---------------------------------------------------------------------------
+#
+# An outgoing API gateway is the controlled exit point for calls from internal
+# clients to external APIs. Routing all outgoing API traffic through it gives
+# you visibility and control over what data leaves your network:
+#
+#   - Client authentication: only authorized internal clients reach external APIs
+#   - Central logging and auditing: who called which API, and when
+#   - Message validation and JSON/XML protection for data leaving and entering
+#
+# Unlike a gateway for inbound traffic, it must not reveal internal details:
+#
+#   - No X-Forwarded-For header, so internal IP addresses stay private.
+#   - Sensitive headers like Authorization, User-Agent or API keys are filtered.
+#     The headerFilter keeps only the listed headers and removes all others.
+#     The Host header is set by the target to the external API's address.
+#
+# The plugins in global: apply to every API, so every outgoing call is filtered.
+#
+# Extend this setup with logging, validation, authentication, rate limiting,
+# message transformation or data loss protection.

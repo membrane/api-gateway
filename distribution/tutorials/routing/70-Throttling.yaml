@@ -1,0 +1,93 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.7.0.json
+#
+# Tutorial: Throttling
+#
+# Protect a backend from overload by delaying requests and by limiting how many
+# requests are processed at the same time.
+#
+# 1.) Start Membrane:
+#     with Docker:
+#       ./run-docker.sh -c 70-Throttling.yaml   (Linux/Mac)
+#       run-docker.cmd -c 70-Throttling.yaml    (Windows)
+#     or with Java:
+#       ./membrane.sh -c 70-Throttling.yaml     (Linux/Mac)
+#       membrane.cmd -c 70-Throttling.yaml      (Windows)
+#
+# 2.) Call the delayed API and measure the time:
+#       curl -s -w "\nTotal time: %{time_total}\n" localhost:2000/delayed
+#
+#       Answered after a delay
+#       Total time: 1.01...
+#
+# 3.) Send three requests at the same time to the limited API (Linux/Mac):
+#       for i in 1 2 3; do curl -s -o /dev/null -w "%{http_code}\n" localhost:2000/limited & done; wait
+#
+#       503
+#       200
+#       200
+#
+#     Two requests are processed, the third is rejected right away.
+#
+# 4.) Read "How it works" at the end of this file.
+#
+# 5.) Continue with file 80-Shadowing-Traffic.yaml
+
+api:
+  name: Delayed API
+  port: 2000
+  path:
+    uri: /delayed
+  flow:
+    - throttle:
+        delay: 1000
+    - template:
+        src: Answered after a delay
+    - return:
+        status: 200
+
+---
+api:
+  name: Limited API
+  port: 2000
+  path:
+    uri: /limited
+  flow:
+    - throttle:
+        maxThreads: 2
+  target:
+    host: localhost
+    port: 3000
+
+---
+api:
+  name: Slow Backend
+  port: 3000
+  flow:
+    - throttle:
+        delay: 3000  # Simulates a backend that needs 3 seconds per request
+    - return:
+        status: 200
+
+# ---------------------------------------------------------------------------
+# How it works
+# ---------------------------------------------------------------------------
+#
+# delay holds every request for the given number of milliseconds before it
+# continues. It slows clients down, e.g. to make brute-force attacks or
+# aggressive crawlers expensive.
+#
+# maxThreads caps the number of requests that are processed concurrently. A slot
+# is taken when the request passes the throttle plugin and freed when the
+# response comes back. A request that finds all slots taken gets a
+# 503 Service Unavailable, so the backend never sees more than maxThreads
+# requests at once.
+#
+# With busyDelay a request waits up to the given number of milliseconds for a
+# free slot instead of being rejected right away:
+#
+#   - throttle:
+#       maxThreads: 2
+#       busyDelay: 5000
+#
+# To limit the number of requests per client and time window, use the
+# rateLimiter plugin instead.

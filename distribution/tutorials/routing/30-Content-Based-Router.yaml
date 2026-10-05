@@ -1,0 +1,81 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.7.0.json
+#
+# Tutorial: Content-Based Router
+#
+# Route JSON requests to different APIs based on their content.
+#
+# 1.) Start Membrane:
+#     with Docker:
+#       ./run-docker.sh -c 30-Content-Based-Router.yaml   (Linux/Mac)
+#       run-docker.cmd -c 30-Content-Based-Router.yaml    (Windows)
+#     or with Java:
+#       ./membrane.sh -c 30-Content-Based-Router.yaml     (Linux/Mac)
+#       membrane.cmd -c 30-Content-Based-Router.yaml      (Windows)
+#
+# 2.) Send an express order:
+#       curl -d '{"id": 1, "express": true}' -H "Content-Type: application/json" localhost:2000/orders
+#
+#       Express order received.
+#
+# 3.) Send an international order:
+#       curl -d '{"id": 2, "shipping": {"international": true}}' -H "Content-Type: application/json" localhost:2000/orders
+#
+#       International order received.
+#
+# 4.) Send a normal order:
+#       curl -d '{"id": 3}' -H "Content-Type: application/json" localhost:2000/orders
+#
+#       Normal order received.
+#
+# 5.) Read "How it works" at the end of this file.
+#
+# 6.) Continue with file 50-Outgoing-API-Gateway.yaml
+
+api:
+  name: Express Orders
+  port: 2000
+  test: $.express
+  language: jsonpath
+  flow:
+    - request:
+        - static:
+            src: Express order received.
+        - return:
+            status: 200
+
+---
+api:
+  name: International Orders
+  port: 2000
+  test: $.shipping.international
+  language: jsonpath
+  flow:
+    - request:
+        - static:
+            src: International order received.
+        - return:
+            status: 200
+
+---
+api:
+  name: Normal Orders
+  port: 2000
+  flow:
+    - request:
+        - static:
+            src: Normal order received.
+        - return:
+            status: 200
+
+# ---------------------------------------------------------------------------
+# How it works
+# ---------------------------------------------------------------------------
+#
+# APIs on the same port are tried from top to bottom. The first API whose test
+# is true handles the request. An order that is express and international goes
+# to Express Orders. The last API has no test and takes all other orders.
+#
+# A JSONPath test is false if the path does not exist or its value is false or
+# null. Otherwise it is true.
+#
+# The same works for XML with language: xpath, e.g. test: //order[@express='yes']
