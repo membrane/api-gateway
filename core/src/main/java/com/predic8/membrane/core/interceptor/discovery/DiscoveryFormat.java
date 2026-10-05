@@ -32,7 +32,7 @@ public enum DiscoveryFormat {
 
     /**
      * Membrane's own format. Carries everything the gateway knows about an API, including the
-     * methods and paths of its operations.
+     * methods and paths of its operations. Answers a browser with an HTML page of the same catalog.
      */
     MEMBRANE
 }

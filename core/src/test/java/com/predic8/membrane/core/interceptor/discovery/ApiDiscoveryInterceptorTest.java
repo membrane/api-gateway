@@ -141,6 +141,65 @@ class ApiDiscoveryInterceptorTest {
         assertEquals(0, response.getBody().getLength());
     }
 
+    private static final String BROWSER_ACCEPT = "text/html,application/xhtml+xml,*/*;q=0.8";
+
+    private Exchange browserRequest() throws Exception {
+        Exchange exc = request("GET");
+        exc.getRequest().getHeader().setValue(ACCEPT, BROWSER_ACCEPT);
+        return exc;
+    }
+
+    /**
+     * The HTML page is the human readable view of the membrane format, operations included.
+     */
+    @Test
+    void aBrowserGetsTheHtmlPageOfTheMembraneFormat() throws Exception {
+        Exchange exc = browserRequest();
+        interceptor(MEMBRANE).handleRequest(exc);
+
+        assertEquals(TEXT_HTML_UTF8, exc.getResponse().getHeader().getContentType());
+        assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("<h2>Shop"));
+    }
+
+    @Test
+    void aClientThatDoesNotAskForHtmlGetsTheMembraneJson() throws Exception {
+        Exchange exc = request("GET");
+        exc.getRequest().getHeader().setValue(ACCEPT, "*/*");
+        interceptor(MEMBRANE).handleRequest(exc);
+
+        assertEquals(APPLICATION_JSON, exc.getResponse().getHeader().getContentType());
+    }
+
+    /**
+     * APIs.json and RFC 9727 documents are standard formats, so they answer with their JSON even
+     * in a browser.
+     */
+    @Test
+    void theStandardFormatsNeverAnswerWithHtml() throws Exception {
+        Exchange apisJson = browserRequest();
+        interceptor(APISJSON).handleRequest(apisJson);
+        assertEquals(APPLICATION_JSON, apisJson.getResponse().getHeader().getContentType());
+
+        Exchange apiCatalog = browserRequest();
+        interceptor(APICATALOG).handleRequest(apiCatalog);
+        assertTrue(apiCatalog.getResponse().getHeader().getContentType().startsWith(APPLICATION_LINKSET_JSON));
+    }
+
+    /**
+     * The membrane format answers with HTML or JSON depending on Accept, so caches must key on it.
+     * The standard formats do not depend on it.
+     */
+    @Test
+    void onlyTheMembraneFormatVariesOnAccept() throws Exception {
+        Exchange membrane = request("GET");
+        interceptor(MEMBRANE).handleRequest(membrane);
+        assertEquals(ACCEPT, membrane.getResponse().getHeader().getFirstValue(VARY));
+
+        Exchange apisJson = request("GET");
+        interceptor(APISJSON).handleRequest(apisJson);
+        assertNull(apisJson.getResponse().getHeader().getFirstValue(VARY));
+    }
+
     @Test
     void aMalformedDateIsARejectedConfiguration() {
         ApiDiscoveryInterceptor interceptor = new ApiDiscoveryInterceptor();

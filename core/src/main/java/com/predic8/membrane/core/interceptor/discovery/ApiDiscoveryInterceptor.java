@@ -46,6 +46,11 @@ import static com.predic8.membrane.core.interceptor.discovery.DiscoveryFormat.*;
  * with its own name and URL. Internal proxies and proxies whose initialisation failed are left out.
  * </p>
  * <p>
+ * With the <code>membrane</code> format, a browser, or any client whose <code>Accept</code> header
+ * asks for HTML, gets an HTML page of the same catalog instead, operations included, with links
+ * to the Swagger UI of every API. APIs.json and RFC 9727 always answer with their JSON.
+ * </p>
+ * <p>
  * Answers every request that reaches it and ends the flow, so give it an api of its own.
  * </p>
  * <pre>
@@ -80,6 +85,8 @@ public class ApiDiscoveryInterceptor extends AbstractInterceptor {
      * Well-known URI RFC 9727 reserves for the api-catalog document.
      */
     static final String WELL_KNOWN_PATH = "/.well-known/api-catalog";
+
+    private static final CatalogRenderer HTML_RENDERER = new HtmlCatalogRenderer();
 
     private DiscoveryFormat format = APISJSON;
     private String rootDomain = "membrane";
@@ -125,13 +132,17 @@ public class ApiDiscoveryInterceptor extends AbstractInterceptor {
     public Outcome handleRequest(Exchange exc) {
         try {
             Catalog catalog = collector.collect(router, exc);
-            Response.ResponseBuilder response = ok().contentType(renderer.contentType());
+            CatalogRenderer negotiated = format == MEMBRANE && acceptsHtml(exc) ? HTML_RENDERER : renderer;
+            Response.ResponseBuilder response = ok().contentType(negotiated.contentType());
+            // The membrane format answers with HTML or JSON, so caches must key on Accept.
+            if (format == MEMBRANE)
+                response.header(VARY, ACCEPT);
             if (catalog.url() != null)
                 response.header(LINK, "<%s>; rel=\"api-catalog\"".formatted(catalog.url()));
             // RFC 9727 requires HEAD on the catalog to answer with the headers but no document.
             exc.setResponse((exc.getRequest().isHEADRequest()
                     ? response.bodyEmpty()
-                    : response.body(renderer.render(catalog))).build());
+                    : response.body(negotiated.render(catalog))).build());
             return RETURN;
         } catch (Exception e) {
             internal(router.getConfiguration().isProduction(), getDisplayName())
@@ -140,6 +151,11 @@ public class ApiDiscoveryInterceptor extends AbstractInterceptor {
                     .buildAndSetResponse(exc);
             return ABORT;
         }
+    }
+
+    private static boolean acceptsHtml(Exchange exc) {
+        String accept = exc.getRequest().getHeader().getAccept();
+        return accept != null && accept.contains("html");
     }
 
     public DiscoveryFormat getFormat() {
