@@ -25,12 +25,14 @@ import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static com.predic8.membrane.core.http.Response.badRequest;
 import static com.predic8.membrane.core.interceptor.oauth2.OAuth2Util.urlencode;
 import static com.predic8.membrane.core.interceptor.oauth2.authorizationservice.FlowContext.fromUrlParam;
 import static com.predic8.membrane.core.interceptor.oauth2.authorizationservice.FlowContext.toUrlParam;
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.OAuth2CallbackRequestHandler.*;
+import static com.predic8.membrane.core.interceptor.session.SessionManager.SESSION_PARAMETER_STATE;
 import static com.predic8.membrane.core.interceptor.session.SessionManager.SESSION_VALUE_SEPARATOR;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
 import static com.predic8.membrane.core.util.URLParamUtil.parseQueryString;
@@ -38,8 +40,6 @@ import static java.net.URLDecoder.decode;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class StateManager {
-    private static final String SESSION_PARAMETER_STATE = "state";
-
     private static final Logger log = LoggerFactory.getLogger(StateManager.class);
     private static final SecureRandom sr = new SecureRandom();
 
@@ -96,11 +96,20 @@ public class StateManager {
             }
         }
 
-        // state in session can be "merged" -> save the selected state in session overwriting the possibly merged value
-        if (!(session.get(SESSION_PARAMETER_STATE).equals(stateFromUri.getSecurityToken()))) {
-            log.warn("Replacing saved state '{}' with '{}'", session.get(SESSION_PARAMETER_STATE), stateFromUri.getSecurityToken());
+        // the session state can hold more than one pending token when other logins are in flight
+        // concurrently on the same session - remove only the one just verified, not the others.
+        removeVerifiedToken(session, stateFromUri.getSecurityToken());
+    }
+
+    private static void removeVerifiedToken(Session session, String verifiedToken) {
+        String remaining = Arrays.stream(session.get(SESSION_PARAMETER_STATE).toString().split(SESSION_VALUE_SEPARATOR))
+                .filter(token -> !token.equals(verifiedToken))
+                .collect(Collectors.joining(SESSION_VALUE_SEPARATOR));
+        if (remaining.isEmpty()) {
+            session.remove(SESSION_PARAMETER_STATE);
+        } else {
+            session.put(SESSION_PARAMETER_STATE, remaining);
         }
-        session.put(SESSION_PARAMETER_STATE, stateFromUri.getSecurityToken());
     }
 
     private static boolean matchesCsrfToken(StateManager stateFromUri, Object stateFromSession) {

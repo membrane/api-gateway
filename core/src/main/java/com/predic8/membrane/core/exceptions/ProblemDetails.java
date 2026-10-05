@@ -20,23 +20,17 @@ import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.http.InvalidMediaTypeException;
-import org.springframework.http.MediaType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
+import org.springframework.http.InvalidMediaTypeException;
+import org.springframework.http.MediaType;
 
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetailsHTML.createHTMLContent;
 import static com.predic8.membrane.core.exceptions.ProblemDetailsXML.createXMLContent;
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_PROBLEM_JSON;
-import static com.predic8.membrane.core.http.MimeType.TEXT_PLAIN_UTF8;
-import static com.predic8.membrane.core.http.MimeType.sortMimeTypeByQualityFactorAscending;
+import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Response.statusCode;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
@@ -168,10 +162,15 @@ public class ProblemDetails {
         if (!failure.isRequestBodyFailure(exchange))
             return internal(production, component)
                     .addSubSee("reading-body")
-                    .detail("Could not read the message body.");
+                    .detail(failure.belongsTo(exchange.getResponse())
+                            ? "Could not read the response body from the backend."
+                            : "Could not read the message body.")
+                    .exception(failure)
+                    // An I/O error is explained by its message and the place named in the detail.
+                    .stacktrace(!failure.exceptionMessageIsSufficient());
 
-        ProblemDetails problem = user(production, component).flow(REQUEST).addSubSee("reading-body");
-        DecodingException decoding = throwableOfType(failure, DecodingException.class);
+        var problem = user(production, component).flow(REQUEST).addSubSee("reading-body");
+        var decoding = throwableOfType(failure, DecodingException.class);
         if (decoding == null)
             return problem.detail(getRootCause(failure).getMessage());
 
@@ -312,17 +311,19 @@ public class ProblemDetails {
         if (internalFields.isEmpty() && exception == null)
             return;
 
-        String logKey = randomUUID().toString();
+        var logKey = randomUUID().toString();
 
         try {
             MDC.put(LOG_KEY, logKey);
-            log.info("ProblemDetails hidden. type={}, title={}, detail={}, internal={}",
-                    getTypeSubtypeString(), title, detail, internalFields);
             if (exception != null) {
-                log.info("Message={}", exception.getMessage());
+                log.info("type={}, title={}, detail={}, internal={} message={}",
+                        getTypeSubtypeString(), title, detail, internalFields, exception.getMessage());
                 if (stacktrace) {
                     log.info("Stacktrace for hidden details:", exception);
                 }
+            } else {
+                log.info("type={}, title={}, detail={}, internal={}",
+                        getTypeSubtypeString(), title, detail, internalFields);
             }
         } finally {
             MDC.remove(LOG_KEY);
@@ -436,7 +437,7 @@ public class ProblemDetails {
         if (accept == null)
             return false;
         try {
-            List<MediaType> types = sortMimeTypeByQualityFactorAscending(accept);
+            List<MediaType> types = sortMimeTypeByQualityFactorDescending(accept);
             if (types.isEmpty())
                 return false;
             double preferred = types.getFirst().getQualityValue();

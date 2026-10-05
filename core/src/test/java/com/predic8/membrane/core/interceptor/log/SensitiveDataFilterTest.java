@@ -55,6 +55,17 @@ class SensitiveDataFilterTest {
         assertEquals(contentTypeVal, masked.getContentType());
     }
 
+    /**
+     * HTTP/2 and MIME part headers skip the field name token check, so a dotless "ı" can reach the
+     * header. Lookups match "Authorızation" as Authorization, so masking must match it too.
+     */
+    @Test
+    void masksNameEqualToSensitiveNameIgnoringCase() {
+        header.add("Authorızation", "Basic dGVzdDp0ZXN0");
+
+        assertEquals("******************", filter.getMaskedHeader(header).getAuthorization());
+    }
+
     @Test
     void maskStartLine() throws URISyntaxException {
         assertEquals("GET /v1/users?token=********&x=1&id_token=******** HTTP/1.1\r\n",

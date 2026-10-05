@@ -13,19 +13,23 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.ws_addressing;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
 @MCElement(name="wsaEndpointRewriter", excludeFromFlow = true)
 public class WsaEndpointRewriterInterceptor extends AbstractInterceptor {
@@ -37,6 +41,10 @@ public class WsaEndpointRewriterInterceptor extends AbstractInterceptor {
 
 	// -1 = do not change port
 	private int port = -1;
+
+	public WsaEndpointRewriterInterceptor() {
+		name = "wsa endpoint rewriter";
+	}
 
 	@Override
 	public Outcome handleResponse(Exchange exc) {
@@ -70,6 +78,9 @@ public class WsaEndpointRewriterInterceptor extends AbstractInterceptor {
 		return protocol;
 	}
 
+	/**
+	 * @description Protocol (e.g. <code>http</code> or <code>https</code>) the rewritten endpoint URLs will use.
+	 */
 	@MCAttribute
 	public void setProtocol(String protocol) {
 		this.protocol = protocol;
@@ -79,6 +90,9 @@ public class WsaEndpointRewriterInterceptor extends AbstractInterceptor {
 		return host;
 	}
 
+	/**
+	 * @description Host name the rewritten endpoint URLs will use.
+	 */
 	@MCAttribute
 	public void setHost(String host) {
 		this.host = host;
@@ -89,8 +103,8 @@ public class WsaEndpointRewriterInterceptor extends AbstractInterceptor {
 	}
 
 	/**
-	 * -1 = do not change port
-	 * @param port
+	 * @description Port the rewritten endpoint URLs will use.
+	 * @default -1 (no port in the rewritten URL)
 	 */
 	@MCAttribute
 	public void setPort(int port) {

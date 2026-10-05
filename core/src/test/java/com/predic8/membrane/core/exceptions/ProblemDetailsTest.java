@@ -23,8 +23,9 @@ import org.xml.sax.InputSource;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import java.io.EOFException;
-import java.net.URISyntaxException;
 import java.io.StringReader;
+import java.net.SocketException;
+import java.net.URISyntaxException;
 import java.util.List;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
@@ -303,6 +304,22 @@ public class ProblemDetailsTest {
         }
 
         @Test
+        @DisplayName("The see URL is rendered as a link")
+        void seeIsLink() throws Exception {
+            Exchange exc = get("/foo").buildExchange();
+
+            user(false, "openapi-publisher")
+                    .addSubType("openapi")
+                    .addSubSee("wrong-id")
+                    .status(404)
+                    .buildAndSetResponse(exc);
+
+            String body = exc.getResponse().getBodyAsStringDecoded();
+            String url = "https://membrane-api.io/problems/user/openapi/openapi-publisher/wrong-id";
+            assertTrue(body.contains("<a href=\"" + url + "\">" + url + "</a>"), body);
+        }
+
+        @Test
         @DisplayName("Fields beyond the headline are listed, nested ones included")
         void fieldsAreListed() throws Exception {
             Exchange exc = get("/foo").buildExchange();
@@ -436,6 +453,42 @@ public class ProblemDetailsTest {
             assertEquals(500, r.getStatusCode());
             // Nothing the sender can act on, so it is not dressed up as a decoding problem of theirs
             assertEquals("https://membrane-api.io/problems/internal", parseJson(r).get(TYPE).asText());
+        }
+
+        @Test
+        @DisplayName("A backend body cut off by the connection names the place and needs no stack trace")
+        void socketFailureOnBackendBody() throws Exception {
+            Exchange exc = Request.post("/").body("x").buildExchange();
+            exc.setResponse(Response.ok().body("x").build());
+            var failure = new ReadingBodyException(new SocketException("Connection reset"), exc.getResponse());
+
+            JsonNode json = parseJson(bodyFailure(false, "validator", exc, failure).build());
+
+            assertEquals("Could not read the response body from the backend.", json.get(DETAIL).asText());
+            assertEquals("java.net.SocketException: Connection reset", json.get("message").asText());
+            assertFalse(json.has("stackTrace"), json.toString());
+        }
+
+        @Test
+        @DisplayName("A backend body failure that is not an I/O error keeps its stack trace")
+        void otherFailureOnBackendBodyKeepsStackTrace() throws Exception {
+            Exchange exc = Request.post("/").body("x").buildExchange();
+            exc.setResponse(Response.ok().body("x").build());
+            var failure = new ReadingBodyException(new IllegalStateException("decoder bug"), exc.getResponse());
+
+            assertTrue(parseJson(bodyFailure(false, "validator", exc, failure).build()).has("stackTrace"));
+        }
+
+        @Test
+        @DisplayName("Production hides a failure on a backend body behind a log key")
+        void productionGivesLogKeyForBackendBody() throws Exception {
+            Exchange exc = Request.post("/").body("x").buildExchange();
+            exc.setResponse(Response.ok().body("x").build());
+            var failure = new ReadingBodyException(new SocketException("Connection reset"), exc.getResponse());
+
+            JsonNode json = parseJson(bodyFailure(true, "validator", exc, failure).build());
+
+            assertTrue(json.get(DETAIL).asText().contains("See server log (key:"), json.toString());
         }
 
         @Test

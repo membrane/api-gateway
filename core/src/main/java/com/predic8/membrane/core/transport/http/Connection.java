@@ -28,12 +28,11 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
-import java.util.Random;
 
 import static com.predic8.membrane.annot.Constants.USERAGENT;
-import static com.predic8.membrane.core.transport.http.ByteStreamLogging.wrapConnectionInputStream;
-import static com.predic8.membrane.core.transport.http.ByteStreamLogging.wrapConnectionOutputStream;
+import static com.predic8.membrane.core.transport.http.ByteStreamLogging.*;
 import static com.predic8.membrane.core.util.text.TextUtil.isNullOrEmpty;
+import static java.nio.charset.StandardCharsets.US_ASCII;
 
 /**
  * A {@link Connection} is an outbound TCP/IP (with or without TLS) connection, possibly managed
@@ -60,7 +59,6 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 
 	private static final Logger log = LoggerFactory.getLogger(Connection.class.getName());
 	public static final String MEMBRANE_HTTPCLIENT_BUFFER_SIZE = "membrane.httpclient.buffer.size";
-	private static volatile ThreadLocal<Random> random = ByteStreamLogging.isLoggingEnabled() ? new ThreadLocal<>() : null;
 	private static final int BUFFER_SIZE = getDefaultBufferSize();
 
 	public final ConnectionManager mgr;
@@ -162,9 +160,9 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 
 	private void setupStreams() throws IOException {
 		if (ByteStreamLogging.isLoggingEnabled()) {
-			String connectionName = chooseNewConnectionName();
-			out = new BufferedOutputStream(wrapConnectionOutputStream(socket.getOutputStream(), connectionName + " out"), BUFFER_SIZE);
-            in = new BufferedInputStream(wrapConnectionInputStream(socket.getInputStream(), connectionName + " in"), BUFFER_SIZE);
+			int id = newConnectionId();
+			out = new BufferedOutputStream(wrapConnectionOutputStream(socket.getOutputStream(), "membrane=>backend " + id), BUFFER_SIZE);
+            in = new BufferedInputStream(wrapConnectionInputStream(socket.getInputStream(), "backend=>membrane " + id), BUFFER_SIZE);
 		} else {
 			out = new BufferedOutputStream(socket.getOutputStream(), BUFFER_SIZE);
 			in = new BufferedInputStream(socket.getInputStream(), BUFFER_SIZE);
@@ -175,15 +173,6 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 		if (System.getProperty(MEMBRANE_HTTPCLIENT_BUFFER_SIZE) != null)
 			return Integer.parseInt(System.getProperty(MEMBRANE_HTTPCLIENT_BUFFER_SIZE));
 		return 2048;
-	}
-
-	private static String chooseNewConnectionName() {
-		Random rand = random.get();
-		if (rand == null) {
-			rand = new Random();
-			random.set(rand);
-		}
-		return "c" + rand.nextInt();
 	}
 
 	public static Connection open(String host, int port, String localHost, SSLProvider sslProvider, ConnectionManager mgr, int connectTimeout) throws IOException {
@@ -464,12 +453,7 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
        * in the case where the connection was successful, but it's
        * insignificant compared to the network overhead.
        */
-		String replyStr;
-		try {
-			replyStr = new String(reply, 0, replyLen, "ASCII7");
-		} catch (UnsupportedEncodingException ignored) {
-			replyStr = new String(reply, 0, replyLen);
-		}
+		String replyStr = new String(reply, 0, replyLen, US_ASCII);
 
         /* Look for '200 OK' response. Probably, some proxies may return HTTP/1.1 back */
 		if (!replyStr.startsWith("HTTP/1.0 200") && !replyStr.startsWith("HTTP/1.1 200")) {
@@ -487,21 +471,8 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 	private static byte @NotNull [] createConnectMessage(ProxyConfiguration proxy, String host, int port) {
 		var msg = "CONNECT %s:%d HTTP/1.0\r\nUser-Agent: %s\r\n%s\r\n"
 				.formatted(host, port, USERAGENT, getProxyAuthenticationHeader(proxy));
-		byte[] b;
-		try {
-          /*
-           * We really do want ASCII7 -- the http protocol doesn't change
-           * with locale.
-           */
-			b = msg.getBytes("ASCII7");
-		} catch (UnsupportedEncodingException ignored) {
-          /*
-           * If ASCII7 isn't there, something serious is wrong, but
-           * Paranoia Is Good (tm)
-           */
-			b = msg.getBytes();
-		}
-		return b;
+		// We really do want ASCII -- the http protocol doesn't change with locale.
+		return msg.getBytes(US_ASCII);
 	}
 
 	private static @NotNull String getProxyAuthenticationHeader(ProxyConfiguration proxy) {

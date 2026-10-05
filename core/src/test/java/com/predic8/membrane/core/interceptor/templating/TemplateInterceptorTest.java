@@ -14,31 +14,41 @@
 
 package com.predic8.membrane.core.interceptor.templating;
 
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.security.*;
-import com.predic8.membrane.core.util.*;
-import org.json.*;
-import org.junit.jupiter.api.*;
-import org.w3c.dom.*;
-import org.xml.sax.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.router.DefaultRouter;
+import com.predic8.membrane.core.router.DummyTestRouter;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.security.BasicHttpSecurityScheme;
+import com.predic8.membrane.core.util.ConfigurationException;
+import org.json.JSONObject;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
-import javax.xml.parsers.*;
-import javax.xml.xpath.*;
-import java.io.*;
-import java.net.*;
-import java.nio.file.*;
-import java.util.*;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.xpath.XPathExpression;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
-import static com.predic8.membrane.core.exchange.Exchange.*;
+import static com.predic8.membrane.core.exchange.Exchange.SECURITY_SCHEMES;
 import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.http.Request.*;
-import static java.lang.Boolean.*;
-import static java.lang.System.*;
-import static java.nio.charset.StandardCharsets.*;
-import static javax.xml.xpath.XPathConstants.*;
+import static com.predic8.membrane.core.http.Request.post;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static java.lang.Boolean.TRUE;
+import static java.lang.System.lineSeparator;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static javax.xml.xpath.XPathConstants.NODESET;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class TemplateInterceptorTest {
@@ -175,6 +185,15 @@ public class TemplateInterceptorTest {
             ti.setLocation("./not_existent_file");
             ti.init(router);
         });
+    }
+
+    @Test
+    void templateExecutionErrorSee() throws Exception {
+        ti.setSrc("${1/0}");
+        ti.init(router);
+        assertEquals(ABORT, ti.handleRequest(exc));
+        assertEquals("https://membrane-api.io/problems/internal/template/execution",
+                om.readTree(exc.getResponse().getBodyAsStringDecoded()).get("see").asText());
     }
 
     @Test

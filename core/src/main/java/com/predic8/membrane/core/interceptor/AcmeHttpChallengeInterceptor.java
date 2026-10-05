@@ -13,28 +13,42 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exceptions.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.transport.ssl.*;
-import com.predic8.membrane.core.transport.ssl.acme.*;
-import org.jose4j.lang.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.proxies.Proxy;
+import com.predic8.membrane.core.proxies.SSLableProxy;
+import com.predic8.membrane.core.transport.ssl.AcmeSSLContext;
+import com.predic8.membrane.core.transport.ssl.SSLContext;
+import com.predic8.membrane.core.transport.ssl.acme.AcmeClient;
+import org.jose4j.lang.JoseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static java.util.Arrays.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_OCTET_STREAM;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static java.util.Arrays.stream;
 
 /**
  * @description
- * See the documentation of the <code>&lt;acme /&gt;</code> element for usage details.
+ * Answers ACME HTTP-01 challenges (RFC 8555, section 8.3). A request to
+ * <code>/.well-known/acme-challenge/&lt;token&gt;</code> for a host with a pending challenge gets the key
+ * authorization as <code>application/octet-stream</code>. Any other token gets 404. If the ACME account key
+ * cannot be processed, the response is a 500 <code>internal</code> problem detail. See the documentation of
+ * the <code>acme</code> element for the certificate setup.
+ * @topic 8. ACME
+ * @yaml <pre><code>
+ * api:
+ *   port: 80
+ *   flow:
+ *     - acmeHttpChallenge: {}
+ * </code></pre>
  */
 @MCElement(name = "acmeHttpChallenge")
 public class AcmeHttpChallengeInterceptor extends AbstractInterceptor {
 
-    private static final Logger LOG = LoggerFactory.getLogger(AcmeHttpChallengeInterceptor.class);
+    private static final Logger log = LoggerFactory.getLogger(AcmeHttpChallengeInterceptor.class);
     public static final String PREFIX = "/.well-known/acme-challenge/";
 
     private boolean ignorePort;
@@ -70,8 +84,10 @@ public class AcmeHttpChallengeInterceptor extends AbstractInterceptor {
                     try {
                         keyAuth = token + "." + acmeClient.getThumbprint();
                     } catch (JoseException e) {
-                        ProblemDetails.user(router.getConfiguration().isProduction(),getDisplayName())
-                                .detail("Could not create thumbprint!")
+                        log.debug("",e);
+                        log.warn("Could not create thumbprint: {}", e.getMessage());
+                        internal(router.getConfiguration().isProduction(),getDisplayName())
+                                .detail("Could not create thumbprint: " + e.getMessage())
                                 .exception(e)
                                 .buildAndSetResponse(exc);
                         return ABORT;
@@ -84,7 +100,7 @@ public class AcmeHttpChallengeInterceptor extends AbstractInterceptor {
                 }
             }
 
-            LOG.warn("Returning 404 in response to ACME challenge token {}", token);
+            log.info("Returning 404 in response to ACME challenge token {}", token);
             exc.setResponse(Response.notFound().build());
             return Outcome.RETURN;
         }

@@ -13,9 +13,10 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.authentication.session;
 
-import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.router.Router;
 
-import java.util.*;
+import java.util.Map;
+import java.util.NoSuchElementException;
 
 public interface UserDataProvider {
 

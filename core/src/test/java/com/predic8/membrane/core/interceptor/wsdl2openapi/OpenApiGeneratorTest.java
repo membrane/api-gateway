@@ -49,7 +49,7 @@ class OpenApiGeneratorTest {
 
     private static Wsdl2OpenApiConverter converter(Definitions definitions, String basePath,
                                                    Map<String, OperationSettings> operations) {
-        return new Wsdl2OpenApiConverter(definitions, basePath, operations, ApiInfo.NONE);
+        return new Wsdl2OpenApiConverter(definitions, SelectedPort.select(definitions, null, null), basePath, operations, ApiInfo.NONE);
     }
 
     static Definitions citiesDefinitions;
@@ -389,33 +389,33 @@ class OpenApiGeneratorTest {
     void configuredOperationsCannotSharePathAndMethod() throws Exception {
         // PathItem accepts just one operation per HTTP method; without this validation, the
         // operation processed last silently replaces the first one in the generated document.
-        var definitions = Definitions.parse(new ResolverMap(), "classpath:/ws/cities-2-services.wsdl");
+        var definitions = scalarOutputDefinitions;
 
         // Both settings share the same path and method, which is invalid.
-        var getCity = new OperationSettings();
-        getCity.setPath("cities");
-        var getCityB = new OperationSettings();
-        getCityB.setPath("cities");
+        var getName = new OperationSettings();
+        getName.setPath("cities");
+        var refresh = new OperationSettings();
+        refresh.setPath("cities");
         var operations = new LinkedHashMap<String, OperationSettings>();
-        operations.put("getCity", getCity);
-        operations.put("getCityB", getCityB);
+        operations.put("getName", getName);
+        operations.put("refresh", refresh);
 
         var e = assertThrows(ConfigurationException.class,
                 () -> converter(definitions, "/", operations).generate());
 
-        assertTrue(e.getMessage().contains("getCity"));
-        assertTrue(e.getMessage().contains("getCityB"));
+        assertTrue(e.getMessage().contains("getName"));
+        assertTrue(e.getMessage().contains("refresh"));
         assertTrue(e.getMessage().contains("POST /cities"));
 
         // Parameter names do not distinguish templated paths for routing, so these conflict too.
-        getCity.setPath("cities/{id}");
-        getCityB.setPath("cities/{name}");
+        getName.setPath("cities/{id}");
+        refresh.setPath("cities/{name}");
 
         e = assertThrows(ConfigurationException.class,
                 () -> converter(definitions, "/", operations).generate());
 
-        assertTrue(e.getMessage().contains("getCity"));
-        assertTrue(e.getMessage().contains("getCityB"));
+        assertTrue(e.getMessage().contains("getName"));
+        assertTrue(e.getMessage().contains("refresh"));
         assertTrue(e.getMessage().contains("POST /cities/{name}")
                 || e.getMessage().contains("POST /cities/{id}"));
     }
@@ -617,7 +617,7 @@ class OpenApiGeneratorTest {
 
     @Test
     void configuredVersionReplacesTheDefault() {
-        var api = new Wsdl2OpenApiConverter(citiesDefinitions, "/", Map.of(), new ApiInfo(null, null, "2.1.0")).generate();
+        var api = new Wsdl2OpenApiConverter(citiesDefinitions, SelectedPort.select(citiesDefinitions, null, null), "/", Map.of(), new ApiInfo(null, null, "2.1.0")).generate();
 
         assertEquals("2.1.0", api.getInfo().getVersion());
     }
@@ -648,7 +648,8 @@ class OpenApiGeneratorTest {
 
     @Test
     void configuredDescriptionWinsOverTheWsdlDocumentation() throws Exception {
-        var openAPI = new Wsdl2OpenApiConverter(documentedDefinitions(), "/", Map.of(), new ApiInfo(null, "Configured.", null)).generate();
+        var definitions = documentedDefinitions();
+        var openAPI = new Wsdl2OpenApiConverter(definitions, SelectedPort.select(definitions, null, null), "/", Map.of(), new ApiInfo(null, "Configured.", null)).generate();
 
         assertTrue(openAPI.getInfo().getDescription().startsWith("Configured."));
         assertFalse(openAPI.getInfo().getDescription().contains("Answers questions about cities."));

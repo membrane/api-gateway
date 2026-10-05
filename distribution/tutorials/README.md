@@ -31,6 +31,11 @@ Use Membrane as a classic HTTP forward proxy that forwards to whatever host the 
 own request names, including tunneling HTTPS traffic to a TLS-protected backend.
 
 
+## [Logging](logging)
+
+Configure Membrane's log output, e.g. as JSON for log aggregators, and write access logs.
+
+
 ## [Operation](operation)
 
 Run and observe Membrane in production. 
@@ -126,6 +131,8 @@ features added in OpenAPI 3.2, such as the QUERY method.
 To run the tutorials via Docker, use the `run-docker.sh` (Linux/macOS) or `run-docker.cmd` (Windows) script instead of `membrane.sh`.
 
 **Important:** Always run the script from the directory that contains the tutorial yaml.
+
+Ports 2000-2010, 8443 (TLS) and 9000 (admin console) are published. For a tutorial listening on another port, add it with `MEMBRANE_DOCKER_OPTS`, e.g. `MEMBRANE_DOCKER_OPTS="-p 3128:3128" ./run-docker.sh -c 10-Forward-Proxy.yaml` (Windows: `set "MEMBRANE_DOCKER_OPTS=-p 3128:3128"` first). `JAVA_OPTS` from your environment is passed on to the JVM in the container.
 
 ## Questions and Feedback
 

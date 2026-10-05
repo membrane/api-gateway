@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- A binding without a service: an interface-only WSDL, whose address the api's target supplies. -->
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:tns="http://example.com/greeting"
+                  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                  xmlns:s="http://schemas.xmlsoap.org/wsdl/soap/"
+                  targetNamespace="http://example.com/greeting">
+    <wsdl:types>
+        <xsd:schema targetNamespace="http://example.com/greeting" elementFormDefault="qualified">
+            <xsd:element name="greet">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="name" type="xsd:string"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="greetResponse" type="xsd:string"/>
+        </xsd:schema>
+    </wsdl:types>
+    <wsdl:message name="greet">
+        <wsdl:part name="parameters" element="tns:greet"/>
+    </wsdl:message>
+    <wsdl:message name="greetResponse">
+        <wsdl:part name="parameters" element="tns:greetResponse"/>
+    </wsdl:message>
+    <wsdl:portType name="GreetingPortType">
+        <wsdl:operation name="greet">
+            <wsdl:input message="tns:greet"/>
+            <wsdl:output message="tns:greetResponse"/>
+        </wsdl:operation>
+    </wsdl:portType>
+    <wsdl:binding name="GreetingBinding" type="tns:GreetingPortType">
+        <s:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+        <wsdl:operation name="greet">
+            <s:operation soapAction="http://example.com/greeting/greet"/>
+            <wsdl:input><s:body use="literal"/></wsdl:input>
+            <wsdl:output><s:body use="literal"/></wsdl:output>
+        </wsdl:operation>
+    </wsdl:binding>
+</wsdl:definitions>

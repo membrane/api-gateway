@@ -17,6 +17,8 @@ package com.predic8.membrane.core.http;
 
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.StringTestUtil;
+import com.predic8.membrane.test.TestAppender;
+import org.apache.logging.log4j.LogManager;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -24,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -34,9 +37,14 @@ import java.util.stream.Stream;
 import static com.predic8.membrane.core.http.MimeType.TEXT_HTML;
 import static com.predic8.membrane.core.http.MimeType.isOfMediaType;
 import static com.predic8.membrane.core.http.Response.*;
+import static com.predic8.membrane.core.util.HttpTestUtil.convertMessage;
 import static com.predic8.membrane.test.TestUtil.getResourceAsStream;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.params.provider.Arguments.of;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 public class ResponseTest {
 
@@ -298,12 +306,421 @@ public class ResponseTest {
         assertInstanceOf(EmptyBody.class, res.getBody());
     }
 
-    @Test
-    void readResponseNoBodyContent205() throws IOException, EndOfStreamException {
+    /**
+     * RFC 9112 §6.3: a 1xx, 204 or 304 response is terminated by the empty line after the
+     * header fields, regardless of Content-Length or Transfer-Encoding.
+     */
+    @ParameterizedTest
+    @MethodSource("responsesWithoutBody")
+    void readResponseNeverContainingBody(String response) throws Exception {
         Response res = new Response();
-        res.read(getResourceAsStream(this,"response-205-reset.http"),true);
-        assertTrue(res.isBodyEmpty());
+        res.read(new ByteArrayInputStream(StringTestUtil.normalizeCRLF(response).getBytes()), true);
         assertInstanceOf(EmptyBody.class, res.getBody());
+        assertTrue(res.isBodyEmpty());
+    }
+
+    static Stream<String> responsesWithoutBody() {
+        return Stream.of("""
+            HTTP/1.1 304 Not Modified
+            Content-Length: 5
+
+            """, """
+            HTTP/1.1 304 Not Modified
+            Transfer-Encoding: chunked
+
+            """, """
+            HTTP/1.1 304 Not Modified
+
+            """, """
+            HTTP/1.1 103 Early Hints
+            Link: </style.css>; rel=preload; as=style
+
+            """, """
+            HTTP/1.1 102 Processing
+
+            """);
+    }
+
+    /**
+     * The client stops reading a 204, 205 or 304 after the header fields, so a body written
+     * anyway is parsed as the start of the next response on a keep-alive connection.
+     */
+    @ParameterizedTest
+    @ValueSource(ints = {204, 205, 304})
+    void writeResponseNeverContainingBody(int statusCode) throws Exception {
+        Response res = Response.statusCode(statusCode).body("hello").build();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        res.write(out, true);
+        String written = out.toString(ISO_8859_1);
+        assertFalse(written.contains("hello"), written);
+        assertTrue(written.endsWith("\r\n\r\n"), written);
+    }
+
+    /**
+     * RFC 9110 §8.6, RFC 9112 §6.1: a server must not send Content-Length or Transfer-Encoding in a
+     * 1xx or 204 response.
+     */
+    @ParameterizedTest
+    @ValueSource(ints = {103, 204})
+    void writeResponseNeverContainingBodyOmitsFraming(int statusCode) throws Exception {
+        String written = writeToString(Response.statusCode(statusCode).body("hello").build());
+        assertFalse(written.contains("Content-Length"), written);
+        assertFalse(written.contains("Transfer-Encoding"), written);
+    }
+
+    /**
+     * RFC 9112 §6.3 does not end a 205 at the header fields, so a client reads as many bytes as the
+     * framing announces. RFC 9110 §15.3.6: a 205 announces zero-length content.
+     */
+    @Test
+    void writeResetContentAnnouncesZeroLength() throws Exception {
+        String written = writeToString(Response.statusCode(205).body("hello").build());
+        assertTrue(written.contains("Content-Length: 0\r\n"), written);
+    }
+
+    @Test
+    void writeChunkedResetContentAnnouncesZeroLength() throws Exception {
+        String written = writeToString(Response.statusCode(205).body(new ByteArrayInputStream("hello".getBytes()), false).build());
+        assertFalse(written.contains("Transfer-Encoding"), written);
+        assertTrue(written.contains("Content-Length: 0\r\n"), written);
+    }
+
+    /**
+     * RFC 9110 §8.6: the Content-Length of a 304 describes the representation it stands for.
+     */
+    @Test
+    void writeNotModifiedKeepsContentLength() throws Exception {
+        String written = writeToString(Response.statusCode(304).body("hello").build());
+        assertTrue(written.contains("Content-Length: 5\r\n"), written);
+    }
+
+    /**
+     * The body is not written, but it still has to be consumed: that is what frees the connection it
+     * is read from.
+     */
+    @Test
+    void writeResponseNeverContainingBodyDrainsBody() throws Exception {
+        ByteArrayInputStream in = new ByteArrayInputStream("hello".getBytes());
+        Response res = Response.statusCode(204).build();
+        res.setBody(new Body(in, 5));
+        writeToString(res);
+        assertEquals(0, in.available());
+        assertTrue(res.getBody().isRead());
+    }
+
+    @Test
+    void writeResponseNeverContainingBodyClosesOwnedStream() throws Exception {
+        boolean[] closed = {false};
+        InputStream in = new ByteArrayInputStream("hello".getBytes()) {
+            @Override
+            public void close() {
+                closed[0] = true;
+            }
+        };
+        writeToString(Response.statusCode(204).body(in, true).build());
+        assertTrue(closed[0]);
+    }
+
+    /**
+     * RFC 9112 §6.2: a sender must not send Content-Length in a message with Transfer-Encoding. Built
+     * the way Http2Client builds a response from an HTTP/2 backend: chunked preset, the backend's
+     * content-length added on top, the body set without touching the header.
+     */
+    @Test
+    void writeChunkedDropsContentLength() throws Exception {
+        Response res = new Response();
+        res.setStatusCode(200);
+        res.getHeader().setValue(Header.TRANSFER_ENCODING, Header.CHUNKED);
+        res.getHeader().add(Header.CONTENT_LENGTH, "5");
+        res.setBody(new Body(new ByteArrayInputStream("hello".getBytes())));
+
+        String written = writeToString(res);
+        assertFalse(written.contains("Content-Length"), written);
+        assertTrue(written.contains("Transfer-Encoding: chunked\r\n"), written);
+        assertTrue(written.endsWith("\r\n\r\n5\r\nhello\r\n0\r\n\r\n"), written);
+    }
+
+    private static String writeToString(Response res) throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        res.write(out, true);
+        return out.toString(ISO_8859_1);
+    }
+
+    /**
+     * RFC 9112 5.1: unlike a request, a response with whitespace before the colon is not rejected,
+     * because a proxy must strip the whitespace before forwarding it. Stripping makes Membrane read
+     * the body length a trimming backend meant, so a sloppy backend keeps working instead of
+     * turning into a 502. The rules themselves are covered in HeaderTest.
+     */
+    @Test
+    void headerLineWithWhitespaceBeforeColonIsStripped() throws Exception {
+        Response res = readResponse("""
+                HTTP/1.1 200 Ok
+                Content-Type: text/plain
+                Content-Length : 6
+
+                abcdef""");
+
+        assertEquals(6, res.getHeader().getContentLength());
+        assertEquals("abcdef", res.getBodyAsStringDecoded());
+        assertTrue(res.getHeader().toString().contains("Content-Length: 6"), res.getHeader().toString());
+    }
+
+    private static Response readResponse(String message) throws IOException, EndOfStreamException {
+        Response res = new Response();
+        res.read(convertMessage(message), true);
+        return res;
+    }
+
+    /**
+     * RFC 9112 §4: the reason phrase is optional, so "HTTP/1.1 200" without a trailing space
+     * is a valid status line.
+     */
+    @Test
+    void readResponseWithoutReasonPhrase() throws Exception {
+        Response res = Response.fromStream(new ByteArrayInputStream(StringTestUtil.normalizeCRLF("""
+            HTTP/1.1 200
+            Content-Length: 0
+
+            """).getBytes()), true);
+        assertEquals(200, res.getStatusCode());
+        assertNotNull(res.getStatusMessage());
+        assertFalse(res.getStartLine().contains("null"), res.getStartLine());
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        res.write(out, true);
+        String written = out.toString(ISO_8859_1);
+        assertTrue(written.matches("(?s)HTTP/1\\.1 200 [^\\r\\n]*\\r\\n.*"), written);
+        assertFalse(written.contains("null"), written);
+    }
+
+    /**
+     * RFC 9112 §6.3 ends only 1xx, 204 and 304 responses at the header fields; a 205 is framed like any
+     * other response. RFC 9110 §15.3.6 forbids it content, though, so a backend that announces some anyway
+     * is broken and may or may not send it. Membrane therefore does not read it: the response is left
+     * without a body and marked, so the connection it came from gets closed instead of pooled.
+     */
+    @Nested
+    class ReadResetContent {
+
+        private org.apache.logging.log4j.core.Logger logger;
+        private TestAppender appender;
+
+        @BeforeEach
+        void attachAppender() {
+            logger = (org.apache.logging.log4j.core.Logger) LogManager.getLogger(Response.class.getName());
+            appender = new TestAppender("ReadResetContent");
+            appender.start();
+            logger.addAppender(appender);
+        }
+
+        @AfterEach
+        void detachAppender() {
+            logger.removeAppender(appender);
+            appender.stop();
+        }
+
+        static Stream<Arguments> announcedContent() {
+            return Stream.of(
+                    of("Content-Length: 5", "hello"),
+                    of("Content-Length: 5", ""),
+                    of("Transfer-Encoding: chunked", "5\r\nhello\r\n0\r\n\r\n"),
+                    of("Transfer-Encoding: chunked", "0\r\n\r\n"),
+                    // RFC 9112 §6.3 rule 3: Transfer-Encoding overrides Content-Length, even an invalid one
+                    of("Transfer-Encoding: chunked\r\nContent-Length: 5, 6", "0\r\n\r\n"));
+        }
+
+        @ParameterizedTest
+        @MethodSource("announcedContent")
+        void announcedContentIsLeftUnread(String framing, String content) throws Exception {
+            InputStream in = new ByteArrayInputStream(("HTTP/1.1 205 Reset Content\r\n" + framing + "\r\n\r\n" + content).getBytes(ISO_8859_1));
+            Response res = read(in);
+            assertTrue(res.hasUnreadContent());
+            assertInstanceOf(EmptyBody.class, res.getBody());
+            assertEquals(content, new String(in.readAllBytes(), ISO_8859_1), "content must not be read");
+            assertEquals(0, res.getHeader().getContentLength());
+            assertFalse(res.getHeader().isChunked());
+            assertTrue(appender.contains("205"), appender.getMessages().toString());
+        }
+
+        @Test
+        void contentLengthZero() throws Exception {
+            InputStream in = stream("""
+                HTTP/1.1 205 Reset Content
+                Content-Length: 0
+
+                HTTP/1.1 200 OK
+                Content-Length: 2
+
+                ok""");
+            Response res = read(in);
+            assertFalse(res.hasUnreadContent());
+            assertEquals("", res.getBodyAsStringDecoded());
+            assertFalse(appender.contains("205"), appender.getMessages().toString());
+
+            Response next = fromStream(in, true);
+            assertEquals(200, next.getStatusCode());
+            assertEquals("ok", next.getBodyAsStringDecoded());
+        }
+
+        /**
+         * RFC 9112 §6.3 rule 8: without Content-Length or Transfer-Encoding the content runs until the
+         * connection closes, so the connection is not reused anyway.
+         */
+        @Test
+        void noFramingReadsUntilClose() throws Exception {
+            InputStream in = stream("""
+                HTTP/1.1 205 Reset Content
+
+                hello""");
+            Response res = read(in);
+            assertFalse(res.hasUnreadContent());
+            assertEquals("hello", res.getBodyAsStringDecoded());
+            assertEquals(-1, in.read());
+        }
+
+        /**
+         * Forwarding an unframed 205 must not wait for the backend to close: the client gets the response
+         * at once, and the body fails instead of being drained, which makes the connection close.
+         */
+        @Test
+        void unframedIsForwardedWithoutWaitingForTheBackend() throws Exception {
+            byte[] head = "HTTP/1.1 205 Reset Content\r\n\r\n".getBytes(ISO_8859_1);
+            InputStream backendKeepsConnectionOpen = new InputStream() {
+                private int pos;
+
+                @Override
+                public int read() {
+                    if (pos < head.length)
+                        return head[pos++];
+                    throw new AssertionError("must not wait for the content of an unframed 205");
+                }
+            };
+            Response res = read(backendKeepsConnectionOpen);
+            MessageObserver connection = mock(MessageObserver.class);
+            res.addObserver(connection);
+
+            assertEquals("HTTP/1.1 205 Reset Content\r\nContent-Length: 0\r\n\r\n", writeToString(res));
+            assertTrue(res.getBody().hasFailed());
+            verify(connection).bodyFailed(any());
+        }
+
+        /**
+         * Only content announced by a backend is reported; a 205 built in a flow is simply written without it.
+         */
+        @Test
+        void writingBuiltResponseDoesNotLog() throws Exception {
+            writeToString(Response.statusCode(205).body("hello").build());
+            assertFalse(appender.contains("205"), appender.getMessages().toString());
+        }
+
+        private static InputStream stream(String response) {
+            return new ByteArrayInputStream(StringTestUtil.normalizeCRLF(response).getBytes(ISO_8859_1));
+        }
+
+        private static Response read(InputStream in) throws Exception {
+            Response res = new Response();
+            res.read(in, true);
+            assertEquals(205, res.getStatusCode());
+            return res;
+        }
+    }
+
+    /**
+     * The two field lines combine to "gzip, chunked", whose final coding is "chunked", so the
+     * response is chunked-framed. Reading only the first field line makes Membrane frame it as a
+     * plain body and hand the chunk sizes through as content (#3327).
+     */
+    @Test
+    void transferEncodingEndingInChunkedAcrossSeveralFieldsIsChunkedFramed() throws Exception {
+        assertInstanceOf(ChunkedBody.class, readResponse("""
+                HTTP/1.1 200 Ok
+                Transfer-Encoding: gzip
+                Transfer-Encoding: chunked
+
+                0
+
+                """).getBody());
+    }
+
+    /**
+     * A present but empty Transfer-Encoding carries no coding and therefore does not end in
+     * "chunked", so the body length of the response cannot be determined and it is rejected
+     * instead of being framed by its Content-Length.
+     */
+    @Test
+    void emptyTransferEncodingIsRejected() {
+        assertThrows(MalformedHeaderException.class, () -> readResponse("""
+                HTTP/1.1 200 Ok
+                Transfer-Encoding:
+                Content-Length: 3
+
+                abc
+                """));
+    }
+
+    /**
+     * RFC 9112 6.3: a response with both Transfer-Encoding and Content-Length might indicate an
+     * attempt at response splitting and ought to be handled as an error, so it is rejected.
+     */
+    @Test
+    void chunkedWithContentLengthIsRejected() {
+        assertThrows(MalformedHeaderException.class, () -> readResponse("""
+                HTTP/1.1 200 Ok
+                Transfer-Encoding: chunked
+                Content-Length: 0
+
+                5
+                abcde
+                0
+
+                """));
+    }
+
+    @Test
+    void chunkedAcrossSeveralFieldsWithContentLengthIsRejected() {
+        assertThrows(MalformedHeaderException.class, () -> readResponse("""
+                HTTP/1.1 302 Found
+                Location: https://example.com/
+                Transfer-Encoding: gzip
+                Transfer-Encoding: chunked
+                Content-Length: 3
+
+                0
+
+                """));
+    }
+
+    /**
+     * A response that must not contain a body carries no framing to validate, so framing fields
+     * it happens to carry are not rejected - and the next response on the connection is read intact.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "103 Early Hints\nTransfer-Encoding: chunked\nContent-Length: 5",
+            "103 Early Hints\nTransfer-Encoding: gzip",
+            "204 No Content\nTransfer-Encoding: chunked\nContent-Length: 5",
+            "204 No Content\nTransfer-Encoding: gzip",
+            "304 Not Modified\nTransfer-Encoding: chunked\nContent-Length: 5",
+            "304 Not Modified\nTransfer-Encoding: gzip",
+    })
+    void responseWithoutBodyIgnoresFraming(String statusAndFraming) throws Exception {
+        InputStream in = convertMessage("""
+                HTTP/1.1 %s
+
+                HTTP/1.1 200 Ok
+                Content-Length: 2
+
+                ok""".formatted(statusAndFraming));
+
+        Response first = new Response();
+        first.read(in, true);
+        assertInstanceOf(EmptyBody.class, first.getBody());
+
+        Response next = new Response();
+        next.read(in, true);
+        assertEquals(200, next.getStatusCode());
+        assertEquals("ok", next.getBodyAsStringDecoded());
     }
 
     @Nested

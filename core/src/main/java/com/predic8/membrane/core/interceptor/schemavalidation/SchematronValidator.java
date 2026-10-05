@@ -29,7 +29,6 @@ import javax.xml.transform.*;
 import javax.xml.transform.dom.*;
 import javax.xml.transform.stream.*;
 import java.io.*;
-import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
 import static com.predic8.membrane.core.http.Header.*;
@@ -41,7 +40,7 @@ import static javax.xml.stream.XMLInputFactory.*;
 public class SchematronValidator extends AbstractMessageValidator {
 	private static final Logger log = LoggerFactory.getLogger(SchematronValidator.class.getName());
 
-	private final ArrayBlockingQueue<Transformer> transformers;
+	private final ValidatorPool<Transformer> transformers;
 	private final XMLInputFactory xmlInputFactory;
 	private final ValidatorInterceptor.FailureHandler failureHandler;
 	private final ErrorDetailsPolicy errorDetailsPolicy;
@@ -74,19 +73,24 @@ public class SchematronValidator extends AbstractMessageValidator {
 		DOMResult r = new DOMResult();
 		t.transform(new StreamSource(router.getResolverMap().resolve(schematron)), r);
 
-		// build XSLT transformers
+		// compile the XSLT once; Templates is thread-safe, the Transformers created from it are not
 		fac.setURIResolver(null);
-		int concurrency = Runtime.getRuntime().availableProcessors() * 2;
-		transformers = new ArrayBlockingQueue<>(concurrency);
-		for (int i = 0; i < concurrency; i++) {
-			Transformer transformer = fac.newTransformer(new DOMSource(r.getNode()));
-			transformer.setErrorListener(new NullErrorListener()); // silence console logging
-			transformers.put(transformer);
-		}
+		Templates templates = fac.newTemplates(new DOMSource(r.getNode()));
+		transformers = new ValidatorPool<>(() -> newTransformer(templates), Runtime.getRuntime().availableProcessors() * 2);
 
 		xmlInputFactory = XMLInputFactory.newInstance();
 		xmlInputFactory.setProperty(IS_REPLACING_ENTITY_REFERENCES, false);
 		xmlInputFactory.setProperty(IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+	}
+
+	private static Transformer newTransformer(Templates templates) {
+		try {
+			Transformer transformer = templates.newTransformer();
+			transformer.setErrorListener(new NullErrorListener()); // silence console logging
+			return transformer;
+		} catch (TransformerConfigurationException e) {
+			throw new IllegalStateException("Cannot create Schematron transformer", e);
+		}
 	}
 
 	@Override
@@ -95,11 +99,11 @@ public class SchematronValidator extends AbstractMessageValidator {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
 		try {
-			Transformer transformer = transformers.take();
+			Transformer transformer = transformers.borrow();
 			try {
 				transformer.transform(new StreamSource(xopr.reconstituteIfNecessary(msg)), new StreamResult(baos));
 			} finally {
-				transformers.put(transformer);
+				transformers.release(transformer);
 			}
 
 			byte[] result = baos.toByteArray();

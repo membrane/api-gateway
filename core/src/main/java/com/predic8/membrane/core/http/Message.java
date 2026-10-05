@@ -32,6 +32,8 @@ import static com.predic8.membrane.annot.Constants.CRLF_BYTES;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.util.ContentTypeDetector.EffectiveContentType.HTML;
 import static com.predic8.membrane.core.util.ContentTypeDetector.detectEffectiveContentType;
+import static com.predic8.membrane.core.util.text.StringUtil.maskNonPrintableCharacters;
+import static com.predic8.membrane.core.util.text.StringUtil.truncateAfter;
 import static com.predic8.membrane.core.util.text.TextUtil.getCharset;
 
 /**
@@ -204,10 +206,58 @@ public abstract class Message {
 		header.setContentLength(b.getLength());
 	}
 
+	/**
+	 * RFC 9112 &sect;6.3: if a <tt>Transfer-Encoding</tt> is present and <tt>chunked</tt> is not the
+	 * final coding, the body length cannot be determined. Falling back to reading until EOF would
+	 * let gateway and backend disagree on where the message ends - the desynchronization that
+	 * request smuggling and response splitting rely on - so the message is rejected before a body
+	 * is selected.
+	 * <p>
+	 * A field line without a value carries no coding and therefore does not end in "chunked"
+	 * either, so it is rejected as well. That needs {@link Header#getValuesAsString(String)}: it
+	 * tells a present empty field apart from an absent one, which
+	 * {@link Header#getNormalizedValue(String)} reports as null in both cases.
+	 *
+	 * @param messageType "request" or "response", named in the rejection message
+	 */
+	protected void rejectIfBodyLengthUndeterminable(String messageType) throws MalformedHeaderException {
+		String transferEncoding = header.getValuesAsString(TRANSFER_ENCODING);
+		if (transferEncoding == null || header.isChunked())
+			return;
+
+		final String maskedTransferEncoding = maskNonPrintableCharacters(truncateAfter(transferEncoding, 80));
+		log.info("Transfer-Encoding \"{}\" does not end in \"chunked\". The body length of the {} cannot be determined; rejecting to prevent a desynchronized connection.", maskedTransferEncoding, messageType);
+		throw new MalformedHeaderException("Transfer-Encoding \"%s\" does not end in \"chunked\". The body length of the %s cannot be determined; rejecting to prevent a desynchronized connection."
+				.formatted(maskedTransferEncoding, messageType));
+	}
+
+	/**
+	 * A message that is chunked-framed and also carries a <tt>Content-Length</tt> is a classic
+	 * smuggling vector: RFC 9112 &sect;6.1 allows a server to reject such a request, and &sect;6.3
+	 * says such a message ought to be handled as an error. Framing it by either header lets gateway
+	 * and peer disagree on where the body ends - e.g. {@link Request#shouldNotContainBody()} checks
+	 * the <tt>Content-Length</tt> first, so "Content-Length: 0" would leave the chunked bytes on the
+	 * connection, to be parsed as the next request.
+	 * <p>
+	 * Call after {@link #rejectIfBodyLengthUndeterminable(String)}, so any <tt>Transfer-Encoding</tt>
+	 * left at this point ends in <tt>chunked</tt>.
+	 *
+	 * @param messageType "request" or "response", named in the rejection message
+	 */
+	protected void rejectIfChunkedWithContentLength(String messageType) throws MalformedHeaderException {
+		if (!header.hasContentLength() || !header.isChunked())
+			return;
+
+		String message = "The %s has both Content-Length and Transfer-Encoding. Rejecting to prevent a desynchronized connection."
+				.formatted(messageType);
+		log.info(message);
+		throw new MalformedHeaderException(message);
+	}
+
 	protected void createBody(InputStream in) throws IOException {
 		log.debug("createBody");
 
-		if (shouldNotContainBody()) {
+		if (endsAfterHeaderFields()) {
 			log.debug("empty body created");
 			body = new EmptyBody();
 			return;
@@ -228,9 +278,7 @@ public abstract class Message {
 			return;
 		}
 
-		if (log.isDebugEnabled()) {
-			log.error("Message has no content length: {}",this);
-		}
+		log.debug("Message has no content-length: {}",this);
 
 		if (this instanceof Request req && (req.isOPTIONSRequest())) {
 			// OPTIONS without Transfer-Encoding and Content-Length has no body,
@@ -264,6 +312,17 @@ public abstract class Message {
 	}
 
 	public final void write(OutputStream out, boolean retainBody) throws IOException {
+		final boolean writeBody = prepareBodyForWrite();
+		final boolean chunked = header.isChunked();
+
+		// RFC 9112 §6.2: a sender must not send Content-Length in a message with Transfer-Encoding, and a
+		// receiver - Membrane included, see rejectIfChunkedWithContentLength - may reject one that has both.
+		// setBodyContent keeps the two consistent, but not every path goes through it: Http2Client presets
+		// chunked on a backend response and then adds the backend's content-length, and setBody or plain
+		// header edits leave the framing fields to the caller.
+		if (writeBody && chunked)
+			header.removeFields(CONTENT_LENGTH);
+
 		writeStartLine(out);
 		header.write(out);
 		out.write(CRLF_BYTES);
@@ -273,9 +332,27 @@ public abstract class Message {
 			return;
 		}
 
-		body.write(getHeader().isChunked() ? new ChunkedBodyTransferer(out) : new PlainBodyTransferer(out), retainBody);
+		// A client stops reading after the header fields; a body written anyway would desync keep-alive.
+		// Still consume it: that is what frees the connection it is read from.
+		if (!writeBody) {
+			out.flush();
+			discardBody();
+			return;
+		}
+
+		body.write(chunked ? new ChunkedBodyTransferer(out) : new PlainBodyTransferer(out), retainBody);
 
 		out.flush();
+	}
+
+	/**
+	 * Called by {@link #write(OutputStream, boolean)} before the header is written.
+	 *
+	 * @return false if the body must not go on the wire. The implementation then adjusts the framing
+	 *         header fields to match; the body is still consumed.
+	 */
+	protected boolean prepareBodyForWrite() {
+		return true;
 	}
 
 	/**
@@ -347,6 +424,14 @@ public abstract class Message {
 	}
 
 	public abstract boolean shouldNotContainBody();
+
+	/**
+	 * @return true if a message read from the wire ends with the empty line after the header fields,
+	 *         whatever Content-Length or Transfer-Encoding says
+	 */
+	protected boolean endsAfterHeaderFields() {
+		return shouldNotContainBody();
+	}
 
 	public boolean isImage() {
 		return MimeType.isImage(getHeader().getContentType());

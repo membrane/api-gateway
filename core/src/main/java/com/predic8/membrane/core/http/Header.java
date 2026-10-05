@@ -23,6 +23,7 @@ import com.predic8.membrane.core.util.HttpUtil;
 import jakarta.mail.internet.ContentType;
 import jakarta.mail.internet.ParseException;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,7 +40,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.http.MimeType.isBinary;
-import static com.predic8.membrane.core.util.HttpUtil.readLine;
+import static com.predic8.membrane.core.util.HttpUtil.*;
+import static com.predic8.membrane.core.util.text.StringUtil.getLastNonEmptyOfCommaSeparatedString;
 import static com.predic8.membrane.core.util.text.StringUtil.maskNonPrintableCharacters;
 import static com.predic8.membrane.core.util.text.StringUtil.truncateAfter;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
@@ -166,9 +168,20 @@ public class Header {
      * @throws MalformedHeaderException if a line is not a valid field line
      */
     public Header(InputStream in) throws IOException, EndOfStreamException {
+        this(in, false);
+    }
+
+    /**
+     * Like {@link #Header(InputStream)}, but optionally strips whitespace between a field name and
+     * the colon instead of rejecting the message, as RFC 9112 &sect;5.1 requires a proxy to do for
+     * a response.
+     *
+     * @param stripWhitespaceBeforeColon true when parsing a response, false when parsing a request
+     */
+    public Header(InputStream in, boolean stripWhitespaceBeforeColon) throws IOException, EndOfStreamException {
         String line;
         while (!(line = readLine(in)).isEmpty())
-            add(parseFieldLine(line));
+            add(parseFieldLine(line, stripWhitespaceBeforeColon));
     }
 
     /**
@@ -181,17 +194,70 @@ public class Header {
      * Membrane and the backend disagree on what the message said, which is the disagreement HTTP
      * request smuggling relies on. A MIME part header is the opposite case, where folding is still
      * legal and is joined back together instead, see {@link #unfold(String)}.
+     * <p>
+     * A field name that is not an RFC 9110 &sect;5.6.2 token is rejected for the same reason. Such a
+     * name no longer matches the field it resembles, while a parser that trims or ignores the stray
+     * character - whitespace, a control character such as VT, FF or CR - still recognizes it: a
+     * "Content-Length&lt;VT&gt;: 6" field is invisible to Membrane but declares a body to a backend
+     * that trims with C's isspace(). Validating the whole name closes every such variant rather than
+     * the ones we thought of.
+     * <p>
+     * The one exception is whitespace between the field name and the colon in a response, which RFC
+     * 9112 &sect;5.1 requires a proxy to remove rather than reject. A request must still be
+     * rejected, as that section requires of a server: a proxy in front of Membrane may not have
+     * recognized the field, so trimming it could make Membrane read a different body length than
+     * that proxy did. A backend at the end of the chain leaves nobody to disagree with.
      *
-     * @throws MalformedHeaderException if the line carries no field name followed by a colon
+     * @throws MalformedHeaderException if the line carries no field name followed by a colon, or
+     *                                  if the field name is not a token
      */
-    private static HeaderField parseFieldLine(String line) {
-        if (line.indexOf(':') < 1) {
-            String message = "Malformed header line \"%s\": it carries no field name followed by a colon. Rejecting the message rather than dropping the line, which would forward it with a header silently missing."
-                    .formatted(maskNonPrintableCharacters(truncateAfter(line, 80)));
-            log.info(message);
-            throw new MalformedHeaderException(message);
-        }
-        return new HeaderField(line);
+    private static HeaderField parseFieldLine(String line, boolean stripWhitespaceBeforeColon) {
+        final int colon = line.indexOf(':');
+        if (colon < 1)
+            throw malformedFieldLine(null, "it carries no field name followed by a colon. Rejecting the message rather than dropping the line, which would forward it with a header silently missing.");
+        // Strips SP and HTAB only, the whitespace RFC 9112 5.1 means. Any other trailing character
+        // stays part of the name, so that the token check rejects it.
+        int end = colon;
+        if (stripWhitespaceBeforeColon)
+            while (end > 0 && isOptionalWhitespace(line.charAt(end - 1)))
+                end--;
+        if (!isToken(line, end))
+            throw malformedFieldLine(line.substring(0, colon), "its field name carries a character a field name must not contain, such as whitespace or a control character. Rejecting the message rather than forwarding it, because a parser that trims or ignores the character reads a different header than Membrane does.");
+        if (end == colon)
+            return new HeaderField(line);
+        log.debug("Stripping whitespace between field name and colon in header line \"{}\".", maskNonPrintableCharacters(truncateAfter(line.substring(0, colon), 80)));
+        return new HeaderField(line.substring(0, end) + line.substring(colon));
+    }
+
+    /**
+     * Whether the first {@code end} characters of the line form an RFC 9110 &sect;5.6.2 token:
+     * 1*tchar. Works on the line in place, as it runs for every header line.
+     */
+    private static boolean isToken(String line, int end) {
+        if (end == 0)
+            return false;
+        for (int i = 0; i < end; i++)
+            if (!isTchar(line.charAt(i)))
+                return false;
+        return true;
+    }
+
+    /**
+     * Builds the rejection message, which is logged and handed to the client in the 400 response.
+     * It names the offending field at most, never the field-line value, which may carry a
+     * credential: everything up to the first colon is the field name and the characters that make
+     * it malformed, so it is safe to quote, while a line without a colon has no name to separate
+     * from a value and is reported with neither. The name is echoed untrimmed, because a trailing
+     * character may be the defect being reported.
+     *
+     * @param fieldName the field name as it arrived, or null if the line carries none
+     */
+    private static MalformedHeaderException malformedFieldLine(@Nullable String fieldName, String reason) {
+        final String message = fieldName == null
+                ? "Malformed header line: " + reason
+                : "Malformed header line \"%s\": %s".formatted(maskNonPrintableCharacters(truncateAfter(fieldName, 80)), reason);
+        log.info(message);
+        return new MalformedHeaderException(message);
     }
 
     /**
@@ -266,7 +332,7 @@ public class Header {
     }
 
     public void removeFields(String name) {
-        fields.removeAll(filterByHeaderName(name).toList());
+        fields.removeIf(hf -> hf.getHeaderName().hasName(name));
     }
 
     /**
@@ -344,21 +410,13 @@ public class Header {
      * @param value the new value to set for the header field
      */
     public void setValue(String name, String value) {
-        boolean found = false;
         for (int i = 0; i < fields.size(); i++) {
             if (fields.get(i).getHeaderName().hasName(name)) {
-                if (found) {
-                    fields.set(i, fields.getLast());
-                    fields.removeLast();
-                    i--;
-                } else {
-                    fields.get(i).setValue(value);
-                    found = true;
-                }
+                fields.get(i).setValue(value);
+                fields.subList(i + 1, fields.size()).removeIf(f -> f.getHeaderName().hasName(name));
+                return;
             }
         }
-        if (found)
-            return;
         fields.add(new HeaderField(name, value));
     }
 
@@ -377,19 +435,22 @@ public class Header {
     /**
      * Whether the message body uses chunked transfer framing.
      * <p>
-     * Per RFC 7230 section 3.3.1 the body is chunked-framed if "chunked" is the
+     * Per RFC 9112 section 6.1 the body is chunked-framed if "chunked" is the
      * <em>final</em> transfer-coding. Transfer-coding names are case-insensitive,
      * and codings may be combined in a comma-separated list (e.g. "gzip, chunked"),
-     * so this looks at the last token case-insensitively rather than requiring an
-     * exact "chunked" match.
+     * so this looks at the last coding case-insensitively rather than requiring an
+     * exact "chunked" match. Empty list elements are legal and are ignored
+     * (RFC 9110 5.6.1.2), so "chunked," is still chunked-framed.
+     * <p>
+     * Repeated field lines carry one coding list between them and are combined before the
+     * final coding is taken, so "chunked" in a field line that is not the last one does
+     * <em>not</em> make the body chunked-framed.
      */
     public boolean isChunked() {
-        String value = getFirstValue(TRANSFER_ENCODING);
+        String value = getNormalizedValue(TRANSFER_ENCODING);
         if (value == null)
             return false;
-        int lastComma = value.lastIndexOf(',');
-        String last = (lastComma == -1 ? value : value.substring(lastComma + 1)).trim();
-        return CHUNKED.equalsIgnoreCase(last);
+        return CHUNKED.equalsIgnoreCase(getLastNonEmptyOfCommaSeparatedString(value));
     }
 
     /**
@@ -618,14 +679,18 @@ public class Header {
     /**
      * @param keepAliveHeaderValue the value of the <a href="http://www.w3.org/Protocols/HTTP/1.1/draft-ietf-http-v11-spec-01.html#Keep-Alive">Keep-Alive</a> header
      * @param paramName            either {@link #TIMEOUT} or {@link #MAX}.
-     * @return the extracted parameter value of the "Keep-Alive" header
+     * @return the extracted parameter value of the "Keep-Alive" header, or -1 if it is absent or too large
      */
     public static long parseKeepAliveHeader(String keepAliveHeaderValue, String paramName) {
         Pattern p = choosePattern(paramName);
         Matcher m = p.matcher(keepAliveHeaderValue);
         if (!m.find())
             return -1;
-        return Long.parseLong(m.group(1));
+        try {
+            return Long.parseLong(m.group(1));
+        } catch (NumberFormatException e) {
+            return -1; // Value does not fit into a long
+        }
     }
 
     private static @NotNull Pattern choosePattern(String paramName) {

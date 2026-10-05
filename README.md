@@ -1,7 +1,7 @@
 
 # Membrane API Gateway
 
-**The open-source API gateway that speaks both REST and SOAP.**
+**Open-source API gateway that speaks both REST and SOAP.**
 
 [![GitHub release](https://img.shields.io/github/v/release/membrane/api-gateway?display_name=tag)](https://github.com/membrane/api-gateway/releases/latest)
 [![Docker Pulls](https://img.shields.io/docker/pulls/predic8/membrane)](https://hub.docker.com/r/predic8/membrane)
@@ -9,28 +9,21 @@
 
 <img src="docs/images/api-gateway-demo.gif" alt="Animated demo of Membrane API Gateway" width="800">
 
-Deploy APIs straight from [OpenAPI](#1-openapi-deployment-validation-and-swagger-ui), secure them with [OAuth2](#oauth2), [JWT](#json-web-tokens), and [API keys](#api-keys), and turn legacy
-[SOAP web services into JSON APIs](#wsdl-to-openapi-conversion), all with a few lines of YAML. Membrane runs as a single
-container or Java application, is Apache 2.0 licensed, and needs no database.
+Deploy APIs directly from [OpenAPI](#1-openapi-deployment-validation-and-swagger-ui), secure them with [OAuth2](#oauth2) and [JWT](#json-web-tokens), or turn legacy [SOAP web services into JSON APIs](#wsdl-to-openapi-conversion), all with a few lines of YAML. [Lightweight](#high-throughput-small-footprint) and easy to run as a single **container** or **Java** application. No database required.
 
-## Try Membrane in 5 Minutes
-
-Start the gateway as a container or as a [Java application](https://www.membrane-api.io/getting-started.html):
+## Start Membrane
 
 ```bash
 docker run --rm -it -p 2000:2000 predic8/membrane
 ```
 
-Open these URLs in your browser to access sample APIs:
+Explore the sample APIs in your browser:
 
 - http://localhost:2000 (Current time)
 - http://localhost:2000/api-docs (API deployed from OpenAPI)
+- http://localhost:2000/shop/v2/products
 
-Or call an API from the command line:
-
-```bash
-curl http://localhost:2000/shop/v2/products
-```
+Prefer Java instead of Docker? Follow the [Java quickstart](https://www.membrane-api.io/getting-started.html).
 
 ### Proxy Your First API
 
@@ -65,64 +58,65 @@ Requests to http://localhost:2000 are now forwarded to https://apibin.io.
 2. Open [tutorials/getting-started/10-First-API.yaml](distribution/tutorials/getting-started/10-First-API.yaml) in a text editor and work through the steps.
 3. Continue with the other [tutorials](distribution/tutorials/README.md) on OpenAPI, security, SOAP, AI, and more.
 
-
 # Why Membrane
-
-From OpenAPI and OAuth to SOAP, XML, LLMs, and MCP, Membrane bridges modern APIs and enterprise integration.
 
 ## Native OpenAPI Support
 
-Deploy APIs directly from [OpenAPI](https://www.membrane-api.io/openapi/configuration-and-validation) documents, [validate](distribution/examples/openapi/validation-simple) messages against them and even generate OpenAPI specifications from legacy WSDL. In addition to OpenAPI 3.0, and 3.1, Membrane also supports **OpenAPI 3.2**.
+Deploy APIs from [OpenAPI](https://www.membrane-api.io/openapi/configuration-and-validation) descriptions and use [OpenAPI for message validation](distribution/examples/openapi/validation-simple). Membrane supports OpenAPI 3.0, 3.1, and **3.2**.
 
 ## Legacy XML and Web Services Integration
 
-`wsdl2openapi` transforms a Web Service's WSDL into an OpenAPI and uses the underlying XSD schema for the conversion between XML and JSON. Deploy a WSDL, and Membrane exposes the service as an API with an OpenAPI description.
+Expose existing [SOAP web services as JSON APIs](#manual-soap-to-rest-conversion) without changing the backend. Membrane’s [wsdl2openapi](#wsdl-to-openapi-conversion) generates OpenAPI descriptions from WSDL and uses it to convert between JSON and XML.
 
-XML and JSON are deeply integrated into Membrane. **XPath** and **JSONPath** expressions provide direct access to message data for routing, filtering, and transformation.
+Use **XPath** and **JSONPath** to access message data for [routing](#4-routing), filtering, and transformation. Templates and XSLT handle custom formats and more complex conversions.
 
-Templates and XSLT allow for flexible message transformation and SOAP-to-REST conversion.
+Apply the same routing, [transformation](#5-message-transformation), and orchestration capabilities to legacy SOAP services and modern JSON APIs.
 
-## XML and Web Services Security
+## Protect APIs and Legacy Services
 
-Secure legacy services with WSDL and XSD message validation, XML message protection, and XML signatures.
+Validate messages against **OpenAPI**, **JSON Schema**, **XSD**, and **WSDL** to reject invalid requests before they reach your backend. Apply XML, JSON, and GraphQL protection to guard against malicious payloads.
 
-## OpenAPI, JSON Schema, XSD, and WSDL Validation
-
-Validate messages against API and service specifications. Don't let invalid messages slip into your organization.
+Secure APIs with **API keys**, **OAuth2**, and **JWT**, and protect SOAP services with **WS-Security**, including **XML signatures and encryption**.
 
 ## API Orchestration
 
-Orchestrate **calls to external APIs** and process collections with loops and conditional flows.
+[Combine calls](#6-orchestration-and-call-outs) to multiple APIs in a single flow. Process collections with loops and control execution with conditions.
 
-## Easy Configuration and Extensibility
+## Simple Configuration, Flexible Extensions
 
-Take a look at the samples below and the tutorials to see what just a few lines of configuration can do.
+Configure routing, security, and transformations with a few lines of YAML. Explore the examples below and the [tutorials](https://www.membrane-api.io/api-gateway-tutorial.html) to [get started](https://www.membrane-api.io/getting-started.html).
 
-When you need more flexibility, extend Membrane with expressions and scripting using **JSONPath**, **XPath**, **Groovy**, or **SpEL**, or write your own plugin in **Java**. In most cases, custom Java code is not necessary.
+For custom logic, use [Groovy scripts](#7-scripting) or expressions with **SpEL**, **JSONPath**, and **XPath**. When you need deeper integration, write your own Java plugin. No need to learn Lua.
 
-## Speed & Footprint
+## High Throughput, Small Footprint
 
-Although Membrane is written in Java, it delivers high performance with a low memory footprint. HTTP streaming, Keep-Alive, and non-blocking processing enable efficient resource utilization and high throughput. The Membrane distribution is only about 55 MB, making it smaller than many other API gateways.
+Membrane stays fast with security and validation enabled. In benchmarks on a 16-vCPU Azure VM, it achieved:
 
-On a single server Membrane can process **39,000 requests per second**. However, raw throughput benchmarks often measure only simple proxying without message protection or transformation.
+| Configuration                             | Requests/sec |
+|-------------------------------------------|-------------:|
+| Plain proxying                            |  **128,723** |
+| Basic Auth + rate limiting + TLS          |  **109,542** |
+| OpenAPI validation of every request       |   **89,197** |
 
-Membrane is implemented entirely in Java, from the HTTP engine to OpenAPI processing. This avoids the overhead of crossing between a native proxy core and a separate scripting runtime for plugins.
+Membrane’s HTTP engine was built specifically for API gateway workloads. Its Java plugins run in the same process, keeping overhead low. This integrated design gives Membrane an architectural advantage over gateways built on general-purpose HTTP servers and helps it deliver outstanding performance.
 
-As a result, Membrane can maintain high performance even when multiple plugins for validation, security, and transformation are active. What matters is not performance in reduced benchmark setups, but performance under realistic gateway configurations.
+The distribution is approximately 55 MB, runs as a container or Java application, and requires no database.
+
+See the [benchmark setup and results](https://www.membrane-api.io/api-gateway-performance.html), or [run the tests yourself](distribution/performance-test/README.md).
 
 # What Can You Do With Membrane?
 
 * **Expose and protect APIs** for partners over the public Internet.
-* **Secure APIs** with OAuth 2.0, JWT, API keys, TLS, and message validation.
-* **Modernize legacy services** by integrating SOAP, XML, and WSDL with REST, JSON, and OpenAPI.
-* **Transform messages** between JSON, XML, SOAP, HTTP headers, query parameters, and other formats.
-* **Route and control traffic** with flexible rules, rate limiting, load balancing, and conditional processing.
+* [Secure APIs](#8-security) with [OAuth 2](#oauth2), [JWT](#json-web-tokens), [API keys](#api-keys), TLS, and message validation.
+* [Modernize legacy services](#legacy-xml-and-web-services-integration) by integrating SOAP, XML, and WSDL with REST, JSON, and OpenAPI.
+* [Transform messages](#5-message-transformation) between JSON, XML, SOAP, HTTP headers, query parameters, and other formats.
+* [Route](#4-routing) and [control traffic](#9-traffic-control) with flexible rules, rate limiting, load balancing, and conditional processing.
 * Use Membrane as an **outgoing gateway** to control access to partner and public APIs.
-* **Observe API traffic** with logging, metrics, Prometheus, and OpenTelemetry tracing.
-* Use Membrane as an **AI Gateway** for LLM providers and MCP servers.
+* **Observe API traffic** with logging, metrics, [Prometheus, Grafana](#monitoring-with-prometheus-and-grafana) and [OpenTelemetry](#opentelemetry-integration) tracing.
+* Use Membrane as an [AI Gateway](#3-ai-and-llm-gateway) for LLM providers and MCP servers.
 * Replace maintenance-intensive **Backend for Frontend (BFF)** services with declarative gateway configuration where appropriate.
 * **Embed Membrane** into your own Java applications and products.
-* Deploy Membrane in **containers, virtual machines, private clouds, or public clouds**.
+* Deploy Membrane in **containers**, **virtual machines**, **private clouds**, or **public clouds**.
 
 
 # Membrane Features with Examples 

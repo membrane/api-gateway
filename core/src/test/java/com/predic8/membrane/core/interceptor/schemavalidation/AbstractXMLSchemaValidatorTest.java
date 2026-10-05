@@ -29,7 +29,6 @@ import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
 import javax.xml.XMLConstants;
-import javax.xml.transform.Result;
 import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.SchemaFactory;
@@ -42,9 +41,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * {@link AbstractXMLSchemaValidator#validateAgainstSchemas} is meant to try every embedded schema
@@ -164,7 +161,7 @@ class AbstractXMLSchemaValidatorTest {
 
         @Override
         protected List<Element> getSchemas() {
-            throw new UnsupportedOperationException("createValidators() is overridden for this test");
+            return List.of(); // createValidators() is overridden for this test, nothing to compile
         }
 
         @Override
@@ -241,7 +238,7 @@ class AbstractXMLSchemaValidatorTest {
 
         @Override
         protected List<Element> getSchemas() {
-            throw new UnsupportedOperationException("createValidators() is overridden for this test");
+            return List.of(); // createValidators() is overridden for this test, nothing to compile
         }
 
         @Override

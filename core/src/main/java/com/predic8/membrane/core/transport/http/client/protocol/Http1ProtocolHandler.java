@@ -41,11 +41,19 @@ import static com.predic8.membrane.core.transport.http.MessageTracer.trace;
 import static com.predic8.membrane.core.transport.http.client.protocol.TcpProtocolHandler.TCP;
 import static com.predic8.membrane.core.transport.http.client.protocol.WebSocketProtocolHandler.WEBSOCKET;
 import static java.lang.Boolean.TRUE;
+import static java.lang.Math.min;
 import static java.lang.System.currentTimeMillis;
 
 public class Http1ProtocolHandler extends AbstractProtocolHandler {
 
     private static final Logger log = LoggerFactory.getLogger(Http1ProtocolHandler.class.getName());
+
+    /**
+     * Upper bound for the idle timeout a backend may request via {@code Keep-Alive: timeout=...}.
+     * Far above realistic server settings; keeps a bogus value from pooling a connection forever
+     * or overflowing when converted to milliseconds.
+     */
+    private static final long MAX_KEEP_ALIVE_TIMEOUT_SECONDS = 3600;
 
     ResponseReader responseReader = (ext, ct) -> fromStream(ct.con().in, !ext.getRequest().isHEADRequest());
 
@@ -76,8 +84,8 @@ public class Http1ProtocolHandler extends AbstractProtocolHandler {
 
         trace(exchange.getResponse());
 
-        // 100 - Continue
-        handle100Expected(exchange, ct.con());
+        readFinalResponse(exchange, ct.con());
+        closeIfContentLeftUnread(exchange, ct.con());
 
         // Only HTTP 1?
         exchange.setReceived();
@@ -127,7 +135,7 @@ public class Http1ProtocolHandler extends AbstractProtocolHandler {
 
         long timeoutSeconds = Header.parseKeepAliveHeader(value, TIMEOUT);
         if (timeoutSeconds != -1)
-            con.setTimeout(timeoutSeconds * 1000);
+            con.setTimeout(min(timeoutSeconds, MAX_KEEP_ALIVE_TIMEOUT_SECONDS) * 1000);
 
         long max = Header.parseKeepAliveHeader(value, MAX);
         if (max != -1 && max < con.getMaxExchanges())
@@ -141,15 +149,41 @@ public class Http1ProtocolHandler extends AbstractProtocolHandler {
         Util.shutdownOutput(connection.socket);
     }
 
-    // 100 - Connect
-
-    private void handle100Expected(Exchange exchange, Connection c) throws IOException, EndOfStreamException {
+    /**
+     * RFC 9110 §15.2: a 1xx other than 101 is followed by the final response on the same connection.
+     * Membrane does not relay interim responses, so they are dropped. The first 100 Continue releases a
+     * body held back by <code>Expect: 100-continue</code>, whatever interim responses came before it.
+     */
+    private void readFinalResponse(Exchange exchange, Connection c) throws IOException, EndOfStreamException {
         Response response = exchange.getResponse();
-        if (response.getStatusCode() != 100)
+        boolean bodyPending = exchange.getRequest().getHeader().is100ContinueExpected();
+        while (response.getStatusCode() < 200 && response.getStatusCode() >= 100 && response.getStatusCode() != 101) {
+            if (response.getStatusCode() == 100 && bodyPending) {
+                exchange.getRequest().getBody().write(getBodyTransferer(exchange, c), retainBodyForRetry());
+                c.out.flush();
+                bodyPending = false;
+            } else {
+                log.debug("Skipping interim response {}.", response.getStatusCode());
+            }
+            response.read(c.in, !exchange.getRequest().isHEADRequest());
+        }
+    }
+
+    /**
+     * The response was read without the content its framing announced, see {@link Response#hasUnreadContent()},
+     * so the connection is out of sync. It is detached before closing, as {@link Connection#close()} already
+     * hands it back to the connection manager. The response is complete by then, so a failing close must not
+     * turn it into an error.
+     */
+    private static void closeIfContentLeftUnread(Exchange exchange, Connection c) {
+        if (!exchange.getResponse().hasUnreadContent())
             return;
-        exchange.getRequest().getBody().write(getBodyTransferer(exchange, c), retainBodyForRetry());
-        c.out.flush();
-        response.read(c.in, !exchange.getRequest().isHEADRequest());
+        exchange.setTargetConnection(null);
+        try {
+            c.close();
+        } catch (IOException e) {
+            log.debug("Could not close connection with unread content: {}", e.getMessage());
+        }
     }
 
     private static @NotNull AbstractBodyTransferer getBodyTransferer(Exchange exchange, Connection c) {

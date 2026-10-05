@@ -14,21 +14,33 @@
 
 package com.predic8.membrane.core.interceptor;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import org.w3c.dom.*;
-import org.xml.sax.*;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.AbstractExchange;
+import com.predic8.membrane.core.http.Body;
+import com.predic8.membrane.core.util.xml.XMLInputSourceUtil;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
 
-import javax.xml.parsers.*;
-import javax.xml.transform.*;
-import javax.xml.transform.dom.*;
-import javax.xml.transform.stream.*;
-import java.io.*;
-import java.nio.charset.*;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import java.io.InputStream;
+import java.io.StringWriter;
+import java.nio.charset.Charset;
 
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
+/**
+ * @description Moves the credentials of a SOAP <code>authorization</code> element out of the request
+ * body into <code>username</code>/<code>password</code> child elements of the payload element, for a
+ * backend that expects them inline. Requests without an <code>authorization</code> element pass
+ * through unchanged.
+ */
 @MCElement(name="authHead2Body")
 public class AuthHead2BodyInterceptor extends AbstractInterceptor {
 	static final String COM_NS  = "test";
@@ -78,10 +90,8 @@ public class AuthHead2BodyInterceptor extends AbstractInterceptor {
 	private Document getDocument(InputStream xmlDocument, Charset encoding) throws Exception {
 		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 		dbf.setNamespaceAware(true);
-		InputSource is = new InputSource(xmlDocument);
-		if (encoding != null)
-			is.setEncoding(encoding.name());
-		return dbf.newDocumentBuilder().parse(is);
+		InputSource source = XMLInputSourceUtil.getInputSource(xmlDocument, encoding != null ? encoding.name() : null);
+		return dbf.newDocumentBuilder().parse(source);
 	}
 
 	private String DOM2String(Document doc) throws Exception {

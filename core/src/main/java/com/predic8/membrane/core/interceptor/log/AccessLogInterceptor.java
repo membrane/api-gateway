@@ -31,7 +31,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
  * @description Writes one access-log line per completed exchange through a Log4j appender. The line follows the Apache
  * Common Log Format by default; add additionalPatternList entries to append your own SpEL-evaluated fields. Where the
  * line is written and in which format is controlled by the Log4j configuration (log4j2.xml). Typically configured under
- * <code>global</code> so it covers every API. See the examples under examples/logging/access.
+ * <code>global</code> so it covers every API. See the tutorials under tutorials/logging.
  * @topic 4. Monitoring, Logging and Statistics
  * @yaml
  * <pre><code>
@@ -91,7 +91,8 @@ public class AccessLogInterceptor extends AbstractInterceptor {
 
     /**
      * @description Extra fields appended to each log line. Each additionalVariable binds a name, referenced in
-     * log4j2.xml as %X{name}, to a SpEL expression evaluated against the exchange.
+     * log4j2.xml as %X{name}, to a SpEL expression evaluated against the exchange. Line breaks, quotes, backslashes
+     * and other control characters in the value are escaped, e.g. a newline is logged as \n.
      */
     @SuppressWarnings("unused")
     @MCChildElement
@@ -119,7 +120,8 @@ public class AccessLogInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description Pattern used to format the request timestamp in the log line.
+     * @description Pattern used to format the request timestamp in the log line. Month names are English. Use
+     * <code>dd/MMM/yyyy:HH:mm:ss Z</code> for the timestamp of the Apache Common Log Format.
      * @default dd/MM/yyyy:HH:mm:ss Z
      */
     @MCAttribute

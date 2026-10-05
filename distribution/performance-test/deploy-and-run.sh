@@ -53,6 +53,12 @@ sed -e "s#__BACKEND_PRIVATE_IP__#$BACKEND_PRIV#" \
     -e "s#__GATEWAY_KEYSTORE_PATH__#$GHOME/conf_override/gateway.p12#" \
     -e "s#__GATEWAY_TRUSTSTORE_PATH__#$GHOME/conf_override/gateway-truststore.p12#" \
     "$PT/conf/loadtest-rate-limit-basic-auth-tls.xml" > "$PT/conf/resolved/loadtest-rate-limit-basic-auth-tls.xml"
+sed -e "s#__BACKEND_PRIVATE_IP__#$BACKEND_PRIV#" \
+    -e "s#__WSDL_PATH__#$GHOME/conf_override/person-service.wsdl#" \
+    "$PT/conf/loadtest-wsdl2openapi.xml" > "$PT/conf/resolved/loadtest-wsdl2openapi.xml"
+sed -e "s#__BACKEND_PRIVATE_IP__#$BACKEND_PRIV#" \
+    -e "s#__WSDL_PATH__#$GHOME/conf_override/person-service.wsdl#" \
+    "$PT/conf/loadtest-soap-validation.xml" > "$PT/conf/resolved/loadtest-soap-validation.xml"
 
 echo "== 4b. Generating self-signed TLS certificates for the rate-limit-basic-auth-tls scenario =="
 # Regenerated fresh on every deploy (gitignored, see .gitignore) -- SANs are baked in against this
@@ -87,6 +93,7 @@ $SCP "$PT/java/LoadTesterBackend.java" "$ADMIN_USER@$BACKEND_PUB:~/"
 $SCP "$CERTS/backend.p12" "$ADMIN_USER@$BACKEND_PUB:~/"
 $SCP "$ZIP" "$ADMIN_USER@$GATEWAY_PUB:~/"
 $SCP "$REPO/distribution/router/conf/openapi/fruitshop-v2-2-0.oas.yml" "$ADMIN_USER@$GATEWAY_PUB:~/"
+$SCP "$PT/conf/person-service.wsdl" "$ADMIN_USER@$GATEWAY_PUB:~/"
 $SCP "$PT"/conf/resolved/*.xml "$ADMIN_USER@$GATEWAY_PUB:~/"
 $SCP "$CERTS/gateway.p12" "$CERTS/gateway-truststore.p12" "$ADMIN_USER@$GATEWAY_PUB:~/"
 $SCP "$PT/java/LoadTesterClient.java" "$ADMIN_USER@$CLIENT_PUB:~/"
@@ -113,12 +120,12 @@ exit 1'
 $SSH "$ADMIN_USER@$BACKEND_PUB" "rm -rf $UNZIPPED_NAME && unzip -o $UNZIPPED_NAME.zip && javac -cp '$UNZIPPED_NAME/lib/*' -d classes LoadTesterBackend.java"
 # BACKEND_TLS_KEYSTORE starts a second, TLS-only listener on 2011 alongside the plaintext one on
 # 2010 (see LoadTesterBackend.java), so rate-limit-basic-auth-tls can share this same backend
-# process instead of needing its own.
+# process instead of needing its own. The wsdl2openapi scenario's SOAP listener on 2012 always runs.
 $SSH "$ADMIN_USER@$BACKEND_PUB" "BACKEND_TLS_KEYSTORE=/home/$ADMIN_USER/backend.p12 BACKEND_TLS_KEYSTORE_PASSWORD=$CERT_PASSWORD nohup java -cp '$UNZIPPED_NAME/lib/*:classes' com.predic8.membrane.load.LoadTesterBackend 2010 </dev/null >backend.log 2>&1 & echo \$! > backend.pid"
 $SSH "$ADMIN_USER@$BACKEND_PUB" 'pid=$(cat backend.pid)
 for attempt in {1..30}; do
   kill -0 "$pid" 2>/dev/null || break
-  if curl --silent --fail --max-time 2 http://localhost:2010/ >/dev/null && curl --silent --fail --max-time 2 -k https://localhost:2011/ >/dev/null; then
+  if curl --silent --fail --max-time 2 http://localhost:2010/ >/dev/null && curl --silent --fail --max-time 2 -k https://localhost:2011/ >/dev/null && curl --silent --fail --max-time 2 http://localhost:2012/ >/dev/null; then
     kill -0 "$pid" 2>/dev/null && { echo "backend OK"; exit 0; }
   fi
   sleep 1
@@ -128,7 +135,7 @@ cat backend.log
 exit 1'
 
 echo "== 7. Unpacking gateway distribution and placing configs (not starting it yet) =="
-$SSH "$ADMIN_USER@$GATEWAY_PUB" "rm -rf $UNZIPPED_NAME && unzip -o $UNZIPPED_NAME.zip && mkdir -p $UNZIPPED_NAME/conf_override && cp ~/loadtest-*.xml $UNZIPPED_NAME/conf_override/ && cp ~/fruitshop-v2-2-0.oas.yml $UNZIPPED_NAME/conf_override/ && cp ~/gateway.p12 ~/gateway-truststore.p12 $UNZIPPED_NAME/conf_override/"
+$SSH "$ADMIN_USER@$GATEWAY_PUB" "rm -rf $UNZIPPED_NAME && unzip -o $UNZIPPED_NAME.zip && mkdir -p $UNZIPPED_NAME/conf_override && cp ~/loadtest-*.xml $UNZIPPED_NAME/conf_override/ && cp ~/fruitshop-v2-2-0.oas.yml ~/person-service.wsdl $UNZIPPED_NAME/conf_override/ && cp ~/gateway.p12 ~/gateway-truststore.p12 $UNZIPPED_NAME/conf_override/"
 $SSH "$ADMIN_USER@$GATEWAY_PUB" "printf '%s\\n' '$GHOME' > ~/loadtest-gateway-path"
 
 echo "== 8. Compiling client =="
@@ -141,6 +148,8 @@ echo "  ./run-scenario.sh fullproxy"
 echo "  ./run-scenario.sh openapi-validation"
 echo "  ./run-scenario.sh rate-limit-basic-auth"
 echo "  ./run-scenario.sh rate-limit-basic-auth-tls"
+echo "  ./run-scenario.sh wsdl2openapi"
+echo "  ./run-scenario.sh soap-validation"
 echo ""
 echo "Each accepts an optional concurrency argument, e.g. ./run-scenario.sh fullproxy 150"
 echo ""
