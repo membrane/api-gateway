@@ -122,6 +122,11 @@ PRIO 3:
           value: jdbc:h2:./membranedb;AUTO_SERVER=TRUE
   ```
 - removed `MethodOverrideInterceptor`
+- `APIsJSON` replaced by `apiDiscovery`. Rename the element in existing configurations. The default `apisjson` format now follows APIs.json 0.18:
+    * `humanUrl` and `baseUrl` are now spelled `humanURL` and `baseURL`.
+    * A proxy bound to every host is listed under the host the client used instead of `localhost`.
+    * `serviceProxy` and `soapProxy` are listed too, not only `api`.
+    * The default collection `description` is now `APIs served by this gateway`.
 
 ## Bug Fixes
 - `xml2json`: Ensuring content type alignment and better exception handling.  
@@ -135,4 +140,4 @@ PRIO 3:
   - Store body as parsed JsonNode or Document
     - If JSON is needed by an interceptor use already parsed JSON
 
-- replaced `ApisJsonInterceptor` with `ApiDiscoveryInterceptor`
+  

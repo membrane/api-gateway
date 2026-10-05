@@ -136,7 +136,8 @@ public class CatalogCollector {
      * so any link here would be dead.
      */
     private CatalogEntry plainEntry(AbstractServiceProxy proxy, Exchange exchange) {
-        return builder().aid(aid(proxy, null)).kind(kindOf(proxy)).name(proxy.getName()).description(description(proxy, null)).endpoint(endpoint(proxy, exchange, pathOf(proxy))).soap(soapInfo(proxy)).build();
+        CatalogEntry.Endpoint endpoint = endpoint(proxy, exchange, pathOf(proxy));
+        return builder().aid(aid(proxy, null)).kind(kindOf(proxy)).name(proxy.getName()).description(description(proxy, null)).endpoint(endpoint).soap(soapInfo(proxy, endpoint)).build();
     }
 
     private static CatalogEntry.ProxyKind kindOf(AbstractServiceProxy proxy) {
@@ -145,9 +146,14 @@ public class CatalogCollector {
         return SERVICE_PROXY;
     }
 
-    private static CatalogEntry.SoapInfo soapInfo(AbstractServiceProxy proxy) {
+    /**
+     * Points at the WSDL the gateway publishes under <code>?wsdl</code>, with the service address
+     * rewritten to the gateway. The configured WSDL location usually names the backend, which the
+     * client cannot reach and which a public catalog must not reveal.
+     */
+    private static CatalogEntry.SoapInfo soapInfo(AbstractServiceProxy proxy, CatalogEntry.Endpoint endpoint) {
         if (!(proxy instanceof SOAPProxy soap)) return null;
-        return new CatalogEntry.SoapInfo(requireNonNullElse(soap.getResolvedWsdl(), soap.getWsdl()), soap.getServiceName(), soap.getPortName());
+        return new CatalogEntry.SoapInfo(endpoint.url() + "?wsdl", soap.getServiceName(), soap.getPortName());
     }
 
     private CatalogEntry.Endpoint endpoint(AbstractServiceProxy proxy, Exchange exchange, String path) {
@@ -226,10 +232,14 @@ public class CatalogCollector {
     /**
      * Identifier of the entry, <code>&lt;rootDomain&gt;:&lt;slug&gt;</code>. An api that sets
      * <code>id</code> keeps that value verbatim, so configuration can pin an identifier that
-     * outlives a change of host, port or path.
+     * outlives a change of host, port or path. With several OpenAPI documents the document id is
+     * appended, because every entry needs an identifier of its own.
      */
     private String aid(AbstractServiceProxy proxy, String recordId) {
-        if (proxy instanceof APIProxy api && api.getId() != null) return api.getId();
+        if (proxy instanceof APIProxy api && api.getId() != null) {
+            if (recordId != null && api.getApiRecords().size() > 1) return api.getId() + ":" + recordId;
+            return api.getId();
+        }
         if (recordId != null) return rootDomain + ":" + recordId;
         return rootDomain + ":" + slug(keyId(proxy));
     }

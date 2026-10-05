@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.discovery;
 
+import com.predic8.membrane.core.config.Path;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
@@ -262,6 +263,45 @@ class CatalogCollectorTest {
 
         assertEquals("http://localhost:2000/shop",
                 only(collector().collect(router, exc)).endpoint().url());
+    }
+
+    @Test
+    void theIdOfAnApiWithOneDocumentIsKeptVerbatim() throws Exception {
+        APIProxy proxy = apiProxy("fruitshop-api-v2-openapi-3.yml", 2000);
+        proxy.setId("shop");
+        add(proxy);
+
+        assertEquals("shop", only(collector().collect(router, exchange("/apis.json"))).aid());
+    }
+
+    @Test
+    void anApiWithAnIdAndSeveralDocumentsGetsOneIdentifierPerDocument() throws Exception {
+        APIProxy proxy = apiProxy("fruitshop-api-v2-openapi-3.yml", 2000);
+        OpenAPISpec second = new OpenAPISpec();
+        second.location = TestUtil.getPathFromResource("openapi/specs/info-servers.yml");
+        proxy.setOpenapi(List.of(proxy.getOpenapi().getFirst(), second));
+        proxy.setId("shop");
+        add(proxy);
+
+        List<String> aids = collector().collect(router, exchange("/apis.json")).apis().stream()
+                .map(CatalogEntry::aid).toList();
+
+        assertEquals(List.of("shop:fruit-shop-api-v2-0-0", "shop:servers-1-api-v1-0"), aids.stream().sorted().toList());
+    }
+
+    @Test
+    void aSoapProxyAdvertisesTheWsdlTheGatewayPublishesNotTheBackendOne() throws Exception {
+        SOAPProxy proxy = new SOAPProxy() {{
+            wsdl = TestUtil.getPathFromResource("validation/ArticleService.wsdl");
+            key = new ServiceProxyKey(2000);
+        }};
+        proxy.setPath(new Path(false, "/articles"));
+        add(proxy);
+
+        CatalogEntry entry = only(collector().collect(router, exchange("/apis.json")));
+
+        assertEquals(SOAP_PROXY, entry.kind());
+        assertEquals("http://gateway.example.com:2000/articles?wsdl", entry.soap().wsdl());
     }
 
     @Test

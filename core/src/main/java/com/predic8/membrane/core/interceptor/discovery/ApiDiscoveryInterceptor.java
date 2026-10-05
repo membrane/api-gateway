@@ -162,8 +162,10 @@ public class ApiDiscoveryInterceptor extends AbstractInterceptor {
 
     /**
      * @description Domain the identifiers in the document are built from. An entry is identified as
-     * <code>&lt;rootDomain&gt;:&lt;id&gt;</code>, where the id comes from the api's <code>id</code>
-     * attribute, its OpenAPI document, or a slug of its host, port and path.
+     * <code>&lt;rootDomain&gt;:&lt;id&gt;</code>, where the id comes from its OpenAPI document or a
+     * slug of its host, port and path. An api that sets <code>id</code> is identified by that value
+     * instead, without the domain, and by <code>&lt;id&gt;:&lt;document id&gt;</code> when it
+     * carries several OpenAPI documents.
      * @default membrane
      * @example example.com
      */
