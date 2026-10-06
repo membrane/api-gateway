@@ -159,7 +159,8 @@ public class RewriteInterceptor extends AbstractInterceptor {
                 return RETURN;
 
             int pathBegin = -1;
-            int authorityBegin = dest.indexOf("//");
+            // a relative dest has no authority, a '//' in its query must not be taken for one
+            int authorityBegin = isAbsoluteUrl(dest) ? dest.indexOf("//") : -1;
             if (authorityBegin != -1)
                 pathBegin = dest.indexOf("/", authorityBegin + 2);
             String schemaHostPort = pathBegin == -1 ? null : dest.substring(0, pathBegin);

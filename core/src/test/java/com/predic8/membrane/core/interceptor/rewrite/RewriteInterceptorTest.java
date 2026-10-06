@@ -93,6 +93,17 @@ public class RewriteInterceptorTest {
 		assertEquals("http://www.predic8.de:80/shop/v2/products?ns=http://example.com/foo/bar", exc.getDestinations().getFirst());
 	}
 
+	/**
+	 * A relative destination has no authority, so a '//' in its query must not be taken for one.
+	 */
+	@Test
+	void rewriteWithoutTargetIgnoresSchemeSeparatorInQuery() throws URISyntaxException {
+		exc.setRequest(get("/store/products?ns=http://example.com/foo/bar").build());
+		assertEquals(CONTINUE, di.handleRequest(exc));
+		assertEquals(CONTINUE, rewriter.handleRequest(exc));
+		assertEquals("/shop/v2/products?ns=http://example.com/foo/bar", exc.getDestinations().getFirst());
+	}
+
 	@Test
 	void storeSample() throws URISyntaxException {
 		exc.setRequest(get("/store/products/").build());
