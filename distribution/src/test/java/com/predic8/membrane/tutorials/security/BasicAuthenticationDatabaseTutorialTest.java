@@ -26,7 +26,6 @@ import java.sql.DriverManager;
 
 import static io.restassured.RestAssured.given;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.apache.commons.io.FileUtils.copyFileToDirectory;
 import static org.hamcrest.Matchers.containsString;
 
 /**
@@ -115,19 +114,5 @@ public class BasicAuthenticationDatabaseTutorialTest extends DistributionExtract
     private String h2JdbcUrl() {
         return "jdbc:h2:%s;AUTO_SERVER=TRUE".formatted(
                 new File(baseDir, "basicauthdb").getAbsolutePath().replace('\\', '/'));
-    }
-
-    private void copyH2JarToMembraneLib() throws IOException {
-        try {
-            final var jar = new File(org.h2.Driver.class.getProtectionDomain()
-                    .getCodeSource().getLocation().toURI());
-
-            if (!jar.isFile() || !jar.getName().endsWith(".jar"))
-                throw new AssertionError("H2 is not loaded from a jar: " + jar);
-
-            copyFileToDirectory(jar, new File(getMembraneHome(), "lib"));
-        } catch (Exception e) {
-            throw new IOException("Failed to locate/copy H2 jar.", e);
-        }
     }
 }
