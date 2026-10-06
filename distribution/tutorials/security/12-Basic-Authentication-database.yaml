@@ -11,7 +11,8 @@
 #     Newer versions should work as well: https://jdbc.postgresql.org/download/
 #
 # 2.) Start PostgreSQL with the users from basic-auth-users.sql:
-#     docker run --name pg --rm -e POSTGRES_PASSWORD=secret -p 5432:5432 -v "$PWD/basic-auth-users.sql:/docker-entrypoint-initdb.d/basic-auth-users.sql" postgres
+#     Linux/Mac or Windows PowerShell (not Command Prompt):
+#       docker run --name pg --rm -e POSTGRES_PASSWORD=secret -p 5432:5432 -v "$PWD/basic-auth-users.sql:/docker-entrypoint-initdb.d/basic-auth-users.sql" postgres
 #
 # 3.) Start Membrane in a second terminal:
 #     with Java:
