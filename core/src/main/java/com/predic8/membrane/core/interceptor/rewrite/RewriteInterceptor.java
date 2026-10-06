@@ -44,6 +44,11 @@ public class RewriteInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(RewriteInterceptor.class.getName());
 
+    /**
+     * Scheme followed by "://" at the start (RFC 3986 section 3.1). A "://" later on, e.g. in the query, does not count.
+     */
+    private static final Pattern ABSOLUTE_URL = Pattern.compile("^[a-zA-Z][a-zA-Z0-9+.-]*://");
+
     public enum Type {
         REWRITE,
         REDIRECT_TEMPORARY,
@@ -177,7 +182,7 @@ public class RewriteInterceptor extends AbstractInterceptor {
                 return RETURN;
             }
 
-            if (!newDest.contains("://") && schemaHostPort != null) {
+            if (!isAbsoluteUrl(newDest) && schemaHostPort != null) {
                 // prepend schema, host and port from original uri
                 newDest = schemaHostPort + newDest;
             }
@@ -188,7 +193,7 @@ public class RewriteInterceptor extends AbstractInterceptor {
         Mapping mapping = findFirstMatchingRegEx(exc.getRequest().getUri());
         if (mapping != null && mapping.do_ == REWRITE) {
             String newDest = replace(exc.getRequest().getUri(), mapping);
-            if (newDest.contains("://")) {
+            if (isAbsoluteUrl(newDest)) {
                 newDest = getPathQueryOrSetError(router.getConfiguration().getUriFactory(), newDest, exc);
                 if (newDest == null)
                     return RETURN;
@@ -197,6 +202,10 @@ public class RewriteInterceptor extends AbstractInterceptor {
         }
 
         return CONTINUE;
+    }
+
+    private static boolean isAbsoluteUrl(String url) {
+        return ABSOLUTE_URL.matcher(url).find();
     }
 
     private String getPathQueryOrSetError(URIFactory factory, String destination, Exchange exc) {

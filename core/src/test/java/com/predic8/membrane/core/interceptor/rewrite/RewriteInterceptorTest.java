@@ -78,6 +78,21 @@ public class RewriteInterceptorTest {
 		assertEquals("http://www.predic8.de:80/buy?item=banana&amount=3", exc.getDestinations().getFirst());
 	}
 
+	/**
+	 * A '://' inside the query must not make the rewritten path count as absolute, see issue #3437.
+	 */
+	@Test
+	void rewriteKeepsTargetWhenQueryContainsSchemeSeparator() throws URISyntaxException {
+		final var uri = "/store/products?ns=http://example.com/foo/bar";
+		exc.setRequest(get(uri).build());
+		exc.setOriginalRequestUri(uri);
+		exc.setProxy(sp);
+
+		assertEquals(CONTINUE, di.handleRequest(exc));
+		assertEquals(CONTINUE, rewriter.handleRequest(exc));
+		assertEquals("http://www.predic8.de:80/shop/v2/products?ns=http://example.com/foo/bar", exc.getDestinations().getFirst());
+	}
+
 	@Test
 	void storeSample() throws URISyntaxException {
 		exc.setRequest(get("/store/products/").build());
