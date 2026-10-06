@@ -124,13 +124,13 @@ public class RewriteInterceptor extends AbstractInterceptor {
 
         public Type getDo() {
             if (do_ == null)
-                do_ = to.contains("://") ? REDIRECT_TEMPORARY : REWRITE;
+                do_ = isAbsoluteUrl(to) ? REDIRECT_TEMPORARY : REWRITE;
             return do_;
         }
 
         /**
          * @description What to do: "rewrite", "redirect-temporary" or "redirect-permanent".
-         * @default rewrite (default) or redirect (if "to" contains "://")
+         * @default rewrite (default) or redirect (if "to" is an absolute URL like "https://...")
          * @example redirect-temporary
          */
         @MCAttribute

@@ -28,6 +28,7 @@ import java.util.*;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.Type.*;
 import static org.junit.jupiter.api.Assertions.*;
 public class RewriteInterceptorTest {
 
@@ -102,6 +103,15 @@ public class RewriteInterceptorTest {
 		assertEquals(CONTINUE, di.handleRequest(exc));
 		assertEquals(CONTINUE, rewriter.handleRequest(exc));
 		assertEquals("/shop/v2/products?ns=http://example.com/foo/bar", exc.getDestinations().getFirst());
+	}
+
+	/**
+	 * Only an absolute 'to' defaults to a redirect, a '://' in its query does not.
+	 */
+	@Test
+	void doDefaultIgnoresSchemeSeparatorInQuery() {
+		assertEquals(REWRITE, new Mapping("^/store/(.*)", "/shop?ns=http://example.com/$1", null).getDo());
+		assertEquals(REDIRECT_TEMPORARY, new Mapping("^/store/(.*)", "https://example.com/shop/$1", null).getDo());
 	}
 
 	@Test
