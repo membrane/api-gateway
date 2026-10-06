@@ -56,8 +56,6 @@
 #       curl localhost:2000/legacy/orders
 #
 #       Legacy backend received /orders
-#
-# 7.) Continue with file 20-Internal-API.yaml
 
 api:
   name: Shop

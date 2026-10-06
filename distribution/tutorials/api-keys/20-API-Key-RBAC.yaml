@@ -27,8 +27,6 @@
 #     curl localhost:2000 -H "X-Api-Key: key-admin"
 #
 #     Admin area
-#
-# Continue with 30-API-Key-OpenAPI.yaml
 
 api:
   port: 2000

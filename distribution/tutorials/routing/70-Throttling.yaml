@@ -34,8 +34,6 @@
 #     Two requests are processed, the third is rejected right away.
 #
 # 4.) Read "How it works" at the end of this file.
-#
-# 5.) Continue with file 80-Shadowing-Traffic.yaml
 
 api:
   name: Delayed API

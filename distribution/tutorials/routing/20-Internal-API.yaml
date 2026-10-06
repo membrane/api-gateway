@@ -23,8 +23,6 @@
 #       Hello from the internal API
 #
 # 3.) Read "How it works" at the end of this file.
-#
-# 4.) Continue with file 30-Content-Based-Router.yaml
 
 api:
   port: 2000
