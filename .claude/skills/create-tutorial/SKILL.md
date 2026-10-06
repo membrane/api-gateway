@@ -56,7 +56,7 @@ same skeleton:
 #
 #     <Expected output — paste it verbatim.>
 #
-# 3.) Continue with file NN-Next.yaml      # the next step in the chain, if any
+# 3.) Continue with file NN-Next.yaml
 
 api:
   port: 2000
@@ -72,6 +72,18 @@ Hold to these conventions — they're what makes the set feel like one coherent 
   Don't explain what the config does; the reader can see the config. Don't repeat information
   the `name:` field already provides.
 - **No section-header comments** above each `api:` block. The `name:` field describes the API.
+- **No trailing `# ...` after a command** in a step. Readers copy the line into their shell,
+  and Windows `cmd` doesn't treat `#` as a comment, so it would pass the text to the command.
+  Put prompts and notes on their own line:
+  ```
+  #     curl -u alice localhost:2000
+  #     enter password: secret
+  ```
+  Show every prompt an interactive tool asks, in order (e.g. `htpasswd` also asks
+  `Re-type new password:`), so the reader isn't surprised by one the step left out.
+- **`NOTE:` blocks go at the end of the file**, after the config. Caveats, alternatives and
+  background (unsupported hash formats, other databases, "plaintext only for demos") would
+  otherwise come between the steps and the config. The top block stays steps only.
 - **Inline comments only for the non-obvious WHY** — a surprising built-in, a hidden constraint.
   Never comment what the interceptor name already says.
 - **Keep the config minimal and focused** on the one concept the step teaches. Tutorials favor
@@ -204,6 +216,8 @@ Avoid the verbose `${property.'membrane.security.schemes'[0].username}` — use 
 
 - [ ] `NN-Title.yaml` (or `.md` for curl-only steps) created with schema line, short numbered comment block, minimal config
 - [ ] Comment block: steps = command + expected output only; no prose repeating the config
+- [ ] No trailing `# ...` on command lines (Windows `cmd` passes it to the command); prompts on their own line
+- [ ] `NOTE:` blocks placed after the config at the end of the file, not in the top step block
 - [ ] No section-header comments above `api:` blocks; `name:` describes them
 - [ ] `return: status: 200` used (not `return: {}`)
 - [ ] Template interpolations unquoted when `contentType: application/json`

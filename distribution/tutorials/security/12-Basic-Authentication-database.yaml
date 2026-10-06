@@ -11,10 +11,9 @@
 #     Newer versions should work as well: https://jdbc.postgresql.org/download/
 #
 # 2.) Start PostgreSQL with the users from basic-auth-users.sql:
-#     docker run -d --name postgres -e POSTGRES_PASSWORD=secret -p 5432:5432 \
-#       -v "$PWD/basic-auth-users.sql:/docker-entrypoint-initdb.d/basic-auth-users.sql" postgres
+#     docker run --name pg --rm -e POSTGRES_PASSWORD=secret -p 5432:5432 -v "$PWD/basic-auth-users.sql:/docker-entrypoint-initdb.d/basic-auth-users.sql" postgres
 #
-# 3.) Start Membrane:
+# 3.) Start Membrane in a second terminal:
 #     with Java:
 #       Linux/Mac:
 #         ./membrane.sh -c 12-Basic-Authentication-database.yaml
@@ -38,7 +37,7 @@
 #     You're in!
 #
 # 6.) Add a user, no restart needed:
-#     docker exec postgres psql -U postgres -c "INSERT INTO users VALUES ('alice', 'secret')"
+#     docker exec pg psql -U postgres -c "INSERT INTO users VALUES ('alice', 'secret')"
 #
 #     curl -u alice localhost:2000
 #     enter password: secret
@@ -46,13 +45,7 @@
 #     You're in!
 #
 # 7.) Stop PostgreSQL:
-#     docker rm -f postgres
-#
-# NOTE: For another database, put its JDBC driver into lib/ and change
-# driverClassName and url, e.g.:
-#     MySQL:      com.mysql.cj.jdbc.Driver                      jdbc:mysql://localhost:3306/demo
-#     SQL Server: com.microsoft.sqlserver.jdbc.SQLServerDriver  jdbc:sqlserver://localhost:1433;encrypt=false
-#     Oracle:     oracle.jdbc.OracleDriver                      jdbc:oracle:thin:@localhost:1521/FREEPDB1
+#     docker stop pg
 
 components:
   dataSource:
@@ -82,3 +75,9 @@ api:
         src: You're in!
     - return:
         status: 200
+
+# NOTE: For another database, put its JDBC driver into lib/ and change
+# driverClassName and url, e.g.:
+#     MySQL:      com.mysql.cj.jdbc.Driver                      jdbc:mysql://localhost:3306/demo
+#     SQL Server: com.microsoft.sqlserver.jdbc.SQLServerDriver  jdbc:sqlserver://localhost:1433;encrypt=false
+#     Oracle:     oracle.jdbc.OracleDriver                      jdbc:oracle:thin:@localhost:1521/FREEPDB1

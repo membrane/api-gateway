@@ -19,13 +19,12 @@
 #     curl localhost:2000
 #
 # 3.) Valid credentials (plain text password):
-#     curl -u alice localhost:2000    # enter password: qwertz
+#     curl -u alice localhost:2000
+#     enter password: qwertz
 #
 # 4.) Valid credentials (hashed password):
-#     curl -u carol localhost:2000    # enter password: abc123
-#
-# NOTE: Plaintext passwords are for tutorial/demo use only.
-# In production, prefer hashed passwords for all users.
+#     curl -u carol localhost:2000
+#     enter password: abc123
 
 api:
   port: 2000
@@ -49,3 +48,6 @@ api:
         src: You're in!
     - return:
         status: 200
+
+# NOTE: Plaintext passwords are for tutorial/demo use only.
+# In production, prefer hashed passwords for all users.
