@@ -6,21 +6,32 @@
 # Protects from invalid and expensive queries that could lead to denial
 # of service or brute force attacks.
 #
-# Try:
+# 1.) Start Membrane:
+#     with Docker:
+#       Linux/Mac:
+#         ./run-docker.sh -c 50-GraphQL-Protection.yaml
+#       Windows:
+#         run-docker.cmd -c 50-GraphQL-Protection.yaml
 #
-# 1.) Valid request => 200
+#     or with Java:
+#       Linux/Mac:
+#         ./membrane.sh -c 50-GraphQL-Protection.yaml
+#       Windows:
+#         membrane.cmd -c 50-GraphQL-Protection.yaml
+#
+# 2.) Valid request => 200
 #    curl -d '{"query":"{products{id}}"}' -H "Content-Type: application/json" http://localhost:2000
 #
-# 2.) Max depth exceeded => 400
+# 3.) Max depth exceeded => 400
 #    curl -d '{ "query": "query{categories{products{vendors{id}}}}"}' -H "Content-Type: application/json" http://localhost:2000
 #
-# 3.) Max recursion exceeded => 400
+# 4.) Max recursion exceeded => 400
 #    curl -d '{"query":"{products{vendor{products{id}}}}"}' -H "Content-Type: application/json" http://localhost:2000
 #
-# 4.) Disallowed mutation 'updateCategory' => 400
+# 5.) Disallowed mutation 'updateCategory' => 400
 #    curl -d '{"query":"mutation { updateCategory(id:6,name: \"Dry Fruits\"){id}}"}' -H "Content-Type: application/json" http://localhost:2000
 #
-# 5.) Disallowed introspection => 400
+# 6.) Disallowed introspection => 400
 #    curl -d '{"query":"{ __schema{mutationType {fields{name}}}}"}' -H "Content-Type: application/json" http://localhost:2000
 #
 # For more examples see: examples/graphql/graphql-validation

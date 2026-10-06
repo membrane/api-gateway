@@ -15,7 +15,14 @@
 #       -v "$PWD/basic-auth-users.sql:/docker-entrypoint-initdb.d/basic-auth-users.sql" postgres
 #
 # 3.) Start Membrane:
-#     ./membrane.sh -c 12-Basic-Authentication-database.yaml
+#     with Java:
+#       Linux/Mac:
+#         ./membrane.sh -c 12-Basic-Authentication-database.yaml
+#       Windows:
+#         membrane.cmd -c 12-Basic-Authentication-database.yaml
+#
+#     Membrane runs with Java here, not in Docker: it loads the driver from lib/ and
+#     connects to PostgreSQL on localhost.
 #
 #     Table users already exists.
 #

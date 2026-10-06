@@ -15,26 +15,39 @@
 # - This tutorial shows both schema styles: inline `schema` and file-based `location`.
 # - The mock upstream below returns one fixed JSON-RPC success response.
 #
-# 1.) Send an allowed read-only request
+# 1.) Start Membrane:
+#     with Docker:
+#       Linux/Mac:
+#         ./run-docker.sh -c 20-JSON-RPC-Protection-with-Schema-Validation.yaml
+#       Windows:
+#         run-docker.cmd -c 20-JSON-RPC-Protection-with-Schema-Validation.yaml
+#
+#     or with Java:
+#       Linux/Mac:
+#         ./membrane.sh -c 20-JSON-RPC-Protection-with-Schema-Validation.yaml
+#       Windows:
+#         membrane.cmd -c 20-JSON-RPC-Protection-with-Schema-Validation.yaml
+#
+# 2.) Send an allowed read-only request
 #     curl -d '{"jsonrpc":"2.0","id":1,"method":"getHealth"}' -H "Content-Type: application/json" http://localhost:2000
 #
-# 2.) Try a blocked write method
+# 3.) Try a blocked write method
 #     curl -d '{"jsonrpc":"2.0","id":1,"method":"setMaintenanceMode"}' -H "Content-Type: application/json" http://localhost:2000
 #
 #     Should return a JSON-RPC error explaining that the method is not allowed.
 #
-# 3.) Try invalid params
+# 4.) Try invalid params
 #     curl -d '{"jsonrpc":"2.0","id":1,"method":"getEcho","params":{}}' -H "Content-Type: application/json" http://localhost:2000
 #
 #     The inline schema requires params.message.
 #
-# 4.) Send a valid request
+# 5.) Send a valid request
 #     curl -d '{"jsonrpc":"2.0","id":1,"method":"getEcho","params":{"message":"Hello"}}' -H "Content-Type: application/json" http://localhost:2000
 #
 #     The request should be forwarded to the mock upstream on port 2001 and the
 #     JSON-RPC result should pass response validation.
 #
-# 5.) Try a batch that is too large
+# 6.) Try a batch that is too large
 #     curl -d '[{"jsonrpc":"2.0","id":5,"method":"getHealth"},{"jsonrpc":"2.0","id":6,"method":"getEcho","params":{"message":"Hi"}},{"jsonrpc":"2.0","id":7,"method":"getHealth"}]' -H "Content-Type: application/json" http://localhost:2000
 #
 #     Should return a JSON-RPC batch error because maxSize is 2.

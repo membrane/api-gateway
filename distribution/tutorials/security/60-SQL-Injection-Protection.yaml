@@ -13,11 +13,16 @@
 #
 # 1.) Start Membrane:
 #     with Docker:
-#       ./run-docker.sh -c 60-SQL-Injection-Protection.yaml   (Linux/Mac)
-#       run-docker.cmd -c 60-SQL-Injection-Protection.yaml    (Windows)
+#       Linux/Mac:
+#         ./run-docker.sh -c 60-SQL-Injection-Protection.yaml
+#       Windows:
+#         run-docker.cmd -c 60-SQL-Injection-Protection.yaml
+#
 #     or with Java:
-#       ./membrane.sh -c 60-SQL-Injection-Protection.yaml     (Linux/Mac)
-#       membrane.cmd -c 60-SQL-Injection-Protection.yaml      (Windows)
+#       Linux/Mac:
+#         ./membrane.sh -c 60-SQL-Injection-Protection.yaml
+#       Windows:
+#         membrane.cmd -c 60-SQL-Injection-Protection.yaml
 #
 # 2.) A normal request passes through:
 #     curl -H 'Content-Type: application/json' -d '{"q":"laptop"}' localhost:2000
