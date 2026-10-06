@@ -81,6 +81,24 @@ class HtmlCatalogRendererTest {
     }
 
     /**
+     * A catalog lists every API of the gateway, so the operations of each one start collapsed and
+     * the reader opens the ones they care about.
+     */
+    @Test
+    void operationsCollapseIntoADetailsBlockThatStartsClosed() {
+        String html = render(catalog(describedApi()));
+
+        assertTrue(html.contains("<details class=\"operations\">"));
+        assertTrue(html.contains("<summary>Operations <span class=\"count\">2</span></summary>"));
+        assertFalse(html.contains("<details class=\"operations\" open"));
+    }
+
+    @Test
+    void anApiWithoutOperationsGetsNoDetailsBlock() {
+        assertFalse(render(catalog(plainProxy())).contains("<details"));
+    }
+
+    /**
      * Neither the summary nor the operationId of an operation is mandatory in OpenAPI, and neither
      * is a license's URL.
      */

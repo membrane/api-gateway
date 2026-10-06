@@ -58,8 +58,14 @@ public class HtmlCatalogRenderer implements CatalogRenderer {
             .links a { margin-right: 1em; }
             .tags { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 0.4em; }
             .tags li { background: var(--stripe); border: 1px solid var(--line); border-radius: 1em; padding: 0.1em 0.7em; font-size: 0.85em; }
-            .operations { overflow-x: auto; }
-            table { width: 100%; border-collapse: collapse; margin-top: 0.8em; }
+            .operations { margin-top: 0.8em; }
+            .operations > summary { cursor: pointer; font-weight: bold; color: var(--muted); padding: 0.2em 0; }
+            .operations > summary:hover { color: var(--text); }
+            .operations[open] > summary { margin-bottom: 0.2em; }
+            .count { font-size: 0.85em; font-weight: normal; padding: 0.1em 0.6em; margin-left: 0.4em;
+                     border: 1px solid var(--line); border-radius: 1em; background: var(--stripe); }
+            .scroll { overflow-x: auto; }
+            table { width: 100%; border-collapse: collapse; margin-top: 0.4em; }
             th, td { text-align: left; padding: 0.45em 0.6em; border-bottom: 1px solid var(--line); vertical-align: top; }
             tbody tr:nth-of-type(even) { background: var(--stripe); }
             .deprecated code, .deprecated td:last-child { text-decoration: line-through; color: var(--muted); }
@@ -197,17 +203,19 @@ public class HtmlCatalogRenderer implements CatalogRenderer {
         if (operations.isEmpty())
             return;
         html.append("""
-                <div class="operations">
+                <details class="operations">
+                <summary>Operations <span class="count">%d</span></summary>
+                <div class="scroll">
                 <table>
                 <thead><tr><th>Method</th><th>Path</th><th>Summary</th></tr></thead>
                 <tbody>
-                """);
+                """.formatted(operations.size()));
         operations.forEach(operation -> html.append("<tr%s><td>%s</td><td><code>%s</code></td><td>%s</td></tr>\n".formatted(
                 operation.deprecated() ? " class=\"deprecated\"" : "",
                 method(operation.method()),
                 escape(operation.path()),
                 escape(firstNonNull(operation.summary(), operation.operationId())))));
-        html.append("</tbody>\n</table>\n</div>\n");
+        html.append("</tbody>\n</table>\n</div>\n</details>\n");
     }
 
     private static String method(String method) {
