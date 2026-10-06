@@ -7,11 +7,16 @@
 #
 # 1.) Start Membrane:
 #     with Docker:
-#       ./run-docker.sh -c 20-CORS-Restricted.yaml   (Linux/Mac)
-#       run-docker.cmd -c 20-CORS-Restricted.yaml    (Windows)
+#       Linux/Mac:
+#         ./run-docker.sh -c 20-CORS-Restricted.yaml
+#       Windows:
+#         run-docker.cmd -c 20-CORS-Restricted.yaml
+#
 #     or with Java:
-#       ./membrane.sh -c 20-CORS-Restricted.yaml     (Linux/Mac)
-#       membrane.cmd -c 20-CORS-Restricted.yaml      (Windows)
+#       Linux/Mac:
+#         ./membrane.sh -c 20-CORS-Restricted.yaml
+#       Windows:
+#         membrane.cmd -c 20-CORS-Restricted.yaml
 #
 # 2.) Open page.html in your browser, open the developer tools (Network tab) and click "Call API".
 #     Calls with PUT or X-Bar fail in the preflight; the Console shows the CORS error.
@@ -44,6 +49,8 @@
 #
 #     The request reaches the API, but without Access-Control-Allow-Origin the browser
 #     hides the response from the page. CORS protects users, not the API.
+#
+# Reference: https://www.membrane-api.io/docs/current/cors.html
 
 api:
   port: 2000

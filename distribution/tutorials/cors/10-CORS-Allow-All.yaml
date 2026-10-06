@@ -9,11 +9,16 @@
 #
 # 1.) Start Membrane:
 #     with Docker:
-#       ./run-docker.sh -c 10-CORS-Allow-All.yaml   (Linux/Mac)
-#       run-docker.cmd -c 10-CORS-Allow-All.yaml    (Windows)
+#       Linux/Mac:
+#         ./run-docker.sh -c 10-CORS-Allow-All.yaml
+#       Windows:
+#         run-docker.cmd -c 10-CORS-Allow-All.yaml
+#
 #     or with Java:
-#       ./membrane.sh -c 10-CORS-Allow-All.yaml     (Linux/Mac)
-#       membrane.cmd -c 10-CORS-Allow-All.yaml      (Windows)
+#       Linux/Mac:
+#         ./membrane.sh -c 10-CORS-Allow-All.yaml
+#       Windows:
+#         membrane.cmd -c 10-CORS-Allow-All.yaml
 #
 # 2.) Open page.html from this directory as a file in your browser (File > Open File...,
 #     or Ctrl+O / Cmd+O), open the developer tools (Network tab) and click "Call API".
@@ -30,6 +35,8 @@
 #     Vary: Origin
 #
 # 4.) Continue with file 20-CORS-Restricted.yaml
+#
+# Reference: https://www.membrane-api.io/docs/current/cors.html
 
 api:
   port: 2000
