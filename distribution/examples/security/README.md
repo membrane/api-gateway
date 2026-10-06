@@ -11,7 +11,6 @@ Explore how to secure your APIs with these ready-to-run examples:
   How to generate JWT at the API Gateway.
 * [API Keys](api-key)
   Simple but powerful access control using API keys.
-* [Cross-Origin Resource Sharing (CORS)](cors)
 * [JSON Protection](json-protection)
   Defend against threats like JSON-based DoS attacks.
 * [Access Control List](access-control-list)

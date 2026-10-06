@@ -18,7 +18,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.toSet;
+import static java.util.stream.Collectors.toCollection;
 
 public class CollectionsUtil {
 
@@ -38,12 +38,12 @@ public class CollectionsUtil {
      * Converts all strings in the given set to lowercase.
      *
      * @param strings the set of strings to convert
-     * @return a new set containing all strings in lowercase
+     * @return a new set containing all strings in lowercase, in the iteration order of {@code strings}
      */
     public static Set<String> toLowerCaseSet(Set<String> strings) {
         return strings.stream()
                 .map(String::toLowerCase)
-                .collect(toSet());
+                .collect(toCollection(LinkedHashSet::new)); // Keep the order of Strings
     }
 
     public static @NotNull String join(List<String> l) {

@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static com.predic8.membrane.core.interceptor.xmlprotection.XMLLimits.UNLIMITED;
 import static com.predic8.membrane.core.interceptor.xmlprotection.XMLProtectionResult.ACCEPTED;
 import static com.predic8.membrane.core.interceptor.xmlprotection.XMLProtectionResult.REWRITTEN;
-import static com.predic8.membrane.core.util.RecordingServerTestUtil.freePort;
+import static com.predic8.membrane.core.util.NetworkTestUtil.freePort;
 import static com.predic8.membrane.core.util.RecordingServerTestUtil.startRecordingServer;
 import static com.predic8.membrane.core.util.xml.parser.HardenedStaxInputFactory.dtdAwareInputFactory;
 import static java.nio.charset.StandardCharsets.UTF_8;
