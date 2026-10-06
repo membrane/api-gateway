@@ -22,7 +22,7 @@ import org.junit.jupiter.api.*;
 
 import java.io.*;
 
-import static com.predic8.membrane.core.util.NetworkUtil.*;
+import static com.predic8.membrane.core.util.NetworkTestUtil.*;
 import static com.predic8.membrane.core.util.text.TextUtil.*;
 import static org.apache.commons.httpclient.HttpVersion.HTTP_1_1;
 import static org.apache.http.params.CoreProtocolPNames.*;
@@ -36,8 +36,8 @@ public class Http11Test {
 
     @BeforeAll
 	public static void setUp() throws Exception {
-		port4k = getFreePortEqualAbove(4000);
-        int port5k = getFreePortEqualAbove(5000);
+		port4k = freePort();
+        int port5k = freePort();
 		ServiceProxy proxy2 = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", port5k), null, 0);
 		proxy2.getFlow().add(new SampleSoapServiceInterceptor());
 		router2 = new TestRouter();
