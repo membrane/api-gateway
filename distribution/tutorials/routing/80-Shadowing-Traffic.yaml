@@ -7,11 +7,16 @@
 #
 # 1.) Start Membrane:
 #     with Docker:
-#       ./run-docker.sh -c 80-Shadowing-Traffic.yaml   (Linux/Mac)
-#       run-docker.cmd -c 80-Shadowing-Traffic.yaml    (Windows)
+#       Linux/Mac:
+#         ./run-docker.sh -c 80-Shadowing-Traffic.yaml
+#       Windows:
+#         run-docker.cmd -c 80-Shadowing-Traffic.yaml
+#
 #     or with Java:
-#       ./membrane.sh -c 80-Shadowing-Traffic.yaml     (Linux/Mac)
-#       membrane.cmd -c 80-Shadowing-Traffic.yaml      (Windows)
+#       Linux/Mac:
+#         ./membrane.sh -c 80-Shadowing-Traffic.yaml
+#       Windows:
+#         membrane.cmd -c 80-Shadowing-Traffic.yaml
 #
 # 2.) Call the API:
 #       curl localhost:2000/products

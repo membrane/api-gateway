@@ -7,11 +7,16 @@
 #
 # 1.) Start Membrane:
 #     with Docker:
-#       ./run-docker.sh -c 70-Throttling.yaml   (Linux/Mac)
-#       run-docker.cmd -c 70-Throttling.yaml    (Windows)
+#       Linux/Mac:
+#         ./run-docker.sh -c 70-Throttling.yaml
+#       Windows:
+#         run-docker.cmd -c 70-Throttling.yaml
+#
 #     or with Java:
-#       ./membrane.sh -c 70-Throttling.yaml     (Linux/Mac)
-#       membrane.cmd -c 70-Throttling.yaml      (Windows)
+#       Linux/Mac:
+#         ./membrane.sh -c 70-Throttling.yaml
+#       Windows:
+#         membrane.cmd -c 70-Throttling.yaml
 #
 # 2.) Call the delayed API and measure the time:
 #       curl -s -w "\nTotal time: %{time_total}\n" localhost:2000/delayed

@@ -30,10 +30,10 @@ public class ContentBasedRouterTutorialTest extends AbstractRoutingTutorialTest 
 
     @ParameterizedTest
     @CsvSource(delimiter = '|', value = {
-            "{\"id\": 1, \"express\": true}                       | Express order received.",
-            "{\"id\": 2, \"shipping\": {\"international\": true}} | International order received.",
-            "{\"id\": 3}                                          | Normal order received.",
-            "{\"id\": 4, \"express\": false}                      | Normal order received."
+            "{\"express\": true}                         | Express order received.",
+            "{\"shipping\": {\"international\": true}}   | International order received.",
+            "{}                                          | Normal order received.",
+            "{\"express\": false}                        | Normal order received."
     })
     void routesByJsonContent(String order, String expected) {
         // @formatter:off

@@ -7,11 +7,16 @@
 #
 # 1.) Start Membrane:
 #     with Docker:
-#       ./run-docker.sh -c 50-Outgoing-API-Gateway.yaml   (Linux/Mac)
-#       run-docker.cmd -c 50-Outgoing-API-Gateway.yaml    (Windows)
+#       Linux/Mac:
+#         ./run-docker.sh -c 50-Outgoing-API-Gateway.yaml
+#       Windows:
+#         run-docker.cmd -c 50-Outgoing-API-Gateway.yaml
+#
 #     or with Java:
-#       ./membrane.sh -c 50-Outgoing-API-Gateway.yaml     (Linux/Mac)
-#       membrane.cmd -c 50-Outgoing-API-Gateway.yaml      (Windows)
+#       Linux/Mac:
+#         ./membrane.sh -c 50-Outgoing-API-Gateway.yaml
+#       Windows:
+#         membrane.cmd -c 50-Outgoing-API-Gateway.yaml
 #
 # 2.) Call the external API through the gateway. apibin.io answers with the
 #     headers it received:
@@ -33,19 +38,24 @@
 components:
   ruleMatching:
     ruleMatching:
-      xForwardedForEnabled: false  # X-Forwarded-For would leak internal client IPs
+      # Membrane usually adds the X-Forwarded-For header, e.g. X-Forwarded-For: 192.168.1.1
+      # The IP address of the client is internal information we do not want to leak.
+      # This option disables Membrane's default behavior and does not add the header.
+      xForwardedForEnabled: false
 
 ---
+# Plugins in global: apply to every API
 global:
   - request:
       - headerFilter:
+          # The header fields to send from the internal client to the external API
           - include: Accept.*
           - include: Cache-Control
           - include: Content-Type
           - include: Content-Length
-          - include: Cookie
           - include: X-Requested-With
           - include: X-Api-Key  # Remove if the external API must not get the client's API key
+          # Take out all other headers
           - exclude: .*
 
 ---
@@ -73,8 +83,6 @@ api:
 #   - Sensitive headers like Authorization, User-Agent or API keys are filtered.
 #     The headerFilter keeps only the listed headers and removes all others.
 #     The Host header is set by the target to the external API's address.
-#
-# The plugins in global: apply to every API, so every outgoing call is filtered.
 #
 # Extend this setup with logging, validation, authentication, rate limiting,
 # message transformation or data loss protection.

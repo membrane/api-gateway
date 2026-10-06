@@ -7,11 +7,16 @@
 #
 # 1.) Start Membrane:
 #     with Docker:
-#       ./run-docker.sh -c 10-Rewrite-and-Redirect.yaml   (Linux/Mac)
-#       run-docker.cmd -c 10-Rewrite-and-Redirect.yaml    (Windows)
+#       Linux/Mac:
+#         ./run-docker.sh -c 10-Rewrite-and-Redirect.yaml
+#       Windows:
+#         run-docker.cmd -c 10-Rewrite-and-Redirect.yaml
+#
 #     or with Java:
-#       ./membrane.sh -c 10-Rewrite-and-Redirect.yaml     (Linux/Mac)
-#       membrane.cmd -c 10-Rewrite-and-Redirect.yaml      (Windows)
+#       Linux/Mac:
+#         ./membrane.sh -c 10-Rewrite-and-Redirect.yaml
+#       Windows:
+#         membrane.cmd -c 10-Rewrite-and-Redirect.yaml
 #
 # 2.) Rewrite a path. The backend receives /shop/v2/products/1:
 #       curl localhost:2000/store/products/1

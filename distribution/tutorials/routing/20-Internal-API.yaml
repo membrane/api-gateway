@@ -6,11 +6,16 @@
 #
 # 1.) Start Membrane:
 #     with Docker:
-#       ./run-docker.sh -c 20-Internal-API.yaml   (Linux/Mac)
-#       run-docker.cmd -c 20-Internal-API.yaml    (Windows)
+#       Linux/Mac:
+#         ./run-docker.sh -c 20-Internal-API.yaml
+#       Windows:
+#         run-docker.cmd -c 20-Internal-API.yaml
+#
 #     or with Java:
-#       ./membrane.sh -c 20-Internal-API.yaml     (Linux/Mac)
-#       membrane.cmd -c 20-Internal-API.yaml      (Windows)
+#       Linux/Mac:
+#         ./membrane.sh -c 20-Internal-API.yaml
+#       Windows:
+#         membrane.cmd -c 20-Internal-API.yaml
 #
 # 2.) Call the API:
 #       curl localhost:2000/products

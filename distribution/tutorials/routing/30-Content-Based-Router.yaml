@@ -6,24 +6,38 @@
 #
 # 1.) Start Membrane:
 #     with Docker:
-#       ./run-docker.sh -c 30-Content-Based-Router.yaml   (Linux/Mac)
-#       run-docker.cmd -c 30-Content-Based-Router.yaml    (Windows)
+#       Linux/Mac:
+#         ./run-docker.sh -c 30-Content-Based-Router.yaml
+#       Windows:
+#         run-docker.cmd -c 30-Content-Based-Router.yaml
+#
 #     or with Java:
-#       ./membrane.sh -c 30-Content-Based-Router.yaml     (Linux/Mac)
-#       membrane.cmd -c 30-Content-Based-Router.yaml      (Windows)
+#       Linux/Mac:
+#         ./membrane.sh -c 30-Content-Based-Router.yaml
+#       Windows:
+#         membrane.cmd -c 30-Content-Based-Router.yaml
 #
 # 2.) Send an express order:
-#       curl -d '{"id": 1, "express": true}' -H "Content-Type: application/json" localhost:2000/orders
+#       Linux/Mac:
+#         curl -d '{"express": true}' -H "Content-Type: application/json" localhost:2000/orders
+#       Windows:
+#         curl -d "{\"express\": true}" -H "Content-Type: application/json" localhost:2000/orders
 #
 #       Express order received.
 #
 # 3.) Send an international order:
-#       curl -d '{"id": 2, "shipping": {"international": true}}' -H "Content-Type: application/json" localhost:2000/orders
+#       Linux/Mac:
+#         curl -d '{"shipping": {"international": true}}' -H "Content-Type: application/json" localhost:2000/orders
+#       Windows:
+#         curl -d "{\"shipping\": {\"international\": true}}" -H "Content-Type: application/json" localhost:2000/orders
 #
 #       International order received.
 #
 # 4.) Send a normal order:
-#       curl -d '{"id": 3}' -H "Content-Type: application/json" localhost:2000/orders
+#       Linux/Mac:
+#         curl -d '{}' -H "Content-Type: application/json" localhost:2000/orders
+#       Windows:
+#         curl -d "{}" -H "Content-Type: application/json" localhost:2000/orders
 #
 #       Normal order received.
 #
