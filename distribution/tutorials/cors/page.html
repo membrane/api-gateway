@@ -45,6 +45,8 @@
 <script>
     const API_URL = "http://localhost:2000";
     let callCount = 0;
+    // Bumped on every call and selection change, so a late response can't overwrite a newer result
+    let generation = 0;
 
     function buildRequest() {
         const method = document.getElementById("methodSelect").value;
@@ -100,6 +102,7 @@
     }
 
     function resetResponse() {
+        generation++;
         showRequest();
         const response = document.getElementById("response");
         response.className = "response";
@@ -109,14 +112,17 @@
     function call() {
         const options = buildRequest();
         const label = "#" + (++callCount) + " at " + new Date().toLocaleTimeString() + " - " + options.method + "\n";
+        const thisGeneration = ++generation;
         showResponse("pending", label + "Calling...");
 
         fetch(API_URL, options)
             .then(res => res.text().then(data => {
+                if (thisGeneration !== generation) return;
                 showResponse(res.ok ? "success" : "error", label + res.status + " " + res.statusText + "\n\n" + data);
             }))
             .catch(err => {
                 console.error("Request failed:", err);
+                if (thisGeneration !== generation) return;
                 showResponse("error", label + "Request failed: blocked by CORS or Membrane is not running.\n"
                     + "Check the Console and Network tabs of the developer tools.");
             });

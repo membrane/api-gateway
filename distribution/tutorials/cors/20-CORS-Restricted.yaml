@@ -22,7 +22,7 @@
 #     HTTP/1.1 204 No Content
 #     Access-Control-Allow-Origin: https://example.com
 #     Access-Control-Allow-Methods: POST
-#     Access-Control-Allow-Headers: x-foo, content-type
+#     Access-Control-Allow-Headers: content-type, x-foo
 #     ...
 #
 # 4.) Request a header that is not allowed:

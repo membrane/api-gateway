@@ -39,7 +39,7 @@ public class CorsRestrictedTutorialTest extends AbstractCorsTutorialTest {
             .statusCode(204)
             .header("Access-Control-Allow-Origin", "https://example.com")
             .header("Access-Control-Allow-Methods", "POST")
-            .header("Access-Control-Allow-Headers", containsString("x-foo"));
+            .header("Access-Control-Allow-Headers", "content-type, x-foo");
         // @formatter:on
     }
 
