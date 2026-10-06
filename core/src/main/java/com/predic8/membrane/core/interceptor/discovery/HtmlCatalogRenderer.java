@@ -17,6 +17,7 @@ import java.util.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static java.nio.charset.StandardCharsets.*;
+import static java.util.stream.Collectors.*;
 import static org.apache.commons.text.StringEscapeUtils.*;
 
 /**
@@ -33,6 +34,8 @@ import static org.apache.commons.text.StringEscapeUtils.*;
 public class HtmlCatalogRenderer implements CatalogRenderer {
 
     private static final Set<String> COLOURED_METHODS = Set.of("GET", "POST", "PUT", "PATCH", "DELETE");
+
+    private static final String UNTAGGED_GROUP = "Other";
 
     private static final String STYLE = """
             :root { color-scheme: light dark; --bg: #eeeeee; --box: #ffffff; --text: #1f2328; --muted: #59636e;
@@ -64,10 +67,20 @@ public class HtmlCatalogRenderer implements CatalogRenderer {
             .operations[open] > summary { margin-bottom: 0.2em; }
             .count { font-size: 0.85em; font-weight: normal; padding: 0.1em 0.6em; margin-left: 0.4em;
                      border: 1px solid var(--line); border-radius: 1em; background: var(--stripe); }
-            .scroll { overflow-x: auto; }
+            .scroll { max-height: 70vh; overflow: auto; }
             table { width: 100%; border-collapse: collapse; margin-top: 0.4em; }
             th, td { text-align: left; padding: 0.45em 0.6em; border-bottom: 1px solid var(--line); vertical-align: top; }
+            thead th { position: sticky; top: 0; background: var(--box); }
             tbody tr:nth-of-type(even) { background: var(--stripe); }
+            .group th { background: var(--stripe); color: var(--muted); font-size: 0.9em; }
+            .opid { color: var(--muted); font-family: monospace; font-size: 0.85em; }
+            .badge { color: var(--muted); border: 1px solid var(--line); border-radius: 1em;
+                     padding: 0.05em 0.5em; font-size: 0.75em; white-space: nowrap; }
+            .index { display: flex; flex-wrap: wrap; gap: 0.3em 1em; margin: 0.8em 0 0; }
+            .self { color: inherit; text-decoration: none; }
+            .self:hover { text-decoration: underline; }
+            .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden;
+                       clip-path: inset(50%); white-space: nowrap; }
             .deprecated code, .deprecated td:last-child { text-decoration: line-through; color: var(--muted); }
             .method { display: inline-block; min-width: 4.5em; text-align: center; font: bold 0.8em monospace;
                       padding: 0.2em 0.4em; border-radius: 4px; color: #ffffff; background: #6e7781; }
@@ -116,14 +129,41 @@ public class HtmlCatalogRenderer implements CatalogRenderer {
             html.append("<p class=\"description\">%s</p>\n".formatted(escape(catalog.description())));
         html.append("<dl>\n");
         definition(html, "Identifier", escape(catalog.aid()));
-        definition(html, "APIs", String.valueOf(catalog.apis().size()));
+        definition(html, "APIs", apiCount(catalog));
         definition(html, "Created", catalog.created().toString());
         definition(html, "Modified", catalog.modified().toString());
-        html.append("</dl>\n</header>\n");
+        html.append("</dl>\n");
+        renderIndex(html, catalog);
+        html.append("</header>\n");
+    }
+
+    private static String apiCount(Catalog catalog) {
+        final var byKind = catalog.apis().stream()
+                .collect(groupingBy(CatalogEntry::kind, TreeMap::new, counting()));
+        if (byKind.size() < 2)
+            return String.valueOf(catalog.apis().size());
+        return "%d (%s)".formatted(catalog.apis().size(), byKind.entrySet().stream()
+                .map(kind -> "%d %s".formatted(kind.getValue(), kind.getKey().getLabel()))
+                .collect(joining(", ")));
+    }
+
+    private static void renderIndex(StringBuilder html, Catalog catalog) {
+        if (catalog.apis().size() < 2)
+            return;
+        html.append("<nav class=\"index\">\n");
+        catalog.apis().forEach(entry -> html.append("<a href=\"#%s\">%s</a>\n"
+                .formatted(sectionId(entry), escape(entry.name()))));
+        html.append("</nav>\n");
+    }
+
+    private static String sectionId(CatalogEntry entry) {
+        return CatalogCollector.slug(entry.aid());
     }
 
     private static void renderApi(StringBuilder html, CatalogEntry entry) {
-        html.append("<section class=\"box\">\n<h2>%s".formatted(escape(entry.name())));
+        final var id = sectionId(entry);
+        html.append("<section class=\"box\" id=\"%s\">\n<h2><a class=\"self\" href=\"#%s\">%s</a>"
+                .formatted(id, id, escape(entry.name())));
         if (entry.version() != null)
             html.append(" <span class=\"version\">%s</span>".formatted(escape(entry.version())));
         html.append(" <span class=\"kind\">%s</span></h2>\n".formatted(entry.kind().getLabel()));
@@ -134,7 +174,7 @@ public class HtmlCatalogRenderer implements CatalogRenderer {
         renderLinks(html, entry);
         renderTags(html, entry.tags());
         renderDetails(html, entry);
-        renderOperations(html, entry.operations());
+        renderOperations(html, entry);
         html.append("</section>\n");
     }
 
@@ -199,7 +239,8 @@ public class HtmlCatalogRenderer implements CatalogRenderer {
         return String.join(", ", parts);
     }
 
-    private static void renderOperations(StringBuilder html, List<CatalogOperation> operations) {
+    private static void renderOperations(StringBuilder html, CatalogEntry entry) {
+        final var operations = entry.operations();
         if (operations.isEmpty())
             return;
         html.append("""
@@ -207,15 +248,53 @@ public class HtmlCatalogRenderer implements CatalogRenderer {
                 <summary>Operations <span class="count">%d</span></summary>
                 <div class="scroll">
                 <table>
-                <thead><tr><th>Method</th><th>Path</th><th>Summary</th></tr></thead>
-                <tbody>
-                """.formatted(operations.size()));
-        operations.forEach(operation -> html.append("<tr%s><td>%s</td><td><code>%s</code></td><td>%s</td></tr>\n".formatted(
+                <caption class="sr-only">Operations of %s</caption>
+                <thead><tr><th scope="col">Method</th><th scope="col">Path</th><th scope="col">Summary</th></tr></thead>
+                """.formatted(operations.size(), escape(entry.name())));
+        if (operations.stream().allMatch(operation -> operation.tags().isEmpty()))
+            renderOperationGroup(html, null, operations);
+        else
+            groupByTag(operations).forEach((tag, group) -> renderOperationGroup(html, tag, group));
+        html.append("</table>\n</div>\n</details>\n");
+    }
+
+    private static Map<String, List<CatalogOperation>> groupByTag(List<CatalogOperation> operations) {
+        final var byTag = new LinkedHashMap<String, List<CatalogOperation>>();
+        final var untagged = new ArrayList<CatalogOperation>();
+        operations.forEach(operation -> {
+            if (operation.tags().isEmpty())
+                untagged.add(operation);
+            else
+                byTag.computeIfAbsent(operation.tags().getFirst(), tag -> new ArrayList<>()).add(operation);
+        });
+        if (!untagged.isEmpty())
+            byTag.computeIfAbsent(UNTAGGED_GROUP, tag -> new ArrayList<>()).addAll(untagged);
+        return byTag;
+    }
+
+    private static void renderOperationGroup(StringBuilder html, String tag, List<CatalogOperation> operations) {
+        html.append("<tbody>\n");
+        if (tag != null)
+            html.append("<tr class=\"group\"><th colspan=\"3\" scope=\"colgroup\">%s</th></tr>\n".formatted(escape(tag)));
+        operations.forEach(operation -> html.append(operationRow(operation)));
+        html.append("</tbody>\n");
+    }
+
+    private static String operationRow(CatalogOperation operation) {
+        return "<tr%s><td>%s%s</td><td><code>%s</code></td><td>%s</td></tr>\n".formatted(
                 operation.deprecated() ? " class=\"deprecated\"" : "",
                 method(operation.method()),
+                // Struck-through text alone carries nothing to a screen reader, so it is said too.
+                operation.deprecated() ? " <span class=\"badge\">deprecated</span>" : "",
                 escape(operation.path()),
-                escape(firstNonNull(operation.summary(), operation.operationId())))));
-        html.append("</tbody>\n</table>\n</div>\n</details>\n");
+                summary(operation));
+    }
+
+    private static String summary(CatalogOperation operation) {
+        if (operation.summary() == null || operation.operationId() == null)
+            return escape(firstNonNull(operation.summary(), operation.operationId()));
+        return "%s <span class=\"opid\">%s</span>"
+                .formatted(escape(operation.summary()), escape(operation.operationId()));
     }
 
     private static String method(String method) {

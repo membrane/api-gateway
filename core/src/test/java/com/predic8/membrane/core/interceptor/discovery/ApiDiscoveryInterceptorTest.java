@@ -160,7 +160,7 @@ class ApiDiscoveryInterceptorTest {
         interceptor(MEMBRANE).handleRequest(exc);
 
         assertEquals(TEXT_HTML_UTF8, exc.getResponse().getHeader().getContentType());
-        assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("<h2>Shop"));
+        assertTrue(exc.getResponse().getBodyAsStringDecoded().contains(">Shop</a>"));
     }
 
     @Test

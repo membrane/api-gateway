@@ -58,7 +58,7 @@ class HtmlCatalogRendererTest {
     void aDescribedApiShowsEverythingTheGatewayKnows() {
         String html = render(catalog(describedApi()));
 
-        assertTrue(html.contains("<h2>Fruit Shop API"));
+        assertTrue(html.contains(">Fruit Shop API</a>"));
         assertTrue(html.contains("2.0.0"));
         assertTrue(html.contains("Showcases REST API design"));
         assertTrue(html.contains("<a href=\"https://example.com/shop/v2/\">https://example.com/shop/v2/</a>"));
@@ -118,11 +118,81 @@ class HtmlCatalogRendererTest {
     void aPlainProxyGetsNoDeadLinksAndNoWildcardMethod() {
         String html = render(catalog(plainProxy()));
 
-        assertTrue(html.contains("<h2>Shop"));
+        assertTrue(html.contains(">Shop</a>"));
         assertTrue(html.contains("serviceProxy"));
         assertFalse(html.contains("Swagger UI"));
         assertFalse(html.contains("<table"));
         assertFalse(html.contains(">*<"));
+    }
+
+    @Test
+    void everyApiIsIndexedAndLinkable() {
+        String html = render(catalog(describedApi(), plainProxy()));
+
+        assertTrue(html.contains("<nav class=\"index\">"));
+        assertTrue(html.contains("<a href=\"#example-com-fruit-shop-api-v2-0-0\">Fruit Shop API</a>"));
+        assertTrue(html.contains("<a href=\"#example-com-shop\">Shop</a>"));
+        assertTrue(html.contains("<section class=\"box\" id=\"example-com-fruit-shop-api-v2-0-0\">"));
+        assertTrue(html.contains("<section class=\"box\" id=\"example-com-shop\">"));
+    }
+
+    @Test
+    void aSingleApiNeedsNoIndex() {
+        assertFalse(render(catalog(describedApi())).contains("<nav class=\"index\">"));
+    }
+
+    @Test
+    void theApiCountIsBrokenDownByKindWhenKindsDiffer() {
+        assertTrue(render(catalog(describedApi(), plainProxy())).contains("2 (1 api, 1 serviceProxy)"));
+    }
+
+    @Test
+    void oneKindOfProxyIsCountedWithoutABreakdown() {
+        String html = render(catalog(describedApi()));
+
+        assertTrue(html.contains("<dd>1</dd>"));
+        assertFalse(html.contains("(1 api)"));
+    }
+
+    @Test
+    void operationsAreGroupedByTheirFirstTag() {
+        CatalogEntry mixed = CatalogEntry.builder()
+                .aid("example.com:x").kind(API).name("X").description("X")
+                .endpoint(new CatalogEntry.Endpoint("http", "example.com", 80, "/", "*", "http://example.com/"))
+                .operations(List.of(
+                        new CatalogOperation("GET", "/products", "getProducts", null, List.of("Products", "Catalog"), false),
+                        new CatalogOperation("GET", "/health", "getHealth", null, List.of(), false)))
+                .build();
+
+        String html = render(catalog(mixed));
+
+        assertTrue(html.contains("<th colspan=\"3\" scope=\"colgroup\">Products</th>"));
+        assertTrue(html.contains("<th colspan=\"3\" scope=\"colgroup\">Other</th>"));
+        // Listed under several tags, shown once, under the first.
+        assertFalse(html.contains(">Catalog</th>"));
+    }
+
+    @Test
+    void operationsWithoutTagsStayOneFlatTable() {
+        CatalogEntry untagged = CatalogEntry.builder()
+                .aid("example.com:x").kind(API).name("X").description("X")
+                .endpoint(new CatalogEntry.Endpoint("http", "example.com", 80, "/", "*", "http://example.com/"))
+                .operations(List.of(new CatalogOperation("GET", "/things", "getThings", null, List.of(), false)))
+                .build();
+
+        assertFalse(render(catalog(untagged)).contains("class=\"group\""));
+    }
+
+    @Test
+    void aDeprecatedOperationSaysSoInWords() {
+        assertTrue(render(catalog(describedApi())).contains("<span class=\"badge\">deprecated</span>"));
+    }
+
+    @Test
+    void theOperationIdStaysVisibleNextToTheSummary() {
+        String html = render(catalog(describedApi()));
+
+        assertTrue(html.contains("Get all products <span class=\"opid\">getProducts</span>"));
     }
 
     @Test
