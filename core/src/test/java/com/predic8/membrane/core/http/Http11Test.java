@@ -38,6 +38,9 @@ public class Http11Test {
 	public static void setUp() throws Exception {
 		port4k = freePort();
         int port5k = freePort();
+		// freePort() closes its probe, so the OS may hand out the same port twice
+		while (port5k == port4k)
+			port5k = freePort();
 		ServiceProxy proxy2 = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", port5k), null, 0);
 		proxy2.getFlow().add(new SampleSoapServiceInterceptor());
 		router2 = new TestRouter();
