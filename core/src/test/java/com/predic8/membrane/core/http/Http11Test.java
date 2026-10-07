@@ -13,37 +13,48 @@
    limitations under the License. */
 package com.predic8.membrane.core.http;
 
-import com.predic8.membrane.core.interceptor.soap.*;
-import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.router.*;
-import org.apache.commons.httpclient.*;
-import org.apache.commons.httpclient.methods.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.interceptor.soap.SampleSoapServiceInterceptor;
+import com.predic8.membrane.core.proxies.ServiceProxy;
+import com.predic8.membrane.core.proxies.ServiceProxyKey;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.router.TestRouter;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpMethodRetryHandler;
+import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
+import org.apache.commons.httpclient.methods.PostMethod;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
-import java.io.*;
+import java.io.InputStream;
 
-import static com.predic8.membrane.core.util.NetworkUtil.*;
-import static com.predic8.membrane.core.util.text.TextUtil.*;
+import static com.predic8.membrane.core.util.NetworkTestUtil.freePort;
+import static com.predic8.membrane.core.util.text.TextUtil.isNullOrEmpty;
 import static org.apache.commons.httpclient.HttpVersion.HTTP_1_1;
-import static org.apache.http.params.CoreProtocolPNames.*;
+import static org.apache.http.params.CoreProtocolPNames.PROTOCOL_VERSION;
+import static org.apache.http.params.CoreProtocolPNames.USE_EXPECT_CONTINUE;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class Http11Test {
 
 	private static Router router;
 	private static Router router2;
-	private static int port4k;
+	private static int proxyPort;
 
     @BeforeAll
 	public static void setUp() throws Exception {
-		port4k = getFreePortEqualAbove(4000);
-        int port5k = getFreePortEqualAbove(5000);
-		ServiceProxy proxy2 = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", port5k), null, 0);
+		proxyPort = freePort();
+        int backendPort = freePort();
+		// freePort() closes its probe, so the OS may hand out the same port twice
+		while (backendPort == proxyPort) {
+			backendPort = freePort();
+		}
+		ServiceProxy proxy2 = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", backendPort), null, 0);
 		proxy2.getFlow().add(new SampleSoapServiceInterceptor());
 		router2 = new TestRouter();
 		router2.add(proxy2);
 		router2.start();
-		ServiceProxy proxy = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", port4k), "localhost", port5k);
+		ServiceProxy proxy = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", proxyPort), "localhost", backendPort);
 		router = new TestRouter();
 		router.add(proxy);
 		router.start();
@@ -71,7 +82,7 @@ public class Http11Test {
 		HttpClient client = new HttpClient();
 		if (useExpect100Continue)
 			initExpect100ContinueWithFastFail(client);
-		PostMethod post = new PostMethod("http://localhost:%s/".formatted(port4k));
+		PostMethod post = new PostMethod("http://localhost:%s/".formatted(proxyPort));
 		InputStream stream = this.getClass().getResourceAsStream("/get-city.xml");
 
 		InputStreamRequestEntity entity = new InputStreamRequestEntity(stream);

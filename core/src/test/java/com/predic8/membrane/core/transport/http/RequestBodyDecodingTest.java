@@ -52,7 +52,7 @@ import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.xmlprotection.XMLProtectionInterceptor.X_PROTECTION;
-import static com.predic8.membrane.core.util.NetworkUtil.getFreePortEqualAbove;
+import static com.predic8.membrane.core.util.NetworkTestUtil.freePort;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -80,7 +80,7 @@ class RequestBodyDecodingTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        port = getFreePortEqualAbove(3080);
+        port = freePort();
         router = new TestRouter();
         proxy = new APIProxy();
         proxy.setPort(port);
