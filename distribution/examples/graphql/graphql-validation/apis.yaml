@@ -1,9 +1,0 @@
-# yaml-language-server: $schema=https://www.membrane-api.io/v7.7.0.json
-api:
-  port: 2000
-  flow:
-    - request:
-        - graphQLProtection:
-            maxRecursion: 2
-  target:
-    url: https://www.predic8.de/fruit-shop-graphql

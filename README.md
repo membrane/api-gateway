@@ -94,11 +94,11 @@ Membrane stays fast with security and validation enabled. In benchmarks on a 16-
 
 | Configuration                             | Requests/sec |
 |-------------------------------------------|-------------:|
-| Plain proxying                            |  **128,723** |
-| Basic Auth + rate limiting + TLS          |  **109,542** |
-| OpenAPI validation of every request       |   **89,197** |
+| Plain proxying                            |  **216,000** |
+| Basic Auth + rate limiting + TLS          |  **196,000** |
+| OpenAPI validation of every request       |  **167,000** |
 
-Membrane’s HTTP engine was built specifically for API gateway workloads. Its Java plugins run in the same process, keeping overhead low. This integrated design gives Membrane an architectural advantage over gateways built on general-purpose HTTP servers and helps it deliver outstanding performance.
+Membrane’s HTTP engine was **built specifically for API gateway workloads**. Its Java plugins run in the same process, keeping overhead low. This integrated architecture gives Membrane an edge over gateways built on general-purpose HTTP servers, helping it maintain high throughput even with demanding plugins enabled.
 
 The distribution is approximately 55 MB, runs as a container or Java application, and requires no database.
 
@@ -761,7 +761,7 @@ The collected metrics can be visualized in a Grafana dashboard:
 ## OpenTelemetry Integration
 Membrane supports integration with **OpenTelemetry**. This enables detailed tracing of requests across Membrane and backend services.
 
-![OpenTelemetry Example](distribution/examples/monitoring-tracing/opentelemetry/resources/otel_example.png)  
+![OpenTelemetry Example](docs/images/otel_example.png)  
 
 For working examples of Prometheus, Grafana and OpenTelemetry, see the [operation tutorial](./distribution/tutorials/operation).
 

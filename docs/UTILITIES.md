@@ -69,7 +69,7 @@ Keep this file in sync when adding, renaming or removing a util class.
 |---|---|
 | `util/FileUtil` | Read/write streams, xml/json file detection, slash handling, resolve, directory part |
 | `util/OSUtil` | OS detection, backslash fixing, Windows path detection |
-| `util/NetworkUtil` | Free port search, IPv4/IPv6 helpers (brackets, dotted quad, CIDR prefix match) |
+| `util/NetworkUtil` | IPv4/IPv6 helpers (brackets, dotted quad, CIDR prefix match) |
 | `util/DNSCache` | Cached reverse DNS lookups |
 | `util/SecurityUtils` | Password hash helpers (`crypt`-compatible, salt extraction) |
 | `util/security/BasicAuthenticationUtil` | Parse/create `Authorization: Basic` headers |
@@ -100,6 +100,7 @@ Keep this file in sync when adding, renaming or removing a util class.
 | `util/HttpTestUtil` | Raw HTTP text → `InputStream` for parser tests |
 | `util/StringTestUtil` | `InputStream` from string, CRLF normalization |
 | `util/ProblemDetailsTestUtil` | Parse a `Response` into `ProblemDetails` |
-| `util/RecordingServerTestUtil` | Free port, throw-away server that records whether it was called |
+| `util/RecordingServerTestUtil` | Throw-away server that records whether it was called |
+| `util/NetworkTestUtil` | `freePort()`: an OS-assigned free port for tests that cannot bind `new ServerSocket(0)` themselves |
 | `openapi/util/JsonTestUtil` | Build `JsonNode`/bytes from maps in tests |
 | `openapi/util/OpenAPITestUtils` | Load/parse OpenAPI resources, create proxies from specs |

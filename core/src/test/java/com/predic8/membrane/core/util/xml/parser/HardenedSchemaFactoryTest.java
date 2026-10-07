@@ -21,7 +21,7 @@ import javax.xml.validation.Validator;
 import java.io.StringReader;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.predic8.membrane.core.util.RecordingServerTestUtil.freePort;
+import static com.predic8.membrane.core.util.NetworkTestUtil.freePort;
 import static com.predic8.membrane.core.util.RecordingServerTestUtil.startRecordingServer;
 import static javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI;
 import static org.junit.jupiter.api.Assertions.assertFalse;

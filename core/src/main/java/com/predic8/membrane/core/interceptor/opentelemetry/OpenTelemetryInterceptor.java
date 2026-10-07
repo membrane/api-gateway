@@ -64,8 +64,7 @@ import static io.opentelemetry.context.Context.current;
  * The <code>traceId</code> and <code>spanId</code> are written into SLF4J MDC automatically so
  * every log line carries them. Aborted exchanges are marked ERROR. Declare the plugin in
  * <code>global:</code> to instrument all APIs at once.
- * See tutorials/operation/40-OpenTelemetry.yaml for a runnable multi-hop example with Jaeger,
- * and examples/monitoring-tracing/opentelemetry for screenshots.
+ * See tutorials/operation/40-OpenTelemetry.yaml for a runnable multi-hop example with Jaeger.
  * <pre>
  * openTelemetry:
  *   [ sampleRate: 0.0..1.0 ]        # default: 1.0
