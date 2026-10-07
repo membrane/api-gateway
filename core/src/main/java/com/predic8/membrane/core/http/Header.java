@@ -98,6 +98,7 @@ public class Header {
     public static final String ACCEPT = "Accept";
     public static final String ACCEPT_ENCODING = "Accept-Encoding";
     public static final String LOCATION = "Location";
+    public static final String LINK = "Link";
     public static final String AUTHORIZATION = "Authorization";
     public static final String SET_COOKIE = "Set-Cookie";
     public static final String COOKIE = "Cookie";
