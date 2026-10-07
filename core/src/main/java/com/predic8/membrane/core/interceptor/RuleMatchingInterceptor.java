@@ -14,18 +14,28 @@
 
 package com.predic8.membrane.core.interceptor;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.AbstractExchange;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.proxies.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.exchange.Exchange.*;
+import java.net.URISyntaxException;
+
+import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
+import static com.predic8.membrane.core.exchange.Exchange.SSL_CONTEXT;
 import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_FLOW;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.util.HttpUtil.isAbsoluteURI;
+import static com.predic8.membrane.core.util.URIUtil.removeDotSegmentsFromRequestTarget;
+import static com.predic8.membrane.core.util.URLUtil.getPathQuery;
 
 /**
  * @description Selects and assigns the matching proxy rule for incoming requests; optionally adds/extends X-Forwarded-* headers.
@@ -48,7 +58,14 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 	public Outcome handleRequest(Exchange exc) {
 		if (exc.getProxy() != null ) return CONTINUE;
 
+		// Canonicalize once, so that routing, the flow and the backend agree on the path
+		final var request = exc.getRequest();
+		final var received = request.getUri();
+		request.setUri(removeDotSegmentsFromRequestTarget(toOriginForm(received)));
+
 		Proxy proxy = getRule(exc);
+		if (proxy instanceof ProxyRule)
+			request.setUri(received); // A forward proxy needs the absolute URI
 		assignRule(exc, proxy);
 
 		if (proxy instanceof NullProxy) {
@@ -74,6 +91,21 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 
 		if(sp.isOutboundSSL()){
 			exc.setProperty(SSL_CONTEXT, sp.getSslOutboundContext());
+		}
+	}
+
+	/**
+	 * Reduces an absolute-form request target (RFC 9112 3.2.2) like <code>http://host/path?q</code> to the
+	 * origin-form <code>/path?q</code> (RFC 9112 3.2.1), so that it is routed by its path.
+	 * Other forms and targets that cannot be parsed are left as they are.
+	 */
+	private String toOriginForm(String uri) {
+		if (!isAbsoluteURI(uri))
+			return uri;
+		try {
+			return getPathQuery(router.getConfiguration().getUriFactory(), uri);
+		} catch (URISyntaxException e) {
+			return uri;
 		}
 	}
 

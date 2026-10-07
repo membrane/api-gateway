@@ -35,8 +35,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 
-import static com.predic8.membrane.core.util.URIUtil.normalizeSingleDot;
-
 public class RuleManager {
 
     private static final Logger log = LoggerFactory.getLogger(RuleManager.class.getName());
@@ -206,7 +204,7 @@ public class RuleManager {
 
         String hostHeader = request.getHeader().getHost();
         String method = request.getMethod();
-        String uri = normalizeSingleDot(request.getUri()); // Removes /./ in path for rule matching
+        String uri = request.getUri(); // Dot-segments and absolute-form are already resolved by the RuleMatchingInterceptor
         String version = request.getVersion();
 
         AbstractHttpHandler handler = exc.getHandler();

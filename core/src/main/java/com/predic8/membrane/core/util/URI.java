@@ -14,13 +14,16 @@
 
 package com.predic8.membrane.core.util;
 
-import com.predic8.membrane.core.util.ip.*;
+import com.predic8.membrane.core.util.ip.IPv6Util;
 
-import java.net.*;
-import java.util.regex.*;
+import java.net.URISyntaxException;
+import java.net.URLDecoder;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import static com.predic8.membrane.core.util.URIValidationUtil.*;
-import static java.nio.charset.StandardCharsets.*;
+import static com.predic8.membrane.core.util.URIValidationUtil.validateDigits;
+import static com.predic8.membrane.core.util.URIValidationUtil.validateHost;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Same behavior as {@link java.net.URI}, but accommodates '{' in paths.
@@ -389,6 +392,17 @@ public class URI {
 
     /**
      * RFC 3986, Section 5.2.4 - Remove dot segments from a path.
+     * <pre>
+     * /a/b/c/./../../g    -> /a/g
+     * mid/content=5/../6  -> mid/6
+     * /../a               -> /a      (cannot go above the root)
+     * /a/..               -> /
+     * /a/.                -> /a/
+     * /a//../b            -> /a/b    (the empty segment counts as a segment)
+     * /a/.../b            -> /a/.../b
+     * /a/%2e%2e/b         -> /a/%2e%2e/b  (encoded dots are not decoded, see URIUtil.decodeDotSegments)
+     * </pre>
+     * Expects a path only: on a whole URI like http://h/../b a ".." would remove the host.
      */
     public static String removeDotSegments(String path) {
         if (path == null || path.isEmpty()) {

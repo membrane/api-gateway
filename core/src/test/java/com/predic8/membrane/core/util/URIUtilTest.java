@@ -13,19 +13,23 @@
    limitations under the License. */
 package com.predic8.membrane.core.util;
 
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.condition.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledOnOs;
 
-import java.io.*;
-import java.net.*;
+import java.io.File;
 import java.net.URI;
-import java.nio.file.*;
-import java.util.function.*;
+import java.net.URISyntaxException;
+import java.nio.file.Path;
+import java.util.function.Function;
 
 import static com.predic8.membrane.core.util.URIUtil.*;
-import static java.util.Optional.*;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.condition.OS.*;
+import static java.util.Optional.empty;
+import static java.util.Optional.of;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.condition.OS.WINDOWS;
 
 /**
  * Unfortunately the file: protocol is
@@ -166,19 +170,51 @@ public class URIUtilTest {
     }
 
     @Test
-    void normalizeSingleDot() {
-        assertEquals("", URIUtil.normalizeSingleDot(""));
-        assertEquals("foo", URIUtil.normalizeSingleDot("foo"));
-        assertEquals("/", URIUtil.normalizeSingleDot("/./"));
-        assertEquals("a/b", URIUtil.normalizeSingleDot("a/./b"));
-        assertEquals("a/b/c/", URIUtil.normalizeSingleDot("a/./b/./c/./"));
-        assertEquals("a/b/c/d", URIUtil.normalizeSingleDot("a/./b/./c/./d"));
+    void decodeDotSegmentsTest() {
+        assertEquals("/a/../b", decodeDotSegments("/a/%2e%2e/b"));
+        assertEquals("/a/../b", decodeDotSegments("/a/%2E%2e/b"));
+        assertEquals("/a/../b", decodeDotSegments("/a/.%2e/b"));
+        assertEquals("/a/../b", decodeDotSegments("/a/%2e./b"));
+        assertEquals("/a/./b", decodeDotSegments("/a/%2e/b"));
+        assertEquals("/a/..", decodeDotSegments("/a/%2e%2e"));
 
-        // ?
-        assertEquals("a?c/./d", URIUtil.normalizeSingleDot("a?c/./d"));
-        assertEquals("a/b?c/./d", URIUtil.normalizeSingleDot("a/./b?c/./d"));
-        assertEquals("a/.b?c/./d", URIUtil.normalizeSingleDot("a/.b?c/./d"));
-        assertEquals("a/x/b?c/./d", URIUtil.normalizeSingleDot("a/x/b?c/./d"));
+        // Plain dot-segments are left for removeDotSegments()
+        assertEquals("/a/../b", decodeDotSegments("/a/../b"));
+
+        // Only segments consisting solely of dots are decoded
+        assertEquals("/a/file%2etxt", decodeDotSegments("/a/file%2etxt"));
+        assertEquals("/a/%2e%2e%2e/b", decodeDotSegments("/a/%2e%2e%2e/b"));
+        assertEquals("/a%2f%2e%2e%2fb", decodeDotSegments("/a%2f%2e%2e%2fb"));
+
+        // Empty segments are kept
+        assertEquals("/", decodeDotSegments("/"));
+        assertEquals("/a//./", decodeDotSegments("/a//%2e/"));
+    }
+
+    @Test
+    void removeDotSegmentsFromRequestTargetTest() {
+        assertEquals("/", removeDotSegmentsFromRequestTarget("/"));
+        assertEquals("/", removeDotSegmentsFromRequestTarget("/./"));
+        assertEquals("/a/b/c/", removeDotSegmentsFromRequestTarget("/a/./b/./c/./"));
+        assertEquals("/b", removeDotSegmentsFromRequestTarget("/a/../b"));
+        assertEquals("/b", removeDotSegmentsFromRequestTarget("/../../b"));
+        assertEquals("/a/", removeDotSegmentsFromRequestTarget("/a/b/.."));
+        assertEquals("/b", removeDotSegmentsFromRequestTarget("/a/%2e%2E/b"));
+        assertEquals("/b", removeDotSegmentsFromRequestTarget("/a/.%2e/b"));
+        assertEquals("/a/b", removeDotSegmentsFromRequestTarget("/a/%2e/b"));
+        assertEquals("/a/.b/..c", removeDotSegmentsFromRequestTarget("/a/.b/..c"));
+        assertEquals("/a/file%2etxt", removeDotSegmentsFromRequestTarget("/a/file%2etxt"));
+        assertEquals("/a%2f..%2fb", removeDotSegmentsFromRequestTarget("/a%2f..%2fb"));
+
+        // query is left alone
+        assertEquals("/b?c/./d/../e", removeDotSegmentsFromRequestTarget("/a/../b?c/./d/../e"));
+        assertEquals("/a?c/../d", removeDotSegmentsFromRequestTarget("/a?c/../d"));
+
+        // not origin-form
+        assertEquals("*", removeDotSegmentsFromRequestTarget("*"));
+        assertEquals("example.com:443", removeDotSegmentsFromRequestTarget("example.com:443"));
+        assertEquals("internal://a/../b", removeDotSegmentsFromRequestTarget("internal://a/../b"));
+        assertEquals("http://h/../b", removeDotSegmentsFromRequestTarget("http://h/../b")); // .. must not remove the host
     }
 
     @Test

@@ -13,17 +13,21 @@
    limitations under the License. */
 package com.predic8.membrane.core.util;
 
-import org.jetbrains.annotations.*;
+import org.jetbrains.annotations.NotNull;
 
-import java.net.*;
 import java.net.URI;
-import java.nio.file.*;
-import java.util.*;
-import java.util.regex.*;
+import java.net.URISyntaxException;
+import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.Locale;
+import java.util.Optional;
+import java.util.regex.Pattern;
 
-import static java.net.URLDecoder.*;
-import static java.nio.charset.StandardCharsets.*;
-import static java.util.Optional.*;
+import static com.predic8.membrane.core.util.URI.removeDotSegments;
+import static java.net.URLDecoder.decode;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Optional.empty;
+import static java.util.stream.Collectors.joining;
 
 public class URIUtil {
 
@@ -116,27 +120,55 @@ public class URIUtil {
         return uri.substring(5); // Remove "file:"
     }
 
-    public static String normalizeSingleDot(String uri) {
-        if (!uri.contains("/./"))
+    /**
+     * Resolves the dot-segments "." and ".." (also percent-encoded as %2e, RFC 3986 2.3) in the path of an
+     * origin-form request target, so that routing, the flow and the forwarded request all see the same path.
+     * The query is left untouched. Other forms (absolute-form, authority-form, asterisk-form) are returned unchanged.
+     */
+    public static String removeDotSegmentsFromRequestTarget(String uri) {
+        if (!uri.startsWith("/"))
             return uri;
 
-        StringBuilder sb = new StringBuilder(uri.length());
-        for (int i = 0; i < uri.length(); i++) {
-            int c = uri.codePointAt(i);
-            switch (c) {
-                case '?':
-                    sb.append(uri.substring(i));
-                    return sb.toString();
-                case '/':
-                    sb.appendCodePoint(c);
-                    while (i < uri.length() - 2 && uri.codePointAt(i + 1) == '.' && uri.codePointAt(i + 2) == '/')
-                        i += 2;
-                    break;
-                default:
-                    sb.appendCodePoint(c);
-            }
-        }
-        return sb.toString();
+        final var queryStart = uri.indexOf('?');
+        final var path = queryStart == -1 ? uri : uri.substring(0, queryStart);
+        if (!containsDotSegment(path))
+            return uri;
+
+        final var query = queryStart == -1 ? "" : uri.substring(queryStart);
+        return removeDotSegments(decodeDotSegments(path)) + query;
+    }
+
+    /**
+     * A dot-segment always starts directly after a slash, with a dot or an encoded dot.
+     */
+    private static boolean containsDotSegment(String path) {
+        return path.contains("/.") || path.contains("/%2e") || path.contains("/%2E");
+    }
+
+    /**
+     * Decodes percent-encoded dot-segments, e.g. "/a/%2e%2e/b" becomes "/a/../b", so that
+     * URI.removeDotSegments() resolves them like plain ones. The split keeps empty segments,
+     * so leading, trailing and double slashes are preserved.
+     */
+    static String decodeDotSegments(String path) {
+        // Without a '%' there is nothing to decode. Spares plain "/a/../b" or "/.well-known/..." the split and join.
+        if (path.indexOf('%') == -1)
+            return path;
+
+        return Arrays.stream(path.split("/", -1))
+                .map(URIUtil::decodeDotSegment)
+                .collect(joining("/"));
+    }
+
+    /**
+     * Only segments consisting solely of (encoded) dots are decoded, e.g. "file%2etxt" stays as it is.
+     */
+    private static String decodeDotSegment(String segment) {
+        return switch (segment.toLowerCase(Locale.ROOT)) {
+            case ".", "%2e" -> ".";
+            case "..", ".%2e", "%2e.", "%2e%2e" -> "..";
+            default -> segment;
+        };
     }
 
     /**

@@ -14,12 +14,16 @@
 
 package com.predic8.membrane.core.util;
 
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.params.*;
-import org.junit.jupiter.params.provider.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
-import java.net.*;
-import java.util.stream.*;
+import java.net.URISyntaxException;
+import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.util.URI.removeDotSegments;
 import static org.junit.jupiter.api.Assertions.*;
@@ -406,6 +410,18 @@ class URIRFC3986ComplianceTest {
         @Test
         void deepNormalization() {
             assertEquals("/g", removeDotSegments("/a/b/c/../../../g"));
+        }
+
+        @Test
+        @DisplayName("A segment of three dots is not a dot-segment")
+        void tripleDotIsKept() {
+            assertEquals("/a/.../b", removeDotSegments("/a/.../b"));
+        }
+
+        @Test
+        @DisplayName("An empty segment counts as a segment, so .. removes it")
+        void dotDotRemovesEmptySegment() {
+            assertEquals("/a/b", removeDotSegments("/a//../b"));
         }
     }
 
