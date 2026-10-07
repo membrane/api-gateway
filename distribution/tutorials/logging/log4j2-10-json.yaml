@@ -1,0 +1,12 @@
+Configuration:
+  Appenders:
+    Console:
+      name: STDOUT
+      target: SYSTEM_OUT
+      JsonTemplateLayout:
+        eventTemplateUri: classpath:com/predic8/membrane/core/interceptor/log/logTemplate.json
+  Loggers:
+    Root:
+      level: info
+      AppenderRef:
+        ref: STDOUT

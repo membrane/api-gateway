@@ -8,12 +8,20 @@
 # Here each API writes its access log into its own file: access-orders.log,
 # access-products.log and access-users.log.
 #
-# 1.) Start Membrane:
-#       export JAVA_OPTS="-Dlog4j.configurationFile=tutorials/logging/log4j2-32-access-per-api.yaml"   (Linux/Mac)
+# 1.) Run from this folder. Copy the logging configuration to log4j2.yaml,
+#     which Membrane loads automatically, and disable terminal colors:
+#       cp log4j2-32-access-per-api.yaml log4j2.yaml                                          (Linux/Mac)
 #       ./membrane.sh -c 32-Access-Log-Per-Api.yaml
 #
-#       $env:JAVA_OPTS="-Dlog4j.configurationFile=tutorials/logging/log4j2-32-access-per-api.yaml"     (Windows PowerShell)
-#       membrane.cmd -c 32-Access-Log-Per-Api.yaml
+#       Copy-Item log4j2-32-access-per-api.yaml log4j2.yaml                                   (Windows PowerShell)
+#       .\membrane.cmd -c 32-Access-Log-Per-Api.yaml
+#
+#     With Docker, copy the same file first, then run:
+#       cp log4j2-32-access-per-api.yaml log4j2.yaml                                          (Linux/Mac)
+#       ./run-docker.sh -c 32-Access-Log-Per-Api.yaml
+#
+#       Copy-Item log4j2-32-access-per-api.yaml log4j2.yaml                                   (Windows PowerShell)
+#       .\run-docker.cmd -c 32-Access-Log-Per-Api.yaml
 #
 # 2.) Call the APIs:
 #       curl http://localhost:2000/orders/1
@@ -25,7 +33,7 @@
 #
 #       0:0:0:0:0:0:0:1 - - [02/Oct/2026:09:56:10 +0200] "GET /products/7 HTTP/1.1" 200 0
 #
-# 4.) Open log4j2-32-access-per-api.yaml: a Routing appender picks the file by the "api" field.
+# 4.) Open log4j2.yaml: a Routing appender picks the file by the "api" field.
 
 global:
   - accessLog:

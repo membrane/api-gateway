@@ -16,8 +16,6 @@ package com.predic8.membrane.tutorials.logging;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.Map;
-
 import static io.restassured.RestAssured.when;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -34,8 +32,8 @@ public class AccessLogPerApiTutorialTest extends AbstractLoggingTutorialTest {
     }
 
     @Override
-    protected Map<String, String> getEnvs() {
-        return Map.of("JAVA_OPTS", "-Dlog4j.configurationFile=tutorials/logging/log4j2-32-access-per-api.yaml");
+    protected String getLoggingConfig() {
+        return "log4j2-32-access-per-api.yaml";
     }
 
     @Test
