@@ -761,7 +761,7 @@ The collected metrics can be visualized in a Grafana dashboard:
 ## OpenTelemetry Integration
 Membrane supports integration with **OpenTelemetry**. This enables detailed tracing of requests across Membrane and backend services.
 
-![OpenTelemetry Example](distribution/examples/monitoring-tracing/opentelemetry/resources/otel_example.png)  
+![OpenTelemetry Example](docs/images/otel_example.png)  
 
 For working examples of Prometheus, Grafana and OpenTelemetry, see the [operation tutorial](./distribution/tutorials/operation).
 
