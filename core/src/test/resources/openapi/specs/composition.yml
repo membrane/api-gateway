@@ -111,17 +111,6 @@ paths:
             schema:
               $ref: "#/components/schemas/RefCycleA"
 
-  /composition-ref-allof-xml:
-    post:
-      responses:
-        '200':
-          description: OK
-      requestBody:
-        content:
-          application/xml:
-            schema:
-              $ref: "#/components/schemas/RefAllOfXmlType"
-
 components:
   schemas:
     Address:
@@ -175,16 +164,5 @@ components:
       type: object
       allOf:
         - $ref: "#/components/schemas/RefCycleA"
-    RefAllOfXmlType:
-      type: object
-      xml:
-        name: order
-      allOf:
-        - type: object
-          properties:
-            id:
-              type: integer
-            customer:
-              type: string
 
 
