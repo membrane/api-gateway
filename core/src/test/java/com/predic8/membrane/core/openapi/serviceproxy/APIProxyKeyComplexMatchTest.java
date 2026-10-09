@@ -14,7 +14,6 @@
 package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.predic8.membrane.core.http.Request.Builder;
-import com.predic8.membrane.core.lang.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -93,6 +92,31 @@ class APIProxyKeyComplexMatchTest {
         assertTrue(key.complexMatch(new Builder().get("/foo/").buildExchange()));
         assertTrue(key.complexMatch(new Builder().get("/foo/boo").buildExchange()));
         assertFalse(key.complexMatch(new Builder().get("/foobar").buildExchange()));
+    }
+
+    @Test
+    @DisplayName("Path parameters are ignored when matching a server base path")
+    void complexMatchServerBasePathIgnoresPathParameters() throws URISyntaxException {
+        final var key = new APIProxyKey("", "", 80, null, "*", null, true) {{
+            addBasePaths(new ArrayList<>(List.of("/shop/v2")));
+        }};
+
+        assertTrue(key.complexMatch(new Builder().get("/shop;x/v2/items").buildExchange()));
+        assertTrue(key.complexMatch(new Builder().get("/shop;jsessionid=1/v2").buildExchange()));
+        assertFalse(key.complexMatch(new Builder().get("/shop;x/v3").buildExchange()));
+    }
+
+    @Test
+    @DisplayName("Duplicate slashes are merged when matching a server base path")
+    void complexMatchServerBasePathMergesDuplicateSlashes() {
+        final var key = new APIProxyKey("", "", 80, null, "*", null, true) {{
+            addBasePaths(new ArrayList<>(List.of("/shop/v2")));
+        }};
+
+        // Builder.get() would parse "//shop" as a URL with the host "shop", so the target is set as sent
+        assertTrue(key.complexMatch(new Builder().method("GET").uri("/shop//v2/items").buildExchange()));
+        assertTrue(key.complexMatch(new Builder().method("GET").uri("//shop/v2").buildExchange()));
+        assertFalse(key.complexMatch(new Builder().method("GET").uri("//shop/v3").buildExchange()));
     }
 
     private static Stream<Arguments> urls() {

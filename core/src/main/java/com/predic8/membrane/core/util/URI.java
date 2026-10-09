@@ -14,12 +14,12 @@
 
 package com.predic8.membrane.core.util;
 
-import com.predic8.membrane.core.http.xml.Host;
+import java.net.URISyntaxException;
+import java.net.URLDecoder;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import java.net.*;
-import java.util.regex.*;
-
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Same behavior as {@link java.net.URI}, but accommodates '{' in paths.
@@ -288,5 +288,73 @@ public class URI {
         if (uri != null)
             return uri.toString();
         return input;
+    }
+
+    /**
+     * RFC 3986, Section 5.2.4 - Remove dot segments from a path.
+     * <pre>
+     * /a/b/c/./../../g    -> /a/g
+     * mid/content=5/../6  -> mid/6
+     * /../a               -> /a      (cannot go above the root)
+     * /a/..               -> /
+     * /a/.                -> /a/
+     * /a//../b            -> /a/b    (the empty segment counts as a segment)
+     * /a/.../b            -> /a/.../b
+     * /a/%2e%2e/b         -> /a/%2e%2e/b  (encoded dots are not decoded, see URIUtil.normalizeRequestTarget)
+     * </pre>
+     * Expects a path only: on a whole URI like http://h/../b a ".." would remove the host.
+     */
+    public static String removeDotSegments(String path) {
+        if (path == null || path.isEmpty()) {
+            return path;
+        }
+
+        var out = new StringBuilder();
+        int i = 0;
+        while (i < path.length()) {
+            // A: remove prefix "../" or "./"
+            if (path.startsWith("../", i)) {
+                i += 3;
+            } else if (path.startsWith("./", i)) {
+                i += 2;
+            }
+            // B: remove prefix "/./" or "/."(end)
+            else if (path.startsWith("/./", i)) {
+                i += 2;
+            } else if (i + 2 == path.length() && path.startsWith("/.", i)) {
+                out.append('/');
+                i += 2;
+            }
+            // C: remove prefix "/../" or "/.."(end), and remove last output segment
+            else if (path.startsWith("/../", i)) {
+                i += 3;
+                removeLastSegment(out);
+            } else if (i + 3 == path.length() && path.startsWith("/..", i)) {
+                removeLastSegment(out);
+                out.append('/');
+                i += 3;
+            }
+            // D: "." or ".." only
+            else if ((i == path.length() - 1 && path.charAt(i) == '.') ||
+                     (i == path.length() - 2 && path.charAt(i) == '.' && path.charAt(i + 1) == '.')) {
+                i = path.length();
+            }
+            // E: move first path segment (including initial "/" if any) to output
+            else {
+                if (path.charAt(i) == '/') {
+                    out.append('/');
+                    i++;
+                }
+                while (i < path.length() && path.charAt(i) != '/') {
+                    out.append(path.charAt(i));
+                    i++;
+                }
+            }
+        }
+        return out.toString();
+    }
+
+    private static void removeLastSegment(StringBuilder out) {
+        out.setLength(Math.max(out.lastIndexOf("/"), 0));
     }
 }

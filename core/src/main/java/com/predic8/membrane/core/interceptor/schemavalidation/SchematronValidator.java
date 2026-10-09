@@ -14,29 +14,44 @@
 
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.multipart.*;
-import org.apache.commons.text.*;
-import org.slf4j.*;
-import org.springframework.beans.factory.*;
+import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.multipart.XOPReconstitutor;
+import com.predic8.membrane.core.util.xml.parser.HardenedSaxParser;
+import org.apache.commons.text.StringEscapeUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.xml.sax.InputSource;
 
-import javax.xml.stream.*;
-import javax.xml.stream.events.*;
-import javax.xml.transform.*;
-import javax.xml.transform.dom.*;
-import javax.xml.transform.stream.*;
-import java.io.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.*;
+import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.events.StartElement;
+import javax.xml.stream.events.XMLEvent;
+import javax.xml.transform.ErrorListener;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMResult;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.stream.StreamSource;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.atomic.AtomicLong;
 
-import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static java.nio.charset.StandardCharsets.*;
-import static javax.xml.stream.XMLInputFactory.*;
+import static com.predic8.membrane.core.http.Header.VALIDATION_ERROR_SOURCE;
+import static com.predic8.membrane.core.http.MimeType.TEXT_XML_UTF8;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static javax.xml.stream.XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES;
+import static javax.xml.stream.XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES;
 
 public class SchematronValidator extends AbstractMessageValidator {
 	private static final Logger log = LoggerFactory.getLogger(SchematronValidator.class.getName());
@@ -95,7 +110,7 @@ public class SchematronValidator extends AbstractMessageValidator {
 		try {
 			Transformer transformer = transformers.take();
 			try {
-				transformer.transform(new StreamSource(xopr.reconstituteIfNecessary(msg)), new StreamResult(baos));
+				transformer.transform(HardenedSaxParser.newSAXSource(new InputSource(xopr.reconstituteIfNecessary(msg))), new StreamResult(baos));
 			} finally {
 				transformers.put(transformer);
 			}

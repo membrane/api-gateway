@@ -13,22 +13,26 @@
    limitations under the License. */
 package com.predic8.membrane.core.util;
 
-import org.jetbrains.annotations.*;
+import org.jetbrains.annotations.NotNull;
 
-import java.net.*;
 import java.net.URI;
-import java.nio.file.*;
-import java.util.*;
-import java.util.regex.*;
+import java.net.URISyntaxException;
+import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.Optional;
+import java.util.regex.Pattern;
 
-import static java.net.URLDecoder.*;
-import static java.nio.charset.StandardCharsets.*;
-import static java.util.Optional.*;
+import static com.predic8.membrane.core.util.URI.removeDotSegments;
+import static java.net.URLDecoder.decode;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Optional.empty;
+import static java.util.stream.Collectors.joining;
 
 public class URIUtil {
 
     private static final Pattern driveLetterPattern = Pattern.compile("^(\\w)[/:|].*");
     private static final Pattern URI_SCHEME_PATTERN = Pattern.compile("^[a-zA-Z][a-zA-Z0-9+.-]*:.*");
+    private static final Pattern MULTIPLE_SLASHES = Pattern.compile("/{2,}");
 
     /**
      *
@@ -116,25 +120,153 @@ public class URIUtil {
         return uri.substring(5); // Remove "file:"
     }
 
-    public static String normalizeSingleDot(String uri) {
-        if (!uri.contains("/./"))
+    /**
+     * Normalizes the path of an origin-form request target, so that routing, the flow and the forwarded
+     * request all see the same path:
+     * <ol>
+     *     <li>Percent-encoded unreserved characters are decoded (RFC 3986 6.2.2.2), e.g. "/%61dmin" becomes "/admin"
+     *     and "/a/%2e%2e/b" becomes "/a/../b". Reserved characters like %2F stay encoded.</li>
+     *     <li>The dot-segments "." and ".." are resolved (RFC 3986 6.2.2.3).</li>
+     * </ol>
+     * The query is left untouched. Other forms (absolute-form, authority-form, asterisk-form) are returned unchanged.
+     *
+     * @throws IllegalArgumentException if the path contains a malformed percent-escape like "%6" or "%zz"
+     */
+    public static String normalizeRequestTarget(String uri) {
+        if (!uri.startsWith("/"))
             return uri;
 
-        StringBuilder sb = new StringBuilder(uri.length());
-        for (int i = 0; i < uri.length(); i++) {
-            int c = uri.codePointAt(i);
-            switch (c) {
-                case '?':
-                    sb.append(uri.substring(i));
-                    return sb.toString();
-                case '/':
-                    sb.appendCodePoint(c);
-                    while (i < uri.length() - 2 && uri.codePointAt(i + 1) == '.' && uri.codePointAt(i + 2) == '/')
-                        i += 2;
-                    break;
-                default:
-                    sb.appendCodePoint(c);
+        final var queryStart = uri.indexOf('?');
+        final var path = decodeUnreserved(queryStart == -1 ? uri : uri.substring(0, queryStart));
+        final var query = queryStart == -1 ? "" : uri.substring(queryStart);
+        if (!containsDotSegment(path))
+            return path + query;
+
+        return removeDotSegments(path) + query;
+    }
+
+    /**
+     * Tells whether the path of an origin-form request target has path parameters (";...", RFC 3986 3.3) in one of
+     * the suspicious sequences that Jakarta Servlet 6.0 (3.5.2) requires a container to reject with 400:
+     * <ul>
+     *     <li>a dot-segment with parameters, like "/x/..;/admin", which a servlet container resolves to "/admin"</li>
+     *     <li>an empty segment with parameters other than the last segment, like "/;x/admin"</li>
+     * </ul>
+     * A trailing empty segment with parameters, like "/app/;jsessionid=1" from servlet URL rewriting, is fine.
+     * Expects a target normalized by {@link #normalizeRequestTarget(String)}, so encoded dots are already decoded.
+     */
+    public static boolean containsAmbiguousPathParameters(String uri) {
+        if (!uri.startsWith("/"))
+            return false;
+
+        final var queryStart = uri.indexOf('?');
+        final var path = queryStart == -1 ? uri : uri.substring(0, queryStart);
+        if (path.indexOf(';') == -1)
+            return false;
+
+        final var segments = path.split("/", -1);
+        for (var i = 1; i < segments.length; i++) {
+            final var parameterStart = segments[i].indexOf(';');
+            if (parameterStart == -1)
+                continue;
+
+            final var name = segments[i].substring(0, parameterStart);
+            if (name.equals(".") || name.equals(".."))
+                return true;
+            if (name.isEmpty() && i < segments.length - 1)
+                return true;
+        }
+        return false;
+    }
+
+    /**
+     * Returns the request target that is used to select an API: path parameters are removed and duplicate slashes
+     * are merged, e.g. "//api;jsessionid=1//admin?q" becomes "/api/admin?q". Servlet containers and many web
+     * servers do the same when they map a request, so a path that differs only in these details must not dodge a
+     * more specific API. The forwarded request keeps the target unchanged.
+     */
+    public static String toRoutingPath(String uri) {
+        return mergeSlashes(removePathParameters(uri));
+    }
+
+    /**
+     * Merges duplicate slashes in the path of an origin-form request target, e.g. "//api///admin?x=//y" becomes
+     * "/api/admin?x=//y". The query is left untouched. Other forms are returned unchanged.
+     */
+    static String mergeSlashes(String uri) {
+        if (!uri.startsWith("/"))
+            return uri;
+
+        final var queryStart = uri.indexOf('?');
+        final var path = queryStart == -1 ? uri : uri.substring(0, queryStart);
+        if (!path.contains("//"))
+            return uri;
+
+        final var query = queryStart == -1 ? "" : uri.substring(queryStart);
+        return MULTIPLE_SLASHES.matcher(path).replaceAll("/") + query;
+    }
+
+    /**
+     * Removes the path parameters (";...", RFC 3986 3.3) from every segment of an origin-form request target,
+     * e.g. "/api;jsessionid=1/admin?q" becomes "/api/admin?q". Servlet containers ignore them when mapping a
+     * request, so routing has to ignore them too. The forwarded request keeps them.
+     * The query is left untouched. Other forms are returned unchanged.
+     */
+    public static String removePathParameters(String uri) {
+        if (!uri.startsWith("/"))
+            return uri;
+
+        final var queryStart = uri.indexOf('?');
+        final var path = queryStart == -1 ? uri : uri.substring(0, queryStart);
+        if (path.indexOf(';') == -1)
+            return uri;
+
+        final var query = queryStart == -1 ? "" : uri.substring(queryStart);
+        return Arrays.stream(path.split("/", -1))
+                       .map(URIUtil::removeParameters)
+                       .collect(joining("/")) + query;
+    }
+
+    private static String removeParameters(String segment) {
+        final var parameterStart = segment.indexOf(';');
+        return parameterStart == -1 ? segment : segment.substring(0, parameterStart);
+    }
+
+    /**
+     * A dot-segment always starts directly after a slash.
+     */
+    private static boolean containsDotSegment(String path) {
+        return path.contains("/.");
+    }
+
+    /**
+     * Decodes percent-encoded unreserved characters (ALPHA, DIGIT, "-", ".", "_", "~"), which are equivalent to
+     * their plain form (RFC 3986 2.3). Everything else, including reserved characters like %2F and %3B,
+     * stays encoded as it is, since decoding it would change the meaning of the path.
+     *
+     * @throws IllegalArgumentException if a "%" is not followed by two hex digits. Keeping it would let the
+     *                                  decoded characters behind it form a new escape, e.g. "/%6%31dmin" would
+     *                                  become "/%61dmin".
+     */
+    static String decodeUnreserved(String path) {
+        if (path.indexOf('%') == -1)
+            return path;
+
+        final var sb = new StringBuilder(path.length());
+        for (var i = 0; i < path.length(); i++) {
+            final var c = path.charAt(i);
+            if (c == '%') {
+                if (i + 2 >= path.length() || !isHex(path.charAt(i + 1)) || !isHex(path.charAt(i + 2)))
+                    throw new IllegalArgumentException("Invalid percent-encoding in path at index %d".formatted(i));
+
+                final var decoded = (char) Integer.parseInt(path, i + 1, i + 3, 16);
+                if (isUnreserved(decoded)) {
+                    sb.append(decoded);
+                    i += 2;
+                    continue;
+                }
             }
+            sb.append(c);
         }
         return sb.toString();
     }
@@ -179,4 +311,12 @@ public class URIUtil {
         return Path.of(location).toAbsolutePath().normalize().toString();
     }
 
+    private static boolean isHex(char c) {
+        return (c >= '0' && c <= '9') || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f');
+    }
+
+    private static boolean isUnreserved(char c) {
+        return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')
+               || c == '-' || c == '.' || c == '_' || c == '~';
+    }
 }
