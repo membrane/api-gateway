@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.tutorials.json;
 
+import com.predic8.membrane.examples.util.SubstringWaitableConsoleEvent;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -21,6 +22,8 @@ import java.io.IOException;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class JsonPathTutorialTest extends AbstractJsonTutorialTest{
 
@@ -44,6 +47,31 @@ public class JsonPathTutorialTest extends AbstractJsonTutorialTest{
             .body("animals.size()", equalTo(2))
             .body("animals.name", hasItems("Skye", "Molly"));
         // @formatter:on
+    }
+
+    @Test
+    void noCatFoundWithoutCat() throws Exception {
+        // The backend on 2001 logs after the if, so once it has, the if has had its say
+        final var backendCalled = new SubstringWaitableConsoleEvent(process, "First: [Rex]");
+
+        // @formatter:off
+        given()
+            .body("""
+                {"animals":[{"name":"Rex","species":"dog"}]}""")
+            .contentType(JSON)
+        .when()
+            .post("http://localhost:2000")
+        .then()
+            .statusCode(200);
+        // @formatter:on
+
+        backendCalled.waitFor(5000);
+
+        final var console = logger.toString();
+        final var end = console.lastIndexOf("First: [Rex]");
+        final var start = console.lastIndexOf("Names: ", end);
+        assertTrue(start >= 0);
+        assertFalse(console.substring(start, end).contains("Cat found!"));
     }
 
     @Test

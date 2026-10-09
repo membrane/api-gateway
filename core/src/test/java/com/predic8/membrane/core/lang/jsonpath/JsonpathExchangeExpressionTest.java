@@ -13,18 +13,21 @@
    limitations under the License. */
 package com.predic8.membrane.core.lang.jsonpath;
 
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.lang.*;
-import com.predic8.membrane.core.lang.ExchangeExpression.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.lang.AbstractExchangeExpressionTest;
+import com.predic8.membrane.core.lang.ExchangeExpression.InterceptorAdapter;
+import com.predic8.membrane.core.lang.ExchangeExpression.Language;
+import org.junit.jupiter.api.Test;
 
-import java.net.*;
-import java.util.*;
+import java.net.URISyntaxException;
+import java.util.List;
+import java.util.Map;
 
 import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
-import static com.predic8.membrane.core.http.Request.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
-import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
+import static com.predic8.membrane.core.http.Request.get;
+import static com.predic8.membrane.core.http.Request.post;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.lang.ExchangeExpression.Language.JSONPATH;
 import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
 import static java.lang.Boolean.FALSE;
 import static org.junit.jupiter.api.Assertions.*;
@@ -77,6 +80,31 @@ class JsonpathExchangeExpressionTest extends AbstractExchangeExpressionTest {
         assertTrue(evalBool("$.fish"));
         assertFalse(evalBool("$.insect"));
         assertFalse(evalBool("$.wings"));
+    }
+
+    @Test
+    void filterWithoutMatchIsFalse() throws URISyntaxException {
+        assertFalse(evalBool("$.animals[?(@.species == 'cat')]", """
+                {"animals":[{"species":"dog"}]}"""));
+    }
+
+    @Test
+    void filterWithMatchIsTrue() throws URISyntaxException {
+        assertTrue(evalBool("$.animals[?(@.species == 'cat')]", """
+                {"animals":[{"species":"dog"},{"species":"cat"}]}"""));
+    }
+
+    @Test
+    void wildcardWithoutMatchIsFalse() throws URISyntaxException {
+        assertFalse(evalBool("$.animals[*].name", """
+                {"animals":[]}"""));
+    }
+
+    @Test
+    void existingEmptyArrayIsTrue() throws URISyntaxException {
+        // A definite path selects the property itself, so an existing but empty array still counts
+        assertTrue(evalBool("$.animals", """
+                {"animals":[]}"""));
     }
 
     @Test
@@ -158,6 +186,10 @@ class JsonpathExchangeExpressionTest extends AbstractExchangeExpressionTest {
     void number() throws URISyntaxException {
         var expr = expression(new InterceptorAdapter(router), JSONPATH, "$");
         assertEquals(314, expr.evaluate(post("/foo").json("314").buildExchange(), REQUEST, Integer.class));
+    }
+
+    private boolean evalBool(String jsonpath, String json) throws URISyntaxException {
+        return expression(new InterceptorAdapter(router), JSONPATH, jsonpath).evaluate(post("/foo").json(json).buildExchange(), REQUEST, Boolean.class);
     }
 
     private <T> T evaluateWithEmptyBodyFor(Class<T> type) throws URISyntaxException {

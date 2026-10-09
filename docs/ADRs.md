@@ -1,5 +1,175 @@
 # Architecture Decision Log
 
+## ADR-012 Request Path Canonicalization for Routing
+
+Status: PROPOSED
+Date: 2026-10-07
+
+### Context
+
+GHSA-9m3q-j7rj-q639: an API was selected by the request path as the client sent it, with only `/./`
+removed, while the backend resolved the path differently, or `combine()` in `DispatchingInterceptor`
+did. `/x/../admin` was routed to a catch-all API and still reached `/admin` on the backend, skipping
+every plugin of the API for `/admin`. The same disagreement came in several variants:
+- percent-encoded characters: `/%61dmin`, `/x/%2e%2e/admin`
+- the absolute-form: `GET http://host/admin`
+- request targets that aren't a path: `admin`, `x:/admin`
+- path parameters: `/api;x/admin`, `/x/..;/admin`
+- duplicate slashes: `/api//admin`, and `//x/admin`, which `DispatchingInterceptor` parsed as the
+  host `x`
+- backslashes: `/api\admin`, which some servers treat as `/api/admin`
+
+A `CONNECT` request skipped every plugin in another way. An API without a target, or with a target
+URL that has no path, answered it with `200` and opened a tunnel to the host and port in the request
+target. The requests sent through the tunnel never passed routing or a flow, and the tunnel could
+reach any host Membrane can reach.
+
+Three parties look at the path:
+- **routing** decides which API gets the request
+- **the flow** is every plugin: `request.uri` and `path` in expressions, `rewriter`, `openapi`,
+  scripts
+- **the backend** gets the forwarded request
+
+The bug class is any disagreement between routing and the backend. A disagreement between routing
+and the flow is the same class, one level down.
+
+### Decision
+
+The `RuleMatchingInterceptor` canonicalizes the request target once, before an API is selected, and
+writes the result back to the request, so that routing, the flow and the backend see the same path:
+
+- An absolute-form target is reduced to origin-form (`http://host/admin?x` → `/admin?x`). A forward
+  proxy (`proxy`) gets the absolute URI back.
+- Percent-encoded unreserved characters are decoded (RFC 3986 6.2.2.2). Reserved and other
+  characters stay encoded (`%2F`, `%3B`, `%25`, `%3F`), because decoding them would change the
+  meaning of the path.
+- Dot-segments are resolved (RFC 3986 6.2.2.3), including ones that were percent-encoded.
+- The query is left untouched. The target as the client sent it stays available from
+  `Exchange.getOriginalRelativeURI()`.
+
+These requests are rejected with `400` (problem type `invalid-path`) before the flow of an API runs:
+
+- **A malformed percent-escape in the path** (`/%zz`, `/%6%31dmin`). Decoding the characters around
+  it could create a new escape: `/%6%31dmin` would become `/%61dmin`. The same applies to an
+  absolute-form target that can't be parsed.
+- **A target that is neither origin-form nor absolute-form** (`admin`, `x:/admin`, `GET *`). Such
+  targets skipped canonicalization, but `DispatchingInterceptor` still extracted `/admin` from them.
+  Two forms are still accepted: the authority-form for `CONNECT` to a forward proxy, and `*` for
+  `OPTIONS`.
+- **A `CONNECT` that isn't routed to a forward proxy** (`proxy`), whatever its target. RFC 9110
+  (9.3.6) intends `CONNECT` for proxies, and a tunnel needs an explicit opt-in, like the WebSocket
+  upgrade, which only happens with the `webSocket` plugin. A STOMP proxy still gets the `CONNECT`
+  frame of STOMP.
+- **The two path-parameter sequences that Jakarta Servlet 6.0 (3.5.2) requires a container to
+  reject:**
+  - a dot-segment with parameters (`/x/..;/admin`)
+  - an empty segment with parameters that isn't the last segment (`/;x/admin`)
+- **A backslash in the path** (`/api\admin`), also in an absolute-form target. A backslash in the
+  query is accepted, since browsers send it unencoded there. `%5C` is accepted and kept as data,
+  like `%2F`.
+
+Forward proxies are exempt from the last two.
+
+**Path parameters and duplicate slashes are ignored for routing but kept in the request.**
+`RuleManager` and `APIProxyKey` match the `path` of an API and OpenAPI server base paths against
+`URIUtil.toRoutingPath(uri)`, which removes the parameters of each segment and merges `//`. Servlet
+containers map requests the same way. The request URI keeps `;...` and `//`, so the flow sees them
+and they are forwarded unchanged.
+
+### Why `;` and `//` aren't canonicalized in the request
+
+These options were considered:
+
+| Option | `;...` | `//` | What breaks |
+|---|---|---|---|
+| **K (chosen):** ignore for routing, keep in the request | kept | kept | Nothing, but path checks in the flow can be dodged (see Consequences) |
+| A: merge `//`, reject `;` | 400 | merged | `;jsessionid`, matrix parameters |
+| B: reject both, like Spring Security's `StrictHttpFirewall` | 400 | 400 | As A, plus clients that send `//` by accident |
+| C: remove `;`, merge `//` in the request | removed | merged | Matrix parameters and jsessionid are silently lost before the backend |
+
+A, B and C would give all three parties one path, but each of them removes or rejects `;` before the
+flow sees it. That breaks the users of `;`:
+- **OpenAPI** describes path parameters with `style: matrix` (`/users/;id=5`), so the `openapi`
+  plugin needs `;` in the path.
+- **Backends** use matrix parameters (JAX-RS `@MatrixParam`, Spring `@MatrixVariable`) and servlet
+  URL rewriting (`;jsessionid`).
+
+K is also what the servlet world does. Servlet 6.0 and Spring's `PathPattern` match without path
+parameters, keep them for the application, and reject only the ambiguous sequences listed above.
+
+`//` is handled like `;`: routing treats it as a servlet container would, and the request keeps it.
+Merging `//` in the request would also change the meaning of an empty segment used as data
+(`/items//details`).
+
+### Why a backslash is rejected, not corrected
+
+A raw `\` carries no meaning that the flow or the backend would need: RFC 3986 doesn't allow it in a
+URI, and browsers turn it into `/` before they send a path (WHATWG URL). These options were
+considered:
+
+| Option | `/api\admin` | What breaks |
+|---|---|---|
+| Ignore for routing, keep in the request (like `;`) | routed as `/api/admin`, the flow sees `\` | Nothing, but path checks in the flow can be dodged again |
+| Change to `/` in the request | `/api/admin` everywhere | A backend that treats `\` as data (`DOMAIN\user`) silently gets another path |
+| **Reject (chosen)** | `400` | Clients that send a raw `\` have to send `%5C` |
+
+- **RFC 9112 (3.2)** says a recipient of an invalid request-line should answer `400` or redirect,
+  and "SHOULD NOT attempt to autocorrect and then process the request without a redirect, since the
+  invalid request-line might be deliberately crafted to bypass security filters along the request
+  chain." That rules out changing it to `/`.
+- **Jakarta Servlet 6.0 (3.5.2), Tomcat, Jetty 12 and Spring Security's `StrictHttpFirewall`**
+  reject a backslash by default. Tomcat turns it into `/` only with `allowBackslash=true`. None of
+  the products surveyed ignores it only for routing.
+
+**`%5C` is kept as data.** Servlet 6.0, Tomcat and Spring Security reject it by default as well,
+together with `%2F`. But it is valid syntax, legitimate as data, and rejecting it is a breaking
+change no RFC requires: Traefik made it a `400` in 3.6.4 and reverted that in 3.6.7. Before, Membrane
+forwarded a raw `\` as `%5C` anyway (`uriFactory` `autoEscapeBackslashes`), so a client that switches
+to `%5C` gets the same result as before.
+
+### Consequences
+
+- An API can no longer be dodged with `..`, percent-encoded characters, the absolute-form, a target
+  that isn't a path, `;...`, `//`, a raw `\` or a `CONNECT` tunnel.
+- **The flow sees a canonical path, except for `;...` and `//`.**
+  - A path check in the flow can still be dodged with them. `if` with
+    `test: path.startsWith('/api/admin')` is false for `/api;x/admin` and `/api//admin`, but a
+    servlet container or a slash-merging backend serves both as `/api/admin`.
+  - Envoy had the same flaw (CVE-2026-73553): the router removed path parameters, but RBAC matched
+    the path as sent.
+  - Access control by path therefore belongs in the `path` of an API, and the release notes say so.
+    `path` in expressions is the same value as `request.uri`.
+- **Plugins that decide what a request is from its path must use the routing form.** Known gaps,
+  each a follow-up:
+  - **`openapi`:**
+    - `OpenAPIInterceptor.getMatchingBasePath` checks the request URI, so `;...` or `//` in or
+      before the server base path gets a 404. That fails closed.
+    - The validator doesn't support `style: matrix` yet.
+    - A matrix parameter that isn't the last segment (`/users/;id=5/orders`) is one of the
+      sequences Servlet 6.0 rejects, so that needs a decision there.
+  - **`rewriter`:** mappings are regular expressions over the request URI, so they don't apply to
+    `/api;x/...` or `/api//...`.
+  - **Expressions:** add a routing-form path variable for `test:`, so path checks see what routing
+    saw.
+  - **API docs:** `//api-docs` is routed to the API but not served.
+- **The empty-segment rule (`/;x/admin`) is no longer needed for routing,** since `toRoutingPath`
+  merges slashes. It stays because Servlet 6.0 requires it.
+- **`DispatchingInterceptor` keeps its handling of a leading `//`.** Such a path can still reach it
+  after routing, e.g. from a `rewriter` mapping `^/api(.*)` → `/$1`. It parses the path behind a
+  dummy authority, and adds a `/.` prefix before `combine()`, so `//x/admin` is never taken as the
+  host `x`.
+- A first line that isn't an HTTP request line is parsed as STOMP. Unless it's a `CONNECT` frame for
+  a STOMP proxy, it now gets `400` instead of `404`.
+- A `CONNECT` to an API gets `400`. Before, depending on the target of the API, it opened a tunnel or
+  failed with `500` or `502`.
+- A client that sends a raw `\` in the path gets `400`. Before, it was forwarded as `%5C`.
+- **Not covered,** because the outcome depends on the backend:
+  - case-insensitive matching (`/Admin`)
+  - backends that decode `%2F`, `%5C` or `%25` before mapping, e.g. Tomcat with
+    `allowBackslash=true` for `%5C`. An option to reject `%2F` and `%5C`, as
+    Servlet 6.0 does and like Envoy's `path_with_escaped_slashes_action`, is a follow-up.
+- `URIUtil.normalizeSingleDot` is removed in favor of `URIUtil.normalizeRequestTarget`.
+
 ## ADR-011 XML Encryption: Hand-Rolled, and a Narrow Algorithm Set
 
 Status: ACCEPTED

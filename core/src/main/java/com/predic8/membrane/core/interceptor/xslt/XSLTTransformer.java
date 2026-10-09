@@ -102,8 +102,8 @@ public class XSLTTransformer {
 
 	/**
 	 * The message comes from a client or backend, so it is parsed with a hardened parser that
-	 * rejects any DOCTYPE (XXE, entity expansion). The factory only blocks external DTDs and entities,
-	 * not stylesheet loading: it also loads the operator's stylesheet, which may use xsl:include, xsl:import or document().
+	 * rejects any DOCTYPE (XXE, entity expansion). The factory is left unhardened on purpose: it
+	 * also loads the operator's stylesheet, which may use xsl:include, xsl:import or document().
 	 */
 	private static SAXSource harden(StreamSource xml) {
 		return HardenedSaxParser.newSAXSource(SAXSource.sourceToInputSource(xml));
