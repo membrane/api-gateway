@@ -13,20 +13,24 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.xslt;
 
-import java.io.InputStream;
+import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.Outcome;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.xml.sax.InputSource;
 
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
-
-import org.junit.jupiter.api.Test;
-import org.xml.sax.InputSource;
-
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Response;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 public class XSLTInterceptorTest {
 
@@ -80,6 +84,31 @@ public class XSLTInterceptorTest {
 		while ((read = i.read(buf)) != -1) {
 			System.out.write(buf, 0, read);
 		}
+	}
+
+	/**
+	 * GHSA-23v5-9h8v-7282: the request body must not be parsed with external entity
+	 * resolution enabled, or a client can make the gateway read local files.
+	 */
+	@Test
+	void externalEntityInRequestIsNotResolved(@TempDir Path dir) throws Exception {
+		final var secret = dir.resolve("secret.txt");
+		Files.writeString(secret, "TOP-SECRET-1234");
+
+		exc = Request.post("http://localhost/").body("""
+				<?xml version="1.0"?>
+				<!DOCTYPE CUSTOMER [<!ENTITY xxe SYSTEM "%s">]>
+				<CUSTOMER><FIRSTNAME>&xxe;</FIRSTNAME><LASTNAME>x</LASTNAME></CUSTOMER>
+				""".formatted(secret.toUri())).buildExchange();
+
+		final var i = new XSLTInterceptor();
+		i.setXslt("classpath:/customer2person.xsl");
+		i.init(new HttpRouter());
+		assertEquals(Outcome.ABORT, i.handleRequest(exc));
+
+		assertEquals(400, exc.getResponse().getStatusCode());
+		assertFalse(exc.getRequest().getBodyAsStringDecoded().contains("TOP-SECRET-1234"));
+		assertFalse(exc.getResponse().getBodyAsStringDecoded().contains("TOP-SECRET-1234"));
 	}
 
 	private void assertXPath(String xpathExpr, String expected)
