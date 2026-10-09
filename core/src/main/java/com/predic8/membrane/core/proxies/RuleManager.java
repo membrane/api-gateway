@@ -35,7 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 
-import static com.predic8.membrane.core.util.URIUtil.normalizeSingleDot;
+import static com.predic8.membrane.core.util.URIUtil.toRoutingPath;
 
 public class RuleManager {
 
@@ -206,7 +206,8 @@ public class RuleManager {
 
         String hostHeader = request.getHeader().getHost();
         String method = request.getMethod();
-        String uri = normalizeSingleDot(request.getUri()); // Removes /./ in path for rule matching
+        String uri = request.getUri(); // Already normalized (absolute-form, percent-encoding, dot-segments) by the RuleMatchingInterceptor
+        String path = toRoutingPath(uri);
         String version = request.getVersion();
 
         AbstractHttpHandler handler = exc.getHandler();
@@ -239,7 +240,10 @@ public class RuleManager {
                 continue;
             if (!key.getMethod().equals(method) && !key.isMethodWildcard())
                 continue;
-            if (key.isUsePathPattern() && !key.matchesPath(uri))
+            // Match without path parameters (";...") and with merged slashes, since servlet containers and many web
+            // servers map a request that way: "/api;x/admin" or "/api//admin" must not dodge an API for "/api/admin".
+            // The URI stays unchanged for the backend.
+            if (key.isUsePathPattern() && !key.matchesPath(path))
                 continue;
             if (!key.complexMatch(exc))
                 continue;
