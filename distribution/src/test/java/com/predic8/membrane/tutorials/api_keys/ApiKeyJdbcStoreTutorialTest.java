@@ -26,7 +26,6 @@ import java.sql.Statement;
 
 import static io.restassured.RestAssured.given;
 import static java.io.File.separator;
-import static org.apache.commons.io.FileUtils.copyFileToDirectory;
 
 /**
  * Runs the JDBC API key store tutorial (40-API-Key-JDBC-Store.yaml) without an
@@ -94,19 +93,5 @@ public class ApiKeyJdbcStoreTutorialTest extends DistributionExtractingTestcase 
     private String h2JdbcUrl() {
         return "jdbc:h2:" + new File(baseDir, "membranedb").getAbsolutePath().replace('\\', '/')
                 + ";AUTO_SERVER=TRUE;NON_KEYWORDS=KEY,SCOPE";
-    }
-
-    private void copyH2JarToMembraneLib() throws IOException {
-        try {
-            File jar = new File(org.h2.Driver.class.getProtectionDomain()
-                    .getCodeSource().getLocation().toURI());
-
-            if (!jar.isFile() || !jar.getName().endsWith(".jar"))
-                throw new AssertionError("H2 is not loaded from a jar: " + jar);
-
-            copyFileToDirectory(jar, new File(getMembraneHome(), "lib"));
-        } catch (Exception e) {
-            throw new IOException("Failed to locate/copy H2 jar.", e);
-        }
     }
 }

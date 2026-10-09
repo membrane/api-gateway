@@ -6,30 +6,43 @@
 # This helps against denial of service attempts (deep nesting, huge arrays, many tokens)
 # and blocks prototype pollution keys like "__proto__".
 #
+# 1.) Start Membrane:
+#     with Docker:
+#       Linux/Mac:
+#         ./run-docker.sh -c 30-JSON-Protection.yaml
+#       Windows:
+#         run-docker.cmd -c 30-JSON-Protection.yaml
+#
+#     or with Java:
+#       Linux/Mac:
+#         ./membrane.sh -c 30-JSON-Protection.yaml
+#       Windows:
+#         membrane.cmd -c 30-JSON-Protection.yaml
+#
 # Try it (each request should be rejected):
 #
-# 1.) Depth
+# 2.) Depth
 #     curl -H 'Content-Type: application/json' -d '{"a":{"b":{"c":{"d":1}}}}' localhost:2000
 #
-# 2.) Key Length
+# 3.) Key Length
 #     curl -H 'Content-Type: application/json' -d '{"abcdefghijk": 0 }' localhost:2000
 #
-# 3.) Object Size
+# 4.) Object Size
 #     curl -H 'Content-Type: application/json' -d '{"a":1,"b":2,"c":3,"d":4}' localhost:2000
 #
-# 4.) Number of Tokens
+# 5.) Number of Tokens
 #     curl -H 'Content-Type: application/json' -d '{"a":[1,2],"b":[1,2],"c":[1,2]}' localhost:2000
 #
-# 5.) String Length
+# 6.) String Length
 #     curl -H 'Content-Type: application/json' -d '{"a": "12345678901" }' localhost:2000
 #
-# 6.) Array Size
+# 7.) Array Size
 #     curl -H 'Content-Type: application/json' -d '{"a":[1,2,3,4,5,6,7,8,9,10]}' localhost:2000
 #
-# 7.) Prototype Pollution
+# 8.) Prototype Pollution
 #     curl -H 'Content-Type: application/json' -d '{"__proto__":{"a":1}}' localhost:2000
 #
-# 8.) Duplicated Keys
+# 9.) Duplicated Keys
 #     curl -H 'Content-Type: application/json' -d '{"a":1,"a":2}' localhost:2000
 #
 # Reference: https://www.membrane-api.io/docs/current/jsonProtection.html
