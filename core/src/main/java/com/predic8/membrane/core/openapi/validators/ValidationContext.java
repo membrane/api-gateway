@@ -16,9 +16,13 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.predic8.membrane.core.openapi.model.*;
+import com.predic8.membrane.core.openapi.model.Request;
+
+import java.util.Set;
+import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
+import static java.util.stream.Collectors.toUnmodifiableSet;
 
 public class ValidationContext {
 
@@ -38,7 +42,19 @@ public class ValidationContext {
     private String validatedEntity;
     private int statusCode;
 
-    public static ValidationContext fromRequest(Request request) {
+    /**
+     * Names of the component schemas whose $ref has already been resolved on the current branch of
+     * the validation. Used solely to break reference cycles; unlike {@link #complexType} it is never
+     * reported to the caller. Immutable and copied on write, so it is scoped to the branch rather
+     * than to the whole validation run.
+     */
+    private Set<String> visitedRefs = Set.of();
+
+    public enum Content { JSON, XML }
+
+    private Content content = Content.JSON;
+
+    public static ValidationContext fromRequest(Request<?> request) {
         ValidationContext ctx = new ValidationContext();
         ctx.method = request.getMethod();
         ctx.path = request.getPath();
@@ -57,6 +73,8 @@ public class ValidationContext {
         this.validatedEntity = ctx.validatedEntity;
         this.statusCode = ctx.statusCode;
         this.parameter = ctx.parameter;
+        this.visitedRefs = ctx.visitedRefs;
+        this.content = ctx.content;
     }
 
     public ValidationContext() {
@@ -191,6 +209,25 @@ public class ValidationContext {
         return ctx;
     }
 
+    /**
+     * Marks the component schema {@code name} as resolved on this branch, see {@link #visitedRefs}.
+     */
+    public ValidationContext visitRef(String name) {
+        ValidationContext ctx = this.deepCopy();
+        ctx.visitedRefs = Stream.concat(visitedRefs.stream(), Stream.of(name)).collect(toUnmodifiableSet());
+        return ctx;
+    }
+
+    public boolean hasVisited(String name) {
+        return visitedRefs.contains(name);
+    }
+
+    public ValidationContext content(Content content) {
+        ValidationContext ctx = this.deepCopy();
+        ctx.content = content;
+        return ctx;
+    }
+
     public String getPath() {
         return path;
     }
@@ -201,6 +238,10 @@ public class ValidationContext {
 
     public String getUriTemplate() {
         return uriTemplate;
+    }
+
+    public boolean isXML() {
+        return content == Content.XML;
     }
 
     public ValidationContext addJSONpointerSegment(String segment) {
