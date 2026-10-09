@@ -13,17 +13,25 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.xslt;
 
-import com.predic8.membrane.core.resolver.*;
-import com.predic8.membrane.core.router.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.resolver.ResourceRetrievalException;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.util.xml.parser.HardenedSaxParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.xml.transform.*;
-import javax.xml.transform.stream.*;
-import java.io.*;
-import java.util.*;
-import java.util.concurrent.*;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.sax.SAXSource;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.stream.StreamSource;
+import java.io.ByteArrayOutputStream;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ArrayBlockingQueue;
 
-import static com.predic8.membrane.core.util.text.TextUtil.*;
+import static com.predic8.membrane.core.util.text.TextUtil.isNullOrEmpty;
 
 public class XSLTTransformer {
 	private static final Logger log = LoggerFactory.getLogger(XSLTTransformer.class.getName());
@@ -62,11 +70,11 @@ public class XSLTTransformer {
 		transformers.put(t);
 	}
 
-	public byte[] transform(Source xml) throws Exception {
+	public byte[] transform(StreamSource xml) throws Exception {
 		return transform(xml, new HashMap<>());
 	}
 
-	public byte[] transform(Source xml, Map<String, String> parameters)
+	public byte[] transform(StreamSource xml, Map<String, String> parameters)
 			throws Exception {
 		log.debug("applying transformation: {}", styleSheet);
 
@@ -81,11 +89,20 @@ public class XSLTTransformer {
 			for (Map.Entry<String, String> e : parameters.entrySet()) {
 				t.setParameter(e.getKey(), e.getValue());
 			}
-			t.transform(xml, new StreamResult(baos));
+			t.transform(harden(xml), new StreamResult(baos));
 		} finally {
 			transformers.put(t);
 		}
 		return baos.toByteArray();
+	}
+
+	/**
+	 * The message comes from a client or backend, so it is parsed with a hardened parser that
+	 * rejects any DOCTYPE (XXE, entity expansion). The factory is left unhardened on purpose: it
+	 * also loads the operator's stylesheet, which may use xsl:include, xsl:import or document().
+	 */
+	private static SAXSource harden(StreamSource xml) {
+		return HardenedSaxParser.newSAXSource(SAXSource.sourceToInputSource(xml));
 	}
 
 }
