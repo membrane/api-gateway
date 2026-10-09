@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 
 import static com.predic8.membrane.core.util.TextUtil.isNullOrEmpty;
+import static javax.xml.XMLConstants.ACCESS_EXTERNAL_DTD;
 
 public class XSLTTransformer {
 	private static final Logger log = LoggerFactory.getLogger(XSLTTransformer.class.getName());
@@ -42,6 +43,9 @@ public class XSLTTransformer {
 
 	public XSLTTransformer(String styleSheet, final Router router, final int concurrency) throws Exception {
 		fac = TransformerFactory.newInstance();
+		// document() parses files with the factory's own parser. A stylesheet may pass a URL from the
+		// message to document(), so that file must not pull in external DTDs or entities.
+		fac.setAttribute(ACCESS_EXTERNAL_DTD, "");
 
 		this.styleSheet = styleSheet;
 		log.debug("using {} parallel transformer instances for {}",concurrency, styleSheet);
@@ -97,8 +101,8 @@ public class XSLTTransformer {
 
 	/**
 	 * The message comes from a client or backend, so it is parsed with a hardened parser that
-	 * rejects any DOCTYPE (XXE, entity expansion). The factory is left unhardened on purpose: it
-	 * also loads the operator's stylesheet, which may use xsl:include, xsl:import or document().
+	 * rejects any DOCTYPE (XXE, entity expansion). The factory only blocks external DTDs and entities,
+	 * not stylesheet loading: it also loads the operator's stylesheet, which may use xsl:include, xsl:import or document().
 	 */
 	private static SAXSource harden(StreamSource xml) {
 		return HardenedSaxParser.newSAXSource(SAXSource.sourceToInputSource(xml));

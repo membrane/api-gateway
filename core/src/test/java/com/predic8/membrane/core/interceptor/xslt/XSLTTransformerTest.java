@@ -73,4 +73,62 @@ class XSLTTransformerTest {
         final var result = new String(transformer.transform(new StreamSource(new StringReader("<a>b</a>"))), UTF_8);
         assertTrue(result.contains("<included>b</included>"), result);
     }
+
+    /**
+     * GHSA-23v5-9h8v-7282: a stylesheet that passes a URL from the message to document() must not
+     * let the loaded file pull in external entities.
+     */
+    @Test
+    void documentFunctionDoesNotResolveExternalEntities(@TempDir Path dir) throws Exception {
+        final var secret = dir.resolve("secret.txt");
+        Files.writeString(secret, "TOP-SECRET-1234");
+        final var external = dir.resolve("external.xml");
+        Files.writeString(external, """
+                <!DOCTYPE r [<!ENTITY xxe SYSTEM "%s">]>
+                <r>&xxe;</r>
+                """.formatted(secret.toUri()));
+
+        final var transformer = new XSLTTransformer(writeDocumentStylesheet(dir).toString(), new HttpRouter(), 1);
+        final var e = assertThrows(TransformerException.class, () -> transformDocumentReference(transformer, external));
+        assertTrue(e.getMessage().contains("accessExternalDTD"), e.getMessage());
+    }
+
+    @Test
+    void documentFunctionStillLoadsPlainDocuments(@TempDir Path dir) throws Exception {
+        final var plain = dir.resolve("plain.xml");
+        Files.writeString(plain, "<r>hello</r>");
+
+        final var transformer = new XSLTTransformer(writeDocumentStylesheet(dir).toString(), new HttpRouter(), 1);
+        assertTrue(transformDocumentReference(transformer, plain).contains("<out>hello</out>"));
+    }
+
+    @Test
+    void stylesheetCanStillDeclareInternalEntities(@TempDir Path dir) throws Exception {
+        final var stylesheet = dir.resolve("entities.xsl");
+        Files.writeString(stylesheet, """
+                <!DOCTYPE xsl:stylesheet [<!ENTITY greeting "hello">]>
+                <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+                    <xsl:template match="/"><out>&greeting;</out></xsl:template>
+                </xsl:stylesheet>
+                """);
+
+        final var transformer = new XSLTTransformer(stylesheet.toString(), new HttpRouter(), 1);
+        final var result = new String(transformer.transform(new StreamSource(new StringReader("<a/>"))), UTF_8);
+        assertTrue(result.contains("<out>hello</out>"), result);
+    }
+
+    private static Path writeDocumentStylesheet(Path dir) throws Exception {
+        final var stylesheet = dir.resolve("document.xsl");
+        Files.writeString(stylesheet, """
+                <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+                    <xsl:template match="/a"><out><xsl:value-of select="document(string(@href))"/></out></xsl:template>
+                </xsl:stylesheet>
+                """);
+        return stylesheet;
+    }
+
+    private static String transformDocumentReference(XSLTTransformer transformer, Path document) throws Exception {
+        final var message = "<a href=\"%s\"/>".formatted(document.toUri());
+        return new String(transformer.transform(new StreamSource(new StringReader(message))), UTF_8);
+    }
 }
