@@ -486,6 +486,39 @@ class RuleMatchingInterceptorTest {
         assertEquals("http://example.com/a/../b", exc.getRequest().getUri());
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "http://my_service/x",
+            "http://example.com/search?q={x}",
+            "http://example.com/a|b",
+            "http://example.com/bad%zz",
+    })
+    @DisplayName("A forward proxy takes an absolute URI that cannot be parsed for routing, since it does not route by path")
+    void proxyRuleAcceptsUnparsableAbsoluteUri(String uri) throws Exception {
+        final var proxyRule = new ProxyRule(new ProxyRuleKey(3013));
+        proxyRule.init(router);
+        router.getRuleManager().addProxy(proxyRule, MANUAL);
+        final var exc = assembleExchange("example.com", "GET", uri, "1.1", 3013, "127.0.0.1");
+
+        assertEquals(CONTINUE, interceptor.handleRequest(exc));
+
+        assertSame(proxyRule, exc.getProxy());
+        assertEquals(uri, exc.getRequest().getUri());
+    }
+
+    @Test
+    @DisplayName("A forward proxy does not take a malformed origin-form target")
+    void proxyRuleRejectsMalformedOriginForm() throws Exception {
+        final var proxyRule = new ProxyRule(new ProxyRuleKey(3013));
+        proxyRule.init(router);
+        router.getRuleManager().addProxy(proxyRule, MANUAL);
+        final var exc = assembleExchange("example.com", "GET", "/bad%zz", "1.1", 3013, "127.0.0.1");
+
+        assertEquals(ABORT, interceptor.handleRequest(exc));
+
+        assertEquals(400, exc.getResponse().getStatusCode());
+    }
+
     @Test
     @DisplayName("A forward proxy accepts a backslash in the path, since it does not route by path")
     void proxyRuleAcceptsBackslashInPath() throws Exception {
