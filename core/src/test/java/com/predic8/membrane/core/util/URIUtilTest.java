@@ -13,19 +13,22 @@
    limitations under the License. */
 package com.predic8.membrane.core.util;
 
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.condition.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledOnOs;
 
-import java.io.*;
-import java.net.*;
+import java.io.File;
 import java.net.URI;
-import java.nio.file.*;
-import java.util.function.*;
+import java.net.URISyntaxException;
+import java.nio.file.Path;
+import java.util.function.Function;
 
 import static com.predic8.membrane.core.util.URIUtil.*;
-import static java.util.Optional.*;
+import static java.util.Optional.empty;
+import static java.util.Optional.of;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.condition.OS.*;
+import static org.junit.jupiter.api.condition.OS.WINDOWS;
 
 /**
  * Unfortunately the file: protocol is
@@ -166,19 +169,131 @@ public class URIUtilTest {
     }
 
     @Test
-    void normalizeSingleDot() {
-        assertEquals("", URIUtil.normalizeSingleDot(""));
-        assertEquals("foo", URIUtil.normalizeSingleDot("foo"));
-        assertEquals("/", URIUtil.normalizeSingleDot("/./"));
-        assertEquals("a/b", URIUtil.normalizeSingleDot("a/./b"));
-        assertEquals("a/b/c/", URIUtil.normalizeSingleDot("a/./b/./c/./"));
-        assertEquals("a/b/c/d", URIUtil.normalizeSingleDot("a/./b/./c/./d"));
+    void decodeUnreservedTest() {
+        assertEquals("/a/../b", decodeUnreserved("/a/%2e%2e/b"));
+        assertEquals("/a/../b", decodeUnreserved("/a/%2E%2e/b"));
+        assertEquals("/a/../b", decodeUnreserved("/a/.%2e/b"));
+        assertEquals("/a/./b", decodeUnreserved("/a/%2e/b"));
+        assertEquals("/a/...", decodeUnreserved("/a/%2e%2e%2e"));
+        assertEquals("/a/file.txt", decodeUnreserved("/a/file%2etxt"));
+        assertEquals("/admin", decodeUnreserved("/%61dmin"));
+        assertEquals("/Admin", decodeUnreserved("/%41dmin"));
+        assertEquals("/~-_09", decodeUnreserved("/%7E%2d%5f%30%39"));
 
-        // ?
-        assertEquals("a?c/./d", URIUtil.normalizeSingleDot("a?c/./d"));
-        assertEquals("a/b?c/./d", URIUtil.normalizeSingleDot("a/./b?c/./d"));
-        assertEquals("a/.b?c/./d", URIUtil.normalizeSingleDot("a/.b?c/./d"));
-        assertEquals("a/x/b?c/./d", URIUtil.normalizeSingleDot("a/x/b?c/./d"));
+        // Reserved and other characters stay encoded as they are
+        assertEquals("/a%2f..%2Fb", decodeUnreserved("/a%2f%2e%2e%2Fb"));
+        assertEquals("/a%3bb%25c%20d%3F", decodeUnreserved("/a%3bb%25c%20d%3F"));
+        assertEquals("/%C3%A4", decodeUnreserved("/%C3%A4"));
+
+        // %25 is not decoded, so a double-encoded character stays double-encoded
+        assertEquals("/%2561", decodeUnreserved("/%2561"));
+
+        assertEquals("/", decodeUnreserved("/"));
+    }
+
+    @Test
+    void decodeUnreservedRejectsMalformedEscapes() {
+        assertThrows(IllegalArgumentException.class, () -> decodeUnreserved("/a%zz"));
+        assertThrows(IllegalArgumentException.class, () -> decodeUnreserved("/a%6"));
+        assertThrows(IllegalArgumentException.class, () -> decodeUnreserved("/a%"));
+        assertThrows(IllegalArgumentException.class, () -> decodeUnreserved("/a%g1"));
+        assertThrows(IllegalArgumentException.class, () -> decodeUnreserved("/a%1g"));
+
+        // Decoding the characters behind a malformed escape would create a new escape like %61 or %2E
+        assertThrows(IllegalArgumentException.class, () -> decodeUnreserved("/%6%31dmin"));
+        assertThrows(IllegalArgumentException.class, () -> decodeUnreserved("/%%361dmin"));
+        assertThrows(IllegalArgumentException.class, () -> decodeUnreserved("/x/%2%45%2%45/admin"));
+
+        // Only ASCII hex digits are accepted, Character.digit() would also accept e.g. fullwidth digits
+        assertThrows(IllegalArgumentException.class, () -> decodeUnreserved("/%６１dmin"));
+    }
+
+    @Test
+    void containsAmbiguousPathParametersTest() {
+        // Dot-segments with parameters
+        assertTrue(containsAmbiguousPathParameters("/x/..;/admin"));
+        assertTrue(containsAmbiguousPathParameters("/x/..;a=b;c=d/admin"));
+        assertTrue(containsAmbiguousPathParameters("/x/.;/admin"));
+        assertTrue(containsAmbiguousPathParameters("/x/..;"));
+        assertTrue(containsAmbiguousPathParameters("/..;/admin"));
+
+        // Empty segments with parameters before another segment
+        assertTrue(containsAmbiguousPathParameters("/;x/admin"));
+        assertTrue(containsAmbiguousPathParameters("/;/admin"));
+        assertTrue(containsAmbiguousPathParameters("/api/;x/admin"));
+
+        assertFalse(containsAmbiguousPathParameters("/admin"));
+        assertFalse(containsAmbiguousPathParameters("/admin;jsessionid=1"));
+        assertFalse(containsAmbiguousPathParameters("/app/;jsessionid=1"));
+        assertFalse(containsAmbiguousPathParameters("/;jsessionid=1"));
+        assertFalse(containsAmbiguousPathParameters("/x/a;b=c/y"));
+        assertFalse(containsAmbiguousPathParameters("/x/...;/y"));
+        assertFalse(containsAmbiguousPathParameters("/x/..a;/y"));
+        assertFalse(containsAmbiguousPathParameters("/x/..%3b/y")); // An encoded ';' does not start parameters
+        assertFalse(containsAmbiguousPathParameters("/x?p=/..;/admin"));
+        assertFalse(containsAmbiguousPathParameters("http://h/..;/admin"));
+    }
+
+    @Test
+    void removePathParametersTest() {
+        assertEquals("/api/admin", removePathParameters("/api;x/admin"));
+        assertEquals("/api/admin", removePathParameters("/api;a=b;c=d/admin;e"));
+        assertEquals("/app/", removePathParameters("/app/;jsessionid=1"));
+        assertEquals("/api/admin?q=a;b", removePathParameters("/api;x/admin?q=a;b"));
+        assertEquals("/a%3bb", removePathParameters("/a%3bb"));
+        assertEquals("/api/admin", removePathParameters("/api/admin"));
+        assertEquals("*", removePathParameters("*"));
+        assertEquals("http://h/a;b", removePathParameters("http://h/a;b"));
+    }
+
+    @Test
+    void mergeSlashesTest() {
+        assertEquals("/admin", mergeSlashes("//admin"));
+        assertEquals("/api/admin/", mergeSlashes("//api///admin//"));
+        assertEquals("/admin?x=//y", mergeSlashes("//admin?x=//y"));
+        assertEquals("/api/admin", mergeSlashes("/api/admin"));
+        assertEquals("*", mergeSlashes("*"));
+        assertEquals("http://h//a", mergeSlashes("http://h//a"));
+    }
+
+    @Test
+    void toRoutingPathTest() {
+        assertEquals("/api/admin?q=a;b", toRoutingPath("//api;jsessionid=1//admin?q=a;b"));
+        assertEquals("/admin", toRoutingPath("/;x/admin"));
+        assertEquals("/app/", toRoutingPath("/app/;jsessionid=1"));
+        assertEquals("/api/admin", toRoutingPath("/api/admin"));
+    }
+
+    @Test
+    void normalizeRequestTargetTest() {
+        assertEquals("/", normalizeRequestTarget("/"));
+        assertEquals("/", normalizeRequestTarget("/./"));
+        assertEquals("/a/b/c/", normalizeRequestTarget("/a/./b/./c/./"));
+        assertEquals("/b", normalizeRequestTarget("/a/../b"));
+        assertEquals("/b", normalizeRequestTarget("/../../b"));
+        assertEquals("/a/", normalizeRequestTarget("/a/b/.."));
+        assertEquals("/b", normalizeRequestTarget("/a/%2e%2E/b"));
+        assertEquals("/b", normalizeRequestTarget("/a/.%2e/b"));
+        assertEquals("/a/b", normalizeRequestTarget("/a/%2e/b"));
+        assertEquals("/a/.b/..c", normalizeRequestTarget("/a/.b/..c"));
+        assertEquals("/a/file.txt", normalizeRequestTarget("/a/file%2etxt"));
+        assertEquals("/admin", normalizeRequestTarget("/%61dmin"));
+        assertEquals("/admin", normalizeRequestTarget("/x/%2e%2e/%61dmin"));
+        assertEquals("/a%2f..%2fb", normalizeRequestTarget("/a%2f..%2fb"));
+
+        // query is left alone
+        assertEquals("/b?c/./d/../e", normalizeRequestTarget("/a/../b?c/./d/../e"));
+        assertEquals("/a?c/../d", normalizeRequestTarget("/a?c/../d"));
+
+        // a malformed escape in the path is rejected, the query is not decoded and so not checked
+        assertThrows(IllegalArgumentException.class, () -> normalizeRequestTarget("/%6%31dmin?q=1"));
+        assertEquals("/admin?q=%6", normalizeRequestTarget("/%61dmin?q=%6"));
+
+        // not origin-form
+        assertEquals("*", normalizeRequestTarget("*"));
+        assertEquals("example.com:443", normalizeRequestTarget("example.com:443"));
+        assertEquals("internal://a/../b", normalizeRequestTarget("internal://a/../b"));
+        assertEquals("http://h/../b", normalizeRequestTarget("http://h/../b")); // .. must not remove the host
     }
 
     @Test

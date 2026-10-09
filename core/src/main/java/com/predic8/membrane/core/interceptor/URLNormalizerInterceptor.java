@@ -13,11 +13,11 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
 
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.util.URIUtil.*;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.util.URIUtil.normalizeRequestTarget;
 
 /**
  * @description <p>
@@ -56,7 +56,7 @@ public class URLNormalizerInterceptor extends AbstractInterceptor {
 
 	@Override
 	public Outcome handleRequest(Exchange exc) {
-        exc.getRequest().setUri(normalizeSingleDot(exc.getRequestURI()));
+        exc.getRequest().setUri(normalizeRequestTarget(exc.getRequestURI()));
 		return CONTINUE;
 	}
 }

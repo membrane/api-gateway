@@ -14,23 +14,28 @@
 
 package com.predic8.membrane.core;
 
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.exchangestore.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.model.*;
-import com.predic8.membrane.core.proxies.Proxy;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchangestore.ExchangeStore;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.model.IExchangesStoreListener;
+import com.predic8.membrane.core.model.IRuleChangeListener;
 import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.transport.http.*;
-import com.predic8.membrane.core.transport.ssl.*;
-import com.predic8.membrane.core.util.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.transport.http.AbstractHttpHandler;
+import com.predic8.membrane.core.transport.http.IpPort;
+import com.predic8.membrane.core.transport.ssl.SSLContext;
+import com.predic8.membrane.core.transport.ssl.SSLContextCollection;
+import com.predic8.membrane.core.transport.ssl.SSLProvider;
+import com.predic8.membrane.core.util.URLUtil;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.net.*;
+import java.io.IOException;
+import java.io.Serial;
+import java.net.UnknownHostException;
 import java.util.*;
 
-import static com.predic8.membrane.core.util.URIUtil.*;
+import static com.predic8.membrane.core.util.URIUtil.toRoutingPath;
 
 public class RuleManager {
 
@@ -167,7 +172,8 @@ public class RuleManager {
 
         String hostHeader = request.getHeader().getHost();
         String method = request.getMethod();
-        String uri = normalizeSingleDot(request.getUri()); // Removes /./ in path for rule matching
+        String uri = request.getUri(); // Already normalized (absolute-form, percent-encoding, dot-segments) by the RuleMatchingInterceptor
+        String path = toRoutingPath(uri);
         String version = request.getVersion();
 
         AbstractHttpHandler handler = exc.getHandler();
@@ -200,7 +206,10 @@ public class RuleManager {
                 continue;
             if (!key.getMethod().equals(method) && !key.isMethodWildcard())
                 continue;
-            if (key.isUsePathPattern() && !key.matchesPath(uri))
+            // Match without path parameters (";...") and with merged slashes, since servlet containers and many web
+            // servers map a request that way: "/api;x/admin" or "/api//admin" must not dodge an API for "/api/admin".
+            // The URI stays unchanged for the backend.
+            if (key.isUsePathPattern() && !key.matchesPath(path))
                 continue;
             if (!key.complexMatch(exc))
                 continue;

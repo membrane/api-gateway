@@ -14,20 +14,30 @@
 
 package com.predic8.membrane.core.http;
 
-import com.google.common.collect.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.transport.http.*;
-import com.predic8.membrane.core.util.*;
+import com.google.common.collect.Sets;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.transport.http.AbstractHttpHandler;
+import com.predic8.membrane.core.transport.http.EOFWhileReadingFirstLineException;
+import com.predic8.membrane.core.transport.http.EOFWhileReadingLineException;
+import com.predic8.membrane.core.transport.http.NoMoreRequestsException;
+import com.predic8.membrane.core.util.HttpUtil;
+import com.predic8.membrane.core.util.URIFactory;
+import com.predic8.membrane.core.util.URLUtil;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
-import java.util.regex.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URISyntaxException;
+import java.util.HashSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.Constants.CRLF;
 import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.http.MimeType.*;
-import static java.nio.charset.StandardCharsets.*;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_XML;
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 public class Request extends Message {
 
 	private static final Pattern pattern = Pattern.compile("(.+?) (.+?) HTTP/(.+?)$");
@@ -80,14 +90,30 @@ public class Request extends Message {
 		this.method = method;
 	}
 
-	/**
-	 * @return the "Request-URI" as sent by the client in the first line of the HTTP request (quoting from <a
-	 *         href="https://tools.ietf.org/html/rfc2616#page-36">RFC 2616</a>: Request-URI = "*" | absoluteURI |
-	 *         abs_path | authority )
-	 */
-	public String getUri() {
-		return uri;
-	}
+    /**
+     * Returns the request-target of the request line (RFC 9112 3.2): origin-form, absolute-form, authority-form or "*".
+     * <p>
+     * Once the RuleMatchingInterceptor has run, this is no longer what the client sent. An absolute-form target is
+     * reduced to origin-form (except for a forward proxy), percent-encoded unreserved characters are decoded and
+     * dot-segments are resolved. Path parameters (";...") and the query are kept:
+     * <pre>
+     * sent by the client               getUri()
+     * /a/../admin                      /admin
+     * /%61dmin                         /admin
+     * http://example.com/admin?x=1     /admin?x=1
+     * /api;jsessionid=1/admin?x=1      /api;jsessionid=1/admin?x=1
+     * /api//admin                      /api//admin
+     * </pre>
+     * Be careful when comparing this value with a path, e.g. for routing or access decisions: servlet containers
+     * ignore path parameters and many servers merge duplicate slashes, so "/api;x/admin" and "/api//admin" reach
+     * "/api/admin" there although they do not start with it.
+     * Use {@link com.predic8.membrane.core.util.URIUtil#toRoutingPath(String)} for such comparisons.
+     * Before the RuleMatchingInterceptor has run, this is still the target the client sent. Its path and query stay
+     * available afterwards from {@link com.predic8.membrane.core.exchange.Exchange#getOriginalRelativeURI()}.
+     */
+    public String getUri() {
+        return uri;
+    }
 
 	public void setUri(String uri) {
 		this.uri = uri;
@@ -238,6 +264,14 @@ public class Request extends Message {
 
 		public Builder method(String method) {
 			req.setMethod(method);
+			return this;
+		}
+
+		/**
+		 * Sets the request target as it is, without parsing it as a URL.
+		 */
+		public Builder uri(String uri) {
+			req.setUri(uri);
 			return this;
 		}
 

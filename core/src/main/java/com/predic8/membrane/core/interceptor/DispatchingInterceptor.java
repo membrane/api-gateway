@@ -13,23 +13,28 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exceptions.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.openapi.util.*;
-import com.predic8.membrane.core.proxies.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exceptions.ProblemDetails;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.openapi.util.UriUtil;
+import com.predic8.membrane.core.proxies.AbstractServiceProxy;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.net.*;
-import java.util.*;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.EnumSet;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.exchange.Exchange.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
+import static com.predic8.membrane.core.exchange.Exchange.SNI_SERVER_NAME;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_FLOW;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
 /**
  * @description This interceptor adds the destination specified in the target
@@ -112,9 +117,13 @@ public class DispatchingInterceptor extends AbstractInterceptor {
             if (targetURL.startsWith("http") || targetURL.startsWith("internal")) {
                 String basePath = UriUtil.getPathFromURL(router.getUriFactory(), targetURL);
                 if (basePath == null || basePath.isEmpty() || "/".equals(basePath)) {
-                    URI base = new URI(targetURL);
-                    // Resolve and normalize slashes consistently with the branch below.
-                    return base.resolve(getUri(exc)).toString();
+                    final var base = new URI(targetURL);
+                    final var path = getUri(exc);
+                    // Resolved against the target URL, a path starting with "//" would be a network-path reference
+                    // (RFC 3986 4.2) and replace the host of the target: "//x/admin" would lead to http://x/admin.
+                    if (path.startsWith("//"))
+                        return base.getScheme() + "://" + base.getRawAuthority() + path;
+                    return base.resolve(path).toString();
                 }
             }
             return targetURL;
@@ -131,7 +140,12 @@ public class DispatchingInterceptor extends AbstractInterceptor {
         if (exc.getRequest().isCONNECTRequest()) {
             return exc.getRequest().getUri();
         }
-        return router.getUriFactory().create(exc.getRequest().getUri()).getPathWithQuery();
+        final var uri = exc.getRequest().getUri();
+        // A URI parser takes a leading "//" as the start of an authority, so "//x/admin" would lose "x".
+        // The request target is a path, so it is parsed behind a dummy authority.
+        if (uri.startsWith("//"))
+            return router.getUriFactory().create("http://localhost" + uri).getPathWithQuery();
+        return router.getUriFactory().create(uri).getPathWithQuery();
     }
 
     @Override

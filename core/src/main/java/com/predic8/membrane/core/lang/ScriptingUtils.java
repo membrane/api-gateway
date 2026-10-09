@@ -16,24 +16,30 @@
 
 package com.predic8.membrane.core.lang;
 
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.Interceptor.*;
-import com.predic8.membrane.core.lang.groovy.*;
-import com.predic8.membrane.core.openapi.serviceproxy.*;
-import com.predic8.membrane.core.openapi.util.*;
-import org.slf4j.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.Interceptor.Flow;
+import com.predic8.membrane.core.lang.groovy.GroovyBuiltInFunctions;
+import com.predic8.membrane.core.lang.groovy.PathParametersMap;
+import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
+import com.predic8.membrane.core.openapi.util.PathDoesNotMatchException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
-import static com.predic8.membrane.core.openapi.util.UriTemplateMatcher.*;
-import static com.predic8.membrane.core.util.FileUtil.*;
-import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
-import static com.predic8.membrane.core.util.URLParamUtil.*;
-import static java.util.Collections.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
+import static com.predic8.membrane.core.openapi.util.UriTemplateMatcher.matchTemplate;
+import static com.predic8.membrane.core.util.FileUtil.readInputStream;
+import static com.predic8.membrane.core.util.URIUtil.toRoutingPath;
+import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.MERGE_USING_COMMA;
+import static com.predic8.membrane.core.util.URLParamUtil.getParams;
+import static java.util.Collections.emptyMap;
 
 public class ScriptingUtils {
 
@@ -114,11 +120,14 @@ public class ScriptingUtils {
         if (!(exchange.getProxy() instanceof APIProxy ap))
             return emptyMap();
 
+        // Match the same path as routing does, see RuleManager.getMatchingRule(), otherwise a path like "/products//42"
+        // selects the API for "/products/{id}" but yields no "id"
+        final var path = toRoutingPath(exchange.getRequest().getUri());
         try {
-            return new HashMap<>(matchTemplate(ap.getPath().getUri(), exchange.getRequestURI())); // Make lazy!
+            return new HashMap<>(matchTemplate(ap.getPath().getUri(), path)); // Make lazy!
         } catch (PathDoesNotMatchException ignore) {
             // Log does only show up if path parameters are used in an expression
-            log.info("No path parameters extracted: uriTemplate {}, path {}", ap.getPath().getUri(), exchange.getRequestURI());
+            log.info("No path parameters extracted: uriTemplate {}, path {}", ap.getPath().getUri(), path);
         }
         // Add map to avoid a second parsing
         return emptyMap();
