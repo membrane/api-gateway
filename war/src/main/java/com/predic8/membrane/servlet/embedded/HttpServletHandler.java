@@ -154,6 +154,8 @@ class HttpServletHandler extends AbstractHttpHandler {
 			String contextPath = request.getContextPath();
 			if (!contextPath.isEmpty() && pathQuery.startsWith(contextPath))
 				pathQuery = pathQuery.substring(contextPath.length());
+			if (!pathQuery.startsWith("/")) // The bare context root "/ctx" or "/ctx?q" leaves no path
+				pathQuery = "/" + pathQuery;
 		}
 
 		srcReq.create(
