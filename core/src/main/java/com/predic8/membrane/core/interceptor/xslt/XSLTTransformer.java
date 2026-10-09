@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 
 import static com.predic8.membrane.core.util.text.TextUtil.isNullOrEmpty;
+import static javax.xml.XMLConstants.ACCESS_EXTERNAL_DTD;
 
 public class XSLTTransformer {
 	private static final Logger log = LoggerFactory.getLogger(XSLTTransformer.class.getName());
@@ -42,6 +43,9 @@ public class XSLTTransformer {
 
 	public XSLTTransformer(String styleSheet, final Router router, final String baseLocation, final int concurrency) throws Exception {
 		fac = TransformerFactory.newInstance();
+		// document() parses files with the factory's own parser. A stylesheet may pass a URL from the
+		// message to document(), so that file must not pull in external DTDs or entities.
+		fac.setAttribute(ACCESS_EXTERNAL_DTD, "");
 
 		this.styleSheet = styleSheet;
 		log.debug("using {} parallel transformer instances for {}",concurrency, styleSheet);
