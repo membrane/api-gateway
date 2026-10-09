@@ -131,7 +131,9 @@ public class Exchange extends AbstractExchange {
     }
 
     public void collectStatistics() {
-        proxy.getStatisticCollector().collect(this);
+        // proxy is null when a request is rejected before routing (e.g. invalid request target).
+        if (proxy != null)
+            proxy.getStatisticCollector().collect(this);
     }
 
     /**

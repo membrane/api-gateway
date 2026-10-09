@@ -62,6 +62,11 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 		try {
 			request.setUri(normalizeRequestTarget(toOriginForm(received)));
 		} catch (URISyntaxException | IllegalArgumentException e) {
+			// A forward proxy passes the absolute URI on unchanged and does not route by its path, so it need not parse
+			if (isAbsoluteURI(received) && getRule(exc) instanceof ProxyRule forwardProxy) {
+				assignRule(exc, forwardProxy);
+				return CONTINUE;
+			}
 			log.info("Rejected request with malformed request target: {} ({})", received, e.getMessage());
 			user(router.isProduction(), "invalid-path")
 					.status(400)
