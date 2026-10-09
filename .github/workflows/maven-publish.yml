@@ -44,6 +44,12 @@ jobs:
           server-id: central
           server-username: MAVEN_USERNAME
           server-password: MAVEN_PASSWORD
+      # Maven 3.10 leaves maven-metadata-local.xml in the central-publishing
+      # bundle, which Central rejects ("content that does NOT have a .pom file").
+      - name: Set up Maven 3.9
+        uses: stCarolas/setup-maven@v5.1
+        with:
+          maven-version: 3.9.16
       - id: install-secret-key
         name: Install gpg secret key
         run: |
