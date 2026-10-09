@@ -16,19 +16,23 @@
 
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.lang.*;
-import com.predic8.membrane.core.openapi.util.*;
-import com.predic8.membrane.core.proxies.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.lang.ExchangeExpression;
+import com.predic8.membrane.core.openapi.util.PathDoesNotMatchException;
+import com.predic8.membrane.core.proxies.RuleKey;
+import com.predic8.membrane.core.proxies.ServiceProxyKey;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Objects;
 
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisherInterceptor.PATH;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisherInterceptor.PATH_UI;
 import static com.predic8.membrane.core.openapi.util.UriTemplateMatcher.matchTemplate;
-import static java.util.Optional.*;
+import static com.predic8.membrane.core.util.URIUtil.toRoutingPath;
+import static java.util.Optional.ofNullable;
 
 public class APIProxyKey extends ServiceProxyKey {
 
@@ -90,7 +94,7 @@ public class APIProxyKey extends ServiceProxyKey {
         if (basePaths.isEmpty() && apiDocsPaths.isEmpty())
             return true;
 
-        var uri = exc.getRequest().getUri();
+        var uri = toRoutingPath(exc.getRequest().getUri()); // Path parameters and duplicate slashes must not dodge a base path
         if (matchesApiDocsPath(uri))
             return true;
 
