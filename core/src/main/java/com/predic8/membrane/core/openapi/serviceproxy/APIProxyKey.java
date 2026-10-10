@@ -18,6 +18,7 @@ package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.lang.ExchangeExpression;
+import com.predic8.membrane.core.lang.ExchangeExpressionException;
 import com.predic8.membrane.core.openapi.util.PathDoesNotMatchException;
 import com.predic8.membrane.core.proxies.RuleKey;
 import com.predic8.membrane.core.proxies.ServiceProxyKey;
@@ -87,6 +88,11 @@ public class APIProxyKey extends ServiceProxyKey {
             if (!testCondition(exc))
                 return false;
         } catch (Exception e) {
+            if (e instanceof ExchangeExpressionException eee && eee.isBodyError()) {
+                // A broken body is the client's mistake, not the configuration's, so it must not flood the log
+                log.debug("Body of the request does not parse for test expression '{}' of API '{}'. Not matching. Error was: {}", exchangeExpression.getExpression(), this, e.getMessage());
+                return false;
+            }
             log.warn("Error evaluating test expression '{}' of API '{}'. Ignoring test. Please check configuration. Error was: {}", exchangeExpression.getExpression(), this, e.getMessage());
             return false;
         }

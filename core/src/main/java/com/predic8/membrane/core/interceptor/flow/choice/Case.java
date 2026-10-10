@@ -70,6 +70,11 @@ public class Case extends AbstractCaseOtherwise implements XMLSupport {
 
     /**
      * @description the condition to be tested
+     * <p>XPath and JSONPath query the body. An empty body, or one of another media type, is evaluated as an
+     * empty document: <code>/a</code> is false and <code>not(/a)</code> is true. A body that should be XML or JSON
+     * but does not parse is rejected with 400 (request) or 502 (response).</p>
+     * <p>In XPath, a comparison with a missing element is false for both <code>=</code> and <code>!=</code>. To
+     * reject anything but a given value, write <code>not(/a = 'admin')</code> rather than <code>/a != 'admin'</code>.</p>
      * @example exc.request.header.userAgentSupportsSNI
      */
     @Required

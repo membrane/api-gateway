@@ -27,8 +27,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_XML;
 import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
+import static com.predic8.membrane.core.lang.ExchangeExpression.Language.XPATH;
 import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
 import static com.predic8.membrane.test.TestUtil.assembleExchange;
 import static org.junit.jupiter.api.Assertions.*;
@@ -57,6 +59,18 @@ class APIProxyKeyComplexMatchTest {
         var key = new APIProxyKey("", "", 80, null,"*",
                 expression(null, SPEL,"1 == 2"), false);
         assertFalse(key.complexMatch(new Builder().get("").buildExchange()));
+    }
+
+    @Test
+    void complexMatchXPathOnMalformedBodyDoesNotMatch() throws URISyntaxException {
+        var key = new APIProxyKey("", "", 80, null, "*", expression(null, XPATH, "not(/a)"), false);
+        assertFalse(key.complexMatch(new Builder().post("/").contentType(APPLICATION_XML).body("<a><b></a>").buildExchange()));
+    }
+
+    @Test
+    void complexMatchXPathOnEmptyBodyUsesEmptyDocument() throws URISyntaxException {
+        var key = new APIProxyKey("", "", 80, null, "*", expression(null, XPATH, "not(/a)"), false);
+        assertTrue(key.complexMatch(new Builder().get("/").buildExchange()));
     }
 
     @Test

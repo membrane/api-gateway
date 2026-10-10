@@ -22,7 +22,7 @@ To run the example execute the following steps:
 3. Send an order XML document to the API:
 
 ```sh
-curl -d @order.xml localhost:2000
+curl -d @order.xml -H "Content-Type: application/xml" localhost:2000
 ```
 
 4. Take a look at the output of the console. You should see the line:
@@ -32,13 +32,13 @@ curl -d @order.xml localhost:2000
 5. Send an express order to the API:
 
 ```sh
-curl -d @express.xml localhost:2000
+curl -d @express.xml -H "Content-Type: application/xml" localhost:2000
 Express order received.
 ```
 
 6. Send an import document:
 
 ```sh
-curl -d @import.xml localhost:2000
+curl -d @import.xml -H "Content-Type: application/xml" localhost:2000
 Order contains import items.
 ```

@@ -21,6 +21,7 @@ import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.router.DummyTestRouter;
 import com.predic8.membrane.core.util.URIFactory;
 import org.jetbrains.annotations.NotNull;
 import org.jose4j.jwt.JwtClaims;
@@ -144,6 +145,19 @@ public class RateLimitInterceptorTest {
 		assertEquals(CONTINUE, interceptor.handleRequest(exc));
 		assertEquals(RETURN, interceptor.handleRequest(exc));
 		assertEquals(429, exc.getResponse().getStatusCode());
+	}
+
+	@Test
+	void keyExpressionOnMalformedBodyIs400() throws Exception {
+		var interceptor = new RateLimitInterceptor(ofMinutes(1), 1);
+		interceptor.setLanguage(JSONPATH);
+		interceptor.setKeyExpression("$.application");
+		interceptor.init(new DummyTestRouter());
+
+		var exc = post("/foo").contentType(APPLICATION_JSON).body("{\"application\":").buildExchange();
+
+		assertEquals(RETURN, interceptor.handleRequest(exc));
+		assertEquals(400, exc.getResponse().getStatusCode());
 	}
 
 	@Test

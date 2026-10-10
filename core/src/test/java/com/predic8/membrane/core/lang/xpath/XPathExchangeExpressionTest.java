@@ -41,6 +41,11 @@ class XPathExchangeExpressionTest extends AbstractExchangeExpressionTest {
     }
 
     @Override
+    protected String getContentType() {
+        return APPLICATION_XML;
+    }
+
+    @Override
     protected Builder getRequestBuilder() throws URISyntaxException {
         return post("/foo")
                 .contentType(APPLICATION_XML)
@@ -121,7 +126,86 @@ class XPathExchangeExpressionTest extends AbstractExchangeExpressionTest {
     @Test
     void wrongContentType() {
         exchange.getRequest().getHeader().setContentType(APPLICATION_JSON);
-        assertEquals("John Doe", evalString("/persons/name[1]"));
+        assertEquals("", evalString("/persons/name[1]"));
+    }
+
+    @Nested
+    class Body {
+
+        @Test
+        void emptyBodyIsAnEmptyDocument() throws URISyntaxException {
+            var exc = post("/foo").contentType(APPLICATION_XML).buildExchange();
+            assertFalse(eval("/a", exc, Boolean.class));
+            assertTrue(eval("not(/a)", exc, Boolean.class));
+            assertFalse(eval("/a != 'admin'", exc, Boolean.class));
+            assertTrue(eval("string(/a) != 'admin'", exc, Boolean.class));
+            assertEquals("0", eval("count(//a)", exc, String.class));
+            assertEquals("", eval("/a", exc, String.class));
+        }
+
+        @Test
+        void foreignContentTypeIsAnEmptyDocument() throws URISyntaxException {
+            var exc = post("/foo").contentType(APPLICATION_JSON).body("{\"a\":1}").buildExchange();
+            assertFalse(eval("/a", exc, Boolean.class));
+            assertTrue(eval("not(/a)", exc, Boolean.class));
+        }
+
+        @Test
+        void textPlainIsParsed() throws URISyntaxException {
+            assertTrue(eval("/a", post("/foo").contentType(TEXT_PLAIN).body("<a/>").buildExchange(), Boolean.class));
+        }
+
+        @Test
+        void missingContentTypeIsParsed() throws URISyntaxException {
+            assertTrue(eval("/a", post("/foo").body("<a/>").buildExchange(), Boolean.class));
+        }
+
+        @Test
+        void formDataWithXmlIsParsed() throws URISyntaxException {
+            assertTrue(eval("/a", post("/foo").contentType(APPLICATION_X_WWW_FORM_URLENCODED).body("<a/>").buildExchange(), Boolean.class));
+        }
+
+        @Test
+        void formDataThatIsNotXmlIsAnEmptyDocument() throws URISyntaxException {
+            var exc = post("/foo").contentType(APPLICATION_X_WWW_FORM_URLENCODED).body("a=1&b=2").buildExchange();
+            assertFalse(eval("/a", exc, Boolean.class));
+            assertTrue(eval("not(/a)", exc, Boolean.class));
+        }
+
+        @Test
+        void malformedXmlIsABodyError() throws URISyntaxException {
+            var e = assertThrows(ExchangeExpressionException.class,
+                    () -> eval("/a", post("/foo").contentType(APPLICATION_XML).body("<a><b></a>").buildExchange(), Boolean.class));
+            assertTrue(e.isBodyError());
+            assertTrue(e.getMessage().contains("must be terminated"), e.getMessage());
+        }
+
+        @Test
+        void textPlainThatIsNotXmlIsABodyError() throws URISyntaxException {
+            var e = assertThrows(ExchangeExpressionException.class,
+                    () -> eval("/a", post("/foo").contentType(TEXT_PLAIN).body("hello").buildExchange(), Boolean.class));
+            assertTrue(e.isBodyError());
+        }
+
+        @Test
+        void bodyErrorIs400InRequestAnd502InResponse() throws URISyntaxException {
+            var e = assertThrows(ExchangeExpressionException.class,
+                    () -> eval("/a", post("/foo").contentType(APPLICATION_XML).body("<a><b></a>").buildExchange(), Boolean.class));
+            assertEquals(400, e.problemDetails(false, "test", REQUEST).getStatus());
+            assertEquals(502, e.problemDetails(false, "test", RESPONSE).getStatus());
+        }
+
+        @Test
+        void expressionErrorIsNoBodyError() throws URISyntaxException {
+            var e = assertThrows(ExchangeExpressionException.class,
+                    () -> eval("foobar][", post("/foo").contentType(APPLICATION_XML).body("<a/>").buildExchange(), Boolean.class));
+            assertFalse(e.isBodyError());
+            assertEquals(500, e.problemDetails(false, "test", REQUEST).getStatus());
+        }
+
+        private <T> T eval(String xpath, Exchange exc, Class<T> type) {
+            return expression(new InterceptorAdapter(router), XPATH, xpath).evaluate(exc, REQUEST, type);
+        }
     }
 
     @Nested

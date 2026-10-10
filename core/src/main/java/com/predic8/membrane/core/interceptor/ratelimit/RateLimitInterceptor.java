@@ -21,6 +21,7 @@ import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.lang.AbstractExchangeExpressionInterceptor;
 import com.predic8.membrane.core.lang.ExchangeExpression;
+import com.predic8.membrane.core.lang.ExchangeExpressionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.expression.spel.SpelEvaluationException;
@@ -118,6 +119,13 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
         try {
             if (!strategy.isRequestLimitReached(getKey(exc)))
                 return CONTINUE;
+        } catch (ExchangeExpressionException e) {
+            // Only body errors get here, getKey() falls back to "unknown" for any other error
+            e.problemDetails(router.getConfiguration().isProduction(), getDisplayName(), REQUEST)
+                    .addSubType("rate-limit")
+                    .title("Cannot evaluate keyExpression.")
+                    .buildAndSetResponse(exc);
+            return RETURN;
         } catch (SpelEvaluationException e) {
             log.info("Cannot evaluate keyExpression {} cause is {}", expression, e.getCause());
             internal(router.getConfiguration().isProduction(),getDisplayName())
@@ -150,6 +158,9 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
         try {
             value = exchangeExpression.evaluate(exc, REQUEST, String.class);
         } catch (Exception e) {
+            // A broken body is the client's error. Counting it under "unknown" would let it share one quota with others
+            if (e instanceof ExchangeExpressionException eee && eee.isBodyError())
+                throw eee;
             log.info("Error evaluating expression {} for rate limit. Fallback to 'unknown'",expression); // Can be pretty common
             return "unknown";
         }
@@ -273,6 +284,7 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
     /**
      * @description The expression the ratelimiter should use to group the requests before counting. The Spring Expression Language (SpEL)
      * is used as language. In the expression the build-in variables request, header, properties can be used.
+     * <p>With XPath or JSONPath, a body that should be XML or JSON but does not parse is rejected with 400.</p>
      * @default ip-address
      */
     @MCAttribute

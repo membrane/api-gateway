@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.interceptor.lang;
 
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.lang.ExchangeExpression.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
@@ -21,6 +22,8 @@ import org.junit.jupiter.params.provider.*;
 
 import java.util.stream.*;
 
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -117,6 +120,33 @@ class SetHeaderInterceptorJsonpathTest extends AbstractSetHeaderInterceptorTest 
         assertEquals(3, tags.split(",").length);
         assertTrue(tags.contains("PRIVATE"));
         assertTrue(tags.contains("BUSINESS"));
+    }
+
+    @Test
+    void malformedRequestBodyIs400() throws Exception {
+        exchange.setRequest(new Request.Builder().post("/boo").contentType(APPLICATION_JSON).body("{\"name\":").build());
+        interceptor.setValue("${$.name}");
+        interceptor.init(router);
+        assertEquals(ABORT, interceptor.handleRequest(exchange));
+        assertEquals(400, exchange.getResponse().getStatusCode());
+    }
+
+    @Test
+    void malformedResponseBodyIs502() {
+        exchange.setResponse(Response.ok().contentType(APPLICATION_JSON).body("{\"name\":").build());
+        interceptor.setValue("${$.name}");
+        interceptor.init(router);
+        assertEquals(ABORT, interceptor.handleResponse(exchange));
+        assertEquals(502, exchange.getResponse().getStatusCode());
+    }
+
+    @Test
+    void malformedBodyIgnoredWithoutFailOnError() throws Exception {
+        exchange.setRequest(new Request.Builder().post("/boo").contentType(APPLICATION_JSON).body("{\"name\":").build());
+        interceptor.setValue("${$.name}");
+        interceptor.setFailOnError(false);
+        interceptor.init(router);
+        assertEquals(CONTINUE, interceptor.handleRequest(exchange));
     }
 
     @Test

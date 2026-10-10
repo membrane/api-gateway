@@ -21,7 +21,7 @@ The example shows how to declare and use them with XPath expressions.
 3. **Run**:
     - Send:
       ```bash
-      curl -d @person.xml localhost:2000
+      curl -d @person.xml -H "Content-Type: application/xml" localhost:2000
       ```
 4. **Understand**:
     Take a look at the `proxies.xml` file.

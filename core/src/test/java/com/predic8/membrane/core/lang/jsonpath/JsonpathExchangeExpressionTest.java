@@ -13,20 +13,27 @@
    limitations under the License. */
 package com.predic8.membrane.core.lang.jsonpath;
 
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.lang.AbstractExchangeExpressionTest;
 import com.predic8.membrane.core.lang.ExchangeExpression.InterceptorAdapter;
+import com.predic8.membrane.core.lang.ExchangeExpressionException;
 import com.predic8.membrane.core.lang.ExchangeExpression.Language;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
 
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_X_WWW_FORM_URLENCODED;
+import static com.predic8.membrane.core.http.MimeType.TEXT_PLAIN;
 import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
 import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.http.Request.post;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.JSONPATH;
 import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
 import static java.lang.Boolean.FALSE;
@@ -153,27 +160,82 @@ class JsonpathExchangeExpressionTest extends AbstractExchangeExpressionTest {
 
     @Test
     void emptyBodyForObject() throws URISyntaxException {
-        assertInstanceOf(Object.class, evaluateWithEmptyBodyFor(Object.class));
+        // Same as a JSON body without the field
+        assertEquals(expression(new InterceptorAdapter(router), JSONPATH, "$.a").evaluate(post("/foo").json("{}").buildExchange(), REQUEST, Object.class),
+                evaluateWithEmptyBodyFor(Object.class));
     }
 
     @Test
     void emptyBodyForString() throws URISyntaxException {
-        var v = evaluateWithEmptyBodyFor(String.class);
-        assertInstanceOf(Object.class, v);
-        assertEquals("", v);
+        assertNull(evaluateWithEmptyBodyFor(String.class));
     }
 
     @Test
     void emptyBodyForBoolean() throws URISyntaxException {
-        var v = evaluateWithEmptyBodyFor(Boolean.class);
-        assertInstanceOf(Object.class, v);
-        assertEquals(FALSE, v);
+        assertEquals(FALSE, evaluateWithEmptyBodyFor(Boolean.class));
     }
 
     @Test
     void wrongContentType() throws URISyntaxException {
-        assertEquals("", expression(new InterceptorAdapter(router), JSONPATH, "$")
-                .evaluate(Request.post("/foo").contentType(TEXT_XML).buildExchange(), REQUEST, String.class));
+        assertNull(expression(new InterceptorAdapter(router), JSONPATH, "$.a")
+                .evaluate(post("/foo").contentType(TEXT_XML).body("<a/>").buildExchange(), REQUEST, String.class));
+    }
+
+    @Nested
+    class Body {
+
+        @Test
+        void textPlainIsParsed() throws URISyntaxException {
+            assertTrue(eval("$.a", post("/foo").contentType(TEXT_PLAIN).body("{\"a\":1}").buildExchange()));
+        }
+
+        @Test
+        void missingContentTypeIsParsed() throws URISyntaxException {
+            assertTrue(eval("$.a", post("/foo").body("{\"a\":1}").buildExchange()));
+        }
+
+        @Test
+        void formDataWithJsonIsParsed() throws URISyntaxException {
+            assertTrue(eval("$.a", post("/foo").contentType(APPLICATION_X_WWW_FORM_URLENCODED).body("{\"a\":1}").buildExchange()));
+        }
+
+        @Test
+        void formDataThatIsNotJsonIsAnEmptyDocument() throws URISyntaxException {
+            assertFalse(eval("$.a", post("/foo").contentType(APPLICATION_X_WWW_FORM_URLENCODED).body("a=1&b=2").buildExchange()));
+        }
+
+        @Test
+        void malformedJsonIsABodyError() throws URISyntaxException {
+            var e = assertThrows(ExchangeExpressionException.class,
+                    () -> eval("$.a", post("/foo").contentType(APPLICATION_JSON).body("{\"a\":").buildExchange()));
+            assertTrue(e.isBodyError());
+            assertEquals(400, e.problemDetails(false, "test", REQUEST).getStatus());
+            assertEquals(502, e.problemDetails(false, "test", RESPONSE).getStatus());
+        }
+
+        @Test
+        void textPlainThatIsNotJsonIsABodyError() throws URISyntaxException {
+            var e = assertThrows(ExchangeExpressionException.class,
+                    () -> eval("$.a", post("/foo").contentType(TEXT_PLAIN).body("hello").buildExchange()));
+            assertTrue(e.isBodyError());
+        }
+
+        /**
+         * Unlike an XPath comparison, a JSONPath filter with != matches an object that lacks the field.
+         */
+        @Test
+        void notEqualsFilterOnEmptyBodyMatches() throws URISyntaxException {
+            assertTrue(eval("$[?(@.a != 'admin')]", get("/foo").buildExchange()));
+        }
+
+        @Test
+        void rootOfEmptyBodyExists() throws URISyntaxException {
+            assertTrue(eval("$", get("/foo").buildExchange()));
+        }
+
+        private boolean eval(String jsonpath, Exchange exc) {
+            return expression(new InterceptorAdapter(router), JSONPATH, jsonpath).evaluate(exc, REQUEST, Boolean.class);
+        }
     }
 
     @Test
@@ -193,6 +255,6 @@ class JsonpathExchangeExpressionTest extends AbstractExchangeExpressionTest {
     }
 
     private <T> T evaluateWithEmptyBodyFor(Class<T> type) throws URISyntaxException {
-        return expression(new InterceptorAdapter(router), JSONPATH, "$").evaluate(get("/foo").buildExchange(), REQUEST, type);
+        return expression(new InterceptorAdapter(router), JSONPATH, "$.a").evaluate(get("/foo").buildExchange(), REQUEST, type);
     }
 }

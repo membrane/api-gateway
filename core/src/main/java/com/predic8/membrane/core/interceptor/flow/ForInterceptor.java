@@ -16,7 +16,6 @@ package com.predic8.membrane.core.interceptor.flow;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.Required;
-import com.predic8.membrane.core.exceptions.ProblemDetails;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
@@ -99,10 +98,8 @@ public class ForInterceptor extends AbstractFlowWithChildrenInterceptor {
         try {
             o = exchangeExpression.evaluate(exc, flow, Object.class);
         } catch (ExchangeExpressionException e) {
-           ProblemDetails pd =  ProblemDetails.internal(router.getConfiguration().isProduction(), getDisplayName());
-            e.provideDetails(pd)
-                    .detail("Error evaluating expression on exchange.")
-                    .component(getDisplayName())
+            e.problemDetails(router.getConfiguration().isProduction(), getDisplayName(), flow)
+                    .title("Error evaluating expression on exchange.")
                     .buildAndSetResponse(exc);
             return ABORT;
         }

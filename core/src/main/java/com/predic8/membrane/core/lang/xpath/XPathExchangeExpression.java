@@ -21,8 +21,11 @@ import com.predic8.membrane.core.http.XmlDomBody;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.XMLSupport;
 import com.predic8.membrane.core.lang.AbstractExchangeExpression;
+import com.predic8.membrane.core.lang.BodyKind;
 import com.predic8.membrane.core.lang.ExchangeExpressionException;
 import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.util.xml.XPathUtil;
+import com.predic8.membrane.core.util.xml.parser.XmlParseException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -30,11 +33,15 @@ import org.slf4j.LoggerFactory;
 import org.w3c.dom.NodeList;
 
 import javax.xml.namespace.NamespaceContext;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.namespace.QName;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathEvaluationResult;
 import javax.xml.xpath.XPathExpressionException;
 
+import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.util.text.StringUtil.tail;
 import static com.predic8.membrane.core.util.text.StringUtil.truncateAfter;
 import static javax.xml.xpath.XPathConstants.NODESET;
@@ -42,6 +49,11 @@ import static javax.xml.xpath.XPathConstants.NODESET;
 public class XPathExchangeExpression extends AbstractExchangeExpression {
 
     private static final Logger log = LoggerFactory.getLogger(XPathExchangeExpression.class.getName());
+
+    /**
+     * DocumentBuilder is not thread-safe. Only builds empty documents, so it parses nothing that would need hardening.
+     */
+    private static final ThreadLocal<DocumentBuilder> DOCUMENT_BUILDER = ThreadLocal.withInitial(XPathExchangeExpression::newDocumentBuilder);
 
     private XmlConfig xmlConfig;
 
@@ -104,38 +116,104 @@ public class XPathExchangeExpression extends AbstractExchangeExpression {
             log.debug("Body: {}", msg.getBodyAsStringDecoded()); // is expensive!
         }
 
-        var namespaces = namespaceContext();
+        return switch (BodyKind.of(msg, XPathExchangeExpression::isXml)) {
+            case EMPTY, FOREIGN -> evaluateOnEmptyDocument(xmlType);
+            case MATCHING, UNKNOWN -> evaluateOnBody(msg, xmlType);
+            case FORM -> evaluateOnFormBody(msg, xmlType);
+        };
+    }
 
+    /**
+     * XOP/MTOM packages are multipart/related; {@link Message#getBodyAsStreamDecoded()} reassembles them into XML.
+     */
+    private static boolean isXml(String contentType) {
+        return isXML(contentType) || isOfMediaType(MULTIPART_RELATED, contentType);
+    }
+
+    private Object evaluateOnBody(Message msg, QName xmlType) throws XPathExpressionException {
         try {
-            if (xmlType == null) {
-                return XmlDomBody.xpath(msg, expression, namespaces);
-            }
-            try {
-                // Depending on the xpath it is not always possible to set it to specified xmlType
-                // e.g., xmlType=NodeSet xpath=string(//city)
-                return XmlDomBody.xpath(msg, expression, namespaces, xmlType);
-            } catch (XPathExpressionException e) {
-                log.debug("XPath expression failed. Trying again without type.", e);
-                return XmlDomBody.xpath(msg, expression, namespaces);
-            }
-        } catch (RuntimeException e) {
-            // Parser errors may escape as unchecked exceptions.
-            // Matches: prolog and Prolog
-            if (causeMessageContains(e, "rolog")) {
-                throw new ExchangeExpressionException(expression, e, "Content not allowed in prolog of XML input.")
-                        .detail("There are extra characters before the XML declaration <?xml ... ?>")
-                        .body(truncateAfter(msg.getBodyAsStringDecoded(), 50))
-                        .excludeException();
-            }
+            return evaluate(msg, xmlType);
+        } catch (XmlParseException e) {
+            throw bodyError(msg, e);
+        }
+    }
 
-            // Matches: Content and content
-            if (causeMessageContains(e, "ontent")) {
-                throw new ExchangeExpressionException(expression, e, "Content not allowed in trailing section of XML input.")
-                        .detail("There are extra characters after the XML root element (after the final closing tag like </root>).")
-                        .body(tail(msg.getBodyAsStringDecoded(), 50))
-                        .excludeException();
-            }
-            throw e;
+    /**
+     * Form data is what <code>curl -d</code> sends for any body, so it may be mislabelled XML. Anything
+     * else is the form data it claims to be, which holds no XML document.
+     */
+    private Object evaluateOnFormBody(Message msg, QName xmlType) throws XPathExpressionException {
+        try {
+            return evaluate(msg, xmlType);
+        } catch (XmlParseException e) {
+            log.info("Content-Type is {} and the body is not XML, so XPath {} is evaluated against an empty document. To have the body evaluated, send Content-Type: {}",
+                    APPLICATION_X_WWW_FORM_URLENCODED, expression, APPLICATION_XML);
+            return evaluateOnEmptyDocument(xmlType);
+        }
+    }
+
+    private Object evaluate(Message msg, QName xmlType) throws XPathExpressionException {
+        var namespaces = namespaceContext();
+        if (xmlType == null) {
+            return XmlDomBody.xpath(msg, expression, namespaces);
+        }
+        try {
+            // Depending on the xpath it is not always possible to set it to specified xmlType
+            // e.g., xmlType=NodeSet xpath=string(//city)
+            return XmlDomBody.xpath(msg, expression, namespaces, xmlType);
+        } catch (XPathExpressionException e) {
+            log.debug("XPath expression failed. Trying again without type.", e);
+            return XmlDomBody.xpath(msg, expression, namespaces);
+        }
+    }
+
+    /**
+     * A fresh document per call: DOM implementations do not guarantee thread safe reads, not even of
+     * an empty document.
+     */
+    private Object evaluateOnEmptyDocument(QName xmlType) throws XPathExpressionException {
+        var emptyDocument = DOCUMENT_BUILDER.get().newDocument();
+        var xpath = XPathUtil.newXPath(namespaceContext());
+        if (xmlType == null) {
+            return xpath.evaluateExpression(expression, emptyDocument);
+        }
+        try {
+            return xpath.evaluate(expression, emptyDocument, xmlType);
+        } catch (XPathExpressionException e) {
+            log.debug("XPath expression failed. Trying again without type.", e);
+            return xpath.evaluateExpression(expression, emptyDocument);
+        }
+    }
+
+    private ExchangeExpressionException bodyError(Message msg, XmlParseException e) {
+        // Matches: prolog and Prolog
+        if (causeMessageContains(e, "rolog")) {
+            return new ExchangeExpressionException(expression, e, "Content not allowed in prolog of XML input.")
+                    .detail("There are extra characters before the XML declaration <?xml ... ?>")
+                    .body(truncateAfter(msg.getBodyAsStringDecoded(), 50))
+                    .excludeException()
+                    .bodyError();
+        }
+
+        // Matches: Content and content
+        if (causeMessageContains(e, "ontent")) {
+            return new ExchangeExpressionException(expression, e, "Content not allowed in trailing section of XML input.")
+                    .detail("There are extra characters after the XML root element (after the final closing tag like </root>).")
+                    .body(tail(msg.getBodyAsStringDecoded(), 50))
+                    .excludeException()
+                    .bodyError();
+        }
+        return new ExchangeExpressionException(expression, e, e.getMessage())
+                .body(truncateAfter(msg.getBodyAsStringDecoded(), 50))
+                .excludeException()
+                .bodyError();
+    }
+
+    private static DocumentBuilder newDocumentBuilder() {
+        try {
+            return DocumentBuilderFactory.newInstance().newDocumentBuilder();
+        } catch (ParserConfigurationException e) {
+            throw new IllegalStateException("Cannot create a DocumentBuilder.", e);
         }
     }
 
