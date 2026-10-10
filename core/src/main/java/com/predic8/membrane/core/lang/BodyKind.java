@@ -80,6 +80,6 @@ public enum BodyKind {
      * A chunked body announces no length, so it has to be read to tell. Parsing reads it anyway.
      */
     private static boolean isEmpty(Message msg) {
-        return msg.isBodyEmpty() || msg.getBody().getContent().length == 0;
+        return msg.isBodyEmpty() || msg.getBody().getLength() == 0;
     }
 }

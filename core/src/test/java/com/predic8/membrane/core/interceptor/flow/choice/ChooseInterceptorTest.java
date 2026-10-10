@@ -21,10 +21,14 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.router.DummyTestRouter;
 import com.predic8.membrane.core.util.ConfigurationException;
+import com.predic8.membrane.core.util.xml.parser.HardenedXmlParser;
+import com.predic8.membrane.core.util.xml.parser.XmlParseException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.xml.sax.InputSource;
 
+import java.io.StringReader;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -89,11 +93,11 @@ class ChooseInterceptorTest {
 
         var exc = Request.post("/").contentType(APPLICATION_XML).body("<a><b></a>").buildExchange();
         assertEquals(ABORT, choose.handleRequest(exc));
-        var problem = exc.getResponse().getBodyAsStringDecoded(); // XML, like the request
+        var problem = HardenedXmlParser.getInstance().parse(new InputSource(exc.getResponse().getBodyAsStreamDecoded())); // XML, like the request
 
         assertAll(
             () -> assertEquals(400, exc.getResponse().getStatusCode()),
-            () -> assertTrue(problem.contains("must be terminated"), problem)
+            () -> assertEquals(parseError("<a><b></a>"), problem.getElementsByTagName("detail").item(0).getTextContent())
         );
     }
 
@@ -107,4 +111,11 @@ class ChooseInterceptorTest {
         assertThrows(ConfigurationException.class, () -> validateChoices(List.of(new Case(), new Otherwise(), new Case())));
     }
 
+    /**
+     * @return the message the XML parser fails with on <code>xml</code>, which is localized
+     */
+    private static String parseError(String xml) {
+        return assertThrows(XmlParseException.class,
+            () -> HardenedXmlParser.getInstance().parse(new InputSource(new StringReader(xml)))).getMessage();
+    }
 }

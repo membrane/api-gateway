@@ -14,22 +14,31 @@
 
 package com.predic8.membrane.core.lang.xpath;
 
-import com.predic8.membrane.core.exceptions.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.lang.*;
-import com.predic8.membrane.core.lang.ExchangeExpression.*;
-import org.jetbrains.annotations.*;
-import org.junit.jupiter.api.*;
-import org.w3c.dom.*;
+import com.predic8.membrane.core.exceptions.ProblemDetails;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.lang.AbstractExchangeExpressionTest;
+import com.predic8.membrane.core.lang.ExchangeExpression.InterceptorAdapter;
+import com.predic8.membrane.core.lang.ExchangeExpression.Language;
+import com.predic8.membrane.core.lang.ExchangeExpressionException;
+import com.predic8.membrane.core.util.xml.parser.HardenedXmlParser;
+import com.predic8.membrane.core.util.xml.parser.XmlParseException;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
 
-import java.net.*;
-import java.util.*;
+import java.io.StringReader;
+import java.net.URISyntaxException;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
 import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.http.Request.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
-import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
+import static com.predic8.membrane.core.http.Request.Builder;
+import static com.predic8.membrane.core.http.Request.post;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
+import static com.predic8.membrane.core.lang.ExchangeExpression.Language.XPATH;
 import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -177,7 +186,8 @@ class XPathExchangeExpressionTest extends AbstractExchangeExpressionTest {
             var e = assertThrows(ExchangeExpressionException.class,
                     () -> eval("/a", post("/foo").contentType(APPLICATION_XML).body("<a><b></a>").buildExchange(), Boolean.class));
             assertTrue(e.isBodyError());
-            assertTrue(e.getMessage().contains("must be terminated"), e.getMessage());
+            // The parser's own diagnostic, in the JVM's locale
+            assertEquals(parseError("<a><b></a>"), e.getMessage());
         }
 
         @Test
@@ -266,5 +276,13 @@ class XPathExchangeExpressionTest extends AbstractExchangeExpressionTest {
             e.provideDetails(pd);
             return pd;
         }
+    }
+
+    /**
+     * @return the message the XML parser fails with on <code>xml</code>, which is localized
+     */
+    private static String parseError(String xml) {
+        return assertThrows(XmlParseException.class,
+                () -> HardenedXmlParser.getInstance().parse(new InputSource(new StringReader(xml)))).getMessage();
     }
 }
