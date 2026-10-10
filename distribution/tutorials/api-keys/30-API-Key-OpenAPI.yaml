@@ -32,8 +32,6 @@
 # 4.) Key with write scope on a write endpoint → forwarded to backend:
 #     curl -i localhost:2000/shop/v2/products -X POST -H "X-Api-Key: 222" \
 #          -H "Content-Type: application/json" -d '{"name":"Mango","price":1.99}'
-#
-# Continue with 40-API-Key-JDBC-Store.yaml
 
 api:
   port: 2000

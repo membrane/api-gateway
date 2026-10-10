@@ -13,24 +13,35 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.rewrite;
 
-import com.googlecode.jatl.*;
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.util.*;
-import org.slf4j.*;
+import com.googlecode.jatl.Html;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.Required;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.util.URIFactory;
+import com.predic8.membrane.core.util.URLUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
-import java.util.regex.*;
+import java.io.StringWriter;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.regex.Pattern;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_FLOW;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.Type.*;
-import static com.predic8.membrane.core.util.text.TextUtil.*;
+import static com.predic8.membrane.core.util.text.TextUtil.capitalizeFirstCharacter;
+import static com.predic8.membrane.core.util.text.TextUtil.toEnglishList;
 import static java.util.Locale.US;
 
 /**
@@ -129,9 +140,9 @@ public class RewriteInterceptor extends AbstractInterceptor {
         }
 
         /**
-         * @description What to do: "rewrite", "redirect-temporary" or "redirect-permanent".
-         * @default rewrite (default) or redirect (if "to" is an absolute URL like "https://...")
-         * @example redirect-temporary
+         * @description What to do: "rewrite", "redirect_temporary" or "redirect_permanent".
+         * @default rewrite (default) or redirect_temporary (if "to" is an absolute URL like "https://...")
+         * @example redirect_temporary
          */
         @MCAttribute
         public void setDo(Type do_) {

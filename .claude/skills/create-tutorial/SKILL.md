@@ -56,7 +56,7 @@ same skeleton:
 #
 #     <Expected output — paste it verbatim.>
 #
-# 3.) Continue with file NN-Next.yaml      # the next step in the chain, if any
+# 3.) Continue with file NN-Next.yaml      # only in sequential tutorials, see below
 
 api:
   port: 2000
@@ -78,8 +78,11 @@ Hold to these conventions — they're what makes the set feel like one coherent 
   clarity over completeness; richer setups belong under `distribution/examples/`.
 - **Port 2000** is the house convention for tutorial listeners unless the lesson needs more.
 - Use `return: status: 200` not `return: {}`.
-- If this file continues a chain, end the previous file's comment block with a
-  "Continue with file NN-Title.yaml" pointer to the new one.
+- **"Continue with file NN-Title.yaml" only where the reader goes through the files in order:**
+  `getting-started/`, `advanced/`, and numbered sub-step series within a topic (e.g. 20, 21,
+  22, 23). Every other category (routing, security, openapi, ...) is random access, so its
+  files get no "Continue with" pointer. When adding to a sequential set, end the previous
+  file's comment block with a pointer to the new one.
 
 ## Step 3 — Make the category runnable
 
@@ -207,7 +210,7 @@ Avoid the verbose `${property.'membrane.security.schemes'[0].username}` — use 
 - [ ] No section-header comments above `api:` blocks; `name:` describes them
 - [ ] `return: status: 200` used (not `return: {}`)
 - [ ] Template interpolations unquoted when `contentType: application/json`
-- [ ] Previous file in the chain points to it ("Continue with…"), if applicable
+- [ ] Previous file points to it ("Continue with…") only in a sequential set (getting-started, advanced, NN/NN+1 sub-step series); none in random-access categories
 - [ ] Category has `membrane.sh`, `membrane.cmd`, `README.md` (and `run-docker.*` if used)
 - [ ] `<Name>TutorialTest` in the underscore package, extends the category abstract base, has the license header
 - [ ] Sub-category has its own abstract base returning the full relative path

@@ -1,0 +1,58 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.7.0.json
+#
+# Tutorial: Internal API
+#
+# Route requests from one API to another API inside the same gateway.
+#
+# 1.) Start Membrane:
+#     with Docker:
+#       Linux/Mac:
+#         ./run-docker.sh -c 20-Internal-API.yaml
+#       Windows:
+#         run-docker.cmd -c 20-Internal-API.yaml
+#
+#     or with Java:
+#       Linux/Mac:
+#         ./membrane.sh -c 20-Internal-API.yaml
+#       Windows:
+#         membrane.cmd -c 20-Internal-API.yaml
+#
+# 2.) Call the API:
+#       curl localhost:2000/products
+#
+#       Hello from the internal API
+#
+# 3.) Read "How it works" at the end of this file.
+
+api:
+  port: 2000
+  target:
+    url: internal://api-a
+
+---
+internal:
+  name: api-a
+  flow:
+    - request:
+        - static:
+            src: Hello from the internal API
+        - return:
+            status: 200
+
+# ---------------------------------------------------------------------------
+# How it works
+# ---------------------------------------------------------------------------
+#
+# An internal API has a name instead of a port, so clients cannot reach it
+# directly. Other APIs call it by setting their target to internal://<name>.
+# The request keeps its method, path, headers and body.
+#
+# You could get the same routing with a second API on a port and a target of
+# localhost:<port>. But then every request leaves Membrane and comes back in
+# over the network stack: the request and response are written to a socket,
+# sent through the TCP stack and parsed again as HTTP. An internal API is
+# called directly in memory, which is faster and needs no extra port.
+#
+# Use internal APIs to split a configuration into reusable parts, e.g. one
+# internal API with the backend address, credentials and TLS settings that
+# several public APIs route to.

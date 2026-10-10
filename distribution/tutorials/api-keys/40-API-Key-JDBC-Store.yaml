@@ -24,8 +24,6 @@
 #     docker exec -i postgres psql -U postgres -d postgres \
 #       -c "INSERT INTO scope (apikey, scope) VALUES ('admin-key', 'admin')"
 #
-# Continue with 50-MongoDB-API-Key-Store.yaml
-#
 # 5.) Test:
 #
 #     No key → 401:
