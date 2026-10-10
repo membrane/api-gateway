@@ -18,7 +18,7 @@ Route requests to internal proxies for reusable functionality across multiple AP
 
 - **Express Processing**:
   ```bash
-  curl -X POST -d @express.xml http://localhost:2000
+  curl -X POST -d @express.xml -H "Content-Type: application/xml" http://localhost:2000
   ```
   Response: `Express processing!`
 

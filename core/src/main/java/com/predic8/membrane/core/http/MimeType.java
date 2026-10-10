@@ -67,6 +67,8 @@ public class MimeType {
 
     public static final String MULTIPART_FORM_DATA = "multipart/form-data";
 
+    public static final String MULTIPART_RELATED = "multipart/related";
+
     public static final String APPLICATION_X_JAVASCRIPT = "application/x-javascript";
 
     public static final String TEXT_JAVASCRIPT = "text/javascript";

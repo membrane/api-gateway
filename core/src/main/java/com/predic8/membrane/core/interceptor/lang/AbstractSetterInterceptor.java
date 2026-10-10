@@ -58,12 +58,12 @@ public abstract class AbstractSetterInterceptor extends AbstractExchangeExpressi
             var msg = "Error evaluating expression %s for field %s".formatted(expression, fieldName);
             if (failOnError) {
                 if (e instanceof ExchangeExpressionException eee) {
-                    var pd = prepareProblemDetails(msg);
+                    var pd = prepareProblemDetails(eee.emptyProblemDetails(isProduction(), getDisplayName(), flow), msg);
                     eee.provideDetails(pd);
                     pd.buildAndSetResponse(exchange);
                     return ABORT;
                 }
-                prepareProblemDetails(msg)
+                prepareProblemDetails(internal(isProduction(), getDisplayName()), msg)
                         .exception(ExceptionUtil.getRootCause(e))
                         .stacktrace(false)
                         .buildAndSetResponse(exchange);
@@ -74,8 +74,12 @@ public abstract class AbstractSetterInterceptor extends AbstractExchangeExpressi
         return CONTINUE;
     }
 
-    private ProblemDetails prepareProblemDetails(String msg) {
-        return internal(getRouter().getConfiguration().isProduction(), getDisplayName())
+    private boolean isProduction() {
+        return getRouter().getConfiguration().isProduction();
+    }
+
+    private ProblemDetails prepareProblemDetails(ProblemDetails pd, String msg) {
+        return pd
                 .title(msg)
                 .internal("field", fieldName)
                 .internal("expression", expression);
@@ -117,6 +121,9 @@ public abstract class AbstractSetterInterceptor extends AbstractExchangeExpressi
     /**
      * @description Value to assign, evaluated as a SpEL template expression by default.
      * Use the <code>language</code> attribute to switch to Groovy, JsonPath, or XPath.
+     * <p>XPath and JSONPath query the body. An empty body, or one of another media type, is evaluated as an
+     * empty document, so the value is empty. A body that should be XML or JSON but does not parse is an error:
+     * 400 in the request, 502 in the response, unless <code>failOnError</code> is false.</p>
      * @example ${method}
      */
     @MCAttribute
