@@ -23,7 +23,7 @@ PRIO 1:
 - API gateway best practice document
   - Start with conditions on the body (`if`, `choose`, API `test`) and media types:
     - Send the right Content-Type (`curl -d` sends form data); an empty or foreign body is evaluated as an empty document, a broken XML/JSON body gives 400/502
-    - Write fail-closed XPath guards: `not(/a = 'admin')` instead of `/a != 'admin'`, which is false when `<a>` is missing
+    - Write fail-closed XPath guards: `not(/a = 'admin')` instead of `/a != 'admin'`. It is also true when `<a>` is missing, so a request without `<a>` counts as "not admin". `/a != 'admin'` is false then, which lets such a request slip past the guard
 
 PRIO 2:
 - Remove MemoryExchangeStore
