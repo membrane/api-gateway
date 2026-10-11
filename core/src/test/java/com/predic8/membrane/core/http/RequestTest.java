@@ -853,4 +853,55 @@ public class RequestTest {
             }
         }
     }
+
+    @Nested
+    class RoutingPath {
+
+        @Test
+        void removesPathParametersAndMergesSlashes() {
+            assertEquals("/api/admin?x=//y;z", routingPathOf("//api;jsessionid=1//admin?x=//y;z"));
+        }
+
+        @Test
+        void keepsPlainPath() {
+            assertEquals("/api/admin?x=1", routingPathOf("/api/admin?x=1"));
+        }
+
+        @Test
+        void keepsOtherFormsThanOriginForm() {
+            assertEquals("http://example.com//a;b", routingPathOf("http://example.com//a;b"));
+            assertEquals("example.com:443", routingPathOf("example.com:443"));
+            assertEquals("*", routingPathOf("*"));
+        }
+
+        @Test
+        void followsChangedUri() {
+            final var req = new Request();
+            req.setUri("/a;x/b");
+            assertEquals("/a/b", req.getRoutingPath());
+            req.setUri("/c//d");
+            assertEquals("/c/d", req.getRoutingPath());
+        }
+
+        @Test
+        void isComputedOncePerUri() {
+            final var req = new Request();
+            req.setUri("/a;x/b");
+            assertSame(req.getRoutingPath(), req.getRoutingPath());
+        }
+
+        @Test
+        void followsParsedStartLine() throws IOException {
+            final var req = new Request();
+            req.parseStartLine(new ByteArrayInputStream("GET /a;x//b HTTP/1.1\r\n".getBytes(ISO_8859_1)));
+            assertEquals("/a/b", req.getRoutingPath());
+            assertEquals("/a;x//b", req.getUri());
+        }
+
+        private static String routingPathOf(String uri) {
+            final var req = new Request();
+            req.setUri(uri);
+            return req.getRoutingPath();
+        }
+    }
 }

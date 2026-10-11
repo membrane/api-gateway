@@ -35,7 +35,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 
-import static com.predic8.membrane.core.util.URIUtil.toRoutingPath;
 
 public class RuleManager {
 
@@ -207,7 +206,7 @@ public class RuleManager {
         String hostHeader = request.getHeader().getHost();
         String method = request.getMethod();
         String uri = request.getUri(); // Already normalized (absolute-form, percent-encoding, dot-segments) by the RuleMatchingInterceptor
-        String path = toRoutingPath(uri);
+        String path = request.getRoutingPath();
         String version = request.getVersion();
 
         AbstractHttpHandler handler = exc.getHandler();
