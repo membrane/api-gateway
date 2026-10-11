@@ -14,26 +14,47 @@
 
 package com.predic8.membrane.core.proxies;
 
-import com.predic8.membrane.core.config.security.*;
 import com.predic8.membrane.core.config.security.KeyStore;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.router.*;
-import org.apache.http.*;
-import org.apache.http.client.config.*;
-import org.apache.http.client.methods.*;
-import org.apache.http.conn.ssl.*;
-import org.apache.http.impl.client.*;
-import org.apache.http.util.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.config.security.SSLParser;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.router.TestRouter;
+import org.apache.http.HttpHost;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
+import org.apache.http.conn.ssl.SSLSocketFactory;
+import org.apache.http.conn.ssl.TrustAllStrategy;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.util.EntityUtils;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
-import java.io.*;
-import java.security.*;
-import java.util.concurrent.atomic.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.nio.charset.StandardCharsets;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ProxyTest {
 
@@ -128,6 +149,37 @@ public class ProxyTest {
 
         assertEquals("0", router.getTransport().getOpenBackendConnections(3055));
         assertEquals("0", router.getTransport().getOpenBackendConnections(3057));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "/a|b",
+            "/search?q={x}",
+            "/bad%zz",
+    })
+    void unparsableAbsoluteUriIsForwardedToBackend(String path) throws Exception {
+        // A plain socket as backend, since a Membrane API would reject some of these targets itself
+        final var requestLine = new CompletableFuture<String>();
+        try (final var backend = new ServerSocket(0)) {
+            Thread.startVirtualThread(() -> {
+                try (final var connection = backend.accept()) {
+                    requestLine.complete(new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.US_ASCII)).readLine());
+                    connection.getOutputStream().write("HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\nok".getBytes(StandardCharsets.US_ASCII));
+                } catch (IOException e) {
+                    requestLine.completeExceptionally(e);
+                }
+            });
+
+            try (final var socket = new Socket("localhost", 3055)) {
+                // Sent over a raw socket, since an HTTP client refuses to send a URI that does not parse
+                final var host = "localhost:" + backend.getLocalPort();
+                socket.getOutputStream().write("GET http://%s%s HTTP/1.1\r\nHost: %s\r\nConnection: close\r\n\r\n".formatted(host, path, host).getBytes(StandardCharsets.US_ASCII));
+                final var response = new String(socket.getInputStream().readAllBytes(), StandardCharsets.US_ASCII);
+
+                assertTrue(response.startsWith("HTTP/1.1 200"), response);
+            }
+            assertEquals("GET %s HTTP/1.1".formatted(path), requestLine.get(5, TimeUnit.SECONDS));
+        }
     }
 
 }
