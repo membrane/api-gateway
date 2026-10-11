@@ -16,7 +16,7 @@ Have **10 minutes** and want to solve a task with Membrane? These hands-on examp
 
 * Use Groovy and JavaScript for scripting
 
-Samples of scripting with JSONPath, XPath and the expression language you can find in the [templating](templating#template---transforming-messages) or [orchestration](orchestration#orchestration) folders.
+Samples of scripting with JSONPath, XPath and the expression language you can find in the [templating](templating#template---transforming-messages) folders or in the [orchestration tutorials](../tutorials/orchestration).
 
 ## [Security](security#samples-for-api-security-with-membrane-api-gateway)
 
@@ -35,7 +35,7 @@ Samples of scripting with JSONPath, XPath and the expression language you can fi
 * HTML-form validation
 * JSON-Schema validation
 
-## [Orchestration](orchestration#orchestration)
+## [Orchestration](../tutorials/orchestration)
 
 * Authentication with external APIs
 * Samples for GET and POST callouts
@@ -78,7 +78,7 @@ Samples of scripting with JSONPath, XPath and the expression language you can fi
 
 ## Other Protocols
 
-### [GraphQL](graphql#graphql)
+### [GraphQL](../tutorials/security/50-GraphQL-Protection.yaml)
 
 * Validate GraphQL requests
 
@@ -91,7 +91,7 @@ Samples of scripting with JSONPath, XPath and the expression language you can fi
 
 ### [YAML Configuration](yaml-configuration#yaml-configuration)
 
-### [Monitoring and Tracing](monitoring-tracing#monitoring-and-tracing)
+### [Monitoring and Tracing](../tutorials/operation)
 
 * OpenTelemetry & Prometheus
 

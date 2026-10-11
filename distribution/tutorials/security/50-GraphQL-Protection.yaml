@@ -23,8 +23,6 @@
 # 5.) Disallowed introspection => 400
 #    curl -d '{"query":"{ __schema{mutationType {fields{name}}}}"}' -H "Content-Type: application/json" http://localhost:2000
 #
-# For more examples see: examples/graphql/graphql-validation
-#
 # Reference: https://www.membrane-api.io/docs/current/graphQLProtection.html
 
 api:

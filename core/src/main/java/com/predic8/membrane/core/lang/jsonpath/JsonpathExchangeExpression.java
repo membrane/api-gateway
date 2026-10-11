@@ -14,24 +14,29 @@
 
 package com.predic8.membrane.core.lang.jsonpath;
 
-import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.exc.*;
-import com.jayway.jsonpath.*;
-import com.predic8.membrane.core.exchange.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.exc.MismatchedInputException;
+import com.jayway.jsonpath.InvalidPathException;
+import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.PathNotFoundException;
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.ReadingBodyException;
-import com.predic8.membrane.core.interceptor.Interceptor.*;
-import com.predic8.membrane.core.lang.*;
-import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.util.*;
-import org.jetbrains.annotations.*;
-import org.jose4j.json.internal.json_simple.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.interceptor.Interceptor.Flow;
+import com.predic8.membrane.core.lang.AbstractExchangeExpression;
+import com.predic8.membrane.core.lang.ExchangeExpressionException;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.util.ConfigurationException;
+import org.jetbrains.annotations.Nullable;
+import org.jose4j.json.internal.json_simple.JSONAware;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.util.*;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.util.List;
 
-import static java.lang.Boolean.*;
-import static java.nio.charset.StandardCharsets.*;
+import static java.lang.Boolean.FALSE;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class JsonpathExchangeExpression extends AbstractExchangeExpression {
 
@@ -149,7 +154,15 @@ public class JsonpathExchangeExpression extends AbstractExchangeExpression {
         return type.cast(new Object());
     }
 
+    /**
+     * An indefinite path (filter, wildcard, deep scan) returns the list of its matches, so an
+     * empty list means nothing matched. A definite path returns the value itself, so an existing
+     * but empty array is still true.
+     */
     private boolean convertToBoolean(Object o) {
+        if (o instanceof List<?> l && !compiledPath.isDefinite()) {
+            return !l.isEmpty();
+        }
         return o != null;
     }
 
