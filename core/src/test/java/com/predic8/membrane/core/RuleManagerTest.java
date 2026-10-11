@@ -171,6 +171,29 @@ public class RuleManagerTest {
 	}
 
 	@Test
+	@DisplayName("A request on the bound IP falls back to the ProxyRule bound to that IP")
+	void getMatchingRuleFallsBackToProxyRuleBoundToIp() throws UnknownHostException {
+		final var proxyOnIp = addProxyRuleBoundToIp();
+		assertEquals(proxyOnIp, manager.getMatchingRule(assembleExchange("unknown-host", "GET", "/anything", "1.1", 3016, "127.0.0.1")));
+	}
+
+	@Test
+	@DisplayName("A ProxyRule bound to an IP is skipped, not dereferenced, when the exchange has no handler")
+	void proxyRuleBoundToIpIsSkippedWithoutHandler() throws URISyntaxException {
+		addProxyRuleBoundToIp();
+		final var exc = get("/anything").buildExchange();
+		exc.getDestinations().add("internal://unknown");
+		assertInstanceOf(NullProxy.class, manager.getMatchingRule(exc));
+	}
+
+	private ProxyRule addProxyRuleBoundToIp() {
+		final var proxy = new ProxyRule(new ProxyRuleKey(3016, "127.0.0.1"));
+		proxy.init(router);
+		manager.addProxy(proxy, RuleManager.RuleDefinitionSource.MANUAL);
+		return proxy;
+	}
+
+	@Test
 	void internalUnknown() throws URISyntaxException {
 		Exchange exc = get("/ignored").buildExchange();
 		exc.getDestinations().add("internal://unknown");
