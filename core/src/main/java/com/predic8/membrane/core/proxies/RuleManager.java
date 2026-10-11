@@ -274,7 +274,7 @@ public class RuleManager {
             return new NullProxy();
         }
         for (Proxy proxy : getRules()) {
-            if (!(proxy instanceof ProxyRule))
+            if (!(proxy instanceof ProxyRule) || !proxy.isActive())
                 continue;
 
             if (proxy.getKey().getIp() != null && !proxy.getKey().getIp().equals(getLocalIP(handler)))
