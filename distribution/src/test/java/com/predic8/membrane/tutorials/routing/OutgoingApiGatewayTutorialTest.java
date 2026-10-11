@@ -26,20 +26,45 @@ public class OutgoingApiGatewayTutorialTest extends AbstractRoutingTutorialTest 
         return "50-Outgoing-API-Gateway.yaml";
     }
 
+    private static final String INJECTED_API_KEY = "0446F862-9EE6-46EC-9440-6B6DA0DD0ADD";
+
     @Test
     void onlyAllowedHeadersAreSentToTheExternalApi() {
         // @formatter:off
         given()
-            .header("X-Api-Key", "abc123")
             .header("User-Agent", "secret")
             .header("Authorization", "secret")
         .when()
             .post("http://localhost:2000/?action=analyze")
         .then()
             .statusCode(200)
-            .body("request.headers.X-Api-Key", contains("abc123"))
             .body("request.headers", not(hasKey("User-Agent")))
             .body("request.headers", not(hasKey("Authorization")));
+        // @formatter:on
+    }
+
+    @Test
+    void gatewayInjectsApiKeyWhenClientSendsNone() {
+        // @formatter:off
+        given()
+        .when()
+            .post("http://localhost:2000/?action=analyze")
+        .then()
+            .statusCode(200)
+            .body("request.headers.X-Api-Key", contains(INJECTED_API_KEY));
+        // @formatter:on
+    }
+
+    @Test
+    void gatewayReplacesApiKeySentByClient() {
+        // @formatter:off
+        given()
+            .header("X-Api-Key", "abc123")
+        .when()
+            .post("http://localhost:2000/?action=analyze")
+        .then()
+            .statusCode(200)
+            .body("request.headers.X-Api-Key", contains(INJECTED_API_KEY));
         // @formatter:on
     }
 }
