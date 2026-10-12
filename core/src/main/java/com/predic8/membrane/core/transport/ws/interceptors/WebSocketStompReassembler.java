@@ -21,7 +21,7 @@ import com.predic8.membrane.core.http.Body;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.router.Router;
 import com.predic8.membrane.core.transport.ws.WebSocketFrame;
 import com.predic8.membrane.core.transport.ws.WebSocketInterceptorInterface;
 import com.predic8.membrane.core.transport.ws.WebSocketSender;
@@ -70,10 +70,8 @@ public class WebSocketStompReassembler implements WebSocketInterceptorInterface 
         sender.handleFrame(wsStompFrame);
     }
 
-    private final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
     private void modifyOriginalFrameWithExchange(WebSocketFrame wsStompFrame, Exchange exc) throws IOException {
-        baos.reset();
+        final var baos = new ByteArrayOutputStream();
         if (exc.getRequest().getMethod().isEmpty()) {
             // this is a heart-beat
             baos.write('\n');
@@ -103,7 +101,9 @@ public class WebSocketStompReassembler implements WebSocketInterceptorInterface 
             if (wsStompFrame.getPayload()[(int) wsStompFrame.getPayloadLength() - 1] != 0)
                 throw new IOException("STOMP frame is not terminated by \\0.");
 
-            request.read(bais, true);
+            // STOMP bodies run up to the terminating NUL; HTTP framing would drop a body without content-length
+            request.read(bais, false);
+            request.setBody(new Body(bais, request.getHeader().getContentLength()));
         }
 
         Exchange result = new Exchange(null);

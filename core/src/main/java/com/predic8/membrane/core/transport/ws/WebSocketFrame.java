@@ -16,8 +16,6 @@ package com.predic8.membrane.core.transport.ws;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.util.ByteUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -26,8 +24,6 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 public class WebSocketFrame {
-
-    protected static final Logger log = LoggerFactory.getLogger(WebSocketFrame.class.getName());
 
     final static int INITIAL_BUFFER_SIZE = 8192;
 
@@ -59,10 +55,25 @@ public class WebSocketFrame {
         System.arraycopy(payload,0,this.payload,0,payload.length);
     }
 
+    /**
+     * @return the status code of a close frame, or null if it has none. The body of a close frame is optional
+     * (RFC 6455 5.5.1). An invalid one-byte body is passed on as well: the receiving endpoint rejects it.
+     */
     private String calcError() {
-        if (payloadLength < 2)
-            throw new IllegalStateException("Error code not read.");
+        if (!hasCloseStatusCode())
+            return null;
         return String.valueOf(ByteBuffer.wrap(payload, 0, 2).getShort());
+    }
+
+    private boolean hasCloseStatusCode() {
+        return opcode == 8 && payloadLength >= 2;
+    }
+
+    /**
+     * Offset of the payload shown by {@link #toString()}, skipping a close frame's status code.
+     */
+    private int displayedPayloadOffset() {
+        return hasCloseStatusCode() ? 2 : 0;
     }
 
     public void write(OutputStream out) throws IOException {
@@ -139,7 +150,10 @@ public class WebSocketFrame {
             return 0;
     }
 
-    private int getSizeInBytes() {
+    /**
+     * @return the size of the frame on the wire, header included
+     */
+    public int getSizeInBytes() {
         return 2 + getExtendedPayloadSize(computePayloadField()) + (isMasked ? maskKey.length : 0) + (payload != null ? (int) payloadLength : 0);
     }
 
@@ -191,9 +205,11 @@ public class WebSocketFrame {
      * @param buffer
      * @param offset
      * @param length
+     * @param maxPayloadSize frames announcing a larger payload are rejected as soon as their header is complete
      * @return the number of bytes read. if > 0, this class has been properly initialized with the frame data read.
+     * @throws WebSocketFrameTooLargeException if the frame announces a payload larger than {@code maxPayloadSize}
      */
-    public int tryRead(byte[] buffer, int offset, int length) {
+    public int tryRead(byte[] buffer, int offset, int length, int maxPayloadSize) throws WebSocketFrameTooLargeException {
         if (length < 2)
             return 0;
 
@@ -206,20 +222,22 @@ public class WebSocketFrame {
         rsv3 = ByteUtil.getBitValueBigEndian(finAndReservedAndOpCode, 3);
         opcode = ByteUtil.getValueOfBits(finAndReservedAndOpCode, 4, 7);
 
-        int headerLength = 2;
-
         byte maskAndPayloadLength = buffer[offset++];
         isMasked = ByteUtil.getBitValueBigEndian(maskAndPayloadLength, 0);
         payloadLength = ByteUtil.getValueOfBits(maskAndPayloadLength, 1, 7);
+
+        int headerLength = 2 + getExtendedPayloadSize((int) payloadLength) + (isMasked ? 4 : 0);
+        // the bytes behind 'length' are leftovers of earlier frames: never parse them as header fields
+        if (length < headerLength)
+            return 0;
+
         if (payloadLength >= 126) {
             if (payloadLength == 126) {
-                headerLength += 2;
                 byte[] newPayloadLength = new byte[4];
                 for (int i = 2; i < newPayloadLength.length; i++)
                     newPayloadLength[i] = buffer[offset++];
                 payloadLength = ByteBuffer.wrap(newPayloadLength).getInt();
             } else {
-                headerLength += 8;
                 byte[] newPayloadLength = new byte[8];
                 for (int i = 0; i < newPayloadLength.length; i++)
                     newPayloadLength[i] = buffer[offset++];
@@ -228,15 +246,14 @@ public class WebSocketFrame {
         }
 
         if (isMasked) {
-            headerLength += 4;
             for (int i = 0; i < 4; i++)
                 maskKey[i] = buffer[offset++];
         }
 
-        if (payloadLength > Integer.MAX_VALUE || payloadLength < 0) {
-            log.warn("Payload of ws message is bigger than Integer.MAX_VALUE which is currently not supported. Message will be truncated");
-            payloadLength = Integer.MAX_VALUE;
-        }
+        // negative: the most significant bit is set, i.e. more than 2^63 bytes
+        if (payloadLength < 0 || payloadLength > maxPayloadSize)
+            throw new WebSocketFrameTooLargeException(payloadLength, maxPayloadSize);
+
         // if payloadLength is bigger than what can currently be in the buffer then we haven't read the whole frame
         if(payloadLength > length-headerLength)
             return 0;
@@ -274,7 +291,7 @@ public class WebSocketFrame {
                 ", isMasked=" + isMasked +
                 ", payloadLength=" + payloadLength +
                 (isMasked ? (", maskKey=" + Arrays.toString(maskKey)) : "") +
-                ", payload=" + (opcode == 8 ? new String(payload, 2, (int) payloadLength - 2) : new String(payload, 0, (int) payloadLength)) +
+                ", payload=" + new String(payload, displayedPayloadOffset(), (int) payloadLength - displayedPayloadOffset()) +
                 '}';
     }
 
@@ -343,7 +360,7 @@ public class WebSocketFrame {
                 ", isMasked=" + isMasked +
                 ", payloadLength=" + payloadLength +
                 (isMasked ? (", maskKey=" + Arrays.toString(maskKey)) : "") +
-                ", payload=\n" + (opcode == 8 ? toHex(payload, 2, (int) payloadLength - 2) : toHex(payload, 0, (int) payloadLength)) +
+                ", payload=\n" + toHex(payload, displayedPayloadOffset(), (int) payloadLength - displayedPayloadOffset()) +
                 '}';
     }
 

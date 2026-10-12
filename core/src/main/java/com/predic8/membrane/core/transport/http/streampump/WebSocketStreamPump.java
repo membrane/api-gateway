@@ -20,25 +20,31 @@ import com.predic8.membrane.core.interceptor.tunnel.WebSocketInterceptor;
 import com.predic8.membrane.core.proxies.Proxy;
 import com.predic8.membrane.core.transport.ws.WebSocketFrame;
 import com.predic8.membrane.core.transport.ws.WebSocketFrameAssembler;
+import com.predic8.membrane.core.transport.ws.WebSocketFrameTooLargeException;
 import com.predic8.membrane.core.transport.ws.WebSocketInterceptorInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 
 public class WebSocketStreamPump extends StreamPump {
     protected static final Logger log = LoggerFactory.getLogger(WebSocketStreamPump.class.getName());
 
+    private static final SecureRandom random = new SecureRandom();
+
     //pumpsToRight == true: from sender to recipient "sender -> recipient"
     public WebSocketStreamPump(InputStream in, OutputStream out, StreamPumpStats stats, String name, Proxy proxy, boolean pumpsToRight, Exchange originalExchange) {
         super(in, out, stats, name, proxy);
         this.pumpsToRight = pumpsToRight;
-        frameAssembler = new WebSocketFrameAssembler(in, originalExchange);
+        var maxPayloadSize = WebSocketFrameAssembler.DEFAULT_MAX_PAYLOAD_SIZE;
         for (Interceptor i : proxy.getFlow()) {
             if (i instanceof WebSocketInterceptor) {
+                maxPayloadSize = ((WebSocketInterceptor) i).getMaxFramePayloadSize();
                 chain = ((WebSocketInterceptor) i).getFlow();
                 for (WebSocketInterceptorInterface i2 : chain)
                     try {
@@ -49,7 +55,7 @@ public class WebSocketStreamPump extends StreamPump {
                 break;
             }
         }
-
+        frameAssembler = new WebSocketFrameAssembler(in, originalExchange, maxPayloadSize);
     }
 
     public void init(WebSocketStreamPump otherStreamPump) {
@@ -66,8 +72,11 @@ public class WebSocketStreamPump extends StreamPump {
     public void run() {
         if (otherStreamPump == null)
             throw new RuntimeException("Call init with other WebSocketStreamPump (backward direction)");
+        if (stats != null)
+            stats.registerPump(this);
         try {
             frameAssembler.readFrames(frame -> {
+                bytesTransferred.addAndGet(frame.getSizeInBytes());
                 try {
                     if (pumpsToRight) {
                         //System.out.println("==client to server==");
@@ -80,6 +89,10 @@ public class WebSocketStreamPump extends StreamPump {
                     log.error("Error while reading frames.",e);
                 }
             });
+        } catch (WebSocketFrameTooLargeException e) {
+            connectionIsOpen = false;
+            log.info("Closing WebSocket connection, {} sent a frame that is too large: {}", pumpsToRight ? "client" : "server", e.getMessage());
+            closeSenderWithMessageTooBig();
         } catch (Exception e) {
             connectionIsOpen = false;
             String entity = (pumpsToRight ? "client to server" : "server to client");
@@ -92,6 +105,27 @@ public class WebSocketStreamPump extends StreamPump {
             } catch (Exception e) {
                 // ignore
             }
+            if (stats != null)
+                stats.unregisterPump(this);
+        }
+    }
+
+    /**
+     * Sends a close frame with status 1009 (message too big) back to the peer this pump reads from.
+     * Frames towards the server have to be masked.
+     */
+    private void closeSenderWithMessageTooBig() {
+        final var maskKey = new byte[4];
+        if (!pumpsToRight)
+            random.nextBytes(maskKey);
+        final var close = new WebSocketFrame(true, false, false, false, 8, !pumpsToRight, maskKey, new byte[]{0x03, (byte) 0xF1});
+        final OutputStream sender = otherStreamPump.out;
+        try {
+            synchronized (sender) {
+                close.write(sender);
+            }
+        } catch (IOException e) {
+            log.debug("Could not send close frame.", e);
         }
     }
 

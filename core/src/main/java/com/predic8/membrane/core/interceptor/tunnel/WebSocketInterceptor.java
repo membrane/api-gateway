@@ -13,15 +13,22 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.tunnel;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.transport.ws.*;
-import com.predic8.membrane.core.util.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.transport.ws.WebSocketFrameAssembler;
+import com.predic8.membrane.core.transport.ws.WebSocketInterceptorInterface;
+import com.predic8.membrane.core.util.ConfigurationException;
+import com.predic8.membrane.core.util.URLUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.net.*;
-import java.util.*;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.predic8.membrane.core.exchange.Exchange.ALLOW_WEBSOCKET;
 import static java.lang.Boolean.TRUE;
@@ -40,11 +47,15 @@ public class WebSocketInterceptor extends AbstractInterceptor {
 
 	private String url;
 	private String pathQuery;
+	private int maxFramePayloadSize = WebSocketFrameAssembler.DEFAULT_MAX_PAYLOAD_SIZE;
 	private List<WebSocketInterceptorInterface> interceptors = new ArrayList<>();
 
 	@Override
 	public void init() {
 		super.init();
+		if (maxFramePayloadSize < 1 || maxFramePayloadSize > WebSocketFrameAssembler.MAX_SUPPORTED_PAYLOAD_SIZE)
+			throw new ConfigurationException("webSocket: maxFramePayloadSize must be between 1 and %d, but is %d."
+					.formatted(WebSocketFrameAssembler.MAX_SUPPORTED_PAYLOAD_SIZE, maxFramePayloadSize));
         try {
             pathQuery = url == null ? null : URLUtil.getPathQuery(getRouter().getConfiguration().getUriFactory(), url);
         } catch (URISyntaxException e) {
@@ -87,6 +98,22 @@ public class WebSocketInterceptor extends AbstractInterceptor {
 	@MCAttribute
 	public void setUrl(String url) {
 		this.url = url;
+	}
+
+	public int getMaxFramePayloadSize() {
+		return maxFramePayloadSize;
+	}
+
+	/**
+	 * @description Maximum payload size of a single WebSocket frame in bytes, in either direction. Every frame
+	 * is held in memory while it passes the gateway. When a peer announces a larger frame, the connection is
+	 * closed before the payload is read, and that peer is sent a close frame with status 1009 (message too big).
+	 * @default 16777216
+	 * @example 1048576
+	 */
+	@MCAttribute
+	public void setMaxFramePayloadSize(int maxFramePayloadSize) {
+		this.maxFramePayloadSize = maxFramePayloadSize;
 	}
 
 	public List<WebSocketInterceptorInterface> getFlow() {

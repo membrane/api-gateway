@@ -16,15 +16,75 @@ package com.predic8.membrane.core.interceptor.websocket;
 
 import com.predic8.membrane.core.transport.ws.WebSocketFrame;
 import com.predic8.membrane.core.transport.ws.WebSocketFrameAssembler;
+import com.predic8.membrane.core.transport.ws.WebSocketFrameTooLargeException;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class WebSocketFrameTest {
     static final int numberOfFrames = 100000;
+
+    /**
+     * Only the header is sent: the frame must be rejected before any payload is buffered.
+     */
+    @Test
+    void frameAboveDefaultMaxPayloadSizeIsRejected() {
+        final var header = new byte[]{(byte) 0x82, 127, 0, 0, 0, 0, 0x40, 0, 0, 0}; // binary, 1 GiB, unmasked
+        final var assembler = new WebSocketFrameAssembler(new ByteArrayInputStream(header), null);
+        assertThrows(WebSocketFrameTooLargeException.class, () -> assembler.readFrames(frame -> fail()));
+    }
+
+    @Test
+    void frameAboveConfiguredMaxPayloadSizeIsRejected() throws Exception {
+        final var frame = new WebSocketFrame(true, false, false, false, 2, false, new byte[4], new byte[513]).toBytes();
+        final var assembler = new WebSocketFrameAssembler(new ByteArrayInputStream(frame), null, 512);
+        assertThrows(WebSocketFrameTooLargeException.class, () -> assembler.readFrames(f -> fail()));
+    }
+
+    /**
+     * Headers arriving in pieces must not be judged by the leftover bytes of the previous frame
+     * (here 0xFF, which would read as a 65535 byte payload).
+     */
+    @Test
+    void headersSplitAcrossReadsAreNotRejected() throws Exception {
+        // 2-byte header, so its 0xFF payload sits right where the next header's extended length is read
+        final var first = new WebSocketFrame(true, false, false, false, 2, false, new byte[4], filled(125, (byte) 0xFF)).toBytes();
+        final var second = new WebSocketFrame(true, false, false, false, 2, false, new byte[4], filled(300, (byte) 7)).toBytes();
+        final var stream = new byte[first.length + second.length];
+        System.arraycopy(first, 0, stream, 0, first.length);
+        System.arraycopy(second, 0, stream, first.length, second.length);
+
+        final var payloadLengths = new ArrayList<Long>();
+        new WebSocketFrameAssembler(new OneByteAtATimeInputStream(stream), null, 512)
+                .readFrames(frame -> payloadLengths.add(frame.getPayloadLength()));
+
+        assertEquals(List.of(125L, 300L), payloadLengths);
+    }
+
+    private static byte[] filled(int length, byte value) {
+        final var bytes = new byte[length];
+        Arrays.fill(bytes, value);
+        return bytes;
+    }
+
+    private static class OneByteAtATimeInputStream extends ByteArrayInputStream {
+
+        OneByteAtATimeInputStream(byte[] content) {
+            super(content);
+        }
+
+        @Override
+        public synchronized int read(byte[] b, int off, int len) {
+            return super.read(b, off, Math.min(len, 1));
+        }
+    }
 
     @Test
     void testDynamicBuffer() throws Exception {
