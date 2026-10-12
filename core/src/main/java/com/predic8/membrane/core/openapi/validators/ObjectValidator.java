@@ -225,8 +225,12 @@ public class ObjectValidator implements JsonSchemaValidator {
         if (!visiting.add(current))
             return;
 
-        if (current.get$ref() != null)
-            collectEvaluatedProperties(ctx, SchemaUtil.getSchemaFromRef(api, current.get$ref()), node, evaluated, visiting);
+        if (current.get$ref() != null) {
+            // An unresolvable reference evaluates no properties.
+            final var target = SchemaUtil.getSchemaFromRef(api, current.get$ref());
+            if (target != null)
+                collectEvaluatedProperties(ctx, target, node, evaluated, visiting);
+        }
 
         final Map<String, Schema> properties = current.getProperties();
         final Map<String, Schema> patternProperties = current.getPatternProperties();

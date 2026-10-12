@@ -109,6 +109,16 @@ class UnevaluatedPropertiesTest extends AbstractValidatorTest {
                 """, "lives");
     }
 
+    /**
+     * An unresolvable $ref evaluates no properties, it must not break the collection of the others.
+     */
+    @Test
+    void unresolvableRefEvaluatesNothing() throws ParseException {
+        assertRejected("/dangling-ref", """
+                {"name": "a", "foo": 1}
+                """, "unevaluated property: foo");
+    }
+
     @Test
     void additionalPropertiesEvaluatesEverything() throws ParseException {
         assertEquals(0, post("/additional", """

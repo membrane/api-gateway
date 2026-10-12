@@ -114,6 +114,24 @@ paths:
       responses:
         "200":
           description: "OK"
+  /dangling-ref:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+              if:
+                required: [name]
+              then:
+                $ref: '#/components/schemas/Missing'
+              unevaluatedProperties: false
+      responses:
+        "200":
+          description: "OK"
 components:
   schemas:
     Base:
