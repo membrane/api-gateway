@@ -13,53 +13,75 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.ws;
 
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.model.*;
-import com.predic8.membrane.core.transport.http.*;
-import org.jetbrains.annotations.*;
-import org.jose4j.base64url.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.EmptyBody;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.model.AbstractExchangeViewerListener;
+import com.predic8.membrane.core.transport.http.TwoWayStreaming;
+import org.jetbrains.annotations.NotNull;
+import org.jose4j.base64url.Base64;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.net.*;
-import java.security.*;
-import java.util.concurrent.*;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.SocketException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
+import java.util.concurrent.ArrayBlockingQueue;
 
 import static com.predic8.membrane.core.http.Header.*;
-import static java.nio.charset.StandardCharsets.*;
-import static java.util.concurrent.TimeUnit.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * An RFC 6455 implementation.
  */
 public abstract class WebSocketConnection {
-    public static final String WEBSOCKET_CLOSED_POLL_INTERVAL_MILLISECONDS = "websocket.closed-poll-interval-ms";
 
     private static final Logger log = LoggerFactory.getLogger(WebSocketConnection.class);
     private static final byte[] mask = new byte[4];
     private static final String WEBSOCKET_PROTOCOL_UUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 
-    private final ArrayBlockingQueue<String> messagesToSend = new ArrayBlockingQueue<>(1000);
+    private static final int OPCODE_TEXT = 1;
+    private static final int OPCODE_BINARY = 2;
+    private static final int OPCODE_CLOSE = 8;
+    private static final int OPCODE_PING = 9;
+    private static final int OPCODE_PONG = 10;
+
+    /**
+     * Queued when the client is gone, to release the sender. Compared by identity.
+     */
+    private static final WebSocketFrame STOP = new WebSocketFrame();
+
+    /**
+     * Frames for the client. The sender thread is the only one writing to the client, so frames never interleave.
+     */
+    private final ArrayBlockingQueue<WebSocketFrame> framesToSend = new ArrayBlockingQueue<>(1000);
+    private volatile boolean stopped;
     private WebSocketConnectionCollection connections;
     private WebSocketFrameAssembler frameAssembler;
     private OutputStream srcOut;
     private Thread readerThread;
     private TwoWayStreaming twoWayStreaming;
-    private int closedPollIntervalMilliSeconds = 60000;
 
+    /**
+     * Called for every text or binary message from the client. Control frames are handled by the connection.
+     */
     public abstract void onMessage(WebSocketFrame frame);
 
     public Outcome handle(Exchange exc, WebSocketConnectionCollection connections) {
-        if (exc.getProperty(WEBSOCKET_CLOSED_POLL_INTERVAL_MILLISECONDS) != null)
-            closedPollIntervalMilliSeconds = (int) exc.getProperty(WEBSOCKET_CLOSED_POLL_INTERVAL_MILLISECONDS);
         this.connections = connections;
-        if (isRelevantForMe(exc)) {
-            handleInternal(exc);
+        if (!isRelevantForMe(exc))
+            return Outcome.CONTINUE;
+        final var key = exc.getRequest().getHeader().getFirstValue(SEC_WEBSOCKET_KEY);
+        if (key == null || key.isBlank()) {
+            exc.setResponse(Response.badRequest("WebSocket upgrade without Sec-WebSocket-Key header.").build());
             return Outcome.RETURN;
         }
-        return Outcome.CONTINUE;
+        handleInternal(exc);
+        return Outcome.RETURN;
     }
 
     private void handleInternal(Exchange exc) {
@@ -73,31 +95,62 @@ public abstract class WebSocketConnection {
             @Override
             public void setExchangeFinished() {
                 readerThread.start();
-                sendMessagesFromQueueOrWait();
+                sendFramesFromQueue();
             }
         });
     }
 
-    private void sendMessagesFromQueueOrWait() {
+    /**
+     * Runs on the connection's handler thread until the client is gone or the closing handshake is done, then closes
+     * the connection.
+     */
+    private void sendFramesFromQueue() {
         try {
             while (!Thread.currentThread().isInterrupted()) {
-                if (twoWayStreaming.isClosed())
+                final var frame = framesToSend.take();
+                if (frame == STOP)
                     return;
 
-                String msg = messagesToSend.poll(closedPollIntervalMilliSeconds, MILLISECONDS);
-                if (msg == null)
-                    continue;
+                log.trace("sending {}", frame);
+                frame.write(srcOut);
 
-                WebSocketFrame wsf = new WebSocketFrame(true, false, false, false, 1, false, mask, msg.getBytes(UTF_8));
-                log.trace("sending {}", wsf);
-
-                wsf.write(srcOut);
+                // RFC 6455 7.1.1: after its close frame, the server closes the TCP connection
+                if (frame.getOpcode() == OPCODE_CLOSE)
+                    return;
             }
         } catch (InterruptedException e) {
             // do nothing
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            log.debug("Could not send to WebSocket client.", e);
+        } finally {
+            stopped = true;
+            connections.unregister(this);
+            closeConnection();
         }
+    }
+
+    private void closeConnection() {
+        try {
+            if (!twoWayStreaming.isClosed())
+                twoWayStreaming.close();
+        } catch (IOException e) {
+            log.error("Could not close source socket.", e);
+        }
+    }
+
+    /**
+     * Releases the sender. If the queue is full, its frames are dropped: the client is gone anyway.
+     */
+    private void stop() {
+        stopped = true;
+        if (!framesToSend.offer(STOP)) {
+            framesToSend.clear();
+            framesToSend.offer(STOP);
+        }
+    }
+
+    private static WebSocketFrame frameToClient(int opcode, byte[] payload) {
+        return new WebSocketFrame(true, false, false, false, opcode, false, mask, payload);
     }
 
     private void initialize(Exchange exc) {
@@ -147,17 +200,11 @@ public abstract class WebSocketConnection {
     }
 
     public void enqueueForSending(String msg) {
-        try {
-            messagesToSend.add(msg);
-        } catch (IllegalStateException e) {
+        if (stopped)
+            return;
+        if (!framesToSend.offer(frameToClient(OPCODE_TEXT, msg.getBytes(UTF_8)))) {
             log.error("Closing websocket connection in adminApi: Queue is full.");
-            try {
-                if (twoWayStreaming.isClosed())
-                    return;
-                twoWayStreaming.close();
-            } catch (IOException ex) {
-                log.error("Could not close source socket.", ex);
-            }
+            closeConnection(); // ends the reader, which releases the sender
         }
     }
 
@@ -165,31 +212,42 @@ public abstract class WebSocketConnection {
         @Override
         public void run() {
             try {
-                frameAssembler.readFrames(frame -> {
+                frameAssembler.readFrames(this::handleFrame);
+            } catch (SocketException e) {
+                log.debug("AdminApi WebSocket connection closed: {}", e.getMessage());
+            } catch (IOException e) {
+                if (twoWayStreaming.isClosed())
+                    log.debug("AdminApi WebSocket connection closed: {}", e.getMessage());
+                else
+                    log.error("Error while reading frames.", e);
+            } finally {
+                stop();
+            }
+        }
+
+        /**
+         * The assembler reuses the frame for the next read, so payloads handed to the sender are copied.
+         */
+        private void handleFrame(WebSocketFrame frame) {
+            switch (frame.getOpcode()) {
+                case OPCODE_TEXT, OPCODE_BINARY -> {
                     try {
                         onMessage(frame);
                     } catch (Exception e) {
                         log.error("Error handling frame.", e);
                     }
-                });
-
-            } catch (SocketException e) {
-                if (e.getMessage().contains("Connection reset"))
-                    log.debug("AdminApi WebSocket connection closed.");
-                else
-                    log.error("Error while reading frames.", e);
-            } catch (IOException e) {
-                log.error("Error while reading frames.", e);
-            } finally {
-                connections.unregister(WebSocketConnection.this);
-                try {
-                    if (!twoWayStreaming.isClosed())
-                        twoWayStreaming.close();
-                } catch (IOException e) {
-                    log.error("Error while closing handler", e);
                 }
-
+                case OPCODE_PING -> framesToSend.offer(frameToClient(OPCODE_PONG, payloadOf(frame, (int) frame.getPayloadLength())));
+                // echo the status code, if any (RFC 6455 5.5.1)
+                case OPCODE_CLOSE -> framesToSend.offer(frameToClient(OPCODE_CLOSE, payloadOf(frame, frame.getPayloadLength() >= 2 ? 2 : 0)));
+                default -> {
+                    // pongs and continuations are not expected from the admin console
+                }
             }
+        }
+
+        private static byte[] payloadOf(WebSocketFrame frame, int length) {
+            return Arrays.copyOf(frame.getPayload(), length);
         }
     }
 }

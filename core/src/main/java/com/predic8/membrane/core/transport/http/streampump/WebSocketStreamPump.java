@@ -242,12 +242,14 @@ public class WebSocketStreamPump extends StreamPump {
         private final int opcode;
         private final boolean masked;
         private final byte[] maskKey;
+        private final Exchange originalExchange;
         private final ByteArrayOutputStream payload = new ByteArrayOutputStream();
 
         PendingMessage(WebSocketFrame first) {
             opcode = first.getOpcode();
             masked = first.isMasked();
             maskKey = first.getMaskKey().clone();
+            originalExchange = first.getOriginalExchange();
         }
 
         void append(WebSocketFrame fragment) {
@@ -258,7 +260,9 @@ public class WebSocketStreamPump extends StreamPump {
         }
 
         WebSocketFrame toFrame() {
-            return new WebSocketFrame(true, false, false, false, opcode, masked, maskKey, payload.toByteArray());
+            final var frame = new WebSocketFrame(true, false, false, false, opcode, masked, maskKey, payload.toByteArray());
+            frame.setOriginalExchange(originalExchange);
+            return frame;
         }
     }
 }

@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.transport.http.streampump;
 
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.tunnel.WebSocketInterceptor;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
 import com.predic8.membrane.core.router.Router;
@@ -190,6 +191,32 @@ class WebSocketStreamPumpTest {
         assertArrayEquals(concat(ping, message), relayed.toServer());
     }
 
+    /**
+     * Frame interceptors like the STOMP reassembler read the handshake from the frame, so a joined message
+     * must carry it just like an unfragmented one.
+     */
+    @Test
+    void fragmentedMessageKeepsOriginalExchange() throws Exception {
+        final var exchanges = new ArrayList<Exchange>();
+        final var recorder = new RecordingInterceptor() {
+            @Override
+            public void handleFrame(WebSocketFrame frame, boolean frameTravelsToRight, WebSocketSender sender) throws Exception {
+                exchanges.add(frame.getOriginalExchange());
+                super.handleFrame(frame, frameTravelsToRight, sender);
+            }
+        };
+        final var handshake = new Exchange(null);
+
+        relayFromClient(apiWithFrameFlow(recorder, 1024), handshake,
+                frame(true, 1, new byte[]{1, 2, 3, 4}, "Hi"),
+                frame(false, 1, new byte[]{1, 2, 3, 4}, "Hel"),
+                frame(true, 0, new byte[]{1, 2, 3, 4}, "lo"));
+
+        assertEquals(2, exchanges.size());
+        assertSame(handshake, exchanges.getFirst());
+        assertSame(handshake, exchanges.get(1));
+    }
+
     @Test
     void fragmentedMessageAboveMaxMessageSizeIsClosedWithMessageTooBig() throws Exception {
         final var recorder = new RecordingInterceptor();
@@ -253,9 +280,13 @@ class WebSocketStreamPumpTest {
      * Runs the client-to-server direction of a connection until the client's frames are used up.
      */
     private static Relayed relayFromClient(APIProxy api, byte[]... clientFrames) {
+        return relayFromClient(api, null, clientFrames);
+    }
+
+    private static Relayed relayFromClient(APIProxy api, Exchange originalExchange, byte[]... clientFrames) {
         final var toServer = new ByteArrayOutputStream();
         final var toClient = new ByteArrayOutputStream();
-        final var clientToServer = new WebSocketStreamPump(new ByteArrayInputStream(concat(clientFrames)), toServer, null, "->", api, true, null);
+        final var clientToServer = new WebSocketStreamPump(new ByteArrayInputStream(concat(clientFrames)), toServer, null, "->", api, true, originalExchange);
         final var serverToClient = new WebSocketStreamPump(new ByteArrayInputStream(new byte[0]), toClient, null, "<-", api, false, null);
         clientToServer.init(serverToClient);
         serverToClient.init(clientToServer);
