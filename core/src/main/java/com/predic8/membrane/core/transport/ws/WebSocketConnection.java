@@ -203,7 +203,7 @@ public abstract class WebSocketConnection {
         if (stopped)
             return;
         if (!framesToSend.offer(frameToClient(OPCODE_TEXT, msg.getBytes(UTF_8)))) {
-            log.error("Closing websocket connection in adminApi: Queue is full.");
+            log.error("Closing WebSocket connection: send queue is full.");
             closeConnection(); // ends the reader, which releases the sender
         }
     }
@@ -214,10 +214,10 @@ public abstract class WebSocketConnection {
             try {
                 frameAssembler.readFrames(this::handleFrame);
             } catch (SocketException e) {
-                log.debug("AdminApi WebSocket connection closed: {}", e.getMessage());
+                log.debug("WebSocket connection closed: {}", e.getMessage());
             } catch (IOException e) {
                 if (twoWayStreaming.isClosed())
-                    log.debug("AdminApi WebSocket connection closed: {}", e.getMessage());
+                    log.debug("WebSocket connection closed: {}", e.getMessage());
                 else
                     log.error("Error while reading frames.", e);
             } finally {

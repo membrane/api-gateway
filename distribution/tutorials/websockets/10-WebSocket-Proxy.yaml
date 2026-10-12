@@ -1,0 +1,49 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.7.1.json
+#
+# Tutorial: WebSocket Proxy
+#
+# A web page receives live data from a backend over a WebSocket connection through Membrane.
+#
+# 1.) Start Membrane:
+#     ./membrane.sh -c 10-WebSocket-Proxy.yaml
+#
+# 2.) Open the page in the browser:
+#     http://localhost:2000
+#
+#     The value, chart and message list update every second.
+#
+# 3.) Check the console of Membrane. Every message is logged:
+#
+#     INFO WebSocketLogInterceptor:76 {} - Frame travels from server to client
+#     INFO WebSocketLogInterceptor:77 {} - WebSocketFrame{error='null', finalFragment=true, ... payload={"message":0,"timestamp":"2026-10-12T18:33:35.193487Z","value":20.5}}
+
+api:
+  name: WebSocket proxy
+  port: 2000
+  flow:
+    - webSocket:
+        flow:
+          - wsLog: {}
+  target:
+    host: localhost
+    port: 2001
+
+---
+api:
+  name: Live data backend
+  port: 2001
+  path:
+    uri: /stream
+  flow:
+    - webSocketDemoStream: {}
+
+---
+api:
+  name: Web page
+  port: 2001
+  flow:
+    - static:
+        location: live-data.html
+        contentType: text/html
+    - return:
+        status: 200
