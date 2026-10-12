@@ -33,6 +33,27 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * @description Runs plugins on STOMP over WebSocket. Every text message, in either direction, is parsed as a STOMP
+ * frame and passed to the nested plugins as a request: the STOMP command is the method, the STOMP headers are the
+ * header fields. Their changes are written back into the message. A plugin that ends the flow drops the message.
+ * Other messages pass unchanged.
+ * @yaml <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - webSocket:
+ *         flow:
+ *           - wsStompReassembler:
+ *               flow:
+ *                 - setHeader:
+ *                     name: x-gateway
+ *                     value: membrane
+ *   target:
+ *     host: localhost
+ *     port: 61614
+ * </code></pre>
+ */
 @MCElement(name = "wsStompReassembler")
 public class WebSocketStompReassembler implements WebSocketInterceptorInterface {
 
@@ -125,6 +146,9 @@ public class WebSocketStompReassembler implements WebSocketInterceptorInterface 
         return interceptors;
     }
 
+    /**
+     * @description Plugins applied to each STOMP frame, as to a request.
+     */
     @MCChildElement
     public void setFlow(List<Interceptor> flow) {
         this.interceptors = flow;

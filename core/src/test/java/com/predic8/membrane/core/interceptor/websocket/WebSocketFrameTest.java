@@ -42,6 +42,17 @@ class WebSocketFrameTest {
     }
 
     @Test
+    void frameWithPayloadAboveInitialBufferSizeCanBeCreated() throws Exception {
+        final var payload = filled(10_000, (byte) 'x');
+        final var bytes = new WebSocketFrame(true, false, false, false, 1, false, new byte[4], payload).toBytes();
+
+        final var parsed = new ArrayList<byte[]>();
+        new WebSocketFrameAssembler(new ByteArrayInputStream(bytes), null)
+                .readFrames(frame -> parsed.add(Arrays.copyOf(frame.getPayload(), (int) frame.getPayloadLength())));
+        assertArrayEquals(payload, parsed.getFirst());
+    }
+
+    @Test
     void frameAboveConfiguredMaxPayloadSizeIsRejected() throws Exception {
         final var frame = new WebSocketFrame(true, false, false, false, 2, false, new byte[4], new byte[513]).toBytes();
         final var assembler = new WebSocketFrameAssembler(new ByteArrayInputStream(frame), null, 512);

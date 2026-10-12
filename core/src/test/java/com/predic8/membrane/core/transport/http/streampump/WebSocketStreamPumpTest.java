@@ -16,7 +16,11 @@ package com.predic8.membrane.core.transport.http.streampump;
 
 import com.predic8.membrane.core.interceptor.tunnel.WebSocketInterceptor;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
+import com.predic8.membrane.core.router.Router;
 import com.predic8.membrane.core.transport.ws.WebSocketFrame;
+import com.predic8.membrane.core.transport.ws.WebSocketFrameAssembler;
+import com.predic8.membrane.core.transport.ws.WebSocketInterceptorInterface;
+import com.predic8.membrane.core.transport.ws.WebSocketSender;
 import com.predic8.membrane.core.transport.ws.interceptors.WebSocketLogInterceptor;
 import com.predic8.membrane.core.transport.ws.interceptors.WebSocketLogInterceptor.Encoding;
 import org.junit.jupiter.api.Test;
@@ -25,10 +29,13 @@ import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.NullSource;
 
 import java.io.*;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.BooleanSupplier;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
 class WebSocketStreamPumpTest {
@@ -146,7 +153,7 @@ class WebSocketStreamPumpTest {
     @Test
     void oversizedClientFrameIsAnsweredWithCloseMessageTooBig() throws Exception {
         final var webSocket = new WebSocketInterceptor();
-        webSocket.setMaxFramePayloadSize(512);
+        webSocket.setMaxMessageSize(512);
         final var api = new APIProxy();
         api.setFlow(List.of(webSocket));
 
@@ -164,5 +171,140 @@ class WebSocketStreamPumpTest {
         assertEquals(0, toServer.size());
         // FIN + opcode 8 (close), unmasked as it travels to the client, payload: status 1009
         assertArrayEquals(new byte[]{(byte) 0x88, 2, 0x03, (byte) 0xF1}, toClient.toByteArray());
+    }
+
+    /**
+     * Frame interceptors see whole messages: fragments are joined, control frames in between pass right away.
+     */
+    @Test
+    void fragmentedMessageIsCoalescedForFrameInterceptors() throws Exception {
+        final var recorder = new RecordingInterceptor();
+        final var start = frame(false, 1, new byte[]{1, 2, 3, 4}, "Hel");
+        final var ping = frame(true, 9, new byte[]{5, 6, 7, 8}, "p");
+        final var end = frame(true, 0, new byte[]{9, 10, 11, 12}, "lo");
+
+        final var relayed = relayFromClient(apiWithFrameFlow(recorder, 1024), start, ping, end);
+
+        final var message = frame(true, 1, new byte[]{1, 2, 3, 4}, "Hello");
+        assertEquals(List.of(toList(ping), toList(message)), recorder.frames);
+        assertArrayEquals(concat(ping, message), relayed.toServer());
+    }
+
+    @Test
+    void fragmentedMessageAboveMaxMessageSizeIsClosedWithMessageTooBig() throws Exception {
+        final var recorder = new RecordingInterceptor();
+        final var relayed = relayFromClient(apiWithFrameFlow(recorder, 8),
+                frame(false, 2, new byte[]{1, 2, 3, 4}, "12345"),
+                frame(true, 0, new byte[]{1, 2, 3, 4}, "67890"));
+
+        assertTrue(recorder.frames.isEmpty());
+        assertEquals(0, relayed.toServer().length);
+        assertArrayEquals(new byte[]{(byte) 0x88, 2, 0x03, (byte) 0xF1}, relayed.toClient()); // 1009
+    }
+
+    @Test
+    void continuationWithoutStartIsClosedWithProtocolError() throws Exception {
+        final var recorder = new RecordingInterceptor();
+        final var relayed = relayFromClient(apiWithFrameFlow(recorder, 1024), frame(true, 0, new byte[]{1, 2, 3, 4}, "lo"));
+
+        assertTrue(recorder.frames.isEmpty());
+        assertEquals(0, relayed.toServer().length);
+        assertArrayEquals(new byte[]{(byte) 0x88, 2, 0x03, (byte) 0xEA}, relayed.toClient()); // 1002
+    }
+
+    @Test
+    void closeDuringFragmentedMessageDropsThePartialMessage() throws Exception {
+        final var recorder = new RecordingInterceptor();
+        final var close = frame(true, 8, new byte[]{1, 2, 3, 4}, "");
+        final var relayed = relayFromClient(apiWithFrameFlow(recorder, 1024), frame(false, 1, new byte[]{1, 2, 3, 4}, "Hel"), close);
+
+        assertEquals(1, recorder.frames.size());
+        assertArrayEquals(close, relayed.toServer());
+    }
+
+    /**
+     * A failing frame interceptor must not lose a message silently: both peers get close 1011 (internal error).
+     */
+    @Test
+    void failingFrameInterceptorClosesBothSidesWithInternalError() throws Exception {
+        final var failing = new RecordingInterceptor() {
+            @Override
+            public void handleFrame(WebSocketFrame frame, boolean frameTravelsToRight, WebSocketSender sender) {
+                throw new IllegalStateException("broken");
+            }
+        };
+        final var relayed = relayFromClient(apiWithFrameFlow(failing, 1024), frame(true, 1, new byte[]{1, 2, 3, 4}, "Hello"));
+
+        assertArrayEquals(new byte[]{(byte) 0x88, 2, 0x03, (byte) 0xF3}, relayed.toClient()); // 1011, unmasked
+
+        final var toServer = new ArrayList<byte[]>();
+        new WebSocketFrameAssembler(new ByteArrayInputStream(relayed.toServer()), null).readFrames(f -> {
+            assertTrue(f.isMasked());
+            toServer.add(Arrays.copyOf(f.getPayload(), (int) f.getPayloadLength()));
+            assertEquals(8, f.getOpcode());
+        });
+        assertEquals(1, toServer.size());
+        assertArrayEquals(new byte[]{0x03, (byte) 0xF3}, toServer.getFirst());
+    }
+
+    private record Relayed(byte[] toServer, byte[] toClient) {}
+
+    /**
+     * Runs the client-to-server direction of a connection until the client's frames are used up.
+     */
+    private static Relayed relayFromClient(APIProxy api, byte[]... clientFrames) {
+        final var toServer = new ByteArrayOutputStream();
+        final var toClient = new ByteArrayOutputStream();
+        final var clientToServer = new WebSocketStreamPump(new ByteArrayInputStream(concat(clientFrames)), toServer, null, "->", api, true, null);
+        final var serverToClient = new WebSocketStreamPump(new ByteArrayInputStream(new byte[0]), toClient, null, "<-", api, false, null);
+        clientToServer.init(serverToClient);
+        serverToClient.init(clientToServer);
+        clientToServer.run();
+        return new Relayed(toServer.toByteArray(), toClient.toByteArray());
+    }
+
+    private static APIProxy apiWithFrameFlow(WebSocketInterceptorInterface frameInterceptor, int maxMessageSize) {
+        final var webSocket = new WebSocketInterceptor();
+        webSocket.setMaxMessageSize(maxMessageSize);
+        webSocket.setFlow(List.of(frameInterceptor));
+        final var api = new APIProxy();
+        api.setFlow(List.of(webSocket));
+        return api;
+    }
+
+    private static byte[] frame(boolean fin, int opcode, byte[] maskKey, String payload) throws IOException {
+        return new WebSocketFrame(fin, false, false, false, opcode, true, maskKey, payload.getBytes(UTF_8)).toBytes();
+    }
+
+    private static byte[] concat(byte[]... parts) {
+        final var out = new ByteArrayOutputStream();
+        for (byte[] part : parts)
+            out.writeBytes(part);
+        return out.toByteArray();
+    }
+
+    private static List<Byte> toList(byte[] bytes) {
+        final var list = new ArrayList<Byte>();
+        for (byte b : bytes)
+            list.add(b);
+        return list;
+    }
+
+    /**
+     * Records each frame as it is sent on, as wire bytes, and passes it on.
+     */
+    private static class RecordingInterceptor implements WebSocketInterceptorInterface {
+
+        final List<List<Byte>> frames = new ArrayList<>();
+
+        @Override
+        public void init(Router router) {
+        }
+
+        @Override
+        public void handleFrame(WebSocketFrame frame, boolean frameTravelsToRight, WebSocketSender sender) throws Exception {
+            frames.add(toList(frame.toBytes()));
+            sender.handleFrame(frame);
+        }
     }
 }

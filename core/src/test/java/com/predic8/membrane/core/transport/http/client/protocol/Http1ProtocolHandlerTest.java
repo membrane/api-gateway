@@ -25,15 +25,18 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.*;
 import java.net.Socket;
 
-import static com.predic8.membrane.core.http.Header.EXPECT;
-import static com.predic8.membrane.core.http.Header.KEEP_ALIVE;
+import static com.predic8.membrane.core.exchange.Exchange.ALLOW_WEBSOCKET;
+import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.http.Response.continue100;
 import static com.predic8.membrane.core.transport.http.client.protocol.AbstractProtocolHandler.UPGRADED_PROTOCOL;
+import static java.lang.Boolean.TRUE;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -45,6 +48,54 @@ class Http1ProtocolHandlerTest {
     @BeforeEach
     void setUp() {
         handler = new Http1ProtocolHandler(new HttpClientConfiguration(), null);
+    }
+
+    @Nested
+    class UpgradeResponse {
+
+        /**
+         * <code>Connection</code> is a list of tokens (RFC 9110 7.6.1); "Upgrade" need not come first.
+         */
+        @ParameterizedTest
+        @ValueSource(strings = {"Upgrade", "upgrade", "keep-alive, Upgrade", "Upgrade, keep-alive"})
+        void webSocketUpgradeIsRecognized(String connection) throws Exception {
+            final var exc = get("/ws").buildExchange();
+            exc.setProperty(ALLOW_WEBSOCKET, TRUE);
+            exc.setResponse(switchingProtocols(connection, "websocket"));
+
+            handler.checkUpgradeResponse(exc);
+
+            assertEquals("websocket", exc.getProperty(UPGRADED_PROTOCOL, String.class));
+        }
+
+        @Test
+        void webSocketUpgradeNotAllowed() throws Exception {
+            final var exc = get("/ws").buildExchange();
+            exc.setResponse(switchingProtocols("keep-alive, Upgrade", "websocket"));
+
+            handler.checkUpgradeResponse(exc);
+
+            assertNull(exc.getProperty(UPGRADED_PROTOCOL));
+        }
+
+        @Test
+        void connectionWithoutUpgradeToken() throws Exception {
+            final var exc = get("/ws").buildExchange();
+            exc.setProperty(ALLOW_WEBSOCKET, TRUE);
+            exc.setResponse(switchingProtocols("keep-alive", "websocket"));
+
+            handler.checkUpgradeResponse(exc);
+
+            assertNull(exc.getProperty(UPGRADED_PROTOCOL));
+        }
+
+        private static Response switchingProtocols(String connection, String upgrade) {
+            final var res = new Response();
+            res.setStatusCode(101);
+            res.getHeader().add(CONNECTION, connection);
+            res.getHeader().add(UPGRADE, upgrade);
+            return res;
+        }
     }
 
     @Nested

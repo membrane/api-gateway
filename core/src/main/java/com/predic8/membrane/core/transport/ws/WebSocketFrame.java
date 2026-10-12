@@ -52,7 +52,7 @@ public class WebSocketFrame {
         this.isMasked = isMasked;
         payloadLength = payload.length;
         System.arraycopy(maskingKey,0,this.maskKey,0,maskingKey.length);
-        System.arraycopy(payload,0,this.payload,0,payload.length);
+        this.payload = payload.clone();
     }
 
     /**
@@ -157,6 +157,10 @@ public class WebSocketFrame {
         return 2 + getExtendedPayloadSize(computePayloadField()) + (isMasked ? maskKey.length : 0) + (payload != null ? (int) payloadLength : 0);
     }
 
+
+    public boolean isFinalFragment() {
+        return finalFragment;
+    }
 
     public int getOpcode() {
         return opcode;

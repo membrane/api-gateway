@@ -41,9 +41,7 @@ import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.http.MimeType.isBinary;
 import static com.predic8.membrane.core.util.HttpUtil.*;
-import static com.predic8.membrane.core.util.text.StringUtil.getLastNonEmptyOfCommaSeparatedString;
-import static com.predic8.membrane.core.util.text.StringUtil.maskNonPrintableCharacters;
-import static com.predic8.membrane.core.util.text.StringUtil.truncateAfter;
+import static com.predic8.membrane.core.util.text.StringUtil.*;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.stream;
@@ -133,6 +131,8 @@ public class Header {
     public static final String SEC_WEBSOCKET_ACCEPT = "Sec-WebSocket-Accept";
 
     public static final String SEC_WEBSOCKET_KEY = "Sec-WebSocket-Key";
+
+    public static final String SEC_WEBSOCKET_EXTENSIONS = "Sec-WebSocket-Extensions";
 
     /**
      * Please note that this is a relic from RFC7540 and has been removed in RFC9113. It is present for backward

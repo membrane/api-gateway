@@ -18,15 +18,19 @@ package com.predic8.membrane.core.transport.ws.interceptors;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.annot.Required;
+import com.predic8.membrane.core.router.Router;
 import com.predic8.membrane.core.transport.ws.WebSocketFrame;
 import com.predic8.membrane.core.transport.ws.WebSocketInterceptorInterface;
 import com.predic8.membrane.core.transport.ws.WebSocketSender;
 import org.springframework.beans.BeansException;
-import com.predic8.membrane.annot.Required;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
+/**
+ * @description Adds a custom frame interceptor: a Spring bean implementing
+ * <code>WebSocketInterceptorInterface</code>, which receives every message and decides whether to pass it on.
+ */
 @MCElement(name="wsInterceptor")
 public class WebSocketSpringInterceptor implements ApplicationContextAware, WebSocketInterceptorInterface {
 
