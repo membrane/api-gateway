@@ -138,16 +138,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                petType:
-                  type: string
-              required: [petType]
-              discriminator:
-                propertyName: petType
-                mapping:
-                  dog: '#/components/schemas/Dog'
-              unevaluatedProperties: false
+              $ref: '#/components/schemas/Pet'
       responses:
         "200":
           description: "OK"
@@ -158,13 +149,28 @@ components:
       properties:
         id:
           type: string
+    Pet:
+      type: object
+      properties:
+        petType:
+          type: string
+      required: [petType]
+      discriminator:
+        propertyName: petType
+        mapping:
+          dog: '#/components/schemas/Dog'
+      unevaluatedProperties: false
     Cat:
-      type: object
-      properties:
-        lives:
-          type: integer
+      allOf:
+        - $ref: '#/components/schemas/Pet'
+        - type: object
+          properties:
+            lives:
+              type: integer
     Dog:
-      type: object
-      properties:
-        tricks:
-          type: integer
+      allOf:
+        - $ref: '#/components/schemas/Pet'
+        - type: object
+          properties:
+            tricks:
+              type: integer
