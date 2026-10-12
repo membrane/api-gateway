@@ -263,7 +263,31 @@ public class ObjectValidator implements JsonSchemaValidator {
                     collectEvaluatedProperties(ctx, sub, node, evaluated, visiting);
             });
 
+        // validateDiscriminator validates the node against the selected schema, so it evaluates its properties
+        if (current.getDiscriminator() != null) {
+            final var selected = getDiscriminatedSchema(current, node);
+            if (selected != null)
+                collectEvaluatedProperties(ctx, selected, node, evaluated, visiting);
+        }
+
         visiting.remove(current);
+    }
+
+    /**
+     * @return the schema the discriminator of owner selects for node, resolved like in validateDiscriminator, or
+     * null if the discriminator property is not set or names no schema
+     */
+    @SuppressWarnings("rawtypes")
+    private @Nullable Schema getDiscriminatedSchema(Schema owner, JsonNode node) {
+        final var discriminator = owner.getDiscriminator();
+        final var value = getBaseSchemaName(node, discriminator.getPropertyName());
+        if (value == null)
+            return null;
+        final Map<String, String> mapping = discriminator.getMapping();
+        final var target = mapping != null && mapping.containsKey(value) ? mapping.get(value) : value;
+        if (target != null && target.startsWith("#"))
+            return SchemaUtil.getSchemaFromRef(api, target);
+        return getBaseSchema(target);
     }
 
     @SuppressWarnings("rawtypes")

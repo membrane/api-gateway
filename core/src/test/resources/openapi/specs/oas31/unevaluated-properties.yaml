@@ -132,6 +132,25 @@ paths:
       responses:
         "200":
           description: "OK"
+  /discriminator:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                petType:
+                  type: string
+              required: [petType]
+              discriminator:
+                propertyName: petType
+                mapping:
+                  dog: '#/components/schemas/Dog'
+              unevaluatedProperties: false
+      responses:
+        "200":
+          description: "OK"
 components:
   schemas:
     Base:
@@ -139,3 +158,13 @@ components:
       properties:
         id:
           type: string
+    Cat:
+      type: object
+      properties:
+        lives:
+          type: integer
+    Dog:
+      type: object
+      properties:
+        tricks:
+          type: integer

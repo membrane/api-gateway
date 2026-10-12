@@ -120,6 +120,27 @@ class UnevaluatedPropertiesTest extends AbstractValidatorTest {
     }
 
     @Test
+    void discriminatorByComponentNameCountsSelectedSchema() throws ParseException {
+        assertEquals(0, post("/discriminator", """
+                {"petType": "Cat", "lives": 9}
+                """).size());
+    }
+
+    @Test
+    void discriminatorByMappingCountsSelectedSchema() throws ParseException {
+        assertEquals(0, post("/discriminator", """
+                {"petType": "dog", "tricks": 3}
+                """).size());
+    }
+
+    @Test
+    void discriminatorIgnoresPropertiesOfOtherSchemas() throws ParseException {
+        assertRejected("/discriminator", """
+                {"petType": "Cat", "tricks": 3}
+                """, "unevaluated property: tricks");
+    }
+
+    @Test
     void additionalPropertiesEvaluatesEverything() throws ParseException {
         assertEquals(0, post("/additional", """
                 {"foo": "bar"}
