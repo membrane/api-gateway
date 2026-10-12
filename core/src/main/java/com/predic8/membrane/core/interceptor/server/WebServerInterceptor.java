@@ -130,6 +130,10 @@ public class WebServerInterceptor extends AbstractInterceptor {
             }
         }
 
+        // A directory request: serve the index file directly instead of first trying to read the directory as a file
+        if ((uri.isEmpty() || uri.endsWith("/")) && tryToReceiveResource(exc, uri))
+            return RETURN;
+
         try {
             exc.setTimeReqSent(currentTimeMillis());
             exc.setResponse(createResponseInternal(router.getResolverMap(), combine(getBeanBaseLocation(), docBase, uri)));
