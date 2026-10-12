@@ -75,6 +75,7 @@ public class ObjectValidator implements JsonSchemaValidator {
 
         ValidationErrors errors = validateRequiredProperties(ctx, node);
         errors.add(validateAdditionalProperties(ctx, node));
+        errors.add(validateUnevaluatedProperties(ctx, node));
         errors.add(validateProperties(ctx, node));
         errors.add(validatePatternProperties(ctx, node));
         errors.add(validateSize(ctx, node));
@@ -181,6 +182,98 @@ public class ObjectValidator implements JsonSchemaValidator {
         // Unknown type – be safe and return an error
         return errors.add(ctx.statusCode(400),
                 format("Unsupported additionalProperties: %s", joinByComma(additionalProperties.keySet())));
+    }
+
+    /**
+     * unevaluatedProperties (JSON Schema 2020-12) applies to the properties that no keyword of this
+     * schema or of its applicator subschemas has evaluated.
+     */
+    @SuppressWarnings("rawtypes")
+    private ValidationErrors validateUnevaluatedProperties(ValidationContext ctx, ObjectNode node) {
+        final Schema unevaluatedSchema = schema.getUnevaluatedProperties();
+        if (unevaluatedSchema == null || Boolean.TRUE.equals(unevaluatedSchema.getBooleanSchemaValue()))
+            return null;
+
+        final var evaluated = new HashSet<String>();
+        collectEvaluatedProperties(ctx, schema, node, evaluated, new HashSet<>());
+        final var unevaluated = new LinkedHashMap<String, JsonNode>();
+        node.fields().forEachRemaining(field -> {
+            if (!evaluated.contains(field.getKey()))
+                unevaluated.put(field.getKey(), field.getValue());
+        });
+        if (unevaluated.isEmpty())
+            return null;
+
+        if (Boolean.FALSE.equals(unevaluatedSchema.getBooleanSchemaValue())) {
+            return error(ctx.statusCode(400),
+                    format("Object has the unevaluated %s: %s. But the schema does not allow unevaluated properties.",
+                            propertyOrProperties(unevaluated.keySet()),
+                            joinByComma(unevaluated.keySet())));
+        }
+        final var errors = new ValidationErrors();
+        unevaluated.forEach((propName, value) ->
+                errors.add(new SchemaValidator(api, unevaluatedSchema).validate(ctx.addJSONpointerSegment(propName), value)));
+        return errors;
+    }
+
+    /**
+     * Adds the names of the properties of node that the schema evaluates. Subschemas of anyOf, oneOf
+     * and if/then/else only count if the node is valid against them.
+     */
+    @SuppressWarnings("rawtypes")
+    private void collectEvaluatedProperties(ValidationContext ctx, Schema current, ObjectNode node, Set<String> evaluated, Set<Schema> visiting) {
+        if (!visiting.add(current))
+            return;
+
+        if (current.get$ref() != null)
+            collectEvaluatedProperties(ctx, SchemaUtil.getSchemaFromRef(api, current.get$ref()), node, evaluated, visiting);
+
+        final Map<String, Schema> properties = current.getProperties();
+        final Map<String, Schema> patternProperties = current.getPatternProperties();
+        node.fieldNames().forEachRemaining(name -> {
+            if (current.getAdditionalProperties() != null
+                || current.getUnevaluatedProperties() != null && current != schema
+                || properties != null && properties.containsKey(name)
+                || patternProperties != null && patternProperties.keySet().stream().anyMatch(r -> Pattern.compile(r).matcher(name).matches()))
+                evaluated.add(name);
+        });
+
+        if (current.getAllOf() != null)
+            ((List<Schema>) current.getAllOf()).forEach(sub -> collectEvaluatedProperties(ctx, sub, node, evaluated, visiting));
+        collectValidBranches(ctx, current.getAnyOf(), node, evaluated, visiting);
+        collectValidBranches(ctx, current.getOneOf(), node, evaluated, visiting);
+
+        if (current.getIf() != null) {
+            final var ifMatches = isValid(ctx, current.getIf(), node);
+            final var branch = ifMatches ? current.getThen() : current.getElse();
+            if (ifMatches)
+                collectEvaluatedProperties(ctx, current.getIf(), node, evaluated, visiting);
+            if (branch != null)
+                collectEvaluatedProperties(ctx, branch, node, evaluated, visiting);
+        }
+
+        final Map<String, Schema> dependentSchemas = current.getDependentSchemas();
+        if (dependentSchemas != null)
+            dependentSchemas.forEach((name, sub) -> {
+                if (node.has(name))
+                    collectEvaluatedProperties(ctx, sub, node, evaluated, visiting);
+            });
+
+        visiting.remove(current);
+    }
+
+    @SuppressWarnings("rawtypes")
+    private void collectValidBranches(ValidationContext ctx, List<Schema> branches, ObjectNode node, Set<String> evaluated, Set<Schema> visiting) {
+        if (branches == null)
+            return;
+        branches.stream()
+                .filter(sub -> isValid(ctx, sub, node))
+                .forEach(sub -> collectEvaluatedProperties(ctx, sub, node, evaluated, visiting));
+    }
+
+    @SuppressWarnings("rawtypes")
+    private boolean isValid(ValidationContext ctx, Schema sub, ObjectNode node) {
+        return new SchemaValidator(api, sub).validate(ctx, node).isEmpty();
     }
 
     private String propertyOrProperties(Set<String> additionalProperties) {
