@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.URISyntaxException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -104,7 +105,7 @@ class Http2ClientTest {
                         backend.getInetAddress().getHostAddress(), backend.getLocalPort(), null, null, 2000);
     }
 
-    private static CompletableFuture<Response> callAsync(Http2Client client) {
+    private static CompletableFuture<Response> callAsync(Http2Client client) throws URISyntaxException {
         final var exc = get("http://localhost/").header("Host", "localhost").buildExchange();
         return CompletableFuture.supplyAsync(() -> {
             try {
