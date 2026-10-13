@@ -5,6 +5,13 @@
 #   export JAVA_OPTS='-Dlog4j.configurationFile=examples/logging/access/log4j2_access.xml'
 #   export JAVA_OPTS='-Dlog4j.configurationFile=/abs/path/log4j2.xml'
 
+# A local config is the default; explicit JAVA_OPTS properties come last and win.
+# The file: URI keeps the shared startup script from resolving it against MEMBRANE_HOME.
+if [ -f ./log4j2.yaml ]; then
+  JAVA_OPTS="-Dlog4j.configurationFile=file:./log4j2.yaml ${JAVA_OPTS:-}"
+  export JAVA_OPTS
+fi
+
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P)
 
 dir="$SCRIPT_DIR"

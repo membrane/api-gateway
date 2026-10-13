@@ -29,6 +29,13 @@ normalize_java_opts() {
 }
 normalize_java_opts
 
+# Prefer a configuration in the current directory. Put this default before
+# JAVA_OPTS so an explicit -Dlog4j.configurationFile still takes precedence.
+LOCAL_LOG4J_OPT=
+if [ -f ./log4j2.yaml ]; then
+  LOCAL_LOG4J_OPT=-Dlog4j.configurationFile=./log4j2.yaml
+fi
+
 detect_colors() {
   # User override via environment variable (only accepts "true" or "false", case-insensitive)
   if [ -n "$MEMBRANE_DISABLE_TERM_COLORS" ]; then
@@ -85,7 +92,7 @@ fi
 
 JAVA_OPTS="${JAVA_OPTS:-} -Dmembrane.disable.term.colors=$DISABLE_COLORS -Djdk.xml.maxGeneralEntitySizeLimit=0 -Djdk.xml.totalEntitySizeLimit=0"
 
-java ${JAVA_OPTS:-} -cp "$CLASSPATH" com.predic8.membrane.core.cli.RouterCLI "$@"
+java ${LOCAL_LOG4J_OPT:-} ${JAVA_OPTS:-} -cp "$CLASSPATH" com.predic8.membrane.core.cli.RouterCLI "$@"
 s=$?
 [ $s -ne 0 ] && {
   echo "Membrane terminated with exit code $s" >&2

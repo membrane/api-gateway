@@ -16,8 +16,6 @@ package com.predic8.membrane.tutorials.logging;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.Map;
-
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.matchesPattern;
@@ -33,8 +31,8 @@ public class AccessLogTutorialTest extends AbstractLoggingTutorialTest {
     }
 
     @Override
-    protected Map<String, String> getEnvs() {
-        return Map.of("JAVA_OPTS", "-Dlog4j.configurationFile=tutorials/logging/log4j2-30-access.yaml");
+    protected String getLoggingConfig() {
+        return "log4j2-30-access.yaml";
     }
 
     @Test

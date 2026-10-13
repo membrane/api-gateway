@@ -17,9 +17,27 @@ package com.predic8.membrane.tutorials.logging;
 import com.predic8.membrane.tutorials.AbstractMembraneTutorialTest;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Arrays;
+import java.util.Map;
+
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 public abstract class AbstractLoggingTutorialTest extends AbstractMembraneTutorialTest {
+
+    protected abstract String getLoggingConfig();
+
+    @Override
+    protected void startMembrane() throws Exception {
+        var tutorialDir = baseDir.toPath();
+        Files.copy(tutorialDir.resolve(getLoggingConfig()), tutorialDir.resolve("log4j2.yaml"), REPLACE_EXISTING);
+        super.startMembrane();
+    }
+
+    @Override
+    protected Map<String, String> getEnvs() {
+        return Map.of("MEMBRANE_DISABLE_TERM_COLORS", "true");
+    }
 
     @Override
     protected String getTutorialDir() {
