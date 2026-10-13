@@ -28,6 +28,7 @@ import java.util.*;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.Type.*;
 import static org.junit.jupiter.api.Assertions.*;
 public class RewriteInterceptorTest {
 
@@ -76,6 +77,41 @@ public class RewriteInterceptorTest {
 		assertEquals(CONTINUE, di.handleRequest(exc));
 		assertEquals(CONTINUE, rewriter.handleRequest(exc));
 		assertEquals("http://www.predic8.de:80/buy?item=banana&amount=3", exc.getDestinations().getFirst());
+	}
+
+	/**
+	 * A '://' inside the query must not make the rewritten path count as absolute, see issue #3437.
+	 */
+	@Test
+	void rewriteKeepsTargetWhenQueryContainsSchemeSeparator() throws URISyntaxException {
+		final var uri = "/store/products?ns=http://example.com/foo/bar";
+		exc.setRequest(get(uri).build());
+		exc.setOriginalRequestUri(uri);
+		exc.setProxy(sp);
+
+		assertEquals(CONTINUE, di.handleRequest(exc));
+		assertEquals(CONTINUE, rewriter.handleRequest(exc));
+		assertEquals("http://www.predic8.de:80/shop/v2/products?ns=http://example.com/foo/bar", exc.getDestinations().getFirst());
+	}
+
+	/**
+	 * A relative destination has no authority, so a '//' in its query must not be taken for one.
+	 */
+	@Test
+	void rewriteWithoutTargetIgnoresSchemeSeparatorInQuery() throws URISyntaxException {
+		exc.setRequest(get("/store/products?ns=http://example.com/foo/bar").build());
+		assertEquals(CONTINUE, di.handleRequest(exc));
+		assertEquals(CONTINUE, rewriter.handleRequest(exc));
+		assertEquals("/shop/v2/products?ns=http://example.com/foo/bar", exc.getDestinations().getFirst());
+	}
+
+	/**
+	 * Only an absolute 'to' defaults to a redirect, a '://' in its query does not.
+	 */
+	@Test
+	void doDefaultIgnoresSchemeSeparatorInQuery() {
+		assertEquals(REWRITE, new Mapping("^/store/(.*)", "/shop?ns=http://example.com/$1", null).getDo());
+		assertEquals(REDIRECT_TEMPORARY, new Mapping("^/store/(.*)", "https://example.com/shop/$1", null).getDo());
 	}
 
 	@Test

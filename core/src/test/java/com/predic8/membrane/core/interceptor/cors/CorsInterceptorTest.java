@@ -251,6 +251,19 @@ class CorsInterceptorTest {
         }
 
         @Test
+        void allowHeadersKeepConfiguredOrder() throws Exception {
+            i.setOrigins("https://example.com");
+            i.setMethods("GET, POST");
+            i.setHeaders("Content-Type, X-Foo, X-Bar, Authorization, Accept");
+            i.init();
+
+            final var exc = makePreflight(createPreflight("https://example.com", METHOD_POST)
+                    .header(ACCESS_CONTROL_REQUEST_HEADERS, "X-Foo"));
+
+            assertEquals("content-type, x-foo, x-bar, authorization, accept", getAllowHeaders(exc));
+        }
+
+        @Test
         void explicitlyAllowedNullOriginPreflight() throws Exception {
             i.init();
             i.setOrigins("http://foo.example.com https://bar.example.com null");

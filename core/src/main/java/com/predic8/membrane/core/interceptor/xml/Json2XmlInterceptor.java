@@ -33,8 +33,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 /**
  * @description Converts a JSON message body to XML. A body that is not JSON passes through unchanged. The result is
  * UTF-8 encoded, begins with an XML prolog, and the Content-Type is set to <code>application/xml</code>. If the body is
- * not valid JSON the exchange is aborted with a 500 Problem Details. See the examples under
- * examples/message-transformation/json2xml and the tutorial tutorials/xml/10-JSON-to-XML.yaml.
+ * not valid JSON the exchange is aborted with a 500 Problem Details. See the tutorial
+ * tutorials/xml/10-JSON-to-XML.yaml.
  * @topic 2. Enterprise Integration Patterns
  * @yaml
  * <pre><code>

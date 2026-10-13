@@ -37,6 +37,7 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.openapi.util.UriTemplateMatcher.matchTemplate;
 import static com.predic8.membrane.core.util.FileUtil.readInputStream;
+import static com.predic8.membrane.core.util.URIUtil.toRoutingPath;
 import static com.predic8.membrane.core.util.URLParamUtil.getParams;
 import static java.util.Collections.emptyMap;
 
@@ -137,11 +138,14 @@ public class ScriptingUtils {
         if (!(exchange.getProxy() instanceof APIProxy ap))
             return emptyMap();
 
+        // Match the same path as routing does, see RuleManager.getMatchingRule(), otherwise a path like "/products//42"
+        // selects the API for "/products/{id}" but yields no "id"
+        final var path = toRoutingPath(exchange.getRequest().getUri());
         try {
-            return new HashMap<>(matchTemplate(ap.getPath().getUri(), exchange.getRequest().getUri())); // Make lazy!
+            return new HashMap<>(matchTemplate(ap.getPath().getUri(), path)); // Make lazy!
         } catch (PathDoesNotMatchException ignore) {
             // Log does only show up if path parameters are used in an expression
-            log.info("No path parameters extracted: uriTemplate {}, path {}", ap.getPath().getUri(), exchange.getRequest().getUri());
+            log.info("No path parameters extracted: uriTemplate {}, path {}", ap.getPath().getUri(), path);
         }
         // Add map to avoid a second parsing
         return emptyMap();

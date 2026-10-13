@@ -47,4 +47,10 @@ public class CollectionsUtilTest {
         assertIterableEquals(List.of(1,2,3), CollectionsUtil.toList(List.of(1,2,3).iterator()));
     }
 
+    @Test
+    void toLowerCaseSetKeepsOrder() {
+        final var lowerCase = CollectionsUtil.toLowerCaseSet(StringList.parseToSet("Content-Type, X-Foo, X-Bar, Authorization, Accept"));
+        assertIterableEquals(List.of("content-type", "x-foo", "x-bar", "authorization", "accept"), lowerCase);
+    }
+
 }

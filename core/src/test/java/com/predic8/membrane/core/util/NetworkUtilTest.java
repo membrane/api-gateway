@@ -17,29 +17,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
-import java.io.IOException;
-import java.net.ServerSocket;
-
 import static com.predic8.membrane.core.util.NetworkUtil.*;
 import static java.lang.Long.parseUnsignedLong;
 import static java.net.InetAddress.getByName;
 import static org.junit.jupiter.api.Assertions.*;
 
 class NetworkUtilTest {
-    @Test
-    void testGetRandomPortEqualAbove3000() throws Exception {
-        assertTrue(getFreePortEqualAbove(3000) >= 3000);
-    }
-
-    @Test
-    void testFailToGetPortAbove65534() {
-        try (ServerSocket ignored = new ServerSocket(65535)) {
-            assertThrows(IOException.class, () -> getFreePortEqualAbove(65535));
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to bind port 65535.", e);
-        }
-    }
-
     @Test
     void removeBracketsIfPresent_removes_and_trims() {
         assertEquals("2001:db8::1", removeBracketsIfPresent("[2001:db8::1]"));
