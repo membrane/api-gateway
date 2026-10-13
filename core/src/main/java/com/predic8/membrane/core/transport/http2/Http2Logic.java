@@ -13,18 +13,27 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.http2;
 
-import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.http2.frame.*;
-import com.predic8.membrane.core.util.*;
-import com.twitter.hpack.*;
-import org.apache.commons.lang3.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.util.EndOfStreamException;
+import com.twitter.hpack.Decoder;
+import com.twitter.hpack.Encoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.net.*;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.*;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.predic8.membrane.core.transport.http2.frame.Error.*;
 import static com.predic8.membrane.core.transport.http2.frame.Frame.*;
@@ -177,6 +186,7 @@ public class Http2Logic {
             throw new FatalConnectionException(ERROR_PROTOCOL_ERROR); // stream is in idle state
 
         streamInfo.receivedRstStream();
+        messageHandler.handleStreamReset(streamId, rstStream.getErrorCode());
     }
 
     private void handleFrame(DataFrame dataFrame) throws IOException {

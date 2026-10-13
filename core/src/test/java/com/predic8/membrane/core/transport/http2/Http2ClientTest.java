@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.transport.http2;
 
+import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.router.DefaultRouter;
 import com.predic8.membrane.core.transport.http.Connection;
@@ -22,6 +23,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.EOFException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -31,7 +33,10 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static com.predic8.membrane.core.http.Request.get;
+import static com.predic8.membrane.core.http.Request.post;
+import static com.predic8.membrane.core.transport.http2.frame.Error.ERROR_CANCEL;
 import static com.predic8.membrane.core.transport.http2.frame.Frame.TYPE_HEADERS;
+import static com.predic8.membrane.core.transport.http2.frame.Frame.TYPE_RST_STREAM;
 import static org.junit.jupiter.api.Assertions.*;
 
 class Http2ClientTest {
@@ -41,6 +46,9 @@ class Http2ClientTest {
 
     /** HEADERS frame on stream 1 with END_STREAM and END_HEADERS, HPACK-encoded ":status: 200". */
     private static final byte[] RESPONSE_HEADERS_200_END_STREAM = {0, 0, 1, 0x1, 0x5, 0, 0, 0, 1, (byte) 0x88};
+
+    /** RST_STREAM frame on stream 1 with error code REFUSED_STREAM. */
+    private static final byte[] RST_STREAM_1_REFUSED_STREAM = {0, 0, 4, 0x3, 0, 0, 0, 0, 1, 0, 0, 0, 0x7};
 
     @Test
     void closeImmediatelyFailsPendingCall() throws Exception {
@@ -55,6 +63,43 @@ class Http2ClientTest {
     @Test
     void peerDisconnectFailsPendingCall() throws Exception {
         assertPendingCallFails((client, peer) -> peer.close());
+    }
+
+    @Test
+    void peerResetFailsPendingCall() throws Exception {
+        final var e = assertPendingCallFails((client, peer) -> {
+            peer.getOutputStream().write(RST_STREAM_1_REFUSED_STREAM);
+            peer.getOutputStream().flush();
+        });
+        assertTrue(e.getMessage().contains("reset by the peer"), e.getMessage());
+    }
+
+    @Test
+    void unreadableRequestBodyCancelsStream() throws Exception {
+        final var router = new DefaultRouter();
+        try (final var backend = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
+            backend.setSoTimeout(2000);
+            final var connection = createConnection(router, backend);
+            try (final var peer = backend.accept()) {
+                peer.setSoTimeout(2000);
+                final var client = new Http2Client(connection, false);
+                final var exc = post("http://localhost/").header("Host", "localhost").body(new InputStream() {
+                    @Override
+                    public int read() throws IOException {
+                        throw new IOException("Upload aborted");
+                    }
+                }).buildExchange();
+
+                assertThrows(ReadingBodyException.class, () -> client.doCall(exc, false));
+
+                final var in = peer.getInputStream();
+                in.readNBytes(PREFACE_LENGTH);
+                assertEquals(ERROR_CANCEL, readUntilFrame(in, TYPE_RST_STREAM)[3]);
+                assertTrue(client.isIdle(), "A cancelled stream must not keep the connection busy");
+            }
+        } finally {
+            router.stop();
+        }
     }
 
     @Test
@@ -123,13 +168,18 @@ class Http2ClientTest {
     private static void readUntilRequestHeaders(Socket peer) throws IOException {
         final var in = peer.getInputStream();
         in.readNBytes(PREFACE_LENGTH);
+        readUntilFrame(in, TYPE_HEADERS);
+    }
+
+    /** Skips frames until one of the given type arrives and returns its payload. */
+    private static byte[] readUntilFrame(InputStream in, int type) throws IOException {
         while (true) {
             final var header = in.readNBytes(9);
             if (header.length < 9)
-                throw new EOFException("Connection closed before the request HEADERS frame");
-            in.skipNBytes(((header[0] & 0xff) << 16) | ((header[1] & 0xff) << 8) | (header[2] & 0xff));
-            if (header[3] == TYPE_HEADERS)
-                return;
+                throw new EOFException("Connection closed before a frame of type %d arrived".formatted(type));
+            final var payload = in.readNBytes(((header[0] & 0xff) << 16) | ((header[1] & 0xff) << 8) | (header[2] & 0xff));
+            if (header[3] == type)
+                return payload;
         }
     }
 
@@ -137,7 +187,7 @@ class Http2ClientTest {
         void terminate(Http2Client client, Socket peer) throws Exception;
     }
 
-    private static void assertPendingCallFails(Termination termination) throws Exception {
+    private static IOException assertPendingCallFails(Termination termination) throws Exception {
         final var router = new DefaultRouter();
         try (final var backend = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
             backend.setSoTimeout(2000);
@@ -154,7 +204,7 @@ class Http2ClientTest {
                 termination.terminate(client, peer);
 
                 final var e = assertThrows(ExecutionException.class, () -> call.get(2, TimeUnit.SECONDS));
-                assertInstanceOf(IOException.class, e.getCause().getCause());
+                return assertInstanceOf(IOException.class, e.getCause().getCause());
             }
         } finally {
             router.stop();

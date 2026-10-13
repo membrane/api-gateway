@@ -19,12 +19,15 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.http.Connection;
 import com.predic8.membrane.core.transport.http.HttpServerThreadFactory;
 import com.predic8.membrane.core.transport.http2.frame.GoawayFrame;
+import com.predic8.membrane.core.transport.http2.frame.RstStreamFrame;
+import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.concurrent.GuardedBy;
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -35,6 +38,7 @@ import static com.predic8.membrane.core.transport.http2.Http2ExchangeHandler.cre
 import static com.predic8.membrane.core.transport.http2.Http2ExchangeHandler.writeMessageBody;
 import static com.predic8.membrane.core.transport.http2.Http2Logic.getRemoteAddr;
 import static com.predic8.membrane.core.transport.http2.Http2ServerHandler.PREFACE;
+import static com.predic8.membrane.core.transport.http2.frame.Error.ERROR_CANCEL;
 
 public class Http2Client implements Runnable, AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(Http2Client.class);
@@ -62,11 +66,13 @@ public class Http2Client implements Runnable, AutoCloseable {
             cdl.countDown();
         }
 
-        void fail(IOException failure) {
+        /** @return whether this failure completed the call */
+        boolean fail(IOException failure) {
             if (!completed.compareAndSet(false, true))
-                return;
+                return false;
             this.failure = failure;
             cdl.countDown();
+            return true;
         }
 
         Response await() throws IOException, InterruptedException {
@@ -93,6 +99,13 @@ public class Http2Client implements Runnable, AutoCloseable {
                 if (ri != null)
                     ri.complete((Response) message);
             }
+
+            @Override
+            public void handleStreamReset(int streamId, int errorCode) {
+                ResponseInfo ri = responses.get(streamId);
+                if (ri != null)
+                    ri.fail(new IOException("HTTP/2 stream %d was reset by the peer with error code %d.".formatted(streamId, errorCode)));
+            }
         });
 
         Thread thread = new Thread(this);
@@ -113,6 +126,7 @@ public class Http2Client implements Runnable, AutoCloseable {
         // TODO: check number of concurrent streams
         ResponseInfo ri = new ResponseInfo();
         responses.put(streamId, ri);
+        var streamOpened = false;
         try {
             // Every close path sets closed before draining responses, so a call
             // registered concurrently is either drained there or rejected here.
@@ -121,13 +135,19 @@ public class Http2Client implements Runnable, AutoCloseable {
 
             StreamInfo streamInfo = new StreamInfo(streamId, logic.sender, logic.peerSettings, logic.ourSettings);
             logic.streams.put(streamId, streamInfo);
+            streamOpened = true;
 
             logic.sender.send(streamId, (encoder, peerSettings) -> createHeadersFrames(exc.getRequest(), exc.getRequest().getHeader(), streamId, encoder, peerSettings, false));
 
             writeMessageBody(streamId, streamInfo, logic.sender, logic.peerSettings, logic.peerFlowControl, exc.getRequest(), retainBody);
 
-            // TODO: handle error/exception
             return ri.await();
+        } catch (Exception e) {
+            // Ended without a response, e.g. the request body could not be read or the caller was
+            // interrupted: cancel the stream, otherwise it stays open and the connection never gets idle.
+            if (streamOpened && ri.fail(new IOException("HTTP/2 call aborted", e)))
+                cancel(streamId);
+            throw e;
         } finally {
             responses.remove(streamId);
         }
@@ -143,7 +163,8 @@ public class Http2Client implements Runnable, AutoCloseable {
             logic.init();
 
             logic.handle();
-        } catch (IOException e) {
+        } catch (IOException | EndOfStreamException e) {
+            // Usually the peer closed the connection.
             if (logic.receiving)
                 LOG.debug("HTTP/2 client stopped receiving: {}", e.toString());
         } catch (Exception e) {
@@ -205,6 +226,15 @@ public class Http2Client implements Runnable, AutoCloseable {
             // Also wake a sender waiting for work. This is safe before init()
             // has published senderFuture and does not require joining it.
             logic.sender.stop();
+        }
+    }
+
+    /** The frame sender closes the stream when it writes the RST_STREAM frame. */
+    private void cancel(int streamId) {
+        try {
+            logic.sender.send(streamId, (encoder, peerSettings) -> List.of(RstStreamFrame.construct(streamId, ERROR_CANCEL)));
+        } catch (IOException e) {
+            LOG.debug("Could not cancel HTTP/2 stream {}: {}", streamId, e.toString());
         }
     }
 

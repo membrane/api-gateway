@@ -60,6 +60,10 @@ public class RstStreamFrame {
         return frame;
     }
 
+    public int getErrorCode() {
+        return errorCode;
+    }
+
     public void validateSize() throws IOException {
         if (frame.length != 4)
             throw new FatalConnectionException(Error.ERROR_FRAME_SIZE_ERROR);
