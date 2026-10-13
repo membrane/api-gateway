@@ -51,7 +51,11 @@ class Http2LogicTest {
                 arguments("DATA on stream 0", new byte[]{0, 0, 1, 0x0, 0, 0, 0, 0, 0, 'a'}),
                 arguments("DATA padded beyond its payload", new byte[]{0, 0, 2, 0x0, 0x8, 0, 0, 0, 1, 5, 'a'}),
                 arguments("HEADERS padded beyond its payload", new byte[]{0, 0, 2, 0x1, 0x4 | 0x8, 0, 0, 0, 1, 5, (byte) 0x88}),
-                arguments("SETTINGS with 5 bytes", new byte[]{0, 0, 5, 0x4, 0, 0, 0, 0, 0, 0, 0x3, 0, 0, 0})
+                arguments("SETTINGS with 5 bytes", new byte[]{0, 0, 5, 0x4, 0, 0, 0, 0, 0, 0, 0x3, 0, 0, 0}),
+                // The client opened stream 3, but even ids belong to the server, which opened none: stream 2 is idle.
+                arguments("WINDOW_UPDATE on an idle stream of the other parity", new byte[]{
+                        0, 0, 3, 0x1, 0x5, 0, 0, 0, 3, (byte) 0x82, (byte) 0x84, (byte) 0x86,
+                        0, 0, 4, 0x8, 0, 0, 0, 0, 2, 0, 0, 0, 1})
         );
     }
 

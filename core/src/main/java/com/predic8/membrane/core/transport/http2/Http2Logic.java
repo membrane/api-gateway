@@ -131,9 +131,11 @@ public class Http2Logic {
     /**
      * Closed streams are removed from {@link #streams}, so an unknown id belongs either to a closed
      * stream or to an idle one. Ids up to the highest one opened belong to closed streams (RFC 9113 §5.1.1).
+     * Clients open odd ids and servers even ones, so only the opener's own ids are compared.
      */
     private boolean isClosed(int streamId) {
-        return streamId <= highestPeerStreamId || streamId < nextClientStreamId.get();
+        return streamId % 2 == highestPeerStreamId % 2 && streamId <= highestPeerStreamId
+                || streamId % 2 == 1 && streamId < nextClientStreamId.get();
     }
 
     /** Stops the frame sender and wakes writers waiting for the connection's flow-control window. */
@@ -310,7 +312,6 @@ public class Http2Logic {
             streamInfo = new StreamInfo(streamId1, sender, peerSettings, ourSettings);
             streams.put(streamId1, streamInfo);
         }
-        // Also covers a stream that a PRIORITY frame created before its HEADERS arrived.
         highestPeerStreamId = Math.max(highestPeerStreamId, streamId1);
 
         boolean isTrailer = streamInfo.isTrailer();

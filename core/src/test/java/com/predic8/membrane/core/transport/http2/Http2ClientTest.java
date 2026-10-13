@@ -34,6 +34,7 @@ import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -82,6 +83,9 @@ class Http2ClientTest {
 
     /** RST_STREAM frame on stream 1 with error code REFUSED_STREAM. */
     private static final byte[] RST_STREAM_1_REFUSED_STREAM = {0, 0, 4, 0x3, 0, 0, 0, 0, 1, 0, 0, 0, 0x7};
+
+    /** PING frame without ACK and with an all-zero payload. */
+    private static final byte[] PING = {0, 0, 8, 0x6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
     @Test
     void closeImmediatelyFailsPendingCall() throws Exception {
@@ -144,6 +148,50 @@ class Http2ClientTest {
                 in.readNBytes(PREFACE_LENGTH);
                 assertEquals(ERROR_CANCEL, readUntilFrame(in, TYPE_RST_STREAM)[3]);
                 assertTrue(client.isIdle(), "A cancelled stream must not keep the connection busy");
+            }
+        } finally {
+            router.stop();
+        }
+    }
+
+    /**
+     * The peer may answer before the request body has been sent completely (RFC 9113 §8.1). If reading the
+     * rest of the body fails then, the stream is still open on our side and has to be cancelled as well.
+     */
+    @Test
+    void unreadableRequestBodyAfterEarlyResponseCancelsStream() throws Exception {
+        final var router = new DefaultRouter();
+        try (final var backend = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
+            backend.setSoTimeout(2000);
+            final var connection = createConnection(router, backend);
+            try (final var peer = backend.accept()) {
+                peer.setSoTimeout(2000);
+                final var client = new Http2Client(connection, false);
+                final var responseReceived = new CountDownLatch(1);
+                final var call = callAsync(client, post("http://localhost/").header("Host", "localhost").body(new InputStream() {
+                    @Override
+                    public int read() throws IOException {
+                        try {
+                            responseReceived.await();
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        }
+                        throw new IOException("Upload aborted");
+                    }
+                }).buildExchange());
+
+                readUntilRequestHeaders(peer);
+                peer.getOutputStream().write(RESPONSE_HEADERS_200_END_STREAM);
+                // Frames are handled in order, so once the PING is acknowledged, the response has been received.
+                peer.getOutputStream().write(PING);
+                peer.getOutputStream().flush();
+                final var in = peer.getInputStream();
+                readUntilFrame(in, TYPE_PING);
+                responseReceived.countDown();
+
+                assertThrows(ExecutionException.class, () -> call.get(2, TimeUnit.SECONDS));
+                assertEquals(ERROR_CANCEL, readUntilFrame(in, TYPE_RST_STREAM)[3]);
+                awaitIdle(client);
             }
         } finally {
             router.stop();

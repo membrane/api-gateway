@@ -153,10 +153,13 @@ public class Http2Client implements Runnable, AutoCloseable {
 
             return ri.await();
         } catch (Exception e) {
-            // Ended without a response, e.g. the request body could not be read or the caller was
-            // interrupted: cancel the stream, otherwise it stays open and the connection never gets idle.
-            if (streamOpened && ri.fail(new IOException("HTTP/2 call aborted", e)))
+            // E.g. the request body could not be read or the caller was interrupted: cancel the stream, otherwise it
+            // stays open and the connection never gets idle. Even if the response already arrived, our side may still
+            // be open. For a stream that is already closed, the frame sender drops the RST_STREAM.
+            if (streamOpened) {
+                ri.fail(new IOException("HTTP/2 call aborted", e));
                 cancel(streamId);
+            }
             throw e;
         } finally {
             responses.remove(streamId);
