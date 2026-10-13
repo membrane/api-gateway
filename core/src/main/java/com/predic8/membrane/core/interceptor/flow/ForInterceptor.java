@@ -42,8 +42,8 @@ import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
  * for each item the nested plugins run with the current item exposed as the exchange property
  * <code>it</code>. Iteration happens only in the request flow and only when the expression yields a
  * list; any other value passes through unchanged. If the expression fails to evaluate, the exchange
- * is aborted with a Problem Details response. See the examples and tutorials under
- * examples/orchestration and tutorials/orchestration.
+ * is aborted with a Problem Details response. See the tutorials under
+ * tutorials/orchestration.
  * <pre>
  * for:
  *   in: expression                # must evaluate to a List

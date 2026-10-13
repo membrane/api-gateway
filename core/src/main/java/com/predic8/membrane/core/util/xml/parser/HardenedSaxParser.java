@@ -22,6 +22,7 @@ import org.xml.sax.SAXNotSupportedException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
+import javax.xml.transform.sax.SAXSource;
 import java.io.StringReader;
 
 import static javax.xml.XMLConstants.FEATURE_SECURE_PROCESSING;
@@ -73,6 +74,18 @@ public final class HardenedSaxParser {
             parser.getXMLReader().setEntityResolver((publicId, systemId) -> new InputSource(new StringReader("")));
             return parser;
         } catch (ParserConfigurationException | SAXException e) {
+            throw new XmlParseException("Failed to create SAX parser: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Wraps untrusted XML for a {@link javax.xml.transform.Transformer}, so the input is parsed by a
+     * hardened parser instead of the transformer's own, which resolves external entities.
+     */
+    public static SAXSource newSAXSource(InputSource input) {
+        try {
+            return new SAXSource(newSAXParser().getXMLReader(), input);
+        } catch (SAXException e) {
             throw new XmlParseException("Failed to create SAX parser: " + e.getMessage(), e);
         }
     }

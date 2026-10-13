@@ -15,15 +15,17 @@
 package com.predic8.membrane.core.resolver;
 
 import com.google.common.collect.Lists;
-import com.predic8.membrane.core.util.functionalInterfaces.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.util.functionalInterfaces.ExceptionThrowingConsumer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.nio.file.*;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
-import static com.predic8.membrane.core.util.URIUtil.*;
+import static com.predic8.membrane.core.util.URIUtil.pathFromFileURI;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 
 public class FileSchemaResolver implements SchemaResolver {
@@ -82,7 +84,7 @@ public class FileSchemaResolver implements SchemaResolver {
         try {
             return new FileInputStream(path);
         } catch (FileNotFoundException e) {
-            log.error("File {} not found: {}",path, e.getMessage());
+            log.debug("File {} not found: {}",path, e.getMessage());
             throw new ResourceRetrievalException(fileUrl, e);
         }
     }

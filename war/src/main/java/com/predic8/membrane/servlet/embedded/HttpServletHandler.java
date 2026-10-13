@@ -116,23 +116,29 @@ class HttpServletHandler extends AbstractHttpHandler {
 	}
 
 	private Request createRequest() throws IOException {
-
-		String pathQuery = request.getRequestURI();
-		if (request.getQueryString() != null)
-			pathQuery += "?" + request.getQueryString();
-
-		if (getTransport().isRemoveContextRoot()) {
-			String contextPath = request.getContextPath();
-			if (!contextPath.isEmpty() && pathQuery.startsWith(contextPath))
-				pathQuery = pathQuery.substring(contextPath.length());
-		}
-
 		return createRequest(
 				request.getMethod(),
-				pathQuery,
+				getRequestTarget(request.getRequestURI(), request.getQueryString(), request.getContextPath(), getTransport().isRemoveContextRoot()),
 				request.getProtocol(),
 				createHeader(),
 				request.getInputStream());
+	}
+
+	/**
+	 * Builds the request target, without the context path if it is removed. A container that does not redirect the
+	 * bare context root "/ctx" to "/ctx/" passes it on, which leaves no path, so the target becomes "/" or "/?q".
+	 */
+	static String getRequestTarget(String requestURI, String queryString, String contextPath, boolean removeContextRoot) {
+		String pathQuery = requestURI;
+		if (queryString != null)
+			pathQuery += "?" + queryString;
+
+		if (removeContextRoot && !contextPath.isEmpty() && pathQuery.startsWith(contextPath)) {
+			pathQuery = pathQuery.substring(contextPath.length());
+			if (!pathQuery.startsWith("/"))
+				pathQuery = "/" + pathQuery;
+		}
+		return pathQuery;
 	}
 
 	public Request createRequest(String method, String uri, String protocol, Header header, InputStream in) {

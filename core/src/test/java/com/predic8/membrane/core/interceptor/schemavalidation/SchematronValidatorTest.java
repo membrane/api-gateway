@@ -17,19 +17,20 @@ package com.predic8.membrane.core.interceptor.schemavalidation;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.router.TestRouter;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 
 import javax.xml.transform.TransformerFactory;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import static com.predic8.membrane.core.http.Header.VALIDATION_ERROR_SOURCE;
 import static com.predic8.membrane.core.http.Request.post;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class SchematronValidatorTest {
 
@@ -90,6 +91,24 @@ class SchematronValidatorTest {
 
         assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("An order must contain at least one item."),
                 "the schematron is public, so its errors stay visible in production");
+    }
+
+    /**
+     * GHSA-23v5-9h8v-7282: the message must not be parsed with external entity resolution enabled.
+     * The order only becomes valid if the gateway reads the file and inlines its {@code <item/>}.
+     */
+    @Test
+    void externalEntityIsNotResolved(@TempDir Path dir) throws Exception {
+        final var file = dir.resolve("item.xml");
+        Files.writeString(file, "<item/>");
+        final var exc = post("/foo").body("""
+                <?xml version="1.0"?>
+                <!DOCTYPE order [<!ENTITY xxe SYSTEM "%s">]>
+                <order>&xxe;</order>
+                """.formatted(file.toUri())).buildExchange();
+
+        assertEquals(ABORT, createValidator(ErrorDetailsPolicy.FULL).validateMessage(exc, REQUEST));
+        assertEquals(400, exc.getResponse().getStatusCode());
     }
 
     private static SchematronValidator createValidator(ErrorDetailsPolicy policy) throws Exception {

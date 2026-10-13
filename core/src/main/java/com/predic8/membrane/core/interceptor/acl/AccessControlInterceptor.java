@@ -41,8 +41,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
  * <p>Rules can match on IPv4/IPv6 (optionally with CIDR prefix) or on a hostname pattern. Hostname matching requires
  * the peer hostname to be resolved and is performed only when at least one configured rule uses a hostname target.</p>
  *
- * <p>See the examples under examples/security/access-control-list and the tutorial
- * tutorials/security/20-Access-Control-Lists.yaml.</p>
+ * <p>See the tutorial tutorials/security/20-Access-Control-Lists.yaml.</p>
  *
  * @yaml
  * <pre><code>

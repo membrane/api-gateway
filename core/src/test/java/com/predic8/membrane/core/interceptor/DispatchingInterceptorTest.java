@@ -13,21 +13,32 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.openapi.serviceproxy.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
 import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.util.*;
-import org.jetbrains.annotations.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.router.DefaultRouter;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.util.ConfigurationException;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
-import java.net.*;
+import java.net.URISyntaxException;
+import java.net.URL;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.http.Request.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.router.DummyTestRouter.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.TITLE;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.TYPE;
+import static com.predic8.membrane.core.http.Request.get;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.router.DummyTestRouter.productionRouter;
 import static com.predic8.membrane.core.util.URIFactory.ALLOW_ILLEGAL_CHARACTERS_URI_FACTORY;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -90,6 +101,38 @@ class DispatchingInterceptorTest {
 		addRequest("/foo");
 		assertEquals("http://thomas-bayer.com:80/foo", getGetAddressFromTargetElement());
     }
+
+	@ParameterizedTest
+	@ValueSource(strings = {"//x/admin", "//x//admin?a=b", "/x//admin"})
+	@DisplayName("A path with duplicate slashes is forwarded unchanged, a leading // is not taken as a host")
+	void duplicateSlashesAreForwardedUnchanged(String uri) throws Exception {
+		exc.setProxy(serviceProxy);
+		exc.setRequest(new Request.Builder().method("GET").uri(uri).build());
+		assertEquals("http://thomas-bayer.com:80" + uri, getGetAddressFromTargetElement());
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {"//x/admin", "/x//admin"})
+	@DisplayName("A path with duplicate slashes is appended unchanged to a target URL")
+	void duplicateSlashesAreAppendedUnchangedToTargetUrl(String uri) throws Exception {
+		serviceProxy.getTarget().setUrl("http://api.predic8.de");
+		serviceProxy.getTarget().setHost(null);
+		serviceProxy.getTarget().setPort(-1);
+		exc.setProxy(serviceProxy);
+		exc.setRequest(new Request.Builder().method("GET").uri(uri).build());
+		assertEquals("http://api.predic8.de" + uri, getGetAddressFromTargetElement());
+	}
+
+	@Test
+	@DisplayName("A leading // in the path does not replace the host of the target URL")
+	void leadingDoubleSlashDoesNotReplaceTargetHost() throws Exception {
+		serviceProxy.getTarget().setUrl("http://api.predic8.de");
+		serviceProxy.getTarget().setHost(null);
+		serviceProxy.getTarget().setPort(-1);
+		exc.setProxy(serviceProxy);
+		exc.setRequest(new Request.Builder().method("GET").uri("//attacker.example.com/x").build());
+		assertTrue(getGetAddressFromTargetElement().startsWith("http://api.predic8.de/"), getGetAddressFromTargetElement());
+	}
 
 	@Test
 	void getAddressFromTargetElementTargetWithURL() throws Exception {
