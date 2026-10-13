@@ -33,7 +33,7 @@ import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Vector;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import static com.predic8.membrane.core.util.URIUtil.toRoutingPath;
 
@@ -43,7 +43,8 @@ public class RuleManager {
 
     private Router router;
 
-    protected final List<Proxy> proxies = new Vector<>();
+    // Copy-on-write: getMatchingRule() iterates on every request without a lock while proxies can be added or removed at runtime
+    protected final List<Proxy> proxies = new CopyOnWriteArrayList<>();
 
     public enum RuleDefinitionSource {
         /**
