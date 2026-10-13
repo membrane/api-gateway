@@ -13,12 +13,16 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.server;
 
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.router.*;
-import org.junit.jupiter.api.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.router.DummyTestRouter;
+import com.predic8.membrane.core.router.Router;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -53,6 +57,14 @@ class WebServerInterceptorTest {
         // No index file is set, and no index page is generated, so throw not found.
         // System.out.println("exc.getResponse().getBodyAsStringDecoded() = " + exc.getResponse().getBodyAsStringDecoded());
         assertEquals(404, exc.getResponse().getStatusCode());
+    }
+
+    @Test
+    void indexFileServedForDirectory() {
+        ws.setIndex("missing.html,index.html");
+        ws.handleRequest(exc);
+        assertEquals(200, exc.getResponse().getStatusCode());
+        assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("<html"));
     }
 
     @Test
