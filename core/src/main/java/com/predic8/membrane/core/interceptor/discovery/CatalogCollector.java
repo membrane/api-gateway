@@ -66,9 +66,20 @@ public class CatalogCollector {
      *                          formats switch it off.
      */
     public CatalogCollector(String baseUrl, boolean collectOperations) {
-        this.baseUrl = trimTrailingSlash(baseUrl);
-        this.baseUri = baseUrl == null ? null : URI.create(baseUrl);
+        this.baseUrl = trimTrailingSlash(withLowercaseScheme(baseUrl));
+        this.baseUri = this.baseUrl == null ? null : URI.create(this.baseUrl);
         this.collectOperations = collectOperations;
+    }
+
+    /**
+     * Schemes are case-insensitive, but everything here compares them against <code>http</code>
+     * and <code>https</code>, so the base URL is normalised once.
+     */
+    private static String withLowercaseScheme(String url) {
+        if (url == null) return null;
+        final var colon = url.indexOf(':');
+        if (colon == -1) return url;
+        return url.substring(0, colon).toLowerCase(Locale.ROOT) + url.substring(colon);
     }
 
     public Catalog collect(Router router, Exchange exchange) {

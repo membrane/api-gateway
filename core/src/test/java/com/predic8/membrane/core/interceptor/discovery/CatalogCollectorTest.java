@@ -131,6 +131,18 @@ class CatalogCollectorTest {
     }
 
     @Test
+    void anUppercaseSchemeInTheBaseUrlIsTheSameScheme() throws Exception {
+        add(new ServiceProxy(new ServiceProxyKey("*", "*", "/shop", 2000), null, 0));
+
+        final var endpoint = only(collectorWithBaseUrl("HTTPS://api.example.com")
+                .collect(router, exchange("/apis.json"))).endpoint();
+
+        assertEquals("https", endpoint.protocol());
+        assertEquals(443, endpoint.port());
+        assertEquals("https://api.example.com/shop", endpoint.url());
+    }
+
+    @Test
     void anApiBoundToOneHostKeepsItDespiteTheBaseUrl() throws Exception {
         add(new ServiceProxy(new ServiceProxyKey("shop.example.com", "*", "/shop", 2000), null, 0));
 

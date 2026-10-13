@@ -26,6 +26,12 @@ import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE;
  * collection a crawler or registry can index. The catalog is collected from the running
  * configuration on each request and therefore never goes stale.
  * <p>
+ * APIs.json treats the <code>aid</code> of the collection and of each API as a stable identity.
+ * Without <code>baseUrl</code> those identifiers are built from the host each client used, so two
+ * crawlers that reach the gateway under different names index two different collections. Set
+ * <code>baseUrl</code> when the document is meant for crawlers or registries.
+ * </p>
+ * <p>
  * An API described by an OpenAPI document is listed with the title, description and version from
  * that document, plus links to the document itself and to its Swagger UI. A SOAP proxy is listed
  * with a link to the WSDL the gateway publishes. Any other proxy is listed with its own name and
