@@ -37,7 +37,6 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.openapi.util.UriTemplateMatcher.matchTemplate;
 import static com.predic8.membrane.core.util.FileUtil.readInputStream;
-import static com.predic8.membrane.core.util.URIUtil.toRoutingPath;
 import static com.predic8.membrane.core.util.URLParamUtil.getParams;
 import static java.util.Collections.emptyMap;
 
@@ -140,7 +139,7 @@ public class ScriptingUtils {
 
         // Match the same path as routing does, see RuleManager.getMatchingRule(), otherwise a path like "/products//42"
         // selects the API for "/products/{id}" but yields no "id"
-        final var path = toRoutingPath(exchange.getRequest().getUri());
+        final var path = exchange.getRequest().getRoutingPath();
         try {
             return new HashMap<>(matchTemplate(ap.getPath().getUri(), path)); // Make lazy!
         } catch (PathDoesNotMatchException ignore) {
