@@ -150,7 +150,7 @@ public class FrameSender implements Runnable {
             }
         } catch (IOException e) {
             // Usually the connection was closed, deliberately or by the peer.
-            log.info("HTTP/2 frame sender stopped: {}", e.toString());
+            log.debug("HTTP/2 frame sender stopped: {}", e.toString());
         } catch (Throwable e) {
             log.error("", e);
         } finally {

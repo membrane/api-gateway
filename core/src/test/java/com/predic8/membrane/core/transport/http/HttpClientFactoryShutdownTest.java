@@ -19,7 +19,7 @@ import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.transport.http2.Http2Client;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -37,23 +37,23 @@ class HttpClientFactoryShutdownTest {
 
     @Test
     void stalledHttp2SenderDoesNotBlockShutdownOrRuntimeReplacement() throws Exception {
-        var router = new DefaultRouter();
+        final var router = new DefaultRouter();
         Connection connection = null;
-        try (var backend = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
+        try (final var backend = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
             backend.setSoTimeout(2000);
-            var config = new HttpClientConfiguration();
+            final var config = new HttpClientConfiguration();
             config.setUseExperimentalHttp2(true);
             config.getConnection().setKeepAliveTimeout(60_000);
-            var factory = router.getHttpClientFactory();
-            var client = factory.createClient(config);
-            var connections = client.getConnectionFactory();
+            final var factory = router.getHttpClientFactory();
+            final var client = factory.createClient(config);
+            final var connections = client.getConnectionFactory();
             connection = connections.getConnectionManager().getConnection(
                     backend.getInetAddress().getHostAddress(), backend.getLocalPort(), null, null, 2000);
-            try (var peer = backend.accept()) {
-                var socket = connection.socket;
-                var writing = new CountDownLatch(1);
-                var writerExited = new CountDownLatch(1);
-                var preface = new AtomicBoolean(true);
+            try (final var peer = backend.accept()) {
+                final var socket = connection.socket;
+                final var writing = new CountDownLatch(1);
+                final var writerExited = new CountDownLatch(1);
+                final var preface = new AtomicBoolean(true);
                 // Let the client write its preface, then stall the actual frame
                 // sender until the socket is closed. Interrupts alone do not help.
                 connection.out = new OutputStream() {
@@ -85,9 +85,9 @@ class HttpClientFactoryShutdownTest {
                         write(0);
                     }
                 };
-                var stalled = new Http2Client(connection, false);
-                var other = mock(Http2Client.class);
-                var pool = connections.getHttp2ClientPool();
+                final var stalled = new Http2Client(connection, false);
+                final var other = mock(Http2Client.class);
+                final var pool = connections.getHttp2ClientPool();
                 pool.share("localhost", 443, null, null, null, null, stalled);
                 pool.share("localhost", 443, null, null, null, null, other);
                 try {
@@ -114,15 +114,15 @@ class HttpClientFactoryShutdownTest {
 
     @Test
     void connectionReturnedAfterShutdownIsClosed() throws Exception {
-        var router = new DefaultRouter();
+        final var router = new DefaultRouter();
         Connection connection = null;
-        try (var backend = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
+        try (final var backend = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
             backend.setSoTimeout(2000);
-            var manager = router.getHttpClientFactory().createClient(null)
+            final var manager = router.getHttpClientFactory().createClient(null)
                     .getConnectionFactory().getConnectionManager();
             connection = manager.getConnection(backend.getInetAddress().getHostAddress(),
                     backend.getLocalPort(), null, null, 2000);
-            try (var peer = backend.accept()) {
+            try (final var peer = backend.accept()) {
                 peer.setSoTimeout(2000);
                 router.stop();
                 assertFalse(connection.isClosed(), "Borrowed HTTP/1 connections may finish their exchange");
@@ -130,7 +130,7 @@ class HttpClientFactoryShutdownTest {
                 assertTrue(connection.isClosed());
                 assertEquals(0, manager.getNumberInPool());
                 assertEquals(-1, peer.getInputStream().read());
-                assertThrows(java.io.IOException.class, () -> manager.getConnection(
+                assertThrows(IOException.class, () -> manager.getConnection(
                         backend.getInetAddress().getHostAddress(), backend.getLocalPort(), null, null, 2000));
             }
         } finally {
@@ -145,13 +145,13 @@ class HttpClientFactoryShutdownTest {
 
     @Test
     void shutdownClosesHttp2PoolAndRejectsLateConnections() {
-        var router = new DefaultRouter();
-        var config = new HttpClientConfiguration();
+        final var router = new DefaultRouter();
+        final var config = new HttpClientConfiguration();
         config.setUseExperimentalHttp2(true);
         config.getConnection().setKeepAliveTimeout(60_000);
-        var pool = router.getHttpClientFactory().createClient(config).getConnectionFactory().getHttp2ClientPool();
-        var pooled = mock(Http2Client.class);
-        var late = mock(Http2Client.class);
+        final var pool = router.getHttpClientFactory().createClient(config).getConnectionFactory().getHttp2ClientPool();
+        final var pooled = mock(Http2Client.class);
+        final var late = mock(Http2Client.class);
         try {
             pool.share("localhost", 443, null, null, null, null, pooled);
             router.stop();
@@ -169,10 +169,10 @@ class HttpClientFactoryShutdownTest {
 
     @Test
     void resetRuntimeCreatesNewClientFactory() {
-        var router = new DefaultRouter();
+        final var router = new DefaultRouter();
         try {
-            var previous = router.getHttpClientFactory();
-            var client = previous.createClient(null);
+            final var previous = router.getHttpClientFactory();
+            final var client = previous.createClient(null);
             router.shutdownRuntimeComponents();
             router.resetRuntime();
             assertNotSame(previous, router.getHttpClientFactory());
@@ -182,36 +182,26 @@ class HttpClientFactoryShutdownTest {
         }
     }
 
-    @ParameterizedTest(name = "{0}, client.close() before shutdown: {1}")
-    @CsvSource({
-            "stop, false",
-            "shutdownRuntimeComponents, false",
-            "stop, true",
-            "shutdownRuntimeComponents, true"
-    })
-    void shutdownClosesIdleConnectionWithoutWaitingForTimer(String shutdownMethod, boolean closeClientFirst)
-            throws Exception {
-        var router = new DefaultRouter();
+    @ParameterizedTest
+    @ValueSource(strings = {"stop", "shutdownRuntimeComponents"})
+    void shutdownClosesIdleConnectionWithoutWaitingForTimer(String shutdownMethod) throws Exception {
+        final var router = new DefaultRouter();
         Connection connection = null;
-        try (var backend = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
+        try (final var backend = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
             backend.setSoTimeout(2000);
-            var config = new HttpClientConfiguration();
+            final var config = new HttpClientConfiguration();
             // Prevent normal idle expiry from masking missing shutdown cleanup.
             config.getConnection().setKeepAliveTimeout(60_000);
-            var client = router.getHttpClientFactory().createClient(config);
-            var manager = client.getConnectionFactory().getConnectionManager();
+            final var client = router.getHttpClientFactory().createClient(config);
+            final var manager = client.getConnectionFactory().getConnectionManager();
             connection = manager.getConnection(backend.getInetAddress().getHostAddress(),
                     backend.getLocalPort(), null, null, 2000);
-            try (var peer = backend.accept()) {
+            try (final var peer = backend.accept()) {
                 peer.setSoTimeout(2000);
                 connection.release();
                 assertFalse(connection.isClosed(), "Connection must be idle in the pool before shutdown");
                 assertEquals(1, manager.getNumberInPool());
 
-                // Also reproduce why merely calling the existing close() before
-                // cancelling the timer does not fix router shutdown.
-                if (closeClientFirst)
-                    client.close();
                 switch (shutdownMethod) {
                     case "stop" -> router.stop();
                     case "shutdownRuntimeComponents" -> router.shutdownRuntimeComponents();

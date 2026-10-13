@@ -126,7 +126,7 @@ public class Http2Client implements Runnable, AutoCloseable {
             ri.cdl.await();
 
             if (ri.failure != null)
-                throw ri.failure;
+                throw new IOException(ri.failure.getMessage(), ri.failure);
             return ri.response;
         } finally {
             responses.remove(streamId);
@@ -143,9 +143,12 @@ public class Http2Client implements Runnable, AutoCloseable {
             logic.init();
 
             logic.handle();
+        } catch (IOException e) {
+            if (logic.receiving)
+                LOG.debug("HTTP/2 client stopped receiving: {}", e.toString());
         } catch (Exception e) {
             if (logic.receiving)
-                e.printStackTrace();
+                LOG.warn("HTTP/2 client stopped receiving.", e);
         } finally {
             // No more responses can arrive once the reader stops, e.g. when the peer disconnects.
             closed = true;

@@ -47,7 +47,7 @@ public class HttpClientFactory {
         if (hc != null)
             return hc;
 
-        hc = new HttpClient(hcc, timerManager);
+        hc = new SharedHttpClient(hcc, timerManager);
         clients.put(config, hc);
         return hc;
     }
@@ -57,6 +57,22 @@ public class HttpClientFactory {
         closed = true;
         clients.values().forEach(HttpClient::closeImmediately);
         clients.clear();
+    }
+
+    /**
+     * The factory owns the lifecycle of the clients it hands out: {@link #closeAll()} closes them. A consumer
+     * calling {@link HttpClient#close()} must not stop the connection cleanup of a client that is still cached
+     * and shared with other consumers.
+     */
+    private static class SharedHttpClient extends HttpClient {
+        SharedHttpClient(@Nullable HttpClientConfiguration configuration, @Nullable TimerManager timerManager) {
+            super(configuration, timerManager);
+        }
+
+        @Override
+        public void close() {
+            // Intentionally empty: the factory closes shared clients in closeAll().
+        }
     }
 
     private static class Config {

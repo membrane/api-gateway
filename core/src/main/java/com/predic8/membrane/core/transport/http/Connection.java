@@ -203,10 +203,13 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 	public void abort() throws IOException {
 		if (socket == null)
 			return;
-		socket.close();
-		socket = null;
-		if (mgr != null)
-			mgr.releaseConnection(this);
+		try {
+			socket.close();
+			socket = null;
+		} finally {
+			if (mgr != null)
+				mgr.releaseConnection(this);
+		}
 	}
 
 	public void close() throws IOException {
