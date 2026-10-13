@@ -307,6 +307,36 @@ class Http2ClientTest {
         }
     }
 
+    /** After an interim response, a second HEADERS frame following the body is the trailer again. */
+    @Test
+    void trailerAfterInterimResponse() throws Exception {
+        final var router = new DefaultRouter();
+        try (final var backend = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
+            backend.setSoTimeout(2000);
+            final var connection = createConnection(router, backend);
+            try (final var peer = backend.accept()) {
+                peer.setSoTimeout(2000);
+                final var client = new Http2Client(connection, false);
+                final var call = callAsync(client);
+
+                readUntilRequestHeaders(peer);
+                final var encoder = new Encoder(4096);
+                peer.getOutputStream().write(headersFrame(1, 0x4, encoder, ":status", "103"));
+                peer.getOutputStream().write(headersFrame(1, 0x4, encoder, ":status", "200"));
+                peer.getOutputStream().write(DATA_1_AB);
+                peer.getOutputStream().write(headersFrame(1, 0x5, encoder, "x-checksum", "abc"));
+                peer.getOutputStream().flush();
+
+                final var response = call.get(2, TimeUnit.SECONDS);
+                assertEquals(200, response.getStatusCode());
+                assertEquals("ab", response.getBodyAsStringDecoded());
+                assertEquals("abc", response.getBody().getTrailer().getFirstValue("x-checksum"));
+            }
+        } finally {
+            router.stop();
+        }
+    }
+
     /**
      * Frames the peer sends for a stream that is already closed (and therefore removed) must neither
      * break the connection nor be mistaken for frames on an idle stream.

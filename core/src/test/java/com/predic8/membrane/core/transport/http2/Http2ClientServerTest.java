@@ -17,6 +17,7 @@ import com.predic8.membrane.core.config.security.KeyStore;
 import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.config.security.TrustStore;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.ChunkedBody;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
@@ -263,6 +264,34 @@ public class Http2ClientServerTest {
         assertEquals(200, e.getResponse().getStatusCode());
         for (var i = 0; i < 30; i++)
             assertEquals(largeHeaderValue(i), received.getFirst().getHeader().getFirstValue("x-large-" + i), "x-large-" + i);
+    }
+
+    /** 200 KB exceeds the server's initial stream and connection windows, so it has to send WINDOW_UPDATE. */
+    @Test
+    public void longRequestBody() throws Exception {
+        final var body = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+!@#$%^&*(){}?+S_|".repeat(2500);
+        final var r = test("POST", "/", body, Response.ok().build());
+        assertEquals(200, r.getStatusCode());
+    }
+
+    @Test
+    public void requestTrailerArrives() throws Exception {
+        this.response = Response.ok().build();
+        final var received = new CopyOnWriteArrayList<String>();
+        this.requestAsserter = req -> {
+            received.add(req.getBodyAsStringDecoded());
+            received.add(req.getBody().getTrailer().getFirstValue("x-checksum"));
+        };
+
+        final var e = new Request.Builder().post("https://localhost:3049").buildExchange();
+        e.getRequest().getHeader().setValue("Transfer-Encoding", "chunked");
+        e.getRequest().setBody(new ChunkedBody(new ByteArrayInputStream(
+                "5\r\nhello\r\n0\r\nx-checksum: abc\r\n\r\n".getBytes(UTF_8))));
+        hc.call(e);
+
+        assertNotNull(e.getProperty(Http2ProtocolHandler.HTTP2_PROTOCOL));
+        assertEquals(200, e.getResponse().getStatusCode());
+        assertEquals(List.of("hello", "abc"), received);
     }
 
     @Test

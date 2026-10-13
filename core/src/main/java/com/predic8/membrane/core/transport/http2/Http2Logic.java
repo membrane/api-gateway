@@ -473,6 +473,8 @@ public class Http2Logic {
             throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
 
         if (settings.isAck()) {
+            if (wantedSettings.isEmpty())
+                throw new FatalConnectionException(ERROR_PROTOCOL_ERROR); // nothing to acknowledge
             ourSettings.copyFrom(wantedSettings.removeFirst());
             return;
         }
