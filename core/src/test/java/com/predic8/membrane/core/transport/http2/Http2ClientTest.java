@@ -340,6 +340,45 @@ class Http2ClientTest {
         }
     }
 
+    /** Padding (RFC 9113 §6.1, §6.2) is not part of the content, also with a pad length of 128 or more. */
+    @Test
+    void paddedFramesAreUnpadded() throws Exception {
+        final var router = new DefaultRouter();
+        try (final var backend = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
+            backend.setSoTimeout(2000);
+            final var connection = createConnection(router, backend);
+            try (final var peer = backend.accept()) {
+                peer.setSoTimeout(2000);
+                final var client = new Http2Client(connection, false);
+                final var call = callAsync(client);
+
+                readUntilRequestHeaders(peer);
+                // HEADERS with END_HEADERS and PADDED, block ":status: 200"
+                peer.getOutputStream().write(paddedFrame(TYPE_HEADERS, 0x4 | 0x8, new byte[]{(byte) 0x88}, 200));
+                // DATA with END_STREAM and PADDED
+                peer.getOutputStream().write(paddedFrame(TYPE_DATA, 0x1 | 0x8, "ab".getBytes(US_ASCII), 200));
+                peer.getOutputStream().flush();
+
+                final var response = call.get(2, TimeUnit.SECONDS);
+                assertEquals(200, response.getStatusCode());
+                assertEquals("ab", response.getBodyAsStringDecoded());
+            }
+        } finally {
+            router.stop();
+        }
+    }
+
+    /** Builds a frame on stream 1 whose payload is the pad length, the content and the padding. */
+    private static byte[] paddedFrame(int type, int flags, byte[] content, int padLength) {
+        final var length = 1 + content.length + padLength;
+        final var frame = new ByteArrayOutputStream();
+        frame.writeBytes(new byte[]{(byte) (length >>> 16), (byte) (length >>> 8), (byte) length, (byte) type, (byte) flags, 0, 0, 0, 1});
+        frame.write(padLength);
+        frame.writeBytes(content);
+        frame.writeBytes(new byte[padLength]);
+        return frame.toByteArray();
+    }
+
     /**
      * Frames the peer sends for a stream that is already closed (and therefore removed) must neither
      * break the connection nor be mistaken for frames on an idle stream.

@@ -217,7 +217,7 @@ public class Http2Logic {
     }
 
     private void handleFrame(DataFrame dataFrame) throws IOException {
-        if (dataFrame.getFrame().getStreamId() == 0)
+        if (dataFrame.getFrame().getStreamId() == 0 || dataFrame.getDataLength() < 0)
             throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
 
         StreamInfo streamInfo = streams.get(dataFrame.getFrame().getStreamId());
@@ -299,7 +299,7 @@ public class Http2Logic {
 
     private void handleFrame(HeadersFrame headers) throws IOException {
         int streamId1 = headers.getFrame().getStreamId();
-        if (streamId1 == 0)
+        if (streamId1 == 0 || headers.getHeaderBlockLength() < 0)
             throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
         StreamInfo streamInfo = streams.get(streamId1);
 

@@ -18,6 +18,7 @@ import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.config.security.TrustStore;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.ChunkedBody;
+import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
@@ -40,16 +41,17 @@ import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
 
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.transport.http2.frame.Error.ERROR_INTERNAL_ERROR;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class Http2ClientServerTest {
     private volatile Response response;
@@ -292,6 +294,34 @@ public class Http2ClientServerTest {
         assertNotNull(e.getProperty(Http2ProtocolHandler.HTTP2_PROTOCOL));
         assertEquals(200, e.getResponse().getStatusCode());
         assertEquals(List.of("hello", "abc"), received);
+    }
+
+    @Test
+    public void invalidMethodIsRejectedWith501() throws Exception {
+        this.response = Response.ok().build();
+        final var reached = new CopyOnWriteArrayList<Request>();
+        this.requestAsserter = reached::add;
+
+        final var e = new Request.Builder().url(new URIFactory(), "https://localhost:3049/").method("1BAD").buildExchange();
+        hc.call(e);
+
+        assertEquals(501, e.getResponse().getStatusCode());
+        assertEquals(List.of(), reached, "the request must not reach the flow");
+    }
+
+    /** The response headers are already sent when reading the body fails, so the stream can only be reset. */
+    @Test
+    public void failingResponseBodyResetsStream() throws Exception {
+        final var r = testGet(Response.ok().body(new InputStream() {
+            @Override
+            public int read() throws IOException {
+                throw new IOException("backend body broke");
+            }
+        }, false).build());
+
+        assertEquals(200, r.getStatusCode());
+        final var e = assertThrows(ReadingBodyException.class, r::getBodyAsStringDecoded);
+        assertTrue(e.getCause().getMessage().contains("error code %d".formatted(ERROR_INTERNAL_ERROR)), e.getCause().getMessage());
     }
 
     @Test
