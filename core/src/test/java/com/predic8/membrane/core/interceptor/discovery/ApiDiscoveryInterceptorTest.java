@@ -113,6 +113,15 @@ class ApiDiscoveryInterceptorTest {
     }
 
     @Test
+    void theFormatParameterGetsABrowserTheJson() throws Exception {
+        final var exc = browserRequest();
+        exc.getRequest().setUri("/catalog?format=json");
+        interceptor().handleRequest(exc);
+
+        assertEquals(APPLICATION_JSON, exc.getResponse().getHeader().getContentType());
+    }
+
+    @Test
     void mediaTypesInAcceptAreMatchedCaseInsensitively() throws Exception {
         assertEquals(TEXT_HTML_UTF8, contentTypeFor("TEXT/HTML"));
     }

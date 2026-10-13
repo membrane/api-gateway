@@ -13,10 +13,13 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.discovery;
 
+import java.net.URLEncoder;
 import java.util.*;
 import java.util.regex.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.interceptor.discovery.ApiDiscoveryInterceptor.*;
+import static com.predic8.membrane.core.openapi.util.UriUtil.*;
 import static java.nio.charset.StandardCharsets.*;
 import static java.util.stream.Collectors.*;
 import static org.apache.commons.text.StringEscapeUtils.*;
@@ -36,6 +39,9 @@ public class HtmlCatalogRenderer implements CatalogRenderer {
     private static final Set<String> COLOURED_METHODS = Set.of("GET", "POST", "PUT", "PATCH", "DELETE");
 
     private static final String UNTAGGED_GROUP = "Other";
+
+    // Swagger UI lists operations without a tag under this one.
+    private static final String SWAGGER_UI_UNTAGGED = "default";
 
     private static final Pattern MARKDOWN_IMAGE = Pattern.compile("!\\[[^\\]]*]\\([^)]*\\)");
     private static final Pattern MARKDOWN_LINK = Pattern.compile("\\[([^\\]]*)]\\([^)]*\\)");
@@ -64,6 +70,8 @@ public class HtmlCatalogRenderer implements CatalogRenderer {
             dt { color: var(--muted); }
             dd { margin: 0; overflow-wrap: anywhere; }
             .description { white-space: pre-wrap; }
+            .more > summary { cursor: pointer; color: var(--muted); }
+            .more > summary:hover { color: var(--text); }
             .version, .kind { font-size: 0.6em; font-weight: normal; padding: 0.15em 0.6em; border-radius: 1em;
                               border: 1px solid var(--line); vertical-align: middle; }
             .kind, .empty { color: var(--muted); }
@@ -87,6 +95,7 @@ public class HtmlCatalogRenderer implements CatalogRenderer {
             .badge { color: var(--muted); border: 1px solid var(--line); border-radius: 1em;
                      padding: 0.05em 0.5em; font-size: 0.75em; white-space: nowrap; }
             .index { display: flex; flex-wrap: wrap; gap: 0.3em 1em; margin: 0.8em 0 0; }
+            .index-version { color: var(--muted); font-size: 0.85em; }
             .self { color: inherit; text-decoration: none; }
             .self:hover { text-decoration: underline; }
             .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden;
@@ -127,7 +136,7 @@ public class HtmlCatalogRenderer implements CatalogRenderer {
                 """.formatted(escape(collection.name()), STYLE));
         renderHeader(html, catalog);
         if (catalog.apis().isEmpty())
-            html.append("<p class=\"box empty\">No APIs are deployed on this gateway.</p>\n");
+            html.append("<p class=\"box empty\">No APIs are published here.</p>\n");
         catalog.apis().forEach(entry -> renderApi(html, entry));
         html.append("</body>\n</html>\n");
         return html.toString().getBytes(UTF_8);
@@ -140,6 +149,8 @@ public class HtmlCatalogRenderer implements CatalogRenderer {
         html.append("<dl>\n");
         definition(html, "APIs", apiCount(catalog));
         html.append("</dl>\n");
+        // A browser always prefers HTML, so the JSON is only reachable through the query parameter.
+        html.append("<p class=\"links\"><a href=\"?%s=%s\">View as JSON</a></p>\n".formatted(FORMAT_PARAMETER, JSON_FORMAT));
         renderIndex(html, catalog);
         html.append("</header>\n");
     }
@@ -159,8 +170,15 @@ public class HtmlCatalogRenderer implements CatalogRenderer {
             return;
         html.append("<nav class=\"index\">\n");
         catalog.apis().forEach(entry -> html.append("<a href=\"#%s\">%s</a>\n"
-                .formatted(sectionId(entry), escape(entry.name()))));
+                .formatted(sectionId(entry), indexLabel(entry))));
         html.append("</nav>\n");
+    }
+
+    // Two versions of one API share a name, so the version tells their links apart.
+    private static String indexLabel(CatalogEntry entry) {
+        if (entry.version() == null)
+            return escape(entry.name());
+        return "%s <span class=\"index-version\">%s</span>".formatted(escape(entry.name()), escape(entry.version()));
     }
 
     private static String sectionId(CatalogEntry entry) {
@@ -175,9 +193,9 @@ public class HtmlCatalogRenderer implements CatalogRenderer {
             html.append(" <span class=\"version\">%s</span>".formatted(escape(entry.version())));
         html.append(" <span class=\"kind\">%s</span></h2>\n".formatted(entry.kind().getLabel()));
         // A proxy without a description of its own repeats its name there, which says nothing new.
-        final var description = firstParagraph(entry.description());
-        if (!description.isEmpty() && !description.equals(entry.name()))
-            html.append("<p class=\"description\">%s</p>\n".formatted(escape(description)));
+        final var paragraphs = paragraphs(entry.description());
+        if (!paragraphs.isEmpty() && !paragraphs.equals(List.of(entry.name())))
+            renderDescription(html, paragraphs);
         renderEndpoint(html, entry.endpoint());
         renderLinks(html, entry);
         renderTags(html, entry.tags());
@@ -186,14 +204,30 @@ public class HtmlCatalogRenderer implements CatalogRenderer {
         html.append("</section>\n");
     }
 
-    private static String firstParagraph(String description) {
+    private static List<String> paragraphs(String description) {
         final var withoutImages = MARKDOWN_IMAGE.matcher(description).replaceAll("");
         final var withoutLinks = MARKDOWN_LINK.matcher(withoutImages).replaceAll("$1");
         return Arrays.stream(BLANK_LINE.split(withoutLinks.replace("\r\n", "\n")))
                 .map(String::strip)
                 .filter(paragraph -> !paragraph.isEmpty())
-                .findFirst()
-                .orElse("");
+                .toList();
+    }
+
+    /**
+     * The first paragraph is shown, the rest is collapsed: a catalog page lists many APIs, and a
+     * long OpenAPI description would push the next one far down.
+     */
+    private static void renderDescription(StringBuilder html, List<String> paragraphs) {
+        html.append(descriptionParagraph(paragraphs.getFirst()));
+        if (paragraphs.size() == 1)
+            return;
+        html.append("<details class=\"more\">\n<summary>More</summary>\n");
+        paragraphs.subList(1, paragraphs.size()).forEach(paragraph -> html.append(descriptionParagraph(paragraph)));
+        html.append("</details>\n");
+    }
+
+    private static String descriptionParagraph(String paragraph) {
+        return "<p class=\"description\">%s</p>\n".formatted(escape(paragraph));
     }
 
     /**
@@ -270,9 +304,9 @@ public class HtmlCatalogRenderer implements CatalogRenderer {
                 <thead><tr><th scope="col">Method</th><th scope="col">Path</th><th scope="col">Summary</th></tr></thead>
                 """.formatted(operations.size(), escape(entry.name())));
         if (operations.stream().allMatch(operation -> operation.tags().isEmpty()))
-            renderOperationGroup(html, null, operations);
+            renderOperationGroup(html, entry, null, operations);
         else
-            groupByTag(entry.tags(), operations).forEach((tag, group) -> renderOperationGroup(html, tag, group));
+            groupByTag(entry.tags(), operations).forEach((tag, group) -> renderOperationGroup(html, entry, tag, group));
         html.append("</table>\n</div>\n</details>\n");
     }
 
@@ -292,22 +326,48 @@ public class HtmlCatalogRenderer implements CatalogRenderer {
         return byTag;
     }
 
-    private static void renderOperationGroup(StringBuilder html, String tag, List<CatalogOperation> operations) {
+    private static void renderOperationGroup(StringBuilder html, CatalogEntry entry, String tag, List<CatalogOperation> operations) {
         html.append("<tbody>\n");
         if (tag != null)
             html.append("<tr class=\"group\"><th colspan=\"3\" scope=\"colgroup\">%s</th></tr>\n".formatted(escape(tag)));
-        operations.forEach(operation -> html.append(operationRow(operation)));
+        operations.forEach(operation -> html.append(operationRow(entry, operation)));
         html.append("</tbody>\n");
     }
 
-    private static String operationRow(CatalogOperation operation) {
-        return "<tr%s><td>%s%s</td><td><code>%s</code></td><td>%s</td></tr>\n".formatted(
+    private static String operationRow(CatalogEntry entry, CatalogOperation operation) {
+        return "<tr%s><td>%s%s</td><td>%s</td><td>%s</td></tr>\n".formatted(
                 operation.deprecated() ? " class=\"deprecated\"" : "",
                 method(operation.method()),
                 // Struck-through text alone carries nothing to a screen reader, so it is said too.
                 operation.deprecated() ? " <span class=\"badge\">deprecated</span>" : "",
-                escape(operation.path()),
+                operationPath(entry, operation),
                 summary(operation));
+    }
+
+    /**
+     * The path the client calls, the path of the api in front of the one from the OpenAPI
+     * document, linked to the operation in Swagger UI where possible.
+     */
+    private static String operationPath(CatalogEntry entry, CatalogOperation operation) {
+        final var path = "<code>%s</code>".formatted(escape(trimTrailingSlash(entry.endpoint().path()) + operation.path()));
+        final var swaggerUi = swaggerUiLink(entry, operation);
+        if (!isHttpUrl(swaggerUi))
+            return path;
+        return "<a href=\"%s\">%s</a>".formatted(escape(swaggerUi), path);
+    }
+
+    // Swagger UI decodes the fragment once and then splits it at '/', so a tag or id containing one cannot be linked.
+    private static String swaggerUiLink(CatalogEntry entry, CatalogOperation operation) {
+        if (entry.links().humanUrl() == null || operation.operationId() == null)
+            return null;
+        final var tag = operation.tags().isEmpty() ? SWAGGER_UI_UNTAGGED : operation.tags().getFirst();
+        if (tag.contains("/") || operation.operationId().contains("/"))
+            return null;
+        return "%s#/%s/%s".formatted(entry.links().humanUrl(), fragmentSegment(tag), fragmentSegment(operation.operationId()));
+    }
+
+    private static String fragmentSegment(String value) {
+        return URLEncoder.encode(value, UTF_8).replace("+", "%20");
     }
 
     private static String summary(CatalogOperation operation) {

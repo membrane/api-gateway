@@ -20,9 +20,12 @@ import org.slf4j.*;
 import org.springframework.http.InvalidMediaTypeException;
 import org.springframework.http.MediaType;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.*;
 
 import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.util.URLParamUtil.*;
 
 /**
  * @description Publishes every API deployed on this gateway in Membrane's own catalog format,
@@ -37,7 +40,9 @@ import static com.predic8.membrane.core.http.Header.*;
  * </p>
  * <p>
  * A browser, or any client whose <code>Accept</code> header prefers HTML, gets an HTML page of
- * the same catalog instead, operations included, with links to the Swagger UI of every API.
+ * the same catalog instead, operations included, with links to the Swagger UI of every API and
+ * operation. The query parameter <code>format=json</code> asks for the JSON whatever the
+ * <code>Accept</code> header says, which is how the page links to it.
  * </p>
  * <p>
  * Answers every request that reaches it and ends the flow, so give it an api of its own. RFC 9727
@@ -67,6 +72,9 @@ public class ApiDiscoveryInterceptor extends AbstractCollectionDiscoveryIntercep
 
     private static final Logger log = LoggerFactory.getLogger(ApiDiscoveryInterceptor.class);
 
+    static final String FORMAT_PARAMETER = "format";
+    static final String JSON_FORMAT = "json";
+
     private static final String HTML_CONTENT_SECURITY_POLICY = "default-src 'none'; style-src 'unsafe-inline'";
 
     private CatalogRenderer htmlRenderer;
@@ -84,7 +92,20 @@ public class ApiDiscoveryInterceptor extends AbstractCollectionDiscoveryIntercep
 
     @Override
     protected CatalogRenderer negotiate(Exchange exc, CatalogRenderer renderer) {
+        if (asksForJson(exc))
+            return renderer;
         return acceptsHtml(exc) ? htmlRenderer : renderer;
+    }
+
+    // A browser always prefers HTML, so without this the HTML page could not link to the JSON.
+    private boolean asksForJson(Exchange exc) {
+        try {
+            final var format = getParams(router.getConfiguration().getUriFactory(), exc).get(FORMAT_PARAMETER);
+            return format != null && format.contains(JSON_FORMAT);
+        } catch (URISyntaxException | IOException e) {
+            log.debug("Ignoring the query of the malformed request URI '{}'.", exc.getRequest().getUri());
+            return false;
+        }
     }
 
     @Override

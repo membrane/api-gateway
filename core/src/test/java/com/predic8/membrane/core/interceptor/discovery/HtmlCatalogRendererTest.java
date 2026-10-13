@@ -53,7 +53,7 @@ class HtmlCatalogRendererTest {
 
     @Test
     void anEmptyCatalogSaysSo() {
-        assertTrue(render(catalog()).contains("No APIs are deployed on this gateway."));
+        assertTrue(render(catalog()).contains("No APIs are published here."));
     }
 
     @Test
@@ -76,7 +76,7 @@ class HtmlCatalogRendererTest {
     void operationsAreListedWithMethodPathAndSummary() {
         String html = render(catalog(describedApi()));
 
-        assertTrue(html.contains("<code>/products</code>"));
+        assertTrue(html.contains("<code>/shop/v2/products</code>"));
         assertTrue(html.contains("Get all products"));
         assertTrue(html.contains("class=\"method get\">GET<"));
         assertTrue(html.contains("<tr class=\"deprecated\">"));
@@ -132,7 +132,7 @@ class HtmlCatalogRendererTest {
         String html = render(catalog(describedApi(), plainProxy()));
 
         assertTrue(html.contains("<nav class=\"index\">"));
-        assertTrue(html.contains("<a href=\"#fruit-shop-api-v2-0-0\">Fruit Shop API</a>"));
+        assertTrue(html.contains("<a href=\"#fruit-shop-api-v2-0-0\">Fruit Shop API <span class=\"index-version\">2.0.0</span></a>"));
         assertTrue(html.contains("<a href=\"#shop\">Shop</a>"));
         assertTrue(html.contains("<section class=\"box\" id=\"fruit-shop-api-v2-0-0\">"));
         assertTrue(html.contains("<section class=\"box\" id=\"shop\">"));
@@ -210,7 +210,89 @@ class HtmlCatalogRendererTest {
 
         assertTrue(html.contains("<p class=\"description\">Showcases REST API\ndesign.</p>"));
         assertFalse(html.contains("Logo"));
-        assertFalse(html.contains("More details."));
+    }
+
+    @Test
+    void furtherParagraphsOfADescriptionAreCollapsedBehindMore() {
+        final var html = render(catalog(describedWith("First.\n\nSecond.\n\nThird.")));
+
+        assertTrue(html.contains("""
+                <p class="description">First.</p>
+                <details class="more">
+                <summary>More</summary>
+                <p class="description">Second.</p>
+                <p class="description">Third.</p>
+                </details>
+                """));
+    }
+
+    @Test
+    void aOneParagraphDescriptionNeedsNoMore() {
+        assertFalse(render(catalog(describedWith("Only this."))).contains("class=\"more\""));
+    }
+
+    private static CatalogEntry describedWith(String description) {
+        return CatalogEntry.builder()
+                .aid("example.com:x").id("x").kind(API).name("X").description(description)
+                .endpoint(new CatalogEntry.Endpoint("http", "example.com", 80, "/", "*", "http://example.com/"))
+                .build();
+    }
+
+    @Test
+    void thePageLinksToTheJson() {
+        assertTrue(render(catalog()).contains("<a href=\"?format=json\">View as JSON</a>"));
+    }
+
+    @Test
+    void anOperationOfAnApiAtTheRootKeepsItsPath() {
+        assertTrue(render(catalog(withOperations("/", "https://example.com/api-docs/ui/x",
+                new CatalogOperation("GET", "/things", null, null, List.of(), false))))
+                .contains("<code>/things</code>"));
+    }
+
+    @Test
+    void operationsLinkToTheirPlaceInSwaggerUi() {
+        assertTrue(render(catalog(describedApi())).contains(
+                "<a href=\"https://example.com/api-docs/ui/fruit-shop-api-v2-0-0#/Products/getProducts\"><code>/shop/v2/products</code></a>"));
+    }
+
+    /**
+     * Swagger UI lists untagged operations under <code>default</code> and expects spaces in the
+     * fragment as <code>%20</code>.
+     */
+    @Test
+    void swaggerUiLinksFollowItsDeepLinkFormat() {
+        final var html = render(catalog(withOperations("/", "https://example.com/ui",
+                new CatalogOperation("GET", "/health", "getHealth", null, List.of(), false),
+                new CatalogOperation("GET", "/stock", "get Stock", null, List.of("Stock Levels"), false))));
+
+        assertTrue(html.contains("href=\"https://example.com/ui#/default/getHealth\""));
+        assertTrue(html.contains("href=\"https://example.com/ui#/Stock%20Levels/get%20Stock\""));
+    }
+
+    @Test
+    void anOperationSwaggerUiCannotAddressIsNotLinked() {
+        final var html = render(catalog(withOperations("/", "https://example.com/ui",
+                new CatalogOperation("GET", "/anonymous", null, null, List.of(), false),
+                new CatalogOperation("GET", "/slashed", "getSlashed", null, List.of("a/b"), false))));
+
+        assertFalse(html.contains("https://example.com/ui#"));
+    }
+
+    @Test
+    void withoutSwaggerUiOperationsAreNotLinked() {
+        assertTrue(render(catalog(withOperations("/", null,
+                new CatalogOperation("GET", "/things", "getThings", null, List.of(), false))))
+                .contains("<td><code>/things</code></td>"));
+    }
+
+    private static CatalogEntry withOperations(String path, String swaggerUi, CatalogOperation... operations) {
+        return CatalogEntry.builder()
+                .aid("example.com:x").id("x").kind(API).name("X").description("X")
+                .endpoint(new CatalogEntry.Endpoint("http", "example.com", 80, path, "*", "http://example.com" + path))
+                .links(new CatalogEntry.Links(swaggerUi, null))
+                .operations(List.of(operations))
+                .build();
     }
 
     @Test
