@@ -97,7 +97,7 @@ class CloseDelimitedResponseTest {
 
             // Exercise the streaming observer path, rather than discard(), which already closes correctly.
             ByteArrayOutputStream forwarded = new ByteArrayOutputStream();
-            response.write(forwarded, true);
+            response.write(forwarded, false);
             assertTrue(forwarded.toString(US_ASCII).endsWith("hello"));
             assertAll(
                     () -> assertTrue(connection.isClosed(), "EOF-delimited backend connection must be closed"),
