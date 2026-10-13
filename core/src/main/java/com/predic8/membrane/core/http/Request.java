@@ -96,9 +96,25 @@ public class Request extends Message {
     }
 
     /**
-     * @return the "Request-URI" as sent by the client in the first line of the HTTP request (quoting from <a
-     * href="https://tools.ietf.org/html/rfc2616#page-36">RFC 2616</a>: Request-URI = "*" | absoluteURI |
-     * abs_path | authority )
+     * Returns the request-target of the request line (RFC 9112 3.2): origin-form, absolute-form, authority-form or "*".
+     * <p>
+     * Once the RuleMatchingInterceptor has run, this is no longer what the client sent. An absolute-form target is
+     * reduced to origin-form (except for a forward proxy), percent-encoded unreserved characters are decoded and
+     * dot-segments are resolved. Path parameters (";...") and the query are kept:
+     * <pre>
+     * sent by the client               getUri()
+     * /a/../admin                      /admin
+     * /%61dmin                         /admin
+     * http://example.com/admin?x=1     /admin?x=1
+     * /api;jsessionid=1/admin?x=1      /api;jsessionid=1/admin?x=1
+     * /api//admin                      /api//admin
+     * </pre>
+     * Be careful when comparing this value with a path, e.g. for routing or access decisions: servlet containers
+     * ignore path parameters and many servers merge duplicate slashes, so "/api;x/admin" and "/api//admin" reach
+     * "/api/admin" there although they do not start with it.
+     * Use {@link com.predic8.membrane.core.util.URIUtil#toRoutingPath(String)} for such comparisons.
+     * Before the RuleMatchingInterceptor has run, this is still the target the client sent. Its path and query stay
+     * available afterwards from {@link com.predic8.membrane.core.exchange.Exchange#getOriginalRelativeURI()}.
      */
     public String getUri() {
         return uri;

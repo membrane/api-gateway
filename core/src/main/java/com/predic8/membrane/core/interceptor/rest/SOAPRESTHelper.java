@@ -16,17 +16,17 @@ package com.predic8.membrane.core.interceptor.rest;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.xml.Request;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.xslt.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.xslt.XSLTTransformer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.xml.transform.*;
-import javax.xml.transform.stream.*;
-import java.io.*;
-import java.util.*;
-import java.util.concurrent.*;
+import javax.xml.transform.stream.StreamSource;
+import java.io.StringReader;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 abstract class SOAPRESTHelper extends AbstractInterceptor {
 
@@ -65,7 +65,7 @@ abstract class SOAPRESTHelper extends AbstractInterceptor {
 		return new StreamSource(new StringReader(res));
 	}
 
-	protected void transformAndReplaceBody(Message msg, String ss, Source src, Map<String, String> properties)
+	protected void transformAndReplaceBody(Message msg, String ss, StreamSource src, Map<String, String> properties)
 			throws Exception {
 		byte[] soapEnv = getTransformer(ss).transform(src, properties);
 		if (log.isDebugEnabled())
