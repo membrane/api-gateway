@@ -28,6 +28,10 @@ api:
     host: localhost
     port: 2001
 
+# NOTE: The webSocket plugin is required: without it, Membrane denies the upgrade to the
+#       WebSocket protocol. wsLog only adds logging; with webSocket: {} the messages are
+#       relayed unchanged without being logged.
+
 ---
 api:
   name: Live data backend

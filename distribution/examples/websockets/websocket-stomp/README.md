@@ -17,9 +17,8 @@ the Running instructions.
 
 
 1.	Download ActiveMQ and unpack it.
-	ActiveMQ DL Site:
-		http://activemq.apache.org/download.html
-	(The latest stable is probably a good idea.)
+	ActiveMQ Classic download site:
+		https://activemq.apache.org/components/classic/download/
 	  
 2.	Start ActiveMQ by executing `bin/activemq start` in the ActiveMQ directory.
 	  
@@ -60,7 +59,7 @@ connecting...
 connected.
   ```
 5.	Press F5 on the Membrane Admin Console.
-	You should now see two brand new Streamp Pumps.
+	You should now see two brand new Stream Pumps.
 
 6.	In the ActiveMQ admin overview you can now click on "Send To"
 	for the queue foo you created earlier.
@@ -76,48 +75,43 @@ connected.
 
 The following part describes the example in detail.
 
-First, take a look at the `proxies.xml` file.
+First, take a look at the `apis.yaml` file.
 
 
-The service proxy on port `9000` is just an admin console to watch the stream pumps.
+The API on port `9000` is just an admin console to watch the stream pumps.
 
-```
-<serviceProxy name="Console" port="9000">
-  <basicAuthentication>
-    <user name="admin" password="membrane" />
-  </basicAuthentication>
-  <adminConsole />
-</serviceProxy>
-```
-
-
-Then there is a serviceProxy (port `4443`) that contains a webSocket element:
-
-```
-<webSocket url="http://localhost:61614/" />
+```yaml
+api:
+  name: Console
+  port: 9000
+  flow:
+    - basicAuthentication:
+        users:
+          - username: admin
+            password: membrane
+    - adminConsole: {}
 ```
 
-The webSocket element redirects your call to the local port `61614`, which is
-ActiveMQ's preconfigured standard port for the webSocket protocol.
 
-A webSocket element contains an if element which tests for a specific HTTP
-header value:
+Then there is an API on port `4443` with TLS that contains the `webSocket` plugin:
 
-```
-<if test="exc.request.header.getFirstValue('Upgrade') == 'websocket'">
+```yaml
+- webSocket:
+    url: http://localhost:61614/
 ```
 
-The if element matches this specific HTTP header
+The `webSocket` plugin allows the upgrade to the WebSocket protocol. Only
+requests with the HTTP header
 
 ```
 Upgrade: websocket
 ```
 
-If the condition succeeded, the webSocket element redirects your call to the
-given URL, which is http://localhost:61614/ in our case.
+are sent to the given URL, http://localhost:61614/, which is ActiveMQ's
+preconfigured standard port for the WebSocket protocol. All other requests,
+like the one for the web page, go to the API's target on port `4444`.
 
-This redirects to the local port `61614`, which is ActiveMQ's preconfigured
-standard port for the webSocket protocol.
+The keystore `membrane.p12` holds a demo certificate. Replace it for production.
 
 ---
 See:
