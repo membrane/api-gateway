@@ -171,18 +171,23 @@ public class FrameSender implements Runnable {
                     // reset it. RST_STREAM is also sent ahead of DATA still buffered for the stream. A closed
                     // stream must not carry frames anymore (RFC 9113 §5.1), so drop them.
                     if (streamInfo == null || (frame.getType() == Frame.TYPE_DATA && streamInfo.getState() == StreamState.CLOSED)) {
-                        log.debug("Dropping {} for closed stream {}.", frame.getTypeString(), frame.getStreamId());
-                        continue;
+                        // Except HEADERS: encoding them already updated the HPACK dynamic table. Dropping them would
+                        // desynchronize the peer's decoder for all later header blocks on the connection. The peer
+                        // still decodes header blocks on a closed stream (RFC 9113 §5.1, §4.3).
+                        if (frame.getType() != Frame.TYPE_HEADERS) {
+                            log.debug("Dropping {} for closed stream {}.", frame.getTypeString(), frame.getStreamId());
+                            continue;
+                        }
+                    } else {
+                        if (frame.getType() == Frame.TYPE_RST_STREAM)
+                            streamInfo.sendRstStream();
+
+                        if (frame.getType() == Frame.TYPE_HEADERS)
+                            streamInfo.sendHeaders();
+
+                        if (frame.getType() != Frame.TYPE_RST_STREAM && (frame.getFlags() & HeadersFrame.FLAG_END_STREAM) != 0)
+                            streamInfo.sendEndStream();
                     }
-
-                    if (frame.getType() == Frame.TYPE_RST_STREAM)
-                        streamInfo.sendRstStream();
-
-                    if (frame.getType() == Frame.TYPE_HEADERS)
-                        streamInfo.sendHeaders();
-
-                    if (frame.getType() != Frame.TYPE_RST_STREAM && (frame.getFlags() & HeadersFrame.FLAG_END_STREAM) != 0)
-                        streamInfo.sendEndStream();
                 }
 
                 if (log.isTraceEnabled())

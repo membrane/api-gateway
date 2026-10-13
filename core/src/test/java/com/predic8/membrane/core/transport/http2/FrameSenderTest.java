@@ -16,18 +16,20 @@ package com.predic8.membrane.core.transport.http2;
 
 import com.predic8.membrane.core.transport.http2.frame.Frame;
 import com.predic8.membrane.core.transport.http2.frame.RstStreamFrame;
+import com.twitter.hpack.Decoder;
 import com.twitter.hpack.Encoder;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.*;
 
 import static com.predic8.membrane.core.transport.http2.frame.Error.ERROR_CANCEL;
-import static com.predic8.membrane.core.transport.http2.frame.Frame.TYPE_DATA;
-import static com.predic8.membrane.core.transport.http2.frame.Frame.TYPE_RST_STREAM;
+import static com.predic8.membrane.core.transport.http2.frame.Frame.*;
+import static com.predic8.membrane.core.transport.http2.frame.HeadersFrame.FLAG_END_HEADERS;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
 class FrameSenderTest {
@@ -92,6 +94,82 @@ class FrameSenderTest {
         thread.join(2000);
 
         assertEquals(List.of(TYPE_RST_STREAM), frameTypes(out.toByteArray()));
+    }
+
+    @Test
+    void headersQueuedBeforeResetAreStillSentToKeepHpackInSync() throws Exception {
+        final var settings = new Settings();
+        final var streams = new ConcurrentHashMap<Integer, StreamInfo>();
+        final var out = new ByteArrayOutputStream();
+        final var sender = new FrameSender(out, new Encoder(4096), settings, streams, "test");
+        final var stream1 = new StreamInfo(1, sender, settings, settings);
+        final var stream3 = new StreamInfo(3, sender, settings, settings);
+        streams.put(1, stream1);
+        streams.put(3, stream3);
+        stream1.receivedHeaders();
+        stream3.receivedHeaders();
+
+        // Encoding adds the field to the encoder's dynamic table. The block is split into HEADERS and CONTINUATION.
+        sender.send(1, (encoder, peerSettings) -> {
+            final var block = encodeHeader(encoder, "x-test", "value");
+            final var split = block.length / 2;
+            return List.of(
+                    headerFrame(TYPE_HEADERS, 0, 1, Arrays.copyOfRange(block, 0, split)),
+                    headerFrame(TYPE_CONTINUATION, FLAG_END_HEADERS, 1, Arrays.copyOfRange(block, split, block.length)));
+        });
+        // The peer resets stream 1 while its HEADERS are still queued.
+        stream1.receivedRstStream(ERROR_CANCEL);
+        // Refers to the dynamic table entry added by stream 1's block.
+        sender.send(3, (encoder, peerSettings) ->
+                List.of(headerFrame(TYPE_HEADERS, FLAG_END_HEADERS, 3, encodeHeader(encoder, "x-test", "value"))));
+
+        final var thread = new Thread(sender);
+        thread.start();
+        sender.stop();
+        thread.join(2000);
+
+        assertEquals(Map.of(1, Map.of("x-test", "value"), 3, Map.of("x-test", "value")), decodeHeaderBlocks(out.toByteArray()));
+    }
+
+    private static byte[] encodeHeader(Encoder encoder, String name, String value) throws IOException {
+        final var block = new ByteArrayOutputStream();
+        encoder.encodeHeader(block, name.getBytes(UTF_8), value.getBytes(UTF_8), false);
+        return block.toByteArray();
+    }
+
+    private static Frame headerFrame(int type, int flags, int streamId, byte[] fragment) {
+        final var frame = new Frame();
+        frame.fill(type, flags, streamId, fragment, 0, fragment.length);
+        return frame;
+    }
+
+    /**
+     * Decodes the header blocks in the written frames with a single decoder, as the peer would.
+     */
+    private static Map<Integer, Map<String, String>> decodeHeaderBlocks(byte[] bytes) throws IOException {
+        final var decoder = new Decoder(65536, 4096);
+        final var headersByStream = new HashMap<Integer, Map<String, String>>();
+        final var block = new ByteArrayOutputStream();
+        var offset = 0;
+        while (offset < bytes.length) {
+            final var length = ((bytes[offset] & 0xff) << 16) | ((bytes[offset + 1] & 0xff) << 8) | (bytes[offset + 2] & 0xff);
+            final var type = bytes[offset + 3];
+            final var flags = bytes[offset + 4];
+            final var streamId = ((bytes[offset + 5] & 0x7f) << 24) | ((bytes[offset + 6] & 0xff) << 16) | ((bytes[offset + 7] & 0xff) << 8) | (bytes[offset + 8] & 0xff);
+            if (type == TYPE_HEADERS || type == TYPE_CONTINUATION) {
+                block.write(bytes, offset + 9, length);
+                if ((flags & FLAG_END_HEADERS) != 0) {
+                    final var headers = new HashMap<String, String>();
+                    decoder.decode(new ByteArrayInputStream(block.toByteArray()),
+                            (name, value, sensitive) -> headers.put(new String(name, UTF_8), new String(value, UTF_8)));
+                    decoder.endHeaderBlock();
+                    headersByStream.put(streamId, headers);
+                    block.reset();
+                }
+            }
+            offset += 9 + length;
+        }
+        return headersByStream;
     }
 
     private static List<Integer> frameTypes(byte[] bytes) {
