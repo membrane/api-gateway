@@ -40,11 +40,11 @@ import org.junit.jupiter.api.Test;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
 
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
-import static com.predic8.membrane.core.transport.http2.StreamState.CLOSED;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -147,8 +147,13 @@ public class Http2ClientServerTest {
     public void testStreamInfoProperlyClosed() throws Exception {
         test200("");
 
-        StreamInfo si = ((HttpServerHandler) handler).getHttp2ServerHandler().logic.streams.entrySet().stream().findFirst().get().getValue();
-        assertEquals(CLOSED, si.getState());
+        // Closed streams are removed. The server closes the stream once the client's END_STREAM has
+        // arrived as well, which can happen after the response was received.
+        final var streams = ((HttpServerHandler) handler).getHttp2ServerHandler().logic.streams;
+        final var deadline = System.nanoTime() + SECONDS.toNanos(2);
+        while (!streams.isEmpty() && System.nanoTime() < deadline)
+            Thread.sleep(10);
+        assertEquals(Map.of(), streams);
     }
 
     @Test

@@ -64,6 +64,8 @@ public class Http2Logic {
     private final ExecutorService executor;
     private final Http2MessageHandler messageHandler;
     final AtomicInteger nextClientStreamId = new AtomicInteger(1);
+    /** Highest id of a stream the peer opened. Only accessed on the receiver thread. */
+    private int highestPeerStreamId;
     volatile boolean receiving = true;
     Future<?> senderFuture;
 
@@ -115,7 +117,18 @@ public class Http2Logic {
             throw new EndOfStreamException("");
         } finally {
             stopSending();
+            // No more frames arrive: body readers still waiting for DATA would wait forever.
+            for (StreamInfo streamInfo : streams.values())
+                streamInfo.abortReceiving(new IOException("HTTP/2 connection closed before the stream ended"));
         }
+    }
+
+    /**
+     * Closed streams are removed from {@link #streams}, so an unknown id belongs either to a closed
+     * stream or to an idle one. Ids up to the highest one opened belong to closed streams (RFC 9113 §5.1.1).
+     */
+    private boolean isClosed(int streamId) {
+        return streamId <= highestPeerStreamId || streamId < nextClientStreamId.get();
     }
 
     /** Stops the frame sender and wakes writers waiting for the connection's flow-control window. */
@@ -188,10 +201,13 @@ public class Http2Logic {
             throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
 
         StreamInfo streamInfo = streams.get(streamId);
-        if (streamInfo == null)
+        if (streamInfo == null) {
+            if (isClosed(streamId))
+                return;
             throw new FatalConnectionException(ERROR_PROTOCOL_ERROR); // stream is in idle state
+        }
 
-        streamInfo.receivedRstStream();
+        streamInfo.receivedRstStream(rstStream.getErrorCode());
         messageHandler.handleStreamReset(streamId, rstStream.getErrorCode());
     }
 
@@ -201,10 +217,15 @@ public class Http2Logic {
 
         StreamInfo streamInfo = streams.get(dataFrame.getFrame().getStreamId());
 
-        if (streamInfo == null)
-            throw new FatalConnectionException(ERROR_STREAM_CLOSED); // TODO: change to stream error
-
-        streamInfo.receivedDataFrame(dataFrame);
+        if (streamInfo == null) {
+            if (!isClosed(dataFrame.getFrame().getStreamId()))
+                throw new FatalConnectionException(ERROR_STREAM_CLOSED); // TODO: change to stream error
+            // Still in flight when the stream was closed, e.g. by our RST_STREAM. It counts against
+            // the connection's window all the same (RFC 9113 §6.9).
+            log.debug("Dropping DATA for closed stream {}.", dataFrame.getFrame().getStreamId());
+        } else {
+            streamInfo.receivedDataFrame(dataFrame);
+        }
 
         // TODO: If a DATA frame is received
         //   whose stream is not in "open" or "half-closed (local)" state, the
@@ -239,6 +260,8 @@ public class Http2Logic {
         StreamInfo streamInfo = streams.get(streamId1);
 
         if (streamInfo == null) {
+            if (isClosed(streamId1))
+                return;
             streamInfo = new StreamInfo(streamId1, sender, peerSettings, ourSettings);
             streams.put(streamId1, streamInfo);
         }
@@ -259,8 +282,12 @@ public class Http2Logic {
                 throw new FatalConnectionException(ERROR_PROTOCOL_ERROR); // TODO: change to stream error
 
             StreamInfo streamInfo = streams.get(windowUpdate.getFrame().getStreamId());
-            if (streamInfo == null)
+            if (streamInfo == null) {
+                // The peer may still send WINDOW_UPDATE after the stream was closed (RFC 9113 §6.9).
+                if (isClosed(windowUpdate.getFrame().getStreamId()))
+                    return;
                 throw new FatalConnectionException(ERROR_PROTOCOL_ERROR); // stream not open // TODO: change to stream error
+            }
 
             streamInfo.getPeerFlowControl().increment(windowUpdate.getWindowSizeIncrement());
         }
@@ -273,9 +300,14 @@ public class Http2Logic {
         StreamInfo streamInfo = streams.get(streamId1);
 
         if (streamInfo == null) {
+            // Like HEADERS on a stream in the CLOSED state, which receivedHeaders() rejects.
+            if (isClosed(streamId1))
+                throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
             streamInfo = new StreamInfo(streamId1, sender, peerSettings, ourSettings);
             streams.put(streamId1, streamInfo);
         }
+        // Also covers a stream that a PRIORITY frame created before its HEADERS arrived.
+        highestPeerStreamId = Math.max(highestPeerStreamId, streamId1);
 
         boolean isTrailer = streamInfo.isTrailer();
 
@@ -359,6 +391,15 @@ public class Http2Logic {
         if (sb != null)
             log.debug(sb.toString());
 
+        if (!isTrailer && request instanceof Response response && response.getStatusCode() >= 100 && response.getStatusCode() < 200) {
+            // An interim response (RFC 9113 §8.1): the final response follows in another HEADERS frame.
+            if (headers.isEndStream())
+                throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
+            log.debug("streamId={} skipping interim response {}", streamId1, response.getStatusCode());
+            streamInfo.receivedInterimResponse();
+            return;
+        }
+
         if (isTrailer) {
             request.getBody().setTrailer(header);
         } else {
@@ -438,7 +479,7 @@ public class Http2Logic {
                         peerSettings.setMaxConcurrentStreams((int) settingsValue);
                 }
                 case ID_SETTINGS_INITIAL_WINDOW_SIZE -> {
-                    if (settingsValue > 1 << 31 - 1)
+                    if (settingsValue > Integer.MAX_VALUE)
                         throw new FatalConnectionException(ERROR_FLOW_CONTROL_ERROR);
                     int delta = (int) settingsValue - peerSettings.getInitialWindowSize();
                     for (StreamInfo si : streams.values()) {

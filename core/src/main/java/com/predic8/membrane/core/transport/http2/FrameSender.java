@@ -70,6 +70,11 @@ public class FrameSender implements Runnable {
      */
     public void sendData(Frame frame) throws IOException {
         StreamInfo streamInfo = streams.get(frame.getStreamId());
+        if (streamInfo == null) {
+            // Closed streams are removed and must not carry DATA anymore.
+            log.debug("Dropping DATA for closed stream {}.", frame.getStreamId());
+            return;
+        }
         try {
             streamInfo.getBufferedDataFrames().acquire();
         } catch (InterruptedException e) {
@@ -119,6 +124,19 @@ public class FrameSender implements Runnable {
         return null;
     }
 
+    /**
+     * Forgets a stream that reached the CLOSED state, so closed streams neither accumulate nor count
+     * against the peer's concurrent stream limit. DATA still buffered for it is dropped, which also
+     * wakes a writer waiting for buffer space.
+     */
+    void streamClosed(StreamInfo streamInfo) {
+        streams.remove(streamInfo.getStreamId(), streamInfo);
+        while (streamInfo.getDataFramesToBeSent().poll() != null) {
+            streamInfo.getBufferedDataFrames().release();
+            totalBufferedFrames.decrementAndGet();
+        }
+    }
+
     private Frame waitForNextFrame() throws InterruptedException {
         lock.lock();
         try {
@@ -147,23 +165,25 @@ public class FrameSender implements Runnable {
                 if (frame.getType() == TYPE_STOP)
                     break;
 
-                // RST_STREAM is sent ahead of DATA still buffered for the stream. A closed stream must not
-                // carry DATA anymore (RFC 9113 §5.1), so drop it.
-                if (frame.getType() == Frame.TYPE_DATA && streams.get(frame.getStreamId()).getState() == StreamState.CLOSED) {
-                    log.debug("Dropping DATA for closed stream {}.", frame.getStreamId());
-                    continue;
+                if (frame.getType() == Frame.TYPE_DATA || frame.getType() == Frame.TYPE_HEADERS || frame.getType() == Frame.TYPE_RST_STREAM) {
+                    final var streamInfo = streams.get(frame.getStreamId());
+                    // A closed stream is removed, possibly while its frames were queued, e.g. when the peer
+                    // reset it. RST_STREAM is also sent ahead of DATA still buffered for the stream. A closed
+                    // stream must not carry frames anymore (RFC 9113 §5.1), so drop them.
+                    if (streamInfo == null || (frame.getType() == Frame.TYPE_DATA && streamInfo.getState() == StreamState.CLOSED)) {
+                        log.debug("Dropping {} for closed stream {}.", frame.getTypeString(), frame.getStreamId());
+                        continue;
+                    }
+
+                    if (frame.getType() == Frame.TYPE_RST_STREAM)
+                        streamInfo.sendRstStream();
+
+                    if (frame.getType() == Frame.TYPE_HEADERS)
+                        streamInfo.sendHeaders();
+
+                    if (frame.getType() != Frame.TYPE_RST_STREAM && (frame.getFlags() & HeadersFrame.FLAG_END_STREAM) != 0)
+                        streamInfo.sendEndStream();
                 }
-
-                if (frame.getType() == Frame.TYPE_RST_STREAM)
-                    streams.get(frame.getStreamId()).sendRstStream();
-
-                if (frame.getType() == Frame.TYPE_HEADERS)
-                    streams.get(frame.getStreamId()).sendHeaders();
-
-                if ((frame.getType() == Frame.TYPE_HEADERS ||
-                        frame.getType() == Frame.TYPE_DATA)&&
-                        (frame.getFlags() & HeadersFrame.FLAG_END_STREAM) != 0)
-                    streams.get(frame.getStreamId()).sendEndStream();
 
                 if (log.isTraceEnabled())
                     log.trace("sending: " + frame);
