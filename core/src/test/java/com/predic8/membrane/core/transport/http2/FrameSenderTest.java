@@ -60,6 +60,37 @@ class FrameSenderTest {
         assertInstanceOf(IOException.class, e.getCause().getCause());
     }
 
+    /**
+     * Closing the stream drains its buffer, which wakes a writer waiting for buffer space. Its frame must not be
+     * left in the buffer of the removed stream: nothing would send it, and a trailer waiting for the buffer to
+     * empty would wait forever.
+     */
+    @Test
+    void dataFrameWaitingForBufferSpaceIsDroppedWhenStreamCloses() throws Exception {
+        final var settings = new Settings();
+        final var streams = new ConcurrentHashMap<Integer, StreamInfo>();
+        final var sender = new FrameSender(new ByteArrayOutputStream(), new Encoder(4096), settings, streams, "test");
+        final var streamInfo = new StreamInfo(1, sender, settings, settings);
+        streams.put(1, streamInfo);
+        streamInfo.sendHeaders();
+
+        while (streamInfo.getBufferedDataFrames().availablePermits() > 0)
+            sender.sendData(dataFrame());
+        final var blocked = CompletableFuture.runAsync(() -> {
+            try {
+                sender.sendData(dataFrame());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        assertThrows(TimeoutException.class, () -> blocked.get(200, TimeUnit.MILLISECONDS));
+
+        streamInfo.receivedRstStream(ERROR_CANCEL);
+
+        blocked.get(2, TimeUnit.SECONDS);
+        assertTrue(streamInfo.getDataFramesToBeSent().isEmpty());
+    }
+
     @Test
     void sendDataAfterStopFails() {
         final var settings = new Settings();

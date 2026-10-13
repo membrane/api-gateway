@@ -86,6 +86,17 @@ public class FrameSender implements Runnable {
             throw new IOException("HTTP/2 frame sender stopped");
         streamInfo.getDataFramesToBeSent().add(frame);
         totalBufferedFrames.incrementAndGet();
+        // The stream may have been closed meanwhile, e.g. while waiting for buffer space. streamClosed() removes it
+        // before draining its buffer, so if it is still mapped here, the drain will see the frame.
+        if (streams.get(frame.getStreamId()) != streamInfo) {
+            // Unless streamClosed() or the sender polled it already, nothing would send it.
+            if (streamInfo.getDataFramesToBeSent().remove(frame)) {
+                streamInfo.getBufferedDataFrames().release();
+                totalBufferedFrames.decrementAndGet();
+            }
+            log.debug("Dropping DATA for closed stream {}.", frame.getStreamId());
+            return;
+        }
         fire();
     }
 
