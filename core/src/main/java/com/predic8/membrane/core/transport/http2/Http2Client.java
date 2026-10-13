@@ -46,6 +46,8 @@ public class Http2Client implements Runnable, AutoCloseable {
     @GuardedBy("this")
     private int reserved;
     private volatile boolean closed;
+    /** Test hook: runs once a call is registered and about to wait for its response. */
+    volatile Runnable beforeResponseWait = () -> {};
 
     private static class ResponseInfo {
         private final CountDownLatch cdl = new CountDownLatch(1);
@@ -110,6 +112,7 @@ public class Http2Client implements Runnable, AutoCloseable {
             writeMessageBody(streamId, streamInfo, logic.sender, logic.peerSettings, logic.peerFlowControl, exc.getRequest(), retainBody);
 
             // TODO: handle error/exception
+            beforeResponseWait.run();
             ri.cdl.await();
 
             if (ri.failure != null)

@@ -23,12 +23,12 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static com.predic8.membrane.core.http.Request.get;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 class Http2ClientTest {
 
@@ -71,6 +71,8 @@ class Http2ClientTest {
             try (final var peer = backend.accept()) {
                 peer.setSoTimeout(2000);
                 final var client = new Http2Client(connection, false);
+                final var waiting = new CountDownLatch(1);
+                client.beforeResponseWait = waiting::countDown;
                 final var exc = get("http://localhost/").header("Host", "localhost").buildExchange();
                 final var call = CompletableFuture.supplyAsync(() -> {
                     try {
@@ -80,6 +82,9 @@ class Http2ClientTest {
                     }
                 });
 
+                // Terminate only once the call is pending, so the test covers failing it
+                // rather than rejecting a call that starts after the close.
+                assertTrue(waiting.await(2, TimeUnit.SECONDS), "Call must wait for its response");
                 termination.terminate(client, peer);
 
                 final var e = assertThrows(ExecutionException.class, () -> call.get(2, TimeUnit.SECONDS));
