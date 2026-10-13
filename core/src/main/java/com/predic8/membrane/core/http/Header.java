@@ -100,6 +100,8 @@ public class Header {
     public static final String LOCATION = "Location";
     public static final String LINK = "Link";
     public static final String CONTENT_SECURITY_POLICY = "Content-Security-Policy";
+    public static final String ETAG = "ETag";
+    public static final String IF_NONE_MATCH = "If-None-Match";
     public static final String AUTHORIZATION = "Authorization";
     public static final String SET_COOKIE = "Set-Cookie";
     public static final String COOKIE = "Cookie";

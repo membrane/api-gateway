@@ -17,6 +17,9 @@ import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.*;
 
+import java.util.*;
+import java.util.stream.*;
+
 import static com.predic8.membrane.core.http.MimeType.*;
 
 /**
@@ -25,9 +28,9 @@ import static com.predic8.membrane.core.http.MimeType.*;
  * The document is a linkset (RFC 9264): one object whose sole member is <code>linkset</code>, an
  * array of link context objects. Every link relation inside a context object maps to an array of
  * link targets, even when there is only one. The first context object is anchored at the catalog
- * itself and bookmarks each API with <code>item</code>; one further context object per API is
- * anchored at that API and points at its OpenAPI document, or for a SOAP proxy its WSDL, with
- * <code>service-desc</code> and at its Swagger UI with <code>service-doc</code>.
+ * itself and bookmarks each API URL with <code>item</code>; one further context object per API URL
+ * is anchored there and points at its OpenAPI documents, or for a SOAP proxy its WSDL, with
+ * <code>service-desc</code> and at their Swagger UIs with <code>service-doc</code>.
  * <p>
  * Publish this at <code>/.well-known/api-catalog</code>, the well-known URI RFC 9727 defines.
  *
@@ -49,43 +52,49 @@ public class ApiCatalogRenderer implements CatalogRenderer {
     public byte[] render(Catalog catalog) throws JsonProcessingException {
         ObjectNode document = om.createObjectNode();
         ArrayNode linkset = document.putArray("linkset");
-        renderBookmarks(catalog, linkset);
-        catalog.apis().forEach(entry -> renderApi(entry, linkset));
+        final var byEndpoint = byEndpoint(catalog);
+        renderBookmarks(catalog, byEndpoint, linkset);
+        byEndpoint.forEach((url, entries) -> renderApi(url, entries, linkset));
         return om.writeValueAsBytes(document);
     }
 
-    /**
-     * The catalog itself as link context, listing every API with the <code>item</code> relation.
-     */
-    private void renderBookmarks(Catalog catalog, ArrayNode linkset) {
+    private static Map<String, List<CatalogEntry>> byEndpoint(Catalog catalog) {
+        final var byEndpoint = new LinkedHashMap<String, List<CatalogEntry>>();
+        catalog.apis().forEach(entry ->
+                byEndpoint.computeIfAbsent(entry.endpoint().url(), url -> new ArrayList<>()).add(entry));
+        return byEndpoint;
+    }
+
+    private void renderBookmarks(Catalog catalog, Map<String, List<CatalogEntry>> byEndpoint, ArrayNode linkset) {
         ObjectNode context = om.createObjectNode();
-        if (catalog.url() != null)
-            context.put("anchor", catalog.url());
+        context.put("anchor", catalog.url());
         ArrayNode items = context.putArray("item");
-        catalog.apis().forEach(entry -> {
+        byEndpoint.forEach((url, entries) -> {
             ObjectNode item = om.createObjectNode();
-            item.put("href", entry.endpoint().url());
-            item.put("title", entry.name());
+            item.put("href", url);
+            item.put("title", entries.stream().map(CatalogEntry::name).distinct().collect(Collectors.joining(", ")));
             items.add(item);
         });
         linkset.add(context);
     }
 
-    /**
-     * One API as link context. Skipped when nothing is known beyond the API's own URL, which is
-     * already covered by the bookmark above.
-     */
-    private void renderApi(CatalogEntry entry, ArrayNode linkset) {
+    private void renderApi(String url, List<CatalogEntry> entries, ArrayNode linkset) {
         ObjectNode context = om.createObjectNode();
-        context.put("anchor", entry.endpoint().url());
-        if (entry.links().specUrl() != null)
-            context.putArray("service-desc").add(link(entry.links().specUrl(), APPLICATION_X_YAML));
-        if (entry.soap() != null && entry.soap().wsdl() != null)
-            context.putArray("service-desc").add(link(entry.soap().wsdl(), TEXT_XML));
-        if (entry.links().humanUrl() != null)
-            context.putArray("service-doc").add(link(entry.links().humanUrl(), TEXT_HTML));
+        context.put("anchor", url);
+        for (CatalogEntry entry : entries) {
+            if (entry.links().specUrl() != null)
+                relation(context, "service-desc").add(link(entry.links().specUrl(), APPLICATION_X_YAML));
+            if (entry.soap() != null && entry.soap().wsdl() != null)
+                relation(context, "service-desc").add(link(entry.soap().wsdl(), TEXT_XML));
+            if (entry.links().humanUrl() != null)
+                relation(context, "service-doc").add(link(entry.links().humanUrl(), TEXT_HTML));
+        }
         if (context.size() > 1)
             linkset.add(context);
+    }
+
+    private static ArrayNode relation(ObjectNode context, String name) {
+        return context.has(name) ? (ArrayNode) context.get(name) : context.putArray(name);
     }
 
     private ObjectNode link(String href, String type) {

@@ -39,6 +39,7 @@ import static com.predic8.membrane.core.http.Header.*;
  * <pre>
  * apiCatalog:
  *   [ baseUrl: &lt;url&gt; ]
+ *   [ exclude: &lt;api name&gt;, ... ]
  * </pre>
  * @topic 5. OpenAPI
  * @yaml <pre><code>

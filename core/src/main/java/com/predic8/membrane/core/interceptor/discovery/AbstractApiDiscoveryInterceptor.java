@@ -21,11 +21,16 @@ import com.predic8.membrane.core.util.*;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
+import java.util.stream.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.Response.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static java.util.stream.Collectors.toUnmodifiableSet;
 
 /**
  * Publishes every API deployed on this gateway as a catalog in one discovery format. Collecting
@@ -43,6 +48,7 @@ public abstract class AbstractApiDiscoveryInterceptor extends AbstractIntercepto
     static final String WELL_KNOWN_PATH = "/.well-known/api-catalog";
 
     private String baseUrl;
+    private String exclude;
 
     private CatalogRenderer renderer;
     private CatalogCollector collector;
@@ -51,7 +57,7 @@ public abstract class AbstractApiDiscoveryInterceptor extends AbstractIntercepto
     public void init() {
         super.init();
         renderer = createRenderer();
-        collector = new CatalogCollector(baseUrl, renderer.rendersOperations());
+        collector = new CatalogCollector(baseUrl, excludedNames(), renderer.rendersOperations());
         // The proxy is unknown when the plugin sits in the else branch of an if.
         if (getProxy() != null && getProxy().getKey() != null)
             checkPath(getProxy().getKey().getPath());
@@ -76,17 +82,31 @@ public abstract class AbstractApiDiscoveryInterceptor extends AbstractIntercepto
                             .formatted(elementName(), WELL_KNOWN_PATH));
     }
 
+    private Set<String> excludedNames() {
+        if (exclude == null) return Set.of();
+        return Arrays.stream(exclude.split(","))
+                .map(String::strip)
+                .filter(name -> !name.isEmpty())
+                .collect(toUnmodifiableSet());
+    }
+
     @Override
     public final Outcome handleRequest(Exchange exc) {
         try {
             final var catalog = collector.collect(router, exc);
             final var negotiated = negotiate(exc, renderer);
-            final var response = ok().contentType(negotiated.contentType());
+            final var document = negotiated.render(catalog);
+            final var etag = etag(document);
+            final var response = ok().contentType(negotiated.contentType()).header(ETAG, etag);
             addHeaders(response, catalog, negotiated);
+            if (matchesAny(exc.getRequest().getHeader().getFirstValue(IF_NONE_MATCH), etag))
+                response.status(304).bodyEmpty();
             // RFC 9727 requires HEAD on the catalog to answer with the headers but no document.
-            exc.setResponse((exc.getRequest().isHEADRequest()
-                    ? response.bodyEmpty()
-                    : response.body(negotiated.render(catalog))).build());
+            else if (exc.getRequest().isHEADRequest())
+                response.bodyEmpty();
+            else
+                response.body(document);
+            exc.setResponse(response.build());
             return RETURN;
         } catch (Exception e) {
             internal(router.getConfiguration().isProduction(), getDisplayName())
@@ -95,6 +115,19 @@ public abstract class AbstractApiDiscoveryInterceptor extends AbstractIntercepto
                     .buildAndSetResponse(exc);
             return ABORT;
         }
+    }
+
+    private static String etag(byte[] document) throws NoSuchAlgorithmException {
+        final var hash = MessageDigest.getInstance("SHA-256").digest(document);
+        return "\"" + HexFormat.of().formatHex(hash, 0, 16) + "\"";
+    }
+
+    private static boolean matchesAny(String ifNoneMatch, String etag) {
+        if (ifNoneMatch == null) return false;
+        return Arrays.stream(ifNoneMatch.split(","))
+                .map(String::strip)
+                .map(tag -> tag.startsWith("W/") ? tag.substring(2) : tag)
+                .anyMatch(tag -> tag.equals("*") || tag.equals(etag));
     }
 
     /**
@@ -117,6 +150,22 @@ public abstract class AbstractApiDiscoveryInterceptor extends AbstractIntercepto
     protected String elementName() {
         final var element = getClass().getAnnotation(MCElement.class);
         return element == null ? getClass().getSimpleName() : element.name();
+    }
+
+    public String getExclude() {
+        return exclude;
+    }
+
+    /**
+     * @description Comma separated names of apis to leave out of the catalog, as set with
+     * <code>name</code> on the api. Every api that opens a port is listed otherwise, including
+     * ones behind authentication.
+     * @default none
+     * @example Admin, Partner Orders
+     */
+    @MCAttribute
+    public void setExclude(String exclude) {
+        this.exclude = exclude;
     }
 
     public String getBaseUrl() {

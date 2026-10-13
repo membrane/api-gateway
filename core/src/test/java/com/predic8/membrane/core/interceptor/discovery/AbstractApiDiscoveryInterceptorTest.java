@@ -22,6 +22,7 @@ import org.junit.jupiter.params.provider.*;
 import java.util.function.*;
 import java.util.stream.*;
 
+import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.discovery.AbstractApiDiscoveryInterceptor.*;
@@ -67,6 +68,65 @@ class AbstractApiDiscoveryInterceptorTest {
                 () -> interceptor.init(router, proxyAt(WELL_KNOWN_PATH)));
         assertTrue(e.getMessage().contains(WELL_KNOWN_PATH));
         assertTrue(e.getMessage().contains(interceptor.elementName()));
+    }
+
+    @Test
+    void excludedApisAreLeftOut() throws Exception {
+        final var interceptor = new ApisJsonInterceptor();
+        interceptor.setExclude("Admin, Shop");
+        final var exc = request("GET");
+        initialized(interceptor, router).handleRequest(exc);
+
+        assertEquals("Admin, Shop", interceptor.getExclude());
+        assertTrue(body(exc).path("apis").isEmpty());
+    }
+
+    @Test
+    void theResponseCarriesAnETag() throws Exception {
+        final var exc = request("GET");
+        initialized(new ApiCatalogInterceptor(), router).handleRequest(exc);
+
+        final var etag = header(exc, ETAG);
+        assertNotNull(etag);
+        assertTrue(etag.matches("\"[0-9a-f]+\""), etag);
+    }
+
+    @Test
+    void aMatchingIfNoneMatchGetsNotModified() throws Exception {
+        final var interceptor = initialized(new ApiCatalogInterceptor(), router);
+        final var first = request("GET");
+        interceptor.handleRequest(first);
+        final var etag = header(first, ETAG);
+
+        final var again = request("GET");
+        again.getRequest().getHeader().setValue(IF_NONE_MATCH, "\"other\", W/" + etag);
+        interceptor.handleRequest(again);
+
+        assertEquals(304, again.getResponse().getStatusCode());
+        assertEquals(etag, header(again, ETAG));
+        assertEquals(0, again.getResponse().getBody().getLength());
+    }
+
+    @Test
+    void aStaleETagGetsTheDocument() throws Exception {
+        final var exc = request("GET");
+        exc.getRequest().getHeader().setValue(IF_NONE_MATCH, "\"stale\"");
+        initialized(new ApiCatalogInterceptor(), router).handleRequest(exc);
+
+        assertEquals(200, exc.getResponse().getStatusCode());
+        assertTrue(body(exc).path("linkset").isArray());
+    }
+
+    @Test
+    void headCarriesTheETagOfTheDocument() throws Exception {
+        final var interceptor = initialized(new ApiCatalogInterceptor(), router);
+        final var get = request("GET");
+        interceptor.handleRequest(get);
+        final var head = request("HEAD");
+        interceptor.handleRequest(head);
+
+        assertNotNull(header(get, ETAG));
+        assertEquals(header(get, ETAG), header(head, ETAG));
     }
 
     @Test

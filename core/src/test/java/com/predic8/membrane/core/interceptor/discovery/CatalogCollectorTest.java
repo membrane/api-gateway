@@ -46,7 +46,11 @@ class CatalogCollectorTest {
     }
 
     private static CatalogCollector collector(String baseUrl, boolean collectOperations) {
-        return new CatalogCollector(baseUrl, collectOperations);
+        return new CatalogCollector(baseUrl, Set.of(), collectOperations);
+    }
+
+    private static CatalogCollector collectorExcluding(String... names) {
+        return new CatalogCollector(null, Set.of(names), false);
     }
 
     private static CatalogCollector collectorWithBaseUrl(String baseUrl) {
@@ -321,6 +325,55 @@ class CatalogCollectorTest {
         assertTrue(ids.contains("fruit-shop-api-v2-0-0"));
         assertTrue(ids.stream().noneMatch(id -> id.contains("example")), ids.toString());
         assertEquals(ids, viaBaseUrl.stream().map(CatalogEntry::id).sorted().toList());
+    }
+
+    @Test
+    void twoApisLoadingTheSameDocumentGetDistinctIdentifiers() throws Exception {
+        add(apiProxy("fruitshop-api-v2-openapi-3.yml", 2000));
+        add(apiProxy("fruitshop-api-v2-openapi-3.yml", 2011));
+
+        final var apis = collector().collect(router, exchange("/apis.json")).apis();
+
+        assertEquals(2, apis.size());
+        assertEquals("fruit-shop-api-v2-0-0", apis.get(0).id());
+        assertTrue(apis.get(1).id().startsWith("fruit-shop-api-v2-0-0-"), apis.get(1).id());
+        assertTrue(apis.get(1).id().contains("2011"), apis.get(1).id());
+        assertEquals("gateway.example.com:" + apis.get(1).id(), apis.get(1).aid());
+    }
+
+    @Test
+    void twoApisWithTheSameConfiguredIdGetDistinctIdentifiers() throws Exception {
+        final var first = apiProxy("fruitshop-api-v2-openapi-3.yml", 2000);
+        first.setId("shop");
+        add(first);
+        final var second = apiProxy("fruitshop-api-v2-openapi-3.yml", 2011);
+        second.setId("shop");
+        add(second);
+
+        final var apis = collector().collect(router, exchange("/apis.json")).apis();
+
+        assertEquals("shop", apis.get(0).aid());
+        assertNotEquals("shop", apis.get(1).aid());
+        assertEquals(apis.get(1).id(), apis.get(1).aid());
+    }
+
+    @Test
+    void excludedApisAreLeftOut() throws Exception {
+        final var admin = new ServiceProxy(new ServiceProxyKey("*", "*", "/admin", 2009), null, 0);
+        admin.setName("Admin");
+        add(admin);
+        final var shop = new ServiceProxy(new ServiceProxyKey("*", "*", "/shop", 2000), null, 0);
+        shop.setName("Shop");
+        add(shop);
+
+        assertEquals(List.of("Shop"), collectorExcluding("Admin").collect(router, exchange("/apis.json"))
+                .apis().stream().map(CatalogEntry::name).toList());
+    }
+
+    @Test
+    void withoutAProxyTheCatalogUrlComesFromTheHostHeader() throws Exception {
+        assertEquals("http://gateway.example.com:2000/apis.json",
+                collector().collect(router, exchange("/apis.json?pretty=true")).url());
     }
 
     @Test

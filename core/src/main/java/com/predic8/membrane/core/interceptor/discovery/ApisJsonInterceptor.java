@@ -45,6 +45,7 @@ import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE;
  * <pre>
  * apisJson:
  *   [ baseUrl: &lt;url&gt; ]
+ *   [ exclude: &lt;api name&gt;, ... ]
  *   [ collectionId: &lt;id&gt; ]
  *   [ name: &lt;name&gt; ]
  *   [ description: &lt;text&gt; ]
@@ -65,11 +66,9 @@ import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE;
  * </code></pre>
  */
 @MCElement(name = "apisJson")
-public class ApisJsonInterceptor extends AbstractApiDiscoveryInterceptor {
+public class ApisJsonInterceptor extends AbstractCollectionDiscoveryInterceptor {
 
     private String collectionId = "apis";
-    private String collectionName = "APIs";
-    private String description = "APIs served by this gateway";
     private LocalDate created = LocalDate.now();
     private LocalDate modified = LocalDate.now();
 
@@ -91,34 +90,6 @@ public class ApisJsonInterceptor extends AbstractApiDiscoveryInterceptor {
     @MCAttribute
     public void setCollectionId(String collectionId) {
         this.collectionId = collectionId;
-    }
-
-    public String getCollectionName() {
-        return collectionName;
-    }
-
-    /**
-     * @description Human readable name of the collection.
-     * @default APIs
-     * @example Membrane Gateway APIs
-     */
-    @MCAttribute(attributeName = "name")
-    public void setCollectionName(String collectionName) {
-        this.collectionName = collectionName;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    /**
-     * @description Human readable description of the collection.
-     * @default APIs served by this gateway
-     * @example Every API of the payments platform
-     */
-    @MCAttribute
-    public void setDescription(String description) {
-        this.description = description;
     }
 
     public LocalDate getCreated() {
@@ -159,10 +130,6 @@ public class ApisJsonInterceptor extends AbstractApiDiscoveryInterceptor {
                     "Cannot parse %s/@%s \"%s\". Expected an ISO date such as 2026-01-15."
                             .formatted(elementName(), attribute, value), e);
         }
-    }
-
-    private CollectionInfo collection() {
-        return new CollectionInfo(collectionName, description);
     }
 
     @Override

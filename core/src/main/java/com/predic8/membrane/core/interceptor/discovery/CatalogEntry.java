@@ -88,6 +88,11 @@ public record CatalogEntry(String aid, String id, ProxyKind kind, String name, S
 
     public record SoapInfo(String wsdl, String serviceName, String portName) {}
 
+    public CatalogEntry withIdentifiers(String aid, String id) {
+        return new CatalogEntry(aid, id, kind, name, description, version, endpoint, links, tags,
+                contact, license, termsOfService, soap, operations);
+    }
+
     public static Builder builder() {
         return new Builder();
     }

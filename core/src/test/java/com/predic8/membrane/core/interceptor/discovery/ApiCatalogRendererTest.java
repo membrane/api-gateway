@@ -91,6 +91,27 @@ class ApiCatalogRendererTest {
         assertTrue(context.path("service-doc").isMissingNode());
     }
 
+    @Test
+    void documentsSharingAnEndpointShareOneBookmarkAndOneLinkContext() throws Exception {
+        final var second = CatalogEntry.builder()
+                .aid("example.com:fruit-shop-api-v3-0-0").id("fruit-shop-api-v3-0-0")
+                .kind(CatalogEntry.ProxyKind.API).name("Fruit Shop API v3").description("v3")
+                .endpoint(describedApi().endpoint())
+                .links(new CatalogEntry.Links("https://example.com/api-docs/ui/fruit-shop-api-v3-0-0",
+                        "https://example.com/api-docs/fruit-shop-api-v3-0-0"))
+                .build();
+
+        final var linkset = render(catalog(describedApi(), second)).path("linkset");
+
+        assertEquals(1, linkset.get(0).path("item").size());
+        assertEquals("Fruit Shop API, Fruit Shop API v3", linkset.get(0).path("item").get(0).path("title").asText());
+        assertEquals(2, linkset.size());
+        assertEquals(2, linkset.get(1).path("service-desc").size());
+        assertEquals("https://example.com/api-docs/fruit-shop-api-v3-0-0",
+                linkset.get(1).path("service-desc").get(1).path("href").asText());
+        assertEquals(2, linkset.get(1).path("service-doc").size());
+    }
+
     /**
      * Every link relation holds an array, even with a single target.
      */

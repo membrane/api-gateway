@@ -47,6 +47,7 @@ import static com.predic8.membrane.core.http.Header.*;
  * <pre>
  * apiDiscovery:
  *   [ baseUrl: &lt;url&gt; ]
+ *   [ exclude: &lt;api name&gt;, ... ]
  *   [ name: &lt;name&gt; ]
  *   [ description: &lt;text&gt; ]
  * </pre>
@@ -62,14 +63,11 @@ import static com.predic8.membrane.core.http.Header.*;
  * </code></pre>
  */
 @MCElement(name = "apiDiscovery")
-public class ApiDiscoveryInterceptor extends AbstractApiDiscoveryInterceptor {
+public class ApiDiscoveryInterceptor extends AbstractCollectionDiscoveryInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(ApiDiscoveryInterceptor.class);
 
     private static final String HTML_CONTENT_SECURITY_POLICY = "default-src 'none'; style-src 'unsafe-inline'";
-
-    private String collectionName = "APIs";
-    private String description = "APIs served by this gateway";
 
     private CatalogRenderer htmlRenderer;
 
@@ -121,38 +119,6 @@ public class ApiDiscoveryInterceptor extends AbstractApiDiscoveryInterceptor {
             log.debug("Ignoring malformed Accept header '{}'.", accept);
             return false;
         }
-    }
-
-    public String getCollectionName() {
-        return collectionName;
-    }
-
-    /**
-     * @description Human readable name of the collection.
-     * @default APIs
-     * @example Membrane Gateway APIs
-     */
-    @MCAttribute(attributeName = "name")
-    public void setCollectionName(String collectionName) {
-        this.collectionName = collectionName;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    /**
-     * @description Human readable description of the collection.
-     * @default APIs served by this gateway
-     * @example Every API of the payments platform
-     */
-    @MCAttribute
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    private CollectionInfo collection() {
-        return new CollectionInfo(collectionName, description);
     }
 
     @Override

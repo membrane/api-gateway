@@ -54,20 +54,23 @@ public class CatalogCollector {
 
     private final String baseUrl;
     private final URI baseUri;
+    private final Set<String> excluded;
     private final boolean collectOperations;
 
     /**
      * @param baseUrl           absolute URL clients reach the gateway under, such as
      *                          <code>https://api.example.com</code>, or null to take everything from
      *                          the request
+     * @param excluded          names of the apis to leave out
      * @param collectOperations whether to walk the paths of every OpenAPI document. Only Membrane's
      *                          own format renders operations, and walking them is the only part of
      *                          collecting that grows with the size of the documents, so the other
      *                          formats switch it off.
      */
-    public CatalogCollector(String baseUrl, boolean collectOperations) {
+    public CatalogCollector(String baseUrl, Set<String> excluded, boolean collectOperations) {
         this.baseUrl = trimTrailingSlash(withLowercaseScheme(baseUrl));
         this.baseUri = this.baseUrl == null ? null : URI.create(this.baseUrl);
+        this.excluded = Set.copyOf(excluded);
         this.collectOperations = collectOperations;
     }
 
@@ -95,14 +98,13 @@ public class CatalogCollector {
         return requestHost(exchange);
     }
 
-    /**
-     * URL of the catalog document itself: the base URL, or else the origin the request reached,
-     * followed by the path of the request with any query string dropped.
-     */
     private String catalogUrl(Exchange exchange) {
         if (baseUrl != null) return baseUrl + pathWithoutQuery(exchange);
-        if (!(exchange.getProxy() instanceof AbstractServiceProxy serviceProxy)) return null;
-        return origin(serviceProxy, exchange) + pathWithoutQuery(exchange);
+        if (exchange.getProxy() instanceof AbstractServiceProxy serviceProxy)
+            return origin(serviceProxy, exchange) + pathWithoutQuery(exchange);
+        String hostHeader = exchange.getOriginalHostHeader();
+        String authority = hostHeader != null && !hostHeader.isBlank() ? hostHeader : requestHost(exchange);
+        return "http://" + authority + pathWithoutQuery(exchange);
     }
 
     private static String pathWithoutQuery(Exchange exchange) {
@@ -114,13 +116,27 @@ public class CatalogCollector {
 
     private List<CatalogEntry> collectEntries(Router router, Exchange exchange, String domain) {
         List<CatalogEntry> entries = new ArrayList<>();
+        final var taken = new HashSet<String>();
         // Snapshot: getRules() hands out the live list, which a configuration reload mutates.
         for (Proxy proxy : List.copyOf(router.getRuleManager().getRules())) {
             if (!(proxy instanceof AbstractServiceProxy serviceProxy)) continue;
             if (proxy instanceof NotPortOpeningProxy || !proxy.isActive()) continue;
-            entries.addAll(entriesFor(serviceProxy, exchange, domain));
+            if (excluded.contains(proxy.getName())) continue;
+            for (CatalogEntry entry : entriesFor(serviceProxy, exchange, domain))
+                entries.add(unique(entry, serviceProxy, domain, taken));
         }
         return entries;
+    }
+
+    private static CatalogEntry unique(CatalogEntry entry, AbstractServiceProxy proxy, String domain, Set<String> taken) {
+        if (taken.add(entry.id())) return entry;
+        final var base = entry.id() + "-" + slug(keyId(proxy));
+        var id = base;
+        for (int n = 2; !taken.add(id); n++)
+            id = base + "-" + n;
+        // A configured id stands as the aid on its own; any other one carries the domain.
+        final var aid = entry.aid().equals(entry.id()) ? id : domain + ":" + id;
+        return entry.withIdentifiers(aid, id);
     }
 
     /**
