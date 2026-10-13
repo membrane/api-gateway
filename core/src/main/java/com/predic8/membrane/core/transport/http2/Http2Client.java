@@ -45,10 +45,17 @@ public class Http2Client implements Runnable, AutoCloseable {
     private final Http2Logic logic;
     @GuardedBy("this")
     private int reserved;
+    private volatile boolean closed;
 
     private static class ResponseInfo {
         private final CountDownLatch cdl = new CountDownLatch(1);
         private Response response;
+        private volatile IOException failure;
+
+        private void fail(IOException failure) {
+            this.failure = failure;
+            cdl.countDown();
+        }
     }
 
     public Http2Client(Connection con, boolean showSSLExceptions) {
@@ -90,6 +97,11 @@ public class Http2Client implements Runnable, AutoCloseable {
         ResponseInfo ri = new ResponseInfo();
         responses.put(streamId, ri);
         try {
+            // closeImmediately() sets closed before draining responses, so a call
+            // registered concurrently is either drained there or rejected here.
+            if (closed)
+                throw new IOException("HTTP/2 connection closed");
+
             StreamInfo streamInfo = new StreamInfo(streamId, logic.sender, logic.peerSettings, logic.ourSettings);
             logic.streams.put(streamId, streamInfo);
 
@@ -100,6 +112,8 @@ public class Http2Client implements Runnable, AutoCloseable {
             // TODO: handle error/exception
             ri.cdl.await();
 
+            if (ri.failure != null)
+                throw ri.failure;
             return ri.response;
         } finally {
             responses.remove(streamId);
@@ -162,7 +176,9 @@ public class Http2Client implements Runnable, AutoCloseable {
      * must not depend on the peer reading queued frames (including GOAWAY).
      */
     public void closeImmediately() {
+        closed = true;
         logic.receiving = false;
+        failPendingResponses();
         try {
             con.abort();
         } catch (IOException e) {
@@ -172,6 +188,11 @@ public class Http2Client implements Runnable, AutoCloseable {
             // has published senderFuture and does not require joining it.
             logic.sender.stop();
         }
+    }
+
+    private void failPendingResponses() {
+        for (var ri : responses.values())
+            ri.fail(new IOException("HTTP/2 connection closed before a response was received"));
     }
 
     public void close() {
