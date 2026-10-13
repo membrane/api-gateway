@@ -195,7 +195,7 @@ public class ObjectValidator implements JsonSchemaValidator {
             return null;
 
         final var evaluated = new HashSet<String>();
-        collectEvaluatedProperties(ctx, schema, node, evaluated, new HashSet<>());
+        collectEvaluatedProperties(ctx, schema, node, evaluated, Collections.newSetFromMap(new IdentityHashMap<>()));
         final var unevaluated = new LinkedHashMap<String, JsonNode>();
         node.fields().forEachRemaining(field -> {
             if (!evaluated.contains(field.getKey()))
@@ -236,11 +236,13 @@ public class ObjectValidator implements JsonSchemaValidator {
 
         final Map<String, Schema> properties = current.getProperties();
         final Map<String, Schema> patternProperties = current.getPatternProperties();
+        final var patterns = patternProperties == null ? List.<Pattern>of()
+                : patternProperties.keySet().stream().map(Pattern::compile).toList();
         node.fieldNames().forEachRemaining(name -> {
             if (current.getAdditionalProperties() != null
                 || current.getUnevaluatedProperties() != null && current != schema
                 || properties != null && properties.containsKey(name)
-                || patternProperties != null && patternProperties.keySet().stream().anyMatch(r -> Pattern.compile(r).matcher(name).find()))
+                || patterns.stream().anyMatch(p -> p.matcher(name).find()))
                 evaluated.add(name);
         });
 
