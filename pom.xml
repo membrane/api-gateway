@@ -17,7 +17,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.membrane-soa</groupId>
 	<artifactId>service-proxy-parent</artifactId>
-	<version>7.6.3-SNAPSHOT</version>
+	<version>7.7.2-SNAPSHOT</version>
 	<name>${project.artifactId}</name>
 	<description>Membrane is an open source API Gateway written in Java that features:
 	- OpenAPI support with validation
@@ -326,7 +326,7 @@
 			<dependency>
 				<groupId>org.bouncycastle</groupId>
 				<artifactId>bcpkix-jdk18on</artifactId>
-				<version>1.85</version>
+				<version>1.86</version>
 			</dependency>
 			<dependency>
 				<groupId>org.jetbrains</groupId>

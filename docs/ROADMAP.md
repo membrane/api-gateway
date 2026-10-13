@@ -55,6 +55,18 @@ PRIO 3:
 
 ## Membrane 8.0.0 (Java 25)
 
+- change all maven packages to membrane-api.io
+  - Needs changes at maven central
+- ReplaceInterceptor:
+  - allow also XPath
+  - allow to use expressions for the replacement
+- global:
+  - global runs between client and Membrane. We need a global also between Membrane and the backend.
+  - Ideas: 
+    - global/inbound global/outbound
+      - keep global to be backward compatible?
+    - globalInbound
+    - globalOutbound
 - Remove deprecated finalize blocks
 - Remove XML configuration
 - configure log4j with YAML

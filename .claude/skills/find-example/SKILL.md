@@ -23,20 +23,19 @@ its demos.
 Run the helper with the element name (the `@MCElement(name = "...")` value):
 
 ```bash
-.claude/skills/find-example/find-example.sh call
+.claude/skills/find-example/find-example.sh rateLimiter
 ```
 
 It lists example **directories** (with the first line of each README as a
 summary) and tutorial **files**:
 
 ```
-Examples using <call>:
-  distribution/examples/orchestration/call-get   To provide simpler interfaces ...
-  distribution/examples/orchestration/call-post  To automate backend interactions ...
+Examples using <rateLimiter>:
+  distribution/examples/rate-limiting   The `rateLimiter` helps you maintain ...
+  distribution/examples/xml/namespaces  Namespaces are a powerful XML feature ...
 
-Tutorials using <call>:
-  distribution/tutorials/orchestration/20-For-Loop-Call.yaml
-  distribution/tutorials/orchestration/40-Authentication-Call.yaml
+Tutorials using <rateLimiter>:
+  distribution/tutorials/operation/70-Production-Settings.yaml
 ```
 
 Narrow to one tree when that's all the user wants:

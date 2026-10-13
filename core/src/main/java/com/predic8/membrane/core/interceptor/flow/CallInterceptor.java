@@ -50,7 +50,7 @@ import static java.util.Collections.singletonList;
  * in both the request and the response flow. The <code>url</code> may contain <code>${...}</code>
  * expressions that are evaluated against the exchange before each call; a URL without a template
  * marker is used verbatim. On an unknown host or a failed call the exchange is aborted with a Problem
- * Details response. See the examples and tutorials under examples/orchestration and
+ * Details response. See the tutorials under
  * tutorials/orchestration.
  * @topic 1. Proxies and Flow
  * @yaml <pre><code>

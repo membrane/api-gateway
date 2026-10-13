@@ -27,7 +27,7 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.time.Duration;
 
-import static com.predic8.membrane.core.util.NetworkUtil.getFreePortEqualAbove;
+import static com.predic8.membrane.core.util.NetworkTestUtil.freePort;
 import static org.junit.jupiter.api.Assertions.*;
 
 class RouterCLITest {
@@ -99,7 +99,7 @@ class RouterCLITest {
      */
     @Test
     void initRouterByOpenApiSpecStartsRouter() throws Exception {
-        int port = getFreePortEqualAbove(3000);
+        int port = freePort();
         MembraneCommandLine cl = new MembraneCommandLine();
         cl.parse(new String[]{"oas", "-l", "src/test/resources/configuration/openapi/simple.oas.yml", "-p", String.valueOf(port)});
 
