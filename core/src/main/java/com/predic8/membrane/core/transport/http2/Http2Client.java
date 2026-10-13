@@ -29,6 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.predic8.membrane.core.transport.http2.Http2ExchangeHandler.createHeadersFrames;
 import static com.predic8.membrane.core.transport.http2.Http2ExchangeHandler.writeMessageBody;
@@ -51,10 +52,21 @@ public class Http2Client implements Runnable, AutoCloseable {
 
     private static class ResponseInfo {
         private final CountDownLatch cdl = new CountDownLatch(1);
+        // First completion wins: a disconnect must not overwrite a response that already arrived.
+        private final AtomicBoolean completed = new AtomicBoolean();
         private Response response;
-        private volatile IOException failure;
+        private IOException failure;
+
+        private void complete(Response response) {
+            if (!completed.compareAndSet(false, true))
+                return;
+            this.response = response;
+            cdl.countDown();
+        }
 
         private void fail(IOException failure) {
+            if (!completed.compareAndSet(false, true))
+                return;
             this.failure = failure;
             cdl.countDown();
         }
@@ -73,10 +85,8 @@ public class Http2Client implements Runnable, AutoCloseable {
             @Override
             public void handleExchange(StreamInfo streamInfo, Message message, boolean showSSLExceptions, String remoteAddr) {
                 ResponseInfo ri = responses.get(streamInfo.getStreamId());
-                if (ri != null) {
-                    ri.response = (Response) message;
-                    ri.cdl.countDown();
-                }
+                if (ri != null)
+                    ri.complete((Response) message);
             }
         });
 
