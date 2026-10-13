@@ -289,7 +289,10 @@ public class Http2ExchangeHandler implements Runnable {
             encodeHeader(encoder, baos, sb, ":method", req.getMethod());
             encodeHeader(encoder, baos, sb, ":scheme", "https");
             encodeHeader(encoder, baos, sb, ":path", req.getUri());
-            encodeHeader(encoder, baos, sb, ":authority", req.getHeader().getHost());
+            // RFC 9113, section 8.3.1: omit :authority when there is no authority to send.
+            final var host = req.getHeader().getHost();
+            if (host != null)
+                encodeHeader(encoder, baos, sb, ":authority", host);
         }
         if (res instanceof Response response) {
             encodeHeader(encoder, baos, sb, ":status", "" + response.getStatusCode());
