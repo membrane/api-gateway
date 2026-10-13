@@ -264,12 +264,11 @@ public class Http2Logic {
 
         StreamInfo streamInfo = streams.get(streamId1);
 
-        if (streamInfo == null) {
-            if (isClosed(streamId1))
-                return;
-            streamInfo = new StreamInfo(streamId1, sender, peerSettings, ourSettings);
-            streams.put(streamId1, streamInfo);
-        }
+        // For a closed or an idle stream: a stream created for an idle one would never close, counting
+        // against the concurrent stream limit and keeping the connection busy. Priority signaling is
+        // deprecated anyway (RFC 9113 §5.3.2).
+        if (streamInfo == null)
+            return;
 
         streamInfo.receivedPriority();
 

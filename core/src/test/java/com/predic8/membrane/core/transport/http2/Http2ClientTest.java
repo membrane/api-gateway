@@ -77,6 +77,9 @@ class Http2ClientTest {
     /** SETTINGS frame with INITIAL_WINDOW_SIZE = 2^31-1, the largest value RFC 9113 §6.5.2 allows. */
     private static final byte[] SETTINGS_MAX_INITIAL_WINDOW_SIZE = {0, 0, 6, 0x4, 0, 0, 0, 0, 0, 0, 0x4, 0x7f, (byte) 0xff, (byte) 0xff, (byte) 0xff};
 
+    /** PRIORITY frame on the idle stream 5: no dependency, weight 16. */
+    private static final byte[] PRIORITY_5 = {0, 0, 5, 0x2, 0, 0, 0, 0, 5, 0, 0, 0, 0, 15};
+
     /** RST_STREAM frame on stream 1 with error code REFUSED_STREAM. */
     private static final byte[] RST_STREAM_1_REFUSED_STREAM = {0, 0, 4, 0x3, 0, 0, 0, 0, 1, 0, 0, 0, 0x7};
 
@@ -367,6 +370,39 @@ class Http2ClientTest {
                 peer.getOutputStream().write(RESPONSE_HEADERS_200_END_STREAM_3);
                 peer.getOutputStream().flush();
                 assertEquals(200, second.get(2, TimeUnit.SECONDS).getStatusCode());
+            }
+        } finally {
+            router.stop();
+        }
+    }
+
+    /**
+     * PRIORITY may be sent for an idle stream (RFC 9113 §5.1). That must not create a stream which never
+     * closes: it would count against the concurrent stream limit and keep the connection from becoming idle.
+     */
+    @Test
+    void priorityForIdleStreamDoesNotKeepConnectionBusy() throws Exception {
+        final var router = new DefaultRouter();
+        try (final var backend = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
+            backend.setSoTimeout(2000);
+            final var connection = createConnection(router, backend);
+            try (final var peer = backend.accept()) {
+                peer.setSoTimeout(2000);
+                peer.getOutputStream().write(SETTINGS_MAX_CONCURRENT_STREAMS_1);
+                peer.getOutputStream().write(PRIORITY_5);
+                peer.getOutputStream().flush();
+                final var client = new Http2Client(connection, false);
+
+                // The response arrives after the PRIORITY frame, so the client has processed it by then.
+                assertTrue(client.reserveStream());
+                final var call = callAsync(client);
+                readUntilRequestHeaders(peer);
+                peer.getOutputStream().write(RESPONSE_HEADERS_200_END_STREAM);
+                peer.getOutputStream().flush();
+                assertEquals(200, call.get(2, TimeUnit.SECONDS).getStatusCode());
+
+                awaitIdle(client);
+                assertTrue(client.reserveStream());
             }
         } finally {
             router.stop();
