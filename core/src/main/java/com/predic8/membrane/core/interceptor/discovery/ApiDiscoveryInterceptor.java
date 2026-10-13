@@ -40,13 +40,15 @@ import static com.predic8.membrane.core.interceptor.discovery.DiscoveryFormat.*;
  * Three catalog formats are available. APIs.json 0.18 (<code>apisjson</code>) is a collection
  * document a crawler can index. RFC 9727 api-catalog (<code>apicatalog</code>) is a linkset of the
  * same APIs, served as <code>application/linkset+json</code> and expected under the well-known path
- * <code>/.well-known/api-catalog</code>. Membrane's own format (<code>membrane</code>) carries
- * everything the gateway knows, including the method and path of every operation.
+ * <code>/.well-known/api-catalog</code>, the only format allowed under that path. Membrane's own
+ * format (<code>membrane</code>) carries everything the gateway knows, including the method and
+ * path of every operation.
  * </p>
  * <p>
  * An API described by an OpenAPI document is listed with the title, description and version from
- * that document, plus links to the document itself and to its Swagger UI. Any other proxy is listed
- * with its own name and URL. Internal proxies and proxies whose initialisation failed are left out.
+ * that document, plus links to the document itself and to its Swagger UI. A SOAP proxy is listed
+ * with a link to the WSDL the gateway publishes. Any other proxy is listed with its own name and
+ * URL. Internal proxies and proxies whose initialisation failed are left out.
  * </p>
  * <p>
  * With the <code>membrane</code> format, a browser, or any client whose <code>Accept</code> header
@@ -113,18 +115,27 @@ public class ApiDiscoveryInterceptor extends AbstractInterceptor {
         };
         collector = new CatalogCollector(rootDomain, collectionId, collectionName, description,
                 url, created, modified, renderer.rendersOperations());
-        warnIfNotAtWellKnownPath();
+        checkWellKnownPath();
     }
 
     /**
      * RFC 9727 ties the api-catalog document to one well-known URI, so a linkset served anywhere
-     * else will not be found by a client that follows the RFC. The proxy is unknown when the
-     * plugin sits in the else branch of an {@code if}, in which case there is nothing to check.
+     * else will not be found by a client that follows the RFC. The other way round is an error:
+     * the RFC makes the Linkset mandatory at that URI, and a client reading any other format there
+     * misreads it. The proxy is unknown when the plugin sits in the else branch of an {@code if},
+     * in which case there is nothing to check.
      */
-    private void warnIfNotAtWellKnownPath() {
-        if (format != APICATALOG || getProxy() == null || getProxy().getKey() == null)
+    private void checkWellKnownPath() {
+        if (getProxy() == null || getProxy().getKey() == null)
             return;
-        String path = getProxy().getKey().getPath();
+        final var path = getProxy().getKey().getPath();
+        if (format != APICATALOG) {
+            if (WELL_KNOWN_PATH.equals(path))
+                throw new ConfigurationException(
+                        "apiDiscovery with format %s cannot be served under %s. RFC 9727 requires an api-catalog Linkset there, so use format apicatalog or move the api to another path."
+                                .formatted(format.name().toLowerCase(Locale.ROOT), WELL_KNOWN_PATH));
+            return;
+        }
         if (!WELL_KNOWN_PATH.equals(path))
             log.warn("apiDiscovery publishes an RFC 9727 api-catalog under the path {}, but RFC 9727 "
                      + "clients look for it at {}. Set that path on the surrounding api.",
@@ -140,7 +151,8 @@ public class ApiDiscoveryInterceptor extends AbstractInterceptor {
             // The membrane format answers with HTML or JSON, so caches must key on Accept.
             if (format == MEMBRANE)
                 response.header(VARY, ACCEPT);
-            if (catalog.url() != null)
+            // RFC 9727 requires the target of an api-catalog link to be a Linkset.
+            if (format == APICATALOG && catalog.url() != null)
                 response.header(LINK, "<%s>; rel=\"api-catalog\"".formatted(catalog.url()));
             // RFC 9727 requires HEAD on the catalog to answer with the headers but no document.
             exc.setResponse((exc.getRequest().isHEADRequest()

@@ -26,8 +26,8 @@ import static com.predic8.membrane.core.http.MimeType.*;
  * array of link context objects. Every link relation inside a context object maps to an array of
  * link targets, even when there is only one. The first context object is anchored at the catalog
  * itself and bookmarks each API with <code>item</code>; one further context object per API is
- * anchored at that API and points at its OpenAPI document with <code>service-desc</code> and at
- * its Swagger UI with <code>service-doc</code>.
+ * anchored at that API and points at its OpenAPI document, or for a SOAP proxy its WSDL, with
+ * <code>service-desc</code> and at its Swagger UI with <code>service-doc</code>.
  * <p>
  * Publish this at <code>/.well-known/api-catalog</code>, the well-known URI RFC 9727 defines.
  *
@@ -80,6 +80,8 @@ public class ApiCatalogRenderer implements CatalogRenderer {
         context.put("anchor", entry.endpoint().url());
         if (entry.links().specUrl() != null)
             context.putArray("service-desc").add(link(entry.links().specUrl(), APPLICATION_X_YAML));
+        if (entry.soap() != null && entry.soap().wsdl() != null)
+            context.putArray("service-desc").add(link(entry.soap().wsdl(), TEXT_XML));
         if (entry.links().humanUrl() != null)
             context.putArray("service-doc").add(link(entry.links().humanUrl(), TEXT_HTML));
         if (context.size() > 1)

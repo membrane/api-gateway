@@ -57,9 +57,8 @@ class ApisJsonRendererTest {
     }
 
     /**
-     * APIs.json spells these members with a capitalised URL. A reader that follows the
-     * specification drops anything else, which is what made the previous implementation's
-     * humanUrl and baseUrl invisible.
+     * The APIs.json field list spells these members humanUrl and baseUrl, its examples and the
+     * tooling built on them humanURL and baseURL. The renderer follows the examples.
      */
     @Test
     void urlMembersUseTheSpelledOutCapitalisation() throws Exception {
@@ -90,13 +89,33 @@ class ApisJsonRendererTest {
     void propertiesLinkToTheOpenApiDocumentAndItsDocumentation() throws Exception {
         JsonNode properties = render(catalog(describedApi())).path("apis").get(0).path("properties");
 
-        assertEquals(2, properties.size());
         assertEquals("OpenAPI", properties.get(0).path("type").asText());
         assertEquals("https://example.com/api-docs/fruit-shop-api-v2-0-0",
                 properties.get(0).path("url").asText());
         assertEquals("Documentation", properties.get(1).path("type").asText());
         assertEquals("https://example.com/api-docs/ui/fruit-shop-api-v2-0-0",
                 properties.get(1).path("url").asText());
+    }
+
+    @Test
+    void termsOfServiceAndLicenseBecomeProperties() throws Exception {
+        final var properties = render(catalog(describedApi())).path("apis").get(0).path("properties");
+
+        assertEquals(4, properties.size());
+        assertEquals("TermsOfService", properties.get(2).path("type").asText());
+        assertEquals("https://example.com/terms", properties.get(2).path("url").asText());
+        assertEquals("InterfaceLicense", properties.get(3).path("type").asText());
+        assertEquals("Apache-2.0", properties.get(3).path("name").asText());
+        assertEquals("https://www.apache.org/licenses/LICENSE-2.0", properties.get(3).path("url").asText());
+    }
+
+    @Test
+    void aSoapProxyCarriesItsWsdlAsProperty() throws Exception {
+        final var properties = render(catalog(soapProxy())).path("apis").get(0).path("properties");
+
+        assertEquals(1, properties.size());
+        assertEquals("WSDL", properties.get(0).path("type").asText());
+        assertEquals("http://example.com:2000/cities?wsdl", properties.get(0).path("url").asText());
     }
 
     @Test

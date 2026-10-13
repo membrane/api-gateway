@@ -132,6 +132,39 @@ class ApiDiscoveryInterceptorTest {
                 exc.getResponse().getHeader().getFirstValue(LINK));
     }
 
+    @ParameterizedTest
+    @EnumSource(value = DiscoveryFormat.class, names = {"APISJSON", "MEMBRANE"})
+    void onlyTheApiCatalogAdvertisesItselfWithALinkHeader(DiscoveryFormat format) throws Exception {
+        final var exc = request("GET");
+        exc.setProxy(shop);
+        interceptor(format).handleRequest(exc);
+
+        assertNull(exc.getResponse().getHeader().getFirstValue(LINK));
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = DiscoveryFormat.class, names = {"APISJSON", "MEMBRANE"})
+    void aNonLinksetFormatAtTheWellKnownPathIsARejectedConfiguration(DiscoveryFormat format) {
+        final var interceptor = new ApiDiscoveryInterceptor();
+        interceptor.setFormat(format);
+
+        final var e = assertThrows(ConfigurationException.class,
+                () -> interceptor.init(router, proxyAt(ApiDiscoveryInterceptor.WELL_KNOWN_PATH)));
+        assertTrue(e.getMessage().contains(ApiDiscoveryInterceptor.WELL_KNOWN_PATH));
+    }
+
+    @Test
+    void theApiCatalogIsAcceptedAtTheWellKnownPath() {
+        final var interceptor = new ApiDiscoveryInterceptor();
+        interceptor.setFormat(APICATALOG);
+
+        assertDoesNotThrow(() -> interceptor.init(router, proxyAt(ApiDiscoveryInterceptor.WELL_KNOWN_PATH)));
+    }
+
+    private static ServiceProxy proxyAt(String path) {
+        return new ServiceProxy(new ServiceProxyKey("*", "*", path, 2002), null, 0);
+    }
+
     @Test
     void headAnswersWithTheHeadersButNoDocument() throws Exception {
         Exchange exc = request("HEAD");

@@ -78,6 +78,19 @@ class ApiCatalogRendererTest {
         assertEquals(TEXT_HTML, context.path("service-doc").get(0).path("type").asText());
     }
 
+    @Test
+    void aSoapProxyPointsAtItsWsdlAsServiceDescription() throws Exception {
+        final var linkset = render(catalog(soapProxy())).path("linkset");
+
+        assertEquals(2, linkset.size());
+        final var context = linkset.get(1);
+        assertEquals("http://example.com:2000/cities", context.path("anchor").asText());
+        assertEquals("http://example.com:2000/cities?wsdl",
+                context.path("service-desc").get(0).path("href").asText());
+        assertEquals(TEXT_XML, context.path("service-desc").get(0).path("type").asText());
+        assertTrue(context.path("service-doc").isMissingNode());
+    }
+
     /**
      * Every link relation holds an array, even with a single target.
      */

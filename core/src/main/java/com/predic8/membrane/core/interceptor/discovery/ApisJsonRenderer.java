@@ -22,11 +22,15 @@ import static com.predic8.membrane.core.http.MimeType.*;
 /**
  * Renders a {@link Catalog} as an APIs.json document, specification version 0.18.
  * <p>
- * Note the capitalisation of <code>humanURL</code> and <code>baseURL</code>: those are the member
- * names APIs.json defines, and a conformant reader silently drops differently spelled members.
+ * Note the capitalisation of <code>humanURL</code> and <code>baseURL</code>. The specification is
+ * inconsistent here: its field list spells them <code>humanUrl</code> and <code>baseUrl</code>, its
+ * examples, and the tooling built on them, <code>humanURL</code> and <code>baseURL</code>. This
+ * renderer follows the examples.
  * The <code>properties</code> array is what makes the document machine readable, so an API
  * described by an OpenAPI document gets an <code>OpenAPI</code> entry pointing at the document
- * Membrane publishes and a <code>Documentation</code> entry pointing at its Swagger UI.
+ * Membrane publishes and a <code>Documentation</code> entry pointing at its Swagger UI, and a SOAP
+ * proxy gets a <code>WSDL</code> entry. Terms of service and license from the OpenAPI document
+ * become <code>TermsOfService</code> and <code>InterfaceLicense</code> entries.
  *
  * @see <a href="https://apisjson.org/">apisjson.org</a>
  */
@@ -77,21 +81,30 @@ public class ApisJsonRenderer implements CatalogRenderer {
     }
 
     /**
-     * Only APIs described by an OpenAPI document get a <code>properties</code> array. An empty
-     * array would be noise: the whole point of the member is to carry a machine readable link.
+     * Only APIs with something to link get a <code>properties</code> array. An empty array would
+     * be noise: the whole point of the member is to carry machine readable links.
      */
     private void renderProperties(ObjectNode api, CatalogEntry entry) {
-        if (entry.links().specUrl() == null)
-            return;
-        ArrayNode properties = api.putArray("properties");
-        properties.add(renderProperty("OpenAPI", entry.links().specUrl()));
-        if (entry.links().humanUrl() != null)
-            properties.add(renderProperty("Documentation", entry.links().humanUrl()));
+        final var properties = om.createArrayNode();
+        if (entry.links().specUrl() != null) {
+            properties.add(renderProperty("OpenAPI", null, entry.links().specUrl()));
+            if (entry.links().humanUrl() != null)
+                properties.add(renderProperty("Documentation", null, entry.links().humanUrl()));
+        }
+        if (entry.soap() != null && entry.soap().wsdl() != null)
+            properties.add(renderProperty("WSDL", null, entry.soap().wsdl()));
+        if (entry.termsOfService() != null)
+            properties.add(renderProperty("TermsOfService", null, entry.termsOfService()));
+        if (entry.license() != null && entry.license().url() != null)
+            properties.add(renderProperty("InterfaceLicense", entry.license().name(), entry.license().url()));
+        if (!properties.isEmpty())
+            api.set("properties", properties);
     }
 
-    private ObjectNode renderProperty(String type, String url) {
+    private ObjectNode renderProperty(String type, String name, String url) {
         ObjectNode property = om.createObjectNode();
         property.put("type", type);
+        putIfPresent(property, "name", name);
         property.put("url", url);
         return property;
     }

@@ -73,4 +73,17 @@ class CatalogTestFixtures {
                         "http://example.com:2000/shop"))
                 .build();
     }
+
+    static CatalogEntry soapProxy() {
+        return CatalogEntry.builder()
+                .aid("example.com:cities")
+                .kind(SOAP_PROXY)
+                .name("CityService")
+                .description("CityService")
+                .endpoint(new CatalogEntry.Endpoint("http", "example.com", 2000, "/cities", "*",
+                        "http://example.com:2000/cities"))
+                .soap(new CatalogEntry.SoapInfo("http://example.com:2000/cities?wsdl", "CityService",
+                        "CityPort"))
+                .build();
+    }
 }
