@@ -16,9 +16,14 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.predic8.membrane.core.openapi.model.Request;
+import io.swagger.v3.oas.models.media.Schema;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.BooleanSupplier;
 import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
@@ -60,6 +65,32 @@ public class ValidationContext {
      */
     private record VisitedRef(String name, String jsonPointer) {}
 
+    /**
+     * Whether a value is valid against a subschema, remembered for one top-level validation and shared by all
+     * contexts derived from it. anyOf/oneOf validate their branches and unevaluatedProperties needs to know which
+     * of them match. Without remembering, a recursive schema validates its subtree twice on every level, see #3482.
+     * Created by {@link #withValidityCache()}, null before.
+     */
+    private Map<ValidityKey, Boolean> validityCache;
+
+    /**
+     * All by identity: equals() and hashCode() of schema and value are deep, and the visited refs grow with the
+     * nesting depth. They are part of the key because a truncated reference cycle drops errors. anyOf/oneOf and
+     * unevaluatedProperties of one schema share the same set instance.
+     */
+    @SuppressWarnings("rawtypes")
+    private record ValidityKey(Schema schema, JsonNode value, Set<VisitedRef> visitedRefs) {
+        @Override
+        public boolean equals(Object o) {
+            return o instanceof ValidityKey k && schema == k.schema && value == k.value && visitedRefs == k.visitedRefs;
+        }
+
+        @Override
+        public int hashCode() {
+            return 31 * (31 * System.identityHashCode(schema) + System.identityHashCode(value)) + System.identityHashCode(visitedRefs);
+        }
+    }
+
     public enum Content { JSON, XML }
 
     private Content content = Content.JSON;
@@ -84,6 +115,7 @@ public class ValidationContext {
         this.statusCode = ctx.statusCode;
         this.parameter = ctx.parameter;
         this.visitedRefs = ctx.visitedRefs;
+        this.validityCache = ctx.validityCache;
         this.content = ctx.content;
     }
 
@@ -239,6 +271,37 @@ public class ValidationContext {
 
     private VisitedRef visitedRef(String name) {
         return new VisitedRef(name, jsonPointer);
+    }
+
+    public boolean hasValidityCache() {
+        return validityCache != null;
+    }
+
+    /**
+     * @return a context with an empty validity cache, see {@link #validityCache}
+     */
+    public ValidationContext withValidityCache() {
+        ValidationContext ctx = this.deepCopy();
+        ctx.validityCache = new HashMap<>();
+        return ctx;
+    }
+
+    /**
+     * @return whether value is valid against schema, computed by validation unless already known
+     */
+    @SuppressWarnings("rawtypes")
+    public boolean isValid(Schema schema, Object value, BooleanSupplier validation) {
+        // Top-level values like a Body are parsed again on every validation, so their identity is no key
+        if (validityCache == null || !(value instanceof JsonNode node))
+            return validation.getAsBoolean();
+        final var key = new ValidityKey(schema, node, visitedRefs);
+        final var cached = validityCache.get(key);
+        if (cached != null)
+            return cached;
+        // Not computeIfAbsent(): the validation adds entries for nested values itself
+        final var valid = validation.getAsBoolean();
+        validityCache.put(key, valid);
+        return valid;
     }
 
     public ValidationContext content(Content content) {

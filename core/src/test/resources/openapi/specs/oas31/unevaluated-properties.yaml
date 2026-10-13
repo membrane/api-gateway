@@ -171,6 +171,16 @@ paths:
       responses:
         "200":
           description: "OK"
+  /tree:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TreeNode'
+      responses:
+        "200":
+          description: "OK"
 components:
   schemas:
     Base:
@@ -225,3 +235,22 @@ components:
       properties:
         tricks:
           type: integer
+    TreeNode:
+      oneOf:
+        - $ref: '#/components/schemas/TreeLeaf'
+        - $ref: '#/components/schemas/TreeBranch'
+      unevaluatedProperties: false
+    TreeLeaf:
+      type: object
+      properties:
+        value:
+          type: string
+      required: [value]
+    TreeBranch:
+      type: object
+      properties:
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/TreeNode'
+      required: [children]

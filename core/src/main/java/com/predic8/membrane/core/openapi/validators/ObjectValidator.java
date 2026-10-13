@@ -311,7 +311,7 @@ public class ObjectValidator implements JsonSchemaValidator {
         // SchemaValidator can't validate against an unresolvable reference, which evaluates no properties anyway
         if (sub.get$ref() != null && SchemaUtil.getSchemaFromRef(api, sub.get$ref()) == null)
             return false;
-        return new SchemaValidator(api, sub).validate(ctx, node).isEmpty();
+        return new SchemaValidator(api, sub).isValid(ctx, node);
     }
 
     private String propertyOrProperties(Set<String> additionalProperties) {
