@@ -51,6 +51,27 @@ class AbstractApiDiscoveryInterceptorTest {
         assertEquals(0, exc.getResponse().getBody().getLength());
     }
 
+    // RFC 9110 §8.6: HEAD and 304 may only announce the length the GET document has.
+    @Test
+    void headAndNotModifiedAnnounceTheLengthOfTheDocument() throws Exception {
+        final var interceptor = initialized(new ApiCatalogInterceptor(), router);
+        final var get = request("GET");
+        interceptor.handleRequest(get);
+        final var length = get.getResponse().getBody().getLength();
+
+        final var head = request("HEAD");
+        interceptor.handleRequest(head);
+        final var notModified = request("GET");
+        notModified.getRequest().getHeader().setValue(IF_NONE_MATCH, header(get, ETAG));
+        interceptor.handleRequest(notModified);
+
+        assertEquals(length, head.getResponse().getHeader().getContentLength());
+        assertEquals(0, head.getResponse().getBody().getLength());
+        assertEquals(304, notModified.getResponse().getStatusCode());
+        assertEquals(length, notModified.getResponse().getHeader().getContentLength());
+        assertEquals(0, notModified.getResponse().getBody().getLength());
+    }
+
     static Stream<Supplier<AbstractApiDiscoveryInterceptor>> nonLinksetFormats() {
         return Stream.of(ApisJsonInterceptor::new, ApiDiscoveryInterceptor::new);
     }

@@ -99,14 +99,19 @@ public abstract class AbstractApiDiscoveryInterceptor extends AbstractIntercepto
             final var etag = etag(document);
             final var response = ok().contentType(negotiated.contentType()).header(ETAG, etag);
             addHeaders(response, catalog, negotiated);
-            if (matchesAny(exc.getRequest().getHeader().getFirstValue(IF_NONE_MATCH), etag))
+            final var notModified = matchesAny(exc.getRequest().getHeader().getFirstValue(IF_NONE_MATCH), etag);
+            if (notModified)
                 response.status(304).bodyEmpty();
             // RFC 9727 requires HEAD on the catalog to answer with the headers but no document.
             else if (exc.getRequest().isHEADRequest())
                 response.bodyEmpty();
             else
                 response.body(document);
-            exc.setResponse(response.build());
+            final var built = response.build();
+            // RFC 9110 §8.6: without a body, HEAD and 304 announce the length a GET would get.
+            if (notModified || exc.getRequest().isHEADRequest())
+                built.getHeader().setContentLength(document.length);
+            exc.setResponse(built);
             return RETURN;
         } catch (Exception e) {
             internal(router.getConfiguration().isProduction(), getDisplayName())
