@@ -110,8 +110,7 @@ public class Http1ProtocolHandler extends AbstractProtocolHandler {
 
     private boolean isUpgradeToResponse(Response res, String protocol) {
         return res.getStatusCode() == 101 &&
-               UPGRADE.equalsIgnoreCase(res.getHeader().getFirstValue(CONNECTION)) &&
-               protocol.equalsIgnoreCase(res.getHeader().getFirstValue(UPGRADE));
+               protocol.equalsIgnoreCase(res.getHeader().getUpgradeProtocol());
     }
 
     @Override

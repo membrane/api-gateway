@@ -46,6 +46,11 @@ Run and observe Membrane in production.
 Proxy a Server-Sent Events (SSE) stream and watch it in a browser-based debugger.
 
 
+## [WebSockets](websockets)
+
+Proxy a WebSocket connection that pushes live data from a backend to a web page, and log every message.
+
+
 ## [AI / MCP](mcp)
 
 Expose Membrane as an MCP server for AI clients, inspect recent API traffic, restrict MCP tools, and protect the endpoint with an API key.
