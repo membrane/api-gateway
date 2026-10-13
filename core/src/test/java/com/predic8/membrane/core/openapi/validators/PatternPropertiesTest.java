@@ -46,4 +46,24 @@ public class PatternPropertiesTest extends AbstractValidatorTest{
         assertEquals(0,errors.size());
     }
 
+    /**
+     * JSON Schema regexes are not anchored, so a prefix pattern matches longer names.
+     */
+    @Test
+    void prefixPatternIsNotAdditional() throws ParseException {
+        final var errors = validator.validate(Request.post().mediaType(APPLICATION_JSON).path("/prefix").body("""
+                {"x-trace": "1"}
+                """));
+        assertEquals(0, errors.size(), errors.toString());
+    }
+
+    @Test
+    void prefixPatternValidatesValue() throws ParseException {
+        final var errors = validator.validate(Request.post().mediaType(APPLICATION_JSON).path("/prefix").body("""
+                {"x-trace": 1}
+                """));
+        assertEquals(1, errors.size(), errors.toString());
+        assertTrue(errors.toString().contains("x-trace"), errors.toString());
+    }
+
 }
