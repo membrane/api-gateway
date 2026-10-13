@@ -14,27 +14,32 @@
 
 package com.predic8.membrane.core.transport.http2;
 
+import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.router.DefaultRouter;
 import com.predic8.membrane.core.transport.http.Connection;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import org.junit.jupiter.api.Test;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static com.predic8.membrane.core.http.Request.get;
+import static com.predic8.membrane.core.transport.http2.frame.Frame.TYPE_HEADERS;
 import static org.junit.jupiter.api.Assertions.*;
 
 class Http2ClientTest {
 
-    /** Length of the client connection preface plus the frame header of the SETTINGS frame sent after init(). */
-    private static final int PREFACE_AND_SETTINGS_HEADER = 24 + 9;
+    /** Length of the HTTP/2 client connection preface. */
+    private static final int PREFACE_LENGTH = 24;
+
+    /** HEADERS frame on stream 1 with END_STREAM and END_HEADERS, HPACK-encoded ":status: 200". */
+    private static final byte[] RESPONSE_HEADERS_200_END_STREAM = {0, 0, 1, 0x1, 0x5, 0, 0, 0, 1, (byte) 0x88};
 
     @Test
     void closeImmediatelyFailsPendingCall() throws Exception {
@@ -43,11 +48,7 @@ class Http2ClientTest {
 
     @Test
     void closeFailsPendingCall() throws Exception {
-        assertPendingCallFails((client, peer) -> {
-            // close() expects init() to have started the frame sender, which then sends SETTINGS.
-            peer.getInputStream().readNBytes(PREFACE_AND_SETTINGS_HEADER);
-            client.close();
-        });
+        assertPendingCallFails((client, peer) -> client.close());
     }
 
     @Test
@@ -64,40 +65,35 @@ class Http2ClientTest {
             try (final var peer = backend.accept()) {
                 peer.setSoTimeout(2000);
                 final var client = new Http2Client(connection, false);
-                // Runs on the calling thread: the response arrives and the connection is gone
-                // before the call resumes, so both completions race for the same pending call.
-                client.beforeResponseWait = () -> {
-                    try {
-                        // The preface implies the reader thread has started and is named.
-                        peer.getInputStream().readNBytes(PREFACE_AND_SETTINGS_HEADER);
-                        final var reader = findReaderThread(backend.getLocalPort());
-                        peer.getOutputStream().write(RESPONSE_HEADERS_200_END_STREAM);
-                        peer.getOutputStream().flush();
-                        peer.close();
-                        reader.join(2000);
-                        assertFalse(reader.isAlive(), "Reader must have stopped after the disconnect");
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                };
+                final var call = callAsync(client);
 
-                final var response = client.doCall(get("http://localhost/").header("Host", "localhost").buildExchange(), false);
-                assertEquals(200, response.getStatusCode());
+                readUntilRequestHeaders(peer);
+                peer.getOutputStream().write(RESPONSE_HEADERS_200_END_STREAM);
+                peer.getOutputStream().flush();
+                peer.close();
+
+                assertEquals(200, call.get(2, TimeUnit.SECONDS).getStatusCode());
             }
         } finally {
             router.stop();
         }
     }
 
-    /** HEADERS frame on stream 1 with END_STREAM and END_HEADERS, HPACK-encoded ":status: 200". */
-    private static final byte[] RESPONSE_HEADERS_200_END_STREAM = {0, 0, 1, 0x1, 0x5, 0, 0, 0, 1, (byte) 0x88};
+    @Test
+    void failureAfterResponseKeepsResponse() throws Exception {
+        final var info = new Http2Client.ResponseInfo();
+        final var response = Response.ok().build();
+        info.complete(response);
+        info.fail(new IOException("closed"));
+        assertSame(response, info.await());
+    }
 
-    private static Thread findReaderThread(int backendPort) {
-        final var suffix = ":" + backendPort;
-        return Thread.getAllStackTraces().keySet().stream()
-                .filter(t -> t.getName().startsWith("HTTP2 Client ") && t.getName().endsWith(suffix))
-                .findFirst()
-                .orElseThrow(() -> new AssertionError("No HTTP/2 client reader thread for port " + backendPort));
+    @Test
+    void responseAfterFailureKeepsFailure() {
+        final var info = new Http2Client.ResponseInfo();
+        info.fail(new IOException("closed"));
+        info.complete(Response.ok().build());
+        assertThrows(IOException.class, info::await);
     }
 
     private static Connection createConnection(DefaultRouter router, ServerSocket backend) throws IOException {
@@ -106,6 +102,34 @@ class Http2ClientTest {
         return router.getHttpClientFactory().createClient(config).getConnectionFactory()
                 .getConnectionManager().getConnection(
                         backend.getInetAddress().getHostAddress(), backend.getLocalPort(), null, null, 2000);
+    }
+
+    private static CompletableFuture<Response> callAsync(Http2Client client) {
+        final var exc = get("http://localhost/").header("Host", "localhost").buildExchange();
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                return client.doCall(exc, false);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    /**
+     * Reads frames until the request HEADERS frame arrives. The client registers a call before sending
+     * its HEADERS, so from then on the call is pending and must be ended by a close or a response.
+     */
+    private static void readUntilRequestHeaders(Socket peer) throws IOException {
+        final var in = peer.getInputStream();
+        in.readNBytes(PREFACE_LENGTH);
+        while (true) {
+            final var header = in.readNBytes(9);
+            if (header.length < 9)
+                throw new EOFException("Connection closed before the request HEADERS frame");
+            in.skipNBytes(((header[0] & 0xff) << 16) | ((header[1] & 0xff) << 8) | (header[2] & 0xff));
+            if (header[3] == TYPE_HEADERS)
+                return;
+        }
     }
 
     private interface Termination {
@@ -121,20 +145,11 @@ class Http2ClientTest {
             try (final var peer = backend.accept()) {
                 peer.setSoTimeout(2000);
                 final var client = new Http2Client(connection, false);
-                final var waiting = new CountDownLatch(1);
-                client.beforeResponseWait = waiting::countDown;
-                final var exc = get("http://localhost/").header("Host", "localhost").buildExchange();
-                final var call = CompletableFuture.supplyAsync(() -> {
-                    try {
-                        return client.doCall(exc, false);
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                });
+                final var call = callAsync(client);
 
                 // Terminate only once the call is pending, so the test covers failing it
                 // rather than rejecting a call that starts after the close.
-                assertTrue(waiting.await(2, TimeUnit.SECONDS), "Call must wait for its response");
+                readUntilRequestHeaders(peer);
                 termination.terminate(client, peer);
 
                 final var e = assertThrows(ExecutionException.class, () -> call.get(2, TimeUnit.SECONDS));

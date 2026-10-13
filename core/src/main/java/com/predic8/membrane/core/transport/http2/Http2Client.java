@@ -47,28 +47,33 @@ public class Http2Client implements Runnable, AutoCloseable {
     @GuardedBy("this")
     private int reserved;
     private volatile boolean closed;
-    /** Test hook: runs once a call is registered and about to wait for its response. */
-    volatile Runnable beforeResponseWait = () -> {};
 
-    private static class ResponseInfo {
+    static class ResponseInfo {
         private final CountDownLatch cdl = new CountDownLatch(1);
         // First completion wins: a disconnect must not overwrite a response that already arrived.
         private final AtomicBoolean completed = new AtomicBoolean();
         private Response response;
         private IOException failure;
 
-        private void complete(Response response) {
+        void complete(Response response) {
             if (!completed.compareAndSet(false, true))
                 return;
             this.response = response;
             cdl.countDown();
         }
 
-        private void fail(IOException failure) {
+        void fail(IOException failure) {
             if (!completed.compareAndSet(false, true))
                 return;
             this.failure = failure;
             cdl.countDown();
+        }
+
+        Response await() throws IOException, InterruptedException {
+            cdl.await();
+            if (failure != null)
+                throw new IOException(failure.getMessage(), failure);
+            return response;
         }
     }
 
@@ -122,12 +127,7 @@ public class Http2Client implements Runnable, AutoCloseable {
             writeMessageBody(streamId, streamInfo, logic.sender, logic.peerSettings, logic.peerFlowControl, exc.getRequest(), retainBody);
 
             // TODO: handle error/exception
-            beforeResponseWait.run();
-            ri.cdl.await();
-
-            if (ri.failure != null)
-                throw new IOException(ri.failure.getMessage(), ri.failure);
-            return ri.response;
+            return ri.await();
         } finally {
             responses.remove(streamId);
         }
