@@ -97,7 +97,7 @@ public class Http2Client implements Runnable, AutoCloseable {
         ResponseInfo ri = new ResponseInfo();
         responses.put(streamId, ri);
         try {
-            // closeImmediately() sets closed before draining responses, so a call
+            // Every close path sets closed before draining responses, so a call
             // registered concurrently is either drained there or rejected here.
             if (closed)
                 throw new IOException("HTTP/2 connection closed");
@@ -133,8 +133,10 @@ public class Http2Client implements Runnable, AutoCloseable {
         } catch (Exception e) {
             if (logic.receiving)
                 e.printStackTrace();
-            // TODO: notify threads waiting on responses
         } finally {
+            // No more responses can arrive once the reader stops, e.g. when the peer disconnects.
+            closed = true;
+            failPendingResponses();
             updateThreadName(false);
         }
     }
@@ -198,7 +200,9 @@ public class Http2Client implements Runnable, AutoCloseable {
     public void close() {
         try {
             LOG.debug("stop receiving frames.");
+            closed = true;
             logic.receiving = false;
+            failPendingResponses();
             logic.sender.send(GoawayFrame.construct(0, logic.nextClientStreamId.get(), 0));
             LOG.debug("terminating frame sender.");
             logic.sender.stop();

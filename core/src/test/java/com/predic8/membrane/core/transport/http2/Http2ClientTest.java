@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -31,8 +32,33 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class Http2ClientTest {
 
+    /** Length of the client connection preface plus the frame header of the SETTINGS frame sent after init(). */
+    private static final int PREFACE_AND_SETTINGS_HEADER = 24 + 9;
+
     @Test
     void closeImmediatelyFailsPendingCall() throws Exception {
+        assertPendingCallFails((client, peer) -> client.closeImmediately());
+    }
+
+    @Test
+    void closeFailsPendingCall() throws Exception {
+        assertPendingCallFails((client, peer) -> {
+            // close() expects init() to have started the frame sender, which then sends SETTINGS.
+            peer.getInputStream().readNBytes(PREFACE_AND_SETTINGS_HEADER);
+            client.close();
+        });
+    }
+
+    @Test
+    void peerDisconnectFailsPendingCall() throws Exception {
+        assertPendingCallFails((client, peer) -> peer.close());
+    }
+
+    private interface Termination {
+        void terminate(Http2Client client, Socket peer) throws Exception;
+    }
+
+    private static void assertPendingCallFails(Termination termination) throws Exception {
         final var router = new DefaultRouter();
         try (final var backend = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
             backend.setSoTimeout(2000);
@@ -41,8 +67,9 @@ class Http2ClientTest {
             final var connection = router.getHttpClientFactory().createClient(config).getConnectionFactory()
                     .getConnectionManager().getConnection(
                             backend.getInetAddress().getHostAddress(), backend.getLocalPort(), null, null, 2000);
-            // The peer accepts but never answers, so the call can only end through closeImmediately().
-            try (final var ignored = backend.accept()) {
+            // The peer accepts but never answers, so the call can only end through the termination.
+            try (final var peer = backend.accept()) {
+                peer.setSoTimeout(2000);
                 final var client = new Http2Client(connection, false);
                 final var exc = get("http://localhost/").header("Host", "localhost").buildExchange();
                 final var call = CompletableFuture.supplyAsync(() -> {
@@ -53,7 +80,7 @@ class Http2ClientTest {
                     }
                 });
 
-                client.closeImmediately();
+                termination.terminate(client, peer);
 
                 final var e = assertThrows(ExecutionException.class, () -> call.get(2, TimeUnit.SECONDS));
                 assertInstanceOf(IOException.class, e.getCause().getCause());
