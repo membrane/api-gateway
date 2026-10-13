@@ -25,6 +25,12 @@ If your APIs use XML as input or output, this tutorial provides useful configura
 Learn how to use Membrane in more advanced scenarios. Topics include path rewriting, scripting, conditions and more.
 
 
+## [Routing](routing)
+
+Route API traffic with Membrane, e.g. as an outgoing API gateway that controls which headers
+leave your network when internal clients call external APIs.
+
+
 ## [Forward Proxy](forward-proxy)
 
 Use Membrane as a classic HTTP forward proxy that forwards to whatever host the client's
