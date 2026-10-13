@@ -32,8 +32,7 @@ import static com.predic8.membrane.test.StringAssertions.replaceInFile;
 import static java.io.File.separator;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
-import static org.apache.commons.io.FileUtils.readFileToString;
-import static org.apache.commons.io.FileUtils.writeStringToFile;
+import static org.apache.commons.io.FileUtils.*;
 
 /**
  * Extracts the .zip distribution built by Maven.
@@ -208,6 +207,24 @@ public abstract class DistributionExtractingTestcase {
 
     public File getMembraneHome() {
         return membraneHome;
+    }
+
+    /**
+     * Copies the H2 driver jar from the test classpath into Membrane's {@code lib} directory,
+     * so a tutorial's datasource can be rewritten to an embedded H2 database.
+     */
+    protected void copyH2JarToMembraneLib() throws IOException {
+        try {
+            final var jar = new File(org.h2.Driver.class.getProtectionDomain()
+                    .getCodeSource().getLocation().toURI());
+
+            if (!jar.isFile() || !jar.getName().endsWith(".jar"))
+                throw new AssertionError("H2 is not loaded from a jar: " + jar);
+
+            copyFileToDirectory(jar, new File(membraneHome, "lib"));
+        } catch (Exception e) {
+            throw new IOException("Failed to locate/copy H2 jar.", e);
+        }
     }
 
     protected String readFileFromBaseDir(String filename) throws IOException {

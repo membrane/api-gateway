@@ -75,6 +75,7 @@ public class ObjectValidator implements JsonSchemaValidator {
 
         ValidationErrors errors = validateRequiredProperties(ctx, node);
         errors.add(validateAdditionalProperties(ctx, node));
+        errors.add(validateUnevaluatedProperties(ctx, node));
         errors.add(validateProperties(ctx, node));
         errors.add(validatePatternProperties(ctx, node));
         errors.add(validateSize(ctx, node));
@@ -183,6 +184,136 @@ public class ObjectValidator implements JsonSchemaValidator {
                 format("Unsupported additionalProperties: %s", joinByComma(additionalProperties.keySet())));
     }
 
+    /**
+     * unevaluatedProperties (JSON Schema 2020-12) applies to the properties that no keyword of this
+     * schema or of its applicator subschemas has evaluated.
+     */
+    @SuppressWarnings("rawtypes")
+    private ValidationErrors validateUnevaluatedProperties(ValidationContext ctx, ObjectNode node) {
+        final Schema unevaluatedSchema = schema.getUnevaluatedProperties();
+        if (unevaluatedSchema == null || Boolean.TRUE.equals(unevaluatedSchema.getBooleanSchemaValue()))
+            return null;
+
+        final var evaluated = new HashSet<String>();
+        collectEvaluatedProperties(ctx, schema, node, evaluated, Collections.newSetFromMap(new IdentityHashMap<>()));
+        final var unevaluated = new LinkedHashMap<String, JsonNode>();
+        node.fields().forEachRemaining(field -> {
+            if (!evaluated.contains(field.getKey()))
+                unevaluated.put(field.getKey(), field.getValue());
+        });
+        if (unevaluated.isEmpty())
+            return null;
+
+        if (Boolean.FALSE.equals(unevaluatedSchema.getBooleanSchemaValue())) {
+            return error(ctx.statusCode(400),
+                    format("Object has the unevaluated %s: %s. But the schema does not allow unevaluated properties.",
+                            propertyOrProperties(unevaluated.keySet()),
+                            joinByComma(unevaluated.keySet())));
+        }
+        final var errors = new ValidationErrors();
+        unevaluated.forEach((propName, value) ->
+                errors.add(new SchemaValidator(api, unevaluatedSchema).validate(ctx.addJSONpointerSegment(propName), value)));
+        return errors;
+    }
+
+    /**
+     * Adds the names of the properties of node that the schema evaluates. Subschemas of anyOf, oneOf,
+     * then/else and dependentSchemas only count if the node is valid against them. No other path validates
+     * then/else and dependentSchemas, so a property they declare must not escape unevaluatedProperties
+     * with an invalid value.
+     */
+    @SuppressWarnings("rawtypes")
+    private void collectEvaluatedProperties(ValidationContext ctx, Schema current, ObjectNode node, Set<String> evaluated, Set<Schema> visiting) {
+        if (!visiting.add(current))
+            return;
+
+        if (current.get$ref() != null) {
+            // An unresolvable reference evaluates no properties.
+            final var target = SchemaUtil.getSchemaFromRef(api, current.get$ref());
+            if (target != null)
+                collectEvaluatedProperties(ctx, target, node, evaluated, visiting);
+        }
+
+        final Map<String, Schema> properties = current.getProperties();
+        final Map<String, Schema> patternProperties = current.getPatternProperties();
+        final var patterns = patternProperties == null ? List.<Pattern>of()
+                : patternProperties.keySet().stream().map(Pattern::compile).toList();
+        node.fieldNames().forEachRemaining(name -> {
+            if (current.getAdditionalProperties() != null
+                || current.getUnevaluatedProperties() != null && current != schema
+                || properties != null && properties.containsKey(name)
+                || patterns.stream().anyMatch(p -> p.matcher(name).find()))
+                evaluated.add(name);
+        });
+
+        if (current.getAllOf() != null)
+            ((List<Schema>) current.getAllOf()).forEach(sub -> collectEvaluatedProperties(ctx, sub, node, evaluated, visiting));
+        // Like SchemaValidator, a discriminator replaces anyOf/oneOf, so only the schema it selects counts (see below)
+        if (current.getDiscriminator() == null) {
+            collectValidBranches(ctx, current.getAnyOf(), node, evaluated, visiting);
+            collectValidBranches(ctx, current.getOneOf(), node, evaluated, visiting);
+        }
+
+        if (current.getIf() != null) {
+            final var ifMatches = isValid(ctx, current.getIf(), node);
+            final var branch = ifMatches ? current.getThen() : current.getElse();
+            if (ifMatches)
+                collectEvaluatedProperties(ctx, current.getIf(), node, evaluated, visiting);
+            if (branch != null && isValid(ctx, branch, node))
+                collectEvaluatedProperties(ctx, branch, node, evaluated, visiting);
+        }
+
+        final Map<String, Schema> dependentSchemas = current.getDependentSchemas();
+        if (dependentSchemas != null)
+            dependentSchemas.forEach((name, sub) -> {
+                if (node.has(name) && isValid(ctx, sub, node))
+                    collectEvaluatedProperties(ctx, sub, node, evaluated, visiting);
+            });
+
+        // validateDiscriminator validates the node against the selected schema, so it evaluates its properties
+        if (current.getDiscriminator() != null) {
+            final var selected = getDiscriminatedSchema(current, node);
+            if (selected != null)
+                collectEvaluatedProperties(ctx, selected, node, evaluated, visiting);
+        }
+
+        visiting.remove(current);
+    }
+
+    /**
+     * @return the schema the discriminator of owner selects for node, resolved like in validateDiscriminator, or
+     * null if the discriminator property is not set or names no schema
+     */
+    @SuppressWarnings("rawtypes")
+    private @Nullable Schema getDiscriminatedSchema(Schema owner, JsonNode node) {
+        final var discriminator = owner.getDiscriminator();
+        final var value = getBaseSchemaName(node, discriminator.getPropertyName());
+        if (value == null)
+            return null;
+        final Map<String, String> mapping = discriminator.getMapping();
+        final var target = mapping != null && mapping.containsKey(value) ? mapping.get(value) : value;
+        if (target != null && target.startsWith("#"))
+            return SchemaUtil.getSchemaFromRef(api, target);
+        return getBaseSchema(target);
+    }
+
+    @SuppressWarnings("rawtypes")
+    private void collectValidBranches(ValidationContext ctx, List<Schema> branches, ObjectNode node, Set<String> evaluated, Set<Schema> visiting) {
+        if (branches == null)
+            return;
+        branches.stream()
+                .filter(sub -> isValid(ctx, sub, node))
+                .forEach(sub -> collectEvaluatedProperties(ctx, sub, node, evaluated, visiting));
+    }
+
+    @SuppressWarnings("rawtypes")
+    private boolean isValid(ValidationContext ctx, Schema sub, ObjectNode node) {
+        // SchemaValidator can't validate against an unresolvable reference, which evaluates no properties anyway
+        if (sub.get$ref() != null && SchemaUtil.getSchemaFromRef(api, sub.get$ref()) == null)
+            return false;
+        return new SchemaValidator(api, sub).validate(ctx, node).isEmpty();
+    }
+
     private String propertyOrProperties(Set<String> additionalProperties) {
         return additionalProperties.size() > 1 ? "properties" : "property";
     }
@@ -193,7 +324,7 @@ public class ObjectValidator implements JsonSchemaValidator {
         for (Iterator<String> it = node.fieldNames(); it.hasNext(); ) {
             String propName = it.next();
             boolean declared = schema.getProperties() != null && schema.getProperties().containsKey(propName);
-            boolean matchesPattern = !regexes.isEmpty() && regexes.stream().anyMatch(r -> Pattern.compile(r).matcher(propName).matches());
+            boolean matchesPattern = !regexes.isEmpty() && regexes.stream().anyMatch(r -> Pattern.compile(r).matcher(propName).find());
             // Properties that match the pattern are not considered additional
             if (!declared && !matchesPattern) {
                 props.put(propName, node.get(propName));
@@ -296,7 +427,7 @@ public class ObjectValidator implements JsonSchemaValidator {
 
             for (Iterator<String> it = node.fieldNames(); it.hasNext(); ) {
                 String fieldName = it.next();
-                if (pattern.matcher(fieldName).matches()) {
+                if (pattern.matcher(fieldName).find()) {
                     JsonNode childNode = node.get(fieldName);
                     errors.add(new SchemaValidator(api, propSchema)
                             .validate(ctx.addJSONpointerSegment(fieldName), childNode));

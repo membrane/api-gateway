@@ -31,7 +31,6 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisherInterceptor.PATH;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisherInterceptor.PATH_UI;
 import static com.predic8.membrane.core.openapi.util.UriTemplateMatcher.matchTemplate;
-import static com.predic8.membrane.core.util.URIUtil.toRoutingPath;
 import static java.util.Optional.ofNullable;
 
 public class APIProxyKey extends ServiceProxyKey {
@@ -94,7 +93,7 @@ public class APIProxyKey extends ServiceProxyKey {
         if (basePaths.isEmpty() && apiDocsPaths.isEmpty())
             return true;
 
-        var uri = toRoutingPath(exc.getRequest().getUri()); // Path parameters and duplicate slashes must not dodge a base path
+        var uri = exc.getRequest().getRoutingPath(); // Path parameters and duplicate slashes must not dodge a base path
         if (matchesApiDocsPath(uri))
             return true;
 
