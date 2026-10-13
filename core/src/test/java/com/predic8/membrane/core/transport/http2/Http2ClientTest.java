@@ -31,6 +31,8 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URISyntaxException;
+import java.nio.ByteBuffer;
+import java.util.HashMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -39,6 +41,7 @@ import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.http.Request.post;
 import static com.predic8.membrane.core.transport.http2.frame.Error.ERROR_CANCEL;
 import static com.predic8.membrane.core.transport.http2.frame.Frame.*;
+import static com.predic8.membrane.core.transport.http2.frame.SettingsFrame.ID_SETTINGS_MAX_HEADER_LIST_SIZE;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -255,6 +258,55 @@ class Http2ClientTest {
         }
     }
 
+    @Test
+    void oversizedResponseHeaderFieldFailsCall() throws Exception {
+        final var router = new DefaultRouter();
+        try (final var backend = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
+            backend.setSoTimeout(2000);
+            final var connection = createConnection(router, backend);
+            try (final var peer = backend.accept()) {
+                peer.setSoTimeout(2000);
+                final var client = new Http2Client(connection, false);
+                final var call = callAsync(client);
+
+                readUntilRequestHeaders(peer);
+                peer.getOutputStream().write(headersFrame(1, 0x4, new Encoder(4096), ":status", "200", "x-large", "a".repeat(9000)));
+                peer.getOutputStream().flush();
+
+                final var e = assertThrows(ExecutionException.class, () -> call.get(2, TimeUnit.SECONDS));
+                final var cause = assertInstanceOf(IOException.class, e.getCause().getCause());
+                assertTrue(cause.getMessage().contains("header size limit"), cause.getMessage());
+                assertEquals(ERROR_CANCEL, readUntilFrame(peer.getInputStream(), TYPE_RST_STREAM)[3]);
+            }
+        } finally {
+            router.stop();
+        }
+    }
+
+    @Test
+    void clientAnnouncesMaxHeaderListSize() throws Exception {
+        final var router = new DefaultRouter();
+        try (final var backend = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
+            backend.setSoTimeout(2000);
+            final var connection = createConnection(router, backend);
+            try (final var peer = backend.accept()) {
+                peer.setSoTimeout(2000);
+                new Http2Client(connection, false);
+
+                final var in = peer.getInputStream();
+                in.readNBytes(PREFACE_LENGTH);
+                final var settings = ByteBuffer.wrap(readUntilFrame(in, TYPE_SETTINGS));
+                final var announced = new HashMap<Integer, Integer>();
+                while (settings.hasRemaining())
+                    announced.put((int) settings.getShort(), settings.getInt());
+
+                assertEquals(Http2Logic.MAX_HEADER_LIST_SIZE, announced.get(ID_SETTINGS_MAX_HEADER_LIST_SIZE));
+            }
+        } finally {
+            router.stop();
+        }
+    }
+
     /**
      * Frames the peer sends for a stream that is already closed (and therefore removed) must neither
      * break the connection nor be mistaken for frames on an idle stream.
@@ -378,7 +430,7 @@ class Http2ClientTest {
         for (var i = 0; i < namesAndValues.length; i += 2)
             encoder.encodeHeader(block, namesAndValues[i].getBytes(US_ASCII), namesAndValues[i + 1].getBytes(US_ASCII), false);
         final var frame = new ByteArrayOutputStream();
-        frame.write(new byte[]{0, 0, (byte) block.size(), TYPE_HEADERS, (byte) flags,
+        frame.write(new byte[]{(byte) (block.size() >>> 16), (byte) (block.size() >>> 8), (byte) block.size(), TYPE_HEADERS, (byte) flags,
                 (byte) (streamId >>> 24), (byte) (streamId >>> 16), (byte) (streamId >>> 8), (byte) streamId});
         block.writeTo(frame);
         return frame.toByteArray();

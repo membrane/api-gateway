@@ -230,6 +230,72 @@ public class Http2ClientServerTest {
         assertEquals(List.of("hello", "hello"), received, "both attempts must carry the body");
     }
 
+    /**
+     * 30 headers of 1000 characters each: more than the 16 KB maximum frame size, so the header
+     * block is split into CONTINUATION frames, and far more than 8 KB in total.
+     */
+    @Test
+    public void largeResponseHeaderBlockArrivesComplete() throws Exception {
+        final var response = Response.ok().build();
+        for (var i = 0; i < 30; i++)
+            response.getHeader().add("x-large-" + i, largeHeaderValue(i));
+
+        final var received = testGet(response);
+
+        assertEquals(200, received.getStatusCode());
+        for (var i = 0; i < 30; i++)
+            assertEquals(largeHeaderValue(i), received.getHeader().getFirstValue("x-large-" + i), "x-large-" + i);
+    }
+
+    @Test
+    public void largeRequestHeaderBlockArrivesComplete() throws Exception {
+        this.response = Response.ok().build();
+        final var received = new CopyOnWriteArrayList<Request>();
+        this.requestAsserter = received::add;
+
+        final var builder = new Request.Builder().get("https://localhost:3049");
+        for (var i = 0; i < 30; i++)
+            builder.header("x-large-" + i, largeHeaderValue(i));
+        final var e = builder.buildExchange();
+        hc.call(e);
+
+        assertNotNull(e.getProperty(Http2ProtocolHandler.HTTP2_PROTOCOL));
+        assertEquals(200, e.getResponse().getStatusCode());
+        for (var i = 0; i < 30; i++)
+            assertEquals(largeHeaderValue(i), received.getFirst().getHeader().getFirstValue("x-large-" + i), "x-large-" + i);
+    }
+
+    @Test
+    public void oversizedRequestHeaderFieldIsRejectedWith431() throws Exception {
+        assertRejectedWith431(1, 9000);
+    }
+
+    @Test
+    public void oversizedRequestHeaderBlockIsRejectedWith431() throws Exception {
+        // 70 fields below the per-field limit, but more than 64 KB in total
+        assertRejectedWith431(70, 1000);
+    }
+
+    private void assertRejectedWith431(int fields, int valueLength) throws Exception {
+        this.response = Response.ok().build();
+        final var reached = new CopyOnWriteArrayList<Request>();
+        this.requestAsserter = reached::add;
+
+        final var builder = new Request.Builder().get("https://localhost:3049");
+        for (var i = 0; i < fields; i++)
+            builder.header("x-large-" + i, "a".repeat(valueLength));
+        final var e = builder.buildExchange();
+        hc.call(e);
+
+        assertNotNull(e.getProperty(Http2ProtocolHandler.HTTP2_PROTOCOL));
+        assertEquals(431, e.getResponse().getStatusCode());
+        assertEquals(List.of(), reached, "the request must not reach the flow");
+    }
+
+    private static String largeHeaderValue(int i) {
+        return (i + "-abcdefghijklmnopqrstuvwxyz0123456789").repeat(30).substring(0, 1000);
+    }
+
     private void test200(String body) throws Exception {
         Response r = testGet(Response.ok(body).build());
 

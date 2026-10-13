@@ -106,6 +106,16 @@ public class Http2Client implements Runnable, AutoCloseable {
                 if (ri != null)
                     ri.fail(new IOException("HTTP/2 stream %d was reset by the peer with error code %d.".formatted(streamId, errorCode)));
             }
+
+            @Override
+            public void handleOversizedHeaders(StreamInfo streamInfo, boolean endStream) {
+                final var streamId = streamInfo.getStreamId();
+                final var ri = responses.get(streamId);
+                if (ri != null)
+                    ri.fail(new IOException("HTTP/2 response headers on stream %d exceed the header size limit.".formatted(streamId)));
+                if (!endStream)
+                    cancel(streamId);
+            }
         });
 
         Thread thread = new Thread(this);

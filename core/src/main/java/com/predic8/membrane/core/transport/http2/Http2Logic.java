@@ -42,7 +42,11 @@ import static com.predic8.membrane.core.transport.http2.frame.SettingsFrame.*;
 public class Http2Logic {
     private static final Logger log = LoggerFactory.getLogger(Http2Logic.class.getName());
 
+    /** Like a header line in HTTP/1, a header field ("name: value") must be shorter than this. */
     private final static int MAX_LINE_LENGTH;
+
+    /** Maximum size of a decoded header block, announced to the peer as SETTINGS_MAX_HEADER_LIST_SIZE. */
+    static final int MAX_HEADER_LIST_SIZE = 64 * 1024;
 
     static {
         String maxLineLength = System.getProperty("membrane.core.http.body.maxlinelength");
@@ -79,7 +83,7 @@ public class Http2Logic {
         log.debug("started HTTP2 connection " + remoteAddr);
 
         int maxHeaderTableSize = 4096; // TODO: update with SETTINGS_HEADER_TABLE_SIZE https://datatracker.ietf.org/doc/html/rfc9113#section-4.3.1
-        decoder = new Decoder(MAX_LINE_LENGTH, maxHeaderTableSize);
+        decoder = new Decoder(MAX_HEADER_LIST_SIZE, maxHeaderTableSize);
         // TODO: update this value
         this.sender = new FrameSender(srcOut, new Encoder(maxHeaderTableSize), peerSettings, streams, remoteAddr);
         flowControl = new FlowControl(0, sender, ourSettings);
@@ -88,6 +92,7 @@ public class Http2Logic {
         Settings newSettings = new Settings();
         newSettings.copyFrom(ourSettings);
         newSettings.setMaxConcurrentStreams(50);
+        newSettings.setMaxHeaderListSize(MAX_HEADER_LIST_SIZE);
         newSettings.setInitialWindowSize(65535 * 2);
         updateSettings(newSettings);
     }
@@ -359,7 +364,13 @@ public class Http2Logic {
             sb.append(":\n");
         }
 
+        final var oversizedField = new boolean[1];
+        // The whole block is decoded even if it gets rejected, so the HPACK dynamic table stays in sync.
         decoder.decode(getPackedHeaderStream(headerFrames), (name, value, sensitive) -> {
+            if (name.length + 2 + value.length >= MAX_LINE_LENGTH) {
+                oversizedField[0] = true;
+                return;
+            }
             String key = new String(name);
             String val = new String(value);
 
@@ -385,11 +396,25 @@ public class Http2Logic {
             } else
                 header.add(key, val);
         });
-        if (decoder.endHeaderBlock())
-            log.warn("dropped header exceeding configured maximum size of " + MAX_LINE_LENGTH + ".");
+        final var truncated = decoder.endHeaderBlock();
 
         if (sb != null)
             log.debug(sb.toString());
+
+        if (oversizedField[0] || truncated) {
+            log.info("Rejecting header block on stream {}: a header field exceeds {} bytes or the block exceeds {} bytes.",
+                    streamId1, MAX_LINE_LENGTH, MAX_HEADER_LIST_SIZE);
+            if (headers.isEndStream())
+                streamInfo.receivedEndStream(false);
+            if (isTrailer) {
+                // The message has already been handed over: fail its body and drop the stream.
+                streamInfo.abortReceiving(new IOException("HTTP/2 trailer on stream %d exceeds the header size limit.".formatted(streamId1)));
+                sender.send(streamId1, (encoder, peerSettings) -> List.of(RstStreamFrame.construct(streamId1, ERROR_CANCEL)));
+            } else {
+                messageHandler.handleOversizedHeaders(streamInfo, headers.isEndStream());
+            }
+            return;
+        }
 
         if (!isTrailer && request instanceof Response response && response.getStatusCode() >= 100 && response.getStatusCode() < 200) {
             // An interim response (RFC 9113 §8.1): the final response follows in another HEADERS frame.

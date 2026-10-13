@@ -15,6 +15,8 @@ package com.predic8.membrane.core.transport.http2;
 
 import com.predic8.membrane.core.http.Message;
 
+import java.io.IOException;
+
 /**
  * Receives the messages that {@link Http2Logic} reads from an HTTP/2 connection. The server side
  * ({@link Http2ServerHandler}) receives requests, the client side ({@link Http2Client}) responses.
@@ -52,5 +54,14 @@ public interface Http2MessageHandler {
      */
     default void handleStreamReset(int streamId, int errorCode) {
     }
+
+    /**
+     * Called instead of {@link #handleExchange} when a stream's header block exceeds the header size limits.
+     * The block has been decoded and discarded; no message is handed over for the stream.
+     *
+     * @param streamInfo the stream the header block was received on
+     * @param endStream whether the peer ended the stream with the header block
+     */
+    void handleOversizedHeaders(StreamInfo streamInfo, boolean endStream) throws IOException;
 
 }
