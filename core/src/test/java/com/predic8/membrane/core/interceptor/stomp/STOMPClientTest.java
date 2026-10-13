@@ -18,9 +18,8 @@ import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.router.DummyTestRouter;
 import org.junit.jupiter.api.Test;
 
-import java.net.ServerSocket;
-
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.util.NetworkTestUtil.freePort;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -28,10 +27,7 @@ class STOMPClientTest {
 
     @Test
     void brokerConnectionFailureIsGatewayError() throws Exception {
-        final int closedPort;
-        try (ServerSocket socket = new ServerSocket(0)) {
-            closedPort = socket.getLocalPort();
-        }
+        final var closedPort = freePort();
 
         STOMPClient client = new STOMPClient();
         client.setHost("127.0.0.1");

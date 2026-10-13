@@ -46,7 +46,7 @@ import java.util.function.Consumer;
 
 import static com.predic8.membrane.core.router.YamlRouterBootstrap.loadIntoRouter;
 import static com.predic8.membrane.core.transport.ssl.TLSError.access_denied;
-import static com.predic8.membrane.core.util.RecordingServerTestUtil.freePort;
+import static com.predic8.membrane.core.util.NetworkTestUtil.freePort;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.*;

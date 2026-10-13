@@ -137,11 +137,14 @@ public class ScriptingUtils {
         if (!(exchange.getProxy() instanceof APIProxy ap))
             return emptyMap();
 
+        // Match the same path as routing does, see RuleManager.getMatchingRule(), otherwise a path like "/products//42"
+        // selects the API for "/products/{id}" but yields no "id"
+        final var path = exchange.getRequest().getRoutingPath();
         try {
-            return new HashMap<>(matchTemplate(ap.getPath().getUri(), exchange.getRequest().getUri())); // Make lazy!
+            return new HashMap<>(matchTemplate(ap.getPath().getUri(), path)); // Make lazy!
         } catch (PathDoesNotMatchException ignore) {
             // Log does only show up if path parameters are used in an expression
-            log.info("No path parameters extracted: uriTemplate {}, path {}", ap.getPath().getUri(), exchange.getRequest().getUri());
+            log.info("No path parameters extracted: uriTemplate {}, path {}", ap.getPath().getUri(), path);
         }
         // Add map to avoid a second parsing
         return emptyMap();

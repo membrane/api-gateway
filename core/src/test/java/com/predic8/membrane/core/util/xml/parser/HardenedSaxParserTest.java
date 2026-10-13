@@ -22,7 +22,7 @@ import org.xml.sax.helpers.DefaultHandler;
 import java.io.StringReader;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.predic8.membrane.core.util.RecordingServerTestUtil.freePort;
+import static com.predic8.membrane.core.util.NetworkTestUtil.freePort;
 import static com.predic8.membrane.core.util.RecordingServerTestUtil.startRecordingServer;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;

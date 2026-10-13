@@ -32,6 +32,7 @@ import java.net.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
+import static com.predic8.membrane.core.util.NetworkTestUtil.freePort;
 import static com.predic8.membrane.core.util.text.SerializationUtil.Serialization.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -158,12 +159,8 @@ class HTTPClientInterceptorTest {
 
         @Test
         void refusedTargetYields502() throws Exception {
-            int freePort;
-            try (var probe = new ServerSocket(0)) {
-                freePort = probe.getLocalPort();
-            } // closed again, so nothing listens on freePort
-
-            var exc = callTarget("http://localhost:" + freePort + "/", 0);
+            // nothing listens on a port freePort() returns
+            var exc = callTarget("http://localhost:" + freePort() + "/", 0);
 
             assertEquals(502, exc.getResponse().getStatusCode());
             assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("connect"));

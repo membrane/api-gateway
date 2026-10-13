@@ -16,18 +16,20 @@ package com.predic8.membrane.core.interceptor.xslt;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.router.DummyTestRouter;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.xml.sax.InputSource;
 
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import static com.predic8.membrane.core.http.Request.get;
+import static com.predic8.membrane.core.http.Request.post;
 import static com.predic8.membrane.core.http.Response.ok;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class XSLTInterceptorTest {
 
@@ -112,6 +114,31 @@ public class XSLTInterceptorTest {
         var body = exc.getResponse().getBodyAsStringDecoded();
         assertTrue(body.contains("Error transforming message!"));
         assertFalse(body.contains("XML parsing failed"));
+    }
+
+    /**
+     * GHSA-23v5-9h8v-7282: the request body must not be parsed with external entity
+     * resolution enabled, or a client can make the gateway read local files.
+     */
+    @Test
+    void externalEntityInRequestIsNotResolved(@TempDir Path dir) throws Exception {
+        final var secret = dir.resolve("secret.txt");
+        Files.writeString(secret, "TOP-SECRET-1234");
+
+        exc = post("http://localhost/").body("""
+                <?xml version="1.0"?>
+                <!DOCTYPE CUSTOMER [<!ENTITY xxe SYSTEM "%s">]>
+                <CUSTOMER><FIRSTNAME>&xxe;</FIRSTNAME><LASTNAME>x</LASTNAME></CUSTOMER>
+                """.formatted(secret.toUri())).buildExchange();
+
+        final var i = new XSLTInterceptor();
+        i.setXslt("classpath:/customer2person.xsl");
+        i.init(new DummyTestRouter());
+        assertEquals(ABORT, i.handleRequest(exc));
+
+        assertEquals(400, exc.getResponse().getStatusCode());
+        assertFalse(exc.getRequest().getBodyAsStringDecoded().contains("TOP-SECRET-1234"));
+        assertFalse(exc.getResponse().getBodyAsStringDecoded().contains("TOP-SECRET-1234"));
     }
 
     private void assertXPath(String xpathExpr, String expected)

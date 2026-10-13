@@ -51,7 +51,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 import javax.security.auth.callback.CallbackHandler;
 import java.io.Closeable;
 import java.lang.reflect.Proxy;
-import java.net.ServerSocket;
 import java.security.KeyStore;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -66,6 +65,7 @@ import java.util.stream.Stream;
 import static com.predic8.membrane.core.interceptor.soap.wsse.SignatureReference.By.TIMESTAMP;
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.WSSE_NS;
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.WSU_NS;
+import static com.predic8.membrane.core.util.NetworkTestUtil.freePort;
 import static java.lang.reflect.Proxy.getInvocationHandler;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.cxf.ws.security.wss4j.CryptoCoverageUtil.CoverageScope.CONTENT;
@@ -458,12 +458,6 @@ class WsSecurityCxfInteropTest extends AbstractWsSecurityTest {
             store.load(input, KEYSTORE_PASSWORD.toCharArray());
         }
         return store;
-    }
-
-    private static int freePort() throws Exception {
-        try (ServerSocket socket = new ServerSocket(0)) {
-            return socket.getLocalPort();
-        }
     }
 
     @AfterEach

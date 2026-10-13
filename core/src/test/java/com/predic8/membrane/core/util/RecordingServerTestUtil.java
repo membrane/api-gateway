@@ -20,7 +20,6 @@ import com.predic8.membrane.core.proxies.ServiceProxyKey;
 import com.predic8.membrane.core.router.TestRouter;
 
 import java.io.IOException;
-import java.net.ServerSocket;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.predic8.membrane.core.http.Response.ok;
@@ -34,12 +33,6 @@ import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 public class RecordingServerTestUtil {
 
     private RecordingServerTestUtil() {
-    }
-
-    public static int freePort() throws IOException {
-        try (ServerSocket s = new ServerSocket(0)) {
-            return s.getLocalPort();
-        }
     }
 
     public static TestRouter startRecordingServer(int port, AtomicBoolean received) throws IOException {

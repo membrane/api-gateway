@@ -38,6 +38,7 @@ import static com.predic8.membrane.annot.Constants.CRLF;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_XML;
+import static com.predic8.membrane.core.util.URIUtil.toRoutingPath;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class Request extends Message {
@@ -63,6 +64,21 @@ public class Request extends Message {
 
     private String method;
     private String uri;
+
+    private RoutingPath routingPath; // Cache for getRoutingPath(), see RoutingPath
+
+    /**
+     * Caches the result of {@link #getRoutingPath()}. It is asked for repeatedly during one request: by the
+     * RuleManager, by APIProxyKey.complexMatch() once per candidate API, and for path parameters. Without the cache,
+     * every call would derive the path again.
+     * The URI is kept next to the path, so a changed URI is detected, also when it is set without setUri(), like in
+     * parseStartLine(). Both live in one immutable object, so a path can never be paired with the wrong URI.
+     *
+     * @param uri  the URI the path was derived from, compared by identity to detect a change
+     * @param path the routing path derived from <code>uri</code>, see {@link #getRoutingPath()}. Null if
+     *             <code>uri</code> is null.
+     */
+    private record RoutingPath(String uri, String path) {}
 
     @Override
     protected void parseStartLine(InputStream in) throws IOException {
@@ -96,9 +112,25 @@ public class Request extends Message {
     }
 
     /**
-     * @return the "Request-URI" as sent by the client in the first line of the HTTP request (quoting from <a
-     * href="https://tools.ietf.org/html/rfc2616#page-36">RFC 2616</a>: Request-URI = "*" | absoluteURI |
-     * abs_path | authority )
+     * Returns the request-target of the request line (RFC 9112 3.2): origin-form, absolute-form, authority-form or "*".
+     * <p>
+     * Once the RuleMatchingInterceptor has run, this is no longer what the client sent. An absolute-form target is
+     * reduced to origin-form (except for a forward proxy), percent-encoded unreserved characters are decoded and
+     * dot-segments are resolved. Path parameters (";...") and the query are kept:
+     * <pre>
+     * sent by the client               getUri()
+     * /a/../admin                      /admin
+     * /%61dmin                         /admin
+     * http://example.com/admin?x=1     /admin?x=1
+     * /api;jsessionid=1/admin?x=1      /api;jsessionid=1/admin?x=1
+     * /api//admin                      /api//admin
+     * </pre>
+     * Be careful when comparing this value with a path, e.g. for routing or access decisions: servlet containers
+     * ignore path parameters and many servers merge duplicate slashes, so "/api;x/admin" and "/api//admin" reach
+     * "/api/admin" there although they do not start with it.
+     * Use {@link #getRoutingPath()} for such comparisons.
+     * Before the RuleMatchingInterceptor has run, this is still the target the client sent. Its path and query stay
+     * available afterwards from {@link com.predic8.membrane.core.exchange.Exchange#getOriginalRelativeURI()}.
      */
     public String getUri() {
         return uri;
@@ -106,6 +138,35 @@ public class Request extends Message {
 
     public void setUri(String uri) {
         this.uri = uri;
+    }
+
+    /**
+     * Returns the request target that selects an API: {@link #getUri()} without path parameters (";...") and with
+     * merged duplicate slashes. The query is kept, other forms than origin-form are returned unchanged:
+     * <pre>
+     * getUri()                         getRoutingPath()
+     * /api;jsessionid=1/admin?x=1      /api/admin?x=1
+     * //api//admin                     /api/admin
+     * </pre>
+     * Routing, the base paths of an API and path parameters all use this value, so they agree on the path.
+     * It is derived from the current URI and follows any change made by {@link #setUri(String)}. It is cached,
+     * since routing asks for it once per candidate API.
+     * The forwarded request keeps {@link #getUri()}.
+     */
+    public String getRoutingPath() {
+        // Read each field once, so the check and the result refer to the same values
+        final var current = uri;
+        var cached = routingPath;
+
+        // Recompute if nothing is cached yet or the URI was replaced since. Identity is enough: an equal new String
+        // only costs a recomputation
+        if (cached == null || cached.uri() != current) {
+            cached = new RoutingPath(current, current == null ? null : toRoutingPath(current));
+            routingPath = cached;
+        }
+
+        // Path and URI come from the same record, so the path always belongs to the URI it was checked against
+        return cached.path();
     }
 
     @Override

@@ -56,6 +56,14 @@ class WebServerInterceptorTest {
     }
 
     @Test
+    void indexFileServedForDirectory() {
+        ws.setIndex("missing.html,index.html");
+        ws.handleRequest(exc);
+        assertEquals(200, exc.getResponse().getStatusCode());
+        assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("<html"));
+    }
+
+    @Test
     void generateIndex() {
         ws.setGenerateIndex(true);
         ws.handleRequest(exc);

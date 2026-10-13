@@ -13,21 +13,26 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.apikey.stores;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.util.ConfigurationException;
 
-import java.io.*;
-import java.util.AbstractMap.*;
-import java.util.*;
-import java.util.stream.*;
+import java.io.IOException;
+import java.util.AbstractMap.SimpleEntry;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Stream;
 
-import static com.predic8.membrane.core.interceptor.apikey.ApiKeyUtils.*;
+import static com.predic8.membrane.core.interceptor.apikey.ApiKeyUtils.readFile;
 import static com.predic8.membrane.core.util.BeanDefinitionBasePathUtil.resolveBaseLocation;
-import static java.util.Arrays.*;
+import static java.util.Arrays.stream;
+import static java.util.Optional.empty;
 import static java.util.Optional.of;
-import static java.util.Optional.*;
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
 
 /**
  * @description Loads API keys and optional scopes from a text file. Each non-empty line must contain a key.
@@ -48,7 +53,7 @@ import static java.util.stream.Collectors.*;
  * abcd:admin
  * </pre>
  * @example See:
- * <a href="https://github.com/membrane/api-gateway/blob/master/distribution/examples/security/api-key/simple/demo-keys.txt" target="_blank">
+ * <a href="https://github.com/membrane/api-gateway/blob/master/distribution/tutorials/api-keys/demo-keys.txt" target="_blank">
  * GitHub example file
  * </a>
  * @topic 3. Security and Validation

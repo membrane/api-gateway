@@ -6,7 +6,7 @@ Currently, we are supporting the following versions with security updates.
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 7.3.x   | :white_check_mark: |
+| 7.7.x   | :white_check_mark: |
 
 Support for other versions is available with [subscription plans](https://www.membrane-api.io/api-gateway-pricing.html).
 

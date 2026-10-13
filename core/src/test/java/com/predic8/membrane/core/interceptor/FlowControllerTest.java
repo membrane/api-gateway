@@ -40,6 +40,7 @@ import java.util.concurrent.CountDownLatch;
 import static com.predic8.membrane.annot.Constants.CRLF;
 import static com.predic8.membrane.core.interceptor.FlowController.ABORTION_REASON;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.util.NetworkTestUtil.freePort;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.*;
@@ -290,12 +291,6 @@ class FlowControllerTest {
             } finally {
                 gateway.stop();
             }
-        }
-    }
-
-    private static int freePort() throws IOException {
-        try (ServerSocket socket = new ServerSocket(0)) {
-            return socket.getLocalPort();
         }
     }
 
