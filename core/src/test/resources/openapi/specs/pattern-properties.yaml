@@ -23,3 +23,18 @@ paths:
       responses:
         "200":
           description: "OK"
+  /prefix:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              patternProperties:
+                "^x-":
+                  type: string
+              additionalProperties:
+                type: integer
+      responses:
+        "200":
+          description: "OK"

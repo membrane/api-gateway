@@ -14,7 +14,7 @@ paths:
                 name:
                   type: string
               patternProperties:
-                "^x-.*":
+                "^x-":
                   type: string
               unevaluatedProperties: false
       responses:
@@ -101,6 +101,25 @@ paths:
       responses:
         "200":
           description: "OK"
+  /dependent:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                kind:
+                  type: string
+              dependentSchemas:
+                kind:
+                  properties:
+                    lives:
+                      type: integer
+              unevaluatedProperties: false
+      responses:
+        "200":
+          description: "OK"
   /additional:
     post:
       requestBody:
@@ -142,6 +161,16 @@ paths:
       responses:
         "200":
           description: "OK"
+  /discriminator-oneof:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Animal'
+      responses:
+        "200":
+          description: "OK"
 components:
   schemas:
     Base:
@@ -174,3 +203,25 @@ components:
           properties:
             tricks:
               type: integer
+    Animal:
+      type: object
+      properties:
+        petType:
+          type: string
+      required: [petType]
+      discriminator:
+        propertyName: petType
+      oneOf:
+        - $ref: '#/components/schemas/Lion'
+        - $ref: '#/components/schemas/Wolf'
+      unevaluatedProperties: false
+    Lion:
+      type: object
+      properties:
+        lives:
+          type: integer
+    Wolf:
+      type: object
+      properties:
+        tricks:
+          type: integer

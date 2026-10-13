@@ -110,6 +110,30 @@ class UnevaluatedPropertiesTest extends AbstractValidatorTest {
     }
 
     /**
+     * Nothing validates if/then/else, so then only evaluates the properties of a node that is valid against it.
+     */
+    @Test
+    void thenIgnoredWhenNodeIsInvalidAgainstIt() throws ParseException {
+        assertRejected("/ifthen", """
+                {"kind": "cat", "lives": "wrong"}
+                """, "lives");
+    }
+
+    @Test
+    void dependentSchemaCountsWhenNodeIsValidAgainstIt() throws ParseException {
+        assertEquals(0, post("/dependent", """
+                {"kind": "cat", "lives": 9}
+                """).size());
+    }
+
+    @Test
+    void dependentSchemaIgnoredWhenNodeIsInvalidAgainstIt() throws ParseException {
+        assertRejected("/dependent", """
+                {"kind": "cat", "lives": "wrong"}
+                """, "lives");
+    }
+
+    /**
      * An unresolvable $ref evaluates no properties, it must not break the collection of the others.
      */
     @Test
@@ -137,6 +161,23 @@ class UnevaluatedPropertiesTest extends AbstractValidatorTest {
     void discriminatorIgnoresPropertiesOfOtherSchemas() throws ParseException {
         assertRejected("/discriminator", """
                 {"petType": "Cat", "tricks": 3}
+                """, "unevaluated property: tricks");
+    }
+
+    @Test
+    void discriminatorWithOneOfCountsSelectedSchema() throws ParseException {
+        assertEquals(0, post("/discriminator-oneof", """
+                {"petType": "Lion", "lives": 9}
+                """).size());
+    }
+
+    /**
+     * Validation dispatches to the selected schema only, so the other oneOf branches evaluate nothing.
+     */
+    @Test
+    void discriminatorWithOneOfIgnoresPropertiesOfOtherBranches() throws ParseException {
+        assertRejected("/discriminator-oneof", """
+                {"petType": "Lion", "lives": 9, "tricks": 3}
                 """, "unevaluated property: tricks");
     }
 
