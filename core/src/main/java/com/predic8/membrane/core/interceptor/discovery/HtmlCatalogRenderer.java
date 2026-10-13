@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.interceptor.discovery;
 
 import java.util.*;
+import java.util.regex.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static java.nio.charset.StandardCharsets.*;
@@ -36,6 +37,10 @@ public class HtmlCatalogRenderer implements CatalogRenderer {
     private static final Set<String> COLOURED_METHODS = Set.of("GET", "POST", "PUT", "PATCH", "DELETE");
 
     private static final String UNTAGGED_GROUP = "Other";
+
+    private static final Pattern MARKDOWN_IMAGE = Pattern.compile("!\\[[^\\]]*]\\([^)]*\\)");
+    private static final Pattern MARKDOWN_LINK = Pattern.compile("\\[([^\\]]*)]\\([^)]*\\)");
+    private static final Pattern BLANK_LINE = Pattern.compile("\\n\\s*\\n");
 
     private static final String STYLE = """
             :root { color-scheme: light dark; --bg: #eeeeee; --box: #ffffff; --text: #1f2328; --muted: #59636e;
@@ -168,14 +173,25 @@ public class HtmlCatalogRenderer implements CatalogRenderer {
             html.append(" <span class=\"version\">%s</span>".formatted(escape(entry.version())));
         html.append(" <span class=\"kind\">%s</span></h2>\n".formatted(entry.kind().getLabel()));
         // A proxy without a description of its own repeats its name there, which says nothing new.
-        if (!entry.description().equals(entry.name()))
-            html.append("<p class=\"description\">%s</p>\n".formatted(escape(entry.description())));
+        final var description = firstParagraph(entry.description());
+        if (!description.isEmpty() && !description.equals(entry.name()))
+            html.append("<p class=\"description\">%s</p>\n".formatted(escape(description)));
         renderEndpoint(html, entry.endpoint());
         renderLinks(html, entry);
         renderTags(html, entry.tags());
         renderDetails(html, entry);
         renderOperations(html, entry);
         html.append("</section>\n");
+    }
+
+    private static String firstParagraph(String description) {
+        final var withoutImages = MARKDOWN_IMAGE.matcher(description).replaceAll("");
+        final var withoutLinks = MARKDOWN_LINK.matcher(withoutImages).replaceAll("$1");
+        return Arrays.stream(BLANK_LINE.split(withoutLinks.replace("\r\n", "\n")))
+                .map(String::strip)
+                .filter(paragraph -> !paragraph.isEmpty())
+                .findFirst()
+                .orElse("");
     }
 
     /**
@@ -254,12 +270,13 @@ public class HtmlCatalogRenderer implements CatalogRenderer {
         if (operations.stream().allMatch(operation -> operation.tags().isEmpty()))
             renderOperationGroup(html, null, operations);
         else
-            groupByTag(operations).forEach((tag, group) -> renderOperationGroup(html, tag, group));
+            groupByTag(entry.tags(), operations).forEach((tag, group) -> renderOperationGroup(html, tag, group));
         html.append("</table>\n</div>\n</details>\n");
     }
 
-    private static Map<String, List<CatalogOperation>> groupByTag(List<CatalogOperation> operations) {
+    private static Map<String, List<CatalogOperation>> groupByTag(List<String> declaredTags, List<CatalogOperation> operations) {
         final var byTag = new LinkedHashMap<String, List<CatalogOperation>>();
+        declaredTags.forEach(tag -> byTag.put(tag, new ArrayList<>()));
         final var untagged = new ArrayList<CatalogOperation>();
         operations.forEach(operation -> {
             if (operation.tags().isEmpty())
@@ -267,6 +284,7 @@ public class HtmlCatalogRenderer implements CatalogRenderer {
             else
                 byTag.computeIfAbsent(operation.tags().getFirst(), tag -> new ArrayList<>()).add(operation);
         });
+        byTag.values().removeIf(List::isEmpty);
         if (!untagged.isEmpty())
             byTag.computeIfAbsent(UNTAGGED_GROUP, tag -> new ArrayList<>()).addAll(untagged);
         return byTag;

@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.node.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.openapi.util.UriUtil.*;
 
 /**
  * Renders a {@link Catalog} in Membrane's own format: everything the gateway knows about an API,
@@ -32,8 +33,10 @@ import static com.predic8.membrane.core.http.MimeType.*;
  */
 public class MembraneCatalogRenderer implements CatalogRenderer {
 
+    static final String FORMAT_VERSION = "1";
+
     private static final ObjectMapper om = new ObjectMapper();
-    private static final ObjectWriter ow = new ObjectMapper().writerWithDefaultPrettyPrinter();
+    private static final ObjectWriter ow = om.writerWithDefaultPrettyPrinter();
 
     @Override
     public String contentType() {
@@ -48,6 +51,7 @@ public class MembraneCatalogRenderer implements CatalogRenderer {
     @Override
     public byte[] render(Catalog catalog) throws JsonProcessingException {
         ObjectNode document = om.createObjectNode();
+        document.put("formatVersion", FORMAT_VERSION);
         document.put("aid", catalog.aid());
         document.put("name", catalog.name());
         document.put("description", catalog.description());
@@ -67,13 +71,13 @@ public class MembraneCatalogRenderer implements CatalogRenderer {
         api.put("description", entry.description());
         putIfPresent(api, "version", entry.version());
         api.set("endpoint", renderEndpoint(entry.endpoint()));
-        renderLinks(api, entry.links());
+        renderLinks(api, entry);
         putStrings(api, "tags", entry.tags());
         renderContact(api, entry.contact());
         renderLicense(api, entry.license());
         putIfPresent(api, "termsOfService", entry.termsOfService());
         renderSoap(api, entry.soap());
-        renderOperations(api, entry.operations());
+        renderOperations(api, entry);
         return api;
     }
 
@@ -88,12 +92,14 @@ public class MembraneCatalogRenderer implements CatalogRenderer {
         return node;
     }
 
-    private void renderLinks(ObjectNode api, CatalogEntry.Links links) {
-        if (links.humanUrl() == null && links.specUrl() == null)
-            return;
-        ObjectNode node = api.putObject("links");
-        putIfPresent(node, "humanUrl", links.humanUrl());
-        putIfPresent(node, "specUrl", links.specUrl());
+    private void renderLinks(ObjectNode api, CatalogEntry entry) {
+        final var node = om.createObjectNode();
+        putIfPresent(node, "docs", entry.links().humanUrl());
+        putIfPresent(node, "openapi", entry.links().specUrl());
+        if (entry.soap() != null)
+            putIfPresent(node, "wsdl", entry.soap().wsdl());
+        if (!node.isEmpty())
+            api.set("links", node);
     }
 
     private void renderContact(ObjectNode api, CatalogEntry.Contact contact) {
@@ -121,21 +127,23 @@ public class MembraneCatalogRenderer implements CatalogRenderer {
         if (soap == null)
             return;
         ObjectNode node = om.createObjectNode();
-        putIfPresent(node, "wsdl", soap.wsdl());
         putIfPresent(node, "serviceName", soap.serviceName());
         putIfPresent(node, "portName", soap.portName());
         if (!node.isEmpty())
             api.set("soap", node);
     }
 
-    private void renderOperations(ObjectNode api, List<CatalogOperation> operations) {
+    private void renderOperations(ObjectNode api, CatalogEntry apiEntry) {
+        final var operations = apiEntry.operations();
         if (operations.isEmpty())
             return;
+        final var baseUrl = trimTrailingSlash(apiEntry.endpoint().url());
         ArrayNode node = api.putArray("operations");
         operations.forEach(operation -> {
             ObjectNode entry = om.createObjectNode();
             entry.put("method", operation.method());
             entry.put("path", operation.path());
+            entry.put("url", baseUrl + operation.path());
             putIfPresent(entry, "operationId", operation.operationId());
             putIfPresent(entry, "summary", operation.summary());
             putStrings(entry, "tags", operation.tags());

@@ -109,4 +109,36 @@ class MembraneCatalogRendererTest {
         assertEquals("2026-01-15", document.path("created").asText());
         assertEquals("api", document.path("apis").get(0).path("kind").asText());
     }
+
+    @Test
+    void documentDeclaresTheVersionOfItsFormat() throws Exception {
+        assertEquals(MembraneCatalogRenderer.FORMAT_VERSION, render(catalog()).path("formatVersion").asText());
+    }
+
+    @Test
+    void operationsCarryTheUrlTheyAreReachableUnder() throws Exception {
+        final var operations = render(catalog(describedApi())).path("apis").get(0).path("operations");
+
+        assertEquals("https://example.com/shop/v2/products", operations.get(0).path("url").asText());
+    }
+
+    @Test
+    void documentationAndSpecificationLinksShareOneObject() throws Exception {
+        final var links = render(catalog(describedApi())).path("apis").get(0).path("links");
+
+        assertEquals("https://example.com/api-docs/ui/fruit-shop-api-v2-0-0", links.path("docs").asText());
+        assertEquals("https://example.com/api-docs/fruit-shop-api-v2-0-0", links.path("openapi").asText());
+        assertTrue(links.path("wsdl").isMissingNode());
+    }
+
+    @Test
+    void theWsdlOfASoapProxyIsALinkLikeAnyOtherDescription() throws Exception {
+        final var api = render(catalog(soapProxy())).path("apis").get(0);
+
+        assertEquals("http://example.com:2000/cities?wsdl", api.path("links").path("wsdl").asText());
+        assertTrue(api.path("links").path("openapi").isMissingNode());
+        assertEquals("CityService", api.path("soap").path("serviceName").asText());
+        assertEquals("CityPort", api.path("soap").path("portName").asText());
+        assertTrue(api.path("soap").path("wsdl").isMissingNode());
+    }
 }

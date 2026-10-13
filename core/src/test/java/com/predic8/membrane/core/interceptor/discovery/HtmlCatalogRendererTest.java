@@ -173,6 +173,45 @@ class HtmlCatalogRendererTest {
     }
 
     @Test
+    void tagGroupsFollowTheOrderOfTheDocumentsTags() {
+        final var entry = CatalogEntry.builder()
+                .aid("example.com:x").kind(API).name("X").description("X")
+                .endpoint(new CatalogEntry.Endpoint("http", "example.com", 80, "/", "*", "http://example.com/"))
+                .tags(List.of("Orders", "Products"))
+                .operations(List.of(
+                        new CatalogOperation("GET", "/health", "getHealth", null, List.of(), false),
+                        new CatalogOperation("GET", "/products", "getProducts", null, List.of("Products"), false),
+                        new CatalogOperation("GET", "/stock", "getStock", null, List.of("Stock"), false),
+                        new CatalogOperation("GET", "/orders", "getOrders", null, List.of("Orders"), false)))
+                .build();
+
+        final var html = render(catalog(entry));
+
+        final var orders = html.indexOf(">Orders</th>");
+        final var products = html.indexOf(">Products</th>");
+        final var stock = html.indexOf(">Stock</th>");
+        final var other = html.indexOf(">Other</th>");
+        assertTrue(orders != -1 && orders < products, "declared tags in declared order");
+        assertTrue(products < stock, "undeclared tags after the declared ones");
+        assertTrue(stock < other, "untagged operations last");
+    }
+
+    @Test
+    void anOpenApiDescriptionIsShownAsItsFirstParagraphWithoutMarkdown() {
+        final var entry = CatalogEntry.builder()
+                .aid("example.com:x").kind(API).name("X")
+                .description("![Logo](https://example.com/logo.png)\n\nShowcases [REST](https://example.com/rest) API\ndesign.\n\nMore details.")
+                .endpoint(new CatalogEntry.Endpoint("http", "example.com", 80, "/", "*", "http://example.com/"))
+                .build();
+
+        final var html = render(catalog(entry));
+
+        assertTrue(html.contains("<p class=\"description\">Showcases REST API\ndesign.</p>"));
+        assertFalse(html.contains("Logo"));
+        assertFalse(html.contains("More details."));
+    }
+
+    @Test
     void operationsWithoutTagsStayOneFlatTable() {
         CatalogEntry untagged = CatalogEntry.builder()
                 .aid("example.com:x").kind(API).name("X").description("X")

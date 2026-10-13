@@ -197,6 +197,18 @@ class ApiDiscoveryInterceptorTest {
     }
 
     @Test
+    void theHtmlPageForbidsScripts() throws Exception {
+        final var html = browserRequest();
+        interceptor(MEMBRANE).handleRequest(html);
+        assertEquals("default-src 'none'; style-src 'unsafe-inline'",
+                html.getResponse().getHeader().getFirstValue(CONTENT_SECURITY_POLICY));
+
+        final var json = request("GET");
+        interceptor(MEMBRANE).handleRequest(json);
+        assertNull(json.getResponse().getHeader().getFirstValue(CONTENT_SECURITY_POLICY));
+    }
+
+    @Test
     void mediaTypesInAcceptAreMatchedCaseInsensitively() throws Exception {
         assertEquals(TEXT_HTML_UTF8, membraneContentTypeFor("TEXT/HTML"));
     }

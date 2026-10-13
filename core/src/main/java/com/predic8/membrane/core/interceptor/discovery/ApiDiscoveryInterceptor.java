@@ -151,6 +151,9 @@ public class ApiDiscoveryInterceptor extends AbstractInterceptor {
             // The membrane format answers with HTML or JSON, so caches must key on Accept.
             if (format == MEMBRANE)
                 response.header(VARY, ACCEPT);
+            // The page shows text from OpenAPI documents and needs no script, so it allows none.
+            if (negotiated == HTML_RENDERER)
+                response.header(CONTENT_SECURITY_POLICY, "default-src 'none'; style-src 'unsafe-inline'");
             // RFC 9727 requires the target of an api-catalog link to be a Linkset.
             if (format == APICATALOG && catalog.url() != null)
                 response.header(LINK, "<%s>; rel=\"api-catalog\"".formatted(catalog.url()));
