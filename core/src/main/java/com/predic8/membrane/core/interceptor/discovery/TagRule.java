@@ -14,8 +14,10 @@
 package com.predic8.membrane.core.interceptor.discovery;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.util.*;
 
 import java.util.*;
+import java.util.regex.*;
 
 /**
  * Selects the apis a discovery plugin publishes by their tags. Rules apply in order and the first
@@ -24,6 +26,7 @@ import java.util.*;
 public abstract class TagRule {
 
     private String tag;
+    private Pattern pattern;
 
     public String getTag() {
         return tag;
@@ -32,6 +35,15 @@ public abstract class TagRule {
     @MCTextContent
     public void setTag(String tag) {
         this.tag = tag.strip();
+        try {
+            this.pattern = Pattern.compile(this.tag);
+        } catch (PatternSyntaxException e) {
+            throw new ConfigurationException("Invalid regular expression \"%s\" in a tags rule.".formatted(this.tag), e);
+        }
+    }
+
+    private boolean matches(String apiTag) {
+        return pattern.matcher(apiTag).matches();
     }
 
     abstract boolean includes();
@@ -43,13 +55,16 @@ public abstract class TagRule {
         if (rules.isEmpty())
             return true;
         for (TagRule rule : rules)
-            if (tags.contains(rule.getTag()))
+            if (tags.stream().anyMatch(rule::matches))
                 return rule.includes();
         return false;
     }
 
     /**
-     * @description Publishes the apis that carry this tag, unless an earlier rule already decided.
+     * @description Publishes the apis that carry a tag this regular expression matches as a whole,
+     * unless an earlier rule already decided. A plain name such as <code>external</code> matches
+     * just that tag.
+     * @example external
      */
     @MCElement(name = "include", collapsed = true, mixed = true, component = false, id = "apiDiscovery-include")
     public static class Include extends TagRule {
@@ -60,7 +75,10 @@ public abstract class TagRule {
     }
 
     /**
-     * @description Leaves out the apis that carry this tag, unless an earlier rule already decided.
+     * @description Leaves out the apis that carry a tag this regular expression matches as a whole,
+     * unless an earlier rule already decided. A plain name such as <code>internal</code> matches
+     * just that tag.
+     * @example internal|staging-.*
      */
     @MCElement(name = "exclude", collapsed = true, mixed = true, component = false, id = "apiDiscovery-exclude")
     public static class Exclude extends TagRule {

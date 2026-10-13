@@ -153,8 +153,9 @@ public abstract class AbstractApiDiscoveryInterceptor extends AbstractIntercepto
 
     /**
      * @description Selects the apis to publish by their tags. Rules apply in order: the first one
-     * whose tag the api carries decides whether it is listed, and an api no rule matches is left
-     * out. Without rules every api is listed.
+     * that matches a tag of the api decides whether it is listed, and an api no rule matches is left
+     * out. Without rules every api is listed. A rule's value is a regular expression that must match
+     * a whole tag, so a plain name matches just that tag.
      */
     @MCChildElement
     public void setTags(List<TagRule> tags) {
