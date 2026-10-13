@@ -17,8 +17,8 @@ import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.util.TimerManager;
 
 import javax.annotation.Nullable;
+import java.util.HashMap;
 import java.util.Objects;
-import java.util.WeakHashMap;
 
 import static java.util.Objects.hash;
 
@@ -32,21 +32,47 @@ import static java.util.Objects.hash;
 public class HttpClientFactory {
     @Nullable
     private final TimerManager timerManager;
-    private final WeakHashMap<Config, HttpClient> clients = new WeakHashMap<>();
+    private final HashMap<Config, HttpClient> clients = new HashMap<>();
+    private boolean closed;
 
     public HttpClientFactory(@Nullable TimerManager timerManager) {
         this.timerManager = timerManager;
     }
 
     public synchronized HttpClient createClient(@Nullable HttpClientConfiguration hcc) {
+        if (closed)
+            throw new IllegalStateException("HttpClientFactory is closed");
         Config config = new Config(hcc, timerManager);
         HttpClient hc = clients.get(config);
         if (hc != null)
             return hc;
 
-        hc = new HttpClient(hcc, timerManager);
+        hc = new SharedHttpClient(hcc, timerManager);
         clients.put(config, hc);
         return hc;
+    }
+
+    /** Closes all shared clients when their owning router runtime stops. */
+    public synchronized void closeAll() {
+        closed = true;
+        clients.values().forEach(HttpClient::closeImmediately);
+        clients.clear();
+    }
+
+    /**
+     * The factory owns the lifecycle of the clients it hands out: {@link #closeAll()} closes them. A consumer
+     * calling {@link HttpClient#close()} must not stop the connection cleanup of a client that is still cached
+     * and shared with other consumers.
+     */
+    private static class SharedHttpClient extends HttpClient {
+        SharedHttpClient(@Nullable HttpClientConfiguration configuration, @Nullable TimerManager timerManager) {
+            super(configuration, timerManager);
+        }
+
+        @Override
+        public void close() {
+            // Intentionally empty: the factory closes shared clients in closeAll().
+        }
     }
 
     private static class Config {
