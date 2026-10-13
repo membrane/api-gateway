@@ -52,7 +52,8 @@ import static com.predic8.membrane.core.util.URLParamUtil.*;
  * <pre>
  * apiDiscovery:
  *   [ baseUrl: &lt;url&gt; ]
- *   [ exclude: &lt;api name&gt;, ... ]
+ *   [ tags:
+ *       - include | exclude: &lt;tag&gt; ]
  *   [ name: &lt;name&gt; ]
  *   [ description: &lt;text&gt; ]
  * </pre>

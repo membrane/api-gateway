@@ -23,6 +23,7 @@ import io.swagger.v3.oas.models.tags.*;
 
 import java.net.URI;
 import java.util.*;
+import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.interceptor.discovery.CatalogEntry.ProxyKind.*;
 import static com.predic8.membrane.core.interceptor.discovery.CatalogEntry.builder;
@@ -54,23 +55,23 @@ public class CatalogCollector {
 
     private final String baseUrl;
     private final URI baseUri;
-    private final Set<String> excluded;
+    private final List<TagRule> tagRules;
     private final boolean collectOperations;
 
     /**
      * @param baseUrl           absolute URL clients reach the gateway under, such as
      *                          <code>https://api.example.com</code>, or null to take everything from
      *                          the request
-     * @param excluded          names of the apis to leave out
+     * @param tagRules          rules selecting the apis to list by their tags
      * @param collectOperations whether to walk the paths of every OpenAPI document. Only Membrane's
      *                          own format renders operations, and walking them is the only part of
      *                          collecting that grows with the size of the documents, so the other
      *                          formats switch it off.
      */
-    public CatalogCollector(String baseUrl, Set<String> excluded, boolean collectOperations) {
+    public CatalogCollector(String baseUrl, List<TagRule> tagRules, boolean collectOperations) {
         this.baseUrl = trimTrailingSlash(withLowercaseScheme(baseUrl));
         this.baseUri = this.baseUrl == null ? null : URI.create(this.baseUrl);
-        this.excluded = Set.copyOf(excluded);
+        this.tagRules = List.copyOf(tagRules);
         this.collectOperations = collectOperations;
     }
 
@@ -121,7 +122,7 @@ public class CatalogCollector {
         for (Proxy proxy : List.copyOf(router.getRuleManager().getRules())) {
             if (!(proxy instanceof AbstractServiceProxy serviceProxy)) continue;
             if (proxy instanceof NotPortOpeningProxy || !proxy.isActive()) continue;
-            if (excluded.contains(proxy.getName())) continue;
+            if (!TagRule.isListed(tagRules, serviceProxy.getTags())) continue;
             for (CatalogEntry entry : entriesFor(serviceProxy, exchange, domain))
                 entries.add(unique(entry, serviceProxy, domain, taken));
         }
@@ -160,7 +161,8 @@ public class CatalogCollector {
                 .version(info == null ? null : info.getVersion())
                 .endpoint(endpoint(api, exchange, basePathOf(api, record)))
                 .links(new CatalogEntry.Links(origin + PATH_UI + "/" + recordId, origin + PATH + "/" + recordId))
-                .tags(tags(openAPI)).contact(contact(info))
+                .tags(Stream.concat(api.getTags().stream(), tags(openAPI).stream()).distinct().toList())
+                .contact(configuredContact(api) != null ? configuredContact(api) : contact(info))
                 .license(license(info))
                 .termsOfService(info == null ? null : info.getTermsOfService())
                 .operations(collectOperations ? operations(openAPI) : List.of()).build();
@@ -173,7 +175,7 @@ public class CatalogCollector {
      */
     private CatalogEntry plainEntry(AbstractServiceProxy proxy, Exchange exchange, String domain) {
         CatalogEntry.Endpoint endpoint = endpoint(proxy, exchange, pathOf(proxy));
-        return builder().aid(aid(proxy, null, domain)).id(id(proxy, null)).kind(kindOf(proxy)).name(proxy.getName()).description(description(proxy, null)).endpoint(endpoint).soap(soapInfo(proxy, endpoint)).build();
+        return builder().aid(aid(proxy, null, domain)).id(id(proxy, null)).kind(kindOf(proxy)).name(proxy.getName()).description(description(proxy, null)).endpoint(endpoint).tags(proxy.getTags()).contact(configuredContact(proxy)).soap(soapInfo(proxy, endpoint)).build();
     }
 
     private static CatalogEntry.ProxyKind kindOf(AbstractServiceProxy proxy) {
@@ -347,6 +349,12 @@ public class CatalogCollector {
         if (info != null && info.getDescription() != null && !info.getDescription().isBlank())
             return info.getDescription();
         return name(proxy, info);
+    }
+
+    private static CatalogEntry.Contact configuredContact(AbstractServiceProxy proxy) {
+        if (proxy.getInfo() == null || proxy.getInfo().getContact() == null) return null;
+        final var contact = proxy.getInfo().getContact();
+        return new CatalogEntry.Contact(contact.getName(), contact.getEmail(), contact.getUrl());
     }
 
     private static List<String> tags(OpenAPI api) {

@@ -15,10 +15,15 @@ package com.predic8.membrane.core.interceptor.discovery;
 
 import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.core.openapi.serviceproxy.*;
+import com.predic8.membrane.core.proxies.*;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.io.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
 
+import java.nio.file.*;
+import java.util.*;
 import java.util.function.*;
 import java.util.stream.*;
 
@@ -27,6 +32,7 @@ import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.discovery.AbstractApiDiscoveryInterceptor.*;
 import static com.predic8.membrane.core.interceptor.discovery.DiscoveryTestSupport.*;
+import static com.predic8.membrane.core.router.YamlRouterBootstrap.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -92,14 +98,72 @@ class AbstractApiDiscoveryInterceptorTest {
     }
 
     @Test
-    void excludedApisAreLeftOut() throws Exception {
+    void tagRulesSelectTheListedApis() throws Exception {
+        final var rule = new TagRule.Include();
+        rule.setTag("external");
         final var interceptor = new ApisJsonInterceptor();
-        interceptor.setExclude("Admin, Shop");
+        interceptor.setTags(List.of(rule));
         final var exc = request("GET");
         initialized(interceptor, router).handleRequest(exc);
 
-        assertEquals("Admin, Shop", interceptor.getExclude());
+        // Shop carries no tag, so no rule matches it.
         assertTrue(body(exc).path("apis").isEmpty());
+    }
+
+    @Test
+    void tagsAndInfoOfProxiesAndTagRulesLoadFromYaml(@TempDir Path dir) throws Exception {
+        final var file = dir.resolve("apis.yaml");
+        Files.writeString(file, """
+                api:
+                  name: Orders
+                  port: 2001
+                  info:
+                    contact:
+                      name: Christian
+                      email: cg@example.com
+                  tags:
+                    - external
+                    - internal
+                ---
+                serviceProxy:
+                  name: Shop
+                  port: 2002
+                  info:
+                    contact:
+                      name: Shop Team
+                  tags:
+                    - partner
+                ---
+                api:
+                  port: 2000
+                  flow:
+                    - apisJson:
+                        tags:
+                          - exclude: internal
+                          - include: external
+                """);
+        final var yamlRouter = new DefaultRouter();
+        try {
+            loadIntoRouter(yamlRouter, file.toString());
+            final var rules = yamlRouter.getRuleManager().getRules();
+
+            final var orders = assertInstanceOf(APIProxy.class, rules.getFirst());
+            assertEquals(List.of("external", "internal"), orders.getTags());
+            assertEquals("Christian", orders.getInfo().getContact().getName());
+            assertEquals("cg@example.com", orders.getInfo().getContact().getEmail());
+
+            final var shop = assertInstanceOf(ServiceProxy.class, rules.get(1));
+            assertEquals(List.of("partner"), shop.getTags());
+            assertEquals("Shop Team", shop.getInfo().getContact().getName());
+
+            final var apisJson = assertInstanceOf(ApisJsonInterceptor.class, rules.get(2).getFlow().getFirst());
+            assertInstanceOf(TagRule.Exclude.class, apisJson.getTags().get(0));
+            assertEquals("internal", apisJson.getTags().get(0).getTag());
+            assertInstanceOf(TagRule.Include.class, apisJson.getTags().get(1));
+            assertEquals("external", apisJson.getTags().get(1).getTag());
+        } finally {
+            yamlRouter.stop();
+        }
     }
 
     @Test

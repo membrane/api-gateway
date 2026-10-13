@@ -46,11 +46,44 @@ class CatalogCollectorTest {
     }
 
     private static CatalogCollector collector(String baseUrl, boolean collectOperations) {
-        return new CatalogCollector(baseUrl, Set.of(), collectOperations);
+        return new CatalogCollector(baseUrl, List.of(), collectOperations);
     }
 
-    private static CatalogCollector collectorExcluding(String... names) {
-        return new CatalogCollector(null, Set.of(names), false);
+    private static CatalogCollector collectorWithRules(TagRule... rules) {
+        return new CatalogCollector(null, List.of(rules), false);
+    }
+
+    private static TagRule include(String tag) {
+        final var rule = new TagRule.Include();
+        rule.setTag(tag);
+        return rule;
+    }
+
+    private static TagRule exclude(String tag) {
+        final var rule = new TagRule.Exclude();
+        rule.setTag(tag);
+        return rule;
+    }
+
+    private static APIProxy taggedApi(String name, int port, String... tags) {
+        final var api = new APIProxy();
+        api.setKey(new APIProxyKey(port));
+        api.setName(name);
+        api.setTags(List.of(tags));
+        return api;
+    }
+
+    private static ProxyInfo contact(String name, String email) {
+        final var contact = new ProxyContact();
+        contact.setName(name);
+        contact.setEmail(email);
+        final var info = new ProxyInfo();
+        info.setContact(contact);
+        return info;
+    }
+
+    private List<String> listedNames(CatalogCollector collector) throws Exception {
+        return collector.collect(router, exchange("/apis.json")).apis().stream().map(CatalogEntry::name).toList();
     }
 
     private static CatalogCollector collectorWithBaseUrl(String baseUrl) {
@@ -358,16 +391,72 @@ class CatalogCollectorTest {
     }
 
     @Test
-    void excludedApisAreLeftOut() throws Exception {
-        final var admin = new ServiceProxy(new ServiceProxyKey("*", "*", "/admin", 2009), null, 0);
-        admin.setName("Admin");
-        add(admin);
+    void withoutTagRulesEveryApiIsListed() throws Exception {
+        add(taggedApi("Internal", 2000, "internal"));
+        add(new ServiceProxy(new ServiceProxyKey("*", "*", "/shop", 2001), null, 0) {{ setName("Shop"); }});
+
+        assertEquals(List.of("Internal", "Shop"), listedNames(collector()));
+    }
+
+    @Test
+    void theFirstRuleMatchingATagOfTheApiDecides() throws Exception {
+        add(taggedApi("Public", 2000, "external"));
+        add(taggedApi("Both", 2001, "external", "internal"));
+        add(taggedApi("Internal", 2002, "internal"));
+
+        assertEquals(List.of("Public"), listedNames(collectorWithRules(exclude("internal"), include("external"))));
+        assertEquals(List.of("Public", "Both"), listedNames(collectorWithRules(include("external"), exclude("internal"))));
+    }
+
+    @Test
+    void aServiceProxyCarriesTagsAndContactToo() throws Exception {
         final var shop = new ServiceProxy(new ServiceProxyKey("*", "*", "/shop", 2000), null, 0);
         shop.setName("Shop");
+        shop.setTags(List.of("external"));
+        shop.setInfo(contact("Shop Team", "shop@example.com"));
         add(shop);
+        add(taggedApi("Internal", 2001, "internal"));
 
-        assertEquals(List.of("Shop"), collectorExcluding("Admin").collect(router, exchange("/apis.json"))
-                .apis().stream().map(CatalogEntry::name).toList());
+        final var entries = collectorWithRules(include("external")).collect(router, exchange("/apis.json")).apis();
+
+        assertEquals(1, entries.size());
+        assertEquals(List.of("external"), entries.getFirst().tags());
+        assertEquals("Shop Team", entries.getFirst().contact().name());
+    }
+
+    @Test
+    void withTagRulesAnApiNoRuleMatchesIsLeftOut() throws Exception {
+        add(taggedApi("Partner", 2000, "partner"));
+        add(new ServiceProxy(new ServiceProxyKey("*", "*", "/shop", 2001), null, 0));
+
+        assertTrue(listedNames(collectorWithRules(exclude("internal"))).isEmpty());
+    }
+
+    @Test
+    void tagsAndContactConfiguredOnTheApiAreListed() throws Exception {
+        final var api = taggedApi("Orders", 2000, "external", "internal");
+        api.setInfo(contact("Christian", "cg@example.com"));
+        add(api);
+
+        final var entry = only(collector().collect(router, exchange("/apis.json")));
+
+        assertEquals(List.of("external", "internal"), entry.tags());
+        assertEquals("Christian", entry.contact().name());
+        assertEquals("cg@example.com", entry.contact().email());
+    }
+
+    @Test
+    void configuredTagsComeFirstAndTheConfiguredContactWinsOverTheDocument() throws Exception {
+        final var api = apiProxy("fruitshop-api-v2-openapi-3.yml", 2000);
+        api.setTags(List.of("external", "Products"));
+        api.setInfo(contact("Gateway Team", null));
+        add(api);
+
+        final var entry = only(collector().collect(router, exchange("/apis.json")));
+
+        assertEquals(List.of("external", "Products", "Root", "Vendors", "Orders", "Customers"), entry.tags());
+        assertEquals("Gateway Team", entry.contact().name());
+        assertNull(entry.contact().email());
     }
 
     @Test

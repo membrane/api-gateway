@@ -45,7 +45,8 @@ import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE;
  * <pre>
  * apisJson:
  *   [ baseUrl: &lt;url&gt; ]
- *   [ exclude: &lt;api name&gt;, ... ]
+ *   [ tags:
+ *       - include | exclude: &lt;tag&gt; ]
  *   [ collectionId: &lt;id&gt; ]
  *   [ name: &lt;name&gt; ]
  *   [ description: &lt;text&gt; ]
