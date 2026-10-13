@@ -42,15 +42,18 @@ public class ApisJsonRenderer implements CatalogRenderer {
 
     private static final ObjectMapper om = new ObjectMapper();
 
+    private final String collectionId;
     private final CollectionInfo collection;
     private final LocalDate created;
     private final LocalDate modified;
 
     /**
-     * @param created  day the collection was created, a member APIs.json makes mandatory
-     * @param modified day the collection last changed, a member APIs.json makes mandatory
+     * @param collectionId second half of the collection's <code>aid</code>, the domain being the first
+     * @param created      day the collection was created, a member APIs.json makes mandatory
+     * @param modified     day the collection last changed, a member APIs.json makes mandatory
      */
-    public ApisJsonRenderer(CollectionInfo collection, LocalDate created, LocalDate modified) {
+    public ApisJsonRenderer(String collectionId, CollectionInfo collection, LocalDate created, LocalDate modified) {
+        this.collectionId = collectionId;
         this.collection = collection;
         this.created = created;
         this.modified = modified;
@@ -64,7 +67,7 @@ public class ApisJsonRenderer implements CatalogRenderer {
     @Override
     public byte[] render(Catalog catalog) throws JsonProcessingException {
         ObjectNode collection = om.createObjectNode();
-        collection.put("aid", this.collection.aid(catalog.domain()));
+        collection.put("aid", catalog.domain() + ":" + collectionId);
         collection.put("name", this.collection.name());
         collection.put("description", this.collection.description());
         putIfPresent(collection, "url", catalog.url());

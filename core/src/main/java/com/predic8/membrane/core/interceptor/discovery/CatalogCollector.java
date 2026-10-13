@@ -138,7 +138,7 @@ public class CatalogCollector {
         Info info = openAPI.getInfo();
         String origin = origin(api, exchange);
         return builder()
-                .aid(aid(api, recordId, domain))
+                .aid(aid(api, recordId, domain)).id(id(api, recordId))
                 .kind(API).name(name(api, info))
                 .description(description(api, info))
                 .version(info == null ? null : info.getVersion())
@@ -157,7 +157,7 @@ public class CatalogCollector {
      */
     private CatalogEntry plainEntry(AbstractServiceProxy proxy, Exchange exchange, String domain) {
         CatalogEntry.Endpoint endpoint = endpoint(proxy, exchange, pathOf(proxy));
-        return builder().aid(aid(proxy, null, domain)).kind(kindOf(proxy)).name(proxy.getName()).description(description(proxy, null)).endpoint(endpoint).soap(soapInfo(proxy, endpoint)).build();
+        return builder().aid(aid(proxy, null, domain)).id(id(proxy, null)).kind(kindOf(proxy)).name(proxy.getName()).description(description(proxy, null)).endpoint(endpoint).soap(soapInfo(proxy, endpoint)).build();
     }
 
     private static CatalogEntry.ProxyKind kindOf(AbstractServiceProxy proxy) {
@@ -274,18 +274,32 @@ public class CatalogCollector {
     }
 
     /**
-     * Identifier of the entry, <code>&lt;domain&gt;:&lt;slug&gt;</code>. An api that sets
-     * <code>id</code> keeps that value verbatim, so configuration can pin an identifier that
-     * outlives a change of host, port or path. With several OpenAPI documents the document id is
-     * appended, because every entry needs an identifier of its own.
+     * Globally unique identifier of the entry, <code>&lt;domain&gt;:&lt;id&gt;</code>. An api that
+     * sets <code>id</code> keeps that value verbatim instead, so configuration can pin an
+     * identifier that outlives a change of host, port or path.
      */
     private static String aid(AbstractServiceProxy proxy, String recordId, String domain) {
+        if (hasConfiguredId(proxy)) return id(proxy, recordId);
+        return domain + ":" + id(proxy, recordId);
+    }
+
+    /**
+     * Identifier of the entry on this gateway: the configured id of the api, else the id of its
+     * OpenAPI document, else a slug of its host, port and path. With several OpenAPI documents the
+     * document id is appended to a configured id, because every entry needs an identifier of its
+     * own.
+     */
+    private static String id(AbstractServiceProxy proxy, String recordId) {
         if (proxy instanceof APIProxy api && api.getId() != null) {
             if (recordId != null && api.getApiRecords().size() > 1) return api.getId() + ":" + recordId;
             return api.getId();
         }
-        if (recordId != null) return domain + ":" + recordId;
-        return domain + ":" + slug(keyId(proxy));
+        if (recordId != null) return recordId;
+        return slug(keyId(proxy));
+    }
+
+    private static boolean hasConfiguredId(AbstractServiceProxy proxy) {
+        return proxy instanceof APIProxy api && api.getId() != null;
     }
 
     private static String keyId(AbstractServiceProxy proxy) {

@@ -75,7 +75,7 @@ public class ApisJsonInterceptor extends AbstractApiDiscoveryInterceptor {
 
     @Override
     protected CatalogRenderer createRenderer() {
-        return new ApisJsonRenderer(collection(), created, modified);
+        return new ApisJsonRenderer(collectionId, collection(), created, modified);
     }
 
     public String getCollectionId() {
@@ -162,7 +162,7 @@ public class ApisJsonInterceptor extends AbstractApiDiscoveryInterceptor {
     }
 
     private CollectionInfo collection() {
-        return new CollectionInfo(collectionId, collectionName, description);
+        return new CollectionInfo(collectionName, description);
     }
 
     @Override

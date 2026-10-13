@@ -40,7 +40,6 @@ class ApiDiscoveryInterceptorTest {
 
     private ApiDiscoveryInterceptor interceptor() {
         final var interceptor = new ApiDiscoveryInterceptor();
-        interceptor.setCollectionId("gateway");
         return initialized(interceptor, router);
     }
 
@@ -51,7 +50,8 @@ class ApiDiscoveryInterceptorTest {
 
         assertEquals(APPLICATION_JSON, exc.getResponse().getHeader().getContentType());
         assertEquals(MembraneCatalogRenderer.FORMAT_VERSION, body(exc).path("formatVersion").asText());
-        assertEquals("gateway.example.com:gateway", body(exc).path("aid").asText());
+        assertTrue(body(exc).path("aid").isMissingNode());
+        assertEquals("shop", body(exc).path("apis").get(0).path("id").asText());
         assertEquals("Shop", body(exc).path("apis").get(0).path("name").asText());
         assertEquals("serviceProxy", body(exc).path("apis").get(0).path("kind").asText());
     }

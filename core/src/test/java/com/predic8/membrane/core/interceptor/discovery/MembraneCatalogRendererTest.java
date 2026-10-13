@@ -100,11 +100,17 @@ class MembraneCatalogRendererTest {
         assertTrue(api.path("operations").isMissingNode());
     }
 
+    /**
+     * Nothing in Membrane's own format depends on the host the catalog was fetched from: no
+     * collection identifier, and each API keyed by an id without the domain.
+     */
     @Test
     void collectionMetadataIsRendered() throws Exception {
         JsonNode document = render(catalog(describedApi()));
 
-        assertEquals("example.com:gateway", document.path("aid").asText());
+        assertTrue(document.path("aid").isMissingNode());
+        assertEquals("fruit-shop-api-v2-0-0", document.path("apis").get(0).path("id").asText());
+        assertTrue(document.path("apis").get(0).path("aid").isMissingNode());
         assertEquals("Gateway APIs", document.path("name").asText());
         assertEquals("api", document.path("apis").get(0).path("kind").asText());
     }

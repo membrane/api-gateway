@@ -304,13 +304,34 @@ class CatalogCollectorTest {
                 only(collector().collect(router, exc)).endpoint().url());
     }
 
+    /**
+     * The id is the identifier without the domain, so it stays the same whichever host the catalog
+     * was fetched from. Membrane's own format keys its entries by it.
+     */
+    @Test
+    void theIdOfAnEntryDoesNotDependOnTheHost() throws Exception {
+        add(apiProxy("fruitshop-api-v2-openapi-3.yml", 2000));
+        add(new ServiceProxy(new ServiceProxyKey("*", "*", "/shop", 2001), null, 0));
+
+        final var viaHostHeader = collector().collect(router, exchange("/apis.json")).apis();
+        final var viaBaseUrl = collectorWithBaseUrl("https://api.example.com").collect(router, exchange("/apis.json")).apis();
+
+        final var ids = viaHostHeader.stream().map(CatalogEntry::id).sorted().toList();
+        assertEquals(2, ids.size());
+        assertTrue(ids.contains("fruit-shop-api-v2-0-0"));
+        assertTrue(ids.stream().noneMatch(id -> id.contains("example")), ids.toString());
+        assertEquals(ids, viaBaseUrl.stream().map(CatalogEntry::id).sorted().toList());
+    }
+
     @Test
     void theIdOfAnApiWithOneDocumentIsKeptVerbatim() throws Exception {
         APIProxy proxy = apiProxy("fruitshop-api-v2-openapi-3.yml", 2000);
         proxy.setId("shop");
         add(proxy);
 
-        assertEquals("shop", only(collector().collect(router, exchange("/apis.json"))).aid());
+        final var entry = only(collector().collect(router, exchange("/apis.json")));
+        assertEquals("shop", entry.aid());
+        assertEquals("shop", entry.id());
     }
 
     @Test

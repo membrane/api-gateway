@@ -27,7 +27,7 @@ class CatalogTestFixtures {
     static final LocalDate DAY = LocalDate.of(2026, 1, 15);
 
     static final CollectionInfo COLLECTION =
-            new CollectionInfo("gateway", "Gateway APIs", "Every API of this gateway");
+            new CollectionInfo("Gateway APIs", "Every API of this gateway");
 
     static Catalog catalog(CatalogEntry... apis) {
         return new Catalog("example.com", "https://example.com/.well-known/api-catalog", List.of(apis));
@@ -40,6 +40,7 @@ class CatalogTestFixtures {
     static CatalogEntry describedApi() {
         return CatalogEntry.builder()
                 .aid("example.com:fruit-shop-api-v2-0-0")
+                .id("fruit-shop-api-v2-0-0")
                 .kind(API)
                 .name("Fruit Shop API")
                 .description("Showcases REST API design")
@@ -68,6 +69,7 @@ class CatalogTestFixtures {
     static CatalogEntry plainProxy() {
         return CatalogEntry.builder()
                 .aid("example.com:shop")
+                .id("shop")
                 .kind(SERVICE_PROXY)
                 .name("Shop")
                 .description("Shop")
@@ -79,6 +81,7 @@ class CatalogTestFixtures {
     static CatalogEntry soapProxy() {
         return CatalogEntry.builder()
                 .aid("example.com:cities")
+                .id("cities")
                 .kind(SOAP_PROXY)
                 .name("CityService")
                 .description("CityService")

@@ -58,7 +58,6 @@ public class MembraneCatalogRenderer implements CatalogRenderer {
     public byte[] render(Catalog catalog) throws JsonProcessingException {
         ObjectNode document = om.createObjectNode();
         document.put("formatVersion", FORMAT_VERSION);
-        document.put("aid", collection.aid(catalog.domain()));
         document.put("name", collection.name());
         document.put("description", collection.description());
         putIfPresent(document, "url", catalog.url());
@@ -69,7 +68,7 @@ public class MembraneCatalogRenderer implements CatalogRenderer {
 
     private ObjectNode renderApi(CatalogEntry entry) {
         ObjectNode api = om.createObjectNode();
-        api.put("aid", entry.aid());
+        api.put("id", entry.id());
         api.put("kind", entry.kind().getLabel());
         api.put("name", entry.name());
         api.put("description", entry.description());

@@ -45,7 +45,8 @@ class HtmlCatalogRendererTest {
         assertTrue(html.contains("<title>Gateway APIs</title>"));
         assertTrue(html.contains("<h1>Gateway APIs</h1>"));
         assertTrue(html.contains("Every API of this gateway"));
-        assertTrue(html.contains("example.com:gateway"));
+        assertFalse(html.contains("example.com"));
+        assertFalse(html.contains("Identifier"));
         assertFalse(html.contains("Created"));
         assertFalse(html.contains("Modified"));
     }
@@ -106,7 +107,7 @@ class HtmlCatalogRendererTest {
     @Test
     void optionalOpenApiMembersMayAllBeMissing() {
         CatalogEntry sparse = CatalogEntry.builder()
-                .aid("example.com:x").kind(API).name("X").description("X")
+                .aid("example.com:x").id("x").kind(API).name("X").description("X")
                 .endpoint(new CatalogEntry.Endpoint("http", "example.com", 80, "/", "*", "http://example.com/"))
                 .license(new CatalogEntry.License(null, null))
                 .operations(List.of(new CatalogOperation("GET", "/things", null, null, List.of(), false)))
@@ -131,10 +132,10 @@ class HtmlCatalogRendererTest {
         String html = render(catalog(describedApi(), plainProxy()));
 
         assertTrue(html.contains("<nav class=\"index\">"));
-        assertTrue(html.contains("<a href=\"#example-com-fruit-shop-api-v2-0-0\">Fruit Shop API</a>"));
-        assertTrue(html.contains("<a href=\"#example-com-shop\">Shop</a>"));
-        assertTrue(html.contains("<section class=\"box\" id=\"example-com-fruit-shop-api-v2-0-0\">"));
-        assertTrue(html.contains("<section class=\"box\" id=\"example-com-shop\">"));
+        assertTrue(html.contains("<a href=\"#fruit-shop-api-v2-0-0\">Fruit Shop API</a>"));
+        assertTrue(html.contains("<a href=\"#shop\">Shop</a>"));
+        assertTrue(html.contains("<section class=\"box\" id=\"fruit-shop-api-v2-0-0\">"));
+        assertTrue(html.contains("<section class=\"box\" id=\"shop\">"));
     }
 
     @Test
@@ -158,7 +159,7 @@ class HtmlCatalogRendererTest {
     @Test
     void operationsAreGroupedByTheirFirstTag() {
         CatalogEntry mixed = CatalogEntry.builder()
-                .aid("example.com:x").kind(API).name("X").description("X")
+                .aid("example.com:x").id("x").kind(API).name("X").description("X")
                 .endpoint(new CatalogEntry.Endpoint("http", "example.com", 80, "/", "*", "http://example.com/"))
                 .operations(List.of(
                         new CatalogOperation("GET", "/products", "getProducts", null, List.of("Products", "Catalog"), false),
@@ -176,7 +177,7 @@ class HtmlCatalogRendererTest {
     @Test
     void tagGroupsFollowTheOrderOfTheDocumentsTags() {
         final var entry = CatalogEntry.builder()
-                .aid("example.com:x").kind(API).name("X").description("X")
+                .aid("example.com:x").id("x").kind(API).name("X").description("X")
                 .endpoint(new CatalogEntry.Endpoint("http", "example.com", 80, "/", "*", "http://example.com/"))
                 .tags(List.of("Orders", "Products"))
                 .operations(List.of(
@@ -200,7 +201,7 @@ class HtmlCatalogRendererTest {
     @Test
     void anOpenApiDescriptionIsShownAsItsFirstParagraphWithoutMarkdown() {
         final var entry = CatalogEntry.builder()
-                .aid("example.com:x").kind(API).name("X")
+                .aid("example.com:x").id("x").kind(API).name("X")
                 .description("![Logo](https://example.com/logo.png)\n\nShowcases [REST](https://example.com/rest) API\ndesign.\n\nMore details.")
                 .endpoint(new CatalogEntry.Endpoint("http", "example.com", 80, "/", "*", "http://example.com/"))
                 .build();
@@ -215,7 +216,7 @@ class HtmlCatalogRendererTest {
     @Test
     void operationsWithoutTagsStayOneFlatTable() {
         CatalogEntry untagged = CatalogEntry.builder()
-                .aid("example.com:x").kind(API).name("X").description("X")
+                .aid("example.com:x").id("x").kind(API).name("X").description("X")
                 .endpoint(new CatalogEntry.Endpoint("http", "example.com", 80, "/", "*", "http://example.com/"))
                 .operations(List.of(new CatalogOperation("GET", "/things", "getThings", null, List.of(), false)))
                 .build();
@@ -238,7 +239,7 @@ class HtmlCatalogRendererTest {
     @Test
     void aSoapProxyLinksItsWsdl() {
         CatalogEntry soap = CatalogEntry.builder()
-                .aid("example.com:articles").kind(SOAP_PROXY).name("ArticleService").description("ArticleService")
+                .aid("example.com:articles").id("articles").kind(SOAP_PROXY).name("ArticleService").description("ArticleService")
                 .endpoint(new CatalogEntry.Endpoint("http", "example.com", 2000, "/articles", "*", "http://example.com:2000/articles"))
                 .soap(new CatalogEntry.SoapInfo("http://example.com:2000/articles?wsdl", "ArticleService", "ArticleServicePort"))
                 .build();
@@ -253,7 +254,7 @@ class HtmlCatalogRendererTest {
     @Test
     void textFromOpenApiDocumentsIsEscaped() {
         CatalogEntry hostile = CatalogEntry.builder()
-                .aid("example.com:x").kind(API).name("<script>alert(1)</script>").description("a & b")
+                .aid("example.com:x").id("x").kind(API).name("<script>alert(1)</script>").description("a & b")
                 .endpoint(new CatalogEntry.Endpoint("http", "example.com", 80, "/", "*", "http://example.com/"))
                 .tags(List.of("<b>tag</b>"))
                 .build();
@@ -269,7 +270,7 @@ class HtmlCatalogRendererTest {
     @Test
     void onlyHttpUrlsBecomeLinks() {
         CatalogEntry hostile = CatalogEntry.builder()
-                .aid("example.com:x").kind(API).name("X").description("X")
+                .aid("example.com:x").id("x").kind(API).name("X").description("X")
                 .endpoint(new CatalogEntry.Endpoint("http", "example.com", 80, "/", "*", "http://example.com/"))
                 .contact(new CatalogEntry.Contact("Evil", null, "javascript:alert(1)"))
                 .termsOfService("JavaScript:alert(2)")

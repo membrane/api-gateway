@@ -19,7 +19,10 @@ import java.util.*;
  * One API of a {@link Catalog}. A proxy described by several OpenAPI documents contributes one
  * entry per document, a proxy without an OpenAPI document contributes a single entry.
  *
- * @param aid            unique identifier, <code>&lt;domain&gt;:&lt;slug&gt;</code>
+ * @param aid            globally unique identifier, <code>&lt;domain&gt;:&lt;id&gt;</code>, or the
+ *                       configured id of the api verbatim
+ * @param id             identifier unique on this gateway, the same whichever host the catalog
+ *                       was fetched from
  * @param kind           which kind of proxy this entry describes
  * @param name           human readable name, never null
  * @param description    human readable description, never null
@@ -33,7 +36,7 @@ import java.util.*;
  * @param soap           WSDL details, or null unless {@link ProxyKind#SOAP_PROXY}
  * @param operations     operations of the API, never null but empty without an OpenAPI document
  */
-public record CatalogEntry(String aid, ProxyKind kind, String name, String description,
+public record CatalogEntry(String aid, String id, ProxyKind kind, String name, String description,
                            String version, Endpoint endpoint, Links links, List<String> tags,
                            Contact contact, License license, String termsOfService, SoapInfo soap,
                            List<CatalogOperation> operations) {
@@ -96,6 +99,7 @@ public record CatalogEntry(String aid, ProxyKind kind, String name, String descr
     public static class Builder {
 
         private String aid;
+        private String id;
         private ProxyKind kind;
         private String name;
         private String description;
@@ -111,6 +115,11 @@ public record CatalogEntry(String aid, ProxyKind kind, String name, String descr
 
         public Builder aid(String aid) {
             this.aid = aid;
+            return this;
+        }
+
+        public Builder id(String id) {
+            this.id = id;
             return this;
         }
 
@@ -175,7 +184,7 @@ public record CatalogEntry(String aid, ProxyKind kind, String name, String descr
         }
 
         public CatalogEntry build() {
-            return new CatalogEntry(aid, kind, name, description, version, endpoint, links, tags,
+            return new CatalogEntry(aid, id, kind, name, description, version, endpoint, links, tags,
                     contact, license, termsOfService, soap, operations);
         }
     }

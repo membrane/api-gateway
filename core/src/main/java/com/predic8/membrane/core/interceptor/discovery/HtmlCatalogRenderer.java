@@ -138,7 +138,6 @@ public class HtmlCatalogRenderer implements CatalogRenderer {
         if (collection.description() != null)
             html.append("<p class=\"description\">%s</p>\n".formatted(escape(collection.description())));
         html.append("<dl>\n");
-        definition(html, "Identifier", escape(collection.aid(catalog.domain())));
         definition(html, "APIs", apiCount(catalog));
         html.append("</dl>\n");
         renderIndex(html, catalog);
@@ -165,7 +164,7 @@ public class HtmlCatalogRenderer implements CatalogRenderer {
     }
 
     private static String sectionId(CatalogEntry entry) {
-        return CatalogCollector.slug(entry.aid());
+        return CatalogCollector.slug(entry.id());
     }
 
     private static void renderApi(StringBuilder html, CatalogEntry entry) {

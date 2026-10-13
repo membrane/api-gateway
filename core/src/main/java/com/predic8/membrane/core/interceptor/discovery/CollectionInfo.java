@@ -15,18 +15,11 @@ package com.predic8.membrane.core.interceptor.discovery;
 
 /**
  * Metadata of the collection as a whole, which APIs.json and the Membrane format carry and an
- * RFC 9727 linkset does not. The dates only APIs.json carries are handed to its renderer directly.
+ * RFC 9727 linkset does not. The identifier and the dates only APIs.json carries are handed to its
+ * renderer directly.
  *
- * @param id          identifier of the collection, the second half of its <code>aid</code>
  * @param name        human readable name of the collection
  * @param description human readable description of the collection
  */
-public record CollectionInfo(String id, String name, String description) {
-
-    /**
-     * Unique identifier of the collection, <code>&lt;domain&gt;:&lt;id&gt;</code>.
-     */
-    public String aid(String domain) {
-        return domain + ":" + id;
-    }
+public record CollectionInfo(String name, String description) {
 }

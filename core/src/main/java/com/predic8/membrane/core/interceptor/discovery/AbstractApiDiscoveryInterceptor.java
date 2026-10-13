@@ -126,8 +126,8 @@ public abstract class AbstractApiDiscoveryInterceptor extends AbstractIntercepto
     /**
      * @description Absolute URL clients reach the gateway under, such as
      * <code>https://api.example.com</code>. It is the origin of the catalog URL and of every api
-     * bound to all hosts, and its host is the domain identifiers in the document are built from.
-     * Without it, all of that comes from the <code>Host</code> header of each request, which is
+     * bound to all hosts, and in APIs.json its host is the domain of every identifier. Without it,
+     * all of that comes from the <code>Host</code> header of each request, which is
      * correct unless a reverse proxy in front of the gateway changes the origin. An api bound to
      * one host keeps that host either way.
      * @default derived from the Host header of the request

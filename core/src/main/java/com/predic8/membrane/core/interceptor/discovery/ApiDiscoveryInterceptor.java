@@ -47,7 +47,6 @@ import static com.predic8.membrane.core.http.Header.*;
  * <pre>
  * apiDiscovery:
  *   [ baseUrl: &lt;url&gt; ]
- *   [ collectionId: &lt;id&gt; ]
  *   [ name: &lt;name&gt; ]
  *   [ description: &lt;text&gt; ]
  * </pre>
@@ -59,7 +58,6 @@ import static com.predic8.membrane.core.http.Header.*;
  *     uri: /catalog
  *   flow:
  *     - apiDiscovery:
- *         collectionId: gateway
  *         name: Example APIs
  * </code></pre>
  */
@@ -70,7 +68,6 @@ public class ApiDiscoveryInterceptor extends AbstractApiDiscoveryInterceptor {
 
     private static final String HTML_CONTENT_SECURITY_POLICY = "default-src 'none'; style-src 'unsafe-inline'";
 
-    private String collectionId = "apis";
     private String collectionName = "APIs";
     private String description = "APIs served by this gateway";
 
@@ -126,21 +123,6 @@ public class ApiDiscoveryInterceptor extends AbstractApiDiscoveryInterceptor {
         }
     }
 
-    public String getCollectionId() {
-        return collectionId;
-    }
-
-    /**
-     * @description Identifier of the collection itself, forming the second half of its
-     * <code>&lt;domain&gt;:&lt;collectionId&gt;</code> identifier.
-     * @default apis
-     * @example gateway
-     */
-    @MCAttribute
-    public void setCollectionId(String collectionId) {
-        this.collectionId = collectionId;
-    }
-
     public String getCollectionName() {
         return collectionName;
     }
@@ -170,7 +152,7 @@ public class ApiDiscoveryInterceptor extends AbstractApiDiscoveryInterceptor {
     }
 
     private CollectionInfo collection() {
-        return new CollectionInfo(collectionId, collectionName, description);
+        return new CollectionInfo(collectionName, description);
     }
 
     @Override

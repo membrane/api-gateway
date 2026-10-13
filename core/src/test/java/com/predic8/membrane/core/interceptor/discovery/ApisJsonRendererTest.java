@@ -26,7 +26,7 @@ class ApisJsonRendererTest {
 
     private static final ObjectMapper om = new ObjectMapper();
 
-    private final ApisJsonRenderer renderer = new ApisJsonRenderer(COLLECTION, DAY, DAY);
+    private final ApisJsonRenderer renderer = new ApisJsonRenderer("gateway", COLLECTION, DAY, DAY);
 
     private JsonNode render(Catalog catalog) throws Exception {
         return om.readTree(renderer.render(catalog));
