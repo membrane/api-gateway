@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.transport.http2;
 
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.router.DefaultRouter;
@@ -35,14 +36,19 @@ import java.util.concurrent.TimeUnit;
 import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.http.Request.post;
 import static com.predic8.membrane.core.transport.http2.frame.Error.ERROR_CANCEL;
-import static com.predic8.membrane.core.transport.http2.frame.Frame.TYPE_HEADERS;
-import static com.predic8.membrane.core.transport.http2.frame.Frame.TYPE_RST_STREAM;
+import static com.predic8.membrane.core.transport.http2.frame.Frame.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class Http2ClientTest {
 
     /** Length of the HTTP/2 client connection preface. */
     private static final int PREFACE_LENGTH = 24;
+
+    /** Default HTTP/2 flow-control window of a stream and of the connection. */
+    private static final int INITIAL_WINDOW_SIZE = 65535;
+
+    /** Default maximum DATA frame payload. */
+    private static final int MAX_FRAME_SIZE = 16384;
 
     /** HEADERS frame on stream 1 with END_STREAM and END_HEADERS, HPACK-encoded ":status: 200". */
     private static final byte[] RESPONSE_HEADERS_200_END_STREAM = {0, 0, 1, 0x1, 0x5, 0, 0, 0, 1, (byte) 0x88};
@@ -72,6 +78,21 @@ class Http2ClientTest {
             peer.getOutputStream().flush();
         });
         assertTrue(e.getMessage().contains("reset by the peer"), e.getMessage());
+    }
+
+    @Test
+    void closeImmediatelyFailsUploadBlockedByFlowControl() throws Exception {
+        assertBlockedUploadFails((client, peer) -> client.closeImmediately());
+    }
+
+    @Test
+    void closeFailsUploadBlockedByFlowControl() throws Exception {
+        assertBlockedUploadFails((client, peer) -> client.close());
+    }
+
+    @Test
+    void peerDisconnectFailsUploadBlockedByFlowControl() throws Exception {
+        assertBlockedUploadFails((client, peer) -> peer.close());
     }
 
     @Test
@@ -151,7 +172,10 @@ class Http2ClientTest {
     }
 
     private static CompletableFuture<Response> callAsync(Http2Client client) throws URISyntaxException {
-        final var exc = get("http://localhost/").header("Host", "localhost").buildExchange();
+        return callAsync(client, get("http://localhost/").header("Host", "localhost").buildExchange());
+    }
+
+    private static CompletableFuture<Response> callAsync(Http2Client client, Exchange exc) {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 return client.doCall(exc, false);
@@ -183,6 +207,13 @@ class Http2ClientTest {
         }
     }
 
+    /** Reads DATA frames until the given number of payload bytes has arrived. */
+    private static void readDataBytes(InputStream in, int length) throws IOException {
+        var received = 0;
+        while (received < length)
+            received += readUntilFrame(in, TYPE_DATA).length;
+    }
+
     private interface Termination {
         void terminate(Http2Client client, Socket peer) throws Exception;
     }
@@ -205,6 +236,31 @@ class Http2ClientTest {
 
                 final var e = assertThrows(ExecutionException.class, () -> call.get(2, TimeUnit.SECONDS));
                 return assertInstanceOf(IOException.class, e.getCause().getCause());
+            }
+        } finally {
+            router.stop();
+        }
+    }
+
+    private static void assertBlockedUploadFails(Termination termination) throws Exception {
+        final var router = new DefaultRouter();
+        try (final var backend = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
+            backend.setSoTimeout(2000);
+            final var connection = createConnection(router, backend);
+            try (final var peer = backend.accept()) {
+                peer.setSoTimeout(2000);
+                final var client = new Http2Client(connection, false);
+                // The peer never grants more window, so the upload blocks once the initial window is used up.
+                final var body = new byte[2 * INITIAL_WINDOW_SIZE];
+                final var call = callAsync(client, post("http://localhost/").header("Host", "localhost").body(body).buildExchange());
+
+                final var in = peer.getInputStream();
+                in.readNBytes(PREFACE_LENGTH);
+                // Full frames only: the client reserves window per frame, so the frame that no longer fits blocks.
+                readDataBytes(in, INITIAL_WINDOW_SIZE / MAX_FRAME_SIZE * MAX_FRAME_SIZE);
+                termination.terminate(client, peer);
+
+                assertThrows(ExecutionException.class, () -> call.get(2, TimeUnit.SECONDS));
             }
         } finally {
             router.stop();

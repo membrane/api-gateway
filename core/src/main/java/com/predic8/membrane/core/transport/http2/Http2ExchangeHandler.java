@@ -211,11 +211,11 @@ public class Http2ExchangeHandler implements Runnable {
     public static void writeMessageBody(final int streamId, final StreamInfo streamInfo, final FrameSender sender, final Settings peerSettings, final PeerFlowControl peerFlowControl, Message res, boolean retainCopy) {
         res.getBody().write(new AbstractBodyTransferer() {
             @Override
-            public void write(byte[] content, int i, int length) {
+            public void write(byte[] content, int i, int length) throws IOException {
                 sendData(content, i, length);
             }
 
-            private void sendData(byte[] content, int offset, int length) {
+            private void sendData(byte[] content, int offset, int length) throws IOException {
                 int mOffset = offset;
                 while (mOffset < offset + length) {
                     int mLength = Math.min(peerSettings.getMaxFrameSize(), length - (mOffset - offset));
@@ -232,14 +232,14 @@ public class Http2ExchangeHandler implements Runnable {
                             mOffset,
                             mLength);
 
-                    sender.send(frame);
+                    sender.sendData(frame);
 
                     mOffset += mLength;
                 }
             }
 
             @Override
-            public void write(Chunk chunk) {
+            public void write(Chunk chunk) throws IOException {
                 sendData(chunk.content(), 0, chunk.getLength());
             }
 
@@ -249,6 +249,8 @@ public class Http2ExchangeHandler implements Runnable {
                     // wait for sender queue to empty
                     // TODO: this could be solved via synchronization
                     while (!streamInfo.getDataFramesToBeSent().isEmpty()) {
+                        if (sender.isStopped())
+                            throw new IOException("HTTP/2 frame sender stopped before the trailer could be sent");
                         try {
                             Thread.sleep(50);
                         } catch (InterruptedException e) {
@@ -265,7 +267,7 @@ public class Http2ExchangeHandler implements Runnable {
                             0,
                             0);
 
-                    sender.send(frame);
+                    sender.sendData(frame);
                 }
             }
         }, retainCopy);

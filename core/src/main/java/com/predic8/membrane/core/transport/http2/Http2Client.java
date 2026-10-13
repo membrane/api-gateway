@@ -225,7 +225,7 @@ public class Http2Client implements Runnable, AutoCloseable {
         } finally {
             // Also wake a sender waiting for work. This is safe before init()
             // has published senderFuture and does not require joining it.
-            logic.sender.stop();
+            logic.stopSending();
         }
     }
 
@@ -251,7 +251,7 @@ public class Http2Client implements Runnable, AutoCloseable {
             failPendingResponses();
             logic.sender.send(GoawayFrame.construct(0, logic.nextClientStreamId.get(), 0));
             LOG.debug("terminating frame sender.");
-            logic.sender.stop();
+            logic.stopSending();
             try {
                 logic.senderFuture.get();
             } catch (InterruptedException | ExecutionException e) {

@@ -86,6 +86,13 @@ public class StreamInfo {
         return new Http2Body();
     }
 
+    /** Wakes this stream's writers waiting to send DATA, after the frame sender stopped. */
+    void senderStopped() {
+        bufferedDataFrames.release();
+        if (peerFlowControl != null)
+            peerFlowControl.senderStopped();
+    }
+
     public PeerFlowControl getPeerFlowControl() {
         return peerFlowControl;
     }

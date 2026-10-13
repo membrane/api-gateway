@@ -22,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.io.OutputStream;
 import java.util.Map;
 import java.util.concurrent.LinkedTransferQueue;
@@ -46,6 +47,7 @@ public class FrameSender implements Runnable {
     private final AtomicInteger totalBufferedFrames = new AtomicInteger(0);
     private final ReentrantLock lock = new ReentrantLock();
     private final Condition hasFrame = lock.newCondition();
+    private volatile boolean stopped;
 
     public FrameSender(OutputStream out, Encoder encoder, Settings peerSettings, Map<Integer, StreamInfo> streams, String remoteAddr) {
         this.out = out;
@@ -56,19 +58,34 @@ public class FrameSender implements Runnable {
     }
 
     public void send(Frame frame) {
-        if (frame.getType() == Frame.TYPE_DATA) {
-            StreamInfo streamInfo = streams.get(frame.getStreamId());
-            try {
-                streamInfo.getBufferedDataFrames().acquire();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-            streamInfo.getDataFramesToBeSent().add(frame);
-        } else {
-            queue.put(frame);
-        }
+        queue.put(frame);
         totalBufferedFrames.incrementAndGet();
         fire();
+    }
+
+    /**
+     * Queues a DATA frame, waiting while the stream already has the maximum number of DATA frames buffered.
+     *
+     * @throws IOException if the sender has been stopped, so the frame would never be sent
+     */
+    public void sendData(Frame frame) throws IOException {
+        StreamInfo streamInfo = streams.get(frame.getStreamId());
+        try {
+            streamInfo.getBufferedDataFrames().acquire();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new InterruptedIOException("Interrupted while waiting to send DATA on HTTP/2 stream " + frame.getStreamId());
+        }
+        // stop() releases a permit to wake a waiting writer.
+        if (stopped)
+            throw new IOException("HTTP/2 frame sender stopped");
+        streamInfo.getDataFramesToBeSent().add(frame);
+        totalBufferedFrames.incrementAndGet();
+        fire();
+    }
+
+    public boolean isStopped() {
+        return stopped;
     }
 
     public void send(int streamId, FrameProducer frameProducer) throws IOException {
@@ -130,6 +147,13 @@ public class FrameSender implements Runnable {
                 if (frame.getType() == TYPE_STOP)
                     break;
 
+                // RST_STREAM is sent ahead of DATA still buffered for the stream. A closed stream must not
+                // carry DATA anymore (RFC 9113 §5.1), so drop it.
+                if (frame.getType() == Frame.TYPE_DATA && streams.get(frame.getStreamId()).getState() == StreamState.CLOSED) {
+                    log.debug("Dropping DATA for closed stream {}.", frame.getStreamId());
+                    continue;
+                }
+
                 if (frame.getType() == Frame.TYPE_RST_STREAM)
                     streams.get(frame.getStreamId()).sendRstStream();
 
@@ -160,10 +184,14 @@ public class FrameSender implements Runnable {
     }
 
     public void stop() {
+        stopped = true;
         Frame e = new Frame();
         e.fill(TYPE_STOP, 0, 0, null, 0, 0);
         queue.add(e);
         fire();
+        // Nothing is sent from now on: writers waiting for buffer space or flow-control window would wait forever.
+        for (StreamInfo streamInfo : streams.values())
+            streamInfo.senderStopped();
     }
 
     private void updateThreadName(boolean fromConnection) {

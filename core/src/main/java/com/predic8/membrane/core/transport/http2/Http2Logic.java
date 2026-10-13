@@ -114,8 +114,14 @@ public class Http2Logic {
         } catch(EOFException eof) {
             throw new EndOfStreamException("");
         } finally {
-            sender.stop();
+            stopSending();
         }
+    }
+
+    /** Stops the frame sender and wakes writers waiting for the connection's flow-control window. */
+    void stopSending() {
+        sender.stop();
+        peerFlowControl.senderStopped();
     }
 
     private void updateSettings(Settings newSettings) {
