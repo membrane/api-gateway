@@ -23,15 +23,12 @@ import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.test.*;
 import org.junit.jupiter.api.*;
 
-import java.time.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.interceptor.discovery.CatalogEntry.ProxyKind.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class CatalogCollectorTest {
-
-    private static final LocalDate DAY = LocalDate.of(2026, 1, 15);
 
     private DummyTestRouter router;
 
@@ -48,9 +45,12 @@ class CatalogCollectorTest {
         return collector(null, true);
     }
 
-    private static CatalogCollector collector(String configuredUrl, boolean collectOperations) {
-        return new CatalogCollector("example.com", "gateway", "Gateway APIs", "All of them",
-                configuredUrl, DAY, DAY, collectOperations);
+    private static CatalogCollector collector(String baseUrl, boolean collectOperations) {
+        return new CatalogCollector(baseUrl, collectOperations);
+    }
+
+    private static CatalogCollector collectorWithBaseUrl(String baseUrl) {
+        return collector(baseUrl, false);
     }
 
     private static Exchange exchange(String uri) throws Exception {
@@ -81,15 +81,17 @@ class CatalogCollectorTest {
     }
 
     @Test
-    void collectionMetadataComesFromTheConfiguration() throws Exception {
-        Catalog catalog = collector().collect(router, exchange("/apis.json"));
+    void withoutABaseUrlTheDomainIsTheHostTheClientUsed() throws Exception {
+        final var catalog = collector().collect(router, exchange("/apis.json"));
 
-        assertEquals("example.com:gateway", catalog.aid());
-        assertEquals("Gateway APIs", catalog.name());
-        assertEquals("All of them", catalog.description());
-        assertEquals(DAY, catalog.created());
-        assertEquals(DAY, catalog.modified());
+        assertEquals("gateway.example.com", catalog.domain());
         assertTrue(catalog.apis().isEmpty());
+    }
+
+    @Test
+    void theDomainIsTheHostOfTheBaseUrl() throws Exception {
+        assertEquals("api.example.com", collectorWithBaseUrl("https://api.example.com:8443/gateway")
+                .collect(router, exchange("/apis.json")).domain());
     }
 
     @Test
@@ -104,11 +106,36 @@ class CatalogCollectorTest {
     }
 
     @Test
-    void configuredUrlWinsOverTheRequest() throws Exception {
-        CatalogCollector collector = collector("https://example.com/apis.json", false);
+    void theBaseUrlIsTheOriginOfTheCatalogUrl() throws Exception {
+        assertEquals("https://api.example.com/apis.json", collectorWithBaseUrl("https://api.example.com/")
+                .collect(router, exchange("/apis.json?pretty=true")).url());
+    }
 
-        assertEquals("https://example.com/apis.json",
-                collector.collect(router, exchange("/apis.json")).url());
+    /**
+     * Behind a reverse proxy the client reaches every api under the public origin, whatever port
+     * Membrane listens on, so the base URL replaces origin and port of an api bound to all hosts.
+     */
+    @Test
+    void anApiBoundToEveryHostIsListedUnderTheBaseUrl() throws Exception {
+        add(apiProxy("fruitshop-api-v2-openapi-3.yml", 2000));
+
+        final var entry = only(collectorWithBaseUrl("https://api.example.com/gateway")
+                .collect(router, exchange("/apis.json")));
+
+        assertEquals("https://api.example.com/gateway/shop/v2/", entry.endpoint().url());
+        assertEquals("https", entry.endpoint().protocol());
+        assertEquals("api.example.com", entry.endpoint().host());
+        assertEquals(443, entry.endpoint().port());
+        assertEquals("https://api.example.com/gateway/api-docs/fruit-shop-api-v2-0-0", entry.links().specUrl());
+        assertEquals("api.example.com:fruit-shop-api-v2-0-0", entry.aid());
+    }
+
+    @Test
+    void anApiBoundToOneHostKeepsItDespiteTheBaseUrl() throws Exception {
+        add(new ServiceProxy(new ServiceProxyKey("shop.example.com", "*", "/shop", 2000), null, 0));
+
+        assertEquals("http://shop.example.com:2000/shop", only(collectorWithBaseUrl("https://api.example.com")
+                .collect(router, exchange("/apis.json"))).endpoint().url());
     }
 
     @Test
@@ -164,7 +191,7 @@ class CatalogCollectorTest {
 
         CatalogEntry entry = only(collector().collect(router, exchange("/apis.json")));
 
-        assertEquals("example.com:fruit-shop-api-v2-0-0", entry.aid());
+        assertEquals("gateway.example.com:fruit-shop-api-v2-0-0", entry.aid());
         assertEquals("http://gateway.example.com:2000/api-docs/fruit-shop-api-v2-0-0",
                 entry.links().specUrl());
         assertEquals("http://gateway.example.com:2000/api-docs/ui/fruit-shop-api-v2-0-0",

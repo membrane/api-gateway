@@ -16,34 +16,20 @@ package com.predic8.membrane.core.interceptor.discovery;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.util.*;
 import org.slf4j.*;
 import org.springframework.http.InvalidMediaTypeException;
 import org.springframework.http.MediaType;
 
 import java.time.*;
-import java.time.format.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.http.Response.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.interceptor.discovery.DiscoveryFormat.*;
 
 /**
- * @description Publishes every API deployed on this gateway as a machine readable catalog, so that a
- * portal, a registry or a developer discovers them all under a single URL. The catalog is collected
- * from the running configuration on each request and therefore never goes stale.
- * <p>
- * Three catalog formats are available. APIs.json 0.18 (<code>apisjson</code>) is a collection
- * document a crawler can index. RFC 9727 api-catalog (<code>apicatalog</code>) is a linkset of the
- * same APIs, served as <code>application/linkset+json</code> and expected under the well-known path
- * <code>/.well-known/api-catalog</code>, the only format allowed under that path. Membrane's own
- * format (<code>membrane</code>) carries everything the gateway knows, including the method and
- * path of every operation.
- * </p>
+ * @description Publishes every API deployed on this gateway in Membrane's own catalog format,
+ * which carries everything the gateway knows about an API, including the method, path and URL of
+ * every operation. The catalog is collected from the running configuration on each request and
+ * therefore never goes stale.
  * <p>
  * An API described by an OpenAPI document is listed with the title, description and version from
  * that document, plus links to the document itself and to its Swagger UI. A SOAP proxy is listed
@@ -51,21 +37,20 @@ import static com.predic8.membrane.core.interceptor.discovery.DiscoveryFormat.*;
  * URL. Internal proxies and proxies whose initialisation failed are left out.
  * </p>
  * <p>
- * With the <code>membrane</code> format, a browser, or any client whose <code>Accept</code> header
- * asks for HTML, gets an HTML page of the same catalog instead, operations included, with links
- * to the Swagger UI of every API. APIs.json and RFC 9727 always answer with their JSON.
+ * A browser, or any client whose <code>Accept</code> header prefers HTML, gets an HTML page of
+ * the same catalog instead, operations included, with links to the Swagger UI of every API.
  * </p>
  * <p>
- * Answers every request that reaches it and ends the flow, so give it an api of its own.
+ * Answers every request that reaches it and ends the flow, so give it an api of its own. RFC 9727
+ * reserves <code>/.well-known/api-catalog</code> for its own format, so that path is refused here;
+ * use <code>apiCatalog</code> there.
  * </p>
  * <pre>
  * apiDiscovery:
- *   [ format: apisjson | apicatalog | membrane ]
- *   [ rootDomain: &lt;domain&gt; ]
+ *   [ baseUrl: &lt;url&gt; ]
  *   [ collectionId: &lt;id&gt; ]
  *   [ name: &lt;name&gt; ]
  *   [ description: &lt;text&gt; ]
- *   [ url: &lt;url&gt; ]
  *   [ created: &lt;yyyy-mm-dd&gt; ]
  *   [ modified: &lt;yyyy-mm-dd&gt; ]
  * </pre>
@@ -73,102 +58,52 @@ import static com.predic8.membrane.core.interceptor.discovery.DiscoveryFormat.*;
  * @yaml <pre><code>
  * api:
  *   port: 2000
- *   path: /.well-known/api-catalog
+ *   path:
+ *     uri: /catalog
  *   flow:
  *     - apiDiscovery:
- *         format: apicatalog
- *         rootDomain: example.com
  *         collectionId: gateway
+ *         name: Example APIs
  * </code></pre>
  */
 @MCElement(name = "apiDiscovery")
-public class ApiDiscoveryInterceptor extends AbstractInterceptor {
+public class ApiDiscoveryInterceptor extends AbstractApiDiscoveryInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(ApiDiscoveryInterceptor.class);
 
-    /**
-     * Well-known URI RFC 9727 reserves for the api-catalog document.
-     */
-    static final String WELL_KNOWN_PATH = "/.well-known/api-catalog";
+    private static final String HTML_CONTENT_SECURITY_POLICY = "default-src 'none'; style-src 'unsafe-inline'";
 
-    private static final CatalogRenderer HTML_RENDERER = new HtmlCatalogRenderer();
-
-    private DiscoveryFormat format = APISJSON;
-    private String rootDomain = "membrane";
     private String collectionId = "apis";
     private String collectionName = "APIs";
     private String description = "APIs served by this gateway";
-    private String url;
     private LocalDate created = LocalDate.now();
     private LocalDate modified = LocalDate.now();
 
-    private CatalogRenderer renderer;
-    private CatalogCollector collector;
+    private CatalogRenderer htmlRenderer;
 
     @Override
     public void init() {
         super.init();
-        renderer = switch (format) {
-            case APISJSON -> new ApisJsonRenderer();
-            case APICATALOG -> new ApiCatalogRenderer();
-            case MEMBRANE -> new MembraneCatalogRenderer();
-        };
-        collector = new CatalogCollector(rootDomain, collectionId, collectionName, description,
-                url, created, modified, renderer.rendersOperations());
-        checkWellKnownPath();
-    }
-
-    /**
-     * RFC 9727 ties the api-catalog document to one well-known URI, so a linkset served anywhere
-     * else will not be found by a client that follows the RFC. The other way round is an error:
-     * the RFC makes the Linkset mandatory at that URI, and a client reading any other format there
-     * misreads it. The proxy is unknown when the plugin sits in the else branch of an {@code if},
-     * in which case there is nothing to check.
-     */
-    private void checkWellKnownPath() {
-        if (getProxy() == null || getProxy().getKey() == null)
-            return;
-        final var path = getProxy().getKey().getPath();
-        if (format != APICATALOG) {
-            if (WELL_KNOWN_PATH.equals(path))
-                throw new ConfigurationException(
-                        "apiDiscovery with format %s cannot be served under %s. RFC 9727 requires an api-catalog Linkset there, so use format apicatalog or move the api to another path."
-                                .formatted(format.name().toLowerCase(Locale.ROOT), WELL_KNOWN_PATH));
-            return;
-        }
-        if (!WELL_KNOWN_PATH.equals(path))
-            log.warn("apiDiscovery publishes an RFC 9727 api-catalog under the path {}, but RFC 9727 "
-                     + "clients look for it at {}. Set that path on the surrounding api.",
-                    path == null ? "/" : path, WELL_KNOWN_PATH);
+        htmlRenderer = new HtmlCatalogRenderer(collection());
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) {
-        try {
-            Catalog catalog = collector.collect(router, exc);
-            CatalogRenderer negotiated = format == MEMBRANE && acceptsHtml(exc) ? HTML_RENDERER : renderer;
-            Response.ResponseBuilder response = ok().contentType(negotiated.contentType());
-            // The membrane format answers with HTML or JSON, so caches must key on Accept.
-            if (format == MEMBRANE)
-                response.header(VARY, ACCEPT);
-            // The page shows text from OpenAPI documents and needs no script, so it allows none.
-            if (negotiated == HTML_RENDERER)
-                response.header(CONTENT_SECURITY_POLICY, "default-src 'none'; style-src 'unsafe-inline'");
-            // RFC 9727 requires the target of an api-catalog link to be a Linkset.
-            if (format == APICATALOG && catalog.url() != null)
-                response.header(LINK, "<%s>; rel=\"api-catalog\"".formatted(catalog.url()));
-            // RFC 9727 requires HEAD on the catalog to answer with the headers but no document.
-            exc.setResponse((exc.getRequest().isHEADRequest()
-                    ? response.bodyEmpty()
-                    : response.body(negotiated.render(catalog))).build());
-            return RETURN;
-        } catch (Exception e) {
-            internal(router.getConfiguration().isProduction(), getDisplayName())
-                    .detail("Could not render the API discovery document!")
-                    .exception(e)
-                    .buildAndSetResponse(exc);
-            return ABORT;
-        }
+    protected CatalogRenderer createRenderer() {
+        return new MembraneCatalogRenderer(collection());
+    }
+
+    @Override
+    protected CatalogRenderer negotiate(Exchange exc, CatalogRenderer renderer) {
+        return acceptsHtml(exc) ? htmlRenderer : renderer;
+    }
+
+    @Override
+    protected void addHeaders(Response.ResponseBuilder response, Catalog catalog, CatalogRenderer negotiated) {
+        // The answer is HTML or JSON depending on Accept, so caches must key on it.
+        response.header(VARY, ACCEPT);
+        // The page shows text from OpenAPI documents and needs no script, so it allows none.
+        if (negotiated == htmlRenderer)
+            response.header(CONTENT_SECURITY_POLICY, HTML_CONTENT_SECURITY_POLICY);
     }
 
     /**
@@ -196,45 +131,13 @@ public class ApiDiscoveryInterceptor extends AbstractInterceptor {
         }
     }
 
-    public DiscoveryFormat getFormat() {
-        return format;
-    }
-
-    /**
-     * @description Format of the published document. Constant names are matched case-insensitively.
-     * @default apisjson
-     * @example apicatalog
-     */
-    @MCAttribute
-    public void setFormat(DiscoveryFormat format) {
-        this.format = format;
-    }
-
-    public String getRootDomain() {
-        return rootDomain;
-    }
-
-    /**
-     * @description Domain the identifiers in the document are built from. An entry is identified as
-     * <code>&lt;rootDomain&gt;:&lt;id&gt;</code>, where the id comes from its OpenAPI document or a
-     * slug of its host, port and path. An api that sets <code>id</code> is identified by that value
-     * instead, without the domain, and by <code>&lt;id&gt;:&lt;document id&gt;</code> when it
-     * carries several OpenAPI documents.
-     * @default membrane
-     * @example example.com
-     */
-    @MCAttribute
-    public void setRootDomain(String rootDomain) {
-        this.rootDomain = rootDomain;
-    }
-
     public String getCollectionId() {
         return collectionId;
     }
 
     /**
      * @description Identifier of the collection itself, forming the second half of its
-     * <code>&lt;rootDomain&gt;:&lt;collectionId&gt;</code> identifier.
+     * <code>&lt;domain&gt;:&lt;collectionId&gt;</code> identifier.
      * @default apis
      * @example gateway
      */
@@ -271,22 +174,6 @@ public class ApiDiscoveryInterceptor extends AbstractInterceptor {
         this.description = description;
     }
 
-    public String getUrl() {
-        return url;
-    }
-
-    /**
-     * @description URL the document itself is published under. Derived from each incoming request
-     * when omitted, which is correct unless a reverse proxy in front of the gateway rewrites host
-     * or path.
-     * @default derived from the request
-     * @example https://example.com/.well-known/api-catalog
-     */
-    @MCAttribute
-    public void setUrl(String url) {
-        this.url = url;
-    }
-
     public LocalDate getCreated() {
         return created;
     }
@@ -315,14 +202,8 @@ public class ApiDiscoveryInterceptor extends AbstractInterceptor {
         this.modified = parseDate("modified", modified);
     }
 
-    private static LocalDate parseDate(String attribute, String value) {
-        try {
-            return LocalDate.parse(value, DateTimeFormatter.ISO_LOCAL_DATE);
-        } catch (DateTimeParseException e) {
-            throw new ConfigurationException(
-                    "Cannot parse apiDiscovery/@%s \"%s\". Expected an ISO date such as 2026-01-15."
-                            .formatted(attribute, value), e);
-        }
+    private CollectionInfo collection() {
+        return new CollectionInfo(collectionId, collectionName, description, created, modified);
     }
 
     @Override
@@ -332,6 +213,6 @@ public class ApiDiscoveryInterceptor extends AbstractInterceptor {
 
     @Override
     public String getShortDescription() {
-        return "Publishes all deployed APIs as a discovery document.";
+        return "Publishes all deployed APIs in Membrane's catalog format, as JSON or HTML.";
     }
 }

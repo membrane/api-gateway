@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class HtmlCatalogRendererTest {
 
-    private final HtmlCatalogRenderer renderer = new HtmlCatalogRenderer();
+    private final HtmlCatalogRenderer renderer = new HtmlCatalogRenderer(COLLECTION);
 
     private String render(Catalog catalog) {
         return new String(renderer.render(catalog), UTF_8);

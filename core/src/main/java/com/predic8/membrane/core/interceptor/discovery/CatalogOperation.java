@@ -17,7 +17,7 @@ import java.util.*;
 
 /**
  * A single operation of an API, taken from the OpenAPI document describing it. Only the
- * <code>membrane</code> discovery format renders these; APIs.json and RFC 9727 link to the
+ * Membrane discovery format (<code>apiDiscovery</code>) renders these; APIs.json and RFC 9727 link to the
  * OpenAPI document instead.
  *
  * @param method      uppercase HTTP method, e.g. <code>GET</code>

@@ -21,12 +21,13 @@ import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.info.*;
 import io.swagger.v3.oas.models.tags.*;
 
-import java.time.*;
+import java.net.URI;
 import java.util.*;
 
 import static com.predic8.membrane.core.interceptor.discovery.CatalogEntry.ProxyKind.*;
 import static com.predic8.membrane.core.interceptor.discovery.CatalogEntry.builder;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisherInterceptor.*;
+import static com.predic8.membrane.core.openapi.util.UriUtil.*;
 import static java.lang.Boolean.*;
 import static java.util.Objects.*;
 
@@ -35,6 +36,12 @@ import static java.util.Objects.*;
  * per request rather than once per process: proxies come and go with configuration reloads, and
  * host and port are resolved against the incoming request, so the URLs in the document are the
  * ones the calling client can actually reach.
+ * <p>
+ * A configured base URL replaces the request wherever the request would have been asked: it is the
+ * origin of the catalog URL and of every proxy bound to all hosts, and its host is the domain
+ * identifiers are built from. That is what a gateway behind a reverse proxy needs, whose clients
+ * reach it under a different origin than the one Membrane sees. A proxy bound to one host keeps
+ * that host, because it answers on no other.
  * <p>
  * Only proxies that open a port are listed. <code>internal</code> proxies
  * ({@link NotPortOpeningProxy}) are reachable through <code>call</code> alone and are therefore
@@ -45,42 +52,44 @@ public class CatalogCollector {
     private static final String DEFAULT_PATH = "/";
     private static final String WILDCARD_HOST = "*";
 
-    private final String rootDomain;
-    private final String collectionId;
-    private final String collectionName;
-    private final String description;
-    private final String configuredUrl;
-    private final LocalDate created;
-    private final LocalDate modified;
+    private final String baseUrl;
+    private final URI baseUri;
     private final boolean collectOperations;
 
     /**
-     * @param collectOperations whether to walk the paths of every OpenAPI document. Only the
-     *                          <code>membrane</code> format renders operations, and walking them is
-     *                          the only part of collecting that grows with the size of the
-     *                          documents, so the other formats switch it off.
+     * @param baseUrl           absolute URL clients reach the gateway under, such as
+     *                          <code>https://api.example.com</code>, or null to take everything from
+     *                          the request
+     * @param collectOperations whether to walk the paths of every OpenAPI document. Only Membrane's
+     *                          own format renders operations, and walking them is the only part of
+     *                          collecting that grows with the size of the documents, so the other
+     *                          formats switch it off.
      */
-    public CatalogCollector(String rootDomain, String collectionId, String collectionName, String description, String configuredUrl, LocalDate created, LocalDate modified, boolean collectOperations) {
-        this.rootDomain = rootDomain;
-        this.collectionId = collectionId;
-        this.collectionName = collectionName;
-        this.description = description;
-        this.configuredUrl = configuredUrl;
-        this.created = created;
-        this.modified = modified;
+    public CatalogCollector(String baseUrl, boolean collectOperations) {
+        this.baseUrl = trimTrailingSlash(baseUrl);
+        this.baseUri = baseUrl == null ? null : URI.create(baseUrl);
         this.collectOperations = collectOperations;
     }
 
     public Catalog collect(Router router, Exchange exchange) {
-        return new Catalog(rootDomain + ":" + collectionId, collectionName, description, catalogUrl(exchange), created, modified, collectEntries(router, exchange));
+        final var domain = domain(exchange);
+        return new Catalog(domain, catalogUrl(exchange), collectEntries(router, exchange, domain));
     }
 
     /**
-     * URL of the catalog document itself. The configured value wins; without one the URL is
-     * derived from the request that asked for the document, with any query string dropped.
+     * Domain identifiers are built from: the host of the base URL, else the host the client used.
+     */
+    private String domain(Exchange exchange) {
+        if (baseUri != null) return baseUri.getHost();
+        return requestHost(exchange);
+    }
+
+    /**
+     * URL of the catalog document itself: the base URL, or else the origin the request reached,
+     * followed by the path of the request with any query string dropped.
      */
     private String catalogUrl(Exchange exchange) {
-        if (configuredUrl != null) return configuredUrl;
+        if (baseUrl != null) return baseUrl + pathWithoutQuery(exchange);
         if (!(exchange.getProxy() instanceof AbstractServiceProxy serviceProxy)) return null;
         return origin(serviceProxy, exchange) + pathWithoutQuery(exchange);
     }
@@ -92,13 +101,13 @@ public class CatalogCollector {
         return query == -1 ? uri : uri.substring(0, query);
     }
 
-    private List<CatalogEntry> collectEntries(Router router, Exchange exchange) {
+    private List<CatalogEntry> collectEntries(Router router, Exchange exchange, String domain) {
         List<CatalogEntry> entries = new ArrayList<>();
         // Snapshot: getRules() hands out the live list, which a configuration reload mutates.
         for (Proxy proxy : List.copyOf(router.getRuleManager().getRules())) {
             if (!(proxy instanceof AbstractServiceProxy serviceProxy)) continue;
             if (proxy instanceof NotPortOpeningProxy || !proxy.isActive()) continue;
-            entries.addAll(entriesFor(serviceProxy, exchange));
+            entries.addAll(entriesFor(serviceProxy, exchange, domain));
         }
         return entries;
     }
@@ -107,18 +116,18 @@ public class CatalogCollector {
      * An API described by several OpenAPI documents contributes one entry per document, because
      * each document is a separately published, separately versioned API.
      */
-    private List<CatalogEntry> entriesFor(AbstractServiceProxy proxy, Exchange exchange) {
+    private List<CatalogEntry> entriesFor(AbstractServiceProxy proxy, Exchange exchange, String domain) {
         if (proxy instanceof APIProxy api && !api.getApiRecords().isEmpty())
-            return api.getApiRecords().entrySet().stream().map(record -> describedEntry(api, record.getKey(), record.getValue(), exchange)).toList();
-        return List.of(plainEntry(proxy, exchange));
+            return api.getApiRecords().entrySet().stream().map(record -> describedEntry(api, record.getKey(), record.getValue(), exchange, domain)).toList();
+        return List.of(plainEntry(proxy, exchange, domain));
     }
 
-    private CatalogEntry describedEntry(APIProxy api, String recordId, OpenAPIRecord record, Exchange exchange) {
+    private CatalogEntry describedEntry(APIProxy api, String recordId, OpenAPIRecord record, Exchange exchange, String domain) {
         OpenAPI openAPI = record.getApi();
         Info info = openAPI.getInfo();
         String origin = origin(api, exchange);
         return builder()
-                .aid(aid(api, recordId))
+                .aid(aid(api, recordId, domain))
                 .kind(API).name(name(api, info))
                 .description(description(api, info))
                 .version(info == null ? null : info.getVersion())
@@ -135,9 +144,9 @@ public class CatalogCollector {
      * proxy without an OpenAPI document publishes neither <code>/api-docs</code> nor a Swagger UI,
      * so any link here would be dead.
      */
-    private CatalogEntry plainEntry(AbstractServiceProxy proxy, Exchange exchange) {
+    private CatalogEntry plainEntry(AbstractServiceProxy proxy, Exchange exchange, String domain) {
         CatalogEntry.Endpoint endpoint = endpoint(proxy, exchange, pathOf(proxy));
-        return builder().aid(aid(proxy, null)).kind(kindOf(proxy)).name(proxy.getName()).description(description(proxy, null)).endpoint(endpoint).soap(soapInfo(proxy, endpoint)).build();
+        return builder().aid(aid(proxy, null, domain)).kind(kindOf(proxy)).name(proxy.getName()).description(description(proxy, null)).endpoint(endpoint).soap(soapInfo(proxy, endpoint)).build();
     }
 
     private static CatalogEntry.ProxyKind kindOf(AbstractServiceProxy proxy) {
@@ -158,6 +167,8 @@ public class CatalogCollector {
 
     private CatalogEntry.Endpoint endpoint(AbstractServiceProxy proxy, Exchange exchange, String path) {
         RuleKey key = proxy.getKey();
+        if (usesBaseUrl(key))
+            return new CatalogEntry.Endpoint(baseUri.getScheme(), baseUri.getHost(), portOf(baseUri), path, key.getMethod(), baseUrl + path);
         String protocol = proxy.getProtocol();
         String host = hostOf(key, exchange);
         int port = portOf(key, protocol);
@@ -165,8 +176,26 @@ public class CatalogCollector {
     }
 
     private String origin(AbstractServiceProxy proxy, Exchange exchange) {
+        if (usesBaseUrl(proxy.getKey())) return baseUrl;
         String protocol = proxy.getProtocol();
         return origin(protocol, hostOf(proxy.getKey(), exchange), portOf(proxy.getKey(), protocol));
+    }
+
+    /**
+     * The base URL stands in for the request host, so it applies exactly where that would: to a
+     * proxy bound to every host.
+     */
+    private boolean usesBaseUrl(RuleKey key) {
+        return baseUrl != null && isBoundToEveryHost(key);
+    }
+
+    private static boolean isBoundToEveryHost(RuleKey key) {
+        return key.getHost() == null || WILDCARD_HOST.equals(key.getHost());
+    }
+
+    private static int portOf(URI uri) {
+        if (uri.getPort() != -1) return uri.getPort();
+        return "https".equals(uri.getScheme()) ? 443 : 80;
     }
 
     /**
@@ -186,7 +215,11 @@ public class CatalogCollector {
      * Host header nor a local address, as in unit tests or a resent exchange.
      */
     private static String hostOf(RuleKey key, Exchange exchange) {
-        if (key.getHost() != null && !WILDCARD_HOST.equals(key.getHost())) return key.getHost();
+        if (!isBoundToEveryHost(key)) return key.getHost();
+        return requestHost(exchange);
+    }
+
+    private static String requestHost(Exchange exchange) {
         String hostHeader = exchange.getOriginalHostHeader();
         if (hostHeader != null && !hostHeader.isBlank()) return hostWithoutPort(hostHeader);
         if (exchange.getHandler() != null && exchange.getHandler().getLocalAddress() != null)
@@ -230,18 +263,18 @@ public class CatalogCollector {
     }
 
     /**
-     * Identifier of the entry, <code>&lt;rootDomain&gt;:&lt;slug&gt;</code>. An api that sets
+     * Identifier of the entry, <code>&lt;domain&gt;:&lt;slug&gt;</code>. An api that sets
      * <code>id</code> keeps that value verbatim, so configuration can pin an identifier that
      * outlives a change of host, port or path. With several OpenAPI documents the document id is
      * appended, because every entry needs an identifier of its own.
      */
-    private String aid(AbstractServiceProxy proxy, String recordId) {
+    private static String aid(AbstractServiceProxy proxy, String recordId, String domain) {
         if (proxy instanceof APIProxy api && api.getId() != null) {
             if (recordId != null && api.getApiRecords().size() > 1) return api.getId() + ":" + recordId;
             return api.getId();
         }
-        if (recordId != null) return rootDomain + ":" + recordId;
-        return rootDomain + ":" + slug(keyId(proxy));
+        if (recordId != null) return domain + ":" + recordId;
+        return domain + ":" + slug(keyId(proxy));
     }
 
     private static String keyId(AbstractServiceProxy proxy) {

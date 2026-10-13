@@ -40,6 +40,12 @@ public class ApisJsonRenderer implements CatalogRenderer {
 
     private static final ObjectMapper om = new ObjectMapper();
 
+    private final CollectionInfo collection;
+
+    public ApisJsonRenderer(CollectionInfo collection) {
+        this.collection = collection;
+    }
+
     @Override
     public String contentType() {
         return APPLICATION_JSON;
@@ -48,12 +54,12 @@ public class ApisJsonRenderer implements CatalogRenderer {
     @Override
     public byte[] render(Catalog catalog) throws JsonProcessingException {
         ObjectNode collection = om.createObjectNode();
-        collection.put("aid", catalog.aid());
-        collection.put("name", catalog.name());
-        collection.put("description", catalog.description());
+        collection.put("aid", this.collection.aid(catalog.domain()));
+        collection.put("name", this.collection.name());
+        collection.put("description", this.collection.description());
         putIfPresent(collection, "url", catalog.url());
-        collection.put("created", catalog.created().toString());
-        collection.put("modified", catalog.modified().toString());
+        collection.put("created", this.collection.created().toString());
+        collection.put("modified", this.collection.modified().toString());
         collection.put("specificationVersion", SPECIFICATION_VERSION);
         ArrayNode apis = collection.putArray("apis");
         catalog.apis().forEach(entry -> apis.add(renderApi(entry)));

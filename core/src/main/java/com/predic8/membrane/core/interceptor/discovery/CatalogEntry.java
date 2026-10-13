@@ -19,7 +19,7 @@ import java.util.*;
  * One API of a {@link Catalog}. A proxy described by several OpenAPI documents contributes one
  * entry per document, a proxy without an OpenAPI document contributes a single entry.
  *
- * @param aid            unique identifier, <code>&lt;rootDomain&gt;:&lt;slug&gt;</code>
+ * @param aid            unique identifier, <code>&lt;domain&gt;:&lt;slug&gt;</code>
  * @param kind           which kind of proxy this entry describes
  * @param name           human readable name, never null
  * @param description    human readable description, never null
@@ -57,7 +57,7 @@ public record CatalogEntry(String aid, ProxyKind kind, String name, String descr
 
         /**
          * Name of the configuration element this kind stands for, as rendered into the
-         * <code>membrane</code> discovery format.
+         * Membrane discovery format (<code>apiDiscovery</code>).
          */
         public String getLabel() {
             return label;

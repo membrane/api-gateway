@@ -23,9 +23,8 @@ import static org.apache.commons.text.StringEscapeUtils.*;
 
 /**
  * Renders a {@link Catalog} as an HTML page for a human in a browser. It is the human readable
- * view of the <code>membrane</code> format and shows what that format carries, operations
- * included. An endpoint with that format serves it when the <code>Accept</code> header asks for
- * HTML.
+ * view of Membrane's own format and shows what that format carries, operations included.
+ * <code>apiDiscovery</code> serves it when the <code>Accept</code> header asks for HTML.
  * <p>
  * Titles, descriptions and contact details come from OpenAPI documents the gateway operator did
  * not necessarily write, so every value is escaped, and only <code>http</code> and
@@ -41,6 +40,12 @@ public class HtmlCatalogRenderer implements CatalogRenderer {
     private static final Pattern MARKDOWN_IMAGE = Pattern.compile("!\\[[^\\]]*]\\([^)]*\\)");
     private static final Pattern MARKDOWN_LINK = Pattern.compile("\\[([^\\]]*)]\\([^)]*\\)");
     private static final Pattern BLANK_LINE = Pattern.compile("\\n\\s*\\n");
+
+    private final CollectionInfo collection;
+
+    public HtmlCatalogRenderer(CollectionInfo collection) {
+        this.collection = collection;
+    }
 
     private static final String STYLE = """
             :root { color-scheme: light dark; --bg: #eeeeee; --box: #ffffff; --text: #1f2328; --muted: #59636e;
@@ -119,7 +124,7 @@ public class HtmlCatalogRenderer implements CatalogRenderer {
                 %s</style>
                 </head>
                 <body>
-                """.formatted(escape(catalog.name()), STYLE));
+                """.formatted(escape(collection.name()), STYLE));
         renderHeader(html, catalog);
         if (catalog.apis().isEmpty())
             html.append("<p class=\"box empty\">No APIs are deployed on this gateway.</p>\n");
@@ -128,15 +133,15 @@ public class HtmlCatalogRenderer implements CatalogRenderer {
         return html.toString().getBytes(UTF_8);
     }
 
-    private static void renderHeader(StringBuilder html, Catalog catalog) {
-        html.append("<header class=\"box\">\n<h1>%s</h1>\n".formatted(escape(catalog.name())));
-        if (catalog.description() != null)
-            html.append("<p class=\"description\">%s</p>\n".formatted(escape(catalog.description())));
+    private void renderHeader(StringBuilder html, Catalog catalog) {
+        html.append("<header class=\"box\">\n<h1>%s</h1>\n".formatted(escape(collection.name())));
+        if (collection.description() != null)
+            html.append("<p class=\"description\">%s</p>\n".formatted(escape(collection.description())));
         html.append("<dl>\n");
-        definition(html, "Identifier", escape(catalog.aid()));
+        definition(html, "Identifier", escape(collection.aid(catalog.domain())));
         definition(html, "APIs", apiCount(catalog));
-        definition(html, "Created", catalog.created().toString());
-        definition(html, "Modified", catalog.modified().toString());
+        definition(html, "Created", collection.created().toString());
+        definition(html, "Modified", collection.modified().toString());
         html.append("</dl>\n");
         renderIndex(html, catalog);
         html.append("</header>\n");

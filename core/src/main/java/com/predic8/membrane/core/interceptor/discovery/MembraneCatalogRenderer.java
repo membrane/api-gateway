@@ -38,6 +38,12 @@ public class MembraneCatalogRenderer implements CatalogRenderer {
     private static final ObjectMapper om = new ObjectMapper();
     private static final ObjectWriter ow = om.writerWithDefaultPrettyPrinter();
 
+    private final CollectionInfo collection;
+
+    public MembraneCatalogRenderer(CollectionInfo collection) {
+        this.collection = collection;
+    }
+
     @Override
     public String contentType() {
         return APPLICATION_JSON;
@@ -52,12 +58,12 @@ public class MembraneCatalogRenderer implements CatalogRenderer {
     public byte[] render(Catalog catalog) throws JsonProcessingException {
         ObjectNode document = om.createObjectNode();
         document.put("formatVersion", FORMAT_VERSION);
-        document.put("aid", catalog.aid());
-        document.put("name", catalog.name());
-        document.put("description", catalog.description());
+        document.put("aid", collection.aid(catalog.domain()));
+        document.put("name", collection.name());
+        document.put("description", collection.description());
         putIfPresent(document, "url", catalog.url());
-        document.put("created", catalog.created().toString());
-        document.put("modified", catalog.modified().toString());
+        document.put("created", collection.created().toString());
+        document.put("modified", collection.modified().toString());
         ArrayNode apis = document.putArray("apis");
         catalog.apis().forEach(entry -> apis.add(renderApi(entry)));
         return ow.writeValueAsBytes(document);

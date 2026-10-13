@@ -15,11 +15,8 @@ package com.predic8.membrane.core.interceptor.discovery;
 
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
-import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.util.*;
 import com.predic8.membrane.test.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
@@ -29,188 +26,95 @@ import java.util.*;
 
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.interceptor.discovery.DiscoveryFormat.*;
+import static com.predic8.membrane.core.interceptor.discovery.DiscoveryTestSupport.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ApiDiscoveryInterceptorTest {
 
-    private static final ObjectMapper om = new ObjectMapper();
-
     private DummyTestRouter router;
-    private ServiceProxy shop;
 
     @BeforeEach
     void setUp() throws Exception {
-        router = new DummyTestRouter();
-        shop = new ServiceProxy(new ServiceProxyKey("*", "*", "/shop", 2000), null, 0);
-        shop.setName("Shop");
-        router.add(shop);
-        router.init();
+        router = routerWithShop();
     }
 
-    private ApiDiscoveryInterceptor interceptor(DiscoveryFormat format) {
-        ApiDiscoveryInterceptor interceptor = new ApiDiscoveryInterceptor();
-        interceptor.setFormat(format);
-        interceptor.setRootDomain("example.com");
+    private ApiDiscoveryInterceptor interceptor() {
+        final var interceptor = new ApiDiscoveryInterceptor();
         interceptor.setCollectionId("gateway");
-        interceptor.init(router);
-        return interceptor;
-    }
-
-    private static Exchange request(String method) throws Exception {
-        Exchange exc = new Request.Builder().method(method).uri("/apis.json")
-                .header("Host", "gateway.example.com:2000").buildExchange();
-        exc.setOriginalHostHeader("gateway.example.com:2000");
-        return exc;
+        return initialized(interceptor, router);
     }
 
     @Test
-    void apisJsonIsTheDefaultFormat() throws Exception {
-        assertEquals(APISJSON, new ApiDiscoveryInterceptor().getFormat());
-
-        Exchange exc = request("GET");
-        assertEquals(RETURN, interceptor(APISJSON).handleRequest(exc));
+    void listsTheProxiesOfTheGateway() throws Exception {
+        final var exc = request("GET");
+        interceptor().handleRequest(exc);
 
         assertEquals(APPLICATION_JSON, exc.getResponse().getHeader().getContentType());
-        assertEquals("0.18", body(exc).path("specificationVersion").asText());
-        assertEquals("example.com:gateway", body(exc).path("aid").asText());
-    }
-
-    @Test
-    void apiCatalogRendersALinkset() throws Exception {
-        Exchange exc = request("GET");
-        interceptor(APICATALOG).handleRequest(exc);
-
-        assertTrue(exc.getResponse().getHeader().getContentType().startsWith(APPLICATION_LINKSET_JSON));
-        assertTrue(body(exc).path("linkset").isArray());
-    }
-
-    @Test
-    void membraneFormatListsTheProxiesOfTheGateway() throws Exception {
-        Exchange exc = request("GET");
-        interceptor(MEMBRANE).handleRequest(exc);
-
-        assertEquals(APPLICATION_JSON, exc.getResponse().getHeader().getContentType());
+        assertEquals(MembraneCatalogRenderer.FORMAT_VERSION, body(exc).path("formatVersion").asText());
+        assertEquals("gateway.example.com:gateway", body(exc).path("aid").asText());
         assertEquals("Shop", body(exc).path("apis").get(0).path("name").asText());
         assertEquals("serviceProxy", body(exc).path("apis").get(0).path("kind").asText());
     }
 
     /**
-     * Only the membrane format renders operations, so only it pays for walking the paths of every
-     * OpenAPI document. This is the wiring between the renderer's declaration and the collector.
+     * Only this format renders operations, so only it pays for walking the paths of every OpenAPI
+     * document. This is the wiring between the renderer's declaration and the collector.
      */
     @Test
-    void onlyTheMembraneFormatCollectsOperations() throws Exception {
-        OpenAPISpec spec = new OpenAPISpec();
+    void operationsAreCollected() throws Exception {
+        final var spec = new OpenAPISpec();
         spec.location = TestUtil.getPathFromResource("openapi/specs/fruitshop-api-v2-openapi-3.yml");
-        APIProxy fruitshop = new APIProxy();
+        final var fruitshop = new APIProxy();
         fruitshop.setOpenapi(List.of(spec));
         fruitshop.setKey(new APIProxyKey(2001));
         router.add(fruitshop);
         router.init();
 
-        Exchange withOperations = request("GET");
-        interceptor(MEMBRANE).handleRequest(withOperations);
-        assertFalse(apiNamed(withOperations, "Fruit Shop API").path("operations").isEmpty());
-
-        Exchange withoutOperations = request("GET");
-        interceptor(APISJSON).handleRequest(withoutOperations);
-        assertTrue(body(withoutOperations).path("apis").isArray());
-    }
-
-    /**
-     * RFC 9727 wants the catalog to advertise itself with the api-catalog link relation.
-     */
-    @Test
-    void responseAdvertisesTheCatalogWithALinkHeader() throws Exception {
-        Exchange exc = request("GET");
-        exc.setProxy(shop);
-        interceptor(APICATALOG).handleRequest(exc);
-
-        assertEquals("<http://gateway.example.com:2000/apis.json>; rel=\"api-catalog\"",
-                exc.getResponse().getHeader().getFirstValue(LINK));
-    }
-
-    @ParameterizedTest
-    @EnumSource(value = DiscoveryFormat.class, names = {"APISJSON", "MEMBRANE"})
-    void onlyTheApiCatalogAdvertisesItselfWithALinkHeader(DiscoveryFormat format) throws Exception {
         final var exc = request("GET");
-        exc.setProxy(shop);
-        interceptor(format).handleRequest(exc);
+        interceptor().handleRequest(exc);
 
-        assertNull(exc.getResponse().getHeader().getFirstValue(LINK));
-    }
-
-    @ParameterizedTest
-    @EnumSource(value = DiscoveryFormat.class, names = {"APISJSON", "MEMBRANE"})
-    void aNonLinksetFormatAtTheWellKnownPathIsARejectedConfiguration(DiscoveryFormat format) {
-        final var interceptor = new ApiDiscoveryInterceptor();
-        interceptor.setFormat(format);
-
-        final var e = assertThrows(ConfigurationException.class,
-                () -> interceptor.init(router, proxyAt(ApiDiscoveryInterceptor.WELL_KNOWN_PATH)));
-        assertTrue(e.getMessage().contains(ApiDiscoveryInterceptor.WELL_KNOWN_PATH));
+        assertFalse(apiNamed(exc, "Fruit Shop API").path("operations").isEmpty());
     }
 
     @Test
-    void theApiCatalogIsAcceptedAtTheWellKnownPath() {
-        final var interceptor = new ApiDiscoveryInterceptor();
-        interceptor.setFormat(APICATALOG);
+    void doesNotClaimTheApiCatalogRelation() throws Exception {
+        final var exc = request("GET");
+        exc.setProxy(shop());
+        interceptor().handleRequest(exc);
 
-        assertDoesNotThrow(() -> interceptor.init(router, proxyAt(ApiDiscoveryInterceptor.WELL_KNOWN_PATH)));
-    }
-
-    private static ServiceProxy proxyAt(String path) {
-        return new ServiceProxy(new ServiceProxyKey("*", "*", path, 2002), null, 0);
-    }
-
-    @Test
-    void headAnswersWithTheHeadersButNoDocument() throws Exception {
-        Exchange exc = request("HEAD");
-        interceptor(APICATALOG).handleRequest(exc);
-
-        Response response = exc.getResponse();
-        assertEquals(200, response.getStatusCode());
-        assertTrue(response.getHeader().getContentType().startsWith(APPLICATION_LINKSET_JSON));
-        assertEquals(0, response.getBody().getLength());
-    }
-
-    private static final String BROWSER_ACCEPT = "text/html,application/xhtml+xml,*/*;q=0.8";
-
-    private Exchange browserRequest() throws Exception {
-        Exchange exc = request("GET");
-        exc.getRequest().getHeader().setValue(ACCEPT, BROWSER_ACCEPT);
-        return exc;
+        assertNull(header(exc, LINK));
     }
 
     /**
-     * The HTML page is the human readable view of the membrane format, operations included.
+     * The HTML page is the human readable view of the same catalog, operations included.
      */
     @Test
-    void aBrowserGetsTheHtmlPageOfTheMembraneFormat() throws Exception {
-        Exchange exc = browserRequest();
-        interceptor(MEMBRANE).handleRequest(exc);
+    void aBrowserGetsTheHtmlPage() throws Exception {
+        final var exc = browserRequest();
+        interceptor().handleRequest(exc);
 
         assertEquals(TEXT_HTML_UTF8, exc.getResponse().getHeader().getContentType());
         assertTrue(exc.getResponse().getBodyAsStringDecoded().contains(">Shop</a>"));
     }
 
+    /**
+     * The page shows text from OpenAPI documents the operator did not write and needs no script,
+     * so it forbids scripts as a second line of defence behind the escaping.
+     */
     @Test
     void theHtmlPageForbidsScripts() throws Exception {
         final var html = browserRequest();
-        interceptor(MEMBRANE).handleRequest(html);
-        assertEquals("default-src 'none'; style-src 'unsafe-inline'",
-                html.getResponse().getHeader().getFirstValue(CONTENT_SECURITY_POLICY));
+        interceptor().handleRequest(html);
+        assertEquals("default-src 'none'; style-src 'unsafe-inline'", header(html, CONTENT_SECURITY_POLICY));
 
         final var json = request("GET");
-        interceptor(MEMBRANE).handleRequest(json);
-        assertNull(json.getResponse().getHeader().getFirstValue(CONTENT_SECURITY_POLICY));
+        interceptor().handleRequest(json);
+        assertNull(header(json, CONTENT_SECURITY_POLICY));
     }
 
     @Test
     void mediaTypesInAcceptAreMatchedCaseInsensitively() throws Exception {
-        assertEquals(TEXT_HTML_UTF8, membraneContentTypeFor("TEXT/HTML"));
+        assertEquals(TEXT_HTML_UTF8, contentTypeFor("TEXT/HTML"));
     }
 
     /**
@@ -219,74 +123,36 @@ class ApiDiscoveryInterceptorTest {
      */
     @ParameterizedTest
     @ValueSource(strings = {
+            "*/*",
             "text/html;q=0",
             "application/json, text/html;q=0.5",
             "application/xhtml+xml",
             "not a media type"})
     void htmlIsOnlyServedWhenTheClientPrefersIt(String accept) throws Exception {
-        assertEquals(APPLICATION_JSON, membraneContentTypeFor(accept));
+        assertEquals(APPLICATION_JSON, contentTypeFor(accept));
     }
 
-    private String membraneContentTypeFor(String accept) throws Exception {
-        Exchange exc = request("GET");
+    private String contentTypeFor(String accept) throws Exception {
+        final var exc = request("GET");
         exc.getRequest().getHeader().setValue(ACCEPT, accept);
-        interceptor(MEMBRANE).handleRequest(exc);
+        interceptor().handleRequest(exc);
         return exc.getResponse().getHeader().getContentType();
     }
 
-    @Test
-    void aClientThatDoesNotAskForHtmlGetsTheMembraneJson() throws Exception {
-        Exchange exc = request("GET");
-        exc.getRequest().getHeader().setValue(ACCEPT, "*/*");
-        interceptor(MEMBRANE).handleRequest(exc);
-
-        assertEquals(APPLICATION_JSON, exc.getResponse().getHeader().getContentType());
-    }
-
     /**
-     * APIs.json and RFC 9727 documents are standard formats, so they answer with their JSON even
-     * in a browser.
+     * The answer is HTML or JSON depending on Accept, so caches must key on it.
      */
     @Test
-    void theStandardFormatsNeverAnswerWithHtml() throws Exception {
-        Exchange apisJson = browserRequest();
-        interceptor(APISJSON).handleRequest(apisJson);
-        assertEquals(APPLICATION_JSON, apisJson.getResponse().getHeader().getContentType());
+    void theResponseVariesOnAccept() throws Exception {
+        final var exc = request("GET");
+        interceptor().handleRequest(exc);
 
-        Exchange apiCatalog = browserRequest();
-        interceptor(APICATALOG).handleRequest(apiCatalog);
-        assertTrue(apiCatalog.getResponse().getHeader().getContentType().startsWith(APPLICATION_LINKSET_JSON));
-    }
-
-    /**
-     * The membrane format answers with HTML or JSON depending on Accept, so caches must key on it.
-     * The standard formats do not depend on it.
-     */
-    @Test
-    void onlyTheMembraneFormatVariesOnAccept() throws Exception {
-        Exchange membrane = request("GET");
-        interceptor(MEMBRANE).handleRequest(membrane);
-        assertEquals(ACCEPT, membrane.getResponse().getHeader().getFirstValue(VARY));
-
-        Exchange apisJson = request("GET");
-        interceptor(APISJSON).handleRequest(apisJson);
-        assertNull(apisJson.getResponse().getHeader().getFirstValue(VARY));
-    }
-
-    @Test
-    void aMalformedDateIsARejectedConfiguration() {
-        ApiDiscoveryInterceptor interceptor = new ApiDiscoveryInterceptor();
-
-        ConfigurationException e =
-                assertThrows(ConfigurationException.class, () -> interceptor.setCreated("15.01.2026"));
-        assertTrue(e.getMessage().contains("created"));
-        assertTrue(e.getMessage().contains("15.01.2026"));
-        assertThrows(ConfigurationException.class, () -> interceptor.setModified("yesterday"));
+        assertEquals(ACCEPT, header(exc, VARY));
     }
 
     @Test
     void configuredDatesAreKept() {
-        ApiDiscoveryInterceptor interceptor = new ApiDiscoveryInterceptor();
+        final var interceptor = new ApiDiscoveryInterceptor();
         interceptor.setCreated("2026-01-15");
         interceptor.setModified("2026-02-20");
 
@@ -299,9 +165,5 @@ class ApiDiscoveryInterceptorTest {
             if (name.equals(api.path("name").asText()))
                 return api;
         throw new AssertionError("No API named " + name + " in the document");
-    }
-
-    private static JsonNode body(Exchange exc) throws Exception {
-        return om.readTree(exc.getResponse().getBodyAsStringDecoded());
     }
 }

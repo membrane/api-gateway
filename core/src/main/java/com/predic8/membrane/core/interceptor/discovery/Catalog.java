@@ -13,24 +13,21 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.discovery;
 
-import java.time.*;
 import java.util.*;
 
 /**
- * Format independent description of the APIs deployed on this gateway. A {@link CatalogCollector}
- * builds one per request, a {@link CatalogRenderer} turns it into a concrete document. Everything
- * the three supported formats need is collected once, so adding a format means adding a renderer
- * rather than another traversal of the router's proxies.
+ * The APIs deployed on this gateway, as one request sees them. A {@link CatalogCollector} builds
+ * one per request, a {@link CatalogRenderer} turns it into a concrete document. Everything every
+ * format needs is collected once, so adding a format means adding a renderer rather than another
+ * traversal of the router's proxies. Metadata only some formats carry, such as the name of the
+ * collection, lives in {@link CollectionInfo} instead.
  *
- * @param aid         unique identifier of the collection, <code>&lt;rootDomain&gt;:&lt;collectionId&gt;</code>
- * @param name        human readable name of the collection
- * @param description human readable description of the collection
- * @param url         URL the catalog document itself is published under
- * @param created     day the collection was created
- * @param modified    day the collection last changed
- * @param apis        the APIs of the collection, never null
+ * @param domain domain identifiers are built from: the host of the configured base URL, else the
+ *               host the client used
+ * @param url    URL the catalog document itself is published under
+ * @param apis   the APIs of the collection, never null
  */
-public record Catalog(String aid, String name, String description, String url, LocalDate created, LocalDate modified, List<CatalogEntry> apis) {
+public record Catalog(String domain, String url, List<CatalogEntry> apis) {
 
     public Catalog {
         apis = List.copyOf(apis);

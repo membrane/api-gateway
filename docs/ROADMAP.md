@@ -157,11 +157,13 @@ PRIO 3:
           value: jdbc:h2:./membranedb;AUTO_SERVER=TRUE
   ```
 - removed `MethodOverrideInterceptor`
-- `APIsJSON` replaced by `apiDiscovery`. Rename the element in existing configurations. The default `apisjson` format now follows APIs.json 0.18:
-    * `humanUrl` and `baseUrl` are now spelled `humanURL` and `baseURL`.
+- `APIsJSON` renamed to `apisJson`. It now follows APIs.json 0.18:
+    * `rootDomain` and `url` are replaced by `baseUrl`, the URL clients reach the gateway under. Its host is the domain of every `aid`. Without it, URLs and identifiers come from the Host header of the request.
+    * `humanUrl` and `baseUrl` in the document are now spelled `humanURL` and `baseURL`.
     * A proxy bound to every host is listed under the host the client used instead of `localhost`.
     * `serviceProxy` and `soapProxy` are listed too, not only `api`.
     * The default collection `description` is now `APIs served by this gateway`.
+- New `apiCatalog` (RFC 9727 api-catalog Linkset) and `apiDiscovery` (Membrane's own catalog format, JSON or HTML).
 
 ## Bug Fixes
 - `xml2json`: Ensuring content type alignment and better exception handling.  

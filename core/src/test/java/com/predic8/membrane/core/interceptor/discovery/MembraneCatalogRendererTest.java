@@ -24,7 +24,7 @@ class MembraneCatalogRendererTest {
 
     private static final ObjectMapper om = new ObjectMapper();
 
-    private final MembraneCatalogRenderer renderer = new MembraneCatalogRenderer();
+    private final MembraneCatalogRenderer renderer = new MembraneCatalogRenderer(COLLECTION);
 
     private JsonNode render(Catalog catalog) throws Exception {
         return om.readTree(renderer.render(catalog));

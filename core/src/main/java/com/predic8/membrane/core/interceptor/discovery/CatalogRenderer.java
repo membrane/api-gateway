@@ -16,8 +16,9 @@ package com.predic8.membrane.core.interceptor.discovery;
 import com.fasterxml.jackson.core.*;
 
 /**
- * Renders a {@link Catalog} into one concrete discovery format. Implementations are stateless and
- * are shared by every request thread of an {@link ApiDiscoveryInterceptor}.
+ * Renders a {@link Catalog} into one concrete discovery format. Implementations hold nothing but
+ * configuration and are shared by every request thread of an
+ * {@link AbstractApiDiscoveryInterceptor}.
  */
 public interface CatalogRenderer {
 
