@@ -340,6 +340,34 @@ class Http2ClientTest {
         }
     }
 
+    /** The body was handed over before the trailer arrived, so an oversized trailer has to fail reading it. */
+    @Test
+    void oversizedTrailerFailsBodyRead() throws Exception {
+        final var router = new DefaultRouter();
+        try (final var backend = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
+            backend.setSoTimeout(2000);
+            final var connection = createConnection(router, backend);
+            try (final var peer = backend.accept()) {
+                peer.setSoTimeout(2000);
+                final var client = new Http2Client(connection, false);
+                final var call = callAsync(client);
+
+                readUntilRequestHeaders(peer);
+                final var encoder = new Encoder(4096);
+                peer.getOutputStream().write(headersFrame(1, 0x4, encoder, ":status", "200"));
+                peer.getOutputStream().write(DATA_1_AB);
+                peer.getOutputStream().write(headersFrame(1, 0x5, encoder, "x-large", "a".repeat(9000)));
+                peer.getOutputStream().flush();
+
+                final var response = call.get(2, TimeUnit.SECONDS);
+                final var e = assertThrows(ReadingBodyException.class, response::getBodyAsStringDecoded);
+                assertTrue(e.getCause().getMessage().contains("header size limit"), e.getCause().getMessage());
+            }
+        } finally {
+            router.stop();
+        }
+    }
+
     /** Padding (RFC 9113 §6.1, §6.2) is not part of the content, also with a pad length of 128 or more. */
     @Test
     void paddedFramesAreUnpadded() throws Exception {

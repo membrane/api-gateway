@@ -403,13 +403,16 @@ public class Http2Logic {
         if (oversizedField[0] || truncated) {
             log.info("Rejecting header block on stream {}: a header field exceeds {} bytes or the block exceeds {} bytes.",
                     streamId1, MAX_LINE_LENGTH, MAX_HEADER_LIST_SIZE);
-            if (headers.isEndStream())
-                streamInfo.receivedEndStream(false);
             if (isTrailer) {
                 // The message has already been handed over: fail its body and drop the stream.
+                // Aborting before the end of stream is queued, as the body reader stops at the first END_STREAM.
                 streamInfo.abortReceiving(new IOException("HTTP/2 trailer on stream %d exceeds the header size limit.".formatted(streamId1)));
+                if (headers.isEndStream())
+                    streamInfo.receivedEndStream(false);
                 sender.send(streamId1, (encoder, peerSettings) -> List.of(RstStreamFrame.construct(streamId1, ERROR_CANCEL)));
             } else {
+                if (headers.isEndStream())
+                    streamInfo.receivedEndStream(false);
                 messageHandler.handleOversizedHeaders(streamInfo, headers.isEndStream());
             }
             return;
