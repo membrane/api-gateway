@@ -13,16 +13,23 @@
 
 package com.predic8.membrane.core.interceptor.authentication.session;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.interceptor.authentication.*;
-import com.predic8.membrane.core.router.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.Required;
+import com.predic8.membrane.core.interceptor.authentication.SecurityUtils;
+import com.predic8.membrane.core.router.Router;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.sql.*;
-import java.sql.*;
-import java.util.*;
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.NoSuchElementException;
 
-import static com.predic8.membrane.core.interceptor.authentication.SecurityUtils.*;
+import static com.predic8.membrane.core.interceptor.authentication.SecurityUtils.verifyPassword;
 
 @MCElement(name = "jdbcUserDataProvider")
 public class JdbcUserDataProvider implements UserDataProvider {
@@ -43,7 +50,7 @@ public class JdbcUserDataProvider implements UserDataProvider {
         getDatasourceIfNull();
 
         try {
-            createTableIfNeeded(); // @todo: works with postgres but prints stacktrace and warning
+            createTableIfNeeded();
         } catch (SQLException e) {
             log.warn("Error creating table.", e);
         }
@@ -66,18 +73,42 @@ public class JdbcUserDataProvider implements UserDataProvider {
 
     private void createTableIfNeeded() throws SQLException {
 
-        try (Connection con = datasource.getConnection(); Statement statement = con.createStatement()) {
-            statement.executeUpdate(getCreateTableSql());
+        try (Connection con = datasource.getConnection()) {
+            // Checked up front: IF NOT EXISTS is not supported by e.g. SQL Server or Oracle before 23ai.
+            if (tableExists(con)) {
+                log.info("Table {} already exists.", tableName);
+                return;
+            }
+            try (var statement = con.createStatement()) {
+                statement.executeUpdate(getCreateTableSql());
+            }
         }
     }
 
+    private boolean tableExists(Connection con) throws SQLException {
+        final var meta = con.getMetaData();
+        // '_' is a wildcard in metadata name patterns
+        final var pattern = storedIdentifier(meta, getTableName()).replace("_", meta.getSearchStringEscape() + "_");
+        try (var rs = meta.getTables(con.getCatalog(), con.getSchema(), pattern, null)) {
+            return rs.next();
+        }
+    }
+
+    private static String storedIdentifier(DatabaseMetaData meta, String identifier) throws SQLException {
+        if (meta.storesLowerCaseIdentifiers())
+            return identifier.toLowerCase();
+        if (meta.storesUpperCaseIdentifiers())
+            return identifier.toUpperCase();
+        return identifier;
+    }
+
+    /**
+     * Restricted to SQL that every common database accepts: no auto-increment, boolean or unsized VARCHAR,
+     * and no trailing semicolon, which Oracle's JDBC driver rejects.
+     */
     private String getCreateTableSql() {
-        return "CREATE TABLE IF NOT EXISTS " + getTableName() + "(" +
-               "id bigint NOT NULL PRIMARY KEY AUTO_INCREMENT, " +
-               getUserColumnName() + " varchar NOT NULL, " +
-               getPasswordColumnName() + " varchar NOT NULL, " +
-               "verified boolean NOT NULL DEFAULT false" +
-               ");";
+        return "CREATE TABLE %s (%s VARCHAR(255) NOT NULL PRIMARY KEY, %s VARCHAR(255) NOT NULL)".formatted(
+                getTableName(), getUserColumnName(), getPasswordColumnName());
     }
 
     private void getDatasourceIfNull() {

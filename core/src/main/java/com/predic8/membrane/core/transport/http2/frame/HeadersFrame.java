@@ -34,7 +34,7 @@ public class HeadersFrame implements HeaderBlockFragment, StreamEnd {
         int p = 0;
 
         if (isPadded()) {
-            padLength = frame.content[p++];
+            padLength = frame.content[p++] & 0xFF;
         } else {
             padLength = 0;
         }

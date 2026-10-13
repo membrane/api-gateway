@@ -20,12 +20,10 @@ import com.predic8.membrane.test.HttpAssertions;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
-import java.io.IOException;
 import java.sql.*;
 import java.util.concurrent.TimeUnit;
 
 import static java.io.File.separator;
-import static org.apache.commons.io.FileUtils.copyFileToDirectory;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class LoggingJDBCExampleTest extends DistributionExtractingTestcase {
@@ -89,20 +87,6 @@ public class LoggingJDBCExampleTest extends DistributionExtractingTestcase {
 
     private File getExampleDir() {
         return new File(getMembraneHome(), "examples" + separator + getExampleDirName());
-    }
-
-    private void copyH2JarToMembraneLib() throws IOException {
-        try {
-            File jar = new File(org.h2.Driver.class.getProtectionDomain()
-                    .getCodeSource().getLocation().toURI());
-
-            if (!jar.isFile() || !jar.getName().endsWith(".jar"))
-                throw new AssertionError("H2 is not loaded from a jar: " + jar);
-
-            copyFileToDirectory(jar, new File(getMembraneHome(), "lib"));
-        } catch (Exception e) {
-            throw new IOException("Failed to locate/copy H2 jar.", e);
-        }
     }
 
 }

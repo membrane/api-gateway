@@ -27,15 +27,34 @@ public class WebSocketFrameAssembler {
     protected static Logger log = LoggerFactory.getLogger(WebSocketFrameAssembler.class.getName());
 
     final static int BUFFER_SIZE = 8192;
+
+    public static final int DEFAULT_MAX_PAYLOAD_SIZE = 16 * 1024 * 1024;
+
+    /**
+     * Keeps the buffer, a frame header (at most 14 bytes) plus the payload, below the JVM's array size limit.
+     */
+    public static final int MAX_SUPPORTED_PAYLOAD_SIZE = Integer.MAX_VALUE - 64;
+
+    private static final int MAX_HEADER_SIZE = 14;
+
     private final Exchange originalExchange;
+    private final int maxPayloadSize;
 
     final InputStream in;
 
     byte[] buffer = new byte[BUFFER_SIZE];
 
     public WebSocketFrameAssembler(InputStream in, Exchange originalExchange) {
+        this(in, originalExchange, DEFAULT_MAX_PAYLOAD_SIZE);
+    }
+
+    /**
+     * @param maxPayloadSize frames announcing a larger payload end reading with a {@link WebSocketFrameTooLargeException}
+     */
+    public WebSocketFrameAssembler(InputStream in, Exchange originalExchange, int maxPayloadSize) {
         this.in = in;
         this.originalExchange = originalExchange;
+        this.maxPayloadSize = maxPayloadSize;
     }
 
     public synchronized void readFrames(Consumer<WebSocketFrame> consumer) throws IOException {
@@ -49,13 +68,14 @@ public class WebSocketFrameAssembler {
 
             offset = offset + read;
 
-            while ((handled = frame.tryRead(buffer, 0, offset)) > 0) {
+            while ((handled = frame.tryRead(buffer, 0, offset, maxPayloadSize)) > 0) {
                 consumer.accept(frame);
                 System.arraycopy(buffer, handled, buffer, 0, offset - handled);
                 offset -= handled;
             }
             if(offset >= buffer.length && handled == 0){
-                byte[] newBuffer = new byte[buffer.length*2];
+                // a full buffer of this size always holds a complete frame, as tryRead rejects larger ones
+                byte[] newBuffer = new byte[(int) Math.min(2L * buffer.length, MAX_HEADER_SIZE + (long) maxPayloadSize)];
                 System.arraycopy(buffer,0,newBuffer,0,buffer.length);
                 buffer = newBuffer;
             }

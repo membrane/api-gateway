@@ -94,7 +94,8 @@ public abstract class Transport {
     }
 
     /**
-     * Look up an interceptor in the Spring context; fall back to default construction.
+     * Look up an interceptor in the Spring context, then in the bean registry (e.g. a YAML component); fall back to
+     * default construction.
      */
     private @NotNull <T extends Interceptor> T getInterceptor(Class<T> clazz)  {
         BeanFactory bf = router.getBeanFactory();
@@ -102,6 +103,11 @@ public abstract class Transport {
             T bean = lbf.getBeanProvider(clazz).getIfAvailable();
             if (bean != null)
                 return bean;
+        }
+        if (router.getRegistry() != null) {
+            final var bean = router.getRegistry().getBean(clazz);
+            if (bean.isPresent())
+                return bean.get();
         }
         try {
             return clazz.getConstructor().newInstance();

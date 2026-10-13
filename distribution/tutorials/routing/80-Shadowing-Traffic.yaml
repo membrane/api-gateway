@@ -1,0 +1,104 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.7.0.json
+#
+# Tutorial: Shadowing Traffic
+#
+# Send a copy of every request to additional backends in the background, while
+# the client only gets the response of the production backend.
+#
+# 1.) Start Membrane:
+#     with Docker:
+#       Linux/Mac:
+#         ./run-docker.sh -c 80-Shadowing-Traffic.yaml
+#       Windows:
+#         run-docker.cmd -c 80-Shadowing-Traffic.yaml
+#
+#     or with Java:
+#       Linux/Mac:
+#         ./membrane.sh -c 80-Shadowing-Traffic.yaml
+#       Windows:
+#         membrane.cmd -c 80-Shadowing-Traffic.yaml
+#
+# 2.) Call the API:
+#       curl localhost:2000/products
+#
+#       Production backend answered GET /products
+#
+# 3.) Watch the console. Both shadow backends received a copy of the request:
+#       ... Shop v2 received GET /products
+#       ... Analytics received GET /products
+#
+# 4.) Read "How it works" at the end of this file.
+
+api:
+  name: Shop
+  port: 2000
+  flow:
+    - shadowing:
+        targets:
+          - target:
+              host: localhost
+              port: 3001
+          - target:
+              host: localhost
+              port: 3002
+  target:
+    host: localhost
+    port: 3000
+
+---
+api:
+  name: Production Backend
+  port: 3000
+  flow:
+    - template:
+        src: Production backend answered ${method} ${path}
+    - return:
+        status: 200
+
+---
+api:
+  name: Shop v2
+  port: 3001
+  flow:
+    - request:
+        - log:
+            message: Shop v2 received ${method} ${path}
+    - return:
+        status: 200
+
+---
+api:
+  name: Analytics
+  port: 3002
+  flow:
+    - request:
+        - log:
+            message: Analytics received ${method} ${path}
+    - return:
+        status: 200
+
+# ---------------------------------------------------------------------------
+# How it works
+# ---------------------------------------------------------------------------
+#
+# The shadowing plugin clones each request, including method, path, headers and
+# body, and sends the copies asynchronously to every shadow target. The request
+# itself continues unchanged to the API's target. The client waits only for the
+# production backend, so shadow backends add no latency and their responses are
+# discarded. A shadow backend answering with a 5xx status is logged.
+#
+# Typical uses:
+#
+#   - Testing a new version with real production traffic before switching
+#     clients over (Shop v2 above), e.g. to compare logs, errors or performance.
+#   - Feeding a copy of the traffic to analytics, auditing or security tools
+#     without putting them into the request path (Analytics above).
+#   - Feeding production data to test and staging systems, so they work with
+#     realistic, up-to-date data instead of hand-made samples.
+#   - Loading business data into a data warehouse or data lake as it arrives,
+#     e.g. orders sent to an ingestion endpoint, without changing the clients.
+#   - Load testing a new environment with realistic requests.
+#   - Verifying a migration by running the old and the new backend side by side.
+#
+# Shadow backends also receive POST, PUT and DELETE requests. Point them to test
+# data, otherwise a request could, for example, create an order twice.

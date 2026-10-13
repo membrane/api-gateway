@@ -12,15 +12,6 @@ Have **10 minutes** and want to solve a task with Membrane? These hands-on examp
 * Deploy APIs from OpenAPI definitions
 * Validate requests, responses, and security
 
-## [API Traffic Routing](routing-traffic#api-traffic-routing)
-
-* Rewriting API URLs
-* Shadow traffic to other environments (e.g., TEST)
-* Content-based routing (JSON, XML)
-* Dynamic routing with URI templates
-* Internal routing
-* Throttle API traffic
-
 ## [Scripting](scripting#scripting)
 
 * Use Groovy and JavaScript for scripting

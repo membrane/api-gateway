@@ -16,7 +16,7 @@ package com.predic8.membrane.core.transport.ws.interceptors;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.router.Router;
 import com.predic8.membrane.core.transport.ws.WebSocketFrame;
 import com.predic8.membrane.core.transport.ws.WebSocketInterceptorInterface;
 import com.predic8.membrane.core.transport.ws.WebSocketSender;
@@ -25,6 +25,21 @@ import org.slf4j.LoggerFactory;
 
 import static com.predic8.membrane.core.transport.ws.interceptors.WebSocketLogInterceptor.Encoding.HEX;
 
+/**
+ * @description Logs every WebSocket message and its direction at level INFO.
+ * @yaml <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - webSocket:
+ *         flow:
+ *           - wsLog:
+ *               encoding: HEX
+ *   target:
+ *     host: localhost
+ *     port: 8080
+ * </code></pre>
+ */
 @MCElement(name = "wsLog")
 public class WebSocketLogInterceptor implements WebSocketInterceptorInterface {
     private static final Logger log = LoggerFactory.getLogger(WebSocketLogInterceptor.class);
@@ -45,6 +60,12 @@ public class WebSocketLogInterceptor implements WebSocketInterceptorInterface {
         return encoding;
     }
 
+    /**
+     * @description How the payload is logged: <code>RAW</code> as text, <code>HEX</code> as a hex dump next to
+     * its printable characters.
+     * @default RAW
+     * @example HEX
+     */
     @MCAttribute
     public void setEncoding(Encoding encoding) {
         this.encoding = encoding;
