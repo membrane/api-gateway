@@ -42,6 +42,7 @@ public class FrameSender implements Runnable {
     private final Encoder encoder;
     private final Settings peerSettings;
     private final Map<Integer, StreamInfo> streams;
+    private final PeerFlowControl connectionFlowControl;
     private final String remoteAddr;
     private final LinkedTransferQueue<Frame> queue = new LinkedTransferQueue<>();
     private final AtomicInteger totalBufferedFrames = new AtomicInteger(0);
@@ -55,6 +56,12 @@ public class FrameSender implements Runnable {
         this.peerSettings = peerSettings;
         this.streams = streams;
         this.remoteAddr = remoteAddr;
+        connectionFlowControl = new PeerFlowControl(0, this, peerSettings);
+    }
+
+    /** The peer's flow-control window for the whole connection. */
+    public PeerFlowControl getConnectionFlowControl() {
+        return connectionFlowControl;
     }
 
     public void send(Frame frame) {
@@ -73,6 +80,7 @@ public class FrameSender implements Runnable {
         if (streamInfo == null) {
             // Closed streams are removed and must not carry DATA anymore.
             log.debug("Dropping DATA for closed stream {}.", frame.getStreamId());
+            dropped(frame);
             return;
         }
         try {
@@ -93,6 +101,7 @@ public class FrameSender implements Runnable {
             if (streamInfo.getDataFramesToBeSent().remove(frame)) {
                 streamInfo.getBufferedDataFrames().release();
                 totalBufferedFrames.decrementAndGet();
+                dropped(frame);
             }
             log.debug("Dropping DATA for closed stream {}.", frame.getStreamId());
             return;
@@ -142,10 +151,21 @@ public class FrameSender implements Runnable {
      */
     void streamClosed(StreamInfo streamInfo) {
         streams.remove(streamInfo.getStreamId(), streamInfo);
-        while (streamInfo.getDataFramesToBeSent().poll() != null) {
+        Frame frame;
+        while ((frame = streamInfo.getDataFramesToBeSent().poll()) != null) {
             streamInfo.getBufferedDataFrames().release();
             totalBufferedFrames.decrementAndGet();
+            dropped(frame);
         }
+    }
+
+    /**
+     * The writer reserved the connection's flow-control window for this DATA frame. The peer only grants window
+     * again for DATA it received, so give it back, or the other streams on the connection run out of window.
+     * The stream's own window does not matter anymore, as the stream is closed.
+     */
+    private void dropped(Frame frame) {
+        connectionFlowControl.increment(frame.getLength());
     }
 
     private Frame waitForNextFrame() throws InterruptedException {
@@ -187,6 +207,8 @@ public class FrameSender implements Runnable {
                         // still decodes header blocks on a closed stream (RFC 9113 §5.1, §4.3).
                         if (frame.getType() != Frame.TYPE_HEADERS) {
                             log.debug("Dropping {} for closed stream {}.", frame.getTypeString(), frame.getStreamId());
+                            if (frame.getType() == Frame.TYPE_DATA)
+                                dropped(frame);
                             continue;
                         }
                     } else {

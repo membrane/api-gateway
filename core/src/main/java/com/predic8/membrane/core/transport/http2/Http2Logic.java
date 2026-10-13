@@ -87,7 +87,7 @@ public class Http2Logic {
         // TODO: update this value
         this.sender = new FrameSender(srcOut, new Encoder(maxHeaderTableSize), peerSettings, streams, remoteAddr);
         flowControl = new FlowControl(0, sender, ourSettings);
-        peerFlowControl = new PeerFlowControl(0, sender, peerSettings);
+        peerFlowControl = sender.getConnectionFlowControl();
 
         Settings newSettings = new Settings();
         newSettings.copyFrom(ourSettings);

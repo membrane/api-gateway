@@ -91,6 +91,41 @@ class FrameSenderTest {
         assertTrue(streamInfo.getDataFramesToBeSent().isEmpty());
     }
 
+    /**
+     * The writer reserves the connection's flow-control window before queuing DATA. The peer only grants window
+     * again for DATA it received, so dropping a frame must give its window back, or other streams starve.
+     */
+    @Test
+    void droppedDataGivesBackConnectionWindow() throws Exception {
+        final var settings = new Settings();
+        final var streams = new ConcurrentHashMap<Integer, StreamInfo>();
+        final var sender = new FrameSender(new ByteArrayOutputStream(), new Encoder(4096), settings, streams, "test");
+        final var connectionFlowControl = sender.getConnectionFlowControl();
+        final var initialWindow = availableWindow(connectionFlowControl);
+        final var streamInfo = new StreamInfo(1, sender, settings, settings);
+        streams.put(1, streamInfo);
+        streamInfo.sendHeaders();
+
+        // Buffered frames are dropped by closing the stream, the waiting one after it wakes up.
+        while (streamInfo.getBufferedDataFrames().availablePermits() > 0)
+            reserveAndSendData(sender);
+        final var blocked = CompletableFuture.runAsync(() -> {
+            try {
+                reserveAndSendData(sender);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        assertThrows(TimeoutException.class, () -> blocked.get(200, TimeUnit.MILLISECONDS));
+
+        streamInfo.receivedRstStream(ERROR_CANCEL);
+        blocked.get(2, TimeUnit.SECONDS);
+        // Dropped right away, as the stream is gone.
+        reserveAndSendData(sender);
+
+        assertEquals(initialWindow, availableWindow(connectionFlowControl));
+    }
+
     @Test
     void sendDataAfterStopFails() {
         final var settings = new Settings();
@@ -211,6 +246,19 @@ class FrameSenderTest {
             offset += 9 + (((bytes[offset] & 0xff) << 16) | ((bytes[offset + 1] & 0xff) << 8) | (bytes[offset + 2] & 0xff));
         }
         return types;
+    }
+
+    /** Reserves the connection window for a DATA frame and queues it, like the body writer does. */
+    private static void reserveAndSendData(FrameSender sender) throws IOException {
+        final var frame = dataFrame();
+        sender.getConnectionFlowControl().reserve(frame.getLength(), frame.getStreamId());
+        sender.sendData(frame);
+    }
+
+    private static long availableWindow(PeerFlowControl flowControl) {
+        synchronized (flowControl) {
+            return flowControl.peerWindowSize - flowControl.peerWindowPosition;
+        }
     }
 
     private static Frame dataFrame() {
