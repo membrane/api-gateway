@@ -46,7 +46,8 @@ class HtmlCatalogRendererTest {
         assertTrue(html.contains("<h1>Gateway APIs</h1>"));
         assertTrue(html.contains("Every API of this gateway"));
         assertTrue(html.contains("example.com:gateway"));
-        assertTrue(html.contains("2026-01-15"));
+        assertFalse(html.contains("Created"));
+        assertFalse(html.contains("Modified"));
     }
 
     @Test

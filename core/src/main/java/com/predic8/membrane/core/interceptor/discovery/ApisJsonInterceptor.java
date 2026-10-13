@@ -14,8 +14,12 @@
 package com.predic8.membrane.core.interceptor.discovery;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.util.*;
 
 import java.time.*;
+import java.time.format.*;
+
+import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE;
 
 /**
  * @description Publishes every API deployed on this gateway as an APIs.json 0.18 document, a
@@ -65,7 +69,7 @@ public class ApisJsonInterceptor extends AbstractApiDiscoveryInterceptor {
 
     @Override
     protected CatalogRenderer createRenderer() {
-        return new ApisJsonRenderer(collection());
+        return new ApisJsonRenderer(collection(), created, modified);
     }
 
     public String getCollectionId() {
@@ -116,7 +120,8 @@ public class ApisJsonInterceptor extends AbstractApiDiscoveryInterceptor {
     }
 
     /**
-     * @description Day the collection was created, as an ISO date.
+     * @description Day the collection was created, as an ISO date. APIs.json requires the member,
+     * so the document always carries it.
      * @default the day Membrane started
      * @example 2026-01-15
      */
@@ -130,7 +135,8 @@ public class ApisJsonInterceptor extends AbstractApiDiscoveryInterceptor {
     }
 
     /**
-     * @description Day the collection last changed, as an ISO date.
+     * @description Day the collection last changed, as an ISO date. APIs.json requires the member,
+     * so the document always carries it.
      * @default the day Membrane started
      * @example 2026-01-15
      */
@@ -139,8 +145,18 @@ public class ApisJsonInterceptor extends AbstractApiDiscoveryInterceptor {
         this.modified = parseDate("modified", modified);
     }
 
+    private LocalDate parseDate(String attribute, String value) {
+        try {
+            return LocalDate.parse(value, ISO_LOCAL_DATE);
+        } catch (DateTimeParseException e) {
+            throw new ConfigurationException(
+                    "Cannot parse %s/@%s \"%s\". Expected an ISO date such as 2026-01-15."
+                            .formatted(elementName(), attribute, value), e);
+        }
+    }
+
     private CollectionInfo collection() {
-        return new CollectionInfo(collectionId, collectionName, description, created, modified);
+        return new CollectionInfo(collectionId, collectionName, description);
     }
 
     @Override

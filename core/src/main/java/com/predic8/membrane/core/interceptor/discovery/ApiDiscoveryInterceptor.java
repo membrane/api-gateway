@@ -20,7 +20,6 @@ import org.slf4j.*;
 import org.springframework.http.InvalidMediaTypeException;
 import org.springframework.http.MediaType;
 
-import java.time.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.http.Header.*;
@@ -51,8 +50,6 @@ import static com.predic8.membrane.core.http.Header.*;
  *   [ collectionId: &lt;id&gt; ]
  *   [ name: &lt;name&gt; ]
  *   [ description: &lt;text&gt; ]
- *   [ created: &lt;yyyy-mm-dd&gt; ]
- *   [ modified: &lt;yyyy-mm-dd&gt; ]
  * </pre>
  * @topic 5. OpenAPI
  * @yaml <pre><code>
@@ -76,8 +73,6 @@ public class ApiDiscoveryInterceptor extends AbstractApiDiscoveryInterceptor {
     private String collectionId = "apis";
     private String collectionName = "APIs";
     private String description = "APIs served by this gateway";
-    private LocalDate created = LocalDate.now();
-    private LocalDate modified = LocalDate.now();
 
     private CatalogRenderer htmlRenderer;
 
@@ -174,36 +169,8 @@ public class ApiDiscoveryInterceptor extends AbstractApiDiscoveryInterceptor {
         this.description = description;
     }
 
-    public LocalDate getCreated() {
-        return created;
-    }
-
-    /**
-     * @description Day the collection was created, as an ISO date.
-     * @default the day Membrane started
-     * @example 2026-01-15
-     */
-    @MCAttribute
-    public void setCreated(String created) {
-        this.created = parseDate("created", created);
-    }
-
-    public LocalDate getModified() {
-        return modified;
-    }
-
-    /**
-     * @description Day the collection last changed, as an ISO date.
-     * @default the day Membrane started
-     * @example 2026-01-15
-     */
-    @MCAttribute
-    public void setModified(String modified) {
-        this.modified = parseDate("modified", modified);
-    }
-
     private CollectionInfo collection() {
-        return new CollectionInfo(collectionId, collectionName, description, created, modified);
+        return new CollectionInfo(collectionId, collectionName, description);
     }
 
     @Override

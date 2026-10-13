@@ -27,7 +27,7 @@ class CatalogTestFixtures {
     static final LocalDate DAY = LocalDate.of(2026, 1, 15);
 
     static final CollectionInfo COLLECTION =
-            new CollectionInfo("gateway", "Gateway APIs", "Every API of this gateway", DAY, DAY);
+            new CollectionInfo("gateway", "Gateway APIs", "Every API of this gateway");
 
     static Catalog catalog(CatalogEntry... apis) {
         return new Catalog("example.com", "https://example.com/.well-known/api-catalog", List.of(apis));

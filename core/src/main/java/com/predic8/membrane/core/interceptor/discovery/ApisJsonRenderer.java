@@ -17,6 +17,8 @@ import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.*;
 
+import java.time.*;
+
 import static com.predic8.membrane.core.http.MimeType.*;
 
 /**
@@ -41,9 +43,17 @@ public class ApisJsonRenderer implements CatalogRenderer {
     private static final ObjectMapper om = new ObjectMapper();
 
     private final CollectionInfo collection;
+    private final LocalDate created;
+    private final LocalDate modified;
 
-    public ApisJsonRenderer(CollectionInfo collection) {
+    /**
+     * @param created  day the collection was created, a member APIs.json makes mandatory
+     * @param modified day the collection last changed, a member APIs.json makes mandatory
+     */
+    public ApisJsonRenderer(CollectionInfo collection, LocalDate created, LocalDate modified) {
         this.collection = collection;
+        this.created = created;
+        this.modified = modified;
     }
 
     @Override
@@ -58,8 +68,8 @@ public class ApisJsonRenderer implements CatalogRenderer {
         collection.put("name", this.collection.name());
         collection.put("description", this.collection.description());
         putIfPresent(collection, "url", catalog.url());
-        collection.put("created", this.collection.created().toString());
-        collection.put("modified", this.collection.modified().toString());
+        collection.put("created", created.toString());
+        collection.put("modified", modified.toString());
         collection.put("specificationVersion", SPECIFICATION_VERSION);
         ArrayNode apis = collection.putArray("apis");
         catalog.apis().forEach(entry -> apis.add(renderApi(entry)));

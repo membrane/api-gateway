@@ -62,8 +62,6 @@ public class MembraneCatalogRenderer implements CatalogRenderer {
         document.put("name", collection.name());
         document.put("description", collection.description());
         putIfPresent(document, "url", catalog.url());
-        document.put("created", collection.created().toString());
-        document.put("modified", collection.modified().toString());
         ArrayNode apis = document.putArray("apis");
         catalog.apis().forEach(entry -> apis.add(renderApi(entry)));
         return ow.writeValueAsBytes(document);

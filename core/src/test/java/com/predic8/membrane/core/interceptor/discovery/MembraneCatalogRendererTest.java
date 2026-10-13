@@ -106,8 +106,15 @@ class MembraneCatalogRendererTest {
 
         assertEquals("example.com:gateway", document.path("aid").asText());
         assertEquals("Gateway APIs", document.path("name").asText());
-        assertEquals("2026-01-15", document.path("created").asText());
         assertEquals("api", document.path("apis").get(0).path("kind").asText());
+    }
+
+    @Test
+    void theDocumentCarriesNoDates() throws Exception {
+        final var document = render(catalog(describedApi()));
+
+        assertTrue(document.path("created").isMissingNode());
+        assertTrue(document.path("modified").isMissingNode());
     }
 
     @Test

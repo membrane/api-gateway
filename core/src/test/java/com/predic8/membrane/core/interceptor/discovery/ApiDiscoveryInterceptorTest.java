@@ -150,16 +150,6 @@ class ApiDiscoveryInterceptorTest {
         assertEquals(ACCEPT, header(exc, VARY));
     }
 
-    @Test
-    void configuredDatesAreKept() {
-        final var interceptor = new ApiDiscoveryInterceptor();
-        interceptor.setCreated("2026-01-15");
-        interceptor.setModified("2026-02-20");
-
-        assertEquals("2026-01-15", interceptor.getCreated().toString());
-        assertEquals("2026-02-20", interceptor.getModified().toString());
-    }
-
     private static JsonNode apiNamed(Exchange exc, String name) throws Exception {
         for (JsonNode api : body(exc).path("apis"))
             if (name.equals(api.path("name").asText()))

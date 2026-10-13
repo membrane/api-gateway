@@ -13,19 +13,15 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.discovery;
 
-import java.time.*;
-
 /**
  * Metadata of the collection as a whole, which APIs.json and the Membrane format carry and an
- * RFC 9727 linkset does not.
+ * RFC 9727 linkset does not. The dates only APIs.json carries are handed to its renderer directly.
  *
  * @param id          identifier of the collection, the second half of its <code>aid</code>
  * @param name        human readable name of the collection
  * @param description human readable description of the collection
- * @param created     day the collection was created
- * @param modified    day the collection last changed
  */
-public record CollectionInfo(String id, String name, String description, LocalDate created, LocalDate modified) {
+public record CollectionInfo(String id, String name, String description) {
 
     /**
      * Unique identifier of the collection, <code>&lt;domain&gt;:&lt;id&gt;</code>.

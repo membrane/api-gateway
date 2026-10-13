@@ -21,8 +21,6 @@ import com.predic8.membrane.core.util.*;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.time.*;
-import java.time.format.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
@@ -119,19 +117,6 @@ public abstract class AbstractApiDiscoveryInterceptor extends AbstractIntercepto
     protected String elementName() {
         final var element = getClass().getAnnotation(MCElement.class);
         return element == null ? getClass().getSimpleName() : element.name();
-    }
-
-    /**
-     * Parses a configured ISO date, for the formats that carry one.
-     */
-    protected LocalDate parseDate(String attribute, String value) {
-        try {
-            return LocalDate.parse(value, DateTimeFormatter.ISO_LOCAL_DATE);
-        } catch (DateTimeParseException e) {
-            throw new ConfigurationException(
-                    "Cannot parse %s/@%s \"%s\". Expected an ISO date such as 2026-01-15."
-                            .formatted(elementName(), attribute, value), e);
-        }
     }
 
     public String getBaseUrl() {

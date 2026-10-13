@@ -140,8 +140,6 @@ public class HtmlCatalogRenderer implements CatalogRenderer {
         html.append("<dl>\n");
         definition(html, "Identifier", escape(collection.aid(catalog.domain())));
         definition(html, "APIs", apiCount(catalog));
-        definition(html, "Created", collection.created().toString());
-        definition(html, "Modified", collection.modified().toString());
         html.append("</dl>\n");
         renderIndex(html, catalog);
         html.append("</header>\n");
