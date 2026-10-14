@@ -262,6 +262,16 @@ public class ProblemDetailsTest {
             assertFalse(j.has(DETAIL));
         }
 
+        @Test
+        void nullPublicDetailIsOmitted() throws Exception {
+            final var j = parseJson(security(true, "a")
+                    .status(403)
+                    .detail(null, true)
+                    .build());
+
+            assertFalse(j.has(DETAIL));
+        }
+
         @Nested
         class status400 {
 

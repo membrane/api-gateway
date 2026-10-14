@@ -55,11 +55,11 @@ public class RewriteInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(RewriteInterceptor.class.getName());
 
+    public static final String URL_NOT_PROCESSABLE = "The URL may be invalid, or the server could not process it.";
+
     /**
      * Scheme followed by "://" at the start (RFC 3986 section 3.1). A "://" later on, e.g. in the query, does not count.
      */
-    public static final String URL_NOT_PROCESSABLE = "The URL may be invalid, or the server could not process it.";
-
     private static final Pattern ABSOLUTE_URL = Pattern.compile("^[a-zA-Z][a-zA-Z0-9+.-]*://");
 
     public enum Type {

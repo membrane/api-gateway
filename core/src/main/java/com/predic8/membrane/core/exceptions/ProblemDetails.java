@@ -234,9 +234,11 @@ public class ProblemDetails {
      * @param humanReadableExplanation A human-readable explanation specific to this
      *                                 occurrence of the problem.
      * @param showInProduction         {@code true} to return the detail in production mode as well. Use it only
-     *                                 for text written for the client, and put internal or request-specific values
-     *                                 into {@link #internal(String, Object)}. {@code false} hides the detail in
-     *                                 production mode.
+     *                                 for text written for the client. The text may echo values the client sent
+     *                                 itself (e.g. a rejected header value or a requested document id), but put
+     *                                 internal values such as configuration, backend data, stack traces or
+     *                                 exception messages into {@link #internal(String, Object)}. {@code false}
+     *                                 hides the detail in production mode.
      * @return Instance
      */
     public ProblemDetails detail(String humanReadableExplanation, boolean showInProduction) {
@@ -308,7 +310,7 @@ public class ProblemDetails {
         root.putAll(topLevel);
 
         if (production) {
-            if (publicDetail) {
+            if (publicDetail && detail != null) {
                 root.put(DETAIL, detail);
             }
             provideLogKeyInsteadOfDetails(root);
