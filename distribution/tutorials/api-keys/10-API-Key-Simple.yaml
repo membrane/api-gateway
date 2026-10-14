@@ -22,8 +22,6 @@
 #     curl localhost:2000 -H "X-Api-Key: abc123"
 #
 #     Secured API!
-#
-# Continue with 20-API-Key-RBAC.yaml
 
 api:
   port: 2000

@@ -1,0 +1,95 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.7.0.json
+#
+# Tutorial: Rewrite and Redirect
+#
+# Rewrite paths, redirect clients and route to other backends with regular
+# expressions.
+#
+# 1.) Start Membrane:
+#     with Docker:
+#       Linux/Mac:
+#         ./run-docker.sh -c 10-Rewrite-and-Redirect.yaml
+#       Windows:
+#         run-docker.cmd -c 10-Rewrite-and-Redirect.yaml
+#
+#     or with Java:
+#       Linux/Mac:
+#         ./membrane.sh -c 10-Rewrite-and-Redirect.yaml
+#       Windows:
+#         membrane.cmd -c 10-Rewrite-and-Redirect.yaml
+#
+# 2.) Rewrite a path. The backend receives /shop/v2/products/1:
+#       curl localhost:2000/store/products/1
+#
+#       {
+#         "id" : 1,
+#         "name" : "Banana",
+#         ...
+#
+# 3.) Rewrite the query string. The backend receives /shop/v2/products?limit=1:
+#       curl "localhost:2000/store/products?max=1"
+#
+#       {
+#         "meta" : {
+#           "count" : 111,
+#           "start" : 1,
+#           "limit" : 1,
+#           ...
+#
+# 4.) Redirect permanently:
+#       curl -i localhost:2000/v1/products/1
+#
+#       HTTP/1.1 301 Moved Permanently
+#       Location: /store/products/1
+#       ...
+#
+#     Add -L to follow the redirect.
+#
+# 5.) Redirect temporarily:
+#       curl -i localhost:2000/docs
+#
+#       HTTP/1.1 307 Temporary Redirect
+#       Location: https://www.membrane-api.io/docs/
+#       ...
+#
+# 6.) Route to another backend:
+#       curl localhost:2000/legacy/orders
+#
+#       Legacy backend received /orders
+
+api:
+  name: Shop
+  port: 2000
+  flow:
+    - rewriter:
+        # The first matching rule wins, so specific rules go before general ones.
+
+        # from is matched against path and query string, so the query can be rewritten too
+        - from: ^/store/products\?max=(\d+)
+          to: /shop/v2/products?limit=$1
+        # $1 is replaced with the part matched by (.*)
+        - from: ^/store/(.*)
+          to: /shop/v2/$1
+        # Answers with 301 Moved Permanently, the backend is not called
+        - from: ^/v1/(.*)
+          to: /store/$1
+          do: redirect_permanent
+        # A to with :// answers with 307 Temporary Redirect by default
+        - from: ^/docs$
+          to: https://www.membrane-api.io/docs/
+        # do: rewrite with an absolute URL replaces the target instead of redirecting
+        - from: ^/legacy/(.*)
+          to: http://localhost:2010/$1
+          do: rewrite
+  target:
+    url: https://api.predic8.de
+
+---
+api:
+  name: Legacy Backend
+  port: 2010
+  flow:
+    - template:
+        src: Legacy backend received ${path}
+    - return:
+        status: 200

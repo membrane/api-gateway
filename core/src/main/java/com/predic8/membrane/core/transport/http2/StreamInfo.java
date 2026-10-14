@@ -22,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.LinkedTransferQueue;
@@ -35,6 +36,11 @@ import static com.predic8.membrane.core.transport.http2.frame.HeadersFrame.FLAG_
 public class StreamInfo {
     private static final Logger log = LoggerFactory.getLogger(StreamInfo.class);
 
+    /** Queued behind the received DATA frames to tell the body reader that no more will arrive. */
+    private static final DataFrame ABORTED = createAbortedMarker();
+
+    private final FrameSender sender;
+
     private final FlowControl flowControl;
     private final PeerFlowControl peerFlowControl;
     private final LinkedTransferQueue<DataFrame> dataFramesReceived = new LinkedTransferQueue<>();
@@ -47,9 +53,11 @@ public class StreamInfo {
     private int weight;
     private Message message;
     private boolean isTrailer;
+    private volatile IOException abortCause;
 
     public StreamInfo(int streamId, FrameSender sender, Settings peerSettings, Settings ourSettings) {
         this.streamId = streamId;
+        this.sender = sender;
         if (streamId == 0) {
             peerFlowControl = null;
             flowControl = null;
@@ -72,18 +80,45 @@ public class StreamInfo {
     public DataFrame removeDataFrame() throws IOException {
         try {
             DataFrame dataFrame = dataFramesReceived.poll(1, TimeUnit.MINUTES);
+            if (dataFrame == ABORTED)
+                throw abortCause;
             if (dataFrame != null) {
                 flowControl.processed(dataFrame.getFrame().getLength());
             }
             return dataFrame;
         } catch (InterruptedException e) {
+            // Returning null would make the body reader poll again, which fails immediately: it would spin.
             Thread.currentThread().interrupt();
-            return null;
+            throw new InterruptedIOException("Interrupted while waiting for DATA on HTTP/2 stream " + streamId);
         }
+    }
+
+    /**
+     * Makes the body reader fail once it has consumed the DATA frames received so far, as no more will
+     * arrive, e.g. because the stream was reset or the connection was closed. Called on the receiver thread.
+     */
+    void abortReceiving(IOException cause) {
+        if (abortCause != null)
+            return;
+        abortCause = cause;
+        dataFramesReceived.add(ABORTED);
+    }
+
+    private static DataFrame createAbortedMarker() {
+        final var frame = new Frame();
+        frame.fill(TYPE_DATA, 0, 0, null, 0, 0);
+        return frame.asData();
     }
 
     public AbstractBody createBody() {
         return new Http2Body();
+    }
+
+    /** Wakes this stream's writers waiting to send DATA, after the frame sender stopped. */
+    void senderStopped() {
+        bufferedDataFrames.release();
+        if (peerFlowControl != null)
+            peerFlowControl.senderStopped();
     }
 
     public PeerFlowControl getPeerFlowControl() {
@@ -94,9 +129,10 @@ public class StreamInfo {
         return streamId;
     }
 
-    public synchronized void receivedRstStream() {
+    public synchronized void receivedRstStream(int errorCode) {
         if (state == StreamState.IDLE)
             return;
+        abortReceiving(new IOException("HTTP/2 stream %d was reset by the peer with error code %d.".formatted(streamId, errorCode)));
         setState(StreamState.CLOSED);
         // TODO: stop sending frames
     }
@@ -133,12 +169,21 @@ public class StreamInfo {
         isTrailer = true;
     }
 
+    /** The next HEADERS frame carries the final response rather than a trailer. */
+    void receivedInterimResponse() {
+        isTrailer = false;
+        message = null;
+    }
+
     private void setState(StreamState state) {
         this.state = state;
 
         // detach message, since no trailers can follow, once the CLOSED state has been reached
-        if (state == StreamState.CLOSED)
+        if (state == StreamState.CLOSED) {
             message = null;
+            // Within the synchronized transition, so whoever sees CLOSED also sees the stream removed.
+            sender.streamClosed(this);
+        }
 
         log.debug("streamId=" + streamId + " changed state to " + state);
     }

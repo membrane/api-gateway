@@ -13,15 +13,17 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.http;
 
-import com.predic8.membrane.core.transport.http.client.*;
-import com.predic8.membrane.core.transport.ssl.*;
-import com.predic8.membrane.core.util.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.transport.http.client.ProxyConfiguration;
+import com.predic8.membrane.core.transport.ssl.SSLContext;
+import com.predic8.membrane.core.transport.ssl.SSLProvider;
+import com.predic8.membrane.core.util.TimerManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.annotation.*;
-import java.io.*;
+import javax.annotation.Nullable;
+import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.atomic.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Pools TCP/IP connections, holding them open for a configurable number of milliseconds.
@@ -51,6 +53,8 @@ public class ConnectionManager {
             new HashMap<>(); // guarded by this
 	private volatile boolean shutdownWhenDone = false;
 	private TimerManager selfCreatedTimerManager;
+	private final TimerTask connectionCloser;
+	private boolean closed; // guarded by this
 
 	private static class OldConnection {
 		public final Connection connection;
@@ -86,7 +90,7 @@ public class ConnectionManager {
 			selfCreatedTimerManager = timerManager = new TimerManager();
 		}
 
-		timerManager.schedulePeriodicTask(new TimerTask() {
+		connectionCloser = new TimerTask() {
 			@Override
 			public void run() {
 				if (closeOldConnections() == 0 && shutdownWhenDone) {
@@ -95,7 +99,8 @@ public class ConnectionManager {
 						selfCreatedTimerManager.shutdown();
 				}
 			}
-		}, autoCloseInterval, "Connection Closer");
+		};
+		timerManager.schedulePeriodicTask(connectionCloser, autoCloseInterval, "Connection Closer");
 	}
 
 	public Connection getConnection(String host, int port, String localHost, SSLProvider sslProvider, int connectTimeout, @Nullable String sniServerName,
@@ -118,6 +123,8 @@ public class ConnectionManager {
 		long now = System.currentTimeMillis();
 
 		synchronized(this) {
+			if (closed)
+				throw new IOException("Connection manager is closed");
 			ArrayList<OldConnection> l = availableConnections.get(key);
 			if (l != null) {
 				int i = l.size() - 1;
@@ -136,7 +143,12 @@ public class ConnectionManager {
 		Connection result = Connection.open(host, port, localHost, sslProvider, this, connectTimeout,
 				sniServerName, proxy, proxySSLContext, applicationProtocols);
 		numberInPool.incrementAndGet();
-		return result;
+		synchronized (this) {
+			if (!closed)
+				return result;
+		}
+		result.close();
+		throw new IOException("Connection manager is closed");
 	}
 
 	public Connection getConnection(String host, int port, String localHost, SSLProvider sslProvider, int connectTimeout) throws IOException {
@@ -156,10 +168,35 @@ public class ConnectionManager {
 				connection.getSslProvider(), connection.getSniServerName(), connection.getProxyConfiguration(),
 				connection.getProxySSLProvider());
 		OldConnection o = new OldConnection(connection, keepAliveTimeout);
-		ArrayList<OldConnection> l;
 		synchronized(this) {
-			l = availableConnections.computeIfAbsent(key, k -> new ArrayList<>());
-			l.add(o);
+			if (!closed) {
+				availableConnections.computeIfAbsent(key, k -> new ArrayList<>()).add(o);
+				return;
+			}
+		}
+		closeConnection(connection);
+	}
+
+	/** Closes idle connections now, and closes borrowed connections when returned. */
+	public void closeAll() {
+		ArrayList<Connection> toClose = new ArrayList<>();
+		synchronized (this) {
+			closed = true;
+			availableConnections.values().forEach(connections ->
+					connections.forEach(connection -> toClose.add(connection.connection)));
+			availableConnections.clear();
+		}
+		connectionCloser.cancel();
+		if (selfCreatedTimerManager != null)
+			selfCreatedTimerManager.shutdown();
+		toClose.forEach(ConnectionManager::closeConnection);
+	}
+
+	private static void closeConnection(Connection connection) {
+		try {
+			connection.close();
+		} catch (Exception e) {
+			log.debug("Could not close pooled connection", e);
 		}
 	}
 

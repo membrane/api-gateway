@@ -2,18 +2,29 @@
 #
 # Tutorial: HTTP Basic Authentication
 #
-# Try:
-#   1) Without credentials
-#      curl localhost:2000
+# 1.) Start Membrane:
+#     with Docker:
+#       Linux/Mac:
+#         ./run-docker.sh -c 10-Basic-Authentication.yaml
+#       Windows:
+#         run-docker.cmd -c 10-Basic-Authentication.yaml
 #
-#   2) Valid credentials (plain text password)
-#      curl -u alice localhost:2000    # enter password: qwertz
+#     or with Java:
+#       Linux/Mac:
+#         ./membrane.sh -c 10-Basic-Authentication.yaml
+#       Windows:
+#         membrane.cmd -c 10-Basic-Authentication.yaml
 #
-#   3) Valid credentials (hashed password)
-#      curl -u carol localhost:2000    # enter password: abc123
+# 2.) Without credentials:
+#     curl localhost:2000
 #
-# NOTE: Plaintext passwords are for tutorial/demo use only.
-# In production, prefer hashed passwords for all users.
+# 3.) Valid credentials (plain text password):
+#     curl -u alice localhost:2000
+#     enter password: qwertz
+#
+# 4.) Valid credentials (hashed password):
+#     curl -u carol localhost:2000
+#     enter password: abc123
 
 api:
   port: 2000
@@ -37,3 +48,6 @@ api:
         src: You're in!
     - return:
         status: 200
+
+# NOTE: Plaintext passwords are for tutorial/demo use only.
+# In production, prefer hashed passwords for all users.
