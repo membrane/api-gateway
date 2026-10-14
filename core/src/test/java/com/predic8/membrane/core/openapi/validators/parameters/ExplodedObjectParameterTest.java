@@ -113,4 +113,42 @@ class ExplodedObjectParameterTest extends AbstractValidatorTest {
         }
     }
 
+    /**
+     * With <code>type: [object, "null"]</code> the parameter name itself is absent, but the collected fields
+     * still form an object that must be validated. The <code>null</code> type must not accept it.
+     */
+    @Nested
+    class NullableObject {
+
+        @Test
+        void patternPropertyInvalid() {
+            final var err = validator.validate(get().path("/pattern-nullable?x-trace=abc"));
+            assertEquals(1, err.size(), err.toString());
+        }
+
+        @Test
+        void patternPropertyValid() {
+            final var err = validator.validate(get().path("/pattern-nullable?x-trace=123"));
+            assertEquals(0, err.size(), err.toString());
+        }
+
+        @Test
+        void propertyInvalid() {
+            final var err = validator.validate(get().path("/properties-nullable?limit=abc"));
+            assertEquals(1, err.size(), err.toString());
+        }
+
+        @Test
+        void propertyValid() {
+            final var err = validator.validate(get().path("/properties-nullable?limit=5"));
+            assertEquals(0, err.size(), err.toString());
+        }
+
+        @Test
+        void absent() {
+            final var err = validator.validate(get().path("/properties-nullable"));
+            assertEquals(0, err.size(), err.toString());
+        }
+    }
+
 }

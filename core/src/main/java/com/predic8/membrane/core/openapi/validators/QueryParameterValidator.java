@@ -157,22 +157,19 @@ public class QueryParameterValidator extends AbstractParameterValidator {
         if (schema == null) {
             return errors;
         }
+        final var collectsObjectFields = v.get(parameterName) == null && collectsExplodedObjectFields(schema, parameter, v, declaredNames);
         getTypes(schema).forEach(type -> {
 
             // Do not try to validate parameters that are not in the query string unless it is an object.
             // Maybe the query parameter is a property from that object
             if (v.get(parameterName) == null && !OBJECT.equals(type)) {
-                validated.set(true);
+                // Fields collected by an exploded object form an object value, which a non-object type cannot match
+                if (!collectsObjectFields)
+                    validated.set(true);
                 return;
             }
 
-            ParameterParser ap = AbstractParameterParser.instance(api, type, parameter);
-            ap.setValues(v);
-            if (ap instanceof ExplodedObjectParameterParser eop) {
-                final var otherNames = new HashSet<>(declaredNames);
-                otherNames.remove(parameterName);
-                eop.setOtherParameterNames(otherNames);
-            }
+            ParameterParser ap = createParser(type, parameter, v, declaredNames);
             try {
                 ValidationErrors err = new SchemaValidator(api, schema).validate(ctx
                                 .entity(parameterName)
@@ -193,6 +190,30 @@ public class QueryParameterValidator extends AbstractParameterValidator {
             return errors.add(ctx, "Validation of query parameter '%s' failed against all types(%s). Details are: %s".formatted(parameterName, getTypes(schema), localErrors));
         }
         return errors;
+    }
+
+    private ParameterParser createParser(String type, Parameter parameter, Map<String, List<String>> v, Set<String> declaredNames) {
+        final var parser = AbstractParameterParser.instance(api, type, parameter);
+        parser.setValues(v);
+        if (parser instanceof ExplodedObjectParameterParser eop) {
+            final var otherNames = new HashSet<>(declaredNames);
+            otherNames.remove(parameter.getName());
+            eop.setOtherParameterNames(otherNames);
+        }
+        return parser;
+    }
+
+    /**
+     * Whether an exploded object parameter collects at least one field from the query string.
+     */
+    private boolean collectsExplodedObjectFields(Schema<?> schema, Parameter parameter, Map<String, List<String>> v, Set<String> declaredNames) {
+        if (!isExplode(parameter) || !getTypes(schema).contains(OBJECT))
+            return false;
+        try {
+            return !createParser(OBJECT, parameter, v, declaredNames).getJson().isEmpty();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to parse query parameter '%s': %s".formatted(parameter.getName(), e.getMessage()), e);
+        }
     }
 
     private static @NotNull Set<String> getTypes(Schema<?> schema) {
