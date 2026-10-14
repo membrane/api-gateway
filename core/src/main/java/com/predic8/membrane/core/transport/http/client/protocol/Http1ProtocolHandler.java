@@ -204,11 +204,7 @@ public class Http1ProtocolHandler extends AbstractProtocolHandler {
                 log.info("Proxy rejected CONNECT request with status code {}.", response.getStatusCode());
                 // The HTTP client has no router (it also runs outside of one), so production mode is assumed.
                 gateway(true, "proxy")
-                        .title("Bad Gateway")
-                        .addSubSee("connect")
                         .status(502)
-                        .detail("Could not connect to proxy server")
-                        .topLevel("proxy-status", response.getStatusCode())
                         .buildAndSetResponse(exchange);
                 // No tunnel was established: do not mark the exchange as upgraded and
                 // close the connection to the proxy, as nobody else will.

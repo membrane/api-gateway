@@ -211,7 +211,17 @@ public class ProblemDetailsTest {
             assertFalse(j.has("b"));
             assertTrue(toList(j.fieldNames()).containsAll(List.of(TITLE, TYPE, STATUS, DETAIL)));
             assertEquals("https://membrane-api.io/problems/internal", j.get(TYPE).asText());
-            assertEquals(INTERNAL_SERVER_ERROR, j.get(TITLE).asText());
+            assertEquals("Internal Server Error", j.get(TITLE).asText());
+        }
+
+        @Test
+        void masksTitleWithReasonPhraseOfStatus() throws Exception {
+            final var j = parseJson(gateway(true, "a")
+                    .status(502)
+                    .title("Backend backend.internal:8080 refused the connection")
+                    .build());
+
+            assertEquals("Bad Gateway", j.get(TITLE).asText());
         }
 
         @Test

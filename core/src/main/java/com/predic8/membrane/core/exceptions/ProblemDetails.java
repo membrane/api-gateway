@@ -36,6 +36,7 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.util.ExceptionUtil.concatMessageAndCauseMessages;
 import static com.predic8.membrane.core.util.ExceptionUtil.getRootCause;
+import static com.predic8.membrane.core.util.HttpUtil.getMessageForStatusCode;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Locale.ROOT;
 import static java.util.UUID.randomUUID;
@@ -60,7 +61,6 @@ public class ProblemDetails {
     public static final String INSTANCE = "instance";
     public static final String STATUS = "status";
     public static final String INTERNAL = "internal";
-    public static final String INTERNAL_SERVER_ERROR = "Internal Server Error";
 
     private static final Set<String> RESERVED = Set.of(TYPE, TITLE, DETAIL, INSTANCE, STATUS);
     public static final String MESSAGE = "message";
@@ -323,9 +323,13 @@ public class ProblemDetails {
         return root;
     }
 
+    /**
+     * In production, a 5xx title is replaced by the reason phrase of the status, which tells the client nothing
+     * the status code does not.
+     */
     private String maskTitle(String title) {
         if (production && status >= 500)
-            return INTERNAL_SERVER_ERROR;
+            return getMessageForStatusCode(status);
         return title;
     }
 
