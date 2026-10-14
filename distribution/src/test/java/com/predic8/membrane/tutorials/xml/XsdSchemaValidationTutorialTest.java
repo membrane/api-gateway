@@ -46,7 +46,7 @@ public class XsdSchemaValidationTutorialTest extends AbstractXmlTutorialTest{
     void invalidXmlFailsValidation() throws IOException {
         // @formatter:off
         given()
-            .contentType("application/x-www-form-urlencoded")
+            .contentType(XML)
             .body(readFileFromBaseDir("book-invalid.xml"))
         .when()
             .post("http://localhost:2000")

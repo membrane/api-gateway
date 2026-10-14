@@ -3,8 +3,8 @@
 # Tutorial: XSD Schema Validation
 #
 # Try:
-#   curl -d @book-valid.xml localhost:2000
-#   curl -d @book-invalid.xml localhost:2000
+#   curl -d @book-valid.xml -H "Content-Type: application/xml" localhost:2000
+#   curl -d @book-invalid.xml -H "Content-Type: application/xml" localhost:2000
 
 api:
   port: 2000
