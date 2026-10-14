@@ -228,6 +228,18 @@ class JsonpathExchangeExpressionTest extends AbstractExchangeExpressionTest {
         }
 
         /**
+         * The body null is valid JSON but no document Jayway can query, so it must not end up as a 500.
+         */
+        @Test
+        void nullBodyIsAnEmptyDocument() throws URISyntaxException {
+            for (var contentType : new String[]{APPLICATION_JSON, TEXT_PLAIN, APPLICATION_X_WWW_FORM_URLENCODED, APPLICATION_OCTET_STREAM}) {
+                var exc = post("/foo").contentType(contentType).body("null").buildExchange();
+                assertFalse(eval("$.a", exc), contentType);
+                assertEquals(Map.of(), evalRoot(exc), contentType);
+            }
+        }
+
+        /**
          * Lenient backends accept single quotes, so the guard must not fall back to an empty document.
          */
         @Test

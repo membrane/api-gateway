@@ -117,11 +117,13 @@ public class JsonpathExchangeExpression extends AbstractExchangeExpression {
 
     private Object document(Message msg) {
         var kind = BodyKind.of(msg, MimeType::isJson, "{[");
-        return switch (kind) {
+        var document = switch (kind) {
             case EMPTY -> EMPTY_DOCUMENT;
             case MATCHING, UNKNOWN, MISLABELLED -> parse(msg);
             case FORM, FOREIGN -> scalarOrEmptyDocument(msg, kind);
         };
+        // The body null is valid JSON, but Jayway cannot query a null root. Like an empty body it has no fields
+        return document != null ? document : EMPTY_DOCUMENT;
     }
 
     private Object parse(Message msg) {

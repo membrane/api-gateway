@@ -310,6 +310,18 @@ class XPathExchangeExpressionTest extends AbstractExchangeExpressionTest {
             }
         }
 
+        /**
+         * These diagnostics mention content too, but have nothing to do with the trailing section.
+         */
+        @Test
+        void otherContentErrorsKeepTheParserMessage() {
+            for (var xml : new String[]{"<a><</a>", "<content></x>"}) {
+                var e = assertThrows(ExchangeExpressionException.class,
+                        () -> expression(null, XPATH, "/a").evaluate(post("/foo").xml(xml).buildExchange(), REQUEST, String.class));
+                assertEquals(parseError(xml), e.getMessage());
+            }
+        }
+
         private static @NotNull ProblemDetails getProblemDetails(ExchangeExpressionException e) {
             var pd = user(false, "test");
             e.provideDetails(pd);

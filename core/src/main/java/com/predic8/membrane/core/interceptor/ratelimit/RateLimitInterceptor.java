@@ -120,7 +120,8 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
             if (!strategy.isRequestLimitReached(getKey(exc)))
                 return CONTINUE;
         } catch (ExchangeExpressionException e) {
-            // Only body errors get here, getKey() falls back to "unknown" for any other error
+            // Only body errors get here, getKey() falls back to "unknown" for any other error.
+            // The limiter only runs in the request flow, so the body is the client's (400)
             e.problemDetails(router.getConfiguration().isProduction(), getDisplayName(), REQUEST)
                     .addSubType("rate-limit")
                     .title("Cannot evaluate keyExpression.")

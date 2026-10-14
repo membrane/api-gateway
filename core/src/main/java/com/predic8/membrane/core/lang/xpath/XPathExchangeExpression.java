@@ -30,11 +30,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.NodeList;
 
 import javax.xml.namespace.NamespaceContext;
 import javax.xml.namespace.QName;
-import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPathConstants;
@@ -51,9 +51,11 @@ public class XPathExchangeExpression extends AbstractExchangeExpression {
     private static final Logger log = LoggerFactory.getLogger(XPathExchangeExpression.class.getName());
 
     /**
-     * DocumentBuilder is not thread-safe. Only builds empty documents, so it parses nothing that would need hardening.
+     * Shared rather than per thread: with virtual threads, a thread local would build a factory for nearly
+     * every request. Creating a document keeps no state in the implementation, and it parses nothing
+     * that would need hardening.
      */
-    private static final ThreadLocal<DocumentBuilder> DOCUMENT_BUILDER = ThreadLocal.withInitial(XPathExchangeExpression::newDocumentBuilder);
+    private static final DOMImplementation DOM_IMPLEMENTATION = newDomImplementation();
 
     private XmlConfig xmlConfig;
 
@@ -167,7 +169,7 @@ public class XPathExchangeExpression extends AbstractExchangeExpression {
      * an empty document.
      */
     private Object evaluateOnEmptyDocument(QName xmlType) throws XPathExpressionException {
-        var emptyDocument = DOCUMENT_BUILDER.get().newDocument();
+        var emptyDocument = DOM_IMPLEMENTATION.createDocument(null, null, null);
         var xpath = XPathUtil.newXPath(namespaceContext());
         if (xmlType == null) {
             return xpath.evaluateExpression(expression, emptyDocument);
@@ -181,6 +183,8 @@ public class XPathExchangeExpression extends AbstractExchangeExpression {
     }
 
     private ExchangeExpressionException bodyError(Message msg, XmlParseException e) {
+        log.info("Body is not valid XML. XPath: {} Error: {}", expression, e.getMessage());
+
         // Matches: prolog and Prolog
         if (causeMessageContains(e, "rolog")) {
             return new ExchangeExpressionException(expression, e, "Content not allowed in prolog of XML input.")
@@ -190,8 +194,9 @@ public class XPathExchangeExpression extends AbstractExchangeExpression {
                     .bodyError();
         }
 
-        // Matches: Content and content
-        if (causeMessageContains(e, "ontent")) {
+        // Matches: "Content is" and "Content ist" (German). The prolog message starts the same way but is
+        // handled above. A bare "ontent" would also match "The content of elements must ..." or an element named content
+        if (causeMessageContains(e, "Content is")) {
             return new ExchangeExpressionException(expression, e, "Content not allowed in trailing section of XML input.")
                     .detail("There are extra characters after the XML root element (after the final closing tag like </root>).")
                     .body(tail(msg.getBodyAsStringDecoded(), 50))
@@ -204,11 +209,11 @@ public class XPathExchangeExpression extends AbstractExchangeExpression {
                 .bodyError();
     }
 
-    private static DocumentBuilder newDocumentBuilder() {
+    private static DOMImplementation newDomImplementation() {
         try {
-            return DocumentBuilderFactory.newInstance().newDocumentBuilder();
+            return DocumentBuilderFactory.newInstance().newDocumentBuilder().getDOMImplementation();
         } catch (ParserConfigurationException e) {
-            throw new IllegalStateException("Cannot create a DocumentBuilder.", e);
+            throw new IllegalStateException("Cannot create a DOMImplementation.", e);
         }
     }
 

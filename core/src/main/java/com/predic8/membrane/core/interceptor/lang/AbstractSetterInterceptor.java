@@ -122,7 +122,8 @@ public abstract class AbstractSetterInterceptor extends AbstractExchangeExpressi
      * @description Value to assign, evaluated as a SpEL template expression by default.
      * Use the <code>language</code> attribute to switch to Groovy, JsonPath, or XPath.
      * <p>XPath and JSONPath query the body. An empty body, or one of another media type, is evaluated as an
-     * empty document, so the value is empty. A body that should be XML or JSON but does not parse is an error:
+     * empty document, so the expression finds nothing, as when the queried element or field is missing. A body
+     * that should be XML or JSON but does not parse is an error:
      * 400 in the request, 502 in the response, unless <code>failOnError</code> is false.</p>
      * @example ${method}
      */
