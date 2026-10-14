@@ -18,6 +18,7 @@ import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.*;
 
 import java.time.*;
+import java.util.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 
@@ -33,6 +34,10 @@ import static com.predic8.membrane.core.http.MimeType.*;
  * Membrane publishes and a <code>Documentation</code> entry pointing at its Swagger UI, and a SOAP
  * proxy gets a <code>WSDL</code> entry. Terms of service and license from the OpenAPI document
  * become <code>TermsOfService</code> and <code>InterfaceLicense</code> entries.
+ * <p>
+ * The JSON Schema of APIs.json makes more members mandatory than the specification text, among
+ * them <code>image</code>, <code>maintainers</code> and <code>tags</code>. The text is the source
+ * of truth, so the renderer follows it and leaves out what it has no value for.
  *
  * @see <a href="https://apisjson.org/">apisjson.org</a>
  */
@@ -46,17 +51,21 @@ public class ApisJsonRenderer implements CatalogRenderer {
     private final CollectionInfo collection;
     private final LocalDate created;
     private final LocalDate modified;
+    private final List<CatalogEntry.Contact> maintainers;
 
     /**
      * @param collectionId second half of the collection's <code>aid</code>, the domain being the first
      * @param created      day the collection was created, a member APIs.json makes mandatory
      * @param modified     day the collection last changed, a member APIs.json makes mandatory
+     * @param maintainers  people or teams maintaining the collection
      */
-    public ApisJsonRenderer(String collectionId, CollectionInfo collection, LocalDate created, LocalDate modified) {
+    public ApisJsonRenderer(String collectionId, CollectionInfo collection, LocalDate created, LocalDate modified,
+                            List<CatalogEntry.Contact> maintainers) {
         this.collectionId = collectionId;
         this.collection = collection;
         this.created = created;
         this.modified = modified;
+        this.maintainers = List.copyOf(maintainers);
     }
 
     @Override
@@ -74,6 +83,13 @@ public class ApisJsonRenderer implements CatalogRenderer {
         collection.put("created", created.toString());
         collection.put("modified", modified.toString());
         collection.put("specificationVersion", SPECIFICATION_VERSION);
+        if (!maintainers.isEmpty()) {
+            final var maintainerNodes = collection.putArray("maintainers");
+            maintainers.forEach(maintainer -> maintainerNodes.add(renderMaintainer(maintainer)));
+        }
+        final var tags = catalog.apis().stream().flatMap(entry -> entry.tags().stream()).distinct().toList();
+        if (!tags.isEmpty())
+            tags.forEach(collection.putArray("tags")::add);
         ArrayNode apis = collection.putArray("apis");
         catalog.apis().forEach(entry -> apis.add(renderApi(entry)));
         return om.writeValueAsBytes(collection);
@@ -118,6 +134,14 @@ public class ApisJsonRenderer implements CatalogRenderer {
             properties.add(renderProperty("InterfaceLicense", entry.license().name(), entry.license().url()));
         if (!properties.isEmpty())
             api.set("properties", properties);
+    }
+
+    private ObjectNode renderMaintainer(CatalogEntry.Contact maintainer) {
+        final var vCard = om.createObjectNode();
+        putIfPresent(vCard, "FN", maintainer.name());
+        putIfPresent(vCard, "email", maintainer.email());
+        putIfPresent(vCard, "url", maintainer.url());
+        return vCard;
     }
 
     private ObjectNode renderProperty(String type, String name, String url) {

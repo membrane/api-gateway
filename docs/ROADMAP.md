@@ -160,6 +160,7 @@ PRIO 3:
 - `APIsJSON` renamed to `apisJson`. It now follows APIs.json 0.24:
     * `rootDomain` and `url` are replaced by `baseUrl`, the URL clients reach the gateway under. Its host is the domain of every `aid`. Without it, URLs and identifiers come from the Host header of the request.
     * `humanUrl` and `baseUrl` in the document are now spelled `humanURL` and `baseURL`.
+    * New `maintainers` option. The tags of the listed APIs become the tags of the collection.
     * A proxy bound to every host is listed under the host the client used instead of `localhost`.
     * `serviceProxy` and `soapProxy` are listed too, not only `api`.
     * The default collection `description` is now `APIs served by this gateway`.

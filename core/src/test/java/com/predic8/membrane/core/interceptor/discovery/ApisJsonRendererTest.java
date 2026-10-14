@@ -26,7 +26,8 @@ class ApisJsonRendererTest {
 
     private static final ObjectMapper om = new ObjectMapper();
 
-    private final ApisJsonRenderer renderer = new ApisJsonRenderer("gateway", COLLECTION, DAY, DAY);
+    private final ApisJsonRenderer renderer = new ApisJsonRenderer("gateway", COLLECTION, DAY, DAY,
+            List.of(new CatalogEntry.Contact("API Team", "api@example.com", "https://example.com/team")));
 
     private JsonNode render(Catalog catalog) throws Exception {
         return om.readTree(renderer.render(catalog));
@@ -131,11 +132,48 @@ class ApisJsonRendererTest {
     }
 
     @Test
+    void maintainersAreRenderedAsVCards() throws Exception {
+        final var maintainers = render(catalog()).path("maintainers");
+
+        assertEquals(1, maintainers.size());
+        assertEquals("API Team", maintainers.get(0).path("FN").asText());
+        assertEquals("api@example.com", maintainers.get(0).path("email").asText());
+        assertEquals("https://example.com/team", maintainers.get(0).path("url").asText());
+    }
+
+    @Test
+    void aMaintainerCarriesOnlyTheDetailsItHas() throws Exception {
+        final var maintainer = om.readTree(new ApisJsonRenderer("gateway", COLLECTION, DAY, DAY,
+                List.of(new CatalogEntry.Contact(null, "api@example.com", null))).render(catalog()))
+                .path("maintainers").get(0);
+
+        assertEquals("api@example.com", maintainer.path("email").asText());
+        assertTrue(maintainer.path("FN").isMissingNode());
+        assertTrue(maintainer.path("url").isMissingNode());
+    }
+
+    @Test
+    void collectionTagsAreTheTagsOfItsApisWithoutDuplicates() throws Exception {
+        final var document = render(catalog(describedApi(), plainProxy(), describedApi()));
+
+        assertEquals(List.of("Products", "Orders"), strings(document.path("tags")));
+    }
+
+    @Test
     void anEmptyGatewayStillRendersAValidCollection() throws Exception {
         JsonNode document = render(catalog());
 
         assertTrue(document.path("apis").isArray());
         assertTrue(document.path("apis").isEmpty());
+        assertTrue(document.path("tags").isMissingNode());
+    }
+
+    @Test
+    void withoutMaintainersTheCollectionHasNone() throws Exception {
+        final var document = om.readTree(
+                new ApisJsonRenderer("gateway", COLLECTION, DAY, DAY, List.of()).render(catalog()));
+
+        assertTrue(document.path("maintainers").isMissingNode());
     }
 
     private static List<String> strings(JsonNode array) {

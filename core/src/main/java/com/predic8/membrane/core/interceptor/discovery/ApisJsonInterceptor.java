@@ -14,10 +14,12 @@
 package com.predic8.membrane.core.interceptor.discovery;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.util.*;
 
 import java.time.*;
 import java.time.format.*;
+import java.util.*;
 
 import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE;
 
@@ -35,7 +37,8 @@ import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE;
  * An API described by an OpenAPI document is listed with the title, description and version from
  * that document, plus links to the document itself and to its Swagger UI. A SOAP proxy is listed
  * with a link to the WSDL the gateway publishes. Any other proxy is listed with its own name and
- * URL. Internal proxies and proxies whose initialisation failed are left out.
+ * URL. Internal proxies and proxies whose initialisation failed are left out. The tags of the
+ * listed APIs become the tags of the collection.
  * </p>
  * <p>
  * Answers every request that reaches it and ends the flow, so give it an api of its own. RFC 9727
@@ -52,6 +55,10 @@ import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE;
  *   [ description: &lt;text&gt; ]
  *   [ created: &lt;yyyy-mm-dd&gt; ]
  *   [ modified: &lt;yyyy-mm-dd&gt; ]
+ *   [ maintainers:
+ *       - [ name: &lt;name&gt; ]
+ *         [ email: &lt;email&gt; ]
+ *         [ url: &lt;url&gt; ] ]
  * </pre>
  * @topic 5. OpenAPI
  * @yaml <pre><code>
@@ -64,6 +71,9 @@ import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE;
  *         baseUrl: https://api.example.com
  *         collectionId: gateway
  *         name: Example APIs
+ *         maintainers:
+ *           - name: API Team
+ *             url: https://example.com/api-team
  * </code></pre>
  */
 @MCElement(name = "apisJson")
@@ -72,10 +82,13 @@ public class ApisJsonInterceptor extends AbstractCollectionDiscoveryInterceptor 
     private String collectionId = "apis";
     private LocalDate created = LocalDate.now();
     private LocalDate modified = LocalDate.now();
+    private List<ProxyContact> maintainers = List.of();
 
     @Override
     protected CatalogRenderer createRenderer() {
-        return new ApisJsonRenderer(collectionId, collection(), created, modified);
+        return new ApisJsonRenderer(collectionId, collection(), created, modified, maintainers.stream()
+                .map(maintainer -> new CatalogEntry.Contact(maintainer.getName(), maintainer.getEmail(), maintainer.getUrl()))
+                .toList());
     }
 
     public String getCollectionId() {
@@ -121,6 +134,19 @@ public class ApisJsonInterceptor extends AbstractCollectionDiscoveryInterceptor 
     @MCAttribute
     public void setModified(String modified) {
         this.modified = parseDate("modified", modified);
+    }
+
+    public List<ProxyContact> getMaintainers() {
+        return maintainers;
+    }
+
+    /**
+     * @description People or teams maintaining the collection, each with a name, an email address
+     * or a web page.
+     */
+    @MCChildElement(order = 1)
+    public void setMaintainers(List<ProxyContact> maintainers) {
+        this.maintainers = maintainers;
     }
 
     private LocalDate parseDate(String attribute, String value) {

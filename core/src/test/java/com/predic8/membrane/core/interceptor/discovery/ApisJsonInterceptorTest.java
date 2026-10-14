@@ -13,8 +13,11 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.discovery;
 
+import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
+
+import java.util.*;
 
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
@@ -31,6 +34,13 @@ class ApisJsonInterceptorTest {
         router = routerWithShop();
     }
 
+    private static ProxyContact contact(String name, String email) {
+        final var contact = new ProxyContact();
+        contact.setName(name);
+        contact.setEmail(email);
+        return contact;
+    }
+
     private ApisJsonInterceptor interceptor() {
         final var interceptor = new ApisJsonInterceptor();
         interceptor.setCollectionId("gateway");
@@ -38,6 +48,7 @@ class ApisJsonInterceptorTest {
         interceptor.setDescription("Every API of this gateway");
         interceptor.setCreated("2026-01-15");
         interceptor.setModified("2026-02-20");
+        interceptor.setMaintainers(List.of(contact("API Team", "api@example.com")));
         return initialized(interceptor, router);
     }
 
@@ -55,6 +66,8 @@ class ApisJsonInterceptorTest {
         assertEquals("2026-01-15", document.path("created").asText());
         assertEquals("2026-02-20", document.path("modified").asText());
         assertEquals("Shop", document.path("apis").get(0).path("name").asText());
+        assertEquals("API Team", document.path("maintainers").get(0).path("FN").asText());
+        assertEquals("api@example.com", document.path("maintainers").get(0).path("email").asText());
     }
 
     @Test
@@ -66,6 +79,7 @@ class ApisJsonInterceptorTest {
         assertEquals("APIs served by this gateway", interceptor.getDescription());
         assertNotNull(interceptor.getCreated());
         assertNotNull(interceptor.getModified());
+        assertTrue(interceptor.getMaintainers().isEmpty());
     }
 
     /**
