@@ -14,8 +14,10 @@
 package com.predic8.membrane.core.interceptor.discovery;
 
 import java.net.URLEncoder;
+import java.security.*;
 import java.util.*;
 import java.util.regex.*;
+import java.util.stream.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.discovery.ApiDiscoveryInterceptor.*;
@@ -32,7 +34,8 @@ import static org.apache.commons.text.StringEscapeUtils.*;
  * Titles, descriptions and contact details come from OpenAPI documents the gateway operator did
  * not necessarily write, so every value is escaped, and only <code>http</code> and
  * <code>https</code> URLs become links. Anything else, such as a <code>javascript:</code> URL, is
- * shown as text.
+ * shown as text. The page's own script, which filters the APIs and expands or collapses them, is
+ * the only one {@link #CONTENT_SECURITY_POLICY} lets run.
  */
 public class HtmlCatalogRenderer implements CatalogRenderer {
 
@@ -94,9 +97,31 @@ public class HtmlCatalogRenderer implements CatalogRenderer {
             .opid { color: var(--muted); font-family: monospace; font-size: 0.85em; }
             .badge { color: var(--muted); border: 1px solid var(--line); border-radius: 1em;
                      padding: 0.05em 0.5em; font-size: 0.75em; white-space: nowrap; }
-            .api > summary { cursor: pointer; }
-            .api > summary > h2 { display: inline; }
-            .api[open] > summary { margin-bottom: 0.4em; }
+            [hidden] { display: none !important; }
+            .api { margin-bottom: 0.6em; padding: 0.8em 1.5em; }
+            .api > summary { display: flex; align-items: center; gap: 0.8em; }
+            :is(.api, .more, .operations) > summary { cursor: pointer; list-style: none; }
+            :is(.api, .more, .operations) > summary::-webkit-details-marker { display: none; }
+            :is(.api, .more, .operations) > summary::before { content: ""; display: inline-block; flex: none;
+                    width: 0.45em; height: 0.45em; margin: 0 0.6em 0.15em 0.1em; vertical-align: middle;
+                    border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted);
+                    transform: rotate(-45deg); transition: transform 0.15s; }
+            .api > summary::before { margin: 0 0.1em; }
+            :is(.api, .more, .operations)[open] > summary::before { transform: rotate(45deg); }
+            .api > summary > h2 { margin: 0; font-size: 1.25em; }
+            .api > summary:hover > h2 { color: var(--link); }
+            .api[open] > summary { margin-bottom: 0.6em; padding-bottom: 0.6em; border-bottom: 1px solid var(--line); }
+            .toolbar { position: sticky; top: 0; z-index: 1; display: flex; flex-wrap: wrap; align-items: center;
+                       gap: 0.6em 1em; padding: 0.7em 1.5em; }
+            .toolbar input { flex: 1 1 16em; min-width: 0; font: inherit; color: inherit; padding: 0.45em 0.7em;
+                             background: var(--bg); border: 1px solid var(--line); border-radius: 6px; }
+            .toolbar button { font: inherit; color: inherit; padding: 0.45em 0.9em; cursor: pointer;
+                              background: var(--stripe); border: 1px solid var(--line); border-radius: 6px; }
+            .toolbar button:hover:enabled { border-color: var(--muted); }
+            .toolbar button:disabled { cursor: default; color: var(--muted); }
+            .toolbar :focus-visible { outline: 2px solid var(--link); outline-offset: 1px; }
+            .matches:empty { display: none; }
+            .matches { color: var(--muted); font-size: 0.9em; white-space: nowrap; font-variant-numeric: tabular-nums; }
             .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden;
                        clip-path: inset(50%); white-space: nowrap; }
             .deprecated code, .deprecated td:last-child { text-decoration: line-through; color: var(--muted); }
@@ -108,6 +133,102 @@ public class HtmlCatalogRenderer implements CatalogRenderer {
             .patch { background: #6f42c1; }
             .delete { background: #b42318; }
             """;
+
+    /**
+     * Filters the APIs as the reader types and expands or collapses all of them. An API matches when
+     * every search term occurs in it; terms that only some operations match narrow it down to those
+     * operations, and the filter opens what it reveals that way and closes it again when it changes.
+     */
+    private static final String SCRIPT = """
+            (() => {
+              const filter = document.getElementById("filter");
+              const toggle = document.getElementById("toggle");
+              const matches = document.getElementById("matches");
+              const noMatch = document.getElementById("no-match");
+              const apis = Array.from(document.querySelectorAll("details.api"));
+              const openedByFilter = new Set();
+              const shown = () => apis.filter(api => !api.hidden);
+
+              function updateToggle() {
+                const visible = shown();
+                toggle.disabled = visible.length === 0;
+                toggle.textContent = visible.length > 0 && visible.every(api => api.open) ? "Collapse all" : "Expand all";
+              }
+
+              function reveal(details) {
+                if (details && !details.open) {
+                  details.open = true;
+                  openedByFilter.add(details);
+                }
+              }
+
+              function apply() {
+                openedByFilter.forEach(details => details.open = false);
+                openedByFilter.clear();
+                const terms = filter.value.toLowerCase().split(/\\s+/).filter(Boolean);
+                let count = 0;
+                for (const api of apis) {
+                  const text = api.dataset.search;
+                  const apiMatches = terms.every(term => text.includes(term));
+                  let rowMatches = 0;
+                  for (const row of api.querySelectorAll("tr[data-search]")) {
+                    row.hidden = !apiMatches && !terms.every(term => text.includes(term) || row.dataset.search.includes(term));
+                    if (!row.hidden) rowMatches++;
+                  }
+                  for (const group of api.querySelectorAll("tbody"))
+                    group.hidden = !group.querySelector("tr[data-search]:not([hidden])");
+                  api.hidden = !apiMatches && rowMatches === 0;
+                  if (!api.hidden) count++;
+                  if (!apiMatches && rowMatches > 0) {
+                    reveal(api);
+                    reveal(api.querySelector("details.operations"));
+                  }
+                }
+                matches.textContent = terms.length === 0 ? "" : count + " of " + apis.length + " APIs";
+                noMatch.hidden = count > 0;
+                updateToggle();
+              }
+
+              toggle.addEventListener("click", () => {
+                const expand = toggle.textContent === "Expand all";
+                shown().forEach(api => api.open = expand);
+                openedByFilter.clear();
+                updateToggle();
+              });
+              filter.addEventListener("input", apply);
+              filter.addEventListener("keydown", event => {
+                if (event.key === "Escape") {
+                  filter.value = "";
+                  apply();
+                }
+              });
+              document.addEventListener("keydown", event => {
+                if (event.key === "/" && document.activeElement !== filter && !event.ctrlKey && !event.metaKey && !event.altKey) {
+                  event.preventDefault();
+                  filter.focus();
+                }
+              });
+              // toggle does not bubble, so it is caught on its way down.
+              document.addEventListener("toggle", updateToggle, true);
+              document.getElementById("toolbar").hidden = false;
+              apply();
+            })();
+            """;
+
+    /**
+     * Allows the page's own script by its hash and nothing else, so markup that slipped past the
+     * escaping still cannot run a script.
+     */
+    static final String CONTENT_SECURITY_POLICY =
+            "default-src 'none'; style-src 'unsafe-inline'; script-src 'sha256-%s'".formatted(sha256(SCRIPT));
+
+    private static String sha256(String text) {
+        try {
+            return Base64.getEncoder().encodeToString(MessageDigest.getInstance("SHA-256").digest(text.getBytes(UTF_8)));
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("Every Java platform supports SHA-256.", e);
+        }
+    }
 
     @Override
     public String contentType() {
@@ -136,7 +257,11 @@ public class HtmlCatalogRenderer implements CatalogRenderer {
         renderHeader(html, catalog);
         if (catalog.apis().isEmpty())
             html.append("<p class=\"box empty\">No APIs are published here.</p>\n");
+        else
+            renderToolbar(html);
         catalog.apis().forEach(entry -> renderApi(html, entry));
+        if (!catalog.apis().isEmpty())
+            html.append("<script>").append(SCRIPT).append("</script>\n");
         html.append("</body>\n</html>\n");
         return html.toString().getBytes(UTF_8);
     }
@@ -151,6 +276,17 @@ public class HtmlCatalogRenderer implements CatalogRenderer {
         // A browser always prefers HTML, so the JSON is only reachable through the query parameter.
         html.append("<p class=\"links\"><a href=\"?%s=%s\">View as JSON</a></p>\n".formatted(FORMAT_PARAMETER, JSON_FORMAT));
         html.append("</header>\n");
+    }
+
+    private static void renderToolbar(StringBuilder html) {
+        html.append("""
+                <div class="box toolbar" id="toolbar" hidden>
+                <input type="search" id="filter" placeholder="Filter by name, path, tag or operation (press /)" aria-label="Filter APIs" autocomplete="off">
+                <span class="matches" id="matches" aria-live="polite"></span>
+                <button type="button" id="toggle">Expand all</button>
+                </div>
+                <p class="box empty" id="no-match" hidden>No API matches the filter.</p>
+                """);
     }
 
     private static String apiCount(Catalog catalog) {
@@ -169,8 +305,8 @@ public class HtmlCatalogRenderer implements CatalogRenderer {
 
     // Collapsed to its title, so that the page opens as an overview of every API.
     private static void renderApi(StringBuilder html, CatalogEntry entry) {
-        html.append("<details class=\"box api\" id=\"%s\">\n<summary><h2>%s"
-                .formatted(sectionId(entry), escape(entry.name())));
+        html.append("<details class=\"box api\" id=\"%s\" data-search=\"%s\">\n<summary><h2>%s"
+                .formatted(sectionId(entry), escape(searchText(entry)), escape(entry.name())));
         if (entry.version() != null)
             html.append(" <span class=\"version\">%s</span>".formatted(escape(entry.version())));
         html.append(" <span class=\"kind\">%s</span></h2></summary>\n".formatted(entry.kind().getLabel()));
@@ -184,6 +320,22 @@ public class HtmlCatalogRenderer implements CatalogRenderer {
         renderDetails(html, entry);
         renderOperations(html, entry);
         html.append("</details>\n");
+    }
+
+    private static String searchText(CatalogEntry entry) {
+        return searchText(Stream.concat(
+                Stream.of(entry.name(), entry.version(), entry.kind().getLabel(), entry.description(), entry.endpoint().url()),
+                entry.tags().stream()));
+    }
+
+    private static String searchText(CatalogEntry entry, CatalogOperation operation) {
+        return searchText(Stream.concat(
+                Stream.of(operation.method(), fullPath(entry, operation), operation.summary(), operation.operationId()),
+                operation.tags().stream()));
+    }
+
+    private static String searchText(Stream<String> values) {
+        return values.filter(Objects::nonNull).collect(joining(" ")).toLowerCase(Locale.ROOT);
     }
 
     private static List<String> paragraphs(String description) {
@@ -317,7 +469,8 @@ public class HtmlCatalogRenderer implements CatalogRenderer {
     }
 
     private static String operationRow(CatalogEntry entry, CatalogOperation operation) {
-        return "<tr%s><td>%s%s</td><td>%s</td><td>%s</td></tr>\n".formatted(
+        return "<tr data-search=\"%s\"%s><td>%s%s</td><td>%s</td><td>%s</td></tr>\n".formatted(
+                escape(searchText(entry, operation)),
                 operation.deprecated() ? " class=\"deprecated\"" : "",
                 method(operation.method()),
                 // Struck-through text alone carries nothing to a screen reader, so it is said too.
@@ -331,11 +484,15 @@ public class HtmlCatalogRenderer implements CatalogRenderer {
      * document, linked to the operation in Swagger UI where possible.
      */
     private static String operationPath(CatalogEntry entry, CatalogOperation operation) {
-        final var path = "<code>%s</code>".formatted(escape(trimTrailingSlash(entry.endpoint().path()) + operation.path()));
+        final var path = "<code>%s</code>".formatted(escape(fullPath(entry, operation)));
         final var swaggerUi = swaggerUiLink(entry, operation);
         if (!isHttpUrl(swaggerUi))
             return path;
         return "<a href=\"%s\">%s</a>".formatted(escape(swaggerUi), path);
+    }
+
+    private static String fullPath(CatalogEntry entry, CatalogOperation operation) {
+        return trimTrailingSlash(entry.endpoint().path()) + operation.path();
     }
 
     // Swagger UI decodes the fragment once and then splits it at '/', so a tag or id containing one cannot be linked.

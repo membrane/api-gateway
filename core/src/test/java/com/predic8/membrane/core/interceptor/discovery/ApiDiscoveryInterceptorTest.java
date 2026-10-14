@@ -98,14 +98,17 @@ class ApiDiscoveryInterceptorTest {
     }
 
     /**
-     * The page shows text from OpenAPI documents the operator did not write and needs no script,
-     * so it forbids scripts as a second line of defence behind the escaping.
+     * The page shows text from OpenAPI documents the operator did not write, so it runs its own
+     * script only, as a second line of defence behind the escaping.
      */
     @Test
-    void theHtmlPageForbidsScripts() throws Exception {
+    void theHtmlPageRunsNoScriptButItsOwn() throws Exception {
         final var html = browserRequest();
         interceptor().handleRequest(html);
-        assertEquals("default-src 'none'; style-src 'unsafe-inline'", header(html, CONTENT_SECURITY_POLICY));
+        final var policy = header(html, CONTENT_SECURITY_POLICY);
+        assertEquals(HtmlCatalogRenderer.CONTENT_SECURITY_POLICY, policy);
+        assertTrue(policy.startsWith("default-src 'none'; style-src 'unsafe-inline'; script-src 'sha256-"));
+        assertFalse(policy.contains("script-src 'unsafe-inline'"));
 
         final var json = request("GET");
         interceptor().handleRequest(json);

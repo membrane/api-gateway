@@ -15,6 +15,7 @@ package com.predic8.membrane.core.interceptor.discovery;
 
 import org.junit.jupiter.api.*;
 
+import java.security.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
@@ -79,7 +80,7 @@ class HtmlCatalogRendererTest {
         assertTrue(html.contains("<code>/shop/v2/products</code>"));
         assertTrue(html.contains("Get all products"));
         assertTrue(html.contains("class=\"method get\">GET<"));
-        assertTrue(html.contains("<tr class=\"deprecated\">"));
+        assertTrue(html.contains(" class=\"deprecated\"><td>"));
     }
 
     /**
@@ -131,8 +132,53 @@ class HtmlCatalogRendererTest {
     void everyApiIsCollapsedUnderItsTitleAndLinkable() {
         String html = render(catalog(describedApi(), plainProxy()));
 
-        assertTrue(html.contains("<details class=\"box api\" id=\"fruit-shop-api-v2-0-0\">\n<summary><h2>Fruit Shop API"));
-        assertTrue(html.contains("<details class=\"box api\" id=\"shop\">\n<summary><h2>Shop"));
+        assertTrue(html.contains("<details class=\"box api\" id=\"fruit-shop-api-v2-0-0\" data-search="));
+        assertTrue(html.contains("<details class=\"box api\" id=\"shop\" data-search="));
+        assertTrue(html.contains("\">\n<summary><h2>Fruit Shop API"));
+        assertTrue(html.contains("\">\n<summary><h2>Shop"));
+    }
+
+    @Test
+    void theToolbarStaysHiddenUntilTheScriptShowsIt() {
+        final var html = render(catalog(describedApi(), plainProxy()));
+
+        assertTrue(html.contains("<div class=\"box toolbar\" id=\"toolbar\" hidden>"));
+        assertTrue(html.contains("<input type=\"search\" id=\"filter\""));
+        assertTrue(html.contains("<button type=\"button\" id=\"toggle\">Expand all</button>"));
+        assertTrue(html.contains("<p class=\"box empty\" id=\"no-match\" hidden>"));
+    }
+
+    @Test
+    void anEmptyCatalogHasNothingToFilter() {
+        final var html = render(catalog());
+
+        assertFalse(html.contains("id=\"toolbar\""));
+        assertFalse(html.contains("<script>"));
+    }
+
+    @Test
+    void theScriptIsTheOneThePolicyAllows() throws Exception {
+        final var html = render(catalog(describedApi()));
+        final var start = html.indexOf("<script>") + "<script>".length();
+        final var script = html.substring(start, html.indexOf("</script>", start));
+
+        final var hash = Base64.getEncoder().encodeToString(
+                MessageDigest.getInstance("SHA-256").digest(script.getBytes(UTF_8)));
+        assertTrue(HtmlCatalogRenderer.CONTENT_SECURITY_POLICY.contains("script-src 'sha256-%s'".formatted(hash)));
+    }
+
+    @Test
+    void anApiIsSearchableByWhatTheReaderSeesOfIt() {
+        final var html = render(catalog(describedApi()));
+
+        assertTrue(html.contains("data-search=\"fruit shop api 2.0.0 api showcases rest api design https://example.com/shop/v2/ products orders\""));
+    }
+
+    @Test
+    void anOperationIsSearchableByMethodPathSummaryAndOperationId() {
+        final var html = render(catalog(describedApi()));
+
+        assertTrue(html.contains("<tr data-search=\"get /shop/v2/products get all products getproducts products\">"));
     }
 
     @Test
@@ -343,10 +389,23 @@ class HtmlCatalogRendererTest {
 
         String html = render(catalog(hostile));
 
-        assertFalse(html.contains("<script>"));
+        assertFalse(html.contains("<script>alert(1)"));
         assertTrue(html.contains("&lt;script&gt;alert(1)&lt;/script&gt;"));
         assertTrue(html.contains("a &amp; b"));
         assertFalse(html.contains("<b>tag</b>"));
+    }
+
+    @Test
+    void theSearchTextIsEscapedInsideItsAttribute() {
+        final var hostile = CatalogEntry.builder()
+                .aid("example.com:x").id("x").kind(API).name("\"><img src=x>").description("X")
+                .endpoint(new CatalogEntry.Endpoint("http", "example.com", 80, "/", "*", "http://example.com/"))
+                .build();
+
+        final var html = render(catalog(hostile));
+
+        assertFalse(html.contains("<img"));
+        assertTrue(html.contains("data-search=\"&quot;&gt;&lt;img src=x&gt;"));
     }
 
     @Test

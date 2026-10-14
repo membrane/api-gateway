@@ -25,6 +25,7 @@ import java.net.URISyntaxException;
 import java.util.*;
 
 import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.interceptor.discovery.HtmlCatalogRenderer.CONTENT_SECURITY_POLICY;
 import static com.predic8.membrane.core.util.URLParamUtil.*;
 
 /**
@@ -76,8 +77,6 @@ public class ApiDiscoveryInterceptor extends AbstractCollectionDiscoveryIntercep
     static final String FORMAT_PARAMETER = "format";
     static final String JSON_FORMAT = "json";
 
-    private static final String HTML_CONTENT_SECURITY_POLICY = "default-src 'none'; style-src 'unsafe-inline'";
-
     private CatalogRenderer htmlRenderer;
 
     @Override
@@ -113,9 +112,8 @@ public class ApiDiscoveryInterceptor extends AbstractCollectionDiscoveryIntercep
     protected void addHeaders(Response.ResponseBuilder response, Catalog catalog, CatalogRenderer negotiated) {
         // The answer is HTML or JSON depending on Accept, so caches must key on it.
         response.header(VARY, ACCEPT);
-        // The page shows text from OpenAPI documents and needs no script, so it allows none.
         if (negotiated == htmlRenderer)
-            response.header(CONTENT_SECURITY_POLICY, HTML_CONTENT_SECURITY_POLICY);
+            response.header(Header.CONTENT_SECURITY_POLICY, HtmlCatalogRenderer.CONTENT_SECURITY_POLICY);
     }
 
     /**
