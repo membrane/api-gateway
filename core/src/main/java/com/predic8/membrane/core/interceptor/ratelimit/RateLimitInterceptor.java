@@ -128,7 +128,7 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
         }
 
         log.info("{} limit: {} duration: {} is exceeded. (clientIp: {})", getKey(exc), getRequestLimit(), getRequestLimitDuration(), exc.getRemoteAddrIp());
-        user(false, getDisplayName())
+        user(router.getConfiguration().isProduction(), getDisplayName())
                 .status(429)
                 .title("Rate limit is exceeded.")
                 .addSubType("rate-limit")

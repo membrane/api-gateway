@@ -17,6 +17,7 @@ package com.predic8.membrane.core.interceptor.cors;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.router.DummyTestRouter;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.util.CollectionsUtil;
 import com.predic8.membrane.core.util.ConfigurationException;
@@ -458,7 +459,7 @@ class CorsInterceptorTest {
     }
 
     private Exchange makePreflight(Builder builder, int expectedStatus) {
-        i.init();
+        i.init(new DummyTestRouter());
         Exchange exc = builder.buildExchange();
         assertEquals(RETURN, i.handleRequest(exc));
         assertEquals(expectedStatus, exc.getResponse().getStatusCode());

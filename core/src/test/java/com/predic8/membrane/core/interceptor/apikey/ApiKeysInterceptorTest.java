@@ -72,6 +72,7 @@ public class ApiKeysInterceptorTest {
         akiWithProp = new ApiKeysInterceptor();
         akiWithProp.setExtractors(of(ahe));
         akiWithProp.setStores(of(store));
+        akiWithProp.init(new DummyTestRouter());
 
         akiWithoutProp = new ApiKeysInterceptor();
         akiWithoutProp.setExtractors(of(ahe));

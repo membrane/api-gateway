@@ -246,7 +246,7 @@ public class HttpEndpointListener extends Thread {
             sourceSocket.getOutputStream().write(TLS_ALERT_INTERNAL_ERROR, 0, TLS_ALERT_INTERNAL_ERROR.length);
         else {
             log.warn("Limit of {} concurrent connections per client is reached.", transport.getConcurrentConnectionLimitPerIp());
-            user(false,"http-endpoint-listener")
+            user(transport.getRouter().getConfiguration().isProduction(), "http-endpoint-listener")
                     .status(429)
                     .addSubType("rate-limit")
                     .title("Limit of concurrent connections per client is reached.")

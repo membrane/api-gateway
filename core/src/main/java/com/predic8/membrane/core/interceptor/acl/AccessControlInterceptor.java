@@ -84,7 +84,7 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 
     // Copied from old ACL as is
     private void setResponseToAccessDenied(Exchange exc) {
-        security(false, getDisplayName())
+        security(router.getConfiguration().isProduction(), getDisplayName())
                 .title("Access Denied")
                 .status(403)
                 .addSubSee("authorization-denied")

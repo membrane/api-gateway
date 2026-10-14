@@ -77,7 +77,7 @@ public abstract class AbstractCORSHandler {
     }
 
     protected Outcome createProblemDetails(Exchange exc, String value, String type) {
-        security(false, "cors")
+        security(interceptor.getRouter().getConfiguration().isProduction(), "cors")
                 .status(403)
                 .addSubType("%s-not-allowed".formatted(type))
                 .detail("Not allowed by CORS policy: %s: %s".formatted(type, value))

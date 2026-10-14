@@ -43,7 +43,7 @@ public class DefaultEndpointProcessor extends EndpointProcessor {
                 exc.setResponse(OAuth2Util.createParameterizedJsonErrorResponse("error", "invalid_request"));
             } catch (IOException e) {
                 log.error("", e);
-                internal(true,"endpoint-processor")
+                internal(authServer.getRouter().getConfiguration().isProduction(), "endpoint-processor")
                         .component(this.getClass().getSimpleName())
                         .exception(e)
                         .buildAndSetResponse(exc);

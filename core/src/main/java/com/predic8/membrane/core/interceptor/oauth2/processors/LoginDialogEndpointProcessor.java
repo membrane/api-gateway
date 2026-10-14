@@ -56,7 +56,7 @@ public class LoginDialogEndpointProcessor extends EndpointProcessor {
             loginDialog.handleLoginRequest(exc);
         } catch (Exception e) {
             log.error("", e);
-            internal(true,"login-dialog-endpoint-processor")
+            internal(authServer.getRouter().getConfiguration().isProduction(), "login-dialog-endpoint-processor")
                     .exception(e)
                     .buildAndSetResponse(exc);
             return ABORT;

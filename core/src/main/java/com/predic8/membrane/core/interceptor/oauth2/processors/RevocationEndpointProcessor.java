@@ -46,7 +46,7 @@ public class RevocationEndpointProcessor extends EndpointProcessor {
             return processInternal(exc);
         } catch (Exception e) {
             log.error("", e);
-            internal(true, "revocation-endpoint-processor")
+            internal(authServer.getRouter().getConfiguration().isProduction(), "revocation-endpoint-processor")
                     .exception(e)
                     .buildAndSetResponse(exc);
             return ABORT;

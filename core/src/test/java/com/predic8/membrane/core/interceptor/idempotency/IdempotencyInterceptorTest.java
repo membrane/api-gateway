@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.interceptor.idempotency;
 
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.router.DummyTestRouter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -36,7 +37,7 @@ class IdempotencyInterceptorTest {
         i = new IdempotencyInterceptor();
         i.setLanguage(JSONPATH);
         i.setKey("$.id");
-        i.init();
+        i.init(new DummyTestRouter());
     }
 
     @Test

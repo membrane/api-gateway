@@ -202,6 +202,7 @@ public class Http1ProtocolHandler extends AbstractProtocolHandler {
             Response response = fromStream(ct.con().in, false);
             if (response.getStatusCode() > 299) {
                 log.info("Proxy rejected CONNECT request with status code {}.", response.getStatusCode());
+                // The HTTP client has no router (it also runs outside of one), so production mode is assumed.
                 gateway(true, "proxy")
                         .title("Bad Gateway")
                         .addSubSee("connect")

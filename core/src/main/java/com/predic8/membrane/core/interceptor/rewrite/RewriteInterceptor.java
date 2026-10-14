@@ -225,7 +225,7 @@ public class RewriteInterceptor extends AbstractInterceptor {
             return URLUtil.getPathQuery(factory, destination);
         } catch (URISyntaxException | IllegalArgumentException e) {
             log.info("Can't parse query: {}", destination);
-            user(false,getDisplayName())
+            user(router.getConfiguration().isProduction(), getDisplayName())
                     .addSubType("path")
                     .title("The path does not follow the URI specification. Confirm the validity of the provided URL.")
                     .detail(e.getMessage())

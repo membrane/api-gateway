@@ -111,15 +111,20 @@ public class FlowController {
      * by calling their {@link Interceptor#handleAbort(Exchange)}.
      */
     private Outcome abortWithError(Exchange exchange, List<Interceptor> interceptors, int pos, Flow flow, Exception e) {
-        String component = interceptors.get(pos).getDisplayName();
-        String detail = "Aborting! Exception caused in %s during %s %s flow."
-                .formatted(component, exchange.getRequest().getUri(), flow);
-        createErrorProblem(exchange, component, detail, e)
-                .exception(e)
-                .buildAndSetResponse(exchange);
+        setErrorResponse(exchange, interceptors.get(pos).getDisplayName(), flow, e);
         exchange.setProperty(ABORTION_REASON, e);
         invokeAbortHandlers(exchange, interceptors, pos);
         return ABORT;
+    }
+
+    /**
+     * Sets the error response for an exception the given component threw, without unwinding.
+     */
+    public void setErrorResponse(Exchange exchange, String component, Flow flow, Exception e) {
+        var detail = "Aborting! Exception caused in %s during %s %s flow.".formatted(component, exchange.getRequest().getUri(), flow);
+        createErrorProblem(exchange, component, detail, e)
+                .exception(e)
+                .buildAndSetResponse(exchange);
     }
 
     private ProblemDetails createErrorProblem(Exchange exchange, String component, String detail, Exception e) {

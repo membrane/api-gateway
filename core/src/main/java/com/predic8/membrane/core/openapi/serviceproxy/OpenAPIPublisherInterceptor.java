@@ -191,7 +191,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
 
     private Outcome returnNoFound(Exchange exc, String id) {
         // Do not log. Too common!
-        user(false, getDisplayName())
+        user(router.getConfiguration().isProduction(), getDisplayName())
                 .title("OpenAPI not found")
                 .status(404)
                 .addSubType("openapi")
@@ -215,7 +215,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
         // No id specified
         if (!m.matches()) {
             // Do not log! Too common.
-            user(false, getDisplayName())
+            user(router.getConfiguration().isProduction(), getDisplayName())
                     .title("No OpenAPI document id")
                     .status(404)
                     .addSubType("openapi")

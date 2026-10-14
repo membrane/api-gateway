@@ -18,6 +18,7 @@ import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
@@ -46,7 +47,7 @@ public class ResponseInterceptor extends AbstractFlowWithChildrenInterceptor {
                     if (interceptor.handleResponse(exc) == ABORT)
                         return ABORT;
                 } catch (Exception e) {
-                    createProblemDetails( "response", interceptor, exc, e);
+                    createProblemDetails(RESPONSE, interceptor, exc, e);
                     return ABORT;
                 }
             }

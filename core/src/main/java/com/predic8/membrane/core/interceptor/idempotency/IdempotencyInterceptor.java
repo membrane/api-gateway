@@ -78,7 +78,7 @@ public class IdempotencyInterceptor extends AbstractLanguageInterceptor {
     }
 
     private Outcome handleDuplicateKey(Exchange exc, String key) {
-        user(false, "idempotency")
+        user(router.getConfiguration().isProduction(), "idempotency")
                 .status(409)
                 .detail("key %s has already been processed".formatted(key))
                 .buildAndSetResponse(exc);

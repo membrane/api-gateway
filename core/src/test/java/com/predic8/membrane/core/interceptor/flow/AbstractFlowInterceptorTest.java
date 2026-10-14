@@ -14,13 +14,22 @@
 
 package com.predic8.membrane.core.interceptor.flow;
 
+import com.fasterxml.jackson.databind.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.log.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
 
+import java.io.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.http.Request.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.router.DummyTestRouter.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class AbstractFlowInterceptorTest {
@@ -35,5 +44,56 @@ class AbstractFlowInterceptorTest {
         ri.init(r,p);
         assertSame(r,ti.getRouter());
         assertSame(p,ti.getProxy());
+    }
+
+    @Test
+    void nestedExceptionHidesDetailsInProduction() throws Exception {
+        var exc = get("/foo").buildExchange();
+
+        assertEquals(ABORT, requestFlowThrowing(productionRouter(), new RuntimeException("secret")).handleRequest(exc));
+
+        var json = parse(exc);
+        assertEquals(500, exc.getResponse().getStatusCode());
+        assertFalse(json.has(STACK_TRACE));
+        assertFalse(json.has(MESSAGE));
+        assertFalse(json.has(ATTENTION));
+        assertTrue(json.get(DETAIL).asText().contains("key"));
+    }
+
+    @Test
+    void nestedExceptionNamesPluginUriAndFlow() throws Exception {
+        var exc = get("/foo").buildExchange();
+
+        requestFlowThrowing(new DummyTestRouter(), new RuntimeException("boom")).handleRequest(exc);
+
+        assertEquals("Aborting! Exception caused in thrower during /foo REQUEST flow.", parse(exc).get(DETAIL).asText());
+    }
+
+    @Test
+    void nestedReadingBodyExceptionIsBodyFailure() throws Exception {
+        var exc = get("/foo").buildExchange();
+
+        requestFlowThrowing(new DummyTestRouter(), new ReadingBodyException(new IOException("broken"), exc.getRequest())).handleRequest(exc);
+
+        assertEquals(400, exc.getResponse().getStatusCode());
+        assertTrue(parse(exc).get(SEE).asText().endsWith("reading-body"));
+    }
+
+    private static RequestInterceptor requestFlowThrowing(Router router, RuntimeException e) {
+        final var thrower = new AbstractInterceptor() {
+            @Override
+            public Outcome handleRequest(Exchange exc) {
+                throw e;
+            }
+        };
+        thrower.setDisplayName("thrower");
+        final var ri = new RequestInterceptor();
+        ri.setFlow(List.of(thrower));
+        ri.init(router, new ServiceProxy());
+        return ri;
+    }
+
+    private static JsonNode parse(Exchange exc) throws IOException {
+        return new ObjectMapper().readTree(exc.getResponse().getBodyAsStringDecoded());
     }
 }
