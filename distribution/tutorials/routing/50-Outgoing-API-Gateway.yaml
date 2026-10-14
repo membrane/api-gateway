@@ -1,0 +1,123 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.7.0.json
+#
+# Tutorial: Outgoing API Gateway
+#
+# Internal applications and users need to access APIs over the internet. Letting
+# every client call any external API directly is hard to control. An outgoing API
+# restricts access to selected external APIs only. It also helps to centrally
+# control the outgoing traffic and to inject credentials such as API keys,
+# passwords or tokens, so they are not distributed to every client.
+#
+# 1.) Start Membrane:
+#     with Docker:
+#       Linux/Mac:
+#         ./run-docker.sh -c 50-Outgoing-API-Gateway.yaml
+#       Windows:
+#         run-docker.cmd -c 50-Outgoing-API-Gateway.yaml
+#
+#     or with Java:
+#       Linux/Mac:
+#         ./membrane.sh -c 50-Outgoing-API-Gateway.yaml
+#       Windows:
+#         membrane.cmd -c 50-Outgoing-API-Gateway.yaml
+#
+# 2.) Call the external API through the gateway. apibin.io answers with the
+#     headers it received:
+#       curl -X POST "localhost:2000/?action=analyze" -H "User-Agent: secret" -H "Authorization: secret"
+#
+#       "headers" : {
+#         "Accept" : [ "*/*" ],
+#         ...
+#         "X-Api-Key" : [ "0446F862-9EE6-46EC-9440-6B6DA0DD0ADD" ],
+#         ...
+#
+#     The client sent no API key, the gateway added it. User-Agent and Authorization
+#     did not leave the gateway. The other headers, including X-Forwarded-For, are
+#     added by apibin.io's own hosting infrastructure.
+#
+# 3.) Read "How it works" at the end of this file.
+
+components:
+  ruleMatching:
+    ruleMatching:
+      # Membrane usually adds the X-Forwarded-For header, e.g. X-Forwarded-For: 192.168.1.1
+      # The IP address of the client is internal information we do not want to leak.
+      # This option disables Membrane's default behavior and does not add the header.
+      xForwardedForEnabled: false
+
+---
+# Plugins in global: apply to every API
+global:
+  - request:
+      - headerFilter:
+          # The header fields to send from the internal client to the external API
+          - include: Accept.*
+          - include: Cache-Control
+          - include: Content-Type
+          - include: Content-Length
+          - include: X-Requested-With
+          # Take out all other headers
+          - exclude: .*
+
+---
+api:
+  name: Outgoing API
+  port: 2000
+  # Optional: Listen only on the internal network interface, e.g. 10.0.0.5
+  # ip: 10.0.0.5
+  flow:
+    # Only let internal clients use this gateway. Everything else is implicitly denied.
+    - accessControl:
+        - allow: 127.0.0.0/24   # Local calls, e.g. for this tutorial
+        - allow: 10.0.0.0/8     # Replace with your internal networks
+        - allow: 172.16.0.0/12  # Includes Docker bridge networks
+        - allow: 192.168.0.0/16
+    # Optional: Set an API key for the external API for all internal users
+    - setHeader:
+        name: X-Api-Key
+        # Do not keep keys in the file. Read the key from an environment variable:
+        # value: "#{env.EXTERNAL_API_KEY}"
+        value: "0446F862-9EE6-46EC-9440-6B6DA0DD0ADD"
+  target:
+    url: https://apibin.io  # Replace with the address of the external API
+
+# ---------------------------------------------------------------------------
+# How it works
+# ---------------------------------------------------------------------------
+#
+# An outgoing API gateway is the controlled exit point for calls from internal
+# clients to external APIs. Routing all outgoing API traffic through it gives
+# you visibility and control over what data leaves your network:
+#
+#   - Client authentication: only authorized internal clients reach external APIs
+#   - Central logging and auditing: who called which API, and when
+#   - Message validation and JSON/XML protection for data leaving and entering
+#
+# Unlike a gateway for inbound traffic, it must not reveal internal details:
+#
+#   - No X-Forwarded-For header, so internal IP addresses stay private.
+#   - Sensitive headers like Authorization or User-Agent are filtered. The
+#     headerFilter keeps only the listed headers and removes all others. This
+#     includes any X-Api-Key header sent by the client.
+#     The Host header is set by the target to the external API's address.
+#
+# The gateway holds the credentials for the external API:
+#
+#   - setHeader adds the API key to every call. Internal users do not need the
+#     key and never see it. Rotating it only requires a change in the gateway.
+#   - The headerFilter runs before the API's flow, so the added key is not removed.
+#
+# Secure the outgoing gateway against external access!
+#
+# Everyone who can reach the gateway can call the external API with your API key.
+# Never expose it to the internet or to untrusted networks:
+#
+#   - Block the port in your firewall or security group. This is the strongest protection.
+#   - accessControl restricts callers by IP address. It only works if Membrane sees
+#     the real client address. Behind a load balancer or reverse proxy every request
+#     appears to come from the proxy.
+#   - ip binds the API to one network interface, e.g. the internal one.
+#   - Authenticate internal clients, e.g. with basicAuthentication or apiKey.
+#
+# Extend this setup with logging, validation, authentication, rate limiting,
+# message transformation or data loss protection.

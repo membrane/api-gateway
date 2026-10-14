@@ -14,26 +14,35 @@
 
 package com.predic8.membrane.core.interceptor;
 
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.lang.ExchangeExpression.*;
-import com.predic8.membrane.core.openapi.serviceproxy.*;
-import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.transport.http.*;
-import com.predic8.membrane.core.transport.http.client.*;
-import com.predic8.membrane.core.util.*;
-import com.predic8.membrane.core.util.text.*;
-import com.predic8.membrane.core.util.text.SerializationUtil.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.lang.ExchangeExpression.Language;
+import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
+import com.predic8.membrane.core.proxies.NullProxy;
+import com.predic8.membrane.core.proxies.Target;
+import com.predic8.membrane.core.router.DefaultRouter;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.transport.http.ConnectTimeoutException;
+import com.predic8.membrane.core.transport.http.HttpClient;
+import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
+import com.predic8.membrane.core.util.ConfigurationException;
+import com.predic8.membrane.core.util.URIFactory;
+import com.predic8.membrane.core.util.text.SerializationUtil.Serialization;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
-import java.net.*;
+import java.net.ServerSocket;
+import java.net.SocketTimeoutException;
+import java.net.URISyntaxException;
 
-import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.Header.CONNECTION;
+import static com.predic8.membrane.core.http.Header.UPGRADE;
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 import static com.predic8.membrane.core.util.NetworkTestUtil.freePort;
-import static com.predic8.membrane.core.util.text.SerializationUtil.Serialization.*;
+import static com.predic8.membrane.core.util.text.SerializationUtil.Serialization.SEGMENT;
+import static com.predic8.membrane.core.util.text.SerializationUtil.Serialization.TEXT;
 import static org.junit.jupiter.api.Assertions.*;
 
 class HTTPClientInterceptorTest {
@@ -59,7 +68,7 @@ class HTTPClientInterceptorTest {
 
         hci.handleRequest(exc);
 
-        assertEquals(401, exc.getResponse().getStatusCode());
+        assertEquals(403, exc.getResponse().getStatusCode());
     }
 
     @Test

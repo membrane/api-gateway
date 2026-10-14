@@ -11,22 +11,33 @@
 # - Method rules are evaluated top-down.
 # - The first matching rule wins.
 #
-# Try:
+# 1.) Start Membrane:
+#     with Docker:
+#       Linux/Mac:
+#         ./run-docker.sh -c 10-JSON-RPC-Allow-Deny-and-Batch-Validation.yaml
+#       Windows:
+#         run-docker.cmd -c 10-JSON-RPC-Allow-Deny-and-Batch-Validation.yaml
 #
-# 1.) Allowed request
+#     or with Java:
+#       Linux/Mac:
+#         ./membrane.sh -c 10-JSON-RPC-Allow-Deny-and-Batch-Validation.yaml
+#       Windows:
+#         membrane.cmd -c 10-JSON-RPC-Allow-Deny-and-Batch-Validation.yaml
+#
+# 2.) Allowed request
 #     curl -d '{"jsonrpc":"2.0","id":1,"method":"ping"}' -H "Content-Type: application/json" http://localhost:2000
 #
-# 2.) Blocked method
+# 3.) Blocked method
 #     curl -d '{"jsonrpc":"2.0","id":1,"method":"shutdown"}' -H "Content-Type: application/json" http://localhost:2000
 #
 #     Should return a JSON-RPC error explaining that the method is not allowed.
 #
-# 3.) Valid batch with 2 calls
+# 4.) Valid batch with 2 calls
 #     curl -d '[{"jsonrpc":"2.0","id":1,"method":"ping"},{"jsonrpc":"2.0","id":2,"method":"sum","params":[1,2]}]' -H "Content-Type: application/json" http://localhost:2000
 #
 #     Should return a JSON-RPC batch response with one success entry per request.
 #
-# 4.) Batch too large
+# 5.) Batch too large
 #     curl -d '[{"jsonrpc":"2.0","id":1,"method":"ping"},{"jsonrpc":"2.0","id":2,"method":"sum","params":[1,2]},{"jsonrpc":"2.0","id":3,"method":"ping"}]' -H "Content-Type: application/json" http://localhost:2000
 #
 #     Should return a JSON-RPC batch error because maxSize is 2.
