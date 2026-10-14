@@ -224,10 +224,8 @@ public class ProblemDetails {
      * @param humanReadableExplanation A human-readable explanation specific to this
      *                                 occurrence of the problem.
      * @return Instance
-     * @deprecated Use {@link #detail(String, boolean)} and decide whether the detail may be shown in
-     * production mode. Will be removed in 8.0.
+     * @see #detail(String, boolean) to show the detail in production mode as well
      */
-    @Deprecated
     public ProblemDetails detail(String humanReadableExplanation) {
         return detail(humanReadableExplanation, false);
     }

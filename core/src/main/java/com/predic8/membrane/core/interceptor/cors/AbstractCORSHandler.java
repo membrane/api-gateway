@@ -80,7 +80,7 @@ public abstract class AbstractCORSHandler {
         security(interceptor.getRouter().getConfiguration().isProduction(), "cors")
                 .status(403)
                 .addSubType("%s-not-allowed".formatted(type))
-                .detail("Not allowed by CORS policy: %s: %s".formatted(type, value))
+                .detail("Not allowed by CORS policy: %s: %s".formatted(type, value), true)
                 .buildAndSetResponse(exc);
         log.info("CORS request denied: type={}, value={}", type, value);
         return RETURN;

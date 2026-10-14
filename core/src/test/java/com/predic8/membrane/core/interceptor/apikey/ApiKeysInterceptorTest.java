@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.apikey;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.apikey.extractors.ApiKeyExpressionExtractor;
 import com.predic8.membrane.core.interceptor.apikey.extractors.ApiKeyHeaderExtractor;
@@ -127,6 +128,34 @@ public class ApiKeysInterceptorTest {
         assertNull(exc.getProperty(SCOPES));
         assertEquals(401, exc.getResponse().getStatusCode());
         assertEquals(APPLICATION_PROBLEM_JSON, exc.getResponse().getHeader().getContentType());
+    }
+
+    @Test
+    void productionShowsDetailWithoutApiKey() throws Exception {
+        final var exc = get("/").buildExchange();
+        assertEquals(RETURN, productionInterceptor().handleRequest(exc));
+        assertEquals(401, exc.getResponse().getStatusCode());
+        assertEquals("Tried to access API key protected resource without key.", getDetail(exc));
+    }
+
+    @Test
+    void productionShowsDetailWithInvalidApiKey() throws Exception {
+        final var exc = get("/").header(keyHeader, "foo").buildExchange();
+        assertEquals(RETURN, productionInterceptor().handleRequest(exc));
+        assertEquals(403, exc.getResponse().getStatusCode());
+        assertEquals("The provided API key is invalid.", getDetail(exc));
+    }
+
+    private static ApiKeysInterceptor productionInterceptor() {
+        final var aki = new ApiKeysInterceptor();
+        aki.setExtractors(of(ahe));
+        aki.setStores(of(store));
+        aki.init(DummyTestRouter.productionRouter());
+        return aki;
+    }
+
+    private static String getDetail(Exchange exc) throws Exception {
+        return new ObjectMapper().readTree(exc.getResponse().getBodyAsStringDecoded()).get("detail").asText();
     }
 
     @Test

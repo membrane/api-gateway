@@ -376,6 +376,19 @@ class CorsInterceptorTest {
         }
 
         @Test
+        void productionShowsDetail() throws Exception {
+            i.setOrigins("https://app.example.com");
+            i.init(DummyTestRouter.productionRouter());
+
+            final var exc = createPreflight("https://other.example.com", METHOD_POST).buildExchange();
+            assertEquals(RETURN, i.handleRequest(exc));
+
+            assertEquals(403, exc.getResponse().getStatusCode());
+            final var jn = om.readTree(exc.getResponse().getBodyAsStringDecoded());
+            assertEquals("Not allowed by CORS policy: origin: https://other.example.com", jn.get("detail").asText());
+        }
+
+        @Test
         void allowedHeaderPreflight() throws Exception {
             i.setOrigins("https://trusted.example.com");
             i.setHeaders("X-Bar X-Foo X-Zoo");
