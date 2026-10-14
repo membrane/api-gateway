@@ -94,7 +94,7 @@ class ApiDiscoveryInterceptorTest {
         interceptor().handleRequest(exc);
 
         assertEquals(TEXT_HTML_UTF8, exc.getResponse().getHeader().getContentType());
-        assertTrue(exc.getResponse().getBodyAsStringDecoded().contains(">Shop</a>"));
+        assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("<h2>Shop"));
     }
 
     /**

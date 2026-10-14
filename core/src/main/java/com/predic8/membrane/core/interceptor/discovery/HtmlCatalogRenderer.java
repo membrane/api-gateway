@@ -94,10 +94,9 @@ public class HtmlCatalogRenderer implements CatalogRenderer {
             .opid { color: var(--muted); font-family: monospace; font-size: 0.85em; }
             .badge { color: var(--muted); border: 1px solid var(--line); border-radius: 1em;
                      padding: 0.05em 0.5em; font-size: 0.75em; white-space: nowrap; }
-            .index { display: flex; flex-wrap: wrap; gap: 0.3em 1em; margin: 0.8em 0 0; }
-            .index-version { color: var(--muted); font-size: 0.85em; }
-            .self { color: inherit; text-decoration: none; }
-            .self:hover { text-decoration: underline; }
+            .api > summary { cursor: pointer; }
+            .api > summary > h2 { display: inline; }
+            .api[open] > summary { margin-bottom: 0.4em; }
             .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden;
                        clip-path: inset(50%); white-space: nowrap; }
             .deprecated code, .deprecated td:last-child { text-decoration: line-through; color: var(--muted); }
@@ -151,7 +150,6 @@ public class HtmlCatalogRenderer implements CatalogRenderer {
         html.append("</dl>\n");
         // A browser always prefers HTML, so the JSON is only reachable through the query parameter.
         html.append("<p class=\"links\"><a href=\"?%s=%s\">View as JSON</a></p>\n".formatted(FORMAT_PARAMETER, JSON_FORMAT));
-        renderIndex(html, catalog);
         html.append("</header>\n");
     }
 
@@ -165,33 +163,17 @@ public class HtmlCatalogRenderer implements CatalogRenderer {
                 .collect(joining(", ")));
     }
 
-    private static void renderIndex(StringBuilder html, Catalog catalog) {
-        if (catalog.apis().size() < 2)
-            return;
-        html.append("<nav class=\"index\">\n");
-        catalog.apis().forEach(entry -> html.append("<a href=\"#%s\">%s</a>\n"
-                .formatted(sectionId(entry), indexLabel(entry))));
-        html.append("</nav>\n");
-    }
-
-    // Two versions of one API share a name, so the version tells their links apart.
-    private static String indexLabel(CatalogEntry entry) {
-        if (entry.version() == null)
-            return escape(entry.name());
-        return "%s <span class=\"index-version\">%s</span>".formatted(escape(entry.name()), escape(entry.version()));
-    }
-
     private static String sectionId(CatalogEntry entry) {
         return CatalogCollector.slug(entry.id());
     }
 
+    // Collapsed to its title, so that the page opens as an overview of every API.
     private static void renderApi(StringBuilder html, CatalogEntry entry) {
-        final var id = sectionId(entry);
-        html.append("<section class=\"box\" id=\"%s\">\n<h2><a class=\"self\" href=\"#%s\">%s</a>"
-                .formatted(id, id, escape(entry.name())));
+        html.append("<details class=\"box api\" id=\"%s\">\n<summary><h2>%s"
+                .formatted(sectionId(entry), escape(entry.name())));
         if (entry.version() != null)
             html.append(" <span class=\"version\">%s</span>".formatted(escape(entry.version())));
-        html.append(" <span class=\"kind\">%s</span></h2>\n".formatted(entry.kind().getLabel()));
+        html.append(" <span class=\"kind\">%s</span></h2></summary>\n".formatted(entry.kind().getLabel()));
         // A proxy without a description of its own repeats its name there, which says nothing new.
         final var paragraphs = paragraphs(entry.description());
         if (!paragraphs.isEmpty() && !paragraphs.equals(List.of(entry.name())))
@@ -201,7 +183,7 @@ public class HtmlCatalogRenderer implements CatalogRenderer {
         renderTags(html, entry.tags());
         renderDetails(html, entry);
         renderOperations(html, entry);
-        html.append("</section>\n");
+        html.append("</details>\n");
     }
 
     private static List<String> paragraphs(String description) {
@@ -306,7 +288,7 @@ public class HtmlCatalogRenderer implements CatalogRenderer {
         if (operations.stream().allMatch(operation -> operation.tags().isEmpty()))
             renderOperationGroup(html, entry, null, operations);
         else
-            groupByTag(entry.tags(), operations).forEach((tag, group) -> renderOperationGroup(html, entry, tag, group));
+            groupByTag(entry.documentTags(), operations).forEach((tag, group) -> renderOperationGroup(html, entry, tag, group));
         html.append("</table>\n</div>\n</details>\n");
     }
 

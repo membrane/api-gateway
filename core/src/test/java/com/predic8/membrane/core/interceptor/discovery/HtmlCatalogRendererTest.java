@@ -60,7 +60,7 @@ class HtmlCatalogRendererTest {
     void aDescribedApiShowsEverythingTheGatewayKnows() {
         String html = render(catalog(describedApi()));
 
-        assertTrue(html.contains(">Fruit Shop API</a>"));
+        assertTrue(html.contains("<h2>Fruit Shop API"));
         assertTrue(html.contains("2.0.0"));
         assertTrue(html.contains("Showcases REST API design"));
         assertTrue(html.contains("<a href=\"https://example.com/shop/v2/\">https://example.com/shop/v2/</a>"));
@@ -97,7 +97,7 @@ class HtmlCatalogRendererTest {
 
     @Test
     void anApiWithoutOperationsGetsNoDetailsBlock() {
-        assertFalse(render(catalog(plainProxy())).contains("<details"));
+        assertFalse(render(catalog(plainProxy())).contains("<details class=\"operations\""));
     }
 
     /**
@@ -120,7 +120,7 @@ class HtmlCatalogRendererTest {
     void aPlainProxyGetsNoDeadLinksAndNoWildcardMethod() {
         String html = render(catalog(plainProxy()));
 
-        assertTrue(html.contains(">Shop</a>"));
+        assertTrue(html.contains("<h2>Shop"));
         assertTrue(html.contains("serviceProxy"));
         assertFalse(html.contains("Swagger UI"));
         assertFalse(html.contains("<table"));
@@ -128,19 +128,19 @@ class HtmlCatalogRendererTest {
     }
 
     @Test
-    void everyApiIsIndexedAndLinkable() {
+    void everyApiIsCollapsedUnderItsTitleAndLinkable() {
         String html = render(catalog(describedApi(), plainProxy()));
 
-        assertTrue(html.contains("<nav class=\"index\">"));
-        assertTrue(html.contains("<a href=\"#fruit-shop-api-v2-0-0\">Fruit Shop API <span class=\"index-version\">2.0.0</span></a>"));
-        assertTrue(html.contains("<a href=\"#shop\">Shop</a>"));
-        assertTrue(html.contains("<section class=\"box\" id=\"fruit-shop-api-v2-0-0\">"));
-        assertTrue(html.contains("<section class=\"box\" id=\"shop\">"));
+        assertTrue(html.contains("<details class=\"box api\" id=\"fruit-shop-api-v2-0-0\">\n<summary><h2>Fruit Shop API"));
+        assertTrue(html.contains("<details class=\"box api\" id=\"shop\">\n<summary><h2>Shop"));
     }
 
     @Test
-    void aSingleApiNeedsNoIndex() {
-        assertFalse(render(catalog(describedApi())).contains("<nav class=\"index\">"));
+    void theHeaderListsNoIndexOfTheApis() {
+        String html = render(catalog(describedApi(), plainProxy()));
+
+        assertFalse(html.contains("<nav"));
+        assertFalse(html.contains("href=\"#shop\""));
     }
 
     @Test
@@ -179,7 +179,7 @@ class HtmlCatalogRendererTest {
         final var entry = CatalogEntry.builder()
                 .aid("example.com:x").id("x").kind(API).name("X").description("X")
                 .endpoint(new CatalogEntry.Endpoint("http", "example.com", 80, "/", "*", "http://example.com/"))
-                .tags(List.of("Orders", "Products"))
+                .documentTags(List.of("Orders", "Products"))
                 .operations(List.of(
                         new CatalogOperation("GET", "/health", "getHealth", null, List.of(), false),
                         new CatalogOperation("GET", "/products", "getProducts", null, List.of("Products"), false),

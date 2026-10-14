@@ -41,15 +41,12 @@ class MembraneCatalogRendererTest {
     }
 
     @Test
-    void endpointCarriesTheRoutingDetailsTheOtherFormatsHide() throws Exception {
+    void endpointCarriesMethodAndUrlButNotTheirParts() throws Exception {
         JsonNode endpoint = render(catalog(describedApi())).path("apis").get(0).path("endpoint");
 
-        assertEquals("https", endpoint.path("protocol").asText());
-        assertEquals("example.com", endpoint.path("host").asText());
-        assertEquals(443, endpoint.path("port").asInt());
-        assertEquals("/shop/v2/", endpoint.path("path").asText());
         assertEquals("*", endpoint.path("method").asText());
         assertEquals("https://example.com/shop/v2/", endpoint.path("url").asText());
+        assertEquals(2, endpoint.size());
     }
 
     @Test
@@ -125,7 +122,15 @@ class MembraneCatalogRendererTest {
 
     @Test
     void documentDeclaresTheVersionOfItsFormat() throws Exception {
-        assertEquals(MembraneCatalogRenderer.FORMAT_VERSION, render(catalog()).path("formatVersion").asText());
+        assertEquals("0.1", render(catalog()).path("formatVersion").asText());
+    }
+
+    @Test
+    void documentLinksItselfAsSelfUrl() throws Exception {
+        final var document = render(catalog());
+
+        assertEquals("https://example.com/.well-known/api-catalog", document.path("self_url").asText());
+        assertTrue(document.path("url").isMissingNode());
     }
 
     @Test
@@ -139,7 +144,7 @@ class MembraneCatalogRendererTest {
     void documentationAndSpecificationLinksShareOneObject() throws Exception {
         final var links = render(catalog(describedApi())).path("apis").get(0).path("links");
 
-        assertEquals("https://example.com/api-docs/ui/fruit-shop-api-v2-0-0", links.path("docs").asText());
+        assertEquals("https://example.com/api-docs/ui/fruit-shop-api-v2-0-0", links.path("doc").asText());
         assertEquals("https://example.com/api-docs/fruit-shop-api-v2-0-0", links.path("openapi").asText());
         assertTrue(links.path("wsdl").isMissingNode());
     }

@@ -29,7 +29,9 @@ import java.util.*;
  * @param version        version of the API, or null when no OpenAPI document describes it
  * @param endpoint       where the API is reachable on this gateway
  * @param links          documentation and specification URLs
- * @param tags           tags of the API, never null
+ * @param tags           tags configured on the api, never null
+ * @param documentTags   tags the OpenAPI document declares, in its order, which group the
+ *                       operations; never null
  * @param contact        contact from the OpenAPI <code>info</code> block, or null
  * @param license        license from the OpenAPI <code>info</code> block, or null
  * @param termsOfService terms of service URL from the OpenAPI <code>info</code> block, or null
@@ -39,12 +41,13 @@ import java.util.*;
  *                       or null when it is no catalog
  */
 public record CatalogEntry(String aid, String id, ProxyKind kind, String name, String description,
-                           String version, Endpoint endpoint, Links links, List<String> tags,
+                           String version, Endpoint endpoint, Links links, List<String> tags, List<String> documentTags,
                            Contact contact, License license, String termsOfService, SoapInfo soap,
                            List<CatalogOperation> operations, String catalogType) {
 
     public CatalogEntry {
         tags = List.copyOf(tags);
+        documentTags = List.copyOf(documentTags);
         operations = List.copyOf(operations);
     }
 
@@ -91,7 +94,7 @@ public record CatalogEntry(String aid, String id, ProxyKind kind, String name, S
     public record SoapInfo(String wsdl, String serviceName, String portName) {}
 
     public CatalogEntry withIdentifiers(String aid, String id) {
-        return new CatalogEntry(aid, id, kind, name, description, version, endpoint, links, tags,
+        return new CatalogEntry(aid, id, kind, name, description, version, endpoint, links, tags, documentTags,
                 contact, license, termsOfService, soap, operations, catalogType);
     }
 
@@ -114,6 +117,7 @@ public record CatalogEntry(String aid, String id, ProxyKind kind, String name, S
         private Endpoint endpoint;
         private Links links = new Links(null, null);
         private List<String> tags = List.of();
+        private List<String> documentTags = List.of();
         private Contact contact;
         private License license;
         private String termsOfService;
@@ -166,6 +170,11 @@ public record CatalogEntry(String aid, String id, ProxyKind kind, String name, S
             return this;
         }
 
+        public Builder documentTags(List<String> documentTags) {
+            this.documentTags = documentTags;
+            return this;
+        }
+
         public Builder contact(Contact contact) {
             this.contact = contact;
             return this;
@@ -197,7 +206,7 @@ public record CatalogEntry(String aid, String id, ProxyKind kind, String name, S
         }
 
         public CatalogEntry build() {
-            return new CatalogEntry(aid, id, kind, name, description, version, endpoint, links, tags,
+            return new CatalogEntry(aid, id, kind, name, description, version, endpoint, links, tags, documentTags,
                     contact, license, termsOfService, soap, operations, catalogType);
         }
     }

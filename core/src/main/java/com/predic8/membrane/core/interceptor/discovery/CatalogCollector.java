@@ -23,7 +23,6 @@ import io.swagger.v3.oas.models.tags.*;
 
 import java.net.URI;
 import java.util.*;
-import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.interceptor.discovery.CatalogEntry.ProxyKind.*;
 import static com.predic8.membrane.core.interceptor.discovery.CatalogEntry.builder;
@@ -161,7 +160,8 @@ public class CatalogCollector {
                 .version(info == null ? null : info.getVersion())
                 .endpoint(endpoint(api, exchange, basePathOf(api, record)))
                 .links(new CatalogEntry.Links(origin + PATH_UI + "/" + recordId, origin + PATH + "/" + recordId))
-                .tags(Stream.concat(api.getTags().stream(), tags(openAPI).stream()).distinct().toList())
+                .tags(api.getTags())
+                .documentTags(tags(openAPI))
                 .contact(configuredContact(api) != null ? configuredContact(api) : contact(info))
                 .license(license(info))
                 .termsOfService(info == null ? null : info.getTermsOfService())

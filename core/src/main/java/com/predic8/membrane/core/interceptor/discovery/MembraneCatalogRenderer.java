@@ -33,7 +33,7 @@ import static com.predic8.membrane.core.openapi.util.UriUtil.*;
  */
 public class MembraneCatalogRenderer implements CatalogRenderer {
 
-    static final String FORMAT_VERSION = "1";
+    static final String FORMAT_VERSION = "0.1";
 
     private static final ObjectMapper om = new ObjectMapper();
     private static final ObjectWriter ow = om.writerWithDefaultPrettyPrinter();
@@ -60,7 +60,7 @@ public class MembraneCatalogRenderer implements CatalogRenderer {
         document.put("formatVersion", FORMAT_VERSION);
         document.put("name", collection.name());
         document.put("description", collection.description());
-        putIfPresent(document, "url", catalog.url());
+        putIfPresent(document, "self_url", catalog.url());
         ArrayNode apis = document.putArray("apis");
         catalog.apis().forEach(entry -> apis.add(renderApi(entry)));
         return ow.writeValueAsBytes(document);
@@ -86,10 +86,6 @@ public class MembraneCatalogRenderer implements CatalogRenderer {
 
     private ObjectNode renderEndpoint(CatalogEntry.Endpoint endpoint) {
         ObjectNode node = om.createObjectNode();
-        node.put("protocol", endpoint.protocol());
-        node.put("host", endpoint.host());
-        node.put("port", endpoint.port());
-        node.put("path", endpoint.path());
         putIfPresent(node, "method", endpoint.method());
         node.put("url", endpoint.url());
         return node;
@@ -97,7 +93,7 @@ public class MembraneCatalogRenderer implements CatalogRenderer {
 
     private void renderLinks(ObjectNode api, CatalogEntry entry) {
         final var node = om.createObjectNode();
-        putIfPresent(node, "docs", entry.links().humanUrl());
+        putIfPresent(node, "doc", entry.links().humanUrl());
         putIfPresent(node, "openapi", entry.links().specUrl());
         if (entry.soap() != null)
             putIfPresent(node, "wsdl", entry.soap().wsdl());

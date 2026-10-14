@@ -211,7 +211,8 @@ class CatalogCollectorTest {
         assertEquals("Fruit Shop API", entry.name());
         assertEquals("2.0.0", entry.version());
         assertTrue(entry.description().contains("Showcases REST API design"));
-        assertEquals(List.of("Root", "Products", "Vendors", "Orders", "Customers"), entry.tags());
+        assertTrue(entry.tags().isEmpty());
+        assertEquals(List.of("Root", "Products", "Vendors", "Orders", "Customers"), entry.documentTags());
         assertEquals("Predic8", entry.contact().name());
         assertEquals("info@predic8.de", entry.contact().email());
     }
@@ -460,7 +461,7 @@ class CatalogCollectorTest {
     }
 
     @Test
-    void configuredTagsComeFirstAndTheConfiguredContactWinsOverTheDocument() throws Exception {
+    void onlyConfiguredTagsAreListedAndTheConfiguredContactWinsOverTheDocument() throws Exception {
         final var api = apiProxy("fruitshop-api-v2-openapi-3.yml", 2000);
         api.setTags(List.of("external", "Products"));
         api.setInfo(contact("Gateway Team", null));
@@ -468,7 +469,7 @@ class CatalogCollectorTest {
 
         final var entry = only(collector().collect(router, exchange("/apis.json")));
 
-        assertEquals(List.of("external", "Products", "Root", "Vendors", "Orders", "Customers"), entry.tags());
+        assertEquals(List.of("external", "Products"), entry.tags());
         assertEquals("Gateway Team", entry.contact().name());
         assertNull(entry.contact().email());
     }
