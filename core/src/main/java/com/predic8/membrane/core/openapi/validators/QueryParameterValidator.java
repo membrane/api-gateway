@@ -90,7 +90,7 @@ public class QueryParameterValidator extends AbstractParameterValidator {
 
         var validFieldNamesFromObjects = getPossibleObjectPropertiesNamesForOperation(operation);
         fields.forEach(f -> {
-            if (validFieldNamesFromObjects.contains(f)) {
+            if (validFieldNamesFromObjects.contains(f) || matchesExplodedObjectPatternProperty(operation, f)) {
                 return;
             }
             errors.add(ctx.parameter(f), "Unknown query parameter '%s' is invalid!".formatted(f));
@@ -124,6 +124,27 @@ public class QueryParameterValidator extends AbstractParameterValidator {
             Object additional = s.getAdditionalProperties();
             if (TRUE.equals(additional) || (additional instanceof Schema)) {
                 return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean matchesExplodedObjectPatternProperty(Operation operation, String name) {
+        for (Parameter parameter : getAllQueryParameters(operation)) {
+            if (!isExplode(parameter))
+                continue;
+
+            Schema<?> schema = OpenAPIUtil.resolveSchema(api, parameter);
+            if (schema == null || !hasObjectType(schema) || schema.getPatternProperties() == null)
+                continue;
+
+            for (String regex : schema.getPatternProperties().keySet()) {
+                try {
+                    if (Pattern.compile(regex).matcher(name).find())
+                        return true;
+                } catch (PatternSyntaxException ignored) {
+                    // Invalid patterns are skipped by the object parameter parser as well.
+                }
             }
         }
         return false;

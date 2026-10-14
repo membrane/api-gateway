@@ -16,6 +16,8 @@ package com.predic8.membrane.core.openapi.validators;
 import com.fasterxml.jackson.databind.node.*;
 import com.predic8.membrane.core.openapi.util.*;
 import io.swagger.v3.oas.models.*;
+import io.swagger.v3.oas.models.media.*;
+import io.swagger.v3.oas.models.parameters.*;
 import io.swagger.v3.oas.models.security.*;
 import org.junit.jupiter.api.*;
 
@@ -131,6 +133,28 @@ class QueryParameterValidatorTest extends AbstractValidatorTest {
         assertEquals(1, err.size());
         assertTrue(err.get(0).getMessage().contains("invalid"));
         assertTrue(err.get(0).getMessage().contains("unknown"));
+    }
+
+    @Test
+    void explodedObjectPatternPropertiesMatchUnanchoredQueryNames() {
+        var schema = new ObjectSchema().patternProperties(Map.of("^x-", new IntegerSchema()));
+        var parameter = new QueryParameter()
+                .name("filter")
+                .required(false)
+                .style(Parameter.StyleEnum.FORM)
+                .explode(true)
+                .schema(schema);
+        var operation = new Operation().addParametersItem(parameter);
+        var validator = new QueryParameterValidator(new OpenAPI(), new PathItem());
+
+        var valid = validator.validate(new ValidationContext().statusCode(400).method("GET").path("/pattern"),
+                get().path("/pattern?x-trace=123"), operation);
+        assertEquals(0, valid.size(), valid.toString());
+
+        var invalid = validator.validate(new ValidationContext().statusCode(400).method("GET").path("/pattern"),
+                get().path("/pattern?x-trace=abc"), operation);
+        assertEquals(1, invalid.size(), invalid.toString());
+        assertTrue(invalid.toString().contains("x-trace"), invalid.toString());
     }
 
 

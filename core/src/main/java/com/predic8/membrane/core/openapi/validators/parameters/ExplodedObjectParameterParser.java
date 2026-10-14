@@ -110,7 +110,7 @@ public class ExplodedObjectParameterParser extends AbstractParameterParser {
                 Pattern pattern = Pattern.compile(regex);
                 values.forEach((k, vs) -> {
                     if (known.contains(k)) return; // avoid double set
-                    if (vs != null && !vs.isEmpty() && pattern.matcher(k).matches()) {
+                    if (vs != null && !vs.isEmpty() && pattern.matcher(k).find()) {
                         obj.set(k, scalarAsJson(decode(vs.getFirst(),UTF_8)));
                         known.add(k);
                     }
