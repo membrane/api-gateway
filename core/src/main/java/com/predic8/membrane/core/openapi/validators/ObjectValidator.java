@@ -165,9 +165,18 @@ public class ObjectValidator implements JsonSchemaValidator {
 
         ValidationErrors errors = new ValidationErrors();
 
-        if (schema.getAdditionalProperties() instanceof Schema) {
+        if (schema.getAdditionalProperties() instanceof Schema additionalPropertiesSchema) {
+            Boolean booleanSchemaValue = additionalPropertiesSchema.getBooleanSchemaValue();
+            if (booleanSchemaValue != null) {
+                if (booleanSchemaValue)
+                    return null;
+                return errors.add(ctx.statusCode(400),
+                        format("Object has the additional %s: %s. But the schema does not allow additional properties.",
+                                propertyOrProperties(additionalProperties.keySet()),
+                                joinByComma(additionalProperties.keySet())));
+            }
             additionalProperties.forEach((propName, value) ->
-                    errors.add(new SchemaValidator(api, (Schema) schema.getAdditionalProperties()).validate(ctx.addJSONpointerSegment(propName), value)));
+                    errors.add(new SchemaValidator(api, additionalPropertiesSchema).validate(ctx.addJSONpointerSegment(propName), value)));
             return errors;
         }
         if (schema.getAdditionalProperties() instanceof Boolean b) {
