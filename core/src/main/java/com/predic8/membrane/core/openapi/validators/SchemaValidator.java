@@ -162,6 +162,14 @@ public class SchemaValidator implements JsonSchemaValidator {
 
         var errors = new ValidationErrors();
 
+        // In JSON Schema 2020-12 (OAS 3.1 and later) true and false are schemas: true accepts every
+        // value, false none, null included. The parser models them as a schema without keywords that
+        // would accept everything. See #3479.
+        if (Boolean.TRUE.equals(schema.getBooleanSchemaValue()))
+            return errors;
+        if (Boolean.FALSE.equals(schema.getBooleanSchemaValue()))
+            return errors.add(ctx, "The schema is false and does not allow any value.");
+
         // A nullable schema accepts null itself, so validation stops here instead of descending into
         // allOf/anyOf/oneOf/not subschemas, which are typically not nullable and would reject it. See #3119.
         if ((value == null || value instanceof NullNode) && isNullable(schema))

@@ -1,0 +1,70 @@
+openapi: "3.1.0"
+info:
+  title: Boolean Schemas API
+  version: '1.0'
+paths:
+  /properties:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                anything: true
+                forbidden: false
+                notTrue:
+                  not: true
+                notFalse:
+                  not: false
+                allOfFalse:
+                  allOf:
+                    - type: string
+                    - false
+                anyOfFalse:
+                  anyOf:
+                    - false
+                    - type: string
+                ref:
+                  $ref: '#/components/schemas/Closed'
+      responses:
+        "200":
+          description: "OK"
+  /items:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items: false
+      responses:
+        "200":
+          description: "OK"
+  /additional:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                closed:
+                  type: object
+                  additionalProperties: false
+                open:
+                  type: object
+                  additionalProperties: true
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+components:
+  schemas:
+    Closed:
+      type: object
+      additionalProperties: false
