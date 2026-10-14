@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.resolver;
 
+import com.google.common.base.Suppliers;
 import com.google.common.collect.Lists;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -110,12 +111,15 @@ public class HTTPSchemaResolver implements SchemaResolver {
        this(() -> httpClient);
     }
 
-    /**
-     * @param httpClient called on every resolve; it must return the same client each time, e.g. by memoizing a lazily
-     *                   created one.
-     */
-    public HTTPSchemaResolver(Supplier<HttpClient> httpClient) {
+    private HTTPSchemaResolver(Supplier<HttpClient> httpClient) {
        this.httpClient = httpClient;
+    }
+
+    /**
+     * @param createHttpClient called once, when the first URL is resolved.
+     */
+    public static HTTPSchemaResolver withLazyClient(Supplier<HttpClient> createHttpClient) {
+        return new HTTPSchemaResolver(Suppliers.memoize(createHttpClient::get));
     }
 
     @Override

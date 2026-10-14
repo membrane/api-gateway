@@ -15,7 +15,6 @@
 package com.predic8.membrane.core.resolver;
 
 import com.google.common.base.Objects;
-import com.google.common.base.Suppliers;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.kubernetes.KubernetesSchemaResolver;
 import com.predic8.membrane.core.kubernetes.client.KubernetesClientFactory;
@@ -67,7 +66,7 @@ public class ResolverMap implements Cloneable, Resolver {
      * closed once it is garbage collected.
      */
     public ResolverMap() {
-        this(new HTTPSchemaResolver(Suppliers.memoize(() -> new HttpClient(new HttpClientConfiguration()))), null);
+        this(HTTPSchemaResolver.withLazyClient(() -> new HttpClient(new HttpClientConfiguration())), null);
     }
 
     public ResolverMap(HttpClient httpClient, KubernetesClientFactory kubernetesClientFactory) {

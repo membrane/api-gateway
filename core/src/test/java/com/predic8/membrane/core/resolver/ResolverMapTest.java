@@ -84,7 +84,8 @@ class ResolverMapTest {
     }
 
     /**
-     * #3483: the no-arg ResolverMap must not start a "Connection Closer" timer thread unless an HTTP URL is resolved.
+     * #3483: the no-arg ResolverMap must not create its HTTP client, and with it a timer thread, unless an HTTP URL is
+     * resolved.
      */
     @Test
     void noArgResolverMapStartsNoTimerThread() throws Exception {
@@ -97,7 +98,7 @@ class ResolverMapTest {
         }
     }
 
-    /** java.util.Timer threads are named "Timer-N". */
+    /** Threads of unnamed java.util.Timers, such as TimerManager's, are named "Timer-N". */
     private static Set<Thread> liveTimerThreads() {
         return Thread.getAllStackTraces().keySet().stream()
                 .filter(t -> t.isAlive() && t.getName().startsWith("Timer-"))

@@ -74,7 +74,7 @@ class DefaultMainComponentsTest {
 
     /**
      * #3483: the components of a router must only use the router's own timer, so stopping the router leaves no
-     * "Connection Closer" timer thread behind.
+     * timer thread behind.
      */
     @Test
     void stoppedRouterLeavesNoTimerThreads() throws Exception {
@@ -82,6 +82,32 @@ class DefaultMainComponentsTest {
 
         new DefaultRouter().stop();
 
+        assertNoTimerThreadStartedSince(before);
+    }
+
+    /**
+     * #3483: init() replaces the HTTP client and the resolver map; the replacements must use the router's timer, too.
+     */
+    @Test
+    void stoppedInitializedRouterLeavesNoTimerThreads() throws Exception {
+        final var before = liveTimerThreads();
+
+        final var router = load("""
+                internal:
+                  name: dummy
+                  target:
+                    url: https://example.com
+                """);
+        try {
+            router.init();
+        } finally {
+            router.stop();
+        }
+
+        assertNoTimerThreadStartedSince(before);
+    }
+
+    private static void assertNoTimerThreadStartedSince(Set<Thread> before) throws InterruptedException {
         final var started = liveTimerThreads();
         started.removeAll(before);
         for (final var thread : started)
@@ -90,7 +116,7 @@ class DefaultMainComponentsTest {
         assertEquals(Set.of(), started);
     }
 
-    /** java.util.Timer threads are named "Timer-N". */
+    /** Threads of unnamed java.util.Timers, such as TimerManager's, are named "Timer-N". */
     private static Set<Thread> liveTimerThreads() {
         return Thread.getAllStackTraces().keySet().stream()
                 .filter(t -> t.isAlive() && t.getName().startsWith("Timer-"))
