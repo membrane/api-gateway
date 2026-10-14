@@ -22,7 +22,7 @@ import java.time.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 
 /**
- * Renders a {@link Catalog} as an APIs.json document, specification version 0.18.
+ * Renders a {@link Catalog} as an APIs.json document, specification version 0.24.
  * <p>
  * Note the capitalisation of <code>humanURL</code> and <code>baseURL</code>. The specification is
  * inconsistent here: its field list spells them <code>humanUrl</code> and <code>baseUrl</code>, its
@@ -38,7 +38,7 @@ import static com.predic8.membrane.core.http.MimeType.*;
  */
 public class ApisJsonRenderer implements CatalogRenderer {
 
-    static final String SPECIFICATION_VERSION = "0.18";
+    static final String SPECIFICATION_VERSION = "0.24";
 
     private static final ObjectMapper om = new ObjectMapper();
 

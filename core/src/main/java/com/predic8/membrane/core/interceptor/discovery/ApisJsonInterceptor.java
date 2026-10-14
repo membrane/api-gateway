@@ -22,7 +22,7 @@ import java.time.format.*;
 import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE;
 
 /**
- * @description Publishes every API deployed on this gateway as an APIs.json 0.18 document, a
+ * @description Publishes every API deployed on this gateway as an APIs.json 0.24 document, a
  * collection a crawler or registry can index. The catalog is collected from the running
  * configuration on each request and therefore never goes stale.
  * <p>

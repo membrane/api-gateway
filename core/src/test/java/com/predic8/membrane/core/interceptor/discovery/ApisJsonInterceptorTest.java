@@ -48,7 +48,7 @@ class ApisJsonInterceptorTest {
 
         assertEquals(APPLICATION_JSON, exc.getResponse().getHeader().getContentType());
         final var document = body(exc);
-        assertEquals("0.18", document.path("specificationVersion").asText());
+        assertEquals("0.24", document.path("specificationVersion").asText());
         assertEquals("gateway.example.com:gateway", document.path("aid").asText());
         assertEquals("Gateway APIs", document.path("name").asText());
         assertEquals("Every API of this gateway", document.path("description").asText());

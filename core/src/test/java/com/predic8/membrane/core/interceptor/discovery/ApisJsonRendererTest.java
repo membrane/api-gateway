@@ -52,7 +52,7 @@ class ApisJsonRendererTest {
         assertEquals("https://example.com/.well-known/api-catalog", document.path("url").asText());
         assertEquals("2026-01-15", document.path("created").asText());
         assertEquals("2026-01-15", document.path("modified").asText());
-        assertEquals("0.18", document.path("specificationVersion").asText());
+        assertEquals("0.24", document.path("specificationVersion").asText());
         assertEquals(1, document.path("apis").size());
     }
 
