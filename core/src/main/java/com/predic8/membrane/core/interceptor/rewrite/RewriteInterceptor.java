@@ -58,6 +58,8 @@ public class RewriteInterceptor extends AbstractInterceptor {
     /**
      * Scheme followed by "://" at the start (RFC 3986 section 3.1). A "://" later on, e.g. in the query, does not count.
      */
+    public static final String URL_NOT_PROCESSABLE = "The URL may be invalid, or the server could not process it.";
+
     private static final Pattern ABSOLUTE_URL = Pattern.compile("^[a-zA-Z][a-zA-Z0-9+.-]*://");
 
     public enum Type {
@@ -227,10 +229,11 @@ public class RewriteInterceptor extends AbstractInterceptor {
             log.info("Can't parse query: {}", destination);
             user(router.getConfiguration().isProduction(), getDisplayName())
                     .addSubType("path")
-                    .title("The path does not follow the URI specification. Confirm the validity of the provided URL.")
-                    .detail(e.getMessage())
+                    .title("Request URL could not be processed.")
+                    .detail(URL_NOT_PROCESSABLE, true)
                     .internal("component", "rewrite")
                     .internal("path", destination)
+                    .internal("reason", e.getMessage())
                     .buildAndSetResponse(exc);
             return null;
         }

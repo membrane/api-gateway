@@ -20,6 +20,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.lang.*;
 import com.predic8.membrane.core.lang.*;
+import org.slf4j.*;
 
 import java.util.concurrent.*;
 
@@ -41,6 +42,8 @@ import static com.predic8.membrane.core.lang.ExchangeExpression.*;
  */
 @MCElement(name = "idempotency")
 public class IdempotencyInterceptor extends AbstractLanguageInterceptor {
+
+    private static final Logger log = LoggerFactory.getLogger(IdempotencyInterceptor.class);
 
     private String key;
     private ExchangeExpression exchangeExpression;
@@ -78,9 +81,10 @@ public class IdempotencyInterceptor extends AbstractLanguageInterceptor {
     }
 
     private Outcome handleDuplicateKey(Exchange exc, String key) {
+        log.info("Idempotency key {} has already been processed.", key);
         user(router.getConfiguration().isProduction(), "idempotency")
                 .status(409)
-                .detail("key %s has already been processed".formatted(key))
+                .detail("Idempotency key has already been processed.", true)
                 .buildAndSetResponse(exc);
         return ABORT;
     }

@@ -177,11 +177,10 @@ public class JsonProtectionInterceptor extends AbstractBodyProtectionInterceptor
     private Response createErrorResponse(String msg, Integer line, Integer col) {
         log.info("JSON protection violation. Line: {}, col: {}, msg: {}", line, col, msg);
         if (shouldProvideDetails()) {
-            // TODO reportError must show msg in production, but production mode drops detail (#3393)
-            ProblemDetails pd = user(false,getDisplayName())
+            ProblemDetails pd = user(router.getConfiguration().isProduction(), getDisplayName())
                     .status(400)
                     .title("JSON Protection Violation")
-                    .detail(msg);
+                    .detail(msg, true);
             if (line != null) pd.topLevel("line", line);
             if (col != null) pd.topLevel("column", col);
             return pd.build();

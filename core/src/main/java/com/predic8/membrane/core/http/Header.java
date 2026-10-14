@@ -104,6 +104,7 @@ public class Header {
     public static final String USER_AGENT = "User-Agent";
     public static final String X_REQUESTED_WITH = "X-Requested-With";
     public static final String EXPIRES = "Expires";
+    public static final String RETRY_AFTER = "Retry-After";
     public static final String KEEP_ALIVE = "Keep-Alive";
 
     public static final String SERVER = "Server";
