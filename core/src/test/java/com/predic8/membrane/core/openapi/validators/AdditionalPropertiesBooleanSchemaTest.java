@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.openapi.validators;
 
 import com.predic8.membrane.core.openapi.model.Request;
+import com.predic8.membrane.core.openapi.model.Response;
 import jakarta.mail.internet.ParseException;
 import org.junit.jupiter.api.Test;
 
@@ -43,6 +44,27 @@ class AdditionalPropertiesBooleanSchemaTest extends AbstractValidatorTest {
         ValidationErrors errors = validator.validate(Request.post().mediaType(APPLICATION_JSON).path("/open").body("""
                 {"name": "a", "foo": 1}
                 """));
+        assertEquals(0, errors.size(), errors.toString());
+    }
+
+    @Test
+    void falseRejectsUnknownResponseProperty() throws ParseException {
+        ValidationErrors errors = validator.validateResponse(
+                Request.post().path("/closed"),
+                Response.statusCode(200).mediaType(APPLICATION_JSON).body("""
+                        {"name": "a", "foo": 1}
+                        """));
+        assertEquals(1, errors.size(), errors.toString());
+        assertTrue(errors.toString().contains("foo"), errors.toString());
+    }
+
+    @Test
+    void trueAllowsUnknownResponseProperty() throws ParseException {
+        ValidationErrors errors = validator.validateResponse(
+                Request.post().path("/open"),
+                Response.statusCode(200).mediaType(APPLICATION_JSON).body("""
+                        {"name": "a", "foo": 1}
+                        """));
         assertEquals(0, errors.size(), errors.toString());
     }
 }

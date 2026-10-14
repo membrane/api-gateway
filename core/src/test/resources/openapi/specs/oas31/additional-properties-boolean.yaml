@@ -17,6 +17,14 @@ paths:
       responses:
         "200":
           description: "OK"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string
+                additionalProperties: false
   /open:
     post:
       requestBody:
@@ -31,3 +39,11 @@ paths:
       responses:
         "200":
           description: "OK"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string
+                additionalProperties: true
