@@ -125,6 +125,8 @@ PRIO 3:
   - Related: in the response flow `cookie` is always empty (it only parses `Cookie`, not `Set-Cookie`). Document or address separately.
   - What about setting cookies?
 - Reorganisation of *Util* classes. Check for duplicates and right place.
+- Remove deprecated `ProblemDetails.detail(String)`
+  - Story: every call site has to choose with `detail(String, boolean)` whether the detail may be shown in production mode. Review each remaining call when migrating instead of passing `false` across the board.
 
 ## Breaking Changes
 

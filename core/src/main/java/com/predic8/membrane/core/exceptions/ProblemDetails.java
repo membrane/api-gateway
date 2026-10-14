@@ -81,6 +81,11 @@ public class ProblemDetails {
     protected String title;
     protected String detail;
 
+    /**
+     * Whether the detail is also returned in production mode
+     */
+    private boolean publicDetail;
+
     protected Interceptor.Flow flow;
     protected String seeSuffix = "";
 
@@ -219,10 +224,26 @@ public class ProblemDetails {
      * @param humanReadableExplanation A human-readable explanation specific to this
      *                                 occurrence of the problem.
      * @return Instance
+     * @deprecated Use {@link #detail(String, boolean)} and decide whether the detail may be shown in
+     * production mode. Will be removed in 8.0.
      */
+    @Deprecated
     public ProblemDetails detail(String humanReadableExplanation) {
-        if (humanReadableExplanation != null)
-            this.detail = humanReadableExplanation;
+        return detail(humanReadableExplanation, false);
+    }
+
+    /**
+     * @param humanReadableExplanation A human-readable explanation specific to this
+     *                                 occurrence of the problem.
+     * @param showInProduction         {@code true} to return the detail in production mode as well. Use it only
+     *                                 for text written for the client, and put internal or request-specific values
+     *                                 into {@link #internal(String, Object)}. {@code false} hides the detail in
+     *                                 production mode.
+     * @return Instance
+     */
+    public ProblemDetails detail(String humanReadableExplanation, boolean showInProduction) {
+        this.detail = humanReadableExplanation;
+        this.publicDetail = showInProduction;
         return this;
     }
 
@@ -289,6 +310,9 @@ public class ProblemDetails {
         root.putAll(topLevel);
 
         if (production) {
+            if (publicDetail) {
+                root.put(DETAIL, detail);
+            }
             provideLogKeyInsteadOfDetails(root);
             return root;
         }
@@ -328,7 +352,8 @@ public class ProblemDetails {
         } finally {
             MDC.remove(LOG_KEY);
         }
-        root.put(DETAIL, "Internal details are hidden. See server log (key: %s)".formatted(logKey));
+        root.merge(DETAIL, "Internal details are hidden. See server log (key: %s)".formatted(logKey),
+                (publicText, hidden) -> publicText + " " + hidden);
     }
 
     private @NotNull String getTypeSubtypeString() {
@@ -513,6 +538,7 @@ public class ProblemDetails {
                ", subType='" + subType + '\'' +
                ", title='" + title + '\'' +
                ", detail='" + detail + '\'' +
+               ", publicDetail=" + publicDetail +
                ", flow=" + flow +
                ", seeSuffix='" + seeSuffix + '\'' +
                ", component='" + component + '\'' +
