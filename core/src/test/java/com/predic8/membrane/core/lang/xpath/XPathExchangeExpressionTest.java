@@ -40,6 +40,7 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.XPATH;
 import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
+import static java.nio.charset.StandardCharsets.UTF_16BE;
 import static org.junit.jupiter.api.Assertions.*;
 
 class XPathExchangeExpressionTest extends AbstractExchangeExpressionTest {
@@ -133,9 +134,9 @@ class XPathExchangeExpressionTest extends AbstractExchangeExpressionTest {
     // Other
 
     @Test
-    void wrongContentType() {
+    void xmlWithWrongContentTypeIsParsed() {
         exchange.getRequest().getHeader().setContentType(APPLICATION_JSON);
-        assertEquals("", evalString("/persons/name[1]"));
+        assertEquals("John Doe", evalString("/persons/name[1]"));
     }
 
     @Nested
@@ -157,6 +158,44 @@ class XPathExchangeExpressionTest extends AbstractExchangeExpressionTest {
             var exc = post("/foo").contentType(APPLICATION_JSON).body("{\"a\":1}").buildExchange();
             assertFalse(eval("/a", exc, Boolean.class));
             assertTrue(eval("not(/a)", exc, Boolean.class));
+        }
+
+        /**
+         * A backend may parse the body as XML whatever its Content-Type says, so a guard must see the
+         * XML too.
+         */
+        @Test
+        void foreignContentTypeWithXmlIsParsed() throws URISyntaxException {
+            assertTrue(eval("//role = 'admin'", post("/foo").contentType(APPLICATION_JSON).body("<req><role>admin</role></req>").buildExchange(), Boolean.class));
+            assertTrue(eval("//role = 'admin'", post("/foo").contentType(APPLICATION_OCTET_STREAM).body(" \r\n\t<req><role>admin</role></req>").buildExchange(), Boolean.class));
+        }
+
+        @Test
+        void foreignContentTypeWithUtf16XmlIsParsed() throws URISyntaxException {
+            var exc = post("/foo").contentType(APPLICATION_OCTET_STREAM).body("\uFEFF<a/>".getBytes(UTF_16BE)).buildExchange();
+            assertTrue(eval("/a", exc, Boolean.class));
+        }
+
+        /**
+         * XML the gateway's parser rejects, but a lenient backend might accept, must not slip past a guard.
+         */
+        @Test
+        void foreignContentTypeWithRejectedXmlIsABodyError() throws URISyntaxException {
+            var e = assertThrows(ExchangeExpressionException.class,
+                    () -> eval("//role = 'admin'", post("/foo").contentType(APPLICATION_JSON).body("<!DOCTYPE req><req><role>admin</role></req>").buildExchange(), Boolean.class));
+            assertTrue(e.isBodyError());
+        }
+
+        @Test
+        void formDataWithRejectedXmlIsABodyError() throws URISyntaxException {
+            var e = assertThrows(ExchangeExpressionException.class,
+                    () -> eval("//role = 'admin'", post("/foo").contentType(APPLICATION_X_WWW_FORM_URLENCODED).body("<!DOCTYPE req><req><role>admin</role></req>").buildExchange(), Boolean.class));
+            assertTrue(e.isBodyError());
+        }
+
+        @Test
+        void foreignContentTypeWithWhitespaceOnlyIsAnEmptyDocument() throws URISyntaxException {
+            assertTrue(eval("not(/a)", post("/foo").contentType(APPLICATION_JSON).body(" \n").buildExchange(), Boolean.class));
         }
 
         @Test

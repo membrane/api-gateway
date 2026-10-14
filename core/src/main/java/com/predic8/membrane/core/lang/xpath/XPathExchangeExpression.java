@@ -33,10 +33,10 @@ import org.slf4j.LoggerFactory;
 import org.w3c.dom.NodeList;
 
 import javax.xml.namespace.NamespaceContext;
+import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.namespace.QName;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathEvaluationResult;
 import javax.xml.xpath.XPathExpressionException;
@@ -116,10 +116,10 @@ public class XPathExchangeExpression extends AbstractExchangeExpression {
             log.debug("Body: {}", msg.getBodyAsStringDecoded()); // is expensive!
         }
 
-        return switch (BodyKind.of(msg, XPathExchangeExpression::isXml)) {
+        return switch (BodyKind.of(msg, XPathExchangeExpression::isXml, "<")) {
             case EMPTY, FOREIGN -> evaluateOnEmptyDocument(xmlType);
-            case MATCHING, UNKNOWN -> evaluateOnBody(msg, xmlType);
-            case FORM -> evaluateOnFormBody(msg, xmlType);
+            case MATCHING, UNKNOWN, MISLABELLED -> evaluateOnBody(msg, xmlType);
+            case FORM -> evaluateOnFormBody(xmlType);
         };
     }
 
@@ -139,17 +139,12 @@ public class XPathExchangeExpression extends AbstractExchangeExpression {
     }
 
     /**
-     * Form data is what <code>curl -d</code> sends for any body, so it may be mislabelled XML. Anything
-     * else is the form data it claims to be, which holds no XML document.
+     * Form data is what <code>curl -d</code> sends for any body, so a user may have meant to send XML.
      */
-    private Object evaluateOnFormBody(Message msg, QName xmlType) throws XPathExpressionException {
-        try {
-            return evaluate(msg, xmlType);
-        } catch (XmlParseException e) {
-            log.info("Content-Type is {} and the body is not XML, so XPath {} is evaluated against an empty document. To have the body evaluated, send Content-Type: {}",
-                    APPLICATION_X_WWW_FORM_URLENCODED, expression, APPLICATION_XML);
-            return evaluateOnEmptyDocument(xmlType);
-        }
+    private Object evaluateOnFormBody(QName xmlType) throws XPathExpressionException {
+        log.info("Content-Type is {} and the body is not XML, so XPath {} is evaluated against an empty document. To have the body evaluated, send Content-Type: {}",
+                APPLICATION_X_WWW_FORM_URLENCODED, expression, APPLICATION_XML);
+        return evaluateOnEmptyDocument(xmlType);
     }
 
     private Object evaluate(Message msg, QName xmlType) throws XPathExpressionException {

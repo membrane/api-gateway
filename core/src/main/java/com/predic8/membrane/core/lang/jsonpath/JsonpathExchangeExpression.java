@@ -16,6 +16,7 @@ package com.predic8.membrane.core.lang.jsonpath;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import com.jayway.jsonpath.InvalidPathException;
 import com.jayway.jsonpath.JsonPath;
@@ -38,11 +39,13 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.List;
 
+import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_TRAILING_TOKENS;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_X_WWW_FORM_URLENCODED;
+import static com.predic8.membrane.core.lang.BodyKind.FORM;
 import static java.lang.Boolean.FALSE;
-import static java.util.Collections.emptyMap;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Collections.emptyMap;
 
 public class JsonpathExchangeExpression extends AbstractExchangeExpression {
 
@@ -54,6 +57,11 @@ public class JsonpathExchangeExpression extends AbstractExchangeExpression {
     private static final Object EMPTY_DOCUMENT = emptyMap();
 
     private final ObjectMapper om = new ObjectMapper();
+
+    /**
+     * Rejects content after the value, so that form data starting with <code>true</code> is not read as <code>true</code>.
+     */
+    private final ObjectReader scalarReader = om.readerFor(Object.class).with(FAIL_ON_TRAILING_TOKENS);
 
     /**
      * Compiled once: the static {@code JsonPath.read(json, String)} looks the path up in Jayway's
@@ -108,10 +116,11 @@ public class JsonpathExchangeExpression extends AbstractExchangeExpression {
     }
 
     private Object document(Message msg) {
-        return switch (BodyKind.of(msg, MimeType::isJson)) {
-            case EMPTY, FOREIGN -> EMPTY_DOCUMENT;
-            case MATCHING, UNKNOWN -> parse(msg);
-            case FORM -> parseFormBody(msg);
+        var kind = BodyKind.of(msg, MimeType::isJson, "{[");
+        return switch (kind) {
+            case EMPTY -> EMPTY_DOCUMENT;
+            case MATCHING, UNKNOWN, MISLABELLED -> parse(msg);
+            case FORM, FOREIGN -> scalarOrEmptyDocument(msg, kind);
         };
     }
 
@@ -139,20 +148,29 @@ public class JsonpathExchangeExpression extends AbstractExchangeExpression {
     }
 
     /**
-     * Form data is what <code>curl -d</code> sends for any body, so it may be mislabelled JSON. Anything
-     * else is the form data it claims to be, which holds no JSON document.
+     * A body that does not start like an object or array may still be a JSON scalar such as
+     * <code>42</code> or <code>"admin"</code>. Falling back to an empty document is safe here: unlike an
+     * object a lenient backend might accept, a scalar has no fields a guard could miss.
      */
-    private Object parseFormBody(Message msg) {
+    private Object scalarOrEmptyDocument(Message msg, BodyKind kind) {
         try {
-            return readBody(msg);
+            return scalarReader.readValue(msg.getBodyAsStreamDecoded());
         } catch (JsonProcessingException e) {
-            log.info("Content-Type is {} and the body is not JSON, so JSONPath {} is evaluated against an empty document. To have the body evaluated, send Content-Type: {}",
-                    APPLICATION_X_WWW_FORM_URLENCODED, expression, APPLICATION_JSON);
+            if (kind == FORM)
+                logFormBody();
             return EMPTY_DOCUMENT;
         } catch (IOException e) {
             throw new ExchangeExpressionException(expression, e, "Error reading body for JSONPath")
                     .excludeException();
         }
+    }
+
+    /**
+     * Form data is what <code>curl -d</code> sends for any body, so a user may have meant to send JSON.
+     */
+    private void logFormBody() {
+        log.info("Content-Type is {} and the body is not JSON, so JSONPath {} is evaluated against an empty document. To have the body evaluated, send Content-Type: {}",
+                APPLICATION_X_WWW_FORM_URLENCODED, expression, APPLICATION_JSON);
     }
 
     private Object readBody(Message msg) throws IOException {

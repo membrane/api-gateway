@@ -17,8 +17,8 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.lang.AbstractExchangeExpressionTest;
 import com.predic8.membrane.core.lang.ExchangeExpression.InterceptorAdapter;
-import com.predic8.membrane.core.lang.ExchangeExpressionException;
 import com.predic8.membrane.core.lang.ExchangeExpression.Language;
+import com.predic8.membrane.core.lang.ExchangeExpressionException;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -26,10 +26,7 @@ import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
 
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_X_WWW_FORM_URLENCODED;
-import static com.predic8.membrane.core.http.MimeType.TEXT_PLAIN;
-import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
+import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.http.Request.post;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
@@ -184,6 +181,62 @@ class JsonpathExchangeExpressionTest extends AbstractExchangeExpressionTest {
     @Nested
     class Body {
 
+        /**
+         * A backend may parse the body as JSON whatever its Content-Type says, so a guard must see the
+         * JSON too.
+         */
+        @Test
+        void foreignContentTypeWithJsonIsParsed() throws URISyntaxException {
+            assertTrue(eval("$.a", post("/foo").contentType(TEXT_XML).body("{\"a\":1}").buildExchange()));
+            assertTrue(eval("$[0]", post("/foo").contentType(APPLICATION_OCTET_STREAM).body(" \n[1]").buildExchange()));
+        }
+
+        @Test
+        void foreignContentTypeWithMalformedJsonIsABodyError() throws URISyntaxException {
+            var e = assertThrows(ExchangeExpressionException.class,
+                    () -> eval("$.a", post("/foo").contentType(TEXT_XML).body("{\"a\":").buildExchange()));
+            assertTrue(e.isBodyError());
+        }
+
+        @Test
+        void formDataWithMalformedJsonIsABodyError() throws URISyntaxException {
+            var e = assertThrows(ExchangeExpressionException.class,
+                    () -> eval("$.a", post("/foo").contentType(APPLICATION_X_WWW_FORM_URLENCODED).body("{\"a\":").buildExchange()));
+            assertTrue(e.isBodyError());
+        }
+
+        @Test
+        void formDataWithJsonScalarIsParsed() throws URISyntaxException {
+            assertEquals(42, evalRoot(post("/foo").contentType(APPLICATION_X_WWW_FORM_URLENCODED).body("42").buildExchange()));
+            assertEquals(false, evalRoot(post("/foo").contentType(APPLICATION_X_WWW_FORM_URLENCODED).body("false").buildExchange()));
+            assertEquals("admin", evalRoot(post("/foo").contentType(APPLICATION_X_WWW_FORM_URLENCODED).body("\"admin\"").buildExchange()));
+        }
+
+        @Test
+        void foreignContentTypeWithJsonScalarIsParsed() throws URISyntaxException {
+            assertEquals(42, evalRoot(post("/foo").contentType(APPLICATION_OCTET_STREAM).body(" 42").buildExchange()));
+            assertEquals("admin", evalRoot(post("/foo").contentType(TEXT_XML).body("\"admin\"").buildExchange()));
+        }
+
+        /**
+         * A form body may start with a JSON scalar, but is only JSON if nothing follows it.
+         */
+        @Test
+        void formDataStartingWithJsonScalarIsAnEmptyDocument() throws URISyntaxException {
+            assertEquals(Map.of(), evalRoot(post("/foo").contentType(APPLICATION_X_WWW_FORM_URLENCODED).body("true&x=1").buildExchange()));
+            assertEquals(Map.of(), evalRoot(post("/foo").contentType(APPLICATION_X_WWW_FORM_URLENCODED).body("null=1&b=2").buildExchange()));
+        }
+
+        /**
+         * Lenient backends accept single quotes, so the guard must not fall back to an empty document.
+         */
+        @Test
+        void formDataWithLenientJsonIsABodyError() throws URISyntaxException {
+            var e = assertThrows(ExchangeExpressionException.class,
+                    () -> eval("$.role", post("/foo").contentType(APPLICATION_X_WWW_FORM_URLENCODED).body("{'role':'admin'}").buildExchange()));
+            assertTrue(e.isBodyError());
+        }
+
         @Test
         void textPlainIsParsed() throws URISyntaxException {
             assertTrue(eval("$.a", post("/foo").contentType(TEXT_PLAIN).body("{\"a\":1}").buildExchange()));
@@ -235,6 +288,10 @@ class JsonpathExchangeExpressionTest extends AbstractExchangeExpressionTest {
 
         private boolean eval(String jsonpath, Exchange exc) {
             return expression(new InterceptorAdapter(router), JSONPATH, jsonpath).evaluate(exc, REQUEST, Boolean.class);
+        }
+
+        private Object evalRoot(Exchange exc) {
+            return expression(new InterceptorAdapter(router), JSONPATH, "$").evaluate(exc, REQUEST, Object.class);
         }
     }
 

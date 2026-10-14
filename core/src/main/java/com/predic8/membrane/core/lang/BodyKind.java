@@ -15,18 +15,23 @@ package com.predic8.membrane.core.lang;
 
 import com.predic8.membrane.core.http.Message;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.function.Predicate;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 
 /**
  * How an expression language that queries the body (XPath, JSONPath) treats a message, judged from
- * its Content-Type before the body is parsed.
+ * its Content-Type and the first bytes of its body.
  * <p>
  * A body that cannot hold a document of the language is evaluated against an empty document rather
  * than answered with a fixed result, so that every expression keeps the meaning the language gives
  * it for a document without the queried content: {@code /a} is false and {@code not(/a)} is true.
  * Only a body that should be such a document but does not parse is an error.
+ * <p>
+ * The Content-Type alone does not rule a body out: a backend may parse the body whatever its
+ * Content-Type says, so a guard that skipped a mislabelled document could be bypassed.
  */
 public enum BodyKind {
 
@@ -46,24 +51,37 @@ public enum BodyKind {
     UNKNOWN,
 
     /**
-     * Form data, which <code>curl -d</code> sends for any body: parsed, but a body that does not parse
-     * is evaluated against an empty document, because its Content-Type said it is no such document.
+     * Declares form data or another format, but starts like a document of the language: parsed, a
+     * parse failure is an error. Falling back to an empty document would let a body pass that the
+     * gateway's parser rejects but a lenient backend accepts.
+     */
+    MISLABELLED,
+
+    /**
+     * Form data, which <code>curl -d</code> sends for any body, that does not start like a document of
+     * the language: evaluated against an empty document, unless the whole body is a document the
+     * language can tell apart from form data, such as a JSON scalar.
      */
     FORM,
 
     /**
-     * Declares another format: not parsed, evaluated against an empty document.
+     * Declares another format and does not start like a document of the language: evaluated against
+     * an empty document, unless the whole body is a document the language can still recognise, such as
+     * a JSON scalar.
      */
     FOREIGN;
 
     /**
      * @param isOwnType whether a Content-Type declares the language's own format
+     * @param documentStart the characters a document of the language can start with, after whitespace
      */
-    public static BodyKind of(Message msg, Predicate<String> isOwnType) {
+    public static BodyKind of(Message msg, Predicate<String> isOwnType, String documentStart) {
+        if (isEmpty(msg))
+            return EMPTY;
         var kind = byContentType(msg.getHeader().getContentType(), isOwnType);
-        if (kind == FOREIGN)
-            return FOREIGN; // Not parsed, so the body need not be read to tell whether it is empty
-        return isEmpty(msg) ? EMPTY : kind;
+        if ((kind == FORM || kind == FOREIGN) && startsLikeDocument(msg, documentStart))
+            return MISLABELLED;
+        return kind;
     }
 
     private static BodyKind byContentType(String contentType, Predicate<String> isOwnType) {
@@ -81,5 +99,22 @@ public enum BodyKind {
      */
     private static boolean isEmpty(Message msg) {
         return msg.isBodyEmpty() || msg.getBody().getLength() == 0;
+    }
+
+    /**
+     * Looks at the first byte that is not ASCII whitespace. The body is not decoded from its charset,
+     * so a byte order mark or a zero byte, which may start a document in UTF-16 or UTF-32, counts as a
+     * possible start too.
+     */
+    private static boolean startsLikeDocument(Message msg, String documentStart) {
+        try (var in = msg.getBodyAsStreamDecoded()) {
+            int b;
+            do {
+                b = in.read();
+            } while (b == ' ' || b == '\t' || b == '\r' || b == '\n');
+            return b != -1 && (documentStart.indexOf(b) >= 0 || b == 0x00 || b == 0xEF || b == 0xFE || b == 0xFF);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 }
