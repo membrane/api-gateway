@@ -128,7 +128,7 @@ public class OpenAPIPublisher {
                 .status(404)
                 .addSubType("openapi")
                 .addSubSee("wrong-id")
-                .detail("OpenAPI document with the id %s not found.".formatted(id))
+                .detail("OpenAPI document with the id %s not found.".formatted(id), true)
                 .buildAndSetResponse(exc);
         return RETURN;
     }

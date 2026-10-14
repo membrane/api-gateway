@@ -196,7 +196,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
                 .status(404)
                 .addSubType("openapi")
                 .addSubSee("wrong-id")
-                .detail("OpenAPI document with the id %s not found.".formatted(id))
+                .detail("OpenAPI document with the id %s not found.".formatted(id), true)
                 .topLevel("id", id)
                 .buildAndSetResponse(exc);
         return RETURN;
