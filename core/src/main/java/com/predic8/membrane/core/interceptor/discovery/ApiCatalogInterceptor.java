@@ -26,7 +26,9 @@ import static com.predic8.membrane.core.http.Header.*;
  * The catalog is collected from the running configuration on each request and therefore never
  * goes stale.
  * <p>
- * The catalog bookmarks every API with an <code>item</code> link. An API described by an OpenAPI
+ * The catalog bookmarks every API with an <code>item</code> link, titled by its name and, where an
+ * OpenAPI document gives one, its version. An api that publishes a catalog itself, such as one with
+ * <code>apisJson</code>, is linked with <code>api-catalog</code> instead. An API described by an OpenAPI
  * document also links that document as <code>service-desc</code> and its Swagger UI as
  * <code>service-doc</code>; a SOAP proxy links the WSDL the gateway publishes as
  * <code>service-desc</code>. Internal proxies and proxies whose initialisation failed are left

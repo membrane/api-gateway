@@ -165,7 +165,8 @@ public class CatalogCollector {
                 .contact(configuredContact(api) != null ? configuredContact(api) : contact(info))
                 .license(license(info))
                 .termsOfService(info == null ? null : info.getTermsOfService())
-                .operations(collectOperations ? operations(openAPI) : List.of()).build();
+                .operations(collectOperations ? operations(openAPI) : List.of())
+                .catalogType(catalogType(api)).build();
     }
 
     /**
@@ -175,7 +176,17 @@ public class CatalogCollector {
      */
     private CatalogEntry plainEntry(AbstractServiceProxy proxy, Exchange exchange, String domain) {
         CatalogEntry.Endpoint endpoint = endpoint(proxy, exchange, pathOf(proxy));
-        return builder().aid(aid(proxy, null, domain)).id(id(proxy, null)).kind(kindOf(proxy)).name(proxy.getName()).description(description(proxy, null)).endpoint(endpoint).tags(proxy.getTags()).contact(configuredContact(proxy)).soap(soapInfo(proxy, endpoint)).build();
+        return builder().aid(aid(proxy, null, domain)).id(id(proxy, null)).kind(kindOf(proxy)).name(proxy.getName()).description(description(proxy, null)).endpoint(endpoint).tags(proxy.getTags()).contact(configuredContact(proxy)).soap(soapInfo(proxy, endpoint)).catalogType(catalogType(proxy)).build();
+    }
+
+    /**
+     * A discovery plugin answers every request and ends the flow, so it sits at the top level.
+     */
+    private static String catalogType(AbstractServiceProxy proxy) {
+        return proxy.getFlow().stream()
+                .filter(AbstractApiDiscoveryInterceptor.class::isInstance)
+                .map(interceptor -> ((AbstractApiDiscoveryInterceptor) interceptor).catalogType())
+                .findFirst().orElse(null);
     }
 
     private static CatalogEntry.ProxyKind kindOf(AbstractServiceProxy proxy) {

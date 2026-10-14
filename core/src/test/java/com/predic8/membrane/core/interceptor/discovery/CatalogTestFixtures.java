@@ -78,6 +78,22 @@ class CatalogTestFixtures {
                 .build();
     }
 
+    /**
+     * An api that publishes a catalog itself, here in the APIs.json format.
+     */
+    static CatalogEntry apisJsonCatalog() {
+        return CatalogEntry.builder()
+                .aid("example.com:apis-json")
+                .id("apis-json")
+                .kind(API)
+                .name("APIs.json")
+                .description("APIs.json")
+                .endpoint(new CatalogEntry.Endpoint("https", "example.com", 443, "/apis.json", "*",
+                        "https://example.com/apis.json"))
+                .catalogType("application/json")
+                .build();
+    }
+
     static CatalogEntry soapProxy() {
         return CatalogEntry.builder()
                 .aid("example.com:cities")

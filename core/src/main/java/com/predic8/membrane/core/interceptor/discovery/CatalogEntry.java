@@ -35,11 +35,13 @@ import java.util.*;
  * @param termsOfService terms of service URL from the OpenAPI <code>info</code> block, or null
  * @param soap           WSDL details, or null unless {@link ProxyKind#SOAP_PROXY}
  * @param operations     operations of the API, never null but empty without an OpenAPI document
+ * @param catalogType    media type of the catalog this api publishes through a discovery plugin,
+ *                       or null when it is no catalog
  */
 public record CatalogEntry(String aid, String id, ProxyKind kind, String name, String description,
                            String version, Endpoint endpoint, Links links, List<String> tags,
                            Contact contact, License license, String termsOfService, SoapInfo soap,
-                           List<CatalogOperation> operations) {
+                           List<CatalogOperation> operations, String catalogType) {
 
     public CatalogEntry {
         tags = List.copyOf(tags);
@@ -90,7 +92,7 @@ public record CatalogEntry(String aid, String id, ProxyKind kind, String name, S
 
     public CatalogEntry withIdentifiers(String aid, String id) {
         return new CatalogEntry(aid, id, kind, name, description, version, endpoint, links, tags,
-                contact, license, termsOfService, soap, operations);
+                contact, license, termsOfService, soap, operations, catalogType);
     }
 
     public static Builder builder() {
@@ -117,6 +119,7 @@ public record CatalogEntry(String aid, String id, ProxyKind kind, String name, S
         private String termsOfService;
         private SoapInfo soap;
         private List<CatalogOperation> operations = List.of();
+        private String catalogType;
 
         public Builder aid(String aid) {
             this.aid = aid;
@@ -188,9 +191,14 @@ public record CatalogEntry(String aid, String id, ProxyKind kind, String name, S
             return this;
         }
 
+        public Builder catalogType(String catalogType) {
+            this.catalogType = catalogType;
+            return this;
+        }
+
         public CatalogEntry build() {
             return new CatalogEntry(aid, id, kind, name, description, version, endpoint, links, tags,
-                    contact, license, termsOfService, soap, operations);
+                    contact, license, termsOfService, soap, operations, catalogType);
         }
     }
 }

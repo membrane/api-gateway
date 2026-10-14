@@ -28,7 +28,9 @@ import static com.predic8.membrane.core.http.MimeType.*;
  * The document is a linkset (RFC 9264): one object whose sole member is <code>linkset</code>, an
  * array of link context objects. Every link relation inside a context object maps to an array of
  * link targets, even when there is only one. The first context object is anchored at the catalog
- * itself and bookmarks each API URL with <code>item</code>; one further context object per API URL
+ * itself and bookmarks each API URL with <code>item</code>, titled by the names and versions of its
+ * APIs. Every other catalog on this gateway is linked from there with <code>api-catalog</code>
+ * instead, because RFC 9727 reserves <code>item</code> for APIs. One further context object per API URL
  * is anchored there and points at its OpenAPI documents, or for a SOAP proxy its WSDL, with
  * <code>service-desc</code> and at their Swagger UIs with <code>service-doc</code>.
  * <p>
@@ -60,7 +62,7 @@ public class ApiCatalogRenderer implements CatalogRenderer {
 
     private static Map<String, List<CatalogEntry>> byEndpoint(Catalog catalog) {
         final var byEndpoint = new LinkedHashMap<String, List<CatalogEntry>>();
-        catalog.apis().forEach(entry ->
+        catalog.apis().stream().filter(entry -> entry.catalogType() == null).forEach(entry ->
                 byEndpoint.computeIfAbsent(entry.endpoint().url(), url -> new ArrayList<>()).add(entry));
         return byEndpoint;
     }
@@ -72,10 +74,24 @@ public class ApiCatalogRenderer implements CatalogRenderer {
         byEndpoint.forEach((url, entries) -> {
             ObjectNode item = om.createObjectNode();
             item.put("href", url);
-            item.put("title", entries.stream().map(CatalogEntry::name).distinct().collect(Collectors.joining(", ")));
+            item.put("title", entries.stream().map(ApiCatalogRenderer::title).distinct().collect(Collectors.joining(", ")));
             items.add(item);
         });
+        final var catalogs = catalog.apis().stream()
+                .filter(entry -> entry.catalogType() != null && !entry.endpoint().url().equals(catalog.url()))
+                .toList();
+        if (!catalogs.isEmpty()) {
+            final var links = context.putArray("api-catalog");
+            catalogs.forEach(entry -> links.add(link(entry.endpoint().url(), entry.catalogType()).put("title", entry.name())));
+        }
         linkset.add(context);
+    }
+
+    /**
+     * Several documents of one API often share a name, and the version is what tells them apart.
+     */
+    private static String title(CatalogEntry entry) {
+        return entry.version() == null ? entry.name() : entry.name() + " " + entry.version();
     }
 
     private void renderApi(String url, List<CatalogEntry> entries, ArrayNode linkset) {

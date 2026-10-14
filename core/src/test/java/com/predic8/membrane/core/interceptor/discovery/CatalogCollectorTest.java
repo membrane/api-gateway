@@ -25,6 +25,7 @@ import org.junit.jupiter.api.*;
 
 import java.util.*;
 
+import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.discovery.CatalogEntry.ProxyKind.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -115,6 +116,19 @@ class CatalogCollectorTest {
     private static CatalogEntry only(Catalog catalog) {
         assertEquals(1, catalog.apis().size());
         return catalog.apis().getFirst();
+    }
+
+    @Test
+    void anApiPublishingACatalogCarriesTheMediaTypeOfThatCatalog() throws Exception {
+        final var catalogApi = taggedApi("APIs.json", 2000);
+        catalogApi.getFlow().add(new ApisJsonInterceptor());
+        add(catalogApi);
+        add(taggedApi("Orders", 2001));
+
+        final var apis = collector().collect(router, exchange("/apis.json")).apis();
+
+        assertEquals(APPLICATION_JSON, apis.getFirst().catalogType());
+        assertNull(apis.get(1).catalogType());
     }
 
     @Test

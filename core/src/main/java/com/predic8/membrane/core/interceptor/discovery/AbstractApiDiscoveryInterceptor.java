@@ -134,6 +134,13 @@ public abstract class AbstractApiDiscoveryInterceptor extends AbstractIntercepto
     }
 
     /**
+     * Media type of the catalog this interceptor publishes, for other catalogs that link it.
+     */
+    String catalogType() {
+        return renderer.contentType();
+    }
+
+    /**
      * Headers the format adds to its response, on top of <code>Content-Type</code>.
      */
     protected void addHeaders(Response.ResponseBuilder response, Catalog catalog, CatalogRenderer negotiated) {

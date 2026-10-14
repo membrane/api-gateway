@@ -61,7 +61,7 @@ class ApiCatalogRendererTest {
         assertEquals("https://example.com/.well-known/api-catalog", context.path("anchor").asText());
         assertEquals(2, context.path("item").size());
         assertEquals("https://example.com/shop/v2/", context.path("item").get(0).path("href").asText());
-        assertEquals("Fruit Shop API", context.path("item").get(0).path("title").asText());
+        assertEquals("Fruit Shop API 2.0.0", context.path("item").get(0).path("title").asText());
         assertEquals("http://example.com:2000/shop", context.path("item").get(1).path("href").asText());
     }
 
@@ -104,12 +104,56 @@ class ApiCatalogRendererTest {
         final var linkset = render(catalog(describedApi(), second)).path("linkset");
 
         assertEquals(1, linkset.get(0).path("item").size());
-        assertEquals("Fruit Shop API, Fruit Shop API v3", linkset.get(0).path("item").get(0).path("title").asText());
+        assertEquals("Fruit Shop API 2.0.0, Fruit Shop API v3", linkset.get(0).path("item").get(0).path("title").asText());
         assertEquals(2, linkset.size());
         assertEquals(2, linkset.get(1).path("service-desc").size());
         assertEquals("https://example.com/api-docs/fruit-shop-api-v3-0-0",
                 linkset.get(1).path("service-desc").get(1).path("href").asText());
         assertEquals(2, linkset.get(1).path("service-doc").size());
+    }
+
+    @Test
+    void anApiWithoutVersionIsTitledByItsNameAlone() throws Exception {
+        final var context = render(catalog(plainProxy())).path("linkset").get(0);
+
+        assertEquals("Shop", context.path("item").get(0).path("title").asText());
+    }
+
+    /**
+     * RFC 9727 §3.1 reserves item for APIs; §4.3 links further catalogs with api-catalog.
+     */
+    @Test
+    void anotherCatalogIsLinkedAsApiCatalogInsteadOfAsItem() throws Exception {
+        final var context = render(catalog(describedApi(), apisJsonCatalog())).path("linkset").get(0);
+
+        assertEquals(1, context.path("item").size());
+        assertEquals("https://example.com/shop/v2/", context.path("item").get(0).path("href").asText());
+        final var catalogs = context.path("api-catalog");
+        assertEquals(1, catalogs.size());
+        assertEquals("https://example.com/apis.json", catalogs.get(0).path("href").asText());
+        assertEquals(APPLICATION_JSON, catalogs.get(0).path("type").asText());
+        assertEquals("APIs.json", catalogs.get(0).path("title").asText());
+    }
+
+    @Test
+    void anotherCatalogGetsNoContextObjectOfItsOwn() throws Exception {
+        assertEquals(1, render(catalog(apisJsonCatalog())).path("linkset").size());
+    }
+
+    @Test
+    void theCatalogDoesNotLinkItself() throws Exception {
+        final var self = CatalogEntry.builder()
+                .aid("example.com:api-catalog").id("api-catalog")
+                .kind(CatalogEntry.ProxyKind.API).name("API Catalog").description("API Catalog")
+                .endpoint(new CatalogEntry.Endpoint("https", "example.com", 443, "/.well-known/api-catalog", "*",
+                        "https://example.com/.well-known/api-catalog"))
+                .catalogType(new ApiCatalogRenderer().contentType())
+                .build();
+
+        final var context = render(catalog(self)).path("linkset").get(0);
+
+        assertTrue(context.path("item").isEmpty());
+        assertTrue(context.path("api-catalog").isMissingNode());
     }
 
     /**
