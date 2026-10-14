@@ -177,6 +177,17 @@ class XPathExchangeExpressionTest extends AbstractExchangeExpressionTest {
         }
 
         /**
+         * JPEG starts with 0xFF and gRPC with 0x00, like a byte order mark or UTF-16 text, but neither is XML.
+         */
+        @Test
+        void binaryBodyIsAnEmptyDocument() throws URISyntaxException {
+            var jpeg = new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0, 0x00, 0x10, 'J', 'F', 'I', 'F'};
+            var grpc = new byte[]{0x00, 0x00, 0x00, 0x00, 0x05, 0x08, 0x01, 0x10, 0x02, 0x00};
+            assertTrue(eval("not(/a)", post("/foo").contentType("image/jpeg").body(jpeg).buildExchange(), Boolean.class));
+            assertTrue(eval("not(/a)", post("/foo").contentType("application/grpc").body(grpc).buildExchange(), Boolean.class));
+        }
+
+        /**
          * XML the gateway's parser rejects, but a lenient backend might accept, must not slip past a guard.
          */
         @Test

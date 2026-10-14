@@ -36,6 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
+import java.io.CharConversionException;
 import java.io.IOException;
 import java.util.List;
 
@@ -143,6 +144,13 @@ public class JsonpathExchangeExpression extends AbstractExchangeExpression {
                     .body(msg.getBodyAsStringDecoded())
                     .excludeException()
                     .bodyError();
+        } catch (CharConversionException e) {
+            // Jackson's encoding detection found no text it can decode, e.g. invalid UTF-32
+            log.info("Body is not valid JSON. JSONPath: {}", expression);
+            throw new ExchangeExpressionException(expression, e, "Body is not valid JSON: " + e.getMessage())
+                    .body(msg.getBodyAsStringDecoded())
+                    .excludeException()
+                    .bodyError();
         } catch (IOException e) {
             throw new ExchangeExpressionException(expression, e, "Error reading body for JSONPath")
                     .excludeException();
@@ -157,7 +165,7 @@ public class JsonpathExchangeExpression extends AbstractExchangeExpression {
     private Object scalarOrEmptyDocument(Message msg, BodyKind kind) {
         try {
             return scalarReader.readValue(msg.getBodyAsStreamDecoded());
-        } catch (JsonProcessingException e) {
+        } catch (JsonProcessingException | CharConversionException e) {
             if (kind == FORM)
                 logFormBody();
             return EMPTY_DOCUMENT;

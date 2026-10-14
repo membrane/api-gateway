@@ -15,11 +15,14 @@ package com.predic8.membrane.core.lang;
 
 import com.predic8.membrane.core.http.Message;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
 import java.util.function.Predicate;
 
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.util.text.TextUtil.detectEncoding;
 
 /**
  * How an expression language that queries the body (XPath, JSONPath) treats a message, judged from
@@ -102,17 +105,18 @@ public enum BodyKind {
     }
 
     /**
-     * Looks at the first byte that is not ASCII whitespace. The body is not decoded from its charset,
-     * so a byte order mark or a zero byte, which may start a document in UTF-16 or UTF-32, counts as a
-     * possible start too.
+     * Looks at the first character that is not whitespace, decoded in the encoding the first bytes
+     * point to. Bytes alone would not do: a document in UTF-16 or UTF-32 starts with a byte order mark
+     * or a zero byte, but so do binary formats such as JPEG (0xFF) or gRPC (0x00).
      */
-    private static boolean startsLikeDocument(Message msg, String documentStart) {
-        try (var in = msg.getBodyAsStreamDecoded()) {
-            int b;
+    static boolean startsLikeDocument(Message msg, String documentStart) {
+        try (var in = new BufferedInputStream(msg.getBodyAsStreamDecoded())) {
+            var reader = new InputStreamReader(in, detectEncoding(in));
+            int c;
             do {
-                b = in.read();
-            } while (b == ' ' || b == '\t' || b == '\r' || b == '\n');
-            return b != -1 && (documentStart.indexOf(b) >= 0 || b == 0x00 || b == 0xEF || b == 0xFE || b == 0xFF);
+                c = reader.read();
+            } while (c == ' ' || c == '\t' || c == '\r' || c == '\n');
+            return c != -1 && documentStart.indexOf(c) >= 0;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

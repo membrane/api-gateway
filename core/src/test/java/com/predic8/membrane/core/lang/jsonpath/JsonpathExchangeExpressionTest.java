@@ -34,6 +34,7 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.JSONPATH;
 import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
 import static java.lang.Boolean.FALSE;
+import static java.nio.charset.StandardCharsets.UTF_16BE;
 import static org.junit.jupiter.api.Assertions.*;
 
 class JsonpathExchangeExpressionTest extends AbstractExchangeExpressionTest {
@@ -237,6 +238,32 @@ class JsonpathExchangeExpressionTest extends AbstractExchangeExpressionTest {
                 assertFalse(eval("$.a", exc), contentType);
                 assertEquals(Map.of(), evalRoot(exc), contentType);
             }
+        }
+
+        /**
+         * JPEG starts with 0xFF and gRPC with 0x00, like a byte order mark or UTF-16 text, but neither is JSON.
+         */
+        @Test
+        void binaryBodyIsAnEmptyDocument() throws URISyntaxException {
+            var jpeg = new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0, 0x00, 0x10, 'J', 'F', 'I', 'F'};
+            var grpc = new byte[]{0x00, 0x00, 0x00, 0x00, 0x05, 0x08, 0x01, 0x10, 0x02, 0x00};
+            assertEquals(Map.of(), evalRoot(post("/foo").contentType("image/jpeg").body(jpeg).buildExchange()));
+            assertEquals(Map.of(), evalRoot(post("/foo").contentType("application/grpc").body(grpc).buildExchange()));
+        }
+
+        /**
+         * Bytes that are no text in any encoding JSON allows are a broken body, not an error of the gateway.
+         */
+        @Test
+        void undecodableJsonIsABodyError() throws URISyntaxException {
+            var e = assertThrows(ExchangeExpressionException.class,
+                    () -> eval("$.a", post("/foo").contentType(APPLICATION_JSON).body(new byte[]{0x00, 0x00, 0x00, 0x00, 0x05, 0x08, 0x01, 0x10, 0x02, 0x00}).buildExchange()));
+            assertTrue(e.isBodyError());
+        }
+
+        @Test
+        void foreignContentTypeWithUtf16JsonIsParsed() throws URISyntaxException {
+            assertTrue(eval("$.a", post("/foo").contentType(APPLICATION_OCTET_STREAM).body("﻿{\"a\":1}".getBytes(UTF_16BE)).buildExchange()));
         }
 
         /**
