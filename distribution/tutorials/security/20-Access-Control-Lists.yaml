@@ -18,7 +18,17 @@
 # - /locals     uses an allowlist (only local access is permitted)
 # - /strangers  uses a denylist (local access is blocked, everyone else allowed)
 #
-# Try:
+# 1.) Start Membrane:
+#     with Java:
+#       Linux/Mac:
+#         ./membrane.sh -c 20-Access-Control-Lists.yaml
+#       Windows:
+#         membrane.cmd -c 20-Access-Control-Lists.yaml
+#
+#     Membrane runs with Java here, not in Docker: in a container, requests arrive
+#     from the Docker network instead of localhost, so the rules would not match.
+#
+# 2.) Call both APIs locally and from another address:
 #     curl localhost:2000/locals
 #     curl localhost:2000/strangers
 #     curl <your-ip>:2000/locals

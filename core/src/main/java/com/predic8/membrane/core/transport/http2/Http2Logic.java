@@ -13,18 +13,27 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.http2;
 
-import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.http2.frame.*;
-import com.predic8.membrane.core.util.*;
-import com.twitter.hpack.*;
-import org.apache.commons.lang3.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.util.EndOfStreamException;
+import com.twitter.hpack.Decoder;
+import com.twitter.hpack.Encoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.net.*;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.*;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.predic8.membrane.core.transport.http2.frame.Error.*;
 import static com.predic8.membrane.core.transport.http2.frame.Frame.*;
@@ -33,7 +42,11 @@ import static com.predic8.membrane.core.transport.http2.frame.SettingsFrame.*;
 public class Http2Logic {
     private static final Logger log = LoggerFactory.getLogger(Http2Logic.class.getName());
 
+    /** Like a header line in HTTP/1, a header field ("name: value") must be shorter than this. */
     private final static int MAX_LINE_LENGTH;
+
+    /** Maximum size of a decoded header block, announced to the peer as SETTINGS_MAX_HEADER_LIST_SIZE. */
+    static final int MAX_HEADER_LIST_SIZE = 64 * 1024;
 
     static {
         String maxLineLength = System.getProperty("membrane.core.http.body.maxlinelength");
@@ -55,6 +68,8 @@ public class Http2Logic {
     private final ExecutorService executor;
     private final Http2MessageHandler messageHandler;
     final AtomicInteger nextClientStreamId = new AtomicInteger(1);
+    /** Highest id of a stream the peer opened. Only accessed on the receiver thread. */
+    private int highestPeerStreamId;
     volatile boolean receiving = true;
     Future<?> senderFuture;
 
@@ -68,15 +83,16 @@ public class Http2Logic {
         log.debug("started HTTP2 connection " + remoteAddr);
 
         int maxHeaderTableSize = 4096; // TODO: update with SETTINGS_HEADER_TABLE_SIZE https://datatracker.ietf.org/doc/html/rfc9113#section-4.3.1
-        decoder = new Decoder(MAX_LINE_LENGTH, maxHeaderTableSize);
+        decoder = new Decoder(MAX_HEADER_LIST_SIZE, maxHeaderTableSize);
         // TODO: update this value
         this.sender = new FrameSender(srcOut, new Encoder(maxHeaderTableSize), peerSettings, streams, remoteAddr);
         flowControl = new FlowControl(0, sender, ourSettings);
-        peerFlowControl = new PeerFlowControl(0, sender, peerSettings);
+        peerFlowControl = sender.getConnectionFlowControl();
 
         Settings newSettings = new Settings();
         newSettings.copyFrom(ourSettings);
         newSettings.setMaxConcurrentStreams(50);
+        newSettings.setMaxHeaderListSize(MAX_HEADER_LIST_SIZE);
         newSettings.setInitialWindowSize(65535 * 2);
         updateSettings(newSettings);
     }
@@ -105,8 +121,27 @@ public class Http2Logic {
         } catch(EOFException eof) {
             throw new EndOfStreamException("");
         } finally {
-            sender.stop();
+            stopSending();
+            // No more frames arrive: body readers still waiting for DATA would wait forever.
+            for (StreamInfo streamInfo : streams.values())
+                streamInfo.abortReceiving(new IOException("HTTP/2 connection closed before the stream ended"));
         }
+    }
+
+    /**
+     * Closed streams are removed from {@link #streams}, so an unknown id belongs either to a closed
+     * stream or to an idle one. Ids up to the highest one opened belong to closed streams (RFC 9113 §5.1.1).
+     * Clients open odd ids and servers even ones, so only the opener's own ids are compared.
+     */
+    private boolean isClosed(int streamId) {
+        return streamId % 2 == highestPeerStreamId % 2 && streamId <= highestPeerStreamId
+                || streamId % 2 == 1 && streamId < nextClientStreamId.get();
+    }
+
+    /** Stops the frame sender and wakes writers waiting for the connection's flow-control window. */
+    void stopSending() {
+        sender.stop();
+        peerFlowControl.senderStopped();
     }
 
     private void updateSettings(Settings newSettings) {
@@ -173,22 +208,31 @@ public class Http2Logic {
             throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
 
         StreamInfo streamInfo = streams.get(streamId);
-        if (streamInfo == null)
+        if (streamInfo == null) {
+            if (isClosed(streamId))
+                return;
             throw new FatalConnectionException(ERROR_PROTOCOL_ERROR); // stream is in idle state
+        }
 
-        streamInfo.receivedRstStream();
+        streamInfo.receivedRstStream(rstStream.getErrorCode());
+        messageHandler.handleStreamReset(streamId, rstStream.getErrorCode());
     }
 
     private void handleFrame(DataFrame dataFrame) throws IOException {
-        if (dataFrame.getFrame().getStreamId() == 0)
+        if (dataFrame.getFrame().getStreamId() == 0 || dataFrame.getDataLength() < 0)
             throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
 
         StreamInfo streamInfo = streams.get(dataFrame.getFrame().getStreamId());
 
-        if (streamInfo == null)
-            throw new FatalConnectionException(ERROR_STREAM_CLOSED); // TODO: change to stream error
-
-        streamInfo.receivedDataFrame(dataFrame);
+        if (streamInfo == null) {
+            if (!isClosed(dataFrame.getFrame().getStreamId()))
+                throw new FatalConnectionException(ERROR_STREAM_CLOSED); // TODO: change to stream error
+            // Still in flight when the stream was closed, e.g. by our RST_STREAM. It counts against
+            // the connection's window all the same (RFC 9113 §6.9).
+            log.debug("Dropping DATA for closed stream {}.", dataFrame.getFrame().getStreamId());
+        } else {
+            streamInfo.receivedDataFrame(dataFrame);
+        }
 
         // TODO: If a DATA frame is received
         //   whose stream is not in "open" or "half-closed (local)" state, the
@@ -222,10 +266,11 @@ public class Http2Logic {
 
         StreamInfo streamInfo = streams.get(streamId1);
 
-        if (streamInfo == null) {
-            streamInfo = new StreamInfo(streamId1, sender, peerSettings, ourSettings);
-            streams.put(streamId1, streamInfo);
-        }
+        // For a closed or an idle stream: a stream created for an idle one would never close, counting
+        // against the concurrent stream limit and keeping the connection busy. Priority signaling is
+        // deprecated anyway (RFC 9113 §5.3.2).
+        if (streamInfo == null)
+            return;
 
         streamInfo.receivedPriority();
 
@@ -243,8 +288,12 @@ public class Http2Logic {
                 throw new FatalConnectionException(ERROR_PROTOCOL_ERROR); // TODO: change to stream error
 
             StreamInfo streamInfo = streams.get(windowUpdate.getFrame().getStreamId());
-            if (streamInfo == null)
+            if (streamInfo == null) {
+                // The peer may still send WINDOW_UPDATE after the stream was closed (RFC 9113 §6.9).
+                if (isClosed(windowUpdate.getFrame().getStreamId()))
+                    return;
                 throw new FatalConnectionException(ERROR_PROTOCOL_ERROR); // stream not open // TODO: change to stream error
+            }
 
             streamInfo.getPeerFlowControl().increment(windowUpdate.getWindowSizeIncrement());
         }
@@ -252,14 +301,18 @@ public class Http2Logic {
 
     private void handleFrame(HeadersFrame headers) throws IOException {
         int streamId1 = headers.getFrame().getStreamId();
-        if (streamId1 == 0)
+        if (streamId1 == 0 || headers.getHeaderBlockLength() < 0)
             throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
         StreamInfo streamInfo = streams.get(streamId1);
 
         if (streamInfo == null) {
+            // Like HEADERS on a stream in the CLOSED state, which receivedHeaders() rejects.
+            if (isClosed(streamId1))
+                throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
             streamInfo = new StreamInfo(streamId1, sender, peerSettings, ourSettings);
             streams.put(streamId1, streamInfo);
         }
+        highestPeerStreamId = Math.max(highestPeerStreamId, streamId1);
 
         boolean isTrailer = streamInfo.isTrailer();
 
@@ -311,7 +364,13 @@ public class Http2Logic {
             sb.append(":\n");
         }
 
+        final var oversizedField = new boolean[1];
+        // The whole block is decoded even if it gets rejected, so the HPACK dynamic table stays in sync.
         decoder.decode(getPackedHeaderStream(headerFrames), (name, value, sensitive) -> {
+            if (name.length + 2 + value.length >= MAX_LINE_LENGTH) {
+                oversizedField[0] = true;
+                return;
+            }
             String key = new String(name);
             String val = new String(value);
 
@@ -337,11 +396,37 @@ public class Http2Logic {
             } else
                 header.add(key, val);
         });
-        if (decoder.endHeaderBlock())
-            log.warn("dropped header exceeding configured maximum size of " + MAX_LINE_LENGTH + ".");
+        final var truncated = decoder.endHeaderBlock();
 
         if (sb != null)
             log.debug(sb.toString());
+
+        if (oversizedField[0] || truncated) {
+            log.info("Rejecting header block on stream {}: a header field exceeds {} bytes or the block exceeds {} bytes.",
+                    streamId1, MAX_LINE_LENGTH, MAX_HEADER_LIST_SIZE);
+            if (isTrailer) {
+                // The message has already been handed over: fail its body and drop the stream.
+                // Aborting before the end of stream is queued, as the body reader stops at the first END_STREAM.
+                streamInfo.abortReceiving(new IOException("HTTP/2 trailer on stream %d exceeds the header size limit.".formatted(streamId1)));
+                if (headers.isEndStream())
+                    streamInfo.receivedEndStream(false);
+                sender.send(streamId1, (encoder, peerSettings) -> List.of(RstStreamFrame.construct(streamId1, ERROR_CANCEL)));
+            } else {
+                if (headers.isEndStream())
+                    streamInfo.receivedEndStream(false);
+                messageHandler.handleOversizedHeaders(streamInfo, headers.isEndStream());
+            }
+            return;
+        }
+
+        if (!isTrailer && request instanceof Response response && response.getStatusCode() >= 100 && response.getStatusCode() < 200) {
+            // An interim response (RFC 9113 §8.1): the final response follows in another HEADERS frame.
+            if (headers.isEndStream())
+                throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
+            log.debug("streamId={} skipping interim response {}", streamId1, response.getStatusCode());
+            streamInfo.receivedInterimResponse();
+            return;
+        }
 
         if (isTrailer) {
             request.getBody().setTrailer(header);
@@ -391,6 +476,8 @@ public class Http2Logic {
             throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
 
         if (settings.isAck()) {
+            if (wantedSettings.isEmpty())
+                throw new FatalConnectionException(ERROR_PROTOCOL_ERROR); // nothing to acknowledge
             ourSettings.copyFrom(wantedSettings.removeFirst());
             return;
         }
@@ -422,7 +509,7 @@ public class Http2Logic {
                         peerSettings.setMaxConcurrentStreams((int) settingsValue);
                 }
                 case ID_SETTINGS_INITIAL_WINDOW_SIZE -> {
-                    if (settingsValue > 1 << 31 - 1)
+                    if (settingsValue > Integer.MAX_VALUE)
                         throw new FatalConnectionException(ERROR_FLOW_CONTROL_ERROR);
                     int delta = (int) settingsValue - peerSettings.getInitialWindowSize();
                     for (StreamInfo si : streams.values()) {

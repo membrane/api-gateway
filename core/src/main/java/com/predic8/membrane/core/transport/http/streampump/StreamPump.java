@@ -14,26 +14,33 @@
 
 package com.predic8.membrane.core.transport.http.streampump;
 
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.model.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.tunnel.WebSocketInterceptor;
+import com.predic8.membrane.core.model.AbstractExchangeViewerListener;
 import com.predic8.membrane.core.proxies.Proxy;
-import com.predic8.membrane.core.transport.http.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.transport.http.Connection;
+import com.predic8.membrane.core.transport.http.TwoWayStreaming;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.net.ssl.*;
-import java.io.*;
-import java.net.*;
-import java.util.*;
-import java.util.concurrent.atomic.*;
+import javax.net.ssl.SSLException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
-import static com.predic8.membrane.core.transport.http.client.protocol.WebSocketProtocolHandler.*;
+import static com.predic8.membrane.core.transport.http.client.protocol.WebSocketProtocolHandler.WEBSOCKET;
 
 public class StreamPump implements Runnable {
 
 	protected static final Logger log = LoggerFactory.getLogger(StreamPump.class.getName());
 
 	public static class StreamPumpStats {
-		private static final ArrayList<StreamPump> pumps = new ArrayList<>();
+		private final ArrayList<StreamPump> pumps = new ArrayList<>();
 
 		public synchronized int getRunning() {
 			return pumps.size();
@@ -139,9 +146,10 @@ public class StreamPump implements Runnable {
 		String dest = con.toString();
 		final StreamPump a;
 		final StreamPump b;
-		if (WEBSOCKET.equalsIgnoreCase(protocol)) {
+		// Frames are only parsed for frame interceptors, otherwise the bytes are relayed as they are
+		if (WEBSOCKET.equalsIgnoreCase(protocol) && WebSocketInterceptor.hasFrameInterceptors(exc.getProxy())) {
 			WebSocketStreamPump aTemp = new WebSocketStreamPump(tws.getSrcIn(), con.out, stats, protocol + " " + source + " -> " + dest, exc.getProxy(), true, exc);
-			WebSocketStreamPump bTemp = new WebSocketStreamPump(con.in, tws.getSrcOut(), stats, protocol + " " + source + " <- " + dest, exc.getProxy(), false, null);
+			WebSocketStreamPump bTemp = new WebSocketStreamPump(con.in, tws.getSrcOut(), stats, protocol + " " + source + " <- " + dest, exc.getProxy(), false, exc);
 			aTemp.init(bTemp);
 			bTemp.init(aTemp);
 			a = aTemp;
@@ -151,7 +159,9 @@ public class StreamPump implements Runnable {
 			b = new StreamPump(con.in, tws.getSrcOut(), stats, protocol + " " + source + " <- " + dest, exc.getProxy());
 		}
 
+		// an upgraded connection may be idle for any time, on both sides
 		tws.removeSocketSoTimeout();
+		con.socket.setSoTimeout(0);
 
 		exc.addExchangeViewerListener(new AbstractExchangeViewerListener() {
 

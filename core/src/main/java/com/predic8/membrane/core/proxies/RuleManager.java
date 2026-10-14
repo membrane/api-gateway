@@ -268,20 +268,21 @@ public class RuleManager {
     }
 
     private Proxy findProxyRule(Exchange exc) {
+        final var handler = exc.getHandler();
+        if (handler == null) {
+            log.debug("No rule found for incoming request");
+            return new NullProxy();
+        }
         for (Proxy proxy : getRules()) {
-            if (!(proxy instanceof ProxyRule))
+            if (!(proxy instanceof ProxyRule) || !proxy.isActive())
                 continue;
 
-            if (proxy.getKey().getIp() != null)
-                if (!proxy.getKey().getIp().equals(exc.getHandler().getLocalAddress().toString()))
-                    continue;
+            if (proxy.getKey().getIp() != null && !proxy.getKey().getIp().equals(getLocalIP(handler)))
+                continue;
 
-            if (exc.getHandler() != null) {
-                if (proxy.getKey().getPort() == -1 || exc.getHandler().getLocalPort() == -1 || proxy.getKey().getPort() == exc.getHandler().getLocalPort()) {
-                    if (log.isDebugEnabled())
-                        log.debug("proxy rule found: {}", proxy);
-                    return proxy;
-                }
+            if (proxy.getKey().getPort() == -1 || handler.getLocalPort() == -1 || proxy.getKey().getPort() == handler.getLocalPort()) {
+                log.debug("proxy rule found: {}", proxy);
+                return proxy;
             }
         }
         log.debug("No rule found for incoming request");

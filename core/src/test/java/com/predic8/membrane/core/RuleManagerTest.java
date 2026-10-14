@@ -52,6 +52,7 @@ public class RuleManagerTest {
 		router.init();
 		manager.setRouter(router);
 		proxy3013 = new ProxyRule(new ProxyRuleKey(3013));
+		proxy3013.init(router);
 		manager.addProxyAndOpenPortIfNew(proxy3013);
 
 		forwardBlz = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3014), "thomas-bayer.com", 80);
@@ -168,6 +169,36 @@ public class RuleManagerTest {
 	@DisplayName("A request that matches no host/method/path rule falls back to the ProxyRule on that port")
 	void getMatchingRuleFallsBackToProxyRuleOnUnmatchedPort() throws UnknownHostException {
 		assertEquals(proxy3013, manager.getMatchingRule(assembleExchange("unknown-host", "GET", "/anything", "1.1", 3013, "127.0.0.1")));
+	}
+
+	@Test
+	@DisplayName("An inactive ProxyRule is not used as fallback")
+	void inactiveProxyRuleIsNotUsedAsFallback() throws UnknownHostException {
+		manager.addProxy(new ProxyRule(new ProxyRuleKey(3017)), RuleManager.RuleDefinitionSource.MANUAL); // not initialized, so inactive
+		assertInstanceOf(NullProxy.class, manager.getMatchingRule(assembleExchange("unknown-host", "GET", "/anything", "1.1", 3017, "127.0.0.1")));
+	}
+
+	@Test
+	@DisplayName("A request on the bound IP falls back to the ProxyRule bound to that IP")
+	void getMatchingRuleFallsBackToProxyRuleBoundToIp() throws UnknownHostException {
+		final var proxyOnIp = addProxyRuleBoundToIp();
+		assertEquals(proxyOnIp, manager.getMatchingRule(assembleExchange("unknown-host", "GET", "/anything", "1.1", 3016, "127.0.0.1")));
+	}
+
+	@Test
+	@DisplayName("A ProxyRule bound to an IP is skipped, not dereferenced, when the exchange has no handler")
+	void proxyRuleBoundToIpIsSkippedWithoutHandler() throws URISyntaxException {
+		addProxyRuleBoundToIp();
+		final var exc = get("/anything").buildExchange();
+		exc.getDestinations().add("internal://unknown");
+		assertInstanceOf(NullProxy.class, manager.getMatchingRule(exc));
+	}
+
+	private ProxyRule addProxyRuleBoundToIp() {
+		final var proxy = new ProxyRule(new ProxyRuleKey(3016, "127.0.0.1"));
+		proxy.init(router);
+		manager.addProxy(proxy, RuleManager.RuleDefinitionSource.MANUAL);
+		return proxy;
 	}
 
 	@Test

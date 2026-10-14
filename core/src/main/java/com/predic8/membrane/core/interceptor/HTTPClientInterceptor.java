@@ -19,11 +19,7 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.MalformedHeaderException;
 import com.predic8.membrane.core.proxies.AbstractServiceProxy;
-import com.predic8.membrane.core.transport.http.ConnectTimeoutException;
-import com.predic8.membrane.core.transport.http.EOFWhileReadingLineException;
-import com.predic8.membrane.core.transport.http.HttpClient;
-import com.predic8.membrane.core.transport.http.ProtocolUpgradeDeniedException;
-import com.predic8.membrane.core.transport.http.UnableToTunnelException;
+import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.util.URLUtil;
 import org.slf4j.Logger;
@@ -161,7 +157,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
         } catch (ProtocolUpgradeDeniedException e) {
             log.debug("Denied protocol upgrade request. uri={} protocol={}", exc.getRequest().getUri(), e.getProtocol());
             gateway(router.getConfiguration().isProduction(), getDisplayName())
-                    .status(401)
+                    .status(403)
                     .title("Protocol upgrade has been denied.")
                     .addSubSee("denied-protocol-upgrade")
                     .internal("hint", "Protocol upgrades are supported by Membrane for 'websocket' and 'tcp', but have to be allowed in the configuration explicitly.")
