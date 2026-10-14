@@ -74,20 +74,20 @@ public class ValidationContext {
     private Map<ValidityKey, Boolean> validityCache;
 
     /**
-     * All by identity: equals() and hashCode() of schema and value are deep, and the visited refs grow with the
-     * nesting depth. They are part of the key because a truncated reference cycle drops errors. anyOf/oneOf and
-     * unevaluatedProperties of one schema share the same set instance.
+     * Schema and value by identity: their equals() and hashCode() are deep. The names of the references already
+     * resolved for the value by content: they can truncate its validation, see {@link #hasVisited(String)}, and a
+     * truncated reference cycle drops errors. References resolved for other values cannot affect this one.
      */
     @SuppressWarnings("rawtypes")
-    private record ValidityKey(Schema schema, JsonNode value, Set<VisitedRef> visitedRefs) {
+    private record ValidityKey(Schema schema, JsonNode value, Set<String> visitedRefNames) {
         @Override
         public boolean equals(Object o) {
-            return o instanceof ValidityKey k && schema == k.schema && value == k.value && visitedRefs == k.visitedRefs;
+            return o instanceof ValidityKey k && schema == k.schema && value == k.value && visitedRefNames.equals(k.visitedRefNames);
         }
 
         @Override
         public int hashCode() {
-            return 31 * (31 * System.identityHashCode(schema) + System.identityHashCode(value)) + System.identityHashCode(visitedRefs);
+            return 31 * (31 * System.identityHashCode(schema) + System.identityHashCode(value)) + visitedRefNames.hashCode();
         }
     }
 
@@ -294,7 +294,7 @@ public class ValidationContext {
         // Top-level values like a Body are parsed again on every validation, so their identity is no key
         if (validityCache == null || !(value instanceof JsonNode node))
             return validation.getAsBoolean();
-        final var key = new ValidityKey(schema, node, visitedRefs);
+        final var key = new ValidityKey(schema, node, visitedRefNames());
         final var cached = validityCache.get(key);
         if (cached != null)
             return cached;
@@ -302,6 +302,16 @@ public class ValidationContext {
         final var valid = validation.getAsBoolean();
         validityCache.put(key, valid);
         return valid;
+    }
+
+    /**
+     * @return the names of the references already resolved for the value at the current JSON pointer
+     */
+    private Set<String> visitedRefNames() {
+        return visitedRefs.stream()
+                .filter(ref -> ref.jsonPointer().equals(jsonPointer))
+                .map(VisitedRef::name)
+                .collect(toUnmodifiableSet());
     }
 
     public ValidationContext content(Content content) {

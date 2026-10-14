@@ -206,6 +206,20 @@ class UnevaluatedPropertiesTest extends AbstractValidatorTest {
     }
 
     /**
+     * Like above, but the oneOf is in a component referenced through allOf, so the unevaluatedProperties collector
+     * reaches it by following the $ref.
+     */
+    @Test
+    void deepRecursiveTreeThroughAllOfRefValidatesInLinearTime() {
+        assertTimeoutPreemptively(ofSeconds(10), () -> assertEquals(0, post("/tree-all-of", tree(40, "")).size()));
+    }
+
+    @Test
+    void deepRecursiveTreeThroughAllOfRefRejectsUnevaluatedPropertyInLinearTime() {
+        assertTimeoutPreemptively(ofSeconds(10), () -> assertFalse(post("/tree-all-of", tree(40, ", \"foo\": 1")).isEmpty()));
+    }
+
+    /**
      * @return a tree of nested branches, depth levels deep, whose leaf has the additional members leafExtra
      */
     private static String tree(int depth, String leafExtra) {
