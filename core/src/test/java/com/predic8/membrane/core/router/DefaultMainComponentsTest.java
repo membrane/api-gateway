@@ -20,8 +20,10 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Set;
 
 import static com.predic8.membrane.core.router.YamlRouterBootstrap.loadIntoRouter;
+import static java.util.stream.Collectors.toSet;
 import static org.junit.jupiter.api.Assertions.*;
 
 class DefaultMainComponentsTest {
@@ -68,6 +70,31 @@ class DefaultMainComponentsTest {
         } finally {
             router.stop();
         }
+    }
+
+    /**
+     * #3483: the components of a router must only use the router's own timer, so stopping the router leaves no
+     * "Connection Closer" timer thread behind.
+     */
+    @Test
+    void stoppedRouterLeavesNoTimerThreads() throws Exception {
+        final var before = liveTimerThreads();
+
+        new DefaultRouter().stop();
+
+        final var started = liveTimerThreads();
+        started.removeAll(before);
+        for (final var thread : started)
+            thread.join(5_000); // Timer.cancel() ends the thread asynchronously
+        started.removeIf(thread -> !thread.isAlive());
+        assertEquals(Set.of(), started);
+    }
+
+    /** java.util.Timer threads are named "Timer-N". */
+    private static Set<Thread> liveTimerThreads() {
+        return Thread.getAllStackTraces().keySet().stream()
+                .filter(t -> t.isAlive() && t.getName().startsWith("Timer-"))
+                .collect(toSet());
     }
 
     private DefaultRouter load(String yaml) throws Exception {

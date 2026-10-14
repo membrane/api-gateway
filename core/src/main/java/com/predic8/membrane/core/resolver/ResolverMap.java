@@ -15,12 +15,12 @@
 package com.predic8.membrane.core.resolver;
 
 import com.google.common.base.Objects;
+import com.google.common.base.Suppliers;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.kubernetes.KubernetesSchemaResolver;
 import com.predic8.membrane.core.kubernetes.client.KubernetesClientFactory;
 import com.predic8.membrane.core.router.Router;
 import com.predic8.membrane.core.transport.http.HttpClient;
-import com.predic8.membrane.core.transport.http.HttpClientFactory;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.util.*;
 import com.predic8.membrane.core.util.functionalInterfaces.ExceptionThrowingConsumer;
@@ -61,17 +61,26 @@ public class ResolverMap implements Cloneable, Resolver {
     private SchemaResolver[] resolvers;
 
 
+    /**
+     * Creates its HTTP client only when an HTTP URL is resolved, so that a ResolverMap used for files or the
+     * classpath does not start a connection closer timer thread (#3483). The client is not shared, so it is
+     * closed once it is garbage collected.
+     */
     public ResolverMap() {
-        this(new HttpClientFactory(null).createClient(new HttpClientConfiguration()), null);
+        this(new HTTPSchemaResolver(Suppliers.memoize(() -> new HttpClient(new HttpClientConfiguration()))), null);
     }
 
     public ResolverMap(HttpClient httpClient, KubernetesClientFactory kubernetesClientFactory) {
+        this(new HTTPSchemaResolver(httpClient), kubernetesClientFactory);
+    }
+
+    private ResolverMap(HTTPSchemaResolver httpSchemaResolver, KubernetesClientFactory kubernetesClientFactory) {
         schemas = new String[10];
         resolvers = new SchemaResolver[10];
 
         // the default config
         addSchemaResolver(new ClasspathSchemaResolver());
-        addSchemaResolver(new HTTPSchemaResolver(httpClient));
+        addSchemaResolver(httpSchemaResolver);
         addSchemaResolver(new KubernetesSchemaResolver(kubernetesClientFactory));
         addSchemaResolver(new FileSchemaResolver());
     }

@@ -20,7 +20,6 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.HttpClientFactory;
-import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.util.URIFactory;
 import com.predic8.membrane.core.util.functionalInterfaces.ExceptionThrowingConsumer;
 
@@ -33,6 +32,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 
 import static com.predic8.membrane.annot.Constants.PRODUCT_NAME;
 import static com.predic8.membrane.core.http.Header.USER_AGENT;
@@ -52,7 +52,7 @@ public class HTTPSchemaResolver implements SchemaResolver {
 
     private static final byte[] NO_HASH = "NO_HASH".getBytes(UTF_8);
 
-    private final HttpClient httpClient;
+    private final Supplier<HttpClient> httpClient;
     private final URIFactory uriFactory = new URIFactory(false);
 
     private final Runnable httpWatchJob = new Runnable() {
@@ -107,6 +107,14 @@ public class HTTPSchemaResolver implements SchemaResolver {
     }
 
     public HTTPSchemaResolver(@Nullable HttpClient httpClient) {
+       this(() -> httpClient);
+    }
+
+    /**
+     * @param httpClient called on every resolve; it must return the same client each time, e.g. by memoizing a lazily
+     *                   created one.
+     */
+    public HTTPSchemaResolver(Supplier<HttpClient> httpClient) {
        this.httpClient = httpClient;
     }
 
@@ -118,7 +126,7 @@ public class HTTPSchemaResolver implements SchemaResolver {
     public InputStream resolve(String url) throws ResourceRetrievalException {
         try {
             var resolveExchange = createResolveExchange(url);
-            httpClient.call(resolveExchange);
+            httpClient.get().call(resolveExchange);
             Response response = resolveExchange.getResponse();
             response.readBody();
 

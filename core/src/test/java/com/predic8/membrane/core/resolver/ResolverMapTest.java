@@ -16,6 +16,9 @@ package com.predic8.membrane.core.resolver;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.Set;
+
+import static java.util.stream.Collectors.toSet;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ResolverMapTest {
@@ -78,5 +81,26 @@ class ResolverMapTest {
     void spaceInChildIsEncoded() {
         var s = ResolverMap.combine("http://localhost:2000", "/foo bar");
         assertEquals("http://localhost:2000/foo%20bar", s);
+    }
+
+    /**
+     * #3483: the no-arg ResolverMap must not start a "Connection Closer" timer thread unless an HTTP URL is resolved.
+     */
+    @Test
+    void noArgResolverMapStartsNoTimerThread() throws Exception {
+        final var before = liveTimerThreads();
+
+        try (final var ignored = new ResolverMap().resolve("classpath:/customer.xml")) {
+            final var started = liveTimerThreads();
+            started.removeAll(before);
+            assertEquals(Set.of(), started);
+        }
+    }
+
+    /** java.util.Timer threads are named "Timer-N". */
+    private static Set<Thread> liveTimerThreads() {
+        return Thread.getAllStackTraces().keySet().stream()
+                .filter(t -> t.isAlive() && t.getName().startsWith("Timer-"))
+                .collect(toSet());
     }
 }
