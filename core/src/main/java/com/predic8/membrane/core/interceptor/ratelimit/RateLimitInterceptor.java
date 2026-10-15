@@ -211,7 +211,7 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
     private String getClientIPFromTrustedProxyCount(Exchange exc, List<String> xForwardedFor) {
         log.debug("Using trustedProxyCount of {}", trustedProxyCount);
         if (xForwardedFor.size() <= trustedProxyCount) {
-            log.info("Forwarded-For entries {} do not match trusted proxies {}", xForwardedFor, trustedProxyList);
+            log.info("Forwarded-For entries {} do not match trusted proxy count {}", xForwardedFor, trustedProxyCount);
             return useRemoteIpAddress(exc);
         }
         // e.g.:
@@ -224,6 +224,10 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
 
     private String getClientIPfromTrustedProxyList(Exchange exc, List<String> xForwardedFor) {
         log.debug("Checking list of trusted proxies");
+        if (xForwardedFor.size() <= trustedProxyList.size()) {
+            log.info("Forwarded-For entries {} leave no client entry before the trusted proxies {}", xForwardedFor, trustedProxyList);
+            return useRemoteIpAddress(exc);
+        }
         for (int i = 1; i <= trustedProxyList.size(); i++) {
             String trustedProxy = trustedProxyList.get(trustedProxyList.size() - i);
             String forwardedFor = xForwardedFor.get(xForwardedFor.size() - i);

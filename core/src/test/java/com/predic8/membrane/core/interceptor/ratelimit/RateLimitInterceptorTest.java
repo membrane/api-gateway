@@ -512,6 +512,38 @@ public class RateLimitInterceptorTest {
 		assertEquals("192.168.2.1",interceptor.getClientIp(exc));
 	}
 
+	/**
+	 * The X-Forwarded-For entries match the trusted proxies but there is no entry left for the client.
+	 */
+	@ParameterizedTest
+	@ValueSource(strings = {"10.0.0.2", "10.0.0.1,10.0.0.2"})
+	void getClientIpXForwardedForHasOnlyTrustedProxies(String xForwardedFor) {
+		final var interceptor = new RateLimitInterceptor();
+		interceptor.setTrustedProxyList("10.0.0.1,10.0.0.2");
+		interceptor.setTrustForwardedFor(true);
+
+		final var exc = new Request.Builder().header(X_FORWARDED_FOR, xForwardedFor).buildExchange();
+		exc.setRemoteAddrIp("192.168.2.1");
+
+		assertEquals("192.168.2.1", interceptor.getClientIp(exc));
+	}
+
+	@Test
+	void keyExpressionWithoutValueAndShortForwardedForFallsBackToRemoteIp() throws Exception {
+		final var interceptor = new RateLimitInterceptor(ofMinutes(1), 1);
+		interceptor.setKeyExpression("headers['X-Api-Key']");
+		interceptor.setTrustedProxyList("10.0.0.1,10.0.0.2");
+		interceptor.setTrustForwardedFor(true);
+		interceptor.init(new DummyTestRouter());
+
+		final var excA = new Request.Builder().header(X_FORWARDED_FOR, "10.0.0.2").buildExchange();
+		excA.setRemoteAddrIp("192.0.2.1");
+		final var excB = new Request.Builder().header(X_FORWARDED_FOR, "10.0.0.2").buildExchange();
+		excB.setRemoteAddrIp("192.0.2.2");
+
+		assertMissingKeysCountedPerClientIp(interceptor, excA, excB);
+	}
+
 	@Test
 	void getOneBeforeTrustworthyProxyTest() {
 		assertEquals("c", getOneBeforeTrustworthyProxy(Arrays.asList("a","b","c"),0));
