@@ -24,8 +24,11 @@
 #       Answered after a delay
 #       Total time: 1.01...
 #
-# 3.) Send three requests at the same time to the limited API (Linux/Mac):
-#       for i in 1 2 3; do curl -s -o /dev/null -w "%{http_code}\n" localhost:2000/limited & done; wait
+# 3.) Send three requests at the same time to the limited API:
+#       Linux/Mac:
+#         for i in 1 2 3; do curl -s -o /dev/null -w "%{http_code}\n" localhost:2000/limited & done; wait
+#       Windows:
+#         for /L %i in (1,1,3) do @start /b curl -s -o NUL -w "%{http_code}\n" localhost:2000/limited
 #
 #       503
 #       200

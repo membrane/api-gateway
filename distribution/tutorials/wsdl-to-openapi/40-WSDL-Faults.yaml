@@ -13,7 +13,7 @@
 #
 # 2.) Cancel an order that cannot be cancelled in its state
 #
-#    curl -d '{"orderId":"1"}' -H "Content-Type: application/json" localhost:2000/orders/cancel
+#    curl -d "{\"orderId\":\"1\"}" -H "Content-Type: application/json" localhost:2000/orders/cancel
 #
 #      {
 #        "title" : "Operation failed",
@@ -37,7 +37,7 @@
 #
 # 3.) Cancel an order that does not exist
 #
-#    curl -d '{"orderId":"4711"}' -H "Content-Type: application/json" localhost:2000/orders/cancel
+#    curl -d "{\"orderId\":\"4711\"}" -H "Content-Type: application/json" localhost:2000/orders/cancel
 #
 #      "details" : {
 #        "orderDoesNotExist" : {

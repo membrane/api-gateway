@@ -16,7 +16,7 @@
 #     Linux/Mac:
 #       JAVA_OPTS="-Dlog4j.configurationFile=$PWD/log4j2-traffic.xml" ./membrane.sh -c 80-Byte-Stream-Logging.yaml
 #     Windows:
-#       set JAVA_OPTS=-Dlog4j.configurationFile=%CD%\log4j2-traffic.xml
+#       set JAVA_OPTS="-Dlog4j.configurationFile=%CD%\log4j2-traffic.xml"
 #       membrane.cmd -c 80-Byte-Stream-Logging.yaml
 #
 #     Membrane warns that TRACE logging is enabled. That is expected here.

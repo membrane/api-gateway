@@ -7,11 +7,16 @@
 #
 # 1.) Start Membrane:
 #     with Docker:
-#       ./run-docker.sh -c 40-Message-Flow.yaml   (Linux/Mac)
-#       run-docker.cmd -c 40-Message-Flow.yaml    (Windows)
+#       Linux/Mac:
+#         ./run-docker.sh -c 40-Message-Flow.yaml
+#       Windows:
+#         run-docker.cmd -c 40-Message-Flow.yaml
+#
 #     or with Java:
-#       ./membrane.sh -c 40-Message-Flow.yaml     (Linux/Mac)
-#       membrane.cmd -c 40-Message-Flow.yaml      (Windows)
+#       Linux/Mac:
+#         ./membrane.sh -c 40-Message-Flow.yaml
+#       Windows:
+#         membrane.cmd -c 40-Message-Flow.yaml
 #
 # 2.) Call the API:
 #     curl localhost:2000

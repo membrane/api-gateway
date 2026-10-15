@@ -16,7 +16,7 @@
 #     http://localhost:2000/api-docs
 #
 # 3.) Call the API
-#    curl -d '{"name":"Berlin"}' -H "Content-Type: application/json" http://localhost:2000/service/get-city
+#    curl -d "{\"name\":\"Berlin\"}" -H "Content-Type: application/json" http://localhost:2000/service/get-city
 #
 #    Body is transformed to SOAP and routed to the web service. The address is taken from the WSDL:
 #    <s:address location="http://localhost:2001/city-service"/>

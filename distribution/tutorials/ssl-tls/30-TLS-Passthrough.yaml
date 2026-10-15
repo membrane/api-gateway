@@ -9,11 +9,16 @@
 #
 # 1.) Start Membrane:
 #     with Docker:
-#       ./run-docker.sh -c 30-TLS-Passthrough.yaml   (Linux/Mac)
-#       run-docker.cmd -c 30-TLS-Passthrough.yaml    (Windows)
+#       Linux/Mac:
+#         ./run-docker.sh -c 30-TLS-Passthrough.yaml
+#       Windows:
+#         run-docker.cmd -c 30-TLS-Passthrough.yaml
+#
 #     or with Java:
-#       ./membrane.sh -c 30-TLS-Passthrough.yaml     (Linux/Mac)
-#       membrane.cmd -c 30-TLS-Passthrough.yaml      (Windows)
+#       Linux/Mac:
+#         ./membrane.sh -c 30-TLS-Passthrough.yaml
+#       Windows:
+#         membrane.cmd -c 30-TLS-Passthrough.yaml
 #
 # 2.) Call the first backend. --resolve sends the request to your local gateway
 #     while keeping api.predic8.de as the TLS server name, -v shows the

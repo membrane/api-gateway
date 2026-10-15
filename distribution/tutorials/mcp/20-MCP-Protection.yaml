@@ -17,11 +17,16 @@
 #
 # 1.) Start Membrane:
 #     with Docker:
-#       ./run-docker.sh -c 20-MCP-Protection.yaml   (Linux/Mac)
-#       run-docker.cmd -c 20-MCP-Protection.yaml    (Windows)
+#       Linux/Mac:
+#         ./run-docker.sh -c 20-MCP-Protection.yaml
+#       Windows:
+#         run-docker.cmd -c 20-MCP-Protection.yaml
+#
 #     or with Java:
-#       ./membrane.sh -c 20-MCP-Protection.yaml     (Linux/Mac)
-#       membrane.cmd -c 20-MCP-Protection.yaml      (Windows)
+#       Linux/Mac:
+#         ./membrane.sh -c 20-MCP-Protection.yaml
+#       Windows:
+#         membrane.cmd -c 20-MCP-Protection.yaml
 #
 # 2.) Start the MCP Inspector in a second terminal. It usually opens the
 #     browser automatically:
@@ -44,7 +49,7 @@
 #     but it is hidden from the Inspector and blocked by `mcpProtection`.
 #     To verify the block, send a manual JSON-RPC request:
 #
-#     curl -i -d '{"jsonrpc":"2.0","id":99,"method":"tools/call","params":{"name":"getExchanges","arguments":{}}}' -H "Content-Type: application/json" http://localhost:2000
+#     curl -i -d @call-getExchanges.json -H "Content-Type: application/json" http://localhost:2000
 #
 #     The response should be 403 with a JSON-RPC error explaining that the tool
 #     is not allowed.

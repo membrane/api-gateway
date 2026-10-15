@@ -20,7 +20,10 @@
 #     verified normally).
 #
 # 1.) Start Membrane:
-#     ./membrane.sh -c 20-TLS-Both-Legs.yaml
+#     Linux/Mac:
+#       ./membrane.sh -c 20-TLS-Both-Legs.yaml
+#     Windows:
+#       membrane.cmd -c 20-TLS-Both-Legs.yaml
 #
 # 2.) Ask curl to use Membrane as an HTTPS proxy, then request a public HTTPS API through it:
 #     curl -x https://localhost:8443 --proxy-insecure https://api.predic8.de/

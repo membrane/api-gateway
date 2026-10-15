@@ -1,0 +1,5 @@
+[
+  {"jsonrpc": "2.0", "id": 5, "method": "getHealth"},
+  {"jsonrpc": "2.0", "id": 6, "method": "getEcho", "params": {"message": "Hi"}},
+  {"jsonrpc": "2.0", "id": 7, "method": "getHealth"}
+]

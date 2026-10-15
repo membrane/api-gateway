@@ -8,11 +8,16 @@
 #     Open a terminal in this folder and run:
 #
 #     with Docker:
-#       ./run-docker.sh -c 10-First-API.yaml   (Linux/Mac)
-#       run-docker.cmd -c 10-First-API.yaml    (Windows)
+#       Linux/Mac:
+#         ./run-docker.sh -c 10-First-API.yaml
+#       Windows:
+#         run-docker.cmd -c 10-First-API.yaml
+#
 #     or with Java:
-#       ./membrane.sh -c 10-First-API.yaml     (Linux/Mac)
-#       membrane.cmd -c 10-First-API.yaml      (Windows)
+#       Linux/Mac:
+#         ./membrane.sh -c 10-First-API.yaml
+#       Windows:
+#         membrane.cmd -c 10-First-API.yaml
 #
 # 2.) Call the API:
 #     Open http://localhost:2000 in the browser or run in a separate terminal:
