@@ -14,7 +14,10 @@
 # backend and Membrane never terminates it or sees the encrypted traffic.
 #
 # 1.) Start Membrane:
-#     ./membrane.sh -c 10-Forward-Proxy.yaml
+#     Linux/Mac:
+#       ./membrane.sh -c 10-Forward-Proxy.yaml
+#     Windows:
+#       membrane.cmd -c 10-Forward-Proxy.yaml
 #
 # 2.) Ask curl to use Membrane as its proxy, then request a public HTTPS API through it:
 #     curl -x http://localhost:3128 https://api.predic8.de/

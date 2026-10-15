@@ -6,7 +6,10 @@
 # carries a request body.
 #
 # 1.) Start Membrane:
-#     ./membrane.sh -c 10-QUERY-Method.apis.yaml
+#     Linux/Mac:
+#       ./membrane.sh -c 10-QUERY-Method.apis.yaml
+#     Windows:
+#       membrane.cmd -c 10-QUERY-Method.apis.yaml
 #
 # 2.) Send a valid QUERY with a search body:
 #     curl -X QUERY localhost:2000/search -H "Content-Type: application/json" -d "{\"term\": \"shoes\"}"

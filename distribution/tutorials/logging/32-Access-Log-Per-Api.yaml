@@ -9,11 +9,15 @@
 # access-products.log and access-users.log.
 #
 # 1.) Start Membrane:
-#       export JAVA_OPTS="-Dlog4j.configurationFile=tutorials/logging/log4j2-32-access-per-api.yaml"   (Linux/Mac)
-#       ./membrane.sh -c 32-Access-Log-Per-Api.yaml
-#
-#       $env:JAVA_OPTS="-Dlog4j.configurationFile=tutorials/logging/log4j2-32-access-per-api.yaml"     (Windows PowerShell)
-#       membrane.cmd -c 32-Access-Log-Per-Api.yaml
+#       Linux/Mac:
+#         export JAVA_OPTS="-Dlog4j.configurationFile=tutorials/logging/log4j2-32-access-per-api.yaml"
+#         ./membrane.sh -c 32-Access-Log-Per-Api.yaml
+#       Windows Command Prompt:
+#         set JAVA_OPTS=-Dlog4j.configurationFile=%CD%\log4j2-32-access-per-api.yaml
+#         membrane.cmd -c 32-Access-Log-Per-Api.yaml
+#       Windows PowerShell:
+#         $env:JAVA_OPTS="-Dlog4j.configurationFile=$PWD\log4j2-32-access-per-api.yaml"
+#         .\membrane.cmd -c 32-Access-Log-Per-Api.yaml
 #
 # 2.) Call the APIs:
 #       curl http://localhost:2000/orders/1
@@ -21,7 +25,10 @@
 #       curl http://localhost:2000/users/alice
 #
 # 3.) Look at the log files:
-#       cat access-products.log
+#       Linux/Mac:
+#         cat access-products.log
+#       Windows:
+#         type access-products.log
 #
 #       0:0:0:0:0:0:0:1 - - [02/Oct/2026:09:56:10 +0200] "GET /products/7 HTTP/1.1" 200 0
 #

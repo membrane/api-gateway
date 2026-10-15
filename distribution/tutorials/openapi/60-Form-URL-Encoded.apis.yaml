@@ -7,7 +7,10 @@
 # against its schema.
 #
 # 1.) Start Membrane:
-#     ./membrane.sh -c 60-Form-URL-Encoded.apis.yaml
+#     Linux/Mac:
+#       ./membrane.sh -c 60-Form-URL-Encoded.apis.yaml
+#     Windows:
+#       membrane.cmd -c 60-Form-URL-Encoded.apis.yaml
 #
 # 2.) Send a valid form post (curl uses application/x-www-form-urlencoded by default for -d):
 #     curl localhost:2000/orders -v -d "product=Shoes&quantity=5"

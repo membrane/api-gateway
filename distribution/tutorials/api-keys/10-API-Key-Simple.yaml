@@ -7,11 +7,16 @@
 #
 # 1.) Start Membrane:
 #     with Docker:
-#       ./run-docker.sh -c 10-API-Key-Simple.yaml   (Linux/Mac)
-#       run-docker.cmd -c 10-API-Key-Simple.yaml    (Windows)
+#       Linux/Mac:
+#         ./run-docker.sh -c 10-API-Key-Simple.yaml
+#       Windows:
+#         run-docker.cmd -c 10-API-Key-Simple.yaml
+#
 #     or with Java:
-#       ./membrane.sh -c 10-API-Key-Simple.yaml     (Linux/Mac)
-#       membrane.cmd -c 10-API-Key-Simple.yaml      (Windows)
+#       Linux/Mac:
+#         ./membrane.sh -c 10-API-Key-Simple.yaml
+#       Windows:
+#         membrane.cmd -c 10-API-Key-Simple.yaml
 #
 # 2.) No API key → 401:
 #     curl -i localhost:2000

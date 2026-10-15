@@ -7,7 +7,10 @@
 # element's text content. Membrane uses it to validate XML bodies.
 #
 # 1.) Start Membrane:
-#     ./membrane.sh -c 40-XML-nodeType.apis.yaml
+#     Linux/Mac:
+#       ./membrane.sh -c 40-XML-nodeType.apis.yaml
+#     Windows:
+#       membrane.cmd -c 40-XML-nodeType.apis.yaml
 #
 # 2.) Send a valid order (id and currency as attributes, total as element text):
 #     curl -X POST localhost:2000/orders -H "Content-Type: application/xml" -d "<order id='A1'><total currency='USD'>42.50</total></order>"

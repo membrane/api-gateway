@@ -3,15 +3,13 @@
 # Tutorial: OpenTelemetry
 #
 # 1.) Start Jaeger (Docker required):
-#       docker run -d --name jaeger \
-#         -e COLLECTOR_OTLP_ENABLED=true \
-#         -p 16686:16686 \
-#         -p 4317:4317 \
-#         jaegertracing/all-in-one:latest
+#       docker run -d --name jaeger -e COLLECTOR_OTLP_ENABLED=true -p 16686:16686 -p 4317:4317 jaegertracing/all-in-one:latest
 #
 # 2.) Start Membrane:
-#       Linux/Mac:  ./membrane.sh -c 40-OpenTelemetry.yaml
-#       Windows:    membrane.cmd  -c 40-OpenTelemetry.yaml
+#       Linux/Mac:
+#         ./membrane.sh -c 40-OpenTelemetry.yaml
+#       Windows:
+#         membrane.cmd -c 40-OpenTelemetry.yaml
 #
 # 3.) Send a few requests:
 #       curl http://localhost:2000

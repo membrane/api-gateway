@@ -145,6 +145,12 @@ To run the tutorials via Docker, use the `run-docker.sh` (Linux/macOS) or `run-d
 
 Ports 2000-2010, 8443 (TLS) and 9000 (admin console) are published. For a tutorial listening on another port, add it with `MEMBRANE_DOCKER_OPTS`, e.g. `MEMBRANE_DOCKER_OPTS="-p 3128:3128" ./run-docker.sh -c 10-Forward-Proxy.yaml` (Windows: `set "MEMBRANE_DOCKER_OPTS=-p 3128:3128"` first). `JAVA_OPTS` from your environment is passed on to the JVM in the container.
 
+## Windows
+
+The commands in the tutorials work in a Linux/macOS shell and in the Windows Command Prompt (`cmd`). Where they differ, a tutorial shows both variants, each under its own label line.
+
+Use the Command Prompt rather than PowerShell for the `curl` commands. Windows PowerShell maps `curl` to `Invoke-WebRequest`, and PowerShell does not treat `\"` inside a request body as an escaped quote. To start a script in PowerShell, prefix it with `.\`, e.g. `.\membrane.cmd -c 10-First-API.yaml`.
+
 ## Questions and Feedback
 
 If you have questions, feedback or run into any issues, we’re happy to help.

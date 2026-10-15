@@ -7,7 +7,10 @@
 # application/x-www-form-urlencoded). Membrane validates it as a unit.
 #
 # 1.) Start Membrane:
-#     ./membrane.sh -c 30-Querystring-Parameter.apis.yaml
+#     Linux/Mac:
+#       ./membrane.sh -c 30-Querystring-Parameter.apis.yaml
+#     Windows:
+#       membrane.cmd -c 30-Querystring-Parameter.apis.yaml
 #
 # 2.) Send a valid query string:
 #     curl "localhost:2000/products?term=boots&page=2"

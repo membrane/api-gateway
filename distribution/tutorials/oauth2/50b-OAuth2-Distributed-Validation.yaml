@@ -8,7 +8,10 @@
 #
 # 1.) Make sure 50a-OAuth2-Distributed-Issuer.yaml is already running in terminal 1.
 #     Run this in terminal 2:
-#     ./membrane.sh -c 50b-OAuth2-Distributed-Validation.yaml
+#     Linux/Mac:
+#       ./membrane.sh -c 50b-OAuth2-Distributed-Validation.yaml
+#     Windows:
+#       membrane.cmd -c 50b-OAuth2-Distributed-Validation.yaml
 #
 # 2.) Get a token from the issuer:
 #     curl -v -s -d "grant_type=password&username=john&password=password&client_id=abc&client_secret=def" localhost:7007/oauth2/token

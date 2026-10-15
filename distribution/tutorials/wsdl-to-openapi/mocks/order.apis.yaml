@@ -3,7 +3,10 @@
 # OrderService Mock
 #
 # Start standalone:
-#   ./membrane.sh -c mocks/order.apis.yaml
+#   Linux/Mac:
+#     ./membrane.sh -c mocks/order.apis.yaml
+#   Windows:
+#     membrane.cmd -c mocks/order.apis.yaml
 #
 # The cancel operation always answers with one of the two faults the WSDL declares, so the
 # tutorial can show how each of them is mapped:

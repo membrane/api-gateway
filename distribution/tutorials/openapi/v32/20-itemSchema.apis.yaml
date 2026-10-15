@@ -7,7 +7,10 @@
 # Membrane validates every item on its own.
 #
 # 1.) Start Membrane:
-#     ./membrane.sh -c 20-itemSchema.apis.yaml
+#     Linux/Mac:
+#       ./membrane.sh -c 20-itemSchema.apis.yaml
+#     Windows:
+#       membrane.cmd -c 20-itemSchema.apis.yaml
 #
 # 2.) Send a valid JSON Lines stream (one document per line):
 #     curl -X POST localhost:2000/documents -H "Content-Type: application/jsonl" --data-binary @documents-valid.jsonl

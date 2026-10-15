@@ -17,11 +17,16 @@
 #
 # 1.) Start Membrane:
 #     with Docker:
-#       ./run-docker.sh -c 20-MCP-Protection.yaml   (Linux/Mac)
-#       run-docker.cmd -c 20-MCP-Protection.yaml    (Windows)
+#       Linux/Mac:
+#         ./run-docker.sh -c 20-MCP-Protection.yaml
+#       Windows:
+#         run-docker.cmd -c 20-MCP-Protection.yaml
+#
 #     or with Java:
-#       ./membrane.sh -c 20-MCP-Protection.yaml     (Linux/Mac)
-#       membrane.cmd -c 20-MCP-Protection.yaml      (Windows)
+#       Linux/Mac:
+#         ./membrane.sh -c 20-MCP-Protection.yaml
+#       Windows:
+#         membrane.cmd -c 20-MCP-Protection.yaml
 #
 # 2.) Start the MCP Inspector in a second terminal. It usually opens the
 #     browser automatically:

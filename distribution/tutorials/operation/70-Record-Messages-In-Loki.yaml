@@ -11,8 +11,10 @@
 #       docker compose -f loki/docker-compose.yml up -d
 #
 # 2.) Start Membrane:
-#       Linux/Mac:  ./membrane.sh -c 70-Record-Messages-In-Loki.yaml
-#       Windows:    membrane.cmd  -c 70-Record-Messages-In-Loki.yaml
+#       Linux/Mac:
+#         ./membrane.sh -c 70-Record-Messages-In-Loki.yaml
+#       Windows:
+#         membrane.cmd -c 70-Record-Messages-In-Loki.yaml
 #
 # 3.) Generate traffic on the two APIs:
 #       curl http://localhost:2001

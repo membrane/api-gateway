@@ -7,18 +7,26 @@
 #
 # 1.) Start Membrane:
 #     with Docker:
-#       ./run-docker.sh -c 50-Prometheus.yaml   (Linux/Mac)
-#       run-docker.cmd -c 50-Prometheus.yaml    (Windows)
+#       Linux/Mac:
+#         ./run-docker.sh -c 50-Prometheus.yaml
+#       Windows:
+#         run-docker.cmd -c 50-Prometheus.yaml
+#
 #     or with Java:
-#       ./membrane.sh -c 50-Prometheus.yaml     (Linux/Mac)
-#       membrane.cmd -c 50-Prometheus.yaml      (Windows)
+#       Linux/Mac:
+#         ./membrane.sh -c 50-Prometheus.yaml
+#       Windows:
+#         membrane.cmd -c 50-Prometheus.yaml
 #
 # 2.) Generate traffic on the two backend APIs:
 #       curl http://localhost:2001
 #       curl http://localhost:2002
 #
 # 3.) Scrape the metrics endpoint:
-#       curl http://localhost:2000/metrics | grep membrane_count
+#       Linux/Mac:
+#         curl http://localhost:2000/metrics | grep membrane_count
+#       Windows:
+#         curl http://localhost:2000/metrics | findstr membrane_count
 #
 #     You should see one counter per API/status combination, e.g.:
 #       membrane_count{api="Backend A",method="GET",statusCode="200",...} 1.0
@@ -26,10 +34,10 @@
 #
 # 4.) To connect a real Prometheus server use the scrape config in
 #     prometheus/prometheus.yml.  With Docker:
-#       docker run -p 9090:9090 \
-#         --add-host=host.docker.internal:host-gateway \
-#         -v $(pwd)/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml \
-#         prom/prometheus
+#       Linux/Mac:
+#         docker run -p 9090:9090 --add-host=host.docker.internal:host-gateway -v "$(pwd)/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml" prom/prometheus
+#       Windows:
+#         docker run -p 9090:9090 -v "%cd%\prometheus\prometheus.yml:/etc/prometheus/prometheus.yml" prom/prometheus
 #
 #     --add-host is required on Linux so host.docker.internal resolves to the host;
 #     on macOS and Windows it is provided automatically.
