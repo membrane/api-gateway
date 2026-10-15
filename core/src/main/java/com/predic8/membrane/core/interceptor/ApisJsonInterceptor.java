@@ -19,7 +19,6 @@ import com.fasterxml.jackson.databind.node.*;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.config.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.Response.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
 import com.predic8.membrane.core.proxies.*;
@@ -32,6 +31,7 @@ import java.util.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.Response.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static java.util.Optional.*;
 
@@ -71,7 +71,7 @@ public class ApisJsonInterceptor extends AbstractInterceptor {
                 return ABORT;
             }
         }
-        exc.setResponse(new ResponseBuilder().body(apisJson).contentType(APPLICATION_JSON).build());
+        exc.setResponse(ok().body(apisJson).contentType(APPLICATION_JSON).build());
         return RETURN;
     }
 
@@ -112,7 +112,10 @@ public class ApisJsonInterceptor extends AbstractInterceptor {
                                     && apiRecord.getApi().getInfo().getDescription() != null)
                 ? apiRecord.getApi().getInfo().getDescription()
                 : ofNullable(api.getDescription()).map(ApiDescription::getContent).orElse("API"));
-        apiJson.put("humanUrl", getProtocol(api) + getHost(api) + ((apiRecord != null) ? "/api-docs/ui/" + recordId : "/api-docs"));
+        // Only an API with an OpenAPI document has a page to link to. Bare /api-docs would not do:
+        // it carries no id, so on a shared port the first matching API answers it.
+        if (apiRecord != null)
+            apiJson.put("humanUrl", getProtocol(api) + getHost(api) + "/api-docs/ui/" + recordId);
         apiJson.put("baseUrl", getProtocol(api) + getHost(api) + ofNullable(api.getPath()).map(Path::getUri).orElse("/"));
         if (apiRecord != null)
             apiJson.put("version", apiRecord.getApi().getInfo().getVersion());
