@@ -52,6 +52,14 @@ import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
  * connection or, if failover on 5xx is configured, a server error. If the backend does not handle these methods
  * idempotently, disable retries of the HTTP client. POST and PATCH are only repeated when the connection could not
  * be established, which is safe.</p>
+ *
+ * <p>Retries are disabled in the global HTTP client configuration, which applies to all APIs:</p>
+ * <pre><code>
+ * configuration:
+ *   httpClientConfig:
+ *     retries:
+ *       retries: 0
+ * </code></pre>
  * @topic 3. Security and Validation
  */
 @MCElement(name = "idempotency")
