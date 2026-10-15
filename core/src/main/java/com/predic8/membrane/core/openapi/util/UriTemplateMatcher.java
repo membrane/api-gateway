@@ -17,6 +17,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -25,7 +26,7 @@ import static java.util.regex.Pattern.compile;
 public class UriTemplateMatcher {
 
     public static final String PARAM_NAME_REGEX = "\\{([^/]+?)}";
-    public static final String URI_PARAM_MATCH = "([^/]+)";
+    public static final String URI_PARAM_MATCH = "[^/]+";
     private static final Pattern PARAM_NAME_REGEX_PATTERN = compile(PARAM_NAME_REGEX);
 
     /**
@@ -52,8 +53,17 @@ public class UriTemplateMatcher {
         return PARAM_NAME_REGEX_PATTERN.matcher(normalizedTemplate);
     }
 
+    /**
+     * Each parameter becomes a named group, so that capturing groups in the literal parts do not shift the lookup.
+     */
     static String prepareTemplate(String template) {
-        return PARAM_NAME_REGEX_PATTERN.matcher(template).replaceAll(URI_PARAM_MATCH);
+        final var index = new AtomicInteger();
+        return PARAM_NAME_REGEX_PATTERN.matcher(template)
+                .replaceAll(r -> "(?<%s>%s)".formatted(groupName(index.getAndIncrement()), URI_PARAM_MATCH));
+    }
+
+    static String groupName(int parameterIndex) {
+        return "param" + parameterIndex;
     }
 
     static String normalizePath(String path) {

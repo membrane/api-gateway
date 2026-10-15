@@ -52,6 +52,11 @@ class UriTemplateTest {
     }
 
     @Test
+    void capturingGroupsInLiteralPartsDoNotShiftParameters() {
+        assertEquals(Map.of("id", "7"), UriTemplate.of("/(v1|v2)/users/{id}").match("/v1/users/7").orElseThrow());
+    }
+
+    @Test
     void isReusable() {
         final var template = UriTemplate.of("/foo/{id}");
         assertEquals(Map.of("id", "1"), template.match("/foo/1").orElseThrow());

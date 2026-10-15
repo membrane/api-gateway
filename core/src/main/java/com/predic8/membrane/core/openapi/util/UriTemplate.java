@@ -65,7 +65,7 @@ public final class UriTemplate {
                 .boxed()
                 .collect(toMap(
                         parameterNames::get,
-                        i -> URLDecoder.decode(matcher.group(i + 1), StandardCharsets.UTF_8)
+                        i -> URLDecoder.decode(matcher.group(groupName(i)), StandardCharsets.UTF_8)
                 )));
     }
 
