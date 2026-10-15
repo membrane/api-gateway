@@ -133,17 +133,9 @@ public class HTTPSchemaResolver implements SchemaResolver {
     }
 
     public InputStream resolve(String url) throws ResourceRetrievalException {
-        final var client = httpClient.get();
+        HttpClient client = null;
         try {
-            return resolve(url, client);
-        } finally {
-            if (clientPerCall)
-                client.closeImmediately();
-        }
-    }
-
-    private InputStream resolve(String url, HttpClient client) throws ResourceRetrievalException {
-        try {
+            client = httpClient.get();
             var resolveExchange = createResolveExchange(url);
             client.call(resolveExchange);
             Response response = resolveExchange.getResponse();
@@ -157,6 +149,9 @@ public class HTTPSchemaResolver implements SchemaResolver {
             throw e;
         } catch (Exception e) {
             throw new ResourceRetrievalException(url, e);
+        } finally {
+            if (clientPerCall && client != null)
+                client.closeImmediately();
         }
     }
 

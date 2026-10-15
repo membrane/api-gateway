@@ -59,6 +59,16 @@ class HTTPSchemaResolverTest {
     }
 
     @Test
+    void withClientPerCallWrapsClientCreationFailure() {
+        final var resolver = HTTPSchemaResolver.withClientPerCall(() -> {
+            throw new IllegalStateException("no client");
+        });
+
+        final var e = assertThrows(ResourceRetrievalException.class, () -> resolver.resolve("http://localhost/a.xsd"));
+        assertEquals("no client", e.getCause().getMessage());
+    }
+
+    @Test
     void resolveLeavesCallerOwnedClientOpen() throws Exception {
         final var client = clientAnswering("<schema/>");
         new HTTPSchemaResolver(client).resolve("http://localhost/a.xsd").close();
