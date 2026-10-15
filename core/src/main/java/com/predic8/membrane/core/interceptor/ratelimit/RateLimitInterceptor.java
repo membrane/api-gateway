@@ -33,6 +33,7 @@ import java.util.Objects;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
+import static com.predic8.membrane.core.http.Header.RETRY_AFTER;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_FLOW;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
@@ -137,15 +138,16 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
         }
 
         log.info("{} limit: {} duration: {} is exceeded. (clientIp: {})", getKey(exc), getRequestLimit(), getRequestLimitDuration(), exc.getRemoteAddrIp());
-        user(false, getDisplayName())
+        final var reset = strategy.getLimitReset(getKey(exc));
+        user(router.getConfiguration().isProduction(), getDisplayName())
                 .status(429)
                 .title("Rate limit is exceeded.")
                 .addSubType("rate-limit")
-                .detail("The quota of the rate limit is exceeded. Try again in %s seconds.".formatted(strategy.getLimitReset(getKey(exc))))
-                .internal("limit", getRequestLimit())
-                .internal("duration", getRequestLimitDuration())
+                .detail("The quota of the rate limit is exceeded. Try again in %s seconds.".formatted(reset), true)
+                .topLevel("limit", getRequestLimit())
+                .topLevel("duration", getRequestLimitDuration())
                 .buildAndSetResponse(exc);
-        setHeaderRateLimitFieldsOnResponse(exc);
+        setHeaderRateLimitFieldsOnResponse(exc, reset);
 
         return RETURN;
     }
@@ -242,11 +244,12 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
         return l.get(l.size() - count - 1).trim();
     }
 
-    private void setHeaderRateLimitFieldsOnResponse(Exchange exc) {
+    private void setHeaderRateLimitFieldsOnResponse(Exchange exc, String reset) {
         Header h = exc.getResponse().getHeader();
         h.add(X_RATELIMIT_DURATION, strategy.getLimitDurationPeriod());
         h.add(X_RATELIMIT_LIMIT, Integer.toString(strategy.requestLimit));
-        h.add(X_RATELIMIT_RESET, strategy.getLimitReset(getKey(exc)));
+        h.add(X_RATELIMIT_RESET, reset);
+        h.add(RETRY_AFTER, reset);
     }
 
     @SuppressWarnings("unused")

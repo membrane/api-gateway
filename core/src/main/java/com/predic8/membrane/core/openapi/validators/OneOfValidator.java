@@ -16,13 +16,11 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import io.swagger.v3.oas.models.*;
-import io.swagger.v3.oas.models.media.*;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.media.Schema;
 
-import java.util.*;
-import java.util.concurrent.atomic.*;
-
-import static com.predic8.membrane.core.openapi.util.Utils.*;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @SuppressWarnings("rawtypes")
 public class OneOfValidator {
@@ -41,7 +39,7 @@ public class OneOfValidator {
 
         AtomicInteger numberValid = new AtomicInteger();
         oneOfSchemas.forEach(schema -> {
-             if (!areThereErrors(new SchemaValidator(api,schema).validate(ctx,obj))) {
+             if (new SchemaValidator(api,schema).isValid(ctx,obj)) {
                  numberValid.incrementAndGet();
              }
         });

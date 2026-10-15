@@ -37,6 +37,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.predic8.membrane.core.http.Header.RETRY_AFTER;
 import static com.predic8.membrane.core.http.Header.X_FORWARDED_FOR;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.Request.post;
@@ -79,7 +80,7 @@ public class RateLimitInterceptorTest {
 
 		RateLimitInterceptor interceptor = new RateLimitInterceptor(ofSeconds(10),3);
 		interceptor.setKeyExpression(expression);
-		interceptor.init();
+		interceptor.init(new DummyTestRouter());
 
 		assertEquals(CONTINUE, interceptor.handleRequest(exc1));
 		assertEquals(CONTINUE, interceptor.handleRequest(exc2));
@@ -102,7 +103,7 @@ public class RateLimitInterceptorTest {
 	void resetTimeUsesKeyExpression() throws Exception {
 		var interceptor = new RateLimitInterceptor(ofMinutes(1), 1);
 		interceptor.setKeyExpression("headers['X-Api-Key']");
-		interceptor.init();
+		interceptor.init(new DummyTestRouter());
 
 		// LazyRateLimit currently shares one reset time across all keys, masking issue #3387.
 		// Keep its real request counting, but distinguish the API-key and remote-IP reset times.
@@ -137,7 +138,7 @@ public class RateLimitInterceptorTest {
 		var interceptor = new RateLimitInterceptor(ofMinutes(1), 1);
 		interceptor.setLanguage(JSONPATH);
 		interceptor.setKeyExpression("$.missing");
-		interceptor.init();
+		interceptor.init(new DummyTestRouter());
 
 		// JSONPath returns null for a path that does not exist
 		var exc = createJsonExchange("a");
@@ -145,6 +146,28 @@ public class RateLimitInterceptorTest {
 		assertEquals(CONTINUE, interceptor.handleRequest(exc));
 		assertEquals(RETURN, interceptor.handleRequest(exc));
 		assertEquals(429, exc.getResponse().getStatusCode());
+	}
+
+	@Test
+	void productionShowsRetryTimeAndLimits() throws Exception {
+		final var interceptor = new RateLimitInterceptor(ofMinutes(1), 1);
+		interceptor.init(DummyTestRouter.productionRouter());
+
+		final var exc = new Request.Builder().buildExchange();
+		exc.setRemoteAddrIp("192.0.2.1");
+
+		assertEquals(CONTINUE, interceptor.handleRequest(exc));
+		assertEquals(RETURN, interceptor.handleRequest(exc));
+		assertEquals(429, exc.getResponse().getStatusCode());
+
+		final var reset = exc.getResponse().getHeader().getFirstValue(X_RATELIMIT_RESET);
+		final var json = om.readTree(exc.getResponse().getBodyAsStringDecoded());
+		assertAll(
+				() -> assertEquals(reset, exc.getResponse().getHeader().getFirstValue(RETRY_AFTER)),
+				() -> assertEquals("The quota of the rate limit is exceeded. Try again in %s seconds.".formatted(reset), json.get("detail").asText()),
+				() -> assertEquals(1, json.get("limit").asInt()),
+				() -> assertEquals("PT1M", json.get("duration").asText())
+		);
 	}
 
 	@Test
@@ -168,7 +191,7 @@ public class RateLimitInterceptorTest {
 		RateLimitInterceptor interceptor = new RateLimitInterceptor(ofSeconds(10),3);
 		interceptor.setLanguage(JSONPATH);
 		interceptor.setKeyExpression("$.application");
-		interceptor.init();
+		interceptor.init(new DummyTestRouter());
 
 		assertEquals(CONTINUE, interceptor.handleRequest(excA));
 		assertEquals(CONTINUE, interceptor.handleRequest(excB));
@@ -218,7 +241,7 @@ public class RateLimitInterceptorTest {
 		int tryLimit = 16;
 		int rateLimitSeconds = 1;
 		RateLimitInterceptor rli = new RateLimitInterceptor(ofSeconds(rateLimitSeconds), tryLimit);
-		rli.init();
+		rli.init(new DummyTestRouter());
 
 		for (int i = 0; i < tryLimit; i++) {
 			assertEquals(CONTINUE, rli.handleRequest(exc));
@@ -239,7 +262,7 @@ public class RateLimitInterceptorTest {
 	void rateLimitByJWT() {
 		var interceptor = new RateLimitInterceptor(ofSeconds(10), 100);
 		interceptor.setKeyExpression("properties.jwt.sub");
-		interceptor.init();
+		interceptor.init(new DummyTestRouter());
 
 		var exc = new Request.Builder().buildExchange();
 
@@ -265,7 +288,7 @@ public class RateLimitInterceptorTest {
 	void rateLimitByJWTDifferentProperties() {
 		var interceptor = new RateLimitInterceptor(ofSeconds(10), 100);
 		interceptor.setKeyExpression("properties.jwt.sub");
-		interceptor.init();
+		interceptor.init(new DummyTestRouter());
 
 		var exc = new Request.Builder().buildExchange();
 
@@ -294,7 +317,7 @@ public class RateLimitInterceptorTest {
 		int tryLimit = 16;
 		int rateLimitSeconds = 1;
 		final RateLimitInterceptor rli = new RateLimitInterceptor(ofSeconds(rateLimitSeconds), tryLimit);
-		rli.init();
+		rli.init(new DummyTestRouter());
 		
 		ArrayList<Thread> threads = new ArrayList<>();
 		final AtomicInteger continues = new AtomicInteger();

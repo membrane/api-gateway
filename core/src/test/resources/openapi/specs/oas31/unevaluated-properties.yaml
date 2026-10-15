@@ -1,0 +1,282 @@
+openapi: "3.1.0"
+info:
+  title: Unevaluated Properties API
+  version: '1.0'
+paths:
+  /closed:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+              patternProperties:
+                "^x-":
+                  type: string
+              unevaluatedProperties: false
+      responses:
+        "200":
+          description: "OK"
+  /allof:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/Base'
+                - type: object
+                  properties:
+                    name:
+                      type: string
+              unevaluatedProperties: false
+      responses:
+        "200":
+          description: "OK"
+  /typed:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+              unevaluatedProperties:
+                type: integer
+      responses:
+        "200":
+          description: "OK"
+  /anyof:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                kind:
+                  type: string
+              anyOf:
+                - properties:
+                    kind:
+                      const: cat
+                    lives:
+                      type: integer
+                  required: [kind]
+                - properties:
+                    kind:
+                      const: dog
+                    tricks:
+                      type: integer
+                  required: [kind]
+              unevaluatedProperties: false
+      responses:
+        "200":
+          description: "OK"
+  /ifthen:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                kind:
+                  type: string
+              if:
+                properties:
+                  kind:
+                    const: cat
+                required: [kind]
+              then:
+                properties:
+                  lives:
+                    type: integer
+              unevaluatedProperties: false
+      responses:
+        "200":
+          description: "OK"
+  /dependent:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                kind:
+                  type: string
+              dependentSchemas:
+                kind:
+                  properties:
+                    lives:
+                      type: integer
+              unevaluatedProperties: false
+      responses:
+        "200":
+          description: "OK"
+  /additional:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                type: string
+              unevaluatedProperties: false
+      responses:
+        "200":
+          description: "OK"
+  /dangling-ref:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+              if:
+                required: [name]
+              then:
+                $ref: '#/components/schemas/Missing'
+              unevaluatedProperties: false
+      responses:
+        "200":
+          description: "OK"
+  /discriminator:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Pet'
+      responses:
+        "200":
+          description: "OK"
+  /discriminator-oneof:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Animal'
+      responses:
+        "200":
+          description: "OK"
+  /tree:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TreeNode'
+      responses:
+        "200":
+          description: "OK"
+  /tree-all-of:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TreeNodeAllOf'
+      responses:
+        "200":
+          description: "OK"
+components:
+  schemas:
+    Base:
+      type: object
+      properties:
+        id:
+          type: string
+    Pet:
+      type: object
+      properties:
+        petType:
+          type: string
+      required: [petType]
+      discriminator:
+        propertyName: petType
+        mapping:
+          dog: '#/components/schemas/Dog'
+      unevaluatedProperties: false
+    Cat:
+      allOf:
+        - $ref: '#/components/schemas/Pet'
+        - type: object
+          properties:
+            lives:
+              type: integer
+    Dog:
+      allOf:
+        - $ref: '#/components/schemas/Pet'
+        - type: object
+          properties:
+            tricks:
+              type: integer
+    Animal:
+      type: object
+      properties:
+        petType:
+          type: string
+      required: [petType]
+      discriminator:
+        propertyName: petType
+      oneOf:
+        - $ref: '#/components/schemas/Lion'
+        - $ref: '#/components/schemas/Wolf'
+      unevaluatedProperties: false
+    Lion:
+      type: object
+      properties:
+        lives:
+          type: integer
+    Wolf:
+      type: object
+      properties:
+        tricks:
+          type: integer
+    TreeNode:
+      oneOf:
+        - $ref: '#/components/schemas/TreeLeaf'
+        - $ref: '#/components/schemas/TreeBranch'
+      unevaluatedProperties: false
+    TreeLeaf:
+      type: object
+      properties:
+        value:
+          type: string
+      required: [value]
+    TreeBranch:
+      type: object
+      properties:
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/TreeNode'
+      required: [children]
+    TreeNodeAllOf:
+      allOf:
+        - $ref: '#/components/schemas/TreeChoice'
+      unevaluatedProperties: false
+    TreeChoice:
+      oneOf:
+        - $ref: '#/components/schemas/TreeLeaf'
+        - $ref: '#/components/schemas/TreeBranchAllOf'
+    TreeBranchAllOf:
+      type: object
+      properties:
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/TreeNodeAllOf'
+      required: [children]

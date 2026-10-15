@@ -27,7 +27,7 @@ public class DataFrame implements StreamEnd {
         int p = 0;
 
         if (isPadded()) {
-            padLength = frame.content[p++];
+            padLength = frame.content[p++] & 0xFF;
         } else {
             padLength = 0;
         }
@@ -43,12 +43,14 @@ public class DataFrame implements StreamEnd {
         return (frame.flags & FLAG_PADDED) != 0;
     }
 
+    /** Skips the Pad Length field of a padded frame. */
     public int getDataStartIndex() {
-        return 0;
+        return isPadded() ? 1 : 0;
     }
 
+    /** Negative if the padding is longer than the payload, which is a connection error (RFC 9113 §6.1). */
     public int getDataLength() {
-        return frame.length - padLength;
+        return frame.length - padLength - getDataStartIndex();
     }
 
     public byte[] getContent() {

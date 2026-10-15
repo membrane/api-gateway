@@ -23,6 +23,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static com.google.common.base.Strings.repeat;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.ATTENTION;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.SEE;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
@@ -267,6 +269,22 @@ public class JsonProtectionInterceptorTest {
                 1,
                 16,
                 "__proto__ found as key.");
+    }
+
+    @Test
+    void productionWithReportErrorShowsDetail() throws Exception {
+        final var jpi = buildJPI(true);
+        jpi.setReportError(true);
+        final var exc = Request.post("/").contentType(APPLICATION_JSON).body(deeplyNested()).buildExchange();
+
+        assertEquals(ABORT, jpi.handleRequest(exc));
+
+        final var pd = parse(exc.getResponse());
+        assertEquals("JSON Protection Violation", pd.getTitle());
+        assertTrue(pd.getDetail().contains("Exceeded maxDepth."), pd.getDetail());
+        assertTrue(pd.getInternal().containsKey("line"));
+        assertFalse(pd.getInternal().containsKey(ATTENTION));
+        assertFalse(pd.getInternal().containsKey(SEE));
     }
 
     // --- Multipart / attachments -------------------------------------------------------------

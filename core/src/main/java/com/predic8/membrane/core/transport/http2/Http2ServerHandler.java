@@ -14,15 +14,29 @@
 
 package com.predic8.membrane.core.transport.http2;
 
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.transport.http.*;
-import com.predic8.membrane.core.util.*;
-import org.apache.commons.lang3.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.transport.http.AbstractHttpHandler;
+import com.predic8.membrane.core.transport.http.HttpServerHandler;
+import com.predic8.membrane.core.transport.http2.frame.RstStreamFrame;
+import com.predic8.membrane.core.util.ByteUtil;
+import com.predic8.membrane.core.util.DNSCache;
+import com.predic8.membrane.core.util.EndOfStreamException;
+import com.predic8.membrane.core.util.Util;
+import org.apache.commons.lang3.NotImplementedException;
 
-import java.io.*;
-import java.net.*;
-import java.util.concurrent.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.util.ArrayList;
+import java.util.concurrent.ExecutorService;
+
+import static com.predic8.membrane.core.http.Response.statusCode;
+import static com.predic8.membrane.core.transport.http2.Http2ExchangeHandler.createHeadersFrames;
+import static com.predic8.membrane.core.transport.http2.frame.Error.ERROR_NO_ERROR;
 
 public class Http2ServerHandler extends AbstractHttpHandler {
 
@@ -60,6 +74,19 @@ public class Http2ServerHandler extends AbstractHttpHandler {
                 exchange.setOriginalRequestUri(((Request)message).getUri());
 
                 executor.submit(new Http2ExchangeHandler(streamInfo, httpServerHandler.getTransport(), logic.sender, logic.peerSettings, logic.peerFlowControl, exchange, showSSLExceptions, remoteAddr));
+            }
+
+            /** Answers 431 (RFC 6585) and, if the request is still open, ends it with RST_STREAM(NO_ERROR) (RFC 9113 §8.1). */
+            @Override
+            public void handleOversizedHeaders(StreamInfo streamInfo, boolean endStream) throws IOException {
+                final var streamId = streamInfo.getStreamId();
+                final var response = statusCode(431).build();
+                logic.sender.send(streamId, (encoder, peerSettings) -> {
+                    final var frames = new ArrayList<>(createHeadersFrames(response, response.getHeader(), streamId, encoder, peerSettings, true));
+                    if (!endStream)
+                        frames.add(RstStreamFrame.construct(streamId, ERROR_NO_ERROR));
+                    return frames;
+                });
             }
         });
     }

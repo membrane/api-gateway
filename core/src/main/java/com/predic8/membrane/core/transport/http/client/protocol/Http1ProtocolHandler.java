@@ -110,8 +110,7 @@ public class Http1ProtocolHandler extends AbstractProtocolHandler {
 
     private boolean isUpgradeToResponse(Response res, String protocol) {
         return res.getStatusCode() == 101 &&
-               UPGRADE.equalsIgnoreCase(res.getHeader().getFirstValue(CONNECTION)) &&
-               protocol.equalsIgnoreCase(res.getHeader().getFirstValue(UPGRADE));
+               protocol.equalsIgnoreCase(res.getHeader().getUpgradeProtocol());
     }
 
     @Override
@@ -203,12 +202,9 @@ public class Http1ProtocolHandler extends AbstractProtocolHandler {
             Response response = fromStream(ct.con().in, false);
             if (response.getStatusCode() > 299) {
                 log.info("Proxy rejected CONNECT request with status code {}.", response.getStatusCode());
+                // The HTTP client has no router (it also runs outside of one), so production mode is assumed.
                 gateway(true, "proxy")
-                        .title("Bad Gateway")
-                        .addSubSee("connect")
                         .status(502)
-                        .detail("Could not connect to proxy server")
-                        .topLevel("proxy-status", response.getStatusCode())
                         .buildAndSetResponse(exchange);
                 // No tunnel was established: do not mark the exchange as upgraded and
                 // close the connection to the proxy, as nobody else will.

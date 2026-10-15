@@ -41,9 +41,7 @@ import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.http.MimeType.isBinary;
 import static com.predic8.membrane.core.util.HttpUtil.*;
-import static com.predic8.membrane.core.util.text.StringUtil.getLastNonEmptyOfCommaSeparatedString;
-import static com.predic8.membrane.core.util.text.StringUtil.maskNonPrintableCharacters;
-import static com.predic8.membrane.core.util.text.StringUtil.truncateAfter;
+import static com.predic8.membrane.core.util.text.StringUtil.*;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.stream;
@@ -106,6 +104,7 @@ public class Header {
     public static final String USER_AGENT = "User-Agent";
     public static final String X_REQUESTED_WITH = "X-Requested-With";
     public static final String EXPIRES = "Expires";
+    public static final String RETRY_AFTER = "Retry-After";
     public static final String KEEP_ALIVE = "Keep-Alive";
 
     public static final String SERVER = "Server";
@@ -133,6 +132,8 @@ public class Header {
     public static final String SEC_WEBSOCKET_ACCEPT = "Sec-WebSocket-Accept";
 
     public static final String SEC_WEBSOCKET_KEY = "Sec-WebSocket-Key";
+
+    public static final String SEC_WEBSOCKET_EXTENSIONS = "Sec-WebSocket-Extensions";
 
     /**
      * Please note that this is a relic from RFC7540 and has been removed in RFC9113. It is present for backward

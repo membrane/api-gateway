@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Live Data</title>
+    <style>
+        body { font-family: sans-serif; margin: 0 auto; padding: 20px; max-width: 720px; background: #f5f5f5; color: #222; }
+        #status { padding: 10px; border-radius: 5px; font-weight: bold; }
+        #status.connecting { background: #ffeb3b; }
+        #status.open { background: #4caf50; color: white; }
+        #status.closed { background: #f44336; color: white; }
+        #value { font-size: 64px; font-weight: bold; margin: 20px 0 0; }
+        #chart { width: 100%; height: 120px; background: white; border: 1px solid #ccc; }
+        #chart polyline { fill: none; stroke: #1976d2; stroke-width: 2; vector-effect: non-scaling-stroke; }
+        #messages { font-family: monospace; background: white; border: 1px solid #ccc; height: 240px; overflow-y: auto; padding: 0 10px; }
+        #messages div { padding: 4px 0; border-bottom: 1px solid #eee; }
+    </style>
+</head>
+<body>
+<h1>WebSocket Live Data</h1>
+<div id="status" class="connecting">Connecting...</div>
+<div id="value">-</div>
+<svg id="chart" viewBox="0 0 60 100" preserveAspectRatio="none"><polyline id="line" points=""/></svg>
+<h2>Messages</h2>
+<div id="messages"></div>
+
+<script>
+    // Same host and port as the page, so the connection goes through the gateway.
+    const url = `ws://${location.host}/stream`;
+    const statusEl = document.getElementById('status');
+    const valueEl = document.getElementById('value');
+    const lineEl = document.getElementById('line');
+    const messagesEl = document.getElementById('messages');
+    const values = [];
+
+    function setStatus(text, cls) {
+        statusEl.textContent = text;
+        statusEl.className = cls;
+    }
+
+    function addMessage(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        messagesEl.prepend(div);
+        while (messagesEl.children.length > 100)
+            messagesEl.lastChild.remove();
+    }
+
+    function drawChart() {
+        const min = Math.min(...values) - 1;
+        const max = Math.max(...values) + 1;
+        lineEl.setAttribute('points', values
+            .map((v, i) => `${i},${100 - (v - min) / (max - min) * 100}`)
+            .join(' '));
+    }
+
+    const ws = new WebSocket(url);
+
+    ws.onopen = () => setStatus(`Connected to ${url}`, 'open');
+
+    ws.onmessage = (event) => {
+        addMessage(event.data);
+        const data = JSON.parse(event.data);
+        valueEl.textContent = data.value.toFixed(1);
+        values.push(data.value);
+        if (values.length > 60)
+            values.shift();
+        drawChart();
+    };
+
+    ws.onclose = (event) => setStatus(`Connection closed (code ${event.code}). Reload the page to reconnect.`, 'closed');
+</script>
+</body>
+</html>

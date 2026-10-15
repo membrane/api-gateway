@@ -2,19 +2,30 @@
 #
 # Tutorial: XML Protection
 #
-# Try it:
+# 1.) Start Membrane:
+#     with Docker:
+#       Linux/Mac:
+#         ./run-docker.sh -c 40-XML-Protection.yaml
+#       Windows:
+#         run-docker.cmd -c 40-XML-Protection.yaml
 #
-# 1.) Too many attributes
+#     or with Java:
+#       Linux/Mac:
+#         ./membrane.sh -c 40-XML-Protection.yaml
+#       Windows:
+#         membrane.cmd -c 40-XML-Protection.yaml
+#
+# 2.) Too many attributes
 #     curl -d '<foo a="1" b="2" c="3" d="4"/>' -H "Content-Type: text/xml" localhost:2000
 #
-# 2.) DTD Removal
+# 3.) DTD Removal
 #     Look at hello-dtd.xml. It contains a DTD configuration.
 #
 #     curl -d @hello-dtd.xml -H "Content-Type: text/xml" localhost:2000
 #
 #     The XML document in the response should have the DTD removed.
 #
-# 3.) Too deeply nested
+# 4.) Too deeply nested
 #     curl -d '<a><b><c><d>x</d></c></b></a>' -H "Content-Type: text/xml" localhost:2000
 
 api:

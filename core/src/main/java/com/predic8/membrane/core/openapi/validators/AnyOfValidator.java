@@ -16,13 +16,11 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import io.swagger.v3.oas.models.*;
-import io.swagger.v3.oas.models.media.*;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.media.Schema;
 
-import java.util.*;
-import java.util.concurrent.atomic.*;
-
-import static com.predic8.membrane.core.openapi.util.Utils.areThereErrors;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @SuppressWarnings("rawtypes")
 public class AnyOfValidator {
@@ -40,7 +38,7 @@ public class AnyOfValidator {
         AtomicBoolean oneIsValid = new AtomicBoolean();
         //noinspection unchecked
         ((List<Schema>) schema.getAnyOf()).forEach(schema -> {
-             if (!areThereErrors(new SchemaValidator(api,schema).validate(ctx,obj))) {
+             if (new SchemaValidator(api,schema).isValid(ctx,obj)) {
                  oneIsValid.set(true);
              }
         });

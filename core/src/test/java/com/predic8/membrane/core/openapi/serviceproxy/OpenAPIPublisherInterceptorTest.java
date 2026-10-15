@@ -148,6 +148,20 @@ public class OpenAPIPublisherInterceptorTest {
         checkHasValidProblemJSON(get);
     }
 
+    @Test
+    void wrongIdShowsDetailInProduction() throws Exception {
+        final var router = new DefaultRouter();
+        router.getConfiguration().setProduction(true);
+        final var prodInterceptor = new OpenAPIPublisherInterceptor(records);
+        prodInterceptor.init(router);
+
+        get.getRequest().setUri("/api-docs/wrong-id-0");
+        assertEquals(RETURN, prodInterceptor.handleRequest(get));
+        assertEquals(404, get.getResponse().getStatusCode());
+        assertEquals("OpenAPI document with the id wrong-id-0 not found.",
+                om.readTree(get.getResponse().getBodyAsStringDecoded()).get("detail").asText());
+    }
+
     @ParameterizedTest
     @MethodSource("uiParameters")
     void getSwaggerUINoId(String testPath) throws Exception {

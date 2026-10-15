@@ -13,23 +13,31 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.rewrite;
 
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.*;
-import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.router.*;
-import org.junit.jupiter.api.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.interceptor.DispatchingInterceptor;
+import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.Mapping;
+import com.predic8.membrane.core.proxies.ServiceProxy;
+import com.predic8.membrane.core.proxies.ServiceProxyKey;
+import com.predic8.membrane.core.router.DummyTestRouter;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import java.net.*;
-import java.util.*;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
-import static com.predic8.membrane.core.http.Request.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.Type.*;
+import static com.predic8.membrane.core.http.Request.get;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.Type.REDIRECT_TEMPORARY;
+import static com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.Type.REWRITE;
+import static com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.URL_NOT_PROCESSABLE;
 import static org.junit.jupiter.api.Assertions.*;
+
 public class RewriteInterceptorTest {
 
 	private final static ObjectMapper om = new ObjectMapper();
@@ -134,8 +142,29 @@ public class RewriteInterceptorTest {
 		JsonNode json = om.readTree(exc.getResponse().getBodyAsStream());
 
 		assertEquals("https://membrane-api.io/problems/user/path",json.get("type").asText());
-		assertEquals("The path does not follow the URI specification. Confirm the validity of the provided URL.",json.get("title").asText());
+		assertEquals("Request URL could not be processed.",json.get("title").asText());
+		assertEquals(URL_NOT_PROCESSABLE, json.get("detail").asText());
 		assertTrue(json.get("path").asText().contains("/buy/banana/%"));
 		assertTrue(json.get("component").asText().contains("rewrite"));
+		assertTrue(json.has("reason"));
+	}
+
+	@Test
+	void invalidURIInProduction() throws Exception {
+		final var prodRewriter = new RewriteInterceptor();
+		prodRewriter.setMappings(new ArrayList<>(List.of(new Mapping("^/store/(.*)", "/shop/$1", null))));
+		prodRewriter.init(DummyTestRouter.productionRouter());
+
+		exc.setProxy(sp);
+		exc.getDestinations().add("http://backend.example.com/buy/banana/%");
+		exc.setRequest(new Request());
+		assertEquals(RETURN, prodRewriter.handleRequest(exc));
+
+		final var json = om.readTree(exc.getResponse().getBodyAsStream());
+		assertEquals(400, json.get("status").asInt());
+		assertEquals("Request URL could not be processed.", json.get("title").asText());
+		assertTrue(json.get("detail").asText().startsWith(URL_NOT_PROCESSABLE), json.get("detail").asText());
+		assertFalse(json.toString().contains("backend.example.com"), json.toString());
+		assertFalse(json.toString().toLowerCase().contains("rewrit"), json.toString());
 	}
 }

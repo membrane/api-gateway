@@ -61,6 +61,12 @@ public class Response extends Message {
 	 */
 	private boolean unreadContent;
 
+	/**
+	 * Records the backend framing independently of later header or body changes. Once EOF delimits
+	 * a response, its backend connection cannot be reused (RFC 9112 §6.3 and §9.3).
+	 */
+	private boolean closeDelimited;
+
 	public static class ResponseBuilder {
 		private final Response res = new Response();
 
@@ -435,6 +441,7 @@ public class Response extends Message {
 	EndOfStreamException {
 		parseStartLine(in);
 
+		closeDelimited = false;
 		header = new Header(in, true);
 
 		if (createBody)
@@ -477,6 +484,7 @@ public class Response extends Message {
 		if (isRedirect() && mayHaveNoBody())
 			return;
 
+		closeDelimited = !header.hasContentLength() && !header.isChunked();
 		super.createBody(in);
 	}
 
@@ -524,8 +532,11 @@ public class Response extends Message {
 
 	@Override
 	protected boolean prepareBodyForWrite() {
-		if (!shouldNotContainBody())
+		if (!shouldNotContainBody()) {
+			if (closeDelimited)
+				header.setConnection(CLOSE);
 			return true;
+		}
 		adjustFramingForNoBody();
 		return false;
 	}
@@ -585,6 +596,8 @@ public class Response extends Message {
 
 	@Override
 	public boolean isKeepAlive() {
+		if (closeDelimited)
+			return false;
 		if (isRedirect() && mayHaveNoBody())
 			return false;
 		return super.isKeepAlive();
@@ -602,6 +615,7 @@ public class Response extends Message {
 	public <T extends Message> T createSnapshot(Runnable bodyUpdatedCallback, BodyCollectingMessageObserver.Strategy strategy, long limit) {
 		Response result = this.createMessageSnapshot(new Response(), bodyUpdatedCallback, strategy, limit);
 
+		result.closeDelimited = closeDelimited;
 		result.setStatusCode(this.getStatusCode());
 		result.setStatusMessage(this.getStatusMessage());
 

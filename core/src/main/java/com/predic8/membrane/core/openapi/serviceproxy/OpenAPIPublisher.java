@@ -13,28 +13,37 @@
    limitations under the License. */
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.fasterxml.jackson.core.*;
-import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.node.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.router.*;
-import groovy.text.*;
-import io.swagger.v3.oas.models.*;
-import io.swagger.v3.parser.*;
-import org.slf4j.*;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.router.Router;
+import groovy.text.StreamingTemplateEngine;
+import groovy.text.Template;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.parser.ObjectMapperFactory;
+import org.slf4j.Logger;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
-import java.util.regex.*;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URISyntaxException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.http.Response.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
-import static com.predic8.membrane.core.openapi.util.Utils.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.http.MimeType.TEXT_HTML_UTF8;
+import static com.predic8.membrane.core.http.Response.ok;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.isOpenAPI3;
+import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.isSwagger2;
+import static com.predic8.membrane.core.openapi.util.Utils.getResourceAsStream;
 
 public class OpenAPIPublisher {
 
@@ -58,13 +67,13 @@ public class OpenAPIPublisher {
         apiOverviewHtmlTemplate = createTemplate("/openapi/overview.html");
     }
 
-    Outcome handleSwaggerUi(Exchange exc) {
+    Outcome handleSwaggerUi(Exchange exc, Router router) {
         Matcher m = PATTERN_UI.matcher(exc.getRequest().getUri());
 
         // No id specified
         if (!m.matches()) {
             // Do not log! Too common!
-            user(false,"openapi-publisher")
+            user(router.getConfiguration().isProduction(), "openapi-publisher")
                     .title("No OpenAPI document id")
                     .addSubType("openapi")
                     .status(404)
@@ -79,7 +88,7 @@ public class OpenAPIPublisher {
 
         OpenAPIRecord record = apis.get(id);
         if (record == null) {
-            return returnNoFound(exc, id);
+            return returnNoFound(exc, id, router);
         }
 
         exc.setResponse(ok().contentType(TEXT_HTML_UTF8).body(renderSwaggerUITemplate(id, record.api)).build());
@@ -100,7 +109,7 @@ public class OpenAPIPublisher {
         OpenAPIRecord rec = apis.get(id);
 
         if (rec == null) {
-            return returnNoFound(exc, id);
+            return returnNoFound(exc, id, router);
         }
         return returnOpenApiAsYaml(exc, rec, router);
     }
@@ -121,14 +130,14 @@ public class OpenAPIPublisher {
         return RETURN;
     }
 
-    private Outcome returnNoFound(Exchange exc, String id) {
+    private Outcome returnNoFound(Exchange exc, String id, Router router) {
         // Do not log. Too common.
-        user(false,"openapi-publisher")
+        user(router.getConfiguration().isProduction(), "openapi-publisher")
                 .title("OpenAPI not found.")
                 .status(404)
                 .addSubType("openapi")
                 .addSubSee("wrong-id")
-                .detail("OpenAPI document with the id %s not found.".formatted(id))
+                .detail("OpenAPI document with the id %s not found.".formatted(id), true)
                 .buildAndSetResponse(exc);
         return RETURN;
     }

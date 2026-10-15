@@ -1,13 +1,13 @@
-### CUSTOM WEBSOCKET INTERCEPTOR WITH EMBEDDED MEMBRANE
+### CUSTOM WEBSOCKET INTERCEPTOR WITH STANDALONE MEMBRANE
 
-In this example a custom WebSocket interceptor is created and then added to Membrane Service Proxy through configuration
+In this example a custom WebSocket interceptor is created and then added to Membrane through configuration
 of the apis.yaml file.
 
 
 #### PREREQUISITES
 
 1. Prepare a WebSocket client and server. The server should listen on port 8080. The client should connect through port 9999.
-   (Membrane Service Proxy already ships with an example WebSocket client and server (requiring NodeJS). Take a look at
+   (Membrane already ships with an example WebSocket client and server (requiring NodeJS). Take a look at
    the "websocket-intercepting" example and run the startWebsocket.[bat|sh]. This will start up a server and client and
    do some communication.)
 
@@ -15,7 +15,7 @@ of the apis.yaml file.
 #### RUNNING THE EXAMPLE
 
 1. Run the `compile-and-copy.[bat|sh]`. Wait until the console window closes
-2. Start Membrane Service proxy by running the `membrane.[bat|sh]` in this folder
+2. Start Membrane by running `membrane.[sh|cmd]` in this folder
 3. Look at the console window and wait until `"Membrane ... up and running!"`. This window will remain open
 4. Start the WebSocket Server
 5. Start the WebSocket client
@@ -24,10 +24,10 @@ of the apis.yaml file.
 
 #### HOW IT IS DONE
 
-The custom interceptor is found in the  `src/main/java/com/predic8/membrane/core/interceptor/websocket/custom` folder. This
-is the WebSocket log interceptor of the custom WebSocket interceptor tutorial at `<LINK TO CUSTOM WEBSOCKET INTERCEPTOR>`.
+The custom interceptor is found in the  `src/main/java/com/predic8/membrane/core/interceptor/websocket/custom` folder. It
+implements `WebSocketInterceptorInterface` and logs every frame to the console.
 
-The custom interceptor is compiled and added to Membrane Service Proxy by copying the resulting jar into the `lib` folder.
+The custom interceptor is compiled and added to Membrane by copying the resulting jar into the `lib` folder.
 
 Take a look at the `apis.yaml`. To use the interceptor in Membrane we need to create it as a component. This is done like this:
 ```yaml
@@ -37,8 +37,8 @@ components:
          class: com.predic8.membrane.core.interceptor.websocket.custom.MyWebSocketLogInterceptor
 ```
 
-The id is the name you want to use to reference your component in the configuration file. The class attribute tells spring
-which class it should instantiate.
+The key (`myInterceptor`) is the name you use to reference your component in the configuration file. The `class` tells
+Membrane which class it should instantiate.
 
 You can then reference this interceptor in the webSocket flow:
 

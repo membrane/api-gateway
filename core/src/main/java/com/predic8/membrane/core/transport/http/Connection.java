@@ -199,6 +199,19 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
         return socket != null && host.equals(this.host) && port == socket.getPort();
     }
 
+	/** Closes the socket without flushing buffered output, unblocking outstanding I/O. */
+	public void abort() throws IOException {
+		if (socket == null)
+			return;
+		try {
+			socket.close();
+			socket = null;
+		} finally {
+			if (mgr != null)
+				mgr.releaseConnection(this);
+		}
+	}
+
 	public void close() throws IOException {
 		if (socket == null)
 			return;

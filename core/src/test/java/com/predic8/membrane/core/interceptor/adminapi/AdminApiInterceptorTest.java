@@ -13,25 +13,32 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.adminapi;
 
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.exchangestore.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.transport.http.*;
-import com.predic8.membrane.core.transport.ws.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchangestore.LimitedMemoryExchangeStore;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.proxies.NullProxy;
+import com.predic8.membrane.core.proxies.ServiceProxy;
+import com.predic8.membrane.core.proxies.ServiceProxyKey;
+import com.predic8.membrane.core.router.TestRouter;
+import com.predic8.membrane.core.transport.http.FakeHttpHandler;
+import com.predic8.membrane.core.transport.http.HttpClient;
+import com.predic8.membrane.core.transport.http.TwoWayStreaming;
+import com.predic8.membrane.core.transport.ws.WebSocketFrameAssembler;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
-import java.io.*;
-import java.net.*;
-import java.util.concurrent.atomic.*;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URISyntaxException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.predic8.membrane.core.exchange.Exchange.*;
+import static com.predic8.membrane.core.exchange.Exchange.ALLOW_WEBSOCKET;
 import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static com.predic8.membrane.core.transport.ws.WebSocketConnection.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AdminApiInterceptorTest {
 
@@ -42,7 +49,6 @@ class AdminApiInterceptorTest {
         router = new TestRouter();
         router.setExchangeStore(new LimitedMemoryExchangeStore()); // Needed by the AdminApiInterceptor
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(3065), null, 0);
-        sp.getFlow().add(new FastWebSocketClosingInterceptor()); // speeds up test execution
         AdminApiInterceptor e = new AdminApiInterceptor();
         e.getMemoryWatcher().setIntervalMilliseconds(50); // speeds up test execution
         sp.getFlow().add(e);
@@ -62,7 +68,6 @@ class AdminApiInterceptorTest {
             var exc = createWSRequest(testHandler);
             exc.setProxy(new NullProxy());
             exc.setProperty(ALLOW_WEBSOCKET, Boolean.TRUE);
-            exc.setProperty(WEBSOCKET_CLOSED_POLL_INTERVAL_MILLISECONDS, 10);  // speeds up test execution
 
             client.call(exc);
 
@@ -163,14 +168,6 @@ class AdminApiInterceptorTest {
             synchronized (this) {
                 notifyAll();
             }
-        }
-    }
-
-    private static class FastWebSocketClosingInterceptor extends AbstractInterceptor {
-        @Override
-        public Outcome handleRequest(Exchange exc) {
-            exc.setProperty(WEBSOCKET_CLOSED_POLL_INTERVAL_MILLISECONDS, 10);  // speeds up test execution
-            return CONTINUE;
         }
     }
 }

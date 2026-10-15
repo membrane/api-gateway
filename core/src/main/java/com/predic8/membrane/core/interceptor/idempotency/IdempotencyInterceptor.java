@@ -14,20 +14,25 @@
 
 package com.predic8.membrane.core.interceptor.idempotency;
 
-import com.google.common.cache.*;
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.lang.*;
-import com.predic8.membrane.core.lang.*;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.Required;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.lang.AbstractLanguageInterceptor;
+import com.predic8.membrane.core.lang.ExchangeExpression;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.*;
+import java.util.concurrent.TimeUnit;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
-import static com.predic8.membrane.core.lang.ExchangeExpression.*;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
 
 
 /**
@@ -41,6 +46,8 @@ import static com.predic8.membrane.core.lang.ExchangeExpression.*;
  */
 @MCElement(name = "idempotency")
 public class IdempotencyInterceptor extends AbstractLanguageInterceptor {
+
+    private static final Logger log = LoggerFactory.getLogger(IdempotencyInterceptor.class);
 
     private String key;
     private ExchangeExpression exchangeExpression;
@@ -78,9 +85,10 @@ public class IdempotencyInterceptor extends AbstractLanguageInterceptor {
     }
 
     private Outcome handleDuplicateKey(Exchange exc, String key) {
-        user(false, "idempotency")
+        log.info("Idempotency key {} has already been processed.", key);
+        user(router.getConfiguration().isProduction(), "idempotency")
                 .status(409)
-                .detail("key %s has already been processed".formatted(key))
+                .detail("Idempotency key has already been processed.", true)
                 .buildAndSetResponse(exc);
         return ABORT;
     }

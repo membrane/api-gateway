@@ -18,11 +18,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.concurrent.GuardedBy;
+import java.io.IOException;
+import java.io.InterruptedIOException;
 
 public class PeerFlowControl {
     private static final Logger log = LoggerFactory.getLogger(PeerFlowControl.class);
 
     private final int streamId;
+    private final FrameSender sender;
 
     @GuardedBy("this")
     public long peerWindowSize;
@@ -31,6 +34,7 @@ public class PeerFlowControl {
 
     public PeerFlowControl(int streamId, FrameSender sender, Settings peerSettings) {
         this.streamId = streamId;
+        this.sender = sender;
         peerWindowSize = peerSettings.getInitialWindowSize();
     }
 
@@ -51,9 +55,14 @@ public class PeerFlowControl {
         return peerWindowSize - peerWindowPosition >= length;
     }
 
-    public synchronized void reserve(int wantLength, int streamId) {
+    /**
+     * @throws IOException if the frame sender stops while waiting, as the peer will not grant more window then
+     */
+    public synchronized void reserve(int wantLength, int streamId) throws IOException {
         boolean warned = false;
         while(!canUse(wantLength)) {
+            if (sender.isStopped())
+                throw new IOException("HTTP/2 frame sender stopped while stream %d waited for flow-control window".formatted(streamId));
             if (!warned) {
                 log.warn("stream " + streamId + " blocked because of flow control on stream " + this.streamId + ".");
                 warned = true;
@@ -62,10 +71,16 @@ public class PeerFlowControl {
                 wait();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
+                throw new InterruptedIOException("Interrupted while stream %d waited for flow-control window".formatted(streamId));
             }
         }
 
         used(wantLength);
+    }
+
+    /** Wakes writers waiting in {@link #reserve(int, int)}, so they notice that the frame sender stopped. */
+    synchronized void senderStopped() {
+        notifyAll();
     }
 
 }

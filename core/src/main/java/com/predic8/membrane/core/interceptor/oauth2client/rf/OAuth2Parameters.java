@@ -51,14 +51,14 @@ public class OAuth2Parameters {
     }
 
 
-    public void checkCodeOrError() throws OAuth2Exception {
+    public void checkCodeOrError(boolean production) throws OAuth2Exception {
         if (getCode() != null)
             return;
         String error = getError();
         if (error == null)
             throw new RuntimeException("No code received.");
         log.warn("OAuth2 Error from Authentication Server: {}", error);
-        ProblemDetails pd = security(false,"oauth2-callback-request-handler")
+        ProblemDetails pd = security(production, "oauth2-callback-request-handler")
                 .title("OAuth2 Error from Authentication Server")
                 .status(500)
                 .addSubSee("oauth2-error-from-authentication-server")

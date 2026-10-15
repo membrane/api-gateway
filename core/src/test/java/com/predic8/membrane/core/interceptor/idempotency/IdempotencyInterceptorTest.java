@@ -14,7 +14,9 @@
 
 package com.predic8.membrane.core.interceptor.idempotency;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.router.DummyTestRouter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -22,7 +24,8 @@ import java.net.URISyntaxException;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.Request.put;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.JSONPATH;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -36,7 +39,7 @@ class IdempotencyInterceptorTest {
         i = new IdempotencyInterceptor();
         i.setLanguage(JSONPATH);
         i.setKey("$.id");
-        i.init();
+        i.init(new DummyTestRouter());
     }
 
     @Test
@@ -51,6 +54,22 @@ class IdempotencyInterceptorTest {
         assertEquals(CONTINUE, i.handleRequest(firstExchange));
         assertEquals(ABORT, i.handleRequest(secondExchange));
         assertEquals(409, secondExchange.getResponse().getStatusCode());
+    }
+
+    @Test
+    void productionShowsDetailForDuplicate() throws Exception {
+        final var pi = new IdempotencyInterceptor();
+        pi.setLanguage(JSONPATH);
+        pi.setKey("$.id");
+        pi.init(DummyTestRouter.productionRouter());
+
+        assertEquals(CONTINUE, pi.handleRequest(put("").body("{\"id\": \"abc789\"}").contentType(APPLICATION_JSON).buildExchange()));
+        final var duplicate = put("").body("{\"id\": \"abc789\"}").contentType(APPLICATION_JSON).buildExchange();
+        assertEquals(ABORT, pi.handleRequest(duplicate));
+
+        assertEquals(409, duplicate.getResponse().getStatusCode());
+        final var json = new ObjectMapper().readTree(duplicate.getResponse().getBodyAsStringDecoded());
+        assertEquals("Idempotency key has already been processed.", json.get("detail").asText());
     }
 
     @Test

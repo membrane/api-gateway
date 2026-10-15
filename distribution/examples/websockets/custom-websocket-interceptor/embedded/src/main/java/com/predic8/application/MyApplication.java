@@ -20,14 +20,14 @@ import com.predic8.membrane.core.interceptor.tunnel.WebSocketInterceptor;
 import com.predic8.membrane.core.interceptor.websocket.custom.MyWebSocketLogInterceptor;
 import com.predic8.membrane.core.proxies.ServiceProxy;
 import com.predic8.membrane.core.proxies.ServiceProxyKey;
-import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.router.*;
 
 public class MyApplication {
 
     public static void main(String[] args) throws Exception {
         System.out.println("Starting up");
 
-        // create a new service proxy that listens on port 8080 and has a target to localhost:2001
+        // create a new service proxy that listens on port 9999 and has a target to localhost:8080
         ServiceProxy sp = createServiceProxy();
 
         // create an enclosing WebSocket interceptor to add our own Logging interceptor to it
@@ -49,12 +49,12 @@ public class MyApplication {
         String hostname = "*";
         String method = "*";
         String path = ".*";
-        int listenPort = 8080;
+        int listenPort = 9999;
 
         ServiceProxyKey key = new ServiceProxyKey(hostname, method, path, listenPort);
 
         String targetHost = "localhost";
-        int targetPort = 2001;
+        int targetPort = 8080;
 
         return new ServiceProxy(key, targetHost, targetPort);
     }
