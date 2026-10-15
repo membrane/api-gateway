@@ -16,11 +16,16 @@ package com.predic8.membrane.core.interceptor.idempotency;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.router.DummyTestRouter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.Request.put;
@@ -81,6 +86,33 @@ class IdempotencyInterceptorTest {
     @Test
     void whenIdIsMissingTest() throws URISyntaxException {
         assertEquals(CONTINUE, i.handleRequest(put("").body("{\"msg\": \"Hello World!\"}").contentType(APPLICATION_JSON).buildExchange()));
+    }
+
+    @Test
+    void concurrentDuplicatesOnlyOnePasses() throws Exception {
+        final var threads = 8;
+        try (final var executor = Executors.newFixedThreadPool(threads)) {
+            for (var round = 0; round < 200; round++) {
+                final var key = "c" + round;
+                final var start = new CountDownLatch(1);
+                final var calls = new ArrayList<Callable<Outcome>>();
+                for (var t = 0; t < threads; t++) {
+                    final var exc = put("").body("{\"id\": \"%s\"}".formatted(key)).contentType(APPLICATION_JSON).buildExchange();
+                    calls.add(() -> {
+                        start.await();
+                        return i.handleRequest(exc);
+                    });
+                }
+                final var futures = calls.stream().map(executor::submit).toList();
+                start.countDown();
+                var passed = 0;
+                for (final var future : futures) {
+                    if (future.get() == CONTINUE)
+                        passed++;
+                }
+                assertEquals(1, passed, "Requests with key %s that passed".formatted(key));
+            }
+        }
     }
 
     @Test

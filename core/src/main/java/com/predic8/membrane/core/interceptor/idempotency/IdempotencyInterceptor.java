@@ -42,6 +42,16 @@ import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
  * If the key has already been processed, it aborts the request with a 409 response.</p>
  *
  * <p>Useful for handling retries from clients to avoid duplicate side effects like double payment submissions.</p>
+ *
+ * <p>A key counts as processed as soon as its request arrives, also if processing it fails later, e.g. because the
+ * backend is not reachable. Further requests with that key are rejected until the key expires. To try again, the
+ * client has to use a new key.</p>
+ *
+ * <p>The interceptor sees each request only once and cannot prevent Membrane's HTTP client from sending it again:
+ * a request with an idempotent method like GET, PUT or DELETE may be repeated after a read timeout, a reset
+ * connection or, if failover on 5xx is configured, a server error. If the backend does not handle these methods
+ * idempotently, disable retries of the HTTP client. POST and PATCH are only repeated when the connection could not
+ * be established, which is safe.</p>
  * @topic 3. Security and Validation
  */
 @MCElement(name = "idempotency")
@@ -72,10 +82,10 @@ public class IdempotencyInterceptor extends AbstractLanguageInterceptor {
             return CONTINUE;
         }
 
-        if (processedKeys.getIfPresent(key) != null) {
+        // Check and mark in one atomic step, otherwise concurrent requests with the same key could all pass
+        if (processedKeys.asMap().putIfAbsent(key, Boolean.TRUE) != null) {
             return handleDuplicateKey(exc, key);
         }
-        processedKeys.put(key, Boolean.TRUE);
 
         return CONTINUE;
     }
