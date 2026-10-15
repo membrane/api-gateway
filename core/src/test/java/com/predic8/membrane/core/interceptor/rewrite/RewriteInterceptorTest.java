@@ -160,4 +160,41 @@ public class RewriteInterceptorTest {
 		assertFalse(json.toString().contains("backend.example.com"), json.toString());
 		assertFalse(json.toString().toLowerCase().contains("rewrit"), json.toString());
 	}
+
+
+	/**
+	 * A target URL with a base path is passed on as a destination with its template expression unevaluated, see issue #3497.
+	 */
+	@Test
+	void templateTargetWithBasePath() throws URISyntaxException {
+		exc.setRequest(get("/store/x").build());
+		exc.setProxy(templateTargetProxy());
+
+		assertEquals(CONTINUE, di.handleRequest(exc));
+		assertEquals(CONTINUE, rewriter.handleRequest(exc));
+		assertNull(exc.getResponse());
+		assertEquals("http://backend.example.com:8080/api/${header.tenant}", exc.getDestinations().getFirst());
+		assertEquals("/shop/v2/x", exc.getRequest().getUri());
+	}
+
+	@Test
+	void templateTargetWithBasePathIsRewritten() throws URISyntaxException {
+		final var basePathRewriter = new RewriteInterceptor();
+		basePathRewriter.setMappings(new ArrayList<>(List.of(new Mapping("^/api/(.*)", "/v2/$1", null))));
+		basePathRewriter.init(new DummyTestRouter());
+
+		exc.setRequest(get("/store/x").build());
+		exc.setProxy(templateTargetProxy());
+
+		assertEquals(CONTINUE, di.handleRequest(exc));
+		assertEquals(CONTINUE, basePathRewriter.handleRequest(exc));
+		assertEquals("http://backend.example.com:8080/v2/${header.tenant}", exc.getDestinations().getFirst());
+	}
+
+	private static ServiceProxy templateTargetProxy() {
+		final var proxy = new ServiceProxy();
+		proxy.getTarget().setUrl("http://backend.example.com:8080/api/${header.tenant}");
+		proxy.init(new DummyTestRouter());
+		return proxy;
+	}
 }
