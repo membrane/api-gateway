@@ -58,13 +58,13 @@ public class OpenAPIPublisher {
         apiOverviewHtmlTemplate = createTemplate("/openapi/overview.html");
     }
 
-    Outcome handleSwaggerUi(Exchange exc) {
+    Outcome handleSwaggerUi(Exchange exc, Router router) {
         Matcher m = PATTERN_UI.matcher(exc.getRequest().getUri());
 
         // No id specified
         if (!m.matches()) {
             // Do not log! Too common!
-            user(false,"openapi-publisher")
+            user(router.getConfiguration().isProduction(), "openapi-publisher")
                     .title("No OpenAPI document id")
                     .addSubType("openapi")
                     .status(404)
@@ -79,7 +79,7 @@ public class OpenAPIPublisher {
 
         OpenAPIRecord record = apis.get(id);
         if (record == null) {
-            return returnNoFound(exc, id);
+            return returnNoFound(exc, id, router);
         }
 
         exc.setResponse(ok().contentType(TEXT_HTML_UTF8).body(renderSwaggerUITemplate(id, record.api)).build());
@@ -100,7 +100,7 @@ public class OpenAPIPublisher {
         OpenAPIRecord rec = apis.get(id);
 
         if (rec == null) {
-            return returnNoFound(exc, id);
+            return returnNoFound(exc, id, router);
         }
         return returnOpenApiAsYaml(exc, rec, router);
     }
@@ -121,14 +121,14 @@ public class OpenAPIPublisher {
         return RETURN;
     }
 
-    private Outcome returnNoFound(Exchange exc, String id) {
+    private Outcome returnNoFound(Exchange exc, String id, Router router) {
         // Do not log. Too common.
-        user(false,"openapi-publisher")
+        user(router.getConfiguration().isProduction(), "openapi-publisher")
                 .title("OpenAPI not found.")
                 .status(404)
                 .addSubType("openapi")
                 .addSubSee("wrong-id")
-                .detail("OpenAPI document with the id %s not found.".formatted(id))
+                .detail("OpenAPI document with the id %s not found.".formatted(id), true)
                 .buildAndSetResponse(exc);
         return RETURN;
     }

@@ -41,7 +41,7 @@ public class UserinfoEndpointProcessor extends EndpointProcessor {
             exc.setResponse(new UserinfoRequest(authServer,exc).validateRequest());
         } catch (Exception e) {
             log.error("", e);
-            internal(true,"user-info-endpoint-processor")
+            internal(authServer.getRouter().getConfiguration().isProduction(), "user-info-endpoint-processor")
                     .exception(e)
                     .buildAndSetResponse(exc);
             return ABORT;

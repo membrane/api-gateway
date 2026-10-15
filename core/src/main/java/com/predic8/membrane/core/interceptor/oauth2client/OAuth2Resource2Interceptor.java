@@ -122,7 +122,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         sessionAuthorizer.init(auth, router, statistics);
 
         oAuth2CallbackRequestHandler.init(uriFactory, auth, originalExchangeStore, accessTokenRevalidator,
-                sessionAuthorizer, publicUrlManager, callbackPath, onlyRefreshToken);
+                sessionAuthorizer, publicUrlManager, callbackPath, onlyRefreshToken, router.getConfiguration().isProduction());
         tokenAuthenticator.init(sessionAuthorizer, statistics, accessTokenRevalidator, auth);
 
 

@@ -41,7 +41,7 @@ public class TokenEndpointProcessor extends EndpointProcessor {
             exc.setResponse(new TokenFlowDecider(authServer,exc).getFlow().validateRequest());
         } catch (Exception e) {
             log.error("", e);
-            internal(true,"token-endpoint-processor")
+            internal(authServer.getRouter().getConfiguration().isProduction(), "token-endpoint-processor")
                     .component(this.getClass().getSimpleName())
                     .exception(e)
                     .buildAndSetResponse(exc);

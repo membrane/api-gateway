@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.regex.Pattern;
 
+import static com.predic8.membrane.core.openapi.util.SchemaUtil.getSchemaNameFromRef;
 import static com.predic8.membrane.core.openapi.util.Utils.joinByComma;
 import static com.predic8.membrane.core.openapi.validators.ValidationError.v;
 import static com.predic8.membrane.core.openapi.validators.ValidationErrors.error;
@@ -230,8 +231,9 @@ public class ObjectValidator implements JsonSchemaValidator {
         if (current.get$ref() != null) {
             // An unresolvable reference evaluates no properties.
             final var target = SchemaUtil.getSchemaFromRef(api, current.get$ref());
+            // Resolved like in SchemaValidator, so validity checks below the reference share its cached results
             if (target != null)
-                collectEvaluatedProperties(ctx, target, node, evaluated, visiting);
+                collectEvaluatedProperties(ctx.visitRef(getSchemaNameFromRef(current)), target, node, evaluated, visiting);
         }
 
         final Map<String, Schema> properties = current.getProperties();
@@ -311,7 +313,7 @@ public class ObjectValidator implements JsonSchemaValidator {
         // SchemaValidator can't validate against an unresolvable reference, which evaluates no properties anyway
         if (sub.get$ref() != null && SchemaUtil.getSchemaFromRef(api, sub.get$ref()) == null)
             return false;
-        return new SchemaValidator(api, sub).validate(ctx, node).isEmpty();
+        return new SchemaValidator(api, sub).isValid(ctx, node);
     }
 
     private String propertyOrProperties(Set<String> additionalProperties) {

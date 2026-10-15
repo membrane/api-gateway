@@ -53,6 +53,7 @@ public class OAuth2CallbackRequestHandler {
     private PublicUrlManager publicUrlManager;
     private String callbackPath;
     private boolean onlyRefreshToken;
+    private boolean production;
 
     public void init(
             URIFactory uriFactory,
@@ -62,7 +63,8 @@ public class OAuth2CallbackRequestHandler {
             SessionAuthorizer sessionAuthorizer,
             PublicUrlManager publicUrlManager,
             String callbackPath,
-            boolean onlyRefreshToken
+            boolean onlyRefreshToken,
+            boolean production
     ) {
         this.uriFactory = uriFactory;
         this.auth = auth;
@@ -72,6 +74,7 @@ public class OAuth2CallbackRequestHandler {
         this.publicUrlManager = publicUrlManager;
         this.callbackPath = callbackPath;
         this.onlyRefreshToken = onlyRefreshToken;
+        this.production = production;
 
         if (onlyRefreshToken && !sessionAuthorizer.isSkipUserInfo())
             throw new RuntimeException("If onlyRefreshToken is set, skipUserInfo also has to be set.");
@@ -80,7 +83,7 @@ public class OAuth2CallbackRequestHandler {
     public void handleRequest(Exchange exc, Session session) throws Exception {
         try {
             OAuth2Parameters params = OAuth2Parameters.parse(uriFactory, exc);
-            params.checkCodeOrError();
+            params.checkCodeOrError(production);
 
             StateManager stateFromUri = new StateManager(params.getState());
 

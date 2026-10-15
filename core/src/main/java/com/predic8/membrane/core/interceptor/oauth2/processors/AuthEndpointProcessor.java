@@ -43,7 +43,7 @@ public class AuthEndpointProcessor extends EndpointProcessor {
             return processInternal(exc);
         } catch (Exception e) {
             log.error("", e);
-            internal(true,"auth-endpoint-processor")
+            internal(authServer.getRouter().getConfiguration().isProduction(), "auth-endpoint-processor")
                     .exception(e)
                     .stacktrace(true)
                     .buildAndSetResponse(exc);

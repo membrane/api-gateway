@@ -82,11 +82,11 @@ public class AccessControlInterceptor extends AbstractInterceptor {
         return CONTINUE;
     }
 
-    // Copied from old ACL as is
     private void setResponseToAccessDenied(Exchange exc) {
-        security(false, getDisplayName())
+        security(router.getConfiguration().isProduction(), getDisplayName())
                 .title("Access Denied")
                 .status(403)
+                .detail("Access from this client address is not permitted.")
                 .addSubSee("authorization-denied")
                 .buildAndSetResponse(exc);
     }

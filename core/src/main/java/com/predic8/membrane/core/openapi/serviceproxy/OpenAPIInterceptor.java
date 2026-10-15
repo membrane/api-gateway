@@ -108,7 +108,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         // No matching API found
         if (basePath == null) {
             // Do not log: 404 is too common
-            user(false, getDisplayName())
+            user(router.getConfiguration().isProduction(), getDisplayName())
                     .title("No matching API found!")
                     .status(404)
                     .addSubSee("not-found")
