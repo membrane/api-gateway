@@ -124,6 +124,11 @@ example/tutorial discovery and scaffolding.
   several values with literal text (`"%s %s failed with status %d".formatted(method, uri, status)`).
   Keep `+` for simple joins of two or three parts (`host + ":" + port`). In SLF4J calls use
   `{}` placeholders, not either of these.
+- Build requests and responses with the static factory methods of `Request` and `Response`, imported statically:
+  `get("/foo").buildExchange()`, `post("/foo").body(...)`, `ok().build()`, `badGateway("...")`, not
+  `new Request.Builder().get(...)`, `Request.get(...)` or `Response.ok()`. Same for constants such as
+  `HTTP2_PROTOCOL`. Keep the qualified form only where a static import would clash with another name. Don't
+  convert untouched existing code.
 - SLF4J everywhere; no `System.out` in production code.
 - Attack/validation-detection log lines (e.g. XXE/DOCTYPE detection) are intentionally `info`,
   not `warn` — that's an ops-tunable level, not a severity bug to flag in review.
