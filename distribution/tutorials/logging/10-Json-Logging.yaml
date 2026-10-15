@@ -11,10 +11,10 @@
 #         export JAVA_OPTS="-Dlog4j.configurationFile=tutorials/logging/log4j2-json.xml"
 #         ./membrane.sh -c 10-Json-Logging.yaml
 #       Windows Command Prompt:
-#         set JAVA_OPTS=-Dlog4j.configurationFile=%CD%\log4j2-json.xml
+#         set JAVA_OPTS="-Dlog4j.configurationFile=%CD%\log4j2-json.xml"
 #         membrane.cmd -c 10-Json-Logging.yaml
 #       Windows PowerShell:
-#         $env:JAVA_OPTS="-Dlog4j.configurationFile=$PWD\log4j2-json.xml"
+#         $env:JAVA_OPTS="`"-Dlog4j.configurationFile=$PWD\log4j2-json.xml`""
 #         .\membrane.cmd -c 10-Json-Logging.yaml
 #
 # 2.) Call the API and watch the console:

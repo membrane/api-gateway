@@ -11,10 +11,10 @@
 #         export JAVA_OPTS="-Dlog4j.configurationFile=tutorials/logging/log4j2-31-access-custom.yaml"
 #         ./membrane.sh -c 31-Access-Log-Custom-Fields.yaml
 #       Windows Command Prompt:
-#         set JAVA_OPTS=-Dlog4j.configurationFile=%CD%\log4j2-31-access-custom.yaml
+#         set JAVA_OPTS="-Dlog4j.configurationFile=%CD%\log4j2-31-access-custom.yaml"
 #         membrane.cmd -c 31-Access-Log-Custom-Fields.yaml
 #       Windows PowerShell:
-#         $env:JAVA_OPTS="-Dlog4j.configurationFile=$PWD\log4j2-31-access-custom.yaml"
+#         $env:JAVA_OPTS="`"-Dlog4j.configurationFile=$PWD\log4j2-31-access-custom.yaml`""
 #         .\membrane.cmd -c 31-Access-Log-Custom-Fields.yaml
 #
 # 2.) Send an order:

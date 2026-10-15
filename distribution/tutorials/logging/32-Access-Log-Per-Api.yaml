@@ -13,10 +13,10 @@
 #         export JAVA_OPTS="-Dlog4j.configurationFile=tutorials/logging/log4j2-32-access-per-api.yaml"
 #         ./membrane.sh -c 32-Access-Log-Per-Api.yaml
 #       Windows Command Prompt:
-#         set JAVA_OPTS=-Dlog4j.configurationFile=%CD%\log4j2-32-access-per-api.yaml
+#         set JAVA_OPTS="-Dlog4j.configurationFile=%CD%\log4j2-32-access-per-api.yaml"
 #         membrane.cmd -c 32-Access-Log-Per-Api.yaml
 #       Windows PowerShell:
-#         $env:JAVA_OPTS="-Dlog4j.configurationFile=$PWD\log4j2-32-access-per-api.yaml"
+#         $env:JAVA_OPTS="`"-Dlog4j.configurationFile=$PWD\log4j2-32-access-per-api.yaml`""
 #         .\membrane.cmd -c 32-Access-Log-Per-Api.yaml
 #
 # 2.) Call the APIs:
