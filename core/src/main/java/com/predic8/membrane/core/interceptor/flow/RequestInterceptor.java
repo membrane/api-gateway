@@ -14,13 +14,15 @@
 
 package com.predic8.membrane.core.interceptor.flow;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_FLOW;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 

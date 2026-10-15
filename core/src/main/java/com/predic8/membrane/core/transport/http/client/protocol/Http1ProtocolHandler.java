@@ -19,6 +19,7 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.transport.http.Connection;
 import com.predic8.membrane.core.transport.http.ConnectionFactory;
 import com.predic8.membrane.core.transport.http.ConnectionFactory.OutgoingConnectionType;
+import com.predic8.membrane.core.transport.http.FakeHttpHandler;
 import com.predic8.membrane.core.transport.http.HostColonPort;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.util.EndOfStreamException;
@@ -202,9 +203,12 @@ public class Http1ProtocolHandler extends AbstractProtocolHandler {
             Response response = fromStream(ct.con().in, false);
             if (response.getStatusCode() > 299) {
                 log.info("Proxy rejected CONNECT request with status code {}.", response.getStatusCode());
-                // The HTTP client has no router (it also runs outside of one), so production mode is assumed.
-                gateway(true, "proxy")
+                gateway(isProduction(exchange), "proxy")
+                        .title("Bad Gateway")
+                        .addSubSee("connect")
                         .status(502)
+                        .detail("Could not connect to proxy server")
+                        .internal("proxy-status", response.getStatusCode())
                         .buildAndSetResponse(exchange);
                 // No tunnel was established: do not mark the exchange as upgraded and
                 // close the connection to the proxy, as nobody else will.
@@ -216,5 +220,16 @@ public class Http1ProtocolHandler extends AbstractProtocolHandler {
         exchange.setResponse(ok().build());
         exchange.setProperty(UPGRADED_PROTOCOL, METHOD_CONNECT);
         return true;
+    }
+
+    /**
+     * The HTTP client also runs without a router, e.g. on its own or with a {@link FakeHttpHandler}. Then
+     * production mode is assumed.
+     */
+    private static boolean isProduction(Exchange exchange) {
+        final var handler = exchange.getHandler();
+        if (handler == null || handler.getTransport() == null)
+            return true;
+        return handler.getTransport().getRouter().getConfiguration().isProduction();
     }
 }

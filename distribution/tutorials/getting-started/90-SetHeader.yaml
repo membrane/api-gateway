@@ -4,7 +4,7 @@
 #
 # Try:
 #     curl -v http://localhost:2000
-#     curl -v -d "Hugo" http://localhost:2000
+#     curl -v -d "Hugo" -H "Content-Type: text/plain" http://localhost:2000
 #
 #     Check the response headers.
 

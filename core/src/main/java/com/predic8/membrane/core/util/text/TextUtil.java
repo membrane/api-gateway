@@ -25,6 +25,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.xml.stream.XMLStreamException;
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringWriter;
 import java.nio.charset.Charset;
@@ -32,11 +35,16 @@ import java.util.ArrayList;
 import java.util.Optional;
 
 import static java.lang.Integer.MAX_VALUE;
+import static java.nio.charset.StandardCharsets.UTF_16BE;
+import static java.nio.charset.StandardCharsets.UTF_16LE;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 
 public class TextUtil {
     private static final Logger log = LoggerFactory.getLogger(TextUtil.class.getName());
+
+    private static final Charset UTF_32BE = Charset.forName("UTF-32BE");
+    private static final Charset UTF_32LE = Charset.forName("UTF-32LE");
 
     // Guess for a very short XML
     private static final int STRING_BUFFER_INITIAL_CAPACITY_FOR_XML = 250;
@@ -85,6 +93,61 @@ public class TextUtil {
 
     public static Charset getCharsetOrDefault(Charset charset) {
         return charset == null ? UTF_8 : charset;
+    }
+
+    /**
+     * Tells the encoding of a text from its first bytes: from a byte order mark, which it skips, or from
+     * where the zero bytes of an ASCII character fall (XML 1.0, Appendix F; RFC 4627, section 3). Anything
+     * else is reported as UTF-8, which is enough to recognise ASCII characters such as the
+     * {@code <}, <code>{</code> or {@code [} a document starts with.
+     * <p>
+     * Reads at most four bytes. Afterwards the stream stands at the first character, after a byte
+     * order mark if there is one.
+     *
+     * <h4>Examples</h4>
+     * <pre>
+     * EF BB BF 3C …   → UTF-8, byte order mark skipped
+     * FF FE 3C 00 …   → UTF-16LE, byte order mark skipped
+     * 00 3C 00 61 …   → UTF-16BE
+     * 3C 00 00 00 …   → UTF-32LE
+     * FF D8 FF E0 …   → UTF-8 (JPEG: no text, nothing skipped)
+     * </pre>
+     *
+     * @param stream the text; must support mark and reset, which a {@link BufferedInputStream} does
+     * @return the detected encoding, never null
+     */
+    public static Charset detectEncoding(BufferedInputStream stream) throws IOException {
+        stream.mark(4);
+        var b = new int[4];
+        for (int i = 0; i < 4; i++)
+            b[i] = stream.read();
+        stream.reset();
+
+        if (b[0] == 0xEF && b[1] == 0xBB && b[2] == 0xBF)
+            return skip(stream, 3, UTF_8);
+        if (b[0] == 0x00 && b[1] == 0x00 && b[2] == 0xFE && b[3] == 0xFF)
+            return skip(stream, 4, UTF_32BE);
+        if (b[0] == 0xFF && b[1] == 0xFE && b[2] == 0x00 && b[3] == 0x00)
+            return skip(stream, 4, UTF_32LE);
+        if (b[0] == 0xFE && b[1] == 0xFF)
+            return skip(stream, 2, UTF_16BE);
+        if (b[0] == 0xFF && b[1] == 0xFE)
+            return skip(stream, 2, UTF_16LE);
+
+        if (b[0] == 0x00 && b[1] == 0x00 && b[2] == 0x00 && b[3] > 0x00)
+            return UTF_32BE;
+        if (b[0] > 0x00 && b[1] == 0x00 && b[2] == 0x00 && b[3] == 0x00)
+            return UTF_32LE;
+        if (b[0] == 0x00 && b[1] > 0x00)
+            return UTF_16BE;
+        if (b[0] > 0x00 && b[1] == 0x00)
+            return UTF_16LE;
+        return UTF_8;
+    }
+
+    private static Charset skip(InputStream in, int bytes, Charset charset) throws IOException {
+        in.skipNBytes(bytes);
+        return charset;
     }
 
     /**

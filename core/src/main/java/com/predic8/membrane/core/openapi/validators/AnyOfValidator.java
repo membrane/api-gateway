@@ -16,11 +16,11 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import io.swagger.v3.oas.models.*;
-import io.swagger.v3.oas.models.media.*;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.media.Schema;
 
-import java.util.*;
-import java.util.concurrent.atomic.*;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @SuppressWarnings("rawtypes")
 public class AnyOfValidator {

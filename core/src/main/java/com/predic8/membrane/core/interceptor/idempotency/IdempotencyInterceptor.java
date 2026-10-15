@@ -14,21 +14,25 @@
 
 package com.predic8.membrane.core.interceptor.idempotency;
 
-import com.google.common.cache.*;
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.lang.*;
-import com.predic8.membrane.core.lang.*;
-import org.slf4j.*;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.Required;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.lang.AbstractLanguageInterceptor;
+import com.predic8.membrane.core.lang.ExchangeExpression;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.*;
+import java.util.concurrent.TimeUnit;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
-import static com.predic8.membrane.core.lang.ExchangeExpression.*;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
 
 
 /**

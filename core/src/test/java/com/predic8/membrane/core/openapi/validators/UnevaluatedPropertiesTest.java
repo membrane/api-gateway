@@ -20,10 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static java.time.Duration.ofSeconds;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class UnevaluatedPropertiesTest extends AbstractValidatorTest {
 

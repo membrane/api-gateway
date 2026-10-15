@@ -46,16 +46,16 @@ public class XsdSchemaValidationTutorialTest extends AbstractXmlTutorialTest{
     void invalidXmlFailsValidation() throws IOException {
         // @formatter:off
         given()
-            .contentType("application/x-www-form-urlencoded")
+            .contentType(XML)
             .body(readFileFromBaseDir("book-invalid.xml"))
         .when()
             .post("http://localhost:2000")
         .then()
             .statusCode(400)
-            .body("status", equalTo(400))
-            .body("title", containsStringIgnoringCase("validation"))
-            .body("validation.size()", greaterThan(0))
-            .body("validation.message", hasItem(containsString("year")));
+            .body("'problem-details'.status", equalTo("400"))
+            .body("'problem-details'.title", containsStringIgnoringCase("validation"))
+            .body("'problem-details'.validation.size()", greaterThan(0))
+            .body("'problem-details'.validation.message", hasItem(containsString("year")));
         // @formatter:on
     }
 }

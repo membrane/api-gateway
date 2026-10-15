@@ -15,7 +15,7 @@
 #     Observe the status code.
 #
 # 3.) Send a request with a body:
-#     curl -d "Bonjour" http://localhost:2000
+#     curl -d "Bonjour" -H "Content-Type: text/plain" http://localhost:2000
 #
 #     Observe the response body.
 
