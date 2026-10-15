@@ -17,9 +17,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.TextNode;
+import com.predic8.membrane.core.openapi.model.Request;
+import com.predic8.membrane.core.openapi.model.Response;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.SpecVersion;
 import io.swagger.v3.oas.models.media.Schema;
+import jakarta.mail.internet.ParseException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -34,6 +37,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import static com.fasterxml.jackson.databind.node.BooleanNode.TRUE;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.parseOpenAPI;
 import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.*;
 import static java.io.InputStream.nullInputStream;
@@ -185,6 +189,115 @@ public class SchemaValidatorTest {
             Schema<?> schema = (Schema<?>) api.getPaths().get("/siblings").getPost().getRequestBody()
                     .getContent().get("application/json").getSchema().getProperties().get(property);
             assertEquals(expected, SchemaValidator.hasSiblings(schema));
+        }
+    }
+
+    /**
+     * In JSON Schema 2020-12 (OAS 3.1 and later) {@code true} and {@code false} are schemas: {@code true}
+     * accepts every value, {@code false} none. See #3479.
+     */
+    @Nested
+    class BooleanSchemas extends AbstractValidatorTest {
+
+        @Override
+        protected String getOpenAPIFileName() {
+            return "/openapi/specs/oas31/boolean-schemas.yaml";
+        }
+
+        private ValidationErrors post(String path, String body) throws ParseException {
+            return validator.validate(Request.post().mediaType(APPLICATION_JSON).path(path).body(body));
+        }
+
+        private void assertRejectedAt(String path, String body, String pointer) throws ParseException {
+            final var errors = post(path, body);
+            assertEquals(1, errors.size(), errors.toString());
+            final var context = errors.getFirst().getContext();
+            assertEquals(pointer, context.getJSONpointer());
+            assertEquals(400, context.getStatusCode());
+        }
+
+        @ParameterizedTest
+        @CsvSource(delimiter = '|', value = {
+                "{\"anything\": {\"a\": [1, null]}}",
+                "{\"notFalse\": 1}",
+                "{\"anyOfFalse\": \"a\"}",
+                "{\"ref\": {}}",
+                "{}"})
+        void accepted(String body) throws ParseException {
+            final var errors = post("/properties", body);
+            assertEquals(0, errors.size(), errors.toString());
+        }
+
+        @ParameterizedTest
+        @CsvSource(delimiter = '|', value = {
+                "forbidden|1",
+                "forbidden|null",
+                "notTrue|\"a\""})
+        void rejected(String property, String value) throws ParseException {
+            assertRejectedAt("/properties", "{\"%s\": %s}".formatted(property, value), "/" + property);
+        }
+
+        /**
+         * AllOfValidator adds a summary error to the one of the failing subschema.
+         */
+        @Test
+        void allOfWithFalse() throws ParseException {
+            final var errors = post("/properties", """
+                    {"allOfFalse": "a"}
+                    """);
+            assertEquals(2, errors.size(), errors.toString());
+            assertTrue(errors.toString().contains("The schema is false"), errors.toString());
+        }
+
+        /**
+         * In a referenced component the parser keeps additionalProperties: false as a Boolean, which
+         * ObjectValidator reports at the object.
+         */
+        @Test
+        void additionalPropertiesFalseInReferencedSchema() throws ParseException {
+            assertRejectedAt("/properties", """
+                    {"ref": {"foo": 1}}
+                    """, "/ref");
+        }
+
+        @Test
+        void itemsFalseAcceptsEmptyArray() throws ParseException {
+            final var errors = post("/items", "[]");
+            assertEquals(0, errors.size(), errors.toString());
+        }
+
+        @Test
+        void itemsFalseRejectsItem() throws ParseException {
+            assertRejectedAt("/items", "[1]", "/0");
+        }
+
+        @Test
+        void additionalPropertiesFalseRejectsUnknownProperty() throws ParseException {
+            assertRejectedAt("/additional", """
+                    {"closed": {"foo": 1}}
+                    """, "/closed/foo");
+        }
+
+        @Test
+        void additionalPropertiesTrueAcceptsUnknownProperty() throws ParseException {
+            final var errors = post("/additional", """
+                    {"open": {"foo": 1}}
+                    """);
+            assertEquals(0, errors.size(), errors.toString());
+        }
+
+        /**
+         * The body of a response comes from the server, so a violation is a 5xx, not a 400.
+         */
+        @Test
+        void additionalPropertiesFalseInResponse() throws ParseException {
+            final var errors = validator.validateResponse(Request.post().path("/additional"),
+                    Response.statusCode(200).mediaType(APPLICATION_JSON).body("""
+                            {"foo": 1}
+                            """));
+            assertEquals(1, errors.size(), errors.toString());
+            assertEquals("/foo", errors.getFirst().getContext().getJSONpointer());
+            assertEquals(500, errors.getFirst().getContext().getStatusCode());
         }
     }
 }
