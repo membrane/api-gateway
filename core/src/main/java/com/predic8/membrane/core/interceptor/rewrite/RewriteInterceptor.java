@@ -166,10 +166,11 @@ public class RewriteInterceptor extends AbstractInterceptor {
 
         logMappings();
 
+        final var destinationUriFactory = getDestinationUriFactory(exc);
         ListIterator<String> it = exc.getDestinations().listIterator();
         while (it.hasNext()) {
             String dest = it.next();
-            String pathQuery = getPathQueryOrSetError(getDestinationUriFactory(exc), dest, exc);
+            String pathQuery = getPathQueryOrSetError(destinationUriFactory, dest, exc);
             if (pathQuery == null)
                 return RETURN;
 
