@@ -14,7 +14,6 @@
 
 package com.predic8.membrane.core.resolver;
 
-import com.google.common.base.Suppliers;
 import com.google.common.collect.Lists;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -54,6 +53,8 @@ public class HTTPSchemaResolver implements SchemaResolver {
     private static final byte[] NO_HASH = "NO_HASH".getBytes(UTF_8);
 
     private final Supplier<HttpClient> httpClient;
+    /** True if {@link #httpClient} creates a new client for each call, which the resolver then closes. */
+    private final boolean clientPerCall;
     private final URIFactory uriFactory = new URIFactory(false);
 
     private final Runnable httpWatchJob = new Runnable() {
@@ -108,18 +109,22 @@ public class HTTPSchemaResolver implements SchemaResolver {
     }
 
     public HTTPSchemaResolver(@Nullable HttpClient httpClient) {
-       this(() -> httpClient);
+        this(() -> httpClient, false);
     }
 
-    private HTTPSchemaResolver(Supplier<HttpClient> httpClient) {
-       this.httpClient = httpClient;
+    private HTTPSchemaResolver(Supplier<HttpClient> httpClient, boolean clientPerCall) {
+        this.httpClient = httpClient;
+        this.clientPerCall = clientPerCall;
     }
 
     /**
-     * @param createHttpClient called once, when the first URL is resolved.
+     * Creates a client for each resolved URL and closes it before {@link #resolve} returns. No client outlives a call,
+     * so there is nothing to close afterwards, at the cost of not reusing connections between calls.
+     *
+     * @param createHttpClient called once per resolved URL.
      */
-    public static HTTPSchemaResolver withLazyClient(Supplier<HttpClient> createHttpClient) {
-        return new HTTPSchemaResolver(Suppliers.memoize(createHttpClient::get));
+    public static HTTPSchemaResolver withClientPerCall(Supplier<HttpClient> createHttpClient) {
+        return new HTTPSchemaResolver(createHttpClient, true);
     }
 
     @Override
@@ -128,9 +133,19 @@ public class HTTPSchemaResolver implements SchemaResolver {
     }
 
     public InputStream resolve(String url) throws ResourceRetrievalException {
+        final var client = httpClient.get();
+        try {
+            return resolve(url, client);
+        } finally {
+            if (clientPerCall)
+                client.closeImmediately();
+        }
+    }
+
+    private InputStream resolve(String url, HttpClient client) throws ResourceRetrievalException {
         try {
             var resolveExchange = createResolveExchange(url);
-            httpClient.get().call(resolveExchange);
+            client.call(resolveExchange);
             Response response = resolveExchange.getResponse();
             response.readBody();
 

@@ -180,8 +180,7 @@ public class HttpClient implements AutoCloseable {
                 : dest;
     }
 
-    // TODO Remove once directly constructed clients are closed explicitly. Until then, this closes them, e.g. the
-    //  client that ResolverMap() creates lazily (#3483); removing it leaks that client's timer thread. Clients from
+    // TODO Remove once directly constructed clients are closed explicitly. Clients from
     //  HttpClientFactory must not be closed by their users; the factory closes them in closeAll().
     @Override
     protected void finalize() {

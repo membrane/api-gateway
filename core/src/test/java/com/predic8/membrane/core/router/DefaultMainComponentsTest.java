@@ -20,10 +20,10 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Set;
 
 import static com.predic8.membrane.core.router.YamlRouterBootstrap.loadIntoRouter;
-import static java.util.stream.Collectors.toSet;
+import static com.predic8.membrane.core.util.ThreadTestUtil.assertNoTimerThreadStartedSince;
+import static com.predic8.membrane.core.util.ThreadTestUtil.liveTimerThreads;
 import static org.junit.jupiter.api.Assertions.*;
 
 class DefaultMainComponentsTest {
@@ -105,22 +105,6 @@ class DefaultMainComponentsTest {
         }
 
         assertNoTimerThreadStartedSince(before);
-    }
-
-    private static void assertNoTimerThreadStartedSince(Set<Thread> before) throws InterruptedException {
-        final var started = liveTimerThreads();
-        started.removeAll(before);
-        for (final var thread : started)
-            thread.join(5_000); // Timer.cancel() ends the thread asynchronously
-        started.removeIf(thread -> !thread.isAlive());
-        assertEquals(Set.of(), started);
-    }
-
-    /** Threads of unnamed java.util.Timers, such as TimerManager's, are named "Timer-N". */
-    private static Set<Thread> liveTimerThreads() {
-        return Thread.getAllStackTraces().keySet().stream()
-                .filter(t -> t.isAlive() && t.getName().startsWith("Timer-"))
-                .collect(toSet());
     }
 
     private DefaultRouter load(String yaml) throws Exception {

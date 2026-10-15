@@ -61,12 +61,11 @@ public class ResolverMap implements Cloneable, Resolver {
 
 
     /**
-     * Creates its HTTP client only when an HTTP URL is resolved, so that a ResolverMap used for files or the
-     * classpath does not start a connection closer timer thread (#3483). The client is not shared, so it is
-     * closed once it is garbage collected.
+     * Creates an HTTP client for each resolved HTTP URL and closes it right away, so the map holds no client and no
+     * connection closer timer thread (#3483).
      */
     public ResolverMap() {
-        this(HTTPSchemaResolver.withLazyClient(() -> new HttpClient(new HttpClientConfiguration())), null);
+        this(HTTPSchemaResolver.withClientPerCall(() -> new HttpClient(new HttpClientConfiguration())), null);
     }
 
     public ResolverMap(HttpClient httpClient, KubernetesClientFactory kubernetesClientFactory) {

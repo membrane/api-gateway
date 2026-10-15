@@ -18,24 +18,23 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.predic8.membrane.core.http.Response.ok;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
 class HTTPSchemaResolverTest {
 
     @Test
-    void withLazyClientCreatesClientOnceOnFirstResolve() throws Exception {
-        final var client = clientAnswering("<schema/>");
+    void withClientPerCallCreatesAndClosesClientForEachResolve() throws Exception {
+        final var clients = List.of(clientAnswering("<schema/>"), clientAnswering("<schema/>"));
         final var created = new AtomicInteger();
-
-        final var resolver = HTTPSchemaResolver.withLazyClient(() -> {
-            created.incrementAndGet();
-            return client;
-        });
+        final var resolver = HTTPSchemaResolver.withClientPerCall(() -> clients.get(created.getAndIncrement()));
         assertEquals(0, created.get());
 
         try (final var in = resolver.resolve("http://localhost/a.xsd")) {
@@ -43,10 +42,32 @@ class HTTPSchemaResolverTest {
         }
         resolver.resolve("http://localhost/b.xsd").close();
 
-        assertEquals(1, created.get());
+        assertEquals(2, created.get());
+        for (final var client : clients)
+            verify(client).closeImmediately();
     }
 
-    private static HttpClient clientAnswering(String body) throws Exception {
+    @Test
+    void withClientPerCallClosesClientWhenCallFails() throws Exception {
+        final var client = mock(HttpClient.class);
+        doThrow(new IOException("refused")).when(client).call(any());
+        final var resolver = HTTPSchemaResolver.withClientPerCall(() -> client);
+
+        assertThrows(ResourceRetrievalException.class, () -> resolver.resolve("http://localhost/a.xsd"));
+
+        verify(client).closeImmediately();
+    }
+
+    @Test
+    void resolveLeavesCallerOwnedClientOpen() throws Exception {
+        final var client = clientAnswering("<schema/>");
+        new HTTPSchemaResolver(client).resolve("http://localhost/a.xsd").close();
+
+        verify(client, never()).close();
+        verify(client, never()).closeImmediately();
+    }
+
+    static HttpClient clientAnswering(String body) throws Exception {
         final var client = mock(HttpClient.class);
         doAnswer(invocation -> {
             invocation.<Exchange>getArgument(0).setResponse(ok(body).build());

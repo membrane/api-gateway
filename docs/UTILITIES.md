@@ -102,5 +102,6 @@ Keep this file in sync when adding, renaming or removing a util class.
 | `util/ProblemDetailsTestUtil` | Parse a `Response` into `ProblemDetails` |
 | `util/RecordingServerTestUtil` | Throw-away server that records whether it was called |
 | `util/NetworkTestUtil` | `freePort()`: an OS-assigned free port for tests that cannot bind `new ServerSocket(0)` themselves |
+| `util/ThreadTestUtil` | `liveTimerThreads()`: the live `Timer-N` threads, for diffing before/after to detect leaked timers |
 | `openapi/util/JsonTestUtil` | Build `JsonNode`/bytes from maps in tests |
 | `openapi/util/OpenAPITestUtils` | Load/parse OpenAPI resources, create proxies from specs |
