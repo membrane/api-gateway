@@ -3,7 +3,7 @@
 # Tutorial: Turn POST into GET
 #
 # Try:
-#     curl "http://localhost:2000/shop/v2/products" -H "Content-Type: application/json" -d '{"limit": 100,"sort": "name"}'
+#     curl "http://localhost:2000/shop/v2/products" -H "Content-Type: application/json" -d "{\"limit\": 100,\"sort\": \"name\"}"
 
 api:
   port: 2000

@@ -24,14 +24,12 @@
 #     401 Unauthorized
 #
 # 3.) Key without write scope on a write endpoint → 403:
-#     curl -i localhost:2000/shop/v2/products -X POST -H "X-Api-Key: 111" \
-#          -H "Content-Type: application/json" -d '{}'
+#     curl -i localhost:2000/shop/v2/products -X POST -H "X-Api-Key: 111" -H "Content-Type: application/json" -d "{}"
 #
 #     403 Forbidden
 #
 # 4.) Key with write scope on a write endpoint → forwarded to backend:
-#     curl -i localhost:2000/shop/v2/products -X POST -H "X-Api-Key: 222" \
-#          -H "Content-Type: application/json" -d '{"name":"Mango","price":1.99}'
+#     curl -i localhost:2000/shop/v2/products -X POST -H "X-Api-Key: 222" -H "Content-Type: application/json" -d "{\"name\":\"Mango\",\"price\":1.99}"
 
 api:
   port: 2000

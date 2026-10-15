@@ -14,7 +14,7 @@
 #       membrane.cmd -c 31-Access-Log-Custom-Fields.yaml
 #
 # 2.) Send an order:
-#       curl http://localhost:2000/shop/orders -H "Content-Type: application/json" -d '{"orderId":"A-1042","items":3}'
+#       curl http://localhost:2000/shop/orders -H "Content-Type: application/json" -d "{\"orderId\":\"A-1042\",\"items\":3}"
 #
 # 3.) Look at the access log file. The line now ends with the custom fields:
 #       cat access-custom-*.log

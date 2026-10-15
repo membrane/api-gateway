@@ -10,12 +10,12 @@
 #     ./membrane.sh -c 40-XML-nodeType.apis.yaml
 #
 # 2.) Send a valid order (id and currency as attributes, total as element text):
-#     curl -X POST localhost:2000/orders -H 'Content-Type: application/xml' -d '<order id="A1"><total currency="USD">42.50</total></order>'
+#     curl -X POST localhost:2000/orders -H "Content-Type: application/xml" -d "<order id='A1'><total currency='USD'>42.50</total></order>"
 #
 #     The XML matches the schema, so the request passes to the backend.
 #
 # 3.) Now send a non-numeric total:
-#     curl -X POST localhost:2000/orders -H 'Content-Type: application/xml' -d '<order id="A1"><total currency="USD">cheap</total></order>'
+#     curl -X POST localhost:2000/orders -H "Content-Type: application/xml" -d "<order id='A1'><total currency='USD'>cheap</total></order>"
 #
 #     Membrane rejects it with 400: the total value must be a number.
 

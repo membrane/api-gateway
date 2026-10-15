@@ -1,0 +1,5 @@
+[
+  {"jsonrpc": "2.0", "id": 1, "method": "ping"},
+  {"jsonrpc": "2.0", "id": 2, "method": "sum", "params": [1, 2]},
+  {"jsonrpc": "2.0", "id": 3, "method": "ping"}
+]

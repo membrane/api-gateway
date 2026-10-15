@@ -10,12 +10,12 @@
 #     ./membrane.sh -c 30-Querystring-Parameter.apis.yaml
 #
 # 2.) Send a valid query string:
-#     curl 'localhost:2000/products?term=boots&page=2'
+#     curl "localhost:2000/products?term=boots&page=2"
 #
 #     term and page match the schema, so the request passes to the backend.
 #
 # 3.) Now omit the required "term":
-#     curl 'localhost:2000/products?page=2'
+#     curl "localhost:2000/products?page=2"
 #
 #     Membrane rejects it with 400: term is required.
 

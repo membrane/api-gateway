@@ -9,12 +9,12 @@
 #     ./membrane.sh -c 10-QUERY-Method.apis.yaml
 #
 # 2.) Send a valid QUERY with a search body:
-#     curl -X QUERY localhost:2000/search -H 'Content-Type: application/json' -d '{"term": "shoes"}'
+#     curl -X QUERY localhost:2000/search -H "Content-Type: application/json" -d "{\"term\": \"shoes\"}"
 #
 #     The body matches the schema, so the request passes to the backend.
 #
 # 3.) Now omit the required "term":
-#     curl -X QUERY localhost:2000/search -H 'Content-Type: application/json' -d '{}'
+#     curl -X QUERY localhost:2000/search -H "Content-Type: application/json" -d "{}"
 #
 #     Membrane rejects it with status 400: "term" is required.
 

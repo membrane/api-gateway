@@ -20,19 +20,19 @@
 #         membrane.cmd -c 50-GraphQL-Protection.yaml
 #
 # 2.) Valid request => 200
-#    curl -d '{"query":"{products{id}}"}' -H "Content-Type: application/json" http://localhost:2000
+#    curl -d "{\"query\":\"{products{id}}\"}" -H "Content-Type: application/json" http://localhost:2000
 #
 # 3.) Max depth exceeded => 400
-#    curl -d '{ "query": "query{categories{products{vendors{id}}}}"}' -H "Content-Type: application/json" http://localhost:2000
+#    curl -d "{\"query\":\"query{categories{products{vendors{id}}}}\"}" -H "Content-Type: application/json" http://localhost:2000
 #
 # 4.) Max recursion exceeded => 400
-#    curl -d '{"query":"{products{vendor{products{id}}}}"}' -H "Content-Type: application/json" http://localhost:2000
+#    curl -d "{\"query\":\"{products{vendor{products{id}}}}\"}" -H "Content-Type: application/json" http://localhost:2000
 #
 # 5.) Disallowed mutation 'updateCategory' => 400
-#    curl -d '{"query":"mutation { updateCategory(id:6,name: \"Dry Fruits\"){id}}"}' -H "Content-Type: application/json" http://localhost:2000
+#    curl -d @graphql-mutation.json -H "Content-Type: application/json" http://localhost:2000
 #
 # 6.) Disallowed introspection => 400
-#    curl -d '{"query":"{ __schema{mutationType {fields{name}}}}"}' -H "Content-Type: application/json" http://localhost:2000
+#    curl -d "{\"query\":\"{ __schema{mutationType {fields{name}}}}\"}" -H "Content-Type: application/json" http://localhost:2000
 #
 # Reference: https://www.membrane-api.io/docs/current/graphQLProtection.html
 

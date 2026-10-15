@@ -6,7 +6,7 @@
 #     ./membrane.sh -c 20-OpenAPI-Validation.apis.yaml
 #
 # 2.) Try creating a new product with a negative price:
-#     curl "http://localhost:2000/shop/v2/products" -H 'Content-Type: application/json' -d '{ "name": "Figs", "price": -2.7}'
+#     curl "http://localhost:2000/shop/v2/products" -H "Content-Type: application/json" -d "{ \"name\": \"Figs\", \"price\": -2.7}"
 #
 #     Check the validation error in the response.
 

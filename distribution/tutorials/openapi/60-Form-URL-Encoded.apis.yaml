@@ -10,12 +10,12 @@
 #     ./membrane.sh -c 60-Form-URL-Encoded.apis.yaml
 #
 # 2.) Send a valid form post (curl uses application/x-www-form-urlencoded by default for -d):
-#     curl localhost:2000/orders -v -d 'product=Shoes&quantity=5'
+#     curl localhost:2000/orders -v -d "product=Shoes&quantity=5"
 #
 #     The request passes to the backend.
 #
 # 3.) Order a negative quantity:
-#     curl localhost:2000/orders -v -d 'product=Shoes&quantity=-5'
+#     curl localhost:2000/orders -v -d "product=Shoes&quantity=-5"
 #
 #     Rejected with status 400: "quantity" is below the minimum of 1.
 

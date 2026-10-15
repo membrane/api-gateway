@@ -44,7 +44,7 @@
 #     but it is hidden from the Inspector and blocked by `mcpProtection`.
 #     To verify the block, send a manual JSON-RPC request:
 #
-#     curl -i -d '{"jsonrpc":"2.0","id":99,"method":"tools/call","params":{"name":"getExchanges","arguments":{}}}' -H "Content-Type: application/json" http://localhost:2000
+#     curl -i -d @call-getExchanges.json -H "Content-Type: application/json" http://localhost:2000
 #
 #     The response should be 403 with a JSON-RPC error explaining that the tool
 #     is not allowed.
