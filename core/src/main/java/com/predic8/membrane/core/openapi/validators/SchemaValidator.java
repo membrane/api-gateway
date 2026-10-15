@@ -64,8 +64,19 @@ public class SchemaValidator implements JsonSchemaValidator {
         return null;
     }
 
+    /**
+     * @return whether obj is valid against the schema. Within one validation the result for a value is computed once.
+     */
+    public boolean isValid(ValidationContext ctx, Object obj) {
+        return ctx.isValid(schema, obj, () -> validate(ctx, obj).isEmpty());
+    }
+
     @Override
     public ValidationErrors validate(ValidationContext ctx, Object obj) {
+
+        // Every top-level validation remembers which values match which subschemas, see ValidationContext.validityCache
+        if (!ctx.hasValidityCache())
+            ctx = ctx.withValidityCache();
 
         var errors = new ValidationErrors();
 
