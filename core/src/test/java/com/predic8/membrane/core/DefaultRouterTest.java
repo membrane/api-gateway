@@ -21,7 +21,6 @@ import org.junit.jupiter.api.*;
 
 import java.io.*;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static io.restassured.RestAssured.*;
 import static io.restassured.filter.log.LogDetail.*;
@@ -55,7 +54,7 @@ class DefaultRouterTest {
             .log().ifValidationFails()
             .statusCode(500)
             .contentType( containsString(APPLICATION_PROBLEM_JSON))
-            .body("title", equalTo( INTERNAL_SERVER_ERROR))
+            .body("title", equalTo("Internal Server Error"))
             .body("type",equalTo("https://membrane-api.io/problems/internal"))
             .body("message", not(containsString(INTERNAL_SECRET)))
             .body("$",aMapWithSize(4));
@@ -72,7 +71,7 @@ class DefaultRouterTest {
             .log().ifValidationFails(ALL)
             .statusCode(500)
             .contentType(containsString(APPLICATION_PROBLEM_XML))
-            .body("error.title", equalTo(INTERNAL_SERVER_ERROR))
+            .body("error.title", equalTo("Internal Server Error"))
             .body("error.type",equalTo("https://membrane-api.io/problems/internal"))
             .body("error.message", not(containsString(INTERNAL_SECRET)));
         // @formatter:on

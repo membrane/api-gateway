@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.interceptor.acl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.acl.rules.*;
 import com.predic8.membrane.core.proxies.Proxy;
@@ -87,6 +88,21 @@ class AccessControlInterceptorTest {
                         allow("0.0.0.0/0")
                 )).handleRequest(exc("192.168.1.100"))
         );
+    }
+
+    @Test
+    void production_hides_detail_when_denied() throws Exception {
+        final var router = spy(DummyTestRouter.productionRouter());
+        doReturn(mock(DNSCache.class)).when(router).getDnsCache();
+        final var i = new AccessControlInterceptor();
+        i.setRules(List.of(allow("10.0.0.0/8")));
+        i.init(router, mock(Proxy.class));
+
+        final var exc = exc("192.168.1.100");
+        assertEquals(ABORT, i.handleRequest(exc));
+        assertEquals(403, exc.getResponse().getStatusCode());
+        final var json = new ObjectMapper().readTree(exc.getResponse().getBodyAsStringDecoded());
+        assertFalse(json.has("detail"));
     }
 
     @Test

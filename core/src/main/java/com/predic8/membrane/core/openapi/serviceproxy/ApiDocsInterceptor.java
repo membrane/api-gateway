@@ -69,7 +69,7 @@ public class ApiDocsInterceptor extends AbstractInterceptor {
         }
 
         if (exc.getRequest().getUri().matches(valueOf(PATTERN_UI))) {
-            return publisher.handleSwaggerUi(exc);
+            return publisher.handleSwaggerUi(exc, router);
         }
 
         try {

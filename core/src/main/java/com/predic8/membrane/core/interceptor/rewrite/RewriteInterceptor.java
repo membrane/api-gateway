@@ -55,6 +55,8 @@ public class RewriteInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(RewriteInterceptor.class.getName());
 
+    public static final String URL_NOT_PROCESSABLE = "The URL may be invalid, or the server could not process it.";
+
     /**
      * Scheme followed by "://" at the start (RFC 3986 section 3.1). A "://" later on, e.g. in the query, does not count.
      */
@@ -225,12 +227,13 @@ public class RewriteInterceptor extends AbstractInterceptor {
             return URLUtil.getPathQuery(factory, destination);
         } catch (URISyntaxException | IllegalArgumentException e) {
             log.info("Can't parse query: {}", destination);
-            user(false,getDisplayName())
+            user(router.getConfiguration().isProduction(), getDisplayName())
                     .addSubType("path")
-                    .title("The path does not follow the URI specification. Confirm the validity of the provided URL.")
-                    .detail(e.getMessage())
+                    .title("Request URL could not be processed.")
+                    .detail(URL_NOT_PROCESSABLE, true)
                     .internal("component", "rewrite")
                     .internal("path", destination)
+                    .internal("reason", e.getMessage())
                     .buildAndSetResponse(exc);
             return null;
         }

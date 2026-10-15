@@ -48,7 +48,7 @@ public class EmptyEndpointProcessor extends EndpointProcessor {
             return processInternal(exc);
         } catch (Exception e) {
             log.error("", e);
-            internal(true,"empty-endpoint-processor")
+            internal(authServer.getRouter().getConfiguration().isProduction(), "empty-endpoint-processor")
                     .exception(e)
                     .buildAndSetResponse(exc);
             return ABORT;

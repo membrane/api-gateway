@@ -36,6 +36,7 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.util.ExceptionUtil.concatMessageAndCauseMessages;
 import static com.predic8.membrane.core.util.ExceptionUtil.getRootCause;
+import static com.predic8.membrane.core.util.HttpUtil.getMessageForStatusCode;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Locale.ROOT;
 import static java.util.UUID.randomUUID;
@@ -60,7 +61,6 @@ public class ProblemDetails {
     public static final String INSTANCE = "instance";
     public static final String STATUS = "status";
     public static final String INTERNAL = "internal";
-    public static final String INTERNAL_SERVER_ERROR = "Internal Server Error";
 
     private static final Set<String> RESERVED = Set.of(TYPE, TITLE, DETAIL, INSTANCE, STATUS);
     public static final String MESSAGE = "message";
@@ -80,6 +80,11 @@ public class ProblemDetails {
 
     protected String title;
     protected String detail;
+
+    /**
+     * Whether the detail is also returned in production mode
+     */
+    private boolean publicDetail;
 
     protected Interceptor.Flow flow;
     protected String seeSuffix = "";
@@ -219,10 +224,26 @@ public class ProblemDetails {
      * @param humanReadableExplanation A human-readable explanation specific to this
      *                                 occurrence of the problem.
      * @return Instance
+     * @see #detail(String, boolean) to show the detail in production mode as well
      */
     public ProblemDetails detail(String humanReadableExplanation) {
-        if (humanReadableExplanation != null)
-            this.detail = humanReadableExplanation;
+        return detail(humanReadableExplanation, false);
+    }
+
+    /**
+     * @param humanReadableExplanation A human-readable explanation specific to this
+     *                                 occurrence of the problem.
+     * @param showInProduction         {@code true} to return the detail in production mode as well. Use it only
+     *                                 for text written for the client. The text may echo values the client sent
+     *                                 itself (e.g. a rejected header value or a requested document id), but put
+     *                                 internal values such as configuration, backend data, stack traces or
+     *                                 exception messages into {@link #internal(String, Object)}. {@code false}
+     *                                 hides the detail in production mode.
+     * @return Instance
+     */
+    public ProblemDetails detail(String humanReadableExplanation, boolean showInProduction) {
+        this.detail = humanReadableExplanation;
+        this.publicDetail = showInProduction;
         return this;
     }
 
@@ -289,6 +310,9 @@ public class ProblemDetails {
         root.putAll(topLevel);
 
         if (production) {
+            if (publicDetail && detail != null) {
+                root.put(DETAIL, detail);
+            }
             provideLogKeyInsteadOfDetails(root);
             return root;
         }
@@ -301,9 +325,13 @@ public class ProblemDetails {
         return root;
     }
 
+    /**
+     * In production, a 5xx title is replaced by the reason phrase of the status, which tells the client nothing
+     * the status code does not.
+     */
     private String maskTitle(String title) {
         if (production && status >= 500)
-            return INTERNAL_SERVER_ERROR;
+            return getMessageForStatusCode(status);
         return title;
     }
 
@@ -328,7 +356,8 @@ public class ProblemDetails {
         } finally {
             MDC.remove(LOG_KEY);
         }
-        root.put(DETAIL, "Internal details are hidden. See server log (key: %s)".formatted(logKey));
+        root.merge(DETAIL, "Internal details are hidden. See server log (key: %s)".formatted(logKey),
+                (publicText, hidden) -> publicText + " " + hidden);
     }
 
     private @NotNull String getTypeSubtypeString() {
@@ -513,6 +542,7 @@ public class ProblemDetails {
                ", subType='" + subType + '\'' +
                ", title='" + title + '\'' +
                ", detail='" + detail + '\'' +
+               ", publicDetail=" + publicDetail +
                ", flow=" + flow +
                ", seeSuffix='" + seeSuffix + '\'' +
                ", component='" + component + '\'' +

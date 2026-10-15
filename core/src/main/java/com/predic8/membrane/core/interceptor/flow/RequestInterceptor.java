@@ -19,6 +19,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import org.slf4j.*;
 
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
@@ -53,7 +54,7 @@ public class RequestInterceptor extends AbstractFlowWithChildrenInterceptor {
                 if (o != CONTINUE)
                     return o;
             } catch (Exception e) {
-                createProblemDetails( "request", i, exc, e);
+                createProblemDetails(REQUEST, i, exc, e);
                 return ABORT;
             }
         }
