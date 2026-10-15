@@ -14,22 +14,26 @@
 
 package com.predic8.membrane.core.interceptor.flow;
 
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.log.*;
-import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.router.*;
-import org.junit.jupiter.api.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.ReadingBodyException;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.log.LogInterceptor;
+import com.predic8.membrane.core.proxies.ServiceProxy;
+import com.predic8.membrane.core.router.DummyTestRouter;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.router.TestRouter;
+import org.junit.jupiter.api.Test;
 
-import java.io.*;
-import java.util.*;
+import java.io.IOException;
+import java.util.List;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.http.Request.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.router.DummyTestRouter.*;
+import static com.predic8.membrane.core.http.Request.get;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.router.DummyTestRouter.productionRouter;
 import static org.junit.jupiter.api.Assertions.*;
 
 class AbstractFlowInterceptorTest {

@@ -15,20 +15,25 @@
 package com.predic8.membrane.core.interceptor.acl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.acl.rules.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.acl.rules.AccessRule;
+import com.predic8.membrane.core.interceptor.acl.rules.Allow;
+import com.predic8.membrane.core.interceptor.acl.rules.Deny;
 import com.predic8.membrane.core.proxies.Proxy;
-import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.util.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.router.DummyTestRouter;
+import com.predic8.membrane.core.util.ConfigurationException;
+import com.predic8.membrane.core.util.DNSCache;
+import org.junit.jupiter.api.Test;
 
-import java.net.*;
-import java.util.*;
+import java.net.InetAddress;
+import java.net.URISyntaxException;
+import java.util.List;
 
-import static com.predic8.membrane.core.http.Request.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.http.Request.get;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 class AccessControlInterceptorTest {

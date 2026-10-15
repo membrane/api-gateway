@@ -29,7 +29,10 @@ import static org.junit.jupiter.api.Assertions.*;
 class ConditionalEvaluationTestContext {
 
     static Outcome performEval(String condition, Object builder, Language lang, boolean shouldCallNested) {
-        var exc = new Exchange(null);
+        return performEval(new Exchange(null), condition, builder, lang, shouldCallNested);
+    }
+
+    static Outcome performEval(Exchange exc, String condition, Object builder, Language lang, boolean shouldCallNested) {
         var mockInt = new ConditionalEvaluationTestContext.MockInterceptor();
         var ifInt = new IfInterceptor();
 

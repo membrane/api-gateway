@@ -14,8 +14,12 @@
 package com.predic8.membrane.core.lang;
 
 import com.predic8.membrane.core.exceptions.*;
+import com.predic8.membrane.core.interceptor.Interceptor.*;
 
 import java.util.*;
+
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 
 /**
  * Gathers information about an error evaluating an exchange expression. It can fill a ProblemDetails object
@@ -45,6 +49,11 @@ public class ExchangeExpressionException extends RuntimeException {
      */
     private String body;
 
+    /**
+     * Whether the message body, not the expression, caused the error.
+     */
+    private boolean bodyError;
+
     public ExchangeExpressionException(String expression, String message) {
         super(message);
         this.expression = expression;
@@ -58,6 +67,27 @@ public class ExchangeExpressionException extends RuntimeException {
     public ExchangeExpressionException(String expression, Throwable cause) {
         super(cause);
         this.expression = expression;
+    }
+
+    /**
+     * Creates ProblemDetails filled from this exception. A body that is not the document it should be
+     * was sent by the client in the request flow (400) and by the backend in the response flow (502).
+     * Any other error is one of the expression or the configuration (500).
+     */
+    public ProblemDetails problemDetails(boolean production, String component, Flow flow) {
+        return provideDetails(emptyProblemDetails(production, component, flow));
+    }
+
+    /**
+     * Like {@link #problemDetails(boolean, String, Flow)}, but not yet filled, for callers that add their own fields
+     * before {@link #provideDetails(ProblemDetails)}.
+     */
+    public ProblemDetails emptyProblemDetails(boolean production, String component, Flow flow) {
+        if (!bodyError)
+            return internal(production, component);
+        if (flow == REQUEST)
+            return user(production, component);
+        return gateway(production, component).status(502);
     }
 
     /**
@@ -105,6 +135,18 @@ public class ExchangeExpressionException extends RuntimeException {
     public ExchangeExpressionException body(String body) {
         this.body = body;
         return this;
+    }
+
+    /**
+     * Marks the message body, not the expression, as the cause of the error.
+     */
+    public ExchangeExpressionException bodyError() {
+        this.bodyError = true;
+        return this;
+    }
+
+    public boolean isBodyError() {
+        return bodyError;
     }
 
     /**

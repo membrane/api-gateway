@@ -9,7 +9,7 @@ Keep this file in sync when adding, renaming or removing a util class.
 | Class | Purpose |
 |---|---|
 | `StringUtil` | Truncate/tail, mask non-printable chars, add line numbers, split by comma, `yes`/`no` flag parsing, last element of a comma list |
-| `TextUtil` | Charset lookup, XML pretty-print, glob→regex, English list ("a, b and c"), capitalize, escape quotes, multiline indent handling (`unifyIndent`, `getLines`) |
+| `TextUtil` | Charset lookup, encoding detection from byte order mark or zero-byte pattern (`detectEncoding`), XML pretty-print, glob→regex, English list ("a, b and c"), capitalize, escape quotes, multiline indent handling (`unifyIndent`, `getLines`) |
 | `SerializationUtil`, `SerializationFunction` | Pick a serializer by mime type or `Serialization`; path/header value encoding |
 | `ToJsonSerializer`, `ToTextSerializer`, `ToURLSerializer`, `ToXMLSerializer` | `Object` → JSON / plain text / URL-encoded / XML string |
 | `TerminalColors` | ANSI colors for console output, with global enable/disable |

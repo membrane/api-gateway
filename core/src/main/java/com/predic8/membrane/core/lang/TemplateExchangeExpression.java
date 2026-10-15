@@ -69,7 +69,7 @@ public class TemplateExchangeExpression extends AbstractExchangeExpression {
         try {
             return tokens.getFirst().eval(exchange, flow, Object.class);
         } catch (Exception e) {
-            throw new ExchangeExpressionException(tokens.getFirst().getExpression(), e);
+            throw wrap(tokens.getFirst(), e);
         }
     }
 
@@ -88,10 +88,19 @@ public class TemplateExchangeExpression extends AbstractExchangeExpression {
                 }
                 line.append(encoder.apply(value));
             } catch (Exception e) {
-                throw new ExchangeExpressionException(token.getExpression(), e);
+                throw wrap(token, e);
             }
         }
         return line.toString();
+    }
+
+    /**
+     * A body error passes unwrapped, so that it keeps telling a broken message (400/502) from a broken expression (500).
+     */
+    private static ExchangeExpressionException wrap(Token token, Exception e) {
+        if (e instanceof ExchangeExpressionException eee && eee.isBodyError())
+            return eee;
+        return new ExchangeExpressionException(token.getExpression(), e);
     }
 
     interface Token {

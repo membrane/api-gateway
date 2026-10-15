@@ -13,24 +13,31 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.rewrite;
 
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.*;
-import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.router.*;
-import org.junit.jupiter.api.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.interceptor.DispatchingInterceptor;
+import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.Mapping;
+import com.predic8.membrane.core.proxies.ServiceProxy;
+import com.predic8.membrane.core.proxies.ServiceProxyKey;
+import com.predic8.membrane.core.router.DummyTestRouter;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import java.net.*;
-import java.util.*;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
-import static com.predic8.membrane.core.http.Request.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.http.Request.get;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.Type.REDIRECT_TEMPORARY;
+import static com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.Type.REWRITE;
 import static com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.URL_NOT_PROCESSABLE;
-import static com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.Type.*;
 import static org.junit.jupiter.api.Assertions.*;
+
 public class RewriteInterceptorTest {
 
 	private final static ObjectMapper om = new ObjectMapper();

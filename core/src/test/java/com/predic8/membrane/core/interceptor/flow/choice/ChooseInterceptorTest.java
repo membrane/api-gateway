@@ -21,16 +21,22 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.router.DummyTestRouter;
 import com.predic8.membrane.core.util.ConfigurationException;
+import com.predic8.membrane.core.util.xml.parser.HardenedXmlParser;
+import com.predic8.membrane.core.util.xml.parser.XmlParseException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.xml.sax.InputSource;
 
+import java.io.StringReader;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_XML;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.flow.choice.ChooseInterceptor.validateChoices;
+import static com.predic8.membrane.core.lang.ExchangeExpression.Language.XPATH;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ChooseInterceptorTest {
@@ -70,7 +76,28 @@ class ChooseInterceptorTest {
             () -> assertEquals("https://membrane-api.io/problems/internal/choose/expression-evaluation",
                 problem.path("see").asText()),
             () -> assertEquals("Error evaluating expression on exchange in choose plugin.",
-                problem.path("detail").asText())
+                problem.path("title").asText())
+        );
+    }
+
+    @Test
+    void bodyErrorKeepsDetailAndIs400() throws Exception {
+        var xpathCase = new Case();
+        xpathCase.setLanguage(XPATH);
+        xpathCase.setTest("/a");
+        xpathCase.setFlow(List.of());
+
+        var choose = new ChooseInterceptor();
+        choose.setChoices(List.of(xpathCase));
+        choose.init(new DummyTestRouter());
+
+        var exc = Request.post("/").contentType(APPLICATION_XML).body("<a><b></a>").buildExchange();
+        assertEquals(ABORT, choose.handleRequest(exc));
+        var problem = HardenedXmlParser.getInstance().parse(new InputSource(exc.getResponse().getBodyAsStreamDecoded())); // XML, like the request
+
+        assertAll(
+            () -> assertEquals(400, exc.getResponse().getStatusCode()),
+            () -> assertEquals(parseError("<a><b></a>"), problem.getElementsByTagName("detail").item(0).getTextContent())
         );
     }
 
@@ -84,4 +111,11 @@ class ChooseInterceptorTest {
         assertThrows(ConfigurationException.class, () -> validateChoices(List.of(new Case(), new Otherwise(), new Case())));
     }
 
+    /**
+     * @return the message the XML parser fails with on <code>xml</code>, which is localized
+     */
+    private static String parseError(String xml) {
+        return assertThrows(XmlParseException.class,
+            () -> HardenedXmlParser.getInstance().parse(new InputSource(new StringReader(xml)))).getMessage();
+    }
 }

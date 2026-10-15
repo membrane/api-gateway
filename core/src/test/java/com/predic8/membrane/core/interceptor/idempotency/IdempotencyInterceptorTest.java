@@ -24,7 +24,8 @@ import java.net.URISyntaxException;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.Request.put;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.JSONPATH;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
