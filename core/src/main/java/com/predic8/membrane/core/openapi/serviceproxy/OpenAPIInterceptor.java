@@ -22,7 +22,6 @@ import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.openapi.OpenAPIParsingException;
-import com.predic8.membrane.core.openapi.OpenAPIValidator;
 import com.predic8.membrane.core.openapi.OpenAPIValidator.ValidationPlan;
 import com.predic8.membrane.core.openapi.model.Request;
 import com.predic8.membrane.core.openapi.validators.ValidationErrors;
@@ -260,7 +259,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         if (validationPlan != null)
             return validationPlan;
 
-        validationPlan = new OpenAPIValidator(router.getConfiguration().getUriFactory(), rec).prepareValidation(request);
+        validationPlan = apiProxy.getValidator(rec).prepareValidation(request);
 
         // Store the plan in request flow for response validation in the response flow
         exc.setProperty(OPENAPI_VALIDATOR_CTX_PROPERTY, validationPlan);

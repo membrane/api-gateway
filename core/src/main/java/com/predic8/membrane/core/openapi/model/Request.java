@@ -16,13 +16,18 @@
 
 package com.predic8.membrane.core.openapi.model;
 
-import com.predic8.membrane.core.openapi.util.*;
-import com.predic8.membrane.core.security.*;
+import com.predic8.membrane.core.openapi.util.PathDoesNotMatchException;
+import com.predic8.membrane.core.openapi.util.UriTemplate;
+import com.predic8.membrane.core.openapi.util.UriTemplateMatcher;
+import com.predic8.membrane.core.security.SecurityScheme;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-import static java.util.Collections.*;
-import static java.util.stream.Collectors.*;
+import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.toSet;
 
 public class Request<T extends Body> extends Message<T, Request<T>> {
 
@@ -142,6 +147,15 @@ public class Request<T extends Body> extends Message<T, Request<T>> {
 
     public void parsePathParameters(String uriTemplate) throws PathDoesNotMatchException {
         pathParameters = UriTemplateMatcher.matchTemplate(uriTemplate, path);
+    }
+
+    /**
+     * @return true if the path matches the template. Only then the path parameters are set.
+     */
+    public boolean parsePathParameters(UriTemplate uriTemplate) {
+        final var parameters = uriTemplate.match(path);
+        parameters.ifPresent(p -> pathParameters = p);
+        return parameters.isPresent();
     }
 
     @Override

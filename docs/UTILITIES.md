@@ -90,6 +90,7 @@ Keep this file in sync when adding, renaming or removing a util class.
 | `UriUtil` | Trim/ensure slashes, strip query, rewrite URL parts (not the same as `util/URIUtil`) |
 | `Utils` | Format validators (UUID, e-mail, date, IP, ISO codes, ...), stream/string conversion, validator request/response builders |
 | `UriTemplateMatcher` | Match request paths against OpenAPI URI templates |
+| `UriTemplate` | Precompiled URI template; non-throwing match for hot paths (routing, validation) |
 | `OpenAPI32Parser` | OpenAPI 3.2 parsing shim |
 | `ObjectHolder` | Mutable holder for lambdas |
 

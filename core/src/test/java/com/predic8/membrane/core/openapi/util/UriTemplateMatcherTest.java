@@ -16,14 +16,14 @@
 
 package com.predic8.membrane.core.openapi.util;
 
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Test;
 
-import java.util.*;
-import java.util.regex.*;
+import java.util.Map;
+import java.util.regex.Matcher;
 
 import static com.predic8.membrane.core.openapi.util.UriTemplateMatcher.*;
 import static java.util.List.of;
-import static java.util.Map.*;
+import static java.util.Map.entry;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class UriTemplateMatcherTest {
@@ -211,5 +211,11 @@ public class UriTemplateMatcherTest {
     @Test
     void getNoParameterNames() {
         assertEquals(of(), getParameterNames("/foo/baz/"));
+    }
+
+    @Test
+    void notMatchingThrowsNoStackTrace() {
+        final var e = assertThrows(PathDoesNotMatchException.class, () -> matchTemplate("/foo", "/bar"));
+        assertEquals(0, e.getStackTrace().length);
     }
 }

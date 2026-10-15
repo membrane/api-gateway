@@ -19,19 +19,20 @@ package com.predic8.membrane.core.openapi.serviceproxy;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.lang.ExchangeExpression;
 import com.predic8.membrane.core.lang.ExchangeExpressionException;
-import com.predic8.membrane.core.openapi.util.PathDoesNotMatchException;
+import com.predic8.membrane.core.openapi.util.UriTemplate;
 import com.predic8.membrane.core.proxies.RuleKey;
 import com.predic8.membrane.core.proxies.ServiceProxyKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisherInterceptor.PATH;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisherInterceptor.PATH_UI;
-import static com.predic8.membrane.core.openapi.util.UriTemplateMatcher.matchTemplate;
 import static java.util.Optional.ofNullable;
 
 public class APIProxyKey extends ServiceProxyKey {
@@ -51,6 +52,11 @@ public class APIProxyKey extends ServiceProxyKey {
      * For complex matches use SpEL
      */
     private ExchangeExpression exchangeExpression;
+
+    /**
+     * {@link #getPath()} compiled as URI template on first use, reset by {@link #setPath(String)}.
+     */
+    private volatile UriTemplate pathTemplate;
 
     public APIProxyKey(RuleKey key, ExchangeExpression exchangeExpression, boolean openAPI) {
         super(key);
@@ -176,13 +182,35 @@ public class APIProxyKey extends ServiceProxyKey {
         // OpenAPI docs stay reachable even when a custom path is configured, see issue #3173.
         if (matchesApiDocsPath(path))
             return true;
-        try {
-            matchTemplate(getPath(), path); // ignore result
+        if (getPath() == null || getPathTemplate().matches(path))
             return true;
-        } catch (PathDoesNotMatchException e) {
-            log.debug("Path {} doesn't match {}", path,getPath());
-        }
+        log.debug("Path {} doesn't match {}", path,getPath());
         return path.startsWith(getPath());
+    }
+
+    /**
+     * @return path parameters of the path matched against the path template of this key, or empty if it does not match.
+     *         Without a path every path matches without parameters.
+     */
+    public Optional<Map<String, String>> matchPathTemplate(String path) {
+        if (getPath() == null)
+            return Optional.of(Map.of());
+        return getPathTemplate().match(path);
+    }
+
+    private UriTemplate getPathTemplate() {
+        var template = pathTemplate;
+        if (template == null) {
+            template = UriTemplate.of(getPath());
+            pathTemplate = template;
+        }
+        return template;
+    }
+
+    @Override
+    public void setPath(String path) {
+        super.setPath(path);
+        pathTemplate = null;
     }
 
     @Override

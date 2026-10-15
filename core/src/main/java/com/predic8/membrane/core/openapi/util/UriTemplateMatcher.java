@@ -13,16 +13,14 @@
    limitations under the License. */
 package com.predic8.membrane.core.openapi.util;
 
-import org.jetbrains.annotations.*;
+import org.jetbrains.annotations.NotNull;
 
-import java.net.*;
-import java.nio.charset.*;
-import java.util.*;
-import java.util.regex.*;
-import java.util.stream.*;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import static java.util.regex.Pattern.*;
-import static java.util.stream.Collectors.*;
+import static java.util.regex.Pattern.compile;
 
 public class UriTemplateMatcher {
 
@@ -34,35 +32,19 @@ public class UriTemplateMatcher {
      * Problem:
      *  - How to handle parameter names containing _, -, ...
      *
+     * Compiles the template on every call. On hot paths keep a {@link UriTemplate} instead.
+     *
      * @return Map of Parameters. If the path does not match PathDoesNotMatchException is thrown.
      */
     public static Map<String, String> matchTemplate(String template, String uri) throws PathDoesNotMatchException {
         if (template == null || uri == null)
             return null;
 
-        Matcher parameters = getTemplateMatcher(template, uri);
-
-        if (!parameters.matches()) {
-            throw new PathDoesNotMatchException();
-        }
-
-        List<String> names = getParameterNames(template);
-
-        return IntStream.range(0, names.size())
-                .boxed()
-                .collect(toMap(
-                        names::get,
-                        i -> URLDecoder.decode(parameters.group(i + 1), StandardCharsets.UTF_8)
-                ));
+        return UriTemplate.of(template).match(uri).orElseThrow(PathDoesNotMatchException::new);
     }
 
     static List<String> getParameterNames(String uriTemplate) {
         return getNameMatcher(normalizePath(uriTemplate)).results().map(r -> r.group(1)).toList();
-    }
-
-    @NotNull
-    private static Matcher getTemplateMatcher(String template, String path) {
-        return compile(prepareTemplate(normalizePath(template))).matcher(normalizePath(path));
     }
 
     @NotNull
@@ -71,7 +53,7 @@ public class UriTemplateMatcher {
     }
 
     static String prepareTemplate(String template) {
-        return template.replaceAll(PARAM_NAME_REGEX, URI_PARAM_MATCH);
+        return PARAM_NAME_REGEX_PATTERN.matcher(template).replaceAll(URI_PARAM_MATCH);
     }
 
     static String normalizePath(String path) {

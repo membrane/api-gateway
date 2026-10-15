@@ -19,7 +19,12 @@ package com.predic8.membrane.core.openapi;
 import com.predic8.membrane.core.openapi.model.Request;
 import com.predic8.membrane.core.openapi.serviceproxy.OpenAPIRecord;
 import com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec;
+import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.URIFactory;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.PathItem;
+import io.swagger.v3.oas.models.Paths;
+import io.swagger.v3.oas.models.info.Info;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -30,7 +35,7 @@ import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.getResourc
 import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.parseOpenAPI;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.METHOD;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.PATH;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 class OpenAPIValidatorTest {
 
@@ -81,5 +86,24 @@ class OpenAPIValidatorTest {
     @Test
     void queryStringArrayExplodedWithNumbers() {
         assertEquals(0, validator.validate(get().path("/customers?ids=1&ids=2&ids=3")).size());
+    }
+
+    @Test
+    void validatorIsReusableForSeveralRequests() {
+        assertEquals(0, validator.validate(get().path("/customers/7")).size());
+        assertEquals(404, validator.validate(get().path("/foo")).getFirst().getContext().getStatusCode());
+        assertEquals(0, validator.validate(get().path("/customers")).size());
+    }
+
+    @Test
+    void pathThatIsNoValidTemplateIsAConfigurationError() {
+        var api = new OpenAPI().info(new Info().title("Broken API")).paths(new Paths().addPathItem("/a/{b/c}", new PathItem()));
+        var spec = new OpenAPISpec();
+        spec.setLocation("broken.yaml");
+        var rec = new OpenAPIRecord(api, spec);
+        var e = assertThrows(ConfigurationException.class, () -> new OpenAPIValidator(new URIFactory(), rec));
+        assertTrue(e.getMessage().contains("/a/{b/c}"));
+        assertTrue(e.getMessage().contains("Broken API"));
+        assertTrue(e.getMessage().contains("broken.yaml"));
     }
 }
