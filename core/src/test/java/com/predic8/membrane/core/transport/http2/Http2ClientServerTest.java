@@ -32,7 +32,6 @@ import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.HttpServerHandler;
 import com.predic8.membrane.core.transport.http.client.ConnectionConfiguration;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
-import com.predic8.membrane.core.transport.http.client.protocol.Http2ProtocolHandler;
 import com.predic8.membrane.core.util.URIFactory;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
@@ -47,7 +46,10 @@ import java.util.Map;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
 
+import static com.predic8.membrane.core.http.Request.get;
+import static com.predic8.membrane.core.http.Response.ok;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.transport.http.client.protocol.Http2ProtocolHandler.HTTP2_PROTOCOL;
 import static com.predic8.membrane.core.transport.http2.frame.Error.ERROR_INTERNAL_ERROR;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -126,6 +128,16 @@ public class Http2ClientServerTest {
 
 
     @Test
+    void timesAreRecorded() throws Exception {
+        response = ok("here").build();
+        final var exc = get("https://localhost:3049").buildExchange();
+        hc.call(exc);
+        assertNotNull(exc.getProperty(HTTP2_PROTOCOL));
+        assertNotEquals(0, exc.getTimeReqSent());
+        assertTrue(exc.getTimeResReceived() >= exc.getTimeReqSent());
+    }
+
+    @Test
     public void emptyBody() throws Exception {
         test200("");
     }
@@ -140,7 +152,7 @@ public class Http2ClientServerTest {
 
     @Test
     public void testQuery() throws Exception {
-        Response r = test("GET", "/abc?def=ghi&jkl=mno", null, Response.ok().build());
+        Response r = test("GET", "/abc?def=ghi&jkl=mno", null, ok().build());
         assertEquals(200, r.getStatusCode());
         assertEquals("", r.getBodyAsStringDecoded());
     }
@@ -163,7 +175,7 @@ public class Http2ClientServerTest {
     public void testParallelStreams() throws Exception {
         CountDownLatch cdl = new CountDownLatch(2);
         CountDownLatch cdl1 = new CountDownLatch(1);
-        this.response = Response.ok().build();
+        this.response = ok().build();
         this.requestAsserter = req -> {
             cdl1.countDown();
             cdl.countDown();
@@ -197,7 +209,7 @@ public class Http2ClientServerTest {
         }
 
         for (int i = 0; i < 2; i++) {
-            assertNotNull(e[i].getProperty(Http2ProtocolHandler.HTTP2_PROTOCOL));
+            assertNotNull(e[i].getProperty(HTTP2_PROTOCOL));
 
             Response r = e[i].getResponse();
             assertEquals(200, r.getStatusCode());
@@ -228,7 +240,7 @@ public class Http2ClientServerTest {
                 .buildExchange();
         hc.call(e);
 
-        assertNotNull(e.getProperty(Http2ProtocolHandler.HTTP2_PROTOCOL));
+        assertNotNull(e.getProperty(HTTP2_PROTOCOL));
         assertEquals(502, e.getResponse().getStatusCode());
         assertEquals(List.of("hello", "hello"), received, "both attempts must carry the body");
     }
@@ -239,7 +251,7 @@ public class Http2ClientServerTest {
      */
     @Test
     public void largeResponseHeaderBlockArrivesComplete() throws Exception {
-        final var response = Response.ok().build();
+        final var response = ok().build();
         for (var i = 0; i < 30; i++)
             response.getHeader().add("x-large-" + i, largeHeaderValue(i));
 
@@ -252,7 +264,7 @@ public class Http2ClientServerTest {
 
     @Test
     public void largeRequestHeaderBlockArrivesComplete() throws Exception {
-        this.response = Response.ok().build();
+        this.response = ok().build();
         final var received = new CopyOnWriteArrayList<Request>();
         this.requestAsserter = received::add;
 
@@ -262,7 +274,7 @@ public class Http2ClientServerTest {
         final var e = builder.buildExchange();
         hc.call(e);
 
-        assertNotNull(e.getProperty(Http2ProtocolHandler.HTTP2_PROTOCOL));
+        assertNotNull(e.getProperty(HTTP2_PROTOCOL));
         assertEquals(200, e.getResponse().getStatusCode());
         for (var i = 0; i < 30; i++)
             assertEquals(largeHeaderValue(i), received.getFirst().getHeader().getFirstValue("x-large-" + i), "x-large-" + i);
@@ -272,13 +284,13 @@ public class Http2ClientServerTest {
     @Test
     public void longRequestBody() throws Exception {
         final var body = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+!@#$%^&*(){}?+S_|".repeat(2500);
-        final var r = test("POST", "/", body, Response.ok().build());
+        final var r = test("POST", "/", body, ok().build());
         assertEquals(200, r.getStatusCode());
     }
 
     @Test
     public void requestTrailerArrives() throws Exception {
-        this.response = Response.ok().build();
+        this.response = ok().build();
         final var received = new CopyOnWriteArrayList<String>();
         this.requestAsserter = req -> {
             received.add(req.getBodyAsStringDecoded());
@@ -291,14 +303,14 @@ public class Http2ClientServerTest {
                 "5\r\nhello\r\n0\r\nx-checksum: abc\r\n\r\n".getBytes(UTF_8))));
         hc.call(e);
 
-        assertNotNull(e.getProperty(Http2ProtocolHandler.HTTP2_PROTOCOL));
+        assertNotNull(e.getProperty(HTTP2_PROTOCOL));
         assertEquals(200, e.getResponse().getStatusCode());
         assertEquals(List.of("hello", "abc"), received);
     }
 
     @Test
     public void invalidMethodIsRejectedWith501() throws Exception {
-        this.response = Response.ok().build();
+        this.response = ok().build();
         final var reached = new CopyOnWriteArrayList<Request>();
         this.requestAsserter = reached::add;
 
@@ -312,7 +324,7 @@ public class Http2ClientServerTest {
     /** The response headers are already sent when reading the body fails, so the stream can only be reset. */
     @Test
     public void failingResponseBodyResetsStream() throws Exception {
-        final var r = testGet(Response.ok().body(new InputStream() {
+        final var r = testGet(ok().body(new InputStream() {
             @Override
             public int read() throws IOException {
                 throw new IOException("backend body broke");
@@ -336,7 +348,7 @@ public class Http2ClientServerTest {
     }
 
     private void assertRejectedWith431(int fields, int valueLength) throws Exception {
-        this.response = Response.ok().build();
+        this.response = ok().build();
         final var reached = new CopyOnWriteArrayList<Request>();
         this.requestAsserter = reached::add;
 
@@ -346,7 +358,7 @@ public class Http2ClientServerTest {
         final var e = builder.buildExchange();
         hc.call(e);
 
-        assertNotNull(e.getProperty(Http2ProtocolHandler.HTTP2_PROTOCOL));
+        assertNotNull(e.getProperty(HTTP2_PROTOCOL));
         assertEquals(431, e.getResponse().getStatusCode());
         assertEquals(List.of(), reached, "the request must not reach the flow");
     }
@@ -356,7 +368,7 @@ public class Http2ClientServerTest {
     }
 
     private void test200(String body) throws Exception {
-        Response r = testGet(Response.ok(body).build());
+        Response r = testGet(ok(body).build());
 
         assertEquals(200, r.getStatusCode());
         assertEquals(body, r.getBodyAsStringDecoded());
@@ -369,7 +381,7 @@ public class Http2ClientServerTest {
         Exchange e = new Request.Builder().get("https://localhost:3049").buildExchange();
         hc.call(e);
 
-        assertNotNull(e.getProperty(Http2ProtocolHandler.HTTP2_PROTOCOL));
+        assertNotNull(e.getProperty(HTTP2_PROTOCOL));
 
         return e.getResponse();
     }
@@ -396,7 +408,7 @@ public class Http2ClientServerTest {
         Exchange e = b.buildExchange();
         hc.call(e);
 
-        assertNotNull(e.getProperty(Http2ProtocolHandler.HTTP2_PROTOCOL));
+        assertNotNull(e.getProperty(HTTP2_PROTOCOL));
 
         return e.getResponse();
     }

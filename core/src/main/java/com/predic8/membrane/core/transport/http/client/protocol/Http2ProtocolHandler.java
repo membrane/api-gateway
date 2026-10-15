@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 import static com.predic8.membrane.core.exchange.Exchange.ALLOW_H2;
 import static com.predic8.membrane.core.http.Header.*;
 import static java.lang.Boolean.TRUE;
+import static java.lang.System.currentTimeMillis;
 
 public class Http2ProtocolHandler extends AbstractProtocolHandler {
 
@@ -66,6 +67,7 @@ public class Http2ProtocolHandler extends AbstractProtocolHandler {
                     h2c);
         }
         exchange.setResponse(h2c.doCall(exchange, retainBodyForRetry()));
+        exchange.setTimeResReceived(currentTimeMillis());
         exchange.setProperty(HTTP2_PROTOCOL, true);
     }
 

@@ -150,6 +150,8 @@ public class Http2Client implements Runnable, AutoCloseable {
             logic.sender.send(streamId, (encoder, peerSettings) -> createHeadersFrames(exc.getRequest(), exc.getRequest().getHeader(), streamId, encoder, peerSettings, false));
 
             writeMessageBody(streamId, streamInfo, logic.sender, logic.peerSettings, logic.peerFlowControl, exc.getRequest(), retainBody);
+            // Here, as only this method knows when the request is sent completely; it waits for the response next
+            exc.setTimeReqSent(System.currentTimeMillis());
 
             return ri.await();
         } catch (Exception e) {
