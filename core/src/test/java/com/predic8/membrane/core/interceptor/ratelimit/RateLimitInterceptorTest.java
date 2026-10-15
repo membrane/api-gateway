@@ -110,7 +110,7 @@ public class RateLimitInterceptorTest {
 		var strategy = new LazyRateLimit(ofMinutes(1), 1) {
 			@Override
 			public String getLimitReset(String key) {
-				return "customer-a".equals(key) ? "42" : "0";
+				return "key:customer-a".equals(key) ? "42" : "0";
 			}
 		};
 		var strategyField = RateLimitInterceptor.class.getDeclaredField("strategy");
@@ -134,18 +134,77 @@ public class RateLimitInterceptorTest {
 	}
 
 	@Test
-	void keyExpressionEvaluatingToNullFallsBackToUnknown() throws Exception {
-		var interceptor = new RateLimitInterceptor(ofMinutes(1), 1);
+	void keyExpressionEvaluatingToNullFallsBackToClientIp() throws Exception {
+		final var interceptor = new RateLimitInterceptor(ofMinutes(1), 1);
 		interceptor.setLanguage(JSONPATH);
 		interceptor.setKeyExpression("$.missing");
 		interceptor.init(new DummyTestRouter());
 
 		// JSONPath returns null for a path that does not exist
-		var exc = createJsonExchange("a");
+		final var excA = createJsonExchange("a");
+		excA.setRemoteAddrIp("192.0.2.1");
+		final var excB = createJsonExchange("a");
+		excB.setRemoteAddrIp("192.0.2.2");
+
+		assertMissingKeysCountedPerClientIp(interceptor, excA, excB);
+	}
+
+	@Test
+	void failingKeyExpressionFallsBackToClientIp() throws Exception {
+		final var interceptor = new RateLimitInterceptor(ofMinutes(1), 1);
+		interceptor.setKeyExpression("headers['X-Api-Key'].substring(10)");
+		interceptor.init(new DummyTestRouter());
+
+		// substring(10) of a short value throws during evaluation
+		final var excA = new Request.Builder().header("X-Api-Key", "short").buildExchange();
+		excA.setRemoteAddrIp("192.0.2.1");
+		final var excB = new Request.Builder().header("X-Api-Key", "short").buildExchange();
+		excB.setRemoteAddrIp("192.0.2.2");
+
+		assertMissingKeysCountedPerClientIp(interceptor, excA, excB);
+	}
+
+	private static void assertMissingKeysCountedPerClientIp(RateLimitInterceptor interceptor, Exchange excA, Exchange excB) {
+		assertEquals(CONTINUE, interceptor.handleRequest(excA));
+		assertEquals(CONTINUE, interceptor.handleRequest(excB));
+		assertEquals(RETURN, interceptor.handleRequest(excA));
+		assertEquals(429, excA.getResponse().getStatusCode());
+	}
+
+	@Test
+	void keyValueCannotTakeOverClientIpFallbackBucket() throws Exception {
+		final var interceptor = new RateLimitInterceptor(ofMinutes(1), 1);
+		interceptor.setKeyExpression("headers['X-Api-Key']");
+		interceptor.init(new DummyTestRouter());
+
+		final var withoutKey = new Request.Builder().buildExchange();
+		withoutKey.setRemoteAddrIp("192.0.2.1");
+		final var spoofingKey = new Request.Builder().header("X-Api-Key", "192.0.2.1").buildExchange();
+		spoofingKey.setRemoteAddrIp("192.0.2.2");
+
+		assertEquals(CONTINUE, interceptor.handleRequest(spoofingKey));
+		assertEquals(CONTINUE, interceptor.handleRequest(withoutKey));
+	}
+
+	@Test
+	void keyIsDeterminedOncePerRejectedRequest() throws Exception {
+		final var calls = new AtomicInteger();
+		final var interceptor = new RateLimitInterceptor(ofMinutes(1), 1) {
+			@Override
+			protected String getClientIp(Exchange exc) {
+				calls.incrementAndGet();
+				return super.getClientIp(exc);
+			}
+		};
+		interceptor.init(new DummyTestRouter());
+
+		final var exc = new Request.Builder().buildExchange();
+		exc.setRemoteAddrIp("192.0.2.1");
 
 		assertEquals(CONTINUE, interceptor.handleRequest(exc));
+		calls.set(0);
 		assertEquals(RETURN, interceptor.handleRequest(exc));
-		assertEquals(429, exc.getResponse().getStatusCode());
+		assertEquals(1, calls.get());
 	}
 
 	@Test
