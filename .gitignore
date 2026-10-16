@@ -130,3 +130,6 @@ maven-plugin/target/surefire/
 /distribution/conf/apis.yaml
 /distribution/conf/membrane.log
 /.codex
+
+# Serena MCP Server
+./serena
