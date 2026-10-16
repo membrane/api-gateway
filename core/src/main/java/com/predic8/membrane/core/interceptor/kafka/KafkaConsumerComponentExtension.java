@@ -20,8 +20,8 @@ import com.predic8.membrane.core.router.Router;
 import java.util.Map;
 
 /**
- * Receives messages from Kafka. The Membrane Kafka Extension provides the real implementation;
- * without it {@link DummyKafkaConsumerComponentExtension} is used.
+ * Receives messages from Kafka. The Membrane Kafka Extension provides the implementation;
+ * without it the interceptor fails on startup with a ConfigurationException.
  */
 public interface KafkaConsumerComponentExtension {
 

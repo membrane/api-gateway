@@ -16,8 +16,6 @@ package com.predic8.membrane.core.interceptor.kafka;
 
 import com.predic8.membrane.core.util.ConfigurationException;
 
-import java.util.function.Supplier;
-
 /**
  * Detects whether the Membrane Kafka Extension is on the classpath and creates its implementations.
  */
@@ -30,15 +28,15 @@ final class KafkaExtension {
     }
 
     /**
-     * Creates the implementation from the extension if its class is on the classpath, otherwise the fallback.
+     * Creates the implementation from the extension.
      *
-     * @param className Class of the extension, needs a public constructor without parameters
-     * @param type      Interface the class has to implement
-     * @param fallback  Creates the dummy implementation
+     * @param className      Class of the extension, needs a public constructor without parameters
+     * @param type           Interface the class has to implement
+     * @param missingMessage Message of the ConfigurationException thrown if the class is not on the classpath
      */
-    static <T> T load(final String className, final Class<T> type, final Supplier<T> fallback) {
+    static <T> T load(final String className, final Class<T> type, final String missingMessage) {
         if (!isOnClasspath(className))
-            return fallback.get();
+            throw new ConfigurationException(missingMessage);
         try {
             return Class.forName(className, true, KafkaExtension.class.getClassLoader())
                     .asSubclass(type)

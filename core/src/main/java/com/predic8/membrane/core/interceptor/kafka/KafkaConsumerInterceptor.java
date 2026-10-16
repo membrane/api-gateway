@@ -22,8 +22,6 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.InternalRoutingInterceptor;
 import com.predic8.membrane.core.util.ConfigurationException;
 import jakarta.annotation.PreDestroy;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -40,8 +38,8 @@ import static com.predic8.membrane.core.interceptor.kafka.KafkaExtension.*;
  *
  * @description <p>Consumes messages from an Apache Kafka topic and forwards each message to an internal API.</p>
  *
- * <p>The interceptor needs the Membrane Kafka Extension. Without the extension no messages are received,
- * calls are only logged. Contact predic8 for the extension.</p>
+ * <p>The interceptor needs the Membrane Kafka Extension. Without the extension Membrane does not start.
+ * Contact predic8 for the extension.</p>
  * @yaml
  * <pre><code>
  * kafkaConsumer:
@@ -54,8 +52,6 @@ import static com.predic8.membrane.core.interceptor.kafka.KafkaExtension.*;
  */
 @MCElement(name = "kafkaConsumer", component = true)
 public class KafkaConsumerInterceptor extends AbstractInterceptor {
-
-    private static final Logger log = LoggerFactory.getLogger(KafkaConsumerInterceptor.class);
 
     private String bootstrapServers;
     private String topic;
@@ -84,11 +80,10 @@ public class KafkaConsumerInterceptor extends AbstractInterceptor {
         super.init();
         if (forward == null || !forward.startsWith("internal:"))
             throw new ConfigurationException("The forward of kafkaConsumer must be the URI of an internal API, e.g. internal://order-handler, but was '%s'.".formatted(forward));
-        if (!isOnClasspath(CONSUMER_CLASS))
-            log.warn("The Membrane Kafka Extension is needed for the kafkaConsumer interceptor. Without it no messages are received from Kafka. Ask info@predic8.de.");
         internalRouting = new InternalRoutingInterceptor();
         internalRouting.init(router);
-        consumer = load(CONSUMER_CLASS, KafkaConsumerComponentExtension.class, DummyKafkaConsumerComponentExtension::new);
+        consumer = load(CONSUMER_CLASS, KafkaConsumerComponentExtension.class,
+                "The Membrane Kafka Extension is needed for the kafkaConsumer interceptor. Ask info@predic8.de.");
         consumer.init(router, consumerProperties());
         consumer.start(topic, this::forward);
     }

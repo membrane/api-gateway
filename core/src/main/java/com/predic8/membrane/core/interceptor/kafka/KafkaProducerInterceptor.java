@@ -39,8 +39,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 /**
  * @description <p>Publishes the body of the request as a message to an Apache Kafka topic.</p>
  *
- * <p>The interceptor needs the Membrane Kafka Extension. Without the extension nothing is sent to Kafka,
- * calls are only logged. Contact predic8 for the extension.</p>
+ * <p>The interceptor needs the Membrane Kafka Extension. Without the extension Membrane does not start.
+ * Contact predic8 for the extension.</p>
  * @yaml
  * <pre><code>
  * kafkaProducer:
@@ -81,11 +81,10 @@ public class KafkaProducerInterceptor extends AbstractLanguageInterceptor {
     @Override
     public void init() {
         super.init();
-        if (!isOnClasspath(PRODUCER_CLASS))
-            log.warn("The Membrane Kafka Extension is needed for the kafkaProducer interceptor. Without it messages are not sent to Kafka. Ask info@predic8.de.");
         if (key != null)
             keyExpression = expression(this, language, key);
-        producer = load(PRODUCER_CLASS, KafkaProducerExtension.class, DummyKafkaProducerExtension::new);
+        producer = load(PRODUCER_CLASS, KafkaProducerExtension.class,
+                "The Membrane Kafka Extension is needed for the kafkaProducer interceptor. Ask info@predic8.de.");
         producer.init(producerProperties());
     }
 

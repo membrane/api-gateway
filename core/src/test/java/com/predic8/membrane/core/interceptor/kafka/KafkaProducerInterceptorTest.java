@@ -15,42 +15,20 @@
 package com.predic8.membrane.core.interceptor.kafka;
 
 import com.predic8.membrane.core.router.DummyTestRouter;
+import com.predic8.membrane.core.util.ConfigurationException;
 import org.junit.jupiter.api.Test;
 
-import static com.predic8.membrane.core.http.Request.post;
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class KafkaProducerInterceptorTest {
 
     @Test
-    void continuesWithDummyProducer() throws Exception {
+    void missingExtensionFailsOnStartup() {
         final var i = new KafkaProducerInterceptor();
         i.setBootstrapServers("localhost:9092");
         i.setTopic("orders");
-        i.setKey("headers['X-Id']");
-        i.init(new DummyTestRouter());
-
-        final var exc = post("/").header("X-Id", "42").body("hello").buildExchange();
-        assertEquals(CONTINUE, i.handleRequest(exc));
-    }
-
-    @Test
-    void destroyStopsProducer() {
-        final var i = new KafkaProducerInterceptor();
-        i.setBootstrapServers("localhost:9092");
-        i.setTopic("orders");
-        i.init(new DummyTestRouter());
-        i.destroy();
-    }
-
-    @Test
-    void worksWithoutKey() throws Exception {
-        final var i = new KafkaProducerInterceptor();
-        i.setBootstrapServers("localhost:9092");
-        i.setTopic("orders");
-        i.init(new DummyTestRouter());
-
-        assertEquals(CONTINUE, i.handleRequest(post("/").body("hello").buildExchange()));
+        final var e = assertThrows(ConfigurationException.class, () -> i.init(new DummyTestRouter()));
+        assertTrue(e.getMessage().contains("Membrane Kafka Extension"));
     }
 }

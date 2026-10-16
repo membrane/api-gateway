@@ -14,25 +14,12 @@
 
 package com.predic8.membrane.core.interceptor.kafka;
 
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.proxies.InternalProxy;
 import com.predic8.membrane.core.router.DummyTestRouter;
-import com.predic8.membrane.core.router.TestRouter;
 import com.predic8.membrane.core.util.ConfigurationException;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import static com.predic8.membrane.core.http.Request.post;
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static com.predic8.membrane.core.interceptor.kafka.KafkaConsumerComponentExtension.KEY_PROPERTY;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class KafkaConsumerInterceptorTest {
 
@@ -45,74 +32,20 @@ class KafkaConsumerInterceptorTest {
     }
 
     @Test
-    void initWithDummyConsumer() {
-        consumer("internal://handler").init(new DummyTestRouter());
+    void missingExtensionFailsOnStartup() {
+        final var e = assertThrows(ConfigurationException.class, () -> consumer("internal://handler").init(new DummyTestRouter()));
+        assertTrue(e.getMessage().contains("Membrane Kafka Extension"));
     }
 
     @Test
     void forwardIsRequired() {
-        final var i = new KafkaConsumerInterceptor();
-        i.setBootstrapServers("localhost:9092");
-        i.setTopic("orders");
-        assertThrows(ConfigurationException.class, () -> i.init(new DummyTestRouter()));
-    }
-
-    @Test
-    void destroyStopsConsumer() {
-        final var i = consumer("internal://handler");
-        i.init(new DummyTestRouter());
-        i.destroy();
+        final var e = assertThrows(ConfigurationException.class, () -> consumer(null).init(new DummyTestRouter()));
+        assertTrue(e.getMessage().contains("forward"));
     }
 
     @Test
     void forwardMustBeInternal() {
-        assertThrows(ConfigurationException.class, () -> consumer("http://example.com").init(new DummyTestRouter()));
-    }
-
-    @Test
-    void failedForwardIsReported() throws Exception {
-        final var router = new TestRouter();
-        final var internal = new InternalProxy();
-        internal.setName("failing");
-        internal.setFlow(List.of(new AbstractInterceptor() {
-            @Override
-            public Outcome handleRequest(final Exchange exc) {
-                exc.setResponse(Response.internalServerError().build());
-                return Outcome.RETURN;
-            }
-        }));
-        router.add(internal);
-
-        final var i = consumer("internal://failing");
-        i.init(router);
-        assertThrows(IllegalStateException.class, () -> i.forward(post("/").body("hello").buildExchange()));
-    }
-
-    @Test
-    void forwardsMessageToInternalApi() throws Exception {
-        final var bodies = new ArrayList<String>();
-        final var keys = new ArrayList<String>();
-
-        final var router = new TestRouter();
-        final var internal = new InternalProxy();
-        internal.setName("handler");
-        internal.setFlow(List.of(new AbstractInterceptor() {
-            @Override
-            public Outcome handleRequest(final Exchange exc) {
-                bodies.add(exc.getRequest().getBodyAsStringDecoded());
-                keys.add(new String(exc.getProperty(KEY_PROPERTY, byte[].class), UTF_8));
-                return CONTINUE;
-            }
-        }));
-        router.add(internal);
-
-        final var i = consumer("internal://handler");
-        i.init(router);
-        final var exc = post("/").body("hello").buildExchange();
-        exc.setProperty(KEY_PROPERTY, "k1".getBytes(UTF_8));
-        i.forward(exc);
-
-        assertEquals(List.of("hello"), bodies);
-        assertEquals(List.of("k1"), keys);
+        final var e = assertThrows(ConfigurationException.class, () -> consumer("http://example.com").init(new DummyTestRouter()));
+        assertTrue(e.getMessage().contains("forward"));
     }
 }

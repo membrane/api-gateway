@@ -20,8 +20,8 @@ import java.io.IOException;
 import java.util.Map;
 
 /**
- * Sends messages to Kafka. The Membrane Kafka Extension provides the real implementation;
- * without it {@link DummyKafkaProducerExtension} is used.
+ * Sends messages to Kafka. The Membrane Kafka Extension provides the implementation;
+ * without it the interceptor fails on startup with a ConfigurationException.
  */
 public interface KafkaProducerExtension {
 

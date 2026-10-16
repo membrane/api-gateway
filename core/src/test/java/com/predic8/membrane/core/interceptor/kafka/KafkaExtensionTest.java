@@ -14,8 +14,11 @@
 
 package com.predic8.membrane.core.interceptor.kafka;
 
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.util.ConfigurationException;
 import org.junit.jupiter.api.Test;
+
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -26,24 +29,35 @@ class KafkaExtensionTest {
         assertTrue(KafkaExtension.isOnClasspath("java.lang.String"));
     }
 
-    public static class ProducerImpl extends DummyKafkaProducerExtension {
+    public static class ProducerImpl implements KafkaProducerExtension {
+        @Override
+        public void init(final Map<String, String> properties) {
+        }
+
+        @Override
+        public void send(final String topic, final byte[] key, final Exchange exc) {
+        }
+
+        @Override
+        public void stop() {
+        }
     }
 
     @Test
     void loadsClassOnClasspath() {
-        final var producer = KafkaExtension.load(ProducerImpl.class.getName(), KafkaProducerExtension.class, DummyKafkaProducerExtension::new);
+        final var producer = KafkaExtension.load(ProducerImpl.class.getName(), KafkaProducerExtension.class, "missing");
         assertEquals(ProducerImpl.class, producer.getClass());
     }
 
     @Test
-    void loadsFallbackIfClassIsMissing() {
-        final var producer = KafkaExtension.load(KafkaExtension.PRODUCER_CLASS, KafkaProducerExtension.class, DummyKafkaProducerExtension::new);
-        assertEquals(DummyKafkaProducerExtension.class, producer.getClass());
+    void rejectsMissingClass() {
+        final var e = assertThrows(ConfigurationException.class, () -> KafkaExtension.load(KafkaExtension.PRODUCER_CLASS, KafkaProducerExtension.class, "missing"));
+        assertEquals("missing", e.getMessage());
     }
 
     @Test
     void rejectsClassOfWrongType() {
-        assertThrows(ConfigurationException.class, () -> KafkaExtension.load("java.lang.String", KafkaProducerExtension.class, DummyKafkaProducerExtension::new));
+        assertThrows(ConfigurationException.class, () -> KafkaExtension.load("java.lang.String", KafkaProducerExtension.class, "missing"));
     }
 
     @Test
