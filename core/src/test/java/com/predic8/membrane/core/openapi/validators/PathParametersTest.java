@@ -105,4 +105,17 @@ protected String getOpenAPIFileName() {
         assertEquals(1,errors.size());
         assertTrue(errors.get(0).getMessage().contains("'_' does not match"));
     }
+
+    @Test
+    void declaredPathParameterNotInTemplateIsIgnored() {
+        final var errors = validator.validate(get().path("/v1/pets/7"));
+        assertEquals(0, errors.size());
+    }
+
+    @Test
+    void declaredPathParameterNotInTemplateOthersStillValidated() {
+        final var errors = validator.validate(get().path("/v1/pets/abc"));
+        assertEquals(1, errors.size());
+        assertTrue(errors.getFirst().getMessage().contains("not an integer"));
+    }
 }

@@ -19,6 +19,7 @@ package com.predic8.membrane.core.openapi.validators;
 import com.predic8.membrane.core.openapi.model.*;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.parameters.*;
+import org.slf4j.*;
 
 import java.util.*;
 
@@ -26,6 +27,8 @@ import static com.predic8.membrane.core.openapi.util.Utils.getComponentLocalName
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.PATH_PARAMETER;
 
 public class PathParametersValidator {
+
+    private static final Logger log = LoggerFactory.getLogger(PathParametersValidator.class);
 
     final OpenAPI api;
     final ValidationErrors errors = new ValidationErrors();
@@ -42,7 +45,9 @@ public class PathParametersValidator {
         schemaParameters.stream().map(this::resolveRefs).filter(this::isPathParameter).forEach(parameter -> {
             String value = req.getPathParameters().get(parameter.getName());
             if (value == null) {
-                throw new RuntimeException("Should not happen! No null for parameter " + parameter);
+                log.warn("Invalid OpenAPI '{}': the path parameter '{}' is declared, but the path template '{}' has no template expression {{}}. Skipping the validation of this parameter. Please correct the OpenAPI document and check it with a linter.",
+                        api.getInfo() != null ? api.getInfo().getTitle() : "", parameter.getName(), ctx.getUriTemplate(), parameter.getName());
+                return;
             }
             errors.add(new SchemaValidator(api, parameter.getSchema()).validate(ctx.entityType(PATH_PARAMETER)
                     .entity(parameter.getName())
