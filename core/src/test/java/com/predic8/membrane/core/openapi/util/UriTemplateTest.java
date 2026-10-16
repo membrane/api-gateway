@@ -48,6 +48,23 @@ class UriTemplateTest {
         assertTrue(UriTemplate.of("/foo/").matches("/foo"));
     }
 
+    /**
+     * OpenAPI: the value of a path parameter MUST NOT contain an unescaped /, ? or #.
+     */
+    @Test
+    void unescapedHashInValueDoesNotMatch() {
+        final var template = UriTemplate.of("/items/{id}");
+        assertFalse(template.matches("/items/a#b"));
+        assertTrue(template.match("/items/a#b").isEmpty());
+        assertFalse(UriTemplate.of("/items/{id}/x").matches("/items/a#b/x"));
+        assertFalse(UriTemplate.of("/items/{id}", true).matches("/items/a#b"));
+    }
+
+    @Test
+    void escapedHashInValueIsDecoded() {
+        assertEquals(Map.of("id", "a#b"), UriTemplate.of("/items/{id}").match("/items/a%23b").orElseThrow());
+    }
+
     @Test
     void plusIsNoSpace() {
         assertEquals(Map.of("name", "a+b"), UriTemplate.of("/users/{name}").match("/users/a+b").orElseThrow());

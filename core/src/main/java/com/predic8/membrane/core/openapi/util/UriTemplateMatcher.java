@@ -26,7 +26,10 @@ public class UriTemplateMatcher {
      * OpenAPI template-expression-param-name: every character but { and }, including /, ? and #.
      */
     public static final String PARAM_NAME_REGEX = "\\{([^{}]+)}";
-    public static final String URI_PARAM_MATCH = "[^/]+";
+    /**
+     * OpenAPI: the value of a path parameter MUST NOT contain an unescaped /, ? or #.
+     */
+    public static final String URI_PARAM_MATCH = "[^/?#]+";
     private static final Pattern PARAM_NAME_REGEX_PATTERN = compile(PARAM_NAME_REGEX);
 
     /**

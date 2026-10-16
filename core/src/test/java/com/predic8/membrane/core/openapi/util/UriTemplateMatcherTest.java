@@ -35,7 +35,7 @@ public class UriTemplateMatcherTest {
 
     @Test
     public void prepareRegex() {
-        assertEquals("/foo/(?<param0>[^/]+)/(?<param1>[^/]+)", prepareTemplate("/foo/{id1}/{id2}"));
+        assertEquals("/foo/(?<param0>[^/?#]+)/(?<param1>[^/?#]+)", prepareTemplate("/foo/{id1}/{id2}"));
     }
 
     @Test
