@@ -22,9 +22,12 @@ import com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec;
 import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.URIFactory;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.Paths;
 import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.media.IntegerSchema;
+import io.swagger.v3.oas.models.parameters.PathParameter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -114,5 +117,45 @@ class OpenAPIValidatorTest {
         var api = new OpenAPI().info(new Info().title("Broken API")).paths(new Paths().addPathItem("/a/{id}/b/{id}", new PathItem()));
         var e = assertThrows(ConfigurationException.class, () -> new OpenAPIValidator(new URIFactory(), new OpenAPIRecord(api, new OpenAPISpec())));
         assertTrue(e.getMessage().contains("/a/{id}/b/{id}"));
+    }
+
+    /**
+     * OpenAPI: concrete paths are matched before their templated counterparts, independent of their order.
+     */
+    @Test
+    void concretePathPrecedesTemplatedPathWithOtherMethod() {
+        var api = new OpenAPI().paths(new Paths()
+                .addPathItem("/pets/{id}", new PathItem().post(new Operation()))
+                .addPathItem("/pets/mine", new PathItem().get(new Operation())));
+        var validator = new OpenAPIValidator(new URIFactory(), new OpenAPIRecord(api, new OpenAPISpec()));
+        assertEquals(0, validator.validate(get().path("/pets/mine")).size());
+        assertEquals(405, validator.validate(get().path("/pets/7")).getFirst().getContext().getStatusCode());
+    }
+
+    @Test
+    void concretePathPrecedesTemplatedPathWithSameMethod() {
+        var api = new OpenAPI().paths(new Paths()
+                .addPathItem("/pets/{id}", new PathItem().get(new Operation()
+                        .addParametersItem(new PathParameter().name("id").schema(new IntegerSchema()))))
+                .addPathItem("/pets/mine", new PathItem().get(new Operation())));
+        var validator = new OpenAPIValidator(new URIFactory(), new OpenAPIRecord(api, new OpenAPISpec()));
+        assertEquals(0, validator.validate(get().path("/pets/mine")).size());
+        assertEquals(0, validator.validate(get().path("/pets/7")).size());
+    }
+
+    /**
+     * Ambiguous templated paths are left to the tooling by OpenAPI: the first matching path that has the method is used.
+     */
+    @Test
+    void ambiguousTemplatedPathWithoutMethodIsSkipped() {
+        var api = new OpenAPI().paths(new Paths()
+                .addPathItem("/books/{id}", new PathItem().post(new Operation()))
+                .addPathItem("/{entity}/me", new PathItem().get(new Operation())));
+        var validator = new OpenAPIValidator(new URIFactory(), new OpenAPIRecord(api, new OpenAPISpec()));
+        assertEquals(0, validator.validate(get().path("/books/me")).size());
+        assertEquals(0, validator.validate(Request.post().path("/books/me")).size());
+        assertEquals(405, validator.validate(Request.put().path("/books/me")).getFirst().getContext().getStatusCode());
+        assertEquals(405, validator.validate(get().path("/books/7")).getFirst().getContext().getStatusCode());
+        assertEquals(404, validator.validate(get().path("/books/7/x")).getFirst().getContext().getStatusCode());
     }
 }
