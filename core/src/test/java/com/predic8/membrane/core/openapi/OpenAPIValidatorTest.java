@@ -158,4 +158,35 @@ class OpenAPIValidatorTest {
         assertEquals(405, validator.validate(get().path("/books/7")).getFirst().getContext().getStatusCode());
         assertEquals(404, validator.validate(get().path("/books/7/x")).getFirst().getContext().getStatusCode());
     }
+
+    /**
+     * OpenAPI: templated paths with the same hierarchy but different templated names MUST NOT exist as they are identical.
+     */
+    @Test
+    void equivalentTemplatedPathsAreAConfigurationError() {
+        var api = new OpenAPI().info(new Info().title("Broken API")).paths(new Paths()
+                .addPathItem("/pets/{id}", new PathItem().get(new Operation()))
+                .addPathItem("/pets/{name}", new PathItem().post(new Operation())));
+        var e = assertThrows(ConfigurationException.class, () -> new OpenAPIValidator(new URIFactory(), new OpenAPIRecord(api, new OpenAPISpec())));
+        assertTrue(e.getMessage().contains("/pets/{id}"));
+        assertTrue(e.getMessage().contains("/pets/{name}"));
+    }
+
+    @Test
+    void equivalentTemplatedPathsWithSeveralParametersAreAConfigurationError() {
+        var api = new OpenAPI().paths(new Paths()
+                .addPathItem("/{a}/files/{b}.json", new PathItem().get(new Operation()))
+                .addPathItem("/{x}/files/{y}.json", new PathItem().get(new Operation())));
+        assertThrows(ConfigurationException.class, () -> new OpenAPIValidator(new URIFactory(), new OpenAPIRecord(api, new OpenAPISpec())));
+    }
+
+    @Test
+    void templatedPathsWithDifferentHierarchyAreNoConfigurationError() {
+        var api = new OpenAPI().paths(new Paths()
+                .addPathItem("/pets/{id}", new PathItem().get(new Operation()))
+                .addPathItem("/pets/{id}/toys", new PathItem().get(new Operation()))
+                .addPathItem("/pets/{name}.json", new PathItem().get(new Operation()))
+                .addPathItem("/{entity}/{id}", new PathItem().get(new Operation())));
+        new OpenAPIValidator(new URIFactory(), new OpenAPIRecord(api, new OpenAPISpec()));
+    }
 }

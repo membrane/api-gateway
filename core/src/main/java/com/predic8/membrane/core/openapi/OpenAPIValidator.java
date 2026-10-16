@@ -34,8 +34,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URISyntaxException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.regex.Pattern;
 
+import static com.predic8.membrane.core.openapi.util.UriTemplateMatcher.PARAM_NAME_REGEX;
 import static com.predic8.membrane.core.openapi.util.UriUtil.normalizeUri;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.METHOD;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.PATH;
@@ -46,6 +49,8 @@ import static java.util.Comparator.comparing;
 public class OpenAPIValidator {
 
     private static final Logger log = LoggerFactory.getLogger(OpenAPIValidator.class.getName());
+
+    private static final Pattern PARAM_NAME_PATTERN = Pattern.compile(PARAM_NAME_REGEX);
 
     private final OpenAPIRecord rec;
     private final URIFactory uriFactory;
@@ -72,6 +77,7 @@ public class OpenAPIValidator {
         this.uriFactory = uriFactory;
         init();
         pathTemplates = compilePathTemplates();
+        checkForEquivalentPaths();
     }
 
     /**
@@ -100,6 +106,22 @@ public class OpenAPIValidator {
 
     private static boolean isTemplated(String path) {
         return path.contains("{");
+    }
+
+    /**
+     * OpenAPI: templated paths with the same hierarchy but different templated names MUST NOT exist as they are identical.
+     */
+    private void checkForEquivalentPaths() {
+        final var pathsWithoutNames = new HashMap<String, String>();
+        for (final var path : pathTemplates) {
+            final var equivalent = pathsWithoutNames.putIfAbsent(withoutParameterNames(path.uriTemplate()), path.uriTemplate());
+            if (equivalent != null)
+                throw new ConfigurationException("Paths %s and %s of OpenAPI %s are identical, they differ only in parameter names.".formatted(equivalent, path.uriTemplate(), describeOpenAPI()));
+        }
+    }
+
+    private static String withoutParameterNames(String path) {
+        return PARAM_NAME_PATTERN.matcher(path).replaceAll("{}");
     }
 
     private UriTemplate compile(String pathTemplate) {
