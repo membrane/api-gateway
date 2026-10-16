@@ -48,5 +48,11 @@ api:
     url: https://api.predic8.de
 
 # NOTE:
+#     With Docker, localhost is the container itself. Use an address of the
+#     proxy that is reachable from inside the container. For a proxy on your
+#     own machine, use host.docker.internal on Docker Desktop. On Linux, start with
+#       MEMBRANE_DOCKER_OPTS="--add-host=host.docker.internal:host-gateway" ./run-docker.sh -c 11-First-API-Proxy-Configuration.yaml
+#     and let the proxy listen on an interface other than 127.0.0.1.
+#
 #     For all options, e.g. proxies with TLS, see:
 #     https://www.membrane-api.io/docs/current/proxy-configuration.html
