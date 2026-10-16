@@ -132,4 +132,4 @@ maven-plugin/target/surefire/
 /.codex
 
 # Serena MCP Server
-./serena
+/.serena
