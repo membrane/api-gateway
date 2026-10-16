@@ -124,6 +124,51 @@ Runs too short to contain a full sampling interval report no CPU result. The his
 figures in the results documents used the older activity-filtered method and are not directly
 comparable to new runs.
 
+## GC logs and per-run results
+
+The gateway always writes a GC and safepoint log (`-Xlog:gc*,safepoint`, epoch-millisecond
+timestamps, no rotation). After each run, `run-scenario.sh` fetches it and saves everything about
+the run under `results/<YYYYMMDD-HHMMSS>-<scenario>-<RUN_LABEL>/` (gitignored):
+
+| File | Content |
+|---|---|
+| `run.txt` | Scenario, label, concurrency, request counts, `GC_OPTS` |
+| `client.out` | Client output: RPS, OK/ERR, latency percentiles, measured window |
+| `cpu-summary.txt` | CPU summary per VM |
+| `gc.log` | The gateway's GC and safepoint log |
+| `gc-summary.txt` | `gc-summary.awk` output for the measured window |
+| `gateway.log` | The gateway's console output |
+| `jvm-flags.txt` | The effective JVM flags (`-XX:+PrintCommandLineFlags`) |
+
+`gc-summary.awk` reads Parallel, G1 and generational ZGC logs and prints the pauses inside the
+client's measured window (count, full GCs, total, max, p99, share of the window, GC CPU, heap after
+GC), the longest safepoint including the time to reach it, ZGC allocation stalls if there were any,
+and the pauses before the window (startup, warmup, or earlier runs). To re-run it on a saved log:
+
+```sh
+LC_ALL=C awk -v start=<epoch ms> -v end=<epoch ms> -f gc-summary.awk results/<run>/gc.log
+```
+
+with `start` and `end` from the `MEASURED_WINDOW` line in `client.out`.
+
+`run-scenario.sh` also reads:
+
+- `GC_OPTS`: the gateway's collector and heap flags, default
+  `-Xms32g -Xmx32g -XX:+AlwaysPreTouch -XX:+UseParallelGC`. `GC_OPTS=''` runs the JVM's defaults.
+  GC logging is added independently of it.
+- `RUN_LABEL`: names the results directory, default `tuned`.
+- `GATEWAY_RESTART=false`: keeps the running gateway JVM instead of restarting it, for soak tests.
+  The gateway must have been started by `run-scenario.sh` for the same scenario; the script
+  refuses otherwise. For example, one hour of `fullproxy` against a 2 GB G1 heap:
+
+  ```sh
+  GC_OPTS='-Xms2g -Xmx2g' LOAD_TOTAL=10000000 RUN_LABEL=soak-g1-2g ./run-scenario.sh fullproxy
+  end=$(( $(date +%s) + 3600 ))
+  while (( $(date +%s) < end )); do
+    LOAD_TOTAL=10000000 GATEWAY_RESTART=false RUN_LABEL=soak-g1-2g ./run-scenario.sh fullproxy
+  done
+  ```
+
 ## Configuration
 
 All scripts read sensible defaults but can be overridden via environment variables, e.g.:
@@ -138,7 +183,7 @@ See the top of each script for the variables it accepts.
 
 - VM performance on shared cloud hardware varies run to run; don't expect to reproduce exact RPS
   figures, only the relative ordering and rough magnitude.
-- The per-scenario concurrency defaults and the JVM heap/GC flags (`JAVA_OPTS` in `run-scenario.sh`) were
+- The per-scenario concurrency defaults and the JVM heap/GC flags (`GC_OPTS` in `run-scenario.sh`) were
   found empirically to work best for the current default VM sizes -- they are very unlikely to be
   optimal for different sizes. If you change `*_SIZE`, re-sweep concurrency (e.g.
   64/100/150/220/300) before trusting a single number.

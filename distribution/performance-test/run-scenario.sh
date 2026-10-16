@@ -23,11 +23,21 @@ LOAD_WARMUP=${LOAD_WARMUP:-1000000}
 
 RG=${RG:-membrane-perftest-rg}
 ADMIN_USER=${ADMIN_USER:-azureuser}
-# Fixed, pre-touched heap + ParallelGC: measured to use noticeably less gateway CPU than the
-# JVM's adaptive default for the same throughput, with total GC pause time under 100ms across a
-# full 1,000,000-request run (see TESTED-CONFIGURATIONS.md, "Heap size and GC tuning"). Override
-# or blank out via the JAVA_OPTS env var to compare against the JVM's untuned defaults.
-JAVA_OPTS=${JAVA_OPTS-'-Xms32g -Xmx32g -XX:+AlwaysPreTouch -XX:+UseParallelGC -Xlog:gc*,safepoint:file=gc.log:time,uptime,level,tags'}
+# Collector and heap flags. Fixed, pre-touched heap + ParallelGC: measured to use noticeably less
+# gateway CPU than the JVM's adaptive default for the same throughput. Override via the GC_OPTS
+# env var to compare other settings; GC_OPTS='' (set but empty) runs the JVM's untuned defaults.
+# GC logging is added separately (GC_LOG_OPTS below), so overriding GC_OPTS keeps it.
+GC_OPTS=${GC_OPTS-'-Xms32g -Xmx32g -XX:+AlwaysPreTouch -XX:+UseParallelGC'}
+# Names this run's results directory, e.g. tuned, g1-2g, soak-g1-2g.
+RUN_LABEL=${RUN_LABEL:-tuned}
+if [[ ! "$RUN_LABEL" =~ ^[A-Za-z0-9._-]+$ ]]; then
+  echo "RUN_LABEL may only contain letters, digits, '.', '_' and '-'" >&2
+  exit 1
+fi
+# GATEWAY_RESTART=false keeps the running gateway JVM (and its gc.log) instead of restarting it
+# with this scenario's config, so back-to-back runs form a soak test against one JVM. The running
+# gateway must have been started by this script for the same scenario; GC_OPTS has no effect then.
+GATEWAY_RESTART=${GATEWAY_RESTART:-true}
 PT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # shortcircuit/openapi-validation use a small fixed POST+JSON body, same as always. fullproxy and
@@ -39,8 +49,8 @@ PT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # unlike openapi-validation, which must keep the small body to satisfy the OpenAPI spec it
 # validates against. rate-limit-basic-auth-tls is in turn built directly on rate-limit-basic-auth
 # (same body/backlog/credentials/rate limit), adding only TLS on both hops, so its RPS subtracts
-# directly against rate-limit-basic-auth's to isolate the added TLS cost. See
-# TESTED-CONFIGURATIONS.md for the full concurrency/body sweep history behind these defaults.
+# directly against rate-limit-basic-auth's to isolate the added TLS cost. The concurrency/body
+# sweeps behind these defaults were documented in TESTED-CONFIGURATIONS.md (removed in 1bd2951f5).
 # (A GET/no-body variant of fullproxy was measured once and found statistically indistinguishable
 # in RPS -- the JSON body isn't on the gateway's/backend's critical path in this scenario, since
 # neither validates nor inspects it -- so the payload-size question only matters for byte-transfer
@@ -90,32 +100,58 @@ if [[ "$GHOME" != /home/"$ADMIN_USER"/membrane-api-gateway-* || "$GHOME" == *$'\
   exit 1
 fi
 
-echo ">>> [$SCENARIO] stopping any running gateway"
-# The bracket trick ([R]outerCLI) keeps pkill/pgrep from matching their own ssh-invoked command
-# line, which otherwise contains the literal string "RouterCLI" and would self-match/self-kill.
-# Wait for it to actually exit (not a fixed sleep) so the new gateway below isn't racing it for
-# port 2000.
-$SSH "$ADMIN_USER@$GATEWAY_PUB" "pkill -f '[R]outerCLI' || true; for i in \$(seq 1 20); do pgrep -f '[R]outerCLI' >/dev/null || exit 0; sleep 0.5; done; echo 'old gateway did not exit in time' >&2; exit 1"
+# Epoch-ms timestamps (timemillis) let gc-summary.awk match pauses against the client's
+# MEASURED_WINDOW. gc* includes gc+cpu (User/Sys/Real per collection), which shows the concurrent
+# work of G1 that never appears as pause time. filecount=0 disables rotation, so a soak run keeps
+# the start of the log. PrintCommandLineFlags records the effective JVM flags in gateway.log.
+GC_LOG_OPTS="-Xlog:gc*,safepoint:file=$GHOME/gc.log:timemillis,uptime,level,tags:filecount=0 -XX:+PrintCommandLineFlags"
+JAVA_OPTS="$GC_OPTS $GC_LOG_OPTS"
 
-echo ">>> [$SCENARIO] starting gateway with $CONFIG (JAVA_OPTS='$JAVA_OPTS')"
-# Keep setup in the foreground. Backgrounding an entire && chain leaves its shell holding
-# the SSH output pipe open, even when the gateway itself has all descriptors redirected.
-$SSH "$ADMIN_USER@$GATEWAY_PUB" "set -e; cd '$GHOME'; rm -f gc.log; JAVA_OPTS='$JAVA_OPTS' nohup ./membrane.sh -c '$GHOME/conf_override/$CONFIG' </dev/null >~/gateway.log 2>&1 & echo \$! > ~/gateway.pid; echo issued"
-# Poll the PID we just launched specifically, plus the gateway's own port -- a broad pgrep here
-# could still match the old process if it lingers, and report OK even though the new one failed
-# to bind. AlwaysPreTouch on a 32GB heap takes longer to come up than the JVM's untuned default.
-$SSH "$ADMIN_USER@$GATEWAY_PUB" "PID=\$(cat ~/gateway.pid); for i in \$(seq 1 30); do kill -0 \$PID 2>/dev/null || { echo 'gateway FAILED (process exited)'; tail -50 ~/gateway.log; exit 1; }; (exec 3<>/dev/tcp/127.0.0.1/2000) 2>/dev/null && exec 3>&- && { echo 'gateway OK'; exit 0; }; sleep 1; done; echo 'gateway FAILED (not ready after 30s)'; tail -50 ~/gateway.log; exit 1"
+RESULTS="$PT/results/$(date +%Y%m%d-%H%M%S)-$SCENARIO-$RUN_LABEL"
+mkdir -p "$RESULTS"
+
+if [[ "$GATEWAY_RESTART" == false ]]; then
+  echo ">>> [$SCENARIO] keeping the running gateway (GATEWAY_RESTART=false)"
+  $SSH "$ADMIN_USER@$GATEWAY_PUB" "PID=\$(cat ~/gateway.pid); kill -0 \$PID 2>/dev/null && (exec 3<>/dev/tcp/127.0.0.1/2000) 2>/dev/null || { echo 'no running gateway; run once without GATEWAY_RESTART=false first' >&2; exit 1; }"
+  # The backend answers every scenario's requests, so a gateway left running with another config
+  # would not show up as errors. Check what the last restart started.
+  RUNNING=$($SSH "$ADMIN_USER@$GATEWAY_PUB" 'cat ~/gateway-run.txt 2>/dev/null' || true)
+  RUNNING_CONFIG=$(sed -n 's/^config=//p' <<< "$RUNNING")
+  if [[ "$RUNNING_CONFIG" != "$CONFIG" ]]; then
+    echo "The running gateway serves '${RUNNING_CONFIG:-unknown}', not $CONFIG; start it once without GATEWAY_RESTART=false" >&2
+    exit 1
+  fi
+  GC_OPTS=$(sed -n 's/^gcOpts=//p' <<< "$RUNNING")
+else
+  echo ">>> [$SCENARIO] stopping any running gateway"
+  # The bracket trick ([R]outerCLI) keeps pkill/pgrep from matching their own ssh-invoked command
+  # line, which otherwise contains the literal string "RouterCLI" and would self-match/self-kill.
+  # Wait for it to actually exit (not a fixed sleep) so the new gateway below isn't racing it for
+  # port 2000.
+  $SSH "$ADMIN_USER@$GATEWAY_PUB" "pkill -f '[R]outerCLI' || true; for i in \$(seq 1 20); do pgrep -f '[R]outerCLI' >/dev/null || exit 0; sleep 0.5; done; echo 'old gateway did not exit in time' >&2; exit 1"
+
+  echo ">>> [$SCENARIO] starting gateway with $CONFIG (JAVA_OPTS='$JAVA_OPTS')"
+  # Keep setup in the foreground. Backgrounding an entire && chain leaves its shell holding
+  # the SSH output pipe open, even when the gateway itself has all descriptors redirected.
+  $SSH "$ADMIN_USER@$GATEWAY_PUB" "set -e; cd '$GHOME'; rm -f gc.log; JAVA_OPTS='$JAVA_OPTS' nohup ./membrane.sh -c '$GHOME/conf_override/$CONFIG' </dev/null >~/gateway.log 2>&1 & echo \$! > ~/gateway.pid; echo issued"
+  # Poll the PID we just launched specifically, plus the gateway's own port -- a broad pgrep here
+  # could still match the old process if it lingers, and report OK even though the new one failed
+  # to bind. AlwaysPreTouch on a 32GB heap takes longer to come up than the JVM's untuned default.
+  $SSH "$ADMIN_USER@$GATEWAY_PUB" "PID=\$(cat ~/gateway.pid); for i in \$(seq 1 30); do kill -0 \$PID 2>/dev/null || { echo 'gateway FAILED (process exited)'; tail -50 ~/gateway.log; exit 1; }; (exec 3<>/dev/tcp/127.0.0.1/2000) 2>/dev/null && exec 3>&- && { echo 'gateway OK'; exit 0; }; sleep 1; done; echo 'gateway FAILED (not ready after 30s)'; tail -50 ~/gateway.log; exit 1"
+  printf 'config=%s\ngcOpts=%s\n' "$CONFIG" "$GC_OPTS" | $SSH "$ADMIN_USER@$GATEWAY_PUB" 'cat > ~/gateway-run.txt'
+fi
+printf 'scenario=%s\nrunLabel=%s\nconcurrency=%s\nloadTotal=%s\nloadWarmup=%s\ngatewayRestart=%s\ngcOpts=%s\ngatewayHome=%s\n' \
+  "$SCENARIO" "$RUN_LABEL" "$CONCURRENCY" "$LOAD_TOTAL" "$LOAD_WARMUP" "$GATEWAY_RESTART" "$GC_OPTS" "$GHOME" > "$RESULTS/run.txt"
 
 echo ">>> [$SCENARIO] starting CPU sampling"
 ROLES=(gw be cl)
 HOSTS=("$GATEWAY_PUB" "$BACKEND_PUB" "$CLIENT_PUB")
 SAMPLE_DIRS=()
-CLIENT_OUTPUT=$(mktemp)
+CLIENT_OUTPUT="$RESULTS/client.out"
 cleanup() {
   for ((i=0; i<${#SAMPLE_DIRS[@]}; i++)); do
     $SSH "$ADMIN_USER@${HOSTS[$i]}" "kill \$(cat '${SAMPLE_DIRS[$i]}/pid') 2>/dev/null || true" || true
   done
-  rm -f "$CLIENT_OUTPUT"
 }
 trap cleanup EXIT
 trap 'exit 130' INT
@@ -140,4 +176,14 @@ for ((i=0; i<${#HOSTS[@]}; i++)); do
   echo "--- ${ROLES[$i]} ---"
   $SSH "$ADMIN_USER@${HOSTS[$i]}" "kill -0 \$(cat '${SAMPLE_DIRS[$i]}/pid') 2>/dev/null || { cat '${SAMPLE_DIRS[$i]}/error.log' >&2; exit 1; }"
   $SSH "$ADMIN_USER@${HOSTS[$i]}" "awk -v start='$START' -v end='$END' -f - '${SAMPLE_DIRS[$i]}/cpu.log'" < "$PT/cpu-summary.awk"
-done
+done | tee "$RESULTS/cpu-summary.txt"
+
+# Fetch with ssh+cat: scp to the gateway once silently copied nothing.
+$SSH "$ADMIN_USER@$GATEWAY_PUB" "cat '$GHOME/gc.log'" > "$RESULTS/gc.log"
+$SSH "$ADMIN_USER@$GATEWAY_PUB" 'cat ~/gateway.log' > "$RESULTS/gateway.log"
+# PrintCommandLineFlags writes the effective flags as the first line starting with -XX:.
+grep -m1 -- '^-XX:' "$RESULTS/gateway.log" > "$RESULTS/jvm-flags.txt" || echo "No JVM flags line in gateway.log" >&2
+
+echo ">>> [$SCENARIO] GC summary (measured window; GC pauses, then all safepoints incl. time to reach them)"
+LC_ALL=C awk -v start="$START" -v end="$END" -f "$PT/gc-summary.awk" "$RESULTS/gc.log" | tee "$RESULTS/gc-summary.txt"
+echo ">>> [$SCENARIO] results in $RESULTS"
