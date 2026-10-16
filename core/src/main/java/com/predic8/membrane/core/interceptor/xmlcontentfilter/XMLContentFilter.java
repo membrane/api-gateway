@@ -19,19 +19,18 @@ import com.predic8.membrane.core.interceptor.xmlcontentfilter.SimpleXPathParser.
 import com.predic8.membrane.core.multipart.XOPReconstitutor;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.xml.XPathUtil;
+import com.predic8.membrane.core.util.xml.parser.HardenedXmlParser;
+import com.predic8.membrane.core.util.xml.parser.XmlParseException;
 import jakarta.mail.internet.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
+import org.xml.sax.InputSource;
 
 import javax.annotation.concurrent.ThreadSafe;
 import javax.xml.namespace.QName;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.FactoryConfigurationError;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.*;
@@ -58,7 +57,6 @@ public class XMLContentFilter {
 	private static final Logger log = LoggerFactory.getLogger(XMLContentFilter.class);
 
 	private final ThreadLocal<XPathExpression> xpe = new ThreadLocal<>();
-	private final ThreadLocal<DocumentBuilder> db = new ThreadLocal<>();
 	private final ThreadLocal<Transformer> t = new ThreadLocal<>();
 	private final XOPReconstitutor xopReconstitutor = new XOPReconstitutor();
 
@@ -125,18 +123,6 @@ public class XMLContentFilter {
 		return res;
 	}
 
-	private DocumentBuilder createDocumentBuilder() throws ParserConfigurationException {
-		DocumentBuilder res = db.get();
-		if (res != null)
-			return res;
-		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-		dbf.setNamespaceAware(true);
-		dbf.setExpandEntityReferences(false);
-		res = dbf.newDocumentBuilder();
-		db.set(res);
-		return res;
-	}
-
 	private Transformer createTransformer() throws TransformerConfigurationException, TransformerFactoryConfigurationError {
 		Transformer res = t.get();
 		if (res != null)
@@ -149,9 +135,14 @@ public class XMLContentFilter {
 	/**
 	 * Removes parts of an XML document based on an XPath expression.
 	 * <p>
-	 * If the message is not valid XML, it is left unchanged.
+	 * A message with an empty body is left unchanged.
+	 *
+	 * @throws XmlParseException if the body cannot be parsed, e.g. because it is not well-formed XML or contains
+	 *                           a DOCTYPE. Such a message must not be forwarded, as it could not be filtered.
 	 */
 	public void removeMatchingElements(Message message) {
+		if (isEmpty(message))
+			return;
 		try {
 			Message xop = null;
 			try {
@@ -164,21 +155,25 @@ public class XMLContentFilter {
 					!elementFinder.matches(xop != null ? xop.getBodyAsStream() : message.getBodyAsStreamDecoded())) {
 				return;
 			}
-			DocumentBuilder db = createDocumentBuilder();
-			Document d;
-			try {
-				d = db.parse(xop != null ? xop.getBodyAsStream() : message.getBodyAsStreamDecoded());
-			} finally {
-				db.reset();
-			}
+			Document d = HardenedXmlParser.getInstance().parse(new InputSource(xop != null ? xop.getBodyAsStream() : message.getBodyAsStreamDecoded()));
 			removeElementsIfNecessary(message, xop, d);
-		} catch (SAXException | XMLStreamException e) {
-			log.warn(e.getMessage());
-		} catch (ParserConfigurationException | XPathExpressionException | IOException |
+		} catch (XMLStreamException e) {
+			throw new XmlParseException("Could not parse XML document: " + e.getMessage());
+		} catch (XPathExpressionException | IOException |
 				 TransformerFactoryConfigurationError | TransformerException e) {
 			log.warn(e.getMessage());
 			throw new RuntimeException(e);
 		}
+	}
+
+	/**
+	 * {@link Message#isBodyEmpty()} answers from the header where it can, so it misses two empty bodies:
+	 * a chunked body announces no length, and the response to a HEAD request keeps the Content-Length of the
+	 * representation, but carries no body. Both would fail to parse and be rejected. Reading the body tells;
+	 * parsing reads it anyway.
+	 */
+	private static boolean isEmpty(Message message) {
+		return message.isBodyEmpty() || message.getBody().getLength() == 0;
 	}
 
 	private void removeElementsIfNecessary(Message originalMessage,

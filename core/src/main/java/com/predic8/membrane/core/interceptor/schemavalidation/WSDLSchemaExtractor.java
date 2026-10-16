@@ -61,6 +61,8 @@ public final class WSDLSchemaExtractor {
     }
 
     private static Document extractSchema(Element originalSchema, List<Attr> definitionNamespaces) throws Exception {
+        // Only used to create an empty Document that receives imported nodes, nothing is parsed here.
+        // Hardening the parser that produced the WSDL is the caller's job.
         var fac = DocumentBuilderFactory.newInstance();
         fac.setNamespaceAware(true);
         var builder = fac.newDocumentBuilder();

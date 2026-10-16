@@ -17,6 +17,7 @@ import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.util.xml.parser.*;
 import org.slf4j.*;
 
 import javax.xml.xpath.*;
@@ -40,7 +41,9 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
  * constructed.
  * </p>
  * <p>
- * If the message body is not well-formed XML, it is left unchanged. If the message is XOP-encoded, the
+ * If the message body cannot be parsed, e.g. because it is not well-formed XML or contains a DOCTYPE, the
+ * message is rejected: with status 400 in the request flow and 500 in the response flow. An empty body is left
+ * unchanged. If the message is XOP-encoded, the
  * XPath-expression is run on the reconstituted message; if it matches, the message is replaced by the
  * modified reconstituted message.
  * </p>
@@ -106,8 +109,21 @@ public class XMLContentFilterInterceptor extends AbstractInterceptor {
         try {
             xmlContentFilter.removeMatchingElements(message);
             return CONTINUE;
+        } catch (ReadingBodyException e) {
+            // Reported centrally: a body that could not be read is no XML error, and the flow controller tells a
+            // request body apart from a backend response body.
+            throw e;
+        } catch (XmlParseException e) {
+            log.info("Rejected message: {}", e.getMessage());
+            (message instanceof Request ? user(router.getConfiguration().isProduction(), getDisplayName())
+                    : internal(router.getConfiguration().isProduction(), getDisplayName()))
+                    .title("XML Error")
+                    .detail(e.getMessage())
+                    .buildAndSetResponse(exc);
+            return ABORT;
         } catch (Exception e) {
-            log.error("", e);
+            log.debug("", e);
+            log.info("Rejected message: {}", e.getMessage());
             internal(router.getConfiguration().isProduction(),getDisplayName())
                     .title("XML Error")
                     .exception(e)
