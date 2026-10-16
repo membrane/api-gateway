@@ -19,19 +19,18 @@ import com.predic8.membrane.core.interceptor.xmlcontentfilter.SimpleXPathParser.
 import com.predic8.membrane.core.multipart.XOPReconstitutor;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.xml.XPathUtil;
+import com.predic8.membrane.core.util.xml.parser.HardenedXmlParser;
+import com.predic8.membrane.core.util.xml.parser.XmlParseException;
 import jakarta.mail.internet.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
+import org.xml.sax.InputSource;
 
 import javax.annotation.concurrent.ThreadSafe;
 import javax.xml.namespace.QName;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.FactoryConfigurationError;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.*;
@@ -58,7 +57,6 @@ public class XMLContentFilter {
 	private static final Logger log = LoggerFactory.getLogger(XMLContentFilter.class);
 
 	private final ThreadLocal<XPathExpression> xpe = new ThreadLocal<>();
-	private final ThreadLocal<DocumentBuilder> db = new ThreadLocal<>();
 	private final ThreadLocal<Transformer> t = new ThreadLocal<>();
 	private final XOPReconstitutor xopReconstitutor = new XOPReconstitutor();
 
@@ -125,18 +123,6 @@ public class XMLContentFilter {
 		return res;
 	}
 
-	private DocumentBuilder createDocumentBuilder() throws ParserConfigurationException {
-		DocumentBuilder res = db.get();
-		if (res != null)
-			return res;
-		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-		dbf.setNamespaceAware(true);
-		dbf.setExpandEntityReferences(false);
-		res = dbf.newDocumentBuilder();
-		db.set(res);
-		return res;
-	}
-
 	private Transformer createTransformer() throws TransformerConfigurationException, TransformerFactoryConfigurationError {
 		Transformer res = t.get();
 		if (res != null)
@@ -164,17 +150,11 @@ public class XMLContentFilter {
 					!elementFinder.matches(xop != null ? xop.getBodyAsStream() : message.getBodyAsStreamDecoded())) {
 				return;
 			}
-			DocumentBuilder db = createDocumentBuilder();
-			Document d;
-			try {
-				d = db.parse(xop != null ? xop.getBodyAsStream() : message.getBodyAsStreamDecoded());
-			} finally {
-				db.reset();
-			}
+			Document d = HardenedXmlParser.getInstance().parse(new InputSource(xop != null ? xop.getBodyAsStream() : message.getBodyAsStreamDecoded()));
 			removeElementsIfNecessary(message, xop, d);
-		} catch (SAXException | XMLStreamException e) {
+		} catch (XMLStreamException | XmlParseException e) {
 			log.warn(e.getMessage());
-		} catch (ParserConfigurationException | XPathExpressionException | IOException |
+		} catch (XPathExpressionException | IOException |
 				 TransformerFactoryConfigurationError | TransformerException e) {
 			log.warn(e.getMessage());
 			throw new RuntimeException(e);

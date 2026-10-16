@@ -51,6 +51,7 @@ public class ProblemDetailsXML {
     }
 
     private static String convertMapToXml(Map<String, Object> map) throws Exception {
+        // Only used to create an empty Document, nothing is parsed, so there is no XXE exposure.
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         dbf.setFeature(FEATURE_SECURE_PROCESSING, true);
         Document doc = dbf.newDocumentBuilder().newDocument();
