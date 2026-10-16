@@ -55,10 +55,10 @@ public class DefaultMainComponents implements MainComponents {
     private final TimerManager timerManager = new TimerManager();
     private final HttpClientFactory httpClientFactory = new HttpClientFactory(timerManager);
 
-    private HttpClient httpClient = new HttpClient();
+    private HttpClient httpClient = httpClientFactory.createClient(null);
 
     private final KubernetesClientFactory kubernetesClientFactory = new KubernetesClientFactory(httpClientFactory);
-    private ResolverMap resolverMap = new ResolverMap();
+    private ResolverMap resolverMap = new ResolverMap(httpClient, kubernetesClientFactory);
 
     private final FlowController flowController;
     private final RuleManager ruleManager;

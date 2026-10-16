@@ -15,8 +15,12 @@
 package com.predic8.membrane.core.util.xml.parser;
 
 import com.predic8.membrane.core.http.ReadingBodyException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
+import org.xml.sax.ErrorHandler;
 import org.xml.sax.InputSource;
+import org.xml.sax.SAXParseException;
 
 import javax.xml.parsers.*;
 import java.io.StringReader;
@@ -29,6 +33,29 @@ import static javax.xml.XMLConstants.FEATURE_SECURE_PROCESSING;
  * Instances are immutable and can safely be shared across threads.
  */
 public final class HardenedXmlParser implements XmlParser {
+
+    private static final Logger log = LoggerFactory.getLogger(HardenedXmlParser.class);
+
+    /**
+     * Replaces Xerces' default handler, which prints every problem to stderr.
+     * Fatal errors are rethrown silently; parse() reports them as XmlParseException.
+     */
+    private static final ErrorHandler LOGGING_ERROR_HANDLER = new ErrorHandler() {
+        @Override
+        public void warning(SAXParseException exception) {
+            log.debug("XML parser warning: {}", exception.getMessage());
+        }
+
+        @Override
+        public void error(SAXParseException exception) {
+            log.debug("XML parser error: {}", exception.getMessage());
+        }
+
+        @Override
+        public void fatalError(SAXParseException exception) throws SAXParseException {
+            throw exception;
+        }
+    };
 
     private final DocumentBuilderFactory factory = createFactory();
 
@@ -80,6 +107,7 @@ public final class HardenedXmlParser implements XmlParser {
             DocumentBuilder builder = factory.newDocumentBuilder();
             // Prevent any external entity resolution
             builder.setEntityResolver((publicId, systemId) -> new InputSource(new StringReader("")));
+            builder.setErrorHandler(LOGGING_ERROR_HANDLER);
             return builder;
         } catch (ParserConfigurationException e) {
             throw new XmlParseException("Failed to create XML parser: " + e.getMessage(), e);

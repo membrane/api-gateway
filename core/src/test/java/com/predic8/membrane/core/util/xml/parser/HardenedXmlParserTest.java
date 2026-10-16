@@ -17,13 +17,30 @@ import com.predic8.membrane.core.http.ReadingBodyException;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.InputSource;
 
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.io.PrintStream;
 import java.io.StringReader;
 
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.jupiter.api.Assertions.*;
 
 class HardenedXmlParserTest {
+
+    @Test
+    void malformedDocumentIsNotPrintedToStderr() {
+        final var originalErr = System.err;
+        final var captured = new ByteArrayOutputStream();
+        System.setErr(new PrintStream(captured, true, UTF_8));
+        try {
+            final var e = assertThrows(XmlParseException.class, () ->
+                    HardenedXmlParser.getInstance().parse(new InputSource(new StringReader("<a><</a>"))));
+            assertTrue(e.getMessage().contains("well-formed"), e.getMessage());
+        } finally {
+            System.setErr(originalErr);
+        }
+        assertFalse(captured.toString(UTF_8).contains("[Fatal Error]"), captured.toString(UTF_8));
+    }
 
     @Test
     void readingBodyExceptionIsNotTurnedIntoParseError() {

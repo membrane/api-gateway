@@ -22,6 +22,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static com.predic8.membrane.core.router.YamlRouterBootstrap.loadIntoRouter;
+import static com.predic8.membrane.core.util.ThreadTestUtil.assertNoTimerThreadStartedSince;
+import static com.predic8.membrane.core.util.ThreadTestUtil.liveTimerThreads;
 import static org.junit.jupiter.api.Assertions.*;
 
 class DefaultMainComponentsTest {
@@ -68,6 +70,41 @@ class DefaultMainComponentsTest {
         } finally {
             router.stop();
         }
+    }
+
+    /**
+     * #3483: the components of a router must only use the router's own timer, so stopping the router leaves no
+     * timer thread behind.
+     */
+    @Test
+    void stoppedRouterLeavesNoTimerThreads() throws Exception {
+        final var before = liveTimerThreads();
+
+        new DefaultRouter().stop();
+
+        assertNoTimerThreadStartedSince(before);
+    }
+
+    /**
+     * #3483: init() replaces the HTTP client and the resolver map; the replacements must use the router's timer, too.
+     */
+    @Test
+    void stoppedInitializedRouterLeavesNoTimerThreads() throws Exception {
+        final var before = liveTimerThreads();
+
+        final var router = load("""
+                internal:
+                  name: dummy
+                  target:
+                    url: https://example.com
+                """);
+        try {
+            router.init();
+        } finally {
+            router.stop();
+        }
+
+        assertNoTimerThreadStartedSince(before);
     }
 
     private DefaultRouter load(String yaml) throws Exception {
