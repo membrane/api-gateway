@@ -23,6 +23,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.lang.AbstractLanguageInterceptor;
 import com.predic8.membrane.core.lang.ExchangeExpression;
+import com.predic8.membrane.core.util.ConfigurationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,15 +71,18 @@ public class IdempotencyInterceptor extends AbstractLanguageInterceptor {
     private String key;
     private ExchangeExpression exchangeExpression;
     private int expiration = 3600;
+    private int maxKeys = 10000;
     private Cache<String, Boolean> processedKeys;
 
     @Override
     public void init() {
         super.init();
+        if (maxKeys < 1)
+            throw new ConfigurationException("maxKeys of idempotency must be at least 1, but was %d.".formatted(maxKeys));
 
         exchangeExpression = expression(this, language, key);
         processedKeys = CacheBuilder.newBuilder()
-                .maximumSize(10000)
+                .maximumSize(maxKeys)
                 .expireAfterWrite(expiration, TimeUnit.SECONDS)
                 .build();
     }
@@ -144,11 +148,28 @@ public class IdempotencyInterceptor extends AbstractLanguageInterceptor {
         this.expiration = expiration;
     }
 
+    /**
+     * @description Maximum number of keys that are remembered. When the limit is reached, the least recently used
+     * keys are dropped before they expire, and a request repeating a dropped key is no longer detected as a
+     * duplicate. Size it for the number of distinct keys expected within the expiration time, with headroom for
+     * peaks; clients sending many new keys can otherwise push out the keys of others.
+     * @default 10000
+     * @example 100000
+     */
+    @MCAttribute
+    public void setMaxKeys(int maxKeys) {
+        this.maxKeys = maxKeys;
+    }
+
     public String getKey() {
         return key;
     }
 
     public int getExpiration() {
         return expiration;
+    }
+
+    public int getMaxKeys() {
+        return maxKeys;
     }
 }
