@@ -1,0 +1,124 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.7.1.json
+#
+# Tutorial: Multiple Balancers
+#
+# Run independent balancers in one gateway and manage each one by its name.
+#
+# 1.) Start Membrane:
+#       Linux/Mac:
+#         ./membrane.sh -c 50-Multiple-Balancers.yaml
+#       Windows:
+#         membrane.cmd -c 50-Multiple-Balancers.yaml
+#
+# 2.) Call each balancer a few times:
+#       curl localhost:2000/shop
+#
+#       Shop node 1
+#
+#       curl localhost:2000/shop
+#
+#       Shop node 2
+#
+#       curl localhost:2000/billing
+#
+#       Billing node 1
+#
+#       curl localhost:2000/billing
+#
+#       Billing node 2
+#
+# 3.) Take shop node 2 out of service:
+#       curl "localhost:9000/clustermanager/down?balancer=shop&host=localhost&port=3002"
+#
+# 4.) Call both balancers again:
+#       curl localhost:2000/shop
+#
+#       Shop node 1
+#
+#       curl localhost:2000/billing
+#
+#     /shop stays on node 1, /billing still alternates.
+
+api:
+  port: 2000
+  path:
+    uri: /shop
+  flow:
+    - balancer:
+        name: shop
+        clusters:
+          - nodes:
+              - host: localhost
+                port: 3001
+              - host: localhost
+                port: 3002
+
+---
+api:
+  port: 2000
+  path:
+    uri: /billing
+  flow:
+    - balancer:
+        name: billing
+        clusters:
+          - nodes:
+              - host: localhost
+                port: 3003
+              - host: localhost
+                port: 3004
+
+---
+api:
+  port: 9000
+  name: Cluster Manager
+  path:
+    uri: /clustermanager
+  flow:
+    - clusterNotification: {}
+
+---
+api:
+  port: 3001
+  name: Shop node 1
+  flow:
+    - static:
+        src: Shop node 1
+    - return:
+        status: 200
+
+---
+api:
+  port: 3002
+  name: Shop node 2
+  flow:
+    - static:
+        src: Shop node 2
+    - return:
+        status: 200
+
+---
+api:
+  port: 3003
+  name: Billing node 1
+  flow:
+    - static:
+        src: Billing node 1
+    - return:
+        status: 200
+
+---
+api:
+  port: 3004
+  name: Billing node 2
+  flow:
+    - static:
+        src: Billing node 2
+    - return:
+        status: 200
+
+# NOTE:
+#   Balancer names must be simple (no spaces or special characters) so they
+#   can be used in the cluster manager API and the admin console.
+#
+# Reference: https://www.membrane-api.io/docs/current/balancer.html

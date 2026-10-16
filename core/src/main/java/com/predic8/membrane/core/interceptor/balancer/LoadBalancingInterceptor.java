@@ -37,7 +37,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
  * sessionIdExtractor is configured, requests carrying a known session are pinned to the node that first served it
  * (sticky sessions). On dispatch the chosen node is stored on the exchange and its statistics are updated when the
  * response returns; if no node is available the request is answered with 503. Can only be used inside an api or
- * serviceProxy. See the examples under examples/loadbalancing.
+ * serviceProxy. See the tutorials under distribution/tutorials/loadbalancing.
  * <pre>
  * balancer:
  *   [ name: &lt;id&gt; ]                  # default: Default

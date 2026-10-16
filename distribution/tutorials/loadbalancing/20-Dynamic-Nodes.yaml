@@ -1,0 +1,90 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.7.1.json
+#
+# Tutorial: Adding and Removing Nodes at Runtime
+#
+# Start a balancer without nodes and register them through the cluster manager API.
+#
+# 1.) Start Membrane:
+#       Linux/Mac:
+#         ./membrane.sh -c 20-Dynamic-Nodes.yaml
+#       Windows:
+#         membrane.cmd -c 20-Dynamic-Nodes.yaml
+#
+# 2.) Call the balancer. There is no node yet:
+#       curl -s -o /dev/null -w "%{http_code}" localhost:2000
+#
+#       503
+#
+# 3.) Register two nodes:
+#       curl "localhost:9000/clustermanager/up?host=localhost&port=3001"
+#       curl "localhost:9000/clustermanager/up?host=localhost&port=3002"
+#
+# 4.) Call the balancer a few times:
+#       curl localhost:2000
+#
+#       Node 1
+#
+#       curl localhost:2000
+#
+#       Node 2
+#
+# 5.) Take node 1 out of service:
+#       curl "localhost:9000/clustermanager/down?host=localhost&port=3001"
+#
+# 6.) Call the balancer again. Only node 2 answers:
+#       curl localhost:2000
+#
+#       Node 2
+#
+# 7.) Open the admin console and look at the nodes:
+#       http://localhost:9000/admin/clusters/show?cluster=Default
+
+api:
+  port: 2000
+  flow:
+    - balancer: {}
+
+---
+api:
+  port: 9000
+  name: Cluster Manager
+  path:
+    uri: /clustermanager
+  flow:
+    - clusterNotification: {}
+
+---
+api:
+  port: 9000
+  name: Admin Console
+  flow:
+    - adminConsole: {}
+
+---
+api:
+  port: 3001
+  name: Node 1
+  flow:
+    - static:
+        src: Node 1
+    - return:
+        status: 200
+
+---
+api:
+  port: 3002
+  name: Node 2
+  flow:
+    - static:
+        src: Node 2
+    - return:
+        status: 200
+
+# NOTE:
+#   On Windows use NUL instead of /dev/null in step 2.
+#
+#   Nodes registered through the cluster manager are only kept in memory.
+#   Protect the cluster manager API like any other API, e.g. with
+#   basicAuthentication, or bind it to an internal interface.
+#
+# Reference: https://www.membrane-api.io/docs/current/clusterNotification.html
