@@ -14,9 +14,19 @@
 
 package com.predic8.membrane.core.resolver;
 
+import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.Test;
 
+import java.net.InetSocketAddress;
+import java.util.Set;
+
+import static com.predic8.membrane.core.resolver.HTTPSchemaResolverTest.clientAnswering;
+import static com.predic8.membrane.core.util.ThreadTestUtil.assertNoTimerThreadStartedSince;
+import static com.predic8.membrane.core.util.ThreadTestUtil.liveTimerThreads;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 class ResolverMapTest {
 
@@ -78,5 +88,57 @@ class ResolverMapTest {
     void spaceInChildIsEncoded() {
         var s = ResolverMap.combine("http://localhost:2000", "/foo bar");
         assertEquals("http://localhost:2000/foo%20bar", s);
+    }
+
+    /**
+     * #3483: the no-arg ResolverMap must not create its HTTP client, and with it a timer thread, unless an HTTP URL is
+     * resolved.
+     */
+    @Test
+    void noArgResolverMapStartsNoTimerThread() throws Exception {
+        final var before = liveTimerThreads();
+
+        try (final var ignored = new ResolverMap().resolve("classpath:/customer.xml")) {
+            final var started = liveTimerThreads();
+            started.removeAll(before);
+            assertEquals(Set.of(), started);
+        }
+    }
+
+    /**
+     * #3483: the no-arg ResolverMap uses a client per HTTP resolve and closes it before resolve() returns, so no timer
+     * thread outlives the call.
+     */
+    @Test
+    void httpResolveLeavesNoTimerThread() throws Exception {
+        final var server = HttpServer.create(new InetSocketAddress("localhost", 0), 0);
+        server.createContext("/", exchange -> {
+            final var body = "<schema/>".getBytes(UTF_8);
+            exchange.sendResponseHeaders(200, body.length);
+            try (final var out = exchange.getResponseBody()) {
+                out.write(body);
+            }
+        });
+        server.start();
+        try {
+            final var before = liveTimerThreads();
+
+            try (final var in = new ResolverMap().resolve("http://localhost:%d/a.xsd".formatted(server.getAddress().getPort()))) {
+                assertEquals("<schema/>", new String(in.readAllBytes(), UTF_8));
+            }
+
+            assertNoTimerThreadStartedSince(before);
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
+    void resolveLeavesCallerOwnedClientOpen() throws Exception {
+        final var client = clientAnswering("<schema/>");
+        new ResolverMap(client, null).resolve("http://localhost/a.xsd").close();
+
+        verify(client, never()).close();
+        verify(client, never()).closeImmediately();
     }
 }

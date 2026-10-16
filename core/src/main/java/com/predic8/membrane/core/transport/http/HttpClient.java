@@ -180,7 +180,7 @@ public class HttpClient implements AutoCloseable {
                 : dest;
     }
 
-    // TODO Remove once directly constructed clients are closed explicitly (#3483). Clients from
+    // TODO Remove once directly constructed clients are closed explicitly. Clients from
     //  HttpClientFactory must not be closed by their users; the factory closes them in closeAll().
     @Override
     protected void finalize() {
