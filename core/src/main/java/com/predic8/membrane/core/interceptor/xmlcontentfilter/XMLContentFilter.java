@@ -135,9 +135,14 @@ public class XMLContentFilter {
 	/**
 	 * Removes parts of an XML document based on an XPath expression.
 	 * <p>
-	 * If the message is not valid XML, it is left unchanged.
+	 * A message with an empty body is left unchanged.
+	 *
+	 * @throws XmlParseException if the body cannot be parsed, e.g. because it is not well-formed XML or contains
+	 *                           a DOCTYPE. Such a message must not be forwarded, as it could not be filtered.
 	 */
 	public void removeMatchingElements(Message message) {
+		if (isEmpty(message))
+			return;
 		try {
 			Message xop = null;
 			try {
@@ -152,13 +157,23 @@ public class XMLContentFilter {
 			}
 			Document d = HardenedXmlParser.getInstance().parse(new InputSource(xop != null ? xop.getBodyAsStream() : message.getBodyAsStreamDecoded()));
 			removeElementsIfNecessary(message, xop, d);
-		} catch (XMLStreamException | XmlParseException e) {
-			log.warn(e.getMessage());
+		} catch (XMLStreamException e) {
+			throw new XmlParseException("Could not parse XML document: " + e.getMessage());
 		} catch (XPathExpressionException | IOException |
 				 TransformerFactoryConfigurationError | TransformerException e) {
 			log.warn(e.getMessage());
 			throw new RuntimeException(e);
 		}
+	}
+
+	/**
+	 * {@link Message#isBodyEmpty()} answers from the header where it can, so it misses two empty bodies:
+	 * a chunked body announces no length, and the response to a HEAD request keeps the Content-Length of the
+	 * representation, but carries no body. Both would fail to parse and be rejected. Reading the body tells;
+	 * parsing reads it anyway.
+	 */
+	private static boolean isEmpty(Message message) {
+		return message.isBodyEmpty() || message.getBody().getLength() == 0;
 	}
 
 	private void removeElementsIfNecessary(Message originalMessage,

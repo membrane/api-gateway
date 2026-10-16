@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.util.xml.parser;
 
+import com.predic8.membrane.core.http.ReadingBodyException;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 
@@ -92,6 +93,9 @@ public final class HardenedXmlParser implements XmlParser {
 
         try {
             return newBuilder().parse(source);
+        } catch (ReadingBodyException e) {
+            // The body could not be read or decoded, e.g. a truncated gzip stream: not a defect of the document.
+            throw e;
         } catch (Exception e) {
             throw new XmlParseException("Could not parse XML document: " + e.getMessage()); // No stacktrace needed
         }
