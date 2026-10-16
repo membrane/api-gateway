@@ -14,6 +14,8 @@
 package com.predic8.membrane.core.openapi.util;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.Map;
 
@@ -61,6 +63,28 @@ class UriTemplateTest {
         assertTrue(UriTemplate.of("/price$/{id}").matches("/price$/1"));
         assertTrue(UriTemplate.of("/x(y/{id}").matches("/x(y/1"));
         assertTrue(UriTemplate.of("/x\\E.*/{id}").matches("/x\\E.*/1"));
+    }
+
+    /**
+     * OpenAPI path-literal = 1*pchar, pchar = unreserved / pct-encoded / sub-delims / ":" / "@"
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"-", ".", "_", "~", "%20", "!", "$", "&", "'", "(", ")", "*", "+", ",", ";", "=", ":", "@"})
+    void everyPcharInLiteralPartIsMatchedAsItIs(String pchar) {
+        final var template = UriTemplate.of("/a%sb/{id}".formatted(pchar));
+        assertEquals(Map.of("id", "7"), template.match("/a%sb/7".formatted(pchar)).orElseThrow());
+        assertFalse(template.matches("/aQb/7"));
+        assertFalse(template.matches("/ab/7"));
+        assertFalse(template.matches("/a%s%sb/7".formatted(pchar, pchar)));
+    }
+
+    /**
+     * OpenAPI template-expression-param-name = 1*( %x00-7A / %x7C / %x7E-10FFFF ), every character but { and }
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"id", "i_d-1", "a.b", "id%3", "id<>4", "a b", "a*b", "$x", "(x)", "a|b", "a\\b", "ü", "a:b", "a@b", "a=b,c;d"})
+    void parameterNames(String name) {
+        assertEquals(Map.of(name, "7"), UriTemplate.of("/x/{%s}".formatted(name)).match("/x/7").orElseThrow());
     }
 
     @Test
