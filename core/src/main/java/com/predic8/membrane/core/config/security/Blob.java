@@ -14,11 +14,13 @@ limitations under the License. */
 
 package com.predic8.membrane.core.config.security;
 
-import com.google.common.base.*;
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.resolver.*;
+import com.google.common.base.Objects;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.MCTextContent;
+import com.predic8.membrane.core.resolver.ResolverMap;
 
-import java.io.*;
+import java.io.IOException;
 
 public abstract class Blob {
     String content;
@@ -62,7 +64,9 @@ public abstract class Blob {
         if (getLocation() != null) {
             if (getContent() != null && !getContent().isEmpty())
                 throw new IllegalStateException("On <"+getName()+">, ./text() and ./@location cannot be set at the same time.");
-            return new String(resolverMap.resolve(ResolverMap.combine(baseLocation, getLocation())).readAllBytes());
+            try (final var is = resolverMap.resolve(ResolverMap.combine(baseLocation, getLocation()))) {
+                return new String(is.readAllBytes());
+            }
         } else {
             if (getContent() == null)
                 throw new IllegalStateException("On <"+getName()+">, either ./text() or ./@location must be set.");

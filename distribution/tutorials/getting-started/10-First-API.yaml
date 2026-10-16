@@ -25,19 +25,19 @@
 #     curl http://localhost:2000
 #     (curl is built into macOS, Linux and Windows 10+; otherwise https://curl.se/download.html)
 #
-#     You should see a list of public APIs.
-#
 # 3.) Stop Membrane:
 #     Press Ctrl+C in the terminal.
 #
 # 4.) Continue with file 20-Hot-Reload.yaml
-#
-# Troubleshooting:
-#     Check if your machine can reach the public API:
-#
-#     curl -v https://api.predic8.de
 
 api:
   port: 2000 # Listing port
   target:
     url: https://api.predic8.de
+
+# Troubleshooting:
+#     Check if your machine can reach the public API:
+#
+#     curl -v https://api.predic8.de
+#
+#     Behind a corporate proxy? See 11-First-API-Proxy-Configuration.yaml
