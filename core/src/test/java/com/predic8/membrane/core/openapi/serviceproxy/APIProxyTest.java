@@ -17,7 +17,7 @@ import com.predic8.membrane.core.router.DummyTestRouter;
 import com.predic8.membrane.core.util.ConfigurationException;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.Map;
 
@@ -106,7 +106,9 @@ class APIProxyTest {
     void pathThatIsNoValidTemplateIsIgnoredWithoutValidation() {
         final var proxy = createProxy(new DummyTestRouter(), invalidPathTemplateSpec());
         final var rec = proxy.getApiRecords().values().iterator().next();
-        assertNull(proxy.getValidator(rec));
+        assertFalse(OpenAPIInterceptor.isValidated(rec.getApi()));
+        final var e = assertThrows(IllegalStateException.class, () -> proxy.getValidator(rec));
+        assertTrue(e.getMessage().contains("Invalid Path Template"));
     }
 
     @Test
@@ -115,7 +117,9 @@ class APIProxyTest {
         spec.location = getPathFromResource("openapi/specs/customers.yml");
         spec.setValidateResponses(YES);
         final var proxy = createProxy(new DummyTestRouter(), spec);
-        assertNotNull(proxy.getValidator(proxy.getApiRecords().values().iterator().next()));
+        final var rec = proxy.getApiRecords().values().iterator().next();
+        assertTrue(OpenAPIInterceptor.isValidated(rec.getApi()));
+        assertNotNull(proxy.getValidator(rec));
     }
 
     private static OpenAPISpec invalidPathTemplateSpec() {

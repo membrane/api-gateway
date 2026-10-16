@@ -35,7 +35,6 @@ import org.slf4j.LoggerFactory;
 
 import java.net.URISyntaxException;
 import java.util.List;
-import java.util.regex.PatternSyntaxException;
 
 import static com.predic8.membrane.core.openapi.util.UriUtil.normalizeUri;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.METHOD;
@@ -96,8 +95,8 @@ public class OpenAPIValidator {
     private UriTemplate compile(String pathTemplate) {
         try {
             return UriTemplate.of(pathTemplate);
-        } catch (PatternSyntaxException e) {
-            throw new ConfigurationException("Cannot use path %s of OpenAPI %s as URI template.".formatted(pathTemplate, describeOpenAPI()), e);
+        } catch (IllegalArgumentException e) {
+            throw new ConfigurationException("Cannot use path %s of OpenAPI %s as URI template: %s".formatted(pathTemplate, describeOpenAPI(), e.getMessage()), e);
         }
     }
 

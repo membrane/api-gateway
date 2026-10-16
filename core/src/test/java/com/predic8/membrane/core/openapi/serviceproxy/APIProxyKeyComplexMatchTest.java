@@ -158,6 +158,17 @@ class APIProxyKeyComplexMatchTest {
     }
 
     @Test
+    @DisplayName("The path is a regular expression only with isRegExp")
+    void matchesPathHonoursRegExp() {
+        var key = new APIProxyKey("", "", 80, "/persons/.*", "*", null, false);
+        key.setPathRegExp(false);
+        assertFalse(key.matchesPath("/persons/7"));
+
+        key.setPathRegExp(true);
+        assertTrue(key.matchesPath("/persons/7"));
+    }
+
+    @Test
     @DisplayName("Without a path every path matches without parameters")
     void matchPathTemplateWithoutPath() {
         var key = new APIProxyKey("", "", 80, null, "*", null, false);

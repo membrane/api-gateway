@@ -142,7 +142,7 @@ public class ScriptingUtils {
         final var path = exchange.getRequest().getRoutingPath();
         final var parameters = ap.getKey() instanceof APIProxyKey key
                 ? key.matchPathTemplate(path)
-                : UriTemplate.of(ap.getPath().getUri()).match(path); // APIProxy not initialized yet
+                : UriTemplate.of(ap.getPath().getUri(), ap.getPath().isRegExp()).match(path); // APIProxy not initialized yet
         if (parameters.isPresent())
             return new HashMap<>(parameters.get()); // Make lazy!
 

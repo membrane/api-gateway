@@ -47,13 +47,51 @@ class UriTemplateTest {
     }
 
     @Test
+    void plusIsNoSpace() {
+        assertEquals(Map.of("name", "a+b"), UriTemplate.of("/users/{name}").match("/users/a+b").orElseThrow());
+        assertEquals(Map.of("name", "a+b"), UriTemplate.of("/users/{name}").match("/users/a%2Bb").orElseThrow());
+    }
+
+    @Test
+    void literalPartsAreMatchedAsTheyAre() {
+        assertTrue(UriTemplate.of("/files/{name}.json").matches("/files/a.json"));
+        assertFalse(UriTemplate.of("/files/{name}.json").matches("/files/aXjson"));
+        assertTrue(UriTemplate.of("/a+b/{id}").matches("/a+b/1"));
+        assertFalse(UriTemplate.of("/a+b/{id}").matches("/aab/1"));
+        assertTrue(UriTemplate.of("/price$/{id}").matches("/price$/1"));
+        assertTrue(UriTemplate.of("/x(y/{id}").matches("/x(y/1"));
+        assertTrue(UriTemplate.of("/x\\E.*/{id}").matches("/x\\E.*/1"));
+    }
+
+    @Test
+    void severalParametersInOneSegment() {
+        final var template = UriTemplate.of("/{name}.{ext}");
+        assertEquals(Map.of("name", "a.b", "ext", "c"), template.match("/a.b.c").orElseThrow());
+        assertFalse(template.matches("/abc"));
+    }
+
+    @Test
+    void curlyBraceOutsideOfTemplateExpression() {
+        assertThrows(IllegalArgumentException.class, () -> UriTemplate.of("/a/{b/c}"));
+        assertThrows(IllegalArgumentException.class, () -> UriTemplate.of("/a/{b}}"));
+    }
+
+    @Test
+    void parameterOccursMoreThanOnce() {
+        final var e = assertThrows(IllegalArgumentException.class, () -> UriTemplate.of("/{id}/{id}"));
+        assertTrue(e.getMessage().contains("{id}"));
+        assertThrows(IllegalArgumentException.class, () -> UriTemplate.of("/{id}/{id}", true));
+    }
+
+    @Test
     void literalPartsAreRegularExpressions() {
-        assertEquals(Map.of("name", "orders"), UriTemplate.of(".*/api/{name}").match("/admin/api/orders").orElseThrow());
+        assertEquals(Map.of("name", "orders"), UriTemplate.of(".*/api/{name}", true).match("/admin/api/orders").orElseThrow());
+        assertFalse(UriTemplate.of(".*/api/{name}").matches("/admin/api/orders"));
     }
 
     @Test
     void capturingGroupsInLiteralPartsDoNotShiftParameters() {
-        assertEquals(Map.of("id", "7"), UriTemplate.of("/(v1|v2)/users/{id}").match("/v1/users/7").orElseThrow());
+        assertEquals(Map.of("id", "7"), UriTemplate.of("/(v1|v2)/users/{id}", true).match("/v1/users/7").orElseThrow());
     }
 
     @Test

@@ -40,7 +40,7 @@ import java.util.*;
 
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
 import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
-import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIInterceptor.shouldValidate;
+import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIInterceptor.isValidated;
 import static com.predic8.membrane.core.openapi.util.UriUtil.ensureTrailingSlash;
 import static com.predic8.membrane.core.openapi.util.UriUtil.getPathFromURL;
 import static com.predic8.membrane.core.util.text.StringUtil.maskNonPrintableCharacters;
@@ -156,7 +156,9 @@ public class APIProxy extends ServiceProxy implements Polyglot, XMLSupport {
         if (test != null && !test.isEmpty()) {
             exchangeExpression = expression(new InterceptorAdapter(router, xmlConfig), language, test);
         }
-        key = new APIProxyKey(key, exchangeExpression, !specs.isEmpty());
+        final var apiKey = new APIProxyKey(key, exchangeExpression, !specs.isEmpty());
+        apiKey.initPathTemplate();
+        key = apiKey;
         initOpenAPI();
 
         for(Interceptor interceptor: interceptors) {
@@ -196,7 +198,7 @@ public class APIProxy extends ServiceProxy implements Polyglot, XMLSupport {
     private Map<OpenAPIRecord, OpenAPIValidator> createValidators() {
         final var uriFactory = router.getConfiguration().getUriFactory();
         return apiRecords.values().stream()
-                .filter(rec -> shouldValidate(rec.getApi(), REQUESTS) || shouldValidate(rec.getApi(), RESPONSES))
+                .filter(rec -> isValidated(rec.getApi()))
                 .collect(toUnmodifiableMap(identity(), rec -> new OpenAPIValidator(uriFactory, rec)));
     }
 
@@ -298,9 +300,15 @@ public class APIProxy extends ServiceProxy implements Polyglot, XMLSupport {
 
     /**
      * @return validator for an OpenAPI of this API that validates requests or responses
+     * @throws IllegalStateException if the OpenAPI is not validated, see {@link OpenAPIInterceptor#isValidated}
      */
     public OpenAPIValidator getValidator(OpenAPIRecord rec) {
-        return validators.get(rec);
+        final var validator = validators.get(rec);
+        if (validator == null) {
+            final var title = rec.getApi().getInfo() != null ? rec.getApi().getInfo().getTitle() : null;
+            throw new IllegalStateException("OpenAPI '%s' of API %s is not validated, so it has no validator.".formatted(title, getName()));
+        }
+        return validator;
     }
 
     public Map<String, OpenAPIRecord> getBasePaths() {

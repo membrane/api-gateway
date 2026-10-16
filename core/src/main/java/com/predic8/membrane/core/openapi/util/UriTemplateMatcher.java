@@ -13,15 +13,12 @@
    limitations under the License. */
 package com.predic8.membrane.core.openapi.util;
 
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.*;
 
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.*;
+import java.util.regex.*;
 
-import static java.util.regex.Pattern.compile;
+import static java.util.regex.Pattern.*;
 
 public class UriTemplateMatcher {
 
@@ -34,6 +31,7 @@ public class UriTemplateMatcher {
      *  - How to handle parameter names containing _, -, ...
      *
      * Compiles the template on every call. On hot paths keep a {@link UriTemplate} instead.
+     * The literal parts of the template are regular expressions, e.g. <code>.*&#47;api/{name}</code>.
      *
      * @return Map of Parameters. If the path does not match PathDoesNotMatchException is thrown.
      */
@@ -41,7 +39,7 @@ public class UriTemplateMatcher {
         if (template == null || uri == null)
             return null;
 
-        return UriTemplate.of(template).match(uri).orElseThrow(PathDoesNotMatchException::new);
+        return UriTemplate.of(template, true).match(uri).orElseThrow(PathDoesNotMatchException::new);
     }
 
     static List<String> getParameterNames(String uriTemplate) {
@@ -53,13 +51,34 @@ public class UriTemplateMatcher {
         return PARAM_NAME_REGEX_PATTERN.matcher(normalizedTemplate);
     }
 
+    static String prepareTemplate(String template) {
+        return prepareTemplate(template, true);
+    }
+
     /**
      * Each parameter becomes a named group, so that capturing groups in the literal parts do not shift the lookup.
+     *
+     * @param regExp true if the literal parts are regular expressions, otherwise they are matched as they are
      */
-    static String prepareTemplate(String template) {
-        final var index = new AtomicInteger();
-        return PARAM_NAME_REGEX_PATTERN.matcher(template)
-                .replaceAll(r -> "(?<%s>%s)".formatted(groupName(index.getAndIncrement()), URI_PARAM_MATCH));
+    static String prepareTemplate(String template, boolean regExp) {
+        final var regex = new StringBuilder();
+        final var matcher = getNameMatcher(template);
+        var index = 0;
+        var literalStart = 0;
+        while (matcher.find()) {
+            regex.append(literal(template.substring(literalStart, matcher.start()), regExp))
+                    .append("(?<%s>%s)".formatted(groupName(index++), URI_PARAM_MATCH));
+            literalStart = matcher.end();
+        }
+        return regex.append(literal(template.substring(literalStart), regExp)).toString();
+    }
+
+    private static String literal(String literal, boolean regExp) {
+        if (regExp || literal.isEmpty())
+            return literal;
+        if (literal.contains("{") || literal.contains("}"))
+            throw new IllegalArgumentException("Curly brace in %s is not part of a template expression.".formatted(literal));
+        return Pattern.quote(literal);
     }
 
     static String groupName(int parameterIndex) {

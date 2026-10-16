@@ -35,7 +35,9 @@ import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.getResourc
 import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.parseOpenAPI;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.METHOD;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.PATH;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class OpenAPIValidatorTest {
 
@@ -105,5 +107,12 @@ class OpenAPIValidatorTest {
         assertTrue(e.getMessage().contains("/a/{b/c}"));
         assertTrue(e.getMessage().contains("Broken API"));
         assertTrue(e.getMessage().contains("broken.yaml"));
+    }
+
+    @Test
+    void parameterOccurringTwiceIsAConfigurationError() {
+        var api = new OpenAPI().info(new Info().title("Broken API")).paths(new Paths().addPathItem("/a/{id}/b/{id}", new PathItem()));
+        var e = assertThrows(ConfigurationException.class, () -> new OpenAPIValidator(new URIFactory(), new OpenAPIRecord(api, new OpenAPISpec())));
+        assertTrue(e.getMessage().contains("/a/{id}/b/{id}"));
     }
 }

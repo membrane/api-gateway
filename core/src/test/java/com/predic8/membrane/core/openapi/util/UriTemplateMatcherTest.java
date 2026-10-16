@@ -16,14 +16,14 @@
 
 package com.predic8.membrane.core.openapi.util;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
-import java.util.Map;
-import java.util.regex.Matcher;
+import java.util.*;
+import java.util.regex.*;
 
 import static com.predic8.membrane.core.openapi.util.UriTemplateMatcher.*;
 import static java.util.List.of;
-import static java.util.Map.entry;
+import static java.util.Map.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class UriTemplateMatcherTest {

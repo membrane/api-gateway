@@ -15,6 +15,7 @@ package com.predic8.membrane.core.openapi.util;
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -30,7 +31,8 @@ import static java.util.stream.Collectors.toMap;
  * A URI template like <code>/users/{id}</code>, compiled once so that it can be matched against many paths.
  * Matching a path that does not fit is cheap: no exception, no regex compilation.
  * <p>
- * The literal parts of the template are used as regular expression, e.g. <code>.*&#47;api/{name}</code>.
+ * By default the literal parts of the template are matched as they are, as in OpenAPI path templating. Optionally they
+ * are regular expressions, e.g. <code>.*&#47;api/{name}</code>.
  * Immutable and thread safe.
  */
 public final class UriTemplate {
@@ -39,17 +41,38 @@ public final class UriTemplate {
     private final Pattern pattern;
     private final List<String> parameterNames;
 
-    private UriTemplate(String template) {
+    private UriTemplate(String template, boolean regExp) {
         this.template = template;
-        this.pattern = compile(prepareTemplate(normalizePath(template)));
-        this.parameterNames = getParameterNames(template);
+        this.pattern = compile(prepareTemplate(normalizePath(template), regExp));
+        this.parameterNames = getUniqueParameterNames(template);
     }
 
     /**
-     * @throws PatternSyntaxException if the template is no valid regular expression after replacing the parameters
+     * Literal parts are matched as they are, see OpenAPI path templating.
+     *
+     * @throws IllegalArgumentException if a parameter occurs more than once or a curly brace is not part of a template expression
      */
     public static UriTemplate of(String template) {
-        return new UriTemplate(template);
+        return of(template, false);
+    }
+
+    /**
+     * @param regExp true if the literal parts are regular expressions
+     * @throws IllegalArgumentException if a parameter occurs more than once or, without regExp, a curly brace is not part of a template expression
+     * @throws PatternSyntaxException   if regExp is true and the template is no valid regular expression after replacing the parameters
+     */
+    public static UriTemplate of(String template, boolean regExp) {
+        return new UriTemplate(template, regExp);
+    }
+
+    private static List<String> getUniqueParameterNames(String template) {
+        final var names = getParameterNames(template);
+        final var seen = new HashSet<String>();
+        for (final var name : names) {
+            if (!seen.add(name))
+                throw new IllegalArgumentException("Parameter {%s} occurs more than once in URI template %s.".formatted(name, template));
+        }
+        return names;
     }
 
     /**
@@ -65,8 +88,15 @@ public final class UriTemplate {
                 .boxed()
                 .collect(toMap(
                         parameterNames::get,
-                        i -> URLDecoder.decode(matcher.group(groupName(i)), StandardCharsets.UTF_8)
+                        i -> decodePathSegment(matcher.group(groupName(i)))
                 )));
+    }
+
+    /**
+     * Unlike in a form, a <code>+</code> in a path is no space.
+     */
+    private static String decodePathSegment(String segment) {
+        return URLDecoder.decode(segment.replace("+", "%2B"), StandardCharsets.UTF_8);
     }
 
     public boolean matches(String uri) {

@@ -22,6 +22,7 @@ import com.predic8.membrane.core.lang.ExchangeExpressionException;
 import com.predic8.membrane.core.openapi.util.UriTemplate;
 import com.predic8.membrane.core.proxies.RuleKey;
 import com.predic8.membrane.core.proxies.ServiceProxyKey;
+import com.predic8.membrane.core.util.ConfigurationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -198,10 +199,25 @@ public class APIProxyKey extends ServiceProxyKey {
         return getPathTemplate().match(path);
     }
 
+    /**
+     * Compiles the path template now, so that a broken path is reported at startup instead of on every request.
+     *
+     * @throws ConfigurationException if the path is no valid URI template
+     */
+    public void initPathTemplate() {
+        if (getPath() == null)
+            return;
+        try {
+            getPathTemplate();
+        } catch (IllegalArgumentException e) {
+            throw new ConfigurationException("Cannot use path %s as URI template: %s".formatted(getPath(), e.getMessage()), e);
+        }
+    }
+
     private UriTemplate getPathTemplate() {
         var template = pathTemplate;
         if (template == null) {
-            template = UriTemplate.of(getPath());
+            template = UriTemplate.of(getPath(), isPathRegExp());
             pathTemplate = template;
         }
         return template;
@@ -210,6 +226,12 @@ public class APIProxyKey extends ServiceProxyKey {
     @Override
     public void setPath(String path) {
         super.setPath(path);
+        pathTemplate = null;
+    }
+
+    @Override
+    public void setPathRegExp(boolean pathRegExp) {
+        super.setPathRegExp(pathRegExp);
         pathTemplate = null;
     }
 

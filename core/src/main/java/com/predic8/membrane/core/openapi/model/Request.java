@@ -16,18 +16,13 @@
 
 package com.predic8.membrane.core.openapi.model;
 
-import com.predic8.membrane.core.openapi.util.PathDoesNotMatchException;
-import com.predic8.membrane.core.openapi.util.UriTemplate;
-import com.predic8.membrane.core.openapi.util.UriTemplateMatcher;
-import com.predic8.membrane.core.security.SecurityScheme;
+import com.predic8.membrane.core.openapi.util.*;
+import com.predic8.membrane.core.security.*;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
-import static java.util.Collections.emptyList;
-import static java.util.stream.Collectors.toSet;
+import static java.util.Collections.*;
+import static java.util.stream.Collectors.*;
 
 public class Request<T extends Body> extends Message<T, Request<T>> {
 
@@ -143,10 +138,6 @@ public class Request<T extends Body> extends Message<T, Request<T>> {
 
     public boolean hasScheme(SecurityScheme scheme) {
         return securitySchemes.stream().anyMatch(s -> s.equals(scheme));
-    }
-
-    public void parsePathParameters(String uriTemplate) throws PathDoesNotMatchException {
-        pathParameters = UriTemplateMatcher.matchTemplate(uriTemplate, path);
     }
 
     /**

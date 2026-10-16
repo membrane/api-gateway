@@ -229,10 +229,9 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
 
 
     private ValidationErrors validateRequest(OpenAPIRecord rec, Exchange exc) throws ParseException {
-        var validateRequests = shouldValidate(rec.getApi(), REQUESTS);
-        var validateResponses = shouldValidate(rec.getApi(), RESPONSES);
+        if (!isValidated(rec.getApi())) return empty();
 
-        if (!validateRequests && !validateResponses) return empty();
+        var validateRequests = shouldValidate(rec.getApi(), REQUESTS);
 
         Request<?> request = validateRequests ? getOpenapiValidatorRequest(exc) : getOperationRequestOnlyForResponseValidation(exc);
         var validationPlan = getOrCreateValidationPlan(rec, exc, request);
@@ -298,6 +297,13 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         @SuppressWarnings("unchecked")
         Map<String, Object> xValidation = (Map<String, Object>) api.getExtensions().get(X_MEMBRANE_VALIDATION);
         return xValidation != null && Boolean.TRUE.equals(xValidation.get(key));
+    }
+
+    /**
+     * @return true if requests or responses are validated against the OpenAPI. Only then does the API have a validator for it.
+     */
+    public static boolean isValidated(OpenAPI api) {
+        return shouldValidate(api, REQUESTS) || shouldValidate(api, RESPONSES);
     }
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
