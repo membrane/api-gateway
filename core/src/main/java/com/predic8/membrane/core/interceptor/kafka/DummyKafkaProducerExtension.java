@@ -35,7 +35,7 @@ public class DummyKafkaProducerExtension implements KafkaProducerExtension {
 
     @Override
     public void send(final String topic, final byte[] key, final Exchange exc) throws IOException {
-        log.info("Dummy Kafka producer called: topic={}, key={}, value={} bytes", topic, key == null ? "none" : "%d bytes".formatted(key.length), exc.getRequest().getBody().getContent().length);
+        log.info("dummy producer send: topic={}", topic);
     }
 
     @Override
