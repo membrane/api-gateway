@@ -289,6 +289,10 @@ public class APIProxy extends ServiceProxy implements Polyglot, XMLSupport {
     /**
      * @description Expression evaluated against each request; the API matches only when it returns
      * true. Used to discriminate APIs on the same port beyond host and path, e.g. by header or method.
+     * <p>XPath and JSONPath query the body. An empty body, or one of another media type, is evaluated as an
+     * empty document. A body that should be XML or JSON but does not parse does not match.</p>
+     * <p>In XPath, a comparison with a missing element is false for both <code>=</code> and <code>!=</code>. To
+     * match anything but a given value, write <code>not(/a = 'admin')</code> rather than <code>/a != 'admin'</code>.</p>
      * @example header.SOAPAction == 'https://predic8.de/city-service/get'
      */
     @MCAttribute

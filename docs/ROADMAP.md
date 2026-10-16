@@ -20,6 +20,11 @@ PRIO 1:
 - Central description of MEMBRANE_* environment variables
   - Like MEMBRANE_HOME...
   - @coderabbitai look through the code base for usages of these variables and suggest documentation 
+- API gateway best practice document
+  - Start with conditions on the body (`if`, `choose`, API `test`) and media types:
+    - Send the right Content-Type (`curl -d` sends form data); an empty body or one that is no XML/JSON at all is evaluated as an empty document, a broken XML/JSON body gives 400/502 whatever its Content-Type
+    - Write fail-closed XPath guards: `not(/a = 'admin')` instead of `/a != 'admin'`. It is also true when `<a>` is missing, so a request without `<a>` counts as "not admin". `/a != 'admin'` is false then, which lets such a request slip past the guard
+    - Check expected content-type at the beginning (Maybe an Interceptor like enforceContent)
 
 PRIO 2:
 - Remove MemoryExchangeStore

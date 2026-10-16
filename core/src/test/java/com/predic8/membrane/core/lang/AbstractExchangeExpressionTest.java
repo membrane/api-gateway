@@ -44,7 +44,7 @@ public abstract class AbstractExchangeExpressionTest {
                 .header("multiple","foo")
                 .header("multiple","bar")
                 .header("multiple","baz")
-                .contentType(APPLICATION_JSON)
+                .contentType(getContentType())
                 .buildExchange();
         flow = REQUEST;
         exchange.setProperty("wet", true);
@@ -67,6 +67,10 @@ public abstract class AbstractExchangeExpressionTest {
     protected abstract Request.Builder getRequestBuilder() throws URISyntaxException;
 
     protected abstract Language getLanguage();
+
+    protected String getContentType() {
+        return APPLICATION_JSON;
+    }
 
     protected Object evalObject(String expression) {
         return expression(new InterceptorAdapter(router), getLanguage(),expression).evaluate(exchange,flow, Object.class);

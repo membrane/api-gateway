@@ -20,12 +20,12 @@ import com.predic8.membrane.core.interceptor.apikey.extractors.ApiKeyHeaderExtra
 import com.predic8.membrane.core.interceptor.apikey.extractors.ApiKeyQueryParamExtractor;
 import com.predic8.membrane.core.interceptor.apikey.stores.ApiKeyFileStore;
 import com.predic8.membrane.core.interceptor.apikey.stores.UnauthorizedApiKeyException;
-import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.router.DummyTestRouter;
 import com.predic8.membrane.core.security.SecurityScheme;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import java.net.*;
+import java.net.URISyntaxException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;

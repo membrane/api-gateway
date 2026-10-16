@@ -13,17 +13,22 @@
    limitations under the License. */
 package com.predic8.membrane.core;
 
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.openapi.serviceproxy.*;
-import com.predic8.membrane.core.router.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
+import com.predic8.membrane.core.openapi.serviceproxy.APIProxyKey;
+import com.predic8.membrane.core.router.DefaultRouter;
+import com.predic8.membrane.core.router.Router;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
-import java.io.*;
+import java.io.IOException;
 
 import static com.predic8.membrane.core.http.MimeType.*;
-import static io.restassured.RestAssured.*;
-import static io.restassured.filter.log.LogDetail.*;
+import static io.restassured.RestAssured.given;
+import static io.restassured.filter.log.LogDetail.ALL;
 import static org.hamcrest.Matchers.*;
 
 class DefaultRouterTest {

@@ -13,24 +13,31 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.rewrite;
 
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.*;
-import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.router.*;
-import org.junit.jupiter.api.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.interceptor.DispatchingInterceptor;
+import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.Mapping;
+import com.predic8.membrane.core.proxies.ServiceProxy;
+import com.predic8.membrane.core.proxies.ServiceProxyKey;
+import com.predic8.membrane.core.router.DummyTestRouter;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import java.net.*;
-import java.util.*;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
-import static com.predic8.membrane.core.http.Request.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.http.Request.get;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.Type.REDIRECT_TEMPORARY;
+import static com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.Type.REWRITE;
 import static com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.URL_NOT_PROCESSABLE;
-import static com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.Type.*;
 import static org.junit.jupiter.api.Assertions.*;
+
 public class RewriteInterceptorTest {
 
 	private final static ObjectMapper om = new ObjectMapper();
@@ -159,5 +166,42 @@ public class RewriteInterceptorTest {
 		assertTrue(json.get("detail").asText().startsWith(URL_NOT_PROCESSABLE), json.get("detail").asText());
 		assertFalse(json.toString().contains("backend.example.com"), json.toString());
 		assertFalse(json.toString().toLowerCase().contains("rewrit"), json.toString());
+	}
+
+
+	/**
+	 * A target URL with a base path is passed on as a destination with its template expression unevaluated, see issue #3497.
+	 */
+	@Test
+	void templateTargetWithBasePath() throws URISyntaxException {
+		exc.setRequest(get("/store/x").build());
+		exc.setProxy(templateTargetProxy());
+
+		assertEquals(CONTINUE, di.handleRequest(exc));
+		assertEquals(CONTINUE, rewriter.handleRequest(exc));
+		assertNull(exc.getResponse());
+		assertEquals("http://backend.example.com:8080/api/${header.tenant}", exc.getDestinations().getFirst());
+		assertEquals("/shop/v2/x", exc.getRequest().getUri());
+	}
+
+	@Test
+	void templateTargetWithBasePathIsRewritten() throws URISyntaxException {
+		final var basePathRewriter = new RewriteInterceptor();
+		basePathRewriter.setMappings(new ArrayList<>(List.of(new Mapping("^/api/(.*)", "/v2/$1", null))));
+		basePathRewriter.init(new DummyTestRouter());
+
+		exc.setRequest(get("/store/x").build());
+		exc.setProxy(templateTargetProxy());
+
+		assertEquals(CONTINUE, di.handleRequest(exc));
+		assertEquals(CONTINUE, basePathRewriter.handleRequest(exc));
+		assertEquals("http://backend.example.com:8080/v2/${header.tenant}", exc.getDestinations().getFirst());
+	}
+
+	private static ServiceProxy templateTargetProxy() {
+		final var proxy = new ServiceProxy();
+		proxy.getTarget().setUrl("http://backend.example.com:8080/api/${header.tenant}");
+		proxy.init(new DummyTestRouter());
+		return proxy;
 	}
 }

@@ -14,10 +14,12 @@
 
 package com.predic8.membrane.core.interceptor.flow;
 
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Interceptor;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public abstract class AbstractFlowInterceptor extends AbstractInterceptor {
 

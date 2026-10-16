@@ -17,6 +17,7 @@ package com.predic8.membrane.tutorials.getting_started;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
+import static io.restassured.http.ContentType.TEXT;
 import static org.hamcrest.CoreMatchers.containsString;
 
 public class ShortCircuitTutorialTest extends AbstractGettingStartedTutorialTest{
@@ -42,7 +43,7 @@ public class ShortCircuitTutorialTest extends AbstractGettingStartedTutorialTest
         // @formatter:off
         given()
             .body("Bonjour")
-            .contentType("application/x-www-form-urlencoded")
+            .contentType(TEXT)
         .when()
             .post("http://localhost:2000")
         .then()

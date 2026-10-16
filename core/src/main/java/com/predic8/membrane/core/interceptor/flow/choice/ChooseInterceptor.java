@@ -27,7 +27,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_RESPONSE_ABORT_FLOW;
@@ -109,7 +108,7 @@ public class ChooseInterceptor extends AbstractFlowInterceptor {
         try {
             matchingCase = findTrueCase(exc, flow);
         } catch (ExchangeExpressionException e) {
-            handleExpressionProblemDetails(e, exc);
+            handleExpressionProblemDetails(e, exc, flow);
             return ABORT;
         }
 
@@ -147,10 +146,10 @@ public class ChooseInterceptor extends AbstractFlowInterceptor {
         }
     }
 
-    private void handleExpressionProblemDetails(ExchangeExpressionException e, Exchange exc) {
-        e.provideDetails(internal(router.getConfiguration().isProduction(),getDisplayName()))
+    private void handleExpressionProblemDetails(ExchangeExpressionException e, Exchange exc, Flow flow) {
+        e.problemDetails(router.getConfiguration().isProduction(), getDisplayName(), flow)
             .addSubSee("expression-evaluation")
-            .detail("Error evaluating expression on exchange in choose plugin.")
+            .title("Error evaluating expression on exchange in choose plugin.")
             .buildAndSetResponse(exc);
     }
 
