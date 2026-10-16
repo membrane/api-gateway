@@ -98,6 +98,7 @@ class UriTemplateTest {
     void curlyBraceOutsideOfTemplateExpression() {
         assertThrows(IllegalArgumentException.class, () -> UriTemplate.of("/a/{b/c}"));
         assertThrows(IllegalArgumentException.class, () -> UriTemplate.of("/a/{b}}"));
+        assertThrows(IllegalArgumentException.class, () -> UriTemplate.of("/a/{b{c}"));
     }
 
     @Test

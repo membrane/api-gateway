@@ -22,7 +22,7 @@ import static java.util.regex.Pattern.*;
 
 public class UriTemplateMatcher {
 
-    public static final String PARAM_NAME_REGEX = "\\{([^/]+?)}";
+    public static final String PARAM_NAME_REGEX = "\\{([^/{}]+)}";
     public static final String URI_PARAM_MATCH = "[^/]+";
     private static final Pattern PARAM_NAME_REGEX_PATTERN = compile(PARAM_NAME_REGEX);
 
