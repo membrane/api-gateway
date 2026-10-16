@@ -1,0 +1,10 @@
+<o:order xmlns:o="https://example.com/orders" xmlns:c="https://example.com/customers">
+    <o:id>4711</o:id>
+    <c:customer>
+        <c:name>Alice</c:name>
+    </c:customer>
+    <o:items>
+        <o:item>Pen</o:item>
+        <o:item>Paper</o:item>
+    </o:items>
+</o:order>

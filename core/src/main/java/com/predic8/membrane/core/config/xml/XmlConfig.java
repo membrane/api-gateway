@@ -15,11 +15,51 @@
 package com.predic8.membrane.core.config.xml;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.router.*;
+import org.jetbrains.annotations.*;
+
+import java.util.*;
+
+import static java.util.stream.Stream.concat;
 
 @MCElement(name="xmlConfig", component = true)
 public class XmlConfig {
 
     private Namespaces namespaces;
+
+    /**
+     * The namespaces of {@code local} plus those of the global xmlConfig whose prefix {@code local}
+     * does not declare. Like nested <code>xmlns</code> declarations in XML, a local prefix shadows
+     * the global one with the same name.
+     */
+    public static @Nullable XmlConfig withGlobal(@Nullable XmlConfig local, @Nullable Router router) {
+        if (router == null || router.getRegistry() == null)
+            return local;
+        return merge(local, router.getRegistry().getBean(XmlConfig.class).orElse(null));
+    }
+
+    static @Nullable XmlConfig merge(@Nullable XmlConfig local, @Nullable XmlConfig global) {
+        final var globalNamespaces = namespaceList(global);
+        if (globalNamespaces.isEmpty())
+            return local;
+        final var localNamespaces = namespaceList(local);
+        if (localNamespaces.isEmpty())
+            return global;
+
+        final var localPrefixes = localNamespaces.stream().map(Namespaces.Namespace::getPrefix).toList();
+        final var merged = new Namespaces();
+        merged.setNamespaces(concat(localNamespaces.stream(),
+                globalNamespaces.stream().filter(ns -> !localPrefixes.contains(ns.getPrefix()))).toList());
+        final var xmlConfig = new XmlConfig();
+        xmlConfig.setNamespaces(merged);
+        return xmlConfig;
+    }
+
+    private static List<Namespaces.Namespace> namespaceList(@Nullable XmlConfig xmlConfig) {
+        if (xmlConfig == null || xmlConfig.getNamespaces() == null || xmlConfig.getNamespaces().getNamespaces() == null)
+            return List.of();
+        return xmlConfig.getNamespaces().getNamespaces();
+    }
 
     @MCChildElement
     public void setNamespaces(Namespaces namespaces) {

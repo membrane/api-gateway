@@ -44,7 +44,8 @@ public abstract class AbstractLanguageInterceptor extends AbstractInterceptor im
     }
 
     /**
-     * @description XML namespace declarations for XPath expressions in the value.
+     * @description XML namespace declarations for XPath expressions in the value. Merged with a global
+     * <code>xmlConfig</code>; a prefix declared here wins over a global one with the same name.
      */
     @Override
     @MCChildElement(allowForeign = true,order = 10)
