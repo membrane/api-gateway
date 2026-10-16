@@ -99,12 +99,12 @@ class OpenAPIValidatorTest {
 
     @Test
     void pathThatIsNoValidTemplateIsAConfigurationError() {
-        var api = new OpenAPI().info(new Info().title("Broken API")).paths(new Paths().addPathItem("/a/{b/c}", new PathItem()));
+        var api = new OpenAPI().info(new Info().title("Broken API")).paths(new Paths().addPathItem("/a/{b}}", new PathItem()));
         var spec = new OpenAPISpec();
         spec.setLocation("broken.yaml");
         var rec = new OpenAPIRecord(api, spec);
         var e = assertThrows(ConfigurationException.class, () -> new OpenAPIValidator(new URIFactory(), rec));
-        assertTrue(e.getMessage().contains("/a/{b/c}"));
+        assertTrue(e.getMessage().contains("/a/{b}}"));
         assertTrue(e.getMessage().contains("Broken API"));
         assertTrue(e.getMessage().contains("broken.yaml"));
     }

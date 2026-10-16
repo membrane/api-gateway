@@ -98,7 +98,7 @@ class APIProxyTest {
         final var spec = invalidPathTemplateSpec();
         spec.setValidateRequests(YES);
         final var e = assertThrows(ConfigurationException.class, () -> createProxy(new DummyTestRouter(), spec));
-        assertTrue(e.getMessage().contains("/items/{id/x}"));
+        assertTrue(e.getMessage().contains("/items/{id}}"));
         assertTrue(e.getMessage().contains("Invalid Path Template"));
     }
 

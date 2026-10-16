@@ -22,7 +22,10 @@ import static java.util.regex.Pattern.*;
 
 public class UriTemplateMatcher {
 
-    public static final String PARAM_NAME_REGEX = "\\{([^/{}]+)}";
+    /**
+     * OpenAPI template-expression-param-name: every character but { and }, including /, ? and #.
+     */
+    public static final String PARAM_NAME_REGEX = "\\{([^{}]+)}";
     public static final String URI_PARAM_MATCH = "[^/]+";
     private static final Pattern PARAM_NAME_REGEX_PATTERN = compile(PARAM_NAME_REGEX);
 
@@ -43,7 +46,7 @@ public class UriTemplateMatcher {
     }
 
     static List<String> getParameterNames(String uriTemplate) {
-        return getNameMatcher(normalizePath(uriTemplate)).results().map(r -> r.group(1)).toList();
+        return getNameMatcher(uriTemplate).results().map(r -> r.group(1)).toList();
     }
 
     @NotNull
@@ -86,7 +89,17 @@ public class UriTemplateMatcher {
     }
 
     static String normalizePath(String path) {
-        String normalizedPath = path.split("\\?")[0];
-        return normalizedPath.endsWith("/") ? normalizedPath : normalizedPath + "/";
+        return appendSlash(path.split("\\?")[0]);
+    }
+
+    /**
+     * Unlike {@link #normalizePath(String)} nothing is cut off at a <code>?</code>, which may be part of a parameter name.
+     */
+    static String normalizeTemplate(String template) {
+        return appendSlash(template);
+    }
+
+    private static String appendSlash(String path) {
+        return path.endsWith("/") ? path : path + "/";
     }
 }

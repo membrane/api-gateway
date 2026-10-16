@@ -10,7 +10,7 @@ paths:
       responses:
         '200':
           description: OK
-  /items/{id/x}:
+  /items/{id}}:
     get:
       responses:
         '200':

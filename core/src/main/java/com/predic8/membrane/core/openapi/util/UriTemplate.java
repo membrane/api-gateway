@@ -43,7 +43,7 @@ public final class UriTemplate {
 
     private UriTemplate(String template, boolean regExp) {
         this.template = template;
-        this.pattern = compile(prepareTemplate(normalizePath(template), regExp));
+        this.pattern = compile(prepareTemplate(normalizeTemplate(template), regExp));
         this.parameterNames = getUniqueParameterNames(template);
     }
 

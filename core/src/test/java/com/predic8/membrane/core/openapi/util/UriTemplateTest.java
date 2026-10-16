@@ -82,9 +82,16 @@ class UriTemplateTest {
      * OpenAPI template-expression-param-name = 1*( %x00-7A / %x7C / %x7E-10FFFF ), every character but { and }
      */
     @ParameterizedTest
-    @ValueSource(strings = {"id", "i_d-1", "a.b", "id%3", "id<>4", "a b", "a*b", "$x", "(x)", "a|b", "a\\b", "ü", "a:b", "a@b", "a=b,c;d"})
+    @ValueSource(strings = {"id", "i_d-1", "a.b", "id%3", "id<>4", "a b", "a*b", "$x", "(x)", "a|b", "a\\b", "ü", "a:b", "a@b", "a=b,c;d", "id/x", "id?x", "id#x", "a/b?c#d"})
     void parameterNames(String name) {
         assertEquals(Map.of(name, "7"), UriTemplate.of("/x/{%s}".formatted(name)).match("/x/7").orElseThrow());
+    }
+
+    @Test
+    void slashAndQuestionMarkInParameterNameDoNotSplitThePath() {
+        final var template = UriTemplate.of("/items/{id?x}/{a/b}");
+        assertEquals(Map.of("id?x", "7", "a/b", "8"), template.match("/items/7/8?id=9").orElseThrow());
+        assertFalse(template.matches("/items/7"));
     }
 
     @Test
@@ -96,7 +103,7 @@ class UriTemplateTest {
 
     @Test
     void curlyBraceOutsideOfTemplateExpression() {
-        assertThrows(IllegalArgumentException.class, () -> UriTemplate.of("/a/{b/c}"));
+        assertThrows(IllegalArgumentException.class, () -> UriTemplate.of("/a/{}"));
         assertThrows(IllegalArgumentException.class, () -> UriTemplate.of("/a/{b}}"));
         assertThrows(IllegalArgumentException.class, () -> UriTemplate.of("/a/{b{c}"));
     }
