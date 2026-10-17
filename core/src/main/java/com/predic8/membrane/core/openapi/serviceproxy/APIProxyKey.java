@@ -34,9 +34,6 @@ import java.util.Optional;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisher.PATH;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisher.PATH_UI;
-import static com.predic8.membrane.core.openapi.util.UriTemplateMatcher.matchTemplate;
-import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisherInterceptor.PATH;
-import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisherInterceptor.PATH_UI;
 import static java.util.Optional.ofNullable;
 
 public class APIProxyKey extends ServiceProxyKey {
