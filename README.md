@@ -737,7 +737,7 @@ api:
                 port: 4000
 ```
 
-See the [API load balancing examples](distribution/examples/loadbalancing)
+See the [load balancing tutorial](distribution/tutorials/loadbalancing)
 
 # 10. Operation
 
