@@ -25,10 +25,13 @@ import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.parameters.Parameter;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.SECURITY;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIInterceptor.shouldValidate;
+import static com.predic8.membrane.core.openapi.util.OpenAPI32Parser.X_MEMBRANE_ADDITIONAL_OPERATIONS;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.BODY;
 
 public class OperationValidator {
@@ -74,6 +77,17 @@ public class OperationValidator {
 
     private ValidationErrors validatePathParameters(ValidationContext ctx, Request<?> req, List<Parameter> schemaParameters) {
         return new PathParametersValidator(api).validatePathParameters(ctx, req, schemaParameters);
+    }
+
+    /**
+     * Methods of the operations of the path item, including the OpenAPI 3.2 ones, e.g. QUERY.
+     */
+    public static List<String> getMethods(PathItem pathItem) {
+        final var methods = new ArrayList<String>();
+        pathItem.readOperationsMap().keySet().forEach(method -> methods.add(method.name()));
+        if (pathItem.getExtensions() != null && pathItem.getExtensions().get(X_MEMBRANE_ADDITIONAL_OPERATIONS) instanceof Map<?, ?> additional)
+            additional.keySet().forEach(method -> methods.add((String) method));
+        return methods;
     }
 
     private static Operation getOperation(String method, PathItem pi) throws MethodNotAllowException {
