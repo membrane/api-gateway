@@ -20,7 +20,6 @@ import com.predic8.membrane.core.kubernetes.KubernetesSchemaResolver;
 import com.predic8.membrane.core.kubernetes.client.KubernetesClientFactory;
 import com.predic8.membrane.core.router.Router;
 import com.predic8.membrane.core.transport.http.HttpClient;
-import com.predic8.membrane.core.transport.http.HttpClientFactory;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.util.*;
 import com.predic8.membrane.core.util.functionalInterfaces.ExceptionThrowingConsumer;
@@ -61,17 +60,25 @@ public class ResolverMap implements Cloneable, Resolver {
     private SchemaResolver[] resolvers;
 
 
+    /**
+     * Creates an HTTP client for each resolved HTTP URL and closes it right away, so the map holds no client and no
+     * connection closer timer thread (#3483).
+     */
     public ResolverMap() {
-        this(new HttpClientFactory(null).createClient(new HttpClientConfiguration()), null);
+        this(HTTPSchemaResolver.withClientPerCall(() -> new HttpClient(new HttpClientConfiguration())), null);
     }
 
     public ResolverMap(HttpClient httpClient, KubernetesClientFactory kubernetesClientFactory) {
+        this(new HTTPSchemaResolver(httpClient), kubernetesClientFactory);
+    }
+
+    private ResolverMap(HTTPSchemaResolver httpSchemaResolver, KubernetesClientFactory kubernetesClientFactory) {
         schemas = new String[10];
         resolvers = new SchemaResolver[10];
 
         // the default config
         addSchemaResolver(new ClasspathSchemaResolver());
-        addSchemaResolver(new HTTPSchemaResolver(httpClient));
+        addSchemaResolver(httpSchemaResolver);
         addSchemaResolver(new KubernetesSchemaResolver(kubernetesClientFactory));
         addSchemaResolver(new FileSchemaResolver());
     }
