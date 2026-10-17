@@ -22,6 +22,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.proxies.AbstractServiceProxy;
 import com.predic8.membrane.core.util.URIFactory;
 import com.predic8.membrane.core.util.URLUtil;
 import org.slf4j.Logger;
@@ -40,6 +41,7 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.Type.*;
+import static com.predic8.membrane.core.util.URIFactory.ALLOW_ILLEGAL_CHARACTERS_URI_FACTORY;
 import static com.predic8.membrane.core.util.text.TextUtil.capitalizeFirstCharacter;
 import static com.predic8.membrane.core.util.text.TextUtil.toEnglishList;
 import static java.util.Locale.US;
@@ -164,10 +166,11 @@ public class RewriteInterceptor extends AbstractInterceptor {
 
         logMappings();
 
+        final var destinationUriFactory = getDestinationUriFactory(exc);
         ListIterator<String> it = exc.getDestinations().listIterator();
         while (it.hasNext()) {
             String dest = it.next();
-            String pathQuery = getPathQueryOrSetError(router.getConfiguration().getUriFactory(), dest, exc);
+            String pathQuery = getPathQueryOrSetError(destinationUriFactory, dest, exc);
             if (pathQuery == null)
                 return RETURN;
 
@@ -220,6 +223,17 @@ public class RewriteInterceptor extends AbstractInterceptor {
 
     private static boolean isAbsoluteUrl(String url) {
         return ABSOLUTE_URL.matcher(url).find();
+    }
+
+    /**
+     * A target URL template with a base path, e.g. http://backend/api/${header.tenant}, reaches the destinations
+     * unevaluated (see DispatchingInterceptor), so its '{' and '}' must not fail the parsing. The target only allows
+     * templates with a strict URI factory, which already parsed any request path that is part of a destination.
+     */
+    private URIFactory getDestinationUriFactory(Exchange exc) {
+        if (exc.getProxy() instanceof AbstractServiceProxy asp && asp.getTarget().isUrlIsTemplate())
+            return ALLOW_ILLEGAL_CHARACTERS_URI_FACTORY;
+        return router.getConfiguration().getUriFactory();
     }
 
     private String getPathQueryOrSetError(URIFactory factory, String destination, Exchange exc) {
