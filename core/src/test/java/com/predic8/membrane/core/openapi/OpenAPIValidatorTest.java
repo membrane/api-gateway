@@ -32,15 +32,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.util.List;
 
 import static com.predic8.membrane.core.openapi.model.Request.get;
 import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.getResourceAsStream;
 import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.parseOpenAPI;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.METHOD;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.PATH;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class OpenAPIValidatorTest {
 
@@ -152,7 +151,9 @@ class OpenAPIValidatorTest {
                 .addPathItem("/users/me", new PathItem().get(new Operation()))
                 .addPathItem("/users/{id}", new PathItem().delete(new Operation())));
         var validator = new OpenAPIValidator(new URIFactory(), new OpenAPIRecord(api, new OpenAPISpec()));
-        assertEquals(405, validator.validate(Request.delete().path("/users/me")).getFirst().getContext().getStatusCode());
+        var ctx = validator.validate(Request.delete().path("/users/me")).getFirst().getContext();
+        assertEquals(405, ctx.getStatusCode());
+        assertEquals(List.of("GET"), ctx.getAllowedMethods());
         assertEquals(0, validator.validate(Request.delete().path("/users/7")).size());
     }
 
@@ -167,8 +168,12 @@ class OpenAPIValidatorTest {
         var validator = new OpenAPIValidator(new URIFactory(), new OpenAPIRecord(api, new OpenAPISpec()));
         assertEquals(0, validator.validate(get().path("/books/me")).size());
         assertEquals(0, validator.validate(Request.post().path("/books/me")).size());
-        assertEquals(405, validator.validate(Request.put().path("/books/me")).getFirst().getContext().getStatusCode());
-        assertEquals(405, validator.validate(get().path("/books/7")).getFirst().getContext().getStatusCode());
+        var putMe = validator.validate(Request.put().path("/books/me")).getFirst().getContext();
+        assertEquals(405, putMe.getStatusCode());
+        assertEquals(List.of("POST", "GET"), putMe.getAllowedMethods());
+        var get7 = validator.validate(get().path("/books/7")).getFirst().getContext();
+        assertEquals(405, get7.getStatusCode());
+        assertEquals(List.of("POST"), get7.getAllowedMethods());
         assertEquals(404, validator.validate(get().path("/books/7/x")).getFirst().getContext().getStatusCode());
     }
 

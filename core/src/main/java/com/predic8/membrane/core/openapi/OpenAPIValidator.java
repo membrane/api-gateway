@@ -34,12 +34,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URISyntaxException;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.regex.Pattern;
 
 import static com.predic8.membrane.core.openapi.util.UriTemplateMatcher.PARAM_NAME_REGEX;
 import static com.predic8.membrane.core.openapi.util.UriUtil.normalizeUri;
+import static com.predic8.membrane.core.openapi.validators.OperationValidator.getMethods;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.METHOD;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.PATH;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.fromRequest;
@@ -161,6 +164,7 @@ public class OpenAPIValidator {
      */
     public ValidationPlan prepareValidation(Request<? extends Body> request) {
         PathTemplate firstMatchingPath = null;
+        final var allowedMethods = new LinkedHashSet<String>();
         for (final var path : pathTemplates) {
             if (!request.parsePathParameters(path.template()))
                 continue;
@@ -169,15 +173,16 @@ public class OpenAPIValidator {
             } catch (MethodNotAllowException e) {
                 // A matching concrete path takes precedence over templated ones, even without the method
                 if (!isTemplated(path.uriTemplate()))
-                    return methodNotAllowed(request, path);
+                    return methodNotAllowed(request, path, getMethods(path.pathItem()));
                 // Ambiguous templated paths are left to the tooling by OpenAPI: try another matching path that has the method
                 if (firstMatchingPath == null)
                     firstMatchingPath = path;
+                allowedMethods.addAll(getMethods(path.pathItem()));
             }
         }
 
         if (firstMatchingPath != null)
-            return methodNotAllowed(request, firstMatchingPath);
+            return methodNotAllowed(request, firstMatchingPath, allowedMethods);
 
         return ValidationPlan.error(ValidationErrors.error(fromRequest(request)
                 .entity(request.getPath())
@@ -185,8 +190,9 @@ public class OpenAPIValidator {
                 .statusCode(404), format("Path %s is invalid.", request.getPath())));
     }
 
-    private static ValidationPlan methodNotAllowed(Request<? extends Body> request, PathTemplate path) {
+    private static ValidationPlan methodNotAllowed(Request<? extends Body> request, PathTemplate path, Collection<String> allowedMethods) {
         return ValidationPlan.error(ValidationErrors.error(contextFor(request, path).statusCode(405)
+                .allowedMethods(allowedMethods)
                 .entity(request.getMethod())
                 .entityType(METHOD), format("Method %s is not allowed", request.getMethod())));
     }

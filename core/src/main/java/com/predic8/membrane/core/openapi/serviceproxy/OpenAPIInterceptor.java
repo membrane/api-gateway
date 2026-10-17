@@ -38,6 +38,7 @@ import java.util.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.exchange.Exchange.SNI_SERVER_NAME;
+import static com.predic8.membrane.core.http.Header.ALLOW;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_RESPONSE_FLOW;
@@ -438,6 +439,11 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
                 .flow(getFlowFromDirection(direction))
                 .topLevel("validation", getErrorMap(errors, direction, validationDetails, maskValues))
                 .buildAndSetResponse(exc);
+
+        // RFC 9110: a 405 must list the methods the target resource supports
+        final var allowedMethods = errors.getFirst().getContext().getAllowedMethods();
+        if (allowedMethods != null)
+            exc.getResponse().getHeader().setValue(ALLOW, String.join(", ", allowedMethods));
     }
 
     private Flow getFlowFromDirection(ValidationErrors.Direction direction) {
