@@ -16,12 +16,14 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.predic8.membrane.core.openapi.model.*;
-import io.swagger.v3.oas.models.*;
-import io.swagger.v3.oas.models.parameters.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.openapi.model.Request;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.parameters.Parameter;
+import io.swagger.v3.oas.models.parameters.PathParameter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.List;
 
 import static com.predic8.membrane.core.openapi.util.Utils.getComponentLocalNameFromRef;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.PATH_PARAMETER;
@@ -39,8 +41,8 @@ public class PathParametersValidator {
 
     public ValidationErrors validatePathParameters(ValidationContext ctx, Request<?> req, List<Parameter> schemaParameters) {
 
-        if (schemaParameters == null || req.getPathParameters().isEmpty())
-            return null;
+        if (schemaParameters == null)
+            return errors;
 
         schemaParameters.stream().map(this::resolveRefs).filter(this::isPathParameter).forEach(parameter -> {
             String value = req.getPathParameters().get(parameter.getName());
