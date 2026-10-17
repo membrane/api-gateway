@@ -18,6 +18,8 @@ import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.proxies.Proxy;
 import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.util.*;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
 
@@ -47,8 +49,16 @@ public class RuleManagerUriTemplateTest {
 
     static Stream<Arguments> missfits() {
         return Stream.of(Arguments.of("/foo","/bar"),
-                Arguments.of("{fid}/{fid}","7")
+                Arguments.of("{fid}/{gid}","7")
         );
+    }
+
+    @Test
+    void repeatedParameterFailsAtStartup() {
+        APIProxy p = new APIProxy();
+        p.setPath(new Path(false, "/{fid}/{fid}"));
+        var e = assertThrows(ConfigurationException.class, () -> p.init(new DefaultRouter()));
+        assertTrue(e.getMessage().contains("/{fid}/{fid}"));
     }
 
     @ParameterizedTest
