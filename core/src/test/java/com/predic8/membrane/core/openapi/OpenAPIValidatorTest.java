@@ -144,6 +144,19 @@ class OpenAPIValidatorTest {
     }
 
     /**
+     * A matching concrete path is the matching path, even if it lacks the method: no fallback to a templated path.
+     */
+    @Test
+    void concretePathWithoutMethodIsNotAllowed() {
+        var api = new OpenAPI().paths(new Paths()
+                .addPathItem("/users/me", new PathItem().get(new Operation()))
+                .addPathItem("/users/{id}", new PathItem().delete(new Operation())));
+        var validator = new OpenAPIValidator(new URIFactory(), new OpenAPIRecord(api, new OpenAPISpec()));
+        assertEquals(405, validator.validate(Request.delete().path("/users/me")).getFirst().getContext().getStatusCode());
+        assertEquals(0, validator.validate(Request.delete().path("/users/7")).size());
+    }
+
+    /**
      * Ambiguous templated paths are left to the tooling by OpenAPI: the first matching path that has the method is used.
      */
     @Test

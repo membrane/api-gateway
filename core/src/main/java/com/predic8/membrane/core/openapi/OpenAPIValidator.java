@@ -59,7 +59,7 @@ public class OpenAPIValidator {
 
     /**
      * Paths of the OpenAPI, concrete before templated paths, otherwise in document order, compiled once.
-     * The first matching path that has the method of the request wins.
+     * A matching concrete path wins. Among matching templated paths, the first that has the method of the request wins.
      */
     private final List<PathTemplate> pathTemplates;
 
@@ -167,21 +167,28 @@ public class OpenAPIValidator {
             try {
                 return ValidationPlan.create(path.template(), contextFor(request, path), OperationValidator.create(rec.getApi(), request.getMethod(), path.pathItem()));
             } catch (MethodNotAllowException e) {
-                // Ambiguous paths are left to the tooling by OpenAPI: try another matching path that has the method
+                // A matching concrete path takes precedence over templated ones, even without the method
+                if (!isTemplated(path.uriTemplate()))
+                    return methodNotAllowed(request, path);
+                // Ambiguous templated paths are left to the tooling by OpenAPI: try another matching path that has the method
                 if (firstMatchingPath == null)
                     firstMatchingPath = path;
             }
         }
 
         if (firstMatchingPath != null)
-            return ValidationPlan.error(ValidationErrors.error(contextFor(request, firstMatchingPath).statusCode(405)
-                    .entity(request.getMethod())
-                    .entityType(METHOD), format("Method %s is not allowed", request.getMethod())));
+            return methodNotAllowed(request, firstMatchingPath);
 
         return ValidationPlan.error(ValidationErrors.error(fromRequest(request)
                 .entity(request.getPath())
                 .entityType(PATH)
                 .statusCode(404), format("Path %s is invalid.", request.getPath())));
+    }
+
+    private static ValidationPlan methodNotAllowed(Request<? extends Body> request, PathTemplate path) {
+        return ValidationPlan.error(ValidationErrors.error(contextFor(request, path).statusCode(405)
+                .entity(request.getMethod())
+                .entityType(METHOD), format("Method %s is not allowed", request.getMethod())));
     }
 
     private static ValidationContext contextFor(Request<? extends Body> request, PathTemplate path) {
