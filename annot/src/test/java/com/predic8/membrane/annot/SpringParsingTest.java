@@ -296,4 +296,39 @@ public class SpringParsingTest {
 
     }
 
+    /**
+     * The overriding setter maps the property to another attribute, so the bean id must no longer be copied into it.
+     */
+    @Test
+    public void overridingSetterRenamesIdAttribute() {
+        var sources = splitSources(MC_MAIN_DEMO + """
+        package com.predic8.membrane.demo;
+        import com.predic8.membrane.annot.*;
+        public abstract class Base {
+            protected String id;
+            @MCAttribute
+            public void setId(String id) { this.id = id; }
+            public String getId() { return id; }
+        }
+        ---
+        package com.predic8.membrane.demo;
+        import com.predic8.membrane.annot.*;
+        @MCElement(name="demo")
+        public class DemoElement extends Base {
+            @Override
+            @MCAttribute(attributeName = "key")
+            public void setId(String id) { this.id = id; }
+        }
+        """);
+        var result = CompilerHelper.compile(sources, false);
+        assertCompilerResult(true, result);
+
+        assertStructure(
+                parseXML(result, wrapSpring("""
+                        <demo id="bean" />
+                        """)),
+                clazz("DemoElement",
+                        property("id", isNull())));
+    }
+
 }

@@ -500,7 +500,8 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
                 // An overload with other parameter types is no override and stays a duplicate.
                 ii.getAis().removeIf(inherited -> processingEnv.getElementUtils().overrides((ExecutableElement) e2, inherited.getE(), te));
                 ii.getAis().add(ai);
-                ii.setHasIdField(ii.isHasIdField() || ai.getXMLName().equals("id"));
+                // Derived from the whole list, as the replaced attribute may have been the one mapping to "id".
+                ii.setHasIdField(ii.getAis().stream().anyMatch(attribute -> attribute.getXMLName().equals("id")));
 
                 validateEnumAttribute(ai);
             }
