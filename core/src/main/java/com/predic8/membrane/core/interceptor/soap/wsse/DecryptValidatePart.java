@@ -263,7 +263,7 @@ public class DecryptValidatePart extends ValidatePart {
     private List<Element> resolveRequired(WsSecurityContext ctx, EncryptionReference required) {
         try {
             return resolveEncryptionReference(ctx.document(), ctx.envelope(), ctx.security(), ctx.soapNs(),
-                    required, parent.getXmlConfig());
+                    required, parent.getEffectiveXmlConfig());
         } catch (WsSecurityXmlUtil.ReferenceResolutionException e) {
             throw new WsSecurityFaultException(FAILED_CHECK, "[" + required.describe() + "] " + e.getMessage(), e);
         }

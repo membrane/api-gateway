@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.lang.xpath;
 
+import com.predic8.membrane.core.config.xml.XmlConfig;
 import com.predic8.membrane.core.exceptions.ProblemDetails;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.lang.AbstractExchangeExpressionTest;
@@ -31,6 +32,7 @@ import org.xml.sax.InputSource;
 
 import java.io.StringReader;
 import java.net.URISyntaxException;
+import java.util.List;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
 import static com.predic8.membrane.core.http.MimeType.*;
@@ -287,6 +289,38 @@ class XPathExchangeExpressionTest extends AbstractExchangeExpressionTest {
             assertEquals("Trevor", expression(new InterceptorAdapter(router), getLanguage(),
                     "//*[local-name()='firstname']")
                     .evaluate(pExc, REQUEST, String.class));
+        }
+
+        @Test
+        void globalXmlConfig() {
+            router.getRegistry().register("ns", xmlConfig("g", "https://predic8.de"));
+            assertEquals("Trevor", expression(new InterceptorAdapter(router), getLanguage(), "//g:firstname")
+                    .evaluate(pExc, REQUEST, String.class));
+        }
+
+        @Test
+        void localXmlConfigWinsOverGlobal() {
+            router.getRegistry().register("ns", xmlConfig("p", "https://example.com/other"));
+            assertEquals("Trevor", expression(new InterceptorAdapter(router, xmlConfig("p", "https://predic8.de")), getLanguage(), "//p:firstname")
+                    .evaluate(pExc, REQUEST, String.class));
+        }
+
+        @Test
+        void localAndGlobalXmlConfigAreMerged() {
+            router.getRegistry().register("ns", xmlConfig("g", "https://predic8.de"));
+            assertEquals("Trevor", expression(new InterceptorAdapter(router, xmlConfig("l", "https://predic8.de")), getLanguage(), "/g:person/l:firstname")
+                    .evaluate(pExc, REQUEST, String.class));
+        }
+
+        private static XmlConfig xmlConfig(String prefix, String uri) {
+            final var ns = new com.predic8.membrane.core.config.xml.Namespaces.Namespace();
+            ns.setPrefix(prefix);
+            ns.setUri(uri);
+            final var namespaces = new com.predic8.membrane.core.config.xml.Namespaces();
+            namespaces.setNamespaces(List.of(ns));
+            final var xmlConfig = new XmlConfig();
+            xmlConfig.setNamespaces(namespaces);
+            return xmlConfig;
         }
     }
 

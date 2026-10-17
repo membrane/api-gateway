@@ -150,6 +150,10 @@ public class WsSecurityInterceptor extends AbstractInterceptor {
     private KeyStore keyStore;
     private TrustStore trustStore;
     private XmlConfig xmlConfig;
+    /**
+     * {@link #xmlConfig} merged with the global xmlConfig, set in {@link #init()}.
+     */
+    private XmlConfig effectiveXmlConfig;
     private ValidateGroup validate;
     private SecureGroup secure;
 
@@ -164,6 +168,7 @@ public class WsSecurityInterceptor extends AbstractInterceptor {
             throw new ConfigurationException("wsSecurity requires at least one <validate> or <secure> part.");
         }
         checkSecureOrder();
+        effectiveXmlConfig = XmlConfig.withGlobal(xmlConfig, router);
         getValidateParts().forEach(part -> part.init(this));
         getSecureParts().forEach(part -> part.init(this));
     }
@@ -553,10 +558,15 @@ public class WsSecurityInterceptor extends AbstractInterceptor {
         return xmlConfig;
     }
 
+    XmlConfig getEffectiveXmlConfig() {
+        return effectiveXmlConfig;
+    }
+
     /**
      * @description Declares additional XML namespace prefixes usable in the <code>xpath</code>
      * attribute of an <code>XPATH</code> reference, in any part. <code>soap</code>,
-     * <code>wsse</code>, and <code>wsu</code> are always available, even when this is set.
+     * <code>wsse</code>, and <code>wsu</code> are always available, even when this is set. Merged with
+     * a global <code>xmlConfig</code>; a prefix declared here wins over a global one with the same name.
      */
     @MCChildElement(allowForeign = true, order = 3)
     public void setXmlConfig(XmlConfig xmlConfig) {

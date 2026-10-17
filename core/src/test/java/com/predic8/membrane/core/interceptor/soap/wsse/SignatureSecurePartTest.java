@@ -270,6 +270,26 @@ class SignatureSecurePartTest extends AbstractWsSecurityTest {
     }
 
     @Test
+    void xpathWithPrefixFromGlobalXmlConfig() throws Exception {
+        router.getRegistry().register("ns", xmlConfig("g", "https://predic8.de/custom"));
+
+        Document result = signWithCustomNamespaceAndParse("//soap:Body/g:foo");
+
+        assertEquals(1, result.getElementsByTagNameNS(DS_NS, "Reference").getLength());
+        assertSignatureIsValid(result);
+    }
+
+    @Test
+    void localXmlConfigOverridesSamePrefixOfGlobal() throws Exception {
+        router.getRegistry().register("ns", xmlConfig("c", "https://example.com/other"));
+
+        Document result = signWithCustomNamespaceAndParse("//c:foo");
+
+        assertEquals(1, result.getElementsByTagNameNS(DS_NS, "Reference").getLength());
+        assertSignatureIsValid(result);
+    }
+
+    @Test
     void passwordIsUsedAsKeyPasswordFallback() throws Exception {
         // Only `password` set, no distinct `keyPassword` - common for a PKCS12 keystore where both
         // are the same.

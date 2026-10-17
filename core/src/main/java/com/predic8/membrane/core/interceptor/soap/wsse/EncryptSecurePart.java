@@ -319,7 +319,7 @@ public class EncryptSecurePart extends SecurePart {
         try {
             for (EncryptionReference reference : references) {
                 List<Element> targets = resolveEncryptionReference(doc, ctx.envelope(), ctx.security(), ctx.soapNs(),
-                        reference, parent.getXmlConfig());
+                        reference, parent.getEffectiveXmlConfig());
                 requireOneTargetPerConfiguredId(reference, targets);
                 for (Element target : targets) {
                     requireEncryptable(target, reference, ctx.soapNs());

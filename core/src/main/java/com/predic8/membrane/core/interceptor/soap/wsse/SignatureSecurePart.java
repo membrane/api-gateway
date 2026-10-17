@@ -188,7 +188,7 @@ public class SignatureSecurePart extends SecurePart {
         try {
             for (SignatureReference reference : references) {
                 List<Element> elements = resolveReference(doc, ctx.envelope(), security, ctx.soapNs(), reference,
-                        parent.getXmlConfig());
+                        parent.getEffectiveXmlConfig());
                 if (reference.getId() != null && elements.size() > 1) {
                     throw new WsSecurityXmlUtil.ReferenceResolutionException(
                             "reference \"" + reference.getId() + "\" has an explicit id but its xpath matched " +

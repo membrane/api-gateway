@@ -62,9 +62,7 @@ public class XPathExchangeExpression extends AbstractExchangeExpression {
     public XPathExchangeExpression(Interceptor interceptor, String xpath, Router router) {
         super(xpath, router);
 
-        if (interceptor instanceof XMLSupport xns) {
-            xmlConfig = xns.getXmlConfig();
-        }
+        xmlConfig = XmlConfig.withGlobal(interceptor instanceof XMLSupport xns ? xns.getXmlConfig() : null, router);
     }
 
     @Override

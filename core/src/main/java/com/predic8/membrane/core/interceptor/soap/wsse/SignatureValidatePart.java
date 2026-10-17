@@ -463,7 +463,7 @@ public class SignatureValidatePart extends ValidatePart {
     private void checkRequiredReference(Document doc, Element envelope, Element security, String soapNs,
                                         Element signatureElement, XMLSignature signature, SignatureReference required) {
         try {
-            for (Element expected : resolveReference(doc, envelope, security, soapNs, required, parent.getXmlConfig())) {
+            for (Element expected : resolveReference(doc, envelope, security, soapNs, required, parent.getEffectiveXmlConfig())) {
                 checkRequiredElement(doc, signatureElement, signature, required, expected);
             }
         } catch (WsSecurityXmlUtil.ReferenceResolutionException e) {

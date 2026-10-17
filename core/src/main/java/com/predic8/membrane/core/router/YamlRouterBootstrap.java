@@ -75,6 +75,7 @@ public final class YamlRouterBootstrap {
         BeanDefinitions beanDefinitions = new BeanDefinitions(definitions);
         beanDefinitions.ensureSingleGlobalDefinition();
         ensureSingleComponent(definitions, "transport");
+        ensureSingleComponent(definitions, "xmlConfig");
         beanDefinitions.getConfigDefinition().ifPresent(configBd -> router.applyConfiguration((Configuration) registry.resolve(configBd.getName())));
 
         registry.finishStaticConfiguration();
