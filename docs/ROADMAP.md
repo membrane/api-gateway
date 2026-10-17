@@ -130,9 +130,8 @@ PRIO 3:
   - Related: in the response flow `cookie` is always empty (it only parses `Cookie`, not `Set-Cookie`). Document or address separately.
   - What about setting cookies?
 - Teardown lifecycle for interceptors when the context reloads
-  - Story: `Interceptor` only has `init()`. Anything an interceptor starts, e.g. the Kafka consumer from `KafkaConsumerInterceptor`, is only stopped through a `@PreDestroy` method, and it is not confirmed that the bean registry calls it for an interceptor nested in an API's flow. On a hot deploy or reload the old interceptor instances may keep running, so a consumer would run twice.
+  - Story: `Interceptor` only has `init()`. Anything an interceptor starts, e.g. the Kafka producer from `KafkaProducerInterceptor`, is only stopped through a `@PreDestroy` method, and it is not confirmed that the bean registry calls it for an interceptor nested in an API's flow. On a hot deploy or reload the old interceptor instances may keep running, so connections would be left open.
   - Check whether there is a teardown lifecycle for interceptors when the context reloads (`DefaultRouter.stopRuntimeForReload`, `closeRegistryIfSupported`). If not, add one, e.g. a `destroy()` on `Interceptor` that the router calls on stop and on reload.
-  - Related: a start hook after all APIs are initialized. `KafkaConsumerInterceptor` starts the consumer from `init()`, so the Kafka extension has to wait itself until the internal API it forwards to is ready.
 - Reorganisation of *Util* classes. Check for duplicates and right place.
 
 ## Breaking Changes

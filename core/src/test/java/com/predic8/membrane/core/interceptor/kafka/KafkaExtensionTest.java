@@ -62,7 +62,6 @@ class KafkaExtensionTest {
 
     @Test
     void detectsMissingClass() {
-        assertFalse(KafkaExtension.isOnClasspath(KafkaExtension.CONSUMER_CLASS));
         assertFalse(KafkaExtension.isOnClasspath(KafkaExtension.PRODUCER_CLASS));
     }
 }
