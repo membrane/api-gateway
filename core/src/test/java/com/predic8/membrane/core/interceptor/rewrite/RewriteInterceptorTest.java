@@ -275,6 +275,22 @@ public class RewriteInterceptorTest {
 	}
 
 	/**
+	 * A leading '//' of the request path is not the start of an authority, 'prefix' must not get lost.
+	 */
+	@Test
+	void redirectKeepsLeadingDoubleSlash() throws URISyntaxException {
+		exc.setRequest(get("/").build());
+		exc.getRequest().setUri("//prefix/old/x");
+		exc.setProxy(sp);
+
+		assertEquals(CONTINUE, di.handleRequest(exc));
+		assertEquals(CONTINUE, rewriter(new Mapping("^/old/(.*)", "/new/$1", "redirect-temporary")).handleRequest(exc));
+		assertNull(exc.getResponse());
+		assertEquals(RETURN, rewriter(new Mapping("^//prefix/old/(.*)", "/new/$1", "redirect-temporary")).handleRequest(exc));
+		assertEquals("/new/x", exc.getResponse().getHeader().getFirstValue("Location"));
+	}
+
+	/**
 	 * The destination of a target URL template with a base path is the unevaluated template. A redirect must not
 	 * match it and put the template into the Location header, see issue #3531.
 	 */

@@ -167,7 +167,11 @@ public class RewriteInterceptor extends AbstractInterceptor {
         logMappings();
 
         // The URI factory escapes e.g. a backslash, which a browser would turn into a host in '/\evil.example'.
-        final var requestPathQuery = getPathQueryOrSetError(router.getConfiguration().getUriFactory(), exc.getRequest().getUri(), exc);
+        // A URI parser takes a leading "//" as the start of an authority, so "//x/old" would lose "x".
+        // The request target is a path, so it is parsed behind a dummy authority.
+        final var requestUri = exc.getRequest().getUri();
+        final var requestPathQuery = getPathQueryOrSetError(router.getConfiguration().getUriFactory(),
+                requestUri.startsWith("//") ? "http://dummy" + requestUri : requestUri, exc);
         if (requestPathQuery == null)
             return RETURN;
         final var mapping = findFirstMatchingRegEx(requestPathQuery);
