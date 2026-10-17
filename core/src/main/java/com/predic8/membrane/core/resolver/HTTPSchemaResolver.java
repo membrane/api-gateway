@@ -20,7 +20,6 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.HttpClientFactory;
-import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.util.URIFactory;
 import com.predic8.membrane.core.util.functionalInterfaces.ExceptionThrowingConsumer;
 
@@ -33,6 +32,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 
 import static com.predic8.membrane.annot.Constants.PRODUCT_NAME;
 import static com.predic8.membrane.core.http.Header.USER_AGENT;
@@ -52,7 +52,9 @@ public class HTTPSchemaResolver implements SchemaResolver {
 
     private static final byte[] NO_HASH = "NO_HASH".getBytes(UTF_8);
 
-    private final HttpClient httpClient;
+    private final Supplier<HttpClient> httpClient;
+    /** True if {@link #httpClient} creates a new client for each call, which the resolver then closes. */
+    private final boolean clientPerCall;
     private final URIFactory uriFactory = new URIFactory(false);
 
     private final Runnable httpWatchJob = new Runnable() {
@@ -107,7 +109,22 @@ public class HTTPSchemaResolver implements SchemaResolver {
     }
 
     public HTTPSchemaResolver(@Nullable HttpClient httpClient) {
-       this.httpClient = httpClient;
+        this(() -> httpClient, false);
+    }
+
+    private HTTPSchemaResolver(Supplier<HttpClient> httpClient, boolean clientPerCall) {
+        this.httpClient = httpClient;
+        this.clientPerCall = clientPerCall;
+    }
+
+    /**
+     * Creates a client for each resolved URL and closes it before {@link #resolve} returns. No client outlives a call,
+     * so there is nothing to close afterwards, at the cost of not reusing connections between calls.
+     *
+     * @param createHttpClient called once per resolved URL.
+     */
+    public static HTTPSchemaResolver withClientPerCall(Supplier<HttpClient> createHttpClient) {
+        return new HTTPSchemaResolver(createHttpClient, true);
     }
 
     @Override
@@ -116,9 +133,11 @@ public class HTTPSchemaResolver implements SchemaResolver {
     }
 
     public InputStream resolve(String url) throws ResourceRetrievalException {
+        HttpClient client = null;
         try {
+            client = httpClient.get();
             var resolveExchange = createResolveExchange(url);
-            httpClient.call(resolveExchange);
+            client.call(resolveExchange);
             Response response = resolveExchange.getResponse();
             response.readBody();
 
@@ -130,6 +149,9 @@ public class HTTPSchemaResolver implements SchemaResolver {
             throw e;
         } catch (Exception e) {
             throw new ResourceRetrievalException(url, e);
+        } finally {
+            if (clientPerCall && client != null)
+                client.closeImmediately();
         }
     }
 
