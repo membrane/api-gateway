@@ -122,6 +122,29 @@ public class RewriteInterceptorTest {
 		assertEquals(REDIRECT_TEMPORARY, new Mapping("^/store/(.*)", "https://example.com/shop/$1", null).getDo());
 	}
 
+	/**
+	 * The default of 'do' is derived from 'to' whenever it is read, it must not be frozen by the first read.
+	 */
+	@Test
+	void doDefaultFollowsTo() {
+		final var mapping = new Mapping();
+		mapping.setFrom("^/store/(.*)");
+		mapping.setTo("/shop/$1");
+		assertEquals(REWRITE, mapping.getDo());
+		mapping.setTo("https://example.com/shop/$1");
+		assertEquals(REDIRECT_TEMPORARY, mapping.getDo());
+	}
+
+	@Test
+	void longDescriptionWithDefaultDo() {
+		final var mapping = new Mapping();
+		mapping.setFrom("^/store/(.*)");
+		mapping.setTo("/shop/$1");
+		final var interceptor = new RewriteInterceptor();
+		interceptor.setMappings(new ArrayList<>(List.of(mapping)));
+		assertTrue(interceptor.getLongDescription().contains("REWRITE"), interceptor.getLongDescription());
+	}
+
 	@Test
 	void storeSample() throws URISyntaxException {
 		exc.setRequest(get("/store/products/").build());
@@ -135,6 +158,7 @@ public class RewriteInterceptorTest {
 		exc.setProxy(sp);
 		exc.getDestinations().add("/buy/banana/%");
 		var req = new Request();
+		req.setUri("/store/x");
 		req.getHeader().setContentType(APPLICATION_JSON);
 		exc.setRequest(req);
 		assertEquals(RETURN, rewriter.handleRequest(exc));
@@ -157,7 +181,7 @@ public class RewriteInterceptorTest {
 
 		exc.setProxy(sp);
 		exc.getDestinations().add("http://backend.example.com/buy/banana/%");
-		exc.setRequest(new Request());
+		exc.setRequest(get("/store/x").build());
 		assertEquals(RETURN, prodRewriter.handleRequest(exc));
 
 		final var json = om.readTree(exc.getResponse().getBodyAsStream());
@@ -184,18 +208,122 @@ public class RewriteInterceptorTest {
 		assertEquals("/shop/v2/x", exc.getRequest().getUri());
 	}
 
+	/**
+	 * A target URL with a path is used as it is, a rewriter does not change it.
+	 */
 	@Test
-	void templateTargetWithBasePathIsRewritten() throws URISyntaxException {
-		final var basePathRewriter = new RewriteInterceptor();
-		basePathRewriter.setMappings(new ArrayList<>(List.of(new Mapping("^/api/(.*)", "/v2/$1", null))));
-		basePathRewriter.init(new DummyTestRouter());
-
+	void templateTargetWithBasePathIsNotRewritten() throws URISyntaxException {
 		exc.setRequest(get("/store/x").build());
 		exc.setProxy(templateTargetProxy());
 
 		assertEquals(CONTINUE, di.handleRequest(exc));
-		assertEquals(CONTINUE, basePathRewriter.handleRequest(exc));
-		assertEquals("http://backend.example.com:8080/v2/${header.tenant}", exc.getDestinations().getFirst());
+		assertEquals(CONTINUE, rewriter(new Mapping("^/api/(.*)", "/v2/$1", null)).handleRequest(exc));
+		assertEquals("http://backend.example.com:8080/api/${header.tenant}", exc.getDestinations().getFirst());
+	}
+
+	@Test
+	void targetUrlWithPathIsNotRewritten() throws URISyntaxException {
+		exc.setRequest(get("/api/x").build());
+		exc.setProxy(targetUrlProxy("http://backend.example.com/api/orders"));
+
+		assertEquals(CONTINUE, di.handleRequest(exc));
+		assertEquals(CONTINUE, rewriter(new Mapping("^/api/(.*)", "/v2/$1", null)).handleRequest(exc));
+		assertEquals("http://backend.example.com/api/orders", exc.getDestinations().getFirst());
+		assertEquals("/v2/x", exc.getRequest().getUri());
+	}
+
+	/**
+	 * A target URL with a path is used as it is, also when a destination replaced it, e.g. set by a balancer.
+	 */
+	@Test
+	void replacedDestinationOfTargetUrlWithPathIsNotRewritten() throws URISyntaxException {
+		exc.setRequest(get("/store/x").build());
+		exc.setProxy(targetUrlProxy("http://backend.example.com/api/orders"));
+
+		assertEquals(CONTINUE, di.handleRequest(exc));
+		exc.setDestinations(new ArrayList<>(List.of("http://node.example.com/store/x")));
+		assertEquals(CONTINUE, rewriter.handleRequest(exc));
+		assertEquals("http://node.example.com/store/x", exc.getDestinations().getFirst());
+		assertEquals("/shop/v2/x", exc.getRequest().getUri());
+	}
+
+	@Test
+	void redirect() throws URISyntaxException {
+		final var redirector = rewriter(new Mapping("^/old/(.*)", "/new/$1", "redirect-permanent"));
+		exc.setRequest(get("/old/x?a=1").build());
+		exc.setProxy(sp);
+
+		assertEquals(CONTINUE, di.handleRequest(exc));
+		assertEquals(RETURN, redirector.handleRequest(exc));
+		assertEquals(301, exc.getResponse().getStatusCode());
+		assertEquals("/new/x?a=1", exc.getResponse().getHeader().getFirstValue("Location"));
+	}
+
+	/**
+	 * A raw backslash must not reach the Location header, browsers resolve '/\evil.example' to another host.
+	 */
+	@Test
+	void redirectEscapesBackslash() throws URISyntaxException {
+		final var redirector = rewriter(new Mapping("^/old\\?next=([^/]+)$", "/$1", "redirect-temporary"));
+		exc.setRequest(get("/").build());
+		exc.getRequest().setUri("/old?next=\\evil.example"); // raw like on the wire, get() would escape it
+		exc.setProxy(sp);
+
+		assertEquals(CONTINUE, di.handleRequest(exc));
+		assertEquals(RETURN, redirector.handleRequest(exc));
+		assertEquals("/%5Cevil.example", exc.getResponse().getHeader().getFirstValue("Location"));
+	}
+
+	/**
+	 * The destination of a target URL template with a base path is the unevaluated template. A redirect must not
+	 * match it and put the template into the Location header, see issue #3531.
+	 */
+	@Test
+	void redirectDoesNotMatchTemplateTarget() throws URISyntaxException {
+		exc.setRequest(get("/").build());
+		exc.setProxy(templateTargetProxy());
+
+		assertEquals(CONTINUE, di.handleRequest(exc));
+		assertEquals(CONTINUE, rewriter(new Mapping("^/api/(.*)", "/v2/$1", "redirect-temporary")).handleRequest(exc));
+		assertNull(exc.getResponse());
+		assertEquals("http://backend.example.com:8080/api/${header.tenant}", exc.getDestinations().getFirst());
+	}
+
+	@Test
+	void redirectMatchesRequestPathWithTemplateTarget() throws URISyntaxException {
+		exc.setRequest(get("/api/orders").build());
+		exc.setProxy(templateTargetProxy());
+
+		assertEquals(CONTINUE, di.handleRequest(exc));
+		assertEquals(RETURN, rewriter(new Mapping("^/api/(.*)", "/v2/$1", "redirect-temporary")).handleRequest(exc));
+		assertEquals("/v2/orders", exc.getResponse().getHeader().getFirstValue("Location"));
+	}
+
+	/**
+	 * A target URL with a base path is the destination of every request, a redirect must not disclose it.
+	 */
+	@Test
+	void redirectDoesNotMatchTargetBasePath() throws URISyntaxException {
+		exc.setRequest(get("/public").build());
+		exc.setProxy(targetUrlProxy("http://backend.example.com/internal/orders"));
+
+		assertEquals(CONTINUE, di.handleRequest(exc));
+		assertEquals(CONTINUE, rewriter(new Mapping("^/internal/(.*)", "/v2/$1", "redirect-temporary")).handleRequest(exc));
+		assertNull(exc.getResponse());
+	}
+
+	private static RewriteInterceptor rewriter(Mapping... mappings) {
+		final var interceptor = new RewriteInterceptor();
+		interceptor.setMappings(new ArrayList<>(List.of(mappings)));
+		interceptor.init(new DummyTestRouter());
+		return interceptor;
+	}
+
+	private static ServiceProxy targetUrlProxy(String url) {
+		final var proxy = new ServiceProxy();
+		proxy.getTarget().setUrl(url);
+		proxy.init(new DummyTestRouter());
+		return proxy;
 	}
 
 	private static ServiceProxy templateTargetProxy() {

@@ -90,7 +90,7 @@ public class RewriteInterceptor extends AbstractInterceptor {
 
         private Type parseDo(String do_) {
             if (do_ == null || do_.isEmpty())
-                return getDo();
+                return null;
 
             String what = do_.toLowerCase(US);
             return switch (what) {
@@ -139,7 +139,7 @@ public class RewriteInterceptor extends AbstractInterceptor {
 
         public Type getDo() {
             if (do_ == null)
-                do_ = isAbsoluteUrl(to) ? REDIRECT_TEMPORARY : REWRITE;
+                return isAbsoluteUrl(to) ? REDIRECT_TEMPORARY : REWRITE;
             return do_;
         }
 
@@ -166,13 +166,47 @@ public class RewriteInterceptor extends AbstractInterceptor {
 
         logMappings();
 
+        // The URI factory escapes e.g. a backslash, which a browser would turn into a host in '/\evil.example'.
+        final var requestPathQuery = getPathQueryOrSetError(router.getConfiguration().getUriFactory(), exc.getRequest().getUri(), exc);
+        if (requestPathQuery == null)
+            return RETURN;
+        final var mapping = findFirstMatchingRegEx(requestPathQuery);
+
+        // A redirect is answered to the client, so it is decided on the request and not on the destination. A target
+        // URL with a base path is the destination of every request and must not end up in the Location header.
+        if (mapping != null && mapping.getDo() != REWRITE) {
+            log.debug("match found: {} redirecting to: {} for type: {}", mapping.from, mapping.to, mapping.getDo());
+            exc.setResponse(Response.redirect(replace(requestPathQuery, mapping), mapping.getDo() == REDIRECT_PERMANENT).build());
+            return RETURN;
+        }
+
+        if (!isTargetUrlUsedAsIs(exc) && !rewriteDestinations(exc))
+            return RETURN;
+
+        if (mapping != null) {
+            var newUri = replace(requestPathQuery, mapping);
+            if (isAbsoluteUrl(newUri)) {
+                newUri = getPathQueryOrSetError(router.getConfiguration().getUriFactory(), newUri, exc);
+                if (newUri == null)
+                    return RETURN;
+            }
+            exc.getRequest().setUri(newUri);
+        }
+
+        return CONTINUE;
+    }
+
+    /**
+     * @return false if a destination could not be parsed, the error response is set then
+     */
+    private boolean rewriteDestinations(Exchange exc) {
         final var destinationUriFactory = getDestinationUriFactory(exc);
         ListIterator<String> it = exc.getDestinations().listIterator();
         while (it.hasNext()) {
             String dest = it.next();
             String pathQuery = getPathQueryOrSetError(destinationUriFactory, dest, exc);
             if (pathQuery == null)
-                return RETURN;
+                return false;
 
             int pathBegin = -1;
             // a relative dest has no authority, a '//' in its query must not be taken for one
@@ -185,19 +219,12 @@ public class RewriteInterceptor extends AbstractInterceptor {
             log.debug("schemaHostPort: {}", schemaHostPort);
 
             Mapping mapping = findFirstMatchingRegEx(pathQuery);
-            if (mapping == null)
+            if (mapping == null || mapping.getDo() != REWRITE)
                 continue;
 
-            Type do_ = mapping.getDo();
-
-            log.debug("match found: {} replacing with: {} for type: {}", mapping.from, mapping.to, do_);
+            log.debug("match found: {} replacing with: {}", mapping.from, mapping.to);
 
             String newDest = replace(pathQuery, mapping);
-
-            if (do_ == REDIRECT_PERMANENT || do_ == REDIRECT_TEMPORARY) {
-                exc.setResponse(Response.redirect(newDest, do_ == REDIRECT_PERMANENT).build());
-                return RETURN;
-            }
 
             if (!isAbsoluteUrl(newDest) && schemaHostPort != null) {
                 // prepend schema, host and port from original uri
@@ -206,19 +233,15 @@ public class RewriteInterceptor extends AbstractInterceptor {
 
             it.set(newDest);
         }
+        return true;
+    }
 
-        Mapping mapping = findFirstMatchingRegEx(exc.getRequest().getUri());
-        if (mapping != null && mapping.do_ == REWRITE) {
-            String newDest = replace(exc.getRequest().getUri(), mapping);
-            if (isAbsoluteUrl(newDest)) {
-                newDest = getPathQueryOrSetError(router.getConfiguration().getUriFactory(), newDest, exc);
-                if (newDest == null)
-                    return RETURN;
-            }
-            exc.getRequest().setUri(newDest);
-        }
-
-        return CONTINUE;
+    /**
+     * A target URL with a path is used as it is, it is already the rewriting the user configured. That includes any
+     * destination replacing it, e.g. set by a balancer.
+     */
+    private static boolean isTargetUrlUsedAsIs(Exchange exc) {
+        return exc.getProxy() instanceof AbstractServiceProxy asp && asp.getTarget().isUrlUsedAsIs();
     }
 
     private static boolean isAbsoluteUrl(String url) {
@@ -226,7 +249,7 @@ public class RewriteInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * A target URL template with a base path, e.g. http://backend/api/${header.tenant}, reaches the destinations
+     * A target URL template without a path, e.g. http://${header.region}.backend, reaches the destinations
      * unevaluated (see DispatchingInterceptor), so its '{' and '}' must not fail the parsing. The target only allows
      * templates with a strict URI factory, which already parsed any request path that is part of a destination.
      */
@@ -255,7 +278,7 @@ public class RewriteInterceptor extends AbstractInterceptor {
 
     private void logMappings() {
         for (Mapping m : mappings) {
-            log.debug("[from: {}],[to: {}],[do: {}]", m.from, m.to, m.do_);
+            log.debug("[from: {}],[to: {}],[do: {}]", m.from, m.to, m.getDo());
         }
     }
 
@@ -321,7 +344,7 @@ public class RewriteInterceptor extends AbstractInterceptor {
                 tr();
                 td().text(m.from).end();
                 td().text(m.to).end();
-                td().text(m.do_.toString()).end();
+                td().text(m.getDo().toString()).end();
                 end();
             }
             end();
