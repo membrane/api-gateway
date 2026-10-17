@@ -22,6 +22,7 @@ import com.predic8.membrane.core.util.ConfigurationException;
 final class KafkaExtension {
 
     static final String PRODUCER_CLASS = "io.membrane_api.ext.kafka.KafkaProducerComponentImpl";
+    static final String CONSUMER_CLASS = "io.membrane_api.ext.kafka.KafkaConsumerComponentImpl";
 
     private KafkaExtension() {
     }
