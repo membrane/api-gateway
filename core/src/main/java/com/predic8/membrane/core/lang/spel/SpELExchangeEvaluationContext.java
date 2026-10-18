@@ -14,24 +14,33 @@
 
 package com.predic8.membrane.core.lang.spel;
 
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.Interceptor.*;
-import com.predic8.membrane.core.lang.*;
-import com.predic8.membrane.core.lang.spel.functions.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.predic8.membrane.core.config.xml.XmlConfig;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.HeaderMap;
+import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.Interceptor.Flow;
+import com.predic8.membrane.core.lang.LazyBody;
+import com.predic8.membrane.core.lang.spel.functions.BuiltInFunctionResolver;
 import com.predic8.membrane.core.lang.spel.spelable.*;
-import com.predic8.membrane.core.lang.spel.typeconverters.*;
-import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.util.*;
-import org.slf4j.*;
-import org.springframework.core.convert.support.*;
-import org.springframework.expression.spel.support.*;
+import com.predic8.membrane.core.lang.spel.typeconverters.ListToStringTypeConverter;
+import com.predic8.membrane.core.lang.spel.typeconverters.SpELBodyToStringTypeConverter;
+import com.predic8.membrane.core.lang.spel.typeconverters.SpELMapToStringTypeConverter;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.util.URIFactory;
+import com.predic8.membrane.core.util.URLParamUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.core.convert.support.DefaultConversionService;
+import org.springframework.expression.spel.support.StandardEvaluationContext;
+import org.springframework.expression.spel.support.StandardTypeConverter;
 
-import java.io.*;
-import java.util.*;
+import java.io.IOException;
+import java.util.Map;
 
-import static com.predic8.membrane.annot.Constants.*;
+import static com.predic8.membrane.annot.Constants.VERSION;
 
 public class SpELExchangeEvaluationContext extends StandardEvaluationContext {
 
@@ -69,6 +78,10 @@ public class SpELExchangeEvaluationContext extends StandardEvaluationContext {
     private final Flow flow;
 
     public SpELExchangeEvaluationContext(Exchange exchange, Flow flow, Router router) {
+        this(exchange, flow, router, null);
+    }
+
+    public SpELExchangeEvaluationContext(Exchange exchange, Flow flow, Router router, XmlConfig localXmlConfig) {
         super();
 
         this.exchange = exchange;
@@ -89,7 +102,7 @@ public class SpELExchangeEvaluationContext extends StandardEvaluationContext {
         addPropertyAccessor(new AwareExchangePropertyAccessor());
 
         // Enables Membrane functions in SpEL scripts like 'hasScopes("admin")'
-        addMethodResolver(new BuiltInFunctionResolver(router));
+        addMethodResolver(new BuiltInFunctionResolver(router, localXmlConfig));
 
         addTypeConverters();
     }

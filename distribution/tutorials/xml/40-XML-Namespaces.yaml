@@ -85,5 +85,4 @@ api:
 #                         wsSecurity, apiKey/expressionExtractor
 #
 #   A local xmlConfig is merged with the global one. If both declare the same
-#   prefix, the local one wins. The xpath() function of SpEL and Groovy only
-#   sees the global xmlConfig.
+#   prefix, the local one wins.

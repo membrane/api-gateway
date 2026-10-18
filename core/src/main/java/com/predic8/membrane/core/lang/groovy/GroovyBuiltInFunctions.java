@@ -14,14 +14,15 @@
 
 package com.predic8.membrane.core.lang.groovy;
 
-import com.predic8.membrane.core.config.xml.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.Interceptor.*;
-import com.predic8.membrane.core.lang.*;
-import com.predic8.membrane.core.router.*;
-import groovy.lang.*;
+import com.predic8.membrane.core.config.xml.XmlConfig;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.Interceptor.Flow;
+import com.predic8.membrane.core.lang.CommonBuiltInFunctions;
+import com.predic8.membrane.core.router.Router;
+import groovy.lang.Binding;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Helper class for built-in functions that delegates to the implementation CommonBuiltInFunctions.
@@ -32,16 +33,18 @@ public class GroovyBuiltInFunctions extends Binding {
     private final Exchange exchange;
     private final Flow flow;
     private final Router router;
-    private XmlConfig xmlConfig;
+    private final XmlConfig xmlConfig;
 
     public GroovyBuiltInFunctions(Exchange exchange, Flow flow, Router router, Map<String, Object> params) {
+        this(exchange, flow, router, params, null);
+    }
+
+    public GroovyBuiltInFunctions(Exchange exchange, Flow flow, Router router, Map<String, Object> params, XmlConfig localXmlConfig) {
         super(params);
         this.exchange = exchange;
         this.flow = flow;
         this.router = router;
-        if (router != null && router.getRegistry() != null) {
-            this.xmlConfig = router.getRegistry().getBean(XmlConfig.class).orElse(null);
-        }
+        this.xmlConfig = XmlConfig.withGlobal(localXmlConfig, router);
     }
 
     public String user() {

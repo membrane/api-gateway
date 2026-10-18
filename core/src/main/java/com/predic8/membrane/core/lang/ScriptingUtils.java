@@ -17,6 +17,7 @@
 package com.predic8.membrane.core.lang;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.predic8.membrane.core.config.xml.XmlConfig;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.HeaderMap;
 import com.predic8.membrane.core.http.LazyCookieMap;
@@ -50,6 +51,10 @@ public class ScriptingUtils {
 
     public static Map<String, Object> createParameterBindings(Router router, Exchange exc, Flow flow, boolean includeJsonObject, SerializationFunction serialization) {
 
+        return createParameterBindings(router, exc, flow, includeJsonObject, serialization, null);
+    }
+
+    public static Map<String, Object> createParameterBindings(Router router, Exchange exc, Flow flow, boolean includeJsonObject, SerializationFunction serialization, XmlConfig localXmlConfig) {
         var msg = exc.getMessage(flow);
 
         Map<String, Object> params = new HashMap<>();
@@ -123,7 +128,7 @@ public class ScriptingUtils {
 
         // "fn" is the special key used to set the Groovy Binding.
         // The Groovy Binding allows function invocation in Groovy scripts with ${functionname()} .
-        params.put(BINDING, new GroovyBuiltInFunctions(exc, flow, router, params) {
+        params.put(BINDING, new GroovyBuiltInFunctions(exc, flow, router, params, localXmlConfig) {
             @Override
             public Object escape(Object o) {
                 return serialization.apply(o);

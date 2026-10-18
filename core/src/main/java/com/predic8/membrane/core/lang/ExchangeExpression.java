@@ -14,16 +14,18 @@
 
 package com.predic8.membrane.core.lang;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.config.xml.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.lang.groovy.*;
-import com.predic8.membrane.core.lang.jsonpath.*;
-import com.predic8.membrane.core.lang.spel.*;
-import com.predic8.membrane.core.lang.xpath.*;
-import com.predic8.membrane.core.router.*;
-import org.jetbrains.annotations.*;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.core.config.xml.XmlConfig;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.interceptor.XMLSupport;
+import com.predic8.membrane.core.lang.groovy.GroovyExchangeExpression;
+import com.predic8.membrane.core.lang.jsonpath.JsonpathExchangeExpression;
+import com.predic8.membrane.core.lang.spel.SpELExchangeExpression;
+import com.predic8.membrane.core.lang.xpath.XPathExchangeExpression;
+import com.predic8.membrane.core.router.Router;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Language expression that takes an exchange as input
@@ -60,9 +62,10 @@ public interface ExchangeExpression {
      * @return
      */
     static ExchangeExpression expression(Interceptor interceptor, Language language, String expression) {
+        var localXmlConfig = interceptor instanceof XMLSupport xml ? xml.getXmlConfig() : null;
         return switch (language) {
-            case GROOVY -> new GroovyExchangeExpression(expression, getRouter(interceptor));
-            case SPEL -> new SpELExchangeExpression(expression,null, getRouter(interceptor)); // parserContext is null on purpose ${} or #{} are not needed here
+            case GROOVY -> new GroovyExchangeExpression(expression, getRouter(interceptor), localXmlConfig);
+            case SPEL -> new SpELExchangeExpression(expression,null, getRouter(interceptor), localXmlConfig); // parserContext is null on purpose ${} or #{} are not needed here
             case XPATH -> new XPathExchangeExpression(interceptor,expression, getRouter(interceptor));
             case JSONPATH -> new JsonpathExchangeExpression(expression, getRouter(interceptor));
         };

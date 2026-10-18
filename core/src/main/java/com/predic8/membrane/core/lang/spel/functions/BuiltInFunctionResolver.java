@@ -13,20 +13,29 @@
    limitations under the License. */
 package com.predic8.membrane.core.lang.spel.functions;
 
-import com.predic8.membrane.core.router.*;
-import org.springframework.core.convert.*;
-import org.springframework.expression.*;
+import com.predic8.membrane.core.config.xml.XmlConfig;
+import com.predic8.membrane.core.router.Router;
+import org.springframework.core.convert.TypeDescriptor;
+import org.springframework.expression.AccessException;
+import org.springframework.expression.EvaluationContext;
+import org.springframework.expression.MethodExecutor;
+import org.springframework.expression.MethodResolver;
 
-import java.lang.reflect.*;
-import java.util.*;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.List;
 
 public class BuiltInFunctionResolver implements MethodResolver {
 
     private final ReflectiveMethodHandler functions;
 
     public BuiltInFunctionResolver(Router router) {
+        this(router, null);
+    }
+
+    public BuiltInFunctionResolver(Router router, XmlConfig localXmlConfig) {
         super();
-        functions = new ReflectiveMethodHandler(new SpELBuiltInFunctions(router));
+        functions = new ReflectiveMethodHandler(new SpELBuiltInFunctions(router, localXmlConfig));
     }
 
     /**

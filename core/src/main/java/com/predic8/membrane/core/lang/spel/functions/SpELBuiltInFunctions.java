@@ -13,15 +13,16 @@
    limitations under the License. */
 package com.predic8.membrane.core.lang.spel.functions;
 
-import com.predic8.membrane.core.config.xml.*;
-import com.predic8.membrane.core.lang.*;
-import com.predic8.membrane.core.lang.spel.*;
-import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.config.xml.XmlConfig;
+import com.predic8.membrane.core.lang.CommonBuiltInFunctions;
+import com.predic8.membrane.core.lang.spel.SpELExchangeEvaluationContext;
+import com.predic8.membrane.core.router.Router;
 
-import java.lang.reflect.*;
-import java.util.*;
+import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.List;
 
-import static java.lang.reflect.Modifier.*;
+import static java.lang.reflect.Modifier.isPublic;
 
 /**
  * This class's public methods are automatically registered in the SpEL context by the BuiltInFunctionResolver.
@@ -36,7 +37,11 @@ public class SpELBuiltInFunctions {
     private final XmlConfig xmlConfig;
 
     public SpELBuiltInFunctions(Router router) {
-        xmlConfig = getXmlConfig(router);
+        this(router, null);
+    }
+
+    public SpELBuiltInFunctions(Router router, XmlConfig localXmlConfig) {
+        xmlConfig = XmlConfig.withGlobal(localXmlConfig, router);
     }
 
     public Object jsonPath(String jsonPath, SpELExchangeEvaluationContext ctx) {
@@ -134,9 +139,4 @@ public class SpELBuiltInFunctions {
         return params.length > 0 && params[params.length - 1] == SpELExchangeEvaluationContext.class;
     }
 
-    private XmlConfig getXmlConfig(Router router) {
-        if (router == null || router.getRegistry() == null)
-            return null;
-        return router.getRegistry().getBean(XmlConfig.class).orElse(null);
-    }
 }

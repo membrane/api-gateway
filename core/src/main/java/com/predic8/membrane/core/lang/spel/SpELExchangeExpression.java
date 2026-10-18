@@ -14,32 +14,42 @@
 
 package com.predic8.membrane.core.lang.spel;
 
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.Interceptor.*;
-import com.predic8.membrane.core.lang.*;
-import com.predic8.membrane.core.lang.spel.functions.*;
-import com.predic8.membrane.core.lang.spel.spelable.*;
-import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.util.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
-import org.springframework.core.convert.*;
-import org.springframework.expression.*;
-import org.springframework.expression.common.*;
-import org.springframework.expression.spel.*;
-import org.springframework.expression.spel.standard.*;
+import com.predic8.membrane.core.config.xml.XmlConfig;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.Interceptor.Flow;
+import com.predic8.membrane.core.lang.AbstractExchangeExpression;
+import com.predic8.membrane.core.lang.ExchangeExpressionException;
+import com.predic8.membrane.core.lang.spel.functions.BuiltInFunctionException;
+import com.predic8.membrane.core.lang.spel.functions.SpELBuiltInFunctions;
+import com.predic8.membrane.core.lang.spel.spelable.SpELLablePropertyAware;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.util.ConfigurationException;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.core.convert.ConverterNotFoundException;
+import org.springframework.core.convert.TypeDescriptor;
+import org.springframework.expression.Expression;
+import org.springframework.expression.ParseException;
+import org.springframework.expression.common.TemplateParserContext;
+import org.springframework.expression.spel.SpelEvaluationException;
+import org.springframework.expression.spel.SpelParserConfiguration;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
 
-import java.util.*;
+import java.util.List;
 
-import static java.lang.Boolean.*;
-import static org.springframework.expression.spel.SpelCompilerMode.*;
-import static org.springframework.expression.spel.SpelMessage.*;
+import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.TRUE;
+import static org.springframework.expression.spel.SpelCompilerMode.MIXED;
+import static org.springframework.expression.spel.SpelMessage.METHOD_NOT_FOUND;
 
 public class SpELExchangeExpression extends AbstractExchangeExpression {
 
     private static final Logger log = LoggerFactory.getLogger(SpELExchangeExpression.class);
 
     private final Expression spelExpression;
+    private final XmlConfig localXmlConfig;
 
     /**
      * Creates an expression "expr" or a templated "..${expr}...${expr}...", depending on
@@ -49,7 +59,12 @@ public class SpELExchangeExpression extends AbstractExchangeExpression {
      * @param parserContext null or one with configuration of prefix and suffix e.g. ${ and }
      */
     public SpELExchangeExpression(String expression, TemplateParserContext parserContext, Router router) {
+        this(expression, parserContext, router, null);
+    }
+
+    public SpELExchangeExpression(String expression, TemplateParserContext parserContext, Router router, XmlConfig localXmlConfig) {
         super(expression, router);
+        this.localXmlConfig = localXmlConfig;
         Exception exception;
         String posLine = "";
         try {
@@ -112,7 +127,7 @@ public class SpELExchangeExpression extends AbstractExchangeExpression {
 
     private @Nullable Object evaluate(Exchange exchange, Flow flow) {
         try {
-            return spelExpression.getValue(new SpELExchangeEvaluationContext(exchange, flow, router), Object.class);
+            return spelExpression.getValue(new SpELExchangeEvaluationContext(exchange, flow, router, localXmlConfig), Object.class);
         } catch (BuiltInFunctionException e) {
             throw new ExchangeExpressionException(expression, e,e.getMessage()).extension("function", e.getFunction());
         }

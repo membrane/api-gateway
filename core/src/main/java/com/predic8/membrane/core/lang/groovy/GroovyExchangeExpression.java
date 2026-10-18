@@ -14,20 +14,21 @@
 
 package com.predic8.membrane.core.lang.groovy;
 
-import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.config.xml.XmlConfig;
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.lang.*;
-import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.lang.AbstractExchangeExpression;
+import com.predic8.membrane.core.router.Router;
 import com.predic8.membrane.core.util.ConfigurationException;
-import com.predic8.membrane.core.util.text.*;
-import groovy.lang.*;
-import org.codehaus.groovy.control.*;
-import org.slf4j.*;
+import groovy.lang.MissingPropertyException;
+import org.codehaus.groovy.control.MultipleCompilationErrorsException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.*;
-import java.util.function.*;
+import java.util.Map;
+import java.util.function.Function;
 
-import static com.predic8.membrane.core.lang.ScriptingUtils.*;
+import static com.predic8.membrane.core.lang.ScriptingUtils.createParameterBindings;
 import static com.predic8.membrane.core.util.text.SerializationFunction.TEXT_SERIALIZATION;
 
 public class GroovyExchangeExpression extends AbstractExchangeExpression {
@@ -36,8 +37,15 @@ public class GroovyExchangeExpression extends AbstractExchangeExpression {
 
     private final Function<Map<String, Object>, Object> script;
 
+    private final XmlConfig localXmlConfig;
+
     public GroovyExchangeExpression(String source, Router router) {
+        this(source, router, null);
+    }
+
+    public GroovyExchangeExpression(String source, Router router, XmlConfig localXmlConfig) {
         super(source, router);
+        this.localXmlConfig = localXmlConfig;
         try {
             script = new GroovyLanguageSupport().compileScript( null, source);
         } catch (MultipleCompilationErrorsException e) {
@@ -49,7 +57,7 @@ public class GroovyExchangeExpression extends AbstractExchangeExpression {
     public <T> T evaluate(Exchange exchange, Interceptor.Flow flow, Class<T> type) {
         Object o = null;
         try {
-            o = script.apply(createParameterBindings(router, exchange, flow, false, TEXT_SERIALIZATION));
+            o = script.apply(createParameterBindings(router, exchange, flow, false, TEXT_SERIALIZATION, localXmlConfig));
         } catch (MissingPropertyException mpe) {
             log.info("Expression {} tries to access non existing property {}",expression,mpe.getMessage());
             if (type.getName().equals(Object.class.getName())) {
