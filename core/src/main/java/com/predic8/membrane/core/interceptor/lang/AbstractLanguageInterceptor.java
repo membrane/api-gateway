@@ -14,12 +14,14 @@
 
 package com.predic8.membrane.core.interceptor.lang;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.config.xml.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.lang.ExchangeExpression.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.core.config.xml.XmlConfig;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.XMLSupport;
+import com.predic8.membrane.core.lang.ExchangeExpression.Language;
 
-import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
+import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
 
 public abstract class AbstractLanguageInterceptor extends AbstractInterceptor implements Polyglot, XMLSupport {
 
@@ -44,8 +46,8 @@ public abstract class AbstractLanguageInterceptor extends AbstractInterceptor im
     }
 
     /**
-     * @description XML namespace declarations for XPath expressions in the value. Merged with a global
-     * <code>xmlConfig</code>; a prefix declared here wins over a global one with the same name.
+     * @description XML namespace declarations for XPath expressions in the value. Merged with API and global
+     * <code>xmlConfig</code>; precedence is local, then API, then global.
      */
     @Override
     @MCChildElement(allowForeign = true,order = 10)

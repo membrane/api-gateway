@@ -75,7 +75,7 @@ public class ChooseInterceptor extends AbstractFlowInterceptor {
         validateChoices(choices);
         setChoices();
 
-        cases.forEach(c -> c.init(router));
+        cases.forEach(c -> c.init(router, proxy));
         interceptors.addAll(concat(
             otherwise != null ? otherwise.getFlow().stream() : empty(),
             cases.stream()

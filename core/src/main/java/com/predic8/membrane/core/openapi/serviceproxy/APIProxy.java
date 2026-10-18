@@ -140,11 +140,8 @@ public class APIProxy extends ServiceProxy implements Polyglot, XMLSupport {
     @Override
     public void init() {
         super.init();
-        if (xmlConfig == null && router != null && router.getRegistry() != null) {
-            xmlConfig = router.getRegistry().getBean(XmlConfig.class).orElse(null);
-        }
         if (test != null && !test.isEmpty()) {
-            exchangeExpression = expression(new InterceptorAdapter(router, xmlConfig), language, test);
+            exchangeExpression = expression(new InterceptorAdapter(router, xmlConfig,this), language, test);
         }
         key = new APIProxyKey(key, exchangeExpression, !specs.isEmpty());
         initOpenAPI();
@@ -352,7 +349,9 @@ public class APIProxy extends ServiceProxy implements Polyglot, XMLSupport {
 
     /**
      * @description XML configuration for the API, such as namespace declarations used by XPath
-     * expressions.
+     * expressions. Namespaces are inherited by the API test, target, and plugins throughout its flow,
+     * including nested flows and SpEL/Groovy XPath functions. Plugin or target declarations override
+     * API declarations, which override global declarations.
      */
     @MCChildElement(allowForeign = true,order = 10)
     public void setXmlConfig(XmlConfig xmlConfig) {

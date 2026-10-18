@@ -2,7 +2,7 @@
 #
 # Tutorial: XML Namespaces
 #
-# Declare namespace prefixes for XPath, globally and locally.
+# Declare namespace prefixes for XPath globally, per API, and per plugin.
 #
 # 1.) Inspect order.xml
 #
@@ -30,6 +30,11 @@ api:
   port: 2000
   test: /o:order
   language: xpath
+  # Available in every plugin in this API, including nested flows.
+  xmlConfig:
+    namespaces:
+      - prefix: cust
+        uri: https://example.com/customers
   flow:
     - request:
       - setHeader:
@@ -40,12 +45,8 @@ api:
           name: X-Customer
           language: xpath
           value: ${//cust:name}
-          # Merged with the global xmlConfig. The prefix does not have to
-          # match the one in the document, only the URI counts.
-          xmlConfig:
-            namespaces:
-              - prefix: cust
-                uri: https://example.com/customers
+          # cust is inherited from the API. Prefixes need not match the
+          # document's prefixes: only the namespace URI counts.
       - setHeader:
           name: X-First-Item
           # xpath() function in SpEL
@@ -84,5 +85,7 @@ api:
 #                         choose/case, rateLimiter, correlationId, idempotency,
 #                         wsSecurity, apiKey/expressionExtractor
 #
-#   A local xmlConfig is merged with the global one. If both declare the same
-#   prefix, the local one wins.
+#   Namespaces are merged with precedence: plugin (or target) > API > global.
+#   API namespaces apply to its test, target, and all plugins in its flow,
+#   including nested flows and the xpath() functions of SpEL and Groovy.
+#   A plugin's local declarations apply only to that plugin.

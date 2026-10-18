@@ -93,12 +93,12 @@ public class Target implements XMLSupport {
         setPort(port);
     }
 
-    public void init(Router router) {
+    public void init(Router router, Proxy proxy) {
         // URL Template evaluation is only activated when there are template markers ${ in the URL
         if (!containsTemplateMarker(url))
             return;
 
-        adapter = new InterceptorAdapter(router, xmlConfig);
+        adapter = new InterceptorAdapter(router, xmlConfig, proxy);
 
         if (router.getConfiguration().getUriFactory().isAllowIllegalCharacters()) {
             log.warn("{}Url templates are disabled for security.{} Disable configuration/uriFactory/allowIllegalCharacters to enable them. Illegal characters in templates may lead to injection attacks.", TerminalColors.BRIGHT_RED(), RESET());
@@ -268,7 +268,8 @@ public class Target implements XMLSupport {
     }
 
     /**
-     * XML Configuration e.g. declaration of XML namespaces for XPath expressions, ...
+     * XML namespaces for XPath expressions, including SpEL/Groovy XPath functions.
+     * Target declarations override API declarations, which override global declarations.
      *
      * @param xmlConfig
      */

@@ -91,7 +91,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
         strategy.init(router);
 
         if (sessionIdExtractor != null) {
-            sessionIdExtractor.init(router);
+            sessionIdExtractor.init(router, proxy);
         }
     }
 

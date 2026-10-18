@@ -123,7 +123,7 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
             extractors.add(new ApiKeyHeaderExtractor());
         }
 
-        extractors.forEach(e -> e.init(router));
+        extractors.forEach(e -> e.init(router, proxy));
     }
 
     @Override

@@ -16,12 +16,12 @@ package com.predic8.membrane.core.interceptor.balancer;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
-import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.proxies.Proxy;
+import com.predic8.membrane.core.router.Router;
 
 public interface SessionIdExtractor {
 
-    default void init(Router router) {
-    }
+    default void init(Router router, Proxy proxy) {};
 
 	default boolean hasSessionId(Exchange exc, Flow flow) throws Exception {
         String sessionId = getSessionId(exc, flow);

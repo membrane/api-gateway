@@ -15,6 +15,7 @@ package com.predic8.membrane.core.interceptor.soap.wsse;
 
 import com.predic8.membrane.core.config.security.KeyStore;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -285,6 +286,22 @@ class SignatureSecurePartTest extends AbstractWsSecurityTest {
 
         Document result = signWithCustomNamespaceAndParse("//c:foo");
 
+        assertEquals(1, result.getElementsByTagNameNS(DS_NS, "Reference").getLength());
+        assertSignatureIsValid(result);
+    }
+
+    @Test
+    void xpathInheritsApiNamespacesAlongsideLocalNamespaces() throws Exception {
+        exchangeWithBody(SOAP_BODY_WITH_CUSTOM_NS);
+        var api = new APIProxy();
+        api.setXmlConfig(xmlConfig("a", "https://predic8.de/custom"));
+        var wsSecurity = securing(signature(xpathReference("//soap:Body/a:foo[self::c:foo]")));
+        wsSecurity.setKeyStore(signingKeyStore(ALIAS_1));
+        wsSecurity.setXmlConfig(xmlConfig("c", "https://predic8.de/custom"));
+        wsSecurity.init(router, api);
+
+        assertEquals(Outcome.CONTINUE, wsSecurity.handleRequest(exchange));
+        var result = parseBody();
         assertEquals(1, result.getElementsByTagNameNS(DS_NS, "Reference").getLength());
         assertSignatureIsValid(result);
     }

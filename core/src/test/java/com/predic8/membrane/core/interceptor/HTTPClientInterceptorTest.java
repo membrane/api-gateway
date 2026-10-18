@@ -271,7 +271,7 @@ class HTTPClientInterceptorTest {
         target.setUrl(url);
         target.setLanguage(language);
         target.setEscaping(escaping);
-        target.init(router);
+        target.init(router,null);
 
         var api = new APIProxy();
         api.setTarget(target);

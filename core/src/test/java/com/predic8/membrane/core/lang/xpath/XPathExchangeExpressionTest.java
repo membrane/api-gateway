@@ -301,14 +301,14 @@ class XPathExchangeExpressionTest extends AbstractExchangeExpressionTest {
         @Test
         void localXmlConfigWinsOverGlobal() {
             router.getRegistry().register("ns", xmlConfig("p", "https://example.com/other"));
-            assertEquals("Trevor", expression(new InterceptorAdapter(router, xmlConfig("p", "https://predic8.de")), getLanguage(), "//p:firstname")
+            assertEquals("Trevor", expression(new InterceptorAdapter(router, xmlConfig("p", "https://predic8.de"),null), getLanguage(), "//p:firstname")
                     .evaluate(pExc, REQUEST, String.class));
         }
 
         @Test
         void localAndGlobalXmlConfigAreMerged() {
             router.getRegistry().register("ns", xmlConfig("g", "https://predic8.de"));
-            assertEquals("Trevor", expression(new InterceptorAdapter(router, xmlConfig("l", "https://predic8.de")), getLanguage(), "/g:person/l:firstname")
+            assertEquals("Trevor", expression(new InterceptorAdapter(router, xmlConfig("l", "https://predic8.de"),null), getLanguage(), "/g:person/l:firstname")
                     .evaluate(pExc, REQUEST, String.class));
         }
 

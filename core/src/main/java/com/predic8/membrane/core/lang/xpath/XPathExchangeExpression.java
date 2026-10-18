@@ -19,7 +19,6 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.XmlDomBody;
 import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.interceptor.XMLSupport;
 import com.predic8.membrane.core.lang.AbstractExchangeExpression;
 import com.predic8.membrane.core.lang.BodyKind;
 import com.predic8.membrane.core.lang.ExchangeExpressionException;
@@ -62,7 +61,7 @@ public class XPathExchangeExpression extends AbstractExchangeExpression {
     public XPathExchangeExpression(Interceptor interceptor, String xpath, Router router) {
         super(xpath, router);
 
-        xmlConfig = XmlConfig.withGlobal(interceptor instanceof XMLSupport xns ? xns.getXmlConfig() : null, router);
+        xmlConfig = XmlConfig.withGlobal(XmlConfig.forInterceptor(interceptor), router);
     }
 
     @Override

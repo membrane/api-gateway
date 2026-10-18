@@ -24,6 +24,7 @@ import com.predic8.membrane.core.lang.groovy.GroovyExchangeExpression;
 import com.predic8.membrane.core.lang.jsonpath.JsonpathExchangeExpression;
 import com.predic8.membrane.core.lang.spel.SpELExchangeExpression;
 import com.predic8.membrane.core.lang.xpath.XPathExchangeExpression;
+import com.predic8.membrane.core.proxies.Proxy;
 import com.predic8.membrane.core.router.Router;
 import org.jetbrains.annotations.Nullable;
 
@@ -62,7 +63,7 @@ public interface ExchangeExpression {
      * @return
      */
     static ExchangeExpression expression(Interceptor interceptor, Language language, String expression) {
-        var localXmlConfig = interceptor instanceof XMLSupport xml ? xml.getXmlConfig() : null;
+        var localXmlConfig = XmlConfig.forInterceptor(interceptor);
         return switch (language) {
             case GROOVY -> new GroovyExchangeExpression(expression, getRouter(interceptor), localXmlConfig);
             case SPEL -> new SpELExchangeExpression(expression,null, getRouter(interceptor), localXmlConfig); // parserContext is null on purpose ${} or #{} are not needed here
@@ -86,9 +87,10 @@ public interface ExchangeExpression {
             this.router = router;
         }
 
-        public InterceptorAdapter(Router router, XmlConfig xmlConfig) {
+        public InterceptorAdapter(Router router, XmlConfig xmlConfig, Proxy proxy) {
             this.router = router;
             this.xmlConfig = xmlConfig;
+            this.proxy = proxy;
         }
 
         /**

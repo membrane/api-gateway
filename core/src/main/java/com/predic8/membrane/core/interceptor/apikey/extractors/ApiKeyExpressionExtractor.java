@@ -13,14 +13,18 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.apikey.extractors;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.config.xml.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.config.xml.XmlConfig;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.lang.*;
-import com.predic8.membrane.core.lang.*;
-import com.predic8.membrane.core.lang.ExchangeExpression.*;
-import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.interceptor.XMLSupport;
+import com.predic8.membrane.core.interceptor.lang.Polyglot;
+import com.predic8.membrane.core.lang.ExchangeExpression;
+import com.predic8.membrane.core.lang.ExchangeExpression.InterceptorAdapter;
+import com.predic8.membrane.core.lang.ExchangeExpression.Language;
+import com.predic8.membrane.core.proxies.Proxy;
+import com.predic8.membrane.core.router.Router;
 
 import java.util.Optional;
 
@@ -56,8 +60,8 @@ public class ApiKeyExpressionExtractor implements ApiKeyExtractor, Polyglot, XML
     private XmlConfig xmlConfig;
 
     @Override
-    public void init(Router router) {
-        exchangeExpression = expression(new InterceptorAdapter(router, xmlConfig), language, expression);
+    public void init(Router router, Proxy proxy) {
+        exchangeExpression = expression(new InterceptorAdapter(router, xmlConfig, proxy), language, expression);
     }
 
     @Override

@@ -13,10 +13,10 @@
  limitations under the License. */
 package com.predic8.membrane.core.interceptor.balancer;
 
-import com.predic8.membrane.core.router.DefaultRouter;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.router.DefaultRouter;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -35,7 +35,7 @@ class PolyglotSessionIdExtractorTest extends AbstractSessionIdExtractorTest {
         extractor = new PolyglotSessionIdExtractor();
         extractor.setLanguage(SPEL);
         extractor.setSessionSource("headers['%s']".formatted(X_SESSION));
-        extractor.init(new DefaultRouter());
+        extractor.init(new DefaultRouter(),null);
     }
 
     @Test

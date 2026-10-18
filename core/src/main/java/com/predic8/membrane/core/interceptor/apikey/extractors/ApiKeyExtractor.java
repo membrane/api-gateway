@@ -14,12 +14,13 @@
 package com.predic8.membrane.core.interceptor.apikey.extractors;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.proxies.Proxy;
+import com.predic8.membrane.core.router.Router;
 
 import java.util.Optional;
 
 public interface ApiKeyExtractor {
-    default void init(Router router) {}
+    default void init(Router router, Proxy proxy) {}
     Optional<LocationNameValue> extract(Exchange exc);
     String getDescription();
 }

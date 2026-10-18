@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.interceptor.templating;
 
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.config.xml.XmlConfig;
 import com.predic8.membrane.core.exceptions.ProblemDetails;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Outcome;
@@ -161,7 +162,7 @@ public class TemplateInterceptor extends AbstractTemplateInterceptor {
     }
 
     private @NotNull Map<String, Object> getVariableBinding(Exchange exc, Flow flow) {
-        return createParameterBindings(router, exc, flow, scriptAccessesJson && isJsonMessage(exc, flow), escaping);
+        return createParameterBindings(router, exc, flow, scriptAccessesJson && isJsonMessage(exc, flow), escaping, XmlConfig.forInterceptor(this));
     }
 
     private static boolean isJsonMessage(Exchange exc, Flow flow) {

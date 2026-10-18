@@ -14,11 +14,16 @@
 
 package com.predic8.membrane.core.config.xml;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.router.*;
-import org.jetbrains.annotations.*;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.interceptor.XMLSupport;
+import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
+import com.predic8.membrane.core.proxies.Proxy;
+import com.predic8.membrane.core.router.Router;
+import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.List;
 
 import static java.util.stream.Stream.concat;
 
@@ -36,6 +41,18 @@ public class XmlConfig {
         if (router == null || router.getRegistry() == null)
             return local;
         return merge(local, router.getRegistry().getBean(XmlConfig.class).orElse(null));
+    }
+
+    /** Plugin-local declarations override API declarations. Global defaults are added by withGlobal. */
+    public static @Nullable XmlConfig forInterceptor(@Nullable Interceptor interceptor) {
+        if (interceptor == null)
+            return null;
+        return withApi(interceptor instanceof XMLSupport xml ? xml.getXmlConfig() : null, interceptor.getProxy());
+    }
+
+    /** Merge without modifying either configured scope. */
+    public static @Nullable XmlConfig withApi(@Nullable XmlConfig local, @Nullable Proxy proxy) {
+        return merge(local, proxy instanceof APIProxy api ? api.getXmlConfig() : null);
     }
 
     static @Nullable XmlConfig merge(@Nullable XmlConfig local, @Nullable XmlConfig global) {

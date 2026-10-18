@@ -78,7 +78,7 @@ public class IfInterceptor extends AbstractFlowWithChildrenInterceptor implement
     }
 
     private void initElse() {
-        elseFlow.forEach(i -> i.init(router));
+        elseFlow.forEach(i -> i.init(router, proxy));
     }
 
     @Override

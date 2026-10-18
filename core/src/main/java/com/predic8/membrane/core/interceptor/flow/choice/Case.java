@@ -13,17 +13,23 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.flow.choice;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.config.xml.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.Interceptor.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.lang.*;
-import com.predic8.membrane.core.lang.ExchangeExpression.*;
-import com.predic8.membrane.core.router.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.Required;
+import com.predic8.membrane.core.config.xml.XmlConfig;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.Interceptor.Flow;
+import com.predic8.membrane.core.interceptor.XMLSupport;
+import com.predic8.membrane.core.lang.ExchangeExpression;
+import com.predic8.membrane.core.lang.ExchangeExpression.InterceptorAdapter;
+import com.predic8.membrane.core.lang.ExchangeExpression.Language;
+import com.predic8.membrane.core.proxies.Proxy;
+import com.predic8.membrane.core.router.Router;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
+import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
 import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
 
 @MCElement(name = "case", component = false)
@@ -36,8 +42,8 @@ public class Case extends AbstractCaseOtherwise implements XMLSupport {
     private ExchangeExpression exchangeExpression;
     private XmlConfig xmlConfig;
 
-    public void init(Router router) {
-        exchangeExpression = expression( new InterceptorAdapter(router,xmlConfig), language, test);
+    public void init(Router router, Proxy proxy) {
+        exchangeExpression = expression(new InterceptorAdapter(router, xmlConfig, proxy), language, test);
     }
 
     boolean evaluate(Exchange exc, Flow flow) {

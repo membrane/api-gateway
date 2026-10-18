@@ -68,7 +68,7 @@ public class ApiKeysInterceptorTest {
         aqe = new ApiKeyQueryParamExtractor();
         aee = new ApiKeyExpressionExtractor();
         aee.setExpression("json['api-key']");
-        aee.init(new DummyTestRouter());
+        aee.init(new DummyTestRouter(),null);
 
         akiWithProp = new ApiKeysInterceptor();
         akiWithProp.setExtractors(of(ahe));

@@ -13,14 +13,18 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.balancer;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.config.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.Interceptor.*;
-import com.predic8.membrane.core.interceptor.lang.*;
-import com.predic8.membrane.core.lang.*;
-import com.predic8.membrane.core.lang.ExchangeExpression.*;
-import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.Required;
+import com.predic8.membrane.core.config.AbstractXmlElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.Interceptor.Flow;
+import com.predic8.membrane.core.interceptor.lang.Polyglot;
+import com.predic8.membrane.core.lang.ExchangeExpression;
+import com.predic8.membrane.core.lang.ExchangeExpression.InterceptorAdapter;
+import com.predic8.membrane.core.lang.ExchangeExpression.Language;
+import com.predic8.membrane.core.proxies.Proxy;
+import com.predic8.membrane.core.router.Router;
 
 import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
 
@@ -31,9 +35,10 @@ public class PolyglotSessionIdExtractor extends AbstractXmlElement implements Se
     private String sessionSource;
     private ExchangeExpression exchangeExpression;
 
-    public void init(Router router) {
+    @Override
+    public void init(Router router, Proxy proxy) {
         if (sessionSource != null && !sessionSource.isEmpty()) {
-            exchangeExpression = expression(new InterceptorAdapter(router), language, sessionSource);
+            exchangeExpression = expression(new InterceptorAdapter(router, null, proxy), language, sessionSource);
         }
     }
 

@@ -14,13 +14,18 @@
 
 package com.predic8.membrane.core.interceptor;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import org.springframework.beans.*;
-import org.springframework.context.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 
 /**
  * @description Wraps an interceptor provided as Spring bean (refid) or as nested interceptor (child element) and delegates all calls.
+ * The wrapped interceptor inherits the enclosing API's XML namespaces. When referencing a plugin from
+ * multiple APIs, use a prototype-scoped Spring bean so each API has its own interceptor instance.
  */
 @MCElement(name="interceptor")
 public class SpringInterceptor extends AbstractInterceptor implements ApplicationContextAware {
@@ -88,7 +93,7 @@ public class SpringInterceptor extends AbstractInterceptor implements Applicatio
 		super.init();
 		if (refid != null)
 			i = (Interceptor) ac.getBean(refid);
-		i.init(router);
+		i.init(router, proxy);
 	}
 
 	public Interceptor getInner() {
