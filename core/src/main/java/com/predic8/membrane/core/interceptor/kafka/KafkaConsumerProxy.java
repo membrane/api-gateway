@@ -20,6 +20,7 @@ import com.predic8.membrane.annot.Required;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.kafka.KafkaConsumerComponentExtension.AckMode;
 import com.predic8.membrane.core.interceptor.kafka.KafkaConsumerComponentExtension.Result;
 import com.predic8.membrane.core.proxies.AbstractServiceProxy;
 import com.predic8.membrane.core.proxies.InternalProxyKey;
@@ -35,8 +36,11 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.RuleMatchingInterceptor.assignRule;
+import static com.predic8.membrane.core.interceptor.kafka.KafkaConsumerComponentExtension.AckMode.AUTO;
+import static com.predic8.membrane.core.interceptor.kafka.KafkaConsumerComponentExtension.AckMode.CLIENT;
 import static com.predic8.membrane.core.interceptor.kafka.KafkaConsumerComponentExtension.Result.*;
-import static com.predic8.membrane.core.interceptor.kafka.KafkaExtension.*;
+import static com.predic8.membrane.core.interceptor.kafka.KafkaExtension.CONSUMER_CLASS;
+import static com.predic8.membrane.core.interceptor.kafka.KafkaExtension.load;
 
 /**
  * @description <p>Consumes messages from an Apache Kafka topic. Every message runs through the flow of this API and
@@ -45,12 +49,12 @@ import static com.predic8.membrane.core.interceptor.kafka.KafkaExtension.*;
  *
  * <p>A message is delivered when the target answers with a status below 400. A client error skips the message,
  * since sending it again would not help. A server error, an unreachable target, 408 Request Timeout and 429 Too Many
- * Requests deliver the message again until it succeeds; until then, the following messages of the same partition
- * wait.</p>
+ * Requests deliver the message again until it succeeds or maxRetries is reached; until then, the following messages
+ * of the same partition wait.</p>
  *
- * <p>By default Kafka commits received messages in the background. Without auto commit, a message is acknowledged to
- * Kafka only after it was delivered or skipped, so no message is lost, but it can be delivered more than once and the
- * target should handle duplicates.</p>
+ * <p>By default a message is acknowledged to Kafka only after it was delivered or skipped, so no message is lost, but
+ * it can be delivered more than once and the target should handle duplicates. With automatic acknowledgement, Kafka
+ * commits received messages in the background instead.</p>
  *
  * <p>The API does not support hot deployment and retryInit. Hot deployment is on by default, so turn it off with
  * <code>hotDeploy: false</code> under <code>configuration</code>; retryInit is off by default.</p>
@@ -82,7 +86,8 @@ public class KafkaConsumerProxy extends AbstractServiceProxy implements NotPortO
     private String topic;
     private String groupId;
     private String clientId;
-    private boolean enableAutoCommit = true;
+    private AckMode ackMode = CLIENT;
+    private int maxRetries = -1;
     private String autoOffsetReset = "latest";
     private int maxPollRecords = 500;
     private int sessionTimeoutMs = 45000;
@@ -106,7 +111,7 @@ public class KafkaConsumerProxy extends AbstractServiceProxy implements NotPortO
 
     /**
      * Called before the interceptors of the flow are initialized. The extension waits until the router is running
-     * before it hands over messages, see {@link KafkaConsumerComponentExtension#start(String, KafkaConsumerComponentExtension.MessageHandler)}.
+     * before it hands over messages, see {@link KafkaConsumerComponentExtension#start(String, int, AckMode, KafkaConsumerComponentExtension.MessageHandler)}.
      * <p>
      * Can run more than once: when the API is inactive and retryInit is on, the router clones it, and the clone
      * shares the consumer of the old instance and is initialized twice. The running consumer is stopped first, so
@@ -123,7 +128,7 @@ public class KafkaConsumerProxy extends AbstractServiceProxy implements NotPortO
         final var created = createConsumer();
         consumer.set(created);
         created.init(router, consumerProperties());
-        created.start(topic, this::handle);
+        created.start(topic, maxRetries, ackMode, this::handle);
     }
 
     /**
@@ -166,7 +171,7 @@ public class KafkaConsumerProxy extends AbstractServiceProxy implements NotPortO
         final var props = new HashMap<String, String>();
         props.put("bootstrap.servers", bootstrapServers);
         props.put("auto.offset.reset", autoOffsetReset);
-        props.put("enable.auto.commit", String.valueOf(enableAutoCommit));
+        props.put("enable.auto.commit", String.valueOf(ackMode == AUTO));
         props.put("max.poll.records", String.valueOf(maxPollRecords));
         props.put("session.timeout.ms", String.valueOf(sessionTimeoutMs));
         props.put("max.poll.interval.ms", String.valueOf(maxPollIntervalMs));
@@ -307,18 +312,36 @@ public class KafkaConsumerProxy extends AbstractServiceProxy implements NotPortO
     }
 
     /**
-     * @description Whether Kafka commits the offsets of received messages periodically in the background. Then a
-     * message counts as consumed once it is received, and it can be lost if Membrane stops before it is delivered.
-     * Set to false to commit a message only after it was delivered or skipped.
-     * @default true
+     * @description When a message is acknowledged to Kafka. With <code>client</code>, a message is acknowledged after
+     * it was delivered or skipped. With <code>auto</code>, Kafka acknowledges received messages periodically in the
+     * background, so a message counts as consumed once it is received, and it can be lost if Membrane stops before it
+     * is delivered.
+     * @default client
+     * @example auto
      */
     @MCAttribute
-    public void setEnableAutoCommit(boolean enableAutoCommit) {
-        this.enableAutoCommit = enableAutoCommit;
+    public void setAckMode(AckMode ackMode) {
+        this.ackMode = ackMode;
     }
 
-    public boolean isEnableAutoCommit() {
-        return enableAutoCommit;
+    public AckMode getAckMode() {
+        return ackMode;
+    }
+
+    /**
+     * @description How often a message is delivered again after a server error, an unreachable target, 408 or 429.
+     * When the last retry fails too, an error is logged and the message is skipped. A negative value retries until
+     * the message is delivered.
+     * @default -1
+     * @example 10
+     */
+    @MCAttribute
+    public void setMaxRetries(int maxRetries) {
+        this.maxRetries = maxRetries;
+    }
+
+    public int getMaxRetries() {
+        return maxRetries;
     }
 
     /**

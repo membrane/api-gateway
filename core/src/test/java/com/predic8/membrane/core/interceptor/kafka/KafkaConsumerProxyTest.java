@@ -41,6 +41,8 @@ import java.util.Map;
 import static com.predic8.membrane.core.exchange.ExchangeState.COMPLETED;
 import static com.predic8.membrane.core.exchange.ExchangeState.FAILED;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.kafka.KafkaConsumerComponentExtension.AckMode.AUTO;
+import static com.predic8.membrane.core.interceptor.kafka.KafkaConsumerComponentExtension.AckMode.CLIENT;
 import static com.predic8.membrane.core.interceptor.kafka.KafkaConsumerComponentExtension.Result.*;
 import static com.predic8.membrane.core.router.YamlRouterBootstrap.loadIntoRouter;
 import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCause;
@@ -69,6 +71,8 @@ class KafkaConsumerProxyTest {
     private static class StubConsumer implements KafkaConsumerComponentExtension {
         MessageHandler handler;
         Map<String, String> properties;
+        int maxRetries;
+        AckMode ackMode;
         boolean stopped;
 
         @Override
@@ -77,7 +81,9 @@ class KafkaConsumerProxyTest {
         }
 
         @Override
-        public void start(final String topic, final MessageHandler handler) {
+        public void start(final String topic, final int maxRetries, final AckMode ackMode, final MessageHandler handler) {
+            this.maxRetries = maxRetries;
+            this.ackMode = ackMode;
             this.handler = handler;
         }
 
@@ -233,21 +239,41 @@ class KafkaConsumerProxyTest {
     }
 
     @Test
-    void autoCommitIsOnByDefault() {
+    void clientAckIsDefault() {
         final var stub = new StubConsumer();
         consumer(stub, "http://localhost:2000/ok").init(dummyRouter());
 
+        assertEquals(CLIENT, stub.ackMode);
+        assertEquals("false", stub.properties.get("enable.auto.commit"));
+    }
+
+    @Test
+    void autoAckTurnsOnAutoCommit() {
+        final var stub = new StubConsumer();
+        final var consumer = consumer(stub, "http://localhost:2000/ok");
+        consumer.setAckMode(AUTO);
+        consumer.init(dummyRouter());
+
+        assertEquals(AUTO, stub.ackMode);
         assertEquals("true", stub.properties.get("enable.auto.commit"));
     }
 
     @Test
-    void autoCommitCanBeTurnedOff() {
+    void retriesWithoutLimitByDefault() {
+        final var stub = new StubConsumer();
+        consumer(stub, "http://localhost:2000/ok").init(dummyRouter());
+
+        assertEquals(-1, stub.maxRetries);
+    }
+
+    @Test
+    void maxRetriesIsPassedToExtension() {
         final var stub = new StubConsumer();
         final var consumer = consumer(stub, "http://localhost:2000/ok");
-        consumer.setEnableAutoCommit(false);
+        consumer.setMaxRetries(5);
         consumer.init(dummyRouter());
 
-        assertEquals("false", stub.properties.get("enable.auto.commit"));
+        assertEquals(5, stub.maxRetries);
     }
 
     /**

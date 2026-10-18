@@ -23,11 +23,10 @@ import java.util.Map;
  * Receives messages from Kafka. The Membrane Kafka Extension provides the implementation;
  * without it the kafkaConsumer fails on startup with a ConfigurationException.
  * <p>
- * A record is acknowledged by committing its offset. With the property <code>enable.auto.commit</code> set to
- * <code>false</code>, the implementation commits according to the {@link Result} of the handler, and delivery is at
- * least once: after a crash between delivery and commit, a record is delivered again. With auto commit on, Kafka
- * commits in the background and the implementation does not commit; {@link Result#RETRY} still hands the record over
- * again, but a record can be lost on a crash.
+ * A record is acknowledged by committing its offset. With {@link AckMode#CLIENT}, the implementation commits according
+ * to the {@link Result} of the handler, and delivery is at least once: after a crash between delivery and commit, a
+ * record is delivered again. With {@link AckMode#AUTO}, Kafka commits in the background and the implementation does
+ * not commit; {@link Result#RETRY} still hands the record over again, but a record can be lost on a crash.
  */
 public interface KafkaConsumerComponentExtension {
 
@@ -37,24 +36,42 @@ public interface KafkaConsumerComponentExtension {
     String KEY_PROPERTY = "membrane.ext.kafka.key";
 
     /**
+     * When the offset of a record is committed.
+     */
+    enum AckMode {
+        /**
+         * Kafka commits the offsets of received records periodically in the background, see the property
+         * <code>enable.auto.commit</code>, which is <code>true</code> in this mode.
+         */
+        AUTO,
+        /**
+         * The implementation commits the offset of a record after the handler returned {@link Result#ACK} or
+         * {@link Result#REJECT}, or the record was skipped after the last retry. <code>enable.auto.commit</code> is
+         * <code>false</code> in this mode.
+         */
+        CLIENT
+    }
+
+    /**
      * What the implementation does with a record after the handler returned. A Kafka commit acknowledges all
      * records of a partition up to the committed offset, so a record is never skipped silently: the next record of
      * a partition is only handed over once the previous one is acknowledged or rejected.
      */
     enum Result {
         /**
-         * Delivered. Commit the offset of the record + 1, unless auto commit is on.
+         * Delivered. Commit the offset of the record + 1, unless the ack mode is {@link AckMode#AUTO}.
          */
         ACK,
         /**
          * Not delivered for a reason that may go away, e.g. the target is down or answered with a server error,
          * 408 or 429.
-         * Do not commit. Seek back to the record, wait and hand it over again, as often as needed.
+         * Do not commit. Seek back to the record, wait and hand it over again, up to <code>maxRetries</code>
+         * times, see {@link #start(String, int, AckMode, MessageHandler)}.
          */
         RETRY,
         /**
          * The target refused the message itself, e.g. with a client error. Sending it again does not help.
-         * Commit the offset of the record + 1 to skip it, unless auto commit is on.
+         * Commit the offset of the record + 1 to skip it, unless the ack mode is {@link AckMode#AUTO}.
          */
         REJECT
     }
@@ -98,10 +115,16 @@ public interface KafkaConsumerComponentExtension {
      * after stop.</li>
      * </ul>
      *
-     * @param topic   Topic to subscribe to
-     * @param handler Receives the records
+     * @param topic      Topic to subscribe to
+     * @param maxRetries How often a record is handed over again after the handler returned {@link Result#RETRY}.
+     *                   When the handler still returns {@link Result#RETRY} after the last retry, log an error with
+     *                   the topic, partition and offset of the record and skip it like {@link Result#REJECT}.
+     *                   A negative value retries without limit.
+     * @param ackMode    When to commit the offset of a record. Matches <code>enable.auto.commit</code> in the
+     *                   properties passed to {@link #init}.
+     * @param handler    Receives the records
      */
-    void start(String topic, MessageHandler handler);
+    void start(String topic, int maxRetries, AckMode ackMode, MessageHandler handler);
 
     /**
      * Stops consuming and releases the connections. Called when the router stops, and when the kafkaConsumer is
