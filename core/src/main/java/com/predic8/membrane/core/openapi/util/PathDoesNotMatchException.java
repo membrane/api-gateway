@@ -16,5 +16,12 @@
 
 package com.predic8.membrane.core.openapi.util;
 
+/**
+ * Signals that a path does not match a URI template. Carries no stack trace, as it is used for control flow.
+ */
 public class PathDoesNotMatchException extends Throwable {
+
+    public PathDoesNotMatchException() {
+        super(null, null, false, false);
+    }
 }
