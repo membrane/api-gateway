@@ -18,7 +18,10 @@ package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.predic8.membrane.core.exceptions.ProblemDetails;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.http.Body;
+import com.predic8.membrane.core.http.ReadingBodyException;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.openapi.OpenAPIValidator;
 import com.predic8.membrane.core.router.DummyTestRouter;
 import com.predic8.membrane.core.router.Router;
@@ -35,6 +38,7 @@ import static com.predic8.membrane.core.http.Header.CONTENT_LENGTH;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.Request.post;
 import static com.predic8.membrane.core.http.Request.put;
+import static com.predic8.membrane.core.http.ThrowingInputStream.closedChannel;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.NO;
@@ -353,7 +357,7 @@ class OpenAPIInterceptorTest {
         var response = Response.ok().contentType(APPLICATION_JSON).build();
         // A Content-Length of 0 makes the validator skip the body
         response.getHeader().removeFields(CONTENT_LENGTH);
-        response.setBody(new Body(ThrowingInputStream.closedChannel("{"), 1000));
+        response.setBody(new Body(closedChannel("{"), 1000));
         exc.setResponse(response);
 
         assertThrows(ReadingBodyException.class, () -> interceptor.handleResponse(exc));
