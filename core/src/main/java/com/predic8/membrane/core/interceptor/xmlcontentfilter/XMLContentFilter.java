@@ -15,6 +15,7 @@ package com.predic8.membrane.core.interceptor.xmlcontentfilter;
 
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.lang.BodyKind;
 import com.predic8.membrane.core.interceptor.xmlcontentfilter.SimpleXPathParser.ContainerNode;
 import com.predic8.membrane.core.multipart.XOPReconstitutor;
 import com.predic8.membrane.core.util.EndOfStreamException;
@@ -135,13 +136,15 @@ public class XMLContentFilter {
 	/**
 	 * Removes parts of an XML document based on an XPath expression.
 	 * <p>
-	 * A message with an empty body is left unchanged.
+	 * A message with an empty body is left unchanged, and so is one whose Content-Type declares another format
+	 * (e.g. JSON or form data), unless its body starts like XML. A mislabelled XML body is filtered like any other:
+	 * a backend may parse it as XML whatever the Content-Type says.
 	 *
 	 * @throws XmlParseException if the body cannot be parsed, e.g. because it is not well-formed XML or contains
 	 *                           a DOCTYPE. Such a message must not be forwarded, as it could not be filtered.
 	 */
 	public void removeMatchingElements(Message message) {
-		if (isEmpty(message))
+		if (!mayBeXml(message))
 			return;
 		try {
 			Message xop = null;
@@ -166,14 +169,11 @@ public class XMLContentFilter {
 		}
 	}
 
-	/**
-	 * {@link Message#isBodyEmpty()} answers from the header where it can, so it misses two empty bodies:
-	 * a chunked body announces no length, and the response to a HEAD request keeps the Content-Length of the
-	 * representation, but carries no body. Both would fail to parse and be rejected. Reading the body tells;
-	 * parsing reads it anyway.
-	 */
-	private static boolean isEmpty(Message message) {
-		return message.isBodyEmpty() || message.getBody().getLength() == 0;
+	private static boolean mayBeXml(Message message) {
+		return switch (BodyKind.ofXml(message)) {
+			case EMPTY, FORM, FOREIGN -> false;
+			case MATCHING, UNKNOWN, MISLABELLED -> true;
+		};
 	}
 
 	private void removeElementsIfNecessary(Message originalMessage,

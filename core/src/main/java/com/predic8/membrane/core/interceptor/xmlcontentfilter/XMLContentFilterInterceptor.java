@@ -43,7 +43,8 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
  * <p>
  * If the message body cannot be parsed, e.g. because it is not well-formed XML or contains a DOCTYPE, the
  * message is rejected: with status 400 in the request flow and 500 in the response flow. An empty body is left
- * unchanged. If the message is XOP-encoded, the
+ * unchanged, and so is a body whose Content-Type declares another format, such as JSON or form data, unless it
+ * starts like XML: such a body is filtered, or rejected if it cannot be parsed. If the message is XOP-encoded, the
  * XPath-expression is run on the reconstituted message; if it matches, the message is replaced by the
  * modified reconstituted message.
  * </p>
