@@ -279,6 +279,7 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
     }
 
     private static DocumentBuilder createDocumentBuilder() throws ParserConfigurationException {
+        // Only used to create an empty Document, nothing is parsed, so there is no XXE exposure.
         return DocumentBuilderFactory.newInstance().newDocumentBuilder();
     }
 

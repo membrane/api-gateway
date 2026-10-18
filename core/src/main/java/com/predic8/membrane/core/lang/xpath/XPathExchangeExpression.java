@@ -115,18 +115,11 @@ public class XPathExchangeExpression extends AbstractExchangeExpression {
             log.debug("Body: {}", msg.getBodyAsStringDecoded()); // is expensive!
         }
 
-        return switch (BodyKind.of(msg, XPathExchangeExpression::isXml, "<")) {
+        return switch (BodyKind.ofXml(msg)) {
             case EMPTY, FOREIGN -> evaluateOnEmptyDocument(xmlType);
             case MATCHING, UNKNOWN, MISLABELLED -> evaluateOnBody(msg, xmlType);
             case FORM -> evaluateOnFormBody(xmlType);
         };
-    }
-
-    /**
-     * XOP/MTOM packages are multipart/related; {@link Message#getBodyAsStreamDecoded()} reassembles them into XML.
-     */
-    private static boolean isXml(String contentType) {
-        return isXML(contentType) || isOfMediaType(MULTIPART_RELATED, contentType);
     }
 
     private Object evaluateOnBody(Message msg, QName xmlType) throws XPathExpressionException {

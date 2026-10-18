@@ -21,11 +21,13 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.util.ConfigurationException;
 import groovy.text.StreamingTemplateEngine;
 import groovy.text.Template;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.parser.ObjectMapperFactory;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -43,14 +45,21 @@ import static com.predic8.membrane.core.http.Response.ok;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.isOpenAPI3;
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.isSwagger2;
+import static com.predic8.membrane.core.openapi.util.UriUtil.trimQueryString;
 import static com.predic8.membrane.core.openapi.util.Utils.getResourceAsStream;
 
+/**
+ * Serves the overview, the OpenAPI documents and the Swagger UI under {@link #PATH}. Shared by
+ * {@link OpenAPIPublisherInterceptor} and {@link ApiDocsInterceptor}.
+ */
 public class OpenAPIPublisher {
+
+    private static final Logger log = LoggerFactory.getLogger(OpenAPIPublisher.class);
 
     public static final String PATH = "/api-docs";
     public static final String PATH_UI = "/api-docs/ui";
     private static final Pattern PATTERN_META = Pattern.compile(PATH + "?/(.+)");
-    private static final Pattern PATTERN_UI = Pattern.compile(PATH + "?/ui/(.+)");
+    private static final Pattern PATTERN_UI = Pattern.compile(PATH + "?/ui(?:/(.*))?");
 
     private final Template swaggerUiHtmlTemplate;
     private final Template apiOverviewHtmlTemplate;
@@ -59,21 +68,38 @@ public class OpenAPIPublisher {
     private final ObjectWriter ow = new ObjectMapper().writerWithDefaultPrettyPrinter();
     private final ObjectMapper omYaml = ObjectMapperFactory.createYaml();
 
-    protected final Map<String, OpenAPIRecord> apis;
+    /**
+     * Not copied: {@link OpenAPIPublisherInterceptor#addRecord} adds to the map after construction.
+     */
+    private final Map<String, OpenAPIRecord> apis;
 
-    public OpenAPIPublisher(Map<String, OpenAPIRecord> apis) throws IOException, ClassNotFoundException {
+    /**
+     * Component name reported in problem details.
+     */
+    private final String component;
+
+    public OpenAPIPublisher(Map<String, OpenAPIRecord> apis, String component) {
         this.apis = apis;
+        this.component = component;
         swaggerUiHtmlTemplate = createTemplate("/openapi/swagger-ui.html");
         apiOverviewHtmlTemplate = createTemplate("/openapi/overview.html");
     }
 
-    Outcome handleSwaggerUi(Exchange exc, Router router) {
-        Matcher m = PATTERN_UI.matcher(exc.getRequest().getUri());
+    public Outcome handle(Exchange exc, Router router) throws IOException, URISyntaxException {
+        final var path = trimQueryString(exc.getRequest().getUri());
 
-        // No id specified
-        if (!m.matches()) {
+        final var ui = PATTERN_UI.matcher(path);
+        if (ui.matches()) {
+            return handleSwaggerUi(exc, ui.group(1), router);
+        }
+        return handleOverviewOpenAPIDoc(exc, path, router);
+    }
+
+    private Outcome handleSwaggerUi(Exchange exc, String id, Router router) {
+        // /api-docs/ui or /api-docs/ui/
+        if (id == null || id.isEmpty()) {
             // Do not log! Too common!
-            user(router.getConfiguration().isProduction(), "openapi-publisher")
+            user(router.getConfiguration().isProduction(), component)
                     .title("No OpenAPI document id")
                     .addSubType("openapi")
                     .status(404)
@@ -83,10 +109,9 @@ public class OpenAPIPublisher {
             return RETURN;
         }
 
-        // /api-doc/ui/(.*)
-        String id = m.group(1);
+        log.debug("OpenAPI with id {} requested", id);
 
-        OpenAPIRecord record = apis.get(id);
+        final var record = apis.get(id);
         if (record == null) {
             return returnNoFound(exc, id, router);
         }
@@ -96,13 +121,13 @@ public class OpenAPIPublisher {
         return RETURN;
     }
 
-    Outcome handleOverviewOpenAPIDoc(Exchange exc, Router router, Logger log) throws IOException, URISyntaxException {
-        Matcher m = PATTERN_META.matcher(exc.getRequest().getUri());
+    private Outcome handleOverviewOpenAPIDoc(Exchange exc, String path, Router router) throws IOException, URISyntaxException {
+        Matcher m = PATTERN_META.matcher(path);
         if (!m.matches()) { // No id specified
             if (acceptsHtmlExplicit(exc)) {
                 return returnHtmlOverview(exc, router);
             }
-            return returnJsonOverview(exc, log);
+            return returnJsonOverview(exc);
         }
 
         String id = m.group(1);
@@ -120,8 +145,8 @@ public class OpenAPIPublisher {
         return exc.getRequest().getHeader().getAccept().contains("html");
     }
 
-    private Outcome returnJsonOverview(Exchange exc, Logger log) throws JsonProcessingException {
-        exc.setResponse(ok().contentType(APPLICATION_JSON).body(ow.writeValueAsBytes(createDictionaryOfAPIs(log))).build());
+    private Outcome returnJsonOverview(Exchange exc) throws JsonProcessingException {
+        exc.setResponse(ok().contentType(APPLICATION_JSON).body(ow.writeValueAsBytes(createDictionaryOfAPIs())).build());
         return RETURN;
     }
 
@@ -132,12 +157,13 @@ public class OpenAPIPublisher {
 
     private Outcome returnNoFound(Exchange exc, String id, Router router) {
         // Do not log. Too common.
-        user(router.getConfiguration().isProduction(), "openapi-publisher")
-                .title("OpenAPI not found.")
+        user(router.getConfiguration().isProduction(), component)
+                .title("OpenAPI not found")
                 .status(404)
                 .addSubType("openapi")
                 .addSubSee("wrong-id")
                 .detail("OpenAPI document with the id %s not found.".formatted(id), true)
+                .topLevel("id", id)
                 .buildAndSetResponse(exc);
         return RETURN;
     }
@@ -149,8 +175,12 @@ public class OpenAPIPublisher {
         return RETURN;
     }
 
-    private Template createTemplate(String filePath) throws ClassNotFoundException, IOException {
-        return new StreamingTemplateEngine().createTemplate(new InputStreamReader(Objects.requireNonNull(getResourceAsStream(this, filePath))));
+    private Template createTemplate(String filePath) {
+        try {
+            return new StreamingTemplateEngine().createTemplate(new InputStreamReader(Objects.requireNonNull(getResourceAsStream(this, filePath))));
+        } catch (Exception e) {
+            throw new ConfigurationException("Could not create Swagger UI or overview page template from: %s".formatted(filePath), e);
+        }
     }
 
     private String renderOverviewTemplate(Router router) {
@@ -169,21 +199,22 @@ public class OpenAPIPublisher {
         return swaggerUiHtmlTemplate.make(tempCtx).toString();
     }
 
-    private ObjectNode createDictionaryOfAPIs(Logger log) {
+    private ObjectNode createDictionaryOfAPIs() {
         ObjectNode top = om.createObjectNode();
         for (Map.Entry<String, OpenAPIRecord> api : apis.entrySet()) {
             ObjectNode apiDetails = top.putObject(api.getKey());
             JsonNode node = api.getValue().node;
-            apiDetails.put("openapi", getSpecVersion(node, log));
-            apiDetails.put("title", node.get("info").get("title").asText());
-            apiDetails.put("version", node.get("info").get("version").asText());
+            apiDetails.put("openapi", getSpecVersion(node));
+            // info, title and version are required, but a document without them still loads
+            apiDetails.put("title", node.path("info").path("title").asText(null));
+            apiDetails.put("version", node.path("info").path("version").asText(null));
             apiDetails.put("openapi_link", PATH + "/" + api.getKey());
             apiDetails.put("ui_link", PATH + "/ui/" + api.getKey());
         }
         return top;
     }
 
-    private String getSpecVersion(JsonNode node, Logger log) {
+    private String getSpecVersion(JsonNode node) {
         if (isSwagger2(node)) {
             return node.get("swagger").asText();
         } else if (isOpenAPI3(node)) {
