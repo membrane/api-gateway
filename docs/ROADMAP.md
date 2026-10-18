@@ -143,6 +143,7 @@ PRIO 3:
   - The model for a target URL with a path: used as it is (today), or target path + request path (Apache `ProxyPass`, Kong).
   - How interceptors that read the path from the destination get it: from the request URI or from a dedicated "routing path".
   - How several destinations (`balancer`, `RetryHandler` failover) and internal routing (`internal:` destinations, `RuleManager` matching internal proxies by the destination's authority) fit.
+  - Path normalization and SSRF when combining target and request path (dot segments, `//x` as a network-path reference, encoded slashes `%2F`); checks in the flow (`if`, `openapi` validation, path-based authorization) must see the path that is sent to the backend.
 - **Breaking**: interceptors and Groovy/SpEL scripts that read or write `exc.getDestinations()` in the flow see different values.
 
 ## Breaking Changes
