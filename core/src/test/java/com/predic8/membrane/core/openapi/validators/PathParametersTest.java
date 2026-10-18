@@ -13,7 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.openapi.validators;
 
-import com.predic8.membrane.core.openapi.util.PathDoesNotMatchException;
 import com.predic8.membrane.core.openapi.util.UriTemplate;
 import io.swagger.v3.oas.models.media.IntegerSchema;
 import io.swagger.v3.oas.models.parameters.PathParameter;
@@ -130,9 +129,9 @@ protected String getOpenAPIFileName() {
      * A path without template expressions: the declared path parameter is skipped like in a path with other expressions.
      */
     @Test
-    void declaredPathParameterWithoutAnyTemplateExpressionIsIgnored() throws PathDoesNotMatchException {
+    void declaredPathParameterWithoutAnyTemplateExpressionIsIgnored() {
         final var request = get().path("/pets");
-        request.parsePathParameters(UriTemplate.of("/pets"));
+        assertTrue(request.parsePathParameters(UriTemplate.of("/pets")));
         final var errors = new PathParametersValidator(validator.getApi()).validatePathParameters(fromRequest(request).uriTemplate("/pets"), request,
                 List.of(new PathParameter().name("ownerId").schema(new IntegerSchema())));
         assertNotNull(errors);

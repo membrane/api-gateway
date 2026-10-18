@@ -16,12 +16,11 @@ package com.predic8.membrane.core.interceptor.authentication.xen;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.util.xml.parser.HardenedXmlParser;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
+import org.xml.sax.InputSource;
 
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
@@ -32,11 +31,9 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 
 public class XenMessageContext {
 
-    private static final DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
     private final Exchange exchange;
     private final Document doc;
     private final Interceptor.Flow flow;
@@ -47,15 +44,7 @@ public class XenMessageContext {
         if (xmc != null)
             return xmc;
 
-        Document document;
-
-        synchronized (dbf) {
-            try {
-                document = dbf.newDocumentBuilder().parse(getMessage(exchange, flow).getBodyAsStream());
-            } catch (SAXException | ParserConfigurationException | IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
+        final var document = HardenedXmlParser.getInstance().parse(new InputSource(getMessage(exchange, flow).getBodyAsStream()));
 
         xmc = new XenMessageContext(exchange, document, flow);
         exchange.setProperty(KEY, xmc);

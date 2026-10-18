@@ -15,23 +15,23 @@ package com.predic8.membrane.core.interceptor.xmlcontentfilter;
 
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.lang.BodyKind;
 import com.predic8.membrane.core.interceptor.xmlcontentfilter.SimpleXPathParser.ContainerNode;
 import com.predic8.membrane.core.multipart.XOPReconstitutor;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.xml.XPathUtil;
+import com.predic8.membrane.core.util.xml.parser.HardenedXmlParser;
+import com.predic8.membrane.core.util.xml.parser.XmlParseException;
 import jakarta.mail.internet.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
+import org.xml.sax.InputSource;
 
 import javax.annotation.concurrent.ThreadSafe;
 import javax.xml.namespace.QName;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.FactoryConfigurationError;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.*;
@@ -58,7 +58,6 @@ public class XMLContentFilter {
 	private static final Logger log = LoggerFactory.getLogger(XMLContentFilter.class);
 
 	private final ThreadLocal<XPathExpression> xpe = new ThreadLocal<>();
-	private final ThreadLocal<DocumentBuilder> db = new ThreadLocal<>();
 	private final ThreadLocal<Transformer> t = new ThreadLocal<>();
 	private final XOPReconstitutor xopReconstitutor = new XOPReconstitutor();
 
@@ -125,18 +124,6 @@ public class XMLContentFilter {
 		return res;
 	}
 
-	private DocumentBuilder createDocumentBuilder() throws ParserConfigurationException {
-		DocumentBuilder res = db.get();
-		if (res != null)
-			return res;
-		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-		dbf.setNamespaceAware(true);
-		dbf.setExpandEntityReferences(false);
-		res = dbf.newDocumentBuilder();
-		db.set(res);
-		return res;
-	}
-
 	private Transformer createTransformer() throws TransformerConfigurationException, TransformerFactoryConfigurationError {
 		Transformer res = t.get();
 		if (res != null)
@@ -149,9 +136,16 @@ public class XMLContentFilter {
 	/**
 	 * Removes parts of an XML document based on an XPath expression.
 	 * <p>
-	 * If the message is not valid XML, it is left unchanged.
+	 * A message with an empty body is left unchanged, and so is one whose Content-Type declares another format
+	 * (e.g. JSON or form data), unless its body starts like XML. A mislabelled XML body is filtered like any other:
+	 * a backend may parse it as XML whatever the Content-Type says.
+	 *
+	 * @throws XmlParseException if the body cannot be parsed, e.g. because it is not well-formed XML or contains
+	 *                           a DOCTYPE. Such a message must not be forwarded, as it could not be filtered.
 	 */
 	public void removeMatchingElements(Message message) {
+		if (!mayBeXml(message))
+			return;
 		try {
 			Message xop = null;
 			try {
@@ -164,21 +158,22 @@ public class XMLContentFilter {
 					!elementFinder.matches(xop != null ? xop.getBodyAsStream() : message.getBodyAsStreamDecoded())) {
 				return;
 			}
-			DocumentBuilder db = createDocumentBuilder();
-			Document d;
-			try {
-				d = db.parse(xop != null ? xop.getBodyAsStream() : message.getBodyAsStreamDecoded());
-			} finally {
-				db.reset();
-			}
+			Document d = HardenedXmlParser.getInstance().parse(new InputSource(xop != null ? xop.getBodyAsStream() : message.getBodyAsStreamDecoded()));
 			removeElementsIfNecessary(message, xop, d);
-		} catch (SAXException | XMLStreamException e) {
-			log.warn(e.getMessage());
-		} catch (ParserConfigurationException | XPathExpressionException | IOException |
+		} catch (XMLStreamException e) {
+			throw new XmlParseException("Could not parse XML document: " + e.getMessage());
+		} catch (XPathExpressionException | IOException |
 				 TransformerFactoryConfigurationError | TransformerException e) {
 			log.warn(e.getMessage());
 			throw new RuntimeException(e);
 		}
+	}
+
+	private static boolean mayBeXml(Message message) {
+		return switch (BodyKind.ofXml(message)) {
+			case EMPTY, FORM, FOREIGN -> false;
+			case MATCHING, UNKNOWN, MISLABELLED -> true;
+		};
 	}
 
 	private void removeElementsIfNecessary(Message originalMessage,
