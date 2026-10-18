@@ -13,9 +13,15 @@
    limitations under the License. */
 package com.predic8.membrane.core.openapi.validators;
 
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.openapi.util.PathDoesNotMatchException;
+import io.swagger.v3.oas.models.media.IntegerSchema;
+import io.swagger.v3.oas.models.parameters.PathParameter;
+import org.junit.jupiter.api.Test;
 
-import static com.predic8.membrane.core.openapi.model.Request.*;
+import java.util.List;
+
+import static com.predic8.membrane.core.openapi.model.Request.get;
+import static com.predic8.membrane.core.openapi.validators.ValidationContext.fromRequest;
 import static org.junit.jupiter.api.Assertions.*;
 
 class PathParametersTest extends AbstractValidatorTest {
@@ -104,5 +110,31 @@ protected String getOpenAPIFileName() {
         ValidationErrors errors = validator.validate(get().path("/v1/encoded-block/%5F"));
         assertEquals(1,errors.size());
         assertTrue(errors.get(0).getMessage().contains("'_' does not match"));
+    }
+
+    @Test
+    void declaredPathParameterNotInTemplateIsIgnored() {
+        final var errors = validator.validate(get().path("/v1/pets/7"));
+        assertEquals(0, errors.size());
+    }
+
+    @Test
+    void declaredPathParameterNotInTemplateOthersStillValidated() {
+        final var errors = validator.validate(get().path("/v1/pets/abc"));
+        assertEquals(1, errors.size());
+        assertTrue(errors.getFirst().getMessage().contains("not an integer"));
+    }
+
+    /**
+     * A path without template expressions: the declared path parameter is skipped like in a path with other expressions.
+     */
+    @Test
+    void declaredPathParameterWithoutAnyTemplateExpressionIsIgnored() throws PathDoesNotMatchException {
+        final var request = get().path("/pets");
+        request.parsePathParameters("/pets");
+        final var errors = new PathParametersValidator(validator.getApi()).validatePathParameters(fromRequest(request).uriTemplate("/pets"), request,
+                List.of(new PathParameter().name("ownerId").schema(new IntegerSchema())));
+        assertNotNull(errors);
+        assertTrue(errors.isEmpty());
     }
 }
