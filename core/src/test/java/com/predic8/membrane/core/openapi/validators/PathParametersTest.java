@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.openapi.validators;
 
 import com.predic8.membrane.core.openapi.util.PathDoesNotMatchException;
+import com.predic8.membrane.core.openapi.util.UriTemplate;
 import io.swagger.v3.oas.models.media.IntegerSchema;
 import io.swagger.v3.oas.models.parameters.PathParameter;
 import org.junit.jupiter.api.Test;
@@ -131,7 +132,7 @@ protected String getOpenAPIFileName() {
     @Test
     void declaredPathParameterWithoutAnyTemplateExpressionIsIgnored() throws PathDoesNotMatchException {
         final var request = get().path("/pets");
-        request.parsePathParameters("/pets");
+        request.parsePathParameters(UriTemplate.of("/pets"));
         final var errors = new PathParametersValidator(validator.getApi()).validatePathParameters(fromRequest(request).uriTemplate("/pets"), request,
                 List.of(new PathParameter().name("ownerId").schema(new IntegerSchema())));
         assertNotNull(errors);
