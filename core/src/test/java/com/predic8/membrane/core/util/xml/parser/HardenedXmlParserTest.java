@@ -13,10 +13,12 @@
    limitations under the License. */
 package com.predic8.membrane.core.util.xml.parser;
 
+import com.predic8.membrane.core.http.ReadingBodyException;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.InputSource;
 
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.StringReader;
 
@@ -38,5 +40,23 @@ class HardenedXmlParserTest {
             System.setErr(originalErr);
         }
         assertFalse(captured.toString(UTF_8).contains("[Fatal Error]"), captured.toString(UTF_8));
+    }
+
+    @Test
+    void readingBodyExceptionIsNotTurnedIntoParseError() {
+        final var failure = new ReadingBodyException("connection reset");
+        final var source = new InputSource(new InputStream() {
+            @Override
+            public int read() {
+                throw failure;
+            }
+        });
+        assertSame(failure, assertThrows(ReadingBodyException.class, () -> HardenedXmlParser.getInstance().parse(source)));
+    }
+
+    @Test
+    void doctypeIsParseError() {
+        assertThrows(XmlParseException.class, () -> HardenedXmlParser.getInstance().parse(
+                new InputSource(new StringReader("<!DOCTYPE a><a/>"))));
     }
 }

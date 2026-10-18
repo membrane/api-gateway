@@ -88,6 +88,7 @@ public class Header {
     public static final String PROXY_CONNECTION = "Proxy-Connection";
     public static final String HOST = "Host";
     public static final String EXPECT = "Expect";
+    public static final String ALLOW = "Allow";
     public static final String X_FORWARDED_FOR = "X-Forwarded-For";
     public static final String X_FORWARDED_PROTO = "X-Forwarded-Proto";
     public static final String X_FORWARDED_HOST = "X-Forwarded-Host";

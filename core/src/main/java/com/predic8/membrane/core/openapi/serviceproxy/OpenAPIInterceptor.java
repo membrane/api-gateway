@@ -22,7 +22,6 @@ import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.openapi.OpenAPIParsingException;
-import com.predic8.membrane.core.openapi.OpenAPIValidator;
 import com.predic8.membrane.core.openapi.OpenAPIValidator.ValidationPlan;
 import com.predic8.membrane.core.openapi.model.Request;
 import com.predic8.membrane.core.openapi.validators.ValidationErrors;
@@ -39,6 +38,7 @@ import java.util.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.exchange.Exchange.SNI_SERVER_NAME;
+import static com.predic8.membrane.core.http.Header.ALLOW;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_RESPONSE_FLOW;
@@ -230,10 +230,9 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
 
 
     private ValidationErrors validateRequest(OpenAPIRecord rec, Exchange exc) throws ParseException {
-        var validateRequests = shouldValidate(rec.getApi(), REQUESTS);
-        var validateResponses = shouldValidate(rec.getApi(), RESPONSES);
+        if (!isValidated(rec.getApi())) return empty();
 
-        if (!validateRequests && !validateResponses) return empty();
+        var validateRequests = shouldValidate(rec.getApi(), REQUESTS);
 
         Request<?> request = validateRequests ? getOpenapiValidatorRequest(exc) : getOperationRequestOnlyForResponseValidation(exc);
         var validationPlan = getOrCreateValidationPlan(rec, exc, request);
@@ -260,7 +259,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         if (validationPlan != null)
             return validationPlan;
 
-        validationPlan = new OpenAPIValidator(router.getConfiguration().getUriFactory(), rec).prepareValidation(request);
+        validationPlan = apiProxy.getValidator(rec).prepareValidation(request);
 
         // Store the plan in request flow for response validation in the response flow
         exc.setProperty(OPENAPI_VALIDATOR_CTX_PROPERTY, validationPlan);
@@ -299,6 +298,13 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         @SuppressWarnings("unchecked")
         Map<String, Object> xValidation = (Map<String, Object>) api.getExtensions().get(X_MEMBRANE_VALIDATION);
         return xValidation != null && Boolean.TRUE.equals(xValidation.get(key));
+    }
+
+    /**
+     * @return true if requests or responses are validated against the OpenAPI. Only then does the API have a validator for it.
+     */
+    public static boolean isValidated(OpenAPI api) {
+        return shouldValidate(api, REQUESTS) || shouldValidate(api, RESPONSES);
     }
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
@@ -433,6 +439,11 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
                 .flow(getFlowFromDirection(direction))
                 .topLevel("validation", getErrorMap(errors, direction, validationDetails, maskValues))
                 .buildAndSetResponse(exc);
+
+        // RFC 9110: a 405 must list the methods the target resource supports
+        final var allowedMethods = errors.getFirst().getContext().getAllowedMethods();
+        if (allowedMethods != null)
+            exc.getResponse().getHeader().setValue(ALLOW, String.join(", ", allowedMethods));
     }
 
     private Flow getFlowFromDirection(ValidationErrors.Direction direction) {
