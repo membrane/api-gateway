@@ -25,6 +25,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
+import java.util.List;
 
 import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
 import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.parseOpenAPI32;
@@ -86,6 +87,7 @@ class OpenAPI32ValidatorTest {
         assertEquals(1, errors.size());
         assertEquals(405, errors.get(0).getContext().getStatusCode());
         assertEquals(METHOD, errors.get(0).getContext().getValidatedEntityType());
+        assertEquals(List.of("QUERY", "PURGE"), errors.getFirst().getContext().getAllowedMethods());
     }
 
     @Test

@@ -20,9 +20,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.predic8.membrane.core.openapi.model.Request;
 import io.swagger.v3.oas.models.media.Schema;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Stream;
 
@@ -46,6 +44,11 @@ public class ValidationContext {
     private ValidatedEntityType validatedEntityType;
     private String validatedEntity;
     private int statusCode;
+
+    /**
+     * Methods the matching path supports, reported in the Allow header of a 405. Null unless the method is not allowed.
+     */
+    private List<String> allowedMethods;
 
     /**
      * The component schemas whose $ref has already been resolved on the current branch of the
@@ -113,6 +116,7 @@ public class ValidationContext {
         this.validatedEntityType = ctx.validatedEntityType;
         this.validatedEntity = ctx.validatedEntity;
         this.statusCode = ctx.statusCode;
+        this.allowedMethods = ctx.allowedMethods;
         this.parameter = ctx.parameter;
         this.visitedRefs = ctx.visitedRefs;
         this.validityCache = ctx.validityCache;
@@ -239,6 +243,12 @@ public class ValidationContext {
         return ctx;
     }
 
+    public ValidationContext allowedMethods(Collection<String> methods) {
+        ValidationContext ctx = this.deepCopy();
+        ctx.allowedMethods = List.copyOf(methods);
+        return ctx;
+    }
+
     public ValidationContext schemaType(String type) {
         ValidationContext ctx = this.deepCopy();
         ctx.schemaType = type;
@@ -326,6 +336,10 @@ public class ValidationContext {
 
     public int getStatusCode() {
         return statusCode;
+    }
+
+    public List<String> getAllowedMethods() {
+        return allowedMethods;
     }
 
     public String getUriTemplate() {

@@ -30,6 +30,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.*;
 
+import static com.predic8.membrane.core.http.Header.ALLOW;
 import static com.predic8.membrane.core.http.Header.CONTENT_LENGTH;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.Request.post;
@@ -226,6 +227,7 @@ class OpenAPIInterceptorTest {
 
         assertEquals(RETURN, interceptor.handleRequest(requestExc));
         assertEquals(405, requestExc.getResponse().getStatusCode());
+        assertEquals("GET, PUT, POST", requestExc.getResponse().getHeader().getFirstValue(ALLOW));
         assertEquals("PATCH", getMapFromResponse(requestExc).get("validation").get("method"));
         assertTrue(((Map<?, ?>) getMapFromResponse(requestExc).get("validation").get("errors")).containsKey("REQUEST/METHOD"));
     }

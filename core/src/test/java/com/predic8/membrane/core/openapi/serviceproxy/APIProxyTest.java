@@ -13,12 +13,17 @@
    limitations under the License. */
 package com.predic8.membrane.core.openapi.serviceproxy;
 
+import com.predic8.membrane.core.router.DummyTestRouter;
+import com.predic8.membrane.core.util.ConfigurationException;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import org.junit.jupiter.api.*;
 
 import java.util.Map;
 
+import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.YES;
+import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.createProxy;
+import static com.predic8.membrane.test.TestUtil.getPathFromResource;
 import static org.junit.jupiter.api.Assertions.*;
 
 class APIProxyTest {
@@ -86,5 +91,40 @@ class APIProxyTest {
         p.apiRecords.values().iterator().next().getApi().getInfo().addExtension("x-api-id", "Foo");
         p.setName(p.assignOpenAPIName());
         assertEquals("Foo", p.getName());
+    }
+
+    @Test
+    void pathThatIsNoValidTemplateFailsAtStartupWhenValidating() {
+        final var spec = invalidPathTemplateSpec();
+        spec.setValidateRequests(YES);
+        final var e = assertThrows(ConfigurationException.class, () -> createProxy(new DummyTestRouter(), spec));
+        assertTrue(e.getMessage().contains("/items/{id}}"));
+        assertTrue(e.getMessage().contains("Invalid Path Template"));
+    }
+
+    @Test
+    void pathThatIsNoValidTemplateIsIgnoredWithoutValidation() {
+        final var proxy = createProxy(new DummyTestRouter(), invalidPathTemplateSpec());
+        final var rec = proxy.getApiRecords().values().iterator().next();
+        assertFalse(OpenAPIInterceptor.isValidated(rec.getApi()));
+        final var e = assertThrows(IllegalStateException.class, () -> proxy.getValidator(rec));
+        assertTrue(e.getMessage().contains("Invalid Path Template"));
+    }
+
+    @Test
+    void validatorIsCreatedWhenValidatingResponses() {
+        final var spec = invalidPathTemplateSpec();
+        spec.location = getPathFromResource("openapi/specs/customers.yml");
+        spec.setValidateResponses(YES);
+        final var proxy = createProxy(new DummyTestRouter(), spec);
+        final var rec = proxy.getApiRecords().values().iterator().next();
+        assertTrue(OpenAPIInterceptor.isValidated(rec.getApi()));
+        assertNotNull(proxy.getValidator(rec));
+    }
+
+    private static OpenAPISpec invalidPathTemplateSpec() {
+        final var spec = new OpenAPISpec();
+        spec.location = getPathFromResource("openapi/specs/invalid-path-template.yml");
+        return spec;
     }
 }
