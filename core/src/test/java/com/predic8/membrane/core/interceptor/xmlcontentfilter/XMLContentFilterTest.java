@@ -23,9 +23,15 @@ import org.xml.sax.SAXException;
 import com.predic8.membrane.core.http.Body;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.util.xml.parser.XmlParseException;
 
+import static com.predic8.membrane.core.http.MimeType.*;
+import static java.nio.charset.StandardCharsets.UTF_16;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.xmlunit.matchers.CompareMatcher.isSimilarTo;
 
 public class XMLContentFilterTest {
@@ -50,6 +56,74 @@ public class XMLContentFilterTest {
 		assertThat("<a/>", isSimilarTo(applyXPath("//b[@c]")));
 		assertThat("<a/>", isSimilarTo(applyXPath("//*[ local-name() = 'b' ]")));
 		assertThat(DOC, isSimilarTo(applyXPath("//b[@c='2']")));
+	}
+
+	private static Message message(String contentType, byte[] body) {
+		final var m = new Request();
+		if (contentType != null)
+			m.getHeader().setContentType(contentType);
+		m.setBody(new Body(body));
+		return m;
+	}
+
+	private static String filterSecret(Message m) throws XPathExpressionException {
+		new XMLContentFilter("//secret").removeMatchingElements(m);
+		return m.getBody().toString();
+	}
+
+	@Test
+	void jsonIsLeftUnchanged() throws XPathExpressionException {
+		assertEquals("{\"secret\":1}", filterSecret(message(APPLICATION_JSON, "{\"secret\":1}".getBytes(UTF_8))));
+	}
+
+	@Test
+	void formDataIsLeftUnchanged() throws XPathExpressionException {
+		assertEquals("secret=1", filterSecret(message(APPLICATION_X_WWW_FORM_URLENCODED, "secret=1".getBytes(UTF_8))));
+	}
+
+	@Test
+	void xmlLabelledAsJsonIsFiltered() throws XPathExpressionException {
+		assertThat("<a/>", isSimilarTo(filterSecret(message(APPLICATION_JSON, " \n<a><secret/></a>".getBytes(UTF_8)))));
+	}
+
+	/**
+	 * Starts with a byte order mark, not with '<': a byte-wise check would let it pass unfiltered.
+	 */
+	@Test
+	void utf16XmlLabelledAsJsonIsFiltered() throws XPathExpressionException {
+		final var m = message(APPLICATION_JSON, "<a><secret/></a>".getBytes(UTF_16));
+		new XMLContentFilter("//secret").removeMatchingElements(m);
+		assertThat("<a/>", isSimilarTo(new String(m.getBody().getContent(), UTF_8)));
+	}
+
+	@Test
+	void doctypeLabelledAsJsonIsRejected() {
+		assertThrows(XmlParseException.class, () -> filterSecret(message(APPLICATION_JSON,
+				"<!DOCTYPE a><a><secret/></a>".getBytes(UTF_8))));
+	}
+
+	@Test
+	void jsonAsTextPlainIsRejected() {
+		assertThrows(XmlParseException.class, () -> filterSecret(message(TEXT_PLAIN, "{\"secret\":1}".getBytes(UTF_8))));
+	}
+
+	@Test
+	void jsonWithoutContentTypeIsRejected() {
+		assertThrows(XmlParseException.class, () -> filterSecret(message(null, "{\"secret\":1}".getBytes(UTF_8))));
+	}
+
+	@Test
+	void xopIsFiltered() throws XPathExpressionException {
+		final var m = message("multipart/related; boundary=MIMEBoundary; type=\"application/xop+xml\"; start=\"<root>\"", """
+				--MIMEBoundary\r
+				Content-Type: application/xop+xml; charset=UTF-8; type="text/xml"\r
+				Content-ID: <root>\r
+				\r
+				<a><secret/></a>\r
+				--MIMEBoundary--\r
+				""".getBytes(UTF_8));
+		assertThat("<a/>", isSimilarTo(filterSecret(m)));
+		assertEquals(TEXT_XML, m.getHeader().getContentType());
 	}
 
 	public void assertFastCheck(String xpath) {

@@ -50,30 +50,27 @@ public class XMLElementFinder {
 	}
 
 	/**
-	 * @return true, if the input is well-formed XML and any of the elements were found
+	 * @return true, if any of the elements were found. The input is only read up to the first match.
+	 * @throws XMLStreamException if the input read so far is not well-formed XML
 	 */
-	public boolean matches(InputStream is) {
-		try {
-			XMLEventReader parser = HardenedStaxInputFactory.inputFactory().createXMLEventReader(is);
+	public boolean matches(InputStream is) throws XMLStreamException {
+		XMLEventReader parser = HardenedStaxInputFactory.inputFactory().createXMLEventReader(is);
 
-			while (parser.hasNext()) {
-				XMLEvent event = parser.nextEvent();
-				if (event.isStartElement()) {
-					StartElement startElement = (StartElement)event;
-					if (elements.contains(startElement.getName()))
+		while (parser.hasNext()) {
+			XMLEvent event = parser.nextEvent();
+			if (event.isStartElement()) {
+				StartElement startElement = (StartElement)event;
+				if (elements.contains(startElement.getName()))
+					return true;
+
+				if (usesWildcardNamespace) {
+					QName onlyLocal = new QName(startElement.getName().getLocalPart());
+					if (elements.contains(onlyLocal))
 						return true;
-
-					if (usesWildcardNamespace) {
-						QName onlyLocal = new QName(startElement.getName().getLocalPart());
-						if (elements.contains(onlyLocal))
-							return true;
-					}
 				}
 			}
-			return false;
-		} catch (XMLStreamException e) {
-			return false;
 		}
+		return false;
 	}
 
 }

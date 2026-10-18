@@ -26,9 +26,11 @@ import java.nio.charset.Charset;
 import java.util.zip.GZIPOutputStream;
 
 import static com.predic8.membrane.core.http.Header.CONTENT_ENCODING;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_OCTET_STREAM;
 import static com.predic8.membrane.core.http.Request.post;
 import static com.predic8.membrane.core.lang.BodyKind.FOREIGN;
+import static com.predic8.membrane.core.lang.BodyKind.MATCHING;
 import static com.predic8.membrane.core.lang.BodyKind.MISLABELLED;
 import static com.predic8.membrane.core.lang.BodyKind.startsLikeDocument;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -77,6 +79,18 @@ class BodyKindTest {
     @Test
     void textIsForeign() throws URISyntaxException {
         assertEquals(FOREIGN, kind(APPLICATION_OCTET_STREAM, "hello <a/>".getBytes(UTF_8)));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"text/xml", "application/soap+xml", "multipart/related; type=\"application/xop+xml\""})
+    void ofXmlMatchesXmlAndXop(String contentType) throws URISyntaxException {
+        assertEquals(MATCHING, BodyKind.ofXml(post("/foo").contentType(contentType).body("<a/>").build()));
+    }
+
+    @Test
+    void ofXmlSniffsForAnAngleBracket() throws URISyntaxException {
+        assertEquals(FOREIGN, BodyKind.ofXml(post("/foo").contentType(APPLICATION_JSON).body("{}").build()));
+        assertEquals(MISLABELLED, BodyKind.ofXml(post("/foo").contentType(APPLICATION_JSON).body("<a/>").build()));
     }
 
     private static BodyKind kind(String contentType, byte[] body) throws URISyntaxException {

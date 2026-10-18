@@ -35,7 +35,7 @@ public class UriTemplateMatcherTest {
 
     @Test
     public void prepareRegex() {
-        assertEquals("/foo/([^/]+)/([^/]+)", prepareTemplate("/foo/{id1}/{id2}"));
+        assertEquals("/foo/(?<param0>[^/?#]+)/(?<param1>[^/?#]+)", prepareTemplate("/foo/{id1}/{id2}"));
     }
 
     @Test
@@ -211,5 +211,11 @@ public class UriTemplateMatcherTest {
     @Test
     void getNoParameterNames() {
         assertEquals(of(), getParameterNames("/foo/baz/"));
+    }
+
+    @Test
+    void notMatchingThrowsNoStackTrace() {
+        final var e = assertThrows(PathDoesNotMatchException.class, () -> matchTemplate("/foo", "/bar"));
+        assertEquals(0, e.getStackTrace().length);
     }
 }

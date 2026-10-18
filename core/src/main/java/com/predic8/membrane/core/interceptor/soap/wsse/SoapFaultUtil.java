@@ -160,6 +160,7 @@ final class SoapFaultUtil {
 
     private static Document newDocument() {
         try {
+            // Only used to create an empty Document, nothing is parsed, so there is no XXE exposure.
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             factory.setNamespaceAware(true);
             return factory.newDocumentBuilder().newDocument();

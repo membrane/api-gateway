@@ -25,7 +25,8 @@ import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.lang.groovy.GroovyBuiltInFunctions;
 import com.predic8.membrane.core.lang.groovy.PathParametersMap;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
-import com.predic8.membrane.core.openapi.util.PathDoesNotMatchException;
+import com.predic8.membrane.core.openapi.serviceproxy.APIProxyKey;
+import com.predic8.membrane.core.openapi.util.UriTemplate;
 import com.predic8.membrane.core.router.Router;
 import com.predic8.membrane.core.util.text.SerializationFunction;
 import org.slf4j.Logger;
@@ -36,7 +37,6 @@ import java.util.Map;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
-import static com.predic8.membrane.core.openapi.util.UriTemplateMatcher.matchTemplate;
 import static com.predic8.membrane.core.util.FileUtil.readInputStream;
 import static com.predic8.membrane.core.util.URLParamUtil.getParams;
 import static java.util.Collections.emptyMap;
@@ -145,12 +145,14 @@ public class ScriptingUtils {
         // Match the same path as routing does, see RuleManager.getMatchingRule(), otherwise a path like "/products//42"
         // selects the API for "/products/{id}" but yields no "id"
         final var path = exchange.getRequest().getRoutingPath();
-        try {
-            return new HashMap<>(matchTemplate(ap.getPath().getUri(), path)); // Make lazy!
-        } catch (PathDoesNotMatchException ignore) {
-            // Log does only show up if path parameters are used in an expression
-            log.info("No path parameters extracted: uriTemplate {}, path {}", ap.getPath().getUri(), path);
-        }
+        final var parameters = ap.getKey() instanceof APIProxyKey key
+                ? key.matchPathTemplate(path)
+                : UriTemplate.of(ap.getPath().getUri(), ap.getPath().isRegExp()).match(path); // APIProxy not initialized yet
+        if (parameters.isPresent())
+            return new HashMap<>(parameters.get()); // Make lazy!
+
+        // Log does only show up if path parameters are used in an expression
+        log.info("No path parameters extracted: uriTemplate {}, path {}", ap.getPath().getUri(), path);
         // Add map to avoid a second parsing
         return emptyMap();
     }
