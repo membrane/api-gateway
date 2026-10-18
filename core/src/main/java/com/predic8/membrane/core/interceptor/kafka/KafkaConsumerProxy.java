@@ -245,18 +245,6 @@ public class KafkaConsumerProxy extends AbstractServiceProxy implements NotPortO
     }
 
     /**
-     * @description Name of the API, shown in the Admin Console and used to call it with
-     * <code>internal://name</code>.
-     * @default topic and group id joined with a hyphen, e.g. orders-membrane
-     * @example orders-in
-     */
-    @Override
-    @MCAttribute
-    public void setName(String name) {
-        super.setName(name);
-    }
-
-    /**
      * @description Comma separated list of Kafka brokers used for the initial connection.
      * @example kafka1.example.com:9092,kafka2.example.com:9092
      */

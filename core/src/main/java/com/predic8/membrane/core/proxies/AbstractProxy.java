@@ -78,8 +78,8 @@ public abstract class AbstractProxy implements Proxy {
     }
 
     /**
-     * @description The name as shown in the Admin Console.
-     * @default By default, a name will be automatically generated from the target host, port, etc.
+     * @description The name of the proxy or API.
+     * @default By default, a name will be automatically generated from the target, openapi, etc.
      */
     @MCAttribute
     public void setName(String name) {

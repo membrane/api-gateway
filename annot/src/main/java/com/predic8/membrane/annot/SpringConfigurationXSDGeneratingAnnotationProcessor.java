@@ -496,9 +496,6 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
                 ai.setAnnotation(a);
                 ai.setE((ExecutableElement) e2);
                 ai.setRequired(isRequired(e2));
-                // Superclasses are scanned first, so an overriding setter replaces the inherited attribute, e.g. to document a different default.
-                // An overload with other parameter types is no override and stays a duplicate.
-                ii.getAis().removeIf(inherited -> processingEnv.getElementUtils().overrides((ExecutableElement) e2, inherited.getE(), te));
                 ii.getAis().add(ai);
                 ii.setHasIdField(ii.isHasIdField() || ai.getXMLName().equals("id"));
 
