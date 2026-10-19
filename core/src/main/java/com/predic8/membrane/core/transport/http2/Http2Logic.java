@@ -24,6 +24,8 @@ import com.twitter.hpack.Encoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.concurrent.GuardedBy;
+
 import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
@@ -73,6 +75,8 @@ public class Http2Logic {
     private int highestPeerStreamId;
     volatile boolean receiving = true;
     volatile Future<?> senderFuture;
+    @GuardedBy("this")
+    private boolean sendingStopped;
 
     public Http2Logic(ExecutorService executor, Socket sourceSocket, InputStream srcIn, OutputStream srcOut, boolean showSSLExceptions, Http2MessageHandler messageHandler) {
         this.executor = executor;
@@ -101,8 +105,13 @@ public class Http2Logic {
     public void init() throws IOException {
         // Published before the sender runs, so whoever sees frames it sent can wait for it.
         final var task = new FutureTask<>(sender, null);
-        senderFuture = task;
-        executor.execute(task);
+        // A shutdown that ran first saw no sender to wait for, so none may start afterwards.
+        synchronized (this) {
+            if (sendingStopped)
+                return;
+            senderFuture = task;
+            executor.execute(task);
+        }
     }
 
     public static String getRemoteAddr(Socket sourceSocket) {
@@ -144,6 +153,9 @@ public class Http2Logic {
 
     /** Stops the frame sender and wakes writers waiting for the connection's flow-control window. */
     void stopSending() {
+        synchronized (this) {
+            sendingStopped = true;
+        }
         sender.stop();
         peerFlowControl.senderStopped();
     }
