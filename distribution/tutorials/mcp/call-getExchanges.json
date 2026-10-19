@@ -1,0 +1,9 @@
+{
+  "jsonrpc": "2.0",
+  "id": 99,
+  "method": "tools/call",
+  "params": {
+    "name": "getExchanges",
+    "arguments": {}
+  }
+}

@@ -28,6 +28,70 @@ paths:
       responses:
         "200":
           description: Ok
+  /pattern:
+    get:
+      parameters:
+        - name: filter
+          in: query
+          style: form
+          explode: true
+          schema:
+            type: object
+            patternProperties:
+              "^x-":
+                type: integer
+      responses:
+        "200":
+          description: Ok
+  /pattern-collision:
+    get:
+      parameters:
+        - name: name
+          in: query
+          schema:
+            type: string
+        - name: filter
+          in: query
+          style: form
+          explode: true
+          schema:
+            type: object
+            patternProperties:
+              "a":
+                type: integer
+      responses:
+        "200":
+          description: Ok
+  /pattern-nullable:
+    get:
+      parameters:
+        - name: filter
+          in: query
+          style: form
+          explode: true
+          schema:
+            type: [object, "null"]
+            patternProperties:
+              "^x-":
+                type: integer
+      responses:
+        "200":
+          description: Ok
+  /properties-nullable:
+    get:
+      parameters:
+        - name: filter
+          in: query
+          style: form
+          explode: true
+          schema:
+            type: [object, "null"]
+            properties:
+              limit:
+                type: integer
+      responses:
+        "200":
+          description: Ok
   /encoding:
     get:
       parameters:

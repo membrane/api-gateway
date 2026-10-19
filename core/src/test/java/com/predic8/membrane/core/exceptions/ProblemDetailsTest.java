@@ -44,6 +44,18 @@ public class ProblemDetailsTest {
     class productionFalse {
 
         @Test
+        void publicDetailIsShown() throws Exception {
+            final var j = parseJson(security(false, "a")
+                    .status(403)
+                    .detail("Public text.", true)
+                    .internal("origin", "https://evil.example")
+                    .build());
+
+            assertEquals("Public text.", j.get(DETAIL).asText());
+            assertEquals("https://evil.example", j.get("origin").asText());
+        }
+
+        @Test
         void simple() throws Exception {
 
             Response r = user(false, "component-a")
@@ -199,7 +211,65 @@ public class ProblemDetailsTest {
             assertFalse(j.has("b"));
             assertTrue(toList(j.fieldNames()).containsAll(List.of(TITLE, TYPE, STATUS, DETAIL)));
             assertEquals("https://membrane-api.io/problems/internal", j.get(TYPE).asText());
-            assertEquals(INTERNAL_SERVER_ERROR, j.get(TITLE).asText());
+            assertEquals("Internal Server Error", j.get(TITLE).asText());
+        }
+
+        @Test
+        void masksTitleWithReasonPhraseOfStatus() throws Exception {
+            final var j = parseJson(gateway(true, "a")
+                    .status(502)
+                    .title("Backend backend.internal:8080 refused the connection")
+                    .build());
+
+            assertEquals("Bad Gateway", j.get(TITLE).asText());
+        }
+
+        @Test
+        void publicDetailIsShown() throws Exception {
+            final var j = parseJson(security(true, "a")
+                    .status(401)
+                    .title("Access Denied")
+                    .detail("Request requires an API key.", true)
+                    .build());
+
+            assertEquals(4, j.size());
+            assertEquals("Request requires an API key.", j.get(DETAIL).asText());
+        }
+
+        @Test
+        void publicDetailWithInternalsKeepsTextAndAddsLogKey() throws Exception {
+            final var j = parseJson(security(true, "a")
+                    .status(403)
+                    .detail("Origin not allowed by CORS policy.", true)
+                    .internal("origin", "https://evil.example")
+                    .build());
+
+            assertFalse(j.has("origin"));
+            final var detail = j.get(DETAIL).asText();
+            assertTrue(detail.startsWith("Origin not allowed by CORS policy. Internal details are hidden."), detail);
+            assertTrue(detail.contains("key"), detail);
+            assertFalse(detail.contains("evil"), detail);
+        }
+
+        @Test
+        void laterDetailMakesDetailInternalAgain() throws Exception {
+            final var j = parseJson(security(true, "a")
+                    .status(403)
+                    .detail("Public text.", true)
+                    .detail("Internal text.", false)
+                    .build());
+
+            assertFalse(j.has(DETAIL));
+        }
+
+        @Test
+        void nullPublicDetailIsOmitted() throws Exception {
+            final var j = parseJson(security(true, "a")
+                    .status(403)
+                    .detail(null, true)
+                    .build());
+
+            assertFalse(j.has(DETAIL));
         }
 
         @Nested

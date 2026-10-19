@@ -13,17 +13,24 @@
 # The line layout lives in log4j2-30-access.yaml.
 #
 # 1.) Start Membrane with the access log configuration:
-#       export JAVA_OPTS="-Dlog4j.configurationFile=tutorials/logging/log4j2-30-access.yaml"   (Linux/Mac)
-#       ./membrane.sh -c 30-Access-Log.yaml
-#
-#       $env:JAVA_OPTS="-Dlog4j.configurationFile=tutorials/logging/log4j2-30-access.yaml"     (Windows PowerShell)
-#       membrane.cmd -c 30-Access-Log.yaml
+#       Linux/Mac:
+#         export JAVA_OPTS="-Dlog4j.configurationFile=tutorials/logging/log4j2-30-access.yaml"
+#         ./membrane.sh -c 30-Access-Log.yaml
+#       Windows Command Prompt:
+#         set JAVA_OPTS="-Dlog4j.configurationFile=%CD%\log4j2-30-access.yaml"
+#         membrane.cmd -c 30-Access-Log.yaml
+#       Windows PowerShell:
+#         $env:JAVA_OPTS="`"-Dlog4j.configurationFile=$PWD\log4j2-30-access.yaml`""
+#         .\membrane.cmd -c 30-Access-Log.yaml
 #
 # 2.) Call the API:
 #       curl http://localhost:2000/shop/products/7 -H "Referer: https://example.com/shop"
 #
 # 3.) Look at the access log file. Its name contains the start time, e.g. access-2026-10-02_09-56-04.log:
-#       cat access-*.log
+#       Linux/Mac:
+#         cat access-*.log
+#       Windows:
+#         type access-*.log
 #
 #       0:0:0:0:0:0:0:1 - - [02/Oct/2026:09:56:04 +0200] "GET /shop/products/7 HTTP/1.1" 200 0 "https://example.com/shop" "curl/8.7.1"
 #

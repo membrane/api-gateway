@@ -25,10 +25,13 @@ import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_XML;
 import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
+import static com.predic8.membrane.core.lang.ExchangeExpression.Language.XPATH;
 import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
 import static com.predic8.membrane.test.TestUtil.assembleExchange;
 import static org.junit.jupiter.api.Assertions.*;
@@ -57,6 +60,18 @@ class APIProxyKeyComplexMatchTest {
         var key = new APIProxyKey("", "", 80, null,"*",
                 expression(null, SPEL,"1 == 2"), false);
         assertFalse(key.complexMatch(new Builder().get("").buildExchange()));
+    }
+
+    @Test
+    void complexMatchXPathOnMalformedBodyDoesNotMatch() throws URISyntaxException {
+        var key = new APIProxyKey("", "", 80, null, "*", expression(null, XPATH, "not(/a)"), false);
+        assertFalse(key.complexMatch(new Builder().post("/").contentType(APPLICATION_XML).body("<a><b></a>").buildExchange()));
+    }
+
+    @Test
+    void complexMatchXPathOnEmptyBodyUsesEmptyDocument() throws URISyntaxException {
+        var key = new APIProxyKey("", "", 80, null, "*", expression(null, XPATH, "not(/a)"), false);
+        assertTrue(key.complexMatch(new Builder().get("/").buildExchange()));
     }
 
     @Test
@@ -126,6 +141,39 @@ class APIProxyKeyComplexMatchTest {
         assertTrue(key.matchesPath("/api-doc"));
         assertTrue(key.matchesPath("/api-doc/ui"));
         assertFalse(key.matchesPath("/other"));
+    }
+
+    @Test
+    @DisplayName("matchesPath matches the path as URI template and recompiles it after setPath")
+    void matchesPathUsesTemplateOfCurrentPath() {
+        var key = new APIProxyKey("", "", 80, "/users/{id}", "*", null, false);
+        assertTrue(key.matchesPath("/users/7"));
+        assertEquals(Map.of("id", "7"), key.matchPathTemplate("/users/7").orElseThrow());
+        assertTrue(key.matchPathTemplate("/orders/7").isEmpty());
+
+        key.setPath("/orders/{id}");
+        assertFalse(key.matchesPath("/users/7"));
+        assertTrue(key.matchesPath("/orders/7"));
+        assertEquals(Map.of("id", "7"), key.matchPathTemplate("/orders/7").orElseThrow());
+    }
+
+    @Test
+    @DisplayName("The path is a regular expression only with isRegExp")
+    void matchesPathHonoursRegExp() {
+        var key = new APIProxyKey("", "", 80, "/persons/.*", "*", null, false);
+        key.setPathRegExp(false);
+        assertFalse(key.matchesPath("/persons/7"));
+
+        key.setPathRegExp(true);
+        assertTrue(key.matchesPath("/persons/7"));
+    }
+
+    @Test
+    @DisplayName("Without a path every path matches without parameters")
+    void matchPathTemplateWithoutPath() {
+        var key = new APIProxyKey("", "", 80, null, "*", null, false);
+        assertTrue(key.matchesPath("/anything"));
+        assertEquals(Map.of(), key.matchPathTemplate("/anything").orElseThrow());
     }
 
     @Test

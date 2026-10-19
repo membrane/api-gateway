@@ -19,8 +19,8 @@ import jakarta.mail.internet.ParseException;
 import org.junit.jupiter.api.Test;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static java.time.Duration.ofSeconds;
+import static org.junit.jupiter.api.Assertions.*;
 
 class UnevaluatedPropertiesTest extends AbstractValidatorTest {
 
@@ -186,5 +186,40 @@ class UnevaluatedPropertiesTest extends AbstractValidatorTest {
         assertEquals(0, post("/additional", """
                 {"foo": "bar"}
                 """).size());
+    }
+
+    /**
+     * Each level of the tree matches its oneOf branches. Validating them again for unevaluatedProperties must not
+     * double the work per level, see #3482.
+     */
+    @Test
+    void deepRecursiveTreeValidatesInLinearTime() {
+        assertTimeoutPreemptively(ofSeconds(10), () -> assertEquals(0, post("/tree", tree(40, "")).size()));
+    }
+
+    @Test
+    void deepRecursiveTreeRejectsUnevaluatedPropertyInLinearTime() {
+        assertTimeoutPreemptively(ofSeconds(10), () -> assertFalse(post("/tree", tree(40, ", \"foo\": 1")).isEmpty()));
+    }
+
+    /**
+     * Like above, but the oneOf is in a component referenced through allOf, so the unevaluatedProperties collector
+     * reaches it by following the $ref.
+     */
+    @Test
+    void deepRecursiveTreeThroughAllOfRefValidatesInLinearTime() {
+        assertTimeoutPreemptively(ofSeconds(10), () -> assertEquals(0, post("/tree-all-of", tree(40, "")).size()));
+    }
+
+    @Test
+    void deepRecursiveTreeThroughAllOfRefRejectsUnevaluatedPropertyInLinearTime() {
+        assertTimeoutPreemptively(ofSeconds(10), () -> assertFalse(post("/tree-all-of", tree(40, ", \"foo\": 1")).isEmpty()));
+    }
+
+    /**
+     * @return a tree of nested branches, depth levels deep, whose leaf has the additional members leafExtra
+     */
+    private static String tree(int depth, String leafExtra) {
+        return "{\"children\": [".repeat(depth) + "{\"value\": \"a\"%s}".formatted(leafExtra) + "]}".repeat(depth);
     }
 }

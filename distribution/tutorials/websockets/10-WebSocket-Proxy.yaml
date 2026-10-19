@@ -5,7 +5,10 @@
 # A web page receives live data from a backend over a WebSocket connection through Membrane.
 #
 # 1.) Start Membrane:
-#     ./membrane.sh -c 10-WebSocket-Proxy.yaml
+#     Linux/Mac:
+#       ./membrane.sh -c 10-WebSocket-Proxy.yaml
+#     Windows:
+#       membrane.cmd -c 10-WebSocket-Proxy.yaml
 #
 # 2.) Open the page in the browser:
 #     http://localhost:2000

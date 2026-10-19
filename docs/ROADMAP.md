@@ -20,6 +20,11 @@ PRIO 1:
 - Central description of MEMBRANE_* environment variables
   - Like MEMBRANE_HOME...
   - @coderabbitai look through the code base for usages of these variables and suggest documentation 
+- API gateway best practice document
+  - Start with conditions on the body (`if`, `choose`, API `test`) and media types:
+    - Send the right Content-Type (`curl -d` sends form data); an empty body or one that is no XML/JSON at all is evaluated as an empty document, a broken XML/JSON body gives 400/502 whatever its Content-Type
+    - Write fail-closed XPath guards: `not(/a = 'admin')` instead of `/a != 'admin'`. It is also true when `<a>` is missing, so a request without `<a>` counts as "not admin". `/a != 'admin'` is false then, which lets such a request slip past the guard
+    - Check expected content-type at the beginning (Maybe an Interceptor like enforceContent)
 
 PRIO 2:
 - Remove MemoryExchangeStore
@@ -76,6 +81,8 @@ PRIO 3:
 - Log harmonization:
   - Decide if log message start with uppercase or lowercase.
      - e.g.:  Error loading log configuration., Started 1 API:, Closing server port:, listening at '*:2000'
+- Remove AuthHead2BodyInterceptor (`authHead2Body`)
+  - Customer-specific (hard-coded namespaces) and effectively dead: it only overrides `handleRequest(AbstractExchange)`, which the pipeline never calls
 - Remove proxies.inactive.xml from conf Folder
   - Also README.md in conf
 - Upgrade baseline to Java 25
@@ -124,6 +131,9 @@ PRIO 3:
   - **Breaking**: scripts calling `cookie.put(...)` fail instead of silently doing nothing.
   - Related: in the response flow `cookie` is always empty (it only parses `Cookie`, not `Set-Cookie`). Document or address separately.
   - What about setting cookies?
+- Teardown lifecycle for interceptors when the context reloads
+  - Story: `Interceptor` only has `init()`. Anything an interceptor starts, e.g. the Kafka producer from `KafkaProducerInterceptor`, is only stopped through a `@PreDestroy` method, and it is not confirmed that the bean registry calls it for an interceptor nested in an API's flow. On a hot deploy or reload the old interceptor instances may keep running, so connections would be left open.
+  - Check whether there is a teardown lifecycle for interceptors when the context reloads (`DefaultRouter.stopRuntimeForReload`, `closeRegistryIfSupported`). If not, add one, e.g. a `destroy()` on `Interceptor` that the router calls on stop and on reload.
 - Reorganisation of *Util* classes. Check for duplicates and right place.
 
 ## Breaking Changes

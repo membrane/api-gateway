@@ -7,7 +7,7 @@
 #
 # Try:
 #     curl localhost:2000/spel
-#     curl -d '{"city": "Seoul"}' -H "Content-Type: application/json" localhost:2000/jsonpath
+#     curl -d "{\"city\": \"Seoul\"}" -H "Content-Type: application/json" localhost:2000/jsonpath
 api:
   port: 2000
   path:

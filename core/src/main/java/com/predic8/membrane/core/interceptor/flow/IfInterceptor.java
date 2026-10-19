@@ -32,7 +32,6 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
@@ -97,7 +96,7 @@ public class IfInterceptor extends AbstractFlowWithChildrenInterceptor implement
         try {
             result = exchangeExpression.evaluate(exc, flow, Boolean.class);
         } catch (ExchangeExpressionException e) {
-            e.provideDetails(internal(router.getConfiguration().isProduction(), getDisplayName()))
+            e.problemDetails(router.getConfiguration().isProduction(), getDisplayName(), flow)
                     .title("Error evaluating expression on exchange.")
                     .buildAndSetResponse(exc);
             return ABORT;
@@ -143,6 +142,11 @@ public class IfInterceptor extends AbstractFlowWithChildrenInterceptor implement
 
     /**
      * @description Condition to be tested
+     * <p>XPath and JSONPath query the body. An empty body, or one of another media type, is evaluated as an
+     * empty document: <code>/a</code> is false and <code>not(/a)</code> is true. A body that should be XML or JSON
+     * but does not parse is rejected with 400 (request) or 502 (response).</p>
+     * <p>In XPath, a comparison with a missing element is false for both <code>=</code> and <code>!=</code>. To
+     * reject anything but a given value, write <code>not(/a = 'admin')</code> rather than <code>/a != 'admin'</code>.</p>
      * @example <ul><li>request.isJSON()</li><li>params['limit'] >= 0</li><li>statusCode matches '[45]\d\d'</li></ul>
      */
     @Required

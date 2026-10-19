@@ -12,7 +12,10 @@
 # (see 10-Forward-Proxy.yaml).
 #
 # 1.) Start Membrane:
-#     ./membrane.sh -c 30-Interceptor.yaml
+#     Linux/Mac:
+#       ./membrane.sh -c 30-Interceptor.yaml
+#     Windows:
+#       membrane.cmd -c 30-Interceptor.yaml
 #
 # 2.) Ask curl to use Membrane as its proxy, then request the second API through it:
 #     curl -x http://localhost:3128 http://localhost:2000/

@@ -9,7 +9,7 @@ Keep this file in sync when adding, renaming or removing a util class.
 | Class | Purpose |
 |---|---|
 | `StringUtil` | Truncate/tail, mask non-printable chars, add line numbers, split by comma, `yes`/`no` flag parsing, last element of a comma list |
-| `TextUtil` | Charset lookup, XML pretty-print, glob→regex, English list ("a, b and c"), capitalize, escape quotes, multiline indent handling (`unifyIndent`, `getLines`) |
+| `TextUtil` | Charset lookup, encoding detection from byte order mark or zero-byte pattern (`detectEncoding`), XML pretty-print, glob→regex, English list ("a, b and c"), capitalize, escape quotes, multiline indent handling (`unifyIndent`, `getLines`) |
 | `SerializationUtil`, `SerializationFunction` | Pick a serializer by mime type or `Serialization`; path/header value encoding |
 | `ToJsonSerializer`, `ToTextSerializer`, `ToURLSerializer`, `ToXMLSerializer` | `Object` → JSON / plain text / URL-encoded / XML string |
 | `TerminalColors` | ANSI colors for console output, with global enable/disable |
@@ -90,6 +90,7 @@ Keep this file in sync when adding, renaming or removing a util class.
 | `UriUtil` | Trim/ensure slashes, strip query, rewrite URL parts (not the same as `util/URIUtil`) |
 | `Utils` | Format validators (UUID, e-mail, date, IP, ISO codes, ...), stream/string conversion, validator request/response builders |
 | `UriTemplateMatcher` | Match request paths against OpenAPI URI templates |
+| `UriTemplate` | Precompiled URI template (OpenAPI path templating, optionally regex literal parts); non-throwing match for hot paths (routing, validation) |
 | `OpenAPI32Parser` | OpenAPI 3.2 parsing shim |
 | `ObjectHolder` | Mutable holder for lambdas |
 
@@ -102,5 +103,6 @@ Keep this file in sync when adding, renaming or removing a util class.
 | `util/ProblemDetailsTestUtil` | Parse a `Response` into `ProblemDetails` |
 | `util/RecordingServerTestUtil` | Throw-away server that records whether it was called |
 | `util/NetworkTestUtil` | `freePort()`: an OS-assigned free port for tests that cannot bind `new ServerSocket(0)` themselves |
+| `util/ThreadTestUtil` | `liveTimerThreads()`: the live `Timer-N` threads, for diffing before/after to detect leaked timers |
 | `openapi/util/JsonTestUtil` | Build `JsonNode`/bytes from maps in tests |
 | `openapi/util/OpenAPITestUtils` | Load/parse OpenAPI resources, create proxies from specs |

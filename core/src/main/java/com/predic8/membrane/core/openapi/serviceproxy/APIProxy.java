@@ -27,6 +27,7 @@ import com.predic8.membrane.core.interceptor.lang.Polyglot;
 import com.predic8.membrane.core.lang.ExchangeExpression;
 import com.predic8.membrane.core.lang.ExchangeExpression.InterceptorAdapter;
 import com.predic8.membrane.core.lang.ExchangeExpression.Language;
+import com.predic8.membrane.core.openapi.OpenAPIValidator;
 import com.predic8.membrane.core.proxies.ServiceProxy;
 import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.URIFactory;
@@ -39,9 +40,12 @@ import java.util.*;
 
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
 import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
+import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIInterceptor.isValidated;
 import static com.predic8.membrane.core.openapi.util.UriUtil.ensureTrailingSlash;
 import static com.predic8.membrane.core.openapi.util.UriUtil.getPathFromURL;
 import static com.predic8.membrane.core.util.text.StringUtil.maskNonPrintableCharacters;
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.toUnmodifiableMap;
 
 /**
  * @description <p>The main API configuration. Extends <code>serviceProxy</code> with REST and OpenAPI
@@ -120,6 +124,12 @@ public class APIProxy extends ServiceProxy implements Polyglot, XMLSupport {
 
     protected Map<String, OpenAPIRecord> basePaths;
 
+    /**
+     * Validators of the OpenAPIs that validate requests or responses, created in init so that broken paths are
+     * reported at startup.
+     */
+    private Map<OpenAPIRecord, OpenAPIValidator> validators = Map.of();
+
     protected final ValidationStatisticsCollector statisticCollector = new ValidationStatisticsCollector();
 
     protected List<OpenAPISpec> specs = new ArrayList<>();
@@ -146,7 +156,9 @@ public class APIProxy extends ServiceProxy implements Polyglot, XMLSupport {
         if (test != null && !test.isEmpty()) {
             exchangeExpression = expression(new InterceptorAdapter(router, xmlConfig), language, test);
         }
-        key = new APIProxyKey(key, exchangeExpression, !specs.isEmpty());
+        final var apiKey = new APIProxyKey(key, exchangeExpression, !specs.isEmpty());
+        apiKey.initPathTemplate();
+        key = apiKey;
         initOpenAPI();
 
         for(Interceptor interceptor: interceptors) {
@@ -163,6 +175,7 @@ public class APIProxy extends ServiceProxy implements Polyglot, XMLSupport {
             return;
 
         apiRecords = new OpenAPIRecordFactory(router, getBeanBaseLocation()).create(specs);
+        validators = createValidators();
 
         checkForDuplicatePaths();
 
@@ -180,6 +193,13 @@ public class APIProxy extends ServiceProxy implements Polyglot, XMLSupport {
 
         if(name.isEmpty() && !apiRecords.isEmpty())
             name = assignOpenAPIName();
+    }
+
+    private Map<OpenAPIRecord, OpenAPIValidator> createValidators() {
+        final var uriFactory = router.getConfiguration().getUriFactory();
+        return apiRecords.values().stream()
+                .filter(rec -> isValidated(rec.getApi()))
+                .collect(toUnmodifiableMap(identity(), rec -> new OpenAPIValidator(uriFactory, rec)));
     }
 
     String assignOpenAPIName() {
@@ -278,6 +298,19 @@ public class APIProxy extends ServiceProxy implements Polyglot, XMLSupport {
         return apiRecords;
     }
 
+    /**
+     * @return validator for an OpenAPI of this API that validates requests or responses
+     * @throws IllegalStateException if the OpenAPI is not validated, see {@link OpenAPIInterceptor#isValidated}
+     */
+    public OpenAPIValidator getValidator(OpenAPIRecord rec) {
+        final var validator = validators.get(rec);
+        if (validator == null) {
+            final var title = rec.getApi().getInfo() != null ? rec.getApi().getInfo().getTitle() : null;
+            throw new IllegalStateException("OpenAPI '%s' of API %s is not validated, so it has no validator.".formatted(title, getName()));
+        }
+        return validator;
+    }
+
     public Map<String, OpenAPIRecord> getBasePaths() {
         return basePaths;
     }
@@ -289,6 +322,10 @@ public class APIProxy extends ServiceProxy implements Polyglot, XMLSupport {
     /**
      * @description Expression evaluated against each request; the API matches only when it returns
      * true. Used to discriminate APIs on the same port beyond host and path, e.g. by header or method.
+     * <p>XPath and JSONPath query the body. An empty body, or one of another media type, is evaluated as an
+     * empty document. A body that should be XML or JSON but does not parse does not match.</p>
+     * <p>In XPath, a comparison with a missing element is false for both <code>=</code> and <code>!=</code>. To
+     * match anything but a given value, write <code>not(/a = 'admin')</code> rather than <code>/a != 'admin'</code>.</p>
      * @example header.SOAPAction == 'https://predic8.de/city-service/get'
      */
     @MCAttribute

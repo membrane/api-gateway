@@ -1,0 +1,58 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.7.1.json
+#
+# Tutorial: First API behind a Proxy
+#
+# Let Membrane reach the public API through an HTTP proxy, e.g. in a corporate network.
+#
+# 1.) Change host and port below to the address of your proxy.
+#
+# 2.) Start Membrane:
+#     Open a terminal in this folder and run:
+#
+#     with Docker:
+#       Linux/Mac:
+#         ./run-docker.sh -c 11-First-API-Proxy-Configuration.yaml
+#       Windows:
+#         run-docker.cmd -c 11-First-API-Proxy-Configuration.yaml
+#
+#     or with Java:
+#       Linux/Mac:
+#         ./membrane.sh -c 11-First-API-Proxy-Configuration.yaml
+#       Windows:
+#         membrane.cmd -c 11-First-API-Proxy-Configuration.yaml
+#
+# 3.) Call the API:
+#     curl http://localhost:2000
+#
+# 4.) Stop Membrane:
+#     Press Ctrl+C in the terminal.
+#
+# 5.) Continue with file 20-Hot-Reload.yaml
+
+configuration:
+  httpClientConfig:
+    proxy:
+      host: localhost
+      port: 3128
+      # Uncomment if the proxy requires a login
+#      authentication: true
+#      username: alice
+#      password: secret
+      # Uncomment for a proxy that is reached over TLS
+#      ssl: {}
+
+---
+api:
+  port: 2000
+  target:
+    url: https://api.predic8.de
+
+# NOTE:
+#     With Docker, localhost is the container itself. Use an address of the
+#     proxy that is reachable from inside the container. For a proxy on your
+#     own machine, use host.docker.internal on Docker Desktop. On Linux, start with
+#       MEMBRANE_DOCKER_OPTS="--add-host=host.docker.internal:host-gateway" ./run-docker.sh -c 11-First-API-Proxy-Configuration.yaml
+#     and let the proxy listen on an interface other than 127.0.0.1.
+#
+#     For all options, e.g. proxies with TLS, see:
+#     https://www.membrane-api.io/docs/current/proxy-configuration.html

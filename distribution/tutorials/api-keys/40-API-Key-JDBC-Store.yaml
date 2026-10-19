@@ -14,15 +14,16 @@
 #     docker run --rm --name postgres -e POSTGRES_PASSWORD=secret -p 5432:5432 postgres
 #
 # 3.) Start Membrane:
-#     ./membrane.sh -c 40-API-Key-JDBC-Store.yaml
+#     Linux/Mac:
+#       ./membrane.sh -c 40-API-Key-JDBC-Store.yaml
+#     Windows:
+#       membrane.cmd -c 40-API-Key-JDBC-Store.yaml
 #
 #     Membrane connects to PostgreSQL and creates the key and scope tables.
 #
 # 4.) Insert test keys:
-#     docker exec -i postgres psql -U postgres -d postgres \
-#       -c "INSERT INTO key (apikey) VALUES ('demo-key'), ('admin-key')"
-#     docker exec -i postgres psql -U postgres -d postgres \
-#       -c "INSERT INTO scope (apikey, scope) VALUES ('admin-key', 'admin')"
+#     docker exec -i postgres psql -U postgres -d postgres -c "INSERT INTO key (apikey) VALUES ('demo-key'), ('admin-key')"
+#     docker exec -i postgres psql -U postgres -d postgres -c "INSERT INTO scope (apikey, scope) VALUES ('admin-key', 'admin')"
 #
 # 5.) Test:
 #

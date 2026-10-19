@@ -3,7 +3,10 @@
 # XsdFeaturesService Mock
 #
 # Start standalone:
-#   ./membrane.sh -c mocks/xsd-features-service.apis.yaml
+#   Linux/Mac:
+#     ./membrane.sh -c mocks/xsd-features-service.apis.yaml
+#   Windows:
+#     membrane.cmd -c mocks/xsd-features-service.apis.yaml
 #
 # Routes by SOAPAction and returns a static SOAP response for each operation. The gateway
 # sends the SOAPAction quoted, as SOAP 1.1 requires.

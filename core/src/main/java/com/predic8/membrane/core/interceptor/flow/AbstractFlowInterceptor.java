@@ -14,17 +14,14 @@
 
 package com.predic8.membrane.core.interceptor.flow;
 
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Interceptor;
 
-import java.util.*;
-
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public abstract class AbstractFlowInterceptor extends AbstractInterceptor {
-
-    private static final Logger log = LoggerFactory.getLogger(AbstractFlowInterceptor.class);
 
     protected List<Interceptor> interceptors = new ArrayList<>();
 
@@ -43,13 +40,7 @@ public abstract class AbstractFlowInterceptor extends AbstractInterceptor {
             i.init(router,proxy);
     }
 
-    protected static void createProblemDetails(String flow, Interceptor interceptor, Exchange exc, Exception e) {
-        String msg = "Aborting! Exception caused by %s %s during %s flow.".formatted(exc.getRequest().getUri(), flow, interceptor.getDisplayName()); // Flow is capital to make it the same as in other places
-        log.warn(msg, e);
-        internal(false, "flow-interceptor")
-                .detail(msg)
-                .component(interceptor.getDisplayName())
-                .exception(e)
-                .buildAndSetResponse(exc);
+    protected void createProblemDetails(Flow flow, Interceptor interceptor, Exchange exc, Exception e) {
+        router.getFlowController().setErrorResponse(exc, interceptor.getDisplayName(), flow, e);
     }
 }

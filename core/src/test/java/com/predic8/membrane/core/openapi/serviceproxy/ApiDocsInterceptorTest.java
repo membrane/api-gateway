@@ -27,6 +27,7 @@ import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.ApiDocsInterceptor.*;
 import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.*;
+import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.test.TestUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -116,6 +117,24 @@ class ApiDocsInterceptorTest {
         assertEquals(RETURN, interceptor.handleRequest(exc));
         assertEquals(404, exc.getResponse().getStatusCode());
         checkHasValidProblemJSON(exc);
+    }
+
+    @Test
+    void swaggerUIWithoutIdAsksForId() throws Exception {
+        // Fresh exchange: the shared one may still carry a response, which turns the 404 into a 500
+        final var uiExc = get("/api-docs/ui").buildExchange();
+        assertEquals(RETURN, interceptor.handleRequest(uiExc));
+        assertEquals(404, uiExc.getResponse().getStatusCode());
+        assertEquals("No OpenAPI document id", om.readTree(uiExc.getResponse().getBodyAsStringDecoded()).get("title").asText());
+    }
+
+    @Test
+    void publisherIsReusedAcrossRequests() {
+        exc.getRequest().setUri("/api-docs");
+        interceptor.handleRequest(exc);
+        final var first = interceptor.getPublisher();
+        interceptor.handleRequest(exc);
+        assertSame(first, interceptor.getPublisher());
     }
 
     @Test

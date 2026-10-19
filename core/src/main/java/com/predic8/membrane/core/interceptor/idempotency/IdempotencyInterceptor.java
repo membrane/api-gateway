@@ -14,20 +14,26 @@
 
 package com.predic8.membrane.core.interceptor.idempotency;
 
-import com.google.common.cache.*;
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.lang.*;
-import com.predic8.membrane.core.lang.*;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.Required;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.lang.AbstractLanguageInterceptor;
+import com.predic8.membrane.core.lang.ExchangeExpression;
+import com.predic8.membrane.core.util.ConfigurationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.*;
+import java.util.concurrent.TimeUnit;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
-import static com.predic8.membrane.core.lang.ExchangeExpression.*;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
 
 
 /**
@@ -37,23 +43,46 @@ import static com.predic8.membrane.core.lang.ExchangeExpression.*;
  * If the key has already been processed, it aborts the request with a 409 response.</p>
  *
  * <p>Useful for handling retries from clients to avoid duplicate side effects like double payment submissions.</p>
+ *
+ * <p>A key counts as processed as soon as its request arrives, also if processing it fails later, e.g. because the
+ * backend is not reachable. Further requests with that key are rejected until the key expires. To try again, the
+ * client has to use a new key.</p>
+ *
+ * <p>The interceptor sees each request only once and cannot prevent Membrane's HTTP client from sending it again:
+ * a request with an idempotent method like GET, PUT or DELETE may be repeated after a read timeout, a reset
+ * connection or, if failover on 5xx is configured, a server error. If the backend does not handle these methods
+ * idempotently, disable retries of the HTTP client. POST and PATCH are only repeated when the connection could not
+ * be established, which is safe.</p>
+ *
+ * <p>Retries are disabled in the global HTTP client configuration, which applies to all APIs:</p>
+ * <pre><code>
+ * configuration:
+ *   httpClientConfig:
+ *     retries:
+ *       retries: 0
+ * </code></pre>
  * @topic 3. Security and Validation
  */
 @MCElement(name = "idempotency")
 public class IdempotencyInterceptor extends AbstractLanguageInterceptor {
 
+    private static final Logger log = LoggerFactory.getLogger(IdempotencyInterceptor.class);
+
     private String key;
     private ExchangeExpression exchangeExpression;
     private int expiration = 3600;
+    private int maxKeys = 10000;
     private Cache<String, Boolean> processedKeys;
 
     @Override
     public void init() {
         super.init();
+        if (maxKeys < 1)
+            throw new ConfigurationException("maxKeys of idempotency must be at least 1, but was %d.".formatted(maxKeys));
 
         exchangeExpression = expression(this, language, key);
         processedKeys = CacheBuilder.newBuilder()
-                .maximumSize(10000)
+                .maximumSize(maxKeys)
                 .expireAfterWrite(expiration, TimeUnit.SECONDS)
                 .build();
     }
@@ -65,10 +94,10 @@ public class IdempotencyInterceptor extends AbstractLanguageInterceptor {
             return CONTINUE;
         }
 
-        if (processedKeys.getIfPresent(key) != null) {
+        // Check and mark in one atomic step, otherwise concurrent requests with the same key could all pass
+        if (processedKeys.asMap().putIfAbsent(key, Boolean.TRUE) != null) {
             return handleDuplicateKey(exc, key);
         }
-        processedKeys.put(key, Boolean.TRUE);
 
         return CONTINUE;
     }
@@ -78,9 +107,10 @@ public class IdempotencyInterceptor extends AbstractLanguageInterceptor {
     }
 
     private Outcome handleDuplicateKey(Exchange exc, String key) {
-        user(false, "idempotency")
+        log.info("Idempotency key {} has already been processed.", key);
+        user(router.getConfiguration().isProduction(), "idempotency")
                 .status(409)
-                .detail("key %s has already been processed".formatted(key))
+                .detail("Idempotency key has already been processed.", true)
                 .buildAndSetResponse(exc);
         return ABORT;
     }
@@ -118,11 +148,28 @@ public class IdempotencyInterceptor extends AbstractLanguageInterceptor {
         this.expiration = expiration;
     }
 
+    /**
+     * @description Maximum number of keys that are remembered. When the limit is reached, the least recently used
+     * keys are dropped before they expire, and a request repeating a dropped key is no longer detected as a
+     * duplicate. Size it for the number of distinct keys expected within the expiration time, with headroom for
+     * peaks; clients sending many new keys can otherwise push out the keys of others.
+     * @default 10000
+     * @example 100000
+     */
+    @MCAttribute
+    public void setMaxKeys(int maxKeys) {
+        this.maxKeys = maxKeys;
+    }
+
     public String getKey() {
         return key;
     }
 
     public int getExpiration() {
         return expiration;
+    }
+
+    public int getMaxKeys() {
+        return maxKeys;
     }
 }

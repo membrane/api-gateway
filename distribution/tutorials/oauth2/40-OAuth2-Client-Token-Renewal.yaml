@@ -8,11 +8,16 @@
 #
 # 1.) Start Membrane:
 #     with Docker:
-#       ./run-docker.sh -c 40-OAuth2-Client-Token-Renewal.yaml   (Linux/Mac)
-#       run-docker.cmd -c 40-OAuth2-Client-Token-Renewal.yaml    (Windows)
+#       Linux/Mac:
+#         ./run-docker.sh -c 40-OAuth2-Client-Token-Renewal.yaml
+#       Windows:
+#         run-docker.cmd -c 40-OAuth2-Client-Token-Renewal.yaml
+#
 #     or with Java:
-#       ./membrane.sh -c 40-OAuth2-Client-Token-Renewal.yaml     (Linux/Mac)
-#       membrane.cmd -c 40-OAuth2-Client-Token-Renewal.yaml      (Windows)
+#       Linux/Mac:
+#         ./membrane.sh -c 40-OAuth2-Client-Token-Renewal.yaml
+#       Windows:
+#         membrane.cmd -c 40-OAuth2-Client-Token-Renewal.yaml
 #
 # 2.) Call the gateway — no token needed from the caller:
 #     curl -v localhost:2000

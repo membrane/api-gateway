@@ -88,6 +88,7 @@ public class Header {
     public static final String PROXY_CONNECTION = "Proxy-Connection";
     public static final String HOST = "Host";
     public static final String EXPECT = "Expect";
+    public static final String ALLOW = "Allow";
     public static final String X_FORWARDED_FOR = "X-Forwarded-For";
     public static final String X_FORWARDED_PROTO = "X-Forwarded-Proto";
     public static final String X_FORWARDED_HOST = "X-Forwarded-Host";
@@ -108,6 +109,7 @@ public class Header {
     public static final String USER_AGENT = "User-Agent";
     public static final String X_REQUESTED_WITH = "X-Requested-With";
     public static final String EXPIRES = "Expires";
+    public static final String RETRY_AFTER = "Retry-After";
     public static final String KEEP_ALIVE = "Keep-Alive";
 
     public static final String SERVER = "Server";

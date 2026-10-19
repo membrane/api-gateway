@@ -13,14 +13,15 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.processors;
 
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.oauth2.*;
-import com.predic8.membrane.core.interceptor.oauth2.request.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
+import com.predic8.membrane.core.interceptor.oauth2.request.UserinfoRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 
 public class UserinfoEndpointProcessor extends EndpointProcessor {
 
@@ -41,7 +42,7 @@ public class UserinfoEndpointProcessor extends EndpointProcessor {
             exc.setResponse(new UserinfoRequest(authServer,exc).validateRequest());
         } catch (Exception e) {
             log.error("", e);
-            internal(true,"user-info-endpoint-processor")
+            internal(authServer.getRouter().getConfiguration().isProduction(), "user-info-endpoint-processor")
                     .exception(e)
                     .buildAndSetResponse(exc);
             return ABORT;

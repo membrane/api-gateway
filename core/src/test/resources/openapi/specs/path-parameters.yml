@@ -84,6 +84,22 @@ paths:
       responses:
         '200':
           description: OK
+  /pets/{petId}:
+    get:
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: ownerId # Invalid OpenAPI: declared as path parameter but not in the path template
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
 
 components:
   parameters:

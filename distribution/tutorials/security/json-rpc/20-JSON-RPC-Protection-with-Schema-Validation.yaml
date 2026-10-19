@@ -29,26 +29,26 @@
 #         membrane.cmd -c 20-JSON-RPC-Protection-with-Schema-Validation.yaml
 #
 # 2.) Send an allowed read-only request
-#     curl -d '{"jsonrpc":"2.0","id":1,"method":"getHealth"}' -H "Content-Type: application/json" http://localhost:2000
+#     curl -d "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"getHealth\"}" -H "Content-Type: application/json" http://localhost:2000
 #
 # 3.) Try a blocked write method
-#     curl -d '{"jsonrpc":"2.0","id":1,"method":"setMaintenanceMode"}' -H "Content-Type: application/json" http://localhost:2000
+#     curl -d "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"setMaintenanceMode\"}" -H "Content-Type: application/json" http://localhost:2000
 #
 #     Should return a JSON-RPC error explaining that the method is not allowed.
 #
 # 4.) Try invalid params
-#     curl -d '{"jsonrpc":"2.0","id":1,"method":"getEcho","params":{}}' -H "Content-Type: application/json" http://localhost:2000
+#     curl -d "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"getEcho\",\"params\":{}}" -H "Content-Type: application/json" http://localhost:2000
 #
 #     The inline schema requires params.message.
 #
 # 5.) Send a valid request
-#     curl -d '{"jsonrpc":"2.0","id":1,"method":"getEcho","params":{"message":"Hello"}}' -H "Content-Type: application/json" http://localhost:2000
+#     curl -d "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"getEcho\",\"params\":{\"message\":\"Hello\"}}" -H "Content-Type: application/json" http://localhost:2000
 #
 #     The request should be forwarded to the mock upstream on port 2001 and the
 #     JSON-RPC result should pass response validation.
 #
 # 6.) Try a batch that is too large
-#     curl -d '[{"jsonrpc":"2.0","id":5,"method":"getHealth"},{"jsonrpc":"2.0","id":6,"method":"getEcho","params":{"message":"Hi"}},{"jsonrpc":"2.0","id":7,"method":"getHealth"}]' -H "Content-Type: application/json" http://localhost:2000
+#     curl -d @batch-too-large.json -H "Content-Type: application/json" http://localhost:2000
 #
 #     Should return a JSON-RPC batch error because maxSize is 2.
 

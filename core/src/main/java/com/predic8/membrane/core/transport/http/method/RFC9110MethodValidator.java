@@ -21,8 +21,7 @@ import com.predic8.membrane.core.util.HttpUtil;
  * @description Accepts any method matching the RFC 9110 token grammar (the spec's definition of a valid method),
  * up to <code>maxLength</code> characters. The most permissive of the built-in policies: it also accepts
  * lowercase methods and punctuation tchars such as <code>PROPFIND</code> or <code>my.method</code>. Declare it
- * explicitly to widen validation beyond the {@link DefaultMethodValidator built-in default}. See
- * examples/configuration for a runnable config.
+ * explicitly to widen validation beyond the {@link DefaultMethodValidator built-in default}.
  * @yaml <pre><code>
  * components:
  *   methodValidator:

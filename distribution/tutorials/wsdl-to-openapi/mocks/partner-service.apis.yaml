@@ -3,7 +3,10 @@
 # PartnerService Mock
 #
 # Start standalone:
-#   ./membrane.sh -c mocks/partner-service.apis.yaml
+#   Linux/Mac:
+#     ./membrane.sh -c mocks/partner-service.apis.yaml
+#   Windows:
+#     membrane.cmd -c mocks/partner-service.apis.yaml
 #
 # Routes by SOAPAction and returns a static SOAP response for each operation. The gateway
 # sends the SOAPAction quoted, as SOAP 1.1 requires.

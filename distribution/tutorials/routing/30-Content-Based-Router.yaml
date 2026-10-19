@@ -18,28 +18,19 @@
 #         membrane.cmd -c 30-Content-Based-Router.yaml
 #
 # 2.) Send an express order:
-#       Linux/Mac:
-#         curl -d '{"express": true}' -H "Content-Type: application/json" localhost:2000/orders
-#       Windows:
-#         curl -d "{\"express\": true}" -H "Content-Type: application/json" localhost:2000/orders
+#     curl -d "{\"express\": true}" -H "Content-Type: application/json" localhost:2000/orders
 #
-#       Express order received.
+#     Express order received.
 #
 # 3.) Send an international order:
-#       Linux/Mac:
-#         curl -d '{"shipping": {"international": true}}' -H "Content-Type: application/json" localhost:2000/orders
-#       Windows:
-#         curl -d "{\"shipping\": {\"international\": true}}" -H "Content-Type: application/json" localhost:2000/orders
+#     curl -d "{\"shipping\": {\"international\": true}}" -H "Content-Type: application/json" localhost:2000/orders
 #
-#       International order received.
+#     International order received.
 #
 # 4.) Send a normal order:
-#       Linux/Mac:
-#         curl -d '{}' -H "Content-Type: application/json" localhost:2000/orders
-#       Windows:
-#         curl -d "{}" -H "Content-Type: application/json" localhost:2000/orders
+#     curl -d "{}" -H "Content-Type: application/json" localhost:2000/orders
 #
-#       Normal order received.
+#     Normal order received.
 #
 # 5.) Read "How it works" at the end of this file.
 
