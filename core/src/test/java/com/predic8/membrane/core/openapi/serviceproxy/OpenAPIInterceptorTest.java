@@ -125,6 +125,93 @@ class OpenAPIInterceptorTest {
         assertEquals("https://membrane-api.io/problems/user", pd.getType());
     }
 
+    /**
+     * Routing ignores path parameters, see Request.getRoutingPath(). The base path must be found as well.
+     */
+    @Test
+    void getMatchingBasePathIgnoresPathParameters() {
+        exc.getRequest().setUri("/base/v2;x=1/foo");
+        assertEquals("/base/v2/", interceptor1Server.getMatchingBasePath(exc));
+    }
+
+    /**
+     * Routing merges duplicate slashes, see Request.getRoutingPath(). The base path must be found as well.
+     */
+    @Test
+    void getMatchingBasePathMergesDuplicateSlashes() {
+        exc.getRequest().setUri("//base//v2/foo");
+        assertEquals("/base/v2/", interceptor1Server.getMatchingBasePath(exc));
+    }
+
+    /**
+     * Of nested server paths the most specific one decides, regardless of the order of the OpenAPI documents.
+     */
+    @Test
+    void nestedBasePathsValidateAgainstMostSpecificOpenAPI() throws Exception {
+        exc.getRequest().setUri("/api/admin/users");
+        assertEquals(RETURN, createNestedBasePathsInterceptor().handleRequest(exc));
+        assertEquals(400, exc.getResponse().getStatusCode()); // Query parameter token of the inner OpenAPI is missing
+    }
+
+    /**
+     * The backend, like a servlet container, sees /api/admin/users. A path parameter must not get the request
+     * validated against the outer OpenAPI instead.
+     */
+    @Test
+    void nestedBasePathsPathParameterDoesNotSelectOuterOpenAPI() throws Exception {
+        exc.getRequest().setUri("/api/admin;x=1/users");
+        assertEquals(RETURN, createNestedBasePathsInterceptor().handleRequest(exc));
+        assertEquals(400, exc.getResponse().getStatusCode()); // Query parameter token of the inner OpenAPI is missing
+    }
+
+    /**
+     * The path templates of the OpenAPI are compiled with merged slashes, so the request path must be merged too.
+     */
+    @Test
+    void duplicateSlashesMatchPathTemplate() {
+        specInfoServers.validateRequests = YES;
+        final var interceptor = new OpenAPIInterceptor(createProxy(router, specInfoServers));
+        interceptor.init(router);
+
+        exc.getRequest().setUri("/base/v2//foo");
+        assertEquals(CONTINUE, interceptor.handleRequest(exc));
+    }
+
+    /**
+     * A path parameter like ;jsessionid=1 is not part of the value of a template expression.
+     */
+    @Test
+    void pathParameterIsNotPartOfTemplateExpressionValue() {
+        specCustomers.validateRequests = YES;
+        final var interceptor = new OpenAPIInterceptor(createProxy(router, specCustomers));
+        interceptor.init(router);
+
+        exc.getRequest().setUri("/customers/7;jsessionid=1");
+        assertEquals(CONTINUE, interceptor.handleRequest(exc));
+    }
+
+    /**
+     * The outer OpenAPI comes first, so that a first-match on the base paths picks it.
+     */
+    private OpenAPIInterceptor createNestedBasePathsInterceptor() {
+        final var outer = new OpenAPISpec();
+        outer.location = getPathFromResource("openapi/specs/nested-base-paths/outer.yml");
+        outer.validateRequests = YES;
+
+        final var inner = new OpenAPISpec();
+        inner.location = getPathFromResource("openapi/specs/nested-base-paths/inner.yml");
+        inner.validateRequests = YES;
+
+        final var proxy = new APIProxy();
+        proxy.setOpenapi(List.of(outer, inner));
+        proxy.setKey(new APIProxyKey(2000));
+        proxy.init(router);
+
+        final var interceptor = new OpenAPIInterceptor(proxy);
+        interceptor.init(router);
+        return interceptor;
+    }
+
     @Test
     void destinations() {
         exc.getRequest().setUri("/foo/boo");

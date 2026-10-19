@@ -86,7 +86,7 @@ public class OpenAPIPublisher {
     }
 
     public Outcome handle(Exchange exc, Router router) throws IOException, URISyntaxException {
-        final var path = trimQueryString(exc.getRequest().getUri());
+        final var path = trimQueryString(exc.getRequest().getRoutingPath());
 
         final var ui = PATTERN_UI.matcher(path);
         if (ui.matches()) {

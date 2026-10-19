@@ -218,14 +218,21 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         return CONTINUE;
     }
 
+    /**
+     * Uses the same path as routing, see {@link com.predic8.membrane.core.http.Request#getRoutingPath()}. Of nested
+     * base paths like /api/ and /api/admin/ the longest one wins, regardless of the order of the OpenAPI documents.
+     */
     protected String getMatchingBasePath(Exchange exc) {
+        final var path = exc.getRequest().getRoutingPath();
+        String matching = null;
         for (String basePath : apiProxy.getBasePaths().keySet()) {
-            if (exc.getRequest().getUri().startsWith(basePath)) {
-                return basePath;
+            if (path.startsWith(basePath) && (matching == null || basePath.length() > matching.length())) {
+                matching = basePath;
             }
         }
-        log.debug("Could not find matching base path for OpenAPI request {}. Returning empty basePath.", exc.getRequest().getUri());
-        return null;
+        if (matching == null)
+            log.debug("Could not find matching base path for OpenAPI request {}. Returning empty basePath.", exc.getRequest().getUri());
+        return matching;
     }
 
 
@@ -271,7 +278,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
      * we need some context.
      */
     private Request<?> getOperationRequestOnlyForResponseValidation(Exchange exc) {
-        return new Request<>(exc.getRequest().getMethod(), exc.getRequest().getUri());
+        return new Request<>(exc.getRequest().getMethod(), exc.getRequest().getRoutingPath());
     }
 
     public boolean validationDetails(OpenAPI api) {
