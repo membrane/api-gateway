@@ -100,13 +100,6 @@ Samples of scripting with JSONPath, XPath and the expression language you can fi
 * Log into console, CSV or databases
 * Structured JSON logs
 
-### [Load Balancing](loadbalancing#load-balancing-apis)
-
-* Simple static setup
-* Dynamic node management
-* Session-based load balancing
-* Backend health checks
-
 ## [API Testing](api-testing)
   
 * API Greasing

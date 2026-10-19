@@ -14,33 +14,37 @@
 
 package com.predic8.membrane.core.interceptor.balancer;
 
-import com.predic8.membrane.annot.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.beanregistry.BeanRegistry;
 import com.predic8.membrane.annot.beanregistry.BeanRegistryAware;
-import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.ReadingBodyException;
-import com.predic8.membrane.core.interceptor.balancer.Node.*;
-import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.transport.http.*;
-import com.predic8.membrane.core.transport.http.client.*;
-import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.core.interceptor.balancer.Node.Status;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.transport.http.HttpClient;
+import com.predic8.membrane.core.transport.http.client.ConnectionConfiguration;
+import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
+import com.predic8.membrane.core.util.ConfigurationException;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
-import org.springframework.beans.*;
-import org.springframework.beans.factory.*;
-import org.springframework.context.*;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.DisposableBean;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 
-import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.util.*;
 
-import static com.predic8.membrane.core.http.Request.*;
-import static com.predic8.membrane.core.interceptor.balancer.BalancerUtil.*;
-import static com.predic8.membrane.core.interceptor.balancer.Node.Status.*;
-import static com.predic8.membrane.core.util.ExceptionUtil.concatMessageAndCauseMessages;
+import static com.predic8.membrane.core.http.Request.get;
+import static com.predic8.membrane.core.interceptor.balancer.BalancerUtil.collectClusters;
+import static com.predic8.membrane.core.interceptor.balancer.Node.Status.DOWN;
+import static com.predic8.membrane.core.interceptor.balancer.Node.Status.UP;
 import static com.predic8.membrane.core.util.TimerTaskUtil.createTimerTask;
 
 /**
@@ -52,7 +56,7 @@ import static com.predic8.membrane.core.util.TimerTaskUtil.createTimerTask;
  * If a health URL is configured for the node, it performs an HTTP request against that endpoint.
  * Otherwise, it performs a TCP check against the node's host and port.
  * This ensures the load balancer always has up-to-date status for routing decisions.
- * @example <a href="https://github.com/membrane/api-gateway/tree/master/distribution/examples/loadbalancing/6-health-monitor">health monitor example</a>
+ * @example <a href="https://github.com/membrane/api-gateway/blob/master/distribution/tutorials/loadbalancing/40-Health-Monitor.yaml">health monitor tutorial</a>
  * @topic 4. Monitoring, Logging and Statistics
  */
 @MCElement(name = "balancerHealthMonitor")
