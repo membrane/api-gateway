@@ -401,9 +401,9 @@ class CatalogCollectorTest {
 
         final var apis = collector().collect(router, exchange("/apis.json")).apis();
 
-        assertEquals("shop", apis.get(0).aid());
-        assertNotEquals("shop", apis.get(1).aid());
-        assertEquals(apis.get(1).id(), apis.get(1).aid());
+        assertEquals("gateway.example.com:shop", apis.get(0).aid());
+        assertNotEquals("shop", apis.get(1).id());
+        assertEquals("gateway.example.com:" + apis.get(1).id(), apis.get(1).aid());
     }
 
     @Test
@@ -524,13 +524,13 @@ class CatalogCollectorTest {
     }
 
     @Test
-    void theIdOfAnApiWithOneDocumentIsKeptVerbatim() throws Exception {
+    void aConfiguredIdIsPrefixedWithTheDomainLikeEveryOtherAid() throws Exception {
         APIProxy proxy = apiProxy("fruitshop-api-v2-openapi-3.yml", 2000);
         proxy.setId("shop");
         add(proxy);
 
         final var entry = only(collector().collect(router, exchange("/apis.json")));
-        assertEquals("shop", entry.aid());
+        assertEquals("gateway.example.com:shop", entry.aid());
         assertEquals("shop", entry.id());
     }
 
@@ -546,7 +546,8 @@ class CatalogCollectorTest {
         List<String> aids = collector().collect(router, exchange("/apis.json")).apis().stream()
                 .map(CatalogEntry::aid).toList();
 
-        assertEquals(List.of("shop:fruit-shop-api-v2-0-0", "shop:servers-1-api-v1-0"), aids.stream().sorted().toList());
+        assertEquals(List.of("gateway.example.com:shop:fruit-shop-api-v2-0-0", "gateway.example.com:shop:servers-1-api-v1-0"),
+                aids.stream().sorted().toList());
     }
 
     @Test

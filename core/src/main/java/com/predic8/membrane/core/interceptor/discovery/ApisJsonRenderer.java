@@ -71,7 +71,9 @@ public class ApisJsonRenderer implements CatalogRenderer {
         collection.put("description", this.collection.description());
         putIfPresent(collection, "image", settings.image());
         putIfPresent(collection, "url", catalog.url());
-        final var tags = catalog.apis().stream().flatMap(entry -> entry.tags().stream()).distinct().toList();
+        // A discovery document is no API, so neither this catalog nor any other one is listed.
+        final var listed = catalog.apis().stream().filter(entry -> entry.catalogType() == null).toList();
+        final var tags = listed.stream().flatMap(entry -> entry.tags().stream()).distinct().toList();
         putStrings(collection, "tags", tags);
         collection.put("created", settings.created().toString());
         collection.put("modified", settings.modified().toString());
@@ -81,7 +83,7 @@ public class ApisJsonRenderer implements CatalogRenderer {
         putIfPresent(collection, "access", settings.access());
         collection.put("specificationVersion", SPECIFICATION_VERSION);
         ArrayNode apis = collection.putArray("apis");
-        catalog.apis().forEach(entry -> apis.add(renderApi(entry)));
+        listed.forEach(entry -> apis.add(renderApi(entry)));
         putResources(collection, "common", settings.common());
         putResources(collection, "prompts", settings.prompts());
         putResources(collection, "rules", settings.rules());

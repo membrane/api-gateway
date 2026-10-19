@@ -135,6 +135,11 @@ Serve an OpenAPI description, validate requests against it, rewrite the server U
 at `/api-docs` (automatically, pinned, or for a deployment behind a reverse proxy), and learn the
 features added in OpenAPI 3.2, such as the QUERY method.
 
+## [API Discovery](discovery)
+
+Publish all APIs deployed on the gateway as an APIs.json catalog, with links to their OpenAPI
+documents, and select the listed APIs by tag.
+
 ---
 
 ## Start Membrane with Docker

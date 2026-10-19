@@ -134,9 +134,7 @@ public class CatalogCollector {
         var id = base;
         for (int n = 2; !taken.add(id); n++)
             id = base + "-" + n;
-        // A configured id stands as the aid on its own; any other one carries the domain.
-        final var aid = entry.aid().equals(entry.id()) ? id : domain + ":" + id;
-        return entry.withIdentifiers(aid, id);
+        return entry.withIdentifiers(domain + ":" + id, id);
     }
 
     /**
@@ -304,12 +302,11 @@ public class CatalogCollector {
     }
 
     /**
-     * Globally unique identifier of the entry, <code>&lt;domain&gt;:&lt;id&gt;</code>. An api that
-     * sets <code>id</code> keeps that value verbatim instead, so configuration can pin an
-     * identifier that outlives a change of host, port or path.
+     * Globally unique identifier of the entry, <code>&lt;domain&gt;:&lt;id&gt;</code>, the form
+     * APIs.json requires. A configured <code>id</code> replaces only the second half, so together
+     * with a base URL it pins an identifier that outlives a change of host, port or path.
      */
     private static String aid(AbstractServiceProxy proxy, String recordId, String domain) {
-        if (hasConfiguredId(proxy)) return id(proxy, recordId);
         return domain + ":" + id(proxy, recordId);
     }
 
@@ -326,10 +323,6 @@ public class CatalogCollector {
         }
         if (recordId != null) return recordId;
         return slug(keyId(proxy));
-    }
-
-    private static boolean hasConfiguredId(AbstractServiceProxy proxy) {
-        return proxy instanceof APIProxy api && api.getId() != null;
     }
 
     private static String keyId(AbstractServiceProxy proxy) {

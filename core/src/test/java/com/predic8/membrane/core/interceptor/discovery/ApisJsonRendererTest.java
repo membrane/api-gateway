@@ -313,6 +313,28 @@ class ApisJsonRendererTest {
         assertEquals("https://example.com/kin.vcf", maintainer.path("vCard").asText());
     }
 
+    @Test
+    void apisPublishingACatalogAreNotListed() throws Exception {
+        final var document = render(catalog(describedApi(), apisJsonCatalog()));
+
+        final var names = new ArrayList<String>();
+        document.path("apis").forEach(api -> names.add(api.path("name").asText()));
+        assertEquals(List.of("Fruit Shop API"), names);
+    }
+
+    @Test
+    void theTagsOfAnApiPublishingACatalogDoNotBecomeCollectionTags() throws Exception {
+        final var catalogApi = CatalogEntry.builder()
+                .aid("example.com:apis-json").id("apis-json").kind(CatalogEntry.ProxyKind.API)
+                .name("APIs.json").description("APIs.json")
+                .endpoint(new CatalogEntry.Endpoint("https", "example.com", 443, "/apis.json", "*", "https://example.com/apis.json"))
+                .tags(List.of("discovery"))
+                .catalogType("application/json")
+                .build();
+
+        assertTrue(render(catalog(catalogApi)).path("tags").isMissingNode());
+    }
+
     private static CatalogEntry.Resource resource(String type, String url) {
         return new CatalogEntry.Resource(type, null, null, null, url, null, List.of());
     }
