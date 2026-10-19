@@ -76,7 +76,8 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 				assignRule(exc, forwardProxy);
 				return CONTINUE;
 			}
-			log.info("Rejected request with malformed request target: {} ({})", received, e.getMessage());
+			log.info("Rejected request with malformed request target.");
+			log.debug("Malformed request target: {} ({})", received, e.getMessage());
 			user(router.getConfiguration().isProduction(), "invalid-path")
 					.status(400)
 					.title("Invalid request target")
@@ -86,7 +87,8 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 		}
 
 		if (!isSupportedRequestTarget(request)) {
-			log.info("Rejected request with unsupported request target: {}", received);
+			log.info("Rejected request with unsupported request target.");
+			log.debug("Unsupported request target: {}", received);
 			user(router.getConfiguration().isProduction(), "invalid-path")
 					.status(400)
 					.title("Invalid request target")
@@ -105,7 +107,8 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 		assignRule(exc, proxy);
 
 		if (request.isCONNECTRequest() && !acceptsConnect(proxy)) {
-			log.info("Rejected CONNECT request that is not routed to a forward proxy: {}", received);
+			log.info("Rejected CONNECT request that is not routed to a forward proxy.");
+			log.debug("CONNECT request target: {}", received);
 			user(router.getConfiguration().isProduction(), "invalid-path")
 					.status(400)
 					.title("Invalid request target")
@@ -115,7 +118,8 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 		}
 
 		if (!(proxy instanceof ProxyRule) && containsAmbiguousPathParameters(request.getUri())) {
-			log.info("Rejected request with ambiguous path parameters: {}", request.getUri());
+			log.info("Rejected request with ambiguous path parameters.");
+			log.debug("Request target with ambiguous path parameters: {}", request.getUri());
 			user(router.getConfiguration().isProduction(), "invalid-path")
 					.status(400)
 					.title("Invalid path")
@@ -125,7 +129,8 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 		}
 
 		if (!(proxy instanceof ProxyRule) && hasBackslashInPath(received)) {
-			log.info("Rejected request with a backslash in the path: {}", received);
+			log.info("Rejected request with a backslash in the path.");
+			log.debug("Request target with a backslash: {}", received);
 			user(router.getConfiguration().isProduction(), "invalid-path")
 					.status(400)
 					.title("Invalid path")
