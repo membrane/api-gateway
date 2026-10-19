@@ -1,0 +1,97 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.7.1.json
+#
+# Tutorial: Health Monitor
+#
+# A monitor probes a health endpoint of the nodes periodically. An unhealthy node
+# is taken out of rotation. Once the probe returns a 2xx status, the node is
+# put back in rotation.
+#
+# 1.) Start Membrane:
+#       Linux/Mac:
+#         ./membrane.sh -c 40-Health-Monitor.yaml
+#       Windows:
+#         membrane.cmd -c 40-Health-Monitor.yaml
+#
+# 2.) Call the balancer repeatedly for about 30 seconds:
+#       curl localhost:2000
+#
+#       Node 1
+#       Node 2
+#       ...
+#
+#     Every 10 seconds the health endpoint of node 2 switches between 200 and
+#     500. While it returns 500, only node 1 answers and the console shows:
+#
+#       Node localhost:3002 health check failed with HTTP 500 status code
+
+components:
+  healthMonitor:
+    balancerHealthMonitor:
+      # Probe every node every 1000 ms (1 second).
+      interval: 1000
+      httpClientConfig:
+        connection:
+          # Keep probe timeouts short so a hanging node is detected quickly.
+          # Give up connecting to a node after 2000 ms.
+          timeout: 2000
+          # Give up waiting for the health response after 2000 ms.
+          soTimeout: 2000
+
+---
+api:
+  port: 2000
+  flow:
+    - balancer:
+        clusters:
+          - nodes:
+              - host: localhost
+                port: 3001
+                # Without a healthUrl the monitor only checks that it can open
+                # a TCP connection to the node.
+                healthUrl: http://localhost:3001/health
+              - host: localhost
+                port: 3002
+                healthUrl: http://localhost:3002/health
+
+---
+api:
+  port: 3001
+  name: Node 1
+  flow:
+    - static:
+        src: Node 1
+    - return:
+        status: 200
+
+---
+api:
+  port: 3002
+  name: Node 2 health
+  path:
+    uri: /health
+  flow:
+    - choose:
+        # Healthy for 10 seconds, then unhealthy for 10 seconds.
+        - case:
+            test: T(java.lang.System).currentTimeMillis() / 10000 % 2 == 0
+            flow:
+              - return:
+                  status: 200
+        - otherwise:
+            - return:
+                status: 500
+
+---
+api:
+  port: 3002
+  name: Node 2
+  flow:
+    - static:
+        src: Node 2
+    - return:
+        status: 200
+
+# NOTE:
+#   The first check runs 5 seconds after startup.
+#
+# Reference: https://www.membrane-api.io/docs/current/balancerHealthMonitor.html
