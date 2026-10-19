@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.predic8.membrane.core.transport.http2.frame.Error.*;
@@ -71,7 +72,7 @@ public class Http2Logic {
     /** Highest id of a stream the peer opened. Only accessed on the receiver thread. */
     private int highestPeerStreamId;
     volatile boolean receiving = true;
-    Future<?> senderFuture;
+    volatile Future<?> senderFuture;
 
     public Http2Logic(ExecutorService executor, Socket sourceSocket, InputStream srcIn, OutputStream srcOut, boolean showSSLExceptions, Http2MessageHandler messageHandler) {
         this.executor = executor;
@@ -98,7 +99,10 @@ public class Http2Logic {
     }
 
     public void init() throws IOException {
-        senderFuture = executor.submit(sender);
+        // Published before the sender runs, so whoever sees frames it sent can wait for it.
+        final var task = new FutureTask<>(sender, null);
+        senderFuture = task;
+        executor.execute(task);
     }
 
     public static String getRemoteAddr(Socket sourceSocket) {
