@@ -19,4 +19,6 @@ api:
     - location: ../../conf/openapi/fruitshop-v2-2-0.oas.yml
       validateRequests: true
       validateResponses: true
+      # Include the detailed list of validation errors in the error response.
+      # Consider turning it off in production to avoid exposing API internals.
       validationDetails: true
