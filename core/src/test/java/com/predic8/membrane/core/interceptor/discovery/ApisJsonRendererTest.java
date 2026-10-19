@@ -27,16 +27,11 @@ class ApisJsonRendererTest {
 
     private static final ObjectMapper om = new ObjectMapper();
 
-    private final ApisJsonRenderer renderer = new ApisJsonRenderer(COLLECTION, settings()
-            .maintainers(List.of(new CatalogEntry.Contact("API Team", "api@example.com", "https://example.com/team")))
-            .build());
+    private final ApisJsonRenderer renderer = new ApisJsonRenderer("gateway", COLLECTION, null, null, DAY, DAY,
+            List.of(new CatalogEntry.Contact("API Team", "api@example.com", "https://example.com/team")));
 
-    private static ApisJsonCollection.Builder settings() {
-        return ApisJsonCollection.builder("gateway", DAY, DAY);
-    }
-
-    private static JsonNode render(ApisJsonCollection settings, Catalog catalog) throws Exception {
-        return om.readTree(new ApisJsonRenderer(COLLECTION, settings).render(catalog));
+    private static JsonNode render(ApisJsonRenderer renderer, Catalog catalog) throws Exception {
+        return om.readTree(renderer.render(catalog));
     }
 
     private JsonNode render(Catalog catalog) throws Exception {
@@ -153,8 +148,8 @@ class ApisJsonRendererTest {
 
     @Test
     void aMaintainerCarriesOnlyTheDetailsItHas() throws Exception {
-        final var maintainer = render(settings()
-                .maintainers(List.of(new CatalogEntry.Contact(null, "api@example.com", null))).build(), catalog())
+        final var maintainer = render(new ApisJsonRenderer("gateway", COLLECTION, null, null, DAY, DAY,
+                List.of(new CatalogEntry.Contact(null, "api@example.com", null))), catalog())
                 .path("maintainers").get(0);
 
         assertEquals("api@example.com", maintainer.path("email").asText());
@@ -180,109 +175,41 @@ class ApisJsonRendererTest {
 
     @Test
     void withoutMaintainersTheCollectionHasNone() throws Exception {
-        final var document = render(settings().build(), catalog());
+        final var document = render(new ApisJsonRenderer("gateway", COLLECTION, null, null, DAY, DAY, List.of()), catalog());
 
         assertTrue(document.path("maintainers").isMissingNode());
     }
 
     @Test
     void typeAndKindAreRenderedWhenSet() throws Exception {
-        final var document = render(settings().type("Index").kind("company").build(), catalog());
+        final var document = render(new ApisJsonRenderer("gateway", COLLECTION, "Index", "company", DAY, DAY, List.of()), catalog());
 
         assertEquals("Index", document.path("type").asText());
         assertEquals("company", document.path("kind").asText());
     }
 
     @Test
-    void optionalCollectionMembersAreLeftOutWhenNotConfigured() throws Exception {
-        final var document = render(settings().build(), catalog());
+    void withoutTypeAndKindTheCollectionHasNeither() throws Exception {
+        final var document = render(catalog());
 
-        for (final var member : List.of("type", "kind", "image", "position", "access", "common", "prompts", "rules",
-                "workflows", "overlays", "include", "networks", "maintainers"))
-            assertTrue(document.path(member).isMissingNode(), member);
+        assertTrue(document.path("type").isMissingNode());
+        assertTrue(document.path("kind").isMissingNode());
     }
 
     @Test
-    void configuredCollectionMembersAreRendered() throws Exception {
-        final var document = render(settings()
-                .image("https://example.com/logo.png")
-                .position("Producer")
-                .access("Public")
-                .common(List.of(resource("Signup", "https://example.com/signup")))
-                .prompts(List.of(resource("AgentPrompt", "https://example.com/prompt.md")))
-                .rules(List.of(resource("SpectralRules", "https://example.com/rules.yml")))
-                .workflows(List.of(resource("Arazzo", "https://example.com/arazzo.yml")))
-                .overlays(List.of(new CatalogEntry.Reference("APIs.io Search", "https://example.com/search")))
-                .include(List.of(new CatalogEntry.Reference("Partner APIs", "https://partner.example.com/apis.json")))
-                .networks(List.of(new CatalogEntry.Reference("APIs.io", "https://apis.io/search")))
-                .build(), catalog());
-
-        assertEquals("https://example.com/logo.png", document.path("image").asText());
-        assertEquals("Producer", document.path("position").asText());
-        assertEquals("Public", document.path("access").asText());
-        assertEquals("Signup", document.path("common").get(0).path("type").asText());
-        assertEquals("https://example.com/signup", document.path("common").get(0).path("url").asText());
-        assertEquals("AgentPrompt", document.path("prompts").get(0).path("type").asText());
-        assertEquals("SpectralRules", document.path("rules").get(0).path("type").asText());
-        assertEquals("Arazzo", document.path("workflows").get(0).path("type").asText());
-        assertEquals("APIs.io Search", document.path("overlays").get(0).path("type").asText());
-        assertEquals("https://example.com/search", document.path("overlays").get(0).path("url").asText());
-        assertEquals("Partner APIs", document.path("include").get(0).path("name").asText());
-        assertEquals("https://partner.example.com/apis.json", document.path("include").get(0).path("url").asText());
-        assertEquals("APIs.io", document.path("networks").get(0).path("name").asText());
-    }
-
-    @Test
-    void aResourceCarriesEveryMemberItHas() throws Exception {
-        final var common = render(settings().common(List.of(new CatalogEntry.Resource("Pricing", "Plans",
-                "Free and paid plans", "text/html", null, "Free up to 1000 calls", List.of("billing")))).build(), catalog())
-                .path("common").get(0);
-
-        assertEquals("Pricing", common.path("type").asText());
-        assertEquals("Plans", common.path("name").asText());
-        assertEquals("Free and paid plans", common.path("description").asText());
-        assertEquals("text/html", common.path("mediaType").asText());
-        assertEquals("Free up to 1000 calls", common.path("data").asText());
-        assertTrue(common.path("url").isMissingNode());
-        assertEquals(List.of("billing"), strings(common.path("tags")));
-    }
-
-    @Test
-    void anApiCarriesItsConfiguredDetails() throws Exception {
-        final var api = render(catalog(describedApi(new CatalogEntry.Details("https://example.com/shop.png",
-                LocalDate.of(2025, 3, 1), LocalDate.of(2026, 2, 1),
-                List.of(resource("Pricing", "https://example.com/pricing")),
-                List.of(new CatalogEntry.Reference("APIs.io Search", "https://example.com/search")),
-                List.of(resource("AgentPrompt", "https://example.com/prompt.md")),
-                List.of(resource("SpectralRules", "https://example.com/rules.yml")),
-                List.of(resource("Arazzo", "https://example.com/arazzo.yml"))))))
+    void anApiCarriesItsConfiguredDates() throws Exception {
+        final var api = render(catalog(describedApi(new CatalogEntry.Details(LocalDate.of(2025, 3, 1), LocalDate.of(2026, 2, 1)))))
                 .path("apis").get(0);
 
-        assertEquals("https://example.com/shop.png", api.path("image").asText());
         assertEquals("2025-03-01", api.path("created").asText());
         assertEquals("2026-02-01", api.path("modified").asText());
-        assertEquals("APIs.io Search", api.path("overlays").get(0).path("type").asText());
-        assertEquals("AgentPrompt", api.path("prompts").get(0).path("type").asText());
-        assertEquals("SpectralRules", api.path("rules").get(0).path("type").asText());
-        assertEquals("Arazzo", api.path("workflows").get(0).path("type").asText());
-    }
-
-    @Test
-    void configuredPropertiesFollowTheDerivedOnes() throws Exception {
-        final var properties = render(catalog(describedApi(new CatalogEntry.Details(null, null, null,
-                List.of(resource("Pricing", "https://example.com/pricing")), List.of(), List.of(), List.of(), List.of()))))
-                .path("apis").get(0).path("properties");
-
-        final var types = new ArrayList<String>();
-        properties.forEach(property -> types.add(property.path("type").asText()));
-        assertEquals(List.of("OpenAPI", "Documentation", "TermsOfService", "InterfaceLicense", "Pricing"), types);
     }
 
     @Test
     void anApiWithoutDetailsHasNoneOfTheirMembers() throws Exception {
         final var api = render(catalog(plainProxy())).path("apis").get(0);
 
-        for (final var member : List.of("image", "created", "modified", "overlays", "prompts", "rules", "workflows", "contact"))
+        for (final var member : List.of("created", "modified", "contact"))
             assertTrue(api.path(member).isMissingNode(), member);
     }
 
@@ -294,23 +221,6 @@ class ApisJsonRendererTest {
         assertEquals("Predic8", contact.get(0).path("FN").asText());
         assertEquals("info@predic8.de", contact.get(0).path("email").asText());
         assertEquals("https://www.predic8.de", contact.get(0).path("url").asText());
-    }
-
-    @Test
-    void aContactCarriesEveryVCardMember() throws Exception {
-        final var maintainer = render(settings().maintainers(List.of(new CatalogEntry.Contact("Kin Lane",
-                "info@example.com", "https://example.com", "APIs.json", "Somewhere 1, Example City", "+1 555 0100",
-                "apievangelist", "kinlane", "https://example.com/kin.png", "https://example.com/kin.vcf"))).build(),
-                catalog()).path("maintainers").get(0);
-
-        assertEquals("Kin Lane", maintainer.path("FN").asText());
-        assertEquals("APIs.json", maintainer.path("org").asText());
-        assertEquals("Somewhere 1, Example City", maintainer.path("adr").asText());
-        assertEquals("+1 555 0100", maintainer.path("tel").asText());
-        assertEquals("apievangelist", maintainer.path("X-twitter").asText());
-        assertEquals("kinlane", maintainer.path("X-github").asText());
-        assertEquals("https://example.com/kin.png", maintainer.path("photo").asText());
-        assertEquals("https://example.com/kin.vcf", maintainer.path("vCard").asText());
     }
 
     @Test
@@ -333,10 +243,6 @@ class ApisJsonRendererTest {
                 .build();
 
         assertTrue(render(catalog(catalogApi)).path("tags").isMissingNode());
-    }
-
-    private static CatalogEntry.Resource resource(String type, String url) {
-        return new CatalogEntry.Resource(type, null, null, null, url, null, List.of());
     }
 
     private static List<String> strings(JsonNode array) {

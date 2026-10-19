@@ -37,10 +37,6 @@ import java.util.*;
  * listed APIs become the tags of the collection.
  * </p>
  * <p>
- * The <code>info</code> block of an api adds what the gateway cannot derive: its contact, image,
- * dates, further properties such as pricing or changelog, overlays, prompts, rules and workflows.
- * </p>
- * <p>
  * Answers every request that reaches it and ends the flow, so give it an api of its own. RFC 9727
  * reserves <code>/.well-known/api-catalog</code> for its own format, so that path is refused here;
  * use <code>apiCatalog</code> there.
@@ -53,50 +49,29 @@ import java.util.*;
  *   [ collectionId: &lt;id&gt; ]
  *   [ name: &lt;name&gt; ]
  *   [ description: &lt;text&gt; ]
- *   [ image: &lt;url&gt; ]
  *   [ type: index | collection | blueprint ]
  *   [ kind: &lt;kind&gt; ]
- *   [ position: &lt;position&gt; ]
- *   [ access: &lt;access&gt; ]
  *   [ created: &lt;yyyy-mm-dd&gt; ]
  *   [ modified: &lt;yyyy-mm-dd&gt; ]
  *   [ maintainers:
  *       - [ name: &lt;name&gt; ]
  *         [ email: &lt;email&gt; ]
- *         [ url: &lt;url&gt; ]
- *         [ organization | address | phone | twitter | github | photo | vCard: &lt;value&gt; ] ]
- *   [ common | prompts | rules | workflows:
- *       - type: &lt;type&gt;
- *         url: &lt;url&gt; | data: &lt;text&gt;
- *         [ name: &lt;name&gt; ]
- *         [ description: &lt;text&gt; ]
- *         [ mediaType: &lt;media type&gt; ]
- *         [ tags: [ &lt;tag&gt;, ... ] ] ]
- *   [ overlays:
- *       - type: &lt;type&gt;
- *         url: &lt;url&gt; ]
- *   [ include | networks:
- *       - name: &lt;name&gt;
- *         url: &lt;url&gt; ]
+ *         [ url: &lt;url&gt; ] ]
  * </pre>
  * @topic 5. OpenAPI
  * @yaml <pre><code>
  * api:
  *   port: 2000
  *   path:
- *     uri: /.well-known/apis.json
+ *     uri: /apis.json
  *   flow:
  *     - apisJson:
  *         baseUrl: https://api.example.com
  *         collectionId: gateway
  *         name: Example APIs
- *         type: collection
  *         maintainers:
  *           - name: API Team
  *             url: https://example.com/api-team
- *         common:
- *           - type: Signup
- *             url: https://example.com/signup
  * </code></pre>
  */
 @MCElement(name = "apisJson")
@@ -115,47 +90,15 @@ public class ApisJsonInterceptor extends AbstractCollectionDiscoveryInterceptor 
     private String collectionId = "apis";
     private CollectionType type;
     private String kind;
-    private String image;
-    private String position;
-    private String access;
     private LocalDate created = LocalDate.now();
     private LocalDate modified = LocalDate.now();
     private List<ProxyContact> maintainers = List.of();
-    private List<CatalogResource.Common> common = List.of();
-    private List<CatalogResource.Prompt> prompts = List.of();
-    private List<CatalogResource.Rule> rules = List.of();
-    private List<CatalogResource.Workflow> workflows = List.of();
-    private List<CatalogOverlay> overlays = List.of();
-    private List<CatalogReference.Include> include = List.of();
-    private List<CatalogReference.Network> networks = List.of();
-
-    @Override
-    public void init() {
-        common.forEach(CatalogResource::validate);
-        prompts.forEach(CatalogResource::validate);
-        rules.forEach(CatalogResource::validate);
-        workflows.forEach(CatalogResource::validate);
-        include.forEach(CatalogReference::validate);
-        super.init();
-    }
 
     @Override
     protected CatalogRenderer createRenderer() {
-        return new ApisJsonRenderer(collection(), ApisJsonCollection.builder(collectionId, created, modified)
-                .type(type == null ? null : type.value)
-                .kind(kind)
-                .image(image)
-                .position(position)
-                .access(access)
-                .maintainers(ConfiguredMetadata.contacts(maintainers))
-                .common(ConfiguredMetadata.resources(common))
-                .prompts(ConfiguredMetadata.resources(prompts))
-                .rules(ConfiguredMetadata.resources(rules))
-                .workflows(ConfiguredMetadata.resources(workflows))
-                .overlays(ConfiguredMetadata.overlays(overlays))
-                .include(ConfiguredMetadata.references(include))
-                .networks(ConfiguredMetadata.references(networks))
-                .build());
+        return new ApisJsonRenderer(collectionId, collection(), type == null ? null : type.value, kind, created, modified, maintainers.stream()
+                .map(maintainer -> new CatalogEntry.Contact(maintainer.getName(), maintainer.getEmail(), maintainer.getUrl()))
+                .toList());
     }
 
     public String getCollectionId() {
@@ -244,133 +187,6 @@ public class ApisJsonInterceptor extends AbstractCollectionDiscoveryInterceptor 
     @MCChildElement(order = 1)
     public void setMaintainers(List<ProxyContact> maintainers) {
         this.maintainers = maintainers;
-    }
-
-    public String getImage() {
-        return image;
-    }
-
-    /**
-     * @description URL of an image that represents the collection.
-     * @example https://example.com/logo.png
-     */
-    @MCAttribute
-    public void setImage(String image) {
-        this.image = image;
-    }
-
-    public String getPosition() {
-        return position;
-    }
-
-    /**
-     * @description Position the maintainer of the collection holds towards its APIs, such as
-     * <code>Producer</code> or <code>Consumer</code>.
-     * @example Producer
-     */
-    @MCAttribute
-    public void setPosition(String position) {
-        this.position = position;
-    }
-
-    public String getAccess() {
-        return access;
-    }
-
-    /**
-     * @description Access available to the APIs of the collection, such as <code>Public</code>,
-     * <code>Partner</code> or <code>Private</code>.
-     * @example Public
-     */
-    @MCAttribute
-    public void setAccess(String access) {
-        this.access = access;
-    }
-
-    public List<CatalogResource.Common> getCommon() {
-        return common;
-    }
-
-    /**
-     * @description Properties shared by every API of the collection, such as the signup page, the
-     * terms of service or the support forum.
-     */
-    @MCChildElement(order = 2)
-    public void setCommon(List<CatalogResource.Common> common) {
-        this.common = List.copyOf(common);
-    }
-
-    public List<CatalogResource.Prompt> getPrompts() {
-        return prompts;
-    }
-
-    /**
-     * @description AI prompts for every API of the collection.
-     */
-    @MCChildElement(order = 3)
-    public void setPrompts(List<CatalogResource.Prompt> prompts) {
-        this.prompts = List.copyOf(prompts);
-    }
-
-    public List<CatalogResource.Rule> getRules() {
-        return rules;
-    }
-
-    /**
-     * @description Governance rulesets every API of the collection follows.
-     */
-    @MCChildElement(order = 4)
-    public void setRules(List<CatalogResource.Rule> rules) {
-        this.rules = List.copyOf(rules);
-    }
-
-    public List<CatalogResource.Workflow> getWorkflows() {
-        return workflows;
-    }
-
-    /**
-     * @description Workflows, such as Arazzo documents, across the APIs of the collection.
-     */
-    @MCChildElement(order = 5)
-    public void setWorkflows(List<CatalogResource.Workflow> workflows) {
-        this.workflows = List.copyOf(workflows);
-    }
-
-    public List<CatalogOverlay> getOverlays() {
-        return overlays;
-    }
-
-    /**
-     * @description Overlays that augment the collection.
-     */
-    @MCChildElement(order = 6)
-    public void setOverlays(List<CatalogOverlay> overlays) {
-        this.overlays = List.copyOf(overlays);
-    }
-
-    public List<CatalogReference.Include> getInclude() {
-        return include;
-    }
-
-    /**
-     * @description Other APIs.json documents whose APIs belong to this collection, for example the
-     * catalogs of further gateways.
-     */
-    @MCChildElement(order = 7)
-    public void setInclude(List<CatalogReference.Include> include) {
-        this.include = List.copyOf(include);
-    }
-
-    public List<CatalogReference.Network> getNetworks() {
-        return networks;
-    }
-
-    /**
-     * @description Related nodes of an API network that clients can search.
-     */
-    @MCChildElement(order = 8)
-    public void setNetworks(List<CatalogReference.Network> networks) {
-        this.networks = List.copyOf(networks);
     }
 
     @Override

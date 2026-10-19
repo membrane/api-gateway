@@ -441,38 +441,17 @@ class CatalogCollectorTest {
     }
 
     @Test
-    void theInfoBlockOfAnApiBecomesItsDetails() throws Exception {
-        final var contact = new ProxyContact();
-        contact.setName("Shop Team");
-        contact.setOrganization("Example Inc.");
-        contact.setGithub("example");
-        final var pricing = new CatalogResource.Property();
-        pricing.setType("Pricing");
-        pricing.setUrl("https://example.com/pricing");
-        final var overlay = new CatalogOverlay();
-        overlay.setType("APIs.io Search");
-        overlay.setUrl("https://example.com/search");
+    void theDatesInTheInfoBlockOfAnApiBecomeItsDetails() throws Exception {
         final var info = new ProxyInfo();
-        info.setContact(contact);
-        info.setImage("https://example.com/shop.png");
         info.setCreated("2025-03-01");
         info.setModified("2026-02-01");
-        info.setProperties(List.of(pricing));
-        info.setOverlays(List.of(overlay));
         final var shop = new ServiceProxy(new ServiceProxyKey("*", "*", "/shop", 2000), null, 0);
         shop.setInfo(info);
         add(shop);
 
         final var entry = collector().collect(router, exchange("/apis.json")).apis().getFirst();
 
-        assertEquals("Example Inc.", entry.contact().organization());
-        assertEquals("example", entry.contact().github());
-        assertEquals("https://example.com/shop.png", entry.details().image());
-        assertEquals(LocalDate.of(2025, 3, 1), entry.details().created());
-        assertEquals(LocalDate.of(2026, 2, 1), entry.details().modified());
-        assertEquals("Pricing", entry.details().properties().getFirst().type());
-        assertEquals("https://example.com/pricing", entry.details().properties().getFirst().url());
-        assertEquals(new CatalogEntry.Reference("APIs.io Search", "https://example.com/search"), entry.details().overlays().getFirst());
+        assertEquals(new CatalogEntry.Details(LocalDate.of(2025, 3, 1), LocalDate.of(2026, 2, 1)), entry.details());
     }
 
     @Test

@@ -89,56 +89,17 @@ public record CatalogEntry(String aid, String id, ProxyKind kind, String name, S
      */
     public record Links(String humanUrl, String specUrl) {}
 
-    /**
-     * A person or organization, with the members of the vCard APIs.json uses.
-     */
-    public record Contact(String name, String email, String url, String organization, String address,
-                          String phone, String twitter, String github, String photo, String vCard) {
-
-        public Contact(String name, String email, String url) {
-            this(name, email, url, null, null, null, null, null, null, null);
-        }
-    }
-
-    /**
-     * A typed link or inline value, such as a pricing page, a prompt or a ruleset.
-     *
-     * @param url  URL of the resource, or null when <code>data</code> carries it inline
-     * @param data the resource inline, or null when <code>url</code> points at it
-     */
-    public record Resource(String type, String name, String description, String mediaType, String url, String data,
-                           List<String> tags) {
-
-        public Resource {
-            tags = List.copyOf(tags);
-        }
-    }
-
-    /**
-     * A link with a label, such as an overlay with its type or an included catalog with its name.
-     */
-    public record Reference(String label, String url) {}
+    public record Contact(String name, String email, String url) {}
 
     /**
      * Catalog metadata configured on the api in its <code>info</code> block.
      *
-     * @param image    URL of an image representing the API, or null
      * @param created  day the API was created, or null
      * @param modified day the API last changed, or null
      */
-    public record Details(String image, LocalDate created, LocalDate modified, List<Resource> properties,
-                          List<Reference> overlays, List<Resource> prompts, List<Resource> rules,
-                          List<Resource> workflows) {
+    public record Details(LocalDate created, LocalDate modified) {
 
-        public static final Details NONE = new Details(null, null, null, List.of(), List.of(), List.of(), List.of(), List.of());
-
-        public Details {
-            properties = List.copyOf(properties);
-            overlays = List.copyOf(overlays);
-            prompts = List.copyOf(prompts);
-            rules = List.copyOf(rules);
-            workflows = List.copyOf(workflows);
-        }
+        public static final Details NONE = new Details(null, null);
     }
 
     public record License(String name, String url) {}

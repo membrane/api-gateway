@@ -19,17 +19,14 @@ import com.predic8.membrane.core.interceptor.flow.*;
 import com.predic8.membrane.core.interceptor.lang.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.proxies.AbstractServiceProxy.*;
-import com.predic8.membrane.core.util.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
-import java.util.*;
 
 import static com.predic8.membrane.core.http.Request.METHOD_POST;
 import static com.predic8.membrane.core.interceptor.flow.invocation.FlowTestInterceptors.*;
 import static io.restassured.RestAssured.*;
-import static org.junit.jupiter.api.Assertions.*;
 
 @SuppressWarnings("UastIncorrectHttpHeaderInspection")
 class AbstractServiceProxyTest extends AbstractTestWithRouter {
@@ -45,18 +42,6 @@ class AbstractServiceProxyTest extends AbstractTestWithRouter {
         .then()
             .statusCode(200)
             .header("X-Called-Method", METHOD_POST);
-    }
-
-    @Test
-    void initRejectsAnInvalidInfo() {
-        final var pricing = new CatalogResource.Property();
-        pricing.setType("Pricing");
-        final var info = new ProxyInfo();
-        info.setProperties(List.of(pricing));
-        final var proxy = getAPI();
-        proxy.setInfo(info);
-
-        assertThrows(ConfigurationException.class, () -> proxy.init(router));
     }
 
     private static @NotNull AbstractServiceProxy getAPI() {

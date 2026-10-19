@@ -17,33 +17,10 @@ import com.predic8.membrane.core.util.*;
 import org.junit.jupiter.api.*;
 
 import java.time.*;
-import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class ProxyInfoTest {
-
-    @Test
-    void aResourceWithoutUrlOrDataIsARejectedConfiguration() {
-        final var pricing = new CatalogResource.Property();
-        pricing.setType("Pricing");
-        final var info = new ProxyInfo();
-        info.setProperties(List.of(pricing));
-
-        final var e = assertThrows(ConfigurationException.class, info::validate);
-        assertTrue(e.getMessage().contains("Pricing"));
-    }
-
-    @Test
-    void aResourceWithDataOnlyIsValid() {
-        final var prompt = new CatalogResource.Prompt();
-        prompt.setType("AgentPrompt");
-        prompt.setData("List my open orders.");
-        final var info = new ProxyInfo();
-        info.setPrompts(List.of(prompt));
-
-        assertDoesNotThrow(info::validate);
-    }
 
     @Test
     void datesAreParsedAsIsoDates() {

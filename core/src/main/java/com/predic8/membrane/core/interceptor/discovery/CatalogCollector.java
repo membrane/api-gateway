@@ -165,7 +165,7 @@ public class CatalogCollector {
                 .termsOfService(info == null ? null : info.getTermsOfService())
                 .operations(collectOperations ? operations(openAPI) : List.of())
                 .catalogType(catalogType(api))
-                .details(ConfiguredMetadata.details(api.getInfo())).build();
+                .details(details(api)).build();
     }
 
     /**
@@ -175,7 +175,7 @@ public class CatalogCollector {
      */
     private CatalogEntry plainEntry(AbstractServiceProxy proxy, Exchange exchange, String domain) {
         CatalogEntry.Endpoint endpoint = endpoint(proxy, exchange, pathOf(proxy));
-        return builder().aid(aid(proxy, null, domain)).id(id(proxy, null)).kind(kindOf(proxy)).name(proxy.getName()).description(description(proxy, null)).endpoint(endpoint).tags(proxy.getTags()).contact(configuredContact(proxy)).soap(soapInfo(proxy, endpoint)).catalogType(catalogType(proxy)).details(ConfiguredMetadata.details(proxy.getInfo())).build();
+        return builder().aid(aid(proxy, null, domain)).id(id(proxy, null)).kind(kindOf(proxy)).name(proxy.getName()).description(description(proxy, null)).endpoint(endpoint).tags(proxy.getTags()).contact(configuredContact(proxy)).soap(soapInfo(proxy, endpoint)).catalogType(catalogType(proxy)).details(details(proxy)).build();
     }
 
     /**
@@ -358,7 +358,13 @@ public class CatalogCollector {
 
     private static CatalogEntry.Contact configuredContact(AbstractServiceProxy proxy) {
         if (proxy.getInfo() == null || proxy.getInfo().getContact() == null) return null;
-        return ConfiguredMetadata.contact(proxy.getInfo().getContact());
+        final var contact = proxy.getInfo().getContact();
+        return new CatalogEntry.Contact(contact.getName(), contact.getEmail(), contact.getUrl());
+    }
+
+    private static CatalogEntry.Details details(AbstractServiceProxy proxy) {
+        if (proxy.getInfo() == null) return CatalogEntry.Details.NONE;
+        return new CatalogEntry.Details(proxy.getInfo().getCreated(), proxy.getInfo().getModified());
     }
 
     private static List<String> tags(OpenAPI api) {

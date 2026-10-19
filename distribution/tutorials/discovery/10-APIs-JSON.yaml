@@ -27,9 +27,6 @@ api:
     contact:
       name: Shop Team
       email: shop@example.com
-    properties:
-      - type: Pricing
-        url: https://example.com/pricing
 
 ---
 
@@ -80,8 +77,3 @@ api:
         maintainers:
           - name: API Team
             email: api-team@example.com
-        common:
-          - type: Signup
-            url: https://example.com/signup
-          - type: TermsOfService
-            url: https://example.com/terms

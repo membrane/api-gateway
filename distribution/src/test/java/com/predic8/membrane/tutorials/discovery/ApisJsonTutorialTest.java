@@ -73,8 +73,7 @@ public class ApisJsonTutorialTest extends AbstractDiscoveryTutorialTest {
             .statusCode(200)
             .body("type", equalTo("Collection"))
             .body("maintainers[0].FN", equalTo("API Team"))
-            .body("common.type", contains("Signup", "TermsOfService"))
-            .body("apis[0].properties.type", contains("OpenAPI", "Documentation", "Pricing"))
+            .body("apis[0].properties.type", contains("OpenAPI", "Documentation"))
             .body("apis[0].contact[0].FN", equalTo("Shop Team"))
             .body("apis[0].contact[0].email", equalTo("shop@example.com"));
         // @formatter:on

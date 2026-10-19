@@ -24,13 +24,6 @@ public class ProxyContact {
     private String name;
     private String email;
     private String url;
-    private String organization;
-    private String address;
-    private String phone;
-    private String twitter;
-    private String github;
-    private String photo;
-    private String vCard;
 
     public String getName() {
         return name;
@@ -69,96 +62,5 @@ public class ProxyContact {
     @MCAttribute
     public void setUrl(String url) {
         this.url = url;
-    }
-
-    public String getOrganization() {
-        return organization;
-    }
-
-    /**
-     * @description Name of the organization the person belongs to.
-     * @example predic8 GmbH
-     */
-    @MCAttribute
-    public void setOrganization(String organization) {
-        this.organization = organization;
-    }
-
-    public String getAddress() {
-        return address;
-    }
-
-    /**
-     * @description Postal address.
-     * @example Koblenzer Str. 65, 53173 Bonn, Germany
-     */
-    @MCAttribute
-    public void setAddress(String address) {
-        this.address = address;
-    }
-
-    public String getPhone() {
-        return phone;
-    }
-
-    /**
-     * @description Phone number including the country code.
-     * @example +49 228 5552576-0
-     */
-    @MCAttribute
-    public void setPhone(String phone) {
-        this.phone = phone;
-    }
-
-    public String getTwitter() {
-        return twitter;
-    }
-
-    /**
-     * @description X (Twitter) username, without the <code>@</code>.
-     * @example membrane_api
-     */
-    @MCAttribute
-    public void setTwitter(String twitter) {
-        this.twitter = twitter;
-    }
-
-    public String getGithub() {
-        return github;
-    }
-
-    /**
-     * @description GitHub username or organization.
-     * @example membrane
-     */
-    @MCAttribute
-    public void setGithub(String github) {
-        this.github = github;
-    }
-
-    public String getPhoto() {
-        return photo;
-    }
-
-    /**
-     * @description URL of an image representing the person or team.
-     * @example https://example.com/team.png
-     */
-    @MCAttribute
-    public void setPhoto(String photo) {
-        this.photo = photo;
-    }
-
-    public String getVCard() {
-        return vCard;
-    }
-
-    /**
-     * @description URL of a vCard (RFC 6350) with the full contact details.
-     * @example https://example.com/team.vcf
-     */
-    @MCAttribute(attributeName = "vCard")
-    public void setVCard(String vCard) {
-        this.vCard = vCard;
     }
 }
