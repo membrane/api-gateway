@@ -36,7 +36,6 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.util.HttpUtil.isAbsoluteURI;
 import static com.predic8.membrane.core.util.URIUtil.containsAmbiguousPathParameters;
 import static com.predic8.membrane.core.util.URIUtil.normalizeRequestTarget;
-import static com.predic8.membrane.core.util.URLUtil.getPathQuery;
 
 /**
  * @description Selects and assigns the matching proxy rule for incoming requests; optionally adds/extends X-Forwarded-* headers.
@@ -62,11 +61,18 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 		// Canonicalize once, so that routing, the flow and the backend agree on the path
 		final var request = exc.getRequest();
 		final var received = request.getUri();
+		// Only an absolute-form target replaces the Host header
+		final var absoluteForm = isAbsoluteURI(received);
+		final var receivedHost = absoluteForm ? request.getHeader().getHost() : null;
 		try {
-			request.setUri(normalizeRequestTarget(toOriginForm(received)));
+			reduceToOriginForm(request);
+			request.setUri(normalizeRequestTarget(request.getUri()));
 		} catch (URISyntaxException | IllegalArgumentException e) {
+			request.setUri(received);
+			if (absoluteForm)
+				restoreHost(request, receivedHost);
 			// A forward proxy passes the absolute URI on unchanged and does not route by its path, so it need not parse
-			if (isAbsoluteURI(received) && getRule(exc) instanceof ProxyRule forwardProxy) {
+			if (absoluteForm && getRule(exc) instanceof ProxyRule forwardProxy) {
 				assignRule(exc, forwardProxy);
 				return CONTINUE;
 			}
@@ -90,8 +96,12 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 		}
 
 		Proxy proxy = getRule(exc);
-		if (proxy instanceof ProxyRule)
-			request.setUri(received); // A forward proxy needs the absolute URI
+		if (proxy instanceof ProxyRule) {
+			// A forward proxy needs the absolute URI and passes on the Host it received
+			request.setUri(received);
+			if (absoluteForm)
+				restoreHost(request, receivedHost);
+		}
 		assignRule(exc, proxy);
 
 		if (request.isCONNECTRequest() && !acceptsConnect(proxy)) {
@@ -151,16 +161,32 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 	}
 
 	/**
-	 * Reduces an absolute-form request target (RFC 9112 3.2.2) like <code>http://host/path?q</code> to the
-	 * origin-form <code>/path?q</code> (RFC 9112 3.2.1), so that it is routed by its path.
-	 * Other forms are left as they are.
+	 * Reduces an absolute-form request target (RFC 9112 3.2.2) like <code>http://host:port/path?q</code> to the
+	 * origin-form <code>/path?q</code> (RFC 9112 3.2.1), so that it is routed by its path. The received Host header is
+	 * replaced by <code>host:port</code> of the target, since RFC 9112 3.2.2 requires to ignore it, so that routing,
+	 * the flow and the backend see the same host.
+	 * A request with another form is left as it is.
 	 *
 	 * @throws URISyntaxException or {@link IllegalArgumentException} if an absolute-form target cannot be parsed
 	 */
-	private String toOriginForm(String uri) throws URISyntaxException {
-		if (!isAbsoluteURI(uri))
-			return uri;
-		return getPathQuery(router.getConfiguration().getUriFactory(), uri);
+	private void reduceToOriginForm(Request request) throws URISyntaxException {
+		if (!isAbsoluteURI(request.getUri()))
+			return;
+		final var parsed = router.getConfiguration().getUriFactory().create(request.getUri());
+		// Not the authority, which may contain user info
+		request.getHeader().setHost(parsed.getPort() == -1 ? parsed.getHost() : parsed.getHost() + ":" + parsed.getPort());
+		request.setUri(parsed.getPathWithQuery());
+	}
+
+	/**
+	 * Puts back the Host header that was received, or removes it if none was received. Of several Host headers, which
+	 * RFC 9112 3.2 does not allow, only the first is put back.
+	 */
+	private static void restoreHost(Request request, String receivedHost) {
+		if (receivedHost == null)
+			request.getHeader().removeFields(HOST);
+		else
+			request.getHeader().setHost(receivedHost);
 	}
 
 	/**
