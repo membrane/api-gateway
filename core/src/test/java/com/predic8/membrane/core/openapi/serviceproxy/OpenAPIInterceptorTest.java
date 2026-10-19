@@ -30,6 +30,8 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.*;
 
@@ -162,6 +164,32 @@ class OpenAPIInterceptorTest {
         exc.getRequest().setUri("/api/admin;x=1/users");
         assertEquals(RETURN, createNestedBasePathsInterceptor().handleRequest(exc));
         assertEquals(400, exc.getResponse().getStatusCode()); // Query parameter token of the inner OpenAPI is missing
+    }
+
+    /**
+     * A backend that decodes ;, / or \ before stripping path parameters, resolving dot-segments or treating \ as /
+     * reaches /api/admin/users. The request must not pass the validation of the outer OpenAPI instead.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "/api/admin%3bx=1/users",
+            "/api/admin%2f./users",
+            "/api/admin%5c./users",
+            "/api/admin%2f..%5cx/users", // A backend that keeps \ as data sees /api/admin/..\x/users
+    })
+    void encodedDelimiterSelectingInnerBasePathIsRejected(String uri) {
+        exc.getRequest().setUri(uri);
+        assertEquals(RETURN, createNestedBasePathsInterceptor().handleRequest(exc));
+        assertEquals(400, exc.getResponse().getStatusCode());
+    }
+
+    /**
+     * Decoding the encoded slash selects the same OpenAPI, so the request is validated as usual.
+     */
+    @Test
+    void encodedDelimiterSelectingSameBasePathIsAccepted() {
+        exc.getRequest().setUri("/api/projects%2Fx/users");
+        assertEquals(CONTINUE, createNestedBasePathsInterceptor().handleRequest(exc));
     }
 
     /**

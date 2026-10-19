@@ -49,6 +49,7 @@ import static com.predic8.membrane.core.openapi.util.UriUtil.getUrlWithoutPath;
 import static com.predic8.membrane.core.openapi.util.Utils.getOpenapiValidatorRequest;
 import static com.predic8.membrane.core.openapi.util.Utils.getOpenapiValidatorResponse;
 import static com.predic8.membrane.core.openapi.validators.ValidationErrors.empty;
+import static com.predic8.membrane.core.util.URIUtil.toDecodedDelimiterRoutingPaths;
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.*;
 
@@ -114,6 +115,18 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
                     .addSubSee("not-found")
                     .detail("There is no API on the path %s deployed. Please check the path.".formatted(exc.getOriginalRequestUri()))
                     .topLevel("path", exc.getOriginalRequestUri())
+                    .buildAndSetResponse(exc);
+            return RETURN;
+        }
+
+        if (decodedDelimitersSelectAnotherBasePath(exc, basePath)) {
+            log.info("Rejected request with an encoded ;, / or \\ that selects another OpenAPI when decoded.");
+            log.debug("Rejected path: {}", exc.getRequest().getUri());
+            user(router.getConfiguration().isProduction(), getDisplayName())
+                    .title("Invalid path")
+                    .status(400)
+                    .addSubSee("invalid-path")
+                    .detail("The request path contains an encoded ';', '/' or '\\' that selects another OpenAPI when it is decoded.")
                     .buildAndSetResponse(exc);
             return RETURN;
         }
@@ -223,15 +236,37 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
      * base paths like /api/ and /api/admin/ the longest one wins, regardless of the order of the OpenAPI documents.
      */
     protected String getMatchingBasePath(Exchange exc) {
-        final var path = exc.getRequest().getRoutingPath();
+        final var matching = getMatchingBasePath(exc.getRequest().getRoutingPath());
+        if (matching == null)
+            log.debug("Could not find matching base path for OpenAPI request {}. Returning empty basePath.", exc.getRequest().getUri());
+        return matching;
+    }
+
+    /**
+     * A backend that decodes "%3B", "%2F" and "%5C" first may serve a path of another OpenAPI, e.g. "/api/admin%3bx=1/users"
+     * matches the base path /api/, but such a backend serves /api/admin/users. See
+     * {@link com.predic8.membrane.core.util.URIUtil#toDecodedDelimiterRoutingPaths(String)}.
+     */
+    private boolean decodedDelimitersSelectAnotherBasePath(Exchange exc, String basePath) {
+        final var uri = exc.getRequest().getUri();
+        if (uri.indexOf('%') == -1) // Nothing encoded, so the common case costs a single scan
+            return false;
+
+        for (final var decoded : toDecodedDelimiterRoutingPaths(uri)) {
+            final var other = getMatchingBasePath(decoded);
+            if (other != null && !other.equals(basePath))
+                return true;
+        }
+        return false;
+    }
+
+    private String getMatchingBasePath(String path) {
         String matching = null;
         for (String basePath : apiProxy.getBasePaths().keySet()) {
             if (path.startsWith(basePath) && (matching == null || basePath.length() > matching.length())) {
                 matching = basePath;
             }
         }
-        if (matching == null)
-            log.debug("Could not find matching base path for OpenAPI request {}. Returning empty basePath.", exc.getRequest().getUri());
         return matching;
     }
 

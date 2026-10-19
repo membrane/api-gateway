@@ -36,6 +36,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.util.HttpUtil.isAbsoluteURI;
 import static com.predic8.membrane.core.util.URIUtil.containsAmbiguousPathParameters;
 import static com.predic8.membrane.core.util.URIUtil.normalizeRequestTarget;
+import static com.predic8.membrane.core.util.URIUtil.toDecodedDelimiterRoutingPaths;
 import static com.predic8.membrane.core.util.URLUtil.getPathQuery;
 
 /**
@@ -124,6 +125,17 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 			return ABORT;
 		}
 
+		if (!(proxy instanceof ProxyRule) && !(proxy instanceof NullProxy) && decodedDelimitersSelectAnotherApi(exc, proxy)) {
+			log.info("Rejected request with an encoded ;, / or \\ that selects another API when decoded.");
+			log.debug("Rejected path: {}", request.getUri());
+			user(router.getConfiguration().isProduction(), "invalid-path")
+					.status(400)
+					.title("Invalid path")
+					.detail("The request path contains an encoded ';', '/' or '\\' that selects another API when it is decoded.")
+					.buildAndSetResponse(exc);
+			return ABORT;
+		}
+
 		if (proxy instanceof NullProxy) {
 			// Do not log. 404 is too common
             user(router.getConfiguration().isProduction(), "routing")
@@ -200,6 +212,34 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 
 	private Proxy getRule(Exchange exc) {
 		return router.getRuleManager().getMatchingRule(exc);
+	}
+
+	/**
+	 * Membrane keeps "%3B", "%2F" and "%5C" encoded, but a backend may decode them before it removes path parameters,
+	 * resolves dot-segments or treats "\" like "/". E.g. "/api%3bx=1/admin" is routed to an API for "/api", but such a
+	 * backend serves "/api/admin". Encoded characters are fine as long as decoding them selects the same API, like in
+	 * "/projects/group%2Fproject".
+	 * Routes each way of decoding them once more, see {@link com.predic8.membrane.core.util.URIUtil#toDecodedDelimiterRoutingPaths(String)},
+	 * with the URI swapped for that call only, so that every part of the rule matching sees it. A path that selects no
+	 * API when decoded does not dodge one.
+	 */
+	private boolean decodedDelimitersSelectAnotherApi(Exchange exc, Proxy proxy) {
+		final var request = exc.getRequest();
+		final var uri = request.getUri();
+		if (uri.indexOf('%') == -1) // Nothing encoded, so the common case costs a single scan
+			return false;
+
+		for (final var decoded : toDecodedDelimiterRoutingPaths(uri)) {
+			request.setUri(decoded);
+			try {
+				final var other = getRule(exc);
+				if (other != proxy && !(other instanceof NullProxy) && !(other instanceof ProxyRule))
+					return true;
+			} finally {
+				request.setUri(uri);
+			}
+		}
+		return false;
 	}
 
 	private void insertXForwardedFor(AbstractExchange exc) {
