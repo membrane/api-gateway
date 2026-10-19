@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.discovery;
 
+import java.time.*;
 import java.util.*;
 
 /**
@@ -39,11 +40,12 @@ import java.util.*;
  * @param operations     operations of the API, never null but empty without an OpenAPI document
  * @param catalogType    media type of the catalog this api publishes through a discovery plugin,
  *                       or null when it is no catalog
+ * @param details        catalog metadata configured on the api, never null
  */
 public record CatalogEntry(String aid, String id, ProxyKind kind, String name, String description,
                            String version, Endpoint endpoint, Links links, List<String> tags, List<String> documentTags,
                            Contact contact, License license, String termsOfService, SoapInfo soap,
-                           List<CatalogOperation> operations, String catalogType) {
+                           List<CatalogOperation> operations, String catalogType, Details details) {
 
     public CatalogEntry {
         tags = List.copyOf(tags);
@@ -87,7 +89,57 @@ public record CatalogEntry(String aid, String id, ProxyKind kind, String name, S
      */
     public record Links(String humanUrl, String specUrl) {}
 
-    public record Contact(String name, String email, String url) {}
+    /**
+     * A person or organization, with the members of the vCard APIs.json uses.
+     */
+    public record Contact(String name, String email, String url, String organization, String address,
+                          String phone, String twitter, String github, String photo, String vCard) {
+
+        public Contact(String name, String email, String url) {
+            this(name, email, url, null, null, null, null, null, null, null);
+        }
+    }
+
+    /**
+     * A typed link or inline value, such as a pricing page, a prompt or a ruleset.
+     *
+     * @param url  URL of the resource, or null when <code>data</code> carries it inline
+     * @param data the resource inline, or null when <code>url</code> points at it
+     */
+    public record Resource(String type, String name, String description, String mediaType, String url, String data,
+                           List<String> tags) {
+
+        public Resource {
+            tags = List.copyOf(tags);
+        }
+    }
+
+    /**
+     * A link with a label, such as an overlay with its type or an included catalog with its name.
+     */
+    public record Reference(String label, String url) {}
+
+    /**
+     * Catalog metadata configured on the api in its <code>info</code> block.
+     *
+     * @param image    URL of an image representing the API, or null
+     * @param created  day the API was created, or null
+     * @param modified day the API last changed, or null
+     */
+    public record Details(String image, LocalDate created, LocalDate modified, List<Resource> properties,
+                          List<Reference> overlays, List<Resource> prompts, List<Resource> rules,
+                          List<Resource> workflows) {
+
+        public static final Details NONE = new Details(null, null, null, List.of(), List.of(), List.of(), List.of(), List.of());
+
+        public Details {
+            properties = List.copyOf(properties);
+            overlays = List.copyOf(overlays);
+            prompts = List.copyOf(prompts);
+            rules = List.copyOf(rules);
+            workflows = List.copyOf(workflows);
+        }
+    }
 
     public record License(String name, String url) {}
 
@@ -95,7 +147,7 @@ public record CatalogEntry(String aid, String id, ProxyKind kind, String name, S
 
     public CatalogEntry withIdentifiers(String aid, String id) {
         return new CatalogEntry(aid, id, kind, name, description, version, endpoint, links, tags, documentTags,
-                contact, license, termsOfService, soap, operations, catalogType);
+                contact, license, termsOfService, soap, operations, catalogType, details);
     }
 
     public static Builder builder() {
@@ -124,6 +176,7 @@ public record CatalogEntry(String aid, String id, ProxyKind kind, String name, S
         private SoapInfo soap;
         private List<CatalogOperation> operations = List.of();
         private String catalogType;
+        private Details details = Details.NONE;
 
         public Builder aid(String aid) {
             this.aid = aid;
@@ -205,9 +258,14 @@ public record CatalogEntry(String aid, String id, ProxyKind kind, String name, S
             return this;
         }
 
+        public Builder details(Details details) {
+            this.details = details;
+            return this;
+        }
+
         public CatalogEntry build() {
             return new CatalogEntry(aid, id, kind, name, description, version, endpoint, links, tags, documentTags,
-                    contact, license, termsOfService, soap, operations, catalogType);
+                    contact, license, termsOfService, soap, operations, catalogType, details);
         }
     }
 }

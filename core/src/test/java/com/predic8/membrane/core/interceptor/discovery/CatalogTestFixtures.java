@@ -38,6 +38,10 @@ class CatalogTestFixtures {
      * operations.
      */
     static CatalogEntry describedApi() {
+        return describedApi(CatalogEntry.Details.NONE);
+    }
+
+    static CatalogEntry describedApi(CatalogEntry.Details details) {
         return CatalogEntry.builder()
                 .aid("example.com:fruit-shop-api-v2-0-0")
                 .id("fruit-shop-api-v2-0-0")
@@ -60,6 +64,7 @@ class CatalogTestFixtures {
                                 List.of("Products"), false),
                         new CatalogOperation("POST", "/products", "createProduct", "Create a product",
                                 List.of("Products"), true)))
+                .details(details)
                 .build();
     }
 

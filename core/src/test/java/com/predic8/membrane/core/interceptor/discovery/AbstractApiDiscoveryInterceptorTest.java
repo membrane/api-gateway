@@ -138,6 +138,8 @@ class AbstractApiDiscoveryInterceptorTest {
                   port: 2000
                   flow:
                     - apisJson:
+                        type: index
+                        kind: topic
                         tags:
                           - exclude: internal
                           - include: external
@@ -161,6 +163,8 @@ class AbstractApiDiscoveryInterceptorTest {
             assertEquals("internal", apisJson.getTags().get(0).getTag());
             assertInstanceOf(TagRule.Include.class, apisJson.getTags().get(1));
             assertEquals("external", apisJson.getTags().get(1).getTag());
+            assertEquals(ApisJsonInterceptor.CollectionType.INDEX, apisJson.getType());
+            assertEquals("topic", apisJson.getKind());
         } finally {
             yamlRouter.stop();
         }

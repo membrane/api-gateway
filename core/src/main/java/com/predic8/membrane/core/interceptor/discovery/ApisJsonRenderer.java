@@ -17,7 +17,6 @@ import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.*;
 
-import java.time.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
@@ -47,25 +46,16 @@ public class ApisJsonRenderer implements CatalogRenderer {
 
     private static final ObjectMapper om = new ObjectMapper();
 
-    private final String collectionId;
     private final CollectionInfo collection;
-    private final LocalDate created;
-    private final LocalDate modified;
-    private final List<CatalogEntry.Contact> maintainers;
+    private final ApisJsonCollection settings;
 
     /**
-     * @param collectionId second half of the collection's <code>aid</code>, the domain being the first
-     * @param created      day the collection was created, a member APIs.json makes mandatory
-     * @param modified     day the collection last changed, a member APIs.json makes mandatory
-     * @param maintainers  people or teams maintaining the collection
+     * @param collection name and description of the collection
+     * @param settings   every other configured member of the collection
      */
-    public ApisJsonRenderer(String collectionId, CollectionInfo collection, LocalDate created, LocalDate modified,
-                            List<CatalogEntry.Contact> maintainers) {
-        this.collectionId = collectionId;
+    public ApisJsonRenderer(CollectionInfo collection, ApisJsonCollection settings) {
         this.collection = collection;
-        this.created = created;
-        this.modified = modified;
-        this.maintainers = List.copyOf(maintainers);
+        this.settings = settings;
     }
 
     @Override
@@ -76,48 +66,59 @@ public class ApisJsonRenderer implements CatalogRenderer {
     @Override
     public byte[] render(Catalog catalog) throws JsonProcessingException {
         ObjectNode collection = om.createObjectNode();
-        collection.put("aid", catalog.domain() + ":" + collectionId);
+        collection.put("aid", catalog.domain() + ":" + settings.id());
         collection.put("name", this.collection.name());
         collection.put("description", this.collection.description());
+        putIfPresent(collection, "image", settings.image());
         putIfPresent(collection, "url", catalog.url());
-        collection.put("created", created.toString());
-        collection.put("modified", modified.toString());
-        collection.put("specificationVersion", SPECIFICATION_VERSION);
-        if (!maintainers.isEmpty()) {
-            final var maintainerNodes = collection.putArray("maintainers");
-            maintainers.forEach(maintainer -> maintainerNodes.add(renderMaintainer(maintainer)));
-        }
         final var tags = catalog.apis().stream().flatMap(entry -> entry.tags().stream()).distinct().toList();
-        if (!tags.isEmpty())
-            tags.forEach(collection.putArray("tags")::add);
+        putStrings(collection, "tags", tags);
+        collection.put("created", settings.created().toString());
+        collection.put("modified", settings.modified().toString());
+        putIfPresent(collection, "type", settings.type());
+        putIfPresent(collection, "kind", settings.kind());
+        putIfPresent(collection, "position", settings.position());
+        putIfPresent(collection, "access", settings.access());
+        collection.put("specificationVersion", SPECIFICATION_VERSION);
         ArrayNode apis = collection.putArray("apis");
         catalog.apis().forEach(entry -> apis.add(renderApi(entry)));
+        putResources(collection, "common", settings.common());
+        putResources(collection, "prompts", settings.prompts());
+        putResources(collection, "rules", settings.rules());
+        putResources(collection, "workflows", settings.workflows());
+        putReferences(collection, "overlays", "type", settings.overlays());
+        putReferences(collection, "include", "name", settings.include());
+        putReferences(collection, "networks", "name", settings.networks());
+        putContacts(collection, "maintainers", settings.maintainers());
         return om.writeValueAsBytes(collection);
     }
 
     private ObjectNode renderApi(CatalogEntry entry) {
+        final var details = entry.details();
         ObjectNode api = om.createObjectNode();
         api.put("aid", entry.aid());
         api.put("name", entry.name());
         api.put("description", entry.description());
+        putIfPresent(api, "image", details.image());
+        putIfPresent(api, "created", details.created() == null ? null : details.created().toString());
+        putIfPresent(api, "modified", details.modified() == null ? null : details.modified().toString());
         putIfPresent(api, "humanURL", entry.links().humanUrl());
         putIfPresent(api, "baseURL", entry.endpoint().url());
         putIfPresent(api, "version", entry.version());
-        renderTags(api, entry);
+        putStrings(api, "tags", entry.tags());
         renderProperties(api, entry);
+        putReferences(api, "overlays", "type", details.overlays());
+        putResources(api, "prompts", details.prompts());
+        putResources(api, "rules", details.rules());
+        putResources(api, "workflows", details.workflows());
+        putContacts(api, "contact", entry.contact() == null ? List.of() : List.of(entry.contact()));
         return api;
-    }
-
-    private void renderTags(ObjectNode api, CatalogEntry entry) {
-        if (entry.tags().isEmpty())
-            return;
-        ArrayNode tags = api.putArray("tags");
-        entry.tags().forEach(tags::add);
     }
 
     /**
      * Only APIs with something to link get a <code>properties</code> array. An empty array would
-     * be noise: the whole point of the member is to carry machine readable links.
+     * be noise: the whole point of the member is to carry machine readable links. The links
+     * Membrane derives come first, the configured properties after them.
      */
     private void renderProperties(ObjectNode api, CatalogEntry entry) {
         final var properties = om.createArrayNode();
@@ -132,16 +133,75 @@ public class ApisJsonRenderer implements CatalogRenderer {
             properties.add(renderProperty("TermsOfService", null, entry.termsOfService()));
         if (entry.license() != null && entry.license().url() != null)
             properties.add(renderProperty("InterfaceLicense", entry.license().name(), entry.license().url()));
+        entry.details().properties().forEach(property -> properties.add(renderResource(property)));
         if (!properties.isEmpty())
             api.set("properties", properties);
     }
 
-    private ObjectNode renderMaintainer(CatalogEntry.Contact maintainer) {
+    private void putResources(ObjectNode parent, String member, List<CatalogEntry.Resource> resources) {
+        if (resources.isEmpty())
+            return;
+        final var array = parent.putArray(member);
+        resources.forEach(resource -> array.add(renderResource(resource)));
+    }
+
+    private ObjectNode renderResource(CatalogEntry.Resource resource) {
+        final var node = om.createObjectNode();
+        putIfPresent(node, "name", resource.name());
+        putIfPresent(node, "description", resource.description());
+        node.put("type", resource.type());
+        putIfPresent(node, "mediaType", resource.mediaType());
+        putIfPresent(node, "url", resource.url());
+        putIfPresent(node, "data", resource.data());
+        putStrings(node, "tags", resource.tags());
+        return node;
+    }
+
+    /**
+     * Overlays label their link with a type, included collections and networks with a name.
+     */
+    private void putReferences(ObjectNode parent, String member, String labelMember, List<CatalogEntry.Reference> references) {
+        if (references.isEmpty())
+            return;
+        final var array = parent.putArray(member);
+        references.forEach(reference -> {
+            final var node = array.addObject();
+            putIfPresent(node, labelMember, reference.label());
+            putIfPresent(node, "url", reference.url());
+        });
+    }
+
+    private void putContacts(ObjectNode parent, String member, List<CatalogEntry.Contact> contacts) {
+        if (contacts.isEmpty())
+            return;
+        final var array = parent.putArray(member);
+        contacts.forEach(contact -> array.add(renderContact(contact)));
+    }
+
+    /**
+     * Member names follow the examples of the specification (<code>FN</code>,
+     * <code>X-twitter</code>) where they differ from its field list, as for <code>humanURL</code>.
+     */
+    private ObjectNode renderContact(CatalogEntry.Contact contact) {
         final var vCard = om.createObjectNode();
-        putIfPresent(vCard, "FN", maintainer.name());
-        putIfPresent(vCard, "email", maintainer.email());
-        putIfPresent(vCard, "url", maintainer.url());
+        putIfPresent(vCard, "FN", contact.name());
+        putIfPresent(vCard, "email", contact.email());
+        putIfPresent(vCard, "url", contact.url());
+        putIfPresent(vCard, "org", contact.organization());
+        putIfPresent(vCard, "adr", contact.address());
+        putIfPresent(vCard, "tel", contact.phone());
+        putIfPresent(vCard, "X-twitter", contact.twitter());
+        putIfPresent(vCard, "X-github", contact.github());
+        putIfPresent(vCard, "photo", contact.photo());
+        putIfPresent(vCard, "vCard", contact.vCard());
         return vCard;
+    }
+
+    private static void putStrings(ObjectNode parent, String member, List<String> values) {
+        if (values.isEmpty())
+            return;
+        final var array = parent.putArray(member);
+        values.forEach(array::add);
     }
 
     private ObjectNode renderProperty(String type, String name, String url) {

@@ -26,7 +26,7 @@ import java.util.*;
 
 import static com.predic8.membrane.core.interceptor.discovery.CatalogEntry.ProxyKind.*;
 import static com.predic8.membrane.core.interceptor.discovery.CatalogEntry.builder;
-import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisherInterceptor.*;
+import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisher.*;
 import static com.predic8.membrane.core.openapi.util.UriUtil.*;
 import static java.lang.Boolean.*;
 import static java.util.Objects.*;
@@ -166,7 +166,8 @@ public class CatalogCollector {
                 .license(license(info))
                 .termsOfService(info == null ? null : info.getTermsOfService())
                 .operations(collectOperations ? operations(openAPI) : List.of())
-                .catalogType(catalogType(api)).build();
+                .catalogType(catalogType(api))
+                .details(ConfiguredMetadata.details(api.getInfo())).build();
     }
 
     /**
@@ -176,7 +177,7 @@ public class CatalogCollector {
      */
     private CatalogEntry plainEntry(AbstractServiceProxy proxy, Exchange exchange, String domain) {
         CatalogEntry.Endpoint endpoint = endpoint(proxy, exchange, pathOf(proxy));
-        return builder().aid(aid(proxy, null, domain)).id(id(proxy, null)).kind(kindOf(proxy)).name(proxy.getName()).description(description(proxy, null)).endpoint(endpoint).tags(proxy.getTags()).contact(configuredContact(proxy)).soap(soapInfo(proxy, endpoint)).catalogType(catalogType(proxy)).build();
+        return builder().aid(aid(proxy, null, domain)).id(id(proxy, null)).kind(kindOf(proxy)).name(proxy.getName()).description(description(proxy, null)).endpoint(endpoint).tags(proxy.getTags()).contact(configuredContact(proxy)).soap(soapInfo(proxy, endpoint)).catalogType(catalogType(proxy)).details(ConfiguredMetadata.details(proxy.getInfo())).build();
     }
 
     /**
@@ -364,8 +365,7 @@ public class CatalogCollector {
 
     private static CatalogEntry.Contact configuredContact(AbstractServiceProxy proxy) {
         if (proxy.getInfo() == null || proxy.getInfo().getContact() == null) return null;
-        final var contact = proxy.getInfo().getContact();
-        return new CatalogEntry.Contact(contact.getName(), contact.getEmail(), contact.getUrl());
+        return ConfiguredMetadata.contact(proxy.getInfo().getContact());
     }
 
     private static List<String> tags(OpenAPI api) {
