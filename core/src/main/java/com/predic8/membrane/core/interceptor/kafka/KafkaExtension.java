@@ -22,6 +22,7 @@ import com.predic8.membrane.core.util.ConfigurationException;
 final class KafkaExtension {
 
     static final String PRODUCER_CLASS = "io.membrane_api.ext.kafka.KafkaProducerComponentImpl";
+    static final String CONSUMER_CLASS = "io.membrane_api.ext.kafka.KafkaConsumerComponentImpl";
 
     private KafkaExtension() {
     }
@@ -34,25 +35,16 @@ final class KafkaExtension {
      * @param missingMessage Message of the ConfigurationException thrown if the class is not on the classpath
      */
     static <T> T load(final String className, final Class<T> type, final String missingMessage) {
-        if (!isOnClasspath(className))
-            throw new ConfigurationException(missingMessage);
         try {
             return Class.forName(className, true, KafkaExtension.class.getClassLoader())
                     .asSubclass(type)
                     .getDeclaredConstructor()
                     .newInstance();
+        } catch (ClassNotFoundException e) {
+            throw new ConfigurationException(missingMessage);
         } catch (ReflectiveOperationException | ClassCastException | LinkageError e) {
             throw new ConfigurationException("Could not create %s of the Membrane Kafka Extension. It needs to implement %s and have a public constructor without parameters."
                     .formatted(className, type.getName()), e);
-        }
-    }
-
-    static boolean isOnClasspath(final String className) {
-        try {
-            Class.forName(className, false, KafkaExtension.class.getClassLoader());
-            return true;
-        } catch (ClassNotFoundException | LinkageError e) {
-            return false;
         }
     }
 }
