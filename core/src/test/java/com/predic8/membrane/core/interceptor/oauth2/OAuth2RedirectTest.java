@@ -13,57 +13,74 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.oauth2;
 
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.exchangestore.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.flow.*;
-import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.*;
-import com.predic8.membrane.core.interceptor.oauth2client.*;
-import com.predic8.membrane.core.interceptor.session.*;
-import com.predic8.membrane.core.interceptor.templating.*;
-import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.transport.http.*;
-import com.predic8.membrane.test.*;
-import io.restassured.filter.log.*;
-import io.restassured.response.*;
-import org.jetbrains.annotations.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchangestore.ForgetfulExchangeStore;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.flow.IfInterceptor;
+import com.predic8.membrane.core.interceptor.flow.ResponseInterceptor;
+import com.predic8.membrane.core.interceptor.flow.ReturnInterceptor;
+import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.MembraneAuthorizationService;
+import com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2Interceptor;
+import com.predic8.membrane.core.interceptor.oauth2client.SessionOriginalExchangeStore;
+import com.predic8.membrane.core.interceptor.session.InMemorySessionManager;
+import com.predic8.membrane.core.interceptor.templating.TemplateInterceptor;
+import com.predic8.membrane.core.proxies.SSLableProxy;
+import com.predic8.membrane.core.proxies.ServiceProxy;
+import com.predic8.membrane.core.proxies.ServiceProxyKey;
+import com.predic8.membrane.core.router.DefaultRouter;
+import com.predic8.membrane.core.transport.http.HttpTransport;
+import com.predic8.membrane.test.OAuth2AuthFlowClient;
+import io.restassured.filter.log.LogDetail;
+import io.restassured.response.Response;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import java.net.*;
-import java.util.*;
-import java.util.concurrent.atomic.*;
+import java.net.URI;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
-import static io.restassured.RestAssured.*;
-import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
+import static com.predic8.membrane.core.util.NetworkTestUtil.freePorts;
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public abstract class OAuth2RedirectTest {
 
-    static final URI AUTH_SERVER_BASE_URL = URI.create("http://localhost:2002");
-    static final URI BACKEND_BASE_URL = URI.create("http://localhost:2001");
-    static final URI CLIENT_BASE_URL = URI.create("http://localhost:2000");
-    static DefaultRouter authorizationServerRouter;
-    static DefaultRouter oauth2ResourceRouter;
-    static DefaultRouter backendRouter;
-    static final AtomicReference<String> firstUrlHit = new AtomicReference<>();
-    static final AtomicReference<String> targetUrlHit = new AtomicReference<>();
-    static final AtomicReference<String> interceptorChainHit = new AtomicReference<>();
+    URI authServerBaseUrl;
+    URI backendBaseUrl;
+    URI clientBaseUrl;
+    DefaultRouter authorizationServerRouter;
+    DefaultRouter oauth2ResourceRouter;
+    DefaultRouter backendRouter;
+    final AtomicReference<String> firstUrlHit = new AtomicReference<>();
+    final AtomicReference<String> targetUrlHit = new AtomicReference<>();
+    final AtomicReference<String> interceptorChainHit = new AtomicReference<>();
 
     @BeforeEach
     void init() throws Exception {
-        authorizationServerRouter = startProxyRule(getAuthorizationServerRule());
-        oauth2ResourceRouter = startProxyRule(getOAuth2ResourceRule());
-        backendRouter = startProxyRule(getBackendRule());
+        int[] ports = freePorts(3);
+        authServerBaseUrl = URI.create("http://localhost:" + ports[0]);
+        backendBaseUrl = URI.create("http://localhost:" + ports[1]);
+        clientBaseUrl = URI.create("http://localhost:" + ports[2]);
+        authorizationServerRouter = new DefaultRouter();
+        oauth2ResourceRouter = new DefaultRouter();
+        backendRouter = new DefaultRouter();
+        startProxyRule(authorizationServerRouter, getAuthorizationServerRule());
+        startProxyRule(oauth2ResourceRouter, getOAuth2ResourceRule());
+        startProxyRule(backendRouter, getBackendRule());
     }
 
     @AfterEach
     void shutdown() {
-        authorizationServerRouter.stop();
-        oauth2ResourceRouter.stop();
-        backendRouter.stop();
+        if (authorizationServerRouter != null) authorizationServerRouter.stop();
+        if (oauth2ResourceRouter != null) oauth2ResourceRouter.stop();
+        if (backendRouter != null) backendRouter.stop();
     }
 
     @Test
@@ -72,7 +89,7 @@ public abstract class OAuth2RedirectTest {
             .redirects().follow(false)
             //.cookies(memCookies) TODO: create clone of this test with existing session
         .when()
-            .get("http://localhost:2000/oauth2callback?code=b2296nh0navopaj5iq5slu7dje&state=security_token=miv38g9f80v7fiau029ctfel2o&url=/a?b=c&d=%C3%A4")
+            .get(clientBaseUrl + "/oauth2callback?code=b2296nh0navopaj5iq5slu7dje&state=security_token=miv38g9f80v7fiau029ctfel2o&url=/a?b=c&d=%C3%A4")
         .then()
             .log().ifValidationFails(LogDetail.ALL)
             .statusCode(400)
@@ -162,17 +179,15 @@ public abstract class OAuth2RedirectTest {
         }};
     }
 
-    private static DefaultRouter startProxyRule(SSLableProxy azureRule) throws Exception {
-        DefaultRouter router = new DefaultRouter();
+    private static void startProxyRule(DefaultRouter router, SSLableProxy azureRule) throws Exception {
         router.setExchangeStore(new ForgetfulExchangeStore());
         router.setTransport(new HttpTransport());
         router.add(azureRule);
         router.start();
-        return router;
     }
 
-    private static @NotNull SSLableProxy getBackendRule() {
-        SSLableProxy nginxRule = new ServiceProxy(new ServiceProxyKey(BACKEND_BASE_URL.getHost(), "*", ".*", BACKEND_BASE_URL.getPort()), "localhost", 80);
+    private @NotNull SSLableProxy getBackendRule() {
+        SSLableProxy nginxRule = new ServiceProxy(new ServiceProxyKey(backendBaseUrl.getHost(), "*", ".*", backendBaseUrl.getPort()), "localhost", 80);
         nginxRule.getFlow().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
@@ -186,8 +201,8 @@ public abstract class OAuth2RedirectTest {
         return nginxRule;
     }
 
-    private static @NotNull SSLableProxy getOAuth2ResourceRule() {
-        SSLableProxy membraneRule = new ServiceProxy(new ServiceProxyKey(CLIENT_BASE_URL.getHost(), "*", ".*", CLIENT_BASE_URL.getPort()), BACKEND_BASE_URL.getHost(), BACKEND_BASE_URL.getPort());
+    private @NotNull SSLableProxy getOAuth2ResourceRule() {
+        SSLableProxy membraneRule = new ServiceProxy(new ServiceProxyKey(clientBaseUrl.getHost(), "*", ".*", clientBaseUrl.getPort()), backendBaseUrl.getHost(), backendBaseUrl.getPort());
         membraneRule.getFlow().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
@@ -199,7 +214,7 @@ public abstract class OAuth2RedirectTest {
         membraneRule.getFlow().add(new OAuth2Resource2Interceptor() {{
             setSessionManager(new InMemorySessionManager());
             setAuthService(new MembraneAuthorizationService() {{
-                setSrc(AUTH_SERVER_BASE_URL.toString());
+                setSrc(authServerBaseUrl.toString());
                 setClientId("abc");
                 setClientSecret("def");
                 setScope("openid profile");

@@ -35,6 +35,7 @@ import java.net.URISyntaxException;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.interceptor.flow.CallInterceptor.copyHeadersFromResponseToRequest;
+import static com.predic8.membrane.core.util.NetworkTestUtil.freePort;
 import static org.junit.jupiter.api.Assertions.*;
 
 class CallInterceptorTest {
@@ -87,8 +88,9 @@ class CallInterceptorTest {
 
     @Test
     void usesRouterHttpClientConfig() throws Exception {
+        int proxyPort = freePort();
         var proxyApi = new APIProxy();
-        proxyApi.setKey(new APIProxyKey(2001));
+        proxyApi.setKey(new APIProxyKey(proxyPort));
         proxyApi.getFlow().add(new TemplateInterceptor() {{
             setSrc("via proxy");
         }});
@@ -97,7 +99,7 @@ class CallInterceptorTest {
 
         var proxy = new ProxyConfiguration();
         proxy.setHost("localhost");
-        proxy.setPort(2001);
+        proxy.setPort(proxyPort);
         var httpClientConfig = new HttpClientConfiguration();
         httpClientConfig.setProxy(proxy);
         router.getConfiguration().setHttpClientConfig(httpClientConfig);
@@ -112,8 +114,9 @@ class CallInterceptorTest {
 
     @Test
     void elementHttpClientConfigOverridesRouterConfig() throws Exception {
+        int proxyPort = freePort();
         var proxyApi = new APIProxy();
-        proxyApi.setKey(new APIProxyKey(2001));
+        proxyApi.setKey(new APIProxyKey(proxyPort));
         proxyApi.getFlow().add(new TemplateInterceptor() {{
             setSrc("via element proxy");
         }});
@@ -123,7 +126,7 @@ class CallInterceptorTest {
 
         var proxy = new ProxyConfiguration();
         proxy.setHost("localhost");
-        proxy.setPort(2001);
+        proxy.setPort(proxyPort);
         var httpClientConfig = new HttpClientConfiguration();
         httpClientConfig.setProxy(proxy);
 
@@ -136,8 +139,9 @@ class CallInterceptorTest {
     }
 
     private void extracted(String expected) throws IOException {
+        int port = freePort();
         var api = new APIProxy();
-        api.setKey(new APIProxyKey(2000));
+        api.setKey(new APIProxyKey(port));
         api.getFlow().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
@@ -153,7 +157,7 @@ class CallInterceptorTest {
         router.start();
 
         var ci = new CallInterceptor();
-        ci.setUrl("http://localhost:2000/${property.a}");
+        ci.setUrl("http://localhost:" + port + "/${property.a}");
         ci.init(router);
         ci.handleRequest(exc);
         assertEquals(expected, exc.getRequest().getBodyAsStringDecoded());
