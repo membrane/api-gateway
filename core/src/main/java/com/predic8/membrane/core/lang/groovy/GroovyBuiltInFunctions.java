@@ -39,9 +39,7 @@ public class GroovyBuiltInFunctions extends Binding {
         this.exchange = exchange;
         this.flow = flow;
         this.router = router;
-        if (router != null && router.getRegistry() != null) {
-            this.xmlConfig = router.getRegistry().getBean(XmlConfig.class).orElse(null);
-        }
+        this.xmlConfig = XmlConfig.global(router);
     }
 
     public String user() {

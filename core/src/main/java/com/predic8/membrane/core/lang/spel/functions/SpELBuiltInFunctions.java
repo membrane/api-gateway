@@ -36,7 +36,7 @@ public class SpELBuiltInFunctions {
     private final XmlConfig xmlConfig;
 
     public SpELBuiltInFunctions(Router router) {
-        xmlConfig = getXmlConfig(router);
+        xmlConfig = XmlConfig.global(router);
     }
 
     public Object jsonPath(String jsonPath, SpELExchangeEvaluationContext ctx) {
@@ -132,11 +132,5 @@ public class SpELBuiltInFunctions {
     private static boolean lastParamIsSpELExchangeEvaluationContext(Method m) {
         Class<?>[] params = m.getParameterTypes();
         return params.length > 0 && params[params.length - 1] == SpELExchangeEvaluationContext.class;
-    }
-
-    private XmlConfig getXmlConfig(Router router) {
-        if (router == null || router.getRegistry() == null)
-            return null;
-        return router.getRegistry().getBean(XmlConfig.class).orElse(null);
     }
 }

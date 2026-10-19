@@ -15,11 +15,30 @@
 package com.predic8.membrane.core.config.xml;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.router.*;
+import org.jetbrains.annotations.*;
 
 @MCElement(name="xmlConfig", component = true)
 public class XmlConfig {
 
     private Namespaces namespaces;
+
+    /**
+     * The global xmlConfig declared in components, or null if there is none.
+     */
+    public static @Nullable XmlConfig global(@Nullable Router router) {
+        if (router == null || router.getRegistry() == null)
+            return null;
+        return router.getRegistry().getBean(XmlConfig.class).orElse(null);
+    }
+
+    /**
+     * The local xmlConfig if there is one, otherwise the global one. A local xmlConfig replaces
+     * the global one, they are not merged.
+     */
+    public static @Nullable XmlConfig localOrGlobal(@Nullable XmlConfig local, @Nullable Router router) {
+        return local != null ? local : global(router);
+    }
 
     @MCChildElement
     public void setNamespaces(Namespaces namespaces) {

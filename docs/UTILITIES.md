@@ -48,6 +48,7 @@ Keep this file in sync when adding, renaming or removing a util class.
 | `util/xml/XMLEncodingUtil` | XML character encoding |
 | `util/xml/NormalizeXMLForJsonUtil` | Normalize XML for JSON conversion |
 | `util/MapNamespaceContext` | `NamespaceContext` backed by a map (XPath) |
+| `config/xml/XmlConfig.global`, `localOrGlobal` | The global `xmlConfig` from `components`, or a local one that replaces it (XPath namespaces) |
 | `util/LSInputImpl` | `LSInput` implementation for schema resolvers |
 
 ## Collections, bytes, errors, concurrency

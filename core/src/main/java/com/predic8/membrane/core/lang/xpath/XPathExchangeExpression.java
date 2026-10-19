@@ -41,6 +41,7 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathEvaluationResult;
 import javax.xml.xpath.XPathExpressionException;
 
+import static com.predic8.membrane.core.config.xml.XmlConfig.localOrGlobal;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.util.text.StringUtil.tail;
 import static com.predic8.membrane.core.util.text.StringUtil.truncateAfter;
@@ -62,9 +63,7 @@ public class XPathExchangeExpression extends AbstractExchangeExpression {
     public XPathExchangeExpression(Interceptor interceptor, String xpath, Router router) {
         super(xpath, router);
 
-        if (interceptor instanceof XMLSupport xns) {
-            xmlConfig = xns.getXmlConfig();
-        }
+        xmlConfig = localOrGlobal(interceptor instanceof XMLSupport xns ? xns.getXmlConfig() : null, router);
     }
 
     @Override
