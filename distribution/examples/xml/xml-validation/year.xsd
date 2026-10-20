@@ -1,6 +1,0 @@
-<schema xmlns="http://www.w3.org/2001/XMLSchema" 
-		targetNamespace="http://membrane-soa.org/validation/year/1/">
-
-	<element name="year" type="gYear" />
-
-</schema>
