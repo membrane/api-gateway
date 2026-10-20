@@ -31,9 +31,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
@@ -155,6 +157,33 @@ public class ConnectionTest {
 
 		assertTrue(conLocalhost.isClosed());
 		assertNull(exc.getTargetConnection());
+	}
+
+	/**
+	 * A failing step in close() must still leave the connection closed. Otherwise the manager, which is
+	 * already shut down, sees an open connection on release and closes it again, recursing endlessly.
+	 */
+	@Test
+	void closeFailingAfterManagerShutdownDoesNotRecurse() throws Exception {
+		try (final var server = new ServerSocket(0)) {
+			final var mgr = new ConnectionManager(1000, null);
+			final var con = Connection.open("localhost", server.getLocalPort(), null, null, mgr, 30000);
+			mgr.closeAll();
+			con.in = new InputStream() {
+				@Override
+				public int read() {
+					return -1;
+				}
+
+				@Override
+				public void close() throws IOException {
+					throw new SocketException("Connection reset");
+				}
+			};
+
+			assertThrows(SocketException.class, con::close);
+			assertTrue(con.isClosed());
+		}
 	}
 
 	/**

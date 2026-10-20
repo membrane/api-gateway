@@ -265,10 +265,13 @@ public class Http2Client implements Runnable, AutoCloseable {
             logic.sender.send(GoawayFrame.construct(0, logic.nextClientStreamId.get(), 0));
             LOG.debug("terminating frame sender.");
             logic.stopSending();
-            try {
-                logic.senderFuture.get();
-            } catch (InterruptedException | ExecutionException e) {
-                // do nothing
+            final var senderFuture = logic.senderFuture;
+            if (senderFuture != null) {
+                try {
+                    senderFuture.get();
+                } catch (InterruptedException | ExecutionException e) {
+                    // do nothing
+                }
             }
 
             con.close();

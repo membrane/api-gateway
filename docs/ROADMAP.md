@@ -34,6 +34,12 @@ PRIO 2:
 PRIO 3:
 - OpenAPI: validate `in: cookie` parameters
   - Path, query and header parameters are validated; cookie parameters currently are not.
+- OpenAPI: support `style: matrix` path parameters (#3544)
+  - Story: values like `/customers/;id=7` (array `;id=3,4,5` or `;id=3;id=4;id=5`, object `;id=role,admin` or `;role=admin`, empty `;id`) are not supported. The validator matches path templates against the routing path, which removes `;...` and merges the emptied segment, so such requests get a 404.
+  - Idea: match a second path that keeps segments consisting only of `;...`, accept a captured `;...` value only for parameters the selected operation declares as `style: matrix`, and parse it per RFC 6570.
+  - Security: return 400 if the routing path selects a different path item than this matrix-aware path. Otherwise `/customers/;x/orders` would be validated against `/customers/{id}/orders`, while a backend that merges slashes serves a literal `/customers/orders`.
+  - Open: the style may differ per method of one path item; `;jsessionid` next to matrix values ends up in exploded objects with `additionalProperties`. The RFC 6570 form `/customers{id}` → `/customers;id=7` stays out of scope.
+  - Related: `simple`-style array/object path parameters are not parsed either, `PathParametersValidator` validates the raw string.
 - ReplaceInterceptor: Support Languages, tutorial/transformation
 - WebServiceExplorerInterceptor
   - Support multiple services, ports, ...

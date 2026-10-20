@@ -24,6 +24,8 @@ import com.twitter.hpack.Encoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.concurrent.GuardedBy;
+
 import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
@@ -33,6 +35,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.predic8.membrane.core.transport.http2.frame.Error.*;
@@ -71,7 +74,9 @@ public class Http2Logic {
     /** Highest id of a stream the peer opened. Only accessed on the receiver thread. */
     private int highestPeerStreamId;
     volatile boolean receiving = true;
-    Future<?> senderFuture;
+    volatile Future<?> senderFuture;
+    @GuardedBy("this")
+    private boolean sendingStopped;
 
     public Http2Logic(ExecutorService executor, Socket sourceSocket, InputStream srcIn, OutputStream srcOut, boolean showSSLExceptions, Http2MessageHandler messageHandler) {
         this.executor = executor;
@@ -98,7 +103,15 @@ public class Http2Logic {
     }
 
     public void init() throws IOException {
-        senderFuture = executor.submit(sender);
+        // Published before the sender runs, so whoever sees frames it sent can wait for it.
+        final var task = new FutureTask<>(sender, null);
+        // A shutdown that ran first saw no sender to wait for, so none may start afterwards.
+        synchronized (this) {
+            if (sendingStopped)
+                return;
+            senderFuture = task;
+            executor.execute(task);
+        }
     }
 
     public static String getRemoteAddr(Socket sourceSocket) {
@@ -140,6 +153,9 @@ public class Http2Logic {
 
     /** Stops the frame sender and wakes writers waiting for the connection's flow-control window. */
     void stopSending() {
+        synchronized (this) {
+            sendingStopped = true;
+        }
         sender.stop();
         peerFlowControl.senderStopped();
     }

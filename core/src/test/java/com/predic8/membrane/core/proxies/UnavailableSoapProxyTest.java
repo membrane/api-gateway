@@ -13,28 +13,31 @@
    limitations under the License. */
 package com.predic8.membrane.core.proxies;
 
-import com.predic8.membrane.core.interceptor.schemavalidation.*;
-import com.predic8.membrane.core.interceptor.soap.*;
-import com.predic8.membrane.core.proxies.AbstractServiceProxy.*;
-import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.transport.http.client.*;
+import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptor;
+import com.predic8.membrane.core.interceptor.soap.SampleSoapServiceInterceptor;
+import com.predic8.membrane.core.router.DefaultRouter;
+import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import org.junit.jupiter.api.*;
 
-import java.io.*;
-import java.util.*;
+import java.io.IOException;
+import java.util.List;
 
+import static com.predic8.membrane.core.util.NetworkTestUtil.freePort;
+import static com.predic8.membrane.core.util.NetworkTestUtil.freePorts;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class UnavailableSoapProxyTest {
 
-	private static DefaultRouter r, r2;
+	private DefaultRouter r, r2;
 	private static DefaultRouter backendRouter;
 	private SOAPProxy sp;
+	private static int backendPort;
 	private ServiceProxy sp3;
 
 	@BeforeAll
 	static void setup() throws Exception {
-		ServiceProxy cityAPI = new ServiceProxy(new ServiceProxyKey(4000), null, 0);
+		backendPort = freePort();
+		ServiceProxy cityAPI = new ServiceProxy(new ServiceProxyKey(backendPort), null, 0);
 		cityAPI.getFlow().add(new SampleSoapServiceInterceptor());
 		backendRouter = new DefaultRouter();
 		backendRouter.add(cityAPI);
@@ -43,14 +46,14 @@ public class UnavailableSoapProxyTest {
 
 	@AfterAll
 	static void teardown() {
-		backendRouter.stop();
-		r.stop();
-		r2.stop();
+		if (backendRouter != null) backendRouter.stop();
 	}
 
 	@BeforeEach
 	void startRouter() throws IOException {
 		r = new DefaultRouter();
+		int[] ports = freePorts(2);
+		int port = ports[0], wsdlPort = ports[1];
 		HttpClientConfiguration httpClientConfig = new HttpClientConfiguration();
 		httpClientConfig.getRetryHandler().setRetries(1);
 		r.getConfiguration().setHttpClientConfig(httpClientConfig);
@@ -58,19 +61,19 @@ public class UnavailableSoapProxyTest {
 		r.getConfiguration().setRetryInit(true);
 
 		sp = new SOAPProxy();
-		sp.setPort(2000);
-		sp.setWsdl("http://localhost:2001?wsdl");
+		sp.setPort(port);
+		sp.setWsdl("http://localhost:" + wsdlPort + "?wsdl");
 
 		sp3 = new ServiceProxy();
-		sp3.setPort(2000);
-		sp3.setTarget(new Target("localhost", 2001));
+		sp3.setPort(port);
+		sp3.setTarget(new Target("localhost", wsdlPort));
 		ValidatorInterceptor v = new ValidatorInterceptor(); // Calling init on interceptor will break test!
-		v.setWsdl("http://localhost:2001?wsdl");
+		v.setWsdl("http://localhost:" + wsdlPort + "?wsdl");
 		sp3.getFlow().add(v);
 
 		SOAPProxy sp2 = new SOAPProxy();
-		sp2.setPort(2001);
-		sp2.setWsdl("http://localhost:4000?wsdl");
+		sp2.setPort(wsdlPort);
+		sp2.setWsdl("http://localhost:" + backendPort + "?wsdl");
 		r2 = new DefaultRouter();
 		r2.getConfiguration().setHotDeploy(false);
 		r2.add(sp2);
@@ -78,8 +81,8 @@ public class UnavailableSoapProxyTest {
 
 	@AfterEach
 	void teardownEach() {
-		r.stop();
-		r2.stop();
+		if (r != null) r.stop();
+		if (r2 != null) r2.stop();
 	}
 
 	private void test() {

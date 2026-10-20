@@ -15,12 +15,15 @@
 package com.predic8.membrane.core.interceptor;
 
 import com.predic8.membrane.core.config.Path;
+import com.predic8.membrane.core.http.HeaderField;
+import com.predic8.membrane.core.http.HeaderName;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
 import com.predic8.membrane.core.proxies.ProxyRule;
 import com.predic8.membrane.core.proxies.ProxyRuleKey;
 import com.predic8.membrane.core.proxies.STOMPProxy;
 import com.predic8.membrane.core.router.TestRouter;
+import com.predic8.membrane.core.transport.http.FakeHttpHandler;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -28,6 +31,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
+
+import java.net.InetAddress;
 
 import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
@@ -382,11 +387,116 @@ class RuleMatchingInterceptorTest {
     }
 
     @ParameterizedTest
+    @CsvSource({
+            "http://a.example.com/x,              a.example.com",
+            "http://a.example.com:8080/x,         a.example.com:8080",
+            "https://user:secret@a.example.com/x, a.example.com",
+            "HTTP://A.example.com/x,              A.example.com",
+    })
+    @DisplayName("An absolute-form target is routed by its authority and the received Host is replaced, so the flow and the backend see the same host (RFC 9112 3.2.2)")
+    void absoluteFormIsRoutedByAuthorityNotHost(String uri, String expectedHost) throws Exception {
+        final var hostApis = hostApis();
+        final var exc = assembleExchange("b.example.com", "GET", uri, "1.1", 80, "127.0.0.1");
+
+        assertEquals(CONTINUE, interceptor.handleRequest(exc));
+
+        assertSame(hostApis.a(), exc.getProxy());
+        assertEquals(expectedHost, exc.getRequest().getHeader().getHost());
+        assertEquals("/x", exc.getRequest().getUri());
+    }
+
+    @Test
+    @DisplayName("An absolute-form target without a Host header is routed by its authority")
+    void absoluteFormWithoutHostIsRoutedByAuthority() {
+        final var hostApis = hostApis();
+        final var exc = new Request.Builder().method("GET").uri("http://a.example.com/x").buildExchange();
+
+        assertEquals(CONTINUE, interceptor.handleRequest(exc));
+
+        assertSame(hostApis.a(), exc.getProxy());
+        assertEquals("a.example.com", exc.getRequest().getHeader().getHost());
+    }
+
+    @Test
+    @DisplayName("All received Host headers are replaced by the authority of an absolute-form target")
+    void absoluteFormReplacesEveryHostHeader() {
+        final var hostApis = hostApis();
+        final var exc = new Request.Builder().method("GET").uri("http://a.example.com/x")
+                .header("Host", "b.example.com").header("Host", "c.example.com").buildExchange();
+
+        assertEquals(CONTINUE, interceptor.handleRequest(exc));
+
+        assertSame(hostApis.a(), exc.getProxy());
+        assertArrayEquals(new String[]{"a.example.com"}, exc.getRequest().getHeader().getValues(new HeaderName("Host")).stream().map(HeaderField::getValue).toArray());
+    }
+
+    @Test
+    @DisplayName("An origin-form target is routed by the Host header, which is left as it is")
+    void originFormIsRoutedByHost() throws Exception {
+        final var hostApis = hostApis();
+        final var exc = assembleExchange("b.example.com:8080", "GET", "/x", "1.1", 80, "127.0.0.1");
+
+        assertEquals(CONTINUE, interceptor.handleRequest(exc));
+
+        assertSame(hostApis.b(), exc.getProxy());
+        assertEquals("b.example.com:8080", exc.getRequest().getHeader().getHost());
+    }
+
+    @Test
+    @DisplayName("A forward proxy keeps the Host header it received")
+    void proxyRuleKeepsHost() throws Exception {
+        final var proxyRule = new ProxyRule(new ProxyRuleKey(3013));
+        proxyRule.init(router);
+        router.getRuleManager().addProxy(proxyRule, MANUAL);
+        final var exc = assembleExchange("other.example.com", "GET", "http://example.com/x", "1.1", 3013, "127.0.0.1");
+
+        assertEquals(CONTINUE, interceptor.handleRequest(exc));
+
+        assertSame(proxyRule, exc.getProxy());
+        assertEquals("other.example.com", exc.getRequest().getHeader().getHost());
+    }
+
+    @Test
+    @DisplayName("A forward proxy does not add a Host header that it did not receive")
+    void proxyRuleDoesNotAddHost() throws Exception {
+        final var proxyRule = new ProxyRule(new ProxyRuleKey(3013));
+        proxyRule.init(router);
+        router.getRuleManager().addProxy(proxyRule, MANUAL);
+        final var exc = new Request.Builder().method("GET").uri("http://example.com/x").buildExchange(new FakeHttpHandler(3013, InetAddress.getByName("127.0.0.1")));
+
+        assertEquals(CONTINUE, interceptor.handleRequest(exc));
+
+        assertSame(proxyRule, exc.getProxy());
+        assertNull(exc.getRequest().getHeader().getHost());
+    }
+
+    /**
+     * Replaces the APIs of {@link #setUp()}, whose catch-all would match first, with two APIs that differ only in
+     * their host.
+     */
+    private HostApis hostApis() {
+        router.getRuleManager().removeAllRules();
+        return new HostApis(hostApi("a.example.com"), hostApi("b.example.com"));
+    }
+
+    private APIProxy hostApi(String host) {
+        final var api = new APIProxy();
+        api.setName(host);
+        api.setHost(host);
+        api.init(router);
+        router.getRuleManager().addProxy(api, MANUAL);
+        return api;
+    }
+
+    private record HostApis(APIProxy a, APIProxy b) {}
+
+    @ParameterizedTest
     @ValueSource(strings = {
             "http://protected.example/bad%zz/admin",
             "http://protected.example/bad%2/admin",
             "http://protected.example:99999/admin",
             "http://:80/admin",
+            "http:///admin",
     })
     @DisplayName("A malformed absolute-form target is rejected with 400")
     void malformedAbsoluteFormIsRejected(String uri) throws Exception {
