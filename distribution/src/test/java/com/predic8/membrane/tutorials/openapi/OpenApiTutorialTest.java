@@ -42,6 +42,18 @@ public class OpenApiTutorialTest extends AbstractOpenAPITutorialTest {
     }
 
     @Test
+    void serverUrlIsRewrittenToTheGateway() {
+        // @formatter:off
+        given()
+        .when()
+            .get("http://localhost:2000/api-docs/fruit-shop-api-v2-2-0")
+        .then()
+            .statusCode(200)
+            .body(containsString("http://localhost:2000/shop/v2"));
+        // @formatter:on
+    }
+
+    @Test
     void fruitshopProducts() {
         // @formatter:off
         given()

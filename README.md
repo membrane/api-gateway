@@ -168,11 +168,11 @@ api:
 
 Membrane lets you explore APIs deployed from OpenAPI in a single overview page.
 
-![List of OpenAPI Deployments](distribution/examples/openapi/openapi-proxy/api-overview.jpg)
+![List of OpenAPI Deployments](docs/images/api-overview.jpg)
 
 For documentation and testing, the gateway also hosts a Swagger UI for the deployed APIs.
 
-![Swagger UI](distribution/examples/openapi/openapi-proxy/swagger-ui.jpg)
+![Swagger UI](docs/images/swagger-ui.jpg)
 
 See: [OpenAPI tutorial](distribution/tutorials/openapi/)
 

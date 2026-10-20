@@ -16,7 +16,7 @@
 api:
   port: 2000
   openapi:
-    - location: ../../conf/openapi/fruitshop-v2-2-0.oas.yml
+    - location: minimal-shop-api.oas.yaml
       validateRequests: true
       validateResponses: true
       # Include the detailed list of validation errors in the error response.

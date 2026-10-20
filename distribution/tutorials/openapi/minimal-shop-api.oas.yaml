@@ -1,6 +1,6 @@
-openapi: 3.0.3
+openapi: 3.1.2
 info:
-  # A minimal excerpt of the Fruit Shop API - just enough to demonstrate rewriting.
+  # A minimal excerpt of the Fruit Shop API
   title: Minimal Shop API
   version: "2.0"
 # The server URL points at the backend. When Membrane serves this document at
@@ -13,3 +13,22 @@ paths:
       responses:
         '200':
           description: A list of products
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                name:
+                  type: string
+                  maxLength: 10
+                price:
+                  type: number
+                  minimum: 0
+      responses:
+        '201':
+          description: Product created
+          content:
+            application/json: {}
