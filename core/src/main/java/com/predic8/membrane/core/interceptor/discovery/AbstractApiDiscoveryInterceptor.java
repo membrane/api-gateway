@@ -40,8 +40,6 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
  */
 public abstract class AbstractApiDiscoveryInterceptor extends AbstractInterceptor {
 
-    static final String WELL_KNOWN_PATH = "/.well-known/api-catalog";
-
     private String baseUrl;
     private List<TagRule> tags = List.of();
 
@@ -54,24 +52,9 @@ public abstract class AbstractApiDiscoveryInterceptor extends AbstractIntercepto
         renderer = createRenderer();
         collector = new CatalogCollector(baseUrl, tags);
         // The proxy is unknown when the plugin sits in the else branch of an if.
-        if (getProxy() != null && getProxy().getKey() != null)
-            checkPath(getProxy().getKey().getPath());
     }
 
     protected abstract CatalogRenderer createRenderer();
-
-    /**
-     * RFC 9727 makes the api-catalog Linkset mandatory at the well-known URI, and a client reading
-     * any other format there misreads it. Only the RFC 9727 format may therefore be served there.
-     *
-     * @param path path of the api this interceptor serves, or null when it serves every path
-     */
-    protected void checkPath(String path) {
-        if (WELL_KNOWN_PATH.equals(path))
-            throw new ConfigurationException(
-                    "%s cannot be served under %s. RFC 9727 requires an api-catalog Linkset there, so move the api to another path."
-                            .formatted(elementName(), WELL_KNOWN_PATH));
-    }
 
     @Override
     public final Outcome handleRequest(Exchange exc) {
