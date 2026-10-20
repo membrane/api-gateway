@@ -1,0 +1,35 @@
+openapi: 3.1.0
+info:
+  title: Shop API with Scopes
+  version: "1.0"
+servers:
+  - url: https://api.predic8.de/shop/v2
+paths:
+  /products:
+    get:
+      security:
+        - jwt: [inventory]
+      responses:
+        "200":
+          description: A list of products
+    post:
+      security:
+        - jwt: [management]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "201":
+          description: Product created
+components:
+  securitySchemes:
+    jwt:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: http://localhost:2000/token
+          scopes:
+            inventory: Read products
+            management: Create and change products

@@ -95,7 +95,7 @@ origins, methods and headers.
 
 ## [JWT](jwt)
 
-Issue signed JSON Web Tokens and protect an API by validating them. Covers Bearer tokens and signature/expiry/audience checks.
+Issue signed JSON Web Tokens and protect an API by validating them. Covers Bearer tokens, signature/expiry/audience checks, and enforcing scopes from an OpenAPI document.
 
 
 ## [API Keys](api-keys)
