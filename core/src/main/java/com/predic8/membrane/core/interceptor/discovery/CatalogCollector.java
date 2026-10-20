@@ -109,6 +109,8 @@ public class CatalogCollector {
             if (!(proxy instanceof AbstractServiceProxy serviceProxy)) continue;
             if (proxy instanceof NotPortOpeningProxy || !proxy.isActive()) continue;
             if (!TagRule.isListed(tagRules, serviceProxy.getTags())) continue;
+            // A host pattern that matches neither the request nor names a literal host has no URL to publish.
+            if (hostOf(serviceProxy.getKey(), exchange) == null) continue;
             for (final var entry : entriesFor(serviceProxy, exchange, domain))
                 entries.add(unique(entry, serviceProxy, domain, taken));
         }
@@ -238,8 +240,21 @@ public class CatalogCollector {
      * Host header nor a local address, as in unit tests or a resent exchange.
      */
     private static String hostOf(RuleKey key, Exchange exchange) {
-        if (!isBoundToEveryHost(key)) return key.getHost();
-        return requestHost(exchange);
+        if (isBoundToEveryHost(key)) return requestHost(exchange);
+        if (!isHostPattern(key.getHost())) return key.getHost();
+        final var requestHost = requestHost(exchange);
+        if (key.matchesHostHeader(requestHost)) return requestHost;
+        return Arrays.stream(key.getHost().split("\\s+"))
+                .filter(host -> !host.contains(WILDCARD_HOST))
+                .findFirst().orElse(null);
+    }
+
+    /**
+     * A host such as <code>*.example.com</code> or a space-separated list of hosts is a pattern for
+     * matching requests, not a host a URL can carry.
+     */
+    private static boolean isHostPattern(String host) {
+        return host.contains(WILDCARD_HOST) || host.strip().contains(" ");
     }
 
     private static String requestHost(Exchange exchange) {

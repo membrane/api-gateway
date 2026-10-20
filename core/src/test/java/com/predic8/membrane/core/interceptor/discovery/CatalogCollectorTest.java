@@ -289,6 +289,37 @@ class CatalogCollectorTest {
     }
 
     @Test
+    void aHostPatternIsListedUnderTheMatchingHostOfTheRequest() throws Exception {
+        add(new ServiceProxy(new ServiceProxyKey("*.example.com", "*", "/shop", 2000), null, 0));
+
+        assertEquals("http://gateway.example.com:2000/shop",
+                only(collector().collect(router, exchange("/apis.json"))).endpoint().url());
+    }
+
+    @Test
+    void aHostListIsListedUnderTheMatchingHostOfTheRequest() throws Exception {
+        add(new ServiceProxy(new ServiceProxyKey("shop.example.com shop.example.org", "*", "/shop", 2000), null, 0));
+
+        assertEquals("http://shop.example.org:2000/shop", only(collector().collect(router,
+                exchange("/apis.json", "shop.example.org:2000"))).endpoint().url());
+    }
+
+    @Test
+    void aHostListIsListedUnderItsFirstLiteralHostWhenTheRequestHostDoesNotMatch() throws Exception {
+        add(new ServiceProxy(new ServiceProxyKey("*.example.org shop.example.com", "*", "/shop", 2000), null, 0));
+
+        assertEquals("http://shop.example.com:2000/shop",
+                only(collector().collect(router, exchange("/apis.json"))).endpoint().url());
+    }
+
+    @Test
+    void aHostPatternWithoutAPublishableHostIsLeftOut() throws Exception {
+        add(new ServiceProxy(new ServiceProxyKey("*.example.org", "*", "/shop", 2000), null, 0));
+
+        assertTrue(collector().collect(router, exchange("/apis.json")).apis().isEmpty());
+    }
+
+    @Test
     void theDefaultPortForTheProtocolIsLeftOutOfTheUrl() throws Exception {
         add(new ServiceProxy(new ServiceProxyKey("*", "*", "/shop", 80), null, 0));
 
