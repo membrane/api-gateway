@@ -14,8 +14,6 @@
 
 package com.predic8.membrane.core.lang.xpath;
 
-import com.predic8.membrane.core.config.xml.Namespaces.Namespace;
-import com.predic8.membrane.core.config.xml.XmlConfig;
 import com.predic8.membrane.core.exceptions.ProblemDetails;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.lang.AbstractExchangeExpressionTest;
@@ -33,7 +31,6 @@ import org.xml.sax.InputSource;
 
 import java.io.StringReader;
 import java.net.URISyntaxException;
-import java.util.List;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
 import static com.predic8.membrane.core.http.MimeType.*;
@@ -308,17 +305,6 @@ class XPathExchangeExpressionTest extends AbstractExchangeExpressionTest {
                     .evaluate(pExc, REQUEST, String.class));
             assertThrows(ExchangeExpressionException.class, () -> expression(local, getLanguage(), "/p8:person/p8:firstname")
                     .evaluate(pExc, REQUEST, String.class));
-        }
-
-        private static XmlConfig xmlConfig(String prefix) {
-            final var ns = new Namespace();
-            ns.setPrefix(prefix);
-            ns.setUri("https://predic8.de");
-            final var namespaces = new com.predic8.membrane.core.config.xml.Namespaces();
-            namespaces.setNamespaces(List.of(ns));
-            final var cfg = new XmlConfig();
-            cfg.setNamespaces(namespaces);
-            return cfg;
         }
     }
 

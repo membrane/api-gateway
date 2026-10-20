@@ -14,6 +14,8 @@
 
 package com.predic8.membrane.core.config.xml;
 
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.lang.ExchangeExpression.*;
 import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
 
@@ -60,5 +62,24 @@ class XmlConfigTest {
         router.getRegistry().register("ns", new XmlConfig());
         final var local = new XmlConfig();
         assertSame(local, localOrGlobal(local, router));
+    }
+
+    @Test
+    void interceptor() {
+        final var global = new XmlConfig();
+        router.getRegistry().register("ns", global);
+        final var local = new XmlConfig();
+        assertNull(localOrGlobal((Interceptor) null));
+        assertSame(global, localOrGlobal(new InterceptorAdapter(router)));
+        assertSame(local, localOrGlobal(new InterceptorAdapter(router, local)));
+    }
+
+    @Test
+    void interceptorWithoutXmlSupport() {
+        final var global = new XmlConfig();
+        router.getRegistry().register("ns", global);
+        assertSame(global, localOrGlobal(new AbstractInterceptor() {{
+            this.router = XmlConfigTest.this.router;
+        }}));
     }
 }

@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.lang;
 
+import com.predic8.membrane.core.lang.ExchangeExpression.InterceptorAdapter;
 import com.predic8.membrane.core.config.Path;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
@@ -77,7 +78,7 @@ class ScriptingUtilsTest {
         }
 
         private static @NotNull Map<String, Object> createBinding(String json) throws URISyntaxException {
-            var bindings = ScriptingUtils.createParameterBindings(new DefaultRouter(), get("/foo").json(json).buildExchange(), REQUEST, true, null);
+            var bindings = ScriptingUtils.createParameterBindings(new InterceptorAdapter(new DefaultRouter()), get("/foo").json(json).buildExchange(), REQUEST, true, null);
             assertNotNull(bindings);
             return bindings;
         }

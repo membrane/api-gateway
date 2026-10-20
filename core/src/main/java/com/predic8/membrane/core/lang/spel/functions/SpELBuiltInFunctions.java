@@ -13,14 +13,14 @@
    limitations under the License. */
 package com.predic8.membrane.core.lang.spel.functions;
 
-import com.predic8.membrane.core.config.xml.*;
+import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.lang.spel.*;
-import com.predic8.membrane.core.router.*;
 
 import java.lang.reflect.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.config.xml.XmlConfig.localOrGlobal;
 import static java.lang.reflect.Modifier.*;
 
 /**
@@ -33,10 +33,13 @@ import static java.lang.reflect.Modifier.*;
 @SuppressWarnings("unused")
 public class SpELBuiltInFunctions {
 
-    private final XmlConfig xmlConfig;
+    private final Interceptor interceptor;
 
-    public SpELBuiltInFunctions(Router router) {
-        xmlConfig = XmlConfig.global(router);
+    /**
+     * @param interceptor the interceptor that evaluates the expression, e.g. for its xmlConfig
+     */
+    public SpELBuiltInFunctions(Interceptor interceptor) {
+        this.interceptor = interceptor;
     }
 
     public Object jsonPath(String jsonPath, SpELExchangeEvaluationContext ctx) {
@@ -48,11 +51,11 @@ public class SpELBuiltInFunctions {
     }
 
     public Object xpath(String expression, SpELExchangeEvaluationContext ctx) {
-        return CommonBuiltInFunctions.xpath(expression, ctx.getMessage(), xmlConfig);
+        return CommonBuiltInFunctions.xpath(expression, ctx.getMessage(), localOrGlobal(interceptor));
     }
 
     public Object xpath(String expression, Object context, SpELExchangeEvaluationContext ctx) {
-        return CommonBuiltInFunctions.xpath(expression, context, xmlConfig);
+        return CommonBuiltInFunctions.xpath(expression, context, localOrGlobal(interceptor));
     }
 
     public boolean weight(double weightInPercent, SpELExchangeEvaluationContext ignored) {
