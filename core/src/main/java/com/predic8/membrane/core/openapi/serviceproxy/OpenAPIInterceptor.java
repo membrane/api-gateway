@@ -49,6 +49,7 @@ import static com.predic8.membrane.core.openapi.util.UriUtil.getUrlWithoutPath;
 import static com.predic8.membrane.core.openapi.util.Utils.getOpenapiValidatorRequest;
 import static com.predic8.membrane.core.openapi.util.Utils.getOpenapiValidatorResponse;
 import static com.predic8.membrane.core.openapi.validators.ValidationErrors.empty;
+import static com.predic8.membrane.core.util.URIUtil.toDecodedDelimiterRoutingPaths;
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.*;
 
@@ -118,7 +119,13 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
             return RETURN;
         }
 
+        if (decodedDelimitersSelectAnotherBasePath(exc, basePath))
+            return rejectEncodedDelimiter(exc, "another OpenAPI");
+
         OpenAPIRecord rec = apiProxy.getBasePaths().get(basePath);
+
+        if (isValidated(rec.getApi()) && decodedDelimitersSelectAnotherPath(exc, rec))
+            return rejectEncodedDelimiter(exc, "another path of the OpenAPI");
 
         // If OpenAPIProxy has a <target> Element use this for routing otherwise
         // take the urls from the info.servers field in the OpenAPI document.
@@ -218,14 +225,76 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         return CONTINUE;
     }
 
+    /**
+     * Uses the same path as routing, see {@link com.predic8.membrane.core.http.Request#getRoutingPath()}. Of nested
+     * base paths like /api/ and /api/admin/ the longest one wins, regardless of the order of the OpenAPI documents.
+     */
     protected String getMatchingBasePath(Exchange exc) {
+        final var matching = getMatchingBasePath(exc.getRequest().getRoutingPath());
+        if (matching == null)
+            log.debug("Could not find matching base path for OpenAPI request {}. Returning empty basePath.", exc.getRequest().getUri());
+        return matching;
+    }
+
+    /**
+     * A backend that decodes "%3B", "%2F" and "%5C" first may serve a path of another OpenAPI, e.g. "/api/admin%3bx=1/users"
+     * matches the base path /api/, but such a backend serves /api/admin/users. See
+     * {@link com.predic8.membrane.core.util.URIUtil#toDecodedDelimiterRoutingPaths(String)}.
+     */
+    private boolean decodedDelimitersSelectAnotherBasePath(Exchange exc, String basePath) {
+        final var uri = exc.getRequest().getUri();
+        if (uri.indexOf('%') == -1) // Nothing encoded, so the common case costs a single scan
+            return false;
+
+        for (final var decoded : toDecodedDelimiterRoutingPaths(uri)) {
+            final var other = getMatchingBasePath(decoded);
+            if (other != null && !other.equals(basePath))
+                return true;
+        }
+        return false;
+    }
+
+    /**
+     * Within one OpenAPI the same applies to its paths, e.g. "/api/public/x%2f..%2f..%2fadmin" matches /public/{file},
+     * but such a backend serves /api/admin. A path that selects no path of the OpenAPI when decoded, like
+     * "/api/public/a%2Fb", is fine.
+     */
+    private boolean decodedDelimitersSelectAnotherPath(Exchange exc, OpenAPIRecord rec) {
+        final var request = exc.getRequest();
+        final var uri = request.getUri();
+        if (uri.indexOf('%') == -1) // Nothing encoded, so the common case costs a single scan
+            return false;
+
+        final var validator = apiProxy.getValidator(rec);
+        final var path = validator.getMatchingPath(request.getMethod(), request.getRoutingPath());
+        for (final var decoded : toDecodedDelimiterRoutingPaths(uri)) {
+            final var other = validator.getMatchingPath(request.getMethod(), decoded);
+            if (other != null && !other.equals(path))
+                return true;
+        }
+        return false;
+    }
+
+    private Outcome rejectEncodedDelimiter(Exchange exc, String selected) {
+        log.info("Rejected request with an encoded ;, / or \\ that selects {} when decoded.", selected);
+        log.debug("Rejected path: {}", exc.getRequest().getUri());
+        user(router.getConfiguration().isProduction(), getDisplayName())
+                .title("Invalid path")
+                .status(400)
+                .addSubSee("invalid-path")
+                .detail("The request path contains an encoded ';', '/' or '\\' that selects %s when it is decoded.".formatted(selected))
+                .buildAndSetResponse(exc);
+        return RETURN;
+    }
+
+    private String getMatchingBasePath(String path) {
+        String matching = null;
         for (String basePath : apiProxy.getBasePaths().keySet()) {
-            if (exc.getRequest().getUri().startsWith(basePath)) {
-                return basePath;
+            if (path.startsWith(basePath) && (matching == null || basePath.length() > matching.length())) {
+                matching = basePath;
             }
         }
-        log.debug("Could not find matching base path for OpenAPI request {}. Returning empty basePath.", exc.getRequest().getUri());
-        return null;
+        return matching;
     }
 
 
@@ -271,7 +340,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
      * we need some context.
      */
     private Request<?> getOperationRequestOnlyForResponseValidation(Exchange exc) {
-        return new Request<>(exc.getRequest().getMethod(), exc.getRequest().getUri());
+        return new Request<>(exc.getRequest().getMethod(), exc.getRequest().getRoutingPath());
     }
 
     public boolean validationDetails(OpenAPI api) {

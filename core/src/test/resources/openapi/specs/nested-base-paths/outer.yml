@@ -1,0 +1,18 @@
+openapi: '3.0.2'
+info:
+  title: Outer API
+  version: '1.0'
+servers:
+  - url: https://api.example.com/api
+paths:
+  /{resource}/users:
+    parameters:
+      - in: path
+        name: resource
+        schema:
+          type: string
+        required: true
+    get:
+      responses:
+        '200':
+          description: OK
