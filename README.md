@@ -596,6 +596,8 @@ api:
     url: https://your-backend
 ```
 
+See the [JWT tutorials](distribution/tutorials/jwt), including enforcing the scopes from an OpenAPI document.
+
 ## OAuth2
 
 ### Secure APIs with OAuth2
