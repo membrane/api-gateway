@@ -34,6 +34,8 @@
 #
 # 6.) Fetch the OpenAPI document Membrane serves:
 #     curl http://localhost:2000/api-docs/fruit-shop-api-v2-2-0
+#
+#     The ID fruit-shop-api-v2-2-0 is built from title and version, see 70-OpenAPI-Extensions.apis.yaml.
 
 api:
   port: 2000
