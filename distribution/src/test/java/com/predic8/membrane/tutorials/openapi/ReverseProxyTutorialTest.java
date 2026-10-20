@@ -34,7 +34,7 @@ public class ReverseProxyTutorialTest extends AbstractOpenAPITutorialTest {
             .get("http://localhost:2000/api-docs/minimal-shop-api-v2-0")
         .then()
             .statusCode(200)
-            .body(containsString("https://api.example.com/shop/v2"));
+            .body(containsString("https://api.example.com/shop"));
         // @formatter:on
     }
 }

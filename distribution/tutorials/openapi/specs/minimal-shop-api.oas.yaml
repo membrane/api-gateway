@@ -6,7 +6,7 @@ info:
 # The server URL points at the backend. When Membrane serves this document at
 # /api-docs, it rewrites this URL so clients talk to the gateway instead.
 servers:
-  - url: https://api.predic8.de/shop/v2
+  - url: https://api.predic8.de/shop
 paths:
   /products:
     get:

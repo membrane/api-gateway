@@ -19,7 +19,7 @@
 #     The server URL shows the public https endpoint:
 #
 #         servers:
-#           - url: https://api.example.com/shop/v2
+#           - url: https://api.example.com/shop
 #
 #     The path stays as in the spec. Port 443 is the default for https, so Membrane
 #     omits it from the URL. (If you leave the port out, Membrane falls back to the
@@ -28,7 +28,7 @@
 api:
   port: 2000
   openapi:
-    - location: minimal-shop-api.oas.yaml
+    - location: specs/minimal-shop-api.oas.yaml
       rewrite:
         protocol: https
         host: api.example.com

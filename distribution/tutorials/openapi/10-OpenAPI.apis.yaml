@@ -35,15 +35,17 @@
 # 6.) Fetch the OpenAPI document Membrane serves:
 #     curl http://localhost:2000/api-docs/fruit-shop-api-v2-2-0
 #
-#     The ID fruit-shop-api-v2-2-0 is built from title and version, see 70-OpenAPI-Extensions.apis.yaml.
+#     The ID fruit-shop-api-v2-2-0 is built from title and version, see 80-OpenAPI-Extensions.apis.yaml.
+#
+# 7.) Continue with file 20-OpenAPI-Validation.apis.yaml
 
 api:
   port: 2000
   openapi:
-    # Deploys every OpenAPI document in the folder:
+    # Deploys every OpenAPI document in the folder, among them:
     #   fruitshop-v2-2-0.oas.yml (Fruit Shop API, /shop/v2)
     #   dlp-v1.0.0.oas.yml       (DLP Field Information API, /dlp)
-    - dir: ../../conf/openapi
+    - dir: specs
 
 # NOTE: In fruitshop-v2-2-0.oas.yml the server URL points to the backend
 # (https://api.predic8.de/shop/v2). When Membrane serves the document at /api-docs, it

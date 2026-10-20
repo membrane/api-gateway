@@ -1,0 +1,40 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.7.1.json
+#
+# Tutorial: OpenAPI with a Target
+#
+# A target sends the requests to a backend of your choice instead of servers[].url from
+# the OpenAPI document, e.g. to a mock, a test system or an internal address.
+#
+# 1.) Start Membrane:
+#     Linux/Mac:
+#       ./membrane.sh -c 11-OpenAPI-Target.apis.yaml
+#     Windows:
+#       membrane.cmd -c 11-OpenAPI-Target.apis.yaml
+#
+# 2.) Call the API:
+#     curl http://localhost:2000/shop/products
+#
+#     The answer comes from the mock backend on port 3000, not from https://api.predic8.de:
+#
+#     { "products": [ { "id": 1, "name": "Mock Banana" } ] }
+
+api:
+  port: 2000
+  name: Shop API
+  openapi:
+    - location: specs/minimal-shop-api.oas.yaml
+  target:
+    url: http://localhost:3000
+
+---
+api:
+  port: 3000
+  name: Mock Backend
+  path:
+    uri: /shop/products
+  flow:
+    - static:
+        contentType: application/json
+        src: '{ "products": [ { "id": 1, "name": "Mock Banana" } ] }'
+    - return:
+        status: 200

@@ -12,10 +12,10 @@
 #       membrane.cmd -c 21-Validation-Advanced.apis.yaml
 #
 # 2.) Create a product with a negative price:
-#     curl "http://localhost:2000/shop/v2/products" -H "Content-Type: application/json" -d "{ \"name\": \"Figs\", \"price\": -2.7}"
+#     curl "http://localhost:2000/shop/products" -H "Content-Type: application/json" -d "{ \"name\": \"Figs\", \"price\": -2.7}"
 #
 #     Response: 400 with the validation errors
-#     Log:      OpenAPI request validation failed for POST /shop/v2/products ...
+#     Log:      OpenAPI request validation failed for POST /shop/products ...
 #
 #     The validation rejected the request before the log plugin ran, so "Fruit: Figs" is missing.
 #
@@ -26,12 +26,12 @@
 #
 #     Response: 400 with the validation errors
 #     Log:      Fruit: Figs
-#               OpenAPI request validation failed for POST /shop/v2/products ...
+#               OpenAPI request validation failed for POST /shop/products ...
 
 api:
   port: 2000
   openapi:
-    - location: minimal-shop-api.oas.yaml
+    - location: specs/minimal-shop-api.oas.yaml
       validateRequests: true
   flow:
     - request:

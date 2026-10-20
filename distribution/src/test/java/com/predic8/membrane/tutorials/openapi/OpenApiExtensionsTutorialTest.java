@@ -24,7 +24,7 @@ public class OpenApiExtensionsTutorialTest extends AbstractOpenAPITutorialTest {
 
     @Override
     protected String getTutorialYaml() {
-        return "70-OpenAPI-Extensions.apis.yaml";
+        return "80-OpenAPI-Extensions.apis.yaml";
     }
 
     @Test
@@ -55,7 +55,7 @@ public class OpenApiExtensionsTutorialTest extends AbstractOpenAPITutorialTest {
             { "name": "Figs", "price": -2.7 }
             """)
         .when()
-            .post("http://localhost:2000/shop/v2/products")
+            .post("http://localhost:2000/ext-shop/products")
         .then()
             .statusCode(400)
             .body("title", equalTo("OpenAPI message validation failed"));

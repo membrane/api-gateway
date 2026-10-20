@@ -21,12 +21,12 @@
 #           - url: http://shop.example.com:8080/shop
 #
 #     Note: basePath REPLACES the whole path of the server URI. It does not get
-#     prepended to it. The original "/shop/v2" is gone, replaced by "/boutique".
+#     prepended to it. The original "/shop" is gone, replaced by "/boutique".
 
 api:
   port: 2000
   openapi:
-    - location: minimal-shop-api.oas.yaml
+    - location: specs/minimal-shop-api.oas.yaml
       rewrite:
         host: shop.example.com
         port: 8080

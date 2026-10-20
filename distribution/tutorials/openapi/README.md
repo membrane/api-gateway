@@ -9,6 +9,7 @@ and rewrites the server URLs it advertises.
   explicit values, or overridden for a deployment behind a reverse proxy
 - Validating `application/x-www-form-urlencoded` messages - the format HTML forms post - against
   the same kind of schema: required fields, types and constraints, just like for JSON
+- Validating XML bodies against the schemas, including attributes declared with `xml.attribute`
 - Membrane settings inside the OpenAPI document: `x-membrane-id` for the ID under `/api-docs`
   and `x-membrane-validation` to turn on validation
 

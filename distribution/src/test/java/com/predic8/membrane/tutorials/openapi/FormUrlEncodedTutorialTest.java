@@ -33,7 +33,7 @@ public class FormUrlEncodedTutorialTest extends AbstractOpenAPITutorialTest {
             .contentType("application/x-www-form-urlencoded")
             .body("product=Shoes&quantity=5")
         .when()
-            .post("http://localhost:2000/orders")
+            .post("http://localhost:2000/forms/orders")
         .then()
             .statusCode(200)
             .body(containsString("accepted"));
@@ -47,7 +47,7 @@ public class FormUrlEncodedTutorialTest extends AbstractOpenAPITutorialTest {
             .contentType("application/x-www-form-urlencoded")
             .body("product=Shoes&quantity=-5")
         .when()
-            .post("http://localhost:2000/orders")
+            .post("http://localhost:2000/forms/orders")
         .then()
             .statusCode(400)
             .body(containsString("minimum"));

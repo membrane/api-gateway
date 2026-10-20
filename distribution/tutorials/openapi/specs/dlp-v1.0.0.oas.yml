@@ -1,0 +1,98 @@
+---
+openapi: "3.0.3"
+info:
+  title: "DLP Field Information API"
+  description: "This API provides access to sensitive field metadata as part of a\
+    \ Data Loss Prevention (DLP) system. It allows retrieval of individual or multiple\
+    \ fields along with their associated data classification and risk level."
+  version: "1.0.0"
+servers:
+- url: "https://api.predic8.de/dlp/"
+paths:
+  /fields/{fieldname}:
+    get:
+      summary: "Get classification details for a specific field"
+      description: "Returns the DLP category and risk level associated with the requested\
+        \ field."
+      parameters:
+      - name: "fieldname"
+        in: "path"
+        description: "The name of the field to inspect (e.g., \"email\", \"card_number\"\
+          , \"last_name\")"
+        required: true
+        style: "simple"
+        explode: false
+        schema:
+          type: "string"
+          example: "email"
+          maxLength: 100
+      responses:
+        "200":
+          description: "Classification info for the given field. If the field is unknown,\
+            \ the response will still return a default \"Unknown\" category and risk."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FieldInfo"
+        "500":
+          description: "Internal server error"
+  /fields:
+    post:
+      summary: "Get classification details for multiple fields"
+      description: "Accepts a list of field names and returns their corresponding\
+        \ DLP category and risk levels."
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Fields"
+        required: true
+      responses:
+        "200":
+          description: "Classification info for each requested field"
+          content:
+            application/json:
+              schema:
+                type: "array"
+                items:
+                  $ref: "#/components/schemas/FieldInfo"
+        "400":
+          description: "Invalid request format or field list"
+        "500":
+          description: "Internal server error"
+components:
+  schemas:
+    Fields:
+      type: "object"
+      description: "List of field names to classify"
+      properties:
+        fieldNames:
+          type: "array"
+          example:
+          - "email"
+          - "card_number"
+          - "last_name"
+          items:
+            type: "string"
+      required:
+      - "fieldNames"
+    FieldInfo:
+      type: "object"
+      description: "Metadata about a field's DLP classification"
+      properties:
+        field:
+          type: "string"
+          description: "The field name (e.g., \"email\", \"card_number\")"
+          example: "email"
+        category:
+          type: "string"
+          description: "The DLP category (e.g., \"Financial\", \"Contact\")"
+          example: "Financial"
+        risk:
+          type: "string"
+          description: "Risk level of data leakage for this field"
+          example: "HIGH"
+      required:
+      - "category"
+      - "field"
+      - "risk"
