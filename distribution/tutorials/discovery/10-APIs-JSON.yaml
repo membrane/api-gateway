@@ -1,0 +1,79 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.7.1.json
+#
+# Tutorial: APIs.json
+#
+# 1.) Start Membrane:
+#     ./membrane.sh -c 10-APIs-JSON.yaml
+#
+# 2.) Fetch the APIs.json document:
+#     curl localhost:2000/.well-known/apis.json
+#
+#     The Admin API is missing: only APIs tagged public are listed.
+#
+# 3.) Open the documentation link of the Products API in the browser:
+#     http://localhost:2000/api-docs/ui/products-api-v1-0
+#
+# 4.) Call the listed APIs:
+#     curl localhost:2000/shop/v2/products
+#     curl localhost:2000/greeting
+
+api:
+  port: 2000
+  openapi:
+    - location: products.oas.yaml
+  tags:
+    - public
+  info:
+    contact:
+      name: Shop Team
+      email: shop@example.com
+
+---
+
+api:
+  port: 2000
+  name: Greeting API
+  id: greeting
+  path:
+    uri: /greeting
+  description: Says hello.
+  tags:
+    - public
+  flow:
+    - static:
+        contentType: application/json
+        src: '{"greeting": "Hello!"}'
+    - return:
+        status: 200
+
+---
+
+api:
+  port: 2000
+  name: Admin API
+  path:
+    uri: /admin
+  tags:
+    - internal
+  flow:
+    - return:
+        status: 200
+
+---
+
+api:
+  port: 2000
+  path:
+    uri: /.well-known/apis.json
+  flow:
+    - apisJson:
+        collectionId: shop
+        name: Example Shop
+        description: Public APIs of the example shop
+        type: collection
+        tags:
+          # Untagged APIs are left out as well.
+          - include: public
+        maintainers:
+          - name: API Team
+            email: api-team@example.com
