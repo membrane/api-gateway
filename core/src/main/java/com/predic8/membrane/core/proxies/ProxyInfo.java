@@ -14,12 +14,10 @@
 package com.predic8.membrane.core.proxies;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.util.*;
 
 import java.time.*;
-import java.time.format.*;
 
-import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE;
+import static com.predic8.membrane.core.util.DateAndTimeUtil.*;
 
 /**
  * @description Metadata about the API that API catalogs publish.
@@ -30,16 +28,6 @@ public class ProxyInfo {
     private ProxyContact contact;
     private LocalDate created;
     private LocalDate modified;
-
-    public static LocalDate parseDate(String element, String attribute, String value) {
-        try {
-            return LocalDate.parse(value, ISO_LOCAL_DATE);
-        } catch (DateTimeParseException e) {
-            throw new ConfigurationException(
-                    "Cannot parse %s/@%s \"%s\". Expected an ISO date such as 2026-01-15."
-                            .formatted(element, attribute, value), e);
-        }
-    }
 
     public ProxyContact getContact() {
         return contact;
@@ -63,7 +51,7 @@ public class ProxyInfo {
      */
     @MCAttribute
     public void setCreated(String created) {
-        this.created = parseDate("info", "created", created);
+        this.created = parseIsoDate("info", "created", created);
     }
 
     public LocalDate getModified() {
@@ -76,6 +64,6 @@ public class ProxyInfo {
      */
     @MCAttribute
     public void setModified(String modified) {
-        this.modified = parseDate("info", "modified", modified);
+        this.modified = parseIsoDate("info", "modified", modified);
     }
 }

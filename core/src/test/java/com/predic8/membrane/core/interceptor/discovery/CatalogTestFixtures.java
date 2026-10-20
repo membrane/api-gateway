@@ -45,7 +45,7 @@ class CatalogTestFixtures {
                 .name("Fruit Shop API")
                 .description("Showcases REST API design")
                 .version("2.0.0")
-                .endpoint(new CatalogEntry.Endpoint("https", "example.com", 443, "/shop/v2/", "*",
+                .endpoint(new CatalogEntry.Endpoint("/shop/v2/", "*",
                         "https://example.com/shop/v2/"))
                 .links(new CatalogEntry.Links(
                         "https://example.com/api-docs/ui/fruit-shop-api-v2-0-0",
@@ -66,7 +66,7 @@ class CatalogTestFixtures {
                 .kind(SERVICE_PROXY)
                 .name("Shop")
                 .description("Shop")
-                .endpoint(new CatalogEntry.Endpoint("http", "example.com", 2000, "/shop", "*",
+                .endpoint(new CatalogEntry.Endpoint("/shop", "*",
                         "http://example.com:2000/shop"))
                 .build();
     }
@@ -81,7 +81,7 @@ class CatalogTestFixtures {
                 .kind(API)
                 .name("APIs.json")
                 .description("APIs.json")
-                .endpoint(new CatalogEntry.Endpoint("https", "example.com", 443, "/apis.json", "*",
+                .endpoint(new CatalogEntry.Endpoint("/apis.json", "*",
                         "https://example.com/apis.json"))
                 .catalogType("application/json")
                 .build();
@@ -94,7 +94,7 @@ class CatalogTestFixtures {
                 .kind(SOAP_PROXY)
                 .name("CityService")
                 .description("CityService")
-                .endpoint(new CatalogEntry.Endpoint("http", "example.com", 2000, "/cities", "*",
+                .endpoint(new CatalogEntry.Endpoint("/cities", "*",
                         "http://example.com:2000/cities"))
                 .soap(new CatalogEntry.SoapInfo("http://example.com:2000/cities?wsdl", "CityService",
                         "CityPort"))

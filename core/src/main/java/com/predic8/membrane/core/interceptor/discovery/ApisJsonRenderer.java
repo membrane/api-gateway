@@ -78,7 +78,7 @@ public class ApisJsonRenderer implements CatalogRenderer {
 
     @Override
     public byte[] render(Catalog catalog) throws JsonProcessingException {
-        ObjectNode collection = om.createObjectNode();
+        final var collection = om.createObjectNode();
         collection.put("aid", catalog.domain() + ":" + collectionId);
         collection.put("name", this.collection.name());
         collection.put("description", this.collection.description());
@@ -97,13 +97,13 @@ public class ApisJsonRenderer implements CatalogRenderer {
         final var tags = listed.stream().flatMap(entry -> entry.tags().stream()).distinct().toList();
         if (!tags.isEmpty())
             tags.forEach(collection.putArray("tags")::add);
-        ArrayNode apis = collection.putArray("apis");
+        final var apis = collection.putArray("apis");
         listed.forEach(entry -> apis.add(renderApi(entry)));
         return om.writeValueAsBytes(collection);
     }
 
     private ObjectNode renderApi(CatalogEntry entry) {
-        ObjectNode api = om.createObjectNode();
+        final var api = om.createObjectNode();
         api.put("aid", entry.aid());
         api.put("name", entry.name());
         api.put("description", entry.description());
@@ -124,7 +124,7 @@ public class ApisJsonRenderer implements CatalogRenderer {
     private void renderTags(ObjectNode api, CatalogEntry entry) {
         if (entry.tags().isEmpty())
             return;
-        ArrayNode tags = api.putArray("tags");
+        final var tags = api.putArray("tags");
         entry.tags().forEach(tags::add);
     }
 
@@ -158,7 +158,7 @@ public class ApisJsonRenderer implements CatalogRenderer {
     }
 
     private ObjectNode renderProperty(String type, String name, String url) {
-        ObjectNode property = om.createObjectNode();
+        final var property = om.createObjectNode();
         property.put("type", type);
         putIfPresent(property, "name", name);
         property.put("url", url);

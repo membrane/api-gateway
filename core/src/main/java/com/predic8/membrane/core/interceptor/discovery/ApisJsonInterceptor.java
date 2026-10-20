@@ -19,6 +19,8 @@ import com.predic8.membrane.core.proxies.*;
 import java.time.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.util.DateAndTimeUtil.*;
+
 /**
  * @description Publishes every API deployed on this gateway as an APIs.json 0.24 document, a
  * collection a crawler or registry can index. The catalog is collected from the running
@@ -152,12 +154,12 @@ public class ApisJsonInterceptor extends AbstractCollectionDiscoveryInterceptor 
     /**
      * @description Day the collection was created, as an ISO date. APIs.json requires the member,
      * so the document always carries it.
-     * @default the day Membrane started
+     * @default the day the configuration was loaded
      * @example 2026-01-15
      */
     @MCAttribute
     public void setCreated(String created) {
-        this.created = ProxyInfo.parseDate(elementName(), "created", created);
+        this.created = parseIsoDate(elementName(), "created", created);
     }
 
     public LocalDate getModified() {
@@ -167,12 +169,12 @@ public class ApisJsonInterceptor extends AbstractCollectionDiscoveryInterceptor 
     /**
      * @description Day the collection last changed, as an ISO date. APIs.json requires the member,
      * so the document always carries it.
-     * @default the day Membrane started
+     * @default the day the configuration was loaded
      * @example 2026-01-15
      */
     @MCAttribute
     public void setModified(String modified) {
-        this.modified = ProxyInfo.parseDate(elementName(), "modified", modified);
+        this.modified = parseIsoDate(elementName(), "modified", modified);
     }
 
     public List<ProxyContact> getMaintainers() {
@@ -185,7 +187,7 @@ public class ApisJsonInterceptor extends AbstractCollectionDiscoveryInterceptor 
      */
     @MCChildElement(order = 1)
     public void setMaintainers(List<ProxyContact> maintainers) {
-        this.maintainers = maintainers;
+        this.maintainers = List.copyOf(maintainers);
     }
 
     @Override

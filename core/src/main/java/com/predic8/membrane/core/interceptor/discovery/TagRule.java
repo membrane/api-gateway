@@ -51,7 +51,7 @@ public abstract class TagRule {
     static boolean isListed(List<TagRule> rules, List<String> tags) {
         if (rules.isEmpty())
             return true;
-        for (TagRule rule : rules)
+        for (final var rule : rules)
             if (tags.stream().anyMatch(rule::matches))
                 return rule.includes();
         return false;

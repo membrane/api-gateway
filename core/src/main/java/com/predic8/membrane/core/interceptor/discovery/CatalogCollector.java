@@ -17,7 +17,6 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.router.*;
-import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.info.*;
 
 import java.net.URI;
@@ -90,27 +89,27 @@ public class CatalogCollector {
         if (baseUrl != null) return baseUrl + pathWithoutQuery(exchange);
         if (exchange.getProxy() instanceof AbstractServiceProxy serviceProxy)
             return origin(serviceProxy, exchange) + pathWithoutQuery(exchange);
-        String hostHeader = exchange.getOriginalHostHeader();
-        String authority = hostHeader != null && !hostHeader.isBlank() ? hostHeader : requestHost(exchange);
+        final var hostHeader = exchange.getOriginalHostHeader();
+        final var authority = hostHeader != null && !hostHeader.isBlank() ? hostHeader : requestHost(exchange);
         return "http://" + authority + pathWithoutQuery(exchange);
     }
 
     private static String pathWithoutQuery(Exchange exchange) {
-        String uri = exchange.getRequest().getUri();
+        final var uri = exchange.getRequest().getUri();
         if (uri == null) return DEFAULT_PATH;
-        int query = uri.indexOf('?');
+        final var query = uri.indexOf('?');
         return query == -1 ? uri : uri.substring(0, query);
     }
 
     private List<CatalogEntry> collectEntries(Router router, Exchange exchange, String domain) {
-        List<CatalogEntry> entries = new ArrayList<>();
+        final var entries = new ArrayList<CatalogEntry>();
         final var taken = new HashSet<String>();
         // Snapshot: getRules() hands out the live list, which a configuration reload mutates.
-        for (Proxy proxy : List.copyOf(router.getRuleManager().getRules())) {
+        for (final var proxy : List.copyOf(router.getRuleManager().getRules())) {
             if (!(proxy instanceof AbstractServiceProxy serviceProxy)) continue;
             if (proxy instanceof NotPortOpeningProxy || !proxy.isActive()) continue;
             if (!TagRule.isListed(tagRules, serviceProxy.getTags())) continue;
-            for (CatalogEntry entry : entriesFor(serviceProxy, exchange, domain))
+            for (final var entry : entriesFor(serviceProxy, exchange, domain))
                 entries.add(unique(entry, serviceProxy, domain, taken));
         }
         return entries;
@@ -136,22 +135,25 @@ public class CatalogCollector {
     }
 
     private CatalogEntry describedEntry(APIProxy api, String recordId, OpenAPIRecord record, Exchange exchange, String domain) {
-        OpenAPI openAPI = record.getApi();
-        Info info = openAPI.getInfo();
-        String origin = origin(api, exchange);
+        final var info = record.getApi().getInfo();
+        final var origin = origin(api, exchange);
+        final var configuredContact = configuredContact(api);
         return builder()
-                .aid(aid(api, recordId, domain)).id(id(api, recordId))
-                .kind(API).name(name(api, info))
+                .aid(aid(api, recordId, domain))
+                .id(id(api, recordId))
+                .kind(API)
+                .name(name(api, info))
                 .description(description(api, info))
                 .version(info == null ? null : info.getVersion())
                 .endpoint(endpoint(api, exchange, basePathOf(api, record)))
                 .links(new CatalogEntry.Links(origin + PATH_UI + "/" + recordId, origin + PATH + "/" + recordId))
                 .tags(api.getTags())
-                .contact(configuredContact(api) != null ? configuredContact(api) : contact(info))
+                .contact(configuredContact != null ? configuredContact : contact(info))
                 .license(license(info))
                 .termsOfService(info == null ? null : info.getTermsOfService())
                 .catalogType(catalogType(api))
-                .details(details(api)).build();
+                .details(details(api))
+                .build();
     }
 
     /**
@@ -159,8 +161,20 @@ public class CatalogCollector {
      * <code>/api-docs</code> nor a Swagger UI, so any link here would be dead.
      */
     private CatalogEntry plainEntry(AbstractServiceProxy proxy, Exchange exchange, String domain) {
-        CatalogEntry.Endpoint endpoint = endpoint(proxy, exchange, pathOf(proxy));
-        return builder().aid(aid(proxy, null, domain)).id(id(proxy, null)).kind(kindOf(proxy)).name(proxy.getName()).description(description(proxy, null)).endpoint(endpoint).tags(proxy.getTags()).contact(configuredContact(proxy)).soap(soapInfo(proxy, endpoint)).catalogType(catalogType(proxy)).details(details(proxy)).build();
+        final var endpoint = endpoint(proxy, exchange, pathOf(proxy));
+        return builder()
+                .aid(aid(proxy, null, domain))
+                .id(id(proxy, null))
+                .kind(kindOf(proxy))
+                .name(proxy.getName())
+                .description(description(proxy, null))
+                .endpoint(endpoint)
+                .tags(proxy.getTags())
+                .contact(configuredContact(proxy))
+                .soap(soapInfo(proxy, endpoint))
+                .catalogType(catalogType(proxy))
+                .details(details(proxy))
+                .build();
     }
 
     /**
@@ -190,18 +204,12 @@ public class CatalogCollector {
     }
 
     private CatalogEntry.Endpoint endpoint(AbstractServiceProxy proxy, Exchange exchange, String path) {
-        RuleKey key = proxy.getKey();
-        if (usesBaseUrl(key))
-            return new CatalogEntry.Endpoint(baseUri.getScheme(), baseUri.getHost(), portOf(baseUri), path, key.getMethod(), baseUrl + path);
-        String protocol = proxy.getProtocol();
-        String host = hostOf(key, exchange);
-        int port = portOf(key, protocol);
-        return new CatalogEntry.Endpoint(protocol, host, port, path, key.getMethod(), origin(protocol, host, port) + path);
+        return new CatalogEntry.Endpoint(path, proxy.getKey().getMethod(), origin(proxy, exchange) + path);
     }
 
     private String origin(AbstractServiceProxy proxy, Exchange exchange) {
         if (usesBaseUrl(proxy.getKey())) return baseUrl;
-        String protocol = proxy.getProtocol();
+        final var protocol = proxy.getProtocol();
         return origin(protocol, hostOf(proxy.getKey(), exchange), portOf(proxy.getKey(), protocol));
     }
 
@@ -215,11 +223,6 @@ public class CatalogCollector {
 
     private static boolean isBoundToEveryHost(RuleKey key) {
         return key.getHost() == null || WILDCARD_HOST.equals(key.getHost());
-    }
-
-    private static int portOf(URI uri) {
-        if (uri.getPort() != -1) return uri.getPort();
-        return "https".equals(uri.getScheme()) ? 443 : 80;
     }
 
     private static String origin(String protocol, String host, int port) {
@@ -240,7 +243,7 @@ public class CatalogCollector {
     }
 
     private static String requestHost(Exchange exchange) {
-        String hostHeader = exchange.getOriginalHostHeader();
+        final var hostHeader = exchange.getOriginalHostHeader();
         if (hostHeader != null && !hostHeader.isBlank()) return hostWithoutPort(hostHeader);
         if (exchange.getHandler() != null && exchange.getHandler().getLocalAddress() != null)
             return exchange.getHandler().getLocalAddress().getHostAddress();
@@ -255,10 +258,10 @@ public class CatalogCollector {
      */
     private static String hostWithoutPort(String hostHeader) {
         if (hostHeader.startsWith("[")) {
-            int bracket = hostHeader.indexOf(']');
+            final var bracket = hostHeader.indexOf(']');
             return bracket == -1 ? hostHeader : hostHeader.substring(0, bracket + 1);
         }
-        int colon = hostHeader.indexOf(':');
+        final var colon = hostHeader.indexOf(':');
         if (colon == -1 || colon != hostHeader.lastIndexOf(':')) return hostHeader;
         return hostHeader.substring(0, colon);
     }
@@ -342,17 +345,15 @@ public class CatalogCollector {
         return new CatalogEntry.Details(proxy.getInfo().getCreated(), proxy.getInfo().getModified());
     }
 
-
     private static CatalogEntry.Contact contact(Info info) {
         if (info == null || info.getContact() == null) return null;
-        Contact contact = info.getContact();
+        final var contact = info.getContact();
         return new CatalogEntry.Contact(contact.getName(), contact.getEmail(), contact.getUrl());
     }
 
     private static CatalogEntry.License license(Info info) {
         if (info == null || info.getLicense() == null) return null;
-        License license = info.getLicense();
+        final var license = info.getLicense();
         return new CatalogEntry.License(license.getName(), license.getUrl());
     }
-
 }

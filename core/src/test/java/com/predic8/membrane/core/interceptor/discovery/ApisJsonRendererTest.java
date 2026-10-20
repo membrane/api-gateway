@@ -225,7 +225,7 @@ class ApisJsonRendererTest {
         final var catalogApi = CatalogEntry.builder()
                 .aid("example.com:apis-json").id("apis-json").kind(CatalogEntry.ProxyKind.API)
                 .name("APIs.json").description("APIs.json")
-                .endpoint(new CatalogEntry.Endpoint("https", "example.com", 443, "/apis.json", "*", "https://example.com/apis.json"))
+                .endpoint(new CatalogEntry.Endpoint("/apis.json", "*", "https://example.com/apis.json"))
                 .tags(List.of("discovery"))
                 .catalogType("application/json")
                 .build();

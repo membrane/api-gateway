@@ -171,9 +171,6 @@ class CatalogCollectorTest {
                 .collect(router, exchange("/apis.json")));
 
         assertEquals("https://api.example.com/gateway/shop/v2/", entry.endpoint().url());
-        assertEquals("https", entry.endpoint().protocol());
-        assertEquals("api.example.com", entry.endpoint().host());
-        assertEquals(443, entry.endpoint().port());
         assertEquals("https://api.example.com/gateway/api-docs/fruit-shop-api-v2-0-0", entry.links().specUrl());
         assertEquals("api.example.com:fruit-shop-api-v2-0-0", entry.aid());
     }
@@ -185,8 +182,6 @@ class CatalogCollectorTest {
         final var endpoint = only(collectorWithBaseUrl("HTTPS://api.example.com")
                 .collect(router, exchange("/apis.json"))).endpoint();
 
-        assertEquals("https", endpoint.protocol());
-        assertEquals(443, endpoint.port());
         assertEquals("https://api.example.com/shop", endpoint.url());
     }
 
@@ -257,7 +252,7 @@ class CatalogCollectorTest {
 
         CatalogEntry entry = only(collector().collect(router, exchange("/apis.json")));
 
-        assertEquals("gateway.example.com", entry.endpoint().host());
+        assertEquals("http://gateway.example.com:2000/shop", entry.endpoint().url());
     }
 
     @Test
@@ -266,7 +261,6 @@ class CatalogCollectorTest {
 
         CatalogEntry entry = only(collector().collect(router, exchange("/apis.json", "[::1]")));
 
-        assertEquals("[::1]", entry.endpoint().host());
         assertEquals("http://[::1]:2000/shop", entry.endpoint().url());
     }
 
@@ -274,24 +268,24 @@ class CatalogCollectorTest {
     void thePortAfterABracketedIpv6HostIsDropped() throws Exception {
         add(new ServiceProxy(new ServiceProxyKey("*", "*", "/shop", 2000), null, 0));
 
-        assertEquals("[::1]", only(collector().collect(router,
-                exchange("/apis.json", "[::1]:8080"))).endpoint().host());
+        assertEquals("http://[::1]:2000/shop", only(collector().collect(router,
+                exchange("/apis.json", "[::1]:8080"))).endpoint().url());
     }
 
     @Test
     void aHostHeaderWithoutAPortIsUsedAsItIs() throws Exception {
         add(new ServiceProxy(new ServiceProxyKey("*", "*", "/shop", 2000), null, 0));
 
-        assertEquals("gateway.example.com", only(collector().collect(router,
-                exchange("/apis.json", "gateway.example.com"))).endpoint().host());
+        assertEquals("http://gateway.example.com:2000/shop", only(collector().collect(router,
+                exchange("/apis.json", "gateway.example.com"))).endpoint().url());
     }
 
     @Test
     void aConfiguredHostWinsOverTheHostHeader() throws Exception {
         add(new ServiceProxy(new ServiceProxyKey("shop.example.com", "*", "/shop", 2000), null, 0));
 
-        assertEquals("shop.example.com",
-                only(collector().collect(router, exchange("/apis.json"))).endpoint().host());
+        assertEquals("http://shop.example.com:2000/shop",
+                only(collector().collect(router, exchange("/apis.json"))).endpoint().url());
     }
 
     @Test

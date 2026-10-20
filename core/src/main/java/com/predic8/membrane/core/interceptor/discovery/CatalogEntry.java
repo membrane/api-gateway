@@ -51,8 +51,7 @@ public record CatalogEntry(String aid, String id, ProxyKind kind, String name, S
     /**
      * @param url origin and path combined, with the port omitted when it is the default for the protocol
      */
-    public record Endpoint(String protocol, String host, int port, String path, String method,
-                           String url) {}
+    public record Endpoint(String path, String method, String url) {}
 
     /**
      * @param humanUrl URL of a page a human can read, i.e. the Swagger UI or the API docs overview
