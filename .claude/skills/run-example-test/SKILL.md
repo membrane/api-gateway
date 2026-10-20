@@ -12,7 +12,7 @@ entire example suite (~6 min, some tests need internet).
 ## When to use
 
 - The user wants to run / verify / check a specific example or tutorial test,
-  e.g. `ChainExampleTest`, `JwtVerificationExampleTest`, a `*ExampleTest` under
+  e.g. `JwtVerificationExampleTest`, `InterceptorChainsTutorialTest`, a `*ExampleTest` under
   `com.predic8.membrane.examples.*`, or a `*TutorialTest` under
   `com.predic8.membrane.tutorials.*`.
 
@@ -38,8 +38,8 @@ Invoke the helper script with the test class (simple name, fully-qualified name,
 or path all work):
 
 ```bash
-.claude/skills/run-example-test/run-example-test.sh ChainExampleTest      # fast, ~2s
-.claude/skills/run-example-test/run-example-test.sh -b ChainExampleTest   # rebuild dist first, then run
+.claude/skills/run-example-test/run-example-test.sh JwtVerificationExampleTest      # fast, ~2s
+.claude/skills/run-example-test/run-example-test.sh -b JwtVerificationExampleTest   # rebuild dist first, then run
 ```
 
 With **no argument** it runs the full example IT suite via failsafe (slow, some
