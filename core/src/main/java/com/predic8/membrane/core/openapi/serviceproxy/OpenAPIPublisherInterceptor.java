@@ -98,7 +98,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) {
-        if (!exc.getRequest().getUri().startsWith("/api-doc"))
+        if (!exc.getRequest().getRoutingPath().startsWith("/api-doc"))
             return CONTINUE;
 
         try {

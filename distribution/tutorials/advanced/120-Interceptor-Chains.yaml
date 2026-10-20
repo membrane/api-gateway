@@ -1,0 +1,71 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.7.1.json
+#
+# Tutorial: Interceptor Chains
+#
+# Many APIs need the same plugins: logging, standard response headers, authentication, ...
+# Copying them into every API makes the configuration long, and a change has to be repeated
+# in every copy. Instead, define a chain of plugins once under components and reuse it in
+# several APIs with $ref.
+#
+# 1.) Start Membrane:
+#     Linux/Mac:
+#       ./membrane.sh -c 120-Interceptor-Chains.yaml
+#     Windows:
+#       membrane.cmd -c 120-Interceptor-Chains.yaml
+#
+# 2.) Call the first API:
+#     curl -i http://localhost:2000/foo
+#
+#     The gateway log shows:
+#     Path: /foo
+#
+# 3.) Call the second API:
+#     curl -i http://localhost:2000/bar
+#
+#     The gateway log shows:
+#     Path: /bar
+#
+#     The response contains the headers set by the api-headers chain:
+#     Server: API Gateway
+#     X-API-Version: 1.0
+#     Cache-Control: no-store
+
+components:
+  log:
+    chain:
+      - request:
+          - log:
+              message: "Path: ${path}"
+  api-headers:
+    chain:
+      - response:
+          - setHeader:
+              name: Server
+              value: API Gateway
+          - setHeader:
+              name: X-API-Version
+              value: "1.0"
+          - setHeader:
+              name: Cache-Control
+              value: no-store
+
+---
+api:
+  port: 2000
+  path:
+    uri: /foo
+  flow:
+    - $ref: '#/components/log'
+    - return:
+        status: 200
+
+---
+api:
+  port: 2000
+  path:
+    uri: /bar
+  flow:
+    - $ref: '#/components/log'
+    - $ref: '#/components/api-headers'
+    - return:
+        status: 200

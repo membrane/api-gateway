@@ -285,17 +285,6 @@ class RuleMatchingInterceptorTest {
         assertEquals(CONTINUE, interceptor.handleRequest(exc));
     }
 
-    @Test
-    @DisplayName("An encoded slash is not decoded")
-    void encodedSlashIsKept() throws Exception {
-        var exc = get("/asd%2f..%2fadmin").buildExchange();
-
-        interceptor.handleRequest(exc);
-
-        assertSame(catchAll, exc.getProxy());
-        assertEquals("/asd%2f..%2fadmin", exc.getRequest().getUri());
-    }
-
     @ParameterizedTest
     @ValueSource(strings = {
             "/api\\admin",
@@ -338,15 +327,42 @@ class RuleMatchingInterceptorTest {
         assertEquals("/admin?q=a\\b", exc.getRequest().getUri());
     }
 
-    @Test
-    @DisplayName("An encoded backslash is not decoded, it is data like an encoded slash")
-    void encodedBackslashIsKept() throws Exception {
-        final var exc = get("/api%5Cadmin").buildExchange();
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "/asd%2f..%2fadmin",
+            "/api%5Cadmin",
+            "/api%3bx=1/admin",
+            "/api%3Bx=1/admin/orders",
+            "/api%2f./admin",
+            "/api%2F./admin",
+            "/api%5c./admin",
+            "/api%5C./admin",
+            "/api%2fadmin/..%5cpublic", // A backend that keeps \ as data sees /api/admin/..\public
+            "/api%2fadmin/..%3bx/public", // A backend that keeps ; as data sees /api/admin/..;x/public
+    })
+    @DisplayName("An encoded ;, / or \\ is rejected if a backend that decodes it first would reach a different API")
+    void encodedDelimiterSelectingAnotherApiIsRejected(String uri) throws Exception {
+        final var exc = get(uri).buildExchange();
+
+        assertEquals(ABORT, interceptor.handleRequest(exc));
+
+        assertEquals(400, exc.getResponse().getStatusCode());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "/api/admin/projects/group%2Fproject",
+            "/api/admin/files/a%5Cb",
+            "/api/admin/tags/a%3Bb",
+            "/other/group%2Fproject",
+    })
+    @DisplayName("An encoded ;, / or \\ is accepted and forwarded unchanged if decoding it reaches the same API")
+    void encodedDelimiterSelectingSameApiIsAccepted(String uri) throws Exception {
+        final var exc = get(uri).buildExchange();
 
         assertEquals(CONTINUE, interceptor.handleRequest(exc));
 
-        assertSame(catchAll, exc.getProxy());
-        assertEquals("/api%5Cadmin", exc.getRequest().getUri());
+        assertEquals(uri, exc.getRequest().getUri());
     }
 
     @Test
