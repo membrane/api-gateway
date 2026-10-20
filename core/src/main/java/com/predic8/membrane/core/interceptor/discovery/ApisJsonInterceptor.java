@@ -38,7 +38,8 @@ import java.util.*;
  * </p>
  * <p>
  * Answers every request that reaches it and ends the flow, so give it an api of its own. RFC 9727
- * reserves <code>/.well-known/api-catalog</code> for its own format, so that path is refused here.
+ * reserves <code>/.well-known/api-catalog</code> for its own format, so that path is refused here;
+ * use <code>apiCatalog</code> there.
  * </p>
  * <pre>
  * apisJson:

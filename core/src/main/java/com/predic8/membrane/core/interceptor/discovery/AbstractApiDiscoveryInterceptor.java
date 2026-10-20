@@ -76,7 +76,7 @@ public abstract class AbstractApiDiscoveryInterceptor extends AbstractIntercepto
     protected void checkPath(String path) {
         if (WELL_KNOWN_PATH.equals(path))
             throw new ConfigurationException(
-                    "%s cannot be served under %s. RFC 9727 requires an api-catalog Linkset there, so move the api to another path."
+                    "%s cannot be served under %s. RFC 9727 requires an api-catalog Linkset there, so use apiCatalog or move the api to another path."
                             .formatted(elementName(), WELL_KNOWN_PATH));
     }
 

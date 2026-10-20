@@ -97,6 +97,7 @@ public class Header {
     public static final String ACCEPT = "Accept";
     public static final String ACCEPT_ENCODING = "Accept-Encoding";
     public static final String LOCATION = "Location";
+    public static final String LINK = "Link";
     public static final String ETAG = "ETag";
     public static final String IF_NONE_MATCH = "If-None-Match";
     public static final String AUTHORIZATION = "Authorization";

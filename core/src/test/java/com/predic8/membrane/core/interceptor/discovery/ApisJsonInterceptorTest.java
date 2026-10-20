@@ -92,16 +92,18 @@ class ApisJsonInterceptorTest {
     }
 
     /**
-     * APIs.json is a standard format, so it answers with its JSON even in a browser.
+     * APIs.json is a standard format, so it answers with its JSON even in a browser, and does not
+     * claim the RFC 9727 api-catalog relation, whose target must be a Linkset.
      */
     @Test
-    void answersEveryClientWithTheSameJson() throws Exception {
+    void answersEveryClientWithTheSameJsonAndNoLink() throws Exception {
         final var exc = browserRequest();
         exc.setProxy(shop());
         interceptor().handleRequest(exc);
 
         assertEquals(APPLICATION_JSON, exc.getResponse().getHeader().getContentType());
         assertNull(header(exc, VARY));
+        assertNull(header(exc, LINK));
     }
 
     @Test

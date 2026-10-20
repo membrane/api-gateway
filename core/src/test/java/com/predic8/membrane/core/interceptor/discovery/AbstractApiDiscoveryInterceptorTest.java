@@ -219,8 +219,14 @@ class AbstractApiDiscoveryInterceptorTest {
     }
 
     @Test
+    void theApiCatalogIsAcceptedAtTheWellKnownPath() {
+        assertDoesNotThrow(() -> new ApiCatalogInterceptor().init(router, proxyAt(WELL_KNOWN_PATH)));
+    }
+
+    @Test
     void theElementNameComesFromTheConfigurationGrammar() {
         assertEquals("apisJson", new ApisJsonInterceptor().elementName());
+        assertEquals("apiCatalog", new ApiCatalogInterceptor().elementName());
     }
 
     /**
