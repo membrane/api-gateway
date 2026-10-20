@@ -15,7 +15,7 @@
 #     curl "http://localhost:2000/shop/products" -H "Content-Type: application/json" -d "{ \"name\": \"Figs\", \"price\": -2.7}"
 #
 #     Response: 400 with the validation errors
-#     Log:      OpenAPI request validation failed for POST /shop/products ...
+#     Log:      OpenAPI request validation failed for POST against 'Minimal Shop API' ...
 #
 #     The validation rejected the request before the log plugin ran, so "Fruit: Figs" is missing.
 #
@@ -26,7 +26,7 @@
 #
 #     Response: 400 with the validation errors
 #     Log:      Fruit: Figs
-#               OpenAPI request validation failed for POST /shop/products ...
+#               OpenAPI request validation failed for POST against 'Minimal Shop API' ...
 
 api:
   port: 2000
