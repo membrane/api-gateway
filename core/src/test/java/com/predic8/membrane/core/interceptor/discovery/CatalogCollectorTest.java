@@ -313,6 +313,14 @@ class CatalogCollectorTest {
     }
 
     @Test
+    void aHostListIsListedUnderTheMatchingBracketedIpv6HostOfTheRequest() throws Exception {
+        add(new ServiceProxy(new ServiceProxyKey("shop.example.com [::1]", "*", "/shop", 2000), null, 0));
+
+        assertEquals("http://[::1]:2000/shop", only(collector().collect(router,
+                exchange("/apis.json", "[::1]:2000"))).endpoint().url());
+    }
+
+    @Test
     void aHostPatternWithoutAPublishableHostIsLeftOut() throws Exception {
         add(new ServiceProxy(new ServiceProxyKey("*.example.org", "*", "/shop", 2000), null, 0));
 
