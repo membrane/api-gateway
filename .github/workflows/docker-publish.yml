@@ -155,4 +155,5 @@ jobs:
           username: ${{ secrets.DOCKER_HUB_USER }}
           password: ${{ secrets.DOCKER_HUB_PASS }}
           repository: predic8/membrane
+          short-description: "Open-source API gateway for REST and SOAP: OpenAPI, OAuth2/JWT, WSDL-to-REST, AI/MCP gateway"
           readme-filepath: distribution/docker/README.md

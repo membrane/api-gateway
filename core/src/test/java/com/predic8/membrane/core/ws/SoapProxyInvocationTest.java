@@ -13,24 +13,31 @@
    limitations under the License. */
 package com.predic8.membrane.core.ws;
 
-import com.predic8.membrane.core.config.*;
-import com.predic8.membrane.core.interceptor.flow.*;
-import com.predic8.membrane.core.interceptor.lang.*;
-import com.predic8.membrane.core.interceptor.schemavalidation.*;
-import com.predic8.membrane.core.interceptor.soap.*;
-import com.predic8.membrane.core.interceptor.templating.*;
-import com.predic8.membrane.core.openapi.serviceproxy.*;
-import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.router.*;
-import io.restassured.response.*;
-import org.jetbrains.annotations.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.config.Path;
+import com.predic8.membrane.core.interceptor.flow.ResponseInterceptor;
+import com.predic8.membrane.core.interceptor.flow.ReturnInterceptor;
+import com.predic8.membrane.core.interceptor.lang.SetHeaderInterceptor;
+import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptor;
+import com.predic8.membrane.core.interceptor.soap.SampleSoapServiceInterceptor;
+import com.predic8.membrane.core.interceptor.templating.TemplateInterceptor;
+import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
+import com.predic8.membrane.core.proxies.SOAPProxy;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.router.TestRouter;
+import io.restassured.response.Response;
+import io.restassured.response.ValidatableResponse;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
-import java.util.*;
+import java.util.List;
 
-import static com.predic8.membrane.core.http.MimeType.*;
-import static io.restassured.RestAssured.*;
-import static org.hamcrest.Matchers.*;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_PROBLEM_XML;
+import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
+import static com.predic8.membrane.core.util.NetworkTestUtil.freePorts;
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.equalTo;
 
 public class SoapProxyInvocationTest {
 
@@ -57,9 +64,13 @@ public class SoapProxyInvocationTest {
 
     static Router gw;
     static Router backend;
+    static int port, backendPort;
 
     @BeforeAll
     public static void setup() throws Exception {
+        int[] ports = freePorts(2);
+        port = ports[0];
+        backendPort = ports[1];
         setupBackend();
         setupGateway();
     }
@@ -70,18 +81,21 @@ public class SoapProxyInvocationTest {
         gw.add(createCitiesSoapProxyGateway());
         gw.add(createTwoServicesSOAPProxyGateway("ServiceA"));
         gw.start();
+        // SOAP initialization reads target ports from the shared WSDL fixtures.
+        gw.getRuleManager().getRules().forEach(rule ->
+                ((SOAPProxy) rule).getTarget().setPort(backendPort));
     }
 
     private static @NotNull SOAPProxy createCitiesSoapProxyGateway() {
         SOAPProxy soapProxy = new SOAPProxy();
-        soapProxy.setPort(2000);
+        soapProxy.setPort(port);
         soapProxy.setWsdl("classpath:/ws/cities.wsdl");
         return soapProxy;
     }
 
     private static @NotNull SOAPProxy createTwoServicesSOAPProxyGateway(String serviceName) {
         SOAPProxy sp = new SOAPProxy();
-        sp.setPort(2000);
+        sp.setPort(port);
         sp.setWsdl("classpath:/ws/two-separated-services.wsdl");
         sp.setServiceName(serviceName);
         sp.getFlow().add(new ValidatorInterceptor());
@@ -97,7 +111,7 @@ public class SoapProxyInvocationTest {
 
     private static @NotNull APIProxy createCitiesServiceProxy() {
         APIProxy api = new APIProxy();
-        api.setPort(2001);
+        api.setPort(backendPort);
         api.getFlow().add(new SampleSoapServiceInterceptor());
         return api;
     }
@@ -107,7 +121,7 @@ public class SoapProxyInvocationTest {
         Path p2 = new Path();
         p2.setUri("/services/a");
         aServiceAPI.setPath(p2 );
-        aServiceAPI.setPort(2001);
+        aServiceAPI.setPort(backendPort);
         aServiceAPI.getFlow().add(new ResponseInterceptor() {{
             setFlow(List.of(new SetHeaderInterceptor() {{
                 setFieldName("AService");
@@ -132,20 +146,20 @@ public class SoapProxyInvocationTest {
 
     @AfterAll
     public static void teardown() {
-        gw.stop();
-        backend.stop();
+        if (gw != null) gw.stop();
+        if (backend != null) backend.stop();
     }
 
     @Test
     void WSDLRewriting() {
         // @formatter:off
         ValidatableResponse res = given()
-            .get("http://localhost:2000/services/cities?wsdl")
+            .get("http://localhost:" + port + "/services/cities?wsdl")
         .then();
 
             res.statusCode(200)
             .contentType(TEXT_XML)
-            .body("definitions.service.port.address.@location", equalTo("http://localhost:2000/services/cities"));
+            .body("definitions.service.port.address.@location", equalTo("http://localhost:" + port + "/services/cities"));
         // @formatter:on
     }
 
@@ -162,7 +176,7 @@ public class SoapProxyInvocationTest {
                         </cs:getCity>
                     </s:Body>
                 </s:Envelope>""")
-            .post("http://localhost:2000/services/cities");
+            .post("http://localhost:" + port + "/services/cities");
 
             body.then()
                 .statusCode(200)
@@ -178,7 +192,7 @@ public class SoapProxyInvocationTest {
         Response res =  given().when()
                 .body(SERVICE_A_REQUEST)
                 .contentType(TEXT_XML)
-                .post("http://localhost:2000/services/a");
+                .post("http://localhost:" + port + "/services/a");
 
         res.then().statusCode(200)
                 .contentType(TEXT_XML)
@@ -191,7 +205,7 @@ public class SoapProxyInvocationTest {
         given().when()
                 .body(SERVICE_B_REQUEST)
                 .contentType(TEXT_XML)
-                .post("http://localhost:2000/services/b")  // This service is not selected!
+                .post("http://localhost:" + port + "/services/b")  // This service is not selected!
         .then().statusCode(404)
                 .log().ifValidationFails()
                 .contentType(APPLICATION_PROBLEM_XML)
@@ -205,7 +219,7 @@ public class SoapProxyInvocationTest {
         given().when()
                 .body(SERVICE_A_INVALID_REQUEST)
                 .contentType(TEXT_XML)
-                .post("http://localhost:2000/services/a")
+                .post("http://localhost:" + port + "/services/a")
         .then().statusCode(200)
                 .contentType(TEXT_XML)
                 .body("Envelope.Body.Fault.faultcode", equalTo("soap:Client"))

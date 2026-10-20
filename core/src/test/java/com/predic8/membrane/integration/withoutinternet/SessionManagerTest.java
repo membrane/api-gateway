@@ -407,9 +407,13 @@ public class SessionManagerTest {
             for (String token : tokens) {
                 executor.execute(() -> {
                     try {
+                        // HttpClientContext is not thread-safe: it holds the current connection, so a shared one lets a
+                        // worker touch another worker's already released connection. Only the cookie store is shared.
+                        final var workerCtx = HttpClientContext.create();
+                        workerCtx.setCookieStore(ctx.getCookieStore());
                         startAllInParallel.await();
                         try (CloseableHttpResponse resp = client.execute(
-                                RequestBuilder.get("http://localhost:" + GATEWAY_PORT).addHeader(APPEND_HEADER, token).build(), ctx)) {
+                                RequestBuilder.get("http://localhost:" + GATEWAY_PORT).addHeader(APPEND_HEADER, token).build(), workerCtx)) {
                             assertEquals(200, resp.getStatusLine().getStatusCode());
                         }
                     } catch (Throwable t) {

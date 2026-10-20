@@ -25,8 +25,10 @@ import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
+import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InterruptedIOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -42,6 +44,7 @@ import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.http.Request.post;
 import static com.predic8.membrane.core.transport.http2.frame.Error.ERROR_CANCEL;
 import static com.predic8.membrane.core.transport.http2.frame.Frame.*;
+import static com.predic8.membrane.core.transport.http2.frame.DataFrame.FLAG_END_STREAM;
 import static com.predic8.membrane.core.transport.http2.frame.SettingsFrame.ID_SETTINGS_MAX_HEADER_LIST_SIZE;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.junit.jupiter.api.Assertions.*;
@@ -109,6 +112,38 @@ class Http2ClientTest {
             peer.getOutputStream().flush();
         });
         assertTrue(e.getMessage().contains("reset by the peer"), e.getMessage());
+    }
+
+    @Test
+    void closeBeforeSenderStartedDoesNotFail() throws Exception {
+        final var router = new DefaultRouter();
+        try (final var backend = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
+            backend.setSoTimeout(2000);
+            final var connection = createConnection(router, backend);
+            // The client thread starts the frame sender only after writing the preface, so it is held back here.
+            final var release = new CountDownLatch(1);
+            connection.out = new FilterOutputStream(connection.out) {
+                @Override
+                public void write(byte[] b, int off, int len) throws IOException {
+                    try {
+                        release.await();
+                    } catch (InterruptedException e) {
+                        throw new InterruptedIOException();
+                    }
+                    out.write(b, off, len);
+                }
+            };
+            try (final var ignored = backend.accept()) {
+                final var client = new Http2Client(connection, false);
+                try {
+                    assertDoesNotThrow(client::close);
+                } finally {
+                    release.countDown();
+                }
+            }
+        } finally {
+            router.stop();
+        }
     }
 
     @Test
@@ -586,6 +621,20 @@ class Http2ClientTest {
         readUntilFrame(in, TYPE_HEADERS);
     }
 
+    /** Reads frames until the request's END_STREAM arrives. The client queues it after writing the request body. */
+    private static void readUntilRequestEnd(Socket peer) throws IOException {
+        final var in = peer.getInputStream();
+        in.readNBytes(PREFACE_LENGTH);
+        while (true) {
+            final var header = in.readNBytes(9);
+            if (header.length < 9)
+                throw new EOFException("Connection closed before the request ended");
+            in.readNBytes(((header[0] & 0xff) << 16) | ((header[1] & 0xff) << 8) | (header[2] & 0xff));
+            if ((header[3] == TYPE_DATA || header[3] == TYPE_HEADERS) && (header[4] & FLAG_END_STREAM) != 0)
+                return;
+        }
+    }
+
     /** Skips frames until one of the given type arrives and returns its payload. */
     private static byte[] readUntilFrame(InputStream in, int type) throws IOException {
         while (true) {
@@ -685,9 +734,9 @@ class Http2ClientTest {
                 final var client = new Http2Client(connection, false);
                 final var call = callAsync(client);
 
-                // Terminate only once the call is pending, so the test covers failing it
-                // rather than rejecting a call that starts after the close.
-                readUntilRequestHeaders(peer);
+                // Terminate only once the call waits for the response, so the test covers failing it rather than
+                // rejecting a call that starts after the close, or failing the upload of its (empty) request body.
+                readUntilRequestEnd(peer);
                 termination.terminate(client, peer);
 
                 final var e = assertThrows(ExecutionException.class, () -> call.get(2, TimeUnit.SECONDS));

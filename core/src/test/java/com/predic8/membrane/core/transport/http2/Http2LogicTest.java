@@ -29,6 +29,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Stream;
 
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
@@ -73,6 +74,15 @@ class Http2LogicTest {
         in.write(SETTINGS_ACK);
 
         assertThrows(FatalConnectionException.class, () -> createLogic(in.toByteArray()).handle());
+    }
+
+    @Test
+    void initAfterStopSendingDoesNotStartSender() throws Exception {
+        final var logic = createLogic(new byte[0]);
+        logic.stopSending();
+        logic.init();
+
+        assertNull(logic.senderFuture);
     }
 
     private static Http2Logic createLogic(byte[] input) {

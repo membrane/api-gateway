@@ -33,11 +33,11 @@ import static com.predic8.membrane.test.TestUtil.getPathFromResource;
 public class OAuth2RedirectFormPostTest extends OAuth2RedirectTest {
 
     OAuth2AuthFlowClient getOAuth2AuthFlowClient() {
-        return new OAuth2AuthFlowFormPostClient(AUTH_SERVER_BASE_URL, CLIENT_BASE_URL);
+        return new OAuth2AuthFlowFormPostClient(authServerBaseUrl, clientBaseUrl);
     }
 
     @NotNull SSLableProxy getAuthorizationServerRule() {
-        SSLableProxy azureRule = new ServiceProxy(new ServiceProxyKey(AUTH_SERVER_BASE_URL.getHost(), "*", ".*", AUTH_SERVER_BASE_URL.getPort()), "localhost", 80);
+        SSLableProxy azureRule = new ServiceProxy(new ServiceProxyKey(authServerBaseUrl.getHost(), "*", ".*", authServerBaseUrl.getPort()), "localhost", 80);
         azureRule.getFlow().add(new LogInterceptor() {{
             setLevel(DEBUG);
         }});
@@ -46,7 +46,7 @@ public class OAuth2RedirectFormPostTest extends OAuth2RedirectTest {
                 setLocation(getPathFromResource("openId/dialog"));
                 setConsentFile(getPathFromResource("openId/consentFile.json"));
                 setTokenGenerator(new BearerTokenGenerator());
-                setIssuer(AUTH_SERVER_BASE_URL.toString());
+                setIssuer(authServerBaseUrl.toString());
                 setUserDataProvider(new StaticUserDataProvider() {{
                     setUsers(List.of(new UserConfig() {{
                         setUsername("user");
@@ -57,7 +57,7 @@ public class OAuth2RedirectFormPostTest extends OAuth2RedirectTest {
                     setClients(List.of(new Client() {{
                         setClientId("abc");
                         setClientSecret("def");
-                        setCallbackUrl(CLIENT_BASE_URL.resolve("/oauth2callback").toString());
+                        setCallbackUrl(clientBaseUrl.resolve("/oauth2callback").toString());
                     }}));
                 }});
                 setClaimList(new ClaimList() {{

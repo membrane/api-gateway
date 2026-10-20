@@ -31,6 +31,12 @@ Route API traffic with Membrane, e.g. as an outgoing API gateway that controls w
 leave your network when internal clients call external APIs.
 
 
+## [Load Balancing](loadbalancing)
+
+Distribute requests across backend nodes. Covers round robin, adding and removing nodes at
+runtime, sticky sessions, multiple balancers, and health checks.
+
+
 ## [Forward Proxy](forward-proxy)
 
 Use Membrane as a classic HTTP forward proxy that forwards to whatever host the client's

@@ -375,7 +375,7 @@ The following legacy interceptors have been removed:
 |---------------------------|-----------------------------------------------------------------------------|
 | `gateKeeperClient`        | Gatekeeper is not supported anymore                                         |
 | `wadl`                    | Use OpenAPI                                                                 |
-| `xmlSessionIdExtractor`   | Use language based session handling. See examples/loadbalancing/4-session   |
+| `xmlSessionIdExtractor`   | Use language based session handling. See tutorials/loadbalancing/30-Sticky-Sessions.yaml |
 | `telekomSMSTokenProvider` | The SMS provider doesn't offer the needed SMS service anymore.              | 
 | `groovyTemplate`          | `template` offers the same functionality including Groovy language support. |
 | `urlNormalizer`           | -                                                                           |

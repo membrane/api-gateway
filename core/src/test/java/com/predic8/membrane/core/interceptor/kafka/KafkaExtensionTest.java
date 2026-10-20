@@ -24,11 +24,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class KafkaExtensionTest {
 
-    @Test
-    void detectsClassOnClasspath() {
-        assertTrue(KafkaExtension.isOnClasspath("java.lang.String"));
-    }
-
     public static class ProducerImpl implements KafkaProducerExtension {
         @Override
         public void init(final Map<String, String> properties) {
@@ -55,13 +50,18 @@ class KafkaExtensionTest {
         assertEquals("missing", e.getMessage());
     }
 
+    /**
+     * The class file is present but invalid, so this is no missing extension and the cause must be kept.
+     */
     @Test
-    void rejectsClassOfWrongType() {
-        assertThrows(ConfigurationException.class, () -> KafkaExtension.load("java.lang.String", KafkaProducerExtension.class, "missing"));
+    void reportsClassThatCannotBeLoaded() {
+        final var e = assertThrows(ConfigurationException.class, () -> KafkaExtension.load(KafkaExtensionTest.class.getPackageName() + ".BrokenExtension", KafkaProducerExtension.class, "missing"));
+        assertNotEquals("missing", e.getMessage());
+        assertInstanceOf(LinkageError.class, e.getCause());
     }
 
     @Test
-    void detectsMissingClass() {
-        assertFalse(KafkaExtension.isOnClasspath(KafkaExtension.PRODUCER_CLASS));
+    void rejectsClassOfWrongType() {
+        assertThrows(ConfigurationException.class, () -> KafkaExtension.load("java.lang.String", KafkaProducerExtension.class, "missing"));
     }
 }
