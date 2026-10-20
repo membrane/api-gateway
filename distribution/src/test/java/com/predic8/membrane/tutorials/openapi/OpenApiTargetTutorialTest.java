@@ -31,7 +31,7 @@ public class OpenApiTargetTutorialTest extends AbstractOpenAPITutorialTest {
         // @formatter:off
         given()
         .when()
-            .get("http://localhost:2000/shop/products")
+            .get("http://localhost:2000/store/products")
         .then()
             .statusCode(200)
             .body("products[0].name", equalTo("Mock Banana"));

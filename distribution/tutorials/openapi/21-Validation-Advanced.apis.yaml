@@ -12,7 +12,7 @@
 #       membrane.cmd -c 21-Validation-Advanced.apis.yaml
 #
 # 2.) Create a product with a negative price:
-#     curl "http://localhost:2000/shop/products" -H "Content-Type: application/json" -d "{ \"name\": \"Figs\", \"price\": -2.7}"
+#     curl "http://localhost:2000/store/products" -H "Content-Type: application/json" -d "{ \"name\": \"Figs\", \"price\": -2.7}"
 #
 #     Response: 400 with the validation errors
 #     Log:      OpenAPI request validation failed for POST against 'Minimal Shop API' ...

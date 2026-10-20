@@ -2,8 +2,16 @@
 #
 # Tutorial: Membrane Extensions in the OpenAPI Document
 #
-# Settings for Membrane can live in the OpenAPI document itself, so they travel with it.
-# See specs/shop-api-extensions.oas.yaml.
+# Settings for Membrane can be in the OpenAPI document itself.
+# Excerpt from specs/shop-api-extensions.oas.yaml:
+#
+#   info:
+#     title: Minimal Shop API
+#     version: "2.0"
+#     x-membrane-id: shop
+#   x-membrane-validation:
+#     requests: true
+#     details: true
 #
 # 1.) Start Membrane:
 #     Linux/Mac:
@@ -24,13 +32,18 @@
 #       }
 #     }
 #
+#     The ID shop-v2-0 comes from x-membrane-id: shop, followed by the version.
+#
 # 3.) Fetch the document by its ID:
 #     curl localhost:2000/api-docs/shop-v2-0
+#
+#     The path uses the ID from x-membrane-id, not the title "Minimal Shop API".
 #
 # 4.) Create a product with a negative price:
 #     curl "http://localhost:2000/ext-shop/products" -H "Content-Type: application/json" -d "{ \"name\": \"Figs\", \"price\": -2.7}"
 #
-#     400 with the validation errors, although the configuration below does not turn on validation.
+#     400 with the validation errors, although no validation is configured in this file.
+#     x-membrane-validation in the OpenAPI document turns it on.
 
 api:
   port: 2000

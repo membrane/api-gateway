@@ -3,10 +3,11 @@ info:
   # A minimal excerpt of the Fruit Shop API
   title: Minimal Shop API
   version: "2.0"
-# The server URL points at the backend. When Membrane serves this document at
-# /api-docs, it rewrites this URL so clients talk to the gateway instead.
+# The server URL points at the backend, here a mock started by some of the tutorials.
+# When Membrane serves this document at /api-docs, it rewrites this URL so clients
+# talk to the gateway instead.
 servers:
-  - url: https://api.predic8.de/shop
+  - url: http://localhost:3000/store
 paths:
   /products:
     get:

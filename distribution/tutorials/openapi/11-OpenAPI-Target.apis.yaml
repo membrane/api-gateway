@@ -12,11 +12,18 @@
 #       membrane.cmd -c 11-OpenAPI-Target.apis.yaml
 #
 # 2.) Call the API:
-#     curl http://localhost:2000/shop/products
+#     curl http://localhost:2000/store/products
 #
-#     The answer comes from the mock backend on port 3000, not from https://api.predic8.de:
+#     The answer comes from the mock on port 3001, not from servers[].url (http://localhost:3000/store):
 #
-#     { "products": [ { "id": 1, "name": "Mock Banana" } ] }
+#     {
+#       "products": [
+#         {
+#           "id": 1,
+#           "name": "Mock Banana"
+#         }
+#       ]
+#     }
 
 api:
   port: 2000
@@ -24,17 +31,25 @@ api:
   openapi:
     - location: specs/minimal-shop-api.oas.yaml
   target:
-    url: http://localhost:3000
+    url: http://localhost:3001
 
 ---
 api:
-  port: 3000
+  port: 3001
   name: Mock Backend
   path:
-    uri: /shop/products
+    uri: /store/products
   flow:
     - static:
         contentType: application/json
-        src: '{ "products": [ { "id": 1, "name": "Mock Banana" } ] }'
+        src: |
+          {
+            "products": [
+              {
+                "id": 1,
+                "name": "Mock Banana"
+              }
+            ]
+          }
     - return:
         status: 200

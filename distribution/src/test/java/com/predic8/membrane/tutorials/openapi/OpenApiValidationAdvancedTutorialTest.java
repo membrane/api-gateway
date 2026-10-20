@@ -71,7 +71,7 @@ public class OpenApiValidationAdvancedTutorialTest extends AbstractOpenAPITutori
             { "name": "Figs", "price": -2.7 }
             """)
         .when()
-            .post("http://localhost:2000/shop/products")
+            .post("http://localhost:2000/store/products")
         .then()
             .statusCode(400)
             .body("title", equalTo("OpenAPI message validation failed"));

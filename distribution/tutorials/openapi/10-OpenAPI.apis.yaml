@@ -42,12 +42,10 @@
 api:
   port: 2000
   openapi:
-    # Deploys every OpenAPI document in the folder, among them:
-    #   fruitshop-v2-2-0.oas.yml (Fruit Shop API, /shop/v2)
-    #   dlp-v1.0.0.oas.yml       (DLP Field Information API, /dlp)
+    # Deploys every OpenAPI document in the folder
     - dir: specs
 
-# NOTE: In fruitshop-v2-2-0.oas.yml the server URL points to the backend
+# NOTE: In specs/fruitshop-v2-2-0.oas.yml the server URL points to the backend
 # (https://api.predic8.de/shop/v2). When Membrane serves the document at /api-docs, it
 # rewrites protocol, host and port to the address the request came in on, so that
 # Swagger UI and generated clients talk to the gateway.

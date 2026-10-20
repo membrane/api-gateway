@@ -39,7 +39,7 @@ public class OpenApiValidationTutorialTest extends AbstractOpenAPITutorialTest {
             { "name": "Figs", "price": -2.7 }
             """)
         .when()
-            .post("http://localhost:2000/shop/products")
+            .post("http://localhost:2000/store/products")
         .then()
             .statusCode(is(400))
             .body("title", equalTo("OpenAPI message validation failed"))
@@ -57,10 +57,12 @@ public class OpenApiValidationTutorialTest extends AbstractOpenAPITutorialTest {
             { "name": "Figs", "price": 2.7, "color": "purple" }
             """)
         .when()
-            .post("http://localhost:2000/shop/products")
+            .post("http://localhost:2000/store/products")
         .then()
             .statusCode(is(400))
-            .body("validation.errors.'REQUEST/BODY#/color'[0].message", containsString("The schema is false"));
+            .body("title", equalTo("OpenAPI message validation failed"))
+            // Not the message text: it changes with #3562, and the error may then be reported on the object
+            .body("validation.errors.toString()", containsString("color"));
         // @formatter:on
     }
 
