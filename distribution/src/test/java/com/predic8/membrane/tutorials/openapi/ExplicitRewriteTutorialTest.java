@@ -47,7 +47,7 @@ public class ExplicitRewriteTutorialTest extends AbstractOpenAPITutorialTest {
             .get("http://localhost:2000/boutique/products")
         .then()
             .statusCode(200)
-            .body("products[0].name", equalTo("Boutique Banana"));
+            .body("success", equalTo(true));
         // @formatter:on
     }
 }

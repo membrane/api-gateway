@@ -9,7 +9,7 @@ x-membrane-validation:
   requests: true
   details: true
 servers:
-  - url: https://api.predic8.de/ext-shop
+  - url: https://apibin.io/ext-shop
 paths:
   /products:
     get:

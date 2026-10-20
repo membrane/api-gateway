@@ -14,7 +14,7 @@
 # 2.) Call the API:
 #     curl http://localhost:2000/store/products
 #
-#     The answer comes from the mock on port 3001, not from servers[].url (http://localhost:3000/store):
+#     The answer comes from the mock on port 3001, not from servers[].url (https://apibin.io/store):
 #
 #     {
 #       "products": [

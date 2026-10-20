@@ -36,7 +36,7 @@ public class FormUrlEncodedTutorialTest extends AbstractOpenAPITutorialTest {
             .post("http://localhost:2000/forms/orders")
         .then()
             .statusCode(200)
-            .body(containsString("accepted"));
+            .body(containsString("success"));
         // @formatter:on
     }
 

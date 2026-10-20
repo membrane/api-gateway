@@ -15,7 +15,7 @@
 # 2.) Create a customer:
 #     curl -i localhost:2000/crm/customers -H "Content-Type: application/xml" -d "<customer id='7'><name>Alice</name><age>42</age></customer>"
 #
-#     HTTP/1.1 201 Created
+#     HTTP/1.1 200 OK
 #
 # 3.) Send a negative age:
 #     curl localhost:2000/crm/customers -H "Content-Type: application/xml" -d "<customer id='7'><name>Alice</name><age>-1</age></customer>"
@@ -34,16 +34,3 @@ api:
   openapi:
     - location: specs/crm-api.oas.yaml
       validateRequests: true
-
----
-api:
-  port: 3000
-  name: Mock Backend
-  path:
-    uri: /crm/customers
-  flow:
-    - static:
-        contentType: application/xml
-        src: <created/>
-    - return:
-        status: 201

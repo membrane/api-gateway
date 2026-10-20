@@ -30,7 +30,7 @@ public class OpenApiXmlTutorialTest extends AbstractOpenAPITutorialTest {
     @Test
     void validCustomer() {
         postCustomer("<customer id='7'><name>Alice</name><age>42</age></customer>")
-            .statusCode(201);
+            .statusCode(200);
     }
 
     @Test

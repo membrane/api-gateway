@@ -26,15 +26,10 @@
 #     curl localhost:2000/boutique/products
 #
 #     The base path of the API is rewritten too: Membrane accepts requests under /boutique
-#     instead of /store and forwards them to the mock below.
+#     instead of /store and forwards them to https://apibin.io/boutique/products.
 #
 #     {
-#       "products": [
-#         {
-#           "id": 1,
-#           "name": "Boutique Banana"
-#         }
-#       ]
+#       "success" : true
 #     }
 
 api:
@@ -46,27 +41,6 @@ api:
         host: api.example.com
         port: 443
         basePath: /boutique
-
----
-api:
-  port: 3000
-  name: Mock Backend
-  path:
-    uri: /boutique/products
-  flow:
-    - static:
-        contentType: application/json
-        src: |
-          {
-            "products": [
-              {
-                "id": 1,
-                "name": "Boutique Banana"
-              }
-            ]
-          }
-    - return:
-        status: 200
 
 # NOTE: basePath replaces the whole path of the server URL, it is not prepended to it.
 # The original "/store" is gone.

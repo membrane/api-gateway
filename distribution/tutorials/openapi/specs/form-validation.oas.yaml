@@ -3,7 +3,7 @@ info:
   title: Form API
   version: 1.0.0
 servers:
-  - url: http://localhost:3000/forms
+  - url: https://apibin.io/forms
 paths:
   /orders:
     post:
