@@ -17,9 +17,6 @@ package com.predic8.membrane.core.interceptor.discovery;
  * Metadata of the collection as a whole, which APIs.json carries and an RFC 9727 linkset does
  * not. The identifier and the dates only APIs.json carries are handed to its
  * renderer directly.
- *
- * @param name        human readable name of the collection
- * @param description human readable description of the collection
  */
 public record CollectionInfo(String name, String description) {
 }

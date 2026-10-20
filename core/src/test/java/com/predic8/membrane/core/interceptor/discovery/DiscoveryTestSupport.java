@@ -19,18 +19,12 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.router.*;
 
-/**
- * Router, requests and response parsing the interceptor tests share.
- */
 class DiscoveryTestSupport {
 
     static final String BROWSER_ACCEPT = "text/html,application/xhtml+xml,*/*;q=0.8";
 
     private static final ObjectMapper om = new ObjectMapper();
 
-    /**
-     * A router with one plain proxy, named Shop, bound to every host on port 2000.
-     */
     static DummyTestRouter routerWithShop() throws Exception {
         final var router = new DummyTestRouter();
         router.add(shop());
@@ -53,10 +47,6 @@ class DiscoveryTestSupport {
         return interceptor;
     }
 
-    /**
-     * A request for <code>/apis.json</code> from a client that reached the gateway as
-     * <code>gateway.example.com:2000</code>.
-     */
     static Exchange request(String method) throws Exception {
         final var exc = new Request.Builder().method(method).uri("/apis.json")
                 .header("Host", "gateway.example.com:2000").buildExchange();

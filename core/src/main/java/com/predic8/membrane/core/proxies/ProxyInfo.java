@@ -31,9 +31,6 @@ public class ProxyInfo {
     private LocalDate created;
     private LocalDate modified;
 
-    /**
-     * Parses an ISO date such as <code>2026-01-15</code>, naming the offending attribute otherwise.
-     */
     public static LocalDate parseDate(String element, String attribute, String value) {
         try {
             return LocalDate.parse(value, ISO_LOCAL_DATE);

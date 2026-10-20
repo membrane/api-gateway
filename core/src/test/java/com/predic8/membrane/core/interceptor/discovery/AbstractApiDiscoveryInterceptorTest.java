@@ -35,9 +35,6 @@ import static com.predic8.membrane.core.interceptor.discovery.DiscoveryTestSuppo
 import static com.predic8.membrane.core.router.YamlRouterBootstrap.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * What every format shares: collecting, HEAD, the well-known path and the base URL.
- */
 class AbstractApiDiscoveryInterceptorTest {
 
     private DummyTestRouter router;
@@ -82,10 +79,6 @@ class AbstractApiDiscoveryInterceptorTest {
         return Stream.of(ApisJsonInterceptor::new);
     }
 
-    /**
-     * RFC 9727 makes the Linkset mandatory at the well-known URI. Any other format there would be
-     * found by RFC clients and misread, so it is a configuration error.
-     */
     @ParameterizedTest
     @MethodSource("nonLinksetFormats")
     void aNonLinksetFormatAtTheWellKnownPathIsARejectedConfiguration(Supplier<AbstractApiDiscoveryInterceptor> format) {
@@ -223,9 +216,6 @@ class AbstractApiDiscoveryInterceptorTest {
         assertEquals("apisJson", new ApisJsonInterceptor().elementName());
     }
 
-    /**
-     * Without a base URL, URLs and identifiers come from the Host header the client sent.
-     */
     @Test
     void withoutABaseUrlTheHostHeaderIsUsed() throws Exception {
         final var exc = request("GET");

@@ -20,18 +20,14 @@ import java.util.*;
  * One API of a {@link Catalog}. A proxy described by several OpenAPI documents contributes one
  * entry per document, a proxy without an OpenAPI document contributes a single entry.
  *
- * @param aid            globally unique identifier, <code>&lt;domain&gt;:&lt;id&gt;</code>, or the
- *                       configured id of the api verbatim
+ * @param aid            globally unique identifier, <code>&lt;domain&gt;:&lt;id&gt;</code>
  * @param id             identifier unique on this gateway, the same whichever host the catalog
  *                       was fetched from
- * @param kind           which kind of proxy this entry describes
  * @param name           human readable name, never null
  * @param description    human readable description, never null
  * @param version        version of the API, or null when no OpenAPI document describes it
- * @param endpoint       where the API is reachable on this gateway
- * @param links          documentation and specification URLs
  * @param tags           tags configured on the api, never null
- * @param contact        contact from the OpenAPI <code>info</code> block, or null
+ * @param contact        contact configured on the api, else from the OpenAPI <code>info</code> block, or null
  * @param license        license from the OpenAPI <code>info</code> block, or null
  * @param termsOfService terms of service URL from the OpenAPI <code>info</code> block, or null
  * @param soap           WSDL details, or null unless {@link ProxyKind#SOAP_PROXY}
@@ -53,9 +49,6 @@ public record CatalogEntry(String aid, String id, ProxyKind kind, String name, S
     }
 
     /**
-     * Where the API is reachable on this gateway. Host and port are resolved against the incoming
-     * request, so a wildcard host is reported as the host the client actually used.
-     *
      * @param url origin and path combined, with the port omitted when it is the default for the protocol
      */
     public record Endpoint(String protocol, String host, int port, String path, String method,
@@ -69,12 +62,6 @@ public record CatalogEntry(String aid, String id, ProxyKind kind, String name, S
 
     public record Contact(String name, String email, String url) {}
 
-    /**
-     * Catalog metadata configured on the api in its <code>info</code> block.
-     *
-     * @param created  day the API was created, or null
-     * @param modified day the API last changed, or null
-     */
     public record Details(LocalDate created, LocalDate modified) {
 
         public static final Details NONE = new Details(null, null);
@@ -93,10 +80,6 @@ public record CatalogEntry(String aid, String id, ProxyKind kind, String name, S
         return new Builder();
     }
 
-    /**
-     * Assembles an entry field by field. A {@link CatalogEntry} has too many components to build
-     * readably through its canonical constructor.
-     */
     public static class Builder {
 
         private String aid;

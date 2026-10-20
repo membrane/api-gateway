@@ -57,10 +57,6 @@ class ApisJsonRendererTest {
         assertEquals(1, document.path("apis").size());
     }
 
-    /**
-     * The APIs.json field list spells these members humanUrl and baseUrl, its examples and the
-     * tooling built on them humanURL and baseURL. The renderer follows the examples.
-     */
     @Test
     void urlMembersUseTheSpelledOutCapitalisation() throws Exception {
         JsonNode api = render(catalog(describedApi())).path("apis").get(0);
@@ -83,9 +79,6 @@ class ApisJsonRendererTest {
         assertEquals(List.of("Products", "Orders"), strings(api.path("tags")));
     }
 
-    /**
-     * The properties array is how APIs.json points a consumer at a machine readable description.
-     */
     @Test
     void propertiesLinkToTheOpenApiDocumentAndItsDocumentation() throws Exception {
         JsonNode properties = render(catalog(describedApi())).path("apis").get(0).path("properties");

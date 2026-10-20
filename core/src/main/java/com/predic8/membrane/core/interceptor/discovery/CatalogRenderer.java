@@ -22,9 +22,6 @@ import com.fasterxml.jackson.core.*;
  */
 public interface CatalogRenderer {
 
-    /**
-     * Value for the <code>Content-Type</code> header of the rendered document.
-     */
     String contentType();
 
     byte[] render(Catalog catalog) throws JsonProcessingException;

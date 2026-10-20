@@ -58,7 +58,6 @@ public class CatalogCollector {
      * @param baseUrl  absolute URL clients reach the gateway under, such as
      *                 <code>https://api.example.com</code>, or null to take everything from the
      *                 request
-     * @param tagRules rules selecting the apis to list by their tags
      */
     public CatalogCollector(String baseUrl, List<TagRule> tagRules) {
         this.baseUrl = trimTrailingSlash(withLowercaseScheme(baseUrl));
@@ -82,9 +81,6 @@ public class CatalogCollector {
         return new Catalog(domain, catalogUrl(exchange), collectEntries(router, exchange, domain));
     }
 
-    /**
-     * Domain identifiers are built from: the host of the base URL, else the host the client used.
-     */
     private String domain(Exchange exchange) {
         if (baseUri != null) return baseUri.getHost();
         return requestHost(exchange);
@@ -159,9 +155,8 @@ public class CatalogCollector {
     }
 
     /**
-     * An entry for a proxy no OpenAPI document describes. It carries no documentation links: a
-     * proxy without an OpenAPI document publishes neither <code>/api-docs</code> nor a Swagger UI,
-     * so any link here would be dead.
+     * No documentation links: a proxy without an OpenAPI document publishes neither
+     * <code>/api-docs</code> nor a Swagger UI, so any link here would be dead.
      */
     private CatalogEntry plainEntry(AbstractServiceProxy proxy, Exchange exchange, String domain) {
         CatalogEntry.Endpoint endpoint = endpoint(proxy, exchange, pathOf(proxy));
@@ -227,10 +222,6 @@ public class CatalogCollector {
         return "https".equals(uri.getScheme()) ? 443 : 80;
     }
 
-    /**
-     * The port is part of the URL unless it is the default for the protocol. Checking the protocol
-     * matters: an HTTPS API on port 80 needs the port, an HTTP one on 80 does not.
-     */
     private static String origin(String protocol, String host, int port) {
         if (("http".equals(protocol) && port == 80) || ("https".equals(protocol) && port == 443))
             return protocol + "://" + host;
@@ -277,10 +268,6 @@ public class CatalogCollector {
         return "https".equals(protocol) ? 443 : 80;
     }
 
-    /**
-     * Path the given OpenAPI document is served under. The explicitly configured path of the api
-     * wins; otherwise the base path Membrane derived from the document's <code>servers</code>.
-     */
     private static String basePathOf(APIProxy api, OpenAPIRecord record) {
         if (api.getKey().getPath() != null) return api.getKey().getPath();
         if (api.getBasePaths() == null) return DEFAULT_PATH;
@@ -301,10 +288,8 @@ public class CatalogCollector {
     }
 
     /**
-     * Identifier of the entry on this gateway: the configured id of the api, else the id of its
-     * OpenAPI document, else a slug of its host, port and path. With several OpenAPI documents the
-     * document id is appended to a configured id, because every entry needs an identifier of its
-     * own.
+     * With several OpenAPI documents the document id is appended to a configured id, because every
+     * entry needs an identifier of its own.
      */
     private static String id(AbstractServiceProxy proxy, String recordId) {
         if (proxy instanceof APIProxy api && api.getId() != null) {

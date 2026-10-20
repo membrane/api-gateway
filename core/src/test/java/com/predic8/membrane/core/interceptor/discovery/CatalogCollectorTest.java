@@ -319,10 +319,6 @@ class CatalogCollectorTest {
                 only(collector().collect(router, exc)).endpoint().url());
     }
 
-    /**
-     * The id is the identifier without the domain, so it stays the same whichever host the catalog
-     * was fetched from.
-     */
     @Test
     void theIdOfAnEntryDoesNotDependOnTheHost() throws Exception {
         add(apiProxy("fruitshop-api-v2-openapi-3.yml", 2000));

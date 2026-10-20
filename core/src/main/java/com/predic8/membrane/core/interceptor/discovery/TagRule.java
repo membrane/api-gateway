@@ -48,9 +48,6 @@ public abstract class TagRule {
 
     abstract boolean includes();
 
-    /**
-     * Whether an api with the given tags is published. Without rules, every api is.
-     */
     static boolean isListed(List<TagRule> rules, List<String> tags) {
         if (rules.isEmpty())
             return true;

@@ -59,9 +59,6 @@ public class ApisJsonRenderer implements CatalogRenderer {
      * @param collectionId second half of the collection's <code>aid</code>, the domain being the first
      * @param type         <code>Index</code>, <code>Collection</code> or <code>Blueprint</code>, or null to leave it out
      * @param kind         kind of entity the collection describes, or null to leave it out
-     * @param created      day the collection was created, a member APIs.json makes mandatory
-     * @param modified     day the collection last changed, a member APIs.json makes mandatory
-     * @param maintainers  people or teams maintaining the collection
      */
     public ApisJsonRenderer(String collectionId, CollectionInfo collection, String type, String kind,
                             LocalDate created, LocalDate modified, List<CatalogEntry.Contact> maintainers) {

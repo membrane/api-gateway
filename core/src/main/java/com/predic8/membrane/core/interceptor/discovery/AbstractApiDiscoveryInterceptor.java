@@ -40,9 +40,6 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
  */
 public abstract class AbstractApiDiscoveryInterceptor extends AbstractInterceptor {
 
-    /**
-     * Well-known URI RFC 9727 reserves for the api-catalog document.
-     */
     static final String WELL_KNOWN_PATH = "/.well-known/api-catalog";
 
     private String baseUrl;
@@ -61,10 +58,6 @@ public abstract class AbstractApiDiscoveryInterceptor extends AbstractIntercepto
             checkPath(getProxy().getKey().getPath());
     }
 
-    /**
-     * Renderer of the format this interceptor publishes. Called once, from {@link #init()}, after
-     * the configuration is complete.
-     */
     protected abstract CatalogRenderer createRenderer();
 
     /**
@@ -125,30 +118,17 @@ public abstract class AbstractApiDiscoveryInterceptor extends AbstractIntercepto
                 .anyMatch(tag -> tag.equals("*") || tag.equals(etag));
     }
 
-    /**
-     * Renderer that answers this request. Only a format with more than one representation picks
-     * anything but its own renderer.
-     */
     protected CatalogRenderer negotiate(Exchange exc, CatalogRenderer renderer) {
         return renderer;
     }
 
-    /**
-     * Media type of the catalog this interceptor publishes, for other catalogs that link it.
-     */
     String catalogType() {
         return renderer.contentType();
     }
 
-    /**
-     * Headers the format adds to its response, on top of <code>Content-Type</code>.
-     */
     protected void addHeaders(Response.ResponseBuilder response, Catalog catalog, CatalogRenderer negotiated) {
     }
 
-    /**
-     * Name of the configuration element, for messages that tell the operator what to change.
-     */
     protected String elementName() {
         final var element = getClass().getAnnotation(MCElement.class);
         return element == null ? getClass().getSimpleName() : element.name();

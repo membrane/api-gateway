@@ -33,9 +33,6 @@ class CatalogTestFixtures {
         return new Catalog("example.com", "https://example.com/.well-known/api-catalog", List.of(apis));
     }
 
-    /**
-     * An API described by an OpenAPI document, so it has a version, documentation links and tags.
-     */
     static CatalogEntry describedApi() {
         return describedApi(CatalogEntry.Details.NONE);
     }
@@ -62,9 +59,6 @@ class CatalogTestFixtures {
                 .build();
     }
 
-    /**
-     * A plain proxy: no OpenAPI document, so no version and no links.
-     */
     static CatalogEntry plainProxy() {
         return CatalogEntry.builder()
                 .aid("example.com:shop")
