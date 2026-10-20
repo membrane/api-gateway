@@ -2,6 +2,11 @@
 #
 # Tutorial: APIs.json
 #
+# Developers, API portals and crawlers need to find out which APIs a gateway
+# offers and where their documentation lives. APIs.json is a machine readable
+# index for exactly that. Membrane builds it from the running configuration, so
+# the index never goes stale, and tags decide which APIs it makes public.
+#
 # 1.) Start Membrane:
 #     ./membrane.sh -c 10-APIs-JSON.yaml
 #
@@ -9,13 +14,6 @@
 #     curl localhost:2000/.well-known/apis.json
 #
 #     The Admin API is missing: only APIs tagged public are listed.
-#
-# 3.) Open the documentation link of the Products API in the browser:
-#     http://localhost:2000/api-docs/ui/products-api-v1-0
-#
-# 4.) Call the listed APIs:
-#     curl localhost:2000/shop/v2/products
-#     curl localhost:2000/greeting
 
 api:
   port: 2000
