@@ -7,11 +7,11 @@ Membrane's **openAPIProxy** offers support for [OpenAPI](https://github.com/OAI/
 - Rewriting of addresses
 - Swagger UI integration 
 
-This page serves as a reference for the functions and configuration. See also the examples:
+This page serves as a reference for the functions and configuration. See also the tutorials:
 
-- [api, UI and Swagger UI](openapi-proxy)
-- [OpenAPI validation](validation-simple)
-- [OpenAPI validation extended sample](validation)
+- [api, UI and Swagger UI](../../tutorials/openapi/10-OpenAPI.apis.yaml)
+- [OpenAPI validation](../../tutorials/openapi/20-OpenAPI-Validation.apis.yaml)
+- [OpenAPI security scopes with JWT](../../tutorials/jwt/30-JWT-OpenAPI-Scopes.yaml)
 
 The __api__ is featured in Membrane version 5 and newer and supports OpenAPI version 2 and up.
 
@@ -19,7 +19,7 @@ The __api__ is featured in Membrane version 5 and newer and supports OpenAPI ver
 
 # Configuration
 
-An _api_ can be added to the _proxies.xml_ configuration file. See the example in the [openapi-proxy/](openapi-proxy) folder.
+An _api_ can be added to the _proxies.xml_ configuration file. See the [OpenAPI tutorial](../../tutorials/openapi/10-OpenAPI.apis.yaml).
 
 ```xml
 <router>

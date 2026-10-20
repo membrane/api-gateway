@@ -2,6 +2,9 @@
 #
 # Tutorial: OpenAPI Validation
 #
+# Membrane validates requests and responses against the OpenAPI document: paths, methods,
+# parameters, headers and bodies.
+#
 # 1.) Start Membrane:
 #     Linux/Mac:
 #       ./membrane.sh -c 20-OpenAPI-Validation.apis.yaml
@@ -12,6 +15,12 @@
 #     curl "http://localhost:2000/shop/v2/products" -H "Content-Type: application/json" -d "{ \"name\": \"Figs\", \"price\": -2.7}"
 #
 #     Check the validation error in the response.
+#
+# 3.) Send a property the schema does not define:
+#     curl "http://localhost:2000/shop/v2/products" -H "Content-Type: application/json" -d "{ \"name\": \"Figs\", \"price\": 2.7, \"color\": \"purple\"}"
+#
+#     "REQUEST/BODY#/color" : [ {
+#       "message" : "The schema is false and does not allow any value.",
 
 api:
   port: 2000
