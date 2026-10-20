@@ -4,8 +4,6 @@ These examples show how to adapt, customize, and embed Membrane for real-world s
 
 ## Modifying API and Gateway Behavior
 
-* [Plugin Chains](reusable-plugin-chains)
-  Define plugin sequences once and reuse them in multiple APIs.
 * [Error handling](error-handling)
   Transform backend error messages into a unified format.
 
