@@ -19,6 +19,7 @@ import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.router.*;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.info.*;
+import io.swagger.v3.oas.models.tags.*;
 
 import java.net.URI;
 import java.util.*;
@@ -27,6 +28,7 @@ import static com.predic8.membrane.core.interceptor.discovery.CatalogEntry.Proxy
 import static com.predic8.membrane.core.interceptor.discovery.CatalogEntry.builder;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisher.*;
 import static com.predic8.membrane.core.openapi.util.UriUtil.*;
+import static java.lang.Boolean.*;
 import static java.util.Objects.*;
 
 /**
@@ -53,17 +55,23 @@ public class CatalogCollector {
     private final String baseUrl;
     private final URI baseUri;
     private final List<TagRule> tagRules;
+    private final boolean collectOperations;
 
     /**
-     * @param baseUrl  absolute URL clients reach the gateway under, such as
-     *                 <code>https://api.example.com</code>, or null to take everything from the
-     *                 request
-     * @param tagRules rules selecting the apis to list by their tags
+     * @param baseUrl           absolute URL clients reach the gateway under, such as
+     *                          <code>https://api.example.com</code>, or null to take everything from
+     *                          the request
+     * @param tagRules          rules selecting the apis to list by their tags
+     * @param collectOperations whether to walk the paths of every OpenAPI document. Only Membrane's
+     *                          own format renders operations, and walking them is the only part of
+     *                          collecting that grows with the size of the documents, so the other
+     *                          formats switch it off.
      */
-    public CatalogCollector(String baseUrl, List<TagRule> tagRules) {
+    public CatalogCollector(String baseUrl, List<TagRule> tagRules, boolean collectOperations) {
         this.baseUrl = trimTrailingSlash(withLowercaseScheme(baseUrl));
         this.baseUri = this.baseUrl == null ? null : URI.create(this.baseUrl);
         this.tagRules = List.copyOf(tagRules);
+        this.collectOperations = collectOperations;
     }
 
     /**
@@ -151,9 +159,11 @@ public class CatalogCollector {
                 .endpoint(endpoint(api, exchange, basePathOf(api, record)))
                 .links(new CatalogEntry.Links(origin + PATH_UI + "/" + recordId, origin + PATH + "/" + recordId))
                 .tags(api.getTags())
+                .documentTags(tags(openAPI))
                 .contact(configuredContact(api) != null ? configuredContact(api) : contact(info))
                 .license(license(info))
                 .termsOfService(info == null ? null : info.getTermsOfService())
+                .operations(collectOperations ? operations(openAPI) : List.of())
                 .catalogType(catalogType(api))
                 .details(details(api)).build();
     }
@@ -357,6 +367,10 @@ public class CatalogCollector {
         return new CatalogEntry.Details(proxy.getInfo().getCreated(), proxy.getInfo().getModified());
     }
 
+    private static List<String> tags(OpenAPI api) {
+        if (api.getTags() == null) return List.of();
+        return api.getTags().stream().map(Tag::getName).filter(Objects::nonNull).distinct().toList();
+    }
 
     private static CatalogEntry.Contact contact(Info info) {
         if (info == null || info.getContact() == null) return null;
@@ -370,4 +384,10 @@ public class CatalogCollector {
         return new CatalogEntry.License(license.getName(), license.getUrl());
     }
 
+    private static List<CatalogOperation> operations(OpenAPI api) {
+        if (api.getPaths() == null) return List.of();
+        List<CatalogOperation> operations = new ArrayList<>();
+        api.getPaths().forEach((path, item) -> item.readOperationsMap().forEach((method, operation) -> operations.add(new CatalogOperation(method.name(), path, operation.getOperationId(), operation.getSummary(), requireNonNullElse(operation.getTags(), List.<String>of()), TRUE.equals(operation.getDeprecated())))));
+        return operations;
+    }
 }

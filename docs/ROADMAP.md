@@ -187,7 +187,7 @@ PRIO 3:
     * A proxy bound to every host is listed under the host the client used instead of `localhost`.
     * `serviceProxy` and `soapProxy` are listed too, not only `api`.
     * The default collection `description` is now `APIs served by this gateway`.
-- New `apiCatalog` (RFC 9727 api-catalog Linkset).
+- New `apiCatalog` (RFC 9727 api-catalog Linkset) and `apiDiscovery` (Membrane's own catalog format, JSON or HTML).
 
 ## Bug Fixes
 - `xml2json`: Ensuring content type alignment and better exception handling.  

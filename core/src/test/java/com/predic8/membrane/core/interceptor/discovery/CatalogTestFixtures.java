@@ -34,7 +34,8 @@ class CatalogTestFixtures {
     }
 
     /**
-     * An API described by an OpenAPI document, so it has a version, documentation links and tags.
+     * An API described by an OpenAPI document, so it has a version, documentation links, tags and
+     * operations.
      */
     static CatalogEntry describedApi() {
         return describedApi(CatalogEntry.Details.NONE);
@@ -58,12 +59,17 @@ class CatalogTestFixtures {
                 .license(new CatalogEntry.License("Apache-2.0",
                         "https://www.apache.org/licenses/LICENSE-2.0"))
                 .termsOfService("https://example.com/terms")
+                .operations(List.of(
+                        new CatalogOperation("GET", "/products", "getProducts", "Get all products",
+                                List.of("Products"), false),
+                        new CatalogOperation("POST", "/products", "createProduct", "Create a product",
+                                List.of("Products"), true)))
                 .details(details)
                 .build();
     }
 
     /**
-     * A plain proxy: no OpenAPI document, so no version and no links.
+     * A plain proxy: no OpenAPI document, so no version, no links and no operations.
      */
     static CatalogEntry plainProxy() {
         return CatalogEntry.builder()

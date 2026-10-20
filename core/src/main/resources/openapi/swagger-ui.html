@@ -15,7 +15,8 @@
     window.onload = () => {
         window.ui = SwaggerUIBundle({
             url: '${openApiUrl}',
-            dom_id: '#swagger-ui'
+            dom_id: '#swagger-ui',
+            deepLinking: true
         });
     };
 </script>

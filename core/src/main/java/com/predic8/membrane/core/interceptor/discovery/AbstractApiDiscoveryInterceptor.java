@@ -55,7 +55,7 @@ public abstract class AbstractApiDiscoveryInterceptor extends AbstractIntercepto
     public void init() {
         super.init();
         renderer = createRenderer();
-        collector = new CatalogCollector(baseUrl, tags);
+        collector = new CatalogCollector(baseUrl, tags, renderer.rendersOperations());
         // The proxy is unknown when the plugin sits in the else branch of an if.
         if (getProxy() != null && getProxy().getKey() != null)
             checkPath(getProxy().getKey().getPath());

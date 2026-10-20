@@ -28,4 +28,14 @@ public interface CatalogRenderer {
     String contentType();
 
     byte[] render(Catalog catalog) throws JsonProcessingException;
+
+    /**
+     * Whether {@link #render} reads {@link CatalogEntry#operations()}. Collecting operations means
+     * walking every path of every OpenAPI document, by far the most expensive part of building a
+     * catalog, so a renderer that ignores them lets {@link CatalogCollector} skip that work
+     * entirely.
+     */
+    default boolean rendersOperations() {
+        return false;
+    }
 }

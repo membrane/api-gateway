@@ -79,7 +79,7 @@ class AbstractApiDiscoveryInterceptorTest {
     }
 
     static Stream<Supplier<AbstractApiDiscoveryInterceptor>> nonLinksetFormats() {
-        return Stream.of(ApisJsonInterceptor::new);
+        return Stream.of(ApisJsonInterceptor::new, ApiDiscoveryInterceptor::new);
     }
 
     /**
@@ -227,6 +227,7 @@ class AbstractApiDiscoveryInterceptorTest {
     void theElementNameComesFromTheConfigurationGrammar() {
         assertEquals("apisJson", new ApisJsonInterceptor().elementName());
         assertEquals("apiCatalog", new ApiCatalogInterceptor().elementName());
+        assertEquals("apiDiscovery", new ApiDiscoveryInterceptor().elementName());
     }
 
     /**

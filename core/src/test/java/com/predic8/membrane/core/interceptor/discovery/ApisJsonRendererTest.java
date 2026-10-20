@@ -39,6 +39,11 @@ class ApisJsonRendererTest {
     }
 
     @Test
+    void declaresThatItIgnoresOperations() {
+        assertFalse(renderer.rendersOperations());
+    }
+
+    @Test
     void servesPlainJson() {
         assertEquals(APPLICATION_JSON, renderer.contentType());
     }

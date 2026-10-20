@@ -17,7 +17,7 @@ import com.predic8.membrane.annot.*;
 
 /**
  * Base of the formats that describe the collection as a whole with a name and a description,
- * such as APIs.json. An RFC 9727 linkset has neither.
+ * APIs.json and Membrane's own format. An RFC 9727 linkset has neither.
  */
 public abstract class AbstractCollectionDiscoveryInterceptor extends AbstractApiDiscoveryInterceptor {
 

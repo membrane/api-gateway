@@ -40,15 +40,19 @@ class CatalogCollectorTest {
     }
 
     private static CatalogCollector collector() {
-        return collector(null);
+        return collector(null, false);
     }
 
-    private static CatalogCollector collector(String baseUrl) {
-        return new CatalogCollector(baseUrl, List.of());
+    private static CatalogCollector collectorWithOperations() {
+        return collector(null, true);
+    }
+
+    private static CatalogCollector collector(String baseUrl, boolean collectOperations) {
+        return new CatalogCollector(baseUrl, List.of(), collectOperations);
     }
 
     private static CatalogCollector collectorWithRules(TagRule... rules) {
-        return new CatalogCollector(null, List.of(rules));
+        return new CatalogCollector(null, List.of(rules), false);
     }
 
     private static TagRule include(String tag) {
@@ -85,7 +89,7 @@ class CatalogCollectorTest {
     }
 
     private static CatalogCollector collectorWithBaseUrl(String baseUrl) {
-        return collector(baseUrl);
+        return collector(baseUrl, false);
     }
 
     private static Exchange exchange(String uri) throws Exception {
@@ -209,8 +213,41 @@ class CatalogCollectorTest {
         assertEquals("2.0.0", entry.version());
         assertTrue(entry.description().contains("Showcases REST API design"));
         assertTrue(entry.tags().isEmpty());
+        assertEquals(List.of("Root", "Products", "Vendors", "Orders", "Customers"), entry.documentTags());
         assertEquals("Predic8", entry.contact().name());
         assertEquals("info@predic8.de", entry.contact().email());
+    }
+
+    @Test
+    void operationsCarryMethodAndPath() throws Exception {
+        add(apiProxy("fruitshop-api-v2-openapi-3.yml", 2000));
+
+        List<CatalogOperation> operations =
+                only(collectorWithOperations().collect(router, exchange("/apis.json"))).operations();
+
+        CatalogOperation getProducts = operations.stream()
+                .filter(operation -> "getProducts".equals(operation.operationId()))
+                .findFirst().orElseThrow();
+        assertEquals("GET", getProducts.method());
+        assertEquals("/products", getProducts.path());
+        assertEquals("Get all products", getProducts.summary());
+        assertEquals(List.of("Products"), getProducts.tags());
+        assertFalse(getProducts.deprecated());
+        assertTrue(operations.stream().anyMatch(operation -> "POST".equals(operation.method())));
+    }
+
+    /**
+     * Walking the paths of every OpenAPI document is the only part of collecting that grows with
+     * the size of those documents, so formats that never render operations must not pay for it.
+     */
+    @Test
+    void operationsAreSkippedWhenTheFormatDoesNotRenderThem() throws Exception {
+        add(apiProxy("fruitshop-api-v2-openapi-3.yml", 2000));
+
+        CatalogEntry entry = only(collector().collect(router, exchange("/apis.json")));
+
+        assertTrue(entry.operations().isEmpty());
+        assertEquals("Fruit Shop API", entry.name());
     }
 
     @Test
@@ -240,6 +277,7 @@ class CatalogCollectorTest {
         assertEquals("Shop", entry.description());
         assertNull(entry.links().specUrl());
         assertNull(entry.links().humanUrl());
+        assertTrue(entry.operations().isEmpty());
     }
 
     @Test
@@ -321,7 +359,7 @@ class CatalogCollectorTest {
 
     /**
      * The id is the identifier without the domain, so it stays the same whichever host the catalog
-     * was fetched from.
+     * was fetched from. Membrane's own format keys its entries by it.
      */
     @Test
     void theIdOfAnEntryDoesNotDependOnTheHost() throws Exception {
