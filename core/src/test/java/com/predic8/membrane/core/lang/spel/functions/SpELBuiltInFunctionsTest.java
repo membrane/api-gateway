@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.lang.spel.functions;
 
+import com.predic8.membrane.core.lang.ExchangeExpression.InterceptorAdapter;
 import com.predic8.membrane.core.lang.spel.*;
 import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
@@ -31,9 +32,9 @@ class SpELBuiltInFunctionsTest {
 
     @BeforeEach
     void setup() throws URISyntaxException {
-        var router = new DummyTestRouter();
-        ctx = new SpELExchangeEvaluationContext(post("/foo").xml("<person name='Fritz'/>").buildExchange(), REQUEST, router);
-        functions = new SpELBuiltInFunctions(router);
+        final var interceptor = new InterceptorAdapter(new DummyTestRouter());
+        ctx = new SpELExchangeEvaluationContext(post("/foo").xml("<person name='Fritz'/>").buildExchange(), REQUEST, interceptor);
+        functions = new SpELBuiltInFunctions(interceptor);
     }
 
     @Test

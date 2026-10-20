@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.lang.spel.functions;
 
-import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.interceptor.*;
 import org.springframework.core.convert.*;
 import org.springframework.expression.*;
 
@@ -24,9 +24,9 @@ public class BuiltInFunctionResolver implements MethodResolver {
 
     private final ReflectiveMethodHandler functions;
 
-    public BuiltInFunctionResolver(Router router) {
+    public BuiltInFunctionResolver(Interceptor interceptor) {
         super();
-        functions = new ReflectiveMethodHandler(new SpELBuiltInFunctions(router));
+        functions = new ReflectiveMethodHandler(new SpELBuiltInFunctions(interceptor));
     }
 
     /**

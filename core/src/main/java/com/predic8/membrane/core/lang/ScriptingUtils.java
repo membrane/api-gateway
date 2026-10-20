@@ -20,13 +20,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.HeaderMap;
 import com.predic8.membrane.core.http.LazyCookieMap;
+import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.lang.groovy.GroovyBuiltInFunctions;
 import com.predic8.membrane.core.lang.groovy.PathParametersMap;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxyKey;
 import com.predic8.membrane.core.openapi.util.UriTemplate;
-import com.predic8.membrane.core.router.Router;
 import com.predic8.membrane.core.util.text.SerializationFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,7 +48,11 @@ public class ScriptingUtils {
 
     public static final String BINDING = "fn";
 
-    public static Map<String, Object> createParameterBindings(Router router, Exchange exc, Flow flow, boolean includeJsonObject, SerializationFunction serialization) {
+    /**
+     * @param interceptor the interceptor that runs the script, e.g. for its router and xmlConfig
+     */
+    public static Map<String, Object> createParameterBindings(Interceptor interceptor, Exchange exc, Flow flow, boolean includeJsonObject, SerializationFunction serialization) {
+        final var router = interceptor.getRouter();
 
         var msg = exc.getMessage(flow);
 
@@ -123,7 +127,7 @@ public class ScriptingUtils {
 
         // "fn" is the special key used to set the Groovy Binding.
         // The Groovy Binding allows function invocation in Groovy scripts with ${functionname()} .
-        params.put(BINDING, new GroovyBuiltInFunctions(exc, flow, router, params) {
+        params.put(BINDING, new GroovyBuiltInFunctions(exc, flow, interceptor, params) {
             @Override
             public Object escape(Object o) {
                 return serialization.apply(o);

@@ -15,11 +15,11 @@
 package com.predic8.membrane.core.lang.spel;
 
 import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.Interceptor.*;
 import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.lang.spel.functions.*;
 import com.predic8.membrane.core.lang.spel.spelable.*;
-import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.util.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
@@ -40,6 +40,7 @@ public class SpELExchangeExpression extends AbstractExchangeExpression {
     private static final Logger log = LoggerFactory.getLogger(SpELExchangeExpression.class);
 
     private final Expression spelExpression;
+    private final Interceptor interceptor;
 
     /**
      * Creates an expression "expr" or a templated "..${expr}...${expr}...", depending on
@@ -47,9 +48,11 @@ public class SpELExchangeExpression extends AbstractExchangeExpression {
      *
      * @param expression SpEL expression
      * @param parserContext null or one with configuration of prefix and suffix e.g. ${ and }
+     * @param interceptor the interceptor the expression belongs to, e.g. for its xmlConfig
      */
-    public SpELExchangeExpression(String expression, TemplateParserContext parserContext, Router router) {
-        super(expression, router);
+    public SpELExchangeExpression(String expression, TemplateParserContext parserContext, @Nullable Interceptor interceptor) {
+        super(expression, interceptor != null ? interceptor.getRouter() : null);
+        this.interceptor = interceptor;
         Exception exception;
         String posLine = "";
         try {
@@ -112,7 +115,7 @@ public class SpELExchangeExpression extends AbstractExchangeExpression {
 
     private @Nullable Object evaluate(Exchange exchange, Flow flow) {
         try {
-            return spelExpression.getValue(new SpELExchangeEvaluationContext(exchange, flow, router), Object.class);
+            return spelExpression.getValue(new SpELExchangeEvaluationContext(exchange, flow, interceptor), Object.class);
         } catch (BuiltInFunctionException e) {
             throw new ExchangeExpressionException(expression, e,e.getMessage()).extension("function", e.getFunction());
         }

@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.lang.spel;
 
 import com.predic8.membrane.core.exceptions.*;
+import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.lang.ExchangeExpression.*;
@@ -24,7 +25,9 @@ import java.net.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.http.Request.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
+import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
 import static com.predic8.membrane.core.lang.spel.SpELExchangeExpression.toBoolean;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
@@ -226,6 +229,47 @@ class SpELExchangeExpressionTest extends AbstractExchangeExpressionTest {
             assertTrue(pd.getDetail().contains("unknown()"));
             assertTrue(pd.getDetail().contains("Method not found"));
             assertTrue(pd.getDetail().contains("isBearerAuthorization"));
+        }
+    }
+
+    @Nested
+    class XPathFunctionNamespaces {
+
+        Exchange pExc;
+
+        @BeforeEach
+        void setup() throws URISyntaxException {
+            pExc = post("/person").xml("""
+                    <p8:person xmlns:p8="https://predic8.de">
+                        <p8:firstname>Trevor</p8:firstname>
+                    </p8:person>
+                    """).buildExchange();
+        }
+
+        @Test
+        void globalXmlConfigIsUsedWithoutLocalOne() {
+            router.getRegistry().register("ns", xmlConfig("p8"));
+            assertEquals("Trevor", evaluate(new InterceptorAdapter(router), "p8"));
+        }
+
+        @Test
+        void localXmlConfigReplacesGlobalOne() {
+            router.getRegistry().register("ns", xmlConfig("p8"));
+            final var local = new InterceptorAdapter(router, xmlConfig("x"));
+            assertEquals("Trevor", evaluate(local, "x"));
+            assertEquals("", evaluate(local, "p8"));
+        }
+
+        @Test
+        void moreThanOneGlobalXmlConfigDoesNotMatterWithLocalOne() {
+            router.getRegistry().register("ns1", xmlConfig("p8"));
+            router.getRegistry().register("ns2", xmlConfig("y"));
+            assertEquals("Trevor", evaluate(new InterceptorAdapter(router, xmlConfig("x")), "x"));
+        }
+
+        private String evaluate(InterceptorAdapter interceptor, String prefix) {
+            return expression(interceptor, getLanguage(), "xpath('string(/%1$s:person/%1$s:firstname)')".formatted(prefix))
+                    .evaluate(pExc, REQUEST, String.class);
         }
     }
 }
