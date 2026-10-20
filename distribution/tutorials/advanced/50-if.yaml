@@ -20,6 +20,7 @@ api:
               - return:
                   status: 400
         - if:
+            # language: groovy
             test: path.startsWith("/foo")
             language: groovy
             flow:
@@ -27,6 +28,7 @@ api:
                   message: "Foo"
     - response:
         - if:
+            # default language: spel
             test: statusCode matches '4\d\d'
             flow:
               - static:
@@ -34,4 +36,5 @@ api:
   target:
     url: https://httpbin.org
 
-
+# Expression syntax for the SpEL language:
+#       https://docs.spring.io/spring-framework/reference/core/expressions.html
