@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://www.membrane-api.io/v7.7.1.json
 #
-# Tutorial: Validating application/x-www-form-urlencoded messages with OpenAPI
+# Tutorial: Validating application/x-www-form-urlencoded messages
 #
 # HTML forms post their fields as application/x-www-form-urlencoded.
 # When the OpenAPI description declares that media type, Membrane can validate the form fields
@@ -18,7 +18,7 @@
 #     The request passes to the backend:
 #
 #     {
-#       "success" : true
+#       "status": "accepted"
 #     }
 #
 # 3.) Order a negative quantity:
@@ -31,3 +31,7 @@ api:
   openapi:
     - location: specs/form-validation.oas.yaml
       validateRequests: true
+
+---
+include:
+  - mock.apis.yaml

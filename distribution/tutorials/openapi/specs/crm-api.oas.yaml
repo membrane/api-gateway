@@ -3,7 +3,7 @@ info:
   title: CRM API
   version: "1.0"
 servers:
-  - url: https://apibin.io/crm
+  - url: http://localhost:3000/crm
 paths:
   /customers:
     post:

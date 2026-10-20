@@ -3,12 +3,12 @@ info:
   # A minimal excerpt of the Fruit Shop API
   title: Minimal Shop API
   version: "2.0"
-# The server URL points at the backend, here apibin.io, a public test endpoint that
-# answers every request with { "success" : true }.
+# The server URL points at the backend, here the mock from mock.apis.yaml that the
+# tutorials include.
 # When Membrane serves this document at /api-docs, it rewrites this URL so clients
 # talk to the gateway instead.
 servers:
-  - url: https://apibin.io/store
+  - url: http://localhost:3000/store
 paths:
   /products:
     get:
@@ -34,7 +34,7 @@ paths:
                   type: number
                   minimum: 0
       responses:
-        '200':
+        '201':
           description: Product created
           content:
             application/json:

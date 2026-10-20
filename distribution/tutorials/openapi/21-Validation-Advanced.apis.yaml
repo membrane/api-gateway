@@ -17,7 +17,7 @@
 #     Response: 400 with the validation errors
 #     Log:      OpenAPI request validation failed for POST against 'Minimal Shop API' ...
 #
-#     The validation rejected the request before the log plugin ran, so "Fruit: Figs" is missing.
+#     The validation rejected the request before the log plugin ran, so the request is not logged.
 #
 # 3.) Remove the # in front of "- openapiValidator: {}" below and save the file.
 #     Membrane reloads the configuration.
@@ -25,7 +25,10 @@
 # 4.) Repeat the curl from step 2.
 #
 #     Response: 400 with the validation errors
-#     Log:      Fruit: Figs
+#     Log:      ==== REQUEST  ===
+#               POST /store/products HTTP/1.1
+#               ...
+#               { "name": "Figs", "price": -2.7}
 #               OpenAPI request validation failed for POST against 'Minimal Shop API' ...
 
 api:
@@ -34,8 +37,9 @@ api:
     - location: specs/minimal-shop-api.oas.yaml
       validateRequests: true
   flow:
-    - request:
-        - log:
-            message: "Fruit: ${$.name}"
-            language: jsonpath
-    # - openapiValidator: {}
+    - log: {}
+#    - openapiValidator: {}
+
+---
+include:
+  - mock.apis.yaml

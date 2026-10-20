@@ -13,43 +13,16 @@
 #
 # 2.) Call the API:
 #     curl http://localhost:2000/store/products
-#
-#     The answer comes from the mock on port 3001, not from servers[].url (https://apibin.io/store):
-#
-#     {
-#       "products": [
-#         {
-#           "id": 1,
-#           "name": "Mock Banana"
-#         }
-#       ]
-#     }
 
 api:
   port: 2000
   name: Shop API
   openapi:
     - location: specs/minimal-shop-api.oas.yaml
+  # Use the target for routing instead of servers[].url in the OpenAPI
   target:
     url: http://localhost:3001
 
 ---
-api:
-  port: 3001
-  name: Mock Backend
-  path:
-    uri: /store/products
-  flow:
-    - static:
-        contentType: application/json
-        src: |
-          {
-            "products": [
-              {
-                "id": 1,
-                "name": "Mock Banana"
-              }
-            ]
-          }
-    - return:
-        status: 200
+include:
+  - mock.apis.yaml

@@ -20,8 +20,6 @@
 #     curl "http://localhost:2000/store/products" -H "Content-Type: application/json" -d "{ \"name\": \"Figs\", \"price\": 2.7, \"color\": \"purple\"}"
 #
 #     Check the validation error.
-#
-# 4.) Continue with file 40-Explicit-Rewrite.apis.yaml
 
 api:
   port: 2000
@@ -32,3 +30,7 @@ api:
       # Include the detailed list of validation errors in the error response.
       # Consider turning it off in production to avoid exposing API internals.
       validationDetails: true
+
+---
+include:
+  - mock.apis.yaml

@@ -2,7 +2,7 @@
 #
 # Tutorial: Explicit Server URLs Rewrite
 #
-# Behind a load balancer or a TLS-terminating reverse proxy, clients reach a public https
+# Behind a TLS-terminating reverse proxy, clients reach a public https
 # address, while Membrane only sees plain http on an internal one. Automatic rewriting
 # would advertise that internal address in the served OpenAPI document. A "rewrite" block
 # under the openapi entry sets the public values instead. Fields you leave out keep the
@@ -26,11 +26,7 @@
 #     curl localhost:2000/boutique/products
 #
 #     The base path of the API is rewritten too: Membrane accepts requests under /boutique
-#     instead of /store and forwards them to https://apibin.io/boutique/products.
-#
-#     {
-#       "success" : true
-#     }
+#     instead of /store and forwards them to http://localhost:3000/boutique/products.
 
 api:
   port: 2000
@@ -41,6 +37,10 @@ api:
         host: api.example.com
         port: 443
         basePath: /boutique
+
+---
+include:
+  - mock.apis.yaml
 
 # NOTE: basePath replaces the whole path of the server URL, it is not prepended to it.
 # The original "/store" is gone.

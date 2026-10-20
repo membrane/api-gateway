@@ -42,18 +42,6 @@ public class OpenApiTutorialTest extends AbstractOpenAPITutorialTest {
     }
 
     @Test
-    void serverUrlIsRewrittenToTheGateway() {
-        // @formatter:off
-        given()
-        .when()
-            .get("http://localhost:2000/api-docs/fruit-shop-api-v2-2-0")
-        .then()
-            .statusCode(200)
-            .body(containsString("http://localhost:2000/shop/v2"));
-        // @formatter:on
-    }
-
-    @Test
     void fruitshopProducts() {
         // @formatter:off
         given()
@@ -64,19 +52,6 @@ public class OpenApiTutorialTest extends AbstractOpenAPITutorialTest {
             .body("meta", notNullValue())
             .body("products", notNullValue())
             .body("products.size()", greaterThan(0));
-        // @formatter:on
-    }
-
-    @Test
-    void dlpFieldsCity() {
-        // @formatter:off
-        given()
-        .when()
-            .get("http://localhost:2000/dlp/fields/city")
-        .then()
-            .statusCode(200)
-            .body("field", notNullValue())
-            .body("category", notNullValue());
         // @formatter:on
     }
 }

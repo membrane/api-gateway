@@ -24,11 +24,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class OpenApiValidationAdvancedTutorialTest extends AbstractOpenAPITutorialTest {
 
-    // Indented, so the replacement does not touch the instructions quoting the line
-    private static final String VALIDATOR_COMMENTED = "\n    # - openapiValidator: {}";
+    // Starts at the line break, so the replacement does not touch the instructions quoting the line
+    private static final String VALIDATOR_COMMENTED = "\n#    - openapiValidator: {}";
     private static final String VALIDATOR_ACTIVE = "\n    - openapiValidator: {}";
     private static final String VALIDATION_FAILED = "OpenAPI request validation failed";
-    private static final String FLOW_LOG = "Fruit: Figs";
+    private static final String FLOW_LOG = "==== REQUEST";
 
     @Override
     protected String getTutorialYaml() {

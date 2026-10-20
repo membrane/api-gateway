@@ -50,9 +50,12 @@ api:
   openapi:
     - location: specs/shop-api-extensions.oas.yaml
 
-# NOTE: Without x-membrane-id, the ID is built from info.title and info.version: every run
-# of non-word characters becomes "-" and the result is lowercased.
-# "Fruit Shop API" 2.2.0 becomes fruit-shop-api-v2-2-0 (see 10-OpenAPI.apis.yaml).
+---
+include:
+  - mock.apis.yaml
+
+# NOTE: Without x-membrane-id, the ID is built from info.title and info.version.
+# "Fruit Shop API" 2.2.0 becomes fruit-shop-api-v2-2-0.
 # With x-membrane-id, the version is still appended: shop + 2.0 becomes shop-v2-0.
 #
 # NOTE: Settings in the configuration override x-membrane-validation, e.g.

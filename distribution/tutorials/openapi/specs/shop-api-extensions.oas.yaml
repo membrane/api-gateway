@@ -9,7 +9,7 @@ x-membrane-validation:
   requests: true
   details: true
 servers:
-  - url: https://apibin.io/ext-shop
+  - url: http://localhost:3000/ext-shop
 paths:
   /products:
     get:
