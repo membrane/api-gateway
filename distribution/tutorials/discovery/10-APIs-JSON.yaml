@@ -7,6 +7,8 @@
 # index for exactly that. Membrane builds it from the running configuration, so
 # the index never goes stale, and tags decide which APIs it makes public.
 #
+# Specification: https://apisjson.org/format/apisjson_0.24.txt
+#
 # 1.) Start Membrane:
 #     ./membrane.sh -c 10-APIs-JSON.yaml
 #
