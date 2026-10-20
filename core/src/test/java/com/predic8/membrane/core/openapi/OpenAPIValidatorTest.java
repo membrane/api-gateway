@@ -178,6 +178,23 @@ class OpenAPIValidatorTest {
     }
 
     /**
+     * The path a request is validated against, also if it lacks the method.
+     */
+    @Test
+    void getMatchingPath() {
+        var api = new OpenAPI().paths(new Paths()
+                .addPathItem("/books/{id}", new PathItem().post(new Operation()))
+                .addPathItem("/{entity}/me", new PathItem().get(new Operation()))
+                .addPathItem("/books/mine", new PathItem().get(new Operation())));
+        var validator = new OpenAPIValidator(new URIFactory(), new OpenAPIRecord(api, new OpenAPISpec()));
+        assertEquals("/{entity}/me", validator.getMatchingPath("GET", "/books/me"));
+        assertEquals("/books/{id}", validator.getMatchingPath("POST", "/books/me?x=1"));
+        assertEquals("/books/{id}", validator.getMatchingPath("PUT", "/books/me")); // No path has PUT: the first matching one
+        assertEquals("/books/mine", validator.getMatchingPath("POST", "/books/mine")); // Concrete, even without POST
+        assertNull(validator.getMatchingPath("GET", "/books/7/x"));
+    }
+
+    /**
      * OpenAPI: templated paths with the same hierarchy but different templated names MUST NOT exist as they are identical.
      */
     @Test

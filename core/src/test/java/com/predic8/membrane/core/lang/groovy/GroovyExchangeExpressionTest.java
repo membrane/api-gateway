@@ -143,4 +143,44 @@ class GroovyExchangeExpressionTest extends AbstractExchangeExpressionTest {
         assertEquals("qux", evalObject("cookie.baz"));
     }
 
+    @Nested
+    class XPathFunctionNamespaces {
+
+        Exchange pExc;
+
+        @BeforeEach
+        void setup() throws URISyntaxException {
+            pExc = post("/person").xml("""
+                    <p8:person xmlns:p8="https://predic8.de">
+                        <p8:firstname>Trevor</p8:firstname>
+                    </p8:person>
+                    """).buildExchange();
+        }
+
+        @Test
+        void globalXmlConfigIsUsedWithoutLocalOne() {
+            router.getRegistry().register("ns", xmlConfig("p8"));
+            assertEquals("Trevor", evaluate(new InterceptorAdapter(router), "p8"));
+        }
+
+        @Test
+        void localXmlConfigReplacesGlobalOne() {
+            router.getRegistry().register("ns", xmlConfig("p8"));
+            final var local = new InterceptorAdapter(router, xmlConfig("x"));
+            assertEquals("Trevor", evaluate(local, "x"));
+            assertEquals("", evaluate(local, "p8"));
+        }
+
+        @Test
+        void moreThanOneGlobalXmlConfigDoesNotMatterWithLocalOne() {
+            router.getRegistry().register("ns1", xmlConfig("p8"));
+            router.getRegistry().register("ns2", xmlConfig("y"));
+            assertEquals("Trevor", evaluate(new InterceptorAdapter(router, xmlConfig("x")), "x"));
+        }
+
+        private String evaluate(InterceptorAdapter interceptor, String prefix) {
+            return expression(interceptor, getLanguage(), "fn.xpath('string(/%1$s:person/%1$s:firstname)')".formatted(prefix))
+                    .evaluate(pExc, REQUEST, String.class);
+        }
+    }
 }

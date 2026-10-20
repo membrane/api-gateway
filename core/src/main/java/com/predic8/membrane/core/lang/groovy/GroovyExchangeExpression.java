@@ -17,7 +17,6 @@ package com.predic8.membrane.core.lang.groovy;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.lang.*;
-import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.text.*;
 import groovy.lang.*;
@@ -35,9 +34,14 @@ public class GroovyExchangeExpression extends AbstractExchangeExpression {
     private static final Logger log = LoggerFactory.getLogger(GroovyExchangeExpression.class);
 
     private final Function<Map<String, Object>, Object> script;
+    private final Interceptor interceptor;
 
-    public GroovyExchangeExpression(String source, Router router) {
-        super(source, router);
+    /**
+     * @param interceptor the interceptor the expression belongs to, e.g. for its xmlConfig
+     */
+    public GroovyExchangeExpression(String source, Interceptor interceptor) {
+        super(source, interceptor != null ? interceptor.getRouter() : null);
+        this.interceptor = interceptor;
         try {
             script = new GroovyLanguageSupport().compileScript( null, source);
         } catch (MultipleCompilationErrorsException e) {
@@ -49,7 +53,7 @@ public class GroovyExchangeExpression extends AbstractExchangeExpression {
     public <T> T evaluate(Exchange exchange, Interceptor.Flow flow, Class<T> type) {
         Object o = null;
         try {
-            o = script.apply(createParameterBindings(router, exchange, flow, false, TEXT_SERIALIZATION));
+            o = script.apply(createParameterBindings(interceptor, exchange, flow, false, TEXT_SERIALIZATION));
         } catch (MissingPropertyException mpe) {
             log.info("Expression {} tries to access non existing property {}",expression,mpe.getMessage());
             if (type.getName().equals(Object.class.getName())) {
