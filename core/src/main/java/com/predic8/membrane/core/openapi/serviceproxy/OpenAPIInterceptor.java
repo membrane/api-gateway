@@ -119,19 +119,13 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
             return RETURN;
         }
 
-        if (decodedDelimitersSelectAnotherBasePath(exc, basePath)) {
-            log.info("Rejected request with an encoded ;, / or \\ that selects another OpenAPI when decoded.");
-            log.debug("Rejected path: {}", exc.getRequest().getUri());
-            user(router.getConfiguration().isProduction(), getDisplayName())
-                    .title("Invalid path")
-                    .status(400)
-                    .addSubSee("invalid-path")
-                    .detail("The request path contains an encoded ';', '/' or '\\' that selects another OpenAPI when it is decoded.")
-                    .buildAndSetResponse(exc);
-            return RETURN;
-        }
+        if (decodedDelimitersSelectAnotherBasePath(exc, basePath))
+            return rejectEncodedDelimiter(exc, "another OpenAPI");
 
         OpenAPIRecord rec = apiProxy.getBasePaths().get(basePath);
+
+        if (isValidated(rec.getApi()) && decodedDelimitersSelectAnotherPath(exc, rec))
+            return rejectEncodedDelimiter(exc, "another path of the OpenAPI");
 
         // If OpenAPIProxy has a <target> Element use this for routing otherwise
         // take the urls from the info.servers field in the OpenAPI document.
@@ -258,6 +252,39 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
                 return true;
         }
         return false;
+    }
+
+    /**
+     * Within one OpenAPI the same applies to its paths, e.g. "/api/public/x%2f..%2f..%2fadmin" matches /public/{file},
+     * but such a backend serves /api/admin. A path that selects no path of the OpenAPI when decoded, like
+     * "/api/public/a%2Fb", is fine.
+     */
+    private boolean decodedDelimitersSelectAnotherPath(Exchange exc, OpenAPIRecord rec) {
+        final var request = exc.getRequest();
+        final var uri = request.getUri();
+        if (uri.indexOf('%') == -1) // Nothing encoded, so the common case costs a single scan
+            return false;
+
+        final var validator = apiProxy.getValidator(rec);
+        final var path = validator.getMatchingPath(request.getMethod(), request.getRoutingPath());
+        for (final var decoded : toDecodedDelimiterRoutingPaths(uri)) {
+            final var other = validator.getMatchingPath(request.getMethod(), decoded);
+            if (other != null && !other.equals(path))
+                return true;
+        }
+        return false;
+    }
+
+    private Outcome rejectEncodedDelimiter(Exchange exc, String selected) {
+        log.info("Rejected request with an encoded ;, / or \\ that selects {} when decoded.", selected);
+        log.debug("Rejected path: {}", exc.getRequest().getUri());
+        user(router.getConfiguration().isProduction(), getDisplayName())
+                .title("Invalid path")
+                .status(400)
+                .addSubSee("invalid-path")
+                .detail("The request path contains an encoded ';', '/' or '\\' that selects %s when it is decoded.".formatted(selected))
+                .buildAndSetResponse(exc);
+        return RETURN;
     }
 
     private String getMatchingBasePath(String path) {

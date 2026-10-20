@@ -193,6 +193,59 @@ class OpenAPIInterceptorTest {
     }
 
     /**
+     * A backend that decodes / or \ before resolving dot-segments serves /api/admin/users. The request must not pass
+     * the validation of /public/{file} instead, which lacks the token of /admin/users.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "/api/public/x%2f..%2f..%2fadmin%2fusers",
+            "/api/public/x%5C..%5C..%5Cadmin%5Cusers",
+            "/api/public/..%3bx%2fadmin%2fusers", // A backend that decodes ; and / before it removes path parameters
+            "/api/public/x;a=b%2f..%2f..%2fadmin%2fusers", // The routing path /api/public/x has nothing encoded left
+    })
+    void encodedDelimiterSelectingAnotherPathIsRejected(String uri) {
+        exc.getRequest().setUri(uri);
+        assertEquals(RETURN, createEncodedDelimiterOperationsInterceptor().handleRequest(exc));
+        assertEquals(400, exc.getResponse().getStatusCode());
+    }
+
+    /**
+     * Decoding selects the same path, or no path of the OpenAPI at all, so the request is validated as usual.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "/api/public/x%3bv=1",
+            "/api/public/group%2Ffile",
+    })
+    void encodedDelimiterNotSelectingAnotherPathIsAccepted(String uri) {
+        exc.getRequest().setUri(uri);
+        assertEquals(CONTINUE, createEncodedDelimiterOperationsInterceptor().handleRequest(exc));
+    }
+
+    /**
+     * Without validation the path of the OpenAPI does not matter.
+     */
+    @Test
+    void encodedDelimiterSelectingAnotherPathIsAcceptedWithoutValidation() {
+        exc.getRequest().setUri("/api/public/x%2f..%2f..%2fadmin%2fusers");
+        assertEquals(CONTINUE, createEncodedDelimiterOperationsInterceptor(NO).handleRequest(exc));
+    }
+
+    private OpenAPIInterceptor createEncodedDelimiterOperationsInterceptor() {
+        return createEncodedDelimiterOperationsInterceptor(YES);
+    }
+
+    private OpenAPIInterceptor createEncodedDelimiterOperationsInterceptor(OpenAPISpec.YesNoOpenAPIOption validateRequests) {
+        final var spec = new OpenAPISpec();
+        spec.location = getPathFromResource("openapi/specs/encoded-delimiter-operations.yml");
+        spec.validateRequests = validateRequests;
+
+        final var interceptor = new OpenAPIInterceptor(createProxy(router, spec));
+        interceptor.init(router);
+        return interceptor;
+    }
+
+    /**
      * The path templates of the OpenAPI are compiled with merged slashes, so the request path must be merged too.
      */
     @Test
