@@ -18,8 +18,11 @@ import com.predic8.membrane.core.openapi.model.Request;
 import jakarta.mail.internet.ParseException;
 import org.junit.jupiter.api.Test;
 
+import java.util.Set;
+
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static java.time.Duration.ofSeconds;
+import static java.util.stream.Collectors.toSet;
 import static org.junit.jupiter.api.Assertions.*;
 
 class UnevaluatedPropertiesTest extends AbstractValidatorTest {
@@ -41,9 +44,23 @@ class UnevaluatedPropertiesTest extends AbstractValidatorTest {
 
     @Test
     void falseRejectsUnknownProperty() throws ParseException {
-        assertRejected("/closed", """
+        final var errors = post("/closed", """
                 {"name": "a", "foo": 1}
-                """, "foo");
+                """);
+        assertEquals(1, errors.size(), errors.toString());
+        assertEquals("/foo", errors.getFirst().getContext().getJSONpointer());
+        assertEquals("The property foo is not allowed. The object does not allow unevaluated properties.",
+                errors.getFirst().getMessage());
+    }
+
+    @Test
+    void falseRejectsEachUnknownProperty() throws ParseException {
+        final var errors = post("/closed", """
+                {"name": "a", "foo": 1, "bar": 2}
+                """);
+        assertEquals(2, errors.size(), errors.toString());
+        assertEquals(Set.of("/foo", "/bar"),
+                errors.stream().map(e -> e.getContext().getJSONpointer()).collect(toSet()));
     }
 
     @Test
@@ -140,7 +157,7 @@ class UnevaluatedPropertiesTest extends AbstractValidatorTest {
     void unresolvableRefEvaluatesNothing() throws ParseException {
         assertRejected("/dangling-ref", """
                 {"name": "a", "foo": 1}
-                """, "unevaluated property: foo");
+                """, "property foo is not allowed");
     }
 
     @Test
@@ -161,7 +178,7 @@ class UnevaluatedPropertiesTest extends AbstractValidatorTest {
     void discriminatorIgnoresPropertiesOfOtherSchemas() throws ParseException {
         assertRejected("/discriminator", """
                 {"petType": "Cat", "tricks": 3}
-                """, "unevaluated property: tricks");
+                """, "property tricks is not allowed");
     }
 
     @Test
@@ -178,7 +195,7 @@ class UnevaluatedPropertiesTest extends AbstractValidatorTest {
     void discriminatorWithOneOfIgnoresPropertiesOfOtherBranches() throws ParseException {
         assertRejected("/discriminator-oneof", """
                 {"petType": "Lion", "lives": 9, "tricks": 3}
-                """, "unevaluated property: tricks");
+                """, "property tricks is not allowed");
     }
 
     @Test
