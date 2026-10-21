@@ -146,7 +146,10 @@ public class AccessLogInterceptorService {
 
     private String safe(Supplier<Object> access, String defaultValue) {
         try {
-            return escapeForLog(String.valueOf(access.get()));
+            final var value = access.get();
+            if (value == null)
+                return defaultValue;
+            return escapeForLog(String.valueOf(value));
         } catch (Exception e) {
             return defaultValue;
         }
