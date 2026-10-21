@@ -99,7 +99,7 @@ cd distribution/performance-test
 
 Each `run-scenario.sh` invocation restarts the gateway with that scenario's config, samples CPU
 on all three VMs during the run, and prints RPS/OK/ERR, latency percentiles
-(`LATENCY_MS p50=... p95=... p99=... max=...`), plus a CPU-busy summary per role. Re-run
+(`LATENCY_MS p50=... p95=... p99=... max=... p99.9=... p99.99=...`), plus a CPU-busy summary per role. Re-run
 it as many times as you like (e.g. at different concurrency levels: `./run-scenario.sh fullproxy
 150`) without re-running `deploy-and-run.sh` in between. Without that argument each scenario runs
 at its own default concurrency (`DEFAULT_CONCURRENCY` in `run-scenario.sh`'s scenario list): 350
