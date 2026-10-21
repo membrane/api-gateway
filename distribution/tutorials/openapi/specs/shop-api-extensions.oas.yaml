@@ -1,0 +1,37 @@
+openapi: 3.1.2
+info:
+  title: Minimal Shop API
+  version: "2.0"
+  # ID under /api-docs: x-membrane-id plus the version, here shop-v2-0
+  x-membrane-id: shop
+# Validation settings for Membrane. Settings in the configuration take precedence.
+x-membrane-validation:
+  requests: true
+  details: true
+servers:
+  - url: http://localhost:3000/ext-shop
+paths:
+  /products:
+    get:
+      responses:
+        '200':
+          description: A list of products
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                name:
+                  type: string
+                  maxLength: 10
+                price:
+                  type: number
+                  minimum: 0
+      responses:
+        '201':
+          description: Product created
+          content:
+            application/json: {}

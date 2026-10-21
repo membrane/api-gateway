@@ -7,11 +7,6 @@ Have **10 minutes** and want to solve a task with Membrane? These hands-on examp
 * Docker 
 * As Windows service
 
-## [OpenAPI](openapi)
-
-* Deploy APIs from OpenAPI definitions
-* Validate requests, responses, and security
-
 ## [Scripting](scripting#scripting)
 
 * Use Groovy and JavaScript for scripting

@@ -99,7 +99,7 @@ cd distribution/performance-test
 
 Each `run-scenario.sh` invocation restarts the gateway with that scenario's config, samples CPU
 on all three VMs during the run, and prints RPS/OK/ERR, latency percentiles
-(`LATENCY_MS p50=... p95=... p99=... max=...`), plus a CPU-busy summary per role. Re-run
+(`LATENCY_MS p50=... p95=... p99=... max=... p99.9=... p99.99=...`), plus a CPU-busy summary per role. Re-run
 it as many times as you like (e.g. at different concurrency levels: `./run-scenario.sh fullproxy
 150`) without re-running `deploy-and-run.sh` in between. Without that argument each scenario runs
 at its own default concurrency (`DEFAULT_CONCURRENCY` in `run-scenario.sh`'s scenario list): 350
@@ -124,6 +124,81 @@ Runs too short to contain a full sampling interval report no CPU result. The his
 figures in the results documents used the older activity-filtered method and are not directly
 comparable to new runs.
 
+## GC logs and per-run results
+
+The gateway always writes a GC and safepoint log (`-Xlog:gc*,safepoint`, epoch-millisecond
+timestamps, no rotation). After each run, `run-scenario.sh` fetches it and saves everything about
+the run under `results/<YYYYMMDD-HHMMSS>-<scenario>-<RUN_LABEL>/` (gitignored):
+
+| File | Content |
+|---|---|
+| `run.txt` | Scenario, label, concurrency, request counts and rate, `GC_OPTS`, gateway JDK |
+| `client.out` | Client output: RPS, OK/ERR, latency percentiles, measured window |
+| `cpu-summary.txt` | CPU summary per VM |
+| `gc.log` | The gateway's GC and safepoint log |
+| `gc-summary.txt` | `gc-summary.awk` output for the measured window |
+| `gateway.log` | The gateway's console output |
+| `jvm-flags.txt` | The effective JVM flags (`-XX:+PrintCommandLineFlags`) |
+| `proc-cpu.log` | CPU time of the gateway JVM and of its GC threads, once per second (`proc-cpu-sample.sh`) |
+| `proc-cpu-summary.txt` | Gateway JVM and GC thread CPU in the measured window |
+| `summary.txt` | The run's `SUMMARY` line: errors, latency, GC collections and pauses, JVM and GC CPU |
+| `slow-requests.txt` | Fixed-rate runs: every request slower than 1 ms, with its scheduled time (epoch ms) and latency (ms) |
+| `client-gc.log` | The client's GC and safepoint log |
+
+To find out which slow requests coincided with a stop-the-world pause of the gateway or of the client:
+
+```sh
+LC_ALL=C awk -v tol=1 -f match-slow.awk results/<run>/gc.log results/<run>/client-gc.log results/<run>/slow-requests.txt
+```
+
+`gc-summary.awk` reads Parallel, G1, generational ZGC and Shenandoah logs of JDK 21 and 25 and
+prints the pauses inside the client's measured window (count, full GCs, degenerated Shenandoah
+cycles, total, max, p99, share of the window, GC CPU, heap after GC), the number of collections and
+their concurrent time, the longest safepoint including the time to reach it, ZGC allocation stalls
+if there were any,
+and the pauses before the window (startup, warmup, or earlier runs). To re-run it on a saved log:
+
+```sh
+LC_ALL=C awk -v start=<epoch ms> -v end=<epoch ms> -f gc-summary.awk results/<run>/gc.log
+```
+
+with `start` and `end` from the `MEASURED_WINDOW` line in `client.out`.
+
+`run-scenario.sh` also reads:
+
+- `GC_OPTS`: the gateway's collector and heap flags, default
+  `-Xms32g -Xmx32g -XX:+AlwaysPreTouch -XX:+UseParallelGC`. `GC_OPTS=''` runs the JVM's defaults.
+  GC logging is added independently of it.
+- `RUN_LABEL`: names the results directory, default `tuned`.
+- `GATEWAY_RESTART=false`: keeps the running gateway JVM instead of restarting it, for soak tests.
+  The gateway must have been started by `run-scenario.sh` for the same scenario; the script
+  refuses otherwise. For example, one hour of `fullproxy` against a 2 GB G1 heap:
+
+  ```sh
+  GC_OPTS='-Xms2g -Xmx2g' LOAD_TOTAL=10000000 RUN_LABEL=soak-g1-2g ./run-scenario.sh fullproxy
+  end=$(( $(date +%s) + 3600 ))
+  while (( $(date +%s) < end )); do
+    LOAD_TOTAL=10000000 GATEWAY_RESTART=false RUN_LABEL=soak-g1-2g ./run-scenario.sh fullproxy
+  done
+  ```
+- `LOAD_RATE`: sends a fixed number of requests per second instead of as many as the concurrency
+  allows, to look at the gateway under typical rather than maximum load. Requests are sent on
+  schedule whether or not earlier ones have completed, and latency is timed from each request's
+  scheduled time, so a gateway stall shows up as latency. The concurrency then only caps the
+  client's connections (default 1000). `client.out` adds a `SEND_RATE` line with the largest lag
+  behind the schedule; a large lag means the client limited the rate.
+- `GATEWAY_JAVA_HOME`: the JDK the gateway runs on, e.g. `/usr/lib/jvm/temurin-25-jdk-amd64`.
+  Default: the gateway VM's `java` (Temurin 21).
+
+## GC under a fixed load
+
+`run-gc-matrix.sh [scenario]` runs a scenario (default `fullproxy`) at a fixed rate once for each
+combination of JDK, collector and heap size and prints one `SUMMARY` line per run. It installs
+missing Temurin versions on the gateway VM. Defaults: `RATE=1000`, `WARMUP_SECONDS=10`,
+`MEASURE_SECONDS=60`, `JDKS="21 25"`, `GCS="g1 zgc shen"` (generational ZGC; Shenandoah in its
+generational mode from JDK 25 on), `HEAPS="default 100m 250m 4g"` (`-Xmx`). A full matrix takes about
+75 minutes; the results of 2026-10-21 are in [gc-typical-load/RESULTS.md](gc-typical-load/RESULTS.md).
+
 ## Configuration
 
 All scripts read sensible defaults but can be overridden via environment variables, e.g.:
@@ -138,7 +213,7 @@ See the top of each script for the variables it accepts.
 
 - VM performance on shared cloud hardware varies run to run; don't expect to reproduce exact RPS
   figures, only the relative ordering and rough magnitude.
-- The per-scenario concurrency defaults and the JVM heap/GC flags (`JAVA_OPTS` in `run-scenario.sh`) were
+- The per-scenario concurrency defaults and the JVM heap/GC flags (`GC_OPTS` in `run-scenario.sh`) were
   found empirically to work best for the current default VM sizes -- they are very unlikely to be
   optimal for different sizes. If you change `*_SIZE`, re-sweep concurrency (e.g.
   64/100/150/220/300) before trusting a single number.

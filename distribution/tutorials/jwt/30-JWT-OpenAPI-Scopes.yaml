@@ -1,0 +1,80 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.7.1.json
+#
+# Tutorial: Enforcing Scopes from OpenAPI
+#
+# The OpenAPI document declares the scopes each operation requires. Membrane checks them
+# against the scopes in the JWT. See shop-api-scopes.oas.yaml.
+#
+# 1.) Start Membrane:
+#     Linux/Mac:
+#       ./membrane.sh -c 30-JWT-OpenAPI-Scopes.yaml
+#     Windows:
+#       membrane.cmd -c 30-JWT-OpenAPI-Scopes.yaml
+#
+# 2.) Call the API without a token:
+#     curl -i localhost:2000/shop/v2/products
+#
+#     HTTP/1.1 401 Unauthorized
+#
+# 3.) Request a token with the scope inventory:
+#     curl localhost:2000/token
+#
+#     eyJ0eXAiOiJKV1Qi...
+#
+#     Copy the token from the response and replace <token> with it in the next steps.
+#
+# 4.) List the products with the token:
+#     curl -i localhost:2000/shop/v2/products -H "Authorization: Bearer <token>"
+#
+#     HTTP/1.1 200 OK
+#
+# 5.) Create a product with the same token:
+#     curl -i localhost:2000/shop/v2/products -H "Authorization: Bearer <token>" -H "Content-Type: application/json" -d "{\"name\":\"Mango\",\"price\":1.99}"
+#
+#     HTTP/1.1 403 Forbidden
+#     ...
+#     "message" : "Caller is not in scope management"
+
+api:
+  port: 2000
+  name: Shop API
+  openapi:
+    - location: shop-api-scopes.oas.yaml
+      validateSecurity: true
+  flow:
+    - jwtAuth:
+        expectedAud: shop
+        jwks:
+          jwks:
+            - location: jwk-public.json
+    # jwtAuth must run before openapiValidator to provide the scopes of the token.
+    # Placing openapiValidator here overrides the default pre-flow validation order.
+    - openapiValidator: {}
+
+---
+api:
+  port: 2000
+  name: Token Server
+  path:
+    uri: /token
+  flow:
+    - request:
+        - template:
+            contentType: application/json
+            src: |
+              {
+                "sub": "user@example.com",
+                "aud": "shop",
+                "scp": "inventory"
+              }
+        - jwtSign:
+            jwk:
+              location: jwk.json
+    - return:
+        status: 200
+
+# NOTE: jwtAuth reads the scopes from the scp claim (Microsoft Entra ID). For tokens that
+# carry them in scope (RFC 9068), set scopesClaim: scope on jwtAuth.
+#
+# NOTE: The token server hands out tokens to anyone. In practice, tokens come from an
+# authorization server such as Keycloak, Entra ID or Membrane's own, see ../oauth2.

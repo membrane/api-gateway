@@ -2,6 +2,9 @@
 #
 # Tutorial: OpenAPI Validation
 #
+# Membrane can validate requests and responses against OpenAPI, checking paths, methods,
+# parameters, headers and bodies.
+#
 # 1.) Start Membrane:
 #     Linux/Mac:
 #       ./membrane.sh -c 20-OpenAPI-Validation.apis.yaml
@@ -9,14 +12,25 @@
 #       membrane.cmd -c 20-OpenAPI-Validation.apis.yaml
 #
 # 2.) Try creating a new product with a negative price:
-#     curl "http://localhost:2000/shop/v2/products" -H "Content-Type: application/json" -d "{ \"name\": \"Figs\", \"price\": -2.7}"
+#     curl "http://localhost:2000/store/products" -H "Content-Type: application/json" -d "{ \"name\": \"Figs\", \"price\": -2.7}"
 #
-#     Check the validation error in the response.
+#     Check the validation error.
+#
+# 3.) Send a property the schema does not define:
+#     curl "http://localhost:2000/store/products" -H "Content-Type: application/json" -d "{ \"name\": \"Figs\", \"price\": 2.7, \"color\": \"purple\"}"
+#
+#     Check the validation error.
 
 api:
   port: 2000
   openapi:
-    - location: ../../conf/openapi/fruitshop-v2-2-0.oas.yml
+    - location: specs/minimal-shop-api.oas.yaml
       validateRequests: true
       validateResponses: true
+      # Include the detailed list of validation errors in the error response.
+      # Consider turning it off in production to avoid exposing API internals.
       validationDetails: true
+
+---
+include:
+  - mock.apis.yaml

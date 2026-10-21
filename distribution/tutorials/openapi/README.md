@@ -5,10 +5,13 @@ and rewrites the server URLs it advertises.
 
 - Serving an OpenAPI description at `/api-docs` and trying it out in the Swagger UI
 - Validating a JSON request against the schema and reading the resulting error
-- Rewriting the `servers[].url` entries of a served OpenAPI document: automatically, pinned to
-  explicit values, or overridden for a deployment behind a reverse proxy
+- Rewriting the `servers[].url` entries of a served OpenAPI document: automatically, or with
+  explicit values for a deployment behind a load balancer or reverse proxy
 - Validating `application/x-www-form-urlencoded` messages - the format HTML forms post - against
   the same kind of schema: required fields, types and constraints, just like for JSON
+- Validating XML bodies against the schemas, including attributes declared with `xml.attribute`
+- Membrane settings inside the OpenAPI document: `x-membrane-id` for the ID under `/api-docs`
+  and `x-membrane-validation` to turn on validation
 
 To begin, open [10-OpenAPI.apis.yaml](10-OpenAPI.apis.yaml) and follow the instructions in the
 file.
