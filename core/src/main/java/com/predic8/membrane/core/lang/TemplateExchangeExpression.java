@@ -16,7 +16,6 @@ package com.predic8.membrane.core.lang;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.Interceptor.*;
-import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.util.text.*;
 import org.slf4j.*;
 import org.w3c.dom.*;
@@ -36,17 +35,17 @@ public class TemplateExchangeExpression extends AbstractExchangeExpression {
 
     private final List<Token> tokens;
 
-    public static ExchangeExpression newInstance(Interceptor interceptor, Language language, String expression, Router router) {
-        return newInstance(interceptor, language, expression, router, TEXT_SERIALIZATION);
+    public static ExchangeExpression newInstance(Interceptor interceptor, Language language, String expression) {
+        return newInstance(interceptor, language, expression, TEXT_SERIALIZATION);
     }
 
-    public static ExchangeExpression newInstance(Interceptor interceptor, Language language, String expression, Router router, SerializationFunction encoder) {
+    public static ExchangeExpression newInstance(Interceptor interceptor, Language language, String expression, SerializationFunction encoder) {
         // SpEL can take expressions like "a: ${..} b: ${..}" as input. We do not use that feature and tokenize the expression ourselves to enable encoding
-        return new TemplateExchangeExpression(interceptor, language, expression, router, encoder);
+        return new TemplateExchangeExpression(interceptor, language, expression, encoder);
     }
 
-    protected TemplateExchangeExpression(Interceptor interceptor, Language language, String expression, Router router, SerializationFunction encoder) {
-        super(expression, router);
+    protected TemplateExchangeExpression(Interceptor interceptor, Language language, String expression, SerializationFunction encoder) {
+        super(expression);
         this.encoder = encoder;
         tokens = parseTokens(interceptor, language, expression);
     }

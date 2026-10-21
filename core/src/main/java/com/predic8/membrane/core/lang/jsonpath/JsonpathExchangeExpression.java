@@ -28,7 +28,6 @@ import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.lang.AbstractExchangeExpression;
 import com.predic8.membrane.core.lang.BodyKind;
 import com.predic8.membrane.core.lang.ExchangeExpressionException;
-import com.predic8.membrane.core.router.Router;
 import com.predic8.membrane.core.util.ConfigurationException;
 import org.jetbrains.annotations.Nullable;
 import org.jose4j.json.internal.json_simple.JSONAware;
@@ -71,8 +70,8 @@ public class JsonpathExchangeExpression extends AbstractExchangeExpression {
      */
     private final JsonPath compiledPath;
 
-    public JsonpathExchangeExpression(String source, Router router) {
-        super(source, router);
+    public JsonpathExchangeExpression(String source) {
+        super(source);
         syntaxCheckJsonpath(source);
         compiledPath = JsonPath.compile(source);
     }

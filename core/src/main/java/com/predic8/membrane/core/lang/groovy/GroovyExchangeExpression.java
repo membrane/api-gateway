@@ -40,7 +40,7 @@ public class GroovyExchangeExpression extends AbstractExchangeExpression {
      * @param interceptor the interceptor the expression belongs to, e.g. for its xmlConfig
      */
     public GroovyExchangeExpression(String source, Interceptor interceptor) {
-        super(source, interceptor != null ? interceptor.getRouter() : null);
+        super(source);
         this.interceptor = interceptor;
         try {
             script = new GroovyLanguageSupport().compileScript( null, source);
