@@ -86,9 +86,10 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
          */
         NONE,
         /**
-         * Only header blocks bound via soap:header in the binding: on the input for requests, on
-         * the output for responses, and via soap:headerfault for faults. A bound element that none
-         * of the WSDL's schemas declares is skipped with a warning.
+         * Only header blocks bound via soap:header in the binding: on the input of any of its
+         * operations for requests, on the output for responses, and via soap:headerfault for
+         * faults. A bound element that none of the WSDL's schemas declares is skipped with a
+         * warning.
          */
         BOUND,
         /**
