@@ -22,6 +22,8 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.util.ConfigurationException;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,6 +62,7 @@ public class WSDLValidatorTest {
     public static final String TWO_FAULTS_PER_OPERATION_WSDL = "src/test/resources/ws/two-faults-per-operation.wsdl";
     public static final String CITIES_WITH_SOAP_HEADER_WSDL = "src/test/resources/ws/cities-with-soap-header.wsdl";
     public static final String UNBOUND_HEADER_WSDL = "src/test/resources/ws/unbound-header.wsdl";
+    public static final String UNVALIDATABLE_HEADERS_WSDL = "src/test/resources/ws/unvalidatable-soap-headers.wsdl";
 
     private static final String GET_CITY_EXAMPLE_COM = """
             <cs:getCity xmlns:cs="https://example.com/cities"><name>Bonn</name></cs:getCity>
@@ -702,7 +705,7 @@ public class WSDLValidatorTest {
     void validDeclaredHeader() throws Exception {
         var exc = getRequestExchange(soap11WithHeader(VALID_REQUEST_HEADER, GET_CITY_EXAMPLE_COM));
 
-        assertEquals(CONTINUE, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, null, false).validateMessage(exc, REQUEST));
+        assertEquals(CONTINUE, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, BOUND).validateMessage(exc, REQUEST));
     }
 
     @Test
@@ -715,7 +718,7 @@ public class WSDLValidatorTest {
                 </hd:RequestHeader>
                 """, GET_CITY_EXAMPLE_COM));
 
-        assertEquals(ABORT, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, null, false).validateMessage(exc, REQUEST));
+        assertEquals(ABORT, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, BOUND).validateMessage(exc, REQUEST));
         assertEquals(REQUEST.name(), exc.getResponse().getHeader().getFirstValue(VALIDATION_ERROR_SOURCE));
         assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("unknown"), exc.getResponse().getBodyAsStringDecoded());
     }
@@ -729,7 +732,7 @@ public class WSDLValidatorTest {
                 </hd:RequestHeader>
                 """, GET_CITY_EXAMPLE_COM));
 
-        assertEquals(ABORT, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, null, false).validateMessage(exc, REQUEST));
+        assertEquals(ABORT, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, BOUND).validateMessage(exc, REQUEST));
         final var body = exc.getResponse().getBodyAsStringDecoded();
         assertTrue(body.contains("not a language"), body);
         assertFalse(body.contains("cvc-elt.1.a"), body);
@@ -749,7 +752,7 @@ public class WSDLValidatorTest {
                 </s11:Envelope>
                 """);
 
-        assertEquals(ABORT, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, null, false).validateMessage(exc, REQUEST));
+        assertEquals(ABORT, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, BOUND).validateMessage(exc, REQUEST));
         final var body = exc.getResponse().getBodyAsStringDecoded();
         assertTrue(body.contains("<line>5</line>"), body);
     }
@@ -813,7 +816,7 @@ public class WSDLValidatorTest {
      */
     @Test
     void manyHeaderBlocks() throws Exception {
-        final var validator = createValidator(CITIES_WITH_SOAP_HEADER_WSDL, null, false);
+        final var validator = createValidator(CITIES_WITH_SOAP_HEADER_WSDL, BOUND);
         final var exc = getRequestExchange(soap11WithHeader(VALID_REQUEST_HEADER.repeat(10_000), GET_CITY_EXAMPLE_COM));
 
         assertTimeoutPreemptively(ofSeconds(5), () -> assertEquals(CONTINUE, validator.validateMessage(exc, REQUEST)));
@@ -838,7 +841,7 @@ public class WSDLValidatorTest {
                 <hd:RequestHeader xmlns:hd="https://example.com/header"><hd:MessageId>1</hd:MessageId></hd:RequestHeader>
                 """, GET_CITY_EXAMPLE_COM));
 
-        assertEquals(ABORT, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, null, false).validateMessage(exc, REQUEST));
+        assertEquals(ABORT, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, BOUND).validateMessage(exc, REQUEST));
     }
 
     @Test
@@ -847,7 +850,7 @@ public class WSDLValidatorTest {
                 <ns2:Block xmlns:ns2="http://membrane-api.io"><anything/></ns2:Block>
                 """ + VALID_REQUEST_HEADER, GET_CITY_EXAMPLE_COM));
 
-        assertEquals(CONTINUE, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, null, false).validateMessage(exc, REQUEST));
+        assertEquals(CONTINUE, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, BOUND).validateMessage(exc, REQUEST));
     }
 
     @Test
@@ -859,7 +862,7 @@ public class WSDLValidatorTest {
                 </hd:RequestHeader>
                 """, GET_CITY_EXAMPLE_COM));
 
-        assertEquals(CONTINUE, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, null, false).validateMessage(exc, REQUEST));
+        assertEquals(CONTINUE, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, BOUND).validateMessage(exc, REQUEST));
     }
 
     @Test
@@ -870,7 +873,7 @@ public class WSDLValidatorTest {
                 <cs:getCityResponse xmlns:cs="https://example.com/cities"><population>300000</population></cs:getCityResponse>
                 """));
 
-        assertEquals(ABORT, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, null, false).validateMessage(exc, RESPONSE));
+        assertEquals(ABORT, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, BOUND).validateMessage(exc, RESPONSE));
         assertEquals(RESPONSE.name(), exc.getResponse().getHeader().getFirstValue(VALIDATION_ERROR_SOURCE));
     }
 
@@ -883,14 +886,37 @@ public class WSDLValidatorTest {
                 """));
 
         // Only the response's own declared header blocks are validated in the response flow.
-        assertEquals(CONTINUE, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, null, false).validateMessage(exc, RESPONSE));
+        assertEquals(CONTINUE, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, BOUND).validateMessage(exc, RESPONSE));
     }
 
     @Test
-    void unboundHeaderIsNotValidatedByDefault() throws Exception {
+    void headersAreNotValidatedByDefault() throws Exception {
+        var exc = getRequestExchange(soap11WithHeader("""
+                <hd:RequestHeader xmlns:hd="https://example.com/header"><unknown/></hd:RequestHeader>
+                """, GET_CITY_EXAMPLE_COM));
+
+        assertEquals(CONTINUE, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, null, false).validateMessage(exc, REQUEST));
+    }
+
+    /**
+     * There is nothing to validate a bound header block against if none of the WSDL's schemas
+     * declares its element, e.g. WS-Security bound without its schema.
+     */
+    @ParameterizedTest
+    @EnumSource(value = WSDLValidator.HeaderValidation.class, names = {"BOUND", "DECLARED"})
+    void boundHeaderWithoutDeclarationIsNotValidated(WSDLValidator.HeaderValidation headerValidation) throws Exception {
+        var exc = getRequestExchange(soap11WithHeader("""
+                <wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"/>
+                """, GET_CITY_EXAMPLE_COM));
+
+        assertEquals(CONTINUE, createValidator(UNVALIDATABLE_HEADERS_WSDL, headerValidation).validateMessage(exc, REQUEST));
+    }
+
+    @Test
+    void unboundHeaderIsNotValidatedWithBound() throws Exception {
         var exc = getRequestExchange(soap11WithHeader(INVALID_UNBOUND_REQUEST_HEADER, GET_CITY_EXAMPLE_COM));
 
-        assertEquals(CONTINUE, createValidator(UNBOUND_HEADER_WSDL, null, false).validateMessage(exc, REQUEST));
+        assertEquals(CONTINUE, createValidator(UNBOUND_HEADER_WSDL, BOUND).validateMessage(exc, REQUEST));
     }
 
     @Test
@@ -948,7 +974,7 @@ public class WSDLValidatorTest {
     }
 
     @Test
-    void headerIsNotValidatedInFaultByDefault() throws Exception {
+    void headerIsNotValidatedInFaultWithBound() throws Exception {
         final var exc = getResponseExchange(soap11WithHeader(INVALID_UNBOUND_REQUEST_HEADER, FAULT_11));
 
         assertEquals(CONTINUE, createValidator(UNBOUND_HEADER_WSDL, BOUND).validateMessage(exc, RESPONSE));

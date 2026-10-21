@@ -43,6 +43,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
+import java.util.function.Supplier;
 
 import static com.predic8.membrane.annot.Constants.SoapVersion.SOAP11;
 import static com.predic8.membrane.annot.Constants.SoapVersion.SOAP12;
@@ -81,8 +82,13 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
      */
     public enum HeaderValidation {
         /**
+         * No header blocks.
+         */
+        NONE,
+        /**
          * Only header blocks bound via soap:header in the binding: on the input for requests, on
-         * the output for responses.
+         * the output for responses. A bound element that none of the WSDL's schemas declares is
+         * skipped with a warning.
          */
         BOUND,
         /**
@@ -143,7 +149,7 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
     }
 
     public WSDLValidator(ResolverMap resourceResolver, String location, String serviceName, ValidatorInterceptor.FailureHandler failureHandler, boolean skipFaults, ErrorDetailsPolicy errorDetailsPolicy) {
-        this(resourceResolver, location, serviceName, failureHandler, skipFaults, errorDetailsPolicy, HeaderValidation.BOUND);
+        this(resourceResolver, location, serviceName, failureHandler, skipFaults, errorDetailsPolicy, HeaderValidation.NONE);
     }
 
     public WSDLValidator(ResolverMap resourceResolver, String location, String serviceName, ValidatorInterceptor.FailureHandler failureHandler, boolean skipFaults, ErrorDetailsPolicy errorDetailsPolicy, HeaderValidation headerValidation) {
@@ -165,9 +171,9 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
 
         requestElements = getPossibleRequestElements(definitions, serviceName);
         responseElements = getPossibleResponseElements(definitions, serviceName);
-        requestHeaderElements = getHeaderElements(getPossibleRequestHeaderElements(definitions, serviceName), headerValidation);
-        responseHeaderElements = getHeaderElements(getPossibleResponseHeaderElements(definitions, serviceName), headerValidation);
-        faultHeaderElements = getHeaderElements(Set.of(), headerValidation);
+        requestHeaderElements = getHeaderElements(() -> getPossibleRequestHeaderElements(definitions, serviceName), headerValidation);
+        responseHeaderElements = getHeaderElements(() -> getPossibleResponseHeaderElements(definitions, serviceName), headerValidation);
+        faultHeaderElements = getHeaderElements(Set::of, headerValidation);
         faultDetailElements = getPossibleFaultDetailElements(definitions, serviceName);
         versions = definitions.getSoapVersions();
 
@@ -176,12 +182,20 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
         faultStructureSchemas.put(SOAP12, compileFaultStructureSchema("soap12-fault.xsd"));
     }
 
-    private Set<QName> getHeaderElements(Set<QName> bound, HeaderValidation headerValidation) {
-        if (headerValidation == HeaderValidation.BOUND)
-            return bound;
-        final var result = new HashSet<>(bound);
-        result.addAll(getGlobalElements(definitions));
-        return result;
+    /**
+     * The bound header blocks are only looked up if headers are validated, as the lookup warns
+     * about those it cannot validate.
+     */
+    private Set<QName> getHeaderElements(Supplier<Set<QName>> bound, HeaderValidation headerValidation) {
+        return switch (headerValidation) {
+            case NONE -> Set.of();
+            case BOUND -> bound.get();
+            case DECLARED -> {
+                final var result = new HashSet<>(bound.get());
+                result.addAll(getGlobalElements(definitions));
+                yield result;
+            }
+        };
     }
 
     @Override

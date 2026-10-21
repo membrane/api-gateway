@@ -49,7 +49,7 @@ public class WSDLMessageElementExtractor {
      * service's binding operations.
      */
     public static Set<QName> getPossibleRequestHeaderElements(Definitions definitions, String serviceName) {
-        return getHeaderElements(getHeaders(definitions, serviceName, BindingOperation::getInputs));
+        return getHeaderElements(getHeaders(definitions, serviceName, BindingOperation::getInputs), getGlobalElements(definitions));
     }
 
     /**
@@ -57,7 +57,7 @@ public class WSDLMessageElementExtractor {
      * service's binding operations.
      */
     public static Set<QName> getPossibleResponseHeaderElements(Definitions definitions, String serviceName) {
-        return getHeaderElements(getHeaders(definitions, serviceName, BindingOperation::getOutputs));
+        return getHeaderElements(getHeaders(definitions, serviceName, BindingOperation::getOutputs), getGlobalElements(definitions));
     }
 
     /**
@@ -89,11 +89,15 @@ public class WSDLMessageElementExtractor {
     }
 
     /**
-     * A {@code soap:header} whose part names a type instead of an element (only legal with
-     * {@code use="encoded"}) is skipped with a warning rather than rejected: the rest of the WSDL is
-     * still validatable, and a header block that cannot be identified is just not validated.
+     * A {@code soap:header} whose header block cannot be validated is skipped with a warning rather
+     * than rejected: the rest of the WSDL is still validatable, and the header block is just not
+     * validated. That is the case if its part cannot be found, if the part names a type instead of
+     * an element, or if none of the WSDL's schemas declares the element, e.g. WS-Security bound
+     * without its schema.
+     *
+     * @param declared the global elements of the WSDL's schemas
      */
-    private static Set<QName> getHeaderElements(List<SoapHeader> headers) {
+    private static Set<QName> getHeaderElements(List<SoapHeader> headers, Set<QName> declared) {
         var result = new HashSet<QName>();
         for (var header : headers) {
             var resolved = header.resolvePart();
@@ -105,6 +109,10 @@ public class WSDLMessageElementExtractor {
             var element = part.getElementQName();
             if (element == null) {
                 log.warn("soap:header part {} names a type instead of an element, so the header block it describes is not validated.", part.getName());
+                continue;
+            }
+            if (!declared.contains(element)) {
+                log.warn("soap:header part {} of message {} binds element {}, which none of the WSDL's schemas declares, so the header block it describes is not validated.", header.getPart(), header.getMessage(), element);
                 continue;
             }
             result.add(element);

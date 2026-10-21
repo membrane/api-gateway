@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
     Declares SOAP header blocks that cannot be validated: one whose part names a type instead of an
-    element, and one whose part does not exist.
+    element, one whose element no schema declares, and one whose part does not exist.
 -->
 <wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
                   xmlns:cs="https://example.com/cities"
                   xmlns:hd="https://example.com/header"
                   xmlns:xsd="http://www.w3.org/2001/XMLSchema"
                   xmlns:s="http://schemas.xmlsoap.org/wsdl/soap/"
+                  xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"
                   targetNamespace="https://example.com/cities" name="cities">
     <wsdl:types>
         <xsd:schema targetNamespace="https://example.com/header" elementFormDefault="qualified">
@@ -48,6 +49,9 @@
         <wsdl:part name="header" type="xsd:string"/>
         <wsdl:part name="body" element="cs:getCity"/>
     </wsdl:message>
+    <wsdl:message name="Security">
+        <wsdl:part name="security" element="wsse:Security"/>
+    </wsdl:message>
     <wsdl:message name="CityResponse">
         <wsdl:part name="body" element="cs:getCityResponse"/>
     </wsdl:message>
@@ -66,6 +70,7 @@
             <s:operation soapAction="https://example.com/cities/getCity"/>
             <wsdl:input>
                 <s:header use="literal" message="cs:City" part="header"/>
+                <s:header use="literal" message="cs:Security" part="security"/>
                 <s:body use="literal" parts="body"/>
             </wsdl:input>
             <wsdl:output>

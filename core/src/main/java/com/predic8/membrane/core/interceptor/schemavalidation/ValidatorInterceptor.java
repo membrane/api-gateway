@@ -48,7 +48,7 @@ import static com.predic8.membrane.core.util.text.TextUtil.linkURL;
  * @description Validates request and response message bodies against a schema. The schema type is selected by the
  * attribute you set: <code>wsdl</code> for SOAP messages, <code>schema</code> for XML against an XSD,
  * <code>jsonSchema</code> for JSON or YAML, or <code>schematron</code>. Exactly one of them must be configured; inside a
- * soapProxy the WSDL is taken from the proxy automatically. With a WSDL, SOAP header blocks are validated as well. An
+ * soapProxy the WSDL is taken from the proxy automatically. With a WSDL, SOAP header blocks can be validated as well. An
  * empty body passes; an invalid body is rejected with an
  * error response that lists what was wrong. Set <code>validationDetails</code> to <code>false</code> to reject with a
  * bare error instead, and <code>failureHandler</code> to control where the failure is logged. See
@@ -59,7 +59,7 @@ import static com.predic8.membrane.core.util.text.TextUtil.linkURL;
  *   wsdl: &lt;url&gt; | schema: &lt;url&gt; | jsonSchema: &lt;url&gt; | schematron: &lt;url&gt;   # choose one
  *   [ validationDetails: true | false ]   # default: true
  *   [ failureHandler: response | log ]    # default: response
- *   [ headers: bound | declared ]         # default: bound, wsdl only
+ *   [ headers: none | bound | declared ]  # default: none, wsdl only
  * </pre>
  * @topic 3. Security and Validation
  * @yaml
@@ -93,7 +93,7 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
     private String failureHandler;
     private boolean skipFaults;
     private boolean validationDetails = true;
-    private HeaderValidation headers = HeaderValidation.BOUND;
+    private HeaderValidation headers = HeaderValidation.NONE;
 
     private MessageValidator validator;
     private ResolverMap resourceResolver;
@@ -127,7 +127,7 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
         name = validator.getName();
         if (skipFaults && wsdl == null)
             throw new ConfigurationException("validator/@skipFaults only makes sense with validator/@wsdl.");
-        if (headers != HeaderValidation.BOUND && wsdl == null)
+        if (headers != HeaderValidation.NONE && wsdl == null)
             throw new ConfigurationException("validator/@headers only makes sense with validator/@wsdl.");
     }
 
@@ -344,12 +344,13 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 
     /**
      * @description Which SOAP header blocks are validated. Only valid together with <code>wsdl</code>.
-     * <code>bound</code> validates the header blocks the WSDL binding declares via <code>soap:header</code>, for
-     * requests those of the operation's input, for responses those of its output. <code>declared</code> validates in
-     * addition every header block whose element is declared globally in the WSDL's schemas, even if the binding does
-     * not mention it. Header blocks without such a declaration, e.g. WS-Security, are never validated.
-     * @default bound
-     * @example declared
+     * <code>none</code> validates no header blocks. <code>bound</code> validates the header blocks the WSDL binding
+     * declares via <code>soap:header</code>, for requests those of the operation's input, for responses those of its
+     * output. <code>declared</code> validates in addition every header block whose element is declared globally in the
+     * WSDL's schemas, even if the binding does not mention it. Header blocks without such a declaration, e.g.
+     * WS-Security, are never validated, even if the binding mentions them.
+     * @default none
+     * @example bound
      */
     @MCAttribute
     public void setHeaders(HeaderValidation headers) {
