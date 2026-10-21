@@ -17,10 +17,14 @@
 package com.predic8.membrane.core.openapi.validators;
 
 import com.predic8.membrane.core.openapi.model.*;
+import jakarta.mail.internet.ParseException;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.*;
+import org.junit.jupiter.params.provider.*;
 
 import java.util.*;
 
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.openapi.util.JsonTestUtil.*;
 import static java.lang.Boolean.*;
 import static java.util.Collections.*;
@@ -68,20 +72,6 @@ public class ArrayTest extends AbstractValidatorTest {
         ValidationErrors errors = validator.validate(Request.post().path("/array").body(mapToJson(m)));
         assertEquals(2, errors.size());
     }
-
-// As of 2022-11-20 parser does not support OpenAPI 3.1.0
-//    @Test
-//    public void prefixedInvalid() {
-//
-//        List l = Arrays.asList("foo","DE",7,true);
-//
-//        Map m = new HashMap();
-//        m.put("prefixed", l);
-//
-//
-//        ValidationErrors errors = validator.validate(Request.post().path("/array").body(mapToJson(m)));
-//        assertEquals(2,errors.size());
-//    }
 
     @Test
     public void minMaxValid() {
@@ -192,6 +182,50 @@ public class ArrayTest extends AbstractValidatorTest {
         assertTrue(e.getMessage().contains("missing"));
         assertEquals("REQUEST/BODY#/objects/1/b", e.getContext().getLocationForRequest());
 
+    }
+
+    /**
+     * In JSON Schema 2020-12 (OAS 3.1 and later) prefixItems validates the items by position and
+     * items only the items after the prefix. See #3499.
+     */
+    @Nested
+    class PrefixItems extends AbstractValidatorTest {
+
+        @Override
+        protected String getOpenAPIFileName() {
+            return "/openapi/specs/oas31/prefix-items.yaml";
+        }
+
+        private ValidationErrors post(String path, String body) throws ParseException {
+            return validator.validate(Request.post().mediaType(APPLICATION_JSON).path(path).body(body));
+        }
+
+        @ParameterizedTest
+        @CsvSource(delimiter = '|', value = {
+                "/closed|[\"a\", 1]",
+                "/closed|[\"a\"]",
+                "/closed|[]",
+                "/open|[\"a\", 1, true, null]",
+                "/rest|[\"a\", 1, 2]",
+                "/ref|[1.5, 2]"})
+        void accepted(String path, String body) throws ParseException {
+            final var errors = post(path, body);
+            assertEquals(0, errors.size(), errors.toString());
+        }
+
+        @ParameterizedTest
+        @CsvSource(delimiter = '|', value = {
+                "/closed|[1, \"a\"]|/0,/1",
+                "/closed|[\"a\", 1, true]|/2",
+                "/open|[1]|/0",
+                "/rest|[\"a\", \"b\"]|/1",
+                "/rest|[1, 2]|/0",
+                "/ref|[1, 2, 3]|/2"})
+        void rejected(String path, String body, String pointers) throws ParseException {
+            final var errors = post(path, body);
+            assertEquals(List.of(pointers.split(",")),
+                    errors.stream().map(e -> e.getContext().getJSONpointer()).toList(), errors.toString());
+        }
     }
 
     private List<Object> listWithDifferentTypes() {

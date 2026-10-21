@@ -40,6 +40,10 @@ PRIO 3:
   - Security: return 400 if the routing path selects a different path item than this matrix-aware path. Otherwise `/customers/;x/orders` would be validated against `/customers/{id}/orders`, while a backend that merges slashes serves a literal `/customers/orders`.
   - Open: the style may differ per method of one path item; `;jsessionid` next to matrix values ends up in exploded objects with `additionalProperties`. The RFC 6570 form `/customers{id}` → `/customers;id=7` stays out of scope.
   - Related: `simple`-style array/object path parameters are not parsed either, `PathParametersValidator` validates the raw string.
+- OpenAPI: support `unevaluatedItems` (JSON Schema 2020-12, OAS 3.1 and later)
+  - Story: the keyword is never read, so arrays are validated as if it were absent. `unevaluatedItems: false` does not reject any items.
+  - It applies to the items not evaluated by `prefixItems`, `items` or `contains`, including those of the `allOf`/`anyOf`/`oneOf`/`$ref` subschemas that validated successfully. `ObjectValidator` does the same for `unevaluatedProperties`.
+  - Related: #3499 (`prefixItems`).
 - ReplaceInterceptor: Support Languages, tutorial/transformation
 - WebServiceExplorerInterceptor
   - Support multiple services, ports, ...

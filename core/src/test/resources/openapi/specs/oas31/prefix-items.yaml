@@ -1,0 +1,66 @@
+openapi: "3.1.0"
+info:
+  title: Prefix Items API
+  version: '1.0'
+paths:
+  /closed:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              prefixItems:
+                - type: string
+                - type: integer
+              items: false
+      responses:
+        "200":
+          description: "OK"
+  /open:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              prefixItems:
+                - type: string
+                - type: integer
+      responses:
+        "200":
+          description: "OK"
+  /rest:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              prefixItems:
+                - type: string
+              items:
+                type: integer
+      responses:
+        "200":
+          description: "OK"
+  /ref:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Point'
+      responses:
+        "200":
+          description: "OK"
+components:
+  schemas:
+    Point:
+      type: array
+      prefixItems:
+        - $ref: '#/components/schemas/Coordinate'
+        - $ref: '#/components/schemas/Coordinate'
+      items: false
+    Coordinate:
+      type: number
