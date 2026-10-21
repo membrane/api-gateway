@@ -342,6 +342,8 @@ public class APIProxy extends ServiceProxy implements Polyglot, XMLSupport {
     /**
      * @description Identifier for this API. Overrides the auto-generated entry id used for this API
      * in the published <code>apis.json</code> catalog; otherwise an id is derived from the API's key.
+     * The catalog puts the domain in front of it, so <code>order-api</code> becomes the
+     * <code>aid</code> <code>api.example.com:order-api</code>.
      * @example order-api
      */
     @MCAttribute
