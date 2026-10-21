@@ -17,6 +17,7 @@ package com.predic8.membrane.core.interceptor.schemavalidation;
 import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.wsdl.parser.*;
 import com.predic8.membrane.core.util.wsdl.parser.Operation.Direction;
+import com.predic8.membrane.core.util.wsdl.parser.schema.Schema;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,6 +58,30 @@ public class WSDLMessageElementExtractor {
      */
     public static Set<QName> getPossibleResponseHeaderElements(Definitions definitions, String serviceName) {
         return getHeaderElements(getHeaders(definitions, serviceName, BindingOperation::getOutputs));
+    }
+
+    /**
+     * The global element declarations of the WSDL's schemas, including those of the schemas they
+     * include or import.
+     */
+    public static Set<QName> getGlobalElements(Definitions definitions) {
+        var result = new HashSet<QName>();
+        definitions.getSchemas().forEach(schema -> addGlobalElements(schema, result));
+        return result;
+    }
+
+    /**
+     * Included elements are already merged into the including schema and take its target
+     * namespace. An imported schema already visited by the parser is null, so the recursion ends.
+     */
+    private static void addGlobalElements(Schema schema, Set<QName> result) {
+        for (var element : schema.getSchemaElements()) {
+            result.add(new QName(schema.getTargetNamespace(), element.getName()));
+        }
+        for (var schemaImport : schema.getImports()) {
+            if (schemaImport.getSchema() != null)
+                addGlobalElements(schemaImport.getSchema(), result);
+        }
     }
 
     /**

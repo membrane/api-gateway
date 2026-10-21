@@ -40,6 +40,7 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.schemavalidation.WSDLValidator.HeaderValidation.DECLARED;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -56,6 +57,7 @@ public class WSDLValidatorTest {
     public static final String RPC_WITH_FAULT_WSDL = "src/test/resources/ws/rpc-with-fault.wsdl";
     public static final String TWO_FAULTS_PER_OPERATION_WSDL = "src/test/resources/ws/two-faults-per-operation.wsdl";
     public static final String CITIES_WITH_SOAP_HEADER_WSDL = "src/test/resources/ws/cities-with-soap-header.wsdl";
+    public static final String UNBOUND_HEADER_WSDL = "src/test/resources/ws/unbound-header.wsdl";
 
     private static final String GET_CITY_EXAMPLE_COM = """
             <cs:getCity xmlns:cs="https://example.com/cities"><name>Bonn</name></cs:getCity>
@@ -66,6 +68,10 @@ public class WSDLValidatorTest {
                 <hd:MessageId>1</hd:MessageId>
                 <hd:Language>de</hd:Language>
             </hd:RequestHeader>
+            """;
+
+    private static final String INVALID_UNBOUND_REQUEST_HEADER = """
+            <hd:RequestHeader xmlns:hd="https://example.com/header"><unknown/><hd:MessageId>1</hd:MessageId></hd:RequestHeader>
             """;
 
     private static final String WELL_FORMED_FAULT_11 = soap11("""
@@ -777,6 +783,67 @@ public class WSDLValidatorTest {
         assertEquals(CONTINUE, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, null, false).validateMessage(exc, RESPONSE));
     }
 
+    @Test
+    void unboundHeaderIsNotValidatedByDefault() throws Exception {
+        var exc = getRequestExchange(soap11WithHeader(INVALID_UNBOUND_REQUEST_HEADER, GET_CITY_EXAMPLE_COM));
+
+        assertEquals(CONTINUE, createValidator(UNBOUND_HEADER_WSDL, null, false).validateMessage(exc, REQUEST));
+    }
+
+    @Test
+    void unboundButDeclaredHeaderIsValidated() throws Exception {
+        var exc = getRequestExchange(soap11WithHeader(INVALID_UNBOUND_REQUEST_HEADER, GET_CITY_EXAMPLE_COM));
+
+        assertEquals(ABORT, createValidator(UNBOUND_HEADER_WSDL, DECLARED).validateMessage(exc, REQUEST));
+        assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("unknown"), exc.getResponse().getBodyAsStringDecoded());
+    }
+
+    @Test
+    void validUnboundButDeclaredHeader() throws Exception {
+        var exc = getRequestExchange(soap11WithHeader("""
+                <hd:RequestHeader xmlns:hd="https://example.com/header"><hd:MessageId>1</hd:MessageId></hd:RequestHeader>
+                <tr:TraceHeader xmlns:tr="https://example.com/trace"><tr:TraceId>42</tr:TraceId></tr:TraceHeader>
+                """, GET_CITY_EXAMPLE_COM));
+
+        assertEquals(CONTINUE, createValidator(UNBOUND_HEADER_WSDL, DECLARED).validateMessage(exc, REQUEST));
+    }
+
+    @Test
+    void headerDeclaredInImportedSchemaIsValidated() throws Exception {
+        var exc = getRequestExchange(soap11WithHeader("""
+                <tr:TraceHeader xmlns:tr="https://example.com/trace"><tr:SpanId>42</tr:SpanId></tr:TraceHeader>
+                """, GET_CITY_EXAMPLE_COM));
+
+        assertEquals(ABORT, createValidator(UNBOUND_HEADER_WSDL, DECLARED).validateMessage(exc, REQUEST));
+    }
+
+    @Test
+    void undeclaredHeaderIsNotValidatedWithDeclared() throws Exception {
+        var exc = getRequestExchange(soap11WithHeader("""
+                <ns2:Block xmlns:ns2="http://membrane-api.io"><anything/></ns2:Block>
+                """, GET_CITY_EXAMPLE_COM));
+
+        assertEquals(CONTINUE, createValidator(UNBOUND_HEADER_WSDL, DECLARED).validateMessage(exc, REQUEST));
+    }
+
+    @Test
+    void unboundButDeclaredHeaderIsValidatedInResponse() throws Exception {
+        var exc = getResponseExchange(soap11WithHeader(INVALID_UNBOUND_REQUEST_HEADER, """
+                <cs:getCityResponse xmlns:cs="https://example.com/cities"><population>300000</population></cs:getCityResponse>
+                """));
+
+        assertEquals(ABORT, createValidator(UNBOUND_HEADER_WSDL, DECLARED).validateMessage(exc, RESPONSE));
+    }
+
+    @Test
+    void boundHeaderIsStillValidatedWithDeclared() throws Exception {
+        var exc = getRequestExchange(soap11WithHeader("""
+                <hd:RequestHeader xmlns:hd="https://example.com/header"><unknown/><hd:MessageId>1</hd:MessageId><hd:Language>de</hd:Language></hd:RequestHeader>
+                """, GET_CITY_EXAMPLE_COM));
+
+        assertEquals(ABORT, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, DECLARED).validateMessage(exc, REQUEST));
+    }
+
     private static Exchange getRequestExchange(String body) throws URISyntaxException {
         return Request.post("/foo").body(body).contentType(TEXT_XML).buildExchange();
     }
@@ -821,6 +888,13 @@ public class WSDLValidatorTest {
 
     private static WSDLValidator createValidator(String location, String serviceName, boolean skipFaults) {
         var validator = new WSDLValidator(new ResolverMap(), location, serviceName, (msg, exc) -> log.info("Validation failure: {}", msg), skipFaults);
+        validator.init();
+        return validator;
+    }
+
+    private static WSDLValidator createValidator(String location, WSDLValidator.HeaderValidation headerValidation) {
+        var validator = new WSDLValidator(new ResolverMap(), location, null,
+                (msg, exc) -> log.info("Validation failure: {}", msg), false, ErrorDetailsPolicy.FULL, headerValidation);
         validator.init();
         return validator;
     }

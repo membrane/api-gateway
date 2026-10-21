@@ -197,6 +197,16 @@ class WSDLMessageElementExtractorTest {
     }
 
     @Test
+    void globalElementsIncludeImportedSchemas() throws Exception {
+        var elements = getGlobalElements(getDefinitions("classpath:/ws/unbound-header.wsdl"));
+
+        assertEquals(Set.of(new QName("https://example.com/header", "RequestHeader"),
+                new QName("https://example.com/trace", "TraceHeader"),
+                new QName("https://example.com/cities", "getCity"),
+                new QName("https://example.com/cities", "getCityResponse")), elements);
+    }
+
+    @Test
     void noHeaderElements() throws Exception {
         assertTrue(getPossibleRequestHeaderElements(getDefinitions("classpath:/ws/cities.wsdl"), null).isEmpty());
     }
