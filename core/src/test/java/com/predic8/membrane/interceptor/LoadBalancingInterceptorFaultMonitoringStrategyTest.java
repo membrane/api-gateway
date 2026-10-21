@@ -14,34 +14,49 @@
 
 package com.predic8.membrane.interceptor;
 
-import com.google.common.base.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.balancer.*;
-import com.predic8.membrane.core.interceptor.balancer.faultmonitoring.*;
-import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.services.*;
-import com.predic8.membrane.core.transport.http.client.*;
-import org.apache.commons.httpclient.*;
-import org.apache.commons.httpclient.methods.*;
-import org.jetbrains.annotations.*;
-import org.junit.jupiter.api.*;
-import org.slf4j.*;
+import com.google.common.base.Stopwatch;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.HTTPClientInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.balancer.DispatchingStrategy;
+import com.predic8.membrane.core.interceptor.balancer.LoadBalancingInterceptor;
+import com.predic8.membrane.core.interceptor.balancer.faultmonitoring.FaultMonitoringStrategy;
+import com.predic8.membrane.core.proxies.ServiceProxy;
+import com.predic8.membrane.core.proxies.ServiceProxyKey;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.router.TestRouter;
+import com.predic8.membrane.core.services.RandomlyFailingDummyWebServiceInterceptor;
+import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
+import com.predic8.membrane.core.transport.http.client.RetryHandler;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
+import org.apache.commons.httpclient.methods.PutMethod;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
-import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.interceptor.balancer.BalancerUtil.*;
-import static java.util.concurrent.TimeUnit.*;
-import static org.apache.commons.httpclient.HttpVersion.*;
-import static org.apache.http.params.CoreProtocolPNames.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static com.predic8.membrane.core.http.Header.CONTENT_TYPE;
+import static com.predic8.membrane.core.http.Header.SOAP_ACTION;
+import static com.predic8.membrane.core.http.MimeType.TEXT_XML_UTF8;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.balancer.BalancerUtil.lookupBalancer;
+import static com.predic8.membrane.core.util.NetworkTestUtil.freePorts;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.apache.commons.httpclient.HttpVersion.HTTP_1_1;
+import static org.apache.http.params.CoreProtocolPNames.PROTOCOL_VERSION;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests the LoadBalancingInterceptor using the SuccessStrategy.
@@ -57,6 +72,7 @@ class LoadBalancingInterceptorFaultMonitoringStrategyTest {
 
     LoadBalancingInterceptor balancingInterceptor;
     Router balancer;
+    private int[] ports;
 
     // The simulation nodes
     private final List<Router> nodes = new ArrayList<>();
@@ -78,6 +94,7 @@ class LoadBalancingInterceptorFaultMonitoringStrategyTest {
     }
 
     private void setUp(TestingContext ctx) throws Exception {
+        ports = freePorts(ctx.numNodes + 1);
         nodes.clear();
         for (int i = 1; i <= ctx.numNodes; i++) {
             nodes.add(createRouterForNode(ctx, i));
@@ -87,13 +104,13 @@ class LoadBalancingInterceptorFaultMonitoringStrategyTest {
 
         //add the destinations to the load balancer
         for (int i = 1; i <= ctx.numNodes; i++) {
-            lookupBalancer(balancer, "Default").up("Default", "localhost", (2000 + i));
+            lookupBalancer(balancer, "Default").up("Default", "localhost", ports[i]);
         }
     }
 
     private Router createLoadBalancer() throws Exception {
         Router r = new TestRouter();
-        ServiceProxy sp3 = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3054), "thomas-bayer.com", 80);
+        ServiceProxy sp3 = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", ports[0]), "thomas-bayer.com", 80);
         balancingInterceptor = new LoadBalancingInterceptor();
         balancingInterceptor.setName("Default");
         sp3.getFlow().add(balancingInterceptor);
@@ -122,7 +139,7 @@ class LoadBalancingInterceptorFaultMonitoringStrategyTest {
     }
 
     private @NotNull ServiceProxy createServiceProxy(TestingContext ctx, int i) {
-        ServiceProxy sp = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", (2000 + i)), "thomas-bayer.com", 80);
+        ServiceProxy sp = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", ports[i]), "thomas-bayer.com", 80);
         sp.getFlow().add(new AbstractInterceptor() {
             @Override
             public Outcome handleResponse(Exchange exc) {
@@ -453,7 +470,7 @@ class LoadBalancingInterceptorFaultMonitoringStrategyTest {
 
     private PutMethod getPutMethod() {
         PutMethod put = new PutMethod(
-                "http://localhost:3054/axis2/services/BLZService");
+                "http://localhost:" + ports[0] + "/axis2/services/BLZService");
         put.setRequestEntity(new InputStreamRequestEntity(this.getClass().getResourceAsStream("/getBank.xml")));
         put.setRequestHeader(CONTENT_TYPE, TEXT_XML_UTF8);
         put.setRequestHeader(SOAP_ACTION, "");

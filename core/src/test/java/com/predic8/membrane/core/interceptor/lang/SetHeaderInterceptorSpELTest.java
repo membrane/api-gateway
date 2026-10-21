@@ -14,14 +14,18 @@
 
 package com.predic8.membrane.core.interceptor.lang;
 
+import com.predic8.membrane.core.config.xml.*;
+import com.predic8.membrane.core.config.xml.Namespaces.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.lang.ExchangeExpression.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
 
+import java.util.*;
 import java.util.stream.*;
 
+import static com.predic8.membrane.core.http.Request.post;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
@@ -180,5 +184,45 @@ class SetHeaderInterceptorSpELTest extends AbstractSetHeaderInterceptorTest {
         interceptor.init(router);
         interceptor.handleRequest(exchange);
         return exchange.getRequest().getHeader().getFirstValue("x-bar");
+    }
+
+    /**
+     * The plugin's own xmlConfig replaces the global one, for language: xpath as well as for the xpath() function
+     */
+    @Test
+    void xpathFunctionUsesLocalXmlConfigLikeLanguageXPath() throws Exception {
+        router.getRegistry().register("global", xmlConfig("urn:global"));
+        final var exc = post("/order").xml("""
+                <o:order xmlns:o="urn:local"><o:id>7</o:id></o:order>
+                """).buildExchange();
+
+        final var xpathLanguage = new SetHeaderInterceptor();
+        xpathLanguage.setFieldName("X-A");
+        xpathLanguage.setLanguage(XPATH);
+        xpathLanguage.setValue("${//o:id}");
+        xpathLanguage.setXmlConfig(xmlConfig("urn:local"));
+        xpathLanguage.init(router);
+        xpathLanguage.handleRequest(exc);
+
+        final var xpathFunction = new SetHeaderInterceptor();
+        xpathFunction.setFieldName("X-B");
+        xpathFunction.setValue("${xpath('//o:id')}");
+        xpathFunction.setXmlConfig(xmlConfig("urn:local"));
+        xpathFunction.init(router);
+        xpathFunction.handleRequest(exc);
+
+        assertEquals("7", exc.getRequest().getHeader().getFirstValue("X-A"));
+        assertEquals("7", exc.getRequest().getHeader().getFirstValue("X-B"));
+    }
+
+    private static XmlConfig xmlConfig(String uri) {
+        final var ns = new Namespace();
+        ns.setPrefix("o");
+        ns.setUri(uri);
+        final var namespaces = new Namespaces();
+        namespaces.setNamespaces(List.of(ns));
+        final var cfg = new XmlConfig();
+        cfg.setNamespaces(namespaces);
+        return cfg;
     }
 }

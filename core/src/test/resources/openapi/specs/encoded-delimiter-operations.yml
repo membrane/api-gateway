@@ -1,0 +1,29 @@
+openapi: '3.0.2'
+info:
+  title: Encoded Delimiter Operations API
+  version: '1.0'
+servers:
+  - url: https://api.example.com/api
+paths:
+  /public/{file}:
+    get:
+      parameters:
+        - in: path
+          name: file
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: OK
+  /admin/users:
+    get:
+      parameters:
+        - in: query
+          name: token
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: OK

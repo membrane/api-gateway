@@ -17,6 +17,7 @@ package com.predic8.membrane.tutorials.openapi;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.greaterThan;
@@ -38,12 +39,30 @@ public class OpenApiValidationTutorialTest extends AbstractOpenAPITutorialTest {
             { "name": "Figs", "price": -2.7 }
             """)
         .when()
-            .post("http://localhost:2000/shop/v2/products")
+            .post("http://localhost:2000/store/products")
         .then()
             .statusCode(is(400))
             .body("title", equalTo("OpenAPI message validation failed"))
             .body("validation.errors", notNullValue())
             .body("validation.errors.size()", greaterThan(0));
+        // @formatter:on
+    }
+
+    @Test
+    void createProductAdditionalPropertyFailsValidation() {
+        // @formatter:off
+        given()
+            .contentType("application/json")
+            .body("""
+            { "name": "Figs", "price": 2.7, "color": "purple" }
+            """)
+        .when()
+            .post("http://localhost:2000/store/products")
+        .then()
+            .statusCode(is(400))
+            .body("title", equalTo("OpenAPI message validation failed"))
+            // Not the message text: it changes with #3562, and the error may then be reported on the object
+            .body("validation.errors.toString()", containsString("color"));
         // @formatter:on
     }
 

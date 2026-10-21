@@ -16,18 +16,26 @@
 
 package com.predic8.membrane.core.interceptor.flow.invocation.internalservice;
 
-import com.predic8.membrane.core.proxies.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.proxies.ServiceProxyKey;
+import org.junit.jupiter.api.Test;
 
 import static com.predic8.membrane.core.interceptor.flow.invocation.FlowTestInterceptors.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static com.predic8.membrane.core.util.NetworkTestUtil.freePorts;
+import static io.restassured.RestAssured.given;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ServiceCallsExternalInternalRoutingTest extends AbstractInternalServiceRoutingInterceptorTest {
 
+    private int port;
+
     protected void configure() throws Exception {
 
+        int[] ports = freePorts(2);
+        port = ports[0];
+        int backendPort = ports[1];
+
         api(a -> {
-            a.setKey(new ServiceProxyKey("*","*",null,2000));
+            a.setKey(new ServiceProxyKey("*","*",null,port));
             a.add(A);
             a.getTarget().setUrl("internal://b");
         });
@@ -36,17 +44,18 @@ public class ServiceCallsExternalInternalRoutingTest extends AbstractInternalSer
             b.setName("b");
             b.add(B);
             b.getTarget().setHost("localhost");  // Test also!
-            b.getTarget().setPort(2001);
+            b.getTarget().setPort(backendPort);
         });
 
         api(c -> {
-            c.setKey(new ServiceProxyKey("*", "*", null, 2001));
+            c.setKey(new ServiceProxyKey("*", "*", null, backendPort));
             c.add(C, RETURN);
         });
     }
 
     @Test
     void test() {
-        assertEquals(">a>b>c<c<b<a", call());
+        assertEquals(">a>b>c<c<b<a", given()
+                        .post("http://localhost:" + port + "/original-path").getBody().asString());
     }
 }

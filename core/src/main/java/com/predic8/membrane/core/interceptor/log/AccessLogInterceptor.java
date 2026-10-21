@@ -69,7 +69,7 @@ public class AccessLogInterceptor extends AbstractInterceptor {
                 defaultValue,
                 additionalVariables,
                 excludePayloadSize,
-                router
+                this
         );
     }
 

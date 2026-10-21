@@ -140,8 +140,13 @@ public class Request<T extends Body> extends Message<T, Request<T>> {
         return securitySchemes.stream().anyMatch(s -> s.equals(scheme));
     }
 
-    public void parsePathParameters(String uriTemplate) throws PathDoesNotMatchException {
-        pathParameters = UriTemplateMatcher.matchTemplate(uriTemplate, path);
+    /**
+     * @return true if the path matches the template. Only then the path parameters are set.
+     */
+    public boolean parsePathParameters(UriTemplate uriTemplate) {
+        final var parameters = uriTemplate.match(path);
+        parameters.ifPresent(p -> pathParameters = p);
+        return parameters.isPresent();
     }
 
     @Override

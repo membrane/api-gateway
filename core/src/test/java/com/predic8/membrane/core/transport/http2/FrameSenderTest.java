@@ -28,8 +28,11 @@ import java.util.concurrent.*;
 
 import static com.predic8.membrane.core.transport.http2.frame.Error.ERROR_CANCEL;
 import static com.predic8.membrane.core.transport.http2.frame.Frame.*;
+import static com.predic8.membrane.core.transport.http2.frame.DataFrame.FLAG_END_STREAM;
 import static com.predic8.membrane.core.transport.http2.frame.HeadersFrame.FLAG_END_HEADERS;
+import static java.lang.System.nanoTime;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.junit.jupiter.api.Assertions.*;
 
 class FrameSenderTest {
@@ -52,7 +55,7 @@ class FrameSenderTest {
                 throw new RuntimeException(e);
             }
         });
-        assertThrows(TimeoutException.class, () -> blocked.get(200, TimeUnit.MILLISECONDS));
+        assertThrows(TimeoutException.class, () -> blocked.get(200, MILLISECONDS));
 
         sender.stop();
 
@@ -83,7 +86,7 @@ class FrameSenderTest {
                 throw new RuntimeException(e);
             }
         });
-        assertThrows(TimeoutException.class, () -> blocked.get(200, TimeUnit.MILLISECONDS));
+        assertThrows(TimeoutException.class, () -> blocked.get(200, MILLISECONDS));
 
         streamInfo.receivedRstStream(ERROR_CANCEL);
 
@@ -116,7 +119,7 @@ class FrameSenderTest {
                 throw new RuntimeException(e);
             }
         });
-        assertThrows(TimeoutException.class, () -> blocked.get(200, TimeUnit.MILLISECONDS));
+        assertThrows(TimeoutException.class, () -> blocked.get(200, MILLISECONDS));
 
         streamInfo.receivedRstStream(ERROR_CANCEL);
         blocked.get(2, TimeUnit.SECONDS);
@@ -197,6 +200,32 @@ class FrameSenderTest {
         assertEquals(Map.of(1, Map.of("x-test", "value"), 3, Map.of("x-test", "value")), decodeHeaderBlocks(out.toByteArray()));
     }
 
+    @Test
+    void dataDoesNotOvertakeHeadersOfItsStream() throws Exception {
+        final var settings = new Settings();
+        final var streams = new ConcurrentHashMap<Integer, StreamInfo>();
+        final var out = new ByteArrayOutputStream();
+        final var sender = new FrameSender(out, new Encoder(4096), settings, streams, "test");
+        final var streamInfo = new StreamInfo(1, sender, settings, settings);
+        streams.put(1, streamInfo);
+
+        sender.sendData(endStreamDataFrame());
+        final var thread = new Thread(sender);
+        thread.start();
+        final var deadline = nanoTime() + MILLISECONDS.toNanos(200);
+        while (!streamInfo.getDataFramesToBeSent().isEmpty() && nanoTime() < deadline)
+            Thread.sleep(10);
+        sender.send(1, (encoder, peerSettings) ->
+                List.of(headerFrame(TYPE_HEADERS, FLAG_END_HEADERS, 1, encodeHeader(encoder, "x-test", "value"))));
+        while (!streamInfo.getDataFramesToBeSent().isEmpty())
+            Thread.sleep(10);
+        sender.stop();
+        thread.join(2000);
+
+        assertEquals(List.of(TYPE_HEADERS, TYPE_DATA), frameTypes(out.toByteArray()));
+        assertEquals(StreamState.HALF_CLOSED_LOCAL, streamInfo.getState());
+    }
+
     private static byte[] encodeHeader(Encoder encoder, String name, String value) throws IOException {
         final var block = new ByteArrayOutputStream();
         encoder.encodeHeader(block, name.getBytes(UTF_8), value.getBytes(UTF_8), false);
@@ -248,7 +277,9 @@ class FrameSenderTest {
         return types;
     }
 
-    /** Reserves the connection window for a DATA frame and queues it, like the body writer does. */
+    /**
+     * Reserves the connection window for a DATA frame and queues it, like the body writer does.
+     */
     private static void reserveAndSendData(FrameSender sender) throws IOException {
         final var frame = dataFrame();
         sender.getConnectionFlowControl().reserve(frame.getLength(), frame.getStreamId());
@@ -264,6 +295,12 @@ class FrameSenderTest {
     private static Frame dataFrame() {
         final var frame = new Frame();
         frame.fill(TYPE_DATA, 0, 1, new byte[1], 0, 1);
+        return frame;
+    }
+
+    private static Frame endStreamDataFrame() {
+        final var frame = new Frame();
+        frame.fill(TYPE_DATA, FLAG_END_STREAM, 1, null, 0, 0);
         return frame;
     }
 }

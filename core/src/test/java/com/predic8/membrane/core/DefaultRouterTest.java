@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.util.NetworkTestUtil.freePort;
 import static io.restassured.RestAssured.given;
 import static io.restassured.filter.log.LogDetail.ALL;
 import static org.hamcrest.Matchers.*;
@@ -35,17 +36,25 @@ class DefaultRouterTest {
 
     public static final String INTERNAL_SECRET = "supersecret";
     static Router dev, prod;
+    static int prodPort, devPort;
     
     @BeforeAll
     static void setUp() throws IOException {
-        prod = createRouter(2000, true);
-        dev = createRouter(2001, false);
+        prod = new DefaultRouter();
+        dev = new DefaultRouter();
+        prodPort = freePort();
+        createRouter(prod, prodPort, true);
+        devPort = freePort();
+        createRouter(dev, devPort, false);
     }
 
     @AfterAll
     static void tearDown() {
-        prod.stop();
-        dev.stop();
+        try {
+            if (prod != null) prod.stop();
+        } finally {
+            if (dev != null) dev.stop();
+        }
     }
 
     @Test
@@ -54,7 +63,7 @@ class DefaultRouterTest {
         // @formatter:off
         given()
             .contentType(APPLICATION_JSON)
-            .post("http://localhost:2000/")
+            .post("http://localhost:" + prodPort + "/")
         .then()
             .log().ifValidationFails()
             .statusCode(500)
@@ -71,7 +80,7 @@ class DefaultRouterTest {
         // @formatter:off
         given()
             .contentType(APPLICATION_XML)
-            .post("http://localhost:2000/")
+            .post("http://localhost:" + prodPort + "/")
         .then()
             .log().ifValidationFails(ALL)
             .statusCode(500)
@@ -86,7 +95,7 @@ class DefaultRouterTest {
     void  devJson() {
         // @formatter:off
         given()
-            .get("http://localhost:2001/")
+            .get("http://localhost:" + devPort + "/")
         .then()
             .statusCode(500)
             .contentType(containsString(APPLICATION_PROBLEM_JSON))
@@ -104,7 +113,7 @@ class DefaultRouterTest {
         // @formatter:off
         given()
                 .contentType(APPLICATION_XML)
-                .post("http://localhost:2001/")
+                .post("http://localhost:" + devPort + "/")
             .then()
                 .log().ifValidationFails(ALL)
                 .statusCode(500)
@@ -117,8 +126,7 @@ class DefaultRouterTest {
         // @formatter:on
     }
 
-    private static Router createRouter(int port, boolean production) throws IOException {
-        Router r = new DefaultRouter();
+    private static void createRouter(Router r, int port, boolean production) throws IOException {
         r.getConfiguration().setProduction(production);
         APIProxy api = new APIProxy();
         api.setKey(new APIProxyKey(port));
@@ -136,6 +144,5 @@ class DefaultRouterTest {
         r.getConfiguration().setHotDeploy(false);
         r.add(api);
         r.start();
-        return r;
     }
 }

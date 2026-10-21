@@ -19,7 +19,6 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.XmlDomBody;
 import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.interceptor.XMLSupport;
 import com.predic8.membrane.core.lang.AbstractExchangeExpression;
 import com.predic8.membrane.core.lang.BodyKind;
 import com.predic8.membrane.core.lang.ExchangeExpressionException;
@@ -41,6 +40,7 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathEvaluationResult;
 import javax.xml.xpath.XPathExpressionException;
 
+import static com.predic8.membrane.core.config.xml.XmlConfig.localOrGlobal;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.util.text.StringUtil.tail;
 import static com.predic8.membrane.core.util.text.StringUtil.truncateAfter;
@@ -62,9 +62,7 @@ public class XPathExchangeExpression extends AbstractExchangeExpression {
     public XPathExchangeExpression(Interceptor interceptor, String xpath, Router router) {
         super(xpath, router);
 
-        if (interceptor instanceof XMLSupport xns) {
-            xmlConfig = xns.getXmlConfig();
-        }
+        xmlConfig = localOrGlobal(interceptor);
     }
 
     @Override
@@ -118,18 +116,11 @@ public class XPathExchangeExpression extends AbstractExchangeExpression {
             log.debug("Body: {}", msg.getBodyAsStringDecoded()); // is expensive!
         }
 
-        return switch (BodyKind.of(msg, XPathExchangeExpression::isXml, "<")) {
+        return switch (BodyKind.ofXml(msg)) {
             case EMPTY, FOREIGN -> evaluateOnEmptyDocument(xmlType);
             case MATCHING, UNKNOWN, MISLABELLED -> evaluateOnBody(msg, xmlType);
             case FORM -> evaluateOnFormBody(xmlType);
         };
-    }
-
-    /**
-     * XOP/MTOM packages are multipart/related; {@link Message#getBodyAsStreamDecoded()} reassembles them into XML.
-     */
-    private static boolean isXml(String contentType) {
-        return isXML(contentType) || isOfMediaType(MULTIPART_RELATED, contentType);
     }
 
     private Object evaluateOnBody(Message msg, QName xmlType) throws XPathExpressionException {

@@ -1,0 +1,40 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.7.1.json
+#
+# Tutorial: Validating XML with OpenAPI
+#
+# The schemas in an OpenAPI document also describe XML bodies. Membrane validates
+# application/xml messages against them, including attributes declared with xml.attribute.
+# See specs/crm-api.oas.yaml.
+#
+# 1.) Start Membrane:
+#     Linux/Mac:
+#       ./membrane.sh -c 70-XML.apis.yaml
+#     Windows:
+#       membrane.cmd -c 70-XML.apis.yaml
+#
+# 2.) Create a customer:
+#     curl -i localhost:2000/crm/customers -H "Content-Type: application/xml" -d "<customer id='7'><name>Alice</name><age>42</age></customer>"
+#
+#     HTTP/1.1 201 Created
+#
+# 3.) Send a negative age:
+#     curl localhost:2000/crm/customers -H "Content-Type: application/xml" -d "<customer id='7'><name>Alice</name><age>-1</age></customer>"
+#
+#     <entry key="REQUEST/BODY#/age">
+#         <message>-1 is smaller than the minimum of 0</message>
+#
+# 4.) Send an id attribute that is not an integer:
+#     curl localhost:2000/crm/customers -H "Content-Type: application/xml" -d "<customer id='seven'><name>Alice</name><age>42</age></customer>"
+#
+#     <entry key="REQUEST/BODY#/id">
+#         <message>"seven" is of type string which does not match any of [integer]</message>
+
+api:
+  port: 2000
+  openapi:
+    - location: specs/crm-api.oas.yaml
+      validateRequests: true
+
+---
+include:
+  - mock.apis.yaml

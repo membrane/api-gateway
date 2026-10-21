@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 
 import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
+import static com.predic8.membrane.core.util.NetworkTestUtil.freePorts;
 import static io.restassured.RestAssured.given;
 import static io.restassured.filter.log.LogDetail.ALL;
 import static org.hamcrest.Matchers.containsString;
@@ -39,15 +40,19 @@ public class SOAPProxyTest {
     Router router;
 
     SOAPProxy proxy;
+    int port, backendPort;
 
     @BeforeEach
     void setUp() throws IOException {
-        proxy = new SOAPProxy();
-        proxy.setPort(2000);
         router = new DefaultRouter();
+        int[] ports = freePorts(2);
+        port = ports[0];
+        backendPort = ports[1];
+        proxy = new SOAPProxy();
+        proxy.setPort(port);
 
         APIProxy backend = new APIProxy();
-        backend.setKey(new APIProxyKey(2001));
+        backend.setKey(new APIProxyKey(backendPort));
         StaticInterceptor e = new StaticInterceptor();
         e.setSrc("<foo></foo>");
         e.setContentType(TEXT_XML);
@@ -125,7 +130,7 @@ public class SOAPProxyTest {
 
         // @formatter: off
         given().when()
-                .get("http://localhost:2000/order")
+                .get("http://localhost:" + port + "/order")
                 .then()
                 .log().ifValidationFails(ALL)
                 .statusCode(200)
@@ -140,10 +145,13 @@ public class SOAPProxyTest {
         router.add(proxy);
         router.start();
 
+        // SOAP initialization reads the target port from the shared WSDL fixture.
+        proxy.getTarget().setPort(backendPort);
+
         // @formatter: off
         given().when()
                 .body(OpenAPITestUtils.getResourceAsStream(this, "/soap-sample/soap-request-bonn.xml"))
-                .post("http://localhost:2000/city-service")
+                .post("http://localhost:" + port + "/city-service")
                 .then()
                 .log().ifValidationFails(ALL)
                 .statusCode(200)

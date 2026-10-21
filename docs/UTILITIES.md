@@ -48,6 +48,7 @@ Keep this file in sync when adding, renaming or removing a util class.
 | `util/xml/XMLEncodingUtil` | XML character encoding |
 | `util/xml/NormalizeXMLForJsonUtil` | Normalize XML for JSON conversion |
 | `util/MapNamespaceContext` | `NamespaceContext` backed by a map (XPath) |
+| `config/xml/XmlConfig.global`, `localOrGlobal` | The global `xmlConfig` from `components`, or a local one that replaces it (XPath namespaces) |
 | `util/LSInputImpl` | `LSInput` implementation for schema resolvers |
 
 ## Collections, bytes, errors, concurrency
@@ -90,6 +91,7 @@ Keep this file in sync when adding, renaming or removing a util class.
 | `UriUtil` | Trim/ensure slashes, strip query, rewrite URL parts (not the same as `util/URIUtil`) |
 | `Utils` | Format validators (UUID, e-mail, date, IP, ISO codes, ...), stream/string conversion, validator request/response builders |
 | `UriTemplateMatcher` | Match request paths against OpenAPI URI templates |
+| `UriTemplate` | Precompiled URI template (OpenAPI path templating, optionally regex literal parts); non-throwing match for hot paths (routing, validation) |
 | `OpenAPI32Parser` | OpenAPI 3.2 parsing shim |
 | `ObjectHolder` | Mutable holder for lambdas |
 

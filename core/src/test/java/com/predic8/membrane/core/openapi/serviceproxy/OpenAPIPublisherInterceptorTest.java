@@ -30,6 +30,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.IOException;
 import java.util.*;
@@ -101,14 +102,14 @@ public class OpenAPIPublisherInterceptorTest {
     static List<String> uiParameters() {
         return new ArrayList<>() {{
             add(UI_OLD);
-            add(OpenAPIPublisherInterceptor.PATH_UI);
+            add(OpenAPIPublisher.PATH_UI);
         }};
     }
 
     static List<String> metaParameters() {
         return new ArrayList<>() {{
             add(META_OLD);
-            add(OpenAPIPublisherInterceptor.PATH);
+            add(OpenAPIPublisher.PATH);
         }};
     }
 
@@ -120,6 +121,18 @@ public class OpenAPIPublisherInterceptorTest {
         assertTrue(OpenAPITestUtils.getMapFromResponse(get).size() >= 27);
     }
 
+    /**
+     * Routing ignores path parameters and merges duplicate slashes, see Request.getRoutingPath(). The documentation
+     * must be served for such a path as well.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"/api-doc;x=1", "//api-doc"})
+    void getApiDirectoryWithRoutingPath(String testPath) throws Exception {
+        get.getRequest().setUri(testPath);
+        assertEquals(RETURN, interceptor.handleRequest(get));
+        assertTrue(OpenAPITestUtils.getMapFromResponse(get).size() >= 27);
+    }
+
     @ParameterizedTest
     @MethodSource("metaParameters")
     void getHTMLOverview(String testPath) {
@@ -128,7 +141,7 @@ public class OpenAPIPublisherInterceptorTest {
         header.setAccept("html");
         get.getRequest().setHeader(header);
         assertEquals( RETURN, interceptor.handleRequest(get));
-        assertTrue(get.getResponse().getBodyAsStringDecoded().contains("<a href=\"" + OpenAPIPublisherInterceptor.PATH_UI + "/servers-1-api-v1-0\">Servers 1 API</a>"));
+        assertTrue(get.getResponse().getBodyAsStringDecoded().contains("<a href=\"" + OpenAPIPublisher.PATH_UI + "/servers-1-api-v1-0\">Servers 1 API</a>"));
     }
 
     @ParameterizedTest
@@ -168,7 +181,7 @@ public class OpenAPIPublisherInterceptorTest {
         get.getRequest().setUri(testPath);
         assertEquals( RETURN, interceptor.handleRequest(get));
         assertEquals( 404, get.getResponse().getStatusCode());
-        checkHasValidProblemJSON(get);
+        assertEquals("No OpenAPI document id", om.readTree(get.getResponse().getBodyAsStringDecoded()).get("title").asText());
     }
 
     private void checkHasValidProblemJSON(Exchange exc) throws IOException {

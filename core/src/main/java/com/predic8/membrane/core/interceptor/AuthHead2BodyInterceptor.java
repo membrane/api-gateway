@@ -18,13 +18,13 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.http.Body;
 import com.predic8.membrane.core.util.xml.XMLInputSourceUtil;
+import com.predic8.membrane.core.util.xml.parser.HardenedXmlParser;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
@@ -88,10 +88,8 @@ public class AuthHead2BodyInterceptor extends AbstractInterceptor {
 	}
 
 	private Document getDocument(InputStream xmlDocument, Charset encoding) throws Exception {
-		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-		dbf.setNamespaceAware(true);
 		InputSource source = XMLInputSourceUtil.getInputSource(xmlDocument, encoding != null ? encoding.name() : null);
-		return dbf.newDocumentBuilder().parse(source);
+		return HardenedXmlParser.getInstance().parse(source);
 	}
 
 	private String DOM2String(Document doc) throws Exception {

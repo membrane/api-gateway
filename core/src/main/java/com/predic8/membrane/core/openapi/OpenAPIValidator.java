@@ -21,7 +21,7 @@ import com.predic8.membrane.core.openapi.model.Request;
 import com.predic8.membrane.core.openapi.model.Response;
 import com.predic8.membrane.core.openapi.serviceproxy.OpenAPIRecord;
 import com.predic8.membrane.core.openapi.util.MethodNotAllowException;
-import com.predic8.membrane.core.openapi.util.PathDoesNotMatchException;
+import com.predic8.membrane.core.openapi.util.UriTemplate;
 import com.predic8.membrane.core.openapi.util.UriUtil;
 import com.predic8.membrane.core.openapi.validators.OperationValidator;
 import com.predic8.membrane.core.openapi.validators.ValidationContext;
@@ -34,27 +34,53 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URISyntaxException;
-import java.util.Map;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.regex.Pattern;
 
+import static com.predic8.membrane.core.openapi.util.UriTemplateMatcher.PARAM_NAME_REGEX;
 import static com.predic8.membrane.core.openapi.util.UriUtil.normalizeUri;
+import static com.predic8.membrane.core.openapi.validators.OperationValidator.getMethods;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.METHOD;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.PATH;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.fromRequest;
 import static java.lang.String.format;
+import static java.util.Comparator.comparing;
 
 public class OpenAPIValidator {
 
     private static final Logger log = LoggerFactory.getLogger(OpenAPIValidator.class.getName());
+
+    private static final Pattern PARAM_NAME_PATTERN = Pattern.compile(PARAM_NAME_REGEX);
 
     private final OpenAPIRecord rec;
     private final URIFactory uriFactory;
 
     private String basePath = "";
 
+    /**
+     * Paths of the OpenAPI, concrete before templated paths, otherwise in document order, compiled once.
+     * A matching concrete path wins. Among matching templated paths, the first that has the method of the request wins.
+     */
+    private final List<PathTemplate> pathTemplates;
+
+    /**
+     * @param uriTemplate path as written in the OpenAPI, without base path
+     * @param template    base path and uriTemplate, compiled
+     */
+    private record PathTemplate(String uriTemplate, UriTemplate template, PathItem pathItem) {}
+
+    /**
+     * Thread safe, create once per OpenAPI and reuse it for all requests.
+     */
     public OpenAPIValidator(URIFactory uriFactory, OpenAPIRecord rec) {
         this.rec = rec;
         this.uriFactory = uriFactory;
         init();
+        pathTemplates = compilePathTemplates();
+        checkForEquivalentPaths();
     }
 
     /**
@@ -69,6 +95,50 @@ public class OpenAPIValidator {
                 throw new ConfigurationException("Error initializing OpenAPI validator. Path was: %s ".formatted(getUrl()), e);
             }
         }
+    }
+
+    /**
+     * OpenAPI: concrete paths are matched before their templated counterparts. Otherwise the order of the OpenAPI is kept.
+     */
+    private List<PathTemplate> compilePathTemplates() {
+        return rec.getApi().getPaths().entrySet().stream()
+                .sorted(comparing(e -> isTemplated(e.getKey())))
+                .map(e -> new PathTemplate(e.getKey(), compile(normalizeUri(basePath + e.getKey())), e.getValue()))
+                .toList();
+    }
+
+    private static boolean isTemplated(String path) {
+        return path.contains("{");
+    }
+
+    /**
+     * OpenAPI: templated paths with the same hierarchy but different templated names MUST NOT exist as they are identical.
+     */
+    private void checkForEquivalentPaths() {
+        final var pathsWithoutNames = new HashMap<String, String>();
+        for (final var path : pathTemplates) {
+            final var equivalent = pathsWithoutNames.putIfAbsent(withoutParameterNames(path.uriTemplate()), path.uriTemplate());
+            if (equivalent != null)
+                throw new ConfigurationException("Paths %s and %s of OpenAPI %s are identical, they differ only in parameter names.".formatted(equivalent, path.uriTemplate(), describeOpenAPI()));
+        }
+    }
+
+    private static String withoutParameterNames(String path) {
+        return PARAM_NAME_PATTERN.matcher(path).replaceAll("{}");
+    }
+
+    private UriTemplate compile(String pathTemplate) {
+        try {
+            return UriTemplate.of(pathTemplate);
+        } catch (IllegalArgumentException e) {
+            throw new ConfigurationException("Cannot use path %s of OpenAPI %s as URI template: %s".formatted(pathTemplate, describeOpenAPI(), e.getMessage()), e);
+        }
+    }
+
+    private String describeOpenAPI() {
+        final var title = rec.getApi().getInfo() != null ? rec.getApi().getInfo().getTitle() : null;
+        final var location = rec.getSpec() != null ? rec.getSpec().getLocation() : null;
+        return location == null ? "'%s'".formatted(title) : "'%s' (%s)".formatted(title, location);
     }
 
     private String getUrl() {
@@ -93,38 +163,84 @@ public class OpenAPIValidator {
      * proper operation.
      */
     public ValidationPlan prepareValidation(Request<? extends Body> request) {
-        for (Map.Entry<String, PathItem> path : rec.getApi().getPaths().entrySet()) {
-            try {
-                return prepareValidationForMatchingPath(request, path.getKey(), path.getValue());
-            } catch (PathDoesNotMatchException ignored) {
-                // All paths from the OpenAPI that do not match will cause an exception while parsing the path and parameter. Then the next uriTemplate
-                // is tried until we get a match or there is no matching path in the OpenAPI.
-            }
-        }
+        final var selection = select(request.getMethod(), request.getPath());
+        if (selection == null)
+            return ValidationPlan.error(ValidationErrors.error(fromRequest(request)
+                    .entity(request.getPath())
+                    .entityType(PATH)
+                    .statusCode(404), format("Path %s is invalid.", request.getPath())));
 
-        return ValidationPlan.error(ValidationErrors.error(fromRequest(request)
-                .entity(request.getPath())
-                .entityType(PATH)
-                .statusCode(404), format("Path %s is invalid.", request.getPath())));
+        final var path = selection.path();
+        request.parsePathParameters(path.template());
+        if (selection.operation() == null)
+            return methodNotAllowed(request, path, getAllowedMethods(request.getPath(), path));
+
+        return ValidationPlan.create(path.template(), contextFor(request, path), selection.operation());
     }
 
-    private ValidationPlan prepareValidationForMatchingPath(Request<? extends Body> request, String uriTemplate, PathItem pathItem) throws PathDoesNotMatchException {
-        String pathTemplate = normalizeUri(basePath + uriTemplate);
-        request.parsePathParameters(pathTemplate);
+    /**
+     * @param path path of the request, may contain a query string, which is ignored
+     * @return the path as written in the OpenAPI that a request is validated against, or null if no path matches. The
+     * path may lack an operation for the method.
+     */
+    public String getMatchingPath(String method, String path) {
+        final var selection = select(method, path);
+        return selection == null ? null : selection.path().uriTemplate();
+    }
 
-        var ctx = fromRequest(request).uriTemplate(uriTemplate);
-        try {
-            return ValidationPlan.create(pathTemplate, ctx, OperationValidator.create(rec.getApi(), request.getMethod(), pathItem));
-        } catch (MethodNotAllowException e) {
-            return ValidationPlan.error(ValidationErrors.error(ctx.statusCode(405)
-                    .entity(request.getMethod())
-                    .entityType(METHOD), format("Method %s is not allowed", request.getMethod())));
+    /**
+     * @param operation null if the path has no operation for the method
+     */
+    private record Selection(PathTemplate path, OperationValidator operation) {}
+
+    private Selection select(String method, String path) {
+        PathTemplate firstMatchingPath = null;
+        for (final var pathTemplate : pathTemplates) {
+            if (!pathTemplate.template().matches(path))
+                continue;
+            try {
+                return new Selection(pathTemplate, OperationValidator.create(rec.getApi(), method, pathTemplate.pathItem()));
+            } catch (MethodNotAllowException e) {
+                // A matching concrete path takes precedence over templated ones, even without the method
+                if (!isTemplated(pathTemplate.uriTemplate()))
+                    return new Selection(pathTemplate, null);
+                // Ambiguous templated paths are left to the tooling by OpenAPI: try another matching path that has the method
+                if (firstMatchingPath == null)
+                    firstMatchingPath = pathTemplate;
+            }
         }
+        return firstMatchingPath == null ? null : new Selection(firstMatchingPath, null);
+    }
+
+    /**
+     * A templated path is selected without the method only if no matching path has it, so all of them are offered.
+     */
+    private Collection<String> getAllowedMethods(String path, PathTemplate selected) {
+        if (!isTemplated(selected.uriTemplate()))
+            return getMethods(selected.pathItem());
+
+        final var allowedMethods = new LinkedHashSet<String>();
+        for (final var pathTemplate : pathTemplates) {
+            if (pathTemplate.template().matches(path))
+                allowedMethods.addAll(getMethods(pathTemplate.pathItem()));
+        }
+        return allowedMethods;
+    }
+
+    private static ValidationPlan methodNotAllowed(Request<? extends Body> request, PathTemplate path, Collection<String> allowedMethods) {
+        return ValidationPlan.error(ValidationErrors.error(contextFor(request, path).statusCode(405)
+                .allowedMethods(allowedMethods)
+                .entity(request.getMethod())
+                .entityType(METHOD), format("Method %s is not allowed", request.getMethod())));
+    }
+
+    private static ValidationContext contextFor(Request<? extends Body> request, PathTemplate path) {
+        return fromRequest(request).uriTemplate(path.uriTemplate());
     }
 
     public static final class ValidationPlan {
 
-        private final String pathTemplate;
+        private final UriTemplate pathTemplate;
         private final ValidationContext ctx;
         private final OperationValidator validator;
 
@@ -133,14 +249,14 @@ public class OpenAPIValidator {
          */
         private final ValidationErrors errors;
 
-        private ValidationPlan(String pathTemplate, ValidationContext ctx, OperationValidator validator, ValidationErrors errors) {
+        private ValidationPlan(UriTemplate pathTemplate, ValidationContext ctx, OperationValidator validator, ValidationErrors errors) {
             this.pathTemplate = pathTemplate;
             this.ctx = ctx;
             this.validator = validator;
             this.errors = errors;
         }
 
-        private static ValidationPlan create(String pathTemplate, ValidationContext ctx, OperationValidator operationValidator) {
+        private static ValidationPlan create(UriTemplate pathTemplate, ValidationContext ctx, OperationValidator operationValidator) {
             return new ValidationPlan(pathTemplate, ctx, operationValidator, ValidationErrors.empty());
         }
 
@@ -153,11 +269,8 @@ public class OpenAPIValidator {
             if (errors.hasErrors())
                 return errors;
 
-            try {
-                request.parsePathParameters(pathTemplate);
-            } catch (PathDoesNotMatchException e) {
-                throw new IllegalStateException("ValidationPlan no longer matches request path %s.".formatted(request.getPath()), e);
-            }
+            if (!request.parsePathParameters(pathTemplate))
+                throw new IllegalStateException("ValidationPlan no longer matches request path %s.".formatted(request.getPath()));
 
             return validator.validateRequest(ctx, request);
         }

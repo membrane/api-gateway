@@ -25,7 +25,7 @@ import static org.hamcrest.Matchers.*;
 public class XsltXML2JSONTransformationTutorialTest extends AbstractXmlTutorialTest{
     @Override
     protected String getTutorialYaml() {
-        return "35-XSLT-Transformation-to-json.yaml";
+        return "60-XSLT-Transformation-to-json.yaml";
     }
 
     @Test

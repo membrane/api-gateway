@@ -233,12 +233,16 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 			if (!(socket instanceof SSLSocket) && !socket.isClosed())
 				socket.shutdownInput();
 
-			socket.close();
-			socket = null;
-
 		} finally {
-			if (mgr != null)
-				mgr.releaseConnection(this); // this.isClosed() == true, but mgr keeps track of number of connections
+			// Close and forget the socket even if a step above failed: releaseConnection() must see this
+			// connection as closed, or it would pool it or, with the manager shut down, close it again.
+			try {
+				socket.close();
+			} finally {
+				socket = null;
+				if (mgr != null)
+					mgr.releaseConnection(this); // this.isClosed() == true, but mgr keeps track of number of connections
+			}
 		}
 	}
 

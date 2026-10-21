@@ -22,6 +22,7 @@ import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
+import java.util.Set;
 import java.util.function.Function;
 
 import static com.predic8.membrane.core.util.URIUtil.*;
@@ -262,6 +263,25 @@ public class URIUtilTest {
         assertEquals("/admin", toRoutingPath("/;x/admin"));
         assertEquals("/app/", toRoutingPath("/app/;jsessionid=1"));
         assertEquals("/api/admin", toRoutingPath("/api/admin"));
+    }
+
+    @Test
+    void toDecodedDelimiterRoutingPathTest() {
+        assertEquals(Set.of("/api/admin"), toDecodedDelimiterRoutingPaths("/api%3bx=1/admin"));
+        assertEquals(Set.of("/api/admin"), toDecodedDelimiterRoutingPaths("/api%3Bx=1/admin"));
+        assertEquals(Set.of("/api/admin"), toDecodedDelimiterRoutingPaths("/api%2f./admin"));
+        assertEquals(Set.of("/api/admin"), toDecodedDelimiterRoutingPaths("/api%5C./admin"));
+        assertEquals(Set.of("/admin"), toDecodedDelimiterRoutingPaths("/asd%2f..%2fadmin"));
+        assertEquals(Set.of("/a/b?q=%2F%3B%5C"), toDecodedDelimiterRoutingPaths("/a%2Fb?q=%2F%3B%5C")); // The query is not decoded
+
+        // Every combination of decoded and kept delimiters
+        assertEquals(Set.of("/api/admin/..%5cpublic", "/public", "/api/public"), toDecodedDelimiterRoutingPaths("/api%2fadmin/..%5cpublic"));
+        assertEquals(Set.of("/api/admin/..%3bx/public", "/public", "/api/public"), toDecodedDelimiterRoutingPaths("/api%2fadmin/..%3bx/public"));
+
+        // Nothing differs from the routing path
+        assertEquals(Set.of(), toDecodedDelimiterRoutingPaths("/a%20b")); // Other escapes stay encoded
+        assertEquals(Set.of(), toDecodedDelimiterRoutingPaths("//api;x//admin"));
+        assertEquals(Set.of(), toDecodedDelimiterRoutingPaths("*"));
     }
 
     @Test

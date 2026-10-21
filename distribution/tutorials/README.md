@@ -31,6 +31,12 @@ Route API traffic with Membrane, e.g. as an outgoing API gateway that controls w
 leave your network when internal clients call external APIs.
 
 
+## [Load Balancing](loadbalancing)
+
+Distribute requests across backend nodes. Covers round robin, adding and removing nodes at
+runtime, sticky sessions, multiple balancers, and health checks.
+
+
 ## [Forward Proxy](forward-proxy)
 
 Use Membrane as a classic HTTP forward proxy that forwards to whatever host the client's
@@ -89,7 +95,7 @@ origins, methods and headers.
 
 ## [JWT](jwt)
 
-Issue signed JSON Web Tokens and protect an API by validating them. Covers Bearer tokens and signature/expiry/audience checks.
+Issue signed JSON Web Tokens and protect an API by validating them. Covers Bearer tokens, signature/expiry/audience checks, and enforcing scopes from an OpenAPI document.
 
 
 ## [API Keys](api-keys)
@@ -132,7 +138,7 @@ Secure SOAP messages with WS-Security: add and validate a `wsse:UsernameToken`, 
 ## [OpenAPI](openapi)
 
 Serve an OpenAPI description, validate requests against it, rewrite the server URLs it advertises
-at `/api-docs` (automatically, pinned, or for a deployment behind a reverse proxy), and learn the
+at `/api-docs` (automatically, or with explicit values for a deployment behind a reverse proxy), and learn the
 features added in OpenAPI 3.2, such as the QUERY method.
 
 ---

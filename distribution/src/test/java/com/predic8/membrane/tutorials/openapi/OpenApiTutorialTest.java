@@ -54,17 +54,4 @@ public class OpenApiTutorialTest extends AbstractOpenAPITutorialTest {
             .body("products.size()", greaterThan(0));
         // @formatter:on
     }
-
-    @Test
-    void dlpFieldsCity() {
-        // @formatter:off
-        given()
-        .when()
-            .get("http://localhost:2000/dlp/fields/city")
-        .then()
-            .statusCode(200)
-            .body("field", notNullValue())
-            .body("category", notNullValue());
-        // @formatter:on
-    }
 }

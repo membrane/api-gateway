@@ -22,7 +22,6 @@ import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.openapi.OpenAPIParsingException;
-import com.predic8.membrane.core.openapi.OpenAPIValidator;
 import com.predic8.membrane.core.openapi.OpenAPIValidator.ValidationPlan;
 import com.predic8.membrane.core.openapi.model.Request;
 import com.predic8.membrane.core.openapi.validators.ValidationErrors;
@@ -39,6 +38,7 @@ import java.util.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.exchange.Exchange.SNI_SERVER_NAME;
+import static com.predic8.membrane.core.http.Header.ALLOW;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_RESPONSE_FLOW;
@@ -49,6 +49,7 @@ import static com.predic8.membrane.core.openapi.util.UriUtil.getUrlWithoutPath;
 import static com.predic8.membrane.core.openapi.util.Utils.getOpenapiValidatorRequest;
 import static com.predic8.membrane.core.openapi.util.Utils.getOpenapiValidatorResponse;
 import static com.predic8.membrane.core.openapi.validators.ValidationErrors.empty;
+import static com.predic8.membrane.core.util.URIUtil.toDecodedDelimiterRoutingPaths;
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.*;
 
@@ -60,8 +61,8 @@ import static java.util.stream.Collectors.*;
  * by the <code>openapi</code> element's <code>validateRequests</code>, <code>validateResponses</code>, and
  * <code>validateSecurity</code> options (or the matching <code>x-membrane-validation</code> extension in the document).
  * A request matching no document is answered with 404, a request that violates its schema with a 4xx Problem Details,
- * and an invalid response with 500. Can only be used inside an api. See the examples under examples/openapi and the
- * tutorial tutorials/openapi/20-OpenAPI-Validation.apis.yaml.
+ * and an invalid response with 500. Can only be used inside an api. See the tutorial
+ * tutorials/openapi/21-Validation-Advanced.apis.yaml.
  * @topic 5. OpenAPI
  * @yaml
  * <pre><code>
@@ -118,7 +119,13 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
             return RETURN;
         }
 
+        if (decodedDelimitersSelectAnotherBasePath(exc, basePath))
+            return rejectEncodedDelimiter(exc, "another OpenAPI");
+
         OpenAPIRecord rec = apiProxy.getBasePaths().get(basePath);
+
+        if (isValidated(rec.getApi()) && decodedDelimitersSelectAnotherPath(exc, rec))
+            return rejectEncodedDelimiter(exc, "another path of the OpenAPI");
 
         // If OpenAPIProxy has a <target> Element use this for routing otherwise
         // take the urls from the info.servers field in the OpenAPI document.
@@ -129,9 +136,9 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
             ValidationErrors errors = validateRequest(rec, exc);
 
             if (!errors.isEmpty()) {
-                log.info("OpenAPI request validation failed for {} {} against '{}': {}",
-                        exc.getRequest().getMethod(), exc.getRequest().getUri(),
-                        rec.api.getInfo().getTitle(), errors.toString(maskValues(rec.api, MASK_VALUES_LOG)));
+                log.info("OpenAPI request validation failed for {} against '{}': {}",
+                        exc.getRequest().getMethod(), rec.api.getInfo().getTitle(), errors.toString(maskValues(rec.api, MASK_VALUES_LOG)));
+                log.debug("OpenAPI request validation failed for URI {}", exc.getRequest().getUri());
                 apiProxy.statisticCollector.collect(errors);
                 createErrorResponse(exc, errors, ValidationErrors.Direction.REQUEST, validationDetails(rec.api), maskValues(rec.api, MASK_VALUES));
                 return RETURN;
@@ -184,9 +191,9 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
             ValidationErrors errors = validateResponse(rec, exc);
 
             if (errors != null && errors.hasErrors()) {
-                log.info("OpenAPI response validation failed for {} {} against '{}': {}",
-                        exc.getRequest().getMethod(), exc.getRequest().getUri(),
-                        rec.api.getInfo().getTitle(), errors.toString(maskValues(rec.api, MASK_VALUES_LOG)));
+                log.info("OpenAPI response validation failed for {} against '{}': {}",
+                        exc.getRequest().getMethod(), rec.api.getInfo().getTitle(), errors.toString(maskValues(rec.api, MASK_VALUES_LOG)));
+                log.debug("OpenAPI response validation failed for URI {}", exc.getRequest().getUri());
                 exc.getResponse().setStatusCode(500); // A validation error in the response is a server error!
                 apiProxy.statisticCollector.collect(errors);
                 createErrorResponse(exc, errors, ValidationErrors.Direction.RESPONSE, validationDetails(rec.api), maskValues(rec.api, MASK_VALUES));
@@ -218,22 +225,83 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         return CONTINUE;
     }
 
+    /**
+     * Uses the same path as routing, see {@link com.predic8.membrane.core.http.Request#getRoutingPath()}. Of nested
+     * base paths like /api/ and /api/admin/ the longest one wins, regardless of the order of the OpenAPI documents.
+     */
     protected String getMatchingBasePath(Exchange exc) {
+        final var matching = getMatchingBasePath(exc.getRequest().getRoutingPath());
+        if (matching == null)
+            log.debug("Could not find matching base path for OpenAPI request {}. Returning empty basePath.", exc.getRequest().getUri());
+        return matching;
+    }
+
+    /**
+     * A backend that decodes "%3B", "%2F" and "%5C" first may serve a path of another OpenAPI, e.g. "/api/admin%3bx=1/users"
+     * matches the base path /api/, but such a backend serves /api/admin/users. See
+     * {@link com.predic8.membrane.core.util.URIUtil#toDecodedDelimiterRoutingPaths(String)}.
+     */
+    private boolean decodedDelimitersSelectAnotherBasePath(Exchange exc, String basePath) {
+        final var uri = exc.getRequest().getUri();
+        if (uri.indexOf('%') == -1) // Nothing encoded, so the common case costs a single scan
+            return false;
+
+        for (final var decoded : toDecodedDelimiterRoutingPaths(uri)) {
+            final var other = getMatchingBasePath(decoded);
+            if (other != null && !other.equals(basePath))
+                return true;
+        }
+        return false;
+    }
+
+    /**
+     * Within one OpenAPI the same applies to its paths, e.g. "/api/public/x%2f..%2f..%2fadmin" matches /public/{file},
+     * but such a backend serves /api/admin. A path that selects no path of the OpenAPI when decoded, like
+     * "/api/public/a%2Fb", is fine.
+     */
+    private boolean decodedDelimitersSelectAnotherPath(Exchange exc, OpenAPIRecord rec) {
+        final var request = exc.getRequest();
+        final var uri = request.getUri();
+        if (uri.indexOf('%') == -1) // Nothing encoded, so the common case costs a single scan
+            return false;
+
+        final var validator = apiProxy.getValidator(rec);
+        final var path = validator.getMatchingPath(request.getMethod(), request.getRoutingPath());
+        for (final var decoded : toDecodedDelimiterRoutingPaths(uri)) {
+            final var other = validator.getMatchingPath(request.getMethod(), decoded);
+            if (other != null && !other.equals(path))
+                return true;
+        }
+        return false;
+    }
+
+    private Outcome rejectEncodedDelimiter(Exchange exc, String selected) {
+        log.info("Rejected request with an encoded ;, / or \\ that selects {} when decoded.", selected);
+        log.debug("Rejected path: {}", exc.getRequest().getUri());
+        user(router.getConfiguration().isProduction(), getDisplayName())
+                .title("Invalid path")
+                .status(400)
+                .addSubSee("invalid-path")
+                .detail("The request path contains an encoded ';', '/' or '\\' that selects %s when it is decoded.".formatted(selected))
+                .buildAndSetResponse(exc);
+        return RETURN;
+    }
+
+    private String getMatchingBasePath(String path) {
+        String matching = null;
         for (String basePath : apiProxy.getBasePaths().keySet()) {
-            if (exc.getRequest().getUri().startsWith(basePath)) {
-                return basePath;
+            if (path.startsWith(basePath) && (matching == null || basePath.length() > matching.length())) {
+                matching = basePath;
             }
         }
-        log.debug("Could not find matching base path for OpenAPI request {}. Returning empty basePath.", exc.getRequest().getUri());
-        return null;
+        return matching;
     }
 
 
     private ValidationErrors validateRequest(OpenAPIRecord rec, Exchange exc) throws ParseException {
-        var validateRequests = shouldValidate(rec.getApi(), REQUESTS);
-        var validateResponses = shouldValidate(rec.getApi(), RESPONSES);
+        if (!isValidated(rec.getApi())) return empty();
 
-        if (!validateRequests && !validateResponses) return empty();
+        var validateRequests = shouldValidate(rec.getApi(), REQUESTS);
 
         Request<?> request = validateRequests ? getOpenapiValidatorRequest(exc) : getOperationRequestOnlyForResponseValidation(exc);
         var validationPlan = getOrCreateValidationPlan(rec, exc, request);
@@ -260,7 +328,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         if (validationPlan != null)
             return validationPlan;
 
-        validationPlan = new OpenAPIValidator(router.getConfiguration().getUriFactory(), rec).prepareValidation(request);
+        validationPlan = apiProxy.getValidator(rec).prepareValidation(request);
 
         // Store the plan in request flow for response validation in the response flow
         exc.setProperty(OPENAPI_VALIDATOR_CTX_PROPERTY, validationPlan);
@@ -272,7 +340,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
      * we need some context.
      */
     private Request<?> getOperationRequestOnlyForResponseValidation(Exchange exc) {
-        return new Request<>(exc.getRequest().getMethod(), exc.getRequest().getUri());
+        return new Request<>(exc.getRequest().getMethod(), exc.getRequest().getRoutingPath());
     }
 
     public boolean validationDetails(OpenAPI api) {
@@ -299,6 +367,13 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         @SuppressWarnings("unchecked")
         Map<String, Object> xValidation = (Map<String, Object>) api.getExtensions().get(X_MEMBRANE_VALIDATION);
         return xValidation != null && Boolean.TRUE.equals(xValidation.get(key));
+    }
+
+    /**
+     * @return true if requests or responses are validated against the OpenAPI. Only then does the API have a validator for it.
+     */
+    public static boolean isValidated(OpenAPI api) {
+        return shouldValidate(api, REQUESTS) || shouldValidate(api, RESPONSES);
     }
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
@@ -433,6 +508,11 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
                 .flow(getFlowFromDirection(direction))
                 .topLevel("validation", getErrorMap(errors, direction, validationDetails, maskValues))
                 .buildAndSetResponse(exc);
+
+        // RFC 9110: a 405 must list the methods the target resource supports
+        final var allowedMethods = errors.getFirst().getContext().getAllowedMethods();
+        if (allowedMethods != null)
+            exc.getResponse().getHeader().setValue(ALLOW, String.join(", ", allowedMethods));
     }
 
     private Flow getFlowFromDirection(ValidationErrors.Direction direction) {
