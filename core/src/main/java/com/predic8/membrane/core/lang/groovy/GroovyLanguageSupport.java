@@ -16,6 +16,7 @@ package com.predic8.membrane.core.lang.groovy;
 
 import com.predic8.membrane.core.lang.*;
 import groovy.lang.*;
+import org.codehaus.groovy.control.*;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -53,7 +54,13 @@ public class GroovyLanguageSupport implements LanguageSupport {
 		}
 	}
 
-	private static final GroovyShell shell = new GroovyShell();
+	private static final GroovyShell shell = new GroovyShell(createCompilerConfiguration());
+
+	private static CompilerConfiguration createCompilerConfiguration() {
+		final var configuration = new CompilerConfiguration();
+		configuration.setScriptBaseClass(BuiltInFunctionsScript.class.getName());
+		return configuration;
+	}
 
 	@Override
 	public Function<Map<String, Object>, Object> compileScript(ClassLoader classLoader, String script) {

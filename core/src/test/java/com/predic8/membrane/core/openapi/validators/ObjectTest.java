@@ -82,8 +82,9 @@ public class ObjectTest extends AbstractValidatorTest{
 
         ValidationErrors errors = validator.validate(Request.post().path("/object").body(mapToJson(m)));
         assertEquals(1,errors.size());
-        ValidationError e = errors.get(0);
-        assertEquals("REQUEST/BODY#/additionalPropertiesFalse", e.getContext().getLocationForRequest());
+        ValidationError e = errors.getFirst();
+        assertEquals("REQUEST/BODY#/additionalPropertiesFalse/b", e.getContext().getLocationForRequest());
+        assertEquals("The property b is not allowed. The object does not allow additional properties.", e.getMessage());
     }
 
     @Test

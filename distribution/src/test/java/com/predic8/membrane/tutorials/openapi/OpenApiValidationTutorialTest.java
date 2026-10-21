@@ -17,7 +17,6 @@ package com.predic8.membrane.tutorials.openapi;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.greaterThan;
@@ -61,8 +60,8 @@ public class OpenApiValidationTutorialTest extends AbstractOpenAPITutorialTest {
         .then()
             .statusCode(is(400))
             .body("title", equalTo("OpenAPI message validation failed"))
-            // Not the message text: it changes with #3562, and the error may then be reported on the object
-            .body("validation.errors.toString()", containsString("color"));
+            .body("validation.errors.'REQUEST/BODY#/color'[0].message",
+                    equalTo("The property color is not allowed. The object does not allow additional properties."));
         // @formatter:on
     }
 

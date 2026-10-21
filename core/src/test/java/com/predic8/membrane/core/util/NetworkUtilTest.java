@@ -16,6 +16,7 @@ package com.predic8.membrane.core.util;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static com.predic8.membrane.core.util.NetworkUtil.*;
 import static java.lang.Long.parseUnsignedLong;
@@ -35,6 +36,26 @@ class NetworkUtilTest {
         assertEquals("[fe80::1]", addBracketsIfIPv6("[fe80::1]"));
         assertEquals("192.168.1.5", addBracketsIfIPv6("192.168.1.5"));
         assertEquals("api.example.com", addBracketsIfIPv6("api.example.com"));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "example.com,          example.com",
+            "example.com:8080,     example.com",
+            "192.168.1.5:80,       192.168.1.5",
+            "'[::1]',              '[::1]'",
+            "'[::1]:2000',         '[::1]'",
+            "'[::1]:',             '[::1]'",
+            "'[2001:db8::1]:443',  '[2001:db8::1]'"
+    })
+    void hostWithoutPort_strips_port(String hostHeader, String expected) {
+        assertEquals(expected, hostWithoutPort(hostHeader));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"[::1]foo", "[::1]:abc", "[::1]:2000x"})
+    void hostWithoutPort_returns_null_for_invalid_ipv6_suffix(String hostHeader) {
+        assertNull(hostWithoutPort(hostHeader));
     }
 
     @ParameterizedTest
