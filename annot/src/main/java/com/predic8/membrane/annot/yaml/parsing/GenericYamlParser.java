@@ -14,6 +14,7 @@
 package com.predic8.membrane.annot.yaml.parsing;
 
 import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.predic8.membrane.annot.Grammar;
 import com.predic8.membrane.annot.beanregistry.BeanDefinition;
@@ -73,8 +74,27 @@ public class GenericYamlParser {
         try (resource) {
             return parseToBeanDefinitions(resource, grammar, rootSourceFile);
         } catch (JsonParseException e) {
-            throw new IOException("Invalid YAML: multiple configurations must be separated by '---' (at line %d, column %d).".formatted(e.getLocation().getLineNr(), e.getLocation().getColumnNr()), e);
+            throw new IOException(describeParseError(e), e);
         }
+    }
+
+    /**
+     * Only a duplicate top-level key hints at a missing document separator; any other syntax error
+     * (indentation, tabs, unquoted special characters) is reported with the parser's own message.
+     */
+    private static String describeParseError(JsonParseException e) {
+        final var line = e.getLocation().getLineNr();
+        final var column = e.getLocation().getColumnNr();
+        if (isDuplicateTopLevelKey(e))
+            return "Invalid YAML: multiple configurations must be separated by '---' (at line %d, column %d).".formatted(line, column);
+        return "Invalid YAML at line %d, column %d: %s".formatted(line, column, e.getOriginalMessage());
+    }
+
+    private static boolean isDuplicateTopLevelKey(JsonParseException e) {
+        return e.getOriginalMessage().startsWith("Duplicate field")
+               && e.getProcessor() instanceof JsonParser parser
+               && parser.getParsingContext().getParent() != null
+               && parser.getParsingContext().getParent().inRoot();
     }
 
     private static List<BeanDefinition> parseToBeanDefinitions(@NotNull InputStream resource, Grammar grammar, Path rootSourceFile) throws IOException {
