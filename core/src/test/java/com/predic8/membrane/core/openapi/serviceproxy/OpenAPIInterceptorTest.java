@@ -567,7 +567,7 @@ class OpenAPIInterceptorTest {
 
         assertEquals(3,validationErrors.size());
 
-        Map<String,Object> m1 = (Map<String, Object>) ((List)validationErrors.get( direction + "/BODY")).getFirst();
+        Map<String,Object> m1 = (Map<String, Object>) ((List)validationErrors.get( direction + "/BODY#/foo")).getFirst();
         assertEquals("Customer",m1.get("complexType"));
         assertEquals("object",m1.get("schemaType"));
 
