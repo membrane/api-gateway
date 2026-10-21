@@ -726,6 +726,21 @@ public class WSDLValidatorTest {
                 """, GET_CITY_EXAMPLE_COM));
 
         assertEquals(ABORT, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, null, false).validateMessage(exc, REQUEST));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains("not a language"), body);
+        assertFalse(body.contains("cvc-elt.1.a"), body);
+    }
+
+    @Test
+    void invalidBodyReportsOnlyTheSchemaDeclaringIt() throws Exception {
+        final var exc = getRequestExchange(soap11WithHeader(VALID_REQUEST_HEADER, """
+                <cs:getCity xmlns:cs="https://example.com/cities"><unknown/></cs:getCity>
+                """));
+
+        assertEquals(ABORT, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, null, false).validateMessage(exc, REQUEST));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains("unknown"), body);
+        assertFalse(body.contains("cvc-elt.1.a"), body);
     }
 
     @Test
