@@ -60,4 +60,23 @@ class ProxyConfigurationTest {
         assertDoesNotThrow(() -> proxy.validate());
         assertEquals("Basic YWxpY2U6c2VjcmV0", proxy.getCredentials());
     }
+
+    @Test
+    void nothingIsBypassedWithoutNoProxy() {
+        assertFalse(proxy.isBypassed("localhost"));
+    }
+
+    @Test
+    void hostsInNoProxyAreBypassed() {
+        proxy.setNoProxy("localhost, .internal.example.com");
+
+        assertTrue(proxy.isBypassed("localhost"));
+        assertTrue(proxy.isBypassed("orders.internal.example.com"));
+        assertFalse(proxy.isBypassed("www.example.com"));
+    }
+
+    @Test
+    void invalidNoProxyIsRejected() {
+        assertThrows(ConfigurationException.class, () -> proxy.setNoProxy("10.0.0.0/33"));
+    }
 }
