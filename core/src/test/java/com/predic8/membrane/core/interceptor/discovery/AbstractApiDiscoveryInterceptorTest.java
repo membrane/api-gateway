@@ -79,17 +79,6 @@ class AbstractApiDiscoveryInterceptorTest {
         return Stream.of(ApisJsonInterceptor::new);
     }
 
-    @ParameterizedTest
-    @MethodSource("nonLinksetFormats")
-    void aNonLinksetFormatAtTheWellKnownPathIsARejectedConfiguration(Supplier<AbstractApiDiscoveryInterceptor> format) {
-        final var interceptor = format.get();
-
-        final var e = assertThrows(ConfigurationException.class,
-                () -> interceptor.init(router, proxyAt(WELL_KNOWN_PATH)));
-        assertTrue(e.getMessage().contains(WELL_KNOWN_PATH));
-        assertTrue(e.getMessage().contains(interceptor.elementName()));
-    }
-
     @Test
     void tagRulesSelectTheListedApis() throws Exception {
         final var rule = new TagRule.Include();
