@@ -22,6 +22,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -67,6 +68,26 @@ public class AccessLogInterceptorTest {
                 .buildExchange());
 
         assertEquals("A-1\\n10.0.0.1 \\\"GET /admin\\\"\\r\\u001b[31m\\\\", mdc.get("orderId"));
+    }
+
+    @Test
+    void missingHeaderUsesDefaultValue() throws Exception {
+        var mdc = captureMDC(Request.get("/foo").buildExchange());
+
+        assertEquals("-", mdc.get("foo"));
+        assertEquals("-", mdc.get("Forwarded"));
+    }
+
+    @Test
+    void missingHeaderUsesCustomDefaultValue() throws Exception {
+        var av = new AdditionalVariable();
+        av.setName("traceparent");
+        av.setExpression("headers['traceparent']");
+        av.setDefaultValue("none");
+        interceptor.setAdditionalPatternList(List.of(av));
+        interceptor.init();
+
+        assertEquals("none", captureMDC(Request.get("/foo").buildExchange()).get("traceparent"));
     }
 
     @Test
