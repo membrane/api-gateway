@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.equalTo;
 
 public class ExplicitRewriteTutorialTest extends AbstractOpenAPITutorialTest {
 
@@ -34,7 +35,19 @@ public class ExplicitRewriteTutorialTest extends AbstractOpenAPITutorialTest {
             .get("http://localhost:2000/api-docs/minimal-shop-api-v2-0")
         .then()
             .statusCode(200)
-            .body(containsString("http://shop.example.com:8080/boutique"));
+            .body(containsString("https://api.example.com/boutique"));
+        // @formatter:on
+    }
+
+    @Test
+    void apiIsReachableUnderRewrittenBasePath() {
+        // @formatter:off
+        given()
+        .when()
+            .get("http://localhost:2000/boutique/products")
+        .then()
+            .statusCode(200)
+            .body("products[0].name", equalTo("Banana"));
         // @formatter:on
     }
 }
