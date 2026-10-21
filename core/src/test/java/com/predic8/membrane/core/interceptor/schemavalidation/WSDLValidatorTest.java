@@ -61,6 +61,7 @@ public class WSDLValidatorTest {
     public static final String RPC_WITH_FAULT_WSDL = "src/test/resources/ws/rpc-with-fault.wsdl";
     public static final String TWO_FAULTS_PER_OPERATION_WSDL = "src/test/resources/ws/two-faults-per-operation.wsdl";
     public static final String CITIES_WITH_SOAP_HEADER_WSDL = "src/test/resources/ws/cities-with-soap-header.wsdl";
+    public static final String CITIES_WITH_SOAP12_HEADER_WSDL = "src/test/resources/ws/cities-with-soap12-header.wsdl";
     public static final String UNBOUND_HEADER_WSDL = "src/test/resources/ws/unbound-header.wsdl";
     public static final String UNVALIDATABLE_HEADERS_WSDL = "src/test/resources/ws/unvalidatable-soap-headers.wsdl";
 
@@ -886,6 +887,47 @@ public class WSDLValidatorTest {
         assertEquals(CONTINUE, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, BOUND).validateMessage(exc, REQUEST));
     }
 
+    /**
+     * The SOAP 1.2 attributes of a header block are ignored, as the SOAP 1.1 ones are.
+     */
+    @Test
+    void validSoap12Header() throws Exception {
+        var exc = getRequestExchange(soap12WithHeader("""
+                <hd:RequestHeader xmlns:hd="https://example.com/header" s12:mustUnderstand="true" s12:role="http://www.w3.org/2003/05/soap-envelope/role/next" s12:relay="true">
+                    <hd:MessageId>1</hd:MessageId>
+                    <hd:Language>de</hd:Language>
+                </hd:RequestHeader>
+                """, GET_CITY_EXAMPLE_COM));
+
+        assertEquals(CONTINUE, createValidator(CITIES_WITH_SOAP12_HEADER_WSDL, BOUND).validateMessage(exc, REQUEST));
+    }
+
+    @Test
+    void invalidSoap12Header() throws Exception {
+        var exc = getRequestExchange(soap12WithHeader("""
+                <hd:RequestHeader xmlns:hd="https://example.com/header"><unknown/><hd:MessageId>1</hd:MessageId></hd:RequestHeader>
+                """, GET_CITY_EXAMPLE_COM));
+
+        assertEquals(ABORT, createValidator(CITIES_WITH_SOAP12_HEADER_WSDL, BOUND).validateMessage(exc, REQUEST));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains(SOAP12_NS), "Expected a SOAP 1.2 fault envelope but got: " + body);
+        assertTrue(body.contains("unknown"), body);
+    }
+
+    @Test
+    void soap12HeaderFaultIsValidatedInFault() throws Exception {
+        var exc = getResponseExchange(soap12WithHeader(INVALID_HEADER_FAULT, """
+                <s12:Fault>
+                    <s12:Code><s12:Value>s12:Sender</s12:Value></s12:Code>
+                    <s12:Reason><s12:Text xml:lang="en">Unknown language</s12:Text></s12:Reason>
+                </s12:Fault>
+                """));
+
+        assertEquals(ABORT, createValidator(CITIES_WITH_SOAP12_HEADER_WSDL, BOUND).validateMessage(exc, RESPONSE));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains("unknown"), body);
+    }
+
     @Test
     void responseHeaderIsValidated() throws Exception {
         var exc = getResponseExchange(soap11WithHeader("""
@@ -1069,6 +1111,15 @@ public class WSDLValidatorTest {
                   <s12:Body>%s</s12:Body>
                </s12:Envelope>
                """.formatted(body);
+    }
+
+    private static String soap12WithHeader(String header, String body) {
+        return """
+               <s12:Envelope xmlns:s12="http://www.w3.org/2003/05/soap-envelope">
+                  <s12:Header>%s</s12:Header>
+                  <s12:Body>%s</s12:Body>
+               </s12:Envelope>
+               """.formatted(header, body);
     }
 
     private static void dumpResonseBody(Exchange exc) {
