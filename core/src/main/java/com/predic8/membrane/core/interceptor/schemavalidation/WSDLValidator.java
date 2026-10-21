@@ -87,8 +87,8 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
         NONE,
         /**
          * Only header blocks bound via soap:header in the binding: on the input for requests, on
-         * the output for responses. A bound element that none of the WSDL's schemas declares is
-         * skipped with a warning.
+         * the output for responses, and via soap:headerfault for faults. A bound element that none
+         * of the WSDL's schemas declares is skipped with a warning.
          */
         BOUND,
         /**
@@ -108,8 +108,8 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
     private final Set<QName> responseHeaderElements;
 
     /**
-     * Header blocks validated in faults. WSDL 1.1 cannot bind headers to a fault, so only
-     * {@link HeaderValidation#DECLARED} selects any.
+     * Header blocks validated in faults, see {@link HeaderValidation}. A wsdl:fault cannot bind
+     * header blocks, but a soap:headerfault binds those of a fault about a header block.
      */
     private final Set<QName> faultHeaderElements;
 
@@ -173,7 +173,7 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
         responseElements = getPossibleResponseElements(definitions, serviceName);
         requestHeaderElements = getHeaderElements(() -> getPossibleRequestHeaderElements(definitions, serviceName), headerValidation);
         responseHeaderElements = getHeaderElements(() -> getPossibleResponseHeaderElements(definitions, serviceName), headerValidation);
-        faultHeaderElements = getHeaderElements(Set::of, headerValidation);
+        faultHeaderElements = getHeaderElements(() -> getPossibleFaultHeaderElements(definitions, serviceName), headerValidation);
         faultDetailElements = getPossibleFaultDetailElements(definitions, serviceName);
         versions = definitions.getSoapVersions();
 
@@ -322,7 +322,7 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
     /**
      * Validates a SOAP fault: first structurally, against the bundled SOAP 1.1/1.2 Fault shape
      * (faultcode/faultstring/detail resp. Code/Reason/Detail), then its header blocks selected by
-     * {@link HeaderValidation#DECLARED}, then - if a detail/Detail payload
+     * {@link HeaderValidation}, then - if a detail/Detail payload
      * is present and the WSDL declares wsdl:fault elements for this service - validates that
      * payload against the WSDL's embedded schemas, same as request/response elements.
      * <p>

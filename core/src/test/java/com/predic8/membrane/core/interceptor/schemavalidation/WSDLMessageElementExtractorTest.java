@@ -159,6 +159,7 @@ class WSDLMessageElementExtractorTest {
 
         assertEquals(Set.of(new QName("https://example.com/header", "RequestHeader")), getPossibleRequestHeaderElements(definitions, null));
         assertEquals(Set.of(new QName("https://example.com/header", "ResponseHeader")), getPossibleResponseHeaderElements(definitions, null));
+        assertEquals(Set.of(new QName("https://example.com/header", "HeaderFault")), getPossibleFaultHeaderElements(definitions, null));
     }
 
     /**
@@ -197,10 +198,12 @@ class WSDLMessageElementExtractorTest {
 
             assertTrue(getPossibleRequestHeaderElements(definitions, null).isEmpty());
             assertTrue(getPossibleResponseHeaderElements(definitions, null).isEmpty());
+            assertTrue(getPossibleFaultHeaderElements(definitions, null).isEmpty());
             assertEquals(Set.of(new QName("https://example.com/cities", "getCity")), getPossibleRequestElements(definitions, null));
             assertTrue(appender.contains("names a type instead of an element"), appender.getMessages().toString());
             assertTrue(appender.contains("binds element {http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd}Security, which none of the WSDL's schemas declares"), appender.getMessages().toString());
             assertTrue(appender.contains("missing of message cs:ResponseHeader cannot be found"), appender.getMessages().toString());
+            assertTrue(appender.contains("soap:headerfault part missing of message cs:Security cannot be found"), appender.getMessages().toString());
         } finally {
             root.removeAppender(appender);
             appender.stop();

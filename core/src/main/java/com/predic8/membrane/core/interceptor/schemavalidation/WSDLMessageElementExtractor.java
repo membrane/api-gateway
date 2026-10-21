@@ -61,6 +61,20 @@ public class WSDLMessageElementExtractor {
     }
 
     /**
+     * Header blocks a fault may carry, as declared via {@code soap:headerfault} in the
+     * {@code soap:header} elements of the service's binding operations. A fault about a header
+     * block carries its details in header blocks, not in the detail (SOAP 1.1 &sect;4.4).
+     */
+    public static Set<QName> getPossibleFaultHeaderElements(Definitions definitions, String serviceName) {
+        final var headers = getHeaders(definitions, serviceName,
+                operation -> Stream.concat(operation.getInputs().stream(), operation.getOutputs().stream()).toList());
+        final var headerFaults = headers.stream()
+                .flatMap(header -> header.getHeaderFaults().stream())
+                .toList();
+        return getHeaderElements(headerFaults, getGlobalElements(definitions));
+    }
+
+    /**
      * The global element declarations of the WSDL's schemas, including those of the schemas they
      * include or import.
      */
@@ -89,11 +103,11 @@ public class WSDLMessageElementExtractor {
     }
 
     /**
-     * A {@code soap:header} whose header block cannot be validated is skipped with a warning rather
-     * than rejected: the rest of the WSDL is still validatable, and the header block is just not
-     * validated. That is the case if its part cannot be found, if the part names a type instead of
-     * an element, or if none of the WSDL's schemas declares the element, e.g. WS-Security bound
-     * without its schema.
+     * A {@code soap:header} or {@code soap:headerfault} whose header block cannot be validated is
+     * skipped with a warning rather than rejected: the rest of the WSDL is still validatable, and
+     * the header block is just not validated. That is the case if its part cannot be found, if the
+     * part names a type instead of an element, or if none of the WSDL's schemas declares the
+     * element, e.g. WS-Security bound without its schema.
      *
      * @param declared the global elements of the WSDL's schemas
      */
@@ -102,17 +116,17 @@ public class WSDLMessageElementExtractor {
         for (var header : headers) {
             var resolved = header.resolvePart();
             if (resolved.isEmpty()) {
-                log.warn("soap:header part {} of message {} cannot be found, so the header block it describes is not validated.", header.getPart(), header.getMessage());
+                log.warn("soap:{} part {} of message {} cannot be found, so the header block it describes is not validated.", header.getElement().getLocalName(), header.getPart(), header.getMessage());
                 continue;
             }
             var part = resolved.get();
             var element = part.getElementQName();
             if (element == null) {
-                log.warn("soap:header part {} names a type instead of an element, so the header block it describes is not validated.", part.getName());
+                log.warn("soap:{} part {} names a type instead of an element, so the header block it describes is not validated.", header.getElement().getLocalName(), part.getName());
                 continue;
             }
             if (!declared.contains(element)) {
-                log.warn("soap:header part {} of message {} binds element {}, which none of the WSDL's schemas declares, so the header block it describes is not validated.", header.getPart(), header.getMessage(), element);
+                log.warn("soap:{} part {} of message {} binds element {}, which none of the WSDL's schemas declares, so the header block it describes is not validated.", header.getElement().getLocalName(), header.getPart(), header.getMessage(), element);
                 continue;
             }
             result.add(element);

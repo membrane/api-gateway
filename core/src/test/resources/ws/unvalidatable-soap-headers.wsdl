@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
     Declares SOAP header blocks that cannot be validated: one whose part names a type instead of an
-    element, one whose element no schema declares, and one whose part does not exist.
+    element, one whose element no schema declares, and one whose part does not exist, the latter
+    once as soap:header and once as soap:headerfault.
 -->
 <wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
                   xmlns:cs="https://example.com/cities"
@@ -70,7 +71,9 @@
             <s:operation soapAction="https://example.com/cities/getCity"/>
             <wsdl:input>
                 <s:header use="literal" message="cs:City" part="header"/>
-                <s:header use="literal" message="cs:Security" part="security"/>
+                <s:header use="literal" message="cs:Security" part="security">
+                    <s:headerfault use="literal" message="cs:Security" part="missing"/>
+                </s:header>
                 <s:body use="literal" parts="body"/>
             </wsdl:input>
             <wsdl:output>

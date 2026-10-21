@@ -79,6 +79,10 @@ public class WSDLValidatorTest {
             <hd:RequestHeader xmlns:hd="https://example.com/header"><unknown/><hd:MessageId>1</hd:MessageId></hd:RequestHeader>
             """;
 
+    private static final String INVALID_HEADER_FAULT = """
+            <hd:HeaderFault xmlns:hd="https://example.com/header"><unknown/></hd:HeaderFault>
+            """;
+
     private static final String FAULT_11 = """
             <s11:Fault>
                 <faultcode>Server</faultcode>
@@ -974,10 +978,41 @@ public class WSDLValidatorTest {
     }
 
     @Test
-    void headerIsNotValidatedInFaultWithBound() throws Exception {
+    void unboundHeaderIsNotValidatedInFaultWithBound() throws Exception {
         final var exc = getResponseExchange(soap11WithHeader(INVALID_UNBOUND_REQUEST_HEADER, FAULT_11));
 
         assertEquals(CONTINUE, createValidator(UNBOUND_HEADER_WSDL, BOUND).validateMessage(exc, RESPONSE));
+    }
+
+    /**
+     * A fault about a header block carries its details in a header block bound via
+     * soap:headerfault (SOAP 1.1 §4.4, WSDL 1.1 §3.7).
+     */
+    @Test
+    void headerFaultIsValidatedInFault() throws Exception {
+        final var exc = getResponseExchange(soap11WithHeader(INVALID_HEADER_FAULT, FAULT_11));
+
+        assertEquals(ABORT, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, BOUND).validateMessage(exc, RESPONSE));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains("unknown"), body);
+    }
+
+    @Test
+    void validHeaderFaultInFault() throws Exception {
+        final var exc = getResponseExchange(soap11WithHeader("""
+                <hd:HeaderFault xmlns:hd="https://example.com/header"><hd:Reason>Unknown language</hd:Reason></hd:HeaderFault>
+                """, FAULT_11));
+
+        assertEquals(CONTINUE, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, BOUND).validateMessage(exc, RESPONSE));
+    }
+
+    @Test
+    void headerFaultIsNotValidatedInResponse() throws Exception {
+        final var exc = getResponseExchange(soap11WithHeader(INVALID_HEADER_FAULT, """
+                <cs:getCityResponse xmlns:cs="https://example.com/cities"><population>300000</population></cs:getCityResponse>
+                """));
+
+        assertEquals(CONTINUE, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, BOUND).validateMessage(exc, RESPONSE));
     }
 
     @Test

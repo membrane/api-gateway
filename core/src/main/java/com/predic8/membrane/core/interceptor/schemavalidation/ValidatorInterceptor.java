@@ -346,9 +346,10 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
      * @description Which SOAP header blocks are validated. Only valid together with <code>wsdl</code>.
      * <code>none</code> validates no header blocks. <code>bound</code> validates the header blocks the WSDL binding
      * declares via <code>soap:header</code>, for requests those of the operation's input, for responses those of its
-     * output. <code>declared</code> validates in addition every header block whose element is declared globally in the
-     * WSDL's schemas, even if the binding does not mention it. Header blocks without such a declaration, e.g.
-     * WS-Security, are never validated, even if the binding mentions them.
+     * output, and for faults those it declares via <code>soap:headerfault</code>. <code>declared</code> validates in
+     * addition every header block whose element is declared globally in the WSDL's schemas, even if the binding does not
+     * mention it. Header blocks without such a declaration, e.g. WS-Security, are never validated, even if the binding
+     * mentions them.
      * @default none
      * @example bound
      */

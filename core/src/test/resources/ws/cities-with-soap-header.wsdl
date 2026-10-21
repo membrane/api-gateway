@@ -2,7 +2,8 @@
 <!--
     Declares SOAP header blocks via soap:header. The header elements live in a schema of their own,
     apart from the body elements. The request message lists its header part before its body part;
-    the response header is carried by a message of its own.
+    the response header is carried by a message of its own. A fault about the request header
+    carries a header block bound via soap:headerfault.
 -->
 <wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
                   xmlns:cs="https://example.com/cities"
@@ -24,6 +25,13 @@
                 <xsd:complexType>
                     <xsd:sequence>
                         <xsd:element name="MessageId" type="xsd:string"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="HeaderFault">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="Reason" type="xsd:string"/>
                     </xsd:sequence>
                 </xsd:complexType>
             </xsd:element>
@@ -55,6 +63,9 @@
     <wsdl:message name="ResponseHeader">
         <wsdl:part name="header" element="hd:ResponseHeader"/>
     </wsdl:message>
+    <wsdl:message name="HeaderFault">
+        <wsdl:part name="fault" element="hd:HeaderFault"/>
+    </wsdl:message>
     <wsdl:portType name="CityPort">
         <wsdl:operation name="getCity">
             <wsdl:input message="cs:City"/>
@@ -66,7 +77,9 @@
         <wsdl:operation name="getCity">
             <s:operation soapAction="https://example.com/cities/getCity"/>
             <wsdl:input>
-                <s:header use="literal" message="cs:City" part="header"/>
+                <s:header use="literal" message="cs:City" part="header">
+                    <s:headerfault use="literal" message="cs:HeaderFault" part="fault"/>
+                </s:header>
                 <s:body use="literal" parts="body"/>
             </wsdl:input>
             <wsdl:output>
