@@ -40,6 +40,7 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.schemavalidation.WSDLValidator.HeaderValidation.BOUND;
 import static com.predic8.membrane.core.interceptor.schemavalidation.WSDLValidator.HeaderValidation.DECLARED;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.*;
@@ -74,12 +75,14 @@ public class WSDLValidatorTest {
             <hd:RequestHeader xmlns:hd="https://example.com/header"><unknown/><hd:MessageId>1</hd:MessageId></hd:RequestHeader>
             """;
 
-    private static final String WELL_FORMED_FAULT_11 = soap11("""
+    private static final String FAULT_11 = """
             <s11:Fault>
                 <faultcode>Server</faultcode>
                 <faultstring>City not found</faultstring>
             </s11:Fault>
-            """);
+            """;
+
+    private static final String WELL_FORMED_FAULT_11 = soap11(FAULT_11);
 
     private static final String MALFORMED_FAULT_11 = soap11("""
             <s11:Fault>
@@ -848,6 +851,22 @@ public class WSDLValidatorTest {
                 """));
 
         assertEquals(ABORT, createValidator(UNBOUND_HEADER_WSDL, DECLARED).validateMessage(exc, RESPONSE));
+    }
+
+    @Test
+    void declaredHeaderIsValidatedInFault() throws Exception {
+        final var exc = getResponseExchange(soap11WithHeader(INVALID_UNBOUND_REQUEST_HEADER, FAULT_11));
+
+        assertEquals(ABORT, createValidator(UNBOUND_HEADER_WSDL, DECLARED).validateMessage(exc, RESPONSE));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains("unknown"), body);
+    }
+
+    @Test
+    void headerIsNotValidatedInFaultByDefault() throws Exception {
+        final var exc = getResponseExchange(soap11WithHeader(INVALID_UNBOUND_REQUEST_HEADER, FAULT_11));
+
+        assertEquals(CONTINUE, createValidator(UNBOUND_HEADER_WSDL, BOUND).validateMessage(exc, RESPONSE));
     }
 
     @Test

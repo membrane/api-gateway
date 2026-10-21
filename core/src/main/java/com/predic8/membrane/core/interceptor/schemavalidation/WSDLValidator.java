@@ -101,6 +101,12 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
 
     private final Set<QName> responseHeaderElements;
 
+    /**
+     * Header blocks validated in faults. WSDL 1.1 cannot bind headers to a fault, so only
+     * {@link HeaderValidation#DECLARED} selects any.
+     */
+    private final Set<QName> faultHeaderElements;
+
     private final Set<SOAPVersion> versions;
 
     private final boolean skipFaults;
@@ -161,6 +167,7 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
         responseElements = getPossibleResponseElements(definitions, serviceName);
         requestHeaderElements = getHeaderElements(getPossibleRequestHeaderElements(definitions, serviceName), headerValidation);
         responseHeaderElements = getHeaderElements(getPossibleResponseHeaderElements(definitions, serviceName), headerValidation);
+        faultHeaderElements = getHeaderElements(Set.of(), headerValidation);
         faultDetailElements = getPossibleFaultDetailElements(definitions, serviceName);
         versions = definitions.getSoapVersions();
 
@@ -301,7 +308,8 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
 
     /**
      * Validates a SOAP fault: first structurally, against the bundled SOAP 1.1/1.2 Fault shape
-     * (faultcode/faultstring/detail resp. Code/Reason/Detail), then - if a detail/Detail payload
+     * (faultcode/faultstring/detail resp. Code/Reason/Detail), then its header blocks selected by
+     * {@link HeaderValidation#DECLARED}, then - if a detail/Detail payload
      * is present and the WSDL declares wsdl:fault elements for this service - validates that
      * payload against the WSDL's embedded schemas, same as request/response elements.
      * <p>
@@ -320,6 +328,10 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
         }
 
         if (!validateWith(structureValidators, getMessageBody(xopr.reconstituteIfNecessary(message)), exceptions)) {
+            return abort(exc, Interceptor.Flow.RESPONSE, exceptions);
+        }
+
+        if (!validateHeaders(message, faultHeaderElements, exceptions)) {
             return abort(exc, Interceptor.Flow.RESPONSE, exceptions);
         }
 
