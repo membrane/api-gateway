@@ -30,6 +30,7 @@ import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.HttpClientFactory;
 import com.predic8.membrane.core.transport.http.HttpTransport;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
+import com.predic8.membrane.core.transport.http.client.SystemProxy;
 import com.predic8.membrane.core.transport.http.streampump.Statistics;
 import com.predic8.membrane.core.util.DNSCache;
 import com.predic8.membrane.core.util.TimerManager;
@@ -76,6 +77,8 @@ public class DefaultMainComponents implements MainComponents {
 
     public void init() {
         httpClient = httpClientFactory.createClient(getHttpClientConfig());
+        if (getHttpClientConfig().getProxy() == null && !getHttpClientConfig().isUseSystemProxy())
+            SystemProxy.logIfIgnored();
         resolverMap = new ResolverMap(httpClient, kubernetesClientFactory);
         resolverMap.addRuleResolver(router);
 

@@ -62,7 +62,7 @@ public class Http2ProtocolHandler extends AbstractProtocolHandler {
                     connectionType.sslProvider(),
                     connectionType.sniServerName(),
                     con.getProxyConfiguration(),
-                    connectionFactory.getProxySSLContext(),
+                    connectionFactory.getProxySSLContext(con.getProxyConfiguration()),
                     h2c);
         }
         exchange.setResponse(h2c.doCall(exchange, retainBodyForRetry()));

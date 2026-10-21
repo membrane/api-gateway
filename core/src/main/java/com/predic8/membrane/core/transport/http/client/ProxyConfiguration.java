@@ -32,7 +32,9 @@ import static com.predic8.membrane.core.util.security.BasicAuthenticationUtil.cr
  *              those to the hosts listed in <code>noProxy</code>.
  *              </p>
  *              <p>
- *              This element is typically used as a child of <code>httpClientConfig</code>.
+ *              This element is typically used as a child of <code>httpClientConfig</code>. To use the proxy
+ *              set in environment variables or JVM system properties instead, set <code>useSystemProxy</code>
+ *              on <code>httpClientConfig</code>.
  *              </p>
  *
  * @yaml <pre><code>

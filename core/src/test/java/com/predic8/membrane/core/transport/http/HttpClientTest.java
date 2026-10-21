@@ -23,6 +23,7 @@ import com.predic8.membrane.core.transport.http.client.*;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
+import java.util.*;
 import java.util.concurrent.atomic.*;
 
 import static com.predic8.membrane.core.http.Header.PROXY_AUTHORIZATION;
@@ -61,15 +62,17 @@ class HttpClientTest {
     }
 
     @Nested
-    class NoProxy {
+    class ThroughProxy {
 
         static final int BACKEND_PORT = 3048;
         static final int PROXY_PORT = 3068;
+        static final List<String> PROXY_PROPERTIES = List.of("http.proxyHost", "http.proxyPort", "http.nonProxyHosts");
 
         final AtomicInteger proxyRequests = new AtomicInteger();
+        final Properties savedProperties = new Properties();
         TestRouter backend;
         TestRouter proxy;
-        HttpClient proxiedClient;
+        HttpClient client;
 
         @BeforeEach
         void setUp() throws Exception {
@@ -98,29 +101,38 @@ class HttpClientTest {
             proxy.add(rule);
             proxy.start();
 
-            var pc = new ProxyConfiguration();
-            pc.setHost("localhost");
-            pc.setPort(PROXY_PORT);
-            pc.setAuthentication(true);
-            pc.setUsername("alice");
-            pc.setPassword("secret");
-            pc.setNoProxy("localhost");
-            var hcc = new HttpClientConfiguration();
-            hcc.setProxy(pc);
-            proxiedClient = new HttpClient(hcc);
+            for (var name : PROXY_PROPERTIES) {
+                var value = System.getProperty(name);
+                if (value != null)
+                    savedProperties.setProperty(name, value);
+            }
         }
 
         @AfterEach
         void tearDown() {
-            proxiedClient.close();
+            for (var name : PROXY_PROPERTIES) {
+                if (savedProperties.containsKey(name))
+                    System.setProperty(name, savedProperties.getProperty(name));
+                else
+                    System.clearProperty(name);
+            }
+            if (client != null)
+                client.close();
             proxy.stop();
             backend.stop();
         }
 
         @Test
         void bypassedHostIsCalledDirectlyWithoutProxyCredentials() throws Exception {
-            var exc = get("http://localhost:%d/foo".formatted(BACKEND_PORT)).buildExchange();
-            proxiedClient.call(exc);
+            var pc = proxyConfiguration();
+            pc.setAuthentication(true);
+            pc.setUsername("alice");
+            pc.setPassword("secret");
+            pc.setNoProxy("localhost");
+            var hcc = new HttpClientConfiguration();
+            hcc.setProxy(pc);
+
+            var exc = call(hcc, "http://localhost:%d/foo".formatted(BACKEND_PORT));
 
             assertEquals(200, exc.getResponse().getStatusCode());
             assertEquals(0, proxyRequests.get());
@@ -129,11 +141,73 @@ class HttpClientTest {
 
         @Test
         void otherHostsGoThroughTheProxy() throws Exception {
-            var exc = get("http://127.0.0.1:%d/foo".formatted(BACKEND_PORT)).buildExchange();
-            proxiedClient.call(exc);
+            var pc = proxyConfiguration();
+            pc.setNoProxy("localhost");
+            var hcc = new HttpClientConfiguration();
+            hcc.setProxy(pc);
+
+            var exc = call(hcc, "http://127.0.0.1:%d/foo".formatted(BACKEND_PORT));
 
             assertEquals(200, exc.getResponse().getStatusCode());
             assertEquals(1, proxyRequests.get());
+        }
+
+        @Test
+        void systemProxyIsUsedWhenEnabled() throws Exception {
+            setProxyProperties();
+            var hcc = new HttpClientConfiguration();
+            hcc.setUseSystemProxy(true);
+
+            var exc = call(hcc, "http://127.0.0.1:%d/foo".formatted(BACKEND_PORT));
+
+            assertEquals(200, exc.getResponse().getStatusCode());
+            assertEquals(1, proxyRequests.get());
+        }
+
+        @Test
+        void systemProxyIsIgnoredByDefault() throws Exception {
+            setProxyProperties();
+
+            var exc = call(new HttpClientConfiguration(), "http://127.0.0.1:%d/foo".formatted(BACKEND_PORT));
+
+            assertEquals(200, exc.getResponse().getStatusCode());
+            assertEquals(0, proxyRequests.get());
+        }
+
+        @Test
+        void explicitProxyWinsOverSystemProxy() throws Exception {
+            setProxyProperties();
+            var pc = proxyConfiguration();
+            pc.setNoProxy("*");
+            var hcc = new HttpClientConfiguration();
+            hcc.setProxy(pc);
+            hcc.setUseSystemProxy(true);
+
+            var exc = call(hcc, "http://127.0.0.1:%d/foo".formatted(BACKEND_PORT));
+
+            assertEquals(200, exc.getResponse().getStatusCode());
+            assertEquals(0, proxyRequests.get());
+        }
+
+        private static void setProxyProperties() {
+            System.setProperty("http.proxyHost", "localhost");
+            System.setProperty("http.proxyPort", String.valueOf(PROXY_PORT));
+            // Without it, the JDK default would bypass the proxy for 127.*
+            System.setProperty("http.nonProxyHosts", "");
+        }
+
+        private static ProxyConfiguration proxyConfiguration() {
+            var pc = new ProxyConfiguration();
+            pc.setHost("localhost");
+            pc.setPort(PROXY_PORT);
+            return pc;
+        }
+
+        private Exchange call(HttpClientConfiguration hcc, String url) throws Exception {
+            client = new HttpClient(hcc);
+            var exc = get(url).buildExchange();
+            client.call(exc);
+            return exc;
         }
     }
 }
