@@ -55,9 +55,9 @@ public class UsernameTokenSecurePart extends SecurePart {
             throw new ConfigurationException("wsSecurity secure/usernameToken requires a password attribute.");
         }
         usernameExpression = TemplateExchangeExpression.newInstance(
-                parent, SPEL, username, parent.getRouter(), TEXT_SERIALIZATION);
+                parent, SPEL, username, TEXT_SERIALIZATION);
         passwordExpression = TemplateExchangeExpression.newInstance(
-                parent, SPEL, password, parent.getRouter(), TEXT_SERIALIZATION);
+                parent, SPEL, password, TEXT_SERIALIZATION);
     }
 
     @Override

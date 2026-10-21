@@ -49,7 +49,7 @@ class TemplateExchangeExpressionTest {
         language = SPEL;
         router = new DefaultRouter();
         adapter = new InterceptorAdapter(router);
-        expression = new TemplateExchangeExpression(adapter, language, "aaa", router, TEXT_SERIALIZATION);
+        expression = new TemplateExchangeExpression(adapter, language, "aaa", TEXT_SERIALIZATION);
     }
 
     @Test
@@ -82,7 +82,6 @@ class TemplateExchangeExpressionTest {
         var expr = TemplateExchangeExpression.newInstance(adapter,
                 GROOVY,
                 "a: ${property.a} b: ${property.b}",
-                router,
                 URL_SERIALIZATION);
         exc.setProperty("a", "$%&/");
         exc.setProperty("b", "{}a§!");
@@ -135,12 +134,12 @@ class TemplateExchangeExpressionTest {
         }
 
         private String eval(String expr, SerializationFunction escaping) {
-            return new TemplateExchangeExpression(new InterceptorAdapter(router), XPATH, expr, router, escaping).evaluate(xexc, REQUEST, String.class);
+            return new TemplateExchangeExpression(new InterceptorAdapter(router), XPATH, expr, escaping).evaluate(xexc, REQUEST, String.class);
         }
 
     }
 
     private String eval(Exchange exc, String expr) {
-        return new TemplateExchangeExpression(new InterceptorAdapter(router), language, expr, router, TEXT_SERIALIZATION).evaluate(exc, REQUEST, String.class);
+        return new TemplateExchangeExpression(new InterceptorAdapter(router), language, expr, TEXT_SERIALIZATION).evaluate(exc, REQUEST, String.class);
     }
 }
