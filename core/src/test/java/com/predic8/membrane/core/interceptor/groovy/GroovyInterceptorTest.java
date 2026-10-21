@@ -208,4 +208,17 @@ public class GroovyInterceptorTest {
 		i.handleResponse(exc);
 		assertEquals("Some String",exc.getResponse().getBodyAsStringDecoded());
 	}
+
+	@Test
+	void builtInFunctionWithoutPrefix() throws Exception {
+		GroovyInterceptor i = new GroovyInterceptor() {{
+			src = """
+				header.add('X-Encoded', base64Encode('abc'))
+				CONTINUE""";
+		}};
+		i.init(router);
+
+		assertEquals(CONTINUE, i.handleRequest(exc));
+		assertEquals("YWJj", exc.getRequest().getHeader().getFirstValue("X-Encoded"));
+	}
 }
