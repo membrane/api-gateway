@@ -104,7 +104,7 @@ public class SetBodyInterceptor extends AbstractExchangeExpressionInterceptor {
     }
 
     protected ExchangeExpression getExchangeExpression() {
-        return TemplateExchangeExpression.newInstance(this, language, expression, router,
+        return TemplateExchangeExpression.newInstance(this, language, expression,
                 getSerialization(contentType).orElseGet(() -> {
             log.warn("Turning off escaping for 'setBody'. No escaping found for content type {}. To enable escaping set 'contentType' on setBody.", contentType);
             // TEXT_SERIALIZATION is only converting from object toString()

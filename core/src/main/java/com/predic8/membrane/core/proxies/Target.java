@@ -118,8 +118,8 @@ public class Target implements XMLSupport {
         escapingFunction = getSerialization(escaping);
     }
 
-    public void applyModifications(Exchange exc, Router router) {
-        exc.setDestinations(computeDestinationExpressions(exc, router));
+    public void applyModifications(Exchange exc) {
+        exc.setDestinations(computeDestinationExpressions(exc));
 
         // Changing the method must be the last step cause it can empty the body!
         if (method != null && !method.isEmpty()) {
@@ -127,12 +127,12 @@ public class Target implements XMLSupport {
         }
     }
 
-    private List<String> computeDestinationExpressions(Exchange exc, Router router) {
-        return exc.getDestinations().stream().map(url -> evaluateTemplate(exc, router, url, adapter))
+    private List<String> computeDestinationExpressions(Exchange exc) {
+        return exc.getDestinations().stream().map(url -> evaluateTemplate(exc, url, adapter))
                 .collect(Collectors.toList()); // Collectors.toList() generates mutable List .toList() => immutable
     }
 
-    private String evaluateTemplate(Exchange exc, Router router, String url, InterceptorAdapter adapter) {
+    private String evaluateTemplate(Exchange exc, String url, InterceptorAdapter adapter) {
         // Only evaluate if the target url contains a template marker ${}
         if (!urlIsTemplate)
             return url;
@@ -142,7 +142,6 @@ public class Target implements XMLSupport {
         return TemplateExchangeExpression.newInstance(adapter,
                 language,
                 url,
-                router,
                 escapingFunction).evaluate(exc, REQUEST, String.class);
     }
 
