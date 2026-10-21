@@ -133,6 +133,14 @@ public class ServiceProxyKeyTest {
 		testHostMatch("[::1]", "[::2]:2000", false);
 	}
 
+	@Test
+	void hostMatchBracketedIpv6InvalidSuffix() {
+		testHostMatch("[::1]", "[::1]foo", false);
+		testHostMatch("[::1]", "[::1]:abc", false);
+		testHostMatch("[::1]", "[::1]:", false);
+		testHostMatch("[::1]", "[::1]:2000x", false);
+	}
+
 	private void testHostMatch(String hostArg, String hostHeader) {
 		testHostMatch(hostArg, hostHeader, true);
 	}

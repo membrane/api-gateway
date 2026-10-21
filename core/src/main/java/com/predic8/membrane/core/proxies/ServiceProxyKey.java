@@ -26,6 +26,7 @@ import static java.util.regex.Pattern.*;
  */
 public class ServiceProxyKey extends AbstractRuleKey {
     private static final Logger log = LoggerFactory.getLogger(ServiceProxyKey.class.getName());
+    private static final Pattern BRACKETED_HOST_PORT_SUFFIX = Pattern.compile(":\\d+");
 
     private String method = "*";
     private String host = "*";
@@ -159,6 +160,8 @@ public class ServiceProxyKey extends AbstractRuleKey {
             return false;
 
         final var requestHost = hostWithoutPort(hostHeader);
+        if (requestHost == null)
+            return false;
 
         log.debug("Rule host: {} Request host: {}", host, requestHost);
 
@@ -166,9 +169,15 @@ public class ServiceProxyKey extends AbstractRuleKey {
     }
 
     // A bracketed IPv6 literal contains colons, so only a colon after its closing bracket separates the port.
-    private static String hostWithoutPort(String hostHeader) {
+    // Returns null if anything other than an optional numeric port follows the closing bracket.
+    private static @Nullable String hostWithoutPort(String hostHeader) {
         final var closingBracket = hostHeader.startsWith("[") ? hostHeader.indexOf(']') : -1;
-        return closingBracket != -1 ? hostHeader.substring(0, closingBracket + 1) : hostHeader.split(":")[0];
+        if (closingBracket == -1)
+            return hostHeader.split(":")[0];
+        final var suffix = hostHeader.substring(closingBracket + 1);
+        if (!suffix.isEmpty() && !BRACKETED_HOST_PORT_SUFFIX.matcher(suffix).matches())
+            return null;
+        return hostHeader.substring(0, closingBracket + 1);
     }
 
     /**
