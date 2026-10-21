@@ -869,6 +869,23 @@ public class WSDLValidatorTest {
         assertEquals(CONTINUE, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, BOUND).validateMessage(exc, REQUEST));
     }
 
+    /**
+     * WS-Security marks a signed header block with a wsu:Id that the block's schema does not
+     * declare.
+     */
+    @Test
+    void signedDeclaredHeader() throws Exception {
+        var exc = getRequestExchange(soap11WithHeader("""
+                <hd:RequestHeader xmlns:hd="https://example.com/header"
+                                  xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" wsu:Id="id-1">
+                    <hd:MessageId>1</hd:MessageId>
+                    <hd:Language>de</hd:Language>
+                </hd:RequestHeader>
+                """, GET_CITY_EXAMPLE_COM));
+
+        assertEquals(CONTINUE, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, BOUND).validateMessage(exc, REQUEST));
+    }
+
     @Test
     void responseHeaderIsValidated() throws Exception {
         var exc = getResponseExchange(soap11WithHeader("""

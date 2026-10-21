@@ -49,7 +49,8 @@ import static com.predic8.membrane.annot.Constants.SOAP12_NS;
  * <p>
  * The attributes SOAP defines for every header block ({@code mustUnderstand}, {@code actor}/
  * {@code role}, {@code relay}, {@code encodingStyle}) are removed from the block's root element:
- * they belong to the envelope, and the block's own schema does not declare them.
+ * they belong to the envelope, and the block's own schema does not declare them. So is the
+ * {@code wsu:Id} that WS-Security puts on a block it signs.
  */
 public class SOAPHeaderBlockRecorder extends DefaultHandler {
 
@@ -57,6 +58,8 @@ public class SOAPHeaderBlockRecorder extends DefaultHandler {
     private static final int BLOCK_DEPTH = 3;
 
     private static final Pattern WHITESPACE = Pattern.compile("\\s+");
+
+    private static final String WSU_NS = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd";
 
     private final Set<QName> selected;
 
@@ -246,10 +249,14 @@ public class SOAPHeaderBlockRecorder extends DefaultHandler {
     private static Attributes withoutSoapAttributes(Attributes atts) {
         var result = new AttributesImpl(atts);
         for (int i = result.getLength() - 1; i >= 0; i--) {
-            if (isSoapNamespace(result.getURI(i)))
+            if (isSoapNamespace(result.getURI(i)) || isWsuId(result.getURI(i), result.getLocalName(i)))
                 result.removeAttribute(i);
         }
         return result;
+    }
+
+    private static boolean isWsuId(String uri, String localName) {
+        return WSU_NS.equals(uri) && "Id".equals(localName);
     }
 
     /**

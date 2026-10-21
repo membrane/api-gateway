@@ -99,6 +99,26 @@ class SOAPHeaderBlockRecorderTest {
         assertFalse(out.contains("First"), out);
     }
 
+    /**
+     * WS-Security marks a signed block with wsu:Id. Only the block's root is stripped of it.
+     */
+    @Test
+    void recordsBlockWithoutWsuId() throws Exception {
+        var out = serialize(record("""
+                <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/"
+                              xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
+                  <s11:Header>
+                    <a:First xmlns:a="https://example.com/a" wsu:Id="id-1" id="x"><a:value wsu:Id="id-2">1</a:value></a:First>
+                  </s11:Header>
+                  <s11:Body/>
+                </s11:Envelope>
+                """, FIRST).getFirst());
+
+        assertFalse(out.contains("id-1"), out);
+        assertTrue(out.contains("id=\"x\""), out);
+        assertTrue(out.contains("id-2"), out);
+    }
+
     @Test
     void soap12() throws Exception {
         var out = serialize(record("""
