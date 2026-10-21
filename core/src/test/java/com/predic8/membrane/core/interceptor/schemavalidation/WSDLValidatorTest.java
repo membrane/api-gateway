@@ -810,9 +810,76 @@ public class WSDLValidatorTest {
         assertHeaderAfterBodyReportedOnce(exc);
     }
 
+    /**
+     * SOAP allows only one header, so a second one is rejected, valid or not.
+     */
+    @Test
+    void secondHeader() throws Exception {
+        final var exc = getRequestExchange("""
+                <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                  <s11:Header>%s</s11:Header>
+                  <s11:Header>%s</s11:Header>
+                  <s11:Body>%s</s11:Body>
+                </s11:Envelope>
+                """.formatted(VALID_REQUEST_HEADER, VALID_REQUEST_HEADER, GET_CITY_EXAMPLE_COM));
+
+        assertEquals(ABORT, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, null, false).validateMessage(exc, REQUEST));
+        assertSecondHeaderReportedOnce(exc);
+    }
+
+    /**
+     * Header blocks are only read from the first header, so a second header must not let an
+     * invalid block through.
+     */
+    @Test
+    void invalidBlockInSecondHeader() throws Exception {
+        final var exc = getRequestExchange("""
+                <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                  <s11:Header/>
+                  <s11:Header>
+                    <hd:RequestHeader xmlns:hd="https://example.com/header">
+                      <hd:MessageId>1</hd:MessageId>
+                      <hd:Language>not a language</hd:Language>
+                    </hd:RequestHeader>
+                  </s11:Header>
+                  <s11:Body>%s</s11:Body>
+                </s11:Envelope>
+                """.formatted(GET_CITY_EXAMPLE_COM));
+
+        assertEquals(ABORT, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, BOUND).validateMessage(exc, REQUEST));
+        assertSecondHeaderReportedOnce(exc);
+    }
+
+    @Test
+    void secondHeaderOfFault() throws Exception {
+        final var exc = getResponseExchange("""
+                <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                  <s11:Header/>
+                  <s11:Header/>
+                  <s11:Body>
+                    <s11:Fault>
+                      <faultcode>Server</faultcode>
+                      <faultstring>City not found</faultstring>
+                    </s11:Fault>
+                  </s11:Body>
+                </s11:Envelope>
+                """);
+
+        assertEquals(ABORT, createValidator(CITIES_WSDL, null, false).validateMessage(exc, RESPONSE));
+        assertSecondHeaderReportedOnce(exc);
+    }
+
     private static void assertHeaderAfterBodyReportedOnce(Exchange exc) {
+        assertReportedOnce(exc, "The SOAP Header must come before the Body");
+    }
+
+    private static void assertSecondHeaderReportedOnce(Exchange exc) {
+        assertReportedOnce(exc, "The SOAP Envelope must not contain more than one Header");
+    }
+
+    private static void assertReportedOnce(Exchange exc, String error) {
         final var body = exc.getResponse().getBodyAsStringDecoded();
-        assertEquals(1, body.split("The SOAP Header must come before the Body", -1).length - 1, body);
+        assertEquals(1, body.split(error, -1).length - 1, body);
     }
 
     /**

@@ -33,8 +33,8 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
-import static com.predic8.membrane.annot.Constants.SOAP11_NS;
-import static com.predic8.membrane.annot.Constants.SOAP12_NS;
+import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.WSU_NS;
+import static com.predic8.membrane.core.util.SOAPUtil.isSOAPNamespace;
 
 /**
  * Records the selected SOAP header blocks - direct children of {@code soap:Header} - in a single
@@ -44,8 +44,8 @@ import static com.predic8.membrane.annot.Constants.SOAP12_NS;
  * soon as it is complete, so only one is held at a time.
  * <p>
  * Parsing stops at the end of the header, or at the first other child of the envelope if there is
- * no header: SOAP puts the header first, and the body is not needed. A header after the body is
- * rejected when the body is validated, see {@link SOAPXMLFilter}.
+ * no header: SOAP puts the header first, and the body is not needed. A second header, or a header
+ * after the body, is rejected when the body is validated, see {@link SOAPXMLFilter}.
  * <p>
  * The attributes SOAP defines for every header block ({@code mustUnderstand}, {@code actor}/
  * {@code role}, {@code relay}, {@code encodingStyle}) are removed from the block's root element:
@@ -58,8 +58,6 @@ public class SOAPHeaderBlockRecorder extends DefaultHandler {
     private static final int BLOCK_DEPTH = 3;
 
     private static final Pattern WHITESPACE = Pattern.compile("\\s+");
-
-    private static final String WSU_NS = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd";
 
     private final Set<QName> selected;
 
@@ -126,10 +124,6 @@ public class SOAPHeaderBlockRecorder extends DefaultHandler {
         return !recorder.stopped;
     }
 
-    private static boolean isSoapNamespace(String uri) {
-        return SOAP11_NS.equals(uri) || SOAP12_NS.equals(uri);
-    }
-
     @Override
     public void setDocumentLocator(Locator locator) {
         this.locator = locator;
@@ -158,7 +152,7 @@ public class SOAPHeaderBlockRecorder extends DefaultHandler {
             namespaces.pushContext();
         contextPushed = false;
         depth++;
-        if (depth == HEADER_DEPTH && !("Header".equals(localName) && isSoapNamespace(uri)))
+        if (depth == HEADER_DEPTH && !("Header".equals(localName) && isSOAPNamespace(uri)))
             throw new StopParsing(); // the header comes first, so there is none
         if (depth == BLOCK_DEPTH && selected.contains(new QName(uri, localName))) {
             final var attributes = withoutSoapAttributes(atts);
@@ -249,7 +243,7 @@ public class SOAPHeaderBlockRecorder extends DefaultHandler {
     private static Attributes withoutSoapAttributes(Attributes atts) {
         var result = new AttributesImpl(atts);
         for (int i = result.getLength() - 1; i >= 0; i--) {
-            if (isSoapNamespace(result.getURI(i)) || isWsuId(result.getURI(i), result.getLocalName(i)))
+            if (isSOAPNamespace(result.getURI(i)) || isWsuId(result.getURI(i), result.getLocalName(i)))
                 result.removeAttribute(i);
         }
         return result;

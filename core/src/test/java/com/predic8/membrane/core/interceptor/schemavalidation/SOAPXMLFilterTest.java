@@ -92,6 +92,21 @@ class SOAPXMLFilterTest {
     }
 
     @Test
+    void secondHeader() throws Exception {
+        var errors = filterSoapBodyErrors("""
+                <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soapenv:Header><h:Block xmlns:h="http://example.com/h"/></soapenv:Header>
+                  <soapenv:Header><h:Block xmlns:h="http://example.com/h"/></soapenv:Header>
+                  <soapenv:Body><req:Request xmlns:req="http://example.com/svc"/></soapenv:Body>
+                </soapenv:Envelope>
+                """);
+
+        assertEquals(1, errors.size());
+        assertEquals("The SOAP Envelope must not contain more than one Header.", errors.getFirst().getMessage());
+        assertEquals(3, errors.getFirst().getLineNumber());
+    }
+
+    @Test
     void headerBeforeBody() throws Exception {
         assertTrue(filterSoapBodyErrors("""
                 <soapenv:Envelope xmlns:soapenv="http://www.w3.org/2003/05/soap-envelope">

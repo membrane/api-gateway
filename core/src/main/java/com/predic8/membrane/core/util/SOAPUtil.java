@@ -267,6 +267,13 @@ public class SOAPUtil {
     }
 
     /**
+     * Whether the namespace is the envelope namespace of SOAP 1.1 or SOAP 1.2.
+     */
+    public static boolean isSOAPNamespace(String uri) {
+        return SOAP11_NS.equals(uri) || SOAP12_NS.equals(uri);
+    }
+
+    /**
      * Extracts the QNames of the detail entries - the direct children of a SOAP fault's
      * {@code detail} (SOAP 1.1, unqualified) or {@code Detail} (SOAP 1.2,
      * {@link com.predic8.membrane.annot.Constants#SOAP12_NS}) element. Descendants below the

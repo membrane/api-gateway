@@ -20,24 +20,35 @@ import org.xml.sax.SAXParseException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLFilterImpl;
 
-import static com.predic8.membrane.annot.Constants.SOAP11_NS;
-import static com.predic8.membrane.annot.Constants.SOAP12_NS;
+import static com.predic8.membrane.core.util.SOAPUtil.isSOAPNamespace;
 
 /**
  * Strips the SOAP envelope so that only the payload below {@code <soap:Body>} is passed on.
  * The {@code Body} boundary is matched by namespace, not just local name: a domain element
  * that happens to be named {@code Body} in another namespace is left untouched and forwarded.
  * <p>
- * A SOAP {@code Header} after the {@code Body} is reported as an error to the error handler, so
- * a validator reading this filter rejects the message: SOAP puts the header in front of the body.
+ * A second SOAP {@code Header}, or one after the {@code Body}, is reported as an error to the
+ * error handler, so a validator reading this filter rejects the message: SOAP allows one header,
+ * in front of the body.
  */
 public class SOAPXMLFilter extends XMLFilterImpl {
 
 	private static final int ENVELOPE_CHILD_DEPTH = 2;
 
-	private enum Position {BEFORE_BODY, IN_BODY, AFTER_BODY}
+	/**
+	 * Where the parser is among the children of the envelope.
+	 */
+	private enum Position {
+		START,
+		/**
+		 * A header has started, the body has not.
+		 */
+		AFTER_HEADER,
+		IN_BODY,
+		AFTER_BODY
+	}
 
-	private Position position = Position.BEFORE_BODY;
+	private Position position = Position.START;
 
 	/**
 	 * Depth of the current element: {@code 1} for the envelope, {@code 2} for its children.
@@ -50,12 +61,12 @@ public class SOAPXMLFilter extends XMLFilterImpl {
 		super(reader);
 	}
 
-	private static boolean isSoapNamespace(String uri) {
-		return SOAP11_NS.equals(uri) || SOAP12_NS.equals(uri);
+	private static boolean isSoapBody(String uri, String localName) {
+		return localName.equals("Body") && isSOAPNamespace(uri);
 	}
 
-	private static boolean isSoapBody(String uri, String localName) {
-		return localName.equals("Body") && isSoapNamespace(uri);
+	private static boolean isSoapHeader(String uri, String localName) {
+		return localName.equals("Header") && isSOAPNamespace(uri);
 	}
 
 	@Override
@@ -75,14 +86,26 @@ public class SOAPXMLFilter extends XMLFilterImpl {
 			return;
 		}
 
-		if (position == Position.AFTER_BODY && depth == ENVELOPE_CHILD_DEPTH && localName.equals("Header") && isSoapNamespace(uri))
-			error(new SAXParseException("The SOAP Header must come before the Body.", locator));
+		if (depth == ENVELOPE_CHILD_DEPTH && isSoapHeader(uri, localName))
+			startHeader();
 
 		if (position != Position.IN_BODY)
 			return;
 
 		super.startElement(uri, localName, qName, atts);
 
+	}
+
+	/**
+	 * SOAP allows one header, in front of the body. Inside the body, no header is a child of the
+	 * envelope.
+	 */
+	private void startHeader() throws SAXException {
+		switch (position) {
+			case START -> position = Position.AFTER_HEADER;
+			case AFTER_HEADER -> error(new SAXParseException("The SOAP Envelope must not contain more than one Header.", locator));
+			case AFTER_BODY -> error(new SAXParseException("The SOAP Header must come before the Body.", locator));
+		}
 	}
 
 	@Override

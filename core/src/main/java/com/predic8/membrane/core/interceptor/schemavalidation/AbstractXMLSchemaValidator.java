@@ -176,9 +176,9 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
      * matching another one of the (possibly several) alternatives.
      *
      * <p>
-     * A schema that does not declare the root element of the source only reports that it cannot
-     * find its declaration, which is noise as long as another schema declares it. So those errors
-     * are only collected if no schema declares the root element.
+     * A schema that does not declare the root element of the source reports that it cannot find
+     * its declaration, which is noise as long as another schema declares it. So the errors of such
+     * a schema are only collected if no schema declares the root element.
      *
      * @param exceptions collects the errors reported for each schema the source failed against
      * @return {@code true} if the source matched at least one embedded schema
@@ -211,13 +211,15 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
     }
 
     /**
-     * The root element comes first, so a schema not declaring it reports cvc-elt.1.a first. The
-     * message starts with that key in every locale.
+     * A schema not declaring the root element reports cvc-elt.1.a for it. Not necessarily first: a
+     * filter in front of the validator may report an error before the root, e.g.
+     * {@link SOAPXMLFilter} about a second SOAP Header. The message starts with that key in every
+     * locale.
      */
     private static boolean isRootUndeclared(List<Exception> errors) {
-        return !errors.isEmpty()
-               && errors.getFirst().getMessage() != null
-               && errors.getFirst().getMessage().startsWith("cvc-elt.1.a");
+        return errors.stream()
+                .map(Exception::getMessage)
+                .anyMatch(message -> message != null && message.startsWith("cvc-elt.1.a"));
     }
 
     /**
