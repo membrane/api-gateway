@@ -70,11 +70,11 @@ Keep this file in sync when adding, renaming or removing a util class.
 |---|---|
 | `util/FileUtil` | Read/write streams, xml/json file detection, slash handling, resolve, directory part |
 | `util/OSUtil` | OS detection, backslash fixing, Windows path detection |
-| `util/NetworkUtil` | IPv4/IPv6 helpers (brackets, dotted quad, CIDR prefix match) |
+| `util/NetworkUtil` | IPv4/IPv6 helpers (brackets, host header without port, dotted quad, CIDR prefix match) |
 | `util/DNSCache` | Cached reverse DNS lookups |
 | `util/SecurityUtils` | Password hash helpers (`crypt`-compatible, salt extraction) |
 | `util/security/BasicAuthenticationUtil` | Parse/create `Authorization: Basic` headers |
-| `util/DateAndTimeUtil` | Pretty-print time spans |
+| `util/DateAndTimeUtil` | Pretty-print time spans, parse configured ISO dates |
 | `util/Util` | Grab bag: line count, socket shutdown, thread pool, split by comma |
 | `util/ClassFinder` | Classpath scanning |
 | `util/ComparatorFactory` | Comparators for admin-console statistics tables |
