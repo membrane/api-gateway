@@ -19,6 +19,7 @@ import org.slf4j.*;
 
 import java.util.regex.*;
 
+import static com.predic8.membrane.core.util.NetworkUtil.hostWithoutPort;
 import static java.util.regex.Pattern.*;
 
 /**
@@ -26,7 +27,6 @@ import static java.util.regex.Pattern.*;
  */
 public class ServiceProxyKey extends AbstractRuleKey {
     private static final Logger log = LoggerFactory.getLogger(ServiceProxyKey.class.getName());
-    private static final Pattern BRACKETED_HOST_PORT_SUFFIX = Pattern.compile(":\\d+");
 
     private String method = "*";
     private String host = "*";
@@ -166,18 +166,6 @@ public class ServiceProxyKey extends AbstractRuleKey {
         log.debug("Rule host: {} Request host: {}", host, requestHost);
 
         return hostPattern.matcher(requestHost).matches();
-    }
-
-    // A bracketed IPv6 literal contains colons, so only a colon after its closing bracket separates the port.
-    // Returns null if anything other than an optional numeric port follows the closing bracket.
-    private static @Nullable String hostWithoutPort(String hostHeader) {
-        final var closingBracket = hostHeader.startsWith("[") ? hostHeader.indexOf(']') : -1;
-        if (closingBracket == -1)
-            return hostHeader.split(":")[0];
-        final var suffix = hostHeader.substring(closingBracket + 1);
-        if (!suffix.isEmpty() && !BRACKETED_HOST_PORT_SUFFIX.matcher(suffix).matches())
-            return null;
-        return hostHeader.substring(0, closingBracket + 1);
     }
 
     /**
