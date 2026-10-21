@@ -19,6 +19,27 @@
 
 api:
   port: 2000
+  path:
+    uri: /.well-known/apis.json
+  flow:
+    - apisJson:
+        collectionId: shop
+        name: Example Shop
+        description: Public APIs of the example shop
+        type: collection
+        tags:
+          # Untagged APIs are left out as well.
+          - include: public
+        maintainers:
+          - name: API Team
+            email: api-team@example.com
+
+---
+
+# The following APIs are there to populate the list of APIs.
+
+api:
+  port: 2000
   openapi:
     - location: products.oas.yaml
   tags:
@@ -58,22 +79,3 @@ api:
   flow:
     - return:
         status: 200
-
----
-
-api:
-  port: 2000
-  path:
-    uri: /.well-known/apis.json
-  flow:
-    - apisJson:
-        collectionId: shop
-        name: Example Shop
-        description: Public APIs of the example shop
-        type: collection
-        tags:
-          # Untagged APIs are left out as well.
-          - include: public
-        maintainers:
-          - name: API Team
-            email: api-team@example.com
