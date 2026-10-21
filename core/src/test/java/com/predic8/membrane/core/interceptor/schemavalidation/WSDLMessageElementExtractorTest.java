@@ -207,6 +207,14 @@ class WSDLMessageElementExtractorTest {
     }
 
     @Test
+    void globalElementsOfCyclicEmbeddedImports() throws Exception {
+        var elements = getGlobalElements(getDefinitions("classpath:/ws/cyclic-embedded-imports.wsdl"));
+
+        assertEquals(Set.of(new QName("https://example.com/a", "A"),
+                new QName("https://example.com/b", "B")), elements);
+    }
+
+    @Test
     void noHeaderElements() throws Exception {
         assertTrue(getPossibleRequestHeaderElements(getDefinitions("classpath:/ws/cities.wsdl"), null).isEmpty());
     }

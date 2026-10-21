@@ -65,22 +65,26 @@ public class WSDLMessageElementExtractor {
      * include or import.
      */
     public static Set<QName> getGlobalElements(Definitions definitions) {
-        var result = new HashSet<QName>();
-        definitions.getSchemas().forEach(schema -> addGlobalElements(schema, result));
+        final var result = new HashSet<QName>();
+        final var visited = Collections.newSetFromMap(new IdentityHashMap<Schema, Boolean>());
+        definitions.getSchemas().forEach(schema -> addGlobalElements(schema, result, visited));
         return result;
     }
 
     /**
      * Included elements are already merged into the including schema and take its target
-     * namespace. An imported schema already visited by the parser is null, so the recursion ends.
+     * namespace. Embedded schemas are linked to each other by namespace, so imports may form a
+     * cycle; each schema is visited only once.
      */
-    private static void addGlobalElements(Schema schema, Set<QName> result) {
+    private static void addGlobalElements(Schema schema, Set<QName> result, Set<Schema> visited) {
+        if (!visited.add(schema))
+            return;
         for (var element : schema.getSchemaElements()) {
             result.add(new QName(schema.getTargetNamespace(), element.getName()));
         }
         for (var schemaImport : schema.getImports()) {
             if (schemaImport.getSchema() != null)
-                addGlobalElements(schemaImport.getSchema(), result);
+                addGlobalElements(schemaImport.getSchema(), result, visited);
         }
     }
 
