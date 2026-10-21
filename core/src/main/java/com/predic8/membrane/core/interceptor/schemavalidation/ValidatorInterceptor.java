@@ -47,7 +47,8 @@ import static com.predic8.membrane.core.util.text.TextUtil.linkURL;
  * @description Validates request and response message bodies against a schema. The schema type is selected by the
  * attribute you set: <code>wsdl</code> for SOAP messages, <code>schema</code> for XML against an XSD,
  * <code>jsonSchema</code> for JSON or YAML, or <code>schematron</code>. Exactly one of them must be configured; inside a
- * soapProxy the WSDL is taken from the proxy automatically. An empty body passes; an invalid body is rejected with an
+ * soapProxy the WSDL is taken from the proxy automatically. With a WSDL, the SOAP header blocks the binding declares via
+ * <code>soap:header</code> are validated as well. An empty body passes; an invalid body is rejected with an
  * error response that lists what was wrong. Set <code>validationDetails</code> to <code>false</code> to reject with a
  * bare error instead, and <code>failureHandler</code> to control where the failure is logged. See
  * distribution/tutorials/xml/50-XSD-Schema-validation.yaml and

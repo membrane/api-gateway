@@ -153,6 +153,54 @@ class WSDLMessageElementExtractorTest {
         assertTrue(e.getMessage().contains("has no part"), e.getMessage());
     }
 
+    @Test
+    void headerElements() throws Exception {
+        var definitions = getDefinitions("classpath:/ws/cities-with-soap-header.wsdl");
+
+        assertEquals(Set.of(new QName("https://example.com/header", "RequestHeader")), getPossibleRequestHeaderElements(definitions, null));
+        assertEquals(Set.of(new QName("https://example.com/header", "ResponseHeader")), getPossibleResponseHeaderElements(definitions, null));
+    }
+
+    /**
+     * The request message lists its soap:header part first; the body element is the first part
+     * not bound as header.
+     */
+    @Test
+    void headerPartIsNoBodyElement() throws Exception {
+        var definitions = getDefinitions("classpath:/ws/cities-with-soap-header.wsdl");
+
+        assertEquals(Set.of(new QName("https://example.com/cities", "getCity")), getPossibleRequestElements(definitions, null));
+        assertEquals(Set.of(new QName("https://example.com/cities", "getCityResponse")), getPossibleResponseElements(definitions, null));
+    }
+
+    /**
+     * A header that cannot be identified is not validated, but the rest of the WSDL still is.
+     */
+    @Test
+    void unvalidatableHeadersAreSkippedWithWarning() throws Exception {
+        var root = (Logger) LogManager.getRootLogger();
+        var appender = new TestAppender("WSDLMessageElementExtractorTest");
+        appender.start();
+        root.addAppender(appender);
+        try {
+            var definitions = getDefinitions("classpath:/ws/unvalidatable-soap-headers.wsdl");
+
+            assertTrue(getPossibleRequestHeaderElements(definitions, null).isEmpty());
+            assertTrue(getPossibleResponseHeaderElements(definitions, null).isEmpty());
+            assertEquals(Set.of(new QName("https://example.com/cities", "getCity")), getPossibleRequestElements(definitions, null));
+            assertTrue(appender.contains("names a type instead of an element"), appender.getMessages().toString());
+            assertTrue(appender.contains("missing of message cs:ResponseHeader cannot be found"), appender.getMessages().toString());
+        } finally {
+            root.removeAppender(appender);
+            appender.stop();
+        }
+    }
+
+    @Test
+    void noHeaderElements() throws Exception {
+        assertTrue(getPossibleRequestHeaderElements(getDefinitions("classpath:/ws/cities.wsdl"), null).isEmpty());
+    }
+
     private static @NotNull Definitions getDefinitions(String location) throws Exception {
         return Definitions.parse(new ResolverMap(), location);
     }

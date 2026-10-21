@@ -76,6 +76,15 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
      */
     private final Set<QName> responseElements;
 
+    /**
+     * Header blocks declared via soap:header for requests resp. responses. Only these are
+     * validated: other header blocks, e.g. WS-Security or WS-Addressing ones added by
+     * infrastructure, are not described by the WSDL and are let through.
+     */
+    private final Set<QName> requestHeaderElements;
+
+    private final Set<QName> responseHeaderElements;
+
     private final Set<SOAPVersion> versions;
 
     private final boolean skipFaults;
@@ -130,6 +139,8 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
 
         requestElements = getPossibleRequestElements(definitions, serviceName);
         responseElements = getPossibleResponseElements(definitions, serviceName);
+        requestHeaderElements = getPossibleRequestHeaderElements(definitions, serviceName);
+        responseHeaderElements = getPossibleResponseHeaderElements(definitions, serviceName);
         faultDetailElements = getPossibleFaultDetailElements(definitions, serviceName);
         versions = definitions.getSoapVersions();
 
@@ -231,7 +242,33 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
         if (flow == Interceptor.Flow.RESPONSE && !isPossibleResponseElement(result.soapElement())) {
             return abort(exc, flow, "%s is not a valid response element. Possible elements are %s".formatted(result.soapElement(), responseElements));
         }
+
+        var exceptions = new ArrayList<Exception>();
+        if (!validateHeaders(message, flow == Interceptor.Flow.REQUEST ? requestHeaderElements : responseHeaderElements, exceptions)) {
+            return abort(exc, flow, exceptions);
+        }
         return super.validateMessage(exc, flow);
+    }
+
+    /**
+     * Validates each header block declared via soap:header against the WSDL's embedded schemas,
+     * one block at a time.
+     *
+     * @param exceptions collects the errors of the first block that did not validate
+     * @return {@code true} if all declared header blocks validated
+     */
+    private boolean validateHeaders(Message message, Set<QName> declared, List<Exception> exceptions) {
+        if (declared.isEmpty())
+            return true;
+        var blocks = extractHeaderElements(xopr, message);
+        for (int i = 0; i < blocks.size(); i++) {
+            if (!declared.contains(blocks.get(i)))
+                continue;
+            final var index = i;
+            if (!validateAgainstSchemas(() -> getSOAPHeaderBlock(xopr.reconstituteIfNecessary(message), index), exceptions))
+                return false;
+        }
+        return true;
     }
 
     /**

@@ -55,6 +55,18 @@ public class WSDLValidatorTest {
     public static final String HELLO_SOAP12_WSDL = "src/test/resources/ws/hello-soap12.wsdl";
     public static final String RPC_WITH_FAULT_WSDL = "src/test/resources/ws/rpc-with-fault.wsdl";
     public static final String TWO_FAULTS_PER_OPERATION_WSDL = "src/test/resources/ws/two-faults-per-operation.wsdl";
+    public static final String CITIES_WITH_SOAP_HEADER_WSDL = "src/test/resources/ws/cities-with-soap-header.wsdl";
+
+    private static final String GET_CITY_EXAMPLE_COM = """
+            <cs:getCity xmlns:cs="https://example.com/cities"><name>Bonn</name></cs:getCity>
+            """;
+
+    private static final String VALID_REQUEST_HEADER = """
+            <hd:RequestHeader xmlns:hd="https://example.com/header">
+                <hd:MessageId>1</hd:MessageId>
+                <hd:Language>de</hd:Language>
+            </hd:RequestHeader>
+            """;
 
     private static final String WELL_FORMED_FAULT_11 = soap11("""
             <s11:Fault>
@@ -658,6 +670,113 @@ public class WSDLValidatorTest {
         }
     }
 
+    @Test
+    void bodyPartAfterHeaderPartIsTheRequestElement() throws Exception {
+        var exc = getRequestExchange(soap11WithHeader("", """
+                <cs:getCity xmlns:cs="https://example.com/cities"><name>Bonn</name></cs:getCity>
+                """));
+
+        assertEquals(CONTINUE, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, null, false).validateMessage(exc, REQUEST));
+    }
+
+    @Test
+    void headerPartIsNoRequestElement() throws Exception {
+        var exc = getRequestExchange(soap11WithHeader("", """
+                <hd:RequestHeader xmlns:hd="https://example.com/header"><hd:MessageId>1</hd:MessageId><hd:Language>de</hd:Language></hd:RequestHeader>
+                """));
+
+        assertEquals(ABORT, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, null, false).validateMessage(exc, REQUEST));
+    }
+
+    @Test
+    void validDeclaredHeader() throws Exception {
+        var exc = getRequestExchange(soap11WithHeader(VALID_REQUEST_HEADER, GET_CITY_EXAMPLE_COM));
+
+        assertEquals(CONTINUE, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, null, false).validateMessage(exc, REQUEST));
+    }
+
+    @Test
+    void unknownElementInDeclaredHeader() throws Exception {
+        var exc = getRequestExchange(soap11WithHeader("""
+                <hd:RequestHeader xmlns:hd="https://example.com/header">
+                    <unknown/>
+                    <hd:MessageId>1</hd:MessageId>
+                    <hd:Language>de</hd:Language>
+                </hd:RequestHeader>
+                """, GET_CITY_EXAMPLE_COM));
+
+        assertEquals(ABORT, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, null, false).validateMessage(exc, REQUEST));
+        assertEquals(REQUEST.name(), exc.getResponse().getHeader().getFirstValue(VALIDATION_ERROR_SOURCE));
+        assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("unknown"), exc.getResponse().getBodyAsStringDecoded());
+    }
+
+    @Test
+    void invalidValueInDeclaredHeader() throws Exception {
+        var exc = getRequestExchange(soap11WithHeader("""
+                <hd:RequestHeader xmlns:hd="https://example.com/header">
+                    <hd:MessageId>1</hd:MessageId>
+                    <hd:Language>not a language</hd:Language>
+                </hd:RequestHeader>
+                """, GET_CITY_EXAMPLE_COM));
+
+        assertEquals(ABORT, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, null, false).validateMessage(exc, REQUEST));
+    }
+
+    @Test
+    void invalidDeclaredHeaderAfterUndeclaredOne() throws Exception {
+        var exc = getRequestExchange(soap11WithHeader("""
+                <ns2:Block xmlns:ns2="http://membrane-api.io"><anything/></ns2:Block>
+                <hd:RequestHeader xmlns:hd="https://example.com/header"><hd:MessageId>1</hd:MessageId></hd:RequestHeader>
+                """, GET_CITY_EXAMPLE_COM));
+
+        assertEquals(ABORT, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, null, false).validateMessage(exc, REQUEST));
+    }
+
+    @Test
+    void undeclaredHeaderIsNotValidated() throws Exception {
+        var exc = getRequestExchange(soap11WithHeader("""
+                <ns2:Block xmlns:ns2="http://membrane-api.io"><anything/></ns2:Block>
+                """ + VALID_REQUEST_HEADER, GET_CITY_EXAMPLE_COM));
+
+        assertEquals(CONTINUE, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, null, false).validateMessage(exc, REQUEST));
+    }
+
+    @Test
+    void soapAttributesOnDeclaredHeader() throws Exception {
+        var exc = getRequestExchange(soap11WithHeader("""
+                <hd:RequestHeader xmlns:hd="https://example.com/header" s11:mustUnderstand="1" s11:actor="http://schemas.xmlsoap.org/soap/actor/next">
+                    <hd:MessageId>1</hd:MessageId>
+                    <hd:Language>de</hd:Language>
+                </hd:RequestHeader>
+                """, GET_CITY_EXAMPLE_COM));
+
+        assertEquals(CONTINUE, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, null, false).validateMessage(exc, REQUEST));
+    }
+
+    @Test
+    void responseHeaderIsValidated() throws Exception {
+        var exc = getResponseExchange(soap11WithHeader("""
+                <hd:ResponseHeader xmlns:hd="https://example.com/header"><hd:Language>de</hd:Language></hd:ResponseHeader>
+                """, """
+                <cs:getCityResponse xmlns:cs="https://example.com/cities"><population>300000</population></cs:getCityResponse>
+                """));
+
+        assertEquals(ABORT, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, null, false).validateMessage(exc, RESPONSE));
+        assertEquals(RESPONSE.name(), exc.getResponse().getHeader().getFirstValue(VALIDATION_ERROR_SOURCE));
+    }
+
+    @Test
+    void requestHeaderIsNotValidatedInResponse() throws Exception {
+        var exc = getResponseExchange(soap11WithHeader("""
+                <hd:RequestHeader xmlns:hd="https://example.com/header"><unknown/></hd:RequestHeader>
+                """, """
+                <cs:getCityResponse xmlns:cs="https://example.com/cities"><population>300000</population></cs:getCityResponse>
+                """));
+
+        // Only the response's own declared header blocks are validated in the response flow.
+        assertEquals(CONTINUE, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, null, false).validateMessage(exc, RESPONSE));
+    }
+
     private static Exchange getRequestExchange(String body) throws URISyntaxException {
         return Request.post("/foo").body(body).contentType(TEXT_XML).buildExchange();
     }
@@ -669,6 +788,15 @@ public class WSDLValidatorTest {
                   <s11:Body>%s</s11:Body>
                </s11:Envelope>
                """.formatted(body);
+    }
+
+    private static String soap11WithHeader(String header, String body) {
+        return """
+               <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                  <s11:Header>%s</s11:Header>
+                  <s11:Body>%s</s11:Body>
+               </s11:Envelope>
+               """.formatted(header, body);
     }
 
     private static String soap12(String body) {

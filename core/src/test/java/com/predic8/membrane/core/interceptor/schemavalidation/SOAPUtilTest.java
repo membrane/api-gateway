@@ -34,6 +34,7 @@ import static com.predic8.membrane.core.util.NetworkTestUtil.freePort;
 import static com.predic8.membrane.core.util.RecordingServerTestUtil.startRecordingServer;
 import static com.predic8.membrane.core.util.SOAPUtil.analyseSOAPMessage;
 import static com.predic8.membrane.core.util.SOAPUtil.extractFaultDetailElements;
+import static com.predic8.membrane.core.util.SOAPUtil.extractHeaderElements;
 import static org.junit.jupiter.api.Assertions.*;
 
 
@@ -262,6 +263,29 @@ public class SOAPUtilTest {
 
         var value = doc.getElementsByTagNameNS("*", "Value").item(0);
         assertEquals("soap:Sender", value.getTextContent());
+    }
+
+    @Test
+    void headerBlocks() {
+        assertEquals(List.of(new QName(TB_NS, "first"), new QName(MEMBRANE_NS, "second")),
+                extractHeaderElements(new XOPReconstitutor(), getMessageFromString("""
+                        <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                          <s11:Header>
+                            <ns1:first xmlns:ns1="http://thomas-bayer.com/blz/"><nested/></ns1:first>
+                            <ns2:second xmlns:ns2="http://membrane-api.io/"/>
+                          </s11:Header>
+                          <s11:Body><ns1:body xmlns:ns1="http://thomas-bayer.com/blz/"/></s11:Body>
+                        </s11:Envelope>
+                        """)));
+    }
+
+    @Test
+    void headerBlocksEmptyWithoutHeader() {
+        assertTrue(extractHeaderElements(new XOPReconstitutor(), getMessageFromString("""
+                <s12:Envelope xmlns:s12="http://www.w3.org/2003/05/soap-envelope">
+                  <s12:Body><ns1:body xmlns:ns1="http://thomas-bayer.com/blz/"/></s12:Body>
+                </s12:Envelope>
+                """)).isEmpty());
     }
 
     @Test
