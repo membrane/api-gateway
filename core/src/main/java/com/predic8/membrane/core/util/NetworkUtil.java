@@ -27,7 +27,7 @@ import static java.net.InetAddress.getByAddress;
 
 public class NetworkUtil {
 
-    private static final Pattern BRACKETED_HOST_PORT_SUFFIX = Pattern.compile(":\\d+");
+    private static final Pattern BRACKETED_HOST_PORT_SUFFIX = Pattern.compile(":\\d*");
 
     public static Pair<byte[], Integer> readUpTo1KbOfDataFrom(Socket sourceSocket, byte[] buffer) throws IOException {
         int available = sourceSocket.getInputStream().available();
@@ -71,7 +71,7 @@ public class NetworkUtil {
     /**
      * Removes the port from a host header value like "example.com:8080" or "[::1]:8080".
      * A bracketed IPv6 literal keeps its brackets. Returns null if anything other than
-     * a colon followed by digits comes after the closing bracket.
+     * a colon followed by optional digits comes after the closing bracket.
      */
     public static @Nullable String hostWithoutPort(String hostHeader) {
         final var closingBracket = hostHeader.startsWith("[") ? hostHeader.indexOf(']') : -1;

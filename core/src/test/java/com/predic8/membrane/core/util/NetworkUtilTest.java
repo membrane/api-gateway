@@ -45,6 +45,7 @@ class NetworkUtilTest {
             "192.168.1.5:80,       192.168.1.5",
             "'[::1]',              '[::1]'",
             "'[::1]:2000',         '[::1]'",
+            "'[::1]:',             '[::1]'",
             "'[2001:db8::1]:443',  '[2001:db8::1]'"
     })
     void hostWithoutPort_strips_port(String hostHeader, String expected) {
@@ -52,7 +53,7 @@ class NetworkUtilTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"[::1]foo", "[::1]:abc", "[::1]:", "[::1]:2000x"})
+    @ValueSource(strings = {"[::1]foo", "[::1]:abc", "[::1]:2000x"})
     void hostWithoutPort_returns_null_for_invalid_ipv6_suffix(String hostHeader) {
         assertNull(hostWithoutPort(hostHeader));
     }
