@@ -291,6 +291,43 @@ full GC.
   outside it (network, client or backend). The 1,417 ms request of 2026-09-29 was measured before
   GC logs were kept, so it can't be checked the same way.
 
+### Typical load
+
+Measured on 2026-10-21 on newly provisioned VMs (same sizes as above), `fullproxy` at a fixed
+1,000 requests per second instead of full load (`LOAD_RATE=1000`): requests are sent on schedule
+and latency is timed from each request's scheduled time, so a gateway stall shows up as latency.
+The client also logs every request slower than 1 ms and writes its own GC log; `match-slow.awk`
+matches the slow requests against the stop-the-world safepoints of the gateway and of the client.
+JDK 21 (Temurin 21.0.12.1), 250 MB heap, 5 minutes (300,000 requests) per collector, 0 errors:
+
+| | G1 | ZGC | Shenandoah |
+|---|---:|---:|---:|
+| p50 / p99 | 0.27 / 0.30 ms | 0.27 / 0.30 ms | 0.27 / 0.30 ms |
+| p99.9 | 0.97 ms | 0.62 ms | 0.63 ms |
+| p99.99 | 2.0 ms | 2.2 ms | 1.9 ms |
+| Max | 17.3 ms | 13.6 ms | 19.2 ms |
+| Requests over 1 ms | 279 | 68 | 110 |
+| … during a gateway pause | 199 | 0 | 0 |
+| … during a client pause | 19 | 7 | 18 |
+| Gateway pauses (longest) | 215 (2.8 ms) | 1,123 (0.02 ms) | 187 (0.27 ms) |
+| GC thread CPU: workers + control | 0.52 + 0.01 s | 4.88 + 0.83 s | 0.78 + 1.73 s |
+| Gateway JVM CPU | 11.5 s | 17.2 s | 14.6 s |
+
+- **Up to p99 the collector makes no difference.** G1's pauses, one every 1.4 s for 1 to 3 ms,
+  delay about 200 of 300,000 requests (0.07 %) by about a millisecond: p99.9 is 0.97 ms with G1 and
+  0.62 ms with ZGC or Shenandoah, whose slow requests never coincide with a gateway pause.
+- **From p99.99 on the collectors are equal** (1.9 to 2.2 ms). The outliers of 5 to 19 ms occur with
+  every collector and are not caused by the gateway's GC. The match of G1's 17 ms request with a
+  1.25 ms pause is an overlap, not a cause.
+- **GC costs little CPU at this load.** The whole gateway JVM uses about 0.04 to 0.06 cores; G1's GC
+  threads 0.2 % of one core, ZGC's about 2 %. Most of Shenandoah's GC CPU comes from its control and
+  regulator threads, which poll whether to collect regardless of load.
+
+A wider matrix of 1-minute runs (JDK 21 and 25; G1, ZGC and Shenandoah; heaps of 100 MB, 250 MB,
+4 GB and the default) is in [gc-typical-load/RESULTS.md](gc-typical-load/RESULTS.md): no run had an
+error or a full GC, G1 never paused longer than 5.7 ms (under 0.1 % of the time), ZGC and Shenandoah
+never longer than 0.4 ms, and GC used at most about 2 % of one core.
+
 ## Per-run results
 
 ### `shortcircuit`

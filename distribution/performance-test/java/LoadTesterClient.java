@@ -154,8 +154,33 @@ public class LoadTesterClient {
             System.out.printf(Locale.ROOT, "SEND_RATE target=%.1f actual=%.1f maxLagMs=%.3f%n",
                     rate, count / ((sendEnd - start) / 1_000_000_000.0), maxLagNanos / 1_000_000.0);
             System.out.println("OK=" + ok.sum() + " ERR=" + err.sum());
+            writeSlowRequests(latenciesNanos, startMillis, intervalNanos);
             printLatencyPercentiles(latenciesNanos);
         }
+    }
+
+    /**
+     * Writes every request slower than LOAD_SLOW_MS (default 1) to the file LOAD_SLOW_LOG, if set,
+     * one line per request with its due time (epoch ms) and latency (ms), so they can be matched against
+     * the timestamps of GC pauses.
+     */
+    private static void writeSlowRequests(long[] latenciesNanos, long startMillis, double intervalNanos) {
+        String file = System.getenv("LOAD_SLOW_LOG");
+        if (file == null || file.isEmpty())
+            return;
+        long thresholdNanos = (long) (Double.parseDouble(System.getenv().getOrDefault("LOAD_SLOW_MS", "1")) * 1_000_000);
+        int slow = 0;
+        try (var out = new PrintWriter(new BufferedWriter(new FileWriter(file)))) {
+            for (int i = 0; i < latenciesNanos.length; i++) {
+                if (latenciesNanos[i] <= thresholdNanos)
+                    continue;
+                out.printf(Locale.ROOT, "%.3f %.3f%n", startMillis + i * intervalNanos / 1_000_000.0, latenciesNanos[i] / 1_000_000.0);
+                slow++;
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        System.out.println("SLOW_REQUESTS " + slow + " " + file);
     }
 
     /**
@@ -208,13 +233,14 @@ public class LoadTesterClient {
 
     private static void printLatencyPercentiles(long[] latenciesNanos) {
         Arrays.sort(latenciesNanos);
-        System.out.printf(Locale.ROOT, "LATENCY_MS p50=%.3f p95=%.3f p99=%.3f max=%.3f%n",
+        System.out.printf(Locale.ROOT, "LATENCY_MS p50=%.3f p95=%.3f p99=%.3f max=%.3f p99.9=%.3f p99.99=%.3f%n",
                 percentileMillis(latenciesNanos, 50), percentileMillis(latenciesNanos, 95),
-                percentileMillis(latenciesNanos, 99), latenciesNanos[latenciesNanos.length - 1] / 1_000_000.0);
+                percentileMillis(latenciesNanos, 99), latenciesNanos[latenciesNanos.length - 1] / 1_000_000.0,
+                percentileMillis(latenciesNanos, 99.9), percentileMillis(latenciesNanos, 99.99));
     }
 
     /** Nearest-rank percentile of an ascending-sorted array. */
-    private static double percentileMillis(long[] sortedNanos, int percentile) {
+    private static double percentileMillis(long[] sortedNanos, double percentile) {
         int rank = (int) Math.ceil(percentile / 100.0 * sortedNanos.length);
         return sortedNanos[Math.max(rank, 1) - 1] / 1_000_000.0;
     }

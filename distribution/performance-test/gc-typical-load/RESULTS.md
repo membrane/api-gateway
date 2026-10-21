@@ -74,3 +74,33 @@ threads (`GC Thread`, `G1 *`, `Z*`, `Shenandoah *`; the VM Thread is not counted
 - Latency max values of 10–17 ms are not gateway GC: the longest pause and safepoint in those
   runs were at most ~1.3 ms. Likely the client JVM or the network (client GC is not logged).
 - JDK 21 vs 25: no difference beyond the noise of single 1-minute runs.
+
+## Influence on tail latency (5-minute runs)
+
+Same setup, JDK 21, 250 MB heap, 5 minutes measured (300,000 requests). The client also reports
+p99.9/p99.99, logs every request slower than 1 ms with its due time, and writes its own GC log.
+`../match-slow.awk` matches each slow request against the stop-the-world safepoints of the gateway
+and of the client that overlap it (±1 ms, safepoints of at least 0.2 ms).
+
+| | G1 | ZGC | Shenandoah |
+|---|---|---|---|
+| p50 / p99 | 0.27 / 0.30 ms | 0.27 / 0.30 ms | 0.27 / 0.30 ms |
+| p99.9 | 0.97 ms | 0.62 ms | 0.63 ms |
+| p99.99 | 2.0 ms | 2.2 ms | 1.9 ms |
+| max | 17.3 ms | 13.6 ms | 19.2 ms |
+| Requests > 1 ms | 279 | 68 | 110 |
+| … during a gateway pause | 199 | 0 | 0 |
+| … during a client pause | 19 | 7 | 18 |
+| Gateway pauses (longest) | 215 (2.8 ms) | 1123 (0.02 ms) | 187 (0.27 ms) |
+| GC CPU (workers + control threads) | 0.52 + 0.01 s | 4.88 + 0.83 s | 0.78 + 1.73 s |
+| JVM CPU | 11.5 s | 17.2 s | 14.6 s |
+
+- Up to p99 the collector makes no difference. G1's 1–3 ms pauses delay about 200 of 300,000
+  requests (0.07 %) by about a millisecond: p99.9 is 0.97 ms with G1 and 0.62 ms with ZGC or
+  Shenandoah, whose slow requests never coincide with a gateway pause.
+- From p99.99 on the collectors are equal (1.9–2.2 ms). The outliers of 5–19 ms occur with every
+  collector and are not explained by gateway GC; the "during a gateway pause" match for G1's 17 ms
+  request is an overlap with a 1.25 ms pause, which cannot account for it.
+- ZGC buys its short pauses with about 10 times G1's GC CPU (5.7 s in 5 minutes, about 2 % of one
+  core). Shenandoah's GC CPU is mostly its control and regulator threads (1.73 s), which poll
+  regardless of load; its collecting workers used 0.78 s.

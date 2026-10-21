@@ -190,7 +190,11 @@ $SSH "$ADMIN_USER@$GATEWAY_PUB" 'cat > ~/proc-cpu-sample.sh' < "$PT/proc-cpu-sam
 $SSH "$ADMIN_USER@$GATEWAY_PUB" "nohup bash ~/proc-cpu-sample.sh $GATEWAY_JVM_PID </dev/null > '${SAMPLE_DIRS[0]}/proc-cpu.log' 2>/dev/null &"
 
 echo ">>> [$SCENARIO] running client at concurrency $CONCURRENCY ($LOAD_TOTAL requests + $LOAD_WARMUP warmup, $LOAD_METHOD${LOAD_RATE:+, $LOAD_RATE req/s})"
-$SSH "$ADMIN_USER@$CLIENT_PUB" "cd ~ && TARGET_URL=$LOAD_SCHEME://$GATEWAY_PRIV:2000$LOAD_PATH LOAD_METHOD=$LOAD_METHOD LOAD_BODY='$LOAD_BODY' LOAD_CONTENT_TYPE=$LOAD_CONTENT_TYPE LOAD_AUTHORIZATION='$LOAD_AUTHORIZATION' LOAD_INSECURE_TLS=$LOAD_INSECURE_TLS LOAD_TOTAL=$LOAD_TOTAL LOAD_CONCURRENCY=$CONCURRENCY LOAD_WARMUP=$LOAD_WARMUP LOAD_RATE=$LOAD_RATE java -cp 'client-libs/*:classes' com.predic8.membrane.load.LoadTesterClient" | tee "$CLIENT_OUTPUT"
+$SSH "$ADMIN_USER@$CLIENT_PUB" "cd ~ && rm -f client-gc.log slow-requests.txt && TARGET_URL=$LOAD_SCHEME://$GATEWAY_PRIV:2000$LOAD_PATH LOAD_METHOD=$LOAD_METHOD LOAD_BODY='$LOAD_BODY' LOAD_CONTENT_TYPE=$LOAD_CONTENT_TYPE LOAD_AUTHORIZATION='$LOAD_AUTHORIZATION' LOAD_INSECURE_TLS=$LOAD_INSECURE_TLS LOAD_TOTAL=$LOAD_TOTAL LOAD_CONCURRENCY=$CONCURRENCY LOAD_WARMUP=$LOAD_WARMUP LOAD_RATE=$LOAD_RATE LOAD_SLOW_LOG=\$HOME/slow-requests.txt java -Xlog:gc*,safepoint:file=client-gc.log:timemillis,uptime,level,tags:filecount=0 -cp 'client-libs/*:classes' com.predic8.membrane.load.LoadTesterClient" | tee "$CLIENT_OUTPUT"
+# Slow requests (due time and latency) and the client's own GC log tell gateway stalls apart from
+# client ones when matched against the gateway's gc.log.
+$SSH "$ADMIN_USER@$CLIENT_PUB" 'cat ~/slow-requests.txt 2>/dev/null' > "$RESULTS/slow-requests.txt" || true
+$SSH "$ADMIN_USER@$CLIENT_PUB" 'cat ~/client-gc.log' > "$RESULTS/client-gc.log" || true
 
 WINDOW=$(awk '/^MEASURED_WINDOW [0-9]+ [0-9]+$/ {print $2, $3}' "$CLIENT_OUTPUT")
 if [[ ! "$WINDOW" =~ ^[0-9]+\ [0-9]+$ ]]; then
@@ -240,7 +244,7 @@ MAX_HEAP=$(grep -o -- '-XX:MaxHeapSize=[0-9]*' "$RESULTS/jvm-flags.txt" | LC_ALL
 LC_ALL=C awk -v label="$RUN_LABEL" -v heap="${MAX_HEAP:-?}" '
   function val(field) { return substr(field, index(field, "=") + 1) }
   /^OK=/ { err = val($2) }
-  /^LATENCY_MS/ { lat = sprintf("lat.p50=%sms lat.p99=%sms lat.max=%sms", val($2), val($4), val($5)) }
+  /^LATENCY_MS/ { lat = sprintf("lat.p50=%sms lat.p99=%sms lat.p99.9=%sms lat.p99.99=%sms lat.max=%sms", val($2), val($4), val($6), val($7), val($5)) }
   /^SEND_RATE/ { lag = val($4) }
   /^GC pauses=/ { gc = sprintf("gc.pauses=%s gc.max=%s gc.total=%s full=%s degenerated=%s", val($2), val($6), val($5), val($3), val($4)) }
   /^GC collections=/ { n = val($2); conc = val($3) }

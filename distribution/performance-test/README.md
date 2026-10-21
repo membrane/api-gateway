@@ -142,6 +142,14 @@ the run under `results/<YYYYMMDD-HHMMSS>-<scenario>-<RUN_LABEL>/` (gitignored):
 | `proc-cpu.log` | CPU time of the gateway JVM and of its GC threads, once per second (`proc-cpu-sample.sh`) |
 | `proc-cpu-summary.txt` | Gateway JVM and GC thread CPU in the measured window |
 | `summary.txt` | The run's `SUMMARY` line: errors, latency, GC collections and pauses, JVM and GC CPU |
+| `slow-requests.txt` | Fixed-rate runs: every request slower than 1 ms, with its scheduled time (epoch ms) and latency (ms) |
+| `client-gc.log` | The client's GC and safepoint log |
+
+To find out which slow requests coincided with a stop-the-world pause of the gateway or of the client:
+
+```sh
+LC_ALL=C awk -v tol=1 -f match-slow.awk results/<run>/gc.log results/<run>/client-gc.log results/<run>/slow-requests.txt
+```
 
 `gc-summary.awk` reads Parallel, G1, generational ZGC and Shenandoah logs of JDK 21 and 25 and
 prints the pauses inside the client's measured window (count, full GCs, degenerated Shenandoah
