@@ -132,17 +132,22 @@ the run under `results/<YYYYMMDD-HHMMSS>-<scenario>-<RUN_LABEL>/` (gitignored):
 
 | File | Content |
 |---|---|
-| `run.txt` | Scenario, label, concurrency, request counts, `GC_OPTS` |
+| `run.txt` | Scenario, label, concurrency, request counts and rate, `GC_OPTS`, gateway JDK |
 | `client.out` | Client output: RPS, OK/ERR, latency percentiles, measured window |
 | `cpu-summary.txt` | CPU summary per VM |
 | `gc.log` | The gateway's GC and safepoint log |
 | `gc-summary.txt` | `gc-summary.awk` output for the measured window |
 | `gateway.log` | The gateway's console output |
 | `jvm-flags.txt` | The effective JVM flags (`-XX:+PrintCommandLineFlags`) |
+| `proc-cpu.log` | CPU time of the gateway JVM and of its GC threads, once per second (`proc-cpu-sample.sh`) |
+| `proc-cpu-summary.txt` | Gateway JVM and GC thread CPU in the measured window |
+| `summary.txt` | The run's `SUMMARY` line: errors, latency, GC collections and pauses, JVM and GC CPU |
 
-`gc-summary.awk` reads Parallel, G1 and generational ZGC logs and prints the pauses inside the
-client's measured window (count, full GCs, total, max, p99, share of the window, GC CPU, heap after
-GC), the longest safepoint including the time to reach it, ZGC allocation stalls if there were any,
+`gc-summary.awk` reads Parallel, G1, generational ZGC and Shenandoah logs of JDK 21 and 25 and
+prints the pauses inside the client's measured window (count, full GCs, degenerated Shenandoah
+cycles, total, max, p99, share of the window, GC CPU, heap after GC), the number of collections and
+their concurrent time, the longest safepoint including the time to reach it, ZGC allocation stalls
+if there were any,
 and the pauses before the window (startup, warmup, or earlier runs). To re-run it on a saved log:
 
 ```sh
@@ -168,6 +173,23 @@ with `start` and `end` from the `MEASURED_WINDOW` line in `client.out`.
     LOAD_TOTAL=10000000 GATEWAY_RESTART=false RUN_LABEL=soak-g1-2g ./run-scenario.sh fullproxy
   done
   ```
+- `LOAD_RATE`: sends a fixed number of requests per second instead of as many as the concurrency
+  allows, to look at the gateway under typical rather than maximum load. Requests are sent on
+  schedule whether or not earlier ones have completed, and latency is timed from each request's
+  scheduled time, so a gateway stall shows up as latency. The concurrency then only caps the
+  client's connections (default 1000). `client.out` adds a `SEND_RATE` line with the largest lag
+  behind the schedule; a large lag means the client limited the rate.
+- `GATEWAY_JAVA_HOME`: the JDK the gateway runs on, e.g. `/usr/lib/jvm/temurin-25-jdk-amd64`.
+  Default: the gateway VM's `java` (Temurin 21).
+
+## GC under a fixed load
+
+`run-gc-matrix.sh [scenario]` runs a scenario (default `fullproxy`) at a fixed rate once for each
+combination of JDK, collector and heap size and prints one `SUMMARY` line per run. It installs
+missing Temurin versions on the gateway VM. Defaults: `RATE=1000`, `WARMUP_SECONDS=10`,
+`MEASURE_SECONDS=60`, `JDKS="21 25"`, `GCS="g1 zgc shen"` (generational ZGC; Shenandoah in its
+generational mode from JDK 25 on), `HEAPS="default 100m 250m 4g"` (`-Xmx`). A full matrix takes about
+75 minutes; the results of 2026-10-21 are in [gc-typical-load/RESULTS.md](gc-typical-load/RESULTS.md).
 
 ## Configuration
 

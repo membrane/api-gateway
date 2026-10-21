@@ -1,6 +1,6 @@
 # Summarizes a gateway gc.log written with -Xlog:gc*,safepoint:...:timemillis,uptime,level,tags
 # for the client's measured window. Pass -v start=<epoch ms> -v end=<epoch ms> (MEASURED_WINDOW).
-# Handles Parallel, G1 and generational ZGC logs. Each event is assigned by the epoch-ms decorator
+# Handles Parallel, G1, generational ZGC and Shenandoah logs of JDK 21 and 25. Each event is assigned by the epoch-ms decorator
 # of its log line, which the JVM writes when the pause ends. Events before the window come from
 # warmup (or from earlier runs when the gateway was not restarted) and are reported separately;
 # events after it are ignored. Decimal commas (JVM running under e.g. a German locale) are accepted.
@@ -51,10 +51,30 @@ function sortn(a, n,    gap, i, j, v) {
         total += d
         if (d > max) { max = d; maxAt = t }
         if ($0 ~ / Pause Full /) full++
+        # Shenandoah's stop-the-world fallback when the concurrent cycle cannot keep up.
+        if ($0 ~ / Pause Degenerated GC /) degenerated++
     } else {
         preN++
         if (d > preMax) preMax = d
     }
+}
+
+# Collections and their concurrent work. Every [gc] line carries its collection's id ("GC(12)"), so
+# the distinct ids are the collections, comparable across collectors: ZGC and Shenandoah pause
+# several times per collection, G1 once per young collection. Concurrent time is the wall time GC
+# threads run next to the application: G1 "Concurrent Mark Cycle 12.345ms", every Shenandoah
+# "Concurrent marking ... 0.456ms" phase, and the whole ZGC "Minor Collection (...) ... 0.012s",
+# whose pauses are a negligible part of it.
+/\[gc *\]/ && match($0, /GC\([0-9]+\)/) && inWindow {
+    id = substr($0, RSTART + 3, RLENGTH - 4)
+    if (!(id in collections)) {
+        collections[id] = 1
+        collectionN++
+    }
+    if ($0 ~ / Concurrent / && $NF ~ /^[0-9]+([.,][0-9]+)?ms$/)
+        concurrent += num(substr($NF, 1, length($NF) - 2))
+    else if ($0 ~ / (Minor|Major) Collection / && $NF ~ /^[0-9]+([.,][0-9]+)?s$/)
+        concurrent += 1000 * num(substr($NF, 1, length($NF) - 1))
 }
 
 # Heap after a collection, from the [gc] summary line: "120M->20M(256M)" (Parallel, G1) or
@@ -68,7 +88,7 @@ function sortn(a, n,    gap, i, j, v) {
     }
 }
 
-# CPU per collection: "User=0.01s Sys=0.00s Real=0.00s". ZGC does not log these.
+# CPU per collection: "User=0.01s Sys=0.00s Real=0.00s". ZGC and Shenandoah do not log these.
 /\[gc,cpu *\]/ && inWindow {
     for (i = 1; i <= NF; i++)
         if ($i ~ /^(User|Sys)=/) {
@@ -89,9 +109,10 @@ function sortn(a, n,    gap, i, j, v) {
 }
 
 # Every safepoint, GC or not: 'Safepoint "G1CollectForAllocation", ..., Total: 950833 ns'. Total
-# includes the time to reach the safepoint, which the GC's own pause figure leaves out.
-/Safepoint "/ && $NF == "ns" {
-    d = $(NF - 1) / 1000000
+# includes the time to reach the safepoint, which the GC's own pause figure leaves out. JDK 25
+# appends ", Threads: 1 runnable, 12 total" after it.
+/Safepoint "/ && match($0, /Total: [0-9]+ ns/) {
+    d = substr($0, RSTART + 7, RLENGTH - 10) / 1000000
     if (inWindow) {
         spN++
         spTotal += d
@@ -117,8 +138,9 @@ END {
     heap = "n/a"
     if (heapAfter != "") heap = sprintf("%.0fMB heapAfterMin=%.0fMB", heapAfter, heapMin)
     if (spName == "") spName = "-"
-    printf "GC pauses=%d full=%d total=%.1fms max=%.2fms p99=%.2fms share=%.3f%% gcCpu=%s heapAfterLast=%s maxAt=%.0f\n", \
-        n, full, total, max, p99, share, cpu, heap, maxAt
+    printf "GC pauses=%d full=%d degenerated=%d total=%.1fms max=%.2fms p99=%.2fms share=%.3f%% gcCpu=%s heapAfterLast=%s maxAt=%.0f\n", \
+        n, full, degenerated, total, max, p99, share, cpu, heap, maxAt
+    printf "GC collections=%d concurrent=%.1fms\n", collectionN, concurrent
     printf "Safepoints n=%d total=%.1fms max=%.2fms op=%s maxAt=%.0f\n", \
         spN, spTotal, spMax, spName, spAt
     if (stallN > 0)

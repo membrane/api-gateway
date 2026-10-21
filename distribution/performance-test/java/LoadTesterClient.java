@@ -21,6 +21,7 @@ import java.time.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
+import java.util.concurrent.locks.*;
 
 import static org.asynchttpclient.Dsl.*;
 
@@ -45,6 +46,13 @@ import static org.asynchttpclient.Dsl.*;
  * or failure. This is a closed-loop client (a new request is only sent once one completes), so
  * latencies are not corrected for coordinated omission: a gateway stall delays the requests that
  * would have been sent during it instead of recording them as slow.
+ * <p>
+ * Fixed rate: env var LOAD_RATE (requests per second, unset by default) switches both phases to an
+ * open-loop client. Request i is due at start + i / rate and is sent then, whether or not earlier
+ * requests have completed, so the load stays constant while the gateway stalls. Latency is timed
+ * from the due time, which counts a stall against every request that should have been sent during
+ * it. LOAD_CONCURRENCY then caps the open connections. The run reports how far sending ever fell
+ * behind the schedule; a large lag means the client, not the gateway, limited the rate.
  */
 public class LoadTesterClient {
 
@@ -67,8 +75,12 @@ public class LoadTesterClient {
         if (authorization != null && authorization.isEmpty())
             authorization = null;
         boolean insecureTls = Boolean.parseBoolean(System.getenv().getOrDefault("LOAD_INSECURE_TLS", "false"));
+        String rateEnv = System.getenv("LOAD_RATE");
+        double rate = rateEnv == null || rateEnv.isEmpty() ? 0 : Double.parseDouble(rateEnv);
+        if (rate < 0)
+            throw new IllegalArgumentException("LOAD_RATE must be > 0, got " + rateEnv);
 
-        System.out.println("Target: " + url + "  METHOD=" + method + "  TOTAL=" + total + "  CONCURRENCY=" + concurrency + "  WARMUP=" + warmup + "  AUTH=" + (authorization != null) + "  INSECURE_TLS=" + insecureTls);
+        System.out.println("Target: " + url + "  METHOD=" + method + "  TOTAL=" + total + "  CONCURRENCY=" + concurrency + "  WARMUP=" + warmup + "  AUTH=" + (authorization != null) + "  INSECURE_TLS=" + insecureTls + "  RATE=" + (rate > 0 ? rate : "unlimited"));
 
         try (var client = asyncHttpClient(new DefaultAsyncHttpClientConfig.Builder()
                 .setConnectTimeout(Duration.ofMillis(60000))
@@ -80,12 +92,69 @@ public class LoadTesterClient {
 
             if (warmup > 0) {
                 System.out.println("Warming up (" + warmup + " untimed requests)...");
-                runPhase(client, submitters, url, method, body, contentType, authorization, warmup, concurrency, false);
+                if (rate > 0)
+                    runRatePhase(client, url, method, body, contentType, authorization, warmup, rate, false);
+                else
+                    runPhase(client, submitters, url, method, body, contentType, authorization, warmup, concurrency, false);
                 System.out.println("Warmup done.");
             }
 
             System.out.println("Starting measured run...");
-            runPhase(client, submitters, url, method, body, contentType, authorization, total, concurrency, true);
+            if (rate > 0)
+                runRatePhase(client, url, method, body, contentType, authorization, total, rate, true);
+            else
+                runPhase(client, submitters, url, method, body, contentType, authorization, total, concurrency, true);
+        }
+    }
+
+    /**
+     * Sends {@code count} requests at a fixed {@code rate} from one thread, without waiting for
+     * responses (see the class Javadoc). Each response callback records its latency from the
+     * request's due time.
+     */
+    private static void runRatePhase(AsyncHttpClient client, String url, String method, String body, String contentType,
+                                     String authorization, int count, double rate, boolean timed) throws InterruptedException {
+        var ok = new LongAdder();
+        var err = new LongAdder();
+        var done = new CountDownLatch(count);
+        // One slot per request, written once by the callback of its response; awaiting the latch
+        // makes every write visible to the percentile calculation.
+        final long[] latenciesNanos = new long[count];
+        double intervalNanos = 1_000_000_000.0 / rate;
+        long maxLagNanos = 0;
+
+        long startMillis = System.currentTimeMillis();
+        long start = System.nanoTime();
+        for (int i = 0; i < count; i++) {
+            long due = start + (long) (i * intervalNanos);
+            long wait;
+            while ((wait = due - System.nanoTime()) > 0)
+                LockSupport.parkNanos(wait);
+            maxLagNanos = Math.max(maxLagNanos, -wait);
+
+            int index = i;
+            prepare(client, url, method, body, contentType, authorization).execute().toCompletableFuture()
+                    .whenComplete((response, failure) -> {
+                        latenciesNanos[index] = System.nanoTime() - due;
+                        if (failure == null && response.getStatusCode() < 400)
+                            ok.increment();
+                        else
+                            err.increment();
+                        done.countDown();
+                    });
+        }
+        long sendEnd = System.nanoTime();
+        done.await();
+        long end = System.nanoTime();
+        long endMillis = System.currentTimeMillis();
+
+        if (timed) {
+            System.out.println("MEASURED_WINDOW " + startMillis + " " + endMillis);
+            System.out.println("RPS: " + (count / ((end - start) / 1_000_000_000.0)));
+            System.out.printf(Locale.ROOT, "SEND_RATE target=%.1f actual=%.1f maxLagMs=%.3f%n",
+                    rate, count / ((sendEnd - start) / 1_000_000_000.0), maxLagNanos / 1_000_000.0);
+            System.out.println("OK=" + ok.sum() + " ERR=" + err.sum());
+            printLatencyPercentiles(latenciesNanos);
         }
     }
 
@@ -150,7 +219,7 @@ public class LoadTesterClient {
         return sortedNanos[Math.max(rank, 1) - 1] / 1_000_000.0;
     }
 
-    private static void sendAndWait(AsyncHttpClient client, String url, String method, String body, String contentType, String authorization, LongAdder ok, LongAdder err, long[] latenciesNanos, int index) {
+    private static BoundRequestBuilder prepare(AsyncHttpClient client, String url, String method, String body, String contentType, String authorization) {
         var request = "GET".equalsIgnoreCase(method)
                 ? client.prepareGet(url)
                 : client.preparePost(url).setBody(body);
@@ -158,6 +227,11 @@ public class LoadTesterClient {
             request.setHeader("Content-Type", contentType);
         if (authorization != null)
             request.setHeader("Authorization", authorization);
+        return request;
+    }
+
+    private static void sendAndWait(AsyncHttpClient client, String url, String method, String body, String contentType, String authorization, LongAdder ok, LongAdder err, long[] latenciesNanos, int index) {
+        var request = prepare(client, url, method, body, contentType, authorization);
         long sentNanos = System.nanoTime();
         try {
             var response = request.execute().get();
