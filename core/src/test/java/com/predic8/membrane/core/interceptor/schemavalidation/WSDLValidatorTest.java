@@ -42,6 +42,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.schemavalidation.WSDLValidator.HeaderValidation.BOUND;
 import static com.predic8.membrane.core.interceptor.schemavalidation.WSDLValidator.HeaderValidation.DECLARED;
+import static java.time.Duration.ofSeconds;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -732,6 +733,90 @@ public class WSDLValidatorTest {
         final var body = exc.getResponse().getBodyAsStringDecoded();
         assertTrue(body.contains("not a language"), body);
         assertFalse(body.contains("cvc-elt.1.a"), body);
+    }
+
+    @Test
+    void headerErrorReportsLineInMessage() throws Exception {
+        final var exc = getRequestExchange("""
+                <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                  <s11:Header>
+                    <hd:RequestHeader xmlns:hd="https://example.com/header">
+                      <hd:MessageId>1</hd:MessageId>
+                      <hd:Language>not a language</hd:Language>
+                    </hd:RequestHeader>
+                  </s11:Header>
+                  <s11:Body><cs:getCity xmlns:cs="https://example.com/cities"><name>Bonn</name></cs:getCity></s11:Body>
+                </s11:Envelope>
+                """);
+
+        assertEquals(ABORT, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, null, false).validateMessage(exc, REQUEST));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains("<line>5</line>"), body);
+    }
+
+    /**
+     * SOAP puts the header in front of the body, so a header after it is rejected, valid or not.
+     */
+    @Test
+    void headerAfterBody() throws Exception {
+        final var exc = getRequestExchange("""
+                <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                  <s11:Body>%s</s11:Body>
+                  <s11:Header>%s</s11:Header>
+                </s11:Envelope>
+                """.formatted(GET_CITY_EXAMPLE_COM, VALID_REQUEST_HEADER));
+
+        assertEquals(ABORT, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, null, false).validateMessage(exc, REQUEST));
+        assertHeaderAfterBodyReportedOnce(exc);
+    }
+
+    @Test
+    void headerBeforeAndAfterBody() throws Exception {
+        final var exc = getRequestExchange("""
+                <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                  <s11:Header>%s</s11:Header>
+                  <s11:Body>%s</s11:Body>
+                  <s11:Header>%s</s11:Header>
+                </s11:Envelope>
+                """.formatted(VALID_REQUEST_HEADER, GET_CITY_EXAMPLE_COM, VALID_REQUEST_HEADER));
+
+        assertEquals(ABORT, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, null, false).validateMessage(exc, REQUEST));
+        assertHeaderAfterBodyReportedOnce(exc);
+    }
+
+    @Test
+    void headerAfterBodyOfFault() throws Exception {
+        final var exc = getResponseExchange("""
+                <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                  <s11:Body>
+                    <s11:Fault>
+                      <faultcode>Server</faultcode>
+                      <faultstring>City not found</faultstring>
+                    </s11:Fault>
+                  </s11:Body>
+                  <s11:Header/>
+                </s11:Envelope>
+                """);
+
+        assertEquals(ABORT, createValidator(CITIES_WSDL, null, false).validateMessage(exc, RESPONSE));
+        assertHeaderAfterBodyReportedOnce(exc);
+    }
+
+    private static void assertHeaderAfterBodyReportedOnce(Exchange exc) {
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertEquals(1, body.split("The SOAP Header must come before the Body", -1).length - 1, body);
+    }
+
+    /**
+     * Each header block used to be validated by parsing the whole message again, so the time grew
+     * with the square of the message size.
+     */
+    @Test
+    void manyHeaderBlocks() throws Exception {
+        final var validator = createValidator(CITIES_WITH_SOAP_HEADER_WSDL, null, false);
+        final var exc = getRequestExchange(soap11WithHeader(VALID_REQUEST_HEADER.repeat(10_000), GET_CITY_EXAMPLE_COM));
+
+        assertTimeoutPreemptively(ofSeconds(5), () -> assertEquals(CONTINUE, validator.validateMessage(exc, REQUEST)));
     }
 
     @Test

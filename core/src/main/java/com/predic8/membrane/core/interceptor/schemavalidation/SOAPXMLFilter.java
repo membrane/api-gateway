@@ -14,7 +14,9 @@
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
 import org.xml.sax.Attributes;
+import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLFilterImpl;
 
@@ -25,30 +27,58 @@ import static com.predic8.membrane.annot.Constants.SOAP12_NS;
  * Strips the SOAP envelope so that only the payload below {@code <soap:Body>} is passed on.
  * The {@code Body} boundary is matched by namespace, not just local name: a domain element
  * that happens to be named {@code Body} in another namespace is left untouched and forwarded.
+ * <p>
+ * A SOAP {@code Header} after the {@code Body} is reported as an error to the error handler, so
+ * a validator reading this filter rejects the message: SOAP puts the header in front of the body.
  */
 public class SOAPXMLFilter extends XMLFilterImpl {
 
+	private static final int ENVELOPE_CHILD_DEPTH = 2;
 
-	private boolean body;
+	private enum Position {BEFORE_BODY, IN_BODY, AFTER_BODY}
+
+	private Position position = Position.BEFORE_BODY;
+
+	/**
+	 * Depth of the current element: {@code 1} for the envelope, {@code 2} for its children.
+	 */
+	private int depth;
+
+	private Locator locator;
 
 	public SOAPXMLFilter(XMLReader reader) {
 		super(reader);
 	}
 
+	private static boolean isSoapNamespace(String uri) {
+		return SOAP11_NS.equals(uri) || SOAP12_NS.equals(uri);
+	}
+
 	private static boolean isSoapBody(String uri, String localName) {
-		return localName.equals("Body") && (SOAP11_NS.equals(uri) || SOAP12_NS.equals(uri));
+		return localName.equals("Body") && isSoapNamespace(uri);
+	}
+
+	@Override
+	public void setDocumentLocator(Locator locator) {
+		this.locator = locator;
+		super.setDocumentLocator(locator);
 	}
 
 	@Override
 	public void startElement(String uri, String localName, String qName,
 			Attributes atts) throws SAXException {
 
+		depth++;
+
 		if (isSoapBody(uri, localName)) {
-			body = true;
+			position = Position.IN_BODY;
 			return;
 		}
 
-		if (!body)
+		if (position == Position.AFTER_BODY && depth == ENVELOPE_CHILD_DEPTH && localName.equals("Header") && isSoapNamespace(uri))
+			error(new SAXParseException("The SOAP Header must come before the Body.", locator));
+
+		if (position != Position.IN_BODY)
 			return;
 
 		super.startElement(uri, localName, qName, atts);
@@ -59,12 +89,14 @@ public class SOAPXMLFilter extends XMLFilterImpl {
 	public void endElement(String uri, String localName, String qName)
 			throws SAXException {
 
+		depth--;
+
 		if (isSoapBody(uri, localName)) {
-			body = false;
+			position = Position.AFTER_BODY;
 			return;
 		}
 
-		if (!body)
+		if (position != Position.IN_BODY)
 			return;
 
 		super.endElement(uri, localName, qName);

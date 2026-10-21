@@ -18,7 +18,6 @@ import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.schemavalidation.FaultDetailXMLFilter;
-import com.predic8.membrane.core.interceptor.schemavalidation.SOAPHeaderBlockXMLFilter;
 import com.predic8.membrane.core.interceptor.schemavalidation.SOAPXMLFilter;
 import com.predic8.membrane.core.multipart.XOPReconstitutor;
 import com.predic8.membrane.core.util.xml.parser.HardenedSaxParser;
@@ -329,47 +328,6 @@ public class SOAPUtil {
         return entries;
     }
 
-    /**
-     * Extracts the QNames of the header blocks - the direct children of {@code soap:Header}.
-     *
-     * @return the header blocks in document order; empty if the message has no header, the header
-     *         is empty, or the message could not be parsed.
-     */
-    public static List<QName> extractHeaderElements(XOPReconstitutor xopr, Message msg) {
-        var blocks = new ArrayList<QName>();
-        try {
-            var parser = HardenedStaxInputFactory.inputFactory().createXMLEventReader(xopr.reconstituteIfNecessary(msg));
-            int depth = 0; // 1 on the envelope, 2 on its children, 3 on the header blocks
-            boolean inHeader = false;
-            while (parser.hasNext()) {
-                var event = parser.nextEvent();
-                if (event.isStartElement()) {
-                    depth++;
-                    var name = ((StartElement) event).getName();
-                    if (depth == 2 && isHeaderElement(name)) {
-                        inHeader = true;
-                    } else if (inHeader && depth == 3) {
-                        blocks.add(name);
-                    }
-                    continue;
-                }
-                if (event.isEndElement()) {
-                    if (inHeader && depth == 2)
-                        return blocks; // header closed
-                    depth--;
-                }
-            }
-        } catch (Exception e) {
-            log.debug("Could not extract header elements: {}", e.getMessage());
-        }
-        return blocks;
-    }
-
-    private static boolean isHeaderElement(QName name) {
-        return "Header".equals(name.getLocalPart())
-                && (SOAP11_NS.equals(name.getNamespaceURI()) || SOAP12_NS.equals(name.getNamespaceURI()));
-    }
-
     private static boolean isDetailElement(QName name, SoapVersion version) {
         return switch (version) {
             case SOAP11 -> "detail".equals(name.getLocalPart()) && name.getNamespaceURI().isEmpty();
@@ -401,19 +359,6 @@ public class SOAPUtil {
     public static Source getFaultDetailBody(InputStream stream, SoapVersion version) {
         try {
             return new SAXSource(new FaultDetailXMLFilter(HardenedSaxParser.newSAXParser().getXMLReader(), version), new InputSource(stream));
-        } catch (SAXException e) {
-            throw new RuntimeException("Error initializing SAXSource", e);
-        }
-    }
-
-    /**
-     * Narrows a SOAP message down to one header block, for schema-validating it on its own.
-     *
-     * @param index position of the block among the direct children of {@code soap:Header}, starting with {@code 0}
-     */
-    public static Source getSOAPHeaderBlock(InputStream stream, int index) {
-        try {
-            return new SAXSource(new SOAPHeaderBlockXMLFilter(HardenedSaxParser.newSAXParser().getXMLReader(), index), new InputSource(stream));
         } catch (SAXException e) {
             throw new RuntimeException("Error initializing SAXSource", e);
         }

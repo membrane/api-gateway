@@ -287,23 +287,22 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
 
     /**
      * Validates each header block selected by {@link HeaderValidation} against the WSDL's embedded
-     * schemas, one block at a time.
+     * schemas, one block at a time. The message is parsed once; each block is recorded and
+     * replayed for every schema it is tried against.
      *
      * @param exceptions collects the errors of the first block that did not validate
      * @return {@code true} if all selected header blocks validated
      */
-    private boolean validateHeaders(Message message, Set<QName> validated, List<Exception> exceptions) {
+    private boolean validateHeaders(Message message, Set<QName> validated, List<Exception> exceptions) throws IOException {
         if (validated.isEmpty())
             return true;
-        var blocks = extractHeaderElements(xopr, message);
-        for (int i = 0; i < blocks.size(); i++) {
-            if (!validated.contains(blocks.get(i)))
-                continue;
-            final var index = i;
-            if (!validateAgainstSchemas(() -> getSOAPHeaderBlock(xopr.reconstituteIfNecessary(message), index), exceptions))
-                return false;
+        try {
+            return SOAPHeaderBlockRecorder.forEach(xopr.reconstituteIfNecessary(message), validated,
+                    block -> validateAgainstSchemas(block::toSource, exceptions));
+        } catch (SAXException e) {
+            exceptions.add(e);
+            return false;
         }
-        return true;
     }
 
     /**
