@@ -40,7 +40,7 @@ import static com.predic8.membrane.core.openapi.util.UriUtil.getPathFromURL;
  * the client accepts HTML, otherwise a JSON list with each document's title, version, and links.
  * <code>/api-docs/{id}</code> returns one document as YAML, rewritten so its server URLs point at the gateway, and
  * <code>/api-docs/ui/{id}</code> opens the Swagger UI for that document. An unknown id returns 404; requests to other
- * paths pass through unchanged. Can only be used inside an api. See the examples under examples/openapi and the tutorial
+ * paths pass through unchanged. Can only be used inside an api. See the tutorial
  * tutorials/getting-started/120-OpenAPI.yaml.
  * @topic 5. OpenAPI
  * @yaml
@@ -98,7 +98,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) {
-        if (!exc.getRequest().getUri().startsWith("/api-doc"))
+        if (!exc.getRequest().getRoutingPath().startsWith("/api-doc"))
             return CONTINUE;
 
         try {

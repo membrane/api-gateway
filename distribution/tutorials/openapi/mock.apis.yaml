@@ -1,0 +1,98 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.7.1.json
+#
+# Mock Backends
+#
+# Backends for the OpenAPI documents in specs/ whose server URL points to localhost:3000,
+# and for the target in 11-OpenAPI-Target.apis.yaml on port 3001.
+# Included by the tutorials in this folder.
+
+api:
+  port: 3000
+  name: List Products
+  method: GET
+  # /store, /boutique and /ext-shop
+  path:
+    uri: .*/products
+    isRegExp: true
+  flow:
+    - static:
+        contentType: application/json
+        src: |
+          {
+            "products": [
+              {
+                "id": 1,
+                "name": "Banana",
+                "price": 2.5
+              },
+              {
+                "id": 2,
+                "name": "Apple",
+                "price": 1.2
+              }
+            ]
+          }
+    - return:
+        status: 200
+
+---
+api:
+  port: 3000
+  name: Create Product
+  method: POST
+  path:
+    uri: .*/products
+    isRegExp: true
+  flow:
+    # Without a response, return answers with the request body: the created product
+    - return:
+        status: 201
+
+---
+api:
+  port: 3000
+  name: Create Customer
+  method: POST
+  path:
+    uri: /crm/customers
+  flow:
+    - return:
+        status: 201
+
+---
+api:
+  port: 3000
+  name: Place Order
+  method: POST
+  path:
+    uri: /forms/orders
+  flow:
+    - static:
+        contentType: application/json
+        src: |
+          {
+            "status": "accepted"
+          }
+    - return:
+        status: 200
+
+---
+api:
+  port: 3001
+  name: Target Mock
+  path:
+    uri: /store/products
+  flow:
+    - static:
+        contentType: application/json
+        src: |
+          {
+            "products": [
+              {
+                "id": 1,
+                "name": "Mock Banana"
+              }
+            ]
+          }
+    - return:
+        status: 200

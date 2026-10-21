@@ -17,13 +17,14 @@ package com.predic8.membrane.core.lang.spel;
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.Interceptor.*;
 import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.lang.spel.functions.*;
 import com.predic8.membrane.core.lang.spel.spelable.*;
 import com.predic8.membrane.core.lang.spel.typeconverters.*;
-import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.util.*;
+import org.jetbrains.annotations.*;
 import org.slf4j.*;
 import org.springframework.core.convert.support.*;
 import org.springframework.expression.spel.support.*;
@@ -68,7 +69,11 @@ public class SpELExchangeEvaluationContext extends StandardEvaluationContext {
     private SpELMessageWrapper response;
     private final Flow flow;
 
-    public SpELExchangeEvaluationContext(Exchange exchange, Flow flow, Router router) {
+    /**
+     * @param interceptor the interceptor that evaluates the expression, e.g. for its xmlConfig. Use an
+     *                    InterceptorAdapter if there is none.
+     */
+    public SpELExchangeEvaluationContext(Exchange exchange, Flow flow, @Nullable Interceptor interceptor) {
         super();
 
         this.exchange = exchange;
@@ -89,7 +94,7 @@ public class SpELExchangeEvaluationContext extends StandardEvaluationContext {
         addPropertyAccessor(new AwareExchangePropertyAccessor());
 
         // Enables Membrane functions in SpEL scripts like 'hasScopes("admin")'
-        addMethodResolver(new BuiltInFunctionResolver(router));
+        addMethodResolver(new BuiltInFunctionResolver(interceptor));
 
         addTypeConverters();
     }

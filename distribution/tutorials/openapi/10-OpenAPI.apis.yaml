@@ -2,6 +2,8 @@
 #
 # Tutorial: OpenAPI
 #
+# All you need to deploy an API on the gateway is its OpenAPI document.
+#
 # 1.) Start Membrane:
 #     Open a terminal in this folder and run:
 #
@@ -17,19 +19,29 @@
 #       Windows:
 #         membrane.cmd -c 10-OpenAPI.apis.yaml
 #
-# 2.) Open /api-docs in the browser:
+# 2.) Open the API overview in the browser:
 #     http://localhost:2000/api-docs
 #
 # 3.) Click on 'Fruit Shop API' to open the Swagger UI.
 #
 # 4.) Try out the API in the Swagger UI.
+#     Membrane forwards the requests to the backend given by servers[].url in the
+#     OpenAPI document (https://api.predic8.de/shop/v2).
 #
-# 5.) Call the APIs:
+# 5.) Call the API:
 #     curl http://localhost:2000/shop/v2/products
-#     curl http://localhost:2000/dlp/fields/city
 
 api:
   port: 2000
   openapi:
-    - location: https://api.predic8.de/api-docs/dlp-field-information-api-v1-0-0
-    - location: ../../conf/openapi/fruitshop-v2-2-0.oas.yml
+    # Deploys every OpenAPI document in the folder
+    - dir: specs
+
+---
+include:
+  - mock.apis.yaml
+
+# NOTE: In specs/fruitshop-v2-2-0.oas.yml the server URL points to the backend
+# (https://api.predic8.de/shop/v2). When Membrane serves the document at /api-docs, it
+# rewrites protocol, host and port to the address the request came in on, so that
+# Swagger UI and generated clients talk to the gateway.
