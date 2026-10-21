@@ -173,6 +173,16 @@ class WSDLMessageElementExtractorTest {
         assertEquals(Set.of(new QName("https://example.com/cities", "getCityResponse")), getPossibleResponseElements(definitions, null));
     }
 
+    @Test
+    void headerElsewhereDoesNotHideBodyPart() throws Exception {
+        final var definitions = getDefinitions("classpath:/ws/header-reuses-body-part.wsdl");
+
+        assertEquals(Set.of(new QName("https://example.com/cities", "getCity"),
+                new QName("https://example.com/cities", "audit")), getPossibleRequestElements(definitions, null));
+        assertEquals(Set.of(new QName("https://example.com/cities", "getCityResponse"),
+                new QName("https://example.com/cities", "auditResponse")), getPossibleResponseElements(definitions, null));
+    }
+
     /**
      * A header that cannot be identified is not validated, but the rest of the WSDL still is.
      */

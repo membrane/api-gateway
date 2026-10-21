@@ -132,17 +132,33 @@ public class WSDLMessageElementExtractor {
     }
 
     /**
-     * Message parts bound as {@code soap:header} in either direction. They are carried in the SOAP
-     * header, so they are never the body element of a message. Unresolvable ones are skipped
-     * silently here; {@link #getHeaderElements} already warns about them.
+     * Message parts bound as {@code soap:header} on the operation's input resp. output in the
+     * port type's bindings. They are carried in the SOAP header, so they are not the body element
+     * of that message. A part bound as header anywhere else, e.g. on another operation or in the
+     * other direction, may still be a body part here. Unresolvable ones are skipped silently;
+     * {@link #getHeaderElements} already warns about them.
      */
-    private static Set<Element> getHeaderPartElements(Definitions definitions, String serviceName) {
-        return Stream.concat(getHeaders(definitions, serviceName, BindingOperation::getInputs).stream(),
-                        getHeaders(definitions, serviceName, BindingOperation::getOutputs).stream())
+    private static Set<Element> getHeaderPartElements(List<Binding> bindings, Operation operation, Direction direction) {
+        if (direction == FAULT)
+            return Set.of();
+        return bindings.stream()
+                .flatMap(binding -> binding.findBindingOperation(operation.getName()).stream())
+                .flatMap(bindingOperation -> (direction == INPUT ? bindingOperation.getInputs() : bindingOperation.getOutputs()).stream())
+                .flatMap(message -> message.getHeaders().stream())
                 .map(SoapHeader::resolvePart)
                 .flatMap(Optional::stream)
                 .map(Part::getElement)
                 .collect(toSet());
+    }
+
+    /**
+     * The port type's bindings among those {@link #getHeaderBindings} considers.
+     */
+    private static List<Binding> getHeaderBindings(Definitions definitions, String serviceName, PortType portType) {
+        final var names = getHeaderBindings(definitions, serviceName).stream().map(Binding::getName).collect(toSet());
+        return definitions.getBindings(portType).stream()
+                .filter(binding -> names.contains(binding.getName()))
+                .toList();
     }
 
     /**
@@ -205,7 +221,7 @@ public class WSDLMessageElementExtractor {
 
     public static Set<QName> getPossibleElements(Definitions definitions, Direction direction, String serviceName) {
         var portTypes = getTypesByStyle(definitions, serviceName);
-        var result = new HashSet<>(getElementQNameForDocumentStyle(direction, portTypes, getHeaderPartElements(definitions, serviceName)));
+        var result = new HashSet<>(getElementQNameForDocumentStyle(definitions, serviceName, direction, portTypes));
         result.addAll(getElementQNamesForRPCStyle(definitions, direction, portTypes));
         return result;
     }
@@ -218,8 +234,8 @@ public class WSDLMessageElementExtractor {
                 .collect(toSet());
     }
 
-    private static @NotNull Set<QName> getElementQNameForDocumentStyle(Direction direction, PortTypesByStyle portTypes, Set<Element> headerParts) {
-        return getParts(direction, portTypes.portTypesDocument(), headerParts)
+    private static @NotNull Set<QName> getElementQNameForDocumentStyle(Definitions definitions, String serviceName, Direction direction, PortTypesByStyle portTypes) {
+        return getParts(definitions, serviceName, direction, portTypes.portTypesDocument())
                 .map(Part::getElementQName)
                 .filter(Objects::nonNull)
                 .collect(toSet());
@@ -270,12 +286,17 @@ public class WSDLMessageElementExtractor {
         return operation.getName();
     }
 
-    private static @NotNull Stream<Part> getParts(Direction direction, List<PortType> result, Set<Element> headerParts) {
-        return result.stream().map(PortType::getOperations)
-                .flatMap(Collection::stream)
-                .map(op -> op.getMessagesByDirection(direction))
-                .flatMap(Collection::stream)
-                .map(message -> getBodyPart(message, headerParts))
+    private static @NotNull Stream<Part> getParts(Definitions definitions, String serviceName, Direction direction, List<PortType> result) {
+        return result.stream()
+                .flatMap(portType -> {
+                    final var bindings = getHeaderBindings(definitions, serviceName, portType);
+                    return portType.getOperations().stream()
+                            .flatMap(op -> {
+                                final var headerParts = getHeaderPartElements(bindings, op, direction);
+                                return op.getMessagesByDirection(direction).stream()
+                                        .map(message -> getBodyPart(message, headerParts));
+                            });
+                })
                 .filter(Objects::nonNull); // Message can have no body part.
     }
 
