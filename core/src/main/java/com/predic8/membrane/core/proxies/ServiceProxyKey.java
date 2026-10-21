@@ -158,13 +158,17 @@ public class ServiceProxyKey extends AbstractRuleKey {
         if (hostHeader == null)
             return false;
 
-        // A bracketed IPv6 literal contains colons, so only a colon after its closing bracket separates the port.
-        final var closingBracket = hostHeader.startsWith("[") ? hostHeader.indexOf(']') : -1;
-        final var requestHost = closingBracket != -1 ? hostHeader.substring(0, closingBracket + 1) : hostHeader.split(":")[0];
+        final var requestHost = hostWithoutPort(hostHeader);
 
         log.debug("Rule host: {} Request host: {}", host, requestHost);
 
         return hostPattern.matcher(requestHost).matches();
+    }
+
+    // A bracketed IPv6 literal contains colons, so only a colon after its closing bracket separates the port.
+    private static String hostWithoutPort(String hostHeader) {
+        final var closingBracket = hostHeader.startsWith("[") ? hostHeader.indexOf(']') : -1;
+        return closingBracket != -1 ? hostHeader.substring(0, closingBracket + 1) : hostHeader.split(":")[0];
     }
 
     /**
