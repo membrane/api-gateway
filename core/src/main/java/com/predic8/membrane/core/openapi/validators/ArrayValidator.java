@@ -51,16 +51,13 @@ public class ArrayValidator implements JsonSchemaValidator {
         ctx = ctx.schemaType("array");
 
         ValidationErrors errors = new ValidationErrors();
-        Schema itemsSchema = schema.getItems();
 
         JsonNode node = (JsonNode) value;
 
         // In JSON Schema 2020-12 (OAS 3.1 and later) prefixItems validates the items by position and
         // items only the items after the prefix. See #3499.
-        final List<Schema> prefixItems = schema.getPrefixItems() != null ? schema.getPrefixItems() : List.of();
-
         for (int i = 0; i < node.size(); i++) {
-            final var itemSchema = i < prefixItems.size() ? prefixItems.get(i) : itemsSchema;
+            final var itemSchema = SchemaUtil.itemSchema(schema, i);
             if (itemSchema != null)
                 errors.add(new SchemaValidator(api, itemSchema).validate(ctx.addJSONpointerSegment(Integer.toString(i)), node.get(i)));
         }

@@ -154,11 +154,10 @@ public class XmlToJsonConverter {
      */
     private ArrayNode convertArrayElement(Element element, Schema schema) {
         ArrayNode arrayNode = om.createArrayNode();
-        Schema itemSchema = resolveRef(schema.getItems());
         NodeList children = element.getChildNodes();
         for (int i = 0; i < children.getLength(); i++) {
             if (children.item(i) instanceof Element child)
-                arrayNode.add(convertElement(child, itemSchema));
+                arrayNode.add(convertElement(child, SchemaUtil.itemSchema(schema, arrayNode.size())));
         }
         return arrayNode;
     }
@@ -173,6 +172,7 @@ public class XmlToJsonConverter {
         boolean wrapped    = isXmlWrapped(propSchema);
         XmlName wrapperName = xmlNameOf(propName, propSchema);          // name of wrapper / sibling element
         XmlName itemName    = xmlNameOf(propName, itemSchema);          // name of each item element
+        // The item element name comes from items; prefixItems only selects the schema of an item by position.
 
         if (wrapped) {
             // Items live inside a single wrapper element  <wrapperName><itemName/><itemName/>…</wrapperName>
@@ -182,7 +182,7 @@ public class XmlToJsonConverter {
             NodeList children = wrapperEl.getChildNodes();
             for (int i = 0; i < children.getLength(); i++) {
                 if (children.item(i) instanceof Element child)
-                    arrayNode.add(convertElement(child, itemSchema));
+                    arrayNode.add(convertElement(child, SchemaUtil.itemSchema(propSchema, arrayNode.size())));
             }
         } else {
             // Items are direct children of the parent element with the item's xml.name
@@ -190,7 +190,7 @@ public class XmlToJsonConverter {
             for (int i = 0; i < children.getLength(); i++) {
                 if (children.item(i) instanceof Element child
                     && itemName.matches(child))
-                    arrayNode.add(convertElement(child, itemSchema));
+                    arrayNode.add(convertElement(child, SchemaUtil.itemSchema(propSchema, arrayNode.size())));
             }
         }
         return arrayNode;

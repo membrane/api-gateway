@@ -21,8 +21,11 @@ import com.predic8.membrane.core.openapi.model.Request;
 import jakarta.mail.internet.ParseException;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.util.Base64;
+import java.util.List;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -235,6 +238,48 @@ public class MultipartFormDataValidatorTest extends AbstractValidatorTest {
         return validator.validate(Request.post().path("/upload")
                 .mediaType(MultipartBuilder.CONTENT_TYPE)
                 .body(body));
+    }
+
+    /**
+     * Each occurrence of an array property is validated against the prefixItems schema of its position,
+     * otherwise against items. See #3499.
+     */
+    @Nested
+    class PrefixItems extends AbstractValidatorTest {
+
+        @Override
+        protected String getOpenAPIFileName() {
+            return "/openapi/specs/oas31/prefix-items.yaml";
+        }
+
+        @ParameterizedTest
+        @CsvSource(delimiter = '|', value = {
+                "rest|1,a",
+                "rest|1,a,true,false",
+                "open|1,a,true"})
+        void accepted(String name, String values) throws ParseException {
+            final var errors = validateParts(name, values);
+            assertTrue(errors.isEmpty(), () -> "Expected no errors but got: " + errors);
+        }
+
+        @ParameterizedTest
+        @CsvSource(delimiter = '|', value = {
+                "rest|a,b|1",
+                "rest|1,a,x|1",
+                "open|a|1"})
+        void rejected(String name, String values, int count) throws ParseException {
+            final var errors = validateParts(name, values);
+            assertEquals(count, errors.size(), errors::toString);
+        }
+
+        private ValidationErrors validateParts(String name, String values) throws ParseException {
+            final var builder = new MultipartBuilder();
+            for (final var value : List.of(values.split(",")))
+                builder.part(name, null, TEXT_PLAIN, null, value);
+            return validator.validate(Request.post().path("/multipart")
+                    .mediaType(MultipartBuilder.CONTENT_TYPE)
+                    .body(builder.build()));
+        }
     }
 
     private static String encodeBase64(String customer) {
