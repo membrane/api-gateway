@@ -64,6 +64,7 @@ public class WSDLValidatorTest {
     public static final String CITIES_WITH_SOAP12_HEADER_WSDL = "src/test/resources/ws/cities-with-soap12-header.wsdl";
     public static final String UNBOUND_HEADER_WSDL = "src/test/resources/ws/unbound-header.wsdl";
     public static final String UNVALIDATABLE_HEADERS_WSDL = "src/test/resources/ws/unvalidatable-soap-headers.wsdl";
+    public static final String HEADER_PART_PER_BINDING_WSDL = "src/test/resources/ws/header-part-per-binding.wsdl";
 
     private static final String GET_CITY_EXAMPLE_COM = """
             <cs:getCity xmlns:cs="https://example.com/cities"><name>Bonn</name></cs:getCity>
@@ -704,6 +705,13 @@ public class WSDLValidatorTest {
                 """));
 
         assertEquals(ABORT, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, null, false).validateMessage(exc, REQUEST));
+    }
+
+    @Test
+    void bodyPartOfOneBindingIsHeaderPartOfAnother() throws Exception {
+        final var exc = getRequestExchange(soap11WithHeader("", GET_CITY_EXAMPLE_COM));
+
+        assertEquals(CONTINUE, createValidator(HEADER_PART_PER_BINDING_WSDL, null, false).validateMessage(exc, REQUEST));
     }
 
     @Test

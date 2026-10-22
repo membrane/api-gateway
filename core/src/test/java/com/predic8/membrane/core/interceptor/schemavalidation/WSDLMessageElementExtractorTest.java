@@ -184,6 +184,14 @@ class WSDLMessageElementExtractorTest {
                 new QName("https://example.com/cities", "auditResponse")), getPossibleResponseElements(definitions, null));
     }
 
+    @Test
+    void headerOfOneBindingDoesNotHideBodyPartOfAnother() throws Exception {
+        final var definitions = getDefinitions("classpath:/ws/header-part-per-binding.wsdl");
+
+        assertEquals(Set.of(new QName("https://example.com/cities", "getCity"),
+                new QName("https://example.com/cities", "trace")), getPossibleRequestElements(definitions, null));
+    }
+
     /**
      * A header that cannot be identified is not validated, but the rest of the WSDL still is.
      */

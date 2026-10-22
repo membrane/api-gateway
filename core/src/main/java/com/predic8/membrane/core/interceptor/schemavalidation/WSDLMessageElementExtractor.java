@@ -154,17 +154,16 @@ public class WSDLMessageElementExtractor {
     }
 
     /**
-     * Message parts bound as {@code soap:header} on the operation's input resp. output in the
-     * port type's bindings. They are carried in the SOAP header, so they are not the body element
-     * of that message. A part bound as header anywhere else, e.g. on another operation or in the
-     * other direction, may still be a body part here. Unresolvable ones are skipped silently;
-     * {@link #getHeaderElements} already warns about them.
+     * Message parts the binding carries as {@code soap:header} on the operation's input resp.
+     * output. They are carried in the SOAP header, so they are not the body element of that
+     * message in this binding. A part bound as header anywhere else, e.g. in another binding, on
+     * another operation or in the other direction, may still be a body part here. Unresolvable
+     * ones are skipped silently; {@link #getHeaderElements} already warns about them.
      */
-    private static Set<Element> getHeaderPartElements(List<Binding> bindings, Operation operation, Direction direction) {
+    private static Set<Element> getHeaderPartElements(Binding binding, Operation operation, Direction direction) {
         if (direction == FAULT)
             return Set.of();
-        return bindings.stream()
-                .flatMap(binding -> binding.findBindingOperation(operation.getName()).stream())
+        return binding.findBindingOperation(operation.getName()).stream()
                 .flatMap(bindingOperation -> (direction == INPUT ? bindingOperation.getInputs() : bindingOperation.getOutputs()).stream())
                 .flatMap(message -> message.getHeaders().stream())
                 .map(SoapHeader::resolvePart)
@@ -313,13 +312,24 @@ public class WSDLMessageElementExtractor {
                 .flatMap(portType -> {
                     final var bindings = getHeaderBindings(definitions, serviceName, portType);
                     return portType.getOperations().stream()
-                            .flatMap(op -> {
-                                final var headerParts = getHeaderPartElements(bindings, op, direction);
-                                return op.getMessagesByDirection(direction).stream()
-                                        .map(message -> getBodyPart(message, headerParts));
-                            });
+                            .flatMap(op -> op.getMessagesByDirection(direction).stream()
+                                    .flatMap(message -> getBodyParts(bindings, op, direction, message)));
                 })
                 .filter(Objects::nonNull); // Message can have no body part.
+    }
+
+    /**
+     * The message's body part in each of the port type's bindings. A part one binding carries as
+     * {@code soap:header} may be the body part of another, so each binding's body part counts. A
+     * port type without a binding carries no part as header.
+     *
+     * @return the body parts, null for a binding in which the message has none
+     */
+    private static Stream<Part> getBodyParts(List<Binding> bindings, Operation operation, Direction direction, Message message) {
+        if (bindings.isEmpty())
+            return Stream.of(getBodyPart(message, Set.of()));
+        return bindings.stream()
+                .map(binding -> getBodyPart(message, getHeaderPartElements(binding, operation, direction)));
     }
 
     /**
