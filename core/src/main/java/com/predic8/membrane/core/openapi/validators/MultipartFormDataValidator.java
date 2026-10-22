@@ -171,17 +171,17 @@ public class MultipartFormDataValidator {
                 partSchema = propertySchema;
 
             // For an array property each occurrence of the field name is one array item, so each
-            // part is validated against the items schema rather than the array schema itself. The
-            // array-level cardinality (minItems/maxItems) is checked here against the occurrence count.
-            if (SchemaUtil.isArray(partSchema)) {
-                err.add(validateArrayCardinality(ctx.addJSONpointerSegment(name), partSchema, entry.getValue().size()));
-                var items = SchemaUtil.resolveRef(api, partSchema.getItems());
-                if (items != null)
-                    partSchema = items;
-            }
+            // part is validated against the schema of its position (prefixItems, then items) rather
+            // than the array schema itself. The array-level cardinality (minItems/maxItems) is checked
+            // here against the occurrence count.
+            var arraySchema = SchemaUtil.isArray(partSchema) ? partSchema : null;
+            if (arraySchema != null)
+                err.add(validateArrayCardinality(ctx.addJSONpointerSegment(name), arraySchema, entry.getValue().size()));
 
             // A field name may occur multiple times (array items / multi-file fields), so validate every occurrence.
-            for (var part : entry.getValue()) {
+            var occurrences = entry.getValue();
+            for (int i = 0; i < occurrences.size(); i++) {
+                var part = occurrences.get(i);
                 var partCtx = ctx.addJSONpointerSegment(name);
 
                 // If the part carries an explicit Content-Type it must conform to the declared
@@ -192,10 +192,26 @@ public class MultipartFormDataValidator {
                     continue;
                 }
 
-                err.add(validatePart(partCtx, partSchema, contentTypeOf(name, part, partSchema, encodings), part));
+                var occurrenceSchema = arraySchema != null ? occurrenceSchema(arraySchema, i) : partSchema;
+                // An item after the prefix of an array without items is not constrained.
+                if (occurrenceSchema == null)
+                    continue;
+
+                err.add(validatePart(partCtx, occurrenceSchema, contentTypeOf(name, part, occurrenceSchema, encodings), part));
             }
         }
         return err;
+    }
+
+    /**
+     * The schema an occurrence of an array property is validated against. An array without items and
+     * prefixItems keeps validating each part against the array schema itself.
+     */
+    @SuppressWarnings("rawtypes")
+    private Schema occurrenceSchema(Schema arraySchema, int index) {
+        if (arraySchema.getItems() == null && arraySchema.getPrefixItems() == null)
+            return arraySchema;
+        return SchemaUtil.resolveRef(api, SchemaUtil.itemSchema(arraySchema, index));
     }
 
     @SuppressWarnings("rawtypes")
@@ -223,6 +239,11 @@ public class MultipartFormDataValidator {
     @SuppressWarnings("rawtypes")
     private ValidationErrors validatePart(ValidationContext ctx, Schema propertySchema, String contentType, FormPart part) {
         var err = new ValidationErrors();
+
+        // A false schema (e.g. items: false or prefixItems: [false]) allows no part at all. Without a
+        // type it would fall through the content-type dispatch below unvalidated. See #3479.
+        if (FALSE.equals(propertySchema.getBooleanSchemaValue()))
+            return err.add(ctx.statusCode(400), "The schema is false and does not allow any value.");
 
         // Binary file uploads (type: string, format: binary/byte) are opaque, only their presence is checked.
         if (isBinaryString(propertySchema))

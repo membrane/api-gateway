@@ -21,6 +21,8 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.Schema;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
@@ -92,5 +94,17 @@ class SchemaUtilTest {
         assertEquals("array", SchemaUtil.getEffectiveType(new Schema().typesItem("array")));
         assertEquals("string", SchemaUtil.getEffectiveType(new Schema().typesItem("string").typesItem("null")));
         assertNull(SchemaUtil.getEffectiveType(new Schema()));
+    }
+
+    @Test
+    void itemSchemaPrefersPrefixItemsThenItems() {
+        final var first = new Schema().type("integer");
+        final var items = new Schema().type("string");
+        final var schema = new Schema().type("array").prefixItems(List.of(first)).items(items);
+
+        assertSame(first, SchemaUtil.itemSchema(schema, 0));
+        assertSame(items, SchemaUtil.itemSchema(schema, 1));
+        assertNull(SchemaUtil.itemSchema(new Schema().type("array").prefixItems(List.of(first)), 1));
+        assertSame(items, SchemaUtil.itemSchema(new Schema().type("array").items(items), 0));
     }
 }
