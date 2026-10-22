@@ -168,11 +168,8 @@ public class XmlToJsonConverter {
     private ArrayNode convertArrayProperty(Element parentElement, String propName, Schema propSchema) {
         ArrayNode arrayNode = om.createArrayNode();
 
-        Schema itemSchema  = resolveRef(propSchema.getItems());
         boolean wrapped    = isXmlWrapped(propSchema);
         XmlName wrapperName = xmlNameOf(propName, propSchema);          // name of wrapper / sibling element
-        XmlName itemName    = xmlNameOf(propName, itemSchema);          // name of each item element
-        // The item element name comes from items; prefixItems only selects the schema of an item by position.
 
         if (wrapped) {
             // Items live inside a single wrapper element  <wrapperName><itemName/><itemName/>…</wrapperName>
@@ -185,12 +182,15 @@ public class XmlToJsonConverter {
                     arrayNode.add(convertElement(child, SchemaUtil.itemSchema(propSchema, arrayNode.size())));
             }
         } else {
-            // Items are direct children of the parent element with the item's xml.name
+            // Items are direct children of the parent element with the item's xml.name. The item schema is
+            // picked by position (prefixItems, then items), so the expected name is that of the next item.
             NodeList children = parentElement.getChildNodes();
             for (int i = 0; i < children.getLength(); i++) {
-                if (children.item(i) instanceof Element child
-                    && itemName.matches(child))
-                    arrayNode.add(convertElement(child, SchemaUtil.itemSchema(propSchema, arrayNode.size())));
+                if (!(children.item(i) instanceof Element child))
+                    continue;
+                final var itemSchema = resolveRef(SchemaUtil.itemSchema(propSchema, arrayNode.size()));
+                if (xmlNameOf(propName, itemSchema).matches(child))
+                    arrayNode.add(convertElement(child, itemSchema));
             }
         }
         return arrayNode;

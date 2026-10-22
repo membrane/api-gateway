@@ -833,6 +833,24 @@ class XmlToJsonConverterTest {
         }
 
         @Test
+        void unwrappedArrayMatchesTheXmlNameOfThePrefixItem() throws Exception {
+            final var xml = """
+                    <order>
+                      <tag>1</tag>
+                      <label>a</label>
+                    </order>
+                    """;
+            final var schema = obj().addProperty("tags", prefixArray(str().xml(new XML().name("label")),
+                    integer().xml(new XML().name("tag"))));
+
+            final var tags = converter.convert(xml, schema).get("tags");
+
+            assertEquals(2, tags.size(), tags::toString);
+            assertTrue(tags.get(0).isIntegralNumber());
+            assertEquals("a", tags.get(1).asText());
+        }
+
+        @Test
         void itemsAfterPrefixWithoutItemsStayText() throws Exception {
             final var node = converter.convert("<numbers><a>1</a><b>2</b></numbers>", prefixArray(null, integer()));
 
