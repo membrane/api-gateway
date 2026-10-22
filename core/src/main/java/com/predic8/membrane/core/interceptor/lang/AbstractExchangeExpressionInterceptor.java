@@ -29,6 +29,6 @@ public class AbstractExchangeExpressionInterceptor extends AbstractLanguageInter
     }
 
     protected ExchangeExpression getExchangeExpression() {
-        return TemplateExchangeExpression.newInstance(this, language, expression, router, TEXT_SERIALIZATION);
+        return TemplateExchangeExpression.newInstance(this, language, expression, TEXT_SERIALIZATION);
     }
 }

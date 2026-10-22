@@ -19,6 +19,7 @@ import org.slf4j.*;
 
 import java.util.regex.*;
 
+import static com.predic8.membrane.core.util.NetworkUtil.hostWithoutPort;
 import static java.util.regex.Pattern.*;
 
 /**
@@ -158,7 +159,9 @@ public class ServiceProxyKey extends AbstractRuleKey {
         if (hostHeader == null)
             return false;
 
-        String requestHost = hostHeader.split(":")[0];
+        final var requestHost = hostWithoutPort(hostHeader);
+        if (requestHost == null)
+            return false;
 
         log.debug("Rule host: {} Request host: {}", host, requestHost);
 

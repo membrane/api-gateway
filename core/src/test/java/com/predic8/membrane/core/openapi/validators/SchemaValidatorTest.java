@@ -41,6 +41,7 @@ import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.parseOpenAPI;
 import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.*;
 import static java.io.InputStream.nullInputStream;
+import static java.util.stream.Collectors.toSet;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class SchemaValidatorTest {
@@ -250,14 +251,13 @@ public class SchemaValidatorTest {
         }
 
         /**
-         * In a referenced component the parser keeps additionalProperties: false as a Boolean, which
-         * ObjectValidator reports at the object.
+         * In a referenced component the parser keeps additionalProperties: false as a Boolean.
          */
         @Test
         void additionalPropertiesFalseInReferencedSchema() throws ParseException {
             assertRejectedAt("/properties", """
                     {"ref": {"foo": 1}}
-                    """, "/ref");
+                    """, "/ref/foo");
         }
 
         @Test
@@ -271,11 +271,29 @@ public class SchemaValidatorTest {
             assertRejectedAt("/items", "[1]", "/0");
         }
 
+        /**
+         * The parser turns an inline additionalProperties: false into a false schema. It is reported
+         * like the Boolean of OAS 3.0, naming the property. See #3562.
+         */
         @Test
         void additionalPropertiesFalseRejectsUnknownProperty() throws ParseException {
-            assertRejectedAt("/additional", """
+            final var errors = post("/additional", """
                     {"closed": {"foo": 1}}
-                    """, "/closed/foo");
+                    """);
+            assertEquals(1, errors.size(), errors.toString());
+            assertEquals("/closed/foo", errors.getFirst().getContext().getJSONpointer());
+            assertEquals("The property foo is not allowed. The object does not allow additional properties.",
+                    errors.getFirst().getMessage());
+        }
+
+        @Test
+        void additionalPropertiesFalseRejectsEachUnknownProperty() throws ParseException {
+            final var errors = post("/additional", """
+                    {"closed": {"foo": 1, "bar": 2}}
+                    """);
+            assertEquals(2, errors.size(), errors.toString());
+            assertEquals(Set.of("/closed/foo", "/closed/bar"),
+                    errors.stream().map(e -> e.getContext().getJSONpointer()).collect(toSet()));
         }
 
         @Test

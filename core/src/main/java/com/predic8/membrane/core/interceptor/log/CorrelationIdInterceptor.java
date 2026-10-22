@@ -43,7 +43,7 @@ import static com.predic8.membrane.core.util.text.StringUtil.truncateAfter;
  *         header: X-Trace-Id
  *         default: "req-${T(java.util.UUID).randomUUID()}"
  *     - log:
- *         message: "Correlation id: ${request.header['X-Trace-Id']}"
+ *         message: "Correlation id: ${header['X-Trace-Id']}"
  * </code></pre>
  */
 @MCElement(name = "correlationId")

@@ -20,7 +20,12 @@ import com.predic8.membrane.core.config.Path;
 import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
 
+import java.util.List;
+
 public abstract class AbstractServiceProxy extends SSLableProxy {
+
+    private ProxyInfo info;
+    private List<String> tags = List.of();
 
     @Override
     public void init() {
@@ -55,6 +60,33 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
         if (!ark.isUsePathPattern())
             return null;
         return new Path(ark.isPathRegExp(), ark.getPath());
+    }
+
+    public ProxyInfo getInfo() {
+        return info;
+    }
+
+    /**
+     * @description Metadata about the API that API catalogs publish, such as whom to contact. It
+     * takes precedence over the same metadata in an OpenAPI document of the API.
+     */
+    @MCChildElement(order = 20)
+    public void setInfo(ProxyInfo info) {
+        this.info = info;
+    }
+
+    public List<String> getTags() {
+        return tags;
+    }
+
+    /**
+     * @description Labels for the API. API catalogs list them, and the discovery plugins can select
+     * the APIs they publish by them.
+     * @example [external, partner]
+     */
+    @MCChildElement(allowForeign = true, order = 21)
+    public void setTags(List<String> tags) {
+        this.tags = List.copyOf(tags);
     }
 
     /**
