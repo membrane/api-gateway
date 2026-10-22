@@ -43,6 +43,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
+import java.util.function.Supplier;
 
 import static com.predic8.membrane.annot.Constants.SoapVersion.SOAP11;
 import static com.predic8.membrane.annot.Constants.SoapVersion.SOAP12;
@@ -75,6 +76,43 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
      * List of toplevel soapElements that are valid for responses
      */
     private final Set<QName> responseElements;
+
+    /**
+     * Which header blocks are validated.
+     */
+    public enum HeaderValidation {
+        /**
+         * No header blocks.
+         */
+        NONE,
+        /**
+         * Only header blocks bound via soap:header in the binding: on the input of any of its
+         * operations for requests, on the output for responses, and via soap:headerfault for
+         * faults. A bound element that none of the WSDL's schemas declares is skipped with a
+         * warning.
+         */
+        BOUND,
+        /**
+         * In addition, every header block that one of the WSDL's schemas declares as a global
+         * element, whether bound or not.
+         */
+        DECLARED
+    }
+
+    /**
+     * Header blocks validated in requests resp. responses, see {@link HeaderValidation}. Other
+     * header blocks, e.g. WS-Security or WS-Addressing ones added by infrastructure, are not
+     * described by the WSDL and are let through.
+     */
+    private final Set<QName> requestHeaderElements;
+
+    private final Set<QName> responseHeaderElements;
+
+    /**
+     * Header blocks validated in faults, see {@link HeaderValidation}. A wsdl:fault cannot bind
+     * header blocks, but a soap:headerfault binds those of a fault about a header block.
+     */
+    private final Set<QName> faultHeaderElements;
 
     private final Set<SOAPVersion> versions;
 
@@ -112,6 +150,10 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
     }
 
     public WSDLValidator(ResolverMap resourceResolver, String location, String serviceName, ValidatorInterceptor.FailureHandler failureHandler, boolean skipFaults, ErrorDetailsPolicy errorDetailsPolicy) {
+        this(resourceResolver, location, serviceName, failureHandler, skipFaults, errorDetailsPolicy, HeaderValidation.NONE);
+    }
+
+    public WSDLValidator(ResolverMap resourceResolver, String location, String serviceName, ValidatorInterceptor.FailureHandler failureHandler, boolean skipFaults, ErrorDetailsPolicy errorDetailsPolicy, HeaderValidation headerValidation) {
         super(resourceResolver, location, failureHandler, errorDetailsPolicy);
         this.skipFaults = skipFaults;
 
@@ -130,12 +172,31 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
 
         requestElements = getPossibleRequestElements(definitions, serviceName);
         responseElements = getPossibleResponseElements(definitions, serviceName);
+        requestHeaderElements = getHeaderElements(() -> getPossibleRequestHeaderElements(definitions, serviceName), headerValidation);
+        responseHeaderElements = getHeaderElements(() -> getPossibleResponseHeaderElements(definitions, serviceName), headerValidation);
+        faultHeaderElements = getHeaderElements(() -> getPossibleFaultHeaderElements(definitions, serviceName), headerValidation);
         faultDetailElements = getPossibleFaultDetailElements(definitions, serviceName);
         versions = definitions.getSoapVersions();
 
         faultStructureSchemas = new EnumMap<>(SoapVersion.class);
         faultStructureSchemas.put(SOAP11, compileFaultStructureSchema("soap11-fault.xsd"));
         faultStructureSchemas.put(SOAP12, compileFaultStructureSchema("soap12-fault.xsd"));
+    }
+
+    /**
+     * The bound header blocks are only looked up if headers are validated, as the lookup warns
+     * about those it cannot validate.
+     */
+    private Set<QName> getHeaderElements(Supplier<Set<QName>> bound, HeaderValidation headerValidation) {
+        return switch (headerValidation) {
+            case NONE -> Set.of();
+            case BOUND -> bound.get();
+            case DECLARED -> {
+                final var result = new HashSet<>(bound.get());
+                result.addAll(getGlobalElements(definitions));
+                yield result;
+            }
+        };
     }
 
     @Override
@@ -231,12 +292,38 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
         if (flow == Interceptor.Flow.RESPONSE && !isPossibleResponseElement(result.soapElement())) {
             return abort(exc, flow, "%s is not a valid response element. Possible elements are %s".formatted(result.soapElement(), responseElements));
         }
+
+        var exceptions = new ArrayList<Exception>();
+        if (!validateHeaders(message, flow == Interceptor.Flow.REQUEST ? requestHeaderElements : responseHeaderElements, exceptions)) {
+            return abort(exc, flow, exceptions);
+        }
         return super.validateMessage(exc, flow);
     }
 
     /**
+     * Validates each header block selected by {@link HeaderValidation} against the WSDL's embedded
+     * schemas, one block at a time. The message is parsed once; each block is recorded and
+     * replayed for every schema it is tried against.
+     *
+     * @param exceptions collects the errors of the first block that did not validate
+     * @return {@code true} if all selected header blocks validated
+     */
+    private boolean validateHeaders(Message message, Set<QName> validated, List<Exception> exceptions) throws IOException {
+        if (validated.isEmpty())
+            return true;
+        try {
+            return SOAPHeaderBlockRecorder.forEach(xopr.reconstituteIfNecessary(message), validated,
+                    block -> validateAgainstSchemas(block::toSource, exceptions));
+        } catch (SAXException e) {
+            exceptions.add(e);
+            return false;
+        }
+    }
+
+    /**
      * Validates a SOAP fault: first structurally, against the bundled SOAP 1.1/1.2 Fault shape
-     * (faultcode/faultstring/detail resp. Code/Reason/Detail), then - if a detail/Detail payload
+     * (faultcode/faultstring/detail resp. Code/Reason/Detail), then its header blocks selected by
+     * {@link HeaderValidation}, then - if a detail/Detail payload
      * is present and the WSDL declares wsdl:fault elements for this service - validates that
      * payload against the WSDL's embedded schemas, same as request/response elements.
      * <p>
@@ -255,6 +342,10 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
         }
 
         if (!validateWith(structureValidators, getMessageBody(xopr.reconstituteIfNecessary(message)), exceptions)) {
+            return abort(exc, Interceptor.Flow.RESPONSE, exceptions);
+        }
+
+        if (!validateHeaders(message, faultHeaderElements, exceptions)) {
             return abort(exc, Interceptor.Flow.RESPONSE, exceptions);
         }
 

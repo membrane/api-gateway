@@ -148,6 +148,10 @@ PRIO 3:
   - Idea: `Proxy.destroy()`, called by `RuleManager.removeRule()` and by `replaceRule()` on the old API **before** `newProxy.init()`. A clone shares the consumer reference with the original, so stopping the old API after the clone was initialized would stop the clone's consumer. Stopping first also keeps two consumers of the same group from running at once.
   - Then look at `kafkaConsumer` again: drop the shared `AtomicReference` that clones need for `@PreDestroy`, allow hotDeploy and retryInit again, and check what happens when `newProxy.init()` fails after the old consumer was stopped.
 - Reorganisation of *Util* classes. Check for duplicates and right place.
+- WSDL validation: change the default of the `validator` attribute `headers` from `none` to `bound`
+  - Story: 7.8 can validate SOAP header blocks (#3582) but leaves it off by default, so an update does not start rejecting messages whose headers passed before. With `bound`, the header blocks the WSDL binds with `soap:header` and `soap:headerfault` are validated against the WSDL's schemas.
+  - **Breaking**: a message with an invalid bound header block is rejected. Name `headers: none` in the release notes as the way to keep the old behavior.
+  - Change the default of the `headers` field and `@default` of `setHeaders` in `ValidatorInterceptor`, and of the `WSDLValidator` constructors without a `HeaderValidation` parameter.
 
 ## Breaking Changes
 

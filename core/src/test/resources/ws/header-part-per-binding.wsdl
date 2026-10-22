@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Two ports of one service bind the same request message differently: CityBinding carries part
+    city in the body and part trace as soap:header, TraceBinding the other way round. Each part is
+    the body element of one of the bindings. soap:body/@parts is given for WS-I conformance only;
+    the body part is the first part the binding does not carry as soap:header.
+-->
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:cs="https://example.com/cities"
+                  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                  xmlns:s="http://schemas.xmlsoap.org/wsdl/soap/"
+                  targetNamespace="https://example.com/cities" name="cities">
+    <wsdl:types>
+        <xsd:schema targetNamespace="https://example.com/cities">
+            <xsd:element name="getCity">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="name" type="xsd:string"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="getCityResponse">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="population" type="xsd:integer"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="trace" type="xsd:string"/>
+        </xsd:schema>
+    </wsdl:types>
+    <wsdl:message name="City">
+        <wsdl:part name="city" element="cs:getCity"/>
+        <wsdl:part name="trace" element="cs:trace"/>
+    </wsdl:message>
+    <wsdl:message name="CityResponse">
+        <wsdl:part name="body" element="cs:getCityResponse"/>
+    </wsdl:message>
+    <wsdl:portType name="CityPort">
+        <wsdl:operation name="getCity">
+            <wsdl:input message="cs:City"/>
+            <wsdl:output message="cs:CityResponse"/>
+        </wsdl:operation>
+    </wsdl:portType>
+    <wsdl:binding name="CityBinding" type="cs:CityPort">
+        <s:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+        <wsdl:operation name="getCity">
+            <s:operation soapAction="https://example.com/cities/getCity"/>
+            <wsdl:input>
+                <s:header message="cs:City" part="trace" use="literal"/>
+                <s:body parts="city" use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <s:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+    </wsdl:binding>
+    <wsdl:binding name="TraceBinding" type="cs:CityPort">
+        <s:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+        <wsdl:operation name="getCity">
+            <s:operation soapAction="https://example.com/cities/getCity"/>
+            <wsdl:input>
+                <s:header message="cs:City" part="city" use="literal"/>
+                <s:body parts="trace" use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <s:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+    </wsdl:binding>
+    <wsdl:service name="CityService">
+        <wsdl:port name="CityPort" binding="cs:CityBinding">
+            <s:address location="https://example.com/cities"/>
+        </wsdl:port>
+        <wsdl:port name="TracePort" binding="cs:TraceBinding">
+            <s:address location="https://example.com/trace"/>
+        </wsdl:port>
+    </wsdl:service>
+</wsdl:definitions>
