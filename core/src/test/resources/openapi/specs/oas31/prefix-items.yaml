@@ -94,6 +94,12 @@ paths:
                   type: array
                   prefixItems:
                     - type: integer
+                closed:
+                  type: array
+                  prefixItems:
+                    - type: integer
+                    - false
+                  items: false
       responses:
         "200":
           description: "OK"

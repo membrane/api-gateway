@@ -240,6 +240,11 @@ public class MultipartFormDataValidator {
     private ValidationErrors validatePart(ValidationContext ctx, Schema propertySchema, String contentType, FormPart part) {
         var err = new ValidationErrors();
 
+        // A false schema (e.g. items: false or prefixItems: [false]) allows no part at all. Without a
+        // type it would fall through the content-type dispatch below unvalidated. See #3479.
+        if (FALSE.equals(propertySchema.getBooleanSchemaValue()))
+            return err.add(ctx.statusCode(400), "The schema is false and does not allow any value.");
+
         // Binary file uploads (type: string, format: binary/byte) are opaque, only their presence is checked.
         if (isBinaryString(propertySchema))
             return err;

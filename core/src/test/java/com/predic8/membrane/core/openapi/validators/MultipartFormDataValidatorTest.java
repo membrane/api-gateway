@@ -256,7 +256,8 @@ public class MultipartFormDataValidatorTest extends AbstractValidatorTest {
         @CsvSource(delimiter = '|', value = {
                 "rest|1,a",
                 "rest|1,a,true,false",
-                "open|1,a,true"})
+                "open|1,a,true",
+                "closed|1"})
         void accepted(String name, String values) throws ParseException {
             final var errors = validateParts(name, values);
             assertTrue(errors.isEmpty(), () -> "Expected no errors but got: " + errors);
@@ -266,7 +267,9 @@ public class MultipartFormDataValidatorTest extends AbstractValidatorTest {
         @CsvSource(delimiter = '|', value = {
                 "rest|a,b|1",
                 "rest|1,a,x|1",
-                "open|a|1"})
+                "open|a|1",
+                "closed|1,a|1",
+                "closed|1,a,b|2"})
         void rejected(String name, String values, int count) throws ParseException {
             final var errors = validateParts(name, values);
             assertEquals(count, errors.size(), errors::toString);
