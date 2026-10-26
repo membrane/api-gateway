@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.lang.groovy;
 
+import com.predic8.membrane.core.lang.ExchangeExpression.InterceptorAdapter;
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
@@ -34,7 +35,7 @@ class GroovyBuiltInFunctionsTest {
 
     @BeforeEach
     void setUp() throws URISyntaxException {
-        functions = new GroovyBuiltInFunctions(post("/foo").xml("<person name='Fritz'/>").buildExchange(), REQUEST, new DummyTestRouter(), new HashMap<>());
+        functions = new GroovyBuiltInFunctions(post("/foo").xml("<person name='Fritz'/>").buildExchange(), REQUEST, new InterceptorAdapter(new DummyTestRouter()), new HashMap<>());
     }
 
     @Test

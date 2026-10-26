@@ -163,31 +163,68 @@ public class OpenAPIValidator {
      * proper operation.
      */
     public ValidationPlan prepareValidation(Request<? extends Body> request) {
+        final var selection = select(request.getMethod(), request.getPath());
+        if (selection == null)
+            return ValidationPlan.error(ValidationErrors.error(fromRequest(request)
+                    .entity(request.getPath())
+                    .entityType(PATH)
+                    .statusCode(404), format("Path %s is invalid.", request.getPath())));
+
+        final var path = selection.path();
+        request.parsePathParameters(path.template());
+        if (selection.operation() == null)
+            return methodNotAllowed(request, path, getAllowedMethods(request.getPath(), path));
+
+        return ValidationPlan.create(path.template(), contextFor(request, path), selection.operation());
+    }
+
+    /**
+     * @param path path of the request, may contain a query string, which is ignored
+     * @return the path as written in the OpenAPI that a request is validated against, or null if no path matches. The
+     * path may lack an operation for the method.
+     */
+    public String getMatchingPath(String method, String path) {
+        final var selection = select(method, path);
+        return selection == null ? null : selection.path().uriTemplate();
+    }
+
+    /**
+     * @param operation null if the path has no operation for the method
+     */
+    private record Selection(PathTemplate path, OperationValidator operation) {}
+
+    private Selection select(String method, String path) {
         PathTemplate firstMatchingPath = null;
-        final var allowedMethods = new LinkedHashSet<String>();
-        for (final var path : pathTemplates) {
-            if (!request.parsePathParameters(path.template()))
+        for (final var pathTemplate : pathTemplates) {
+            if (!pathTemplate.template().matches(path))
                 continue;
             try {
-                return ValidationPlan.create(path.template(), contextFor(request, path), OperationValidator.create(rec.getApi(), request.getMethod(), path.pathItem()));
+                return new Selection(pathTemplate, OperationValidator.create(rec.getApi(), method, pathTemplate.pathItem()));
             } catch (MethodNotAllowException e) {
                 // A matching concrete path takes precedence over templated ones, even without the method
-                if (!isTemplated(path.uriTemplate()))
-                    return methodNotAllowed(request, path, getMethods(path.pathItem()));
+                if (!isTemplated(pathTemplate.uriTemplate()))
+                    return new Selection(pathTemplate, null);
                 // Ambiguous templated paths are left to the tooling by OpenAPI: try another matching path that has the method
                 if (firstMatchingPath == null)
-                    firstMatchingPath = path;
-                allowedMethods.addAll(getMethods(path.pathItem()));
+                    firstMatchingPath = pathTemplate;
             }
         }
+        return firstMatchingPath == null ? null : new Selection(firstMatchingPath, null);
+    }
 
-        if (firstMatchingPath != null)
-            return methodNotAllowed(request, firstMatchingPath, allowedMethods);
+    /**
+     * A templated path is selected without the method only if no matching path has it, so all of them are offered.
+     */
+    private Collection<String> getAllowedMethods(String path, PathTemplate selected) {
+        if (!isTemplated(selected.uriTemplate()))
+            return getMethods(selected.pathItem());
 
-        return ValidationPlan.error(ValidationErrors.error(fromRequest(request)
-                .entity(request.getPath())
-                .entityType(PATH)
-                .statusCode(404), format("Path %s is invalid.", request.getPath())));
+        final var allowedMethods = new LinkedHashSet<String>();
+        for (final var pathTemplate : pathTemplates) {
+            if (pathTemplate.template().matches(path))
+                allowedMethods.addAll(getMethods(pathTemplate.pathItem()));
+        }
+        return allowedMethods;
     }
 
     private static ValidationPlan methodNotAllowed(Request<? extends Body> request, PathTemplate path, Collection<String> allowedMethods) {

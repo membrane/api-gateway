@@ -3,3 +3,5 @@ client-libs/
 conf/resolved/
 certs/
 *.log
+# Per-run artifacts fetched by run-scenario.sh (gc.log, client output, CPU/GC summaries).
+results/

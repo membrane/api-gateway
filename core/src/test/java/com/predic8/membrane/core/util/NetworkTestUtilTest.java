@@ -16,9 +16,13 @@ package com.predic8.membrane.core.util;
 import org.junit.jupiter.api.Test;
 
 import java.net.ServerSocket;
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.predic8.membrane.core.util.NetworkTestUtil.freePort;
-import static org.junit.jupiter.api.Assertions.*;
+import static com.predic8.membrane.core.util.NetworkTestUtil.freePorts;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class NetworkTestUtilTest {
 
@@ -28,6 +32,19 @@ class NetworkTestUtilTest {
         assertTrue(port > 0 && port <= 65535);
         try (var socket = new ServerSocket(port)) {
             assertEquals(port, socket.getLocalPort());
+        }
+    }
+    @Test
+    void multiplePortsCanBeBoundSimultaneously() throws Exception {
+        int[] ports = freePorts(5);
+        List<ServerSocket> sockets = new ArrayList<>();
+        try {
+            for (int port : ports)
+                sockets.add(new ServerSocket(port));
+            assertEquals(5, sockets.size());
+        } finally {
+            for (ServerSocket socket : sockets)
+                socket.close();
         }
     }
 }

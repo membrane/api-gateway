@@ -62,7 +62,7 @@ Requests to http://localhost:2000 are now forwarded to https://apibin.io.
 
 ## Native OpenAPI Support
 
-Deploy APIs from [OpenAPI](https://www.membrane-api.io/openapi/configuration-and-validation) descriptions and use [OpenAPI for message validation](distribution/examples/openapi/validation-simple). Membrane supports OpenAPI 3.0, 3.1, and **3.2**.
+Deploy APIs from [OpenAPI](https://www.membrane-api.io/openapi/configuration-and-validation) descriptions and use [OpenAPI for message validation](distribution/tutorials/openapi/20-OpenAPI-Validation.apis.yaml). Membrane supports OpenAPI 3.0, 3.1, and **3.2**.
 
 ## Legacy XML and Web Services Integration
 
@@ -168,11 +168,11 @@ api:
 
 Membrane lets you explore APIs deployed from OpenAPI in a single overview page.
 
-![List of OpenAPI Deployments](distribution/examples/openapi/openapi-proxy/api-overview.jpg)
+![List of OpenAPI Deployments](docs/images/api-overview.jpg)
 
 For documentation and testing, the gateway also hosts a Swagger UI for the deployed APIs.
 
-![Swagger UI](distribution/examples/openapi/openapi-proxy/swagger-ui.jpg)
+![Swagger UI](docs/images/swagger-ui.jpg)
 
 See: [OpenAPI tutorial](distribution/tutorials/openapi/)
 
@@ -596,6 +596,8 @@ api:
     url: https://your-backend
 ```
 
+See the [JWT tutorials](distribution/tutorials/jwt), including enforcing the scopes from an OpenAPI document.
+
 ## OAuth2
 
 ### Secure APIs with OAuth2
@@ -737,7 +739,7 @@ api:
                 port: 4000
 ```
 
-See the [API load balancing examples](distribution/examples/loadbalancing)
+See the [load balancing tutorial](distribution/tutorials/loadbalancing)
 
 # 10. Operation
 

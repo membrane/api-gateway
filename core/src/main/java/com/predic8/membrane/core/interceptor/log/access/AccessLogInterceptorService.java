@@ -18,9 +18,9 @@ package com.predic8.membrane.core.interceptor.log.access;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.ReadingBodyException;
+import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.log.AdditionalVariable;
 import com.predic8.membrane.core.lang.spel.SpELExchangeEvaluationContext;
-import com.predic8.membrane.core.router.Router;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -47,20 +47,20 @@ public class AccessLogInterceptorService {
     private final String defaultValue;
     private final List<AdditionalVariable> additionalVariables;
     private final boolean excludePayloadSize;
-    private final Router router;
+    private final Interceptor interceptor;
 
     public AccessLogInterceptorService(
             String dateTimePattern,
             String defaultValue,
             List<AdditionalVariable> additionalVariables,
             boolean excludePayloadSize,
-            Router router
+            Interceptor interceptor
     ) {
         this.dateTimeFormat = ofPattern(dateTimePattern, Locale.ENGLISH).withZone(systemDefault());
         this.defaultValue = defaultValue;
         this.additionalVariables = additionalVariables;
         this.excludePayloadSize = excludePayloadSize;
-        this.router = router;
+        this.interceptor = interceptor;
     }
 
     /**
@@ -146,7 +146,10 @@ public class AccessLogInterceptorService {
 
     private String safe(Supplier<Object> access, String defaultValue) {
         try {
-            return escapeForLog(String.valueOf(access.get()));
+            final var value = access.get();
+            if (value == null)
+                return defaultValue;
+            return escapeForLog(String.valueOf(value));
         } catch (Exception e) {
             return defaultValue;
         }
@@ -163,7 +166,7 @@ public class AccessLogInterceptorService {
     private Function<AdditionalVariable, AbstractMap.SimpleEntry<String, String>> additionalPatternToMapEntry(Exchange exc) {
         return additionalPattern -> new AbstractMap.SimpleEntry<>(
                 additionalPattern.getName(),
-                safe(() ->  additionalPattern.getExpression().getValue(new SpELExchangeEvaluationContext(exc, REQUEST, router)),
+                safe(() ->  additionalPattern.getExpression().getValue(new SpELExchangeEvaluationContext(exc, REQUEST, interceptor)),
                     additionalPattern.getDefaultValue()
                 )
         );

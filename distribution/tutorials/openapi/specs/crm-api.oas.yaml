@@ -1,0 +1,36 @@
+openapi: 3.1.2
+info:
+  title: CRM API
+  version: "1.0"
+servers:
+  - url: http://localhost:3000/crm
+paths:
+  /customers:
+    post:
+      requestBody:
+        content:
+          # XML instead of JSON
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/Customer'
+      responses:
+        '201':
+          description: Customer created
+components:
+  # XML data structures are also described with JSON Schema
+  schemas:
+    Customer:
+      type: object
+      required: [name, age]
+      properties:
+        id:
+          type: integer
+          # <customer id="7"> instead of a child element <id>7</id>
+          xml:
+            attribute: true
+        name:
+          type: string
+          maxLength: 20
+        age:
+          type: integer
+          minimum: 0

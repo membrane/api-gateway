@@ -74,7 +74,7 @@ public class ShadowingInterceptor extends AbstractInterceptor {
     public Outcome handleRequest(Exchange exc) {
         // Copy the request headers to ensure we maintain original request details for use in the cloned requests.
         Header copiedHeader = new Header(exc.getRequest().getHeader());
-        exc.getRequest().getBody().getObservers().add(new MessageObserver() {
+        exc.getRequest().getBody().addObserver(new MessageObserver() {
             @Override
             public void bodyRequested(AbstractBody body) {}
             @Override

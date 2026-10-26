@@ -34,6 +34,12 @@ PRIO 2:
 PRIO 3:
 - OpenAPI: validate `in: cookie` parameters
   - Path, query and header parameters are validated; cookie parameters currently are not.
+- OpenAPI: support `style: matrix` path parameters (#3544)
+  - Story: values like `/customers/;id=7` (array `;id=3,4,5` or `;id=3;id=4;id=5`, object `;id=role,admin` or `;role=admin`, empty `;id`) are not supported. The validator matches path templates against the routing path, which removes `;...` and merges the emptied segment, so such requests get a 404.
+  - Idea: match a second path that keeps segments consisting only of `;...`, accept a captured `;...` value only for parameters the selected operation declares as `style: matrix`, and parse it per RFC 6570.
+  - Security: return 400 if the routing path selects a different path item than this matrix-aware path. Otherwise `/customers/;x/orders` would be validated against `/customers/{id}/orders`, while a backend that merges slashes serves a literal `/customers/orders`.
+  - Open: the style may differ per method of one path item; `;jsessionid` next to matrix values ends up in exploded objects with `additionalProperties`. The RFC 6570 form `/customers{id}` → `/customers;id=7` stays out of scope.
+  - Related: `simple`-style array/object path parameters are not parsed either, `PathParametersValidator` validates the raw string.
 - ReplaceInterceptor: Support Languages, tutorial/transformation
 - WebServiceExplorerInterceptor
   - Support multiple services, ports, ...
@@ -81,6 +87,8 @@ PRIO 3:
 - Log harmonization:
   - Decide if log message start with uppercase or lowercase.
      - e.g.:  Error loading log configuration., Started 1 API:, Closing server port:, listening at '*:2000'
+- Remove AuthHead2BodyInterceptor (`authHead2Body`)
+  - Customer-specific (hard-coded namespaces) and effectively dead: it only overrides `handleRequest(AbstractExchange)`, which the pipeline never calls
 - Remove proxies.inactive.xml from conf Folder
   - Also README.md in conf
 - Upgrade baseline to Java 25
@@ -129,6 +137,16 @@ PRIO 3:
   - **Breaking**: scripts calling `cookie.put(...)` fail instead of silently doing nothing.
   - Related: in the response flow `cookie` is always empty (it only parses `Cookie`, not `Set-Cookie`). Document or address separately.
   - What about setting cookies?
+- Teardown lifecycle for interceptors when the context reloads
+  - Story: `Interceptor` only has `init()`. Anything an interceptor starts, e.g. the Kafka producer from `KafkaProducerInterceptor`, is only stopped through a `@PreDestroy` method, and it is not confirmed that the bean registry calls it for an interceptor nested in an API's flow. On a hot deploy or reload the old interceptor instances may keep running, so connections would be left open.
+  - Check whether there is a teardown lifecycle for interceptors when the context reloads (`DefaultRouter.stopRuntimeForReload`, `closeRegistryIfSupported`). If not, add one, e.g. a `destroy()` on `Interceptor` that the router calls on stop and on reload.
+  - Related: a start hook after all APIs are initialized. `KafkaConsumerProxy` starts the consumer from `init()`, before the interceptors of its flow are initialized, so the Kafka extension has to wait itself until the router is running.
+- Lifecycle for APIs: stop an API when it is removed or replaced
+  - Story: `Proxy` only has `init()`. `@PreDestroy` runs only when the bean registry is closed (`BeanRegistryImplementation.close()`, on router stop or reload). Deleting or changing an API by hot deployment (`DefaultRouter.handleBeanEvent`), in the Admin Console, over JMX, or replacing it with a clone in `RuleReinitializer` (retryInit) goes through `RuleManager.removeRule()`/`replaceRule()`, which never stop the old instance. The registry keeps the old bean's callback until shutdown.
+  - Affected: `kafkaConsumer` (`KafkaConsumerProxy`). A removed or replaced consumer keeps receiving messages and delivering them to its old target until Membrane stops. For now `kafkaConsumer` refuses to start when hot deployment is on.
+  - Also `kafkaConsumer` with retryInit: the consumer starts in `init()`, before the interceptors of the flow. If one of them fails, the API stays inactive with a running consumer that reads without delivering. Every retry replaces the API with a clone, and `clone()` and `replaceRule()` both initialize it, so the consumer is restarted twice per retry and the consumer group rebalances. Also, without the Kafka extension Membrane starts anyway with an inactive API, although the docs say it does not start. For now `kafkaConsumer` refuses to start when retryInit is on, but `AbstractProxy.init` swallows that exception under retryInit, so Membrane starts anyway with the API inactive and retries it forever.
+  - Idea: `Proxy.destroy()`, called by `RuleManager.removeRule()` and by `replaceRule()` on the old API **before** `newProxy.init()`. A clone shares the consumer reference with the original, so stopping the old API after the clone was initialized would stop the clone's consumer. Stopping first also keeps two consumers of the same group from running at once.
+  - Then look at `kafkaConsumer` again: drop the shared `AtomicReference` that clones need for `@PreDestroy`, allow hotDeploy and retryInit again, and check what happens when `newProxy.init()` fails after the old consumer was stopped.
 - Reorganisation of *Util* classes. Check for duplicates and right place.
 
 ### Resolve the backend URL (destination) late
@@ -177,6 +195,13 @@ PRIO 3:
           value: jdbc:h2:./membranedb;AUTO_SERVER=TRUE
   ```
 - removed `MethodOverrideInterceptor`
+- `APIsJSON` renamed to `apisJson`. It now follows APIs.json 0.24:
+    * `rootDomain` and `url` are replaced by `baseUrl`, the URL clients reach the gateway under. Its host is the domain of every `aid`. Without it, URLs and identifiers come from the Host header of the request.
+    * `humanUrl` and `baseUrl` in the document are now spelled `humanURL` and `baseURL`.
+    * New `maintainers` option. The tags of the listed APIs become the tags of the collection.
+    * A proxy bound to every host is listed under the host the client used instead of `localhost`.
+    * `serviceProxy` and `soapProxy` are listed too, not only `api`.
+    * The default collection `description` is now `APIs served by this gateway`.
 
 ## Bug Fixes
 - `xml2json`: Ensuring content type alignment and better exception handling.  

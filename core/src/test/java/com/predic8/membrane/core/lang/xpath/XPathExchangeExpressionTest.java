@@ -288,6 +288,24 @@ class XPathExchangeExpressionTest extends AbstractExchangeExpressionTest {
                     "//*[local-name()='firstname']")
                     .evaluate(pExc, REQUEST, String.class));
         }
+
+        @Test
+        void globalXmlConfigIsUsedWithoutLocalOne() {
+            router.getRegistry().register("ns", xmlConfig("p8"));
+            assertEquals("Trevor", expression(new InterceptorAdapter(router), getLanguage(),
+                    "/p8:person/p8:firstname")
+                    .evaluate(pExc, REQUEST, String.class));
+        }
+
+        @Test
+        void localXmlConfigReplacesGlobalOne() {
+            router.getRegistry().register("ns", xmlConfig("p8"));
+            final var local = new InterceptorAdapter(router, xmlConfig("x"));
+            assertEquals("Trevor", expression(local, getLanguage(), "/x:person/x:firstname")
+                    .evaluate(pExc, REQUEST, String.class));
+            assertThrows(ExchangeExpressionException.class, () -> expression(local, getLanguage(), "/p8:person/p8:firstname")
+                    .evaluate(pExc, REQUEST, String.class));
+        }
     }
 
     @Nested

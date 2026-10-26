@@ -49,7 +49,7 @@ import static com.predic8.membrane.core.util.text.TextUtil.removeFinalChar;
  * the transformation result. Every string-valued <code>Exchange</code> property is passed to the stylesheet
  * as an XSLT parameter of the same name; declare a matching <code>xsl:param</code> in the stylesheet to read
  * it. Set such a property beforehand, e.g. with <code>setProperty</code>. See
- * tutorials/xml/35-XSLT-Transformation-to-json.yaml.
+ * tutorials/xml/62-XSLT-Parameter.yaml.
  * @topic 2. Enterprise Integration Patterns
  * @yaml <pre><code>
  * api:

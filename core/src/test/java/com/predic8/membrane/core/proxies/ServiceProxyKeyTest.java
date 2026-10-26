@@ -125,6 +125,22 @@ public class ServiceProxyKeyTest {
 		testHostMatch("a b c", "c");
 	}
 
+	@Test
+	void hostMatchBracketedIpv6() {
+		testHostMatch("[::1]", "[::1]");
+		testHostMatch("[::1]", "[::1]:2000");
+		testHostMatch("[::1]", "[::1]:");
+		testHostMatch("foo.predic8.de [::1]", "[::1]:2000");
+		testHostMatch("[::1]", "[::2]:2000", false);
+	}
+
+	@Test
+	void hostMatchBracketedIpv6InvalidSuffix() {
+		testHostMatch("[::1]", "[::1]foo", false);
+		testHostMatch("[::1]", "[::1]:abc", false);
+		testHostMatch("[::1]", "[::1]:2000x", false);
+	}
+
 	private void testHostMatch(String hostArg, String hostHeader) {
 		testHostMatch(hostArg, hostHeader, true);
 	}

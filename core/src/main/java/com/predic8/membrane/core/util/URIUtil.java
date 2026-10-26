@@ -19,7 +19,9 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import static com.predic8.membrane.core.util.URI.removeDotSegments;
@@ -35,6 +37,7 @@ public class URIUtil {
     private static final Pattern driveLetterPattern = Pattern.compile("^(\\w)[/:|].*");
     private static final Pattern URI_SCHEME_PATTERN = Pattern.compile("^[a-zA-Z][a-zA-Z0-9+.-]*:.*");
     private static final Pattern MULTIPLE_SLASHES = Pattern.compile("/{2,}");
+    private static final Pattern ENCODED_DELIMITER = Pattern.compile("%(3[bB]|2[fF]|5[cC])");
 
     /**
      *
@@ -189,6 +192,55 @@ public class URIUtil {
      */
     public static String toRoutingPath(String uri) {
         return mergeSlashes(removePathParameters(uri));
+    }
+
+    /**
+     * Returns the routing paths as backends see them that decode "%3B", "%2F" or "%5C" before they remove path
+     * parameters, resolve dot-segments or treat "\" like "/". E.g. "/api%3bx=1/admin", "/api%2f./admin" and
+     * "/api%5c./admin" all become "/api/admin". Membrane keeps these characters encoded, see
+     * {@link #normalizeRequestTarget(String)}, so such a backend may reach a path that routing would send to
+     * another API.
+     * Backends differ in which of them they decode, and a decoded character that a backend keeps as data is like one
+     * that stays encoded. So every combination is returned: "/api%2fadmin/..%5cpublic" becomes "/api/public" if "\"
+     * is a separator, but stays under "/api/admin" if it is data.
+     * The query is left untouched.
+     *
+     * @return the paths that differ from {@link #toRoutingPath(String)}, empty for other forms than origin-form or
+     * without any of these escapes
+     */
+    public static Set<String> toDecodedDelimiterRoutingPaths(String uri) {
+        if (!uri.startsWith("/") || uri.indexOf('%') == -1)
+            return Set.of();
+
+        final var queryStart = uri.indexOf('?');
+        final var encoded = queryStart == -1 ? uri : uri.substring(0, queryStart);
+        final var query = queryStart == -1 ? "" : uri.substring(queryStart);
+
+        final var paths = new LinkedHashSet<String>();
+        // Each bit of the mask decodes one of ";", "/" and "\", see delimiterBit()
+        for (var mask = 1; mask < 8; mask++) {
+            final var decodedDelimiters = mask;
+            final var path = mergeSlashes(removePathParameters(ENCODED_DELIMITER.matcher(encoded)
+                    .replaceAll(m -> (decodedDelimiters & delimiterBit(m.group(1))) != 0 ? decodeDelimiter(m.group(1)) : m.group())));
+            paths.add((containsDotSegment(path) ? removeDotSegments(path) : path) + query);
+        }
+        paths.remove(toRoutingPath(uri));
+        return paths;
+    }
+
+    private static int delimiterBit(String hex) {
+        return switch (hex.toUpperCase()) {
+            case "3B" -> 1;
+            case "2F" -> 2;
+            default -> 4; // 5C
+        };
+    }
+
+    /**
+     * A backslash becomes "/" right away, like for a backend that treats it as a separator.
+     */
+    private static String decodeDelimiter(String hex) {
+        return hex.equalsIgnoreCase("3B") ? ";" : "/";
     }
 
     /**

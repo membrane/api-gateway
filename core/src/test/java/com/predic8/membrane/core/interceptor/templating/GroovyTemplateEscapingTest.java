@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.templating;
 
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.lang.ExchangeExpression.InterceptorAdapter;
 import com.predic8.membrane.core.lang.groovy.adapted.*;
 import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.util.text.*;
@@ -46,7 +47,7 @@ public class GroovyTemplateEscapingTest {
                 "${flow} $flow <%= flow %> ${hasScope('foo')}"));
 
         assertEquals("REQUEST REQUEST REQUEST false",
-                t.make(createParameterBindings(r, e, REQUEST, false, TEXT_SERIALIZATION))
+                t.make(createParameterBindings(new InterceptorAdapter(r), e, REQUEST, false, TEXT_SERIALIZATION))
                         .toString());
     }
 
@@ -56,7 +57,7 @@ public class GroovyTemplateEscapingTest {
                 "${flow} $flow <%= flow %> ${hasScope('foo')}"));
 
         assertEquals("\"REQUEST\" \"REQUEST\" \"REQUEST\" false",
-                t.make(createParameterBindings(r, e, REQUEST, false, JSON_SERIALIZATION ))
+                t.make(createParameterBindings(new InterceptorAdapter(r), e, REQUEST, false, JSON_SERIALIZATION ))
                         .toString());
     }
 
