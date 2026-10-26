@@ -23,6 +23,7 @@ import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.Schema;
 
+import java.util.List;
 import java.util.Map;
 
 import static com.predic8.membrane.core.openapi.util.Utils.getComponentLocalNameFromRef;
@@ -109,6 +110,18 @@ public class SchemaUtil {
     /** True if the schema's effective type is {@code array}. */
     public static boolean isArray(Schema schema) {
         return "array".equals(getEffectiveType(schema));
+    }
+
+    /**
+     * Returns the schema of the array item at {@code index}: the {@code prefixItems} entry at that
+     * position (JSON Schema 2020-12, OAS 3.1 and later), otherwise {@code items}. The result may be a
+     * {@code $ref} or {@code null} if the array does not constrain that item.
+     */
+    public static Schema itemSchema(Schema arraySchema, int index) {
+        List<Schema> prefixItems = arraySchema.getPrefixItems();
+        if (prefixItems != null && index < prefixItems.size())
+            return prefixItems.get(index);
+        return arraySchema.getItems();
     }
 
     /** True for the primitive scalar types string, integer, number and boolean. */
