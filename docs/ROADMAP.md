@@ -150,6 +150,10 @@ PRIO 3:
   - Story: 7.8 can validate SOAP header blocks (#3582) but leaves it off by default, so an update does not start rejecting messages whose headers passed before. With `bound`, the header blocks the WSDL binds with `soap:header` and `soap:headerfault` are validated against the WSDL's schemas.
   - **Breaking**: a message with an invalid bound header block is rejected. Name `headers: none` in the release notes as the way to keep the old behavior.
   - Change the default of the `headers` field and `@default` of `setHeaders` in `ValidatorInterceptor`, and of the `WSDLValidator` constructors without a `HeaderValidation` parameter.
+- To discuss:
+  - validator/ValidatorInterceptor is for WSDL, XSD, Schematron, JSON Schema?
+  - Maybe we should split that to wsdlValidator, xmlSchemaValidator, jsonSchemaValidator?
+  - It might be confusing to have a wsdl or boundHeader property visible when JSON Schema validation is needed.
 
 ### Refactorings for v8
 
