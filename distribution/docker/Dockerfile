@@ -7,7 +7,7 @@ ARG USER_GID=$USER_UID
 COPY release-bin .
 RUN apt-get update \
     && apt-get upgrade -y \
-    && apt-get install -y --no-install-recommends unzip \
+    && apt-get install -y --no-install-recommends unzip tini \
     && rm -rf /var/lib/apt/lists/*
 # The host-side Docker launchers make no sense inside the image itself, and
 # membrane.sh is already the ENTRYPOINT.
@@ -21,4 +21,6 @@ RUN groupadd --gid $USER_GID $USERNAME && useradd --uid $USER_UID --gid $USER_GI
 
 USER $USERNAME
 WORKDIR /opt/membrane
-ENTRYPOINT ["./membrane.sh"]
+# Without tini, sh is PID 1 and ignores SIGTERM, so docker stop waits 10s and then SIGKILLs.
+# -g signals the whole process group, so the JVM receives SIGTERM directly.
+ENTRYPOINT ["tini", "-g", "--", "./membrane.sh"]

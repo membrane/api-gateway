@@ -87,6 +87,20 @@ public enum BodyKind {
         return kind;
     }
 
+    /**
+     * Classifies a message for XML.
+     */
+    public static BodyKind ofXml(Message msg) {
+        return of(msg, BodyKind::isXmlOrXop, "<");
+    }
+
+    /**
+     * XOP/MTOM packages are multipart/related; {@link Message#getBodyAsStreamDecoded()} reassembles them into XML.
+     */
+    private static boolean isXmlOrXop(String contentType) {
+        return isXML(contentType) || isOfMediaType(MULTIPART_RELATED, contentType);
+    }
+
     private static BodyKind byContentType(String contentType, Predicate<String> isOwnType) {
         if (contentType == null || isOfMediaType(TEXT_PLAIN, contentType))
             return UNKNOWN;

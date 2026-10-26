@@ -1,0 +1,45 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.7.1.json
+#
+# Tutorial: Position of the OpenAPI Validation in the Flow
+#
+# By default, Membrane validates against the OpenAPI document before the flow runs.
+# Placing openapiValidator in the flow moves the validation to that position.
+#
+# 1.) Start Membrane:
+#     Linux/Mac:
+#       ./membrane.sh -c 21-Validation-Advanced.apis.yaml
+#     Windows:
+#       membrane.cmd -c 21-Validation-Advanced.apis.yaml
+#
+# 2.) Create a product with a negative price:
+#     curl "http://localhost:2000/store/products" -H "Content-Type: application/json" -d "{ \"name\": \"Figs\", \"price\": -2.7}"
+#
+#     Response: 400 with the validation errors
+#     Log:      OpenAPI request validation failed for POST against 'Minimal Shop API' ...
+#
+#     The validation rejected the request before the log plugin ran, so the request is not logged.
+#
+# 3.) Remove the # in front of "- openapiValidator: {}" below and save the file.
+#     Membrane reloads the configuration.
+#
+# 4.) Repeat the curl from step 2.
+#
+#     Response: 400 with the validation errors
+#     Log:      ==== REQUEST  ===
+#               POST /store/products HTTP/1.1
+#               ...
+#               { "name": "Figs", "price": -2.7}
+#               OpenAPI request validation failed for POST against 'Minimal Shop API' ...
+
+api:
+  port: 2000
+  openapi:
+    - location: specs/minimal-shop-api.oas.yaml
+      validateRequests: true
+  flow:
+    - log: {}
+#    - openapiValidator: {}
+
+---
+include:
+  - mock.apis.yaml

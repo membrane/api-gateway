@@ -270,6 +270,20 @@ class SignatureSecurePartTest extends AbstractWsSecurityTest {
     }
 
     @Test
+    void xpathWithCustomPrefixResolvesViaGlobalXmlConfig() throws Exception {
+        exchangeWithBody(SOAP_BODY_WITH_CUSTOM_NS);
+        final var wsSecurity = securing(signature(xpathReference("//c:foo")));
+        wsSecurity.setKeyStore(signingKeyStore(ALIAS_1));
+        router.getRegistry().register("ns", xmlConfig("c", "https://predic8.de/custom"));
+        wsSecurity.init(router);
+
+        assertEquals(Outcome.CONTINUE, wsSecurity.handleRequest(exchange));
+        final var result = parseBody();
+        assertEquals(1, result.getElementsByTagNameNS(DS_NS, "Reference").getLength());
+        assertSignatureIsValid(result);
+    }
+
+    @Test
     void passwordIsUsedAsKeyPasswordFallback() throws Exception {
         // Only `password` set, no distinct `keyPassword` - common for a PKCS12 keystore where both
         // are the same.

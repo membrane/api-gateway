@@ -36,7 +36,9 @@ import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.predic8.membrane.core.http.Header.CONTENT_LENGTH;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.http.Request.post;
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -125,6 +127,7 @@ class ShadowingInterceptorTest {
      */
     @Test
     void testIfShadowTargetIsCalled() {
+        clearInvocations(returnInterceptorMock);
         given().when().get("http://localhost:2000").then().statusCode(200);
         verify(returnInterceptorMock, timeout(10000).times(1)).handleRequest(any(Exchange.class));
     }
@@ -135,10 +138,12 @@ class ShadowingInterceptorTest {
      */
     @Test
     void testIfShadowTargetHasFooHeader() {
+        clearInvocations(returnInterceptorMock);
         given().when().get("http://localhost:2000").then().statusCode(200);
 
+        // Wait for this test's own shadow request, so it is not still in flight when the next test starts
         ArgumentCaptor<Exchange> exchangeCaptor = ArgumentCaptor.forClass(Exchange.class);
-        verify(returnInterceptorMock, atLeastOnce()).handleRequest(exchangeCaptor.capture());
+        verify(returnInterceptorMock, timeout(10000).times(1)).handleRequest(exchangeCaptor.capture());
 
         assertNull(exchangeCaptor.getValue().getRequest().getHeader().getFirstValue("foo"));
     }
@@ -216,24 +221,30 @@ class ShadowingInterceptorTest {
         proxy.setPort(3000);
         var httpClientConfig = new HttpClientConfiguration();
         httpClientConfig.setProxy(proxy);
+        final var originalHttpClientConfig = interceptorRouter.getConfiguration().getHttpClientConfig();
         interceptorRouter.getConfiguration().setHttpClientConfig(httpClientConfig);
+        try {
+            var interceptor = new ShadowingInterceptor();
+            interceptor.setTargets(List.of(new Target() {{
+                setHost("localhost");
+                setPort(3001);
+            }}));
+            interceptor.init(interceptorRouter);
 
-        var interceptor = new ShadowingInterceptor();
-        interceptor.setTargets(List.of(new Target() {{
-            setHost("localhost");
-            setPort(3001);
-        }}));
-        interceptor.init(interceptorRouter);
+            // Without Content-Length the shadow target would take the body as the start of a next request and wait for it
+            Exchange exchange = new Request.Builder().post("http://localhost:2000").header(CONTENT_LENGTH, "3").buildExchange();
+            Body body = new Body(new ByteArrayInputStream("foo".getBytes()), 3);
+            exchange.getRequest().setBody(body);
 
-        Exchange exchange = new Request.Builder().post("http://localhost:2000").buildExchange();
-        Body body = new Body(new ByteArrayInputStream("foo".getBytes()), 3);
-        exchange.getRequest().setBody(body);
+            interceptor.handleRequest(exchange);
+            body.read();
 
-        interceptor.handleRequest(exchange);
-        body.read();
-
-        verify(returnInterceptorMock, timeout(10000).times(1)).handleRequest(any(Exchange.class));
-        clearInvocations(returnInterceptorMock);
+            verify(returnInterceptorMock, timeout(10000).times(1)).handleRequest(any(Exchange.class));
+            clearInvocations(returnInterceptorMock);
+        } finally {
+            // The router is shared by all tests of this class
+            interceptorRouter.getConfiguration().setHttpClientConfig(originalHttpClientConfig);
+        }
     }
 
     @Test
@@ -253,12 +264,10 @@ class ShadowingInterceptorTest {
         }}));
         interceptor.init(interceptorRouter);
 
-        Exchange exchange = new Request.Builder().post("http://localhost:2000").buildExchange();
-        Body body = new Body(new ByteArrayInputStream("foo".getBytes()), 3);
-        exchange.getRequest().setBody(body);
+        // A request without a body has an already read body: it must be shadowed as well
+        var exchange = post("http://localhost:2000").buildExchange();
 
         interceptor.handleRequest(exchange);
-        body.read();
 
         verify(returnInterceptorMock, timeout(10000).times(1)).handleRequest(any(Exchange.class));
         clearInvocations(returnInterceptorMock);

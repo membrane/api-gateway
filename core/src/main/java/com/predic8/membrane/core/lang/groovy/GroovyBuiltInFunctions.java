@@ -14,14 +14,15 @@
 
 package com.predic8.membrane.core.lang.groovy;
 
-import com.predic8.membrane.core.config.xml.*;
 import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.Interceptor.*;
 import com.predic8.membrane.core.lang.*;
-import com.predic8.membrane.core.router.*;
 import groovy.lang.*;
 
 import java.util.*;
+
+import static com.predic8.membrane.core.config.xml.XmlConfig.localOrGlobal;
 
 /**
  * Helper class for built-in functions that delegates to the implementation CommonBuiltInFunctions.
@@ -31,17 +32,17 @@ public class GroovyBuiltInFunctions extends Binding {
 
     private final Exchange exchange;
     private final Flow flow;
-    private final Router router;
-    private XmlConfig xmlConfig;
+    // Private on purpose: scripts see this object as "fn"
+    private final Interceptor interceptor;
 
-    public GroovyBuiltInFunctions(Exchange exchange, Flow flow, Router router, Map<String, Object> params) {
+    /**
+     * @param interceptor the interceptor that runs the script, e.g. for its xmlConfig
+     */
+    public GroovyBuiltInFunctions(Exchange exchange, Flow flow, Interceptor interceptor, Map<String, Object> params) {
         super(params);
         this.exchange = exchange;
         this.flow = flow;
-        this.router = router;
-        if (router != null && router.getRegistry() != null) {
-            this.xmlConfig = router.getRegistry().getBean(XmlConfig.class).orElse(null);
-        }
+        this.interceptor = interceptor;
     }
 
     public String user() {
@@ -57,11 +58,11 @@ public class GroovyBuiltInFunctions extends Binding {
     }
 
     public Object xpath(String expression) {
-        return CommonBuiltInFunctions.xpath(expression, exchange.getMessage(flow), xmlConfig);
+        return CommonBuiltInFunctions.xpath(expression, exchange.getMessage(flow), localOrGlobal(interceptor));
     }
 
     public Object xpath(String expression, Object context) {
-        return CommonBuiltInFunctions.xpath(expression, context, xmlConfig);
+        return CommonBuiltInFunctions.xpath(expression, context, localOrGlobal(interceptor));
     }
 
     public List<String> scopes() {

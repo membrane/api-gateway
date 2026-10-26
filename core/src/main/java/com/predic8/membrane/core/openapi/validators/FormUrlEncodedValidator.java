@@ -152,10 +152,11 @@ public class FormUrlEncodedValidator {
     }
 
     private ArrayNode toArrayNode(List<String> values, Schema arraySchema) {
-        Schema items = SchemaUtil.resolveRef(api, arraySchema.getItems());
         ArrayNode arrayNode = JsonNodeFactory.instance.arrayNode();
-        for (String value : values)
-            arrayNode.add(items != null ? toNode(value, items) : JsonNodeFactory.instance.textNode(value));
+        for (int i = 0; i < values.size(); i++) {
+            final var items = SchemaUtil.resolveRef(api, SchemaUtil.itemSchema(arraySchema, i));
+            arrayNode.add(items != null ? toNode(values.get(i), items) : JsonNodeFactory.instance.textNode(values.get(i)));
+        }
         return arrayNode;
     }
 

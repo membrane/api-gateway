@@ -13,6 +13,11 @@
    limitations under the License. */
 package com.predic8.membrane.core.util;
 
+import java.time.*;
+import java.time.format.*;
+
+import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE;
+
 public class DateAndTimeUtil {
 	public static String prettyPrintTimeSpan(long timespan) {
 		timespan = timespan / 1000;
@@ -31,5 +36,15 @@ public class DateAndTimeUtil {
 			sb.append(String.format("%d m, ", min));
 		sb.append(String.format("%d s", sec));
 		return sb.toString();
+	}
+
+	public static LocalDate parseIsoDate(String element, String attribute, String value) {
+		try {
+			return LocalDate.parse(value, ISO_LOCAL_DATE);
+		} catch (DateTimeParseException e) {
+			throw new ConfigurationException(
+					"Cannot parse %s/@%s \"%s\". Expected an ISO date such as 2026-01-15."
+							.formatted(element, attribute, value), e);
+		}
 	}
 }

@@ -17,11 +17,14 @@ The tutorials build on each other, from simple to advanced:
    protected API. Nothing to run locally.
 2. [20-JWT-Signing.yaml](20-JWT-Signing.yaml) — sign and validate JWTs with the
    jwtSign interceptor, a lightweight alternative to a full OAuth2 token endpoint.
+3. [30-JWT-OpenAPI-Scopes.yaml](30-JWT-OpenAPI-Scopes.yaml) — enforce the scopes an
+   OpenAPI document requires for each operation against the scopes in the JWT.
 
 ## Next Steps
 
 Start with [10-JWT-Requesting-Token.md](10-JWT-Requesting-Token.md), then run
-[20-JWT-Signing.yaml](20-JWT-Signing.yaml).
+[20-JWT-Signing.yaml](20-JWT-Signing.yaml) and
+[30-JWT-OpenAPI-Scopes.yaml](30-JWT-OpenAPI-Scopes.yaml).
 
 For a full OAuth2 setup — an authorization server and a token-validating gateway — see the
 [OAuth2 tutorial](../oauth2).

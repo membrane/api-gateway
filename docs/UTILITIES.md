@@ -48,6 +48,7 @@ Keep this file in sync when adding, renaming or removing a util class.
 | `util/xml/XMLEncodingUtil` | XML character encoding |
 | `util/xml/NormalizeXMLForJsonUtil` | Normalize XML for JSON conversion |
 | `util/MapNamespaceContext` | `NamespaceContext` backed by a map (XPath) |
+| `config/xml/XmlConfig.global`, `localOrGlobal` | The global `xmlConfig` from `components`, or a local one that replaces it (XPath namespaces) |
 | `util/LSInputImpl` | `LSInput` implementation for schema resolvers |
 
 ## Collections, bytes, errors, concurrency
@@ -69,11 +70,11 @@ Keep this file in sync when adding, renaming or removing a util class.
 |---|---|
 | `util/FileUtil` | Read/write streams, xml/json file detection, slash handling, resolve, directory part |
 | `util/OSUtil` | OS detection, backslash fixing, Windows path detection |
-| `util/NetworkUtil` | IPv4/IPv6 helpers (brackets, dotted quad, CIDR prefix match) |
+| `util/NetworkUtil` | IPv4/IPv6 helpers (brackets, host header without port, dotted quad, CIDR prefix match) |
 | `util/DNSCache` | Cached reverse DNS lookups |
 | `util/SecurityUtils` | Password hash helpers (`crypt`-compatible, salt extraction) |
 | `util/security/BasicAuthenticationUtil` | Parse/create `Authorization: Basic` headers |
-| `util/DateAndTimeUtil` | Pretty-print time spans |
+| `util/DateAndTimeUtil` | Pretty-print time spans, parse configured ISO dates |
 | `util/Util` | Grab bag: line count, socket shutdown, thread pool, split by comma |
 | `util/ClassFinder` | Classpath scanning |
 | `util/ComparatorFactory` | Comparators for admin-console statistics tables |
@@ -86,7 +87,7 @@ Keep this file in sync when adding, renaming or removing a util class.
 | Class | Purpose |
 |---|---|
 | `OpenAPIUtil` | API id/version, 3.x vs Swagger 2 detection, path/parameter/property lookup, explode/query checks |
-| `SchemaUtil` | `$ref` resolution, effective type, string/array/scalar/object checks, parse scalar by schema |
+| `SchemaUtil` | `$ref` resolution, effective type, string/array/scalar/object checks, item schema by position (`prefixItems`/`items`), parse scalar by schema |
 | `UriUtil` | Trim/ensure slashes, strip query, rewrite URL parts (not the same as `util/URIUtil`) |
 | `Utils` | Format validators (UUID, e-mail, date, IP, ISO codes, ...), stream/string conversion, validator request/response builders |
 | `UriTemplateMatcher` | Match request paths against OpenAPI URI templates |

@@ -15,6 +15,8 @@ package com.predic8.membrane.core.util;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.util.ArrayList;
+import java.util.List;
 
 public class NetworkTestUtil {
 
@@ -29,6 +31,25 @@ public class NetworkTestUtil {
     public static int freePort() throws IOException {
         try (var socket = new ServerSocket(0)) {
             return socket.getLocalPort();
+        }
+    }
+    /**
+     * Returns distinct candidate ports, keeping all probe sockets open until allocation is complete.
+     * As with {@link #freePort()}, callers must bind promptly: these ports are not reserved on return.
+     */
+    public static int[] freePorts(int count) throws IOException {
+        List<ServerSocket> sockets = new ArrayList<>();
+        try {
+            int[] ports = new int[count];
+            for (int i = 0; i < count; i++) {
+                ServerSocket socket = new ServerSocket(0);
+                sockets.add(socket);
+                ports[i] = socket.getLocalPort();
+            }
+            return ports;
+        } finally {
+            for (ServerSocket socket : sockets)
+                socket.close();
         }
     }
 }

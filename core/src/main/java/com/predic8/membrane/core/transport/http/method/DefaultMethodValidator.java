@@ -23,7 +23,7 @@ import com.predic8.membrane.annot.MCElement;
  * tchars) but wider than {@link UppercaseMethodValidator} (allows lowercase and digits). This is the built-in
  * default applied by {@link com.predic8.membrane.core.transport.Transport} when no validator component is
  * declared, so it rarely needs to be declared explicitly; declare it to change <code>maxLength</code> or
- * <code>allowTrace</code>. See examples/configuration for a runnable config.
+ * <code>allowTrace</code>.
  * @yaml <pre><code>
  * components:
  *   methodValidator:

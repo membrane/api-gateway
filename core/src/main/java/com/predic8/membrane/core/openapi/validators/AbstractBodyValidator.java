@@ -66,6 +66,10 @@ public abstract class AbstractBodyValidator {
             }
         }
 
+        // Without a schema any content is acceptable, see #3561
+        if ((APPLICATION_JSON_CONTENT_TYPE.match(mediaType) || isXML(mediaType)) && mediaTypeObj.getSchema() == null)
+            return errors;
+
         // Use the value of the OpenAPI spec for comparison, so it can not
         // be influenced from the outside.
         if ( APPLICATION_JSON_CONTENT_TYPE.match(mediaType)) {

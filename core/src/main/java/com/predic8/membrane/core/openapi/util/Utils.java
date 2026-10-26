@@ -227,7 +227,8 @@ public class Utils {
     }
 
     public static <T extends Body> Request<T> getOpenapiValidatorRequest(Exchange exc) throws ParseException {
-        Request<T> request = new Request<>(exc.getRequest().getMethod(), exc.getRequest().getUri());
+        // Same path as routing: path parameters (";...") and duplicate slashes must not change the matched operation
+        Request<T> request = new Request<>(exc.getRequest().getMethod(), exc.getRequest().getRoutingPath());
         for (HeaderField header : exc.getRequest().getHeader().getAllHeaderFields()) {
             request.getHeaders().put(header.getHeaderName().toString(), header.getValue());
         }
