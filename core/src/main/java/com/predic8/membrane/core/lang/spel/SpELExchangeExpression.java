@@ -51,7 +51,7 @@ public class SpELExchangeExpression extends AbstractExchangeExpression {
      * @param interceptor the interceptor the expression belongs to, e.g. for its xmlConfig
      */
     public SpELExchangeExpression(String expression, TemplateParserContext parserContext, @Nullable Interceptor interceptor) {
-        super(expression, interceptor != null ? interceptor.getRouter() : null);
+        super(expression);
         this.interceptor = interceptor;
         Exception exception;
         String posLine = "";

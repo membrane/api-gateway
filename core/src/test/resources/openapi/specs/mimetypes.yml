@@ -56,6 +56,18 @@ paths:
       responses:
         '200':
           description: OK
+  /no-schema:
+    post:
+      requestBody:
+        content:
+          application/json: {}
+          application/xml: {}
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json: {}
+            application/xml: {}
 
 components:
   schemas:

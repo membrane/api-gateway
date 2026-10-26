@@ -45,6 +45,7 @@ import java.util.function.*;
 import java.util.stream.*;
 
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
 @TestInstance(Lifecycle.PER_CLASS)
@@ -64,6 +65,49 @@ public class GenericYamlParserTest {
     @MethodSource("errorCases")
     void fails_with_exception(ErrCase c) {
         assertThrows(c.expected(), () -> parse(c.yaml(), c.reg()));
+    }
+
+    @Test
+    void indentationErrorIsNotReportedAsMissingDocumentSeparator() {
+        final var yaml = """
+                api:
+                  port: 2000
+                  flow:
+                    - log: {}
+                   target:
+                    url: https://api.example.com
+                """;
+        final var e = assertThrows(IOException.class, () -> parseMembraneResources(yaml));
+        assertFalse(e.getMessage().contains("---"), e.getMessage());
+        assertTrue(e.getMessage().contains("line 5"), e.getMessage());
+    }
+
+    @Test
+    void secondTopLevelApiWithoutSeparatorIsReportedAsMissingDocumentSeparator() {
+        final var yaml = """
+                api:
+                  port: 2000
+                api:
+                  port: 2001
+                """;
+        final var e = assertThrows(IOException.class, () -> parseMembraneResources(yaml));
+        assertTrue(e.getMessage().contains("must be separated by '---'"), e.getMessage());
+    }
+
+    @Test
+    void nestedDuplicateKeyIsNotReportedAsMissingDocumentSeparator() {
+        final var yaml = """
+                api:
+                  port: 2000
+                  port: 2001
+                """;
+        final var e = assertThrows(IOException.class, () -> parseMembraneResources(yaml));
+        assertFalse(e.getMessage().contains("---"), e.getMessage());
+        assertTrue(e.getMessage().contains("port"), e.getMessage());
+    }
+
+    private static List<BeanDefinition> parseMembraneResources(String yaml) throws IOException {
+        return GenericYamlParser.parseMembraneResources(new ByteArrayInputStream(yaml.getBytes(UTF_8)), K8S_HELPER, null);
     }
 
     Stream<Case> successCases() {

@@ -14,15 +14,20 @@
 
 package com.predic8.membrane.core.util;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.regex.Pattern;
 
 import static java.lang.Integer.parseInt;
 import static java.net.InetAddress.getByAddress;
 
 public class NetworkUtil {
+
+    private static final Pattern BRACKETED_HOST_PORT_SUFFIX = Pattern.compile(":\\d*");
 
     public static Pair<byte[], Integer> readUpTo1KbOfDataFrom(Socket sourceSocket, byte[] buffer) throws IOException {
         int available = sourceSocket.getInputStream().available();
@@ -61,6 +66,21 @@ public class NetworkUtil {
      */
     public static String addBracketsIfIPv6(String host) {
         return (host.contains(":") && !host.startsWith("[")) ? "[" + host + "]" : host;
+    }
+
+    /**
+     * Removes the port from a host header value like "example.com:8080" or "[::1]:8080".
+     * A bracketed IPv6 literal keeps its brackets. Returns null if anything other than
+     * a colon followed by optional digits comes after the closing bracket.
+     */
+    public static @Nullable String hostWithoutPort(String hostHeader) {
+        final var closingBracket = hostHeader.startsWith("[") ? hostHeader.indexOf(']') : -1;
+        if (closingBracket == -1)
+            return hostHeader.split(":")[0];
+        final var suffix = hostHeader.substring(closingBracket + 1);
+        if (!suffix.isEmpty() && !BRACKETED_HOST_PORT_SUFFIX.matcher(suffix).matches())
+            return null;
+        return hostHeader.substring(0, closingBracket + 1);
     }
 
 

@@ -211,7 +211,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
         if (!(exc.getProxy() instanceof AbstractServiceProxy asp) || asp.getTarget() == null)
             return;
 
-        asp.getTarget().applyModifications(exc, getRouter());
+        asp.getTarget().applyModifications(exc);
     }
 
     private String getDestination(Exchange exc) {

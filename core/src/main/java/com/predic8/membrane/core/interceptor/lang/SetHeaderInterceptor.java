@@ -59,7 +59,7 @@ public class SetHeaderInterceptor extends AbstractSetterInterceptor {
 
     @Override
     protected ExchangeExpression getExchangeExpression() {
-        return TemplateExchangeExpression.newInstance(this, language, expression, router, HEADERVALUE_SERIALIZATION);
+        return TemplateExchangeExpression.newInstance(this, language, expression, HEADERVALUE_SERIALIZATION);
     }
 
     @Override
