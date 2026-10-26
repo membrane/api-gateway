@@ -163,7 +163,9 @@ public class SOAPUtil {
     /**
      * A SOAP message read as a whole.
      *
-     * @param analysis what {@link #analyseSOAPMessage} reports for the message
+     * @param analysis what {@link #analyseSOAPMessage} reports for the message, except for a Fault
+     *                 next to other body entries: that makes no fault message, which only reading
+     *                 the whole message shows
      * @param errors   where the message is not well-formed or its envelope breaks the structure
      *                 SOAP requires, found after the message was recognized as SOAP; empty for a
      *                 message that is no SOAP message
@@ -176,7 +178,8 @@ public class SOAPUtil {
 
     /**
      * Recognizes a SOAP message by its envelope and finds its body element. Reads the message only
-     * up to the start of the body element.
+     * up to the start of the body element. A body element named {@code Fault} in the namespace of
+     * the {@code Envelope}, or unqualified, makes a fault.
      */
     public static SOAPAnalysisResult analyseSOAPMessage( XOPReconstitutor xopr, Message msg) {
         return SOAPEnvelopeReader.read(xopr, msg, false).analysis();
@@ -186,7 +189,8 @@ public class SOAPUtil {
      * Analyses the message like {@link #analyseSOAPMessage}, but reads it to the end, so that it is
      * checked as a whole: whether it is well-formed, and whether its envelope has the structure
      * SOAP 1.1 resp. 1.2 requires - at most one {@code Header}, in front of exactly one
-     * {@code Body}, both in the namespace of the {@code Envelope}, and, in SOAP 1.2, no element
+     * {@code Body}, both in the namespace of the {@code Envelope}, namespace-qualified header
+     * blocks, a {@code Fault} as the only entry of the {@code Body}, and, in SOAP 1.2, no element
      * after the {@code Body}. SOAP 1.1 allows further elements there.
      */
     public static SOAPEnvelopeValidation validateSOAPEnvelope(XOPReconstitutor xopr, Message msg) {

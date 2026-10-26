@@ -61,8 +61,9 @@ final class SOAPEnvelopeReader {
      */
     private enum Position {
         START,
+        IN_HEADER,
         /**
-         * A header has started, the body has not.
+         * A header has ended, the body has not started.
          */
         AFTER_HEADER,
         IN_BODY,
@@ -84,6 +85,16 @@ final class SOAPEnvelopeReader {
     private QName envelope;
 
     private Position position = Position.START;
+
+    /**
+     * The first entry of the body.
+     */
+    private QName firstBodyEntry;
+
+    /**
+     * Whether a Fault was found next to another body entry.
+     */
+    private boolean faultNotAlone;
 
     /**
      * Depth of the current element: {@code 1} for the envelope, {@code 2} for its children.
@@ -174,11 +185,41 @@ final class SOAPEnvelopeReader {
         }
         if (depth == ENVELOPE_CHILD_DEPTH)
             return envelopeChild(element);
-        if (depth == BODY_ENTRY_DEPTH && position == Position.IN_BODY && analysis == null) {
-            final var fault = "Fault".equals(name.getLocalPart());
+        if (depth == BODY_ENTRY_DEPTH && position == Position.IN_BODY)
+            return bodyEntry(element);
+        // SOAP 1.1 4.2, SOAP 1.2 Part 1 5.2.1
+        if (depth == BODY_ENTRY_DEPTH && position == Position.IN_HEADER && name.getNamespaceURI().isEmpty())
+            error(element, "A SOAP header block must be namespace-qualified.");
+        return true;
+    }
+
+    /**
+     * The first entry decides whether the message is a fault. Only a Fault that is the only entry
+     * makes a fault message, though (SOAP 1.2 Part 1 5.4): a fault message is not validated like
+     * other messages, so further entries would go unvalidated.
+     */
+    private boolean bodyEntry(StartElement element) {
+        final var name = element.getName();
+        final var fault = isFault(name);
+        if (analysis == null) {
+            firstBodyEntry = name;
             return recognized(new SOAPAnalysisResult(true, fault, getSOAPVersion(envelope), fault ? null : name));
         }
+        if (!faultNotAlone && (fault || analysis.isFault())) {
+            faultNotAlone = true;
+            error(element, "A SOAP Body with a Fault must not contain any other element.");
+            analysis = new SOAPAnalysisResult(true, false, analysis.version(), firstBodyEntry);
+        }
         return true;
+    }
+
+    /**
+     * A Fault in the namespace of the Envelope. An unqualified one is taken for a Fault as well, as
+     * some implementations send it that way.
+     */
+    private boolean isFault(QName name) {
+        return "Fault".equals(name.getLocalPart())
+                && (envelope.getNamespaceURI().equals(name.getNamespaceURI()) || name.getNamespaceURI().isEmpty());
     }
 
     private boolean envelopeChild(StartElement element) {
@@ -199,7 +240,7 @@ final class SOAPEnvelopeReader {
             case "Header" -> {
                 if (position == Position.AFTER_HEADER)
                     error(element, "The SOAP Envelope must not contain more than one Header.");
-                position = Position.AFTER_HEADER;
+                position = Position.IN_HEADER;
             }
             case "Body" -> position = Position.IN_BODY;
             default -> {
@@ -213,6 +254,8 @@ final class SOAPEnvelopeReader {
 
     private boolean endElement() {
         final var closing = depth--;
+        if (closing == ENVELOPE_CHILD_DEPTH && position == Position.IN_HEADER)
+            position = Position.AFTER_HEADER;
         if (closing == ENVELOPE_CHILD_DEPTH && position == Position.IN_BODY) {
             position = Position.AFTER_BODY;
             // The Body held no element at all, which is reported with a null soapElement.

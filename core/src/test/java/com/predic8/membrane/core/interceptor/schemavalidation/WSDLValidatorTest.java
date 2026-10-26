@@ -1043,6 +1043,43 @@ public class WSDLValidatorTest {
         assertEquals(CONTINUE, createValidator(CITIES_WSDL, null, true).validateMessage(exc, RESPONSE));
     }
 
+    /**
+     * A body element named Fault in a namespace of its own is no fault, so skipFaults does not let
+     * it through.
+     */
+    @Test
+    void skipFaultsValidatesFaultOfOtherNamespace() throws Exception {
+        final var exc = getResponseExchange(soap11("""
+                <x:Fault xmlns:x="https://example.com/x"><anything/></x:Fault>
+                """));
+
+        assertEquals(ABORT, createValidator(CITIES_WSDL, null, true).validateMessage(exc, RESPONSE));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains("{https://example.com/x}Fault is not a valid response element"), body);
+    }
+
+    /**
+     * A Fault followed by another element is no fault message, so skipFaults does not let the
+     * element through.
+     */
+    @Test
+    void skipFaultsRejectsElementAfterFault() throws Exception {
+        final var exc = getResponseExchange(soap11(FAULT_11 + """
+                <cs:getCityResponse xmlns:cs="https://predic8.de/cities"><unknown/></cs:getCityResponse>
+                """));
+
+        assertEquals(ABORT, createValidator(CITIES_WSDL, null, true).validateMessage(exc, RESPONSE));
+        assertReportedOnce(exc, "A SOAP Body with a Fault must not contain any other element.");
+    }
+
+    @Test
+    void unqualifiedHeaderBlock() throws Exception {
+        final var exc = getRequestExchange(soap11WithHeader("<Block/>", GET_CITY_EXAMPLE_COM));
+
+        assertEquals(ABORT, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, null, false).validateMessage(exc, REQUEST));
+        assertReportedOnce(exc, "A SOAP header block must be namespace-qualified.");
+    }
+
     @Test
     void validationDetailsOffHidesEnvelopeError() throws Exception {
         final var exc = getRequestExchange("""

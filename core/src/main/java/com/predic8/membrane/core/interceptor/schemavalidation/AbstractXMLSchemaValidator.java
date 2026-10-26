@@ -184,6 +184,9 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
      * @return {@code true} if the source matched at least one embedded schema
      */
     protected boolean validateAgainstSchemas(Supplier<Source> source, List<Exception> exceptions) {
+        // Errors of the schemas that declare the root element of the source, i.e. about its content,
+        // and of those that don't, which only report that they cannot find its declaration. The
+        // latter are only reported if no schema declares the root element.
         final var declaringErrors = new ArrayList<Exception>();
         final var undeclaringErrors = new ArrayList<Exception>();
         var vals = validators.borrow();

@@ -244,6 +244,108 @@ class SOAPEnvelopeReaderTest {
         assertTrue(result.errors().isEmpty(), result.errors()::toString);
     }
 
+    /**
+     * A body element that is named Fault, but is not in the namespace of the Envelope, is no fault.
+     */
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void faultOfOtherNamespace(boolean wholeMessage) throws Exception {
+        final var result = SOAPEnvelopeReader.read(new XOPReconstitutor(), message("""
+                <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soapenv:Body><x:Fault xmlns:x="https://example.com/x"/></soapenv:Body>
+                </soapenv:Envelope>
+                """), wholeMessage);
+
+        assertTrue(result.analysis().isSOAP());
+        assertFalse(result.analysis().isFault());
+        assertEquals(new QName("https://example.com/x", "Fault"), result.analysis().soapElement());
+    }
+
+    @Test
+    void faultOfOtherSoapVersion() throws Exception {
+        assertFalse(analyse("""
+                <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soapenv:Body><s12:Fault xmlns:s12="http://www.w3.org/2003/05/soap-envelope"/></soapenv:Body>
+                </soapenv:Envelope>
+                """).isFault());
+    }
+
+    /**
+     * Only a Fault that is the only entry of the Body makes a fault message (SOAP 1.2 Part 1 5.4).
+     * Otherwise, the other entries would go unvalidated.
+     */
+    @Test
+    void elementAfterFault() throws Exception {
+        final var result = assertSingleError("""
+                <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soapenv:Body><soapenv:Fault/>
+                    <req:Request xmlns:req="http://example.com/svc"/></soapenv:Body>
+                </soapenv:Envelope>
+                """, "A SOAP Body with a Fault must not contain any other element.", 3);
+
+        assertFalse(result.analysis().isFault());
+        assertEquals(new QName("http://schemas.xmlsoap.org/soap/envelope/", "Fault"), result.analysis().soapElement());
+    }
+
+    @Test
+    void faultAfterElement() throws Exception {
+        final var result = assertSingleError("""
+                <soapenv:Envelope xmlns:soapenv="http://www.w3.org/2003/05/soap-envelope">
+                  <soapenv:Body><req:Request xmlns:req="http://example.com/svc"/>
+                    <soapenv:Fault/></soapenv:Body>
+                </soapenv:Envelope>
+                """, "A SOAP Body with a Fault must not contain any other element.", 3);
+
+        assertEquals(new QName("http://example.com/svc", "Request"), result.analysis().soapElement());
+    }
+
+    @Test
+    void secondFault() throws Exception {
+        assertSingleError("""
+                <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soapenv:Body><soapenv:Fault/>
+                    <soapenv:Fault/>
+                    <soapenv:Fault/></soapenv:Body>
+                </soapenv:Envelope>
+                """, "A SOAP Body with a Fault must not contain any other element.", 3);
+    }
+
+    /**
+     * Without a Fault, a Body may hold several entries.
+     */
+    @Test
+    void severalBodyEntries() throws Exception {
+        assertTrue(validateEnvelope("""
+                <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soapenv:Body><req:Request xmlns:req="http://example.com/svc"/><req:Request xmlns:req="http://example.com/svc"/></soapenv:Body>
+                </soapenv:Envelope>
+                """).errors().isEmpty());
+    }
+
+    @Test
+    void unqualifiedHeaderBlock() throws Exception {
+        assertSingleError("""
+                <soapenv:Envelope xmlns:soapenv="http://www.w3.org/2003/05/soap-envelope">
+                  <soapenv:Header><h:Block xmlns:h="http://example.com/h"/>
+                    <Block/></soapenv:Header>
+                  <soapenv:Body/>
+                </soapenv:Envelope>
+                """, "A SOAP header block must be namespace-qualified.", 3);
+    }
+
+    /**
+     * Only the header blocks themselves must be qualified, not their content.
+     */
+    @Test
+    void unqualifiedElementInHeaderBlock() throws Exception {
+        assertTrue(validateEnvelope("""
+                <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soapenv:Header><h:Block xmlns:h="http://example.com/h"><id>1</id></h:Block></soapenv:Header>
+                  <soapenv:Body/>
+                </soapenv:Envelope>
+                """).errors().isEmpty());
+    }
+
     private static SOAPEnvelopeValidation assertSingleError(String soap, String message, int line) throws Exception {
         final var result = validateEnvelope(soap);
         assertTrue(result.analysis().isSOAP());
