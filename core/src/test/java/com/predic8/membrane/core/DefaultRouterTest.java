@@ -13,35 +13,48 @@
    limitations under the License. */
 package com.predic8.membrane.core;
 
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.openapi.serviceproxy.*;
-import com.predic8.membrane.core.router.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
+import com.predic8.membrane.core.openapi.serviceproxy.APIProxyKey;
+import com.predic8.membrane.core.router.DefaultRouter;
+import com.predic8.membrane.core.router.Router;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
-import java.io.*;
+import java.io.IOException;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.MimeType.*;
-import static io.restassured.RestAssured.*;
-import static io.restassured.filter.log.LogDetail.*;
+import static com.predic8.membrane.core.util.NetworkTestUtil.freePort;
+import static io.restassured.RestAssured.given;
+import static io.restassured.filter.log.LogDetail.ALL;
 import static org.hamcrest.Matchers.*;
 
 class DefaultRouterTest {
 
     public static final String INTERNAL_SECRET = "supersecret";
     static Router dev, prod;
+    static int prodPort, devPort;
     
     @BeforeAll
     static void setUp() throws IOException {
-        prod = createRouter(2000, true);
-        dev = createRouter(2001, false);
+        prod = new DefaultRouter();
+        dev = new DefaultRouter();
+        prodPort = freePort();
+        createRouter(prod, prodPort, true);
+        devPort = freePort();
+        createRouter(dev, devPort, false);
     }
 
     @AfterAll
     static void tearDown() {
-        prod.stop();
-        dev.stop();
+        try {
+            if (prod != null) prod.stop();
+        } finally {
+            if (dev != null) dev.stop();
+        }
     }
 
     @Test
@@ -50,12 +63,12 @@ class DefaultRouterTest {
         // @formatter:off
         given()
             .contentType(APPLICATION_JSON)
-            .post("http://localhost:2000/")
+            .post("http://localhost:" + prodPort + "/")
         .then()
             .log().ifValidationFails()
             .statusCode(500)
             .contentType( containsString(APPLICATION_PROBLEM_JSON))
-            .body("title", equalTo( INTERNAL_SERVER_ERROR))
+            .body("title", equalTo("Internal Server Error"))
             .body("type",equalTo("https://membrane-api.io/problems/internal"))
             .body("message", not(containsString(INTERNAL_SECRET)))
             .body("$",aMapWithSize(4));
@@ -67,12 +80,12 @@ class DefaultRouterTest {
         // @formatter:off
         given()
             .contentType(APPLICATION_XML)
-            .post("http://localhost:2000/")
+            .post("http://localhost:" + prodPort + "/")
         .then()
             .log().ifValidationFails(ALL)
             .statusCode(500)
             .contentType(containsString(APPLICATION_PROBLEM_XML))
-            .body("error.title", equalTo(INTERNAL_SERVER_ERROR))
+            .body("error.title", equalTo("Internal Server Error"))
             .body("error.type",equalTo("https://membrane-api.io/problems/internal"))
             .body("error.message", not(containsString(INTERNAL_SECRET)));
         // @formatter:on
@@ -82,7 +95,7 @@ class DefaultRouterTest {
     void  devJson() {
         // @formatter:off
         given()
-            .get("http://localhost:2001/")
+            .get("http://localhost:" + devPort + "/")
         .then()
             .statusCode(500)
             .contentType(containsString(APPLICATION_PROBLEM_JSON))
@@ -100,7 +113,7 @@ class DefaultRouterTest {
         // @formatter:off
         given()
                 .contentType(APPLICATION_XML)
-                .post("http://localhost:2001/")
+                .post("http://localhost:" + devPort + "/")
             .then()
                 .log().ifValidationFails(ALL)
                 .statusCode(500)
@@ -113,8 +126,7 @@ class DefaultRouterTest {
         // @formatter:on
     }
 
-    private static Router createRouter(int port, boolean production) throws IOException {
-        Router r = new DefaultRouter();
+    private static void createRouter(Router r, int port, boolean production) throws IOException {
         r.getConfiguration().setProduction(production);
         APIProxy api = new APIProxy();
         api.setKey(new APIProxyKey(port));
@@ -132,6 +144,5 @@ class DefaultRouterTest {
         r.getConfiguration().setHotDeploy(false);
         r.add(api);
         r.start();
-        return r;
     }
 }

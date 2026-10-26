@@ -16,9 +16,12 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.predic8.membrane.core.openapi.model.Request;
+import io.swagger.v3.oas.models.media.Schema;
 
-import java.util.Set;
+import java.util.*;
+import java.util.function.BooleanSupplier;
 import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
@@ -43,6 +46,11 @@ public class ValidationContext {
     private int statusCode;
 
     /**
+     * Methods the matching path supports, reported in the Allow header of a 405. Null unless the method is not allowed.
+     */
+    private List<String> allowedMethods;
+
+    /**
      * The component schemas whose $ref has already been resolved on the current branch of the
      * validation, each paired with the JSON pointer of the value it was resolved for. Used solely
      * to break reference cycles; unlike {@link #complexType} it is never reported to the caller.
@@ -59,6 +67,32 @@ public class ValidationContext {
      * A resolved $ref, identified by the referenced schema and the value it was resolved for.
      */
     private record VisitedRef(String name, String jsonPointer) {}
+
+    /**
+     * Whether a value is valid against a subschema, remembered for one top-level validation and shared by all
+     * contexts derived from it. anyOf/oneOf validate their branches and unevaluatedProperties needs to know which
+     * of them match. Without remembering, a recursive schema validates its subtree twice on every level, see #3482.
+     * Created by {@link #withValidityCache()}, null before.
+     */
+    private Map<ValidityKey, Boolean> validityCache;
+
+    /**
+     * Schema and value by identity: their equals() and hashCode() are deep. The names of the references already
+     * resolved for the value by content: they can truncate its validation, see {@link #hasVisited(String)}, and a
+     * truncated reference cycle drops errors. References resolved for other values cannot affect this one.
+     */
+    @SuppressWarnings("rawtypes")
+    private record ValidityKey(Schema schema, JsonNode value, Set<String> visitedRefNames) {
+        @Override
+        public boolean equals(Object o) {
+            return o instanceof ValidityKey k && schema == k.schema && value == k.value && visitedRefNames.equals(k.visitedRefNames);
+        }
+
+        @Override
+        public int hashCode() {
+            return 31 * (31 * System.identityHashCode(schema) + System.identityHashCode(value)) + visitedRefNames.hashCode();
+        }
+    }
 
     public enum Content { JSON, XML }
 
@@ -82,8 +116,10 @@ public class ValidationContext {
         this.validatedEntityType = ctx.validatedEntityType;
         this.validatedEntity = ctx.validatedEntity;
         this.statusCode = ctx.statusCode;
+        this.allowedMethods = ctx.allowedMethods;
         this.parameter = ctx.parameter;
         this.visitedRefs = ctx.visitedRefs;
+        this.validityCache = ctx.validityCache;
         this.content = ctx.content;
     }
 
@@ -207,6 +243,12 @@ public class ValidationContext {
         return ctx;
     }
 
+    public ValidationContext allowedMethods(Collection<String> methods) {
+        ValidationContext ctx = this.deepCopy();
+        ctx.allowedMethods = List.copyOf(methods);
+        return ctx;
+    }
+
     public ValidationContext schemaType(String type) {
         ValidationContext ctx = this.deepCopy();
         ctx.schemaType = type;
@@ -241,6 +283,47 @@ public class ValidationContext {
         return new VisitedRef(name, jsonPointer);
     }
 
+    public boolean hasValidityCache() {
+        return validityCache != null;
+    }
+
+    /**
+     * @return a context with an empty validity cache, see {@link #validityCache}
+     */
+    public ValidationContext withValidityCache() {
+        ValidationContext ctx = this.deepCopy();
+        ctx.validityCache = new HashMap<>();
+        return ctx;
+    }
+
+    /**
+     * @return whether value is valid against schema, computed by validation unless already known
+     */
+    @SuppressWarnings("rawtypes")
+    public boolean isValid(Schema schema, Object value, BooleanSupplier validation) {
+        // Top-level values like a Body are parsed again on every validation, so their identity is no key
+        if (validityCache == null || !(value instanceof JsonNode node))
+            return validation.getAsBoolean();
+        final var key = new ValidityKey(schema, node, visitedRefNames());
+        final var cached = validityCache.get(key);
+        if (cached != null)
+            return cached;
+        // Not computeIfAbsent(): the validation adds entries for nested values itself
+        final var valid = validation.getAsBoolean();
+        validityCache.put(key, valid);
+        return valid;
+    }
+
+    /**
+     * @return the names of the references already resolved for the value at the current JSON pointer
+     */
+    private Set<String> visitedRefNames() {
+        return visitedRefs.stream()
+                .filter(ref -> ref.jsonPointer().equals(jsonPointer))
+                .map(VisitedRef::name)
+                .collect(toUnmodifiableSet());
+    }
+
     public ValidationContext content(Content content) {
         ValidationContext ctx = this.deepCopy();
         ctx.content = content;
@@ -253,6 +336,10 @@ public class ValidationContext {
 
     public int getStatusCode() {
         return statusCode;
+    }
+
+    public List<String> getAllowedMethods() {
+        return allowedMethods;
     }
 
     public String getUriTemplate() {

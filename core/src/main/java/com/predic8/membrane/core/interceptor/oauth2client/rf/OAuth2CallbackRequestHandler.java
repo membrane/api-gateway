@@ -13,25 +13,26 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.oauth2client.rf;
 
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.exchange.snapshots.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.*;
-import com.predic8.membrane.core.interceptor.oauth2client.*;
-import com.predic8.membrane.core.interceptor.oauth2client.rf.token.*;
-import com.predic8.membrane.core.interceptor.session.*;
-import com.predic8.membrane.core.util.*;
-import org.slf4j.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchange.snapshots.AbstractExchangeSnapshot;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService;
+import com.predic8.membrane.core.interceptor.oauth2client.OriginalExchangeStore;
+import com.predic8.membrane.core.interceptor.oauth2client.rf.token.AccessTokenRevalidator;
+import com.predic8.membrane.core.interceptor.session.Session;
+import com.predic8.membrane.core.util.URIFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.math.*;
-import java.security.*;
+import java.math.BigInteger;
+import java.security.SecureRandom;
 
 import static com.predic8.membrane.core.http.Response.badRequest;
 import static com.predic8.membrane.core.interceptor.oauth2.OAuth2AnswerParameters.createFrom;
 import static com.predic8.membrane.core.interceptor.oauth2.authorizationservice.FlowContext.applyToSession;
-import static com.predic8.membrane.core.interceptor.oauth2client.rf.StateManager.*;
-import static com.predic8.membrane.core.interceptor.oauth2client.temp.OAuth2Constants.*;
+import static com.predic8.membrane.core.interceptor.oauth2client.rf.StateManager.verifyCsrfToken;
+import static com.predic8.membrane.core.interceptor.oauth2client.temp.OAuth2Constants.OA2REDIRECT;
 
 public class OAuth2CallbackRequestHandler {
     private static final Logger log = LoggerFactory.getLogger(OAuth2CallbackRequestHandler.class);
@@ -53,6 +54,7 @@ public class OAuth2CallbackRequestHandler {
     private PublicUrlManager publicUrlManager;
     private String callbackPath;
     private boolean onlyRefreshToken;
+    private boolean production;
 
     public void init(
             URIFactory uriFactory,
@@ -62,7 +64,8 @@ public class OAuth2CallbackRequestHandler {
             SessionAuthorizer sessionAuthorizer,
             PublicUrlManager publicUrlManager,
             String callbackPath,
-            boolean onlyRefreshToken
+            boolean onlyRefreshToken,
+            boolean production
     ) {
         this.uriFactory = uriFactory;
         this.auth = auth;
@@ -72,6 +75,7 @@ public class OAuth2CallbackRequestHandler {
         this.publicUrlManager = publicUrlManager;
         this.callbackPath = callbackPath;
         this.onlyRefreshToken = onlyRefreshToken;
+        this.production = production;
 
         if (onlyRefreshToken && !sessionAuthorizer.isSkipUserInfo())
             throw new RuntimeException("If onlyRefreshToken is set, skipUserInfo also has to be set.");
@@ -80,7 +84,7 @@ public class OAuth2CallbackRequestHandler {
     public void handleRequest(Exchange exc, Session session) throws Exception {
         try {
             OAuth2Parameters params = OAuth2Parameters.parse(uriFactory, exc);
-            params.checkCodeOrError();
+            params.checkCodeOrError(production);
 
             StateManager stateFromUri = new StateManager(params.getState());
 

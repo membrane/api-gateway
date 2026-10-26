@@ -17,6 +17,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.lang.ExchangeExpression.*;
+import groovy.lang.*;
 import org.junit.jupiter.api.*;
 
 import java.net.*;
@@ -143,4 +144,74 @@ class GroovyExchangeExpressionTest extends AbstractExchangeExpressionTest {
         assertEquals("qux", evalObject("cookie.baz"));
     }
 
+    @Test
+    void builtInFunctionWithoutPrefix() {
+        assertEquals("YWJj", evalString("base64Encode('abc')"));
+        assertEquals("%2F", evalString("pathEncode('/')"));
+    }
+
+    @Test
+    void builtInFunctionWithPrefix() {
+        assertEquals("YWJj", evalString("fn.base64Encode('abc')"));
+    }
+
+    @Test
+    void methodDefinedInScriptWinsOverBuiltInFunction() {
+        assertEquals("own", evalString("def base64Encode(s) { 'own' }; base64Encode('abc')"));
+    }
+
+    @Test
+    void unknownFunction() {
+        final var e = assertThrows(MissingMethodException.class, () -> evalString("unknownFunction('abc')"));
+        assertEquals("unknownFunction", e.getMethod());
+        assertFalse(GroovyBuiltInFunctions.class.isAssignableFrom(e.getType()));
+    }
+
+    @Nested
+    class XPathFunctionNamespaces {
+
+        Exchange pExc;
+
+        @BeforeEach
+        void setup() throws URISyntaxException {
+            pExc = post("/person").xml("""
+                    <p8:person xmlns:p8="https://predic8.de">
+                        <p8:firstname>Trevor</p8:firstname>
+                    </p8:person>
+                    """).buildExchange();
+        }
+
+        @Test
+        void globalXmlConfigIsUsedWithoutLocalOne() {
+            router.getRegistry().register("ns", xmlConfig("p8"));
+            assertEquals("Trevor", evaluate(new InterceptorAdapter(router), "p8"));
+        }
+
+        @Test
+        void localXmlConfigReplacesGlobalOne() {
+            router.getRegistry().register("ns", xmlConfig("p8"));
+            final var local = new InterceptorAdapter(router, xmlConfig("x"));
+            assertEquals("Trevor", evaluate(local, "x"));
+            assertEquals("", evaluate(local, "p8"));
+        }
+
+        @Test
+        void moreThanOneGlobalXmlConfigDoesNotMatterWithLocalOne() {
+            router.getRegistry().register("ns1", xmlConfig("p8"));
+            router.getRegistry().register("ns2", xmlConfig("y"));
+            assertEquals("Trevor", evaluate(new InterceptorAdapter(router, xmlConfig("x")), "x"));
+        }
+
+        @Test
+        void xpathWithoutPrefix() {
+            router.getRegistry().register("ns", xmlConfig("p8"));
+            assertEquals("Trevor", expression(new InterceptorAdapter(router), getLanguage(), "xpath('string(/p8:person/p8:firstname)')")
+                    .evaluate(pExc, REQUEST, String.class));
+        }
+
+        private String evaluate(InterceptorAdapter interceptor, String prefix) {
+            return expression(interceptor, getLanguage(), "fn.xpath('string(/%1$s:person/%1$s:firstname)')".formatted(prefix))
+                    .evaluate(pExc, REQUEST, String.class);
+        }
+    }
 }

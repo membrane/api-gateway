@@ -164,6 +164,7 @@ public class WsSecurityInterceptor extends AbstractInterceptor {
             throw new ConfigurationException("wsSecurity requires at least one <validate> or <secure> part.");
         }
         checkSecureOrder();
+        xmlConfig = XmlConfig.localOrGlobal(xmlConfig, router);
         getValidateParts().forEach(part -> part.init(this));
         getSecureParts().forEach(part -> part.init(this));
     }

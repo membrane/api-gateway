@@ -17,15 +17,13 @@
 #     docker run --rm --name mongodb -p 27017:27017 mongo
 #
 # 3.) Start Membrane:
-#     ./membrane.sh -c 50-MongoDB-API-Key-Store.yaml
+#     Linux/Mac:
+#       ./membrane.sh -c 50-MongoDB-API-Key-Store.yaml
+#     Windows:
+#       membrane.cmd -c 50-MongoDB-API-Key-Store.yaml
 #
 # 4.) Insert test keys:
-#     docker exec mongodb mongosh --eval "
-#       use('apiKeyDB');
-#       db.apikey.insertMany([
-#         { _id: 'demo-key' },
-#         { _id: 'admin-key', scopes: ['admin'] }
-#       ]);"
+#     docker exec mongodb mongosh --eval "use('apiKeyDB'); db.apikey.insertMany([{ _id: 'demo-key' }, { _id: 'admin-key', scopes: ['admin'] }]);"
 #
 # 5.) Test:
 #

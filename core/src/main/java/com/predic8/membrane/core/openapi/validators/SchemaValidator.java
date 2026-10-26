@@ -64,8 +64,19 @@ public class SchemaValidator implements JsonSchemaValidator {
         return null;
     }
 
+    /**
+     * @return whether obj is valid against the schema. Within one validation the result for a value is computed once.
+     */
+    public boolean isValid(ValidationContext ctx, Object obj) {
+        return ctx.isValid(schema, obj, () -> validate(ctx, obj).isEmpty());
+    }
+
     @Override
     public ValidationErrors validate(ValidationContext ctx, Object obj) {
+
+        // Every top-level validation remembers which values match which subschemas, see ValidationContext.validityCache
+        if (!ctx.hasValidityCache())
+            ctx = ctx.withValidityCache();
 
         var errors = new ValidationErrors();
 
@@ -161,6 +172,14 @@ public class SchemaValidator implements JsonSchemaValidator {
     private ValidationErrors validateKeywords(ValidationContext ctx, Schema schema, Object obj, Object value) {
 
         var errors = new ValidationErrors();
+
+        // In JSON Schema 2020-12 (OAS 3.1 and later) true and false are schemas: true accepts every
+        // value, false none, null included. The parser models them as a schema without keywords that
+        // would accept everything. See #3479.
+        if (Boolean.TRUE.equals(schema.getBooleanSchemaValue()))
+            return errors;
+        if (Boolean.FALSE.equals(schema.getBooleanSchemaValue()))
+            return errors.add(ctx, "The schema is false and does not allow any value.");
 
         // A nullable schema accepts null itself, so validation stops here instead of descending into
         // allOf/anyOf/oneOf/not subschemas, which are typically not nullable and would reject it. See #3119.

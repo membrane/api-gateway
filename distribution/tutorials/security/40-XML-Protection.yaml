@@ -16,7 +16,7 @@
 #         membrane.cmd -c 40-XML-Protection.yaml
 #
 # 2.) Too many attributes
-#     curl -d '<foo a="1" b="2" c="3" d="4"/>' -H "Content-Type: text/xml" localhost:2000
+#     curl -d "<foo a='1' b='2' c='3' d='4'/>" -H "Content-Type: text/xml" localhost:2000
 #
 # 3.) DTD Removal
 #     Look at hello-dtd.xml. It contains a DTD configuration.
@@ -26,7 +26,7 @@
 #     The XML document in the response should have the DTD removed.
 #
 # 4.) Too deeply nested
-#     curl -d '<a><b><c><d>x</d></c></b></a>' -H "Content-Type: text/xml" localhost:2000
+#     curl -d "<a><b><c><d>x</d></c></b></a>" -H "Content-Type: text/xml" localhost:2000
 
 api:
   port: 2000

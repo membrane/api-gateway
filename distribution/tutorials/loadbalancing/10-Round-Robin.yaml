@@ -1,0 +1,80 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.7.1.json
+#
+# Tutorial: Round Robin Load Balancing
+#
+# Distribute requests across a static list of backend nodes.
+#
+# 1.) Start Membrane:
+#     with Docker:
+#       Linux/Mac:
+#         ./run-docker.sh -c 10-Round-Robin.yaml
+#       Windows:
+#         run-docker.cmd -c 10-Round-Robin.yaml
+#
+#     or with Java:
+#       Linux/Mac:
+#         ./membrane.sh -c 10-Round-Robin.yaml
+#       Windows:
+#         membrane.cmd -c 10-Round-Robin.yaml
+#
+# 2.) Call the balancer three times:
+#       curl localhost:2000
+#
+#       Node 1
+#
+#       curl localhost:2000
+#
+#       Node 2
+#
+#       curl localhost:2000
+#
+#       Node 3
+
+api:
+  port: 2000
+  flow:
+    - balancer:
+        clusters:
+          - nodes:
+              - host: localhost
+                port: 3001
+              - host: localhost
+                port: 3002
+              - host: localhost
+                port: 3003
+
+---
+api:
+  port: 3001
+  name: Node 1
+  flow:
+    - static:
+        src: Node 1
+    - return:
+        status: 200
+
+---
+api:
+  port: 3002
+  name: Node 2
+  flow:
+    - static:
+        src: Node 2
+    - return:
+        status: 200
+
+---
+api:
+  port: 3003
+  name: Node 3
+  flow:
+    - static:
+        src: Node 3
+    - return:
+        status: 200
+
+# NOTE:
+#   The APIs on ports 3001 to 3003 simulate the backend nodes. Replace the
+#   nodes of the balancer with your own backends.
+#
+# Reference: https://www.membrane-api.io/docs/current/balancer.html

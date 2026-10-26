@@ -27,7 +27,7 @@ import static org.hamcrest.Matchers.matchesPattern;
 public class XsltParameterTutorialTest extends AbstractXmlTutorialTest {
     @Override
     protected String getTutorialYaml() {
-        return "41-XSLT-Parameter.yaml";
+        return "62-XSLT-Parameter.yaml";
     }
 
     @Test

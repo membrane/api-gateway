@@ -13,20 +13,26 @@
    limitations under the License. */
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.proxies.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.proxies.Proxy;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.*;
-import java.util.function.*;
-import java.util.regex.*;
-import java.util.stream.*;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisher.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisher.PATH;
 import static java.lang.String.valueOf;
 
 /**
@@ -39,41 +45,18 @@ import static java.lang.String.valueOf;
 @MCElement(name = "apiDocs")
 public class ApiDocsInterceptor extends AbstractInterceptor {
 
-    private static final Pattern PATTERN_UI = Pattern.compile(PATH + "?/ui/(.*)");
-
-    Map<String, OpenAPIRecord>  ruleApiSpecs;
-
     private static final Logger log = LoggerFactory.getLogger(ApiDocsInterceptor.class.getName());
 
-    private boolean initialized = false;
+    /**
+     * Created on the first request, once all proxies are known. Replaced whenever the specs are
+     * collected again.
+     */
+    private OpenAPIPublisher publisher;
 
     @Override
     public Outcome handleRequest(Exchange exc) {
-        synchronized(this) {
-            if (!initialized) {
-                ruleApiSpecs = initializeRuleApiSpecs();
-                initialized = true;
-            }
-        }
-        OpenAPIPublisher publisher;
         try {
-            publisher = new OpenAPIPublisher(ruleApiSpecs);
-        } catch (Exception e) {
-            log.error("", e);
-            internal(router.getConfiguration().isProduction(),getDisplayName())
-                    .addSubSee("publisher-creation")
-                    .detail("Error creating OpenAPI publisher!")
-                    .exception(e)
-                    .buildAndSetResponse(exc);
-            return ABORT;
-        }
-
-        if (exc.getRequest().getUri().matches(valueOf(PATTERN_UI))) {
-            return publisher.handleSwaggerUi(exc);
-        }
-
-        try {
-            return publisher.handleOverviewOpenAPIDoc(exc, router, log);
+            return getPublisher().handle(exc, router);
         } catch (Exception e) {
             log.error("", e);
             internal(router.getConfiguration().isProduction(),getDisplayName())
@@ -83,6 +66,18 @@ public class ApiDocsInterceptor extends AbstractInterceptor {
                     .buildAndSetResponse(exc);
             return ABORT;
         }
+    }
+
+    synchronized OpenAPIPublisher getPublisher() {
+        if (publisher == null)
+            initializePublisher();
+        return publisher;
+    }
+
+    private synchronized Map<String, OpenAPIRecord> initializePublisher() {
+        final var specs = initializeRuleApiSpecs();
+        publisher = new OpenAPIPublisher(specs, getDisplayName());
+        return specs;
     }
 
     public Map<String, OpenAPIRecord> initializeRuleApiSpecs() {
@@ -150,15 +145,14 @@ public class ApiDocsInterceptor extends AbstractInterceptor {
 
     @Override
     public String getLongDescription() {
-        ruleApiSpecs = initializeRuleApiSpecs();
-        initialized = true;
+        final var specs = initializePublisher();
         StringBuilder sb = new StringBuilder();
 
         sb.append("<table>");
         sb.append("<thead><th>API</th><th>OpenAPI Version</th></thead>");
 
-        for (String ruleKey : ruleApiSpecs.keySet()) {
-            OpenAPIRecord apiSpec = ruleApiSpecs.get(ruleKey);
+        for (String ruleKey : specs.keySet()) {
+            OpenAPIRecord apiSpec = specs.get(ruleKey);
             sb.append("<tr>");
             sb.append("<td>");
             sb.append(ruleKey);

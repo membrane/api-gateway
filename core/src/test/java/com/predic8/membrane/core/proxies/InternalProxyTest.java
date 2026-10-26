@@ -13,32 +13,40 @@
    limitations under the License. */
 package com.predic8.membrane.core.proxies;
 
-import com.predic8.membrane.core.interceptor.flow.*;
-import com.predic8.membrane.core.interceptor.groovy.*;
-import com.predic8.membrane.core.openapi.serviceproxy.*;
-import com.predic8.membrane.core.router.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.interceptor.flow.ResponseInterceptor;
+import com.predic8.membrane.core.interceptor.groovy.GroovyInterceptor;
+import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
+import com.predic8.membrane.core.openapi.serviceproxy.APIProxyKey;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.router.TestRouter;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static com.predic8.membrane.core.interceptor.flow.invocation.FlowTestInterceptors.*;
-import static io.restassured.RestAssured.*;
-import static org.hamcrest.Matchers.*;
+import static com.predic8.membrane.core.util.NetworkTestUtil.freePorts;
+import static io.restassured.RestAssured.given;
+import static io.restassured.RestAssured.when;
+import static org.hamcrest.Matchers.equalTo;
 
 class InternalProxyTest {
 
     private Router router;
+    private int[] ports;
 
     @BeforeEach
     void setup() throws Exception {
         router = new TestRouter();
+        ports = freePorts(5);
 
         router.add(new APIProxy() {{
-            key = new APIProxyKey(2001);
+            key = new APIProxyKey(ports[1]);
             interceptors.add(E);
             interceptors.add(ECHO);
         }});
 
         router.add(new APIProxy() {{
-            key = new APIProxyKey(2000);
+            key = new APIProxyKey(ports[0]);
             key.setPath("/to-external");
             interceptors.add(C);
             target = new Target() {{
@@ -49,11 +57,11 @@ class InternalProxyTest {
         router.add(new InternalProxy() {{
             name = "to-external";
             interceptors.add(D);
-            target = new Target("localhost",2001);
+            target = new Target("localhost",ports[1]);
         }});
 
         router.add(new APIProxy() {{
-            key = new APIProxyKey(2000);
+            key = new APIProxyKey(ports[0]);
             key.setUsePathPattern(false);
             target = new Target() {{
                 setUrl("internal://a");
@@ -75,21 +83,21 @@ class InternalProxyTest {
         }});
 
         router.add(new APIProxy() {{
-            key = new APIProxyKey(2100);
+            key = new APIProxyKey(ports[2]);
             target = new Target() {{
                 setUrl("internal://tservice");
             }};
         }});
 
         router.add(new APIProxy() {{
-            key = new APIProxyKey(2101);
+            key = new APIProxyKey(ports[3]);
             target = new Target() {{
                 setUrl("internal://tservice/");
             }};
         }});
 
         router.add(new APIProxy() {{
-            key = new APIProxyKey(2102);
+            key = new APIProxyKey(ports[4]);
             target = new Target() {{
                 setUrl("internal://tservice/a");
             }};
@@ -118,7 +126,7 @@ class InternalProxyTest {
     void internalCallsInternal() {
         // @formatter:off
         when()
-            .get("http://localhost:2000/foo")
+            .get("http://localhost:" + ports[0] + "/foo")
         .then()
             .body(equalTo(">a>b<b<a"));
         // @formatter:on
@@ -130,7 +138,7 @@ class InternalProxyTest {
         given()
             .body("client")
         .when()
-            .post("http://localhost:2000/to-external")
+            .post("http://localhost:" + ports[0] + "/to-external")
         .then()
             .body(equalTo("client>c>d>e<e<d<c"));
         // @formatter:on
@@ -140,12 +148,12 @@ class InternalProxyTest {
     void internalUrl_noTrailingSlash() {
         // @formatter:off
         when()
-            .get("http://localhost:2100/")
+            .get("http://localhost:" + ports[2] + "/")
         .then()
             .body(equalTo("/"));
 
         when()
-            .get("http://localhost:2100/foo")
+            .get("http://localhost:" + ports[2] + "/foo")
         .then()
             .body(equalTo("/foo"));
         // @formatter:on
@@ -155,12 +163,12 @@ class InternalProxyTest {
     void internalUrl_withTrailingSlash() {
         // @formatter:off
         when()
-            .get("http://localhost:2101/")
+            .get("http://localhost:" + ports[3] + "/")
         .then()
             .body(equalTo("/"));
 
         when()
-            .get("http://localhost:2101/foo")
+            .get("http://localhost:" + ports[3] + "/foo")
         .then()
             .body(equalTo("/foo"));
         // @formatter:on
@@ -170,12 +178,12 @@ class InternalProxyTest {
     void internalUrl_withFixedPathSegment() {
         // @formatter:off
         when()
-            .get("http://localhost:2102/")
+            .get("http://localhost:" + ports[4] + "/")
         .then()
             .body(equalTo("/a"));
 
         when()
-            .get("http://localhost:2102/foo")
+            .get("http://localhost:" + ports[4] + "/foo")
         .then()
             .body(equalTo("/a"));
         // @formatter:on

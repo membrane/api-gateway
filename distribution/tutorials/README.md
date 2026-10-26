@@ -31,6 +31,12 @@ Route API traffic with Membrane, e.g. as an outgoing API gateway that controls w
 leave your network when internal clients call external APIs.
 
 
+## [Load Balancing](loadbalancing)
+
+Distribute requests across backend nodes. Covers round robin, adding and removing nodes at
+runtime, sticky sessions, multiple balancers, and health checks.
+
+
 ## [Forward Proxy](forward-proxy)
 
 Use Membrane as a classic HTTP forward proxy that forwards to whatever host the client's
@@ -89,7 +95,7 @@ origins, methods and headers.
 
 ## [JWT](jwt)
 
-Issue signed JSON Web Tokens and protect an API by validating them. Covers Bearer tokens and signature/expiry/audience checks.
+Issue signed JSON Web Tokens and protect an API by validating them. Covers Bearer tokens, signature/expiry/audience checks, and enforcing scopes from an OpenAPI document.
 
 
 ## [API Keys](api-keys)
@@ -132,8 +138,13 @@ Secure SOAP messages with WS-Security: add and validate a `wsse:UsernameToken`, 
 ## [OpenAPI](openapi)
 
 Serve an OpenAPI description, validate requests against it, rewrite the server URLs it advertises
-at `/api-docs` (automatically, pinned, or for a deployment behind a reverse proxy), and learn the
+at `/api-docs` (automatically, or with explicit values for a deployment behind a reverse proxy), and learn the
 features added in OpenAPI 3.2, such as the QUERY method.
+
+## [API Discovery](discovery)
+
+Publish all APIs deployed on the gateway as an APIs.json catalog, with links to their OpenAPI
+documents, and select the listed APIs by tag.
 
 ---
 
@@ -144,6 +155,12 @@ To run the tutorials via Docker, use the `run-docker.sh` (Linux/macOS) or `run-d
 **Important:** Always run the script from the directory that contains the tutorial yaml.
 
 Ports 2000-2010, 8443 (TLS) and 9000 (admin console) are published. For a tutorial listening on another port, add it with `MEMBRANE_DOCKER_OPTS`, e.g. `MEMBRANE_DOCKER_OPTS="-p 3128:3128" ./run-docker.sh -c 10-Forward-Proxy.yaml` (Windows: `set "MEMBRANE_DOCKER_OPTS=-p 3128:3128"` first). `JAVA_OPTS` from your environment is passed on to the JVM in the container.
+
+## Windows
+
+The commands in the tutorials work in a Linux/macOS shell and in the Windows Command Prompt (`cmd`). Where they differ, a tutorial shows both variants, each under its own label line.
+
+Use the Command Prompt rather than PowerShell for the `curl` commands. Windows PowerShell maps `curl` to `Invoke-WebRequest`, and PowerShell does not treat `\"` inside a request body as an escaped quote. To start a script in PowerShell, prefix it with `.\`, e.g. `.\membrane.cmd -c 10-First-API.yaml`.
 
 ## Questions and Feedback
 

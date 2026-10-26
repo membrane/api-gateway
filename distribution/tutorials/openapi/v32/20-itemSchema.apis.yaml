@@ -7,15 +7,18 @@
 # Membrane validates every item on its own.
 #
 # 1.) Start Membrane:
-#     ./membrane.sh -c 20-itemSchema.apis.yaml
+#     Linux/Mac:
+#       ./membrane.sh -c 20-itemSchema.apis.yaml
+#     Windows:
+#       membrane.cmd -c 20-itemSchema.apis.yaml
 #
 # 2.) Send a valid JSON Lines stream (one document per line):
-#     curl -X POST localhost:2000/documents -H 'Content-Type: application/jsonl' --data-binary $'{"id":"1","title":"First"}\n{"id":"2","title":"Second"}'
+#     curl -X POST localhost:2000/documents -H "Content-Type: application/jsonl" --data-binary @documents-valid.jsonl
 #
 #     Every line matches itemSchema, so the stream passes to the backend.
 #
 # 3.) Now break the second line by dropping the required "title":
-#     curl -X POST localhost:2000/documents -H 'Content-Type: application/jsonl' --data-binary $'{"id":"1","title":"First"}\n{"id":"2"}'
+#     curl -X POST localhost:2000/documents -H "Content-Type: application/jsonl" --data-binary @documents-invalid.jsonl
 #
 #     Membrane rejects it with 400 and points at the offending item: /1/title is required.
 

@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.lang.spel;
 
+import com.predic8.membrane.core.lang.ExchangeExpression.InterceptorAdapter;
 import com.predic8.membrane.core.config.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
@@ -64,7 +65,7 @@ public class SpELExchangeEvaluationContextTest {
     }
 
     String keyExpression(String spel) {
-        return new SpelExpressionParser().parseExpression(spel).getValue(new SpELExchangeEvaluationContext(exc, REQUEST, new DummyTestRouter()), String.class);
+        return new SpelExpressionParser().parseExpression(spel).getValue(new SpELExchangeEvaluationContext(exc, REQUEST, new InterceptorAdapter(new DummyTestRouter())), String.class);
     }
 
     @Test

@@ -66,4 +66,89 @@ class ExplodedObjectParameterTest extends AbstractValidatorTest {
         }
     }
 
+    /**
+     * patternProperties regexes are not anchored, so {@code ^x-} must match {@code x-trace}.
+     */
+    @Nested
+    class PatternProperties {
+
+        @Test
+        void unanchoredPatternCollectsParameter() throws Exception {
+            final var filter = OpenAPIUtil.getParameter(OpenAPIUtil.getPath(validator.getApi(), "/pattern").getGet(), "filter");
+            final var parser = AbstractParameterParser.instance(validator.getApi(), OBJECT, filter);
+            parser.setValues(Map.of("x-trace", List.of("123")));
+            final var fields = parser.getJson();
+            assertEquals(1, fields.size());
+            assertEquals(123, fields.get("x-trace").asInt());
+        }
+
+        @Test
+        void validValue() {
+            final var err = validator.validate(get().path("/pattern?x-trace=123"));
+            assertEquals(0, err.size(), err.toString());
+        }
+
+        @Test
+        void invalidValue() {
+            final var err = validator.validate(get().path("/pattern?x-trace=abc"));
+            assertEquals(1, err.size(), err.toString());
+            assertFalse(err.getFirst().getMessage().contains("Unknown query parameter"), err.toString());
+        }
+
+        @Test
+        void nonMatchingNameIsUnknown() {
+            final var err = validator.validate(get().path("/pattern?y-trace=1"));
+            assertEquals(1, err.size(), err.toString());
+            assertTrue(err.getFirst().getMessage().contains("Unknown query parameter 'y-trace'"), err.toString());
+        }
+
+        /**
+         * The unanchored pattern "a" also matches the declared string parameter "name", which must not be pulled
+         * into the object and validated as integer.
+         */
+        @Test
+        void declaredParameterIsNotClaimedByPattern() {
+            final var err = validator.validate(get().path("/pattern-collision?name=abc&xa=1"));
+            assertEquals(0, err.size(), err.toString());
+        }
+    }
+
+    /**
+     * With <code>type: [object, "null"]</code> the parameter name itself is absent, but the collected fields
+     * still form an object that must be validated. The <code>null</code> type must not accept it.
+     */
+    @Nested
+    class NullableObject {
+
+        @Test
+        void patternPropertyInvalid() {
+            final var err = validator.validate(get().path("/pattern-nullable?x-trace=abc"));
+            assertEquals(1, err.size(), err.toString());
+        }
+
+        @Test
+        void patternPropertyValid() {
+            final var err = validator.validate(get().path("/pattern-nullable?x-trace=123"));
+            assertEquals(0, err.size(), err.toString());
+        }
+
+        @Test
+        void propertyInvalid() {
+            final var err = validator.validate(get().path("/properties-nullable?limit=abc"));
+            assertEquals(1, err.size(), err.toString());
+        }
+
+        @Test
+        void propertyValid() {
+            final var err = validator.validate(get().path("/properties-nullable?limit=5"));
+            assertEquals(0, err.size(), err.toString());
+        }
+
+        @Test
+        void absent() {
+            final var err = validator.validate(get().path("/properties-nullable"));
+            assertEquals(0, err.size(), err.toString());
+        }
+    }
+
 }

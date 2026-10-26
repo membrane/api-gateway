@@ -15,11 +15,16 @@
 #
 # 1.) Start Membrane:
 #     with Docker:
-#       ./run-docker.sh -c 20-JWT-Signing.yaml   (Linux/Mac)
-#       run-docker.cmd -c 20-JWT-Signing.yaml    (Windows)
+#       Linux/Mac:
+#         ./run-docker.sh -c 20-JWT-Signing.yaml
+#       Windows:
+#         run-docker.cmd -c 20-JWT-Signing.yaml
+#
 #     or with Java:
-#       ./membrane.sh -c 20-JWT-Signing.yaml     (Linux/Mac)
-#       membrane.cmd -c 20-JWT-Signing.yaml      (Windows)
+#       Linux/Mac:
+#         ./membrane.sh -c 20-JWT-Signing.yaml
+#       Windows:
+#         membrane.cmd -c 20-JWT-Signing.yaml
 #
 # 2.) Request a token with Basic Auth:
 #     curl -v localhost:2000/token -u "alice:alice-secret"

@@ -9,7 +9,7 @@ Keep this file in sync when adding, renaming or removing a util class.
 | Class | Purpose |
 |---|---|
 | `StringUtil` | Truncate/tail, mask non-printable chars, add line numbers, split by comma, `yes`/`no` flag parsing, last element of a comma list |
-| `TextUtil` | Charset lookup, XML pretty-print, glob→regex, English list ("a, b and c"), capitalize, escape quotes, multiline indent handling (`unifyIndent`, `getLines`) |
+| `TextUtil` | Charset lookup, encoding detection from byte order mark or zero-byte pattern (`detectEncoding`), XML pretty-print, glob→regex, English list ("a, b and c"), capitalize, escape quotes, multiline indent handling (`unifyIndent`, `getLines`) |
 | `SerializationUtil`, `SerializationFunction` | Pick a serializer by mime type or `Serialization`; path/header value encoding |
 | `ToJsonSerializer`, `ToTextSerializer`, `ToURLSerializer`, `ToXMLSerializer` | `Object` → JSON / plain text / URL-encoded / XML string |
 | `TerminalColors` | ANSI colors for console output, with global enable/disable |
@@ -48,6 +48,7 @@ Keep this file in sync when adding, renaming or removing a util class.
 | `util/xml/XMLEncodingUtil` | XML character encoding |
 | `util/xml/NormalizeXMLForJsonUtil` | Normalize XML for JSON conversion |
 | `util/MapNamespaceContext` | `NamespaceContext` backed by a map (XPath) |
+| `config/xml/XmlConfig.global`, `localOrGlobal` | The global `xmlConfig` from `components`, or a local one that replaces it (XPath namespaces) |
 | `util/LSInputImpl` | `LSInput` implementation for schema resolvers |
 
 ## Collections, bytes, errors, concurrency
@@ -69,11 +70,11 @@ Keep this file in sync when adding, renaming or removing a util class.
 |---|---|
 | `util/FileUtil` | Read/write streams, xml/json file detection, slash handling, resolve, directory part |
 | `util/OSUtil` | OS detection, backslash fixing, Windows path detection |
-| `util/NetworkUtil` | IPv4/IPv6 helpers (brackets, dotted quad, CIDR prefix match) |
+| `util/NetworkUtil` | IPv4/IPv6 helpers (brackets, host header without port, dotted quad, CIDR prefix match) |
 | `util/DNSCache` | Cached reverse DNS lookups |
 | `util/SecurityUtils` | Password hash helpers (`crypt`-compatible, salt extraction) |
 | `util/security/BasicAuthenticationUtil` | Parse/create `Authorization: Basic` headers |
-| `util/DateAndTimeUtil` | Pretty-print time spans |
+| `util/DateAndTimeUtil` | Pretty-print time spans, parse configured ISO dates |
 | `util/Util` | Grab bag: line count, socket shutdown, thread pool, split by comma |
 | `util/ClassFinder` | Classpath scanning |
 | `util/ComparatorFactory` | Comparators for admin-console statistics tables |
@@ -90,6 +91,7 @@ Keep this file in sync when adding, renaming or removing a util class.
 | `UriUtil` | Trim/ensure slashes, strip query, rewrite URL parts (not the same as `util/URIUtil`) |
 | `Utils` | Format validators (UUID, e-mail, date, IP, ISO codes, ...), stream/string conversion, validator request/response builders |
 | `UriTemplateMatcher` | Match request paths against OpenAPI URI templates |
+| `UriTemplate` | Precompiled URI template (OpenAPI path templating, optionally regex literal parts); non-throwing match for hot paths (routing, validation) |
 | `OpenAPI32Parser` | OpenAPI 3.2 parsing shim |
 | `ObjectHolder` | Mutable holder for lambdas |
 
@@ -102,5 +104,6 @@ Keep this file in sync when adding, renaming or removing a util class.
 | `util/ProblemDetailsTestUtil` | Parse a `Response` into `ProblemDetails` |
 | `util/RecordingServerTestUtil` | Throw-away server that records whether it was called |
 | `util/NetworkTestUtil` | `freePort()`: an OS-assigned free port for tests that cannot bind `new ServerSocket(0)` themselves |
+| `util/ThreadTestUtil` | `liveTimerThreads()`: the live `Timer-N` threads, for diffing before/after to detect leaked timers |
 | `openapi/util/JsonTestUtil` | Build `JsonNode`/bytes from maps in tests |
 | `openapi/util/OpenAPITestUtils` | Load/parse OpenAPI resources, create proxies from specs |

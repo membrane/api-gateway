@@ -19,16 +19,18 @@ import java.util.Arrays;
 import java.util.List;
 
 import javax.xml.namespace.QName;
+import javax.xml.stream.XMLStreamException;
 
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 
 public class XMLElementFinderTest {
-	private final static String DOC = "<a xmlns:s=\"space-s\" xmlns=\"space-default\"><b /><s:c></a>";
+	private final static String DOC = "<a xmlns:s=\"space-s\" xmlns=\"space-default\"><b /><s:c/></a>";
 
-	private void testIt(String doc, boolean isExpectedToContainOneOf, QName... names) {
+	private void testIt(String doc, boolean isExpectedToContainOneOf, QName... names) throws XMLStreamException {
 		List<QName> names2 = new ArrayList<>();
         names2.addAll(Arrays.asList(names));
 		assertEquals(isExpectedToContainOneOf,
@@ -36,7 +38,7 @@ public class XMLElementFinderTest {
 	}
 
 	@Test
-	public void doit() {
+	public void doit() throws XMLStreamException {
 		testIt(DOC, true, new QName("a"));
 		testIt(DOC, true, new QName("space-default", "a"));
 		testIt(DOC, false, new QName("space-other", "a"));
@@ -52,6 +54,12 @@ public class XMLElementFinderTest {
 		testIt(DOC, false, new QName("d"));
 		testIt(DOC, false, new QName("space-s", "d"));
 		testIt(DOC, false, new QName("space-other", "d"));
+	}
+
+	@Test
+	void notWellFormedWithoutMatch() {
+		final var finder = new XMLElementFinder(List.of(new QName("d")));
+		assertThrows(XMLStreamException.class, () -> finder.matches(new ByteArrayInputStream("<a><b></a>".getBytes())));
 	}
 
 }

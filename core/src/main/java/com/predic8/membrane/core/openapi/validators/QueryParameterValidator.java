@@ -37,6 +37,7 @@ import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.isExplode;
 import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.*;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
 import static com.predic8.membrane.core.openapi.validators.ValidationErrors.error;
+import static com.predic8.membrane.core.openapi.validators.parameters.ExplodedObjectParameterParser.*;
 import static com.predic8.membrane.core.util.CollectionsUtil.*;
 import static io.swagger.v3.oas.models.security.SecurityScheme.In.*;
 import static io.swagger.v3.oas.models.security.SecurityScheme.Type.*;
@@ -78,8 +79,9 @@ public class QueryParameterValidator extends AbstractParameterValidator {
         errors.add(checkMissingRequiredFields(operation, parameterMap, ctx));
 
         Map<String, List<String>> finalParameterMap = parameterMap;
+        final var declaredNames = getAllQueryParameters(operation).stream().map(Parameter::getName).collect(toSet());
         getAllQueryParameters(operation).forEach(p -> {
-            errors.add(validateParameter(ctx, p.getName(), finalParameterMap, p));
+            errors.add(validateParameter(ctx, p.getName(), finalParameterMap, p, declaredNames));
             fields.remove(p.getName());
         });
 
@@ -89,8 +91,9 @@ public class QueryParameterValidator extends AbstractParameterValidator {
         }
 
         var validFieldNamesFromObjects = getPossibleObjectPropertiesNamesForOperation(operation);
+        final var patterns = getExplodedObjectPatternProperties(operation);
         fields.forEach(f -> {
-            if (validFieldNamesFromObjects.contains(f)) {
+            if (validFieldNamesFromObjects.contains(f) || matchesAny(patterns, f)) {
                 return;
             }
             errors.add(ctx.parameter(f), "Unknown query parameter '%s' is invalid!".formatted(f));
@@ -129,7 +132,23 @@ public class QueryParameterValidator extends AbstractParameterValidator {
         return false;
     }
 
-    private ValidationErrors validateParameter(ValidationContext ctx, String parameterName, Map<String, List<String>> v, Parameter parameter) {
+    /**
+     * Pattern properties of exploded object parameters. Query parameters matching one of them belong to that object.
+     */
+    private List<Pattern> getExplodedObjectPatternProperties(Operation operation) {
+        final var patterns = new ArrayList<Pattern>();
+        for (final var parameter : getAllQueryParameters(operation)) {
+            if (!isExplode(parameter))
+                continue;
+            final var schema = OpenAPIUtil.resolveSchema(api, parameter);
+            if (schema == null || !hasObjectType(schema))
+                continue;
+            patterns.addAll(compilePatternProperties(schema));
+        }
+        return patterns;
+    }
+
+    private ValidationErrors validateParameter(ValidationContext ctx, String parameterName, Map<String, List<String>> v, Parameter parameter, Set<String> declaredNames) {
         var schema = OpenAPIUtil.resolveSchema(api, parameter);
         var errors = new ValidationErrors();
         var localErrors = new ValidationErrors();
@@ -138,17 +157,19 @@ public class QueryParameterValidator extends AbstractParameterValidator {
         if (schema == null) {
             return errors;
         }
+        final var collectsObjectFields = v.get(parameterName) == null && collectsExplodedObjectFields(schema, parameter, v, declaredNames);
         getTypes(schema).forEach(type -> {
 
             // Do not try to validate parameters that are not in the query string unless it is an object.
             // Maybe the query parameter is a property from that object
             if (v.get(parameterName) == null && !OBJECT.equals(type)) {
-                validated.set(true);
+                // Fields collected by an exploded object form an object value, which a non-object type cannot match
+                if (!collectsObjectFields)
+                    validated.set(true);
                 return;
             }
 
-            ParameterParser ap = AbstractParameterParser.instance(api, type, parameter);
-            ap.setValues(v);
+            ParameterParser ap = createParser(type, parameter, v, declaredNames);
             try {
                 ValidationErrors err = new SchemaValidator(api, schema).validate(ctx
                                 .entity(parameterName)
@@ -169,6 +190,30 @@ public class QueryParameterValidator extends AbstractParameterValidator {
             return errors.add(ctx, "Validation of query parameter '%s' failed against all types(%s). Details are: %s".formatted(parameterName, getTypes(schema), localErrors));
         }
         return errors;
+    }
+
+    private ParameterParser createParser(String type, Parameter parameter, Map<String, List<String>> v, Set<String> declaredNames) {
+        final var parser = AbstractParameterParser.instance(api, type, parameter);
+        parser.setValues(v);
+        if (parser instanceof ExplodedObjectParameterParser eop) {
+            final var otherNames = new HashSet<>(declaredNames);
+            otherNames.remove(parameter.getName());
+            eop.setOtherParameterNames(otherNames);
+        }
+        return parser;
+    }
+
+    /**
+     * Whether an exploded object parameter collects at least one field from the query string.
+     */
+    private boolean collectsExplodedObjectFields(Schema<?> schema, Parameter parameter, Map<String, List<String>> v, Set<String> declaredNames) {
+        if (!isExplode(parameter) || !getTypes(schema).contains(OBJECT))
+            return false;
+        try {
+            return !createParser(OBJECT, parameter, v, declaredNames).getJson().isEmpty();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to parse query parameter '%s': %s".formatted(parameter.getName(), e.getMessage()), e);
+        }
     }
 
     private static @NotNull Set<String> getTypes(Schema<?> schema) {

@@ -10,11 +10,16 @@
 #
 # 1.) Start Membrane:
 #     with Docker:
-#       ./run-docker.sh -c 70-Production-Settings.yaml   (Linux/Mac)
-#       run-docker.cmd -c 70-Production-Settings.yaml    (Windows)
+#       Linux/Mac:
+#         ./run-docker.sh -c 70-Production-Settings.yaml
+#       Windows:
+#         run-docker.cmd -c 70-Production-Settings.yaml
+#
 #     or with Java:
-#       ./membrane.sh -c 70-Production-Settings.yaml     (Linux/Mac)
-#       membrane.cmd -c 70-Production-Settings.yaml      (Windows)
+#       Linux/Mac:
+#         ./membrane.sh -c 70-Production-Settings.yaml
+#       Windows:
+#         membrane.cmd -c 70-Production-Settings.yaml
 #
 # 2.) Call the hardened API and inspect the security header:
 #       curl -i http://localhost:2000/orders
@@ -23,7 +28,10 @@
 #       X-Content-Type-Options: nosniff
 #
 # 3.) Exceed the rate limit (11 calls within a minute) to trigger throttling:
-#       for i in $(seq 1 11); do curl -o /dev/null -s -w "%{http_code}\n" http://localhost:2000/orders; done
+#       Linux/Mac:
+#         for i in $(seq 1 11); do curl -o /dev/null -s -w "%{http_code}\n" http://localhost:2000/orders; done
+#       Windows:
+#         for /L %i in (1,1,11) do @curl -o NUL -s -w "%{http_code}\n" http://localhost:2000/orders
 #
 #     The 11th request returns 429 (Too Many Requests).
 #
@@ -33,7 +41,10 @@
 #     Returns 200 — wire this into your orchestrator's probes.
 #
 # 5.) Scrape metrics:
-#       curl http://localhost:2001/metrics | grep membrane_count
+#       Linux/Mac:
+#         curl http://localhost:2001/metrics | grep membrane_count
+#       Windows:
+#         curl http://localhost:2001/metrics | findstr membrane_count
 #
 # Production checklist (see PRODUCTION.md for the full explanation):
 #   - Java 21 LTS; pin -Xms/-Xmx (or -XX:MaxRAMPercentage) via JAVA_OPTS

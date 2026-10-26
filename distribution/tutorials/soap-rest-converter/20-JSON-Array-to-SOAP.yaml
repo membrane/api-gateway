@@ -31,7 +31,7 @@
 # This example focuses on the transformation.
 #
 # Try:
-#     curl -d @fruits.json localhost:2000
+#     curl -d @fruits.json -H "Content-Type: application/json" localhost:2000
 
 api:
   port: 2000

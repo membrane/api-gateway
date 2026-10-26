@@ -18,6 +18,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.ABORT;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.RESPONSE_ABORT_FLOW;
 
 /**
@@ -48,7 +49,7 @@ public class AbortInterceptor extends AbstractFlowWithChildrenInterceptor {
                 try {
                     interceptor.handleResponse(exchange);
                 } catch (Exception e) {
-                    createProblemDetails("abort", interceptor, exchange, e);
+                    createProblemDetails(ABORT, interceptor, exchange, e);
                 }
             }
         }

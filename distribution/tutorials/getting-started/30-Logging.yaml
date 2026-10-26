@@ -8,11 +8,16 @@
 #
 # 1.) Start Membrane:
 #     with Docker:
-#       ./run-docker.sh -c 30-Logging.yaml   (Linux/Mac)
-#       run-docker.cmd -c 30-Logging.yaml    (Windows)
+#       Linux/Mac:
+#         ./run-docker.sh -c 30-Logging.yaml
+#       Windows:
+#         run-docker.cmd -c 30-Logging.yaml
+#
 #     or with Java:
-#       ./membrane.sh -c 30-Logging.yaml     (Linux/Mac)
-#       membrane.cmd -c 30-Logging.yaml      (Windows)
+#       Linux/Mac:
+#         ./membrane.sh -c 30-Logging.yaml
+#       Windows:
+#         membrane.cmd -c 30-Logging.yaml
 #
 # 2.) Call the API:
 #     curl http://localhost:2000

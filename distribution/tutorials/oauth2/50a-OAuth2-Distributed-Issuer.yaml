@@ -14,7 +14,10 @@
 # Run this in terminal 1:
 #
 # 1.) Start the authorization server:
-#     ./membrane.sh -c 50a-OAuth2-Distributed-Issuer.yaml
+#     Linux/Mac:
+#       ./membrane.sh -c 50a-OAuth2-Distributed-Issuer.yaml
+#     Windows:
+#       membrane.cmd -c 50a-OAuth2-Distributed-Issuer.yaml
 #
 #     Ignore the warnings.
 #

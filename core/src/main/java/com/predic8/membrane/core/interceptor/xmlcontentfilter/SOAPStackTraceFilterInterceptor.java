@@ -17,11 +17,13 @@ import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.util.xml.parser.*;
 import org.slf4j.*;
 
 import javax.xml.xpath.*;
 
 import static com.predic8.membrane.annot.Constants.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_RESPONSE_ABORT_FLOW;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
@@ -37,6 +39,10 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
  *              The <i>soapStackTraceFilter</i> works without further configuration with most backend servers, but it is
  *              advised to test its functionality in combination with your SOAP service provider before deploying it in
  *              production.
+ *              </p>
+ *              <p>
+ *              A message whose body cannot be parsed as XML, e.g. because it contains a DOCTYPE, is rejected: with
+ *              status 400 in the request flow and 500 in the response flow. An empty body is left unchanged.
  *              </p>
  * @topic 6. Web Services with SOAP and WSDL
  */
@@ -79,9 +85,25 @@ public class SOAPStackTraceFilterInterceptor extends AbstractInterceptor {
 		try {
 			xmlContentFilter.removeMatchingElements(message);
 			return CONTINUE;
+		} catch (ReadingBodyException e) {
+			// Reported centrally: a body that could not be read is no XML error, and the flow controller tells a
+			// request body apart from a backend response body.
+			throw e;
+		} catch (XmlParseException e) {
+			LOG.info("Rejected message: {}", e.getMessage());
+			(message instanceof Request ? user(router.getConfiguration().isProduction(), getDisplayName())
+					: internal(router.getConfiguration().isProduction(), getDisplayName()))
+					.title("XML Error")
+					.detail(e.getMessage())
+					.buildAndSetResponse(exc);
+			return ABORT;
 		} catch (Exception e) {
-			LOG.error("soapStackTraceFilter error", e);
-			exc.setResponse(Response.internalServerError("soapStackTraceFilter error. See log for details.").build());
+			LOG.debug("soapStackTraceFilter error", e);
+			LOG.info("Rejected message: {}", e.getMessage());
+			internal(router.getConfiguration().isProduction(), getDisplayName())
+					.title("XML Error")
+					.exception(e)
+					.buildAndSetResponse(exc);
 			return ABORT;
 		}
 	}

@@ -161,7 +161,7 @@ public class TemplateInterceptor extends AbstractTemplateInterceptor {
     }
 
     private @NotNull Map<String, Object> getVariableBinding(Exchange exc, Flow flow) {
-        return createParameterBindings(router, exc, flow, scriptAccessesJson && isJsonMessage(exc, flow), escaping);
+        return createParameterBindings(this, exc, flow, scriptAccessesJson && isJsonMessage(exc, flow), escaping);
     }
 
     private static boolean isJsonMessage(Exchange exc, Flow flow) {

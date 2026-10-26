@@ -13,7 +13,9 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.flow;
 
+import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.Request.*;
+import com.predic8.membrane.core.http.Response.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.util.*;
 import org.junit.jupiter.api.*;
@@ -44,6 +46,35 @@ class IfInterceptorJsonpathTest extends ConditionalEvaluationTestContext {
     @Test
     void invalid() {
         assertThrows(ConfigurationException.class, () -> eval("$$33foobar][", getRequest(),false));
+    }
+
+    @Test
+    void emptyBodyIsAnEmptyDocument() throws Exception {
+        assertEquals(CONTINUE, eval("$.id", new Builder(), false));
+    }
+
+    @Test
+    void xmlBodyIsAnEmptyDocument() throws Exception {
+        assertEquals(CONTINUE, eval("$.id", new Builder().contentType(APPLICATION_XML).body("<id/>"), false));
+    }
+
+    @Test
+    void textPlainJsonIsEvaluated() throws Exception {
+        assertEquals(CONTINUE, eval("$.id", new Builder().contentType(TEXT_PLAIN).body("{\"id\":1}"), true));
+    }
+
+    @Test
+    void malformedRequestBodyIs400() {
+        var exc = new Exchange(null);
+        assertEquals(ABORT, performEval(exc, "$.id", new Builder().contentType(APPLICATION_JSON).body("{\"id\":"), JSONPATH, false));
+        assertEquals(400, exc.getResponse().getStatusCode());
+    }
+
+    @Test
+    void malformedResponseBodyIs502() {
+        var exc = new Exchange(null);
+        assertEquals(ABORT, performEval(exc, "$.id", new ResponseBuilder().contentType(APPLICATION_JSON).body("{\"id\":"), JSONPATH, false));
+        assertEquals(502, exc.getResponse().getStatusCode());
     }
 
     private static Builder getRequest() {

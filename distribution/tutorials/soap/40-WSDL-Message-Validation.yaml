@@ -11,7 +11,10 @@
 # the client.
 #
 # 1.) Start Membrane
-#     ./membrane.sh -c 40-WSDL-Message-Validation.yaml
+#     Linux/Mac:
+#       ./membrane.sh -c 40-WSDL-Message-Validation.yaml
+#     Windows:
+#       membrane.cmd -c 40-WSDL-Message-Validation.yaml
 #
 # 2.) Send valid and invalid SOAP messages
 #     curl -d @city.soap.xml -H "Content-Type: text/xml" http://localhost:2000/city-service

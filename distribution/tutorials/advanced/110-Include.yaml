@@ -14,11 +14,16 @@
 #
 # 1.) Start Membrane:
 #     with Docker:
-#       ./run-docker.sh -c 110-Include.yaml   (Linux/Mac)
-#       run-docker.cmd -c 110-Include.yaml    (Windows)
+#       Linux/Mac:
+#         ./run-docker.sh -c 110-Include.yaml
+#       Windows:
+#         run-docker.cmd -c 110-Include.yaml
+#
 #     or with Java:
-#       ./membrane.sh -c 110-Include.yaml     (Linux/Mac)
-#       membrane.cmd -c 110-Include.yaml      (Windows)
+#       Linux/Mac:
+#         ./membrane.sh -c 110-Include.yaml
+#       Windows:
+#         membrane.cmd -c 110-Include.yaml
 #
 # 2.) Health check (inline):
 #     curl -i http://localhost:2000/health

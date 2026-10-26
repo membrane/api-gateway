@@ -21,6 +21,7 @@ import com.predic8.membrane.core.openapi.model.Response;
 import jakarta.mail.internet.ParseException;
 import org.junit.jupiter.api.Test;
 
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_XML;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -47,5 +48,24 @@ protected String getOpenAPIFileName() {
                 Response.statusCode(200).mediaType(APPLICATION_XML).body("{ not-xml }"));
         assertEquals(1, errors.size());
         assertTrue(errors.get(0).getMessage().toLowerCase().contains("cannot be parsed as xml"));
+    }
+
+    // Media type without schema: any content is acceptable, see #3561
+    @Test
+    void jsonRequestBodyWithoutSchemaIsAccepted() throws ParseException {
+        assertEquals(0, validator.validate(
+                Request.post().path("/no-schema").mediaType(APPLICATION_JSON).body("{\"name\":\"Mango\"}")).size());
+    }
+
+    @Test
+    void xmlRequestBodyWithoutSchemaIsAccepted() throws ParseException {
+        assertEquals(0, validator.validate(
+                Request.post().path("/no-schema").mediaType(APPLICATION_XML).body("<name>Mango</name>")).size());
+    }
+
+    @Test
+    void jsonResponseBodyWithoutSchemaIsAccepted() throws ParseException {
+        assertEquals(0, validator.validateResponse(Request.post().path("/no-schema"),
+                Response.statusCode(200).mediaType(APPLICATION_JSON).body("{\"name\":\"Mango\"}")).size());
     }
 }

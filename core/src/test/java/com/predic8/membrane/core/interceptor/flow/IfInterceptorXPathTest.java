@@ -15,9 +15,11 @@ package com.predic8.membrane.core.interceptor.flow;
 
 import com.predic8.membrane.core.http.Request.*;
 import com.predic8.membrane.core.http.Response.*;
+import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import org.junit.jupiter.api.*;
 
+import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
@@ -46,6 +48,37 @@ public class IfInterceptorXPathTest extends ConditionalEvaluationTestContext {
         assertEquals(ABORT, eval("foobar][", getResponse(),false));
     }
 
+    @Test
+    void emptyBodyIsAnEmptyDocument() {
+        assertEquals(CONTINUE, eval("/a", new Builder(), false));
+        assertEquals(CONTINUE, eval("not(/a)", new Builder(), true));
+    }
+
+    @Test
+    void jsonBodyIsAnEmptyDocument() {
+        assertEquals(CONTINUE, eval("/a", new Builder().contentType(APPLICATION_JSON).body("{}"), false));
+        assertEquals(CONTINUE, eval("not(/a)", new Builder().contentType(APPLICATION_JSON).body("{}"), true));
+    }
+
+    @Test
+    void textPlainXmlIsEvaluated() {
+        assertEquals(CONTINUE, eval("/a", new Builder().contentType(TEXT_PLAIN).body("<a/>"), true));
+    }
+
+    @Test
+    void malformedRequestBodyIs400() {
+        var exc = new Exchange(null);
+        assertEquals(ABORT, performEval(exc, "/a", new Builder().contentType(APPLICATION_XML).body("<a><b></a>"), XPATH, false));
+        assertEquals(400, exc.getResponse().getStatusCode());
+    }
+
+    @Test
+    void malformedResponseBodyIs502() {
+        var exc = new Exchange(null);
+        assertEquals(ABORT, performEval(exc, "/a", new ResponseBuilder().contentType(APPLICATION_XML).body("<a><b></a>"), XPATH, false));
+        assertEquals(502, exc.getResponse().getStatusCode());
+    }
+
     private static Builder getRequest() {
         return new Builder().body("""
             <person id="314"/>""");
@@ -55,7 +88,7 @@ public class IfInterceptorXPathTest extends ConditionalEvaluationTestContext {
         return new ResponseBuilder().body("<foo/>");
     }
 
-    private static Outcome eval(String condition, Object builder,boolean shouldCallNested) throws Exception {
+    private static Outcome eval(String condition, Object builder,boolean shouldCallNested) {
         return performEval(condition, builder, XPATH,shouldCallNested);
     }
 }

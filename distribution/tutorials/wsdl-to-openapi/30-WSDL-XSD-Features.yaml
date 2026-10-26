@@ -26,38 +26,38 @@
 #
 # 3.) Call the operations
 #
-#    curl -d '{"id":1}' -H "Content-Type: application/json" localhost:2000/features/get-primitive-types
+#    curl -d "{\"id\":1}" -H "Content-Type: application/json" localhost:2000/features/get-primitive-types
 #      "count": 42, "price": 9.99, "active": true      numbers and booleans, not strings
 #
-#    curl -d '{"id":1}' -H "Content-Type: application/json" localhost:2000/features/get-array
+#    curl -d "{\"id\":1}" -H "Content-Type: application/json" localhost:2000/features/get-array
 #      "tag": [ "java" ]                               one occurrence is still an array
 #
-#    curl -d '{"note":null}' -H "Content-Type: application/json" localhost:2000/features/get-nillable
+#    curl -d "{\"note\":null}" -H "Content-Type: application/json" localhost:2000/features/get-nillable
 #      "closedAt": null                                from <closedAt xsi:nil="true"/>
 #      the request sends <note xsi:nil="true"/>         see the log
 #
-#    curl -d '{"id":1}' -H "Content-Type: application/json" localhost:2000/features/get-simple-content
+#    curl -d "{\"id\":1}" -H "Content-Type: application/json" localhost:2000/features/get-simple-content
 #      "price": { "@currency": "EUR", "$value": 9.99 }  a value that also carries attributes
 #
-#    curl -d '{"id":1}' -H "Content-Type: application/json" localhost:2000/features/get-attributes
+#    curl -d "{\"id\":1}" -H "Content-Type: application/json" localhost:2000/features/get-attributes
 #      "record": { "@id": "123", "@kind": "city", "name": "Berlin" }
 #
-#    curl -d '{"id":1}' -H "Content-Type: application/json" localhost:2000/features/get-extension
+#    curl -d "{\"id\":1}" -H "Content-Type: application/json" localhost:2000/features/get-extension
 #      "order": { "orderId": "A-1", "customer": "Alice", "priority": "high" }
 #
-#    curl -d '{"id":1}' -H "Content-Type: application/json" localhost:2000/features/get-restriction
+#    curl -d "{\"id\":1}" -H "Content-Type: application/json" localhost:2000/features/get-restriction
 #      "order": { "orderId": "A-1" }                   customer is not part of the restricted type
 #
-#    curl -d '{"id":1}' -H "Content-Type: application/json" localhost:2000/features/get-group-ref
+#    curl -d "{\"id\":1}" -H "Content-Type: application/json" localhost:2000/features/get-group-ref
 #      "createdBy": "alice"                            the group's fields sit inline
 #
-#    curl -d '{"id":1}' -H "Content-Type: application/json" localhost:2000/features/get-imported-type
+#    curl -d "{\"id\":1}" -H "Content-Type: application/json" localhost:2000/features/get-imported-type
 #      "address": { "street": "Main St 1", "city": "Berlin" }   type from the imported namespace
 #
-#    curl -d '{"third":"c","first":"a","second":"b"}' -H "Content-Type: application/json" localhost:2000/features/get-sequence
+#    curl -d "{\"third\":\"c\",\"first\":\"a\",\"second\":\"b\"}" -H "Content-Type: application/json" localhost:2000/features/get-sequence
 #      the SOAP carries first, second, third in XSD order — see the log
 #
-#    curl -d '{"byId":7}' -H "Content-Type: application/json" localhost:2000/features/get-choice
+#    curl -d "{\"byId\":7}" -H "Content-Type: application/json" localhost:2000/features/get-choice
 #      either alternative alone is accepted
 #
 # 4.) Not covered — no OpenAPI equivalent, or not yet mapped:

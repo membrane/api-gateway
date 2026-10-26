@@ -1,0 +1,18 @@
+openapi: '3.0.2'
+info:
+  title: Inner API
+  version: '1.0'
+servers:
+  - url: https://api.example.com/api/admin
+paths:
+  /users:
+    get:
+      parameters:
+        - in: query
+          name: token
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: OK

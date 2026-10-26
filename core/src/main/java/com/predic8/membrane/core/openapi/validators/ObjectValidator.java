@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.regex.Pattern;
 
+import static com.predic8.membrane.core.openapi.util.SchemaUtil.getSchemaNameFromRef;
 import static com.predic8.membrane.core.openapi.util.Utils.joinByComma;
 import static com.predic8.membrane.core.openapi.validators.ValidationError.v;
 import static com.predic8.membrane.core.openapi.validators.ValidationErrors.error;
@@ -165,19 +166,21 @@ public class ObjectValidator implements JsonSchemaValidator {
 
         ValidationErrors errors = new ValidationErrors();
 
-        if (schema.getAdditionalProperties() instanceof Schema) {
+        // OAS 3.1 parses additionalProperties: true/false into a boolean schema, 3.0 into a Boolean. See #3562.
+        var additional = schema.getAdditionalProperties();
+        if (additional instanceof Schema<?> s && s.getBooleanSchemaValue() != null)
+            additional = s.getBooleanSchemaValue();
+
+        if (additional instanceof Schema<?> s) {
             additionalProperties.forEach((propName, value) ->
-                    errors.add(new SchemaValidator(api, (Schema) schema.getAdditionalProperties()).validate(ctx.addJSONpointerSegment(propName), value)));
+                    errors.add(new SchemaValidator(api, s).validate(ctx.addJSONpointerSegment(propName), value)));
             return errors;
         }
-        if (schema.getAdditionalProperties() instanceof Boolean b) {
+        if (additional instanceof Boolean b) {
             if (b) {
                 return null; // allowed
             }
-            return errors.add(ctx.statusCode(400),
-                    format("Object has the additional %s: %s. But the schema does not allow additional properties.",
-                            propertyOrProperties(additionalProperties.keySet()),
-                            joinByComma(additionalProperties.keySet())));
+            return notAllowed(ctx, additionalProperties.keySet(), "additional");
         }
         // Unknown type – be safe and return an error
         return errors.add(ctx.statusCode(400),
@@ -204,12 +207,8 @@ public class ObjectValidator implements JsonSchemaValidator {
         if (unevaluated.isEmpty())
             return null;
 
-        if (Boolean.FALSE.equals(unevaluatedSchema.getBooleanSchemaValue())) {
-            return error(ctx.statusCode(400),
-                    format("Object has the unevaluated %s: %s. But the schema does not allow unevaluated properties.",
-                            propertyOrProperties(unevaluated.keySet()),
-                            joinByComma(unevaluated.keySet())));
-        }
+        if (Boolean.FALSE.equals(unevaluatedSchema.getBooleanSchemaValue()))
+            return notAllowed(ctx, unevaluated.keySet(), "unevaluated");
         final var errors = new ValidationErrors();
         unevaluated.forEach((propName, value) ->
                 errors.add(new SchemaValidator(api, unevaluatedSchema).validate(ctx.addJSONpointerSegment(propName), value)));
@@ -230,8 +229,9 @@ public class ObjectValidator implements JsonSchemaValidator {
         if (current.get$ref() != null) {
             // An unresolvable reference evaluates no properties.
             final var target = SchemaUtil.getSchemaFromRef(api, current.get$ref());
+            // Resolved like in SchemaValidator, so validity checks below the reference share its cached results
             if (target != null)
-                collectEvaluatedProperties(ctx, target, node, evaluated, visiting);
+                collectEvaluatedProperties(ctx.visitRef(getSchemaNameFromRef(current)), target, node, evaluated, visiting);
         }
 
         final Map<String, Schema> properties = current.getProperties();
@@ -311,11 +311,18 @@ public class ObjectValidator implements JsonSchemaValidator {
         // SchemaValidator can't validate against an unresolvable reference, which evaluates no properties anyway
         if (sub.get$ref() != null && SchemaUtil.getSchemaFromRef(api, sub.get$ref()) == null)
             return false;
-        return new SchemaValidator(api, sub).validate(ctx, node).isEmpty();
+        return new SchemaValidator(api, sub).isValid(ctx, node);
     }
 
-    private String propertyOrProperties(Set<String> additionalProperties) {
-        return additionalProperties.size() > 1 ? "properties" : "property";
+    /**
+     * Reports each property at its own location. The status code of the context is kept, so a
+     * violation in a response is a 5xx.
+     */
+    private static ValidationErrors notAllowed(ValidationContext ctx, Set<String> propertyNames, String kind) {
+        final var errors = new ValidationErrors();
+        propertyNames.forEach(name -> errors.add(ctx.addJSONpointerSegment(name),
+                "The property %s is not allowed. The object does not allow %s properties.".formatted(name, kind)));
+        return errors;
     }
 
     private Map<String, JsonNode> getAdditionalProperties(JsonNode node) {

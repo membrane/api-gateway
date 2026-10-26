@@ -181,6 +181,153 @@ Both the VMs and the code changed, so the differences can't be attributed to eit
 scenarios ran at 2 to 4 percentage points more gateway CPU than before. Their CPU time per request
 stayed the same, except for `openapi-validation`, which rose from 82 to 87 µs.
 
+## Garbage collection
+
+Measured on 2026-10-16 on newly provisioned VMs (same sizes, OS and region as above; JVM Temurin
+21.0.12.1; code: master `21e7c28e7`), with the gateway's GC log fetched after every run and
+summarized by `gc-summary.awk` for the client's measured window. All 144 runs completed with
+**0 errors**.
+
+Pause figures are the JVM's own stop-the-world pause times. The safepoint figure is the longest
+time any safepoint held the application threads, including the time it took to reach the safepoint;
+it is the stall a request can actually see.
+
+### Tuned configuration
+
+One run per scenario with the configuration used for all results above
+(`-Xms32g -Xmx32g -XX:+AlwaysPreTouch -XX:+UseParallelGC`), 10,000,000 measured requests each:
+
+| Scenario | RPS | vs. 2026-09-29 | GC pauses | Longest pause | Longest safepoint | Time in GC pauses | Full GCs under load | Allocated per request |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| `shortcircuit` | 586,951 | +8.7 % | 19 | 1.7 ms | 6.4 ms | 0.09 % | 0 | 21 KB |
+| `fullproxy` | 220,946 | +1.9 % | 45 | 1.2 ms | 1.8 ms | 0.05 % | 0 | 50 KB |
+| `openapi-validation` | 173,047 | +3.5 % | 97 | 0.9 ms | 1.9 ms | 0.09 % | 0 | 108 KB |
+| `rate-limit-basic-auth` | 213,503 | −0.3 % | 46 | 1.7 ms | 2.2 ms | 0.05 % | 0 | 51 KB |
+| `rate-limit-basic-auth-tls` | 195,777 | −0.1 % | 55 | 1.6 ms | 2.8 ms | 0.06 % | 0 | 61 KB |
+| `wsdl2openapi` | 122,508 | +1.7 % | 221 | 2.8 ms | 3.3 ms | 0.15 % | 0 | 247 KB |
+| `soap-validation` | 96,704 | −1.2 % | 416 | 6.1 ms | 7.3 ms | 0.35 % | 0 | 464 KB |
+
+Allocated per request is the heap filled between collections (heap before each GC minus heap after
+the previous one) divided by the requests. The pauses during startup and warmup (up to 22 ms, while
+classes load and the JIT compiles) are excluded. Over all 144 runs the gateway had 69 full GCs, all
+within its first 8.3 seconds and all triggered by class metadata (`Metadata GC Threshold`), taking
+up to 22.4 ms; none happened later.
+
+### GC and heap settings
+
+Three rounds of each scenario under five JVM configurations, the order of the configurations
+rotated per round. `default` passes no GC or heap flags: the JVM picks G1 and a maximum heap of a
+quarter of the VM's 64 GiB.
+
+| Label | JVM flags |
+|---|---|
+| `tuned` | `-Xms32g -Xmx32g -XX:+AlwaysPreTouch -XX:+UseParallelGC` |
+| `default` | none |
+| `g1-2g` | `-Xms2g -Xmx2g` |
+| `g1-512m` | `-Xms512m -Xmx512m` |
+| `zgc-2g` | `-Xms2g -Xmx2g -XX:+UseZGC -XX:+ZGenerational` |
+
+Mean of the 3 runs; longest pause, longest safepoint and max latency are the worst of the 3 runs.
+
+| Scenario | Config | Mean RPS | vs. `tuned` | CV | p99 ms | Max ms | Longest pause | Longest safepoint | Time in GC pauses | Gateway user CPU per request |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| `fullproxy` | `tuned` | 218,294 | | 1.4 % | 2.74 | 11.7 | 2.2 ms | 2.4 ms | 0.05 % | 25.6 µs |
+| `fullproxy` | `default` | 202,289 | −7.3 % | 6.0 % | 3.32 | 13.5 | 2.5 ms | 4.6 ms | 0.97 % | 28.6 µs |
+| `fullproxy` | `g1-2g` | 201,334 | −7.8 % | 4.4 % | 3.37 | 13.8 | 4.0 ms | 5.7 ms | 0.82 % | 29.2 µs |
+| `fullproxy` | `g1-512m` | 191,968 | −12.1 % | 2.7 % | 3.66 | 13.2 | 4.2 ms | 4.4 ms | 2.43 % | 30.1 µs |
+| `fullproxy` | `zgc-2g` | 213,048 | −2.4 % | 0.7 % | 2.71 | 17.2 | 0.04 ms | 2.4 ms | 0.02 % | 27.6 µs |
+| `openapi-validation` | `tuned` | 173,586 | | 2.9 % | 4.18 | 22.9 | 2.1 ms | 2.9 ms | 0.09 % | 45.1 µs |
+| `openapi-validation` | `default` | 157,283 | −9.4 % | 1.8 % | 5.20 | 16.2 | 5.2 ms | 5.6 ms | 1.15 % | 49.5 µs |
+| `openapi-validation` | `g1-2g` | 159,960 | −7.8 % | 5.8 % | 4.90 | 19.2 | 5.6 ms | 6.5 ms | 1.45 % | 49.7 µs |
+| `openapi-validation` | `g1-512m` | 153,605 | −11.5 % | 1.6 % | 4.91 | 51.6 | 40.9 ms | 41.1 ms | 4.40 % | 50.4 µs |
+| `openapi-validation` | `zgc-2g` | 159,999 | −7.8 % | 1.2 % | 4.59 | 21.0 | 0.07 ms | 6.8 ms | 0.05 % | 50.9 µs |
+
+- **No full GCs under load** in any of the 45 runs (only the startup ones described above).
+- **Untuned costs throughput, not latency.** With the JVM's defaults or a 2 GB G1 heap the gateway
+  delivers 7 to 9 % fewer requests per second than `tuned`, and each request costs 3 to 5 µs more
+  user CPU. The longest GC pause stays at 6 ms or less, and no request took longer than 20 ms.
+- **512 MB is the only setting with long pauses.** The 40.9 ms pause (and the long pauses in the
+  allocation-heavy scenario below) is not GC work: the pause's phases add up to about 1 ms, and the
+  GC threads used 0.01 s of CPU in 0.04 s of wall-clock time. The VM had no steal time and about
+  15 % idle CPU at the time, so it was not starved of CPU either; the cause was not found. All
+  pauses over 20 ms in the whole matrix were in `g1-512m`.
+- **ZGC** keeps its pauses below 0.1 ms but does not reduce the longest safepoint (the time to bring
+  all threads to a stop still counts), and costs 2 to 6 µs more user CPU per request than `tuned`.
+
+**Allocation-heavy workloads.** `soap-validation` allocates about 464 KB per request, nine times as
+much as `fullproxy` (about 45 GB/s at full load), and the GC settings matter more there: `default`
+−13 %, `g1-2g` −17 %, `g1-512m` −30 % (pauses up to 103 ms, of the same kind) and `zgc-2g`
+−27 % against `tuned`. With `zgc-2g`, request threads stalled 75,000 to 92,000 times per run, for
+up to 193 ms each, because a 2 GB heap gives ZGC too little room to keep up with that allocation rate.
+ZGC logs these allocation stalls separately; they are neither pauses nor safepoints. Heavy XML
+processing needs a correspondingly larger heap.
+
+### Soak
+
+`fullproxy` for 60 minutes against one gateway JVM: one run that starts the gateway, then
+back-to-back 10,000,000-request runs without restarting it (`GATEWAY_RESTART=false`).
+
+| Config | Runs | Requests | Errors | Full GCs | Longest pause | Longest safepoint | RPS first → last third | p99 first → last third |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| `g1-2g` | 44 | 484,000,000 | 0 | 0 | 23.1 ms | 23.4 ms | 202,004 → 197,498 | 3.35 → 3.55 ms |
+| `tuned` | 48 | 528,000,000 | 0 | 0 | 3.8 ms | 4.1 ms | 213,320 → 213,950 | 2.99 → 2.97 ms |
+
+Request counts include each run's 1,000,000 warmup requests. The other figures cover the measured
+windows; over the whole hour, from the first run's measured start to the last run's measured end
+(including the warmups in between), the longest pause and safepoint are the same and there was no
+full GC.
+
+- **No memory leak.** The lowest heap after GC grew over the hour (`tuned`: 30 → 89 MB), because
+  objects promoted to the old generation pile up until an old-generation collection runs. A full GC
+  forced at the end of the `tuned` soak shrank the old generation from 102 MB to 30 MB, the level of
+  the soak's first runs.
+- **`g1-2g` lost 3 % RPS over the hour**, with user CPU per request rising from 28.9 to 29.7 µs while
+  the time in GC pauses stayed flat (0.82 → 0.79 %). The drift is smaller than the 4.4 % run-to-run
+  CV of `g1-2g` in the matrix; `tuned` showed none.
+- **The 23.1 ms `g1-2g` pause** is the same pattern as in `g1-512m`: its phases add up to 1 ms and
+  the GC threads used 0.01 s of CPU in 0.02 s. Every other pause in that soak was at most 6.4 ms.
+- **One request took 203 ms** (`tuned`, run 11). In that run the gateway's longest GC pause was
+  0.9 ms and its longest safepoint 2.9 ms, so the gateway's JVM did not stall: the delay came from
+  outside it (network, client or backend). The 1,417 ms request of 2026-09-29 was measured before
+  GC logs were kept, so it can't be checked the same way.
+
+### Typical load
+
+Measured on 2026-10-21 on newly provisioned VMs (same sizes as above), `fullproxy` at a fixed
+1,000 requests per second instead of full load (`LOAD_RATE=1000`): requests are sent on schedule
+and latency is timed from each request's scheduled time, so a gateway stall shows up as latency.
+The client also logs every request slower than 1 ms and writes its own GC log; `match-slow.awk`
+matches the slow requests against the stop-the-world safepoints of the gateway and of the client.
+JDK 21 (Temurin 21.0.12.1), 250 MB heap, 5 minutes (300,000 requests) per collector, 0 errors:
+
+| | G1 | ZGC | Shenandoah |
+|---|---:|---:|---:|
+| p50 / p99 | 0.27 / 0.30 ms | 0.27 / 0.30 ms | 0.27 / 0.30 ms |
+| p99.9 | 0.97 ms | 0.62 ms | 0.63 ms |
+| p99.99 | 2.0 ms | 2.2 ms | 1.9 ms |
+| Max | 17.3 ms | 13.6 ms | 19.2 ms |
+| Requests over 1 ms | 279 | 68 | 110 |
+| … during a gateway pause | 199 | 0 | 0 |
+| … during a client pause | 19 | 7 | 18 |
+| Gateway pauses (longest) | 215 (2.8 ms) | 1,123 (0.02 ms) | 187 (0.27 ms) |
+| GC thread CPU: workers + control | 0.52 + 0.01 s | 4.88 + 0.83 s | 0.78 + 1.73 s |
+| Gateway JVM CPU | 11.5 s | 17.2 s | 14.6 s |
+
+- **Up to p99 the collector makes no difference.** G1's pauses, one every 1.4 s for 1 to 3 ms,
+  delay about 200 of 300,000 requests (0.07 %) by about a millisecond: p99.9 is 0.97 ms with G1 and
+  0.62 ms with ZGC or Shenandoah, whose slow requests never coincide with a gateway pause.
+- **From p99.99 on the collectors are equal** (1.9 to 2.2 ms). The outliers of 5 to 19 ms occur with
+  every collector and are not caused by the gateway's GC. The match of G1's 17 ms request with a
+  1.25 ms pause is an overlap, not a cause.
+- **GC costs little CPU at this load.** The whole gateway JVM uses about 0.04 to 0.06 cores; G1's GC
+  threads 0.2 % of one core, ZGC's about 2 %. Most of Shenandoah's GC CPU comes from its control and
+  regulator threads, which poll whether to collect regardless of load.
+
+A wider matrix of 1-minute runs (JDK 21 and 25; G1, ZGC and Shenandoah; heaps of 100 MB, 250 MB,
+4 GB and the default) is in [gc-typical-load/RESULTS.md](gc-typical-load/RESULTS.md): no run had an
+error or a full GC, G1 never paused longer than 5.7 ms (under 0.1 % of the time), ZGC and Shenandoah
+never longer than 0.4 ms, and GC used at most about 2 % of one core.
+
 ## Per-run results
 
 ### `shortcircuit`

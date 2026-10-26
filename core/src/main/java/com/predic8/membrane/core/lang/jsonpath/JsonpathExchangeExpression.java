@@ -14,17 +14,20 @@
 
 package com.predic8.membrane.core.lang.jsonpath;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import com.jayway.jsonpath.InvalidPathException;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.PathNotFoundException;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.ReadingBodyException;
+import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.lang.AbstractExchangeExpression;
+import com.predic8.membrane.core.lang.BodyKind;
 import com.predic8.membrane.core.lang.ExchangeExpressionException;
-import com.predic8.membrane.core.router.Router;
 import com.predic8.membrane.core.util.ConfigurationException;
 import org.jetbrains.annotations.Nullable;
 import org.jose4j.json.internal.json_simple.JSONAware;
@@ -32,17 +35,33 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
+import java.io.CharConversionException;
 import java.io.IOException;
 import java.util.List;
 
+import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_TRAILING_TOKENS;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_X_WWW_FORM_URLENCODED;
+import static com.predic8.membrane.core.lang.BodyKind.FORM;
 import static java.lang.Boolean.FALSE;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Collections.emptyMap;
 
 public class JsonpathExchangeExpression extends AbstractExchangeExpression {
 
     private static final Logger log = LoggerFactory.getLogger(JsonpathExchangeExpression.class);
 
+    /**
+     * What an empty body, or one that holds no JSON, is evaluated against: a document without content.
+     */
+    private static final Object EMPTY_DOCUMENT = emptyMap();
+
     private final ObjectMapper om = new ObjectMapper();
+
+    /**
+     * Rejects content after the value, so that form data starting with <code>true</code> is not read as <code>true</code>.
+     */
+    private final ObjectReader scalarReader = om.readerFor(Object.class).with(FAIL_ON_TRAILING_TOKENS);
 
     /**
      * Compiled once: the static {@code JsonPath.read(json, String)} looks the path up in Jayway's
@@ -51,8 +70,8 @@ public class JsonpathExchangeExpression extends AbstractExchangeExpression {
      */
     private final JsonPath compiledPath;
 
-    public JsonpathExchangeExpression(String source, Router router) {
-        super(source, router);
+    public JsonpathExchangeExpression(String source) {
+        super(source);
         syntaxCheckJsonpath(source);
         compiledPath = JsonPath.compile(source);
     }
@@ -76,20 +95,9 @@ public class JsonpathExchangeExpression extends AbstractExchangeExpression {
 
     @Override
     public <T> T evaluate(Exchange exchange, Flow flow, Class<T> type) {
-
-        // Guard against empty body and other Content-Types
+        var document = document(exchange.getMessage(flow));
         try {
-            if (exchange.getMessage(flow).isBodyEmpty() || !exchange.getMessage(flow).isJSON()) {
-                log.debug("Body is empty or Content-Type not JSON. Nothing to evaluate for expression: {}", expression); // Normal
-                return resultForNoEvaluation(type);
-            }
-        } catch (ReadingBodyException e) {
-            log.error("Error checking if body is empty: {}", e.getMessage());
-            return resultForNoEvaluation(type);
-        }
-
-        try {
-            return castType(exchange, flow, type);
+            return castType(document, type);
         } catch (PathNotFoundException e) {
             if (type.isAssignableFrom(Boolean.class)) {
                 return type.cast(FALSE);
@@ -99,13 +107,6 @@ public class JsonpathExchangeExpression extends AbstractExchangeExpression {
             log.error("Invalid JSONPath: {}", expression);
             throw new ExchangeExpressionException(expression, e, "Invalid JSONPath.")
                     .excludeException();
-        } catch (MismatchedInputException e) {
-            log.info("Error evaluating JSONPath: {} Token: {} Target: {}", expression,e.getCurrentToken(),e.getTargetType());
-            throw new ExchangeExpressionException(expression, e, "Error evaluating JSONPath")
-                    .body(exchange.getMessage(flow).getBodyAsStringDecoded())
-                    .extension("token", e.getCurrentToken())
-                    .extension("targetType", e.getTargetType())
-                    .excludeException();
         } catch (Exception e) {
             log.info("Error evaluating JSONPath: {}", expression);
             throw new ExchangeExpressionException(expression, e, "Error evaluating JSONPath")
@@ -114,8 +115,79 @@ public class JsonpathExchangeExpression extends AbstractExchangeExpression {
         }
     }
 
-    private <T> @Nullable T castType(Exchange exchange, Flow flow, Class<T> type) throws IOException {
-        Object o = execute(exchange, flow);
+    private Object document(Message msg) {
+        var kind = BodyKind.of(msg, MimeType::isJson, "{[");
+        var document = switch (kind) {
+            case EMPTY -> EMPTY_DOCUMENT;
+            case MATCHING, UNKNOWN, MISLABELLED -> parse(msg);
+            case FORM, FOREIGN -> scalarOrEmptyDocument(msg, kind);
+        };
+        // The body null is valid JSON, but Jayway cannot query a null root. Like an empty body it has no fields
+        return document != null ? document : EMPTY_DOCUMENT;
+    }
+
+    private Object parse(Message msg) {
+        try {
+            return readBody(msg);
+        } catch (MismatchedInputException e) {
+            log.info("Body is not valid JSON. JSONPath: {} Token: {} Target: {}", expression, e.getCurrentToken(), e.getTargetType());
+            throw new ExchangeExpressionException(expression, e, "Body is not valid JSON: " + e.getOriginalMessage())
+                    .body(msg.getBodyAsStringDecoded())
+                    .extension("token", e.getCurrentToken())
+                    .extension("targetType", e.getTargetType())
+                    .excludeException()
+                    .bodyError();
+        } catch (JsonProcessingException e) {
+            log.info("Body is not valid JSON. JSONPath: {}", expression);
+            throw new ExchangeExpressionException(expression, e, "Body is not valid JSON: " + e.getOriginalMessage())
+                    .body(msg.getBodyAsStringDecoded())
+                    .excludeException()
+                    .bodyError();
+        } catch (CharConversionException e) {
+            // Jackson's encoding detection found no text it can decode, e.g. invalid UTF-32
+            log.info("Body is not valid JSON. JSONPath: {}", expression);
+            throw new ExchangeExpressionException(expression, e, "Body is not valid JSON: " + e.getMessage())
+                    .body(msg.getBodyAsStringDecoded())
+                    .excludeException()
+                    .bodyError();
+        } catch (IOException e) {
+            throw new ExchangeExpressionException(expression, e, "Error reading body for JSONPath")
+                    .excludeException();
+        }
+    }
+
+    /**
+     * A body that does not start like an object or array may still be a JSON scalar such as
+     * <code>42</code> or <code>"admin"</code>. Falling back to an empty document is safe here: unlike an
+     * object a lenient backend might accept, a scalar has no fields a guard could miss.
+     */
+    private Object scalarOrEmptyDocument(Message msg, BodyKind kind) {
+        try {
+            return scalarReader.readValue(msg.getBodyAsStreamDecoded());
+        } catch (JsonProcessingException | CharConversionException e) {
+            if (kind == FORM)
+                logFormBody();
+            return EMPTY_DOCUMENT;
+        } catch (IOException e) {
+            throw new ExchangeExpressionException(expression, e, "Error reading body for JSONPath")
+                    .excludeException();
+        }
+    }
+
+    /**
+     * Form data is what <code>curl -d</code> sends for any body, so a user may have meant to send JSON.
+     */
+    private void logFormBody() {
+        log.info("Content-Type is {} and the body is not JSON, so JSONPath {} is evaluated against an empty document. To have the body evaluated, send Content-Type: {}",
+                APPLICATION_X_WWW_FORM_URLENCODED, expression, APPLICATION_JSON);
+    }
+
+    private Object readBody(Message msg) throws IOException {
+        return om.readValue(msg.getBodyAsStreamDecoded(), Object.class);
+    }
+
+    private <T> @Nullable T castType(Object document, Class<T> type) {
+        Object o = compiledPath.read(document);
         if (type.getName().equals("java.lang.Object") || type.isInstance(o)) {
             return type.cast(o);
         }
@@ -144,16 +216,6 @@ public class JsonpathExchangeExpression extends AbstractExchangeExpression {
         return type.cast(o);
     }
 
-    private <T> T resultForNoEvaluation(Class<T> type) {
-        if (String.class.isAssignableFrom(type)) {
-            return type.cast("");
-        }
-        if (Boolean.class.isAssignableFrom(type)) {
-            return type.cast(FALSE);
-        }
-        return type.cast(new Object());
-    }
-
     /**
      * An indefinite path (filter, wildcard, deep scan) returns the list of its matches, so an
      * empty list means nothing matched. A definite path returns the value itself, so an existing
@@ -164,9 +226,5 @@ public class JsonpathExchangeExpression extends AbstractExchangeExpression {
             return !l.isEmpty();
         }
         return o != null;
-    }
-
-    private Object execute(Exchange exchange, Flow flow) throws IOException {
-        return compiledPath.read(om.readValue(exchange.getMessage(flow).getBodyAsStreamDecoded(), Object.class));
     }
 }

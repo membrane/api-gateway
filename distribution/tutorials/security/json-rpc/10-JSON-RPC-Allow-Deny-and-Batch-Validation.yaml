@@ -25,20 +25,20 @@
 #         membrane.cmd -c 10-JSON-RPC-Allow-Deny-and-Batch-Validation.yaml
 #
 # 2.) Allowed request
-#     curl -d '{"jsonrpc":"2.0","id":1,"method":"ping"}' -H "Content-Type: application/json" http://localhost:2000
+#     curl -d "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"ping\"}" -H "Content-Type: application/json" http://localhost:2000
 #
 # 3.) Blocked method
-#     curl -d '{"jsonrpc":"2.0","id":1,"method":"shutdown"}' -H "Content-Type: application/json" http://localhost:2000
+#     curl -d "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"shutdown\"}" -H "Content-Type: application/json" http://localhost:2000
 #
 #     Should return a JSON-RPC error explaining that the method is not allowed.
 #
 # 4.) Valid batch with 2 calls
-#     curl -d '[{"jsonrpc":"2.0","id":1,"method":"ping"},{"jsonrpc":"2.0","id":2,"method":"sum","params":[1,2]}]' -H "Content-Type: application/json" http://localhost:2000
+#     curl -d @batch-2-calls.json -H "Content-Type: application/json" http://localhost:2000
 #
 #     Should return a JSON-RPC batch response with one success entry per request.
 #
 # 5.) Batch too large
-#     curl -d '[{"jsonrpc":"2.0","id":1,"method":"ping"},{"jsonrpc":"2.0","id":2,"method":"sum","params":[1,2]},{"jsonrpc":"2.0","id":3,"method":"ping"}]' -H "Content-Type: application/json" http://localhost:2000
+#     curl -d @batch-3-calls.json -H "Content-Type: application/json" http://localhost:2000
 #
 #     Should return a JSON-RPC batch error because maxSize is 2.
 

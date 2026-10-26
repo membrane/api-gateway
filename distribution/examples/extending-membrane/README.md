@@ -2,19 +2,8 @@
 
 These examples show how to adapt, customize, and embed Membrane for real-world scenarios beyond basic reverse-proxy usage.
 
-## Configuration and Deployment
-
-* [Configuration properties and environment variables](configuration-properties)
-  Prepare Membrane for production by externalizing configuration.
-
 ## Modifying API and Gateway Behavior
 
-* [Conditional logic with `if`](if)
-  Change API behavior based on conditions.
-* [Global plugin chain](global-interceptor)
-  Apply plugins globally across all APIs.
-* [Plugin Chains](reusable-plugin-chains)
-  Define plugin sequences once and reuse them in multiple APIs.
 * [Error handling](error-handling)
   Transform backend error messages into a unified format.
 

@@ -14,23 +14,33 @@
 
 package com.predic8.membrane.core.lang.xpath;
 
-import com.predic8.membrane.core.exceptions.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.lang.*;
-import com.predic8.membrane.core.lang.ExchangeExpression.*;
-import org.jetbrains.annotations.*;
-import org.junit.jupiter.api.*;
-import org.w3c.dom.*;
+import com.predic8.membrane.core.exceptions.ProblemDetails;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.lang.AbstractExchangeExpressionTest;
+import com.predic8.membrane.core.lang.ExchangeExpression.InterceptorAdapter;
+import com.predic8.membrane.core.lang.ExchangeExpression.Language;
+import com.predic8.membrane.core.lang.ExchangeExpressionException;
+import com.predic8.membrane.core.util.xml.parser.HardenedXmlParser;
+import com.predic8.membrane.core.util.xml.parser.XmlParseException;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
 
-import java.net.*;
-import java.util.*;
+import java.io.StringReader;
+import java.net.URISyntaxException;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
 import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.http.Request.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
-import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
+import static com.predic8.membrane.core.http.Request.Builder;
+import static com.predic8.membrane.core.http.Request.post;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
+import static com.predic8.membrane.core.lang.ExchangeExpression.Language.XPATH;
 import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
+import static java.nio.charset.StandardCharsets.UTF_16BE;
 import static org.junit.jupiter.api.Assertions.*;
 
 class XPathExchangeExpressionTest extends AbstractExchangeExpressionTest {
@@ -38,6 +48,11 @@ class XPathExchangeExpressionTest extends AbstractExchangeExpressionTest {
     @Override
     protected Language getLanguage() {
         return XPATH;
+    }
+
+    @Override
+    protected String getContentType() {
+        return APPLICATION_XML;
     }
 
     @Override
@@ -119,9 +134,138 @@ class XPathExchangeExpressionTest extends AbstractExchangeExpressionTest {
     // Other
 
     @Test
-    void wrongContentType() {
+    void xmlWithWrongContentTypeIsParsed() {
         exchange.getRequest().getHeader().setContentType(APPLICATION_JSON);
         assertEquals("John Doe", evalString("/persons/name[1]"));
+    }
+
+    @Nested
+    class Body {
+
+        @Test
+        void emptyBodyIsAnEmptyDocument() throws URISyntaxException {
+            var exc = post("/foo").contentType(APPLICATION_XML).buildExchange();
+            assertFalse(eval("/a", exc, Boolean.class));
+            assertTrue(eval("not(/a)", exc, Boolean.class));
+            assertFalse(eval("/a != 'admin'", exc, Boolean.class));
+            assertTrue(eval("string(/a) != 'admin'", exc, Boolean.class));
+            assertEquals("0", eval("count(//a)", exc, String.class));
+            assertEquals("", eval("/a", exc, String.class));
+        }
+
+        @Test
+        void foreignContentTypeIsAnEmptyDocument() throws URISyntaxException {
+            var exc = post("/foo").contentType(APPLICATION_JSON).body("{\"a\":1}").buildExchange();
+            assertFalse(eval("/a", exc, Boolean.class));
+            assertTrue(eval("not(/a)", exc, Boolean.class));
+        }
+
+        /**
+         * A backend may parse the body as XML whatever its Content-Type says, so a guard must see the
+         * XML too.
+         */
+        @Test
+        void foreignContentTypeWithXmlIsParsed() throws URISyntaxException {
+            assertTrue(eval("//role = 'admin'", post("/foo").contentType(APPLICATION_JSON).body("<req><role>admin</role></req>").buildExchange(), Boolean.class));
+            assertTrue(eval("//role = 'admin'", post("/foo").contentType(APPLICATION_OCTET_STREAM).body(" \r\n\t<req><role>admin</role></req>").buildExchange(), Boolean.class));
+        }
+
+        @Test
+        void foreignContentTypeWithUtf16XmlIsParsed() throws URISyntaxException {
+            var exc = post("/foo").contentType(APPLICATION_OCTET_STREAM).body("\uFEFF<a/>".getBytes(UTF_16BE)).buildExchange();
+            assertTrue(eval("/a", exc, Boolean.class));
+        }
+
+        /**
+         * JPEG starts with 0xFF and gRPC with 0x00, like a byte order mark or UTF-16 text, but neither is XML.
+         */
+        @Test
+        void binaryBodyIsAnEmptyDocument() throws URISyntaxException {
+            var jpeg = new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0, 0x00, 0x10, 'J', 'F', 'I', 'F'};
+            var grpc = new byte[]{0x00, 0x00, 0x00, 0x00, 0x05, 0x08, 0x01, 0x10, 0x02, 0x00};
+            assertTrue(eval("not(/a)", post("/foo").contentType("image/jpeg").body(jpeg).buildExchange(), Boolean.class));
+            assertTrue(eval("not(/a)", post("/foo").contentType("application/grpc").body(grpc).buildExchange(), Boolean.class));
+        }
+
+        /**
+         * XML the gateway's parser rejects, but a lenient backend might accept, must not slip past a guard.
+         */
+        @Test
+        void foreignContentTypeWithRejectedXmlIsABodyError() throws URISyntaxException {
+            var e = assertThrows(ExchangeExpressionException.class,
+                    () -> eval("//role = 'admin'", post("/foo").contentType(APPLICATION_JSON).body("<!DOCTYPE req><req><role>admin</role></req>").buildExchange(), Boolean.class));
+            assertTrue(e.isBodyError());
+        }
+
+        @Test
+        void formDataWithRejectedXmlIsABodyError() throws URISyntaxException {
+            var e = assertThrows(ExchangeExpressionException.class,
+                    () -> eval("//role = 'admin'", post("/foo").contentType(APPLICATION_X_WWW_FORM_URLENCODED).body("<!DOCTYPE req><req><role>admin</role></req>").buildExchange(), Boolean.class));
+            assertTrue(e.isBodyError());
+        }
+
+        @Test
+        void foreignContentTypeWithWhitespaceOnlyIsAnEmptyDocument() throws URISyntaxException {
+            assertTrue(eval("not(/a)", post("/foo").contentType(APPLICATION_JSON).body(" \n").buildExchange(), Boolean.class));
+        }
+
+        @Test
+        void textPlainIsParsed() throws URISyntaxException {
+            assertTrue(eval("/a", post("/foo").contentType(TEXT_PLAIN).body("<a/>").buildExchange(), Boolean.class));
+        }
+
+        @Test
+        void missingContentTypeIsParsed() throws URISyntaxException {
+            assertTrue(eval("/a", post("/foo").body("<a/>").buildExchange(), Boolean.class));
+        }
+
+        @Test
+        void formDataWithXmlIsParsed() throws URISyntaxException {
+            assertTrue(eval("/a", post("/foo").contentType(APPLICATION_X_WWW_FORM_URLENCODED).body("<a/>").buildExchange(), Boolean.class));
+        }
+
+        @Test
+        void formDataThatIsNotXmlIsAnEmptyDocument() throws URISyntaxException {
+            var exc = post("/foo").contentType(APPLICATION_X_WWW_FORM_URLENCODED).body("a=1&b=2").buildExchange();
+            assertFalse(eval("/a", exc, Boolean.class));
+            assertTrue(eval("not(/a)", exc, Boolean.class));
+        }
+
+        @Test
+        void malformedXmlIsABodyError() throws URISyntaxException {
+            var e = assertThrows(ExchangeExpressionException.class,
+                    () -> eval("/a", post("/foo").contentType(APPLICATION_XML).body("<a><b></a>").buildExchange(), Boolean.class));
+            assertTrue(e.isBodyError());
+            // The parser's own diagnostic, in the JVM's locale
+            assertEquals(parseError("<a><b></a>"), e.getMessage());
+        }
+
+        @Test
+        void textPlainThatIsNotXmlIsABodyError() throws URISyntaxException {
+            var e = assertThrows(ExchangeExpressionException.class,
+                    () -> eval("/a", post("/foo").contentType(TEXT_PLAIN).body("hello").buildExchange(), Boolean.class));
+            assertTrue(e.isBodyError());
+        }
+
+        @Test
+        void bodyErrorIs400InRequestAnd502InResponse() throws URISyntaxException {
+            var e = assertThrows(ExchangeExpressionException.class,
+                    () -> eval("/a", post("/foo").contentType(APPLICATION_XML).body("<a><b></a>").buildExchange(), Boolean.class));
+            assertEquals(400, e.problemDetails(false, "test", REQUEST).getStatus());
+            assertEquals(502, e.problemDetails(false, "test", RESPONSE).getStatus());
+        }
+
+        @Test
+        void expressionErrorIsNoBodyError() throws URISyntaxException {
+            var e = assertThrows(ExchangeExpressionException.class,
+                    () -> eval("foobar][", post("/foo").contentType(APPLICATION_XML).body("<a/>").buildExchange(), Boolean.class));
+            assertFalse(e.isBodyError());
+            assertEquals(500, e.problemDetails(false, "test", REQUEST).getStatus());
+        }
+
+        private <T> T eval(String xpath, Exchange exc, Class<T> type) {
+            return expression(new InterceptorAdapter(router), XPATH, xpath).evaluate(exc, REQUEST, type);
+        }
     }
 
     @Nested
@@ -142,6 +286,24 @@ class XPathExchangeExpressionTest extends AbstractExchangeExpressionTest {
         void localName() {
             assertEquals("Trevor", expression(new InterceptorAdapter(router), getLanguage(),
                     "//*[local-name()='firstname']")
+                    .evaluate(pExc, REQUEST, String.class));
+        }
+
+        @Test
+        void globalXmlConfigIsUsedWithoutLocalOne() {
+            router.getRegistry().register("ns", xmlConfig("p8"));
+            assertEquals("Trevor", expression(new InterceptorAdapter(router), getLanguage(),
+                    "/p8:person/p8:firstname")
+                    .evaluate(pExc, REQUEST, String.class));
+        }
+
+        @Test
+        void localXmlConfigReplacesGlobalOne() {
+            router.getRegistry().register("ns", xmlConfig("p8"));
+            final var local = new InterceptorAdapter(router, xmlConfig("x"));
+            assertEquals("Trevor", expression(local, getLanguage(), "/x:person/x:firstname")
+                    .evaluate(pExc, REQUEST, String.class));
+            assertThrows(ExchangeExpressionException.class, () -> expression(local, getLanguage(), "/p8:person/p8:firstname")
                     .evaluate(pExc, REQUEST, String.class));
         }
     }
@@ -177,10 +339,30 @@ class XPathExchangeExpressionTest extends AbstractExchangeExpressionTest {
             }
         }
 
+        /**
+         * These diagnostics mention content too, but have nothing to do with the trailing section.
+         */
+        @Test
+        void otherContentErrorsKeepTheParserMessage() {
+            for (var xml : new String[]{"<a><</a>", "<content></x>"}) {
+                var e = assertThrows(ExchangeExpressionException.class,
+                        () -> expression(null, XPATH, "/a").evaluate(post("/foo").xml(xml).buildExchange(), REQUEST, String.class));
+                assertEquals(parseError(xml), e.getMessage());
+            }
+        }
+
         private static @NotNull ProblemDetails getProblemDetails(ExchangeExpressionException e) {
             var pd = user(false, "test");
             e.provideDetails(pd);
             return pd;
         }
+    }
+
+    /**
+     * @return the message the XML parser fails with on <code>xml</code>, which is localized
+     */
+    private static String parseError(String xml) {
+        return assertThrows(XmlParseException.class,
+                () -> HardenedXmlParser.getInstance().parse(new InputSource(new StringReader(xml)))).getMessage();
     }
 }

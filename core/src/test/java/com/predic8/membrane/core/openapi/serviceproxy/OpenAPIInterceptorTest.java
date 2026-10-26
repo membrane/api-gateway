@@ -18,7 +18,10 @@ package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.predic8.membrane.core.exceptions.ProblemDetails;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.http.Body;
+import com.predic8.membrane.core.http.ReadingBodyException;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.openapi.OpenAPIValidator;
 import com.predic8.membrane.core.router.DummyTestRouter;
 import com.predic8.membrane.core.router.Router;
@@ -27,13 +30,17 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.*;
 
+import static com.predic8.membrane.core.http.Header.ALLOW;
 import static com.predic8.membrane.core.http.Header.CONTENT_LENGTH;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.Request.post;
 import static com.predic8.membrane.core.http.Request.put;
+import static com.predic8.membrane.core.http.ThrowingInputStream.closedChannel;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.NO;
@@ -118,6 +125,172 @@ class OpenAPIInterceptorTest {
 
         assertEquals("No matching API found!", pd.getTitle());
         assertEquals("https://membrane-api.io/problems/user", pd.getType());
+    }
+
+    /**
+     * Routing ignores path parameters, see Request.getRoutingPath(). The base path must be found as well.
+     */
+    @Test
+    void getMatchingBasePathIgnoresPathParameters() {
+        exc.getRequest().setUri("/base/v2;x=1/foo");
+        assertEquals("/base/v2/", interceptor1Server.getMatchingBasePath(exc));
+    }
+
+    /**
+     * Routing merges duplicate slashes, see Request.getRoutingPath(). The base path must be found as well.
+     */
+    @Test
+    void getMatchingBasePathMergesDuplicateSlashes() {
+        exc.getRequest().setUri("//base//v2/foo");
+        assertEquals("/base/v2/", interceptor1Server.getMatchingBasePath(exc));
+    }
+
+    /**
+     * Of nested server paths the most specific one decides, regardless of the order of the OpenAPI documents.
+     */
+    @Test
+    void nestedBasePathsValidateAgainstMostSpecificOpenAPI() throws Exception {
+        exc.getRequest().setUri("/api/admin/users");
+        assertEquals(RETURN, createNestedBasePathsInterceptor().handleRequest(exc));
+        assertEquals(400, exc.getResponse().getStatusCode()); // Query parameter token of the inner OpenAPI is missing
+    }
+
+    /**
+     * The backend, like a servlet container, sees /api/admin/users. A path parameter must not get the request
+     * validated against the outer OpenAPI instead.
+     */
+    @Test
+    void nestedBasePathsPathParameterDoesNotSelectOuterOpenAPI() throws Exception {
+        exc.getRequest().setUri("/api/admin;x=1/users");
+        assertEquals(RETURN, createNestedBasePathsInterceptor().handleRequest(exc));
+        assertEquals(400, exc.getResponse().getStatusCode()); // Query parameter token of the inner OpenAPI is missing
+    }
+
+    /**
+     * A backend that decodes ;, / or \ before stripping path parameters, resolving dot-segments or treating \ as /
+     * reaches /api/admin/users. The request must not pass the validation of the outer OpenAPI instead.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "/api/admin%3bx=1/users",
+            "/api/admin%2f./users",
+            "/api/admin%5c./users",
+            "/api/admin%2f..%5cx/users", // A backend that keeps \ as data sees /api/admin/..\x/users
+    })
+    void encodedDelimiterSelectingInnerBasePathIsRejected(String uri) {
+        exc.getRequest().setUri(uri);
+        assertEquals(RETURN, createNestedBasePathsInterceptor().handleRequest(exc));
+        assertEquals(400, exc.getResponse().getStatusCode());
+    }
+
+    /**
+     * Decoding the encoded slash selects the same OpenAPI, so the request is validated as usual.
+     */
+    @Test
+    void encodedDelimiterSelectingSameBasePathIsAccepted() {
+        exc.getRequest().setUri("/api/projects%2Fx/users");
+        assertEquals(CONTINUE, createNestedBasePathsInterceptor().handleRequest(exc));
+    }
+
+    /**
+     * A backend that decodes / or \ before resolving dot-segments serves /api/admin/users. The request must not pass
+     * the validation of /public/{file} instead, which lacks the token of /admin/users.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "/api/public/x%2f..%2f..%2fadmin%2fusers",
+            "/api/public/x%5C..%5C..%5Cadmin%5Cusers",
+            "/api/public/..%3bx%2fadmin%2fusers", // A backend that decodes ; and / before it removes path parameters
+            "/api/public/x;a=b%2f..%2f..%2fadmin%2fusers", // The routing path /api/public/x has nothing encoded left
+    })
+    void encodedDelimiterSelectingAnotherPathIsRejected(String uri) {
+        exc.getRequest().setUri(uri);
+        assertEquals(RETURN, createEncodedDelimiterOperationsInterceptor().handleRequest(exc));
+        assertEquals(400, exc.getResponse().getStatusCode());
+    }
+
+    /**
+     * Decoding selects the same path, or no path of the OpenAPI at all, so the request is validated as usual.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "/api/public/x%3bv=1",
+            "/api/public/group%2Ffile",
+    })
+    void encodedDelimiterNotSelectingAnotherPathIsAccepted(String uri) {
+        exc.getRequest().setUri(uri);
+        assertEquals(CONTINUE, createEncodedDelimiterOperationsInterceptor().handleRequest(exc));
+    }
+
+    /**
+     * Without validation the path of the OpenAPI does not matter.
+     */
+    @Test
+    void encodedDelimiterSelectingAnotherPathIsAcceptedWithoutValidation() {
+        exc.getRequest().setUri("/api/public/x%2f..%2f..%2fadmin%2fusers");
+        assertEquals(CONTINUE, createEncodedDelimiterOperationsInterceptor(NO).handleRequest(exc));
+    }
+
+    private OpenAPIInterceptor createEncodedDelimiterOperationsInterceptor() {
+        return createEncodedDelimiterOperationsInterceptor(YES);
+    }
+
+    private OpenAPIInterceptor createEncodedDelimiterOperationsInterceptor(OpenAPISpec.YesNoOpenAPIOption validateRequests) {
+        final var spec = new OpenAPISpec();
+        spec.location = getPathFromResource("openapi/specs/encoded-delimiter-operations.yml");
+        spec.validateRequests = validateRequests;
+
+        final var interceptor = new OpenAPIInterceptor(createProxy(router, spec));
+        interceptor.init(router);
+        return interceptor;
+    }
+
+    /**
+     * The path templates of the OpenAPI are compiled with merged slashes, so the request path must be merged too.
+     */
+    @Test
+    void duplicateSlashesMatchPathTemplate() {
+        specInfoServers.validateRequests = YES;
+        final var interceptor = new OpenAPIInterceptor(createProxy(router, specInfoServers));
+        interceptor.init(router);
+
+        exc.getRequest().setUri("/base/v2//foo");
+        assertEquals(CONTINUE, interceptor.handleRequest(exc));
+    }
+
+    /**
+     * A path parameter like ;jsessionid=1 is not part of the value of a template expression.
+     */
+    @Test
+    void pathParameterIsNotPartOfTemplateExpressionValue() {
+        specCustomers.validateRequests = YES;
+        final var interceptor = new OpenAPIInterceptor(createProxy(router, specCustomers));
+        interceptor.init(router);
+
+        exc.getRequest().setUri("/customers/7;jsessionid=1");
+        assertEquals(CONTINUE, interceptor.handleRequest(exc));
+    }
+
+    /**
+     * The outer OpenAPI comes first, so that a first-match on the base paths picks it.
+     */
+    private OpenAPIInterceptor createNestedBasePathsInterceptor() {
+        final var outer = new OpenAPISpec();
+        outer.location = getPathFromResource("openapi/specs/nested-base-paths/outer.yml");
+        outer.validateRequests = YES;
+
+        final var inner = new OpenAPISpec();
+        inner.location = getPathFromResource("openapi/specs/nested-base-paths/inner.yml");
+        inner.validateRequests = YES;
+
+        final var proxy = new APIProxy();
+        proxy.setOpenapi(List.of(outer, inner));
+        proxy.setKey(new APIProxyKey(2000));
+        proxy.init(router);
+
+        final var interceptor = new OpenAPIInterceptor(proxy);
+        interceptor.init(router);
+        return interceptor;
     }
 
     @Test
@@ -226,6 +399,7 @@ class OpenAPIInterceptorTest {
 
         assertEquals(RETURN, interceptor.handleRequest(requestExc));
         assertEquals(405, requestExc.getResponse().getStatusCode());
+        assertEquals("GET, PUT, POST", requestExc.getResponse().getHeader().getFirstValue(ALLOW));
         assertEquals("PATCH", getMapFromResponse(requestExc).get("validation").get("method"));
         assertTrue(((Map<?, ?>) getMapFromResponse(requestExc).get("validation").get("errors")).containsKey("REQUEST/METHOD"));
     }
@@ -351,7 +525,7 @@ class OpenAPIInterceptorTest {
         var response = Response.ok().contentType(APPLICATION_JSON).build();
         // A Content-Length of 0 makes the validator skip the body
         response.getHeader().removeFields(CONTENT_LENGTH);
-        response.setBody(new Body(ThrowingInputStream.closedChannel("{"), 1000));
+        response.setBody(new Body(closedChannel("{"), 1000));
         exc.setResponse(response);
 
         assertThrows(ReadingBodyException.class, () -> interceptor.handleResponse(exc));
@@ -393,7 +567,7 @@ class OpenAPIInterceptorTest {
 
         assertEquals(3,validationErrors.size());
 
-        Map<String,Object> m1 = (Map<String, Object>) ((List)validationErrors.get( direction + "/BODY")).getFirst();
+        Map<String,Object> m1 = (Map<String, Object>) ((List)validationErrors.get( direction + "/BODY#/foo")).getFirst();
         assertEquals("Customer",m1.get("complexType"));
         assertEquals("object",m1.get("schemaType"));
 

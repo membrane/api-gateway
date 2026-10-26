@@ -9,9 +9,12 @@
 # Note: The environment variables are case-sensitive
 #
 # 1) Set PORT
-#     Linux/macOS: export PORT=3000
-#     Windows PowerShell: $env:PORT="3000"
-#     Windows CMD: set PORT=3000
+#     Linux/Mac:
+#       export PORT=3000
+#     Windows Command Prompt:
+#       set PORT=3000
+#     Windows PowerShell:
+#       $env:PORT="3000"
 #
 # 2) Start membrane from the same terminal so the env var is available
 #

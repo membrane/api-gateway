@@ -21,8 +21,7 @@ import java.util.regex.Pattern;
 /**
  * @description Accepts only methods consisting of uppercase letters A-Z, up to <code>maxLength</code> characters.
  * The strictest policy: <code>GET</code> and <code>POST</code> pass, but <code>PROPFIND2</code> (digit) and
- * <code>get</code> (lowercase) are answered with <code>501 Not Implemented</code>. See examples/configuration
- * for a runnable config.
+ * <code>get</code> (lowercase) are answered with <code>501 Not Implemented</code>.
  * @yaml <pre><code>
  * components:
  *   methodValidator:

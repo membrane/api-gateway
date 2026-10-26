@@ -134,6 +134,8 @@ public class FrameSender implements Runnable {
         }
         // TODO: implement prioritization logic
         for (StreamInfo streamInfo : streams.values()) {
+            if (streamInfo.getState() == StreamState.IDLE)
+                continue;
             frame = streamInfo.getDataFramesToBeSent().poll();
             if (frame != null) {
                 streamInfo.getBufferedDataFrames().release();

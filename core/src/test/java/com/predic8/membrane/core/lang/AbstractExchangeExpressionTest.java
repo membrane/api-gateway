@@ -13,6 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.core.lang;
 
+import com.predic8.membrane.core.config.xml.*;
+import com.predic8.membrane.core.config.xml.Namespaces.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.Interceptor.*;
@@ -44,7 +46,7 @@ public abstract class AbstractExchangeExpressionTest {
                 .header("multiple","foo")
                 .header("multiple","bar")
                 .header("multiple","baz")
-                .contentType(APPLICATION_JSON)
+                .contentType(getContentType())
                 .buildExchange();
         flow = REQUEST;
         exchange.setProperty("wet", true);
@@ -68,6 +70,10 @@ public abstract class AbstractExchangeExpressionTest {
 
     protected abstract Language getLanguage();
 
+    protected String getContentType() {
+        return APPLICATION_JSON;
+    }
+
     protected Object evalObject(String expression) {
         return expression(new InterceptorAdapter(router), getLanguage(),expression).evaluate(exchange,flow, Object.class);
     }
@@ -78,5 +84,19 @@ public abstract class AbstractExchangeExpressionTest {
 
     protected String evalString(String expression) {
         return expression(new InterceptorAdapter(router), getLanguage(),expression).evaluate(exchange,flow, String.class);
+    }
+
+    /**
+     * An xmlConfig that binds the prefix to https://predic8.de
+     */
+    protected static XmlConfig xmlConfig(String prefix) {
+        final var ns = new Namespace();
+        ns.setPrefix(prefix);
+        ns.setUri("https://predic8.de");
+        final var namespaces = new Namespaces();
+        namespaces.setNamespaces(List.of(ns));
+        final var cfg = new XmlConfig();
+        cfg.setNamespaces(namespaces);
+        return cfg;
     }
 }

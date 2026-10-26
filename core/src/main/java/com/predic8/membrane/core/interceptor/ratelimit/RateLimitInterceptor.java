@@ -21,17 +21,17 @@ import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.lang.AbstractExchangeExpressionInterceptor;
 import com.predic8.membrane.core.lang.ExchangeExpression;
+import com.predic8.membrane.core.lang.ExchangeExpressionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.expression.spel.SpelEvaluationException;
 
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
+import static com.predic8.membrane.core.http.Header.RETRY_AFTER;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_FLOW;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
@@ -83,6 +83,9 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
      */
     public static final String X_RATELIMIT_RESET = "X-RateLimit-Reset";
 
+    private static final String KEY_PREFIX_EXPRESSION = "key:";
+    private static final String KEY_PREFIX_CLIENT_IP = "ip:";
+
     private final RateLimitStrategy strategy;
 
     private List<String> trustedProxyList;
@@ -115,49 +118,60 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
 
     @Override
     public Outcome handleRequest(Exchange exc) {
+        final String key;
         try {
-            if (!strategy.isRequestLimitReached(getKey(exc)))
-                return CONTINUE;
-        } catch (SpelEvaluationException e) {
-            log.info("Cannot evaluate keyExpression {} cause is {}", expression, e.getCause());
-            internal(router.getConfiguration().isProduction(),getDisplayName())
+            key = getKey(exc);
+        } catch (ExchangeExpressionException e) {
+            // Only body errors get here, getKey() falls back to the client IP for any other error.
+            // The limiter only runs in the request flow, so the body is the client's (400)
+            e.problemDetails(router.getConfiguration().isProduction(), getDisplayName(), REQUEST)
                     .addSubType("rate-limit")
-                    .detail("Cannot evaluate keyExpression '%s' cause is %s".formatted(expression, e.getMessage()))
+                    .title("Cannot evaluate keyExpression.")
                     .buildAndSetResponse(exc);
             return RETURN;
         }
+        if (!strategy.isRequestLimitReached(key))
+            return CONTINUE;
 
-        log.info("{} limit: {} duration: {} is exceeded. (clientIp: {})", getKey(exc), getRequestLimit(), getRequestLimitDuration(), exc.getRemoteAddrIp());
-        user(false, getDisplayName())
+        log.info("{} limit: {} duration: {} is exceeded. (clientIp: {})", key, getRequestLimit(), getRequestLimitDuration(), exc.getRemoteAddrIp());
+        final var reset = strategy.getLimitReset(key);
+        user(router.getConfiguration().isProduction(), getDisplayName())
                 .status(429)
                 .title("Rate limit is exceeded.")
                 .addSubType("rate-limit")
-                .detail("The quota of the rate limit is exceeded. Try again in %s seconds.".formatted(strategy.getLimitReset(getKey(exc))))
-                .internal("limit", getRequestLimit())
-                .internal("duration", getRequestLimitDuration())
+                .detail("The quota of the rate limit is exceeded. Try again in %s seconds.".formatted(reset), true)
+                .topLevel("limit", getRequestLimit())
+                .topLevel("duration", getRequestLimitDuration())
                 .buildAndSetResponse(exc);
-        setHeaderRateLimitFieldsOnResponse(exc);
+        setHeaderRateLimitFieldsOnResponse(exc, reset);
 
         return RETURN;
     }
 
+    /**
+     * With a keyExpression, expression values and the client IP fallback get different prefixes,
+     * so a client cannot choose a key value that shares the fallback bucket of another client.
+     */
     private String getKey(Exchange exc) {
         if (expression == null || expression.isEmpty()) {
             return getClientIp(exc);
         }
 
-        String value;
+        final String value;
         try {
             value = exchangeExpression.evaluate(exc, REQUEST, String.class);
         } catch (Exception e) {
-            log.info("Error evaluating expression {} for rate limit. Fallback to 'unknown'",expression); // Can be pretty common
-            return "unknown";
+            // A broken body is the client's error and is answered with 400 instead of being counted
+            if (e instanceof ExchangeExpressionException eee && eee.isBodyError())
+                throw eee;
+            log.info("Error evaluating expression {} for rate limit. Fallback to client IP.", expression); // Can be pretty common
+            return KEY_PREFIX_CLIENT_IP + getClientIp(exc);
         }
         if (value != null && !value.isEmpty())
-            return value;
+            return KEY_PREFIX_EXPRESSION + value;
 
-        log.warn("The expression {} evaluates to null or there is an error in the expression. This may result in a wrong counting for the ratelimiter.", expression);
-        return "unknown";
+        log.info("The expression {} evaluates to null or an empty value. Fallback to client IP.", expression);
+        return KEY_PREFIX_CLIENT_IP + getClientIp(exc);
     }
 
     protected String getClientIp(Exchange exc) {
@@ -197,7 +211,7 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
     private String getClientIPFromTrustedProxyCount(Exchange exc, List<String> xForwardedFor) {
         log.debug("Using trustedProxyCount of {}", trustedProxyCount);
         if (xForwardedFor.size() <= trustedProxyCount) {
-            log.info("Forwarded-For entries {} do not match trusted proxies {}", xForwardedFor, trustedProxyList);
+            log.info("Forwarded-For entries {} do not match trusted proxy count {}", xForwardedFor, trustedProxyCount);
             return useRemoteIpAddress(exc);
         }
         // e.g.:
@@ -210,6 +224,10 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
 
     private String getClientIPfromTrustedProxyList(Exchange exc, List<String> xForwardedFor) {
         log.debug("Checking list of trusted proxies");
+        if (xForwardedFor.size() <= trustedProxyList.size()) {
+            log.info("Forwarded-For entries {} leave no client entry before the trusted proxies {}", xForwardedFor, trustedProxyList);
+            return useRemoteIpAddress(exc);
+        }
         for (int i = 1; i <= trustedProxyList.size(); i++) {
             String trustedProxy = trustedProxyList.get(trustedProxyList.size() - i);
             String forwardedFor = xForwardedFor.get(xForwardedFor.size() - i);
@@ -230,11 +248,12 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
         return l.get(l.size() - count - 1).trim();
     }
 
-    private void setHeaderRateLimitFieldsOnResponse(Exchange exc) {
+    private void setHeaderRateLimitFieldsOnResponse(Exchange exc, String reset) {
         Header h = exc.getResponse().getHeader();
         h.add(X_RATELIMIT_DURATION, strategy.getLimitDurationPeriod());
         h.add(X_RATELIMIT_LIMIT, Integer.toString(strategy.requestLimit));
-        h.add(X_RATELIMIT_RESET, strategy.getLimitReset(getKey(exc)));
+        h.add(X_RATELIMIT_RESET, reset);
+        h.add(RETRY_AFTER, reset);
     }
 
     @SuppressWarnings("unused")
@@ -273,6 +292,8 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
     /**
      * @description The expression the ratelimiter should use to group the requests before counting. The Spring Expression Language (SpEL)
      * is used as language. In the expression the build-in variables request, header, properties can be used.
+     * If the expression fails or evaluates to an empty value, the request is counted by its client IP address instead.
+     * <p>With XPath or JSONPath, a body that should be XML or JSON but does not parse is rejected with 400.</p>
      * @default ip-address
      */
     @MCAttribute

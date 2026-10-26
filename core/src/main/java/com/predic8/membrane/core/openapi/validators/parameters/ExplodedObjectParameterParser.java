@@ -32,6 +32,8 @@ public class ExplodedObjectParameterParser extends AbstractParameterParser {
 
     private static final Logger log = LoggerFactory.getLogger(ExplodedObjectParameterParser.class);
 
+    private Set<String> otherParameterNames = Set.of();
+
     @Override
     public JsonNode getJson() throws ParameterParsingException {
         var obj = FACTORY.objectNode();
@@ -102,22 +104,50 @@ public class ExplodedObjectParameterParser extends AbstractParameterParser {
     }
 
     private void patternProperties(Schema<?> schema, ObjectNode obj, Set<String> known) {
-        if (schema.getPatternProperties() == null || schema.getPatternProperties().isEmpty())
+        final var patterns = compilePatternProperties(schema);
+        if (patterns.isEmpty())
             return;
 
-        schema.getPatternProperties().forEach((regex, ignored) -> {
-            try {
-                Pattern pattern = Pattern.compile(regex);
-                values.forEach((k, vs) -> {
-                    if (known.contains(k)) return; // avoid double set
-                    if (vs != null && !vs.isEmpty() && pattern.matcher(k).matches()) {
-                        obj.set(k, scalarAsJson(decode(vs.getFirst(),UTF_8)));
-                        known.add(k);
-                    }
-                });
-            } catch (PatternSyntaxException e) {
-                log.warn("Ignoring invalid patternProperties regex '{}' for parameter '{}': {}", regex, parameter, e.getMessage());
+        values.forEach((k, vs) -> {
+            if (known.contains(k)) return; // avoid double set
+            if (otherParameterNames.contains(k)) return; // belongs to another declared parameter
+            if (vs != null && !vs.isEmpty() && matchesAny(patterns, k)) {
+                obj.set(k, scalarAsJson(decode(vs.getFirst(), UTF_8)));
+                known.add(k);
             }
         });
+    }
+
+    /**
+     * Names of the other query parameters declared for the operation. They are never collected
+     * via patternProperties, so an unanchored pattern cannot claim e.g. a declared <code>limit</code>.
+     */
+    public void setOtherParameterNames(Set<String> otherParameterNames) {
+        this.otherParameterNames = Set.copyOf(otherParameterNames);
+    }
+
+    /**
+     * Compiles the patternProperties regexes of the schema. Invalid regexes are logged and skipped.
+     */
+    public static List<Pattern> compilePatternProperties(Schema<?> schema) {
+        if (schema.getPatternProperties() == null)
+            return List.of();
+
+        final var patterns = new ArrayList<Pattern>();
+        schema.getPatternProperties().keySet().forEach(regex -> {
+            try {
+                patterns.add(Pattern.compile(regex));
+            } catch (PatternSyntaxException e) {
+                log.warn("Ignoring invalid patternProperties regex '{}': {}", regex, e.getMessage());
+            }
+        });
+        return List.copyOf(patterns);
+    }
+
+    /**
+     * JSON Schema regexes are not anchored: a name matches if the pattern matches anywhere in it.
+     */
+    public static boolean matchesAny(List<Pattern> patterns, String name) {
+        return patterns.stream().anyMatch(p -> p.matcher(name).find());
     }
 }
