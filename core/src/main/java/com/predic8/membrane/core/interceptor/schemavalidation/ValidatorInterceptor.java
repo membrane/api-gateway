@@ -60,6 +60,7 @@ import static com.predic8.membrane.core.util.text.TextUtil.linkURL;
  *   [ validationDetails: true | false ]   # default: true
  *   [ failureHandler: response | log ]    # default: response
  *   [ headers: none | bound | declared ]  # default: none, wsdl only
+ *   [ requireBoundHeaders: true | false ] # default: false, wsdl only
  * </pre>
  * @topic 3. Security and Validation
  * @yaml
@@ -94,6 +95,7 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
     private boolean skipFaults;
     private boolean validationDetails = true;
     private HeaderValidation headers = HeaderValidation.NONE;
+    private boolean requireBoundHeaders;
 
     private MessageValidator validator;
     private ResolverMap resourceResolver;
@@ -129,13 +131,15 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
             throw new ConfigurationException("validator/@skipFaults only makes sense with validator/@wsdl.");
         if (headers != HeaderValidation.NONE && wsdl == null)
             throw new ConfigurationException("validator/@headers only makes sense with validator/@wsdl.");
+        if (requireBoundHeaders && wsdl == null)
+            throw new ConfigurationException("validator/@requireBoundHeaders only makes sense with validator/@wsdl.");
     }
 
     private MessageValidator getMessageValidator() throws Exception {
         if (wsdl != null) {
             if (schemaMappings != null)
                 logIgnoringRefSchemas();
-            return new WSDLValidator(resourceResolver, combine(router.getConfiguration().getUriFactory(), getBeanBaseLocation(), wsdl), serviceName, createFailureHandler(), skipFaults, errorDetailsPolicy(), headers);
+            return new WSDLValidator(resourceResolver, combine(router.getConfiguration().getUriFactory(), getBeanBaseLocation(), wsdl), serviceName, createFailureHandler(), skipFaults, errorDetailsPolicy(), headers, requireBoundHeaders);
         }
         if (schema != null) {
             if (schemaMappings != null)
@@ -167,7 +171,7 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
         if(soapProxy == null) return null;
         wsdl = soapProxy.getResolvedWsdl();
         name = "soap validator";
-        return new WSDLValidator(resourceResolver, combine(router.getConfiguration().getUriFactory(), resolveBaseLocation(soapProxy, router), wsdl), serviceName, createFailureHandler(), skipFaults, errorDetailsPolicy(), headers);
+        return new WSDLValidator(resourceResolver, combine(router.getConfiguration().getUriFactory(), resolveBaseLocation(soapProxy, router), wsdl), serviceName, createFailureHandler(), skipFaults, errorDetailsPolicy(), headers, requireBoundHeaders);
     }
 
     private ErrorDetailsPolicy errorDetailsPolicy() {
@@ -356,6 +360,25 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
     @MCAttribute
     public void setHeaders(HeaderValidation headers) {
         this.headers = headers;
+    }
+
+    public boolean isRequireBoundHeaders() {
+        return requireBoundHeaders;
+    }
+
+    /**
+     * @description Whether a SOAP message must carry the header blocks the WSDL binding declares via
+     * <code>soap:header</code> for its operation: a request those on the operation's input, a response those on its
+     * output. A message missing one is rejected. If the body element belongs to several operations, e.g. of two ports,
+     * only the header blocks all of them declare are required. Faults need no header blocks. Only valid together with
+     * <code>wsdl</code>; works with every value of <code>headers</code>, which controls whether the header blocks are
+     * also validated.
+     * @default false
+     * @example true
+     */
+    @MCAttribute
+    public void setRequireBoundHeaders(boolean requireBoundHeaders) {
+        this.requireBoundHeaders = requireBoundHeaders;
     }
 
     public String getServiceName() {

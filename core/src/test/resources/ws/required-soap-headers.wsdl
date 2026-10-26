@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Header blocks bound via soap:header, for requiring them per operation. In service Single,
+    getCity binds a request and a response header, getVersion none. Service Both adds a port whose
+    binding binds no header for getCity. Service Rpc binds a request header on an RPC operation.
+-->
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:cs="https://example.com/cities"
+                  xmlns:hd="https://example.com/header"
+                  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                  xmlns:s="http://schemas.xmlsoap.org/wsdl/soap/"
+                  targetNamespace="https://example.com/cities" name="cities">
+    <wsdl:types>
+        <xsd:schema targetNamespace="https://example.com/header" elementFormDefault="qualified">
+            <xsd:element name="RequestHeader">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="MessageId" type="xsd:string"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="ResponseHeader">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="MessageId" type="xsd:string"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+        </xsd:schema>
+        <xsd:schema targetNamespace="https://example.com/cities">
+            <xsd:element name="getCity">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="name" type="xsd:string"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="getCityResponse">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="population" type="xsd:integer"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="getVersion">
+                <xsd:complexType/>
+            </xsd:element>
+            <xsd:element name="getVersionResponse" type="xsd:string"/>
+        </xsd:schema>
+    </wsdl:types>
+    <wsdl:message name="City">
+        <wsdl:part name="body" element="cs:getCity"/>
+    </wsdl:message>
+    <wsdl:message name="CityResponse">
+        <wsdl:part name="body" element="cs:getCityResponse"/>
+    </wsdl:message>
+    <wsdl:message name="Version">
+        <wsdl:part name="body" element="cs:getVersion"/>
+    </wsdl:message>
+    <wsdl:message name="VersionResponse">
+        <wsdl:part name="body" element="cs:getVersionResponse"/>
+    </wsdl:message>
+    <wsdl:message name="RequestHeader">
+        <wsdl:part name="header" element="hd:RequestHeader"/>
+    </wsdl:message>
+    <wsdl:message name="ResponseHeader">
+        <wsdl:part name="header" element="hd:ResponseHeader"/>
+    </wsdl:message>
+    <wsdl:message name="Lookup">
+        <wsdl:part name="name" type="xsd:string"/>
+    </wsdl:message>
+    <wsdl:portType name="CityPort">
+        <wsdl:operation name="getCity">
+            <wsdl:input message="cs:City"/>
+            <wsdl:output message="cs:CityResponse"/>
+        </wsdl:operation>
+        <wsdl:operation name="getVersion">
+            <wsdl:input message="cs:Version"/>
+            <wsdl:output message="cs:VersionResponse"/>
+        </wsdl:operation>
+    </wsdl:portType>
+    <wsdl:portType name="LookupPort">
+        <wsdl:operation name="lookup">
+            <wsdl:input message="cs:Lookup"/>
+        </wsdl:operation>
+    </wsdl:portType>
+    <wsdl:binding name="HeaderBinding" type="cs:CityPort">
+        <s:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+        <wsdl:operation name="getCity">
+            <s:operation soapAction="https://example.com/cities/getCity"/>
+            <wsdl:input>
+                <s:header use="literal" message="cs:RequestHeader" part="header"/>
+                <s:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <s:header use="literal" message="cs:ResponseHeader" part="header"/>
+                <s:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="getVersion">
+            <s:operation soapAction="https://example.com/cities/getVersion"/>
+            <wsdl:input>
+                <s:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <s:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+    </wsdl:binding>
+    <wsdl:binding name="PlainBinding" type="cs:CityPort">
+        <s:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+        <wsdl:operation name="getCity">
+            <s:operation soapAction="https://example.com/cities/getCity"/>
+            <wsdl:input>
+                <s:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <s:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="getVersion">
+            <s:operation soapAction="https://example.com/cities/getVersion"/>
+            <wsdl:input>
+                <s:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <s:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+    </wsdl:binding>
+    <wsdl:binding name="RpcBinding" type="cs:LookupPort">
+        <s:binding style="rpc" transport="http://schemas.xmlsoap.org/soap/http"/>
+        <wsdl:operation name="lookup">
+            <s:operation soapAction="https://example.com/cities/lookup"/>
+            <wsdl:input>
+                <s:header use="literal" message="cs:RequestHeader" part="header"/>
+                <s:body use="literal" namespace="https://example.com/cities"/>
+            </wsdl:input>
+        </wsdl:operation>
+    </wsdl:binding>
+    <wsdl:service name="Single">
+        <wsdl:port name="HeaderPort" binding="cs:HeaderBinding">
+            <s:address location="https://example.com/cities"/>
+        </wsdl:port>
+    </wsdl:service>
+    <wsdl:service name="Both">
+        <wsdl:port name="HeaderPort" binding="cs:HeaderBinding">
+            <s:address location="https://example.com/cities"/>
+        </wsdl:port>
+        <wsdl:port name="PlainPort" binding="cs:PlainBinding">
+            <s:address location="https://example.com/cities/plain"/>
+        </wsdl:port>
+    </wsdl:service>
+    <wsdl:service name="Rpc">
+        <wsdl:port name="RpcPort" binding="cs:RpcBinding">
+            <s:address location="https://example.com/lookup"/>
+        </wsdl:port>
+    </wsdl:service>
+</wsdl:definitions>

@@ -202,6 +202,17 @@ public class ValidatorInterceptorTest {
         assertTrue(e.getMessage().contains("headers"), e.getMessage());
     }
 
+    @Test
+    void requireBoundHeadersWithoutWsdlIsRejected() {
+        final var interceptor = new ValidatorInterceptor();
+        interceptor.setResourceResolver(new ResolverMap());
+        interceptor.setSchema("src/test/resources/validation/order.xsd");
+        interceptor.setRequireBoundHeaders(true);
+
+        final var e = assertThrows(ConfigurationException.class, () -> interceptor.init(router));
+        assertTrue(e.getMessage().contains("requireBoundHeaders"), e.getMessage());
+    }
+
     private ValidatorInterceptor createSchemaValidatorInterceptor(String schema) {
         return createSchemaValidatorInterceptor(schema, true);
     }

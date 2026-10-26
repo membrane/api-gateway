@@ -24,6 +24,7 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 import javax.xml.namespace.QName;
+import java.util.Map;
 import java.util.Set;
 
 import static com.predic8.membrane.core.interceptor.schemavalidation.WSDLMessageElementExtractor.*;
@@ -34,6 +35,10 @@ class WSDLMessageElementExtractorTest {
     private static final String CITIES_NS = "https://predic8.de/cities";
     private static final QName GET_CITY_QNAME = new QName(CITIES_NS, "getCity");
     private static final QName GET_CITYRESPONSE_QNAME = new QName(CITIES_NS, "getCityResponse");
+
+    private static final String EXAMPLE_CITIES_NS = "https://example.com/cities";
+    private static final String EXAMPLE_HEADER_NS = "https://example.com/header";
+    private static final QName REQUEST_HEADER = new QName(EXAMPLE_HEADER_NS, "RequestHeader");
 
     private static final String CALC_NS = "http://example.com/calc";
     private static final String SVC_NS = "http://example.com/svc";
@@ -239,6 +244,30 @@ class WSDLMessageElementExtractorTest {
     @Test
     void noHeaderElements() throws Exception {
         assertTrue(getPossibleRequestHeaderElements(getDefinitions("classpath:/ws/cities.wsdl"), null).isEmpty());
+    }
+
+    @Test
+    void requiredHeaderElementsPerBodyElement() throws Exception {
+        final var definitions = getDefinitions("classpath:/ws/required-soap-headers.wsdl");
+
+        assertEquals(Map.of(new QName(EXAMPLE_CITIES_NS, "getCity"), Set.of(REQUEST_HEADER),
+                        new QName(EXAMPLE_CITIES_NS, "getVersion"), Set.of()),
+                getRequiredRequestHeaderElements(definitions, "Single"));
+        assertEquals(Map.of(new QName(EXAMPLE_CITIES_NS, "getCityResponse"), Set.of(new QName(EXAMPLE_HEADER_NS, "ResponseHeader")),
+                        new QName(EXAMPLE_CITIES_NS, "getVersionResponse"), Set.of()),
+                getRequiredResponseHeaderElements(definitions, "Single"));
+    }
+
+    @Test
+    void requiredHeaderElementsIntersectAcrossBindings() throws Exception {
+        assertEquals(Set.of(), getRequiredRequestHeaderElements(getDefinitions("classpath:/ws/required-soap-headers.wsdl"), "Both")
+                .get(new QName(EXAMPLE_CITIES_NS, "getCity")));
+    }
+
+    @Test
+    void requiredHeaderElementsOfRpcOperation() throws Exception {
+        assertEquals(Map.of(new QName(EXAMPLE_CITIES_NS, "lookup"), Set.of(REQUEST_HEADER)),
+                getRequiredRequestHeaderElements(getDefinitions("classpath:/ws/required-soap-headers.wsdl"), "Rpc"));
     }
 
     private static @NotNull Definitions getDefinitions(String location) throws Exception {

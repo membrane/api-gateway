@@ -76,10 +76,18 @@ class SOAPHeaderBlockRecorderTest {
     }
 
     @Test
+    void reportsNamesOfAllBlocks() throws Exception {
+        final var names = new ArrayList<QName>();
+
+        assertTrue(SOAPHeaderBlockRecorder.forEach(new ByteArrayInputStream(SOAP11.getBytes(UTF_8)), Set.of(SECOND), names::add, block -> true));
+        assertEquals(List.of(FIRST, SECOND), names);
+    }
+
+    @Test
     void actionStopsRecording() throws Exception {
         var blocks = new ArrayList<RecordedElement>();
 
-        assertFalse(SOAPHeaderBlockRecorder.forEach(new ByteArrayInputStream(SOAP11.getBytes(UTF_8)), Set.of(FIRST, SECOND), block -> {
+        assertFalse(SOAPHeaderBlockRecorder.forEach(new ByteArrayInputStream(SOAP11.getBytes(UTF_8)), Set.of(FIRST, SECOND), name -> {}, block -> {
             blocks.add(block);
             return false;
         }));
@@ -246,7 +254,7 @@ class SOAPHeaderBlockRecorderTest {
 
     private static List<RecordedElement> record(String soap, QName... selected) throws Exception {
         var blocks = new ArrayList<RecordedElement>();
-        assertTrue(SOAPHeaderBlockRecorder.forEach(new ByteArrayInputStream(soap.getBytes(UTF_8)), Set.of(selected), blocks::add));
+        assertTrue(SOAPHeaderBlockRecorder.forEach(new ByteArrayInputStream(soap.getBytes(UTF_8)), Set.of(selected), name -> {}, blocks::add));
         return blocks;
     }
 

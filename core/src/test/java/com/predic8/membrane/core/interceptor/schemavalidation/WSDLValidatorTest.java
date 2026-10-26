@@ -44,6 +44,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.schemavalidation.WSDLValidator.HeaderValidation.BOUND;
 import static com.predic8.membrane.core.interceptor.schemavalidation.WSDLValidator.HeaderValidation.DECLARED;
+import static com.predic8.membrane.core.interceptor.schemavalidation.WSDLValidator.HeaderValidation.NONE;
 import static java.time.Duration.ofSeconds;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.*;
@@ -65,6 +66,13 @@ public class WSDLValidatorTest {
     public static final String UNBOUND_HEADER_WSDL = "src/test/resources/ws/unbound-header.wsdl";
     public static final String UNVALIDATABLE_HEADERS_WSDL = "src/test/resources/ws/unvalidatable-soap-headers.wsdl";
     public static final String HEADER_PART_PER_BINDING_WSDL = "src/test/resources/ws/header-part-per-binding.wsdl";
+    public static final String REQUIRED_HEADERS_WSDL = "src/test/resources/ws/required-soap-headers.wsdl";
+
+    private static final String REQUIRED_REQUEST_HEADER = """
+            <hd:RequestHeader xmlns:hd="https://example.com/header"><hd:MessageId>1</hd:MessageId></hd:RequestHeader>
+            """;
+
+    private static final String MISSING_REQUEST_HEADER = "The SOAP header block {https://example.com/header}RequestHeader required by the WSDL binding is missing.";
 
     private static final String GET_CITY_EXAMPLE_COM = """
             <cs:getCity xmlns:cs="https://example.com/cities"><name>Bonn</name></cs:getCity>
@@ -1158,6 +1166,111 @@ public class WSDLValidatorTest {
         assertEquals(ABORT, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, DECLARED).validateMessage(exc, REQUEST));
     }
 
+    @Test
+    void missingBoundHeaderIsNotRequiredByDefault() throws Exception {
+        final var exc = getRequestExchange(soap11WithoutHeader(GET_CITY_EXAMPLE_COM));
+
+        assertEquals(CONTINUE, createValidator(REQUIRED_HEADERS_WSDL, "Single", BOUND, false).validateMessage(exc, REQUEST));
+    }
+
+    @Test
+    void missingRequiredHeader() throws Exception {
+        final var exc = getRequestExchange(soap11WithoutHeader(GET_CITY_EXAMPLE_COM));
+
+        assertEquals(ABORT, createValidator(REQUIRED_HEADERS_WSDL, "Single", BOUND, true).validateMessage(exc, REQUEST));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains(MISSING_REQUEST_HEADER), body);
+    }
+
+    @Test
+    void missingRequiredHeaderBlock() throws Exception {
+        final var exc = getRequestExchange(soap11(GET_CITY_EXAMPLE_COM));
+
+        assertEquals(ABORT, createValidator(REQUIRED_HEADERS_WSDL, "Single", BOUND, true).validateMessage(exc, REQUEST));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains(MISSING_REQUEST_HEADER), body);
+    }
+
+    @Test
+    void presentRequiredHeader() throws Exception {
+        final var exc = getRequestExchange(soap11WithHeader(REQUIRED_REQUEST_HEADER, GET_CITY_EXAMPLE_COM));
+
+        assertEquals(CONTINUE, createValidator(REQUIRED_HEADERS_WSDL, "Single", BOUND, true).validateMessage(exc, REQUEST));
+    }
+
+    @Test
+    void invalidRequiredHeaderIsReportedAsInvalid() throws Exception {
+        final var exc = getRequestExchange(soap11WithHeader("""
+                <hd:RequestHeader xmlns:hd="https://example.com/header"><unknown/></hd:RequestHeader>
+                """, GET_CITY_EXAMPLE_COM));
+
+        assertEquals(ABORT, createValidator(REQUIRED_HEADERS_WSDL, "Single", BOUND, true).validateMessage(exc, REQUEST));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains("unknown"), body);
+        assertFalse(body.contains("is missing"), body);
+    }
+
+    @Test
+    void requiredHeaderOnlyForItsOperation() throws Exception {
+        final var exc = getRequestExchange(soap11WithoutHeader("""
+                <cs:getVersion xmlns:cs="https://example.com/cities"/>
+                """));
+
+        assertEquals(CONTINUE, createValidator(REQUIRED_HEADERS_WSDL, "Single", BOUND, true).validateMessage(exc, REQUEST));
+    }
+
+    @Test
+    void missingRequiredResponseHeader() throws Exception {
+        final var exc = getResponseExchange(soap11WithoutHeader("""
+                <cs:getCityResponse xmlns:cs="https://example.com/cities"><population>300000</population></cs:getCityResponse>
+                """));
+
+        assertEquals(ABORT, createValidator(REQUIRED_HEADERS_WSDL, "Single", BOUND, true).validateMessage(exc, RESPONSE));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains("{https://example.com/header}ResponseHeader required by the WSDL binding is missing"), body);
+    }
+
+    /**
+     * In service Both, getCity is also bound by a binding without soap:header, so its request may
+     * come without a header.
+     */
+    @Test
+    void requiredHeadersIntersectAcrossBindings() throws Exception {
+        final var exc = getRequestExchange(soap11WithoutHeader(GET_CITY_EXAMPLE_COM));
+
+        assertEquals(CONTINUE, createValidator(REQUIRED_HEADERS_WSDL, "Both", BOUND, true).validateMessage(exc, REQUEST));
+    }
+
+    @Test
+    void requiredRpcHeader() throws Exception {
+        final var exc = getRequestExchange(soap11WithoutHeader("""
+                <cs:lookup xmlns:cs="https://example.com/cities"><name>Bonn</name></cs:lookup>
+                """));
+
+        assertEquals(ABORT, createValidator(REQUIRED_HEADERS_WSDL, "Rpc", NONE, true).validateMessage(exc, REQUEST));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains(MISSING_REQUEST_HEADER), body);
+    }
+
+    /**
+     * Presence is checked even if no header block is validated.
+     */
+    @Test
+    void requiredHeaderWithHeadersNone() throws Exception {
+        final var exc = getRequestExchange(soap11WithoutHeader(GET_CITY_EXAMPLE_COM));
+
+        assertEquals(ABORT, createValidator(REQUIRED_HEADERS_WSDL, "Single", NONE, true).validateMessage(exc, REQUEST));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains(MISSING_REQUEST_HEADER), body);
+    }
+
+    @Test
+    void faultNeedsNoHeader() throws Exception {
+        final var exc = getResponseExchange(soap11WithoutHeader(FAULT_11));
+
+        assertEquals(CONTINUE, createValidator(REQUIRED_HEADERS_WSDL, "Single", BOUND, true).validateMessage(exc, RESPONSE));
+    }
+
     private static Exchange getRequestExchange(String body) throws URISyntaxException {
         return Request.post("/foo").body(body).contentType(TEXT_XML).buildExchange();
     }
@@ -1178,6 +1291,14 @@ public class WSDLValidatorTest {
                   <s11:Body>%s</s11:Body>
                </s11:Envelope>
                """.formatted(header, body);
+    }
+
+    private static String soap11WithoutHeader(String body) {
+        return """
+               <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                  <s11:Body>%s</s11:Body>
+               </s11:Envelope>
+               """.formatted(body);
     }
 
     private static String soap12(String body) {
@@ -1218,6 +1339,13 @@ public class WSDLValidatorTest {
     private static WSDLValidator createValidator(String location, WSDLValidator.HeaderValidation headerValidation) {
         var validator = new WSDLValidator(new ResolverMap(), location, null,
                 (msg, exc) -> log.info("Validation failure: {}", msg), false, ErrorDetailsPolicy.FULL, headerValidation);
+        validator.init();
+        return validator;
+    }
+
+    private static WSDLValidator createValidator(String location, String serviceName, WSDLValidator.HeaderValidation headerValidation, boolean requireBoundHeaders) {
+        final var validator = new WSDLValidator(new ResolverMap(), location, serviceName,
+                (msg, exc) -> log.info("Validation failure: {}", msg), false, ErrorDetailsPolicy.FULL, headerValidation, requireBoundHeaders);
         validator.init();
         return validator;
     }

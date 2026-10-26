@@ -30,6 +30,7 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
@@ -60,6 +61,11 @@ public class SOAPHeaderBlockRecorder extends DefaultHandler {
     private static final Pattern WHITESPACE = Pattern.compile("\\s+");
 
     private final Set<QName> selected;
+
+    /**
+     * Called with the name of each header block, selected or not.
+     */
+    private final Consumer<QName> blocks;
 
     /**
      * Called with each selected block; returns {@code false} to stop.
@@ -100,20 +106,23 @@ public class SOAPHeaderBlockRecorder extends DefaultHandler {
      */
     private final StringBuilder text = new StringBuilder();
 
-    private SOAPHeaderBlockRecorder(Set<QName> selected, Predicate<RecordedElement> action) {
+    private SOAPHeaderBlockRecorder(Set<QName> selected, Consumer<QName> blocks, Predicate<RecordedElement> action) {
         this.selected = selected;
+        this.blocks = blocks;
         this.action = action;
     }
 
     /**
      * @param selected names of the header blocks to record
+     * @param blocks   called with the name of each header block in document order, selected or not,
+     *                 until {@code action} stops
      * @param action   called with each selected header block in document order; returns
      *                 {@code false} to stop
      * @return {@code false} if {@code action} stopped, {@code true} otherwise
      * @throws SAXException if the message is not well-formed up to the end of its header
      */
-    public static boolean forEach(InputStream message, Set<QName> selected, Predicate<RecordedElement> action) throws IOException, SAXException {
-        final var recorder = new SOAPHeaderBlockRecorder(selected, action);
+    public static boolean forEach(InputStream message, Set<QName> selected, Consumer<QName> blocks, Predicate<RecordedElement> action) throws IOException, SAXException {
+        final var recorder = new SOAPHeaderBlockRecorder(selected, blocks, action);
         final var reader = HardenedSaxParser.newSAXParser().getXMLReader();
         reader.setContentHandler(recorder);
         try {
@@ -154,7 +163,11 @@ public class SOAPHeaderBlockRecorder extends DefaultHandler {
         depth++;
         if (depth == HEADER_DEPTH && !("Header".equals(localName) && isSOAPNamespace(uri)))
             throw new StopParsing(); // the header comes first, so there is none
-        if (depth == BLOCK_DEPTH && selected.contains(new QName(uri, localName))) {
+        if (depth == BLOCK_DEPTH) {
+            final var name = new QName(uri, localName);
+            blocks.accept(name);
+            if (!selected.contains(name))
+                return;
             final var attributes = withoutSoapAttributes(atts);
             block = new RecordedElement(locator, handler -> handler.startElement(uri, localName, qName, attributes));
             collectPrefixes(attributes);

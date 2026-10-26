@@ -75,6 +75,69 @@ public class WSDLMessageElementExtractor {
     }
 
     /**
+     * Header blocks a request must carry, by its body element: those bound via {@code soap:header}
+     * on the input of the binding operation the body element belongs to.
+     */
+    public static Map<QName, Set<QName>> getRequiredRequestHeaderElements(Definitions definitions, String serviceName) {
+        return getRequiredHeaderElements(definitions, serviceName, INPUT);
+    }
+
+    /**
+     * Header blocks a response must carry, by its body element: those bound via {@code soap:header}
+     * on the output of the binding operation the body element belongs to.
+     */
+    public static Map<QName, Set<QName>> getRequiredResponseHeaderElements(Definitions definitions, String serviceName) {
+        return getRequiredHeaderElements(definitions, serviceName, OUTPUT);
+    }
+
+    /**
+     * If a body element belongs to several binding operations, e.g. of two ports, only the header
+     * blocks all of them bind are required, so no message one of them allows is rejected. Header
+     * parts that cannot be resolved to an element are skipped; {@link #getHeaderElements} warns
+     * about them.
+     */
+    private static Map<QName, Set<QName>> getRequiredHeaderElements(Definitions definitions, String serviceName, Direction direction) {
+        final var result = new HashMap<QName, Set<QName>>();
+        for (var binding : getHeaderBindings(definitions, serviceName)) {
+            for (var bindingOperation : binding.getBindingOperations()) {
+                final var operation = binding.getPortType().findOperation(bindingOperation.getName());
+                if (operation.isEmpty())
+                    continue;
+                final var required = (direction == INPUT ? bindingOperation.getInputs() : bindingOperation.getOutputs()).stream()
+                        .flatMap(message -> message.getHeaders().stream())
+                        .map(SoapHeader::resolvePart)
+                        .flatMap(Optional::stream)
+                        .map(Part::getElementQName)
+                        .filter(Objects::nonNull)
+                        .collect(toSet());
+                for (var bodyElement : getBodyElements(definitions, binding, operation.get(), direction)) {
+                    result.merge(bodyElement, required, (a, b) -> a.stream().filter(b::contains).collect(toSet()));
+                }
+            }
+        }
+        result.replaceAll((bodyElement, required) -> Set.copyOf(required));
+        return Map.copyOf(result);
+    }
+
+    /**
+     * The body elements of the operation's messages in that direction in the binding, derived like
+     * {@link #getPossibleElements}: without services, every port type counts as document style.
+     */
+    private static Set<QName> getBodyElements(Definitions definitions, Binding binding, Operation operation, Direction direction) {
+        if (operation.getMessagesByDirection(direction).isEmpty())
+            return Set.of();
+        if (binding.getStyle() == RPC && !definitions.getServices().isEmpty())
+            return Set.of(new QName(definitions.getTargetNamespace(), getElementNameRPC(operation, direction)));
+        final var headerParts = getHeaderPartElements(binding, operation, direction);
+        return operation.getMessagesByDirection(direction).stream()
+                .map(message -> getBodyPart(message, headerParts))
+                .filter(Objects::nonNull)
+                .map(Part::getElementQName)
+                .filter(Objects::nonNull)
+                .collect(toSet());
+    }
+
+    /**
      * The global element declarations of the WSDL's schemas, including those of the schemas they
      * include or import.
      */
