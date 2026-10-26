@@ -22,6 +22,7 @@ import com.predic8.membrane.core.util.ConfigurationException;
 
 import java.util.Objects;
 
+import static com.predic8.membrane.core.transport.http.client.NoProxyList.parse;
 import static com.predic8.membrane.core.util.security.BasicAuthenticationUtil.createAuthorizationHeader;
 
 /**
@@ -186,8 +187,9 @@ public class ProxyConfiguration {
 	 */
 	@MCAttribute
 	public void setNoProxy(String noProxy) {
+		final var parsed = noProxy != null ? parse(noProxy) : null;
 		this.noProxy = noProxy;
-		this.noProxyList = noProxy != null ? NoProxyList.parse(noProxy) : null;
+		this.noProxyList = parsed;
 	}
 
 	/**
