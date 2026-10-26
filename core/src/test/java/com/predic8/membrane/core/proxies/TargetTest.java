@@ -15,10 +15,13 @@
 package com.predic8.membrane.core.proxies;
 
 import com.predic8.membrane.core.config.security.SSLParser;
+import com.predic8.membrane.core.util.ConfigurationException;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static com.predic8.membrane.core.util.text.SerializationUtil.Serialization.URL;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 class TargetTest {
 
@@ -45,5 +48,33 @@ class TargetTest {
         target.setSslParser(new SSLParser());
         target.setPort(8080);
         assertEquals(8080, target.getPort());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"http://backend.example.com/api/orders", "http://backend.example.com/api/${header.tenant}", "/path"})
+    void urlWithPathIsUsedAsIs(String url) {
+        assertTrue(targetWithUrl(url).isUrlUsedAsIs());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"http://backend.example.com", "http://backend.example.com/", "http://${header.region}.backend.example.com"})
+    void urlWithoutPathIsNotUsedAsIs(String url) {
+        assertFalse(targetWithUrl(url).isUrlUsedAsIs());
+    }
+
+    @Test
+    void withoutUrlNotUsedAsIs() {
+        assertFalse(new Target("backend.example.com", 8080).isUrlUsedAsIs());
+    }
+
+    @Test
+    void invalidUrlFailsAtConfiguration() {
+        assertThrows(ConfigurationException.class, () -> targetWithUrl("http://[::1/x"));
+    }
+
+    private static Target targetWithUrl(String url) {
+        final var target = new Target();
+        target.setUrl(url);
+        return target;
     }
 }
