@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions
+    xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+    xmlns:tns="https://example.com/ping"
+    targetNamespace="https://example.com/ping"
+    name="PingService">
+
+  <wsdl:types>
+    <xs:schema targetNamespace="https://example.com/ping" elementFormDefault="qualified">
+      <xs:element name="PingHeader" type="xs:string"/>
+      <xs:element name="pong" type="xs:string"/>
+    </xs:schema>
+  </wsdl:types>
+
+  <!-- Its only part is bound as soap:header, so the Body of a request is empty. -->
+  <wsdl:message name="PingRequest">
+    <wsdl:part name="header" element="tns:PingHeader"/>
+  </wsdl:message>
+
+  <wsdl:message name="PingResponse">
+    <wsdl:part name="parameters" element="tns:pong"/>
+  </wsdl:message>
+
+  <wsdl:portType name="PingPortType">
+    <wsdl:operation name="ping">
+      <wsdl:input message="tns:PingRequest"/>
+      <wsdl:output message="tns:PingResponse"/>
+    </wsdl:operation>
+  </wsdl:portType>
+
+  <wsdl:binding name="PingBinding" type="tns:PingPortType">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <wsdl:operation name="ping">
+      <soap:operation soapAction="ping"/>
+      <wsdl:input>
+        <soap:header message="tns:PingRequest" part="header" use="literal"/>
+        <soap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+
+  <wsdl:service name="PingService">
+    <wsdl:port name="PingPort" binding="tns:PingBinding">
+      <soap:address location="https://example.com/ping"/>
+    </wsdl:port>
+  </wsdl:service>
+
+</wsdl:definitions>

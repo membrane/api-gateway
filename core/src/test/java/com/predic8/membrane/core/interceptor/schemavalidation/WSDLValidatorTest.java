@@ -67,6 +67,12 @@ public class WSDLValidatorTest {
     public static final String BODY_PART_ALSO_HEADER_WSDL = "src/test/resources/ws/body-part-also-header.wsdl";
     public static final String HEADER_DECLARES_SOAP_ATTRIBUTES_WSDL = "src/test/resources/ws/header-declares-soap-attributes.wsdl";
     public static final String REQUIRED_HEADERS_WSDL = "src/test/resources/ws/required-soap-headers.wsdl";
+    public static final String MESSAGE_WITHOUT_PART_WSDL = "src/test/resources/ws/message-without-part.wsdl";
+    public static final String HEADER_ONLY_REQUEST_WSDL = "src/test/resources/ws/header-only-request.wsdl";
+
+    private static final String PING_HEADER = """
+            <p:PingHeader xmlns:p="https://example.com/ping">42</p:PingHeader>
+            """;
 
     private static final String REQUIRED_REQUEST_HEADER = """
             <hd:RequestHeader xmlns:hd="https://example.com/header"><hd:MessageId>1</hd:MessageId></hd:RequestHeader>
@@ -695,6 +701,69 @@ public class WSDLValidatorTest {
                 assertEquals(i % 2 == 0 ? CONTINUE : ABORT, futures.get(i).get(30, SECONDS), "task " + i);
             }
         }
+    }
+
+    @Test
+    void emptyBodyForMessageWithoutPart() throws Exception {
+        final var exc = getResponseExchange("""
+                <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope">
+                    <soap:Body/>
+                </soap:Envelope>
+                """);
+
+        assertEquals(CONTINUE, createValidator(MESSAGE_WITHOUT_PART_WSDL, null, false).validateMessage(exc, RESPONSE));
+    }
+
+    @Test
+    void emptyBodyForMessageWithPart() throws Exception {
+        final var exc = getRequestExchange(soap12(""));
+
+        assertEquals(ABORT, createValidator(MESSAGE_WITHOUT_PART_WSDL, null, false).validateMessage(exc, REQUEST));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains("An empty SOAP Body is not a valid request. Possible elements are [{https://example.com/empty}MyRequest]"), body);
+    }
+
+    @Test
+    void elementForMessageWithoutPart() throws Exception {
+        final var exc = getResponseExchange(soap12("""
+                <e:MyRequest xmlns:e="https://example.com/empty"><e:name>foo</e:name></e:MyRequest>
+                """));
+
+        assertEquals(ABORT, createValidator(MESSAGE_WITHOUT_PART_WSDL, null, false).validateMessage(exc, RESPONSE));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains("{https://example.com/empty}MyRequest is not a valid response element. Possible elements are [an empty Body]"), body);
+    }
+
+    @Test
+    void textInBodyForMessageWithoutPart() throws Exception {
+        final var exc = getResponseExchange(soap12("foo"));
+
+        assertEquals(ABORT, createValidator(MESSAGE_WITHOUT_PART_WSDL, null, false).validateMessage(exc, RESPONSE));
+    }
+
+    @Test
+    void emptyBodyForMessageWithOnlyHeaderPart() throws Exception {
+        final var exc = getRequestExchange(soap11WithHeader(PING_HEADER, ""));
+
+        assertEquals(CONTINUE, createValidator(HEADER_ONLY_REQUEST_WSDL, null, BOUND, true).validateMessage(exc, REQUEST));
+    }
+
+    @Test
+    void emptyBodyWithInvalidHeader() throws Exception {
+        final var exc = getRequestExchange(soap11WithHeader("""
+                <p:PingHeader xmlns:p="https://example.com/ping"><p:foo/></p:PingHeader>
+                """, ""));
+
+        assertEquals(ABORT, createValidator(HEADER_ONLY_REQUEST_WSDL, BOUND).validateMessage(exc, REQUEST));
+    }
+
+    @Test
+    void emptyBodyWithoutRequiredHeader() throws Exception {
+        final var exc = getRequestExchange(soap11WithoutHeader(""));
+
+        assertEquals(ABORT, createValidator(HEADER_ONLY_REQUEST_WSDL, null, BOUND, true).validateMessage(exc, REQUEST));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains("The SOAP header block {https://example.com/ping}PingHeader required by the WSDL binding is missing."), body);
     }
 
     @Test

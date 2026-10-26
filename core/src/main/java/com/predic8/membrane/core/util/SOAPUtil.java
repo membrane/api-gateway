@@ -224,6 +224,12 @@ public class SOAPUtil {
                         return NO_SOAP_RESULT;
                     }
                 }
+                // A Body holds elements only (SOAP 1.1 4.3, SOAP 1.2 5.3). Text in it would be taken
+                // for an empty Body if it is not followed by an element.
+                if (state == 2 && event.isCharacters() && !event.asCharacters().isWhiteSpace()) {
+                    log.debug("Text in SOAP Body.");
+                    return NO_SOAP_RESULT;
+                }
                 if (event.isEndElement()) {
                     if (state < 2) {
                         // Closed before a Body ever opened, e.g. an envelope carrying only a header.

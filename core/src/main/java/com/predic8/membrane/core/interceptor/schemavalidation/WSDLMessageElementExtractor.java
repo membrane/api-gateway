@@ -36,6 +36,13 @@ public class WSDLMessageElementExtractor {
 
     private static final Logger log = LoggerFactory.getLogger(WSDLMessageElementExtractor.class.getName());
 
+    /**
+     * Stands for an empty SOAP Body among the body elements: the one of a document style message
+     * without a body part, e.g. one without any part or with all its parts bound as
+     * {@code soap:header}. No element can have an empty local name, so it never matches a real one.
+     */
+    public static final QName EMPTY_BODY = new QName("", "");
+
     public static Set<QName> getPossibleRequestElements(Definitions definitions, String serviceName) {
         return getPossibleElements(definitions, INPUT, serviceName);
     }
@@ -122,6 +129,7 @@ public class WSDLMessageElementExtractor {
     /**
      * The body elements of the operation's messages in that direction in the binding, derived like
      * {@link #getPossibleElements}: without services, every port type counts as document style.
+     * A message without a body part has {@link #EMPTY_BODY}.
      */
     private static Set<QName> getBodyElements(Definitions definitions, Binding binding, Operation operation, Direction direction) {
         if (operation.getMessagesByDirection(direction).isEmpty())
@@ -131,10 +139,19 @@ public class WSDLMessageElementExtractor {
         final var bindingMessages = getBindingMessages(binding, operation, direction);
         return operation.getMessagesByDirection(direction).stream()
                 .map(message -> getBodyPart(message, bindingMessages))
-                .filter(Objects::nonNull)
-                .map(Part::getElementQName)
+                .map(WSDLMessageElementExtractor::getBodyElement)
                 .filter(Objects::nonNull)
                 .collect(toSet());
+    }
+
+    /**
+     * @param bodyPart null if the message has no body part
+     * @return null if the part names a type instead of an element
+     */
+    private static QName getBodyElement(Part bodyPart) {
+        if (bodyPart == null)
+            return EMPTY_BODY;
+        return bodyPart.getElementQName();
     }
 
     /**
@@ -310,6 +327,9 @@ public class WSDLMessageElementExtractor {
         return Stream.concat(portTypes.portTypesDocument().stream(), portTypes.portTypesRPC().stream()).toList();
     }
 
+    /**
+     * @return the body elements, {@link #EMPTY_BODY} for a document style message without a body part
+     */
     public static Set<QName> getPossibleElements(Definitions definitions, Direction direction, String serviceName) {
         var portTypes = getTypesByStyle(definitions, serviceName);
         var result = new HashSet<>(getElementQNameForDocumentStyle(definitions, serviceName, direction, portTypes));
@@ -327,7 +347,7 @@ public class WSDLMessageElementExtractor {
 
     private static @NotNull Set<QName> getElementQNameForDocumentStyle(Definitions definitions, String serviceName, Direction direction, PortTypesByStyle portTypes) {
         return getParts(definitions, serviceName, direction, portTypes.portTypesDocument())
-                .map(Part::getElementQName)
+                .map(WSDLMessageElementExtractor::getBodyElement)
                 .filter(Objects::nonNull)
                 .collect(toSet());
     }
@@ -377,6 +397,9 @@ public class WSDLMessageElementExtractor {
         return operation.getName();
     }
 
+    /**
+     * @return the body parts, null for a message without one
+     */
     private static @NotNull Stream<Part> getParts(Definitions definitions, String serviceName, Direction direction, List<PortType> result) {
         return result.stream()
                 .flatMap(portType -> {
@@ -384,8 +407,7 @@ public class WSDLMessageElementExtractor {
                     return portType.getOperations().stream()
                             .flatMap(op -> op.getMessagesByDirection(direction).stream()
                                     .flatMap(message -> getBodyParts(bindings, op, direction, message)));
-                })
-                .filter(Objects::nonNull); // Message can have no body part.
+                });
     }
 
     /**

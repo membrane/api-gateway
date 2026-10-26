@@ -68,12 +68,14 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
     private static final String SOAP_ANALYSIS_PROPERTY = "wsdlValidator.soapAnalysis";
 
     /**
-     * List of toplevel soapElements that are valid for requests
+     * List of toplevel soapElements that are valid for requests, {@link WSDLMessageElementExtractor#EMPTY_BODY}
+     * if the Body may be empty
      */
     private final Set<QName> requestElements;
 
     /**
-     * List of toplevel soapElements that are valid for responses
+     * List of toplevel soapElements that are valid for responses, {@link WSDLMessageElementExtractor#EMPTY_BODY}
+     * if the Body may be empty
      */
     private final Set<QName> responseElements;
 
@@ -304,20 +306,35 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
             return validateFault(exc, message, result.version());
         }
 
-        if (flow == Interceptor.Flow.REQUEST && !isPossibleRequestElement(result.soapElement())) {
-            return abort(exc, flow, "%s is not a valid request element. Possible elements are %s".formatted(result.soapElement(), requestElements));
+        final var bodyElement = result.soapElement() == null ? EMPTY_BODY : result.soapElement();
+        if (flow == Interceptor.Flow.REQUEST && !isPossibleRequestElement(bodyElement)) {
+            return abort(exc, flow, getInvalidBodyElementMessage(bodyElement, "request", requestElements));
         }
-        if (flow == Interceptor.Flow.RESPONSE && !isPossibleResponseElement(result.soapElement())) {
-            return abort(exc, flow, "%s is not a valid response element. Possible elements are %s".formatted(result.soapElement(), responseElements));
+        if (flow == Interceptor.Flow.RESPONSE && !isPossibleResponseElement(bodyElement)) {
+            return abort(exc, flow, getInvalidBodyElementMessage(bodyElement, "response", responseElements));
         }
 
         var exceptions = new ArrayList<Exception>();
         var required = (flow == Interceptor.Flow.REQUEST ? requiredRequestHeaderElements : requiredResponseHeaderElements)
-                .getOrDefault(result.soapElement(), Set.of());
+                .getOrDefault(bodyElement, Set.of());
         if (!validateHeaders(message, flow == Interceptor.Flow.REQUEST ? requestHeaderElements : responseHeaderElements, required, exceptions)) {
             return abort(exc, flow, exceptions);
         }
+        // An empty Body has no content to validate against the schemas.
+        if (bodyElement.equals(EMPTY_BODY)) {
+            valid.incrementAndGet();
+            return CONTINUE;
+        }
         return super.validateMessage(exc, flow);
+    }
+
+    private static String getInvalidBodyElementMessage(QName bodyElement, String messageKind, Set<QName> possible) {
+        final var possibleElements = possible.stream()
+                .map(element -> element.equals(EMPTY_BODY) ? "an empty Body" : element.toString())
+                .toList();
+        if (bodyElement.equals(EMPTY_BODY))
+            return "An empty SOAP Body is not a valid %s. Possible elements are %s".formatted(messageKind, possibleElements);
+        return "%s is not a valid %s element. Possible elements are %s".formatted(bodyElement, messageKind, possibleElements);
     }
 
     /**

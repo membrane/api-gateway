@@ -194,7 +194,7 @@ class WSDLMessageElementExtractorTest {
         final var definitions = getDefinitions("classpath:/ws/body-part-also-header.wsdl");
 
         assertEquals(Set.of(new QName("https://example.com/cities", "getCity"),
-                new QName("https://example.com/cities", "trace")), getPossibleRequestElements(definitions, null));
+                new QName("https://example.com/cities", "trace"), EMPTY_BODY), getPossibleRequestElements(definitions, null));
     }
 
     @Test
@@ -252,6 +252,23 @@ class WSDLMessageElementExtractorTest {
     @Test
     void noHeaderElements() throws Exception {
         assertTrue(getPossibleRequestHeaderElements(getDefinitions("classpath:/ws/cities.wsdl"), null).isEmpty());
+    }
+
+    @Test
+    void messageWithoutPartHasEmptyBody() throws Exception {
+        final var definitions = getDefinitions("classpath:/ws/message-without-part.wsdl");
+
+        assertEquals(Set.of(new QName("https://example.com/empty", "MyRequest")), getPossibleRequestElements(definitions, null));
+        assertEquals(Set.of(EMPTY_BODY), getPossibleResponseElements(definitions, null));
+    }
+
+    @Test
+    void messageWithOnlyHeaderPartHasEmptyBody() throws Exception {
+        final var definitions = getDefinitions("classpath:/ws/header-only-request.wsdl");
+
+        assertEquals(Set.of(EMPTY_BODY), getPossibleRequestElements(definitions, null));
+        assertEquals(Map.of(EMPTY_BODY, Set.of(new QName("https://example.com/ping", "PingHeader"))),
+                getRequiredRequestHeaderElements(definitions, null));
     }
 
     @Test
