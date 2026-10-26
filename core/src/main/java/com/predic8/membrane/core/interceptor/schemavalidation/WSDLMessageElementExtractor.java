@@ -128,9 +128,9 @@ public class WSDLMessageElementExtractor {
             return Set.of();
         if (binding.getStyle() == RPC && !definitions.getServices().isEmpty())
             return Set.of(new QName(definitions.getTargetNamespace(), getElementNameRPC(operation, direction)));
-        final var headerParts = getHeaderPartElements(binding, operation, direction);
+        final var bindingMessages = getBindingMessages(binding, operation, direction);
         return operation.getMessagesByDirection(direction).stream()
-                .map(message -> getBodyPart(message, headerParts))
+                .map(message -> getBodyPart(message, bindingMessages))
                 .filter(Objects::nonNull)
                 .map(Part::getElementQName)
                 .filter(Objects::nonNull)
@@ -217,17 +217,24 @@ public class WSDLMessageElementExtractor {
     }
 
     /**
-     * Message parts the binding carries as {@code soap:header} on the operation's input resp.
-     * output. They are carried in the SOAP header, so they are not the body element of that
-     * message in this binding. A part bound as header anywhere else, e.g. in another binding, on
-     * another operation or in the other direction, may still be a body part here. Unresolvable
-     * ones are skipped silently; {@link #getHeaderElements} already warns about them.
+     * The binding's input resp. output of the operation; none for faults.
      */
-    private static Set<Element> getHeaderPartElements(Binding binding, Operation operation, Direction direction) {
+    private static List<BindingOperationMessage> getBindingMessages(Binding binding, Operation operation, Direction direction) {
         if (direction == FAULT)
-            return Set.of();
+            return List.of();
         return binding.findBindingOperation(operation.getName()).stream()
                 .flatMap(bindingOperation -> (direction == INPUT ? bindingOperation.getInputs() : bindingOperation.getOutputs()).stream())
+                .toList();
+    }
+
+    /**
+     * Message parts the binding messages carry as {@code soap:header}. A part bound as header
+     * anywhere else, e.g. in another binding, on another operation or in the other direction, may
+     * still be a body part here. Unresolvable ones are skipped silently; {@link #getHeaderElements}
+     * already warns about them.
+     */
+    private static Set<Element> getHeaderPartElements(List<BindingOperationMessage> bindingMessages) {
+        return bindingMessages.stream()
                 .flatMap(message -> message.getHeaders().stream())
                 .map(SoapHeader::resolvePart)
                 .flatMap(Optional::stream)
@@ -390,17 +397,38 @@ public class WSDLMessageElementExtractor {
      */
     private static Stream<Part> getBodyParts(List<Binding> bindings, Operation operation, Direction direction, Message message) {
         if (bindings.isEmpty())
-            return Stream.of(getBodyPart(message, Set.of()));
+            return Stream.of(getBodyPart(message, List.of()));
         return bindings.stream()
-                .map(binding -> getBodyPart(message, getHeaderPartElements(binding, operation, direction)));
+                .map(binding -> getBodyPart(message, getBindingMessages(binding, operation, direction)));
     }
 
     /**
-     * Document style only uses one part for the body: the first one not bound as {@code soap:header}.
+     * Document style only uses one part for the body: the first one {@code soap:body/@parts}
+     * lists, even if it is also bound as {@code soap:header}. Without that attribute, the first
+     * part not bound as {@code soap:header}. Listed names the message does not have are ignored,
+     * and if none of them is found, the body part is chosen as without the attribute.
      *
+     * @param bindingMessages the binding's input resp. output carrying the message; none if the
+     *                        port type has no binding
      * @return the body part, or null if the message has none
      */
-    private static Part getBodyPart(Message message, Set<Element> headerParts) {
+    private static Part getBodyPart(Message message, List<BindingOperationMessage> bindingMessages) {
+        final var listed = bindingMessages.stream()
+                .map(BindingOperationMessage::getBody)
+                .flatMap(Optional::stream)
+                .map(SoapBody::getParts)
+                .flatMap(Optional::stream)
+                .findFirst();
+        if (listed.isPresent()) {
+            if (listed.get().isEmpty())
+                return null;
+            final var part = listed.get().stream()
+                    .flatMap(name -> message.getParts().stream().filter(p -> name.equals(p.getName())))
+                    .findFirst();
+            if (part.isPresent())
+                return part.get();
+        }
+        final var headerParts = getHeaderPartElements(bindingMessages);
         return message.getParts().stream()
                 .filter(part -> !headerParts.contains(part.getElement()))
                 .findFirst()

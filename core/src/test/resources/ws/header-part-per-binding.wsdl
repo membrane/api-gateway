@@ -2,8 +2,7 @@
 <!--
     Two ports of one service bind the same request message differently: CityBinding carries part
     city in the body and part trace as soap:header, TraceBinding the other way round. Each part is
-    the body element of one of the bindings. soap:body/@parts is given for WS-I conformance only;
-    the body part is the first part the binding does not carry as soap:header.
+    the body element of one of the bindings, as soap:body/@parts lists.
 -->
 <wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
                   xmlns:cs="https://example.com/cities"

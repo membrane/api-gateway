@@ -190,6 +190,14 @@ class WSDLMessageElementExtractorTest {
     }
 
     @Test
+    void explicitBodyPartAlsoBoundAsHeader() throws Exception {
+        final var definitions = getDefinitions("classpath:/ws/body-part-also-header.wsdl");
+
+        assertEquals(Set.of(new QName("https://example.com/cities", "getCity"),
+                new QName("https://example.com/cities", "trace")), getPossibleRequestElements(definitions, null));
+    }
+
+    @Test
     void headerOfOneBindingDoesNotHideBodyPartOfAnother() throws Exception {
         final var definitions = getDefinitions("classpath:/ws/header-part-per-binding.wsdl");
 

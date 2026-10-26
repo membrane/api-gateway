@@ -42,9 +42,7 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static com.predic8.membrane.core.interceptor.schemavalidation.WSDLValidator.HeaderValidation.BOUND;
-import static com.predic8.membrane.core.interceptor.schemavalidation.WSDLValidator.HeaderValidation.DECLARED;
-import static com.predic8.membrane.core.interceptor.schemavalidation.WSDLValidator.HeaderValidation.NONE;
+import static com.predic8.membrane.core.interceptor.schemavalidation.WSDLValidator.HeaderValidation.*;
 import static java.time.Duration.ofSeconds;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.*;
@@ -66,6 +64,7 @@ public class WSDLValidatorTest {
     public static final String UNBOUND_HEADER_WSDL = "src/test/resources/ws/unbound-header.wsdl";
     public static final String UNVALIDATABLE_HEADERS_WSDL = "src/test/resources/ws/unvalidatable-soap-headers.wsdl";
     public static final String HEADER_PART_PER_BINDING_WSDL = "src/test/resources/ws/header-part-per-binding.wsdl";
+    public static final String BODY_PART_ALSO_HEADER_WSDL = "src/test/resources/ws/body-part-also-header.wsdl";
     public static final String REQUIRED_HEADERS_WSDL = "src/test/resources/ws/required-soap-headers.wsdl";
 
     private static final String REQUIRED_REQUEST_HEADER = """
@@ -720,6 +719,13 @@ public class WSDLValidatorTest {
         final var exc = getRequestExchange(soap11WithHeader("", GET_CITY_EXAMPLE_COM));
 
         assertEquals(CONTINUE, createValidator(HEADER_PART_PER_BINDING_WSDL, null, false).validateMessage(exc, REQUEST));
+    }
+
+    @Test
+    void explicitBodyPartAlsoBoundAsHeader() throws Exception {
+        final var exc = getRequestExchange(soap11(GET_CITY_EXAMPLE_COM));
+
+        assertEquals(CONTINUE, createValidator(BODY_PART_ALSO_HEADER_WSDL, null, false).validateMessage(exc, REQUEST));
     }
 
     @Test
