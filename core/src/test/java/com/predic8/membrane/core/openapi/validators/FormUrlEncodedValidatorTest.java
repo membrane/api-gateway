@@ -17,9 +17,13 @@
 package com.predic8.membrane.core.openapi.validators;
 
 import jakarta.mail.internet.ParseException;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.net.URLEncoder;
+import java.util.List;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_X_WWW_FORM_URLENCODED;
 import static com.predic8.membrane.core.openapi.model.Request.post;
@@ -121,6 +125,45 @@ public class FormUrlEncodedValidatorTest extends AbstractValidatorTest {
         assertEquals(1, errors.size(), () -> "Errors: " + errors);
         assertTrue(errors.get(0).getMessage().toLowerCase().contains("minlength"),
                 "Expected a minLength error but got: " + errors.get(0).getMessage());
+    }
+
+    /**
+     * A repeated key is converted item by item with the prefixItems schema of its position, otherwise
+     * with items. See #3499.
+     */
+    @Nested
+    class PrefixItems extends AbstractValidatorTest {
+
+        @Override
+        protected String getOpenAPIFileName() {
+            return "/openapi/specs/oas31/prefix-items.yaml";
+        }
+
+        @ParameterizedTest
+        @CsvSource({
+                "closed=1&closed=a",
+                "closed=1",
+                "open=1&open=a&open=true"})
+        void accepted(String body) throws ParseException {
+            final var errors = validatePrefixItems(body);
+            assertTrue(errors.isEmpty(), () -> "Expected no errors but got: " + errors);
+        }
+
+        @ParameterizedTest
+        @CsvSource(delimiter = '|', value = {
+                "closed=a&closed=1|/closed/0",
+                "closed=1&closed=a&closed=2|/closed/2",
+                "open=a|/open/0"})
+        void rejected(String body, String pointer) throws ParseException {
+            final var errors = validatePrefixItems(body);
+            assertEquals(List.of(pointer), errors.stream().map(e -> e.getContext().getJSONpointer()).toList(), errors::toString);
+        }
+
+        private ValidationErrors validatePrefixItems(String body) throws ParseException {
+            return validator.validate(post().path("/form")
+                    .mediaType(APPLICATION_X_WWW_FORM_URLENCODED)
+                    .body(body));
+        }
     }
 
     private ValidationErrors validateForm(String body) throws ParseException {
