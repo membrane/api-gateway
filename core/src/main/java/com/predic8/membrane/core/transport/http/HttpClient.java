@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import java.net.MalformedURLException;
 
+import static com.predic8.membrane.core.http.Header.PROXY_AUTHORIZATION;
 import static com.predic8.membrane.core.transport.http.client.protocol.Http2ProtocolHandler.UPGRADED_PROTOCOL;
 import static com.predic8.membrane.core.util.HttpUtil.getPathAndQueryString;
 
@@ -83,6 +84,8 @@ public class HttpClient implements AutoCloseable {
         if (proxy != null && proxy.isAuthentication() && outConType.sslProvider() == null) {
             // if we use a proxy for a plain HTTP (=non-HTTPS) request, attach the proxy credentials.
             exc.getRequest().getHeader().setProxyAuthorization(proxy.getCredentials());
+        } else {
+            removeProxyCredentialsOfEarlierAttempt(exc);
         }
 
         protocolHandlerFactory.getHandlerForConnection(exc, outConType).handle(exc, outConType, hcp);
@@ -106,6 +109,17 @@ public class HttpClient implements AutoCloseable {
         if (configuration.isAdjustHostHeader() && (exc.getProxy() == null || exc.getProxy().isTargetAdjustHostHeader())) {
             exc.getRequest().getHeader().setHost(target.toString());
         }
+    }
+
+    // A retry can go direct (noProxy) or through a TLS tunnel after a proxied plain HTTP attempt. Only the value
+    // this client set is removed, a Proxy-Authorization header that came with the request is kept.
+    private void removeProxyCredentialsOfEarlierAttempt(Exchange exc) {
+        final var proxy = configuration.getProxy();
+        if (proxy == null || !proxy.isAuthentication())
+            return;
+        final var header = exc.getRequest().getHeader();
+        if (proxy.getCredentials().equals(header.getFirstValue(PROXY_AUTHORIZATION)))
+            header.removeFields(PROXY_AUTHORIZATION);
     }
 
     private void setAuthorizationHeader(Exchange exc) {

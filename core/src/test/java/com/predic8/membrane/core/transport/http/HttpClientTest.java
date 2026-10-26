@@ -23,6 +23,7 @@ import com.predic8.membrane.core.transport.http.client.*;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
+import java.util.*;
 import java.util.concurrent.atomic.*;
 
 import static com.predic8.membrane.core.http.Header.PROXY_AUTHORIZATION;
@@ -67,6 +68,7 @@ class HttpClientTest {
         static final int PROXY_PORT = 3068;
 
         final AtomicInteger proxyRequests = new AtomicInteger();
+        volatile boolean failFirstProxyRequest;
         TestRouter backend;
         TestRouter proxy;
         HttpClient proxiedClient;
@@ -91,7 +93,10 @@ class HttpClientTest {
             rule.getFlow().add(new AbstractInterceptor() {
                 @Override
                 public Outcome handleRequest(Exchange exc) {
-                    proxyRequests.incrementAndGet();
+                    if (proxyRequests.incrementAndGet() == 1 && failFirstProxyRequest) {
+                        exc.setResponse(Response.statusCode(408).build());
+                        return RETURN;
+                    }
                     return super.handleRequest(exc);
                 }
             });
@@ -134,6 +139,30 @@ class HttpClientTest {
 
             assertEquals(200, exc.getResponse().getStatusCode());
             assertEquals(1, proxyRequests.get());
+        }
+
+        @Test
+        void retryToBypassedHostDropsProxyCredentialsOfProxiedAttempt() throws Exception {
+            failFirstProxyRequest = true;
+            final var exc = get("/foo").buildExchange();
+            exc.setDestinations(List.of(
+                    "http://127.0.0.1:%d/foo".formatted(BACKEND_PORT),
+                    "http://localhost:%d/foo".formatted(BACKEND_PORT)));
+            proxiedClient.call(exc);
+
+            assertEquals(1, proxyRequests.get());
+            assertEquals(200, exc.getResponse().getStatusCode());
+            assertEquals("", exc.getResponse().getBodyAsStringDecoded());
+        }
+
+        @Test
+        void inboundProxyAuthorizationIsKeptForBypassedHost() throws Exception {
+            final var exc = get("http://localhost:%d/foo".formatted(BACKEND_PORT))
+                    .header(PROXY_AUTHORIZATION, "Basic aW5ib3VuZA==")
+                    .buildExchange();
+            proxiedClient.call(exc);
+
+            assertEquals("Basic aW5ib3VuZA==", exc.getResponse().getBodyAsStringDecoded());
         }
     }
 }
