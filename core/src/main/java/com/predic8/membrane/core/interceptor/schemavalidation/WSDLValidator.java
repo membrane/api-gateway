@@ -26,12 +26,16 @@ import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.LSInputImpl;
 import com.predic8.membrane.core.util.wsdl.parser.Definitions.SOAPVersion;
 import com.predic8.membrane.core.util.xml.XMLUtil;
+import com.predic8.membrane.core.util.xml.parser.HardenedSaxParser;
 import com.predic8.membrane.core.util.xml.parser.HardenedSchemaFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
 import org.w3c.dom.ls.LSResourceResolver;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
+import org.xml.sax.helpers.DefaultHandler;
 
 import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
@@ -322,10 +326,40 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
         }
         // An empty Body has no content to validate against the schemas.
         if (bodyElement.equals(EMPTY_BODY)) {
+            if (!validateEnvelope(message, exceptions)) {
+                return abort(exc, flow, exceptions);
+            }
             valid.incrementAndGet();
             return CONTINUE;
         }
         return super.validateMessage(exc, flow);
+    }
+
+    /**
+     * Parses the whole message through the {@link SOAPXMLFilter} without validating the body. A
+     * message whose body is validated gets these checks from the body filter; one with an empty
+     * Body is otherwise only read up to the end of the Body.
+     *
+     * @param exceptions collects the well-formedness and envelope structure errors
+     * @return {@code true} if the message is well-formed and its envelope structure is valid
+     */
+    private boolean validateEnvelope(Message message, List<Exception> exceptions) throws IOException {
+        final var errors = new ArrayList<Exception>();
+        try {
+            final var filter = new SOAPXMLFilter(HardenedSaxParser.newSAXParser().getXMLReader());
+            filter.setContentHandler(new DefaultHandler());
+            filter.setErrorHandler(new DefaultHandler() {
+                @Override
+                public void error(SAXParseException e) {
+                    errors.add(e);
+                }
+            });
+            filter.parse(new InputSource(xopr.reconstituteIfNecessary(message)));
+        } catch (SAXException e) {
+            errors.add(e);
+        }
+        exceptions.addAll(errors);
+        return errors.isEmpty();
     }
 
     private static String getInvalidBodyElementMessage(QName bodyElement, String messageKind, Set<QName> possible) {

@@ -766,6 +766,73 @@ public class WSDLValidatorTest {
         assertTrue(body.contains("The SOAP header block {https://example.com/ping}PingHeader required by the WSDL binding is missing."), body);
     }
 
+    /**
+     * An empty Body has no content to validate, but the rest of the message is still checked.
+     */
+    @Test
+    void emptyBodyInUnclosedEnvelope() throws Exception {
+        final var exc = getResponseExchange("""
+                <s12:Envelope xmlns:s12="http://www.w3.org/2003/05/soap-envelope">
+                  <s12:Body/>
+                """);
+
+        assertEquals(ABORT, createValidator(MESSAGE_WITHOUT_PART_WSDL, null, false).validateMessage(exc, RESPONSE));
+    }
+
+    @Test
+    void emptyBodyWithInvalidBlockInSecondHeader() throws Exception {
+        final var exc = getRequestExchange("""
+                <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                  <s11:Header>%s</s11:Header>
+                  <s11:Header><p:PingHeader xmlns:p="https://example.com/ping"><p:foo/></p:PingHeader></s11:Header>
+                  <s11:Body/>
+                </s11:Envelope>
+                """.formatted(PING_HEADER));
+
+        assertEquals(ABORT, createValidator(HEADER_ONLY_REQUEST_WSDL, BOUND).validateMessage(exc, REQUEST));
+        assertSecondHeaderReportedOnce(exc);
+    }
+
+    @Test
+    void emptyBodyWithHeaderAfterBody() throws Exception {
+        final var exc = getRequestExchange("""
+                <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                  <s11:Header>%s</s11:Header>
+                  <s11:Body/>
+                  <s11:Header><p:PingHeader xmlns:p="https://example.com/ping"><p:foo/></p:PingHeader></s11:Header>
+                </s11:Envelope>
+                """.formatted(PING_HEADER));
+
+        assertEquals(ABORT, createValidator(HEADER_ONLY_REQUEST_WSDL, BOUND).validateMessage(exc, REQUEST));
+        assertHeaderAfterBodyReportedOnce(exc);
+    }
+
+    @Test
+    void emptyBodyFollowedBySecondBody() throws Exception {
+        final var exc = getResponseExchange("""
+                <s12:Envelope xmlns:s12="http://www.w3.org/2003/05/soap-envelope">
+                  <s12:Body/>
+                  <s12:Body><e:MyRequest xmlns:e="https://example.com/empty"><e:unknown/></e:MyRequest></s12:Body>
+                </s12:Envelope>
+                """);
+
+        assertEquals(ABORT, createValidator(MESSAGE_WITHOUT_PART_WSDL, null, false).validateMessage(exc, RESPONSE));
+        assertReportedOnce(exc, "The SOAP Envelope must not contain more than one Body");
+    }
+
+    @Test
+    void secondBody() throws Exception {
+        final var exc = getRequestExchange("""
+                <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                  <s11:Body>%s</s11:Body>
+                  <s11:Body>%s</s11:Body>
+                </s11:Envelope>
+                """.formatted(GET_CITY_EXAMPLE_COM, GET_CITY_EXAMPLE_COM));
+
+        assertEquals(ABORT, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, null, false).validateMessage(exc, REQUEST));
+        assertReportedOnce(exc, "The SOAP Envelope must not contain more than one Body");
+    }
+
     @Test
     void bodyPartAfterHeaderPartIsTheRequestElement() throws Exception {
         var exc = getRequestExchange(soap11WithHeader("", """

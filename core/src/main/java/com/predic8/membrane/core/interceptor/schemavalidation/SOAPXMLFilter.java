@@ -13,11 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
-import org.xml.sax.Attributes;
-import org.xml.sax.Locator;
-import org.xml.sax.SAXException;
-import org.xml.sax.SAXParseException;
-import org.xml.sax.XMLReader;
+import org.xml.sax.*;
 import org.xml.sax.helpers.XMLFilterImpl;
 
 import static com.predic8.membrane.core.util.SOAPUtil.isSOAPNamespace;
@@ -82,6 +78,9 @@ public class SOAPXMLFilter extends XMLFilterImpl {
 		depth++;
 
 		if (isSoapBody(uri, localName)) {
+			// SOAP allows one body. A second one would be read as further body content.
+			if (depth == ENVELOPE_CHILD_DEPTH && position == Position.AFTER_BODY)
+				error(new SAXParseException("The SOAP Envelope must not contain more than one Body.", locator));
 			position = Position.IN_BODY;
 			return;
 		}

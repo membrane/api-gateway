@@ -29,9 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class SOAPXMLFilterTest {
 
@@ -103,6 +101,20 @@ class SOAPXMLFilterTest {
 
         assertEquals(1, errors.size());
         assertEquals("The SOAP Envelope must not contain more than one Header.", errors.getFirst().getMessage());
+        assertEquals(3, errors.getFirst().getLineNumber());
+    }
+
+    @Test
+    void secondBody() throws Exception {
+        var errors = filterSoapBodyErrors("""
+                <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soapenv:Body/>
+                  <soapenv:Body><req:Request xmlns:req="http://example.com/svc"/></soapenv:Body>
+                </soapenv:Envelope>
+                """);
+
+        assertEquals(1, errors.size());
+        assertEquals("The SOAP Envelope must not contain more than one Body.", errors.getFirst().getMessage());
         assertEquals(3, errors.getFirst().getLineNumber());
     }
 
