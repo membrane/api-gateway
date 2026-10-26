@@ -57,8 +57,20 @@ public final class RecordedElement {
      */
     private final Map<String, String> outerNamespaces = new LinkedHashMap<>();
 
-    RecordedElement(Locator locator, Event start) {
+    /**
+     * The start of the element as it was read, if the recorded start differs from it; null
+     * otherwise.
+     */
+    private final Event originalStart;
+
+    /**
+     * @param start         the start of the element as recorded
+     * @param originalStart the start of the element as it was read, if it differs from
+     *                      {@code start}; null otherwise
+     */
+    RecordedElement(Locator locator, Event start, Event originalStart) {
         add(locator, start);
+        this.originalStart = originalStart;
     }
 
     void add(Locator locator, Event event) {
@@ -73,10 +85,24 @@ public final class RecordedElement {
      * A source that replays the element as a document.
      */
     public Source toSource() {
-        return new SAXSource(new Player(), new InputSource());
+        return new SAXSource(new Player(false), new InputSource());
     }
 
-    private void replay(ContentHandler handler) throws SAXException {
+    /**
+     * Whether the recorded start of the element differs from the one that was read.
+     */
+    public boolean isStartChanged() {
+        return originalStart != null;
+    }
+
+    /**
+     * A source that replays the element as a document, starting it as it was read.
+     */
+    public Source toOriginalSource() {
+        return new SAXSource(new Player(isStartChanged()), new InputSource());
+    }
+
+    private void replay(ContentHandler handler, boolean original) throws SAXException {
         final var locator = new LocatorImpl();
         handler.setDocumentLocator(locator);
         handler.startDocument();
@@ -86,7 +112,7 @@ public final class RecordedElement {
         }
         for (var event : events) {
             moveTo(locator, event);
-            event.event().replay(handler);
+            (original && event == events.getFirst() ? originalStart : event.event()).replay(handler);
         }
         for (var prefix : outerNamespaces.keySet()) {
             handler.endPrefixMapping(prefix);
@@ -104,14 +130,20 @@ public final class RecordedElement {
      */
     private class Player extends XMLFilterImpl {
 
+        private final boolean original;
+
+        Player(boolean original) {
+            this.original = original;
+        }
+
         @Override
         public void parse(InputSource input) throws SAXException {
-            replay(getContentHandler());
+            replay(getContentHandler(), original);
         }
 
         @Override
         public void parse(String systemId) throws SAXException {
-            replay(getContentHandler());
+            replay(getContentHandler(), original);
         }
     }
 }

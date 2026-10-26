@@ -337,7 +337,7 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
         final var present = new HashSet<QName>();
         try {
             if (!SOAPHeaderBlockRecorder.forEach(xopr.reconstituteIfNecessary(message), validated, present::add,
-                    block -> validateAgainstSchemas(block::toSource, exceptions)))
+                    block -> validateHeaderBlock(block, exceptions)))
                 return false;
         } catch (SAXException e) {
             exceptions.add(e);
@@ -346,6 +346,40 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
         final var missing = required.stream().filter(name -> !present.contains(name)).toList();
         missing.forEach(name -> exceptions.add(new Exception("The SOAP header block %s required by the WSDL binding is missing.".formatted(name))));
         return missing.isEmpty();
+    }
+
+    /**
+     * The block is validated without the SOAP attributes on its root first, as its schema usually
+     * does not declare them. A schema may declare them, though, even as required, so a block that
+     * does not validate without them is validated once more with them.
+     * <p>
+     * The errors reported are those of the second validation, unless it reports an attribute as
+     * not allowed: then the schema does not declare the SOAP attributes, and the errors of the
+     * first validation are the ones about the block's content.
+     */
+    private boolean validateHeaderBlock(RecordedElement block, List<Exception> exceptions) {
+        final var errors = new ArrayList<Exception>();
+        if (validateAgainstSchemas(block::toSource, errors))
+            return true;
+        if (!block.isStartChanged()) {
+            exceptions.addAll(errors);
+            return false;
+        }
+        final var originalErrors = new ArrayList<Exception>();
+        if (validateAgainstSchemas(block::toOriginalSource, originalErrors))
+            return true;
+        exceptions.addAll(isAttributeNotAllowed(originalErrors) ? errors : originalErrors);
+        return false;
+    }
+
+    /**
+     * An attribute the schema does not allow is reported as cvc-complex-type.3.2.2. The message
+     * starts with that key in every locale.
+     */
+    private static boolean isAttributeNotAllowed(List<Exception> errors) {
+        return errors.stream()
+                .map(Exception::getMessage)
+                .anyMatch(message -> message != null && message.startsWith("cvc-complex-type.3.2.2"));
     }
 
     /**

@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    The schema of header block trace requires soap:mustUnderstand. The second embedded schema
+    stands in for the SOAP 1.1 envelope schema, which declares the attribute.
+-->
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:cs="https://example.com/cities"
+                  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                  xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                  xmlns:s="http://schemas.xmlsoap.org/wsdl/soap/"
+                  targetNamespace="https://example.com/cities" name="cities">
+    <wsdl:types>
+        <xsd:schema targetNamespace="https://example.com/cities">
+            <xsd:import namespace="http://schemas.xmlsoap.org/soap/envelope/"/>
+            <xsd:element name="getCity">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="name" type="xsd:string"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="getCityResponse">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="population" type="xsd:integer"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="trace">
+                <xsd:complexType>
+                    <xsd:simpleContent>
+                        <xsd:extension base="xsd:string">
+                            <xsd:attribute ref="soapenv:mustUnderstand" use="required"/>
+                        </xsd:extension>
+                    </xsd:simpleContent>
+                </xsd:complexType>
+            </xsd:element>
+        </xsd:schema>
+        <xsd:schema targetNamespace="http://schemas.xmlsoap.org/soap/envelope/">
+            <xsd:attribute name="mustUnderstand">
+                <xsd:simpleType>
+                    <xsd:restriction base="xsd:boolean">
+                        <xsd:pattern value="0|1"/>
+                    </xsd:restriction>
+                </xsd:simpleType>
+            </xsd:attribute>
+        </xsd:schema>
+    </wsdl:types>
+    <wsdl:message name="City">
+        <wsdl:part name="city" element="cs:getCity"/>
+        <wsdl:part name="trace" element="cs:trace"/>
+    </wsdl:message>
+    <wsdl:message name="CityResponse">
+        <wsdl:part name="body" element="cs:getCityResponse"/>
+    </wsdl:message>
+    <wsdl:portType name="CityPort">
+        <wsdl:operation name="getCity">
+            <wsdl:input message="cs:City"/>
+            <wsdl:output message="cs:CityResponse"/>
+        </wsdl:operation>
+    </wsdl:portType>
+    <wsdl:binding name="CityBinding" type="cs:CityPort">
+        <s:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+        <wsdl:operation name="getCity">
+            <s:operation soapAction="https://example.com/cities/getCity"/>
+            <wsdl:input>
+                <s:header message="cs:City" part="trace" use="literal"/>
+                <s:body parts="city" use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <s:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+    </wsdl:binding>
+    <wsdl:service name="CityService">
+        <wsdl:port name="CityPort" binding="cs:CityBinding">
+            <s:address location="https://example.com/cities"/>
+        </wsdl:port>
+    </wsdl:service>
+</wsdl:definitions>

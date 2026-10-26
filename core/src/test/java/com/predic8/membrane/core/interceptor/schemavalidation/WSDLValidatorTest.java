@@ -65,6 +65,7 @@ public class WSDLValidatorTest {
     public static final String UNVALIDATABLE_HEADERS_WSDL = "src/test/resources/ws/unvalidatable-soap-headers.wsdl";
     public static final String HEADER_PART_PER_BINDING_WSDL = "src/test/resources/ws/header-part-per-binding.wsdl";
     public static final String BODY_PART_ALSO_HEADER_WSDL = "src/test/resources/ws/body-part-also-header.wsdl";
+    public static final String HEADER_DECLARES_SOAP_ATTRIBUTES_WSDL = "src/test/resources/ws/header-declares-soap-attributes.wsdl";
     public static final String REQUIRED_HEADERS_WSDL = "src/test/resources/ws/required-soap-headers.wsdl";
 
     private static final String REQUIRED_REQUEST_HEADER = """
@@ -957,6 +958,59 @@ public class WSDLValidatorTest {
                 """, GET_CITY_EXAMPLE_COM));
 
         assertEquals(CONTINUE, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, BOUND).validateMessage(exc, REQUEST));
+    }
+
+    /**
+     * The schema does not declare the SOAP attributes, so the errors are about the content, not
+     * about them.
+     */
+    @Test
+    void invalidDeclaredHeaderWithSoapAttributes() throws Exception {
+        final var exc = getRequestExchange(soap11WithHeader("""
+                <hd:RequestHeader xmlns:hd="https://example.com/header" s11:mustUnderstand="1">
+                    <hd:Language>de</hd:Language>
+                </hd:RequestHeader>
+                """, GET_CITY_EXAMPLE_COM));
+
+        assertEquals(ABORT, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, BOUND).validateMessage(exc, REQUEST));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains("cvc-complex-type.2.4"), body);
+        assertFalse(body.contains("mustUnderstand"), body);
+    }
+
+    /**
+     * A header block's schema may declare the SOAP attributes, even as required.
+     */
+    @Test
+    void soapAttributeRequiredByHeaderSchema() throws Exception {
+        final var exc = getRequestExchange(soap11WithHeader("""
+                <cs:trace xmlns:cs="https://example.com/cities" s11:mustUnderstand="1">abc</cs:trace>
+                """, GET_CITY_EXAMPLE_COM));
+
+        assertEquals(CONTINUE, createValidator(HEADER_DECLARES_SOAP_ATTRIBUTES_WSDL, BOUND).validateMessage(exc, REQUEST));
+    }
+
+    @Test
+    void soapAttributeRequiredByHeaderSchemaMissing() throws Exception {
+        final var exc = getRequestExchange(soap11WithHeader("""
+                <cs:trace xmlns:cs="https://example.com/cities">abc</cs:trace>
+                """, GET_CITY_EXAMPLE_COM));
+
+        assertEquals(ABORT, createValidator(HEADER_DECLARES_SOAP_ATTRIBUTES_WSDL, BOUND).validateMessage(exc, REQUEST));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains("cvc-complex-type.4"), body);
+    }
+
+    @Test
+    void soapAttributeDeclaredByHeaderSchemaInvalid() throws Exception {
+        final var exc = getRequestExchange(soap11WithHeader("""
+                <cs:trace xmlns:cs="https://example.com/cities" s11:mustUnderstand="true">abc</cs:trace>
+                """, GET_CITY_EXAMPLE_COM));
+
+        assertEquals(ABORT, createValidator(HEADER_DECLARES_SOAP_ATTRIBUTES_WSDL, BOUND).validateMessage(exc, REQUEST));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains("cvc-pattern-valid"), body);
+        assertFalse(body.contains("cvc-complex-type.4"), body);
     }
 
     /**

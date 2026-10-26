@@ -23,6 +23,7 @@ import org.xml.sax.helpers.DefaultHandler;
 import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
 import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Source;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.stream.StreamResult;
@@ -105,6 +106,26 @@ class SOAPHeaderBlockRecorderTest {
         assertFalse(out.contains("mustUnderstand"), out);
         assertFalse(out.contains("actor"), out);
         assertFalse(out.contains("First"), out);
+    }
+
+    @Test
+    void keepsOriginalBlockWithSoapAttributes() throws Exception {
+        final var block = record(SOAP11, SECOND).getFirst();
+        final var out = serialize(block.toOriginalSource());
+
+        assertTrue(block.isStartChanged());
+        assertTrue(out.contains("mustUnderstand=\"1\""), out);
+        assertTrue(out.contains("actor="), out);
+        assertTrue(out.contains("id=\"x\""), out);
+        assertTrue(out.contains(">2<"), out);
+    }
+
+    @Test
+    void blockWithoutSoapAttributesIsUnchanged() throws Exception {
+        final var block = record(SOAP11, FIRST).getFirst();
+
+        assertFalse(block.isStartChanged());
+        assertEquals(serialize(block), serialize(block.toOriginalSource()));
     }
 
     /**
@@ -259,12 +280,16 @@ class SOAPHeaderBlockRecorderTest {
     }
 
     private static String serialize(RecordedElement block) throws Exception {
+        return serialize(block.toSource());
+    }
+
+    private static String serialize(Source source) throws Exception {
         var tf = TransformerFactory.newInstance();
         tf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
         var t = tf.newTransformer();
         t.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
         var sw = new StringWriter();
-        t.transform(block.toSource(), new StreamResult(sw));
+        t.transform(source, new StreamResult(sw));
         return sw.toString();
     }
 }

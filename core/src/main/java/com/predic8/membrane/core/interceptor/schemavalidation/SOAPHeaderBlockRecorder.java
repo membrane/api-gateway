@@ -50,8 +50,9 @@ import static com.predic8.membrane.core.util.SOAPUtil.isSOAPNamespace;
  * <p>
  * The attributes SOAP defines for every header block ({@code mustUnderstand}, {@code actor}/
  * {@code role}, {@code relay}, {@code encodingStyle}) are removed from the block's root element:
- * they belong to the envelope, and the block's own schema does not declare them. So is the
- * {@code wsu:Id} that WS-Security puts on a block it signs.
+ * they belong to the envelope, and the block's own schema usually does not declare them. So is the
+ * {@code wsu:Id} that WS-Security puts on a block it signs. The block keeps its root as it was
+ * read, see {@link RecordedElement#toOriginalSource()}, for a schema that does declare them.
  */
 public class SOAPHeaderBlockRecorder extends DefaultHandler {
 
@@ -169,7 +170,9 @@ public class SOAPHeaderBlockRecorder extends DefaultHandler {
             if (!selected.contains(name))
                 return;
             final var attributes = withoutSoapAttributes(atts);
-            block = new RecordedElement(locator, handler -> handler.startElement(uri, localName, qName, attributes));
+            final var original = new AttributesImpl(atts);
+            block = new RecordedElement(locator, handler -> handler.startElement(uri, localName, qName, attributes),
+                    attributes.getLength() == atts.getLength() ? null : handler -> handler.startElement(uri, localName, qName, original));
             collectPrefixes(attributes);
             return;
         }
@@ -253,7 +256,7 @@ public class SOAPHeaderBlockRecorder extends DefaultHandler {
         }
     }
 
-    private static Attributes withoutSoapAttributes(Attributes atts) {
+    private static AttributesImpl withoutSoapAttributes(Attributes atts) {
         var result = new AttributesImpl(atts);
         for (int i = result.getLength() - 1; i >= 0; i--) {
             if (isSOAPNamespace(result.getURI(i)) || isWsuId(result.getURI(i), result.getLocalName(i)))
