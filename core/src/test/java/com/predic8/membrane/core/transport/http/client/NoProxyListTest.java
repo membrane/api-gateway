@@ -86,6 +86,13 @@ class NoProxyListTest {
     }
 
     @Test
+    void ipv4EntryWithTrailingDot() {
+        final var list = NoProxyList.parse("127.0.0.1.");
+        assertTrue(list.matches("127.0.0.1"));
+        assertTrue(list.matches("127.0.0.1."));
+    }
+
+    @Test
     void ipEntryDoesNotMatchHostNames() {
         assertFalse(NoProxyList.parse("127.0.0.1").matches("localhost"));
     }

@@ -64,7 +64,7 @@ public final class NoProxyList {
                 matchAll = true;
                 continue;
             }
-            final var ipRange = parseIpRange(entry);
+            final var ipRange = parseIpRange(normalize(entry));
             if (ipRange.isPresent()) {
                 ipRanges.add(ipRange.get());
                 continue;
