@@ -70,6 +70,7 @@ class HttpClientTest {
 
         final AtomicInteger proxyRequests = new AtomicInteger();
         final Properties savedProperties = new Properties();
+        volatile boolean failFirstProxyRequest;
         TestRouter backend;
         TestRouter proxy;
         HttpClient client;
@@ -94,7 +95,10 @@ class HttpClientTest {
             rule.getFlow().add(new AbstractInterceptor() {
                 @Override
                 public Outcome handleRequest(Exchange exc) {
-                    proxyRequests.incrementAndGet();
+                    if (proxyRequests.incrementAndGet() == 1 && failFirstProxyRequest) {
+                        exc.setResponse(Response.statusCode(408).build());
+                        return RETURN;
+                    }
                     return super.handleRequest(exc);
                 }
             });
@@ -124,15 +128,7 @@ class HttpClientTest {
 
         @Test
         void bypassedHostIsCalledDirectlyWithoutProxyCredentials() throws Exception {
-            var pc = proxyConfiguration();
-            pc.setAuthentication(true);
-            pc.setUsername("alice");
-            pc.setPassword("secret");
-            pc.setNoProxy("localhost");
-            var hcc = new HttpClientConfiguration();
-            hcc.setProxy(pc);
-
-            var exc = call(hcc, "http://localhost:%d/foo".formatted(BACKEND_PORT));
+            var exc = call(authenticatedProxyBypassingLocalhost(), "http://localhost:%d/foo".formatted(BACKEND_PORT));
 
             assertEquals(200, exc.getResponse().getStatusCode());
             assertEquals(0, proxyRequests.get());
@@ -150,6 +146,32 @@ class HttpClientTest {
 
             assertEquals(200, exc.getResponse().getStatusCode());
             assertEquals(1, proxyRequests.get());
+        }
+
+        @Test
+        void retryToBypassedHostDropsProxyCredentialsOfProxiedAttempt() throws Exception {
+            failFirstProxyRequest = true;
+            client = new HttpClient(authenticatedProxyBypassingLocalhost());
+            final var exc = get("/foo").buildExchange();
+            exc.setDestinations(List.of(
+                    "http://127.0.0.1:%d/foo".formatted(BACKEND_PORT),
+                    "http://localhost:%d/foo".formatted(BACKEND_PORT)));
+            client.call(exc);
+
+            assertEquals(1, proxyRequests.get());
+            assertEquals(200, exc.getResponse().getStatusCode());
+            assertEquals("", exc.getResponse().getBodyAsStringDecoded());
+        }
+
+        @Test
+        void inboundProxyAuthorizationIsKeptForBypassedHost() throws Exception {
+            client = new HttpClient(authenticatedProxyBypassingLocalhost());
+            final var exc = get("http://localhost:%d/foo".formatted(BACKEND_PORT))
+                    .header(PROXY_AUTHORIZATION, "Basic aW5ib3VuZA==")
+                    .buildExchange();
+            client.call(exc);
+
+            assertEquals("Basic aW5ib3VuZA==", exc.getResponse().getBodyAsStringDecoded());
         }
 
         @Test
@@ -194,6 +216,17 @@ class HttpClientTest {
             System.setProperty("http.proxyPort", String.valueOf(PROXY_PORT));
             // Without it, the JDK default would bypass the proxy for 127.*
             System.setProperty("http.nonProxyHosts", "");
+        }
+
+        private static HttpClientConfiguration authenticatedProxyBypassingLocalhost() {
+            var pc = proxyConfiguration();
+            pc.setAuthentication(true);
+            pc.setUsername("alice");
+            pc.setPassword("secret");
+            pc.setNoProxy("localhost");
+            var hcc = new HttpClientConfiguration();
+            hcc.setProxy(pc);
+            return hcc;
         }
 
         private static ProxyConfiguration proxyConfiguration() {

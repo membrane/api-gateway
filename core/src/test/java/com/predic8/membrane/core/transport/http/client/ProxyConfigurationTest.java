@@ -79,4 +79,13 @@ class ProxyConfigurationTest {
     void invalidNoProxyIsRejected() {
         assertThrows(ConfigurationException.class, () -> proxy.setNoProxy("10.0.0.0/33"));
     }
+
+    @Test
+    void invalidNoProxyKeepsPreviousValue() {
+        proxy.setNoProxy("localhost");
+        assertThrows(ConfigurationException.class, () -> proxy.setNoProxy("10.0.0.0/33"));
+
+        assertEquals("localhost", proxy.getNoProxy());
+        assertTrue(proxy.isBypassed("localhost"));
+    }
 }
