@@ -63,6 +63,19 @@ class UnevaluatedPropertiesTest extends AbstractValidatorTest {
                 errors.stream().map(e -> e.getContext().getJSONpointer()).collect(toSet()));
     }
 
+    /**
+     * The property name is escaped in the JSON Pointer. See #3568.
+     */
+    @Test
+    void falseEscapesPropertyInPointer() throws ParseException {
+        final var errors = post("/closed", """
+                {"name": "a", "a/b": 1, "c~d": 2}
+                """);
+        assertEquals(2, errors.size(), errors.toString());
+        assertEquals(Set.of("/a~1b", "/c~0d"),
+                errors.stream().map(e -> e.getContext().getJSONpointer()).collect(toSet()));
+    }
+
     @Test
     void falseAcceptsDeclaredAndPatternProperties() throws ParseException {
         assertEquals(0, post("/closed", """
