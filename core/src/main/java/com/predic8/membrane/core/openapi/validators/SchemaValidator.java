@@ -16,7 +16,9 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
+import com.fasterxml.jackson.databind.node.BooleanNode;
 import com.fasterxml.jackson.databind.node.NullNode;
+import com.fasterxml.jackson.databind.node.NumericNode;
 import com.predic8.membrane.core.openapi.OpenAPIParsingException;
 import com.predic8.membrane.core.openapi.model.Body;
 import com.predic8.membrane.core.openapi.util.SchemaUtil;
@@ -34,6 +36,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 import static com.predic8.membrane.core.openapi.util.SchemaUtil.getSchemaNameFromRef;
 import static com.predic8.membrane.core.openapi.validators.EnumConstValidator.isString;
@@ -304,16 +307,17 @@ public class SchemaValidator implements JsonSchemaValidator {
         var type = schema.getType();
 
         // When a schema has an enum but no type, the parser infers one from the first member, e.g.
-        // string for enum: [{"a": 1}]. So the enum decides: a member is validated by its own type,
-        // and for any other value but a string, not being a member is the error. See #3587.
+        // string for enum: [{"a": 1}]. If the type may be such an inferred one, the enum decides: a
+        // member is validated by its own type, and for any other value but a string, not being a
+        // member is the error. See #3587.
         // A query parameter is text whose type the parameter parser guessed, e.g. 123 as a number,
         // so there the declared type still applies.
         final var enumConstValidator = new EnumConstValidator(schema);
         final var errors = new ValidationErrors();
-        if (!QUERY_PARAMETER.equals(ctx.getValidatedEntityType())) {
+        if (!QUERY_PARAMETER.equals(ctx.getValidatedEntityType()) && enumConstValidator.hasEnum() && mayBeInferredFromEnum(schema, type)) {
             if (enumConstValidator.isEnumMember(value))
                 return errors.add(validateSingleType(ctx, schema, value, getType(value))).add(enumConstValidator.validate(ctx, value));
-            if (enumConstValidator.hasEnum() && !isString(value))
+            if (!isString(value))
                 return enumConstValidator.validate(ctx, value);
         }
 
@@ -323,6 +327,29 @@ public class SchemaValidator implements JsonSchemaValidator {
         if (isOfDeclaredType(ctx, schema, value, type))
             errors.add(enumConstValidator.validate(ctx, value));
         return errors;
+    }
+
+    /**
+     * The parser does not tell an inferred type from a declared one, but it infers by a fixed rule
+     * from the first enum member: boolean, number or else string. A type that differs from that was
+     * declared. If it is the same, it can be either, e.g. type: string, enum: ["a", 1] then accepts 1.
+     */
+    @SuppressWarnings("rawtypes")
+    private static boolean mayBeInferredFromEnum(Schema schema, String type) {
+        if (schemaHasNoTypeAndTypes(schema, type))
+            return true;
+        final var declared = type != null ? Set.of(type) : schema.getTypes();
+        return declared.equals(Set.of(typeInferredFrom(schema.getEnum().getFirst())));
+    }
+
+    private static String typeInferredFrom(Object member) {
+        return switch (member) {
+            case Boolean ignored -> BOOLEAN;
+            case Number ignored -> NUMBER;
+            case BooleanNode ignored -> BOOLEAN;
+            case NumericNode ignored -> NUMBER;
+            case null, default -> STRING;
+        };
     }
 
     @SuppressWarnings("rawtypes")

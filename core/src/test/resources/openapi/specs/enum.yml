@@ -97,6 +97,19 @@ paths:
       responses:
         '200':
           description: OK
+  /enum-declared-type:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: integer
+              enum:
+                - a
+                - 1
+      responses:
+        '200':
+          description: OK
   /enum-query:
     get:
       parameters:

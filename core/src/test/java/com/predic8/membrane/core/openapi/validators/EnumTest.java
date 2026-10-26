@@ -16,20 +16,24 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.predic8.membrane.core.openapi.*;
-import com.predic8.membrane.core.openapi.model.*;
-import com.predic8.membrane.core.openapi.serviceproxy.*;
-import com.predic8.membrane.core.util.*;
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.params.*;
-import org.junit.jupiter.params.provider.*;
+import com.predic8.membrane.core.openapi.OpenAPIValidator;
+import com.predic8.membrane.core.openapi.model.Request;
+import com.predic8.membrane.core.openapi.serviceproxy.OpenAPIRecord;
+import com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec;
+import com.predic8.membrane.core.util.URIFactory;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-import static com.predic8.membrane.core.openapi.util.JsonTestUtil.*;
-import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.*;
-import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static com.predic8.membrane.core.openapi.util.JsonTestUtil.mapToJson;
+import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.getApi;
+import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.BODY;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 class EnumTest extends AbstractValidatorTest {
@@ -121,7 +125,19 @@ class EnumTest extends AbstractValidatorTest {
     @ParameterizedTest
     @ValueSource(strings = {OAS30, OAS31})
     void nonMemberOfOtherTypeIsReportedOnce(String spec) {
-        assertEquals(List.of("true is not part of the enum [1, 2]."), messages(spec, "/enum-integer", "true"));
+        assertEquals(List.of("true is not part of the enum [42, red, [1,2]]."), messages(spec, "/enum-mixed", "true"));
+    }
+
+    /**
+     * A type the parser would not have inferred from the first member was declared, so it applies
+     * to enum members too.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {OAS30, OAS31})
+    void declaredTypeAppliesToEnumMembers(String spec) {
+        assertEquals(List.of(), messages(spec, "/enum-declared-type", "1"));
+        assertEquals(1, messages(spec, "/enum-declared-type", "\"a\"").size());
+        assertEquals(1, messages(spec, "/enum-integer", "true").size());
     }
 
     @ParameterizedTest
