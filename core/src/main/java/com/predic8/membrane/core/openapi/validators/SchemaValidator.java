@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Objects;
 
 import static com.predic8.membrane.core.openapi.util.SchemaUtil.getSchemaNameFromRef;
+import static com.predic8.membrane.core.openapi.validators.EnumConstValidator.isString;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.BODY;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.QUERY_PARAMETER;
 import static com.predic8.membrane.core.openapi.validators.ValidationError.v;
@@ -302,6 +303,38 @@ public class SchemaValidator implements JsonSchemaValidator {
         // e.g. an array in the QueryParameter
         var type = schema.getType();
 
+        // When a schema has an enum but no type, the parser infers one from the first member, e.g.
+        // string for enum: [{"a": 1}]. So the enum decides: a member is validated by its own type,
+        // and for any other value but a string, not being a member is the error. See #3587.
+        // A query parameter is text whose type the parameter parser guessed, e.g. 123 as a number,
+        // so there the declared type still applies.
+        final var enumConstValidator = new EnumConstValidator(schema);
+        final var errors = new ValidationErrors();
+        if (!QUERY_PARAMETER.equals(ctx.getValidatedEntityType())) {
+            if (enumConstValidator.isEnumMember(value))
+                return errors.add(validateSingleType(ctx, schema, value, getType(value))).add(enumConstValidator.validate(ctx, value));
+            if (enumConstValidator.hasEnum() && !isString(value))
+                return enumConstValidator.validate(ctx, value);
+        }
+
+        errors.add(validateTypes(ctx, schema, value, type));
+
+        // A value of the wrong type is reported as such, not once more as not being the const.
+        if (isOfDeclaredType(ctx, schema, value, type))
+            errors.add(enumConstValidator.validate(ctx, value));
+        return errors;
+    }
+
+    @SuppressWarnings("rawtypes")
+    private boolean isOfDeclaredType(ValidationContext ctx, Schema schema, Object value, String type) {
+        if (schemaHasNoTypeAndTypes(schema, type))
+            return true;
+        final var types = type != null ? List.of(type) : new ArrayList<String>(schema.getTypes());
+        return getTypeNotMatchError(types, ctx, value, getTypeOfValue(types, value)) == null;
+    }
+
+    @SuppressWarnings("rawtypes")
+    private ValidationErrors validateTypes(ValidationContext ctx, Schema schema, Object value, String type) {
         if (schemaHasNoTypeAndTypes(schema, type)) {
             return validateMultipleTypes(List.of(STRING, NUMBER, INTEGER, BOOLEAN, ARRAY, OBJECT, NULL), ctx, schema, value);
         }
