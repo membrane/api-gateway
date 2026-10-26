@@ -32,6 +32,8 @@ import org.slf4j.LoggerFactory;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -40,8 +42,8 @@ import static com.google.common.collect.ImmutableMap.of;
 import static com.predic8.membrane.core.openapi.model.Request.post;
 import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.parseOpenAPI;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.regex.Pattern.quote;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Runs the OpenAPI validator with the official tests from the JSON Schema Test Suite.
@@ -98,6 +100,8 @@ public class JsonSchemaTestSuiteTests {
         log.info("\n{}", createSummary());
         log.info("Report written to {}", reportFile.toAbsolutePath());
 
+        // Without any executed run, e.g. for a draft directory without tests, the check below would pass vacuously
+        assertTrue(total(Outcome.PASSED) + total(Outcome.FAILED) + total(Outcome.ERROR) > 0, "No test run was executed in " + base);
         assertEquals(0, total(Outcome.FAILED) + total(Outcome.ERROR), "Failed or erroneous test runs, see " + reportFile.toAbsolutePath());
     }
 
@@ -123,7 +127,7 @@ public class JsonSchemaTestSuiteTests {
             final var openapi = generateOpenAPIForSchema(schema);
             log.debug("- {}\n{}", group, openapi);
 
-            var ignoredReason = computeIgnoredReason(openapi, group);
+            var ignoredReason = computeIgnoredReason(schema, group);
             OpenAPIValidator validator = null;
             if (ignoredReason == null) {
                 try {
@@ -143,42 +147,106 @@ public class JsonSchemaTestSuiteTests {
     }
 
     private @NotNull String generateOpenAPIForSchema(Object schema) throws JsonProcessingException {
+        final var references = new References(schema);
+        final var rewritten = references.rewrite(schema);
+
         Map openapi = new HashMap(of("openapi", "3.1.0",
                 "info", of("title", "JSON Schema Test Suite", "version", "1.0"),
                 "paths", of("/test", of("post", of(
-                        "requestBody", of("content", of("application/json", of("schema", schema))),
+                        "requestBody", of("content", of("application/json", of("schema", rewritten))),
                         "responses", of("200", of("description", "OK")))))));
 
         final var schemas = new HashMap<String, Object>();
-        moveTypeDefinitions(schema, schemas, "definitions");
-        moveTypeDefinitions(schema, schemas, "$defs");
+        references.moveDefinitions(schema, schemas);
         // "#" would point to the root of the OpenAPI document, so the schema is also made available as a component
-        final var refersToRoot = objectMapper.writeValueAsString(schema).contains("\"$ref\":\"#\"");
-        if (refersToRoot)
-            schemas.put(ROOT_SCHEMA, schema);
+        if (references.refersToRoot)
+            schemas.put(ROOT_SCHEMA, rewritten);
         if (!schemas.isEmpty())
             openapi.put("components", of("schemas", schemas));
 
-        var yaml = replaceReferences(replaceReferences(yamlMapper.writeValueAsString(openapi), "definitions"), "$defs");
-        if (refersToRoot)
-            yaml = yaml.replace("$ref: \"#\"", "$ref: \"#/components/schemas/" + ROOT_SCHEMA + "\"");
-        return yaml;
+        return yamlMapper.writeValueAsString(openapi);
     }
 
-    private String replaceReferences(String openApiString, String rootKey) {
-        return openApiString.replaceAll("#/" + quote(rootKey) + "/", "#/components/schemas/");
-    }
+    /**
+     * Rewrites the references of a test schema to the components of the generated OpenAPI. Only the values of
+     * <code>$ref</code> in schema positions are rewritten, literal values like those of <code>enum</code> and
+     * <code>const</code> stay as they are, even if they look like a reference.
+     * <p>
+     * The definitions of <code>$defs</code> and <code>definitions</code> become component schemas. If both declare the
+     * same name, the ones of <code>definitions</code> get the prefix {@link #DEFINITIONS_PREFIX}, so each reference
+     * keeps its own target.
+     */
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private static class References {
 
-    @SuppressWarnings("unchecked")
-    private static void moveTypeDefinitions(Object schema, Map<String, Object> schemas, String rootKey) {
-        if (schema instanceof Map && ((Map) schema).containsKey(rootKey)) {
-            schemas.putAll((Map<String, Object>) ((Map) schema).get(rootKey));
-            log.debug("The schema contains definitions. They have been moved from #/{}/ to #/components/schemas/ .", rootKey);
+        private static final String DEFINITIONS_PREFIX = "definitions_";
+
+        /** Keywords whose values are data, not schemas. */
+        private static final Set<String> LITERAL_KEYWORDS = Set.of("enum", "const", "default", "examples");
+
+        /** Keywords whose values map names to schemas, so the names are not keywords. */
+        private static final Set<String> SCHEMA_MAP_KEYWORDS = Set.of("properties", "patternProperties", "$defs", "definitions", "dependentSchemas");
+
+        private final String definitionsPrefix;
+        boolean refersToRoot;
+
+        References(Object schema) {
+            definitionsPrefix = collides(schema) ? DEFINITIONS_PREFIX : "";
+        }
+
+        private static boolean collides(Object schema) {
+            if (!(schema instanceof Map map) || !(map.get("$defs") instanceof Map defs) || !(map.get("definitions") instanceof Map definitions))
+                return false;
+            return defs.keySet().stream().anyMatch(definitions::containsKey);
+        }
+
+        void moveDefinitions(Object schema, Map<String, Object> schemas) {
+            if (!(schema instanceof Map map))
+                return;
+            if (map.get("definitions") instanceof Map definitions)
+                definitions.forEach((name, definition) -> schemas.put(definitionsPrefix + name, rewrite(definition)));
+            if (map.get("$defs") instanceof Map defs)
+                defs.forEach((name, definition) -> schemas.put((String) name, rewrite(definition)));
+        }
+
+        Object rewrite(Object schema) {
+            if (schema instanceof List list)
+                return list.stream().map(this::rewrite).toList();
+            if (!(schema instanceof Map map))
+                return schema;
+            final var result = new LinkedHashMap<String, Object>();
+            map.forEach((key, value) -> result.put((String) key, rewriteKeyword((String) key, value)));
+            return result;
+        }
+
+        private Object rewriteKeyword(String keyword, Object value) {
+            if ("$ref".equals(keyword) && value instanceof String ref)
+                return rewriteRef(ref);
+            if (LITERAL_KEYWORDS.contains(keyword))
+                return value;
+            if (SCHEMA_MAP_KEYWORDS.contains(keyword) && value instanceof Map schemas) {
+                final var result = new LinkedHashMap<String, Object>();
+                schemas.forEach((name, schema) -> result.put((String) name, rewrite(schema)));
+                return result;
+            }
+            return rewrite(value);
+        }
+
+        private String rewriteRef(String ref) {
+            if (ref.equals("#")) {
+                refersToRoot = true;
+                return "#/components/schemas/" + ROOT_SCHEMA;
+            }
+            if (ref.startsWith("#/$defs/"))
+                return "#/components/schemas/" + ref.substring("#/$defs/".length());
+            if (ref.startsWith("#/definitions/"))
+                return "#/components/schemas/" + definitionsPrefix + ref.substring("#/definitions/".length());
+            return ref;
         }
     }
 
-    private static @Nullable String computeIgnoredReason(String openapi, String description) {
-        if (openapi.contains("http://localhost:1234"))
+    private static @Nullable String computeIgnoredReason(Object schema, String description) {
+        if (needsRemoteServer(schema))
             return "remote references to localhost:1234, which the official test code serves, are not supported (yet).";
         if (description.equals("Location-independent identifier"))
             return "'$ref':'#foo' is used, which we do not support.";
@@ -189,6 +257,63 @@ public class JsonSchemaTestSuiteTests {
         if (description.equals("relative pointer ref to object"))
             return "reference migration not implemented";
         return null;
+    }
+
+    /**
+     * Whether a reference of the schema points to a resource on localhost:1234 that the schema does not embed with
+     * an <code>$id</code>. Only those need the server of the official test code; references between resources of
+     * the same schema, like in "Recursive references between schemas", do not.
+     */
+    private static boolean needsRemoteServer(Object schema) {
+        final var ids = new HashSet<String>();
+        final var refs = new ArrayList<String>();
+        collectIdsAndRefs(schema, URI.create(""), ids, refs);
+        return refs.stream().anyMatch(ref -> ref.startsWith("http://localhost:1234") && !ids.contains(ref));
+    }
+
+    /**
+     * Collects the <code>$id</code>s and the targets of the <code>$ref</code>s, each resolved against the
+     * <code>$id</code> in scope and without the fragment. Literal values like those of <code>enum</code> are skipped.
+     */
+    @SuppressWarnings("rawtypes")
+    private static void collectIdsAndRefs(Object schema, URI base, Set<String> ids, List<String> refs) {
+        if (schema instanceof List list) {
+            list.forEach(s -> collectIdsAndRefs(s, base, ids, refs));
+            return;
+        }
+        if (!(schema instanceof Map map))
+            return;
+        final var resolvedId = map.get("$id") instanceof String id ? resolve(base, id) : null;
+        if (resolvedId != null)
+            ids.add(withoutFragment(resolvedId));
+        final var scope = resolvedId != null ? resolvedId : base;
+        if (map.get("$ref") instanceof String ref) {
+            final var resolved = resolve(scope, ref);
+            if (resolved != null)
+                refs.add(withoutFragment(resolved));
+        }
+        for (var entry : ((Map<?, ?>) map).entrySet()) {
+            if (References.LITERAL_KEYWORDS.contains(entry.getKey()))
+                continue;
+            if (References.SCHEMA_MAP_KEYWORDS.contains(entry.getKey()) && entry.getValue() instanceof Map schemas)
+                schemas.values().forEach(s -> collectIdsAndRefs(s, scope, ids, refs));
+            else
+                collectIdsAndRefs(entry.getValue(), scope, ids, refs);
+        }
+    }
+
+    private static @Nullable URI resolve(URI base, String reference) {
+        try {
+            return base.resolve(new URI(reference));
+        } catch (URISyntaxException | IllegalArgumentException e) {
+            return null; // The validator reports the reference
+        }
+    }
+
+    private static String withoutFragment(URI uri) {
+        final var s = uri.toString();
+        final var hash = s.indexOf('#');
+        return hash == -1 ? s : s.substring(0, hash);
     }
 
     @SuppressWarnings("rawtypes")
