@@ -14,22 +14,17 @@
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
 import com.predic8.membrane.core.util.SOAPUtil;
-import com.predic8.membrane.core.util.xml.parser.HardenedSaxParser;
 import org.junit.jupiter.api.Test;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXParseException;
-import org.xml.sax.helpers.DefaultHandler;
 
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 import java.io.ByteArrayInputStream;
 import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.List;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SOAPXMLFilterTest {
 
@@ -75,85 +70,21 @@ class SOAPXMLFilterTest {
         assertTrue(out.contains("SearchCriteria"), out);
     }
 
-    @Test
-    void headerAfterBody() throws Exception {
-        var errors = filterSoapBodyErrors("""
-                <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
-                  <soapenv:Body><req:Request xmlns:req="http://example.com/svc"/></soapenv:Body>
-                  <soapenv:Header><h:Block xmlns:h="http://example.com/h"/></soapenv:Header>
-                </soapenv:Envelope>
-                """);
-
-        assertEquals(1, errors.size());
-        assertEquals("The SOAP Header must come before the Body.", errors.getFirst().getMessage());
-        assertEquals(3, errors.getFirst().getLineNumber());
-    }
-
-    @Test
-    void secondHeader() throws Exception {
-        var errors = filterSoapBodyErrors("""
-                <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
-                  <soapenv:Header><h:Block xmlns:h="http://example.com/h"/></soapenv:Header>
-                  <soapenv:Header><h:Block xmlns:h="http://example.com/h"/></soapenv:Header>
-                  <soapenv:Body><req:Request xmlns:req="http://example.com/svc"/></soapenv:Body>
-                </soapenv:Envelope>
-                """);
-
-        assertEquals(1, errors.size());
-        assertEquals("The SOAP Envelope must not contain more than one Header.", errors.getFirst().getMessage());
-        assertEquals(3, errors.getFirst().getLineNumber());
-    }
-
-    @Test
-    void secondBody() throws Exception {
-        var errors = filterSoapBodyErrors("""
-                <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
-                  <soapenv:Body/>
-                  <soapenv:Body><req:Request xmlns:req="http://example.com/svc"/></soapenv:Body>
-                </soapenv:Envelope>
-                """);
-
-        assertEquals(1, errors.size());
-        assertEquals("The SOAP Envelope must not contain more than one Body.", errors.getFirst().getMessage());
-        assertEquals(3, errors.getFirst().getLineNumber());
-    }
-
-    @Test
-    void headerBeforeBody() throws Exception {
-        assertTrue(filterSoapBodyErrors("""
-                <soapenv:Envelope xmlns:soapenv="http://www.w3.org/2003/05/soap-envelope">
-                  <soapenv:Header><h:Block xmlns:h="http://example.com/h"/></soapenv:Header>
-                  <soapenv:Body><req:Request xmlns:req="http://example.com/svc"/></soapenv:Body>
-                </soapenv:Envelope>
-                """).isEmpty());
-    }
-
     /**
-     * SOAP 1.1 allows further elements after the body. Only the SOAP header as a child of the
-     * envelope counts.
+     * Only the Body that is a child of the envelope holds the payload, not a SOAP Body nested in
+     * an element after it, which SOAP 1.1 allows.
      */
     @Test
-    void headerNestedInElementAfterBody() throws Exception {
-        assertTrue(filterSoapBodyErrors("""
+    void ignoresBodyNestedInElementAfterBody() throws Exception {
+        String out = filterSoapBody("""
                 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
                   <soapenv:Body><req:Request xmlns:req="http://example.com/svc"/></soapenv:Body>
-                  <t:Trailer xmlns:t="http://example.com/t"><soapenv:Header/></t:Trailer>
+                  <t:Trailer xmlns:t="http://example.com/t"><soapenv:Body><t:Smuggled/></soapenv:Body></t:Trailer>
                 </soapenv:Envelope>
-                """).isEmpty());
-    }
+                """);
 
-    private static List<SAXParseException> filterSoapBodyErrors(String soap) throws Exception {
-        var errors = new ArrayList<SAXParseException>();
-        var filter = new SOAPXMLFilter(HardenedSaxParser.newSAXParser().getXMLReader());
-        filter.setContentHandler(new DefaultHandler());
-        filter.setErrorHandler(new DefaultHandler() {
-            @Override
-            public void error(SAXParseException e) {
-                errors.add(e);
-            }
-        });
-        filter.parse(new InputSource(new ByteArrayInputStream(soap.getBytes(UTF_8))));
-        return errors;
+        assertTrue(out.contains("Request"), out);
+        assertFalse(out.contains("Smuggled"), out);
     }
 
     private static String filterSoapBody(String soap) throws Exception {

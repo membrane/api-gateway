@@ -28,6 +28,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 
 import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
@@ -36,6 +37,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.events.EndElement;
+import javax.xml.stream.events.EntityReference;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
 import javax.xml.transform.Source;
@@ -161,99 +163,236 @@ public class SOAPUtil {
     public record SOAPAnalysisResult(boolean isSOAP, boolean isFault, SoapVersion version, QName soapElement) {
     }
 
+    /**
+     * A SOAP message read as a whole.
+     *
+     * @param analysis what {@link #analyseSOAPMessage} reports for the message
+     * @param errors   where the message is not well-formed or its envelope breaks the structure
+     *                 SOAP requires, found after the message was recognized as SOAP; empty for a
+     *                 message that is no SOAP message
+     */
+    public record SOAPEnvelopeValidation(SOAPAnalysisResult analysis, List<Exception> errors) {
+        public SOAPEnvelopeValidation {
+            errors = List.copyOf(errors);
+        }
+    }
+
+    /**
+     * Recognizes a SOAP message by its envelope and finds its body element. Reads the message only
+     * up to the start of the body element.
+     */
     public static SOAPAnalysisResult analyseSOAPMessage( XOPReconstitutor xopr, Message msg) {
+        return readEnvelope(xopr, msg, false).analysis();
+    }
+
+    /**
+     * Analyses the message like {@link #analyseSOAPMessage}, but reads it to the end, so that it is
+     * checked as a whole: whether it is well-formed, and whether its envelope has the structure
+     * SOAP 1.1 resp. 1.2 requires - at most one {@code Header}, in front of exactly one
+     * {@code Body}, both in the namespace of the {@code Envelope}, and, in SOAP 1.2, no element
+     * after the {@code Body}. SOAP 1.1 allows further elements there.
+     */
+    public static SOAPEnvelopeValidation validateSOAPEnvelope(XOPReconstitutor xopr, Message msg) {
+        return readEnvelope(xopr, msg, true);
+    }
+
+    private static SOAPEnvelopeValidation readEnvelope(XOPReconstitutor xopr, Message msg, boolean wholeMessage) {
         log.debug("Analyzing SOAP message: {}", msg);
-
-        /*
-         * 0: waiting for "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">"
-         * 1: waiting for "<soapenv:Body>" (skipping any "<soapenv:Header>")
-         * 2: waiting for "<soapenv:Fault>"
-         */
+        final var reader = new EnvelopeReader(wholeMessage);
         try {
-            var parser = HardenedStaxInputFactory.inputFactory().createXMLEventReader(xopr.reconstituteIfNecessary(msg));
-
-            SoapVersion version = null;
-            int state = 0;
+            final var parser = HardenedStaxInputFactory.inputFactory().createXMLEventReader(xopr.reconstituteIfNecessary(msg));
             while (parser.hasNext()) {
-                var event = parser.nextEvent();
-                if (event.isStartElement()) {
-                    var name = ((StartElement) event).getName();
-
-                    if (state < 2 && !isSOAP11Element(name) && !isSOAP12Element(name)) {
-                        log.debug("Not a SOAP Element: {}", name);
-                        return NO_SOAP_RESULT;
-                    }
-
-                    // Only before the Body opens: this test is on the local name alone, so inside the
-                    // Body (state 2) it would swallow a payload element that happens to be named
-                    // "Header" and report a non-empty body as empty.
-                    if (state < 2 && "Header".equals(name.getLocalPart())) {
-                        // skip header
-                        readUntilEndTag(parser);
-                        continue;
-                    }
-
-                    String expected;
-                    switch (state) {
-                        case 0 -> expected = "Envelope";
-                        case 1 -> expected = "Body";
-                        case 2 -> expected = "Fault";
-                        default -> {
-                            return NO_SOAP_RESULT;
-                        }
-                    }
-
-                    if ("Envelope".equals(name.getLocalPart())) {
-                        state = 1;
-                        version = getSOAPVersion(name);
-                        continue;
-                    }
-
-                    if (expected.equals(name.getLocalPart())) {
-                        switch (state) {
-                            case 0 -> version = getSOAPVersion(name);
-                            case 2 -> {
-                                return new SOAPAnalysisResult(true, true, version, null);
-                            }
-                            default -> state++;
-                        }
-                    } else {
-                        if (state == 2) {
-                            return new SOAPAnalysisResult(true, false, version, name);
-                        }
-                        return NO_SOAP_RESULT;
-                    }
-                }
-                // A Body holds elements only (SOAP 1.1 4.3, SOAP 1.2 5.3). Text in it would be taken
-                // for an empty Body if it is not followed by an element.
-                if (state == 2 && event.isCharacters() && !event.asCharacters().isWhiteSpace()) {
-                    log.debug("Text in SOAP Body.");
-                    return NO_SOAP_RESULT;
-                }
-                if (event.isEndElement()) {
-                    if (state < 2) {
-                        // Closed before a Body ever opened, e.g. an envelope carrying only a header.
-                        return NO_SOAP_RESULT;
-                    }
-                    // Specifically </Body>, not just any end element at this state: reaching it means
-                    // the Body held no element at all, which is reported with a null soapElement.
-                    // Anything else keeps the scan going rather than being read as an empty body.
-                    if ("Body".equals(event.asEndElement().getName().getLocalPart())) {
-                        return new SOAPAnalysisResult(true, false, version, null);
-                    }
-                }
+                if (!reader.read(parser.nextEvent()))
+                    break;
             }
         } catch (ReadingBodyException e) {
             // As in isSOAP: a body that could not be read says nothing about whether it was SOAP.
             // Reporting it as "not SOAP" would turn a transport failure into a content verdict.
             throw e;
         } catch (Exception e) {
-            log.info("Error parsing SOAP message: {}", e.getMessage());
-            log.debug("Ignoring exception: ", e);
-            return NO_SOAP_RESULT;
+            if (reader.analysis == null) {
+                log.info("Error parsing SOAP message: {}", e.getMessage());
+                log.debug("Ignoring exception: ", e);
+                return new SOAPEnvelopeValidation(NO_SOAP_RESULT, List.of());
+            }
+            reader.errors.add(e instanceof XMLStreamException xse ? toSAXParseException(xse) : e);
         }
-        log.info("No SOAP Element found.");
-        return NO_SOAP_RESULT;
+        if (reader.analysis == null) {
+            log.info("No SOAP Element found.");
+            return new SOAPEnvelopeValidation(NO_SOAP_RESULT, List.of());
+        }
+        return new SOAPEnvelopeValidation(reader.analysis, reader.analysis.isSOAP() ? reader.errors : List.of());
+    }
+
+    /**
+     * The JDK's StAX parser puts the location in front of the message of a parse error, Woodstox
+     * after it.
+     */
+    private static final String LOCATION_IN_FRONT = "Message: ";
+    private static final String LOCATION_AFTER = "\n at [row,col";
+
+    /**
+     * Reports a parse error with its location in fields of its own, as the SAX parser does,
+     * instead of in the message.
+     */
+    private static SAXParseException toSAXParseException(XMLStreamException e) {
+        final var location = e.getLocation();
+        var message = e.getMessage();
+        final var start = message.indexOf(LOCATION_IN_FRONT);
+        if (start >= 0)
+            message = message.substring(start + LOCATION_IN_FRONT.length());
+        final var end = message.indexOf(LOCATION_AFTER);
+        if (end >= 0)
+            message = message.substring(0, end);
+        return location == null
+                ? new SAXParseException(message, null)
+                : new SAXParseException(message, null, null, location.getLineNumber(), location.getColumnNumber());
+    }
+
+    /**
+     * Reads the events of a message, one at a time, and keeps track of where they are in the
+     * envelope.
+     */
+    private static final class EnvelopeReader {
+
+        private static final int ENVELOPE_DEPTH = 1;
+        private static final int ENVELOPE_CHILD_DEPTH = 2;
+        private static final int BODY_ENTRY_DEPTH = 3;
+
+        /**
+         * Where the reader is among the children of the envelope.
+         */
+        private enum Position {
+            START,
+            /**
+             * A header has started, the body has not.
+             */
+            AFTER_HEADER,
+            IN_BODY,
+            AFTER_BODY
+        }
+
+        /**
+         * Whether to read on once the message is recognized as SOAP, to check the rest of it.
+         */
+        private final boolean wholeMessage;
+
+        private final List<Exception> errors = new ArrayList<>();
+
+        /**
+         * Null until the message is recognized as SOAP or not.
+         */
+        private SOAPAnalysisResult analysis;
+
+        private QName envelope;
+
+        private Position position = Position.START;
+
+        /**
+         * Depth of the current element: {@code 1} for the envelope, {@code 2} for its children.
+         */
+        private int depth;
+
+        EnvelopeReader(boolean wholeMessage) {
+            this.wholeMessage = wholeMessage;
+        }
+
+        /**
+         * @return {@code false} if the rest of the message is not needed
+         */
+        boolean read(XMLEvent event) {
+            if (event.isStartElement())
+                return startElement(event.asStartElement());
+            if (event.isEndElement())
+                return endElement();
+            // Without a DTD no entity is declared. Some parsers report the reference as an event
+            // instead of as an error.
+            if (event.isEntityReference())
+                error(event, "The entity \"%s\" was referenced, but not declared.".formatted(((EntityReference) event).getName()));
+            // A Body holds elements only (SOAP 1.1 4.3, SOAP 1.2 5.3). Text in it would be taken
+            // for an empty Body if it is not followed by an element.
+            if (position == Position.IN_BODY && analysis == null && event.isCharacters() && !event.asCharacters().isWhiteSpace())
+                return notSOAP("Text in SOAP Body.", null);
+            return true;
+        }
+
+        private boolean startElement(StartElement element) {
+            final var name = element.getName();
+            depth++;
+            if (depth == ENVELOPE_DEPTH) {
+                if (!"Envelope".equals(name.getLocalPart()) || !isSOAPNamespace(name.getNamespaceURI()))
+                    return notSOAP("Not a SOAP Envelope: {}", name);
+                envelope = name;
+                return true;
+            }
+            if (depth == ENVELOPE_CHILD_DEPTH)
+                return envelopeChild(element);
+            if (depth == BODY_ENTRY_DEPTH && position == Position.IN_BODY && analysis == null) {
+                final var fault = "Fault".equals(name.getLocalPart());
+                return recognized(new SOAPAnalysisResult(true, fault, getSOAPVersion(envelope), fault ? null : name));
+            }
+            return true;
+        }
+
+        private boolean envelopeChild(StartElement element) {
+            final var name = element.getName();
+            final var soap = isSOAPNamespace(name.getNamespaceURI());
+            if (position == Position.AFTER_BODY) {
+                if (soap && "Header".equals(name.getLocalPart()))
+                    error(element, "The SOAP Header must come before the Body.");
+                else if (soap && "Body".equals(name.getLocalPart()))
+                    error(element, "The SOAP Envelope must not contain more than one Body.");
+                else if (getSOAPVersion(envelope) == SoapVersion.SOAP12)
+                    error(element, "A SOAP 1.2 Envelope must not contain an element after the Body.");
+                return true;
+            }
+            if (!soap)
+                return notSOAP("Not a SOAP Element: {}", name);
+            switch (name.getLocalPart()) {
+                case "Header" -> {
+                    if (position == Position.AFTER_HEADER)
+                        error(element, "The SOAP Envelope must not contain more than one Header.");
+                    position = Position.AFTER_HEADER;
+                }
+                case "Body" -> position = Position.IN_BODY;
+                default -> {
+                    return notSOAP("Not a SOAP Element: {}", name);
+                }
+            }
+            if (!envelope.getNamespaceURI().equals(name.getNamespaceURI()))
+                error(element, "The SOAP %s must be in the namespace of the Envelope, %s.".formatted(name.getLocalPart(), envelope.getNamespaceURI()));
+            return true;
+        }
+
+        private boolean endElement() {
+            final var closing = depth--;
+            if (closing == ENVELOPE_CHILD_DEPTH && position == Position.IN_BODY) {
+                position = Position.AFTER_BODY;
+                // The Body held no element at all, which is reported with a null soapElement.
+                if (analysis == null)
+                    return recognized(new SOAPAnalysisResult(true, false, getSOAPVersion(envelope), null));
+            }
+            // Closed before a Body ever opened, e.g. an envelope carrying only a header.
+            if (closing == ENVELOPE_DEPTH && analysis == null)
+                return notSOAP("SOAP Envelope without Body.", null);
+            return true;
+        }
+
+        private boolean recognized(SOAPAnalysisResult result) {
+            analysis = result;
+            return wholeMessage;
+        }
+
+        private boolean notSOAP(String message, QName name) {
+            log.debug(message, name);
+            analysis = NO_SOAP_RESULT;
+            return false;
+        }
+
+        private void error(XMLEvent event, String message) {
+            final var location = event.getLocation();
+            errors.add(new SAXParseException(message, null, null, location.getLineNumber(), location.getColumnNumber()));
+        }
     }
 
     private static SoapVersion getSOAPVersion(QName name) {
@@ -374,21 +513,6 @@ public class SOAPUtil {
             return new SAXSource(new FaultDetailXMLFilter(HardenedSaxParser.newSAXParser().getXMLReader(), version), new InputSource(stream));
         } catch (SAXException e) {
             throw new RuntimeException("Error initializing SAXSource", e);
-        }
-    }
-
-    private static void readUntilEndTag(XMLEventReader parser) throws XMLStreamException {
-        XMLEvent event;
-        int stack = 0;
-        while (parser.hasNext()) {
-            event = parser.nextEvent();
-            if (event.isStartElement())
-                stack++;
-            if (event.isEndElement())
-                if (stack == 0)
-                    break;
-                else
-                    stack--;
         }
     }
 }

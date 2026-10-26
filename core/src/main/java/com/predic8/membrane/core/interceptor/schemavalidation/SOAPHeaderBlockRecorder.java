@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
+import com.predic8.membrane.core.util.SOAPUtil;
 import com.predic8.membrane.core.util.xml.parser.HardenedSaxParser;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
@@ -45,8 +46,8 @@ import static com.predic8.membrane.core.util.SOAPUtil.isSOAPNamespace;
  * soon as it is complete, so only one is held at a time.
  * <p>
  * Parsing stops at the end of the header, or at the first other child of the envelope if there is
- * no header: SOAP puts the header first, and the body is not needed. A second header, or a header
- * after the body, is rejected when the body is validated, see {@link SOAPXMLFilter}.
+ * no header: SOAP puts the header first, and the body is not needed. A message with a second
+ * header, or a header after the body, is rejected before, see {@link SOAPUtil#validateSOAPEnvelope}.
  * <p>
  * The attributes SOAP defines for every header block ({@code mustUnderstand}, {@code actor}/
  * {@code role}, {@code relay}, {@code encodingStyle}) are removed from the block's root element:

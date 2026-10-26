@@ -18,6 +18,7 @@ import com.predic8.membrane.core.http.HeaderField;
 import com.predic8.membrane.core.http.HeaderName;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.util.ConfigurationException;
@@ -831,6 +832,231 @@ public class WSDLValidatorTest {
 
         assertEquals(ABORT, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, null, false).validateMessage(exc, REQUEST));
         assertReportedOnce(exc, "The SOAP Envelope must not contain more than one Body");
+    }
+
+    /**
+     * A message of each SOAP version with an empty and with a populated Body, each allowed by its
+     * WSDL. The envelope of each is checked the same way.
+     */
+    private enum EnvelopeCase {
+        SOAP11_EMPTY_BODY(SOAP11_NS, "", HEADER_ONLY_REQUEST_WSDL, REQUEST),
+        SOAP11_POPULATED_BODY(SOAP11_NS, GET_CITY_EXAMPLE_COM, CITIES_WITH_SOAP_HEADER_WSDL, REQUEST),
+        SOAP12_EMPTY_BODY(SOAP12_NS, "", MESSAGE_WITHOUT_PART_WSDL, RESPONSE),
+        SOAP12_POPULATED_BODY(SOAP12_NS, MY_REQUEST, MESSAGE_WITHOUT_PART_WSDL, REQUEST);
+
+        private final String namespace;
+        private final String body;
+        private final String wsdl;
+        private final Interceptor.Flow flow;
+
+        EnvelopeCase(String namespace, String body, String wsdl, Interceptor.Flow flow) {
+            this.namespace = namespace;
+            this.body = body.strip(); // keeps the line numbers of the cases equal
+            this.wsdl = wsdl;
+            this.flow = flow;
+        }
+
+        /**
+         * @param template a message with {@code %1$s} for the envelope namespace and {@code %2$s}
+         *                 for the Body content
+         */
+        Exchange exchange(String template) throws URISyntaxException {
+            final var message = template.formatted(namespace, body);
+            return flow == REQUEST ? getRequestExchange(message) : getResponseExchange(message);
+        }
+    }
+
+    private static final String MY_REQUEST = """
+            <e:MyRequest xmlns:e="https://example.com/empty"><e:name>foo</e:name></e:MyRequest>
+            """;
+
+    @ParameterizedTest
+    @EnumSource
+    void validEnvelope(EnvelopeCase envelope) throws Exception {
+        final var validator = createValidator(envelope.wsdl, null, false);
+        final var exc = envelope.exchange("""
+                <soap:Envelope xmlns:soap="%1$s">
+                  <soap:Header/>
+                  <soap:Body>%2$s</soap:Body>
+                </soap:Envelope>
+                """);
+
+        assertEquals(CONTINUE, validator.validateMessage(exc, envelope.flow));
+        assertEquals(1, validator.getValid());
+        assertEquals(0, validator.getInvalid());
+    }
+
+    @ParameterizedTest
+    @EnumSource
+    void secondHeaderInEnvelope(EnvelopeCase envelope) throws Exception {
+        assertEnvelopeRejected(envelope, """
+                <soap:Envelope xmlns:soap="%1$s">
+                  <soap:Header/>
+                  <soap:Header/>
+                  <soap:Body>%2$s</soap:Body>
+                </soap:Envelope>
+                """, "The SOAP Envelope must not contain more than one Header.", 3);
+    }
+
+    @ParameterizedTest
+    @EnumSource
+    void headerAfterBodyInEnvelope(EnvelopeCase envelope) throws Exception {
+        assertEnvelopeRejected(envelope, """
+                <soap:Envelope xmlns:soap="%1$s">
+                  <soap:Body>%2$s</soap:Body>
+                  <soap:Header/>
+                </soap:Envelope>
+                """, "The SOAP Header must come before the Body.", 3);
+    }
+
+    @ParameterizedTest
+    @EnumSource
+    void secondBodyInEnvelope(EnvelopeCase envelope) throws Exception {
+        assertEnvelopeRejected(envelope, """
+                <soap:Envelope xmlns:soap="%1$s">
+                  <soap:Body>%2$s</soap:Body>
+                  <soap:Body>%2$s</soap:Body>
+                </soap:Envelope>
+                """, "The SOAP Envelope must not contain more than one Body.", 3);
+    }
+
+    @ParameterizedTest
+    @EnumSource
+    void malformedEnvelope(EnvelopeCase envelope) throws Exception {
+        assertEnvelopeRejected(envelope, """
+                <soap:Envelope xmlns:soap="%1$s">
+                  <soap:Body>%2$s</soap:Body>
+                </soap:Envelop>
+                """, null, 3);
+    }
+
+    @ParameterizedTest
+    @EnumSource
+    void truncatedEnvelope(EnvelopeCase envelope) throws Exception {
+        assertEnvelopeRejected(envelope, """
+                <soap:Envelope xmlns:soap="%1$s">
+                  <soap:Body>%2$s</soap:Body>
+                """, null, 3);
+    }
+
+    @ParameterizedTest
+    @EnumSource
+    void contentAfterEnvelope(EnvelopeCase envelope) throws Exception {
+        assertEnvelopeRejected(envelope, """
+                <soap:Envelope xmlns:soap="%1$s">
+                  <soap:Body>%2$s</soap:Body>
+                </soap:Envelope>
+                <soap:Envelope xmlns:soap="%1$s"/>
+                """, null, 4);
+    }
+
+    @ParameterizedTest
+    @EnumSource(names = {"SOAP12_EMPTY_BODY", "SOAP12_POPULATED_BODY"})
+    void elementAfterBodyInSoap12(EnvelopeCase envelope) throws Exception {
+        assertEnvelopeRejected(envelope, """
+                <soap:Envelope xmlns:soap="%1$s">
+                  <soap:Body>%2$s</soap:Body>
+                  <t:Trailer xmlns:t="https://example.com/trailer"/>
+                </soap:Envelope>
+                """, "A SOAP 1.2 Envelope must not contain an element after the Body.", 3);
+    }
+
+    /**
+     * SOAP 1.1 allows further elements after the Body.
+     */
+    @ParameterizedTest
+    @EnumSource(names = {"SOAP11_EMPTY_BODY", "SOAP11_POPULATED_BODY"})
+    void elementAfterBodyInSoap11(EnvelopeCase envelope) throws Exception {
+        final var exc = envelope.exchange("""
+                <soap:Envelope xmlns:soap="%1$s">
+                  <soap:Body>%2$s</soap:Body>
+                  <t:Trailer xmlns:t="https://example.com/trailer"/>
+                </soap:Envelope>
+                """);
+
+        assertEquals(CONTINUE, createValidator(envelope.wsdl, null, false).validateMessage(exc, envelope.flow));
+    }
+
+    @ParameterizedTest
+    @EnumSource
+    void bodyOfOtherSoapVersion(EnvelopeCase envelope) throws Exception {
+        final var other = envelope.namespace.equals(SOAP11_NS) ? SOAP12_NS : SOAP11_NS;
+        assertEnvelopeRejected(envelope, """
+                <soap:Envelope xmlns:soap="%1$s">
+                  <other:Body xmlns:other="OTHER">%2$s</other:Body>
+                </soap:Envelope>
+                """.replace("OTHER", other), "The SOAP Body must be in the namespace of the Envelope, " + envelope.namespace + ".", 2);
+    }
+
+    /**
+     * Rejected with a single error at the line given.
+     *
+     * @param error the error, or {@code null} for one reported by the XML parser
+     */
+    private static void assertEnvelopeRejected(EnvelopeCase envelope, String template, String error, int line) throws Exception {
+        final var validator = createValidator(envelope.wsdl, null, false);
+        final var exc = envelope.exchange(template);
+
+        assertEquals(ABORT, validator.validateMessage(exc, envelope.flow));
+        assertEquals(0, validator.getValid());
+        assertEquals(1, validator.getInvalid());
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        if (error != null)
+            assertReportedOnce(exc, error);
+        assertReportedOnce(exc, "<line>");
+        assertTrue(body.contains("<line>%d</line>".formatted(line)), body);
+    }
+
+    /**
+     * A message that does not get as far as the Body is no SOAP message.
+     */
+    @Test
+    void malformedHeaderIsNotSoap() throws Exception {
+        final var exc = getRequestExchange(soap11WithHeader("<a></b>", GET_CITY_EXAMPLE_COM));
+
+        assertEquals(ABORT, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, null, false).validateMessage(exc, REQUEST));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains("Not a valid SOAP message."), body);
+    }
+
+    @Test
+    void truncatedFault() throws Exception {
+        final var exc = getResponseExchange(WELL_FORMED_FAULT_11.replace("</s11:Envelope>", ""));
+
+        assertEquals(ABORT, createValidator(CITIES_WSDL, null, false).validateMessage(exc, RESPONSE));
+        assertReportedOnce(exc, "<line>");
+    }
+
+    /**
+     * skipFaults lets a fault through unchecked, its envelope as well.
+     */
+    @Test
+    void skipFaultsSkipsEnvelopeOfFault() throws Exception {
+        final var exc = getResponseExchange("""
+                <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                  <s11:Header/>
+                  <s11:Header/>
+                  <s11:Body>%s</s11:Body>
+                </s11:Envelope>
+                """.formatted(FAULT_11));
+
+        assertEquals(CONTINUE, createValidator(CITIES_WSDL, null, true).validateMessage(exc, RESPONSE));
+    }
+
+    @Test
+    void validationDetailsOffHidesEnvelopeError() throws Exception {
+        final var exc = getRequestExchange("""
+                <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                  <s11:Body><cit:getCity xmlns:cit="https://predic8.de/cities"><name>Bonn</name></cit:getCity></s11:Body>
+                  <s11:Body/>
+                </s11:Envelope>
+                """);
+
+        assertEquals(ABORT, createValidator(new ErrorDetailsPolicy(false, false)).validateMessage(exc, REQUEST));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains("WSDL message validation failed"), body);
+        assertFalse(body.contains("more than one Body"), body);
+        assertFalse(body.contains("<detail>"), body);
     }
 
     @Test

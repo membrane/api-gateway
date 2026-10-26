@@ -212,9 +212,8 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
 
     /**
      * A schema not declaring the root element reports cvc-elt.1.a for it. Not necessarily first: a
-     * filter in front of the validator may report an error before the root, e.g.
-     * {@link SOAPXMLFilter} about a second SOAP Header. The message starts with that key in every
-     * locale.
+     * filter in front of the validator may report an error before the root. The message starts with
+     * that key in every locale.
      */
     private static boolean isRootUndeclared(List<Exception> errors) {
         return errors.stream()

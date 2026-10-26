@@ -13,7 +13,9 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
-import org.xml.sax.*;
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLFilterImpl;
 
 import static com.predic8.membrane.core.util.SOAPUtil.isSOAPNamespace;
@@ -22,36 +24,21 @@ import static com.predic8.membrane.core.util.SOAPUtil.isSOAPNamespace;
  * Strips the SOAP envelope so that only the payload below {@code <soap:Body>} is passed on.
  * The {@code Body} boundary is matched by namespace, not just local name: a domain element
  * that happens to be named {@code Body} in another namespace is left untouched and forwarded.
+ * Only the {@code Body} that is a child of the envelope counts.
  * <p>
- * A second SOAP {@code Header}, or one after the {@code Body}, is reported as an error to the
- * error handler, so a validator reading this filter rejects the message: SOAP allows one header,
- * in front of the body.
+ * The structure of the envelope is not checked here, but before, see
+ * {@link com.predic8.membrane.core.util.SOAPUtil#validateSOAPEnvelope}.
  */
 public class SOAPXMLFilter extends XMLFilterImpl {
 
 	private static final int ENVELOPE_CHILD_DEPTH = 2;
 
 	/**
-	 * Where the parser is among the children of the envelope.
-	 */
-	private enum Position {
-		START,
-		/**
-		 * A header has started, the body has not.
-		 */
-		AFTER_HEADER,
-		IN_BODY,
-		AFTER_BODY
-	}
-
-	private Position position = Position.START;
-
-	/**
 	 * Depth of the current element: {@code 1} for the envelope, {@code 2} for its children.
 	 */
 	private int depth;
 
-	private Locator locator;
+	private boolean body;
 
 	public SOAPXMLFilter(XMLReader reader) {
 		super(reader);
@@ -61,64 +48,36 @@ public class SOAPXMLFilter extends XMLFilterImpl {
 		return localName.equals("Body") && isSOAPNamespace(uri);
 	}
 
-	private static boolean isSoapHeader(String uri, String localName) {
-		return localName.equals("Header") && isSOAPNamespace(uri);
-	}
-
-	@Override
-	public void setDocumentLocator(Locator locator) {
-		this.locator = locator;
-		super.setDocumentLocator(locator);
-	}
-
 	@Override
 	public void startElement(String uri, String localName, String qName,
 			Attributes atts) throws SAXException {
 
 		depth++;
 
-		if (isSoapBody(uri, localName)) {
-			// SOAP allows one body. A second one would be read as further body content.
-			if (depth == ENVELOPE_CHILD_DEPTH && position == Position.AFTER_BODY)
-				error(new SAXParseException("The SOAP Envelope must not contain more than one Body.", locator));
-			position = Position.IN_BODY;
+		if (depth == ENVELOPE_CHILD_DEPTH && isSoapBody(uri, localName)) {
+			body = true;
 			return;
 		}
 
-		if (depth == ENVELOPE_CHILD_DEPTH && isSoapHeader(uri, localName))
-			startHeader();
-
-		if (position != Position.IN_BODY)
+		if (!body)
 			return;
 
 		super.startElement(uri, localName, qName, atts);
 
 	}
 
-	/**
-	 * SOAP allows one header, in front of the body. Inside the body, no header is a child of the
-	 * envelope.
-	 */
-	private void startHeader() throws SAXException {
-		switch (position) {
-			case START -> position = Position.AFTER_HEADER;
-			case AFTER_HEADER -> error(new SAXParseException("The SOAP Envelope must not contain more than one Header.", locator));
-			case AFTER_BODY -> error(new SAXParseException("The SOAP Header must come before the Body.", locator));
-		}
-	}
-
 	@Override
 	public void endElement(String uri, String localName, String qName)
 			throws SAXException {
 
-		depth--;
+		final var closing = depth--;
 
-		if (isSoapBody(uri, localName)) {
-			position = Position.AFTER_BODY;
+		if (closing == ENVELOPE_CHILD_DEPTH && isSoapBody(uri, localName)) {
+			body = false;
 			return;
 		}
 
-		if (position != Position.IN_BODY)
+		if (!body)
 			return;
 
 		super.endElement(uri, localName, qName);
