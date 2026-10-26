@@ -171,7 +171,7 @@ public class OpenAPIPublisherInterceptorTest {
         get.getRequest().setUri("/api-docs/wrong-id-0");
         assertEquals(RETURN, prodInterceptor.handleRequest(get));
         assertEquals(404, get.getResponse().getStatusCode());
-        assertEquals("OpenAPI document with the id wrong-id-0 not found.",
+        assertEquals("OpenAPI document with the id wrong-id-0 not found. See /api-docs for the available documents.",
                 om.readTree(get.getResponse().getBodyAsStringDecoded()).get("detail").asText());
     }
 
