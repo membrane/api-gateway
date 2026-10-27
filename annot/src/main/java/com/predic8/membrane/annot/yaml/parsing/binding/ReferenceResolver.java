@@ -18,13 +18,15 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.predic8.membrane.annot.yaml.ConfigurationParsingException;
 import com.predic8.membrane.annot.yaml.ParsingContext;
 
+import java.lang.reflect.Method;
+
 import static com.predic8.membrane.annot.yaml.McYamlIntrospector.getChildSetter;
 import static com.predic8.membrane.annot.yaml.McYamlIntrospector.getElementName;
 import static com.predic8.membrane.annot.yaml.NodeValidationUtils.ensureTextual;
 
 public final class ReferenceResolver {
 
-    public <T> void applyObjectLevelRef(ParsingContext<?> ctx, Class<T> parentClass, JsonNode parentNode, JsonNode refNode, T obj) {
+    public <T> Method applyObjectLevelRef(ParsingContext<?> ctx, Class<T> parentClass, JsonNode parentNode, JsonNode refNode, T obj) {
         ensureTextual(refNode, "Expected a string after the '$ref' key.");
         Object referenced = resolveReferencedObject(ctx, refNode.asText(), "$ref");
         String refKey = getElementName(referenced.getClass());
@@ -35,7 +37,9 @@ public final class ReferenceResolver {
         }
 
         try {
-            getChildSetter(parentClass, referenced.getClass()).invoke(obj, referenced);
+            var setter = getChildSetter(parentClass, referenced.getClass());
+            setter.invoke(obj, referenced);
+            return setter;
         } catch (RuntimeException e) {
             throw new ConfigurationParsingException(
                     "Referenced component '%s' (type '%s') is not allowed in '%s'."
