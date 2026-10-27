@@ -87,6 +87,12 @@ public abstract class AbstractSchema<T extends AbstractSchema<T>> implements ISc
         return self();
     }
 
+    public T types(String... types) {
+        this.typeList = List.of(types);
+        this.type = null;
+        return self();
+    }
+
     public T enumValues(List<String> enumValues) {
         this.enumValues = enumValues;
         return self();

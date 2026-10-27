@@ -80,6 +80,28 @@ class JsonSchemaGeneratorTest {
         assertEquals("\"string\"", properties.at("/text/type").toString());
     }
 
+    /**
+     * The YAML parser converts numbers and booleans in a {@code Map<String, String>} of other attributes to strings,
+     * so the schema has to accept them, e.g. {@code callTimeout: 30000}.
+     */
+    @Test
+    void stringOtherAttributesAcceptScalars() throws Exception {
+        final var result = compile(splitSources(MC_MAIN_DEMO + """
+                package com.predic8.membrane.demo;
+                import com.predic8.membrane.annot.*;
+                import java.util.Map;
+                @MCElement(name="demo", topLevel=true, component=false)
+                public class DemoElement {
+                    @MCOtherAttributes
+                    public void setProperties(Map<String, String> properties) {}
+                    public Map<String, String> getProperties() { return Map.of(); }
+                }
+                """), false);
+        assertCompilerResult(true, result);
+        assertEquals("[\"string\",\"number\",\"boolean\"]", schema(result)
+                .at("/$defs/com_predic8_membrane_demo_config_spring_DemoParser/additionalProperties/type").toString());
+    }
+
     @Test
     void enumListsExposeIndividualChoices() throws Exception {
         var result = compile(splitSources(MC_MAIN_DEMO + """
