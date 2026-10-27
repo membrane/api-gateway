@@ -84,6 +84,13 @@ public abstract class AbstractSchema<T extends AbstractSchema<T>> implements ISc
 
     public T type(String type) {
         this.type = type;
+        this.typeList = null;
+        return self();
+    }
+
+    public T types(String... types) {
+        this.typeList = List.of(types);
+        this.type = null;
         return self();
     }
 
