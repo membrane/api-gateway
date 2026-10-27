@@ -133,16 +133,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
             parser = createRegularParser(model, main, elementInfo, parserName);
         }
 
-        return tagElementId(parser, elementInfo);
-    }
-
-    @SuppressWarnings({ "rawtypes", "unchecked" })
-    private static AbstractSchema<?> tagElementId(AbstractSchema<?> schema, ElementInfo elementInfo) {
-        String id = elementInfo.getId();
-        if (id == null || id.isBlank()) return schema;
-
-        ((AbstractSchema) schema).id(id);
-        return schema;
+        return parser;
     }
 
     private AbstractSchema<?> createNoEnvelopeParser(Model model, MainInfo main, ElementInfo elementInfo, String parserName) {
