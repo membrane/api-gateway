@@ -132,16 +132,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
             parser = createRegularParser(model, main, elementInfo, parserName);
         }
 
-        return tagElementId(parser, elementInfo);
-    }
-
-    @SuppressWarnings({ "rawtypes", "unchecked" })
-    private static AbstractSchema<?> tagElementId(AbstractSchema<?> schema, ElementInfo elementInfo) {
-        String id = elementInfo.getId();
-        if (id == null || id.isBlank()) return schema;
-
-        ((AbstractSchema) schema).id(id);
-        return schema;
+        return parser;
     }
 
     private AbstractSchema<?> createNoEnvelopeParser(Model model, MainInfo main, ElementInfo elementInfo, String parserName) {
@@ -331,7 +322,8 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         }
 
         if (otherAttributes.getValueType() == STRING) {
-            parserSchema.additionalProperties(from("string"));
+            // The YAML parser converts numbers and booleans to strings, e.g. callTimeout: 30000
+            parserSchema.additionalProperties(basic(null).types("string", "number", "boolean"));
             return;
         }
 
