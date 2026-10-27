@@ -29,6 +29,8 @@ import java.util.Map;
 public interface JmsProducerExtension {
 
     /**
+     * Called once before any call to {@link #send(Exchange)}.
+     *
      * @param properties Connection and producer settings. Unset optional settings are missing from the map.
      *                   <ul>
      *                   <li><code>connection.factory</code>: class of the <code>jakarta.jms.ConnectionFactory</code></li>
@@ -42,6 +44,11 @@ public interface JmsProducerExtension {
     void init(Map<String, String> properties);
 
     /**
+     * Called concurrently from multiple request threads on the same instance. JMS
+     * <code>Session</code>s and <code>MessageProducer</code>s are not thread-safe, so the implementation
+     * must not share them between concurrent calls without synchronization, e.g. it can use one
+     * session and producer per thread or a pool.
+     *
      * @param exchange Exchange whose request body is the message body
      */
     void send(Exchange exchange) throws IOException;
