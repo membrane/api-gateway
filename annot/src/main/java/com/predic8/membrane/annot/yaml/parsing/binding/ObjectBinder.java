@@ -64,11 +64,12 @@ public final class ObjectBinder {
                 throw new ConfigurationParsingException("Class %s is annotated with @MCElement(noEnvelope=true), but the YAML/JSON structure does not contain a list.".formatted(clazz.getName()), null, pc);
             }
 
+            List<Method> required = findRequiredSetters(clazz);
+
             JsonNode refNode = node.get("$ref");
             if (refNode != null)
-                REFERENCE_RESOLVER.applyObjectLevelRef(pc, clazz, node, refNode, configObj);
+                required.remove(REFERENCE_RESOLVER.applyObjectLevelRef(pc, clazz, node, refNode, configObj));
 
-            List<Method> required = findRequiredSetters(clazz);
             PropertyBinder.populate(pc, clazz, node, required, configObj);
 
             if (!required.isEmpty())
