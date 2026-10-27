@@ -40,6 +40,10 @@ PRIO 3:
   - Security: return 400 if the routing path selects a different path item than this matrix-aware path. Otherwise `/customers/;x/orders` would be validated against `/customers/{id}/orders`, while a backend that merges slashes serves a literal `/customers/orders`.
   - Open: the style may differ per method of one path item; `;jsessionid` next to matrix values ends up in exploded objects with `additionalProperties`. The RFC 6570 form `/customers{id}` → `/customers;id=7` stays out of scope.
   - Related: `simple`-style array/object path parameters are not parsed either, `PathParametersValidator` validates the raw string.
+- OpenAPI: support `unevaluatedItems` (JSON Schema 2020-12, OAS 3.1 and later)
+  - Story: the keyword is never read, so arrays are validated as if it were absent. `unevaluatedItems: false` does not reject any items.
+  - It applies to the items not evaluated by `prefixItems`, `items` or `contains`, including those of the `allOf`/`anyOf`/`oneOf`/`$ref` subschemas that validated successfully. `ObjectValidator` does the same for `unevaluatedProperties`.
+  - Related: #3499 (`prefixItems`).
 - ReplaceInterceptor: Support Languages, tutorial/transformation
 - WebServiceExplorerInterceptor
   - Support multiple services, ports, ...
@@ -148,6 +152,21 @@ PRIO 3:
   - Idea: `Proxy.destroy()`, called by `RuleManager.removeRule()` and by `replaceRule()` on the old API **before** `newProxy.init()`. A clone shares the consumer reference with the original, so stopping the old API after the clone was initialized would stop the clone's consumer. Stopping first also keeps two consumers of the same group from running at once.
   - Then look at `kafkaConsumer` again: drop the shared `AtomicReference` that clones need for `@PreDestroy`, allow hotDeploy and retryInit again, and check what happens when `newProxy.init()` fails after the old consumer was stopped.
 - Reorganisation of *Util* classes. Check for duplicates and right place.
+
+### Resolve the backend URL (destination) late
+
+- Story: the `DispatchingInterceptor` runs in the transport chain before the proxy's flow and copies the target into `exc.getDestinations()`. With a target `url` without a path it is target + request path; a target `url` with a path is used as it is; with `host`/`port` it is `scheme://host:port` + request path; without a target it is the request URI. URL templates stay unevaluated until `HTTPClientInterceptor` calls `Target.applyModifications()` after the flow. Finally, `HttpClient.setRequestURI()` overwrites the request URI with the path and query of the destination.
+- Problems:
+  - Changes to the request URI in the flow do not reach the backend, only changes to the destination do. That is why the `rewriter` rewrites both the destinations and the request URI.
+  - The unevaluated `${...}` of a target URL template travels through the whole flow. Every interceptor that parses a destination has to tolerate it. Cause of #3497 and #3531, see #3512.
+  - The destination has two roles: backend URL (HTTP client, retries over several destinations, internal routing, `reverseProxying`) and "current request path". `webServer`, `RESTInterceptor`, the admin console, `WSDLPublisherInterceptor`, `oauth2Resource2` and `cache` take the path from the destination. That only works because the dispatcher copies the request URI when there is no target. With a target URL with a path, both roles diverge.
+- Idea: like other gateways (nginx, Envoy, Spring Cloud Gateway), derive the backend URL as late as possible from the target and the current request path, after the template is evaluated. Interceptors that choose another backend (`balancer`, `destination`, `call`, `openapi` servers, `rest2Soap`, `wsdl2openapi`, ...) set it explicitly. The `rewriter` then rewrites only the request URI.
+- To decide:
+  - The model for a target URL with a path: used as it is (today), or target path + request path (Apache `ProxyPass`, Kong).
+  - How interceptors that read the path from the destination get it: from the request URI or from a dedicated "routing path".
+  - How several destinations (`balancer`, `RetryHandler` failover) and internal routing (`internal:` destinations, `RuleManager` matching internal proxies by the destination's authority) fit.
+  - Path normalization and SSRF when combining target and request path (dot segments, `//x` as a network-path reference, encoded slashes `%2F`); checks in the flow (`if`, `openapi` validation, path-based authorization) must see the path that is sent to the backend.
+- **Breaking**: interceptors and Groovy/SpEL scripts that read or write `exc.getDestinations()` in the flow see different values.
 
 ## Breaking Changes
 
