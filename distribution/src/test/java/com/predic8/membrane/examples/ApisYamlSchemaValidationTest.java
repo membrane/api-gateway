@@ -17,7 +17,6 @@ package com.predic8.membrane.examples;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.networknt.schema.Error;
 import com.networknt.schema.Schema;
@@ -74,23 +73,12 @@ class ApisYamlSchemaValidationTest {
             if (in == null)
                 throw new IOException("Schema not found on classpath: " + SCHEMA_CLASSPATH);
             JsonNode schemaNode = new ObjectMapper().readTree(in);
-            stripLegacyIdKeyword(schemaNode);
             SchemaRegistry registry = SchemaRegistry.withDefaultDialect(DRAFT_2020_12);
             SCHEMA = registry.getSchema(SchemaLocation.of(SCHEMA_CLASSPATH), schemaNode);
             SCHEMA.initializeValidators();
         } catch (Exception e) {
             throw new RuntimeException("Failed to load JSON schema", e);
         }
-    }
-
-    private static void stripLegacyIdKeyword(JsonNode schemaNode) {
-        JsonNode defs = schemaNode.get("$defs");
-        if (defs == null)
-            return;
-        defs.forEach(def -> {
-            if (def instanceof ObjectNode obj)
-                obj.remove("id");
-        });
     }
 
     static Stream<String> getApisYamlConfigs() {
