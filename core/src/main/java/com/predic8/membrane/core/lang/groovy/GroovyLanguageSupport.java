@@ -14,13 +14,17 @@
 
 package com.predic8.membrane.core.lang.groovy;
 
-import com.predic8.membrane.core.lang.*;
-import groovy.lang.*;
-import org.codehaus.groovy.control.*;
+import com.predic8.membrane.core.lang.LanguageSupport;
+import com.predic8.membrane.core.lang.ScriptExecutorPool;
+import groovy.lang.Binding;
+import groovy.lang.GroovyShell;
+import groovy.lang.Script;
+import org.codehaus.groovy.control.CompilerConfiguration;
 
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.function.*;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.regex.Pattern;
 
 public class GroovyLanguageSupport implements LanguageSupport {
 
@@ -54,6 +58,18 @@ public class GroovyLanguageSupport implements LanguageSupport {
 		}
 	}
 
+	private static final String IMPORTS = """
+			import static com.predic8.membrane.core.interceptor.Outcome.*
+			import com.predic8.membrane.core.http.*
+			""";
+
+	private static final int IMPORT_LINES = (int) IMPORTS.lines().count();
+
+	/**
+	 * Name of the source file Groovy assigns to a script parsed from a String
+	 */
+	private static final Pattern SCRIPT_FILE_NAME = Pattern.compile("Script\\d+\\.groovy");
+
 	private static final GroovyShell shell = new GroovyShell(createCompilerConfiguration());
 
 	private static CompilerConfiguration createCompilerConfiguration() {
@@ -73,9 +89,25 @@ public class GroovyLanguageSupport implements LanguageSupport {
 	}
 
 	private String addImports(String src) {
-		return """
-				import static com.predic8.membrane.core.interceptor.Outcome.*
-				import com.predic8.membrane.core.http.*
-				""" + src;
+		return IMPORTS + src;
+	}
+
+	/**
+	 * Finds the line of the script, as written by the user, at which the exception occurred.
+	 *
+	 * @param throwable Exception thrown while running a script compiled by this class
+	 * @return 1-based line number in the user's script or empty if the exception has no script frame
+	 */
+	public static Optional<Integer> getScriptLineNumber(Throwable throwable) {
+		for (var t = throwable; t != null; t = t.getCause()) {
+			for (final var element : t.getStackTrace()) {
+				if (element.getFileName() != null
+					&& SCRIPT_FILE_NAME.matcher(element.getFileName()).matches()
+					&& element.getLineNumber() > IMPORT_LINES) {
+					return Optional.of(element.getLineNumber() - IMPORT_LINES);
+				}
+			}
+		}
+		return Optional.empty();
 	}
 }

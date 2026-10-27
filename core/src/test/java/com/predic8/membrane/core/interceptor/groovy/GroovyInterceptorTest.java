@@ -13,16 +13,17 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.groovy;
 
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.router.*;
-import org.junit.jupiter.api.*;
-import org.springframework.context.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.router.DummyTestRouter;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationContext;
 
-import java.util.*;
+import java.util.Map;
 
-import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.Response.ok;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -220,5 +221,57 @@ public class GroovyInterceptorTest {
 
 		assertEquals(CONTINUE, i.handleRequest(exc));
 		assertEquals("YWJj", exc.getRequest().getHeader().getFirstValue("X-Encoded"));
+	}
+
+	@Test
+	void scriptErrorReportsLineInsteadOfStacktrace() throws Exception {
+		GroovyInterceptor i = new GroovyInterceptor() {{
+			src = """
+				def a = 1
+				exc.request.setBodyContent('foo')
+				CONTINUE""";
+		}};
+		i.init(router);
+
+		assertEquals(ABORT, i.handleRequest(exc));
+		Map<String,Object> pd = om.readValue(exc.getResponse().getBodyAsStringDecoded(), Map.class);
+		assertEquals(2, pd.get("line"));
+		assertEquals("exc.request.setBodyContent('foo')", pd.get("sourceLine"));
+		assertTrue(((String) pd.get("message")).contains("setBodyContent"));
+		assertFalse(pd.containsKey("stackTrace"));
+	}
+
+	@Test
+	void missingPropertyReportsLine() throws Exception {
+		GroovyInterceptor i = new GroovyInterceptor() {{
+			src = """
+				def a = 1
+
+				header.add('X', foo.bar)
+				CONTINUE""";
+		}};
+		i.init(router);
+
+		assertEquals(ABORT, i.handleRequest(exc));
+		Map<String,Object> pd = om.readValue(exc.getResponse().getBodyAsStringDecoded(), Map.class);
+		assertEquals("foo", pd.get("missingProperty"));
+		assertEquals(3, pd.get("line"));
+		assertEquals("header.add('X', foo.bar)", pd.get("sourceLine"));
+	}
+
+	@Test
+	void errorInClosureReportsLineInClosure() throws Exception {
+		GroovyInterceptor i = new GroovyInterceptor() {{
+			src = """
+				[1, 2].each {
+				    exc.request.setBodyContent('foo')
+				}
+				CONTINUE""";
+		}};
+		i.init(router);
+
+		assertEquals(ABORT, i.handleRequest(exc));
+		Map<String,Object> pd = om.readValue(exc.getResponse().getBodyAsStringDecoded(), Map.class);
+		assertEquals(2, pd.get("line"));
 	}
 }
