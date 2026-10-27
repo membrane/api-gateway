@@ -17,3 +17,24 @@ paths:
       responses:
         '200':
           description: Ok
+  /const-number:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              const: 5
+      responses:
+        '200':
+          description: Ok
+  /const-object:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              const:
+                a: [1, 2.5]
+      responses:
+        '200':
+          description: Ok

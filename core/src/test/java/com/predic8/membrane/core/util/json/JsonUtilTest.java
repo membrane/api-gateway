@@ -12,10 +12,12 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.util;
+package com.predic8.membrane.core.util.json;
 
-import com.fasterxml.jackson.databind.*;
-import org.junit.jupiter.api.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import static com.predic8.membrane.core.util.json.JsonUtil.scalarAsJson;
 import static org.junit.jupiter.api.Assertions.*;
@@ -84,4 +86,20 @@ class JsonUtilTest {
         assertEquals("", node.textValue());
     }
 
+    /**
+     * ~ becomes ~0, then / becomes ~1, as defined by RFC 6901.
+     */
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', value = {
+            "foo|foo",
+            "a/b|a~1b",
+            "a~b|a~0b",
+            "a~/b|a~0~1b",
+            "a~1b|a~01b",
+            "~01|~001",
+            "/|~1",
+            "''|''"})
+    void escapeJsonPointerSegment(String segment, String escaped) {
+        assertEquals(escaped, JsonUtil.escapeJsonPointerSegment(segment));
+    }
 }
