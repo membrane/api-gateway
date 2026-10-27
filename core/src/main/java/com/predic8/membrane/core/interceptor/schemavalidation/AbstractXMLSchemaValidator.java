@@ -175,29 +175,53 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
      * and the remaining schemas are still tried; one broken schema must not stop a message from
      * matching another one of the (possibly several) alternatives.
      *
+     * <p>
+     * A schema that does not declare the root element of the source reports that it cannot find
+     * its declaration, which is noise as long as another schema declares it. So the errors of such
+     * a schema are only collected if no schema declares the root element.
+     *
      * @param exceptions collects the errors reported for each schema the source failed against
      * @return {@code true} if the source matched at least one embedded schema
      */
     protected boolean validateAgainstSchemas(Supplier<Source> source, List<Exception> exceptions) {
+        // Errors of the schemas that declare the root element of the source, i.e. about its content,
+        // and of those that don't, which only report that they cannot find its declaration. The
+        // latter are only reported if no schema declares the root element.
+        final var declaringErrors = new ArrayList<Exception>();
+        final var undeclaringErrors = new ArrayList<Exception>();
         var vals = validators.borrow();
         try {
             // the message must be valid for one schema embedded into WSDL
             for (var validator : vals) {
+                final var errors = new ArrayList<Exception>();
                 try {
-                    if (validateOnce(validator, source.get(), exceptions)) {
+                    if (validateOnce(validator, source.get(), errors)) {
                         return true;
                     }
                 } catch (Exception e) {
                     logValidatorFailure(e);
-                    if (!exceptions.contains(e)) {
-                        exceptions.add(e);
+                    if (!errors.contains(e)) {
+                        errors.add(e);
                     }
                 }
+                (isRootUndeclared(errors) ? undeclaringErrors : declaringErrors).addAll(errors);
             }
         } finally {
             validators.release(vals);
         }
+        exceptions.addAll(declaringErrors.isEmpty() ? undeclaringErrors : declaringErrors);
         return false;
+    }
+
+    /**
+     * A schema not declaring the root element reports cvc-elt.1.a for it. Not necessarily first: a
+     * filter in front of the validator may report an error before the root. The message starts with
+     * that key in every locale.
+     */
+    private static boolean isRootUndeclared(List<Exception> errors) {
+        return errors.stream()
+                .map(Exception::getMessage)
+                .anyMatch(message -> message != null && message.startsWith("cvc-elt.1.a"));
     }
 
     /**

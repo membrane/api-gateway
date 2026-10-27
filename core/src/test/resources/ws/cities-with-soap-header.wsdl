@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Declares SOAP header blocks via soap:header. The header elements live in a schema of their own,
+    apart from the body elements. The request message lists its header part before its body part;
+    the response header is carried by a message of its own. A fault about the request header
+    carries a header block bound via soap:headerfault.
+-->
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:cs="https://example.com/cities"
+                  xmlns:hd="https://example.com/header"
+                  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                  xmlns:s="http://schemas.xmlsoap.org/wsdl/soap/"
+                  targetNamespace="https://example.com/cities" name="cities">
+    <wsdl:types>
+        <xsd:schema targetNamespace="https://example.com/header" elementFormDefault="qualified">
+            <xsd:element name="RequestHeader">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="MessageId" type="xsd:string"/>
+                        <xsd:element name="Language" type="xsd:language"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="ResponseHeader">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="MessageId" type="xsd:string"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="HeaderFault">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="Reason" type="xsd:string"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+        </xsd:schema>
+        <xsd:schema targetNamespace="https://example.com/cities">
+            <xsd:element name="getCity">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="name" type="xsd:string"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="getCityResponse">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="population" type="xsd:integer"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+        </xsd:schema>
+    </wsdl:types>
+    <wsdl:message name="City">
+        <wsdl:part name="header" element="hd:RequestHeader"/>
+        <wsdl:part name="body" element="cs:getCity"/>
+    </wsdl:message>
+    <wsdl:message name="CityResponse">
+        <wsdl:part name="body" element="cs:getCityResponse"/>
+    </wsdl:message>
+    <wsdl:message name="ResponseHeader">
+        <wsdl:part name="header" element="hd:ResponseHeader"/>
+    </wsdl:message>
+    <wsdl:message name="HeaderFault">
+        <wsdl:part name="fault" element="hd:HeaderFault"/>
+    </wsdl:message>
+    <wsdl:portType name="CityPort">
+        <wsdl:operation name="getCity">
+            <wsdl:input message="cs:City"/>
+            <wsdl:output message="cs:CityResponse"/>
+        </wsdl:operation>
+    </wsdl:portType>
+    <wsdl:binding name="CitySoapBinding" type="cs:CityPort">
+        <s:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+        <wsdl:operation name="getCity">
+            <s:operation soapAction="https://example.com/cities/getCity"/>
+            <wsdl:input>
+                <s:header use="literal" message="cs:City" part="header">
+                    <s:headerfault use="literal" message="cs:HeaderFault" part="fault"/>
+                </s:header>
+                <s:body use="literal" parts="body"/>
+            </wsdl:input>
+            <wsdl:output>
+                <s:header use="literal" message="cs:ResponseHeader" part="header"/>
+                <s:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+    </wsdl:binding>
+    <wsdl:service name="CityService">
+        <wsdl:port name="CityPort" binding="cs:CitySoapBinding">
+            <s:address location="https://example.com/cities"/>
+        </wsdl:port>
+    </wsdl:service>
+</wsdl:definitions>

@@ -17,6 +17,7 @@ package com.predic8.membrane.core.util.wsdl.parser;
 import org.w3c.dom.Node;
 
 import java.util.List;
+import java.util.Optional;
 
 public class BindingOperationMessage extends WSDLElement {
 
@@ -26,5 +27,10 @@ public class BindingOperationMessage extends WSDLElement {
 
     public List<SoapHeader> getHeaders() {
         return instantiateChildren("header", SoapHeader.class);
+    }
+
+    /** The soap:body; empty if the message has none, e.g. one bound to MIME parts. */
+    public Optional<SoapBody> getBody() {
+        return instantiateChild("body", SoapBody.class);
     }
 }

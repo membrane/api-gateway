@@ -26,6 +26,8 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.zip.GZIPOutputStream;
 
+import static com.predic8.membrane.annot.Constants.SOAP11_NS;
+import static com.predic8.membrane.annot.Constants.SOAP12_NS;
 import static com.predic8.membrane.core.http.MimeType.TEXT_XML_UTF8;
 import static com.predic8.membrane.core.http.Request.post;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -53,6 +55,21 @@ class SOAPUtilTest {
     void isSOAPRethrowsUnreadableBody() throws Exception {
         assertThrows(ReadingBodyException.class,
                 () -> SOAPUtil.isSOAP(new XOPReconstitutor(), undecodableBody()));
+    }
+
+    @Test
+    void soapNamespaces() {
+        assertTrue(SOAPUtil.isSOAPNamespace(SOAP11_NS));
+        assertTrue(SOAPUtil.isSOAPNamespace(SOAP12_NS));
+        assertFalse(SOAPUtil.isSOAPNamespace("https://example.com/envelope"));
+        assertFalse(SOAPUtil.isSOAPNamespace(""));
+    }
+
+    @Test
+    @DisplayName("validateSOAPEnvelope passes an unreadable body on instead of reporting it as not SOAP")
+    void validateSOAPEnvelopeRethrowsUnreadableBody() throws Exception {
+        assertThrows(ReadingBodyException.class,
+                () -> SOAPUtil.validateSOAPEnvelope(new XOPReconstitutor(), undecodableBody()));
     }
 
     /** Announced as gzip, but the compressed data stops two bytes into the stream. */
