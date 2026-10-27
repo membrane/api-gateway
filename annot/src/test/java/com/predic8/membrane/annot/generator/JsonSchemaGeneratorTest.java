@@ -16,16 +16,23 @@ package com.predic8.membrane.annot.generator;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import com.networknt.schema.SchemaRegistry;
 import com.predic8.membrane.annot.util.CompilerResult;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 
+import static com.networknt.schema.SpecificationVersion.DRAFT_2020_12;
 import static com.predic8.membrane.annot.SpringConfigurationXSDGeneratingAnnotationProcessorTest.MC_MAIN_DEMO;
 import static com.predic8.membrane.annot.util.CompilerHelper.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class JsonSchemaGeneratorTest {
 
@@ -100,6 +107,135 @@ class JsonSchemaGeneratorTest {
         assertEquals("array", algorithms.path("type").asText());
         assertEquals("string", algorithms.at("/items/type").asText());
         assertEquals("[\"aes128_cbc\",\"rsa_1_5\"]", algorithms.at("/items/enum").toString());
+    }
+
+    @Test
+    void requiredChildWithOneImplementationIsRequired() throws Exception {
+        var schema = requiredChildrenSchema();
+        assertEquals("[\"child\"]", schema.at("/$defs/com_predic8_membrane_demo_config_spring_SingleParser/required").toString());
+        assertValid(schema, "single: { child: {} }");
+        assertInvalid(schema, "single: {}");
+    }
+
+    @Test
+    void requiredAbstractChildNeedsOneOfItsImplementations() throws Exception {
+        var schema = requiredChildrenSchema();
+        assertValid(schema, "cache: { memStore: {} }");
+        assertValid(schema, "cache: { diskStore: {} }");
+        assertInvalid(schema, "cache: {}");
+    }
+
+    @Test
+    void everyRequiredChildMustBePresent() throws Exception {
+        var schema = requiredChildrenSchema();
+        assertValid(schema, "two: { child: {}, memStore: {} }");
+        assertInvalid(schema, "two: { child: {} }");
+        assertInvalid(schema, "two: { memStore: {} }");
+    }
+
+    @Test
+    void refSatisfiesRequiredComponentChild() throws Exception {
+        var schema = requiredChildrenSchema();
+        assertValid(schema, "refCache: { sharedStore: {} }");
+        assertValid(schema, "refCache: { $ref: '#/components/store' }");
+        assertInvalid(schema, "refCache: {}");
+    }
+
+    private static final String REQUIRED_CHILDREN_SOURCES = """
+            package com.predic8.membrane.demo;
+            import com.predic8.membrane.annot.*;
+            @MCElement(name="single", topLevel=true, component=false)
+            public class SingleElement {
+                @Required
+                @MCChildElement
+                public void setChild(ChildElement child) {}
+                public ChildElement getChild() { return null; }
+            }
+            ---
+            package com.predic8.membrane.demo;
+            import com.predic8.membrane.annot.*;
+            @MCElement(name="child", component=false)
+            public class ChildElement {}
+            ---
+            package com.predic8.membrane.demo;
+            public abstract class Store {}
+            ---
+            package com.predic8.membrane.demo;
+            import com.predic8.membrane.annot.*;
+            @MCElement(name="memStore", component=false)
+            public class MemStore extends Store {}
+            ---
+            package com.predic8.membrane.demo;
+            import com.predic8.membrane.annot.*;
+            @MCElement(name="diskStore", component=false)
+            public class DiskStore extends Store {}
+            ---
+            package com.predic8.membrane.demo;
+            import com.predic8.membrane.annot.*;
+            @MCElement(name="cache", topLevel=true, component=false)
+            public class CacheElement {
+                @Required
+                @MCChildElement
+                public void setStore(Store store) {}
+                public Store getStore() { return null; }
+            }
+            ---
+            package com.predic8.membrane.demo;
+            import com.predic8.membrane.annot.*;
+            @MCElement(name="two", topLevel=true, component=false)
+            public class TwoElement {
+                @Required
+                @MCChildElement(order=1)
+                public void setChild(ChildElement child) {}
+                public ChildElement getChild() { return null; }
+
+                @Required
+                @MCChildElement(order=2)
+                public void setStore(Store store) {}
+                public Store getStore() { return null; }
+            }
+            ---
+            package com.predic8.membrane.demo;
+            public abstract class SharedStore {}
+            ---
+            package com.predic8.membrane.demo;
+            import com.predic8.membrane.annot.*;
+            @MCElement(name="sharedStore")
+            public class SharedStoreElement extends SharedStore {}
+            ---
+            package com.predic8.membrane.demo;
+            import com.predic8.membrane.annot.*;
+            @MCElement(name="refCache", topLevel=true, component=false)
+            public class RefCacheElement {
+                @Required
+                @MCChildElement
+                public void setStore(SharedStore store) {}
+                public SharedStore getStore() { return null; }
+            }
+            """;
+
+    private static JsonNode requiredChildrenSchema() throws IOException {
+        var result = compile(splitSources(MC_MAIN_DEMO + REQUIRED_CHILDREN_SOURCES), false);
+        assertCompilerResult(true, result);
+        return schema(result);
+    }
+
+    private static void assertValid(JsonNode schema, String yaml) throws IOException {
+        final var errors = validate(schema, yaml);
+        assertTrue(errors.isEmpty(), () -> "Expected '%s' to be valid, but got %s".formatted(yaml, errors));
+    }
+
+    private static void assertInvalid(JsonNode schema, String yaml) throws IOException {
+        assertFalse(validate(schema, yaml).isEmpty(), () -> "Expected '%s' to be invalid".formatted(yaml));
+    }
+
+    private static List<com.networknt.schema.Error> validate(JsonNode schema, String yaml) throws IOException {
+        final var copy = schema.deepCopy();
+        // The 2020-12 dialect of networknt has no validator for the legacy "id" keyword in $defs.
+        copy.get("$defs").forEach(def -> ((ObjectNode) def).remove("id"));
+        return SchemaRegistry.withDefaultDialect(DRAFT_2020_12)
+                .getSchema(copy)
+                .validate(new YAMLMapper().readTree(yaml));
     }
 
     private static JsonNode schema(CompilerResult result) throws IOException {

@@ -43,7 +43,6 @@ import static javax.tools.StandardLocation.CLASS_OUTPUT;
 
 /**
  * TODOs:
- * - A required property with a base type needs all the subtypes to be present in the schema. See CacheParser
  * - ports are strings
  * - Choose/cases/case has one nesting to much
  * - apiKey/extractors/expressionExtractor/expression => too much?
@@ -205,6 +204,8 @@ public class JsonSchemaGenerator extends AbstractGrammar {
                     .description("JSON Pointer to a component.")
                     .required(false));
         }
+
+        addRequiredChildren(main, elementInfo, parserSchema);
 
         return parserSchema;
     }
@@ -511,9 +512,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
     }
 
     private void addChildsAsProperties(Model model, MainInfo main, ChildElementInfo childSpec, SchemaObject parentObjectSchema, boolean componentsContext, boolean listItemContext) {
-        var childElementInfos = requireChildElementDeclarationInfo(main, childSpec).getElementInfo().stream()
-                .filter(candidateElementInfo -> !candidateElementInfo.getAnnotation().topLevel())
-                .toList();
+        var childElementInfos = getChildElementInfos(main, childSpec);
 
         // Generic list-item reference support:
         // If this list can contain at least one @MCElement(component=true) type,
@@ -523,10 +522,45 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         }
 
         for (ElementInfo childElementInfo : childElementInfos) {
-            parentObjectSchema.property(getRef(model, childElementInfo))
-                    .description(getDescriptionContent(childElementInfo))
-                    .required(childSpec.isRequired());
+            parentObjectSchema.property(getRef(model, childElementInfo)
+                    .description(getDescriptionContent(childElementInfo)));
         }
+    }
+
+    private static List<ElementInfo> getChildElementInfos(MainInfo main, ChildElementInfo childSpec) {
+        return requireChildElementDeclarationInfo(main, childSpec).getElementInfo().stream()
+                .filter(candidateElementInfo -> !candidateElementInfo.getAnnotation().topLevel())
+                .toList();
+    }
+
+    // The schema cannot resolve a "$ref" to see which child it fills, so a "$ref" satisfies every required child.
+    // The parser checks the rest at startup.
+    private void addRequiredChildren(MainInfo main, ElementInfo elementInfo, SchemaObject parserSchema) {
+        final var refAllowed = parserSchema.hasProperty($_REF);
+        final var groups = new ArrayList<AbstractSchema<?>>();
+        for (ChildElementInfo childSpec : getJsonVisibleChildElementSpecs(elementInfo)) {
+            if (childSpec.isList() || !childSpec.isRequired())
+                continue;
+
+            final var keys = getChildElementInfos(main, childSpec).stream()
+                    .map(childElementInfo -> childElementInfo.getAnnotation().name())
+                    .toList();
+            if (keys.isEmpty())
+                continue;
+
+            if (keys.size() == 1 && !refAllowed) {
+                parserSchema.getProperty(keys.getFirst()).required(true);
+                continue;
+            }
+
+            final var alternatives = new ArrayList<AbstractSchema<?>>();
+            keys.forEach(key -> alternatives.add(requiredKey(key)));
+            if (refAllowed)
+                alternatives.add(requiredKey($_REF));
+            groups.add(anyOf(alternatives));
+        }
+        if (!groups.isEmpty())
+            parserSchema.allOf(groups);
     }
 
     private static SchemaRef getRef(Model model, ElementInfo elementInfo) {
