@@ -18,6 +18,7 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.Required;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.lang.AbstractLanguageInterceptor;
 import com.predic8.membrane.core.lang.ExchangeExpression;
@@ -32,9 +33,10 @@ import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static com.predic8.membrane.core.interceptor.kafka.KafkaExtension.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
+import static com.predic8.membrane.core.util.ExtensionLoader.load;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.apache.commons.lang3.exception.ExceptionUtils.throwableOfType;
 
 /**
  * @description <p>Publishes the body of the request as a message to an Apache Kafka topic.</p>
@@ -54,6 +56,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public class KafkaProducerInterceptor extends AbstractLanguageInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(KafkaProducerInterceptor.class);
+
+    private static final String PRODUCER_CLASS = "io.membrane_api.ext.kafka.KafkaProducerComponentImpl";
 
     private String bootstrapServers;
     private String topic;
@@ -83,15 +87,26 @@ public class KafkaProducerInterceptor extends AbstractLanguageInterceptor {
         super.init();
         if (key != null)
             keyExpression = expression(this, language, key);
-        producer = load(PRODUCER_CLASS, KafkaProducerExtension.class,
-                "The Membrane Kafka Extension is needed for the kafkaProducer interceptor. Ask info@predic8.de.");
+        // init() can run again, e.g. when the API is re-initialized
+        destroy();
+        producer = createProducer();
         producer.init(producerProperties());
+    }
+
+    /**
+     * Package-private so that tests can replace the extension with a stub.
+     */
+    KafkaProducerExtension createProducer() {
+        return load(PRODUCER_CLASS, KafkaProducerExtension.class,
+                "The Membrane Kafka Extension is needed for the kafkaProducer interceptor. Ask info@predic8.de.");
     }
 
     @PreDestroy
     public void destroy() {
-        if (producer != null)
-            producer.stop();
+        if (producer == null)
+            return;
+        producer.stop();
+        producer = null;
     }
 
     private Map<String, String> producerProperties() {
@@ -123,6 +138,10 @@ public class KafkaProducerInterceptor extends AbstractLanguageInterceptor {
             producer.send(topic, evaluateKey(exc), exc);
             return CONTINUE;
         } catch (Exception e) {
+            // An unreadable body (e.g. invalid Content-Encoding) is answered by FlowController
+            final var bodyFailure = throwableOfType(e, ReadingBodyException.class);
+            if (bodyFailure != null)
+                throw bodyFailure;
             log.error("Could not send message to Kafka topic {}.", topic, e);
             internal(router.getConfiguration().isProduction(), getDisplayName())
                     .detail("Could not send message to Kafka.")

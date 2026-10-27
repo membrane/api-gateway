@@ -78,6 +78,7 @@ Keep this file in sync when adding, renaming or removing a util class.
 | `util/DateAndTimeUtil` | Pretty-print time spans, parse configured ISO dates |
 | `util/Util` | Grab bag: line count, socket shutdown, thread pool, split by comma |
 | `util/ClassFinder` | Classpath scanning |
+| `util/ExtensionLoader` | Create the implementation of an optional Membrane extension (Kafka, JMS) by class name; `ConfigurationException` if missing |
 | `util/ComparatorFactory` | Comparators for admin-console statistics tables |
 | `util/BeanDefinitionBasePathUtil` | Resolve base location of a Spring bean definition |
 | `util/MemcachedConnector`, `util/RedisConnector` | Cache backends |
