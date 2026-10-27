@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.kafka;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.ReadingBodyException;
+import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.router.DummyTestRouter;
 import com.predic8.membrane.core.util.ConfigurationException;
 import org.junit.jupiter.api.Test;
@@ -24,6 +25,9 @@ import java.io.IOException;
 import java.util.Map;
 
 import static com.predic8.membrane.core.http.Request.post;
+import static com.predic8.membrane.core.http.Response.ok;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -36,6 +40,7 @@ class KafkaProducerInterceptorTest {
         String topic;
         byte[] key;
         Exchange exchange;
+        Flow flow;
         boolean stopped;
         IOException failure;
 
@@ -45,12 +50,13 @@ class KafkaProducerInterceptorTest {
         }
 
         @Override
-        public void send(final String topic, final byte[] key, final Exchange exc) throws IOException {
+        public void send(final String topic, final byte[] key, final Exchange exc, final Flow flow) throws IOException {
             if (failure != null)
                 throw failure;
             this.topic = topic;
             this.key = key;
             this.exchange = exc;
+            this.flow = flow;
         }
 
         @Override
@@ -103,6 +109,32 @@ class KafkaProducerInterceptorTest {
         assertEquals("orders", producer.topic);
         assertNull(producer.key);
         assertSame(exc, producer.exchange);
+        assertEquals(REQUEST, producer.flow);
+    }
+
+    @Test
+    void sendsResponse() throws Exception {
+        final var i = interceptor();
+        i.setKey("headers['X-Order-Id']");
+        i.init(new DummyTestRouter());
+        final var exc = post("/orders").header("X-Order-Id", "1").body("{}").buildExchange();
+        exc.setResponse(ok().header("X-Order-Id", "42").body("{}").build());
+        assertEquals(CONTINUE, i.handleResponse(exc));
+        assertSame(exc, producer.exchange);
+        assertEquals(RESPONSE, producer.flow);
+        // The key is evaluated on the response
+        assertArrayEquals("42".getBytes(UTF_8), producer.key);
+    }
+
+    @Test
+    void failedSendOfResponseAnswersWith500() throws Exception {
+        final var i = interceptor();
+        i.init(new DummyTestRouter());
+        producer.failure = new IOException("broker down");
+        final var exc = post("/orders").body("{}").buildExchange();
+        exc.setResponse(ok().body("{}").build());
+        assertEquals(ABORT, i.handleResponse(exc));
+        assertEquals(500, exc.getResponse().getStatusCode());
     }
 
     @Test

@@ -19,6 +19,7 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.Required;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.ReadingBodyException;
+import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.lang.AbstractLanguageInterceptor;
 import com.predic8.membrane.core.lang.ExchangeExpression;
@@ -31,6 +32,7 @@ import java.util.Map;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
@@ -39,16 +41,25 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.commons.lang3.exception.ExceptionUtils.throwableOfType;
 
 /**
- * @description <p>Publishes the body of the request as a message to an Apache Kafka topic.</p>
+ * @description <p>Publishes the body of the request or the response as a message to an Apache Kafka topic.</p>
+ *
+ * <p>In the flow of an API, the interceptor sends a message for the request and another one for the response.
+ * Put it into <code>request</code> or <code>response</code> to send only one of them.</p>
  *
  * <p>The interceptor needs the Membrane Kafka Extension. Without the extension Membrane does not start.
  * Contact predic8 for the extension.</p>
  * @yaml
  * <pre><code>
- * kafkaProducer:
- *   bootstrapServers: kafka.example.com:9092
- *   topic: orders
- *   key: headers['X-Order-Id']
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - request:
+ *         - kafkaProducer:
+ *             bootstrapServers: kafka.example.com:9092
+ *             topic: orders
+ *             key: headers['X-Order-Id']
+ *     - return:
+ *         status: 202
  * </code></pre>
  * @topic 2. Enterprise Integration Patterns
  */
@@ -134,8 +145,17 @@ public class KafkaProducerInterceptor extends AbstractLanguageInterceptor {
 
     @Override
     public Outcome handleRequest(final Exchange exc) {
+        return send(exc, REQUEST);
+    }
+
+    @Override
+    public Outcome handleResponse(final Exchange exc) {
+        return send(exc, RESPONSE);
+    }
+
+    private Outcome send(final Exchange exc, final Flow flow) {
         try {
-            producer.send(topic, evaluateKey(exc), exc);
+            producer.send(topic, evaluateKey(exc, flow), exc, flow);
             return CONTINUE;
         } catch (Exception e) {
             // An unreadable body (e.g. invalid Content-Encoding) is answered by FlowController
@@ -152,10 +172,10 @@ public class KafkaProducerInterceptor extends AbstractLanguageInterceptor {
         }
     }
 
-    private byte[] evaluateKey(final Exchange exc) {
+    private byte[] evaluateKey(final Exchange exc, final Flow flow) {
         if (keyExpression == null)
             return null;
-        final var evaluated = keyExpression.evaluate(exc, REQUEST, String.class);
+        final var evaluated = keyExpression.evaluate(exc, flow, String.class);
         return evaluated == null ? null : evaluated.getBytes(UTF_8);
     }
 

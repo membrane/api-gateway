@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.interceptor.kafka;
 
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 
 import java.io.IOException;
 import java.util.Map;
@@ -33,9 +34,10 @@ public interface KafkaProducerExtension {
     /**
      * @param topic Target topic
      * @param key   Record key as UTF-8 bytes, may be null
-     * @param exc   Exchange whose request body is the record value
+     * @param exc   Exchange whose request or response body is the record value
+     * @param flow  REQUEST to send the body of the request, RESPONSE to send the body of the response
      */
-    void send(String topic, byte[] key, Exchange exc) throws IOException;
+    void send(String topic, byte[] key, Exchange exc, Flow flow) throws IOException;
 
     /**
      * Sends pending messages and releases the connections. Called when the router stops.

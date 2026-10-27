@@ -16,9 +16,15 @@ package com.predic8.membrane.core.interceptor.jms;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.ReadingBodyException;
+import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.router.DefaultRouter;
 import com.predic8.membrane.core.router.DummyTestRouter;
 import com.predic8.membrane.core.util.ConfigurationException;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.Logger;
+import org.apache.logging.log4j.core.appender.AbstractAppender;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -26,8 +32,12 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import static com.predic8.membrane.core.http.Request.post;
+import static com.predic8.membrane.core.http.Response.ok;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.router.YamlRouterBootstrap.loadIntoRouter;
@@ -40,6 +50,7 @@ class JmsProducerInterceptorTest {
     static class RecordingProducer implements JmsProducerExtension {
         Map<String, String> properties;
         Exchange exchange;
+        Flow flow;
         boolean stopped;
         IOException failure;
 
@@ -49,10 +60,11 @@ class JmsProducerInterceptorTest {
         }
 
         @Override
-        public void send(final Exchange exc) throws IOException {
+        public void send(final Exchange exc, final Flow flow) throws IOException {
             if (failure != null)
                 throw failure;
             this.exchange = exc;
+            this.flow = flow;
         }
 
         @Override
@@ -129,7 +141,26 @@ class JmsProducerInterceptorTest {
                 "username", "alice",
                 "factory.brokerURL", "tcp://mq.example.com:61616",
                 "queue", "orders",
-                "delivery.mode", "NON_PERSISTENT"), producer.properties);
+                "delivery.mode", "NON_PERSISTENT",
+                "send.timeout", "10000"), producer.properties);
+    }
+
+    @Test
+    void passesSendTimeoutToExtension() {
+        final var i = interceptor();
+        i.setQueue("orders");
+        i.setSendTimeout(0);
+        i.init(new DummyTestRouter());
+        assertEquals("0", producer.properties.get("send.timeout"));
+    }
+
+    @Test
+    void rejectsNegativeSendTimeout() {
+        final var i = interceptor();
+        i.setQueue("orders");
+        i.setSendTimeout(-1);
+        final var e = assertThrows(ConfigurationException.class, () -> i.init(new DummyTestRouter()));
+        assertTrue(e.getMessage().contains("sendTimeout"));
     }
 
     @Test
@@ -149,6 +180,31 @@ class JmsProducerInterceptorTest {
         final var exc = post("/orders").body("{}").buildExchange();
         assertEquals(CONTINUE, i.handleRequest(exc));
         assertSame(exc, producer.exchange);
+        assertEquals(REQUEST, producer.flow);
+    }
+
+    @Test
+    void sendsResponse() throws Exception {
+        final var i = interceptor();
+        i.setQueue("orders");
+        i.init(new DummyTestRouter());
+        final var exc = post("/orders").body("{}").buildExchange();
+        exc.setResponse(ok().body("{}").build());
+        assertEquals(CONTINUE, i.handleResponse(exc));
+        assertSame(exc, producer.exchange);
+        assertEquals(RESPONSE, producer.flow);
+    }
+
+    @Test
+    void failedSendOfResponseAnswersWith500() throws Exception {
+        final var i = interceptor();
+        i.setQueue("orders");
+        i.init(new DummyTestRouter());
+        producer.failure = new IOException("broker down");
+        final var exc = post("/orders").body("{}").buildExchange();
+        exc.setResponse(ok().body("{}").build());
+        assertEquals(ABORT, i.handleResponse(exc));
+        assertEquals(500, exc.getResponse().getStatusCode());
     }
 
     @Test
@@ -160,6 +216,34 @@ class JmsProducerInterceptorTest {
         final var exc = post("/orders").body("{}").buildExchange();
         assertEquals(ABORT, i.handleRequest(exc));
         assertEquals(500, exc.getResponse().getStatusCode());
+    }
+
+    @Test
+    void sendFailureIsLoggedWithoutStackTrace() throws Exception {
+        final var events = new CopyOnWriteArrayList<LogEvent>();
+        final var appender = new AbstractAppender("JmsProducerInterceptorTest", null, null, false, null) {
+            @Override
+            public void append(LogEvent event) {
+                events.add(event.toImmutable());
+            }
+        };
+        appender.start();
+        final var interceptorLog = (Logger) LogManager.getLogger(JmsProducerInterceptor.class);
+        interceptorLog.addAppender(appender);
+        try {
+            final var i = interceptor();
+            i.setQueue("orders");
+            i.init(new DummyTestRouter());
+            producer.failure = new IOException("Could not send the message to queue orders.", new IOException("AMQ219010: Connection is destroyed"));
+            i.handleRequest(post("/orders").body("{}").buildExchange());
+
+            final var error = events.stream().filter(e -> e.getLevel() == Level.ERROR).findFirst().orElseThrow();
+            assertEquals("Could not send message to JMS destination orders: Could not send the message to queue orders. "
+                    + "Reason: AMQ219010: Connection is destroyed", error.getMessage().getFormattedMessage());
+            assertNull(error.getThrown());
+        } finally {
+            interceptorLog.removeAppender(appender);
+        }
     }
 
     /**

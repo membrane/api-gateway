@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.interceptor.jms;
 
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 
 import java.io.IOException;
 import java.util.Map;
@@ -24,12 +25,12 @@ import java.util.Map;
  * without it the interceptor fails on startup with a ConfigurationException.
  * <p>
  * Settings that are fixed for one jmsProducer are passed to {@link #init(Map)}. Values that can change from
- * message to message are read from the exchange, so the signature of {@link #send(Exchange)} stays stable.
+ * message to message are read from the exchange, so the signature of {@link #send(Exchange, Flow)} stays stable.
  */
 public interface JmsProducerExtension {
 
     /**
-     * Called once before any call to {@link #send(Exchange)}.
+     * Called once before any call to {@link #send(Exchange, Flow)}.
      *
      * @param properties Connection and producer settings. Unset optional settings are missing from the map.
      *                   <ul>
@@ -39,6 +40,8 @@ public interface JmsProducerExtension {
      *                   <li><code>username</code>, <code>password</code>: credentials for creating the connection</li>
      *                   <li>either <code>queue</code> or <code>topic</code>: name of the destination</li>
      *                   <li><code>delivery.mode</code>: PERSISTENT or NON_PERSISTENT</li>
+     *                   <li><code>send.timeout</code>: milliseconds a send may take before it fails, 0 for no
+     *                   limit</li>
      *                   </ul>
      */
     void init(Map<String, String> properties);
@@ -49,9 +52,10 @@ public interface JmsProducerExtension {
      * must not share them between concurrent calls without synchronization, e.g. it can use one
      * session and producer per thread or a pool.
      *
-     * @param exchange Exchange whose request body is the message body
+     * @param exchange Exchange whose request or response body is the message body
+     * @param flow     REQUEST to send the body of the request, RESPONSE to send the body of the response
      */
-    void send(Exchange exchange) throws IOException;
+    void send(Exchange exchange, Flow flow) throws IOException;
 
     /**
      * Releases the connections. Called when the router stops.

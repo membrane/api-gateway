@@ -26,17 +26,23 @@ import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.util.ExtensionLoader.load;
 import static org.apache.commons.lang3.exception.ExceptionUtils.throwableOfType;
 
 /**
- * @description <p>Sends the body of the request as a message to a JMS queue or topic.</p>
+ * @description <p>Sends the body of the request or the response as a message to a JMS queue or topic.</p>
+ *
+ * <p>In the flow of an API, the interceptor sends a message for the request and another one for the response.
+ * Put it into <code>request</code> or <code>response</code> to send only one of them.</p>
  *
  * <p>Any broker with a Jakarta Messaging (JMS 3) client can be used.</p>
  *
@@ -44,11 +50,17 @@ import static org.apache.commons.lang3.exception.ExceptionUtils.throwableOfType;
  * Contact predic8 for the extension.</p>
  * @yaml
  * <pre><code>
- * jmsProducer:
- *   jmsConnection:
- *     connectionFactory: org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory
- *     brokerURL: tcp://mq.example.com:61616
- *   queue: orders
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - request:
+ *         - jmsProducer:
+ *             jmsConnection:
+ *               connectionFactory: org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory
+ *               brokerURL: tcp://mq.example.com:61616
+ *             queue: orders
+ *     - return:
+ *         status: 202
  * </code></pre>
  * @topic 2. Enterprise Integration Patterns
  */
@@ -70,6 +82,7 @@ public class JmsProducerInterceptor extends AbstractInterceptor {
     private String queue;
     private String topic;
     private DeliveryMode deliveryMode = DeliveryMode.PERSISTENT;
+    private int sendTimeout = 10000;
 
     /**
      * Written in init(), read-only afterwards.
@@ -84,6 +97,8 @@ public class JmsProducerInterceptor extends AbstractInterceptor {
             throw new ConfigurationException("jmsProducer needs a jmsConnection.");
         if ((queue == null) == (topic == null))
             throw new ConfigurationException("jmsProducer needs either a queue or a topic.");
+        if (sendTimeout < 0)
+            throw new ConfigurationException("sendTimeout of jmsProducer must not be negative.");
         // init() can run again, e.g. when the API is re-initialized
         destroy();
         producer = createProducer();
@@ -115,6 +130,7 @@ public class JmsProducerInterceptor extends AbstractInterceptor {
         putIfSet(props, "queue", queue);
         putIfSet(props, "topic", topic);
         props.put("delivery.mode", deliveryMode.name());
+        props.put("send.timeout", String.valueOf(sendTimeout));
         return props;
     }
 
@@ -125,15 +141,24 @@ public class JmsProducerInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleRequest(final Exchange exc) {
+        return send(exc, REQUEST);
+    }
+
+    @Override
+    public Outcome handleResponse(final Exchange exc) {
+        return send(exc, RESPONSE);
+    }
+
+    private Outcome send(final Exchange exc, final Flow flow) {
         try {
-            producer.send(exc);
+            producer.send(exc, flow);
             return CONTINUE;
         } catch (Exception e) {
             // An unreadable body (e.g. invalid Content-Encoding) is answered by FlowController
             final var bodyFailure = throwableOfType(e, ReadingBodyException.class);
             if (bodyFailure != null)
                 throw bodyFailure;
-            log.error("Could not send message to JMS destination {}.", topic != null ? topic : queue, e);
+            logSendFailure(e);
             internal(router.getConfiguration().isProduction(), getDisplayName())
                     .detail("Could not send message to JMS.")
                     .exception(e)
@@ -141,6 +166,23 @@ public class JmsProducerInterceptor extends AbstractInterceptor {
                     .buildAndSetResponse(exc);
             return ABORT;
         }
+    }
+
+    /**
+     * An IOException is the failure the extension reports, e.g. a broker that is down. Its message tells what
+     * happened, a stack trace does not help. Other exceptions are bugs and are logged with their stack trace.
+     */
+    private void logSendFailure(final Exception e) {
+        final var destination = topic != null ? topic : queue;
+        if (!(e instanceof IOException)) {
+            log.error("Could not send message to JMS destination {}.", destination, e);
+            return;
+        }
+        if (e.getCause() != null)
+            log.error("Could not send message to JMS destination {}: {} Reason: {}", destination, e.getMessage(), e.getCause().getMessage());
+        else
+            log.error("Could not send message to JMS destination {}: {}", destination, e.getMessage());
+        log.debug("Stack trace of the JMS failure:", e);
     }
 
     @Override
@@ -198,5 +240,20 @@ public class JmsProducerInterceptor extends AbstractInterceptor {
 
     public DeliveryMode getDeliveryMode() {
         return deliveryMode;
+    }
+
+    /**
+     * @description Time in milliseconds the broker may take to accept a message. If it takes longer, e.g. because
+     * the broker blocks producers when its disk is full, the request is answered with 500. 0 waits without limit.
+     * @default 10000
+     * @example 30000
+     */
+    @MCAttribute
+    public void setSendTimeout(int sendTimeout) {
+        this.sendTimeout = sendTimeout;
+    }
+
+    public int getSendTimeout() {
+        return sendTimeout;
     }
 }
