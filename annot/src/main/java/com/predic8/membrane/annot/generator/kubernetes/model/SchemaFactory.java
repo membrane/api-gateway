@@ -71,6 +71,14 @@ public class SchemaFactory {
         return new RequiredKey(key);
     }
 
+    public static AllOf allOf(List<AbstractSchema<?>> allOfs) {
+        return new AllOf(allOfs);
+    }
+
+    public static Not not(AbstractSchema<?> schema) {
+        return new Not(schema);
+    }
+
     public static Schema schema(String name) {
         return new Schema(name);
     }

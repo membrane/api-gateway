@@ -16,7 +16,6 @@ package com.predic8.membrane.annot.generator;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.networknt.schema.SchemaRegistry;
 import com.predic8.membrane.annot.util.CompilerResult;
@@ -163,6 +162,15 @@ class JsonSchemaGeneratorTest {
         assertInvalid(schema, "refCache: {}");
     }
 
+    @Test
+    void missingRequiredChildIsNotReportedAsMissingRef() throws Exception {
+        final var messages = validate(requiredChildrenSchema(), "refCache: {}").stream()
+                .map(com.networknt.schema.Error::getMessage)
+                .toList();
+        assertTrue(messages.stream().anyMatch(m -> m.contains("sharedStore")), messages::toString);
+        assertTrue(messages.stream().noneMatch(m -> m.contains("$ref")), messages::toString);
+    }
+
     private static final String REQUIRED_CHILDREN_SOURCES = """
             package com.predic8.membrane.demo;
             import com.predic8.membrane.annot.*;
@@ -252,11 +260,8 @@ class JsonSchemaGeneratorTest {
     }
 
     private static List<com.networknt.schema.Error> validate(JsonNode schema, String yaml) throws IOException {
-        final var copy = schema.deepCopy();
-        // The 2020-12 dialect of networknt has no validator for the legacy "id" keyword in $defs.
-        copy.get("$defs").forEach(def -> ((ObjectNode) def).remove("id"));
         return SchemaRegistry.withDefaultDialect(DRAFT_2020_12)
-                .getSchema(copy)
+                .getSchema(schema)
                 .validate(new YAMLMapper().readTree(yaml));
     }
 
