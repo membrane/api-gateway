@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.node.*;
 import org.junit.jupiter.api.*;
 
 import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaFactory.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -36,6 +37,13 @@ class SchemaTest {
         assertTrue(json.get("properties").has("bar"));
 
 //        prettyPrint(json);
+    }
+
+    @Test
+    void typeReplacesTypeList() {
+        final var json = new Schema("foo").types("string", "number").type("integer").json(jnf.objectNode());
+
+        assertEquals("integer", json.get("type").asText());
     }
 
     private static void prettyPrint(JsonNode json) throws Exception {
