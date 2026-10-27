@@ -27,7 +27,6 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.ConfigurationException;
-import groovy.lang.MissingPropertyException;
 import org.apache.commons.io.IOUtils;
 import org.graalvm.polyglot.Value;
 import org.jetbrains.annotations.Nullable;
@@ -45,7 +44,6 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.lang.ScriptingUtils.createParameterBindings;
-import static com.predic8.membrane.core.lang.groovy.GroovyLanguageSupport.getScriptLineNumber;
 import static com.predic8.membrane.core.resolver.ResolverMap.combine;
 import static com.predic8.membrane.core.util.text.SerializationFunction.TEXT_SERIALIZATION;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -194,29 +192,49 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
         return null;
     }
 
-    protected void handleScriptExecutionException(Exchange exc, Exception e) {
-        final var line = getScriptLineNumber(e);
-        log.warn("Error executing {} script{}: {}\n{}", name, line.map(" at line %d"::formatted).orElse(""), e.getMessage(), src);
-        log.debug("", e);
+    protected final void handleScriptExecutionException(Exchange exc, Exception e) {
+        final var error = describe(e);
+        logError(e, error);
 
-        var pd = internal(router.getConfiguration().isProduction(), getDisplayName())
+        final var pd = internal(router.getConfiguration().isProduction(), getDisplayName())
                 .addSubSee("script-execution")
                 .title("Error executing script.")
                 .addSubType("scripting");
 
-        if (e instanceof MissingPropertyException mpe) {
-            pd.internal("missingProperty", mpe.getProperty());
-        }
+        error.details().forEach(pd::internal);
 
-        // The stacktrace shows only Groovy and Membrane internals. The script line is what helps.
-        line.ifPresent(l -> pd.internal("line", l)
-                .internal("sourceLine", getSourceLine(l)));
+        if (error.line() != null) {
+            pd.internal("line", error.line())
+                    .internal("sourceLine", getSourceLine(error.line()));
+        }
+        if (error.column() != null) {
+            pd.internal("column", error.column());
+        }
 
         pd.exception(e)
                 .stacktrace(false)
                 .internal("source", trim(src))
                 .buildAndSetResponse(exc);
     }
+
+    private void logError(Exception e, ScriptError error) {
+        final var at = error.line() != null ? " at line " + error.line() : "";
+        if (error.scriptException()) {
+            // The stacktrace shows only interpreter and Membrane internals. The script line is what helps.
+            log.warn("Error executing {} script{}: {}\n{}", name, at, e.getMessage(), src);
+            log.debug("", e);
+        } else {
+            log.warn("Error executing {} script{}: {}\n{}", name, at, e.getMessage(), src, e);
+        }
+    }
+
+    /**
+     * Describes an exception thrown while running the script. Language specific, so subclasses provide it.
+     *
+     * @param e Exception thrown while running the script
+     * @return Location in the script and details for the ProblemDetails
+     */
+    protected abstract ScriptError describe(Exception e);
 
     private String getSourceLine(int line) {
         return src.lines().skip(line - 1).findFirst().map(String::strip).orElse("");

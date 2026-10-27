@@ -16,11 +16,18 @@ package com.predic8.membrane.core.interceptor.groovy;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.lang.AbstractScriptInterceptor;
 import com.predic8.membrane.core.router.DummyTestRouter;
+import com.predic8.membrane.test.TestAppender;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.LogEvent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.ApplicationContext;
 
+import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
@@ -260,6 +267,21 @@ public class GroovyInterceptorTest {
 	}
 
 	@Test
+	void missingPropertyWithoutPropertyName() throws Exception {
+		GroovyInterceptor i = new GroovyInterceptor() {{
+			src = """
+				throw new MissingPropertyException('boom')""";
+		}};
+		i.init(router);
+
+		assertEquals(ABORT, i.handleRequest(exc));
+		Map<String,Object> pd = om.readValue(exc.getResponse().getBodyAsStringDecoded(), Map.class);
+		assertEquals(500, exc.getResponse().getStatusCode());
+		assertTrue(((String) pd.get("message")).contains("boom"));
+		assertFalse(pd.containsKey("missingProperty"));
+	}
+
+	@Test
 	void errorInClosureReportsLineInClosure() throws Exception {
 		GroovyInterceptor i = new GroovyInterceptor() {{
 			src = """
@@ -273,5 +295,40 @@ public class GroovyInterceptorTest {
 		assertEquals(ABORT, i.handleRequest(exc));
 		Map<String,Object> pd = om.readValue(exc.getResponse().getBodyAsStringDecoded(), Map.class);
 		assertEquals(2, pd.get("line"));
+	}
+
+	@Test
+	void scriptErrorIsLoggedWithoutStacktrace() throws Exception {
+		var warnings = runAndCaptureWarnings("""
+				exc.request.setBodyContent('foo')
+				CONTINUE""");
+
+		assertFalse(warnings.isEmpty());
+		assertTrue(warnings.stream().allMatch(e -> e.getThrown() == null));
+	}
+
+	@Test
+	void unexpectedExceptionIsLoggedWithStacktrace() throws Exception {
+		var warnings = runAndCaptureWarnings("""
+				throw new IOException('boom')""");
+
+		assertTrue(warnings.stream().anyMatch(e -> e.getThrown() instanceof IOException));
+	}
+
+	private List<LogEvent> runAndCaptureWarnings(String script) throws Exception {
+		var logger = (org.apache.logging.log4j.core.Logger) LogManager.getLogger(AbstractScriptInterceptor.class.getName());
+		var appender = new TestAppender("GroovyInterceptorTest");
+		appender.start();
+		logger.addAppender(appender);
+		try {
+			GroovyInterceptor i = new GroovyInterceptor();
+			i.setSrc(script);
+			i.init(router);
+			assertEquals(ABORT, i.handleRequest(exc));
+		} finally {
+			logger.removeAppender(appender);
+			appender.stop();
+		}
+		return appender.getEvents().stream().filter(e -> e.getLevel() == Level.WARN).toList();
 	}
 }

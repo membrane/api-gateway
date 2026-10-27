@@ -16,25 +16,35 @@
 
 package com.predic8.membrane.core.interceptor.javascript;
 
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.exceptions.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.lang.*;
-import com.predic8.membrane.core.lang.javascript.*;
-import com.predic8.membrane.core.router.*;
-import org.graalvm.polyglot.*;
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.params.*;
-import org.junit.jupiter.params.provider.*;
-import org.springframework.context.support.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.predic8.membrane.core.exceptions.ProblemDetails;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.lang.AbstractScriptInterceptor;
+import com.predic8.membrane.core.lang.LanguageSupport;
+import com.predic8.membrane.core.lang.javascript.GraalVMJavascriptSupport;
+import com.predic8.membrane.core.lang.javascript.RhinoJavascriptLanguageSupport;
+import com.predic8.membrane.core.router.DefaultRouter;
+import com.predic8.membrane.test.TestAppender;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.LogEvent;
+import org.graalvm.polyglot.Context;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.context.support.GenericApplicationContext;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
 
-import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.util.ProblemDetailsTestUtil.*;
+import static com.predic8.membrane.core.util.ProblemDetailsTestUtil.parse;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SuppressWarnings("unchecked")
@@ -95,7 +105,8 @@ public class JavascriptInterceptorTest {
         assertTrue(pd.getType().startsWith("https://membrane-api.io/problems/internal"));
         assertTrue(pd.getTitle().contains("Error executing"));
         assertEquals(1,pd.getInternal().get("line"));
-        assertEquals(1,pd.getInternal().get("column"));
+        // Rhino does not know the column of a runtime error
+        assertEquals(engine.equals(GraalVMJavascriptSupport.class) ? 1 : null, pd.getInternal().get("column"));
         assertNotNull(pd.getInternal().get("engine"));
     }
 
@@ -224,8 +235,201 @@ public class JavascriptInterceptorTest {
     }
 
 
+    /**
+     * Same ProblemDetails layout as the groovy interceptor.
+     */
+    @ParameterizedTest
+    @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
+    void scriptErrorProblemDetails(Class<LanguageSupport> engine) throws Exception {
+        assertEquals(ABORT, executeScript("""
+                var a = 1;
+                adsfasf;""", engine));
+
+        var pd = parse(exc.getResponse());
+        assertEquals("https://membrane-api.io/problems/internal/scripting", pd.getType());
+        assertEquals("Error executing script.", pd.getTitle());
+        var internal = pd.getInternal();
+        assertEquals(2, internal.get("line"));
+        assertEquals("adsfasf;", internal.get("sourceLine"));
+        assertTrue(((String) internal.get("message")).contains("adsfasf"), internal.toString());
+        assertTrue(((String) internal.get("see")).endsWith("/script-execution"), internal.toString());
+        assertNull(internal.get("stackTrace"));
+    }
+
+    @Test
+    void hostExceptionProblemDetails() throws Exception {
+        assertEquals(ABORT, executeScript("Java.type('java.lang.Integer').parseInt('x');")); // Graal
+
+        var internal = parse(exc.getResponse()).getInternal();
+        assertTrue(((String) internal.get("message")).contains("For input string"), internal.toString());
+        assertEquals(1, internal.get("line"));
+        assertNull(internal.get("stackTrace"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
+    void scriptErrorIsLoggedWithoutStacktrace(Class<LanguageSupport> engine) throws Exception {
+        var warnings = executeAndCaptureWarnings("adsfasf;", engine);
+
+        assertEquals(1, warnings.size(), warnings.toString());
+        assertNull(warnings.getFirst().getThrown());
+        assertTrue(warnings.getFirst().getMessage().getFormattedMessage().contains("at line 1: "));
+        assertNull(parse(exc.getResponse()).getInternal().get("stackTrace"));
+    }
+
+    @Test
+    void hostExceptionIsLoggedWithStacktrace() {
+        var warnings = executeAndCaptureWarnings("Java.type('java.lang.Integer').parseInt('x');", GraalVMJavascriptSupport.class);
+
+        assertTrue(warnings.stream().anyMatch(e -> e.getThrown() != null));
+    }
+
+    /**
+     * Rhino has no host exception with a stacktrace, it reports the message of the Java exception only.
+     */
+    @Test
+    void rhinoJavaExceptionProblemDetails() throws Exception {
+        assertEquals(ABORT, executeScript("""
+                var a = 1;
+                java.lang.Integer.parseInt('x');""", RhinoJavascriptLanguageSupport.class));
+
+        var internal = assertScriptErrorResponse("For input string");
+        assertEquals(2, internal.get("line"));
+    }
+
+    /**
+     * The Rhino pre-script parses the JSON body before the script runs. Its lines are not part of the script.
+     */
+    @Test
+    void malformedJsonBodyRhino() throws Exception {
+        exc.setRequest(new Request.Builder().contentType(APPLICATION_JSON).body("{\"a\": ").build());
+
+        assertEquals(ABORT, executeScript("var a = json.a;", RhinoJavascriptLanguageSupport.class));
+
+        var internal = assertScriptErrorResponse("SyntaxError");
+        assertNull(internal.get("line"));
+        assertNull(internal.get("column"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"eval('\\n\\n\\nfoo;');", "new Function('\\n\\n\\nfoo;')();"})
+    void errorInEvaluatedCodeGraal(String call) throws Exception {
+        assertEquals(ABORT, executeScript("var a = 1;\n" + call, GraalVMJavascriptSupport.class));
+
+        var internal = assertScriptErrorResponse("foo");
+        assertEquals(2, internal.get("line"));
+        assertEquals(call, internal.get("sourceLine"));
+    }
+
+    /**
+     * Rhino does not tell the line in the script that called eval().
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"eval('\\n\\n\\nfoo;');", "new Function('\\n\\n\\nfoo;')();"})
+    void errorInEvaluatedCodeRhino(String call) throws Exception {
+        assertEquals(ABORT, executeScript("var a = 1;\n" + call, RhinoJavascriptLanguageSupport.class));
+
+        var internal = assertScriptErrorResponse("foo");
+        assertNull(internal.get("line"));
+        assertNull(internal.get("column"));
+        assertFalse(((String) internal.get("message")).contains(RhinoJavascriptLanguageSupport.SCRIPT_NAME), internal.toString());
+    }
+
+    /**
+     * The message of Rhino contains the position counted with the pre-script. The line is reported separately.
+     */
+    @Test
+    void rhinoMessageWithoutPosition() throws Exception {
+        assertEquals(ABORT, executeScript("adsfasf;", RhinoJavascriptLanguageSupport.class));
+
+        var internal = assertScriptErrorResponse("adsfasf");
+        assertEquals("ReferenceError: \"adsfasf\" is not defined.", internal.get("message"));
+        assertEquals(1, internal.get("line"));
+    }
+
+    /**
+     * The statusCode parameter is only set in the response flow. It must not be left over for the next request.
+     */
+    @ParameterizedTest
+    @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
+    void parameterOfPreviousCallIsRemoved(Class<LanguageSupport> engine) throws Exception {
+        // Rhino does not support typeof on a Java object, statusCode is a number
+        interceptor.setSrc("exc.setProperty('statusCode', typeof statusCode);");
+        interceptor.adapter = engine.equals(GraalVMJavascriptSupport.class)
+                ? new GraalVMJavascriptLanguageAdapter(router)
+                : new RhinoJavascriptLanguageAdapter(router);
+        interceptor.init(router);
+
+        exc.setResponse(Response.ok().build());
+        assertEquals(CONTINUE, interceptor.handleResponse(exc), () -> exc.getResponse().getBodyAsStringDecoded());
+        assertEquals("number", String.valueOf(exc.getProperty("statusCode")));
+
+        // Rhino pools one engine per 2 processors and uses them in turn. Enough calls to get the first one again.
+        for (int i = 0; i <= Runtime.getRuntime().availableProcessors() * 2; i++) {
+            final var next = new Exchange(null);
+            next.setRequest(new Request.Builder().build());
+            assertEquals(CONTINUE, interceptor.handleRequest(next), () -> next.getResponse().getBodyAsStringDecoded());
+            assertEquals("undefined", String.valueOf(next.getProperty("statusCode")), "call " + i);
+        }
+    }
+
+    @Test
+    void graalHostExceptionReportsCallingLine() throws Exception {
+        assertEquals(ABORT, executeScript("""
+                var a = 1;
+                Java.type('java.lang.Integer').parseInt('x');""", GraalVMJavascriptSupport.class));
+
+        assertEquals(2, assertScriptErrorResponse("For input string").get("line"));
+    }
+
+    @Test
+    void otherAdapterDoesNotShiftLines() throws Exception {
+        interceptor.setSrc("adsfasf;");
+        interceptor.adapter = new GraalVMJavascriptLanguageAdapter(router);
+        interceptor.init(router);
+        new RhinoJavascriptLanguageAdapter(router);
+
+        assertEquals(ABORT, interceptor.handleRequest(exc));
+        assertEquals(1, assertScriptErrorResponse("adsfasf").get("line"));
+    }
+
+    @Test
+    void describeExceptionWithoutLocation() {
+        for (var adapter : List.of(new GraalVMJavascriptLanguageAdapter(router), new RhinoJavascriptLanguageAdapter(router))) {
+            var error = adapter.describe(new RuntimeException("boom"));
+            assertFalse(error.scriptException());
+            assertNull(error.line());
+            assertNull(error.column());
+        }
+    }
+
+    private Map<String, Object> assertScriptErrorResponse(String messagePart) throws Exception {
+        assertEquals(500, exc.getResponse().getStatusCode());
+        var pd = parse(exc.getResponse());
+        assertEquals("https://membrane-api.io/problems/internal/scripting", pd.getType());
+        var internal = pd.getInternal();
+        assertTrue(((String) internal.get("message")).contains(messagePart), internal.toString());
+        return internal;
+    }
+
+    private List<LogEvent> executeAndCaptureWarnings(String src, Class<? extends LanguageSupport> engine) {
+        var loggers = Stream.of(AbstractScriptInterceptor.class, GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class)
+                .map(c -> (org.apache.logging.log4j.core.Logger) LogManager.getLogger(c.getName()))
+                .toList();
+        var appender = new TestAppender("JavascriptInterceptorTest");
+        appender.start();
+        loggers.forEach(l -> l.addAppender(appender));
+        try {
+            assertEquals(ABORT, executeScript(src, (Class<LanguageSupport>) engine));
+        } finally {
+            loggers.forEach(l -> l.removeAppender(appender));
+            appender.stop();
+        }
+        return appender.getEvents().stream().filter(e -> e.getLevel().isMoreSpecificThan(Level.WARN)).toList();
+    }
+
     @SafeVarargs
-    private Outcome executeScript(String src, Class<LanguageSupport>... engine) {
+    private Outcome executeScript(String src, Class<? extends LanguageSupport>... engine) {
         interceptor.setSrc(src);
 
         // Needed because GraalVMJavascriptSupport is not found using Class.forname() in the Interceptor!

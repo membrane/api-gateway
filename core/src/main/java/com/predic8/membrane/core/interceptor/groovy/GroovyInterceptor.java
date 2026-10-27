@@ -16,8 +16,11 @@ package com.predic8.membrane.core.interceptor.groovy;
 
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.lang.AbstractScriptInterceptor;
+import com.predic8.membrane.core.lang.ScriptError;
 import com.predic8.membrane.core.lang.groovy.GroovyLanguageSupport;
 import com.predic8.membrane.core.util.ConfigurationException;
+import groovy.lang.GroovyRuntimeException;
+import groovy.lang.MissingPropertyException;
 import org.codehaus.groovy.control.MultipleCompilationErrorsException;
 import org.codehaus.groovy.control.messages.Message;
 import org.slf4j.Logger;
@@ -26,6 +29,7 @@ import org.slf4j.LoggerFactory;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
 import java.util.EnumSet;
+import java.util.Map;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_RESPONSE_ABORT_FLOW;
 import static com.predic8.membrane.core.util.text.TextUtil.removeFinalChar;
@@ -89,6 +93,14 @@ public class GroovyInterceptor extends AbstractScriptInterceptor {
             logGroovyError(e);
             throw new ConfigurationException("Error in Groovy script initialization.",e);
         }
+    }
+
+    @Override
+    protected ScriptError describe(Exception e) {
+        return new ScriptError(e instanceof GroovyRuntimeException,
+                GroovyLanguageSupport.getScriptLineNumber(e).orElse(null),
+                null,
+                e instanceof MissingPropertyException mpe && mpe.getProperty() != null ? Map.of("missingProperty", mpe.getProperty()) : Map.of());
     }
 
     private void logGroovyError(MultipleCompilationErrorsException e) {

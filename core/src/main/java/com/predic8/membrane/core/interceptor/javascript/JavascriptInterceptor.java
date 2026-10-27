@@ -13,16 +13,13 @@
 
 package com.predic8.membrane.core.interceptor.javascript;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exceptions.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.lang.*;
-import com.predic8.membrane.core.util.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.lang.AbstractScriptInterceptor;
+import com.predic8.membrane.core.lang.ScriptError;
+import com.predic8.membrane.core.util.ConfigurationException;
 
-import static com.predic8.membrane.core.util.text.TextUtil.*;
-import static org.apache.commons.lang3.StringUtils.*;
-import static org.apache.commons.text.StringEscapeUtils.*;
+import static com.predic8.membrane.core.util.text.TextUtil.removeFinalChar;
+import static org.apache.commons.text.StringEscapeUtils.escapeHtml4;
 
 /**
  * @description Executes a Javascript. The script can access and manipulate data from the request and response.
@@ -46,8 +43,6 @@ import static org.apache.commons.text.StringEscapeUtils.*;
  */
 @MCElement(name = "javascript", mixed = true)
 public class JavascriptInterceptor extends AbstractScriptInterceptor {
-
-    private static final Logger log = LoggerFactory.getLogger(JavascriptInterceptor.class);
 
     protected LanguageAdapter adapter;
 
@@ -80,14 +75,8 @@ public class JavascriptInterceptor extends AbstractScriptInterceptor {
                "</pre>";
     }
 
-    protected void handleScriptExecutionException(Exchange exc, Exception e) {
-        log.warn("Error executing {} script: {}", name , e.getMessage());
-        log.warn("Script: {}", src);
-
-        ProblemDetails pd = adapter.getProblemDetails(e);
-        pd.title("Error executing script.");
-        pd.internal("source", trim(src));
-
-        exc.setResponse(pd.build());
+    @Override
+    protected ScriptError describe(Exception e) {
+        return adapter.describe(e);
     }
 }

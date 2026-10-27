@@ -24,6 +24,7 @@ import java.util.concurrent.TimeoutException;
 public class TestAppender extends AbstractAppender {
 
     private final List<String> messages = new CopyOnWriteArrayList<>();
+    private final List<LogEvent> events = new CopyOnWriteArrayList<>();
 
     public TestAppender(String name) {
         super(name, null, null, false, null);
@@ -32,10 +33,18 @@ public class TestAppender extends AbstractAppender {
     @Override
     public void append(LogEvent event) {
         messages.add(event.getMessage().getFormattedMessage());
+        events.add(event.toImmutable());
     }
 
     public List<String> getMessages() {
         return messages;
+    }
+
+    /**
+     * @return Events including level and thrown exception
+     */
+    public List<LogEvent> getEvents() {
+        return events;
     }
 
     public boolean contains(String text) {

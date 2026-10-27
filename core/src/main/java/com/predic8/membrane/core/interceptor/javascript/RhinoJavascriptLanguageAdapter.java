@@ -16,11 +16,12 @@
 
 package com.predic8.membrane.core.interceptor.javascript;
 
-import com.predic8.membrane.core.exceptions.*;
-import com.predic8.membrane.core.lang.javascript.*;
-import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.lang.ScriptError;
+import com.predic8.membrane.core.lang.javascript.RhinoJavascriptLanguageSupport;
+import com.predic8.membrane.core.lang.javascript.RhinoScriptException;
+import com.predic8.membrane.core.router.Router;
 
-import javax.script.*;
+import java.util.Map;
 
 public class RhinoJavascriptLanguageAdapter extends LanguageAdapter {
 
@@ -29,16 +30,21 @@ public class RhinoJavascriptLanguageAdapter extends LanguageAdapter {
         languageSupport = new RhinoJavascriptLanguageSupport();
     }
 
+    /**
+     * Rhino reports a Java exception thrown by code the script calls with the message only, so it is treated like
+     * an error in the script.
+     */
     @Override
-    public ProblemDetails getProblemDetails(Exception e) {
-        ProblemDetails pd = ProblemDetails.internal(router.getConfiguration().isProduction(),"javascript");
-        if (e.getCause() instanceof ScriptException se) {
-            pd.internal("column", se.getColumnNumber() + 1);
-            pd.internal("line", se.getLineNumber() - preScriptLineLength + 1);
-            pd.internal("message",  se.getMessage());
-            pd.internal("engine", "rhino");
-        }
-        return pd;
+    public ScriptError describe(Exception e) {
+        if (!(e instanceof RhinoScriptException rse))
+            return new ScriptError(false, null, null, Map.of("engine", "rhino"));
+
+        // Lines of code passed to eval() or new Function() are not lines of the script
+        if (!RhinoJavascriptLanguageSupport.SCRIPT_NAME.equals(rse.getFileName()))
+            return new ScriptError(true, null, null, Map.of("engine", "rhino"));
+
+        // Rhino counts lines from 0. A column of 0 means unknown.
+        return new ScriptError(true, rse.getLine() - preScriptLineLength + 1, rse.getColumn(), Map.of("engine", "rhino"));
     }
 
     @Override

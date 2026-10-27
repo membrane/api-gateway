@@ -16,17 +16,23 @@
 
 package com.predic8.membrane.core.lang.javascript;
 
-import com.predic8.membrane.core.lang.*;
+import com.predic8.membrane.core.lang.LanguageSupport;
+import com.predic8.membrane.core.lang.ScriptExecutorPool;
 import org.graalvm.polyglot.*;
-import org.slf4j.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.function.*;
+import java.util.Map;
+import java.util.function.Function;
 
 public class GraalVMJavascriptSupport implements LanguageSupport {
 
     private static final Logger log = LoggerFactory.getLogger(GraalVMJavascriptSupport.class);
+
+    /**
+     * Source name of the script. Code passed to eval() or new Function() gets a different name.
+     */
+    public static final String SCRIPT_NAME = "membrane-script.js";
 
     private abstract static class GraalVMJavascriptExecutorPool<R> extends ScriptExecutorPool<Source, R> {
 
@@ -47,34 +53,35 @@ public class GraalVMJavascriptSupport implements LanguageSupport {
         protected Object invoke(Source source, Map<String, Object> parameters) {
             try {
                 synchronized (context) {
-                    parameters.forEach((key, value) -> context.getBindings("js").putMember(key, value));
+                    final var bindings = context.getBindings("js");
+                    parameters.forEach(bindings::putMember);
+                    try {
+                        // Eval caches the compiled script internally. No need to call parse and try to
+                        // cache it in Membrane.
+                        Value js = context.eval(source);
 
-                    // Eval caches the compiled script internally. No need to call parse and try to
-                    // cache it in Membrane.
-                    Value js = context.eval(source);
-
-                    if (js.isHostObject())
-                        return js.asHostObject();
-                    return js;
+                        if (js.isHostObject())
+                            return js.asHostObject();
+                        return js;
+                    } finally {
+                        // The context is shared. A parameter missing in the next call, e.g. json, must not keep this value.
+                        parameters.keySet().forEach(bindings::removeMember);
+                    }
                 }
             } catch (PolyglotException e) {
                 if (e.isSyntaxError()) {
                     SourceSection location = e.getSourceLocation();
                     log.warn("Syntax error compiling Javascript at {} line {} position {}", location.getSource(), location.getStartLine(), location.getCharIndex());
                     log.warn("Location: {}", location);
-                } else {
-                    log.warn("",e);
                 }
+                // Other errors are logged by the caller
                 throw e;
-            } catch (Exception e) {
-                log.error("Error compiling script:", e);
-                throw new RuntimeException("Error compiling script:", e);
             }
         }
 
         @Override
         protected Source createOneScript() {
-            return Source.create("js", javascriptCode);
+            return Source.newBuilder("js", javascriptCode, SCRIPT_NAME).buildLiteral();
         }
     }
 

@@ -13,21 +13,27 @@
 
 package com.predic8.membrane.core.lang.javascript;
 
-import com.predic8.membrane.core.lang.*;
-import com.predic8.membrane.core.util.*;
-import com.predic8.membrane.core.util.text.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.lang.LanguageSupport;
+import com.predic8.membrane.core.lang.ScriptExecutorPool;
 
-import javax.script.*;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.function.*;
-
-import static com.predic8.membrane.core.util.text.TextUtil.*;
+import javax.script.ScriptContext;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.regex.Pattern;
 
 public class RhinoJavascriptLanguageSupport implements LanguageSupport {
 
-    private static final Logger log = LoggerFactory.getLogger(RhinoJavascriptLanguageSupport.class);
+    /**
+     * File name of the script. Code passed to eval() or new Function() gets a different name, e.g.
+     * "membrane-script.js#12(eval)".
+     */
+    public static final String SCRIPT_NAME = "membrane-script.js";
+
+    private static final Pattern POSITION = Pattern.compile(
+            "(?: \\(\\S+#\\d+\\))?(?: in \\S+ at line number -?\\d+(?: at column number -?\\d+)?)?$");
 
     private abstract static class JavascriptScriptExecutorPool<R> extends ScriptExecutorPool<ScriptEngine,R>{
         private final String javascriptCode;
@@ -51,17 +57,29 @@ public class RhinoJavascriptLanguageSupport implements LanguageSupport {
             try {
                 return script.eval(javascriptCode);
             } catch (ScriptException e) {
-                log.error("Error compiling script: {}", e.getMessage());
-                log.error("Error in Line: {}", getLineFromMultilineString(javascriptCode,e.getLineNumber()));
-                log.error("Script:\n{}", javascriptCode);
-                throw new RuntimeException("Error compiling script:", e);
+                // Logged by the caller
+                throw new RhinoScriptException(withoutPosition(e), e.getFileName(), e.getLineNumber(), e.getColumnNumber());
+            } finally {
+                // The engine is pooled. A parameter missing in the next call must not keep this value.
+                parameters.keySet().forEach(script.getBindings(ScriptContext.ENGINE_SCOPE)::remove);
             }
+        }
+
+        /**
+         * Rhino and ScriptException append the position counted with the pre-script, e.g.
+         * " (membrane-script.js#10) in membrane-script.js at line number 10 at column number 0". The caller reports
+         * the line in the script.
+         */
+        private static String withoutPosition(ScriptException e) {
+            return POSITION.matcher(e.getMessage()).replaceFirst("");
         }
 
         @Override
         protected ScriptEngine createOneScript() {
             synchronized (sce){
-                return sce.getEngineByName(javascriptEngineName);
+                final var engine = sce.getEngineByName(javascriptEngineName);
+                engine.put(ScriptEngine.FILENAME, SCRIPT_NAME);
+                return engine;
             }
         }
     }

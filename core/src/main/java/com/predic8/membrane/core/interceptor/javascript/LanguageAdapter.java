@@ -16,16 +16,17 @@
 
 package com.predic8.membrane.core.interceptor.javascript;
 
-import com.predic8.membrane.core.exceptions.*;
-import com.predic8.membrane.core.lang.*;
-import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.util.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
-import org.springframework.context.*;
+import com.predic8.membrane.core.lang.LanguageSupport;
+import com.predic8.membrane.core.lang.ScriptError;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.util.ConfigurationException;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationContext;
 
-import java.util.*;
-import java.util.function.*;
+import java.util.Map;
+import java.util.function.Function;
 
 public abstract  class LanguageAdapter {
 
@@ -34,7 +35,7 @@ public abstract  class LanguageAdapter {
     protected LanguageSupport languageSupport;
     final protected Router router;
 
-    protected static int preScriptLineLength;
+    protected final int preScriptLineLength;
 
     public LanguageAdapter(Router router) {
         this.router = router;
@@ -101,6 +102,10 @@ public abstract  class LanguageAdapter {
         return bf.getClassLoader();
     }
 
-    public abstract ProblemDetails getProblemDetails(Exception e);
+    /**
+     * @param e Exception thrown while running the script
+     * @return Location in the script and details for the ProblemDetails
+     */
+    public abstract ScriptError describe(Exception e);
 
 }
