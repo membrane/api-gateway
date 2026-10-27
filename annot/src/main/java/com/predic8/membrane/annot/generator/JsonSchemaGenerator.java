@@ -525,8 +525,9 @@ public class JsonSchemaGenerator extends AbstractGrammar {
                 .toList();
     }
 
-    // A "$ref" cannot be resolved here, so required children are only checked without one (if/then; the parser checks
-    // the rest). As an anyOf alternative, "$ref" would show up in the error for a missing child.
+    // The schema cannot resolve a "$ref" to see which child it fills, so a "$ref" satisfies every required child.
+    // The parser checks the rest at startup. Not as if/then: IntelliJ's completion then offers the required keys
+    // in nested objects, too.
     private void addRequiredChildren(MainInfo main, ElementInfo elementInfo, SchemaObject parserSchema) {
         final var refAllowed = parserSchema.hasProperty($_REF);
         final var groups = new ArrayList<AbstractSchema<?>>();
@@ -545,23 +546,14 @@ public class JsonSchemaGenerator extends AbstractGrammar {
                 continue;
             }
 
-            if (keys.size() == 1) {
-                groups.add(requiredKey(keys.getFirst()));
-                continue;
-            }
-
             final var alternatives = new ArrayList<AbstractSchema<?>>();
             keys.forEach(key -> alternatives.add(requiredKey(key)));
+            if (refAllowed)
+                alternatives.add(requiredKey($_REF));
             groups.add(anyOf(alternatives));
         }
-        if (groups.isEmpty())
-            return;
-
-        if (!refAllowed) {
+        if (!groups.isEmpty())
             parserSchema.allOf(groups);
-            return;
-        }
-        parserSchema.ifThen(not(requiredKey($_REF)), groups.size() == 1 ? groups.getFirst() : allOf(groups));
     }
 
     private static SchemaRef getRef(Model model, ElementInfo elementInfo) {

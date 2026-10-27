@@ -32,9 +32,6 @@ public class SchemaObject extends AbstractSchema<SchemaObject> {
     private List<AbstractSchema<?>> oneOf;
 
     private List<AbstractSchema<?>> allOf;
-
-    private AbstractSchema<?> ifSchema;
-    private AbstractSchema<?> thenSchema;
     private final Map<String, AbstractSchema<?>> patternProperties = new LinkedHashMap<>();
 
     private Integer minProperties;
@@ -69,10 +66,6 @@ public class SchemaObject extends AbstractSchema<SchemaObject> {
         addPatternProperties(node);
         addAllOf(node);
         addOneOf(node);
-        if (ifSchema != null) {
-            node.set("if", ifSchema.json(jnf.objectNode()));
-            node.set("then", thenSchema.json(jnf.objectNode()));
-        }
         return node;
     }
 
@@ -201,12 +194,6 @@ public class SchemaObject extends AbstractSchema<SchemaObject> {
 
     public SchemaObject allOf(List<AbstractSchema<?>> allOf) {
         this.allOf = allOf;
-        return this;
-    }
-
-    public SchemaObject ifThen(AbstractSchema<?> ifSchema, AbstractSchema<?> thenSchema) {
-        this.ifSchema = ifSchema;
-        this.thenSchema = thenSchema;
         return this;
     }
 

@@ -162,15 +162,6 @@ class JsonSchemaGeneratorTest {
         assertInvalid(schema, "refCache: {}");
     }
 
-    @Test
-    void missingRequiredChildIsNotReportedAsMissingRef() throws Exception {
-        final var messages = validate(requiredChildrenSchema(), "refCache: {}").stream()
-                .map(com.networknt.schema.Error::getMessage)
-                .toList();
-        assertTrue(messages.stream().anyMatch(m -> m.contains("sharedStore")), messages::toString);
-        assertTrue(messages.stream().noneMatch(m -> m.contains("$ref")), messages::toString);
-    }
-
     private static final String REQUIRED_CHILDREN_SOURCES = """
             package com.predic8.membrane.demo;
             import com.predic8.membrane.annot.*;
