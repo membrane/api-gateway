@@ -296,6 +296,24 @@ public class SchemaValidatorTest {
                     errors.stream().map(e -> e.getContext().getJSONpointer()).collect(toSet()));
         }
 
+        /**
+         * The property name is escaped in the JSON Pointer. See #3568.
+         */
+        @ParameterizedTest
+        @CsvSource(delimiter = '|', value = {
+                "a/b|/closed/a~1b",
+                "a~b|/closed/a~0b",
+                "a~1b|/closed/a~01b"})
+        void additionalPropertiesFalseEscapesPropertyInPointer(String property, String pointer) throws ParseException {
+            final var errors = post("/additional", """
+                    {"closed": {"%s": 1}}
+                    """.formatted(property));
+            assertEquals(1, errors.size(), errors.toString());
+            assertEquals(pointer, errors.getFirst().getContext().getJSONpointer());
+            assertEquals("The property %s is not allowed. The object does not allow additional properties.".formatted(property),
+                    errors.getFirst().getMessage());
+        }
+
         @Test
         void additionalPropertiesTrueAcceptsUnknownProperty() throws ParseException {
             final var errors = post("/additional", """
