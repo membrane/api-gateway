@@ -17,6 +17,7 @@ package com.predic8.membrane.tutorials.xml;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.util.List;
 
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
@@ -46,6 +47,24 @@ public class XmlToJsonTutorialTest extends AbstractXmlTutorialTest {
             .body("animals.animal.content", hasItems("Skye", "Sunny", "Bubbles","Molly","Biscuit"))
             .body("animals.animal.find { it.content == 'Sunny' }.legs", equalTo(2))
             .body("animals.animal.find { it.content == 'Bubbles' }.species", equalTo("goldfish"));
+        // @formatter:on
+    }
+
+    @Test
+    void singleAnimalIsStillAnArray() throws IOException {
+        // @formatter:off
+        given()
+            .body(readFileFromBaseDir("one-animal.xml"))
+            .contentType(XML)
+        .when()
+            .post("http://localhost:2000")
+        .then()
+            .log().ifValidationFails()
+            .statusCode(200)
+            .contentType(JSON)
+            .body("animals.animal", instanceOf(List.class))
+            .body("animals.animal.size()", equalTo(1))
+            .body("animals.animal[0].content", equalTo("Skye"));
         // @formatter:on
     }
 }
