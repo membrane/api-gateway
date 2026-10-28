@@ -16,13 +16,16 @@
 
 package com.predic8.membrane.core.lang.javascript;
 
-import com.predic8.membrane.core.lang.*;
+import com.predic8.membrane.core.lang.LanguageSupport;
+import com.predic8.membrane.core.lang.ScriptExecutorPool;
 import org.graalvm.polyglot.*;
-import org.slf4j.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.function.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.function.Function;
 
 public class GraalVMJavascriptSupport implements LanguageSupport {
 
@@ -30,11 +33,8 @@ public class GraalVMJavascriptSupport implements LanguageSupport {
 
     private abstract static class GraalVMJavascriptExecutorPool<R> extends ScriptExecutorPool<Source, R> {
 
-        // Permissions are needed to access the Java Host from Javascript e.g. access to Exchange
-        private static final Context context = Context.newBuilder()
-                .allowHostAccess(HostAccess.ALL)
-                .allowHostClassLookup(s -> true)
-                .allowPolyglotAccess(PolyglotAccess.ALL).build();
+        // Shared by all contexts, so that a script is only compiled once
+        private static final Engine engine = Engine.create("js");
 
         private final String javascriptCode;
 
@@ -45,18 +45,19 @@ public class GraalVMJavascriptSupport implements LanguageSupport {
 
         @Override
         protected Object invoke(Source source, Map<String, Object> parameters) {
-            try {
-                synchronized (context) {
-                    parameters.forEach((key, value) -> context.getBindings("js").putMember(key, value));
+            // A fresh context per execution: globals of a previous exchange, including the script's own
+            // top-level variables, must not be visible.
+            // Permissions are needed to access the Java Host from Javascript e.g. access to Exchange
+            try (var context = Context.newBuilder("js")
+                    .engine(engine)
+                    .allowHostAccess(HostAccess.ALL)
+                    .allowHostClassLookup(s -> true)
+                    .allowPolyglotAccess(PolyglotAccess.ALL).build()) {
+                final var bindings = context.getBindings("js");
+                parameters.forEach(bindings::putMember);
 
-                    // Eval caches the compiled script internally. No need to call parse and try to
-                    // cache it in Membrane.
-                    Value js = context.eval(source);
-
-                    if (js.isHostObject())
-                        return js.asHostObject();
-                    return js;
-                }
+                // Values of the context are not usable after it is closed
+                return toJava(context.eval(source));
             } catch (PolyglotException e) {
                 if (e.isSyntaxError()) {
                     SourceSection location = e.getSourceLocation();
@@ -70,6 +71,34 @@ public class GraalVMJavascriptSupport implements LanguageSupport {
                 log.error("Error compiling script:", e);
                 throw new RuntimeException("Error compiling script:", e);
             }
+        }
+
+        private static Object toJava(Value value) {
+            if (value.isNull() || value.canExecute())
+                return null;
+            if (value.isHostObject())
+                return value.asHostObject();
+            if (value.isString())
+                return value.asString();
+            if (value.isBoolean())
+                return value.asBoolean();
+            if (value.fitsInLong())
+                return value.asLong();
+            if (value.isNumber())
+                return value.asDouble();
+            if (value.hasArrayElements()) {
+                final var list = new ArrayList<>();
+                for (long i = 0; i < value.getArraySize(); i++)
+                    list.add(toJava(value.getArrayElement(i)));
+                return list;
+            }
+            if (value.hasMembers()) {
+                final var map = new LinkedHashMap<String, Object>();
+                for (final var key : value.getMemberKeys())
+                    map.put(key, toJava(value.getMember(key)));
+                return map;
+            }
+            return value.toString();
         }
 
         @Override

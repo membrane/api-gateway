@@ -13,17 +13,20 @@
 
 package com.predic8.membrane.core.lang.javascript;
 
-import com.predic8.membrane.core.lang.*;
-import com.predic8.membrane.core.util.*;
-import com.predic8.membrane.core.util.text.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.lang.LanguageSupport;
+import com.predic8.membrane.core.lang.ScriptExecutorPool;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.script.*;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.function.*;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
+import javax.script.SimpleBindings;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Function;
 
-import static com.predic8.membrane.core.util.text.TextUtil.*;
+import static com.predic8.membrane.core.util.text.TextUtil.getLineFromMultilineString;
 
 public class RhinoJavascriptLanguageSupport implements LanguageSupport {
 
@@ -47,9 +50,9 @@ public class RhinoJavascriptLanguageSupport implements LanguageSupport {
 
         @Override
         protected Object invoke(ScriptEngine script, Map<String, Object> parameters) {
-            parameters.forEach(script::put);
             try {
-                return script.eval(javascriptCode);
+                // Fresh bindings per execution: the pooled engine must not keep values of a previous exchange
+                return script.eval(javascriptCode, new SimpleBindings(new HashMap<>(parameters)));
             } catch (ScriptException e) {
                 log.error("Error compiling script: {}", e.getMessage());
                 log.error("Error in Line: {}", getLineFromMultilineString(javascriptCode,e.getLineNumber()));
