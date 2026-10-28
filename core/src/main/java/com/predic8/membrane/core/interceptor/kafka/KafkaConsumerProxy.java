@@ -39,8 +39,7 @@ import static com.predic8.membrane.core.interceptor.RuleMatchingInterceptor.assi
 import static com.predic8.membrane.core.interceptor.kafka.KafkaConsumerComponentExtension.AckMode.AUTO;
 import static com.predic8.membrane.core.interceptor.kafka.KafkaConsumerComponentExtension.AckMode.CLIENT;
 import static com.predic8.membrane.core.interceptor.kafka.KafkaConsumerComponentExtension.Result.*;
-import static com.predic8.membrane.core.interceptor.kafka.KafkaExtension.CONSUMER_CLASS;
-import static com.predic8.membrane.core.interceptor.kafka.KafkaExtension.load;
+import static com.predic8.membrane.core.util.ExtensionLoader.load;
 
 /**
  * @description <p>Consumes messages from an Apache Kafka topic. Every message runs through the flow of this API and
@@ -81,6 +80,8 @@ import static com.predic8.membrane.core.interceptor.kafka.KafkaExtension.load;
 public class KafkaConsumerProxy extends AbstractServiceProxy implements NotPortOpeningProxy {
 
     private static final Logger log = LoggerFactory.getLogger(KafkaConsumerProxy.class);
+
+    private static final String CONSUMER_CLASS = "io.membrane_api.ext.kafka.KafkaConsumerComponentImpl";
 
     private String bootstrapServers;
     private String topic;
