@@ -12,19 +12,15 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.interceptor.kafka;
-
-import com.predic8.membrane.core.util.ConfigurationException;
+package com.predic8.membrane.core.util;
 
 /**
- * Detects whether the Membrane Kafka Extension is on the classpath and creates its implementations.
+ * Creates the implementations of optional Membrane extensions (e.g. Kafka, JMS) that are only present when the
+ * extension is on the classpath.
  */
-final class KafkaExtension {
+public final class ExtensionLoader {
 
-    static final String PRODUCER_CLASS = "io.membrane_api.ext.kafka.KafkaProducerComponentImpl";
-    static final String CONSUMER_CLASS = "io.membrane_api.ext.kafka.KafkaConsumerComponentImpl";
-
-    private KafkaExtension() {
+    private ExtensionLoader() {
     }
 
     /**
@@ -34,16 +30,19 @@ final class KafkaExtension {
      * @param type           Interface the class has to implement
      * @param missingMessage Message of the ConfigurationException thrown if the class is not on the classpath
      */
-    static <T> T load(final String className, final Class<T> type, final String missingMessage) {
+    public static <T> T load(final String className, final Class<T> type, final String missingMessage) {
         try {
-            return Class.forName(className, true, KafkaExtension.class.getClassLoader())
+            return Class.forName(className, true, ExtensionLoader.class.getClassLoader())
                     .asSubclass(type)
                     .getDeclaredConstructor()
                     .newInstance();
         } catch (ClassNotFoundException e) {
             throw new ConfigurationException(missingMessage);
+        } catch (NoClassDefFoundError e) {
+            throw new ConfigurationException("Could not create %s, because the class %s it needs is missing. Put the library that contains it into the lib folder."
+                    .formatted(className, e.getMessage()), e);
         } catch (ReflectiveOperationException | ClassCastException | LinkageError e) {
-            throw new ConfigurationException("Could not create %s of the Membrane Kafka Extension. It needs to implement %s and have a public constructor without parameters."
+            throw new ConfigurationException("Could not create %s. It needs to implement %s and have a public constructor without parameters."
                     .formatted(className, type.getName()), e);
         }
     }
