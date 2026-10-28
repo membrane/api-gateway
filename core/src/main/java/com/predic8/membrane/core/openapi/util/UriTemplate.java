@@ -46,7 +46,7 @@ public final class UriTemplate {
     private UriTemplate(String template, boolean regExp) {
         this.template = template;
         this.regExp = regExp;
-        this.pattern = compile(regExp ? prepareTemplate(template, true) : prepareTemplate(normalizeTemplate(template), false));
+        this.pattern = compile(prepareTemplate(regExp ? template : normalizeTemplate(template), regExp));
         this.parameterNames = getUniqueParameterNames(template);
     }
 
@@ -60,6 +60,10 @@ public final class UriTemplate {
     }
 
     /**
+     * With regExp the template must match the whole path without the query, a trailing slash is not ignored:
+     * <code>^/foo$</code> matches <code>/foo</code> and <code>/foo?a=b</code>, but not <code>/foo/</code>. Without
+     * regExp a trailing slash of the template or the path is ignored.
+     *
      * @param regExp true if the literal parts are regular expressions
      * @throws IllegalArgumentException if a parameter occurs more than once or, without regExp, a curly brace is not part of a template expression
      * @throws PatternSyntaxException   if regExp is true and the template is no valid regular expression after replacing the parameters
