@@ -23,7 +23,9 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import static com.networknt.schema.SpecificationVersion.DRAFT_2020_12;
 import static com.predic8.membrane.annot.SpringConfigurationXSDGeneratingAnnotationProcessorTest.MC_MAIN_DEMO;
@@ -160,6 +162,112 @@ class JsonSchemaGeneratorTest {
         assertValid(schema, "refCache: { sharedStore: {} }");
         assertValid(schema, "refCache: { $ref: '#/components/store' }");
         assertInvalid(schema, "refCache: {}");
+    }
+
+    @Test
+    void flowItemIsOneObjectWithAPropertyPerPlugin() throws Exception {
+        var items = flowSchema().at("/$defs/flowParser/items");
+        assertEquals("object", items.path("type").asText());
+        assertEquals(1, items.path("minProperties").asInt());
+        assertEquals(1, items.path("maxProperties").asInt());
+        assertFalse(items.path("additionalProperties").asBoolean(true));
+        assertTrue(items.path("anyOf").isMissingNode());
+        final var properties = new ArrayList<String>();
+        items.path("properties").fieldNames().forEachRemaining(properties::add);
+        assertEquals(Set.of("log", "cache", "if", "$ref"), Set.copyOf(properties));
+    }
+
+    @Test
+    void validFlowItems() throws Exception {
+        assertValid(flowSchema(), """
+                api:
+                  flow:
+                    - log: { message: abc }
+                    - cache: { store: {} }
+                    - $ref: '#/components/log'
+                    - if:
+                        test: abc
+                        flow:
+                          - log: {}
+                """);
+    }
+
+    @Test
+    void invalidFlowItemReportsOnlyItsOwnError() throws Exception {
+        final var schema = flowSchema();
+        assertEquals(1, validate(schema, "api: { flow: [ { foo: {} } ] }").size());
+        assertEquals(1, validate(schema, "api: { flow: [ {} ] }").size());
+        assertEquals(1, validate(schema, "api: { flow: [ { log: {}, if: { test: abc } } ] }").size());
+    }
+
+    @Test
+    void invalidPluginIsReportedInsideThePlugin() throws Exception {
+        final var errors = validate(flowSchema(), "api: { flow: [ { cache: {} } ] }");
+        assertFalse(errors.isEmpty());
+        errors.forEach(e -> assertTrue(e.getInstanceLocation().toString().startsWith("/api/flow/0/cache"), e::toString));
+    }
+
+    private static final String FLOW_SOURCES = """
+            package com.predic8.membrane.core.interceptor;
+            public interface Interceptor {}
+            ---
+            package com.predic8.membrane.demo;
+            import com.predic8.membrane.annot.*;
+            import com.predic8.membrane.core.interceptor.Interceptor;
+            import java.util.List;
+            @MCElement(name="api", topLevel=true, component=false)
+            public class ApiElement {
+                @MCChildElement
+                public void setFlow(List<Interceptor> flow) {}
+                public List<Interceptor> getFlow() { return null; }
+            }
+            ---
+            package com.predic8.membrane.demo;
+            import com.predic8.membrane.annot.*;
+            import com.predic8.membrane.core.interceptor.Interceptor;
+            @MCElement(name="log")
+            public class LogElement implements Interceptor {
+                @MCAttribute
+                public void setMessage(String message) {}
+                public String getMessage() { return null; }
+            }
+            ---
+            package com.predic8.membrane.demo;
+            import com.predic8.membrane.annot.*;
+            import com.predic8.membrane.core.interceptor.Interceptor;
+            @MCElement(name="cache")
+            public class CacheElement implements Interceptor {
+                @Required
+                @MCChildElement
+                public void setStore(StoreElement store) {}
+                public StoreElement getStore() { return null; }
+            }
+            ---
+            package com.predic8.membrane.demo;
+            import com.predic8.membrane.annot.*;
+            @MCElement(name="store", component=false)
+            public class StoreElement {}
+            ---
+            package com.predic8.membrane.demo;
+            import com.predic8.membrane.annot.*;
+            import com.predic8.membrane.core.interceptor.Interceptor;
+            import java.util.List;
+            @MCElement(name="if")
+            public class IfElement implements Interceptor {
+                @MCAttribute
+                public void setTest(String test) {}
+                public String getTest() { return null; }
+
+                @MCChildElement
+                public void setFlow(List<Interceptor> flow) {}
+                public List<Interceptor> getFlow() { return null; }
+            }
+            """;
+
+    private static JsonNode flowSchema() throws IOException {
+        var result = compile(splitSources(MC_MAIN_DEMO + FLOW_SOURCES), false);
+        assertCompilerResult(true, result);
+        return schema(result);
     }
 
     private static final String REQUIRED_CHILDREN_SOURCES = """
