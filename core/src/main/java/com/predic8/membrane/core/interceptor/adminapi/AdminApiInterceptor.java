@@ -94,7 +94,7 @@ public class AdminApiInterceptor extends AbstractInterceptor {
             } else if (uri.matches(".*/ws.*")) {
                 return new AdminApiObserver().handle(exc, connections);
             } else if (uri.matches(".*/api/.*")) {
-                Map<String, String> params = matchTemplate(".*/api/{name}", uri);
+                Map<String, String> params = matchTemplate(".*/api/{name}/?", uri);
                 return handleApiDetails(exc, params.get("name"));
             } else if (uri.matches(".*/exchange/\\d*")) {
                 Map<String, String> params = matchTemplate(".*/exchange/{id}", uri);

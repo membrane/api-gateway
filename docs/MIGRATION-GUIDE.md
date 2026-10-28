@@ -93,6 +93,10 @@ See `distribution/tutorials/discovery/10-APIs-JSON.yaml`.
   it would select another API, OpenAPI document or validated OpenAPI path.
 - An absolute-form request (`GET http://a.example.com/orders`) is routed by the host of the request
   target instead of the `Host` header, and the `Host` header is replaced with it.
+- A regular expression `path` (`isRegExp: true`) of an `api` no longer ignores a trailing slash:
+  `^/foo$` matches `/foo` but not `/foo/`. Write `^/foo/?$` to accept both. It is also no longer
+  matched as a prefix: `/foo` no longer routes `/foo/bar`; write `/foo.*` for that. Regular
+  expression paths of a `serviceProxy` are unchanged.
 
 ## OpenAPI validation
 
