@@ -40,7 +40,7 @@ import static javax.xml.XMLConstants.NULL_NS_URI;
  * creating and addressing the {@code soap:Header}/{@code wsse:Security} structure, and resolving a
  * {@link SignatureReference} to the element(s) it selects.
  */
-final class WsSecurityXmlUtil {
+public final class WsSecurityXmlUtil {
 
     public static final String WSSE_NS = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd";
     public static final String WSU_NS = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd";

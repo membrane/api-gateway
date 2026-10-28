@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Two embedded schemas that import each other without a schemaLocation.
+-->
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                  targetNamespace="https://example.com/a" name="cyclic">
+    <wsdl:types>
+        <xsd:schema targetNamespace="https://example.com/a">
+            <xsd:import namespace="https://example.com/b"/>
+            <xsd:element name="A" type="xsd:string"/>
+        </xsd:schema>
+        <xsd:schema targetNamespace="https://example.com/b">
+            <xsd:import namespace="https://example.com/a"/>
+            <xsd:element name="B" type="xsd:string"/>
+        </xsd:schema>
+    </wsdl:types>
+</wsdl:definitions>

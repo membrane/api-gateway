@@ -89,6 +89,15 @@ class XMLSchemaValidatorTest {
     }
 
     @Test
+    void undeclaredRootElementIsReported() throws Exception {
+        final var exc = post("/foo").body("<unknown/>").buildExchange();
+
+        assertEquals(ABORT, validator.validateMessage(exc, REQUEST));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains("cvc-elt.1.a"), body);
+    }
+
+    @Test
     void validationDetailsOffOmitsValidationMember() throws Exception {
         Exchange exc = invalidOrder(new ErrorDetailsPolicy(false, false));
 

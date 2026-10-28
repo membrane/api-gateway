@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions
+    xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/"
+    xmlns:tns="https://example.com/empty"
+    targetNamespace="https://example.com/empty"
+    name="EmptyResponseService">
+
+  <wsdl:types>
+    <xs:schema targetNamespace="https://example.com/empty" elementFormDefault="qualified">
+      <xs:element name="MyRequest">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="name" type="xs:string"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+    </xs:schema>
+  </wsdl:types>
+
+  <wsdl:message name="MyRequestMessage">
+    <wsdl:part name="parameters" element="tns:MyRequest"/>
+  </wsdl:message>
+
+  <wsdl:message name="MyResponseMessage">
+  </wsdl:message>
+
+  <wsdl:portType name="MyPortType">
+    <wsdl:operation name="My">
+      <wsdl:input message="tns:MyRequestMessage"/>
+      <wsdl:output message="tns:MyResponseMessage"/>
+    </wsdl:operation>
+  </wsdl:portType>
+
+  <wsdl:binding name="MyBinding" type="tns:MyPortType">
+    <soap12:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <wsdl:operation name="My">
+      <soap12:operation soapAction="My"/>
+      <wsdl:input>
+        <soap12:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+
+  <wsdl:service name="MyService">
+    <wsdl:port name="MyPort" binding="tns:MyBinding">
+      <soap12:address location="https://example.com/empty"/>
+    </wsdl:port>
+  </wsdl:service>
+
+</wsdl:definitions>

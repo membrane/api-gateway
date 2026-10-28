@@ -1,0 +1,75 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.7.1.json
+#
+# Tutorial: WSDL Header Validation
+#
+# Validates the SOAP header block the WSDL binds via soap:header.
+#
+# 1.) Start Membrane
+#     with Docker:
+#       Linux/Mac:
+#         ./run-docker.sh -c 41-WSDL-Header-Validation.yaml
+#       Windows:
+#         run-docker.cmd -c 41-WSDL-Header-Validation.yaml
+#
+#     or with Java:
+#       Linux/Mac:
+#         ./membrane.sh -c 41-WSDL-Header-Validation.yaml
+#       Windows:
+#         membrane.cmd -c 41-WSDL-Header-Validation.yaml
+#
+# 2.) Send a request with a valid header
+#     curl -d @city-with-header.soap.xml -H "Content-Type: text/xml" http://localhost:2000/city-service
+#
+#     <cs:getCityResponse>
+#         <country>India</country>
+#         <population>34665600</population>
+#     </cs:getCityResponse>
+#
+# 3.) Send a request with an invalid header
+#     curl -d @invalid-header.soap.xml -H "Content-Type: text/xml" http://localhost:2000/city-service
+#
+#     <faultstring>WSDL message validation failed</faultstring>
+#     ...
+#     <message>cvc-datatype-valid.1.2.1: 'abc' is not a valid value for 'integer'.</message>
+#
+# 4.) Send a request without the header
+#     curl -d @city.soap.xml -H "Content-Type: text/xml" http://localhost:2000/city-service
+#
+#     <faultstring>WSDL message validation failed</faultstring>
+#     ...
+#     <message>The SOAP header block {https://predic8.de/cities}Client required by the WSDL binding is missing.</message>
+
+api:
+  port: 2000
+  path:
+    uri: /city-service
+  flow:
+    - validator:
+        wsdl: city-with-header.wsdl
+        headers: bound
+        requireBoundHeaders: true
+    - sampleSoapService: {}
+
+# NOTE:
+#   A bound header block is one the WSDL binding names with soap:header for an
+#   operation, like Client in city-with-header.wsdl:
+#
+#     <wsdl:input>
+#       <s:header message="cs:ClientHeader" part="client" use="literal"/>
+#       <s:body use="literal"/>
+#     </wsdl:input>
+#
+#   A declared header block is one whose element is declared globally in the
+#   WSDL's schemas, whether the binding names it or not.
+#
+#   Which header blocks are validated:
+#
+#     headers: none       none (default)
+#     headers: bound      the bound ones
+#     headers: declared   the bound and the declared ones
+#
+#   Other header blocks, e.g. WS-Security or WS-Addressing, are let through
+#   without validation.
+#
+#   Without requireBoundHeaders, a request without the Client header passes;
+#   only header blocks that are present are validated.

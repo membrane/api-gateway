@@ -18,16 +18,25 @@ import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLFilterImpl;
 
-import static com.predic8.membrane.annot.Constants.SOAP11_NS;
-import static com.predic8.membrane.annot.Constants.SOAP12_NS;
+import static com.predic8.membrane.core.util.SOAPUtil.isSOAPNamespace;
 
 /**
  * Strips the SOAP envelope so that only the payload below {@code <soap:Body>} is passed on.
  * The {@code Body} boundary is matched by namespace, not just local name: a domain element
  * that happens to be named {@code Body} in another namespace is left untouched and forwarded.
+ * Only the {@code Body} that is a child of the envelope counts.
+ * <p>
+ * The structure of the envelope is not checked here, but before, see
+ * {@link com.predic8.membrane.core.util.SOAPUtil#validateSOAPEnvelope}.
  */
 public class SOAPXMLFilter extends XMLFilterImpl {
 
+	private static final int ENVELOPE_CHILD_DEPTH = 2;
+
+	/**
+	 * Depth of the current element: {@code 1} for the envelope, {@code 2} for its children.
+	 */
+	private int depth;
 
 	private boolean body;
 
@@ -36,14 +45,16 @@ public class SOAPXMLFilter extends XMLFilterImpl {
 	}
 
 	private static boolean isSoapBody(String uri, String localName) {
-		return localName.equals("Body") && (SOAP11_NS.equals(uri) || SOAP12_NS.equals(uri));
+		return localName.equals("Body") && isSOAPNamespace(uri);
 	}
 
 	@Override
 	public void startElement(String uri, String localName, String qName,
 			Attributes atts) throws SAXException {
 
-		if (isSoapBody(uri, localName)) {
+		depth++;
+
+		if (depth == ENVELOPE_CHILD_DEPTH && isSoapBody(uri, localName)) {
 			body = true;
 			return;
 		}
@@ -59,7 +70,9 @@ public class SOAPXMLFilter extends XMLFilterImpl {
 	public void endElement(String uri, String localName, String qName)
 			throws SAXException {
 
-		if (isSoapBody(uri, localName)) {
+		final var closing = depth--;
+
+		if (closing == ENVELOPE_CHILD_DEPTH && isSoapBody(uri, localName)) {
 			body = false;
 			return;
 		}

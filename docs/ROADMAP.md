@@ -1,7 +1,5 @@
 # Membrane Roadmap
 
-
-
 PRIO 1:
 - Add performance tutorial or tuning guide
   - forgetful exchange store
@@ -152,6 +150,49 @@ PRIO 3:
   - Idea: `Proxy.destroy()`, called by `RuleManager.removeRule()` and by `replaceRule()` on the old API **before** `newProxy.init()`. A clone shares the consumer reference with the original, so stopping the old API after the clone was initialized would stop the clone's consumer. Stopping first also keeps two consumers of the same group from running at once.
   - Then look at `kafkaConsumer` again: drop the shared `AtomicReference` that clones need for `@PreDestroy`, allow hotDeploy and retryInit again, and check what happens when `newProxy.init()` fails after the old consumer was stopped.
 - Reorganisation of *Util* classes. Check for duplicates and right place.
+- WSDL validation: change the default of the `validator` attribute `headers` from `none` to `bound`
+  - Story: 7.8 can validate SOAP header blocks (#3582) but leaves it off by default, so an update does not start rejecting messages whose headers passed before. With `bound`, the header blocks the WSDL binds with `soap:header` and `soap:headerfault` are validated against the WSDL's schemas.
+  - **Breaking**: a message with an invalid bound header block is rejected. Name `headers: none` in the release notes as the way to keep the old behavior.
+  - Change the default of the `headers` field and `@default` of `setHeaders` in `ValidatorInterceptor`, and of the `WSDLValidator` constructors without a `HeaderValidation` parameter.
+- To discuss:
+  - validator/ValidatorInterceptor is for WSDL, XSD, Schematron, JSON Schema?
+  - Maybe we should split that to wsdlValidator, xmlSchemaValidator, jsonSchemaValidator?
+  - It might be confusing to have a wsdl or boundHeader property visible when JSON Schema validation is needed.
+
+### Refactorings for v8
+
+#### Build one immutable WSDL binding-validation model
+
+Refactor WSDL validation metadata extraction into one immutable model built during validator initialization.
+
+Relevant classes:
+- WSDLMessageElementExtractor
+- WSDLValidator
+- BindingOperationMessage
+- SoapBody
+- SoapHeader
+
+Body selection, possible headers, required headers, and fault headers currently perform overlapping traversals of services, bindings, operations, and schemas. Consolidate that work while retaining enough per-binding information to derive each validation rule correctly.
+
+Requirements:
+- Resolve the selected services, bindings, operations, message directions, and parts once.
+- Discover global schema elements once, retaining cycle protection for schema imports.
+- Represent empty bodies explicitly.
+- Preserve documented service-wide header selection and required-header intersections across alternative bindings.
+- Preserve SOAP version handling, RPC behavior, fault handling, abstract-WSDL behavior, configuration defaults, and existing warning behavior.
+- Derive runtime lookup sets/maps from the model rather than repeating extraction logic.
+- Use immutable collections after initialization.
+
+Correct the known WSDL 1.1 §3.5 discrepancy during this refactoring:
+- Absent soap:body/@parts includes all message parts; header binding does not subtract a part.
+- parts="" selects no body parts.
+- Explicit parts selects the named parts, including a part also bound as a header.
+  Update header-only fixtures to specify parts="" where appropriate.
+
+Add regression tests before changing the incorrect behavior. Cover absent/empty/explicit parts, shared body/header parts, different bindings of the same message, required-header intersections, faults, and cyclic schema imports.
+
+Avoid expanding unrelated unsupported WSDL features. Use the repository’s targeted test workflow. Do not commit or push. Report the model, compatibility implications, and test results.
+
 
 ### Resolve the backend URL (destination) late
 

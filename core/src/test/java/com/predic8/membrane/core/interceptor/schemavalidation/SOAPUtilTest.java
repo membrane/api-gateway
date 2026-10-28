@@ -114,6 +114,32 @@ public class SOAPUtilTest {
     }
 
     /**
+     * A Body holds elements only, so text in it must not be reported as an empty Body.
+     */
+    @Test
+    void analyseTextInBody() {
+        final var result = analyseSOAPMessage(new XOPReconstitutor(), getMessageFromString("""
+                <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                  <s11:Body>foo</s11:Body>
+                </s11:Envelope>
+                """));
+        assertFalse(result.isSOAP());
+    }
+
+    @Test
+    void analyseEmptyBody() {
+        final var result = analyseSOAPMessage(new XOPReconstitutor(), getMessageFromString("""
+                <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                  <s11:Body>
+                    <!-- nothing -->
+                  </s11:Body>
+                </s11:Envelope>
+                """));
+        assertTrue(result.isSOAP());
+        assertNull(result.soapElement());
+    }
+
+    /**
      * The case the skip must still handle: a real soap:Header ahead of a non-empty Body.
      */
     @Test

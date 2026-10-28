@@ -121,7 +121,9 @@ public class FlowController {
      * Sets the error response for an exception the given component threw, without unwinding.
      */
     public void setErrorResponse(Exchange exchange, String component, Flow flow, Exception e) {
-        var detail = "Aborting! Exception caused in %s during %s %s flow.".formatted(component, exchange.getRequest().getUri(), flow);
+        // No URI in the detail: its query may carry secrets, and production logs the detail at info.
+        var detail = "Aborting! Exception caused in %s during %s flow.".formatted(component, flow);
+        log.debug("Request URI of the aborted exchange: {}", exchange.getRequest().getUri());
         createErrorProblem(exchange, component, detail, e)
                 .exception(e)
                 .buildAndSetResponse(exchange);

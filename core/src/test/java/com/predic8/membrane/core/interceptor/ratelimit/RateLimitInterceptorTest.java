@@ -18,6 +18,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
@@ -37,8 +38,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.predic8.membrane.core.http.Header.RETRY_AFTER;
-import static com.predic8.membrane.core.http.Header.X_FORWARDED_FOR;
+import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.Request.post;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
@@ -240,6 +240,21 @@ public class RateLimitInterceptorTest {
 
 		assertEquals(RETURN, interceptor.handleRequest(exc));
 		assertEquals(400, exc.getResponse().getStatusCode());
+	}
+
+	@Test
+	void keyExpressionOnUndecodableBodyIsLeftToFlowController() throws Exception {
+		var interceptor = new RateLimitInterceptor(ofMinutes(1), 1);
+		interceptor.setLanguage(JSONPATH);
+		interceptor.setKeyExpression("$.application");
+		interceptor.init(new DummyTestRouter());
+
+		var exc = post("/foo").contentType(APPLICATION_JSON).body("{\"application\":\"a\"}").buildExchange();
+		// Not gzip-compressed. The header is set after the body, which would remove it
+		exc.getRequest().getHeader().setValue(CONTENT_ENCODING, "gzip");
+
+		// FlowController answers it with 400 body-decoding
+		assertThrows(ReadingBodyException.class, () -> interceptor.handleRequest(exc));
 	}
 
 	@Test

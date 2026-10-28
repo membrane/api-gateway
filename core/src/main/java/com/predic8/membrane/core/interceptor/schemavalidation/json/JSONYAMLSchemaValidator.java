@@ -44,6 +44,7 @@ import static com.networknt.schema.InputFormat.JSON;
 import static com.networknt.schema.InputFormat.YAML;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.util.json.JsonUtil.escapeJsonPointerSegment;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
@@ -214,12 +215,7 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < evaluationPath.getNameCount(); i++) {
             sb.append('/');
-            String part = evaluationPath.getName(i);
-
-            // escape according to RFC 6901
-            part = part.replace("~", "~0").replace("/", "~1");
-
-            sb.append(part);
+            sb.append(escapeJsonPointerSegment(evaluationPath.getName(i)));
         }
         return sb.toString();
     }

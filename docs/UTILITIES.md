@@ -40,9 +40,10 @@ Keep this file in sync when adding, renaming or removing a util class.
 |---|---|
 | `util/MessageUtil` | Message body as stream/bytes, decompression |
 | `util/SOAPUtil` | SOAP detection/analysis (1.1 and 1.2), build SOAP faults, extract fault details and body |
+| `util/SOAPEnvelopeReader` | Package-private; reads a message event by event for `SOAPUtil.analyseSOAPMessage` and `validateSOAPEnvelope` (envelope structure and well-formedness checks) |
 | `util/soap/SoapVersion`, `util/soap/WSDLUtil` | SOAP version constants; rewrite relative WSDL paths |
 | `util/wsdl/parser/*` | Lightweight WSDL model (`Definitions`, `Binding`, `Operation`, `Port`, ...) |
-| `util/json/JsonUtil` | Parse body to `ObjectNode`, set JSON body, scalar → `JsonNode` |
+| `util/json/JsonUtil` | Parse body to `ObjectNode`, set JSON body, scalar → `JsonNode`, escape JSON Pointer segment (RFC 6901) |
 | `util/json/JsonToXml` | JSON → XML conversion |
 | `util/xml/XMLUtil` | XML operations (parsing, namespaces, XPath) |
 | `util/xml/XMLEncodingUtil` | XML character encoding |
