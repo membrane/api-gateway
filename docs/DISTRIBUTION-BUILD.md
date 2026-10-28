@@ -30,7 +30,7 @@
 
 1. Run Action "Publish package to the Maven Central Repository" / Use Workflow from Tag: v7.8.0 / Release to v7.8.0
 2. Run Workflow
-
+3. Check if the release is available on Maven Central: https://central.sonatype.com/artifact/org.membrane-soa/membrane-api-gateway
 
 ## Publishing the Docker Image
 
