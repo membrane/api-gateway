@@ -1,0 +1,109 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.7.1.json
+#
+# Tutorial: Sign and Verify Messages with Groovy
+#
+# A signature proves that a message comes from someone who knows the shared
+# secret and that nobody changed it on the way. This example shows how a Groovy
+# script can use the security features of Java to build a simple signing
+# application.
+#
+# 1.) Set the shared secret:
+#     Linux/Mac:
+#       export SECRET=my-shared-secret
+#     Windows Command Prompt:
+#       set SECRET=my-shared-secret
+#     Windows PowerShell:
+#       $env:SECRET="my-shared-secret"
+#
+# 2.) Start Membrane from the same terminal:
+#     with Docker:
+#       Linux/Mac:
+#         MEMBRANE_DOCKER_OPTS="-e SECRET" ./run-docker.sh -c 50-Groovy-Sign-And-Verify.yaml
+#       Windows:
+#         set "MEMBRANE_DOCKER_OPTS=-e SECRET"
+#         run-docker.cmd -c 50-Groovy-Sign-And-Verify.yaml
+#
+#     or with Java:
+#       Linux/Mac:
+#         ./membrane.sh -c 50-Groovy-Sign-And-Verify.yaml
+#       Windows:
+#         membrane.cmd -c 50-Groovy-Sign-And-Verify.yaml
+#
+# 3.) Send a request through the signing API:
+#     curl -d "Hello" localhost:2000
+#
+#     Success
+#
+# 4.) Call the verifying API directly with a forged signature:
+#     curl -d "Hello" -H "X-Signature: 0123abcd" localhost:2010
+#
+#     Invalid Signature
+
+api:
+  name: Signer
+  port: 2000
+  flow:
+    - request:
+        - groovy:
+            src: |
+              import javax.crypto.*
+              import javax.crypto.spec.*
+
+              def mac = Mac.getInstance('HmacSHA256')
+              mac.init(new SecretKeySpec('#{env.SECRET}'.bytes, 'HmacSHA256'))
+              header.put('X-Signature', mac.doFinal(message.body.content).encodeHex().toString())
+
+              CONTINUE
+  target:
+    url: http://localhost:2010
+
+---
+api:
+  name: Verifier
+  port: 2010
+  flow:
+    - request:
+        - log:
+            message: "Got signature: ${header['X-Signature']}"
+        - groovy:
+            src: |
+              import javax.crypto.*
+              import javax.crypto.spec.*
+              import java.security.*
+
+              def mac = Mac.getInstance('HmacSHA256')
+              mac.init(new SecretKeySpec('#{env.SECRET}'.bytes, 'HmacSHA256'))
+              def expected = mac.doFinal(message.body.content)
+
+              def sig = header['X-Signature']
+              // The regex accepts exactly 64 hex digits (32 bytes). Anything else is
+              // invalid and would make decodeHex() fail.
+              property.valid = sig ==~ /[0-9a-fA-F]{64}/ && MessageDigest.isEqual(expected, sig.decodeHex())
+              CONTINUE
+        - if:
+            test: property.valid
+            flow:
+              - static:
+                  src: Success
+              - return:
+                  status: 200
+            else:
+              - static:
+                  src: Invalid Signature
+              - return:
+                  status: 401
+
+# HOW IT WORKS:
+#       Both APIs share the secret from the SECRET environment variable. The
+#       signer calculates an HMAC-SHA256 over the request body and sends it as
+#       hexadecimal text in X-Signature. The verifier calculates the HMAC again
+#       and compares both values. Changing the body or the signature makes the
+#       verification fail.
+#
+# NOTE: To keep the example simple, signer and verifier run in one Membrane
+#       instance. Usually they run on different computers, and each side gets
+#       the same secret.
+#
+#       Writing your own security solution is risky: small mistakes can make it
+#       insecure. For production, use existing standards and functions such as
+#       JWT (jwtSign plugin, see ../jwt) or HTTP Message Signatures (RFC 9421).
