@@ -50,7 +50,7 @@ api:
               import javax.crypto.spec.*
 
               def mac = Mac.getInstance('HmacSHA256')
-              mac.init(new SecretKeySpec('#{env.SECRET}'.bytes, 'HmacSHA256'))
+              mac.init(new SecretKeySpec(System.getenv('SECRET').bytes, 'HmacSHA256'))
               header.put('X-Signature', mac.doFinal(message.body.content).encodeHex().toString())
 
               CONTINUE
@@ -72,7 +72,7 @@ api:
               import java.security.*
 
               def mac = Mac.getInstance('HmacSHA256')
-              mac.init(new SecretKeySpec('#{env.SECRET}'.bytes, 'HmacSHA256'))
+              mac.init(new SecretKeySpec(System.getenv('SECRET').bytes, 'HmacSHA256'))
               def expected = mac.doFinal(message.body.content)
 
               def sig = header['X-Signature']

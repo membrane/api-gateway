@@ -5,7 +5,6 @@
 #
 # Try:
 #   curl http://localhost:2000/groovy
-#   curl http://localhost:2000/random
 #   curl http://localhost:2000/response
 
 api:
@@ -18,18 +17,6 @@ api:
           println "I'm executed in the ${flow} flow"
     - return:
         status: 200
-
----
-api:
-  port: 2000
-  path:
-    uri: /random
-  flow:
-    - groovy:
-        src: |
-          sites = ["https://api.predic8.de","https://httpbin.org/json","https://bored-api.appbrewery.com/random"]
-          Collections.shuffle sites
-          exchange.setDestinations(sites)
 
 ---
 api:

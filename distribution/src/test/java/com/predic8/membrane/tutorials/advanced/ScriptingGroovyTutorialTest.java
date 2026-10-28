@@ -22,7 +22,6 @@ import java.util.concurrent.TimeUnit;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
@@ -62,17 +61,6 @@ public class ScriptingGroovyTutorialTest extends AbstractAdvancedTutorialTest {
         } finally {
             process.removeConsoleWatcher(watcher);
         }
-    }
-
-    @Test
-    void randomEndpoint() {
-        // @formatter:off
-        given()
-        .when()
-            .get("http://localhost:2000/random")
-        .then()
-            .body(notNullValue());
-        // @formatter:on
     }
 
     @Test
