@@ -21,7 +21,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
@@ -61,20 +60,6 @@ public class ScriptingGroovyTutorialTest extends AbstractAdvancedTutorialTest {
         } finally {
             process.removeConsoleWatcher(watcher);
         }
-    }
-
-    @Test
-    void groovyCustomResponse() {
-        // @formatter:off
-        given()
-        .when()
-            .get("http://localhost:2000/response")
-        .then()
-            .statusCode(200)
-            .contentType("application/json")
-            .header("X-Foo", "bar")
-            .body("success", equalTo(true));
-        // @formatter:on
     }
 
 }

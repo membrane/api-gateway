@@ -20,9 +20,12 @@
 # 2.) Call the API several times:
 #     curl localhost:2000
 #
-#     Backend B
+#     {
+#       "api": "apibin",
+#       ...
+#     }
 #
-#     The backend changes at random between Backend A, B and C.
+#     The response changes at random between apibin.io, api.predic8.de and postman-echo.com.
 
 api:
   name: Gateway
@@ -31,40 +34,10 @@ api:
     - request:
         - groovy:
             src: |
-              def backends = ['http://localhost:2010', 'http://localhost:2011', 'http://localhost:2012']
+              def backends = ['https://apibin.io', 'https://api.predic8.de', 'https://postman-echo.com/get']
               Collections.shuffle(backends)
               exchange.setDestinations(backends)
               CONTINUE
-
----
-api:
-  name: Backend A
-  port: 2010
-  flow:
-    - static:
-        src: Backend A
-    - return:
-        status: 200
-
----
-api:
-  name: Backend B
-  port: 2011
-  flow:
-    - static:
-        src: Backend B
-    - return:
-        status: 200
-
----
-api:
-  name: Backend C
-  port: 2012
-  flow:
-    - static:
-        src: Backend C
-    - return:
-        status: 200
 
 # HOW IT WORKS:
 #       The destinations of an exchange are the URLs Membrane forwards the

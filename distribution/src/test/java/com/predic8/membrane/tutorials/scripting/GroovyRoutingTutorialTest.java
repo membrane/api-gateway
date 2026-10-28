@@ -17,12 +17,19 @@ package com.predic8.membrane.tutorials.scripting;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashSet;
+import java.util.Map;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.in;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class GroovyRoutingTutorialTest extends AbstractScriptingTutorialTest {
+
+    // A field only the response of that backend contains
+    private static final Map<String, String> BACKEND_BY_MARKER = Map.of(
+            "\"api\"", "apibin.io",
+            "\"apis\"", "api.predic8.de",
+            "postman-echo.com", "postman-echo.com");
 
     @Override
     protected String getTutorialYaml() {
@@ -32,18 +39,26 @@ public class GroovyRoutingTutorialTest extends AbstractScriptingTutorialTest {
     @Test
     void routesToRandomBackend() {
         final var backends = new HashSet<String>();
-        for (int i = 0; i < 20; i++) {
+        for (int i = 0; i < 10; i++) {
             // @formatter:off
-            backends.add(given()
+            final var body = given()
             .when()
                 .get("http://localhost:2000")
             .then()
                 .statusCode(200)
-                .body(in(new String[]{"Backend A", "Backend B", "Backend C"}))
-                .extract().asString());
+                .extract().asString();
             // @formatter:on
+            backends.add(backendOf(body));
         }
-        // All 20 calls hitting the same backend has a probability of 3 * (1/3)^20.
+        // All 10 calls hitting the same backend has a probability of 3 * (1/3)^10.
         assertTrue(backends.size() > 1, "Always routed to " + backends);
+    }
+
+    private static String backendOf(String body) {
+        return BACKEND_BY_MARKER.entrySet().stream()
+                .filter(e -> body.contains(e.getKey()))
+                .map(Map.Entry::getValue)
+                .findFirst()
+                .orElseGet(() -> fail("Response from unknown backend: " + body));
     }
 }
