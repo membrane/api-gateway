@@ -207,6 +207,46 @@ class JsonSchemaGeneratorTest {
         errors.forEach(e -> assertTrue(e.getInstanceLocation().toString().startsWith("/api/flow/0/cache"), e::toString));
     }
 
+    @Test
+    void componentEntryIsOneObjectWithAPropertyPerComponent() throws Exception {
+        var entry = flowSchema().at("/$defs/com_predic8_membrane_demo_config_spring_ComponentsParser/patternProperties").elements().next();
+        assertEquals("object", entry.path("type").asText());
+        assertEquals(1, entry.path("minProperties").asInt());
+        assertEquals(1, entry.path("maxProperties").asInt());
+        assertFalse(entry.path("additionalProperties").asBoolean(true));
+        assertTrue(entry.path("anyOf").isMissingNode());
+        final var properties = new ArrayList<String>();
+        entry.path("properties").fieldNames().forEachRemaining(properties::add);
+        // "bean" is generated for every grammar (BeanClassGenerator).
+        assertEquals(Set.of("log", "cache", "if", "bean"), Set.copyOf(properties));
+    }
+
+    @Test
+    void validComponentEntries() throws Exception {
+        assertValid(flowSchema(), """
+                components:
+                  messageLog:
+                    log: { message: abc }
+                  responseCache:
+                    cache: { store: {} }
+                """);
+    }
+
+    @Test
+    void invalidComponentEntryReportsOnlyItsOwnError() throws Exception {
+        final var schema = flowSchema();
+        assertEquals(1, validate(schema, "components: { x: { foo: {} } }").size());
+        assertEquals(1, validate(schema, "components: { x: {} }").size());
+        assertEquals(1, validate(schema, "components: { x: { log: {}, if: { test: abc } } }").size());
+    }
+
+    @Test
+    void invalidComponentIsReportedInsideIt() throws Exception {
+        final var errors = validate(flowSchema(), "components: { x: { cache: {} } }");
+        assertFalse(errors.isEmpty());
+        errors.forEach(e -> assertTrue(e.getInstanceLocation().toString().startsWith("/components/x/cache"), e::toString));
+    }
+
     private static final String FLOW_SOURCES = """
             package com.predic8.membrane.core.interceptor;
             public interface Interceptor {}

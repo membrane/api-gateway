@@ -590,26 +590,24 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         SchemaObject parser = object(parserName)
                 .additionalProperties(false) // only IDs via patternProperties
                 .description(getDescriptionContent(elementInfo));
-        parser.patternProperty(COMPONENT_ID_PATTERN, anyOf(getComponents(m, main)));
+        parser.patternProperty(COMPONENT_ID_PATTERN, getComponentEntrySchema(m, main));
         return parser;
     }
 
-    private static @NotNull ArrayList<AbstractSchema<?>> getComponents(Model m, MainInfo main) {
-        var variants = new ArrayList<AbstractSchema<?>>();
+    private static @NotNull SchemaObject getComponentEntrySchema(Model m, MainInfo main) {
+        var entry = object()
+                .additionalProperties(false)
+                .minProperties(1)
+                .maxProperties(1);
 
         for (ElementInfo comp : main.getElements().values()) {
             if (!comp.getAnnotation().component()) continue;
             if (comp.getAnnotation().topLevel()) continue;
 
             String n = comp.getAnnotation().name();
-
-            variants.add(object()
-                    .title(n)
-                    .additionalProperties(false)
-                    .minProperties(1)
-                    .property(defsSchemaRef(n, comp.getXSDTypeName(m))));
+            entry.property(defsSchemaRef(n, comp.getXSDTypeName(m)));
         }
-        return variants;
+        return entry;
     }
 
     private boolean hasComponentChild(ElementInfo parentElementInfo, MainInfo main) {
