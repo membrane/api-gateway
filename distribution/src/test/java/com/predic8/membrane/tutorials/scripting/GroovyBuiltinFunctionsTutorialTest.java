@@ -21,7 +21,7 @@ import static io.restassured.http.ContentType.JSON;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 
-public class GroovyBuiltinFunctionsTutorialTest extends AbstractScriptingTutorialTest {
+class GroovyBuiltinFunctionsTutorialTest extends AbstractScriptingTutorialTest {
 
     @Override
     protected String getTutorialYaml() {

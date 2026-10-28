@@ -20,7 +20,7 @@ import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static org.hamcrest.Matchers.matchesPattern;
 
-public class JavaScriptAddTimestampTutorialTest extends AbstractScriptingTutorialTest {
+class JavaScriptAddTimestampTutorialTest extends AbstractScriptingTutorialTest {
 
     @Override
     protected String getTutorialYaml() {

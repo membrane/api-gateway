@@ -39,7 +39,7 @@ import static org.apache.commons.text.StringEscapeUtils.escapeHtml4;
  *   <li>an <code>Outcome</code> (<code>CONTINUE</code>, <code>RETURN</code>, <code>ABORT</code>) is used as-is;</li>
  *   <li>a <code>Response</code> is set on the exchange and the flow returns;</li>
  *   <li>a <code>Request</code> replaces the current request;</li>
- *   <li>a <code>Map</code> is serialized to a JSON body;</li>
+ *   <li>a <code>Map</code> or <code>List</code> is serialized to a JSON body;</li>
  *   <li>a <code>String</code> or <code>byte[]</code> becomes the message body;</li>
  *   <li><code>null</code> or no value continues unchanged.</li>
  * </ul>

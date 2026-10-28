@@ -13,20 +13,22 @@
 
 package com.predic8.membrane.core.interceptor.javascript;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exceptions.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.lang.*;
-import com.predic8.membrane.core.util.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exceptions.ProblemDetails;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.lang.AbstractScriptInterceptor;
+import com.predic8.membrane.core.util.ConfigurationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static com.predic8.membrane.core.util.text.TextUtil.*;
-import static org.apache.commons.lang3.StringUtils.*;
-import static org.apache.commons.text.StringEscapeUtils.*;
+import static com.predic8.membrane.core.util.text.TextUtil.removeFinalChar;
+import static org.apache.commons.lang3.StringUtils.trim;
+import static org.apache.commons.text.StringEscapeUtils.escapeHtml4;
 
 /**
  * @description Executes a Javascript. The script can access and manipulate data from the request and response.
- * Use this or the Groovy plugin to extend the functions of Membrane by scripting. See the samples in examples/javascript.
+ * Use this or the Groovy plugin to extend the functions of Membrane by scripting. A returned object or array is serialized to a JSON body.
+ * See the tutorials in tutorials/scripting.
  * @yaml <pre><code>
  * api:
  *   port: 2000

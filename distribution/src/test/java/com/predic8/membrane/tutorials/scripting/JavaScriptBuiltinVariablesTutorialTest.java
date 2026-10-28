@@ -20,7 +20,7 @@ import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static org.hamcrest.Matchers.equalTo;
 
-public class JavaScriptBuiltinVariablesTutorialTest extends AbstractScriptingTutorialTest {
+class JavaScriptBuiltinVariablesTutorialTest extends AbstractScriptingTutorialTest {
 
     @Override
     protected String getTutorialYaml() {

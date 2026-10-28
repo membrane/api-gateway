@@ -192,7 +192,7 @@ public class JavascriptInterceptorTest {
     }
 
     @ParameterizedTest
-    @ValueSource(classes = {RhinoJavascriptLanguageSupport.class})
+    @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
     void returnArray(Class<LanguageSupport> engine) throws Exception {
         executeScript("""
                ['Roller', 'äöüÄÖÜ'];

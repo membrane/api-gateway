@@ -22,7 +22,7 @@ import static io.restassured.http.ContentType.XML;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 
-public class GroovyGenerateXmlTutorialTest extends AbstractXmlTutorialTest {
+class GroovyGenerateXmlTutorialTest extends AbstractXmlTutorialTest {
     @Override
     protected String getTutorialYaml() {
         return "90-Groovy-Generate-XML.yaml";

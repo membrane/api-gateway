@@ -23,7 +23,7 @@ import static io.restassured.http.ContentType.JSON;
 import static io.restassured.http.ContentType.XML;
 import static org.hamcrest.Matchers.contains;
 
-public class GroovyReadXmlTutorialTest extends AbstractXmlTutorialTest {
+class GroovyReadXmlTutorialTest extends AbstractXmlTutorialTest {
     @Override
     protected String getTutorialYaml() {
         return "70-Groovy-Read-XML.yaml";
