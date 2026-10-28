@@ -149,7 +149,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
 
         boolean flowParserType = shouldGenerateFlowParserType(childSpec);
         if (flowParserType) {
-            ensureFlowParserDefinition(getSchemaObjects(model, main, childSpec));
+            ensureFlowParserDefinition(getFlowItemSchema(model, main, childSpec));
             return ref(parserName).ref(defsRefPath(FLOW_PARSER_DEF_NAME));
         }
 
@@ -364,7 +364,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
             }
 
             if (shouldGenerateFlowParserType(childSpec)) {
-                processList(parentElementInfo, parentSchema, childSpec, getSchemaObjects(model, main, childSpec));
+                processList(parentElementInfo, parentSchema, childSpec, getFlowItemSchema(model, main, childSpec));
                 continue;
             }
 
@@ -399,24 +399,24 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         attachArrayItems(parentElementInfo, parentSchema, childSpec, itemsSchema);
     }
 
-    private static @NotNull ArrayList<AbstractSchema<?>> getSchemaObjects(Model model, MainInfo main, ChildElementInfo childSpec) {
-        var variants = new ArrayList<AbstractSchema<?>>();
+    private static @NotNull SchemaObject getFlowItemSchema(Model model, MainInfo main, ChildElementInfo childSpec) {
+        var flowItem = object()
+                .additionalProperties(false)
+                .minProperties(1)
+                .maxProperties(1);
 
         for (ElementInfo candidateElementInfo : requireChildElementDeclarationInfo(main, childSpec).getElementInfo()) {
             if (candidateElementInfo.getAnnotation().excludeFromFlow())
                 continue;
 
-            variants.add(object()
-                    .title(candidateElementInfo.getAnnotation().name())
-                    .additionalProperties(false)
-                    .property(defsSchemaRef(candidateElementInfo.getAnnotation().name(), candidateElementInfo.getXSDTypeName(model))));
+            flowItem.property(defsSchemaRef(candidateElementInfo.getAnnotation().name(), candidateElementInfo.getXSDTypeName(model)));
         }
 
         // Allow referencing a component instance directly on list-item level:
         // flow:
         //   - $ref: ...
-        variants.add(componentRefVariantSchema());
-        return variants;
+        flowItem.property(string($_REF));
+        return flowItem;
     }
 
     private static ChildElementDeclarationInfo requireChildElementDeclarationInfo(MainInfo main, ChildElementInfo childSpec) {
@@ -478,11 +478,11 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         return "com.predic8.membrane.core.transport.ws.WebSocketInterceptorInterface".equals(cei.getTypeDeclaration().getQualifiedName().toString());
     }
 
-    private AbstractSchema<?> processList(ElementInfo parentElementInfo, AbstractSchema<?> parentSchema, ChildElementInfo childSpec, ArrayList<AbstractSchema<?>> itemVariants) {
+    private AbstractSchema<?> processList(ElementInfo parentElementInfo, AbstractSchema<?> parentSchema, ChildElementInfo childSpec, AbstractSchema<?> flowItemSchema) {
         SchemaObject itemsObjectSchema = object("items");
 
         if (shouldGenerateFlowParserType(childSpec)) {
-            addFlowParserRef(parentSchema, childSpec.getPropertyName(), itemVariants);
+            addFlowParserRef(parentSchema, childSpec.getPropertyName(), flowItemSchema);
             return itemsObjectSchema;
         }
 
@@ -496,8 +496,8 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         return itemsObjectSchema;
     }
 
-    private void addFlowParserRef(AbstractSchema<?> parentSchema, String propertyName, List<AbstractSchema<?>> itemVariants) {
-        ensureFlowParserDefinition(itemVariants);
+    private void addFlowParserRef(AbstractSchema<?> parentSchema, String propertyName, AbstractSchema<?> flowItemSchema) {
+        ensureFlowParserDefinition(flowItemSchema);
         SchemaRef flowParserRef = ref(propertyName).ref(defsRefPath(FLOW_PARSER_DEF_NAME));
         setItemsIfArray(parentSchema, flowParserRef);
         addPropertyIfObject(parentSchema, flowParserRef);
@@ -693,10 +693,6 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         return ref(propertyName).ref(defsRefPath(defName));
     }
 
-    private static SchemaObject componentRefVariantSchema() {
-        return componentRefVariantSchema(true);
-    }
-
     private static SchemaObject componentRefVariantSchema(Boolean required) {
         var refProperty = string($_REF);
         if (required != null) {
@@ -736,12 +732,12 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         };
     }
 
-    private void ensureFlowParserDefinition(List<AbstractSchema<?>> itemVariants) {
+    private void ensureFlowParserDefinition(AbstractSchema<?> flowItemSchema) {
         if (flowDefCreated) {
             return;
         }
 
-        schema.definition(array(FLOW_PARSER_DEF_NAME).items(anyOf(itemVariants)));
+        schema.definition(array(FLOW_PARSER_DEF_NAME).items(flowItemSchema));
         flowDefCreated = true;
     }
 
