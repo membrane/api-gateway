@@ -16,14 +16,14 @@
 
 package com.predic8.membrane.core.openapi.util;
 
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Test;
 
-import java.util.*;
-import java.util.regex.*;
+import java.util.Map;
+import java.util.regex.Matcher;
 
 import static com.predic8.membrane.core.openapi.util.UriTemplateMatcher.*;
 import static java.util.List.of;
-import static java.util.Map.*;
+import static java.util.Map.entry;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class UriTemplateMatcherTest {
@@ -63,13 +63,13 @@ public class UriTemplateMatcherTest {
     }
 
     @Test
-    public void matchNoSlashAtEnd() throws PathDoesNotMatchException {
-        assertEquals(0, matchTemplate("/foo", "/foo/").size());
+    public void uriTrailingSlashDoesNotMatch() {
+        assertThrows(PathDoesNotMatchException.class, () -> matchTemplate("/foo", "/foo/"));
     }
 
     @Test
-    public void matchTemplateTrailingSlash() throws PathDoesNotMatchException {
-        assertEquals(0, matchTemplate("/foo/", "/foo").size());
+    public void templateTrailingSlashDoesNotMatch() {
+        assertThrows(PathDoesNotMatchException.class, () -> matchTemplate("/foo/", "/foo"));
     }
 
     @Test
@@ -78,8 +78,8 @@ public class UriTemplateMatcherTest {
     }
 
     @Test
-    public void matchUriTrailingSlashWithParams() throws PathDoesNotMatchException {
-        assertEquals(0, matchTemplate("/foo", "/foo/?x=1").size());
+    public void uriTrailingSlashWithParamsDoesNotMatch() {
+        assertThrows(PathDoesNotMatchException.class, () -> matchTemplate("/foo", "/foo/?x=1"));
     }
 
     @Test
@@ -98,8 +98,8 @@ public class UriTemplateMatcherTest {
     }
 
     @Test
-    public void matchUriAndTemplateWithFourParamsWithTrailingSlash() throws PathDoesNotMatchException {
-        assertEquals(4, matchTemplate("/foo/{id1}/{id2}/{id3}/{id4}", "/foo/a/b/c/d/").size());
+    public void uriWithFourParamsWithTrailingSlashDoesNotMatch() {
+        assertThrows(PathDoesNotMatchException.class, () -> matchTemplate("/foo/{id1}/{id2}/{id3}/{id4}", "/foo/a/b/c/d/"));
     }
 
     @Test
@@ -136,13 +136,13 @@ public class UriTemplateMatcherTest {
     }
 
     @Test
-    public void matchSingleTemplateSlash() throws PathDoesNotMatchException {
-        assertEquals(0, matchTemplate("/", "").size());
+    public void singleTemplateSlashDoesNotMatchEmptyUri() {
+        assertThrows(PathDoesNotMatchException.class, () -> matchTemplate("/", ""));
     }
 
     @Test
-    public void matchSingleUriSlash() throws PathDoesNotMatchException {
-        assertEquals(0, matchTemplate("", "/").size());
+    public void singleUriSlashDoesNotMatchEmptyTemplate() {
+        assertThrows(PathDoesNotMatchException.class, () -> matchTemplate("", "/"));
     }
 
     @Test
@@ -175,7 +175,7 @@ public class UriTemplateMatcherTest {
 
     @Test
     public void exoticParameterNames() throws PathDoesNotMatchException {
-        var matches = matchTemplate("/foo/{i_d1}/{Id-2}/{id%3}/{id<>4}", "/foo/1/2/3/4/");
+        var matches = matchTemplate("/foo/{i_d1}/{Id-2}/{id%3}/{id<>4}", "/foo/1/2/3/4");
         assertEquals(4,matches.size());
         assertEquals("1", matches.get("i_d1"));
         assertEquals("2", matches.get("Id-2"));

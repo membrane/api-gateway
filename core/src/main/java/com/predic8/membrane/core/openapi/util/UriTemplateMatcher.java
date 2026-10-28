@@ -13,12 +13,14 @@
    limitations under the License. */
 package com.predic8.membrane.core.openapi.util;
 
-import org.jetbrains.annotations.*;
+import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
-import java.util.regex.*;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import static java.util.regex.Pattern.*;
+import static java.util.regex.Pattern.compile;
 
 public class UriTemplateMatcher {
 
@@ -38,6 +40,7 @@ public class UriTemplateMatcher {
      *
      * Compiles the template on every call. On hot paths keep a {@link UriTemplate} instead.
      * The literal parts of the template are regular expressions, e.g. <code>.*&#47;api/{name}</code>.
+     * A trailing slash is not ignored, see {@link UriTemplate}.
      *
      * @return Map of Parameters. If the path does not match PathDoesNotMatchException is thrown.
      */
@@ -92,7 +95,11 @@ public class UriTemplateMatcher {
     }
 
     static String normalizePath(String path) {
-        return appendSlash(path.split("\\?")[0]);
+        return appendSlash(cutOffQuery(path));
+    }
+
+    static String cutOffQuery(String path) {
+        return path.split("\\?")[0];
     }
 
     /**
