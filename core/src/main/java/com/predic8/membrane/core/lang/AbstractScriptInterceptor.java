@@ -16,34 +16,40 @@
 
 package com.predic8.membrane.core.lang;
 
-import com.fasterxml.jackson.core.*;
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.util.*;
-import groovy.lang.*;
-import org.apache.commons.io.*;
-import org.graalvm.polyglot.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCTextContent;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.util.ConfigurationException;
+import groovy.lang.MissingPropertyException;
+import org.apache.commons.io.IOUtils;
+import org.graalvm.polyglot.Value;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.util.*;
-import java.util.function.*;
+import java.io.InputStream;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.http.Response.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.http.Response.ok;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
-import static com.predic8.membrane.core.lang.ScriptingUtils.*;
-import static com.predic8.membrane.core.resolver.ResolverMap.*;
-import static com.predic8.membrane.core.util.text.SerializationFunction.*;
-import static java.nio.charset.StandardCharsets.*;
-import static org.apache.commons.lang3.StringUtils.*;
+import static com.predic8.membrane.core.lang.ScriptingUtils.createParameterBindings;
+import static com.predic8.membrane.core.resolver.ResolverMap.combine;
+import static com.predic8.membrane.core.util.text.SerializationFunction.TEXT_SERIALIZATION;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.apache.commons.lang3.StringUtils.trim;
 
 public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
 
@@ -111,16 +117,16 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
             exc.setRequest(request);
         }
 
-        if (res instanceof Map m) {
+        if (res instanceof Map || res instanceof List) {
             msg = createResponseAndToExchangeIfThereIsNone(exc, flow, msg);
             msg.getHeader().setContentType(APPLICATION_JSON);
             try {
-                msg.setBodyContent(om.writeValueAsBytes(m));
+                msg.setBodyContent(om.writeValueAsBytes(res));
             } catch (JsonProcessingException e) {
                 log.error("", e);
                 internal(router.getConfiguration().isProduction(), getDisplayName())
                         .addSubSee("json-processing-1")
-                        .detail("Error serializing Map to JSON")
+                        .detail("Error serializing Map or List to JSON")
                         .exception(e)
                         .buildAndSetResponse(exc);
                 return ABORT;
@@ -168,7 +174,7 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * If a script returns a String or a Map that should be interpreted as a successful message (200 OK) if there
+     * If a script returns a String, a Map or a List that should be interpreted as a successful message (200 OK) if there
      * is not a message already.
      * Design issue: Method does to things!
      *

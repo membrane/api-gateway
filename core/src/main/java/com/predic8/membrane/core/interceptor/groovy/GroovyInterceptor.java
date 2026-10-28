@@ -47,8 +47,7 @@ import static org.apache.commons.text.StringEscapeUtils.escapeHtml4;
  * <code>header</code>, <code>body</code>, <code>request</code>, <code>response</code>, <code>params</code> (request
  * flow), <code>statusCode</code> (response flow), <code>property</code>, <code>json</code> (when the body is JSON), and
  * <code>spring</code> for bean lookups. Provide the script inline as the element body, or load it from a file with
- * <code>location</code>. See the examples under examples/scripting/groovy and the tutorial
- * tutorials/advanced/80-Scripting-Groovy.yaml.
+ * <code>location</code>. See the tutorials under tutorials/scripting.
  * <pre>
  * groovy:
  *   [ location: &lt;file-or-url&gt; ]   # alternative to an inline script

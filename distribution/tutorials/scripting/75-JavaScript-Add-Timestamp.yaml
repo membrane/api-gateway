@@ -1,0 +1,39 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.7.1.json
+#
+# Tutorial: Add a Timestamp with JavaScript
+#
+# A very common task is to add a timestamp to a message after receiving it.
+# JavaScript makes it easy to manipulate JSON: the body is available as an
+# object, so adding a field is a single assignment.
+#
+# 1.) Start Membrane:
+#     with Docker:
+#       Linux/Mac:
+#         ./run-docker.sh -c 75-JavaScript-Add-Timestamp.yaml
+#       Windows:
+#         run-docker.cmd -c 75-JavaScript-Add-Timestamp.yaml
+#
+#     or with Java:
+#       Linux/Mac:
+#         ./membrane.sh -c 75-JavaScript-Add-Timestamp.yaml
+#       Windows:
+#         membrane.cmd -c 75-JavaScript-Add-Timestamp.yaml
+#
+# 2.) Send an empty JSON object:
+#     curl -d "{}" -H "Content-Type: application/json" localhost:2000
+#
+#     {"timestamp":"2026-10-28T09:15:42.123Z"}
+
+api:
+  port: 2000
+  flow:
+    - request:
+        - javascript:
+            src: |
+              json.timestamp = new Date().toISOString()
+              
+              // json holds the parsed request body. Returning it writes the changed
+              // document back as the new body.
+              json
+        - return:
+            status: 200

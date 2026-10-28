@@ -22,8 +22,6 @@
 #     curl -i -d "{\"name\":\"Oolong\"}" -H "Content-Type: application/json" -H "X-Customer: 42" -b "session=abc" "localhost:2000/shop/tea?limit=10"
 #
 #     HTTP/1.1 200 OK
-#     Content-Type: application/json
-#     Content-Length: 202
 #     X-Flow: RESPONSE
 #     X-Status-Code: 200
 #
@@ -77,5 +75,5 @@ api:
 #       param is only available in the request flow, statusCode and response
 #       only in the response flow.
 #
-#       All variables: Builtin-Variables.md
-#       Built-in functions: Builtin-Functions.md
+#       All variables: https://www.membrane-api.io/scripting/builtin-variables.html
+#       Built-in functions: https://www.membrane-api.io/scripting/builtin-functions.html

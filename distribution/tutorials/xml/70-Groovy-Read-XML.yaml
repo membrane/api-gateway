@@ -1,0 +1,41 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.7.1.json
+#
+# Tutorial: Read XML with Groovy
+#
+# Groovy's XmlSlurper reads an XML document into an object you can navigate
+# like the document itself: books.book.title. A few lines of Groovy can pick
+# values out of XML and return them as JSON.
+#
+# 1.) Start Membrane:
+#     with Docker:
+#       Linux/Mac:
+#         ./run-docker.sh -c 70-Groovy-Read-XML.yaml
+#       Windows:
+#         run-docker.cmd -c 70-Groovy-Read-XML.yaml
+#
+#     or with Java:
+#       Linux/Mac:
+#         ./membrane.sh -c 70-Groovy-Read-XML.yaml
+#       Windows:
+#         membrane.cmd -c 70-Groovy-Read-XML.yaml
+#
+# 2.) Have a look at books.xml, then send it to the API:
+#     curl -d @books.xml -H "Content-Type: application/xml" localhost:2000
+#
+#     [ "Clean Code", "Patterns of Enterprise Application Architecture", "The Art of Unix Programming", "Site Reliability Engineering", "The Phoenix Project" ]
+
+api:
+  port: 2000
+  flow:
+    - request:
+        - groovy:
+            src: |
+              def books = new groovy.xml.XmlSlurper().parse(message.getBodyAsStreamDecoded())
+
+              // A returned list becomes the new JSON body.
+              books.book.findAll { it.year.toInteger() > 2000 }.collect { it.title.text() }
+        - beautifier: {}
+    - return:
+        status: 200
+
+# NOTE: XmlSlurper documentation: https://groovy-lang.org/processing-xml.html
