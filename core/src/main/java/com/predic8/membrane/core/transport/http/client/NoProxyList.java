@@ -23,8 +23,9 @@ import com.predic8.membrane.core.util.ConfigurationException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.regex.Pattern;
 
+import static com.predic8.membrane.core.util.NetworkUtil.isIpLiteral;
+import static com.predic8.membrane.core.util.NetworkUtil.isIpv4Literal;
 import static com.predic8.membrane.core.util.NetworkUtil.removeBracketsIfPresent;
 import static java.util.Locale.ROOT;
 
@@ -34,8 +35,6 @@ import static java.util.Locale.ROOT;
  * its subdomains, an IP entry (optionally with a CIDR prefix) matches IP literals only, without DNS lookups.
  */
 public final class NoProxyList {
-
-    private static final Pattern IPV4_LITERAL = Pattern.compile("\\d{1,3}(\\.\\d{1,3}){3}");
 
     private final boolean matchAll;
     private final List<String> domains;
@@ -88,7 +87,7 @@ public final class NoProxyList {
     }
 
     private static Optional<Target> parseIpRange(String entry) {
-        if (IPV4_LITERAL.matcher(entry.split("/")[0]).matches())
+        if (isIpv4Literal(entry.split("/")[0]))
             return Optional.of(Ipv4Target.tryCreate(entry).orElseThrow(() -> invalidEntry(entry)));
         // Ipv6Target would resolve anything that is not an IPv6 literal via DNS, so only hand it entries with a colon.
         if (entry.contains(":"))
@@ -113,10 +112,6 @@ public final class NoProxyList {
             return false;
         }
         return ipRanges.stream().anyMatch(range -> range.peerMatches(address));
-    }
-
-    private static boolean isIpLiteral(String host) {
-        return host.contains(":") || IPV4_LITERAL.matcher(host).matches();
     }
 
     private static String normalize(String host) {

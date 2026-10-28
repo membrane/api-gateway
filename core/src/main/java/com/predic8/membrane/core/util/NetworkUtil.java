@@ -28,6 +28,7 @@ import static java.net.InetAddress.getByAddress;
 public class NetworkUtil {
 
     private static final Pattern BRACKETED_HOST_PORT_SUFFIX = Pattern.compile(":\\d*");
+    private static final Pattern IPV4_LITERAL = Pattern.compile("\\d{1,3}(\\.\\d{1,3}){3}");
 
     public static Pair<byte[], Integer> readUpTo1KbOfDataFrom(Socket sourceSocket, byte[] buffer) throws IOException {
         int available = sourceSocket.getInputStream().available();
@@ -81,6 +82,21 @@ public class NetworkUtil {
         if (!suffix.isEmpty() && !BRACKETED_HOST_PORT_SUFFIX.matcher(suffix).matches())
             return null;
         return hostHeader.substring(0, closingBracket + 1);
+    }
+
+    /**
+     * Tells a dotted-quad IPv4 literal from a host name by its shape only, so octets above 255 still count.
+     */
+    public static boolean isIpv4Literal(String host) {
+        return IPV4_LITERAL.matcher(host).matches();
+    }
+
+    /**
+     * Tells an IP literal from a host name without a DNS lookup. Brackets must already be removed. Any value
+     * containing a colon counts as an IPv6 literal, since host names cannot contain one.
+     */
+    public static boolean isIpLiteral(String host) {
+        return host.contains(":") || isIpv4Literal(host);
     }
 
 
