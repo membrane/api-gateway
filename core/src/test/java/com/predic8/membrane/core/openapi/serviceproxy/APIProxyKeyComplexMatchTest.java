@@ -169,6 +169,15 @@ class APIProxyKeyComplexMatchTest {
     }
 
     @Test
+    @DisplayName("A regular expression path anchored with $ matches (#3621)")
+    void regExpPathAnchoredWithDollar() {
+        var key = new APIProxyKey("", "", 80, "^\\/?$", "*", null, false);
+        key.setPathRegExp(true);
+        assertTrue(key.matchesPath("/"));
+        assertFalse(key.matchesPath("/foo"));
+    }
+
+    @Test
     @DisplayName("Without a path every path matches without parameters")
     void matchPathTemplateWithoutPath() {
         var key = new APIProxyKey("", "", 80, null, "*", null, false);
