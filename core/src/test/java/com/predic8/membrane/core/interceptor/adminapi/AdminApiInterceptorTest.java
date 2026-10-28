@@ -37,21 +37,24 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.predic8.membrane.core.exchange.Exchange.ALLOW_WEBSOCKET;
 import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.Request.get;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AdminApiInterceptorTest {
 
     private static TestRouter router;
+    private static AdminApiInterceptor interceptor;
 
     @BeforeAll
     static void setUp() throws IOException {
         router = new TestRouter();
         router.setExchangeStore(new LimitedMemoryExchangeStore()); // Needed by the AdminApiInterceptor
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(3065), null, 0);
-        AdminApiInterceptor e = new AdminApiInterceptor();
-        e.getMemoryWatcher().setIntervalMilliseconds(50); // speeds up test execution
-        sp.getFlow().add(e);
+        interceptor = new AdminApiInterceptor();
+        interceptor.getMemoryWatcher().setIntervalMilliseconds(50); // speeds up test execution
+        sp.getFlow().add(interceptor);
         router.add(sp);
         router.start();
     }
@@ -59,6 +62,13 @@ class AdminApiInterceptorTest {
     @AfterAll
     static void tearDown() {
         router.stop();
+    }
+
+    @Test
+    void apiDetailsWithTrailingSlash() throws Exception {
+        final var exc = get("/admin/api/unknown/").buildExchange();
+        assertEquals(RETURN, interceptor.handleRequest(exc));
+        assertEquals(404, exc.getResponse().getStatusCode());
     }
 
     @Test
