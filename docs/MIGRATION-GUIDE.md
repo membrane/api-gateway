@@ -1,3 +1,147 @@
+# Migrate to Membrane 7.8
+
+This guide explains how to migrate existing Membrane installations to **Membrane 7.8**.
+See `distribution/release-notes/7.8.0.md` for the complete list of changes.
+
+## Configuration errors at startup
+
+Some mistakes that used to fail per request now stop Membrane from starting. Check the log after
+the update:
+
+| Log message                                                        | Fix                                                                                                                       |
+|--------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------|
+| `Paths ... of OpenAPI ... are identical, they differ only in parameter names.` | Use the same parameter names in equivalent OpenAPI paths (`/pets/{id}` and `/pets/{petId}`) or merge them.  |
+| `Cannot use path ... as URI template`                              | Remove stray braces (`/a/{b}}`) and duplicate parameters (`/{id}/{id}`).                                                  |
+| `One bean was asked. But found 2 beans of class ...XmlConfig`      | Merge the global `xmlConfig`s in `components` into one, or reference the others with `$ref` from the plugins that need them. |
+| `Invalid target URL: ...`                                          | Fix the `url` of the `target`.                                                                                            |
+| *(error about the missing Kafka extension)*                        | Put the Membrane Kafka Extension on the classpath when using `kafkaProducer` or `kafkaConsumer`.                          |
+
+The OpenAPI path check only applies when requests or responses are validated. As a stopgap, turn
+validation off for that OpenAPI.
+
+## URI templates match literally
+
+Paths with templates (`api` `path` and OpenAPI paths) no longer treat `.`, `+`, `$`, `(`, `)` or `*`
+as regular expression characters: `/files/{name}.json` no longer matches `/files/aXjson`. If you
+relied on a regular expression, set `isRegExp: true`:
+
+```yaml
+api:
+  port: 2000
+  path:
+    uri: /files/.*\.json
+    isRegExp: true
+```
+
+A `+` in a path parameter is no longer decoded to a space, and an unescaped `#` no longer matches a
+path parameter.
+
+## `rewriter` no longer rewrites target URLs with a path
+
+A `target` `url` with a path, like `http://backend.example.com/api/orders`, is used as it is.
+Mappings that matched the path of the target URL have no effect anymore; put the path into the
+target URL instead. Redirect rules are matched against the request path, not the destination.
+
+## XPath and JSONPath read the body according to its Content-Type
+
+This affects `if`, `choose`, the API `test`, `for`, `setHeader`, `setProperty`, the `keyExpression`
+of `rateLimiter` and `${...}` templates:
+
+- XPath parses XML, JSONPath parses JSON. A body without Content-Type or with `text/plain` is parsed
+  as well. Other media types and empty bodies are evaluated against an empty document/object.
+- A body that does not parse is rejected with `400` (request) or `502` (response) instead of `500`.
+- JSONPath returns `null` instead of `""` for a missing field.
+
+Make sure clients send the right `Content-Type`, e.g. `curl -H 'Content-Type: application/json'`.
+
+## `xpath()` uses the plugin's `xmlConfig`
+
+The `xpath()` function of SpEL and Groovy now uses the `xmlConfig` of its plugin and falls back to
+the global one only when the plugin has none. A prefix declared only in the global `xmlConfig` is
+not found in a plugin with its own `xmlConfig`; declare it there as well.
+
+## `APIsJSON` replaced by `apisJson`
+
+`APIsJSON` is removed. The new `apisJson` plugin follows APIs.json 0.24:
+
+| `APIsJSON`       | `apisJson`                                            |
+|------------------|-------------------------------------------------------|
+| `collectionName` | `name`                                                |
+| `rootDomain`     | removed                                               |
+| `apisJsonUrl`    | `baseUrl` (without it, URLs come from the `Host` header) |
+
+```yaml
+# before
+APIsJSON:
+  collectionId: shop
+  collectionName: Example Shop
+  rootDomain: example
+  apisJsonUrl: https://api.example.com/apis.json
+
+# now
+apisJson:
+  collectionId: shop
+  name: Example Shop
+  baseUrl: https://api.example.com
+```
+
+See `distribution/tutorials/discovery/10-APIs-JSON.yaml`.
+
+## Routing
+
+- A path with an encoded `;`, `/` or `\` (`%3B`, `%2F`, `%5C`) is rejected with `400` if decoding
+  it would select another API, OpenAPI document or validated OpenAPI path.
+- An absolute-form request (`GET http://a.example.com/orders`) is routed by the host of the request
+  target instead of the `Host` header, and the `Host` header is replaced with it.
+
+## OpenAPI validation
+
+- Properties not allowed by `additionalProperties: false` or `unevaluatedProperties: false` are
+  reported one error per property, at the property (`REQUEST/BODY#/color`). Adapt clients that
+  parse the error location or message.
+- OpenAPI 3.1/3.2: `patternProperties` regexes are no longer anchored. Add `^` and `$` to match
+  whole property names.
+- OpenAPI 3.1/3.2: a boolean schema `false` now rejects every value, and `enum`/`const` are checked
+  for every type. Requests that passed before may now be rejected.
+
+## WSDL validation
+
+The SOAP envelope structure is validated: the `Header` must come before the `Body`, only one
+`Header` and one `Body`, both in the namespace of the `Envelope`, namespace-qualified header
+blocks, and a `Fault` must be alone in the `Body`. Fix clients or backends that send such messages.
+
+## Plugins
+
+- `rateLimiter`: if the `keyExpression` fails or yields no value, the request is counted by client
+  IP instead of a shared `unknown` key.
+- `xmlContentFilter` and `soapStackTraceFilter`: a body that cannot be parsed (including any body
+  with a `DOCTYPE`) is rejected with `400` (request) or `500` (response) instead of being forwarded
+  unfiltered.
+
+## WebSockets
+
+With frame interceptors (`wsLog`, `wsStompReassembler`, `wsInterceptor`):
+
+- Messages are limited to 16 MiB. Raise the limit with `maxMessageSize` on `webSocket` if needed.
+- `permessage-deflate` is no longer negotiated. A `groovy` plugin that removed
+  `Sec-WebSocket-Extensions` can be dropped.
+- A failing interceptor closes the connection with status `1011`.
+- Interceptors are initialized once at startup, not per connection. Custom `wsInterceptor`s must
+  keep per-connection state elsewhere.
+
+Upgraded connections are no longer closed by `connection.soTimeout` on the backend side.
+
+## Java API (when using Membrane as a library)
+
+- `WebSocketFrame.tryRead` takes the maximum payload size and throws `WebSocketFrameTooLargeException`.
+- `WebSocketConnection.onMessage` is only called for text and binary messages;
+  `WEBSOCKET_CLOSED_POLL_INTERVAL_MILLISECONDS` is removed.
+- `StreamPumpStats` is per router: use `router.getStatistics().getStreamPumpStats()`.
+- The `Router` parameter is removed from `TemplateExchangeExpression.newInstance`, the constructors
+  of `XPathExchangeExpression` and `JsonpathExchangeExpression`, and `Target.applyModifications`.
+
+---
+
 # Migrate to Membrane 7.6
 
 This guide explains how to migrate existing Membrane installations to **Membrane 7.6**.
