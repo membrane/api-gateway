@@ -32,6 +32,9 @@ public class RhinoJavascriptLanguageSupport implements LanguageSupport {
 
     private static final Logger log = LoggerFactory.getLogger(RhinoJavascriptLanguageSupport.class);
 
+    // More than the about 7700 calls the compiled mode allowed with the default stack size of a thread
+    private static final int MAX_STACK_DEPTH = 10_000;
+
     // Configured as the context factory of the JSR 223 engine of rhino-engine
     private static final ContextFactory contextFactory = new ContextFactory() {
         @Override
@@ -49,6 +52,9 @@ public class RhinoJavascriptLanguageSupport implements LanguageSupport {
             // The script is compiled for every execution. The interpreter compiles fast, while the compiled mode
             // generates and loads several classes for every compilation.
             cx.setInterpretedMode(true);
+            // The interpreter keeps the frames of Javascript calls on the heap. Without a limit, an endless recursion
+            // would use up the memory of the JVM instead of overflowing the stack of the thread.
+            cx.setMaximumInterpreterStackDepth(MAX_STACK_DEPTH);
         }
     };
 

@@ -25,6 +25,7 @@ import com.predic8.membrane.core.lang.LanguageSupport;
 import com.predic8.membrane.core.lang.javascript.GraalVMJavascriptSupport;
 import com.predic8.membrane.core.lang.javascript.RhinoJavascriptLanguageSupport;
 import com.predic8.membrane.core.router.DefaultRouter;
+import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.test.TestAppender;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.Logger;
@@ -43,6 +44,7 @@ import java.util.Map;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.MimeType.TEXT_PLAIN;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.util.ExceptionUtil.concatMessageAndCauseMessages;
 import static com.predic8.membrane.core.util.ProblemDetailsTestUtil.parse;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
@@ -126,6 +128,36 @@ public class JavascriptInterceptorTest {
             appender.stop();
         }
         assertTrue(appender.getMessages().contains("Error in Line: adsfasf;"), appender.getMessages().toString());
+    }
+
+    @ParameterizedTest
+    @ValueSource(classes = RhinoJavascriptLanguageSupport.class)
+    void syntaxErrorStopsStartup(Class<LanguageSupport> engine) {
+        final var e = assertThrows(ConfigurationException.class, () -> initInterceptor("""
+                var a = 1;
+                var b = ;""", engine));
+        final var message = concatMessageAndCauseMessages(e);
+        assertTrue(message.contains("line 2: var b = ;"), message);
+    }
+
+    /**
+     * The Rhino interpreter keeps the frames of Javascript calls on the heap, not on the stack of the thread.
+     */
+    @ParameterizedTest
+    @ValueSource(classes = RhinoJavascriptLanguageSupport.class)
+    void endlessRecursion(Class<LanguageSupport> engine) {
+        assertEquals(ABORT, executeScript("function f(n) { return f(n + 1); } f(0);", engine));
+        assertEquals(500, exc.getResponse().getStatusCode());
+    }
+
+    /**
+     * As deep as with the compiled mode of Rhino, which was used before.
+     */
+    @ParameterizedTest
+    @ValueSource(classes = RhinoJavascriptLanguageSupport.class)
+    void deepRecursion(Class<LanguageSupport> engine) {
+        assertEquals(CONTINUE, executeScript("function f(n) { return n == 0 ? 0 : 1 + f(n - 1); } '' + f(7500);", engine));
+        assertEquals("7500", exc.getRequest().getBodyAsStringDecoded());
     }
 
     @ParameterizedTest
@@ -259,7 +291,7 @@ public class JavascriptInterceptorTest {
     void jsonOfPreviousRequestDoesNotLeak(Class<LanguageSupport> engine) {
         initInterceptor("header.put('json-id', typeof json === 'object' ? '' + json.id : 'none');", engine);
 
-        // More runs than pooled engines, so every engine has seen a JSON request before the non-JSON ones
+        // More runs than scripts in a pool, so every pooled script has seen a JSON request before the non-JSON ones
         final var runs = 4 * Runtime.getRuntime().availableProcessors();
         for (int i = 0; i < runs; i++)
             assertEquals("7", jsonIdSeenByScript(new Request.Builder().body("{\"id\":7}").contentType(APPLICATION_JSON).build()));

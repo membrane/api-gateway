@@ -90,7 +90,6 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
 
     protected abstract void initInternal();
 
-    @SuppressWarnings("rawtypes")
     protected Outcome runScript(Exchange exc, Flow flow) {
 
         var msg = getMessage(exc, flow);
