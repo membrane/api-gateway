@@ -8,6 +8,8 @@ services, configurable in YAML or XML. Upstream: https://github.com/membrane/api
 - NEVER commit, push, or open/merge a PR unless the user explicitly asks for it in that moment.
   Stage nothing automatically; report what changed and wait.
 - Use `Closes #<issue>` in commit messages when the work resolves a filed issue.
+- Never mention Claude in commit messages, pull requests, or issues — no `Co-Authored-By: Claude`
+  trailer, no "Generated with Claude Code" footer, no reference in titles or bodies.
 - Never commit customer-derived artifacts — real customer names, WSDLs, XML, or sample payloads,
   not even as test fixtures. Generate synthetic equivalents (`example.com`-style) or reuse
   existing generic fixtures.
