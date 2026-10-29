@@ -46,12 +46,10 @@ public class RhinoJavascriptLanguageAdapter extends LanguageAdapter {
         return """
             var imports = new JavaImporter(com.predic8.membrane.core.interceptor.Outcome, com.predic8.membrane.core.http)
             var console = {};
-            console.log = function(s) {
-              java.lang.System.out.println(new java.lang.String(s));
+            console.log = function() {
+              java.lang.System.out.println(new java.lang.String(Array.prototype.map.call(arguments, String).join(' ')));
             };
-            var print = function() {
-              java.lang.System.out.println(new java.lang.String(Array.prototype.join.call(arguments, '')));
-            };
+            var print = console.log;
             var json;
             if (message.isJSON()) {
               json=JSON.parse(message.getBodyAsStringDecoded());

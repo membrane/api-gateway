@@ -35,12 +35,16 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.context.support.GenericApplicationContext;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.util.List;
 import java.util.Map;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.MimeType.TEXT_PLAIN;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.util.ProblemDetailsTestUtil.parse;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SuppressWarnings("unchecked")
@@ -297,6 +301,23 @@ public class JavascriptInterceptorTest {
     @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
     void print(Class<LanguageSupport> engine) {
         assertEquals(CONTINUE, executeScript("print('a', 1); CONTINUE;", engine));
+    }
+
+    /**
+     * Separated by spaces as by the print and console.log of GraalVM, whose output can not be captured here.
+     */
+    @ParameterizedTest
+    @ValueSource(classes = RhinoJavascriptLanguageSupport.class)
+    void printAndConsoleLogPrintAllArguments(Class<LanguageSupport> engine) {
+        final var out = new ByteArrayOutputStream();
+        final var stdout = System.out;
+        System.setOut(new PrintStream(out, true, UTF_8));
+        try {
+            executeScript("print('a', 1, undefined); console.log('b', 2); CONTINUE;", engine);
+        } finally {
+            System.setOut(stdout);
+        }
+        assertEquals(List.of("a 1 undefined", "b 2"), out.toString(UTF_8).lines().toList());
     }
 
     @ParameterizedTest
