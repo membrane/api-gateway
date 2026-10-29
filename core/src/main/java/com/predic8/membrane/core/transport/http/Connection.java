@@ -198,7 +198,7 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
      * opened by the same HttpClient are managed by the same ConnectionManager, this is sufficient.
      */
     public boolean isSame(String host, int port) {
-        return socket != null && host.equals(this.host) && port == socket.getPort();
+        return socket != null && host.equals(this.host) && port == this.port;
     }
 
 	/** Closes the socket without flushing buffered output, unblocking outstanding I/O. */

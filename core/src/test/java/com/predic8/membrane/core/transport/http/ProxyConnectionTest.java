@@ -29,11 +29,14 @@ import java.util.*;
 import java.util.concurrent.atomic.*;
 
 import static com.predic8.membrane.core.exchange.Exchange.SSL_CONTEXT;
+import static com.predic8.membrane.core.http.Header.AUTHORIZATION;
 import static com.predic8.membrane.core.http.Request.METHOD_CONNECT;
 import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.http.Response.ok;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.transport.http.client.protocol.Http2ProtocolHandler.HTTP2_PROTOCOL;
+import static java.lang.Boolean.TRUE;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -44,16 +47,40 @@ class ProxyConnectionTest {
 	private HttpClient client;
 
 	private static HttpClient createClient(int proxyPort) {
+		return createClient(proxyPort, false);
+	}
+
+	private static HttpClient createClient(int proxyPort, boolean useHttp2) {
 		final var proxyConfiguration = new ProxyConfiguration();
 		proxyConfiguration.setHost("localhost");
 		proxyConfiguration.setPort(proxyPort);
 		final var configuration = new HttpClientConfiguration();
 		configuration.setProxy(proxyConfiguration);
+		configuration.setUseExperimentalHttp2(useHttp2);
 		return new HttpClient(configuration);
 	}
 
 	private int getNumberInPool() {
 		return client.getConnectionFactory().getConnectionManager().getNumberInPool();
+	}
+
+	/**
+	 * Calls {@code first} with an NTLM header, which binds its target connection to the exchange, then calls
+	 * {@code second} on that bound connection, as done during an NTLM handshake.
+	 *
+	 * @return the connection bound by {@code first}
+	 */
+	private Connection callOnBoundConnection(Exchange first, Exchange second) throws Exception {
+		first.getRequest().getHeader().add(AUTHORIZATION, "NTLM abcd");
+		client.call(first);
+		first.getResponse().readBody();
+		final var bound = first.getTargetConnection();
+		assertNotNull(bound, "The connection should be bound to the exchange.");
+
+		second.setTargetConnection(bound);
+		client.call(second);
+		second.getResponse().readBody();
+		return bound;
 	}
 
 	/**
@@ -120,6 +147,16 @@ class ProxyConnectionTest {
 			assertEquals(1, proxyConnections.size());
 			assertEquals(1, getNumberInPool());
 		}
+
+		@Test
+		void boundConnectionToProxyIsKept() throws Exception {
+			final var second = get("http://backend.example.com/").buildExchange();
+			final var bound = callOnBoundConnection(get("http://backend.example.com/").buildExchange(), second);
+
+			assertSame(bound, second.getTargetConnection());
+			assertEquals(1, proxyConnections.size());
+			bound.close();
+		}
 	}
 
 	/**
@@ -177,6 +214,7 @@ class ProxyConnectionTest {
 
 		private static SSLParser createKeyStoreParser() {
 			final var ssl = new SSLParser();
+			ssl.setUseExperimentalHttp2(true); // clients without HTTP/2 still get HTTP/1.1
 			ssl.setKeyStore(new KeyStore());
 			ssl.getKeyStore().setLocation("classpath:/ssl-rsa.keystore");
 			ssl.getKeyStore().setKeyPassword("secret");
@@ -193,11 +231,16 @@ class ProxyConnectionTest {
 		}
 
 		private int issueRequest() throws Exception {
-			final var exchange = get("https://localhost:%d/".formatted(BACKEND_PORT)).buildExchange();
-			exchange.setProperty(SSL_CONTEXT, clientSSLContext);
+			final var exchange = createExchange();
 			client.call(exchange);
 			exchange.getResponse().readBody();
 			return exchange.getResponse().getStatusCode();
+		}
+
+		private Exchange createExchange() throws Exception {
+			final var exchange = get("https://localhost:%d/".formatted(BACKEND_PORT)).buildExchange();
+			exchange.setProperty(SSL_CONTEXT, clientSSLContext);
+			return exchange;
 		}
 
 		@Test
@@ -207,6 +250,32 @@ class ProxyConnectionTest {
 
 			assertEquals(1, connectRequests.get());
 			assertEquals(1, getNumberInPool());
+		}
+
+		@Test
+		void boundTunnelIsKept() throws Exception {
+			final var second = createExchange();
+			final var bound = callOnBoundConnection(createExchange(), second);
+
+			assertSame(bound, second.getTargetConnection());
+			assertEquals(1, connectRequests.get());
+			bound.close();
+		}
+
+		@Test
+		void http2ConnectionThroughProxyIsReused() throws Exception {
+			client.close();
+			client = createClient(PROXY_PORT, true);
+
+			for (int i = 0; i < 2; i++) {
+				final var exchange = createExchange();
+				client.call(exchange);
+				exchange.getResponse().readBody();
+				assertEquals(200, exchange.getResponse().getStatusCode());
+				assertEquals(TRUE, exchange.getProperty(HTTP2_PROTOCOL), "The request should use HTTP/2.");
+			}
+
+			assertEquals(1, connectRequests.get());
 		}
 	}
 }
