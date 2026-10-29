@@ -79,9 +79,10 @@ public class HttpClient implements AutoCloseable {
         var outConType = connectionFactory.getConnection(exc, hcp, attempt);
         setRequestURI(exc.getRequest(), target, outConType.con());
 
-        if (configuration.getProxy() != null && configuration.getProxy().isAuthentication() && outConType.sslProvider() == null) {
+        var proxy = outConType.con().getProxyConfiguration();
+        if (proxy != null && proxy.isAuthentication() && outConType.sslProvider() == null) {
             // if we use a proxy for a plain HTTP (=non-HTTPS) request, attach the proxy credentials.
-            exc.getRequest().getHeader().setProxyAuthorization(configuration.getProxy().getCredentials());
+            exc.getRequest().getHeader().setProxyAuthorization(proxy.getCredentials());
         }
 
         protocolHandlerFactory.getHandlerForConnection(exc, outConType).handle(exc, outConType, hcp);
@@ -161,7 +162,7 @@ public class HttpClient implements AutoCloseable {
         }
 
         // Use complete URL with protocol and host. The proxy needs to know where to forward
-        if (configuration.getProxy() != null && !con.isTunneled()) {
+        if (con.getProxyConfiguration() != null && !con.isTunneled()) {
             req.setUri(dest);
             return;
         }
