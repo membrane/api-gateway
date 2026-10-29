@@ -41,6 +41,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.predic8.membrane.core.transport.http2.frame.Error.*;
 import static com.predic8.membrane.core.transport.http2.frame.Frame.*;
 import static com.predic8.membrane.core.transport.http2.frame.SettingsFrame.*;
+import static com.predic8.membrane.core.util.HttpUtil.isOptionalWhitespace;
+import static com.predic8.membrane.core.util.HttpUtil.isTchar;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
 public class Http2Logic {
     private static final Logger log = LoggerFactory.getLogger(Http2Logic.class.getName());
@@ -381,13 +384,19 @@ public class Http2Logic {
         }
 
         final var oversizedField = new boolean[1];
+        final var malformedField = new boolean[1];
         // The whole block is decoded even if it gets rejected, so the HPACK dynamic table stays in sync.
         decoder.decode(getPackedHeaderStream(headerFrames), (name, value, sensitive) -> {
             if (name.length + 2 + value.length >= MAX_LINE_LENGTH) {
                 oversizedField[0] = true;
                 return;
             }
-            String key = new String(name);
+            if (!isValidFieldName(name) || !isValidFieldValue(value)) {
+                malformedField[0] = true;
+                return;
+            }
+            // The name has been checked to be ASCII, so this charset reads it byte for byte.
+            String key = new String(name, ISO_8859_1);
             String val = new String(value);
 
             if (sb != null) {
@@ -435,6 +444,21 @@ public class Http2Logic {
             return;
         }
 
+        if (malformedField[0]) {
+            // A malformed message is a stream error of type PROTOCOL_ERROR (RFC 9113 §8.1.1). It is rejected
+            // rather than forwarded without the field, as the HTTP/1.1 parser does.
+            log.info("Rejecting header block on stream {}: a header field name or value is malformed (RFC 9113 §8.2.1).", streamId1);
+            if (isTrailer)
+                // As for an oversized trailer: aborting before the end of stream is queued.
+                streamInfo.abortReceiving(new IOException("HTTP/2 trailer on stream %d carries a malformed header field.".formatted(streamId1)));
+            else
+                messageHandler.handleMalformedHeaders(streamInfo);
+            if (headers.isEndStream())
+                streamInfo.receivedEndStream(false);
+            sender.send(streamId1, (encoder, peerSettings) -> List.of(RstStreamFrame.construct(streamId1, ERROR_PROTOCOL_ERROR)));
+            return;
+        }
+
         if (!isTrailer && request instanceof Response response && response.getStatusCode() >= 100 && response.getStatusCode() < 200) {
             // An interim response (RFC 9113 §8.1): the final response follows in another HEADERS frame.
             if (headers.isEndStream())
@@ -455,6 +479,35 @@ public class Http2Logic {
 
         if (headers.isEndStream())
             streamInfo.receivedEndStream(false);
+    }
+
+    /**
+     * Whether the field name is a lower-case RFC 9110 token, or a pseudo-header name: a colon followed by one.
+     * This is stricter than RFC 9113 &sect;8.2.1, which only excludes control characters, SP, upper-case letters
+     * and non-ASCII bytes. The HTTP/1.1 parser accepts tokens only, and a message received over HTTP/2 may be
+     * forwarded over HTTP/1.1.
+     */
+    static boolean isValidFieldName(byte[] name) {
+        final int start = name.length > 0 && name[0] == ':' ? 1 : 0;
+        if (name.length == start)
+            return false;
+        for (int i = start; i < name.length; i++) {
+            final int c = name[i] & 0xFF;
+            if ((c >= 'A' && c <= 'Z') || !isTchar(c))
+                return false;
+        }
+        return true;
+    }
+
+    /**
+     * Whether the field value carries no NUL, CR or LF, and does not start or end with SP or HTAB
+     * (RFC 9113 &sect;8.2.1).
+     */
+    static boolean isValidFieldValue(byte[] value) {
+        for (byte b : value)
+            if (b == 0 || b == '\r' || b == '\n')
+                return false;
+        return value.length == 0 || (!isOptionalWhitespace((char) value[0]) && !isOptionalWhitespace((char) value[value.length - 1]));
     }
 
     public InputStream getPackedHeaderStream(List<HeaderBlockFragment> headerFrames) {

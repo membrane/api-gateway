@@ -43,6 +43,7 @@ import java.util.concurrent.TimeUnit;
 import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.http.Request.post;
 import static com.predic8.membrane.core.transport.http2.frame.Error.ERROR_CANCEL;
+import static com.predic8.membrane.core.transport.http2.frame.Error.ERROR_PROTOCOL_ERROR;
 import static com.predic8.membrane.core.transport.http2.frame.Frame.*;
 import static com.predic8.membrane.core.transport.http2.frame.DataFrame.FLAG_END_STREAM;
 import static com.predic8.membrane.core.transport.http2.frame.SettingsFrame.ID_SETTINGS_MAX_HEADER_LIST_SIZE;
@@ -338,6 +339,31 @@ class Http2ClientTest {
                 assertEquals("yes", response.getHeader().getFirstValue("x-final"));
                 assertNull(response.getHeader().getFirstValue("link"));
                 assertFalse(response.getBody().hasTrailer());
+            }
+        } finally {
+            router.stop();
+        }
+    }
+
+    @Test
+    void malformedResponseHeaderFieldFailsCall() throws Exception {
+        final var router = new DefaultRouter();
+        try (final var backend = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
+            backend.setSoTimeout(2000);
+            final var connection = createConnection(router, backend);
+            try (final var peer = backend.accept()) {
+                peer.setSoTimeout(2000);
+                final var client = new Http2Client(connection, false);
+                final var call = callAsync(client);
+
+                readUntilRequestHeaders(peer);
+                peer.getOutputStream().write(headersFrame(1, 0x5, new Encoder(4096), ":status", "200", "X-Upper", "a"));
+                peer.getOutputStream().flush();
+
+                final var e = assertThrows(ExecutionException.class, () -> call.get(2, TimeUnit.SECONDS));
+                final var cause = assertInstanceOf(IOException.class, e.getCause().getCause());
+                assertTrue(cause.getMessage().contains("malformed"), cause.getMessage());
+                assertEquals(ERROR_PROTOCOL_ERROR, readUntilFrame(peer.getInputStream(), TYPE_RST_STREAM)[3]);
             }
         } finally {
             router.stop();
