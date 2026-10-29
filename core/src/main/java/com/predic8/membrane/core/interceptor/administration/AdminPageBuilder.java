@@ -15,31 +15,33 @@ limitations under the License. */
 
 package com.predic8.membrane.core.interceptor.administration;
 
-import com.googlecode.jatl.*;
+import com.googlecode.jatl.Html;
 import com.predic8.membrane.annot.Constants;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.Interceptor.*;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.interceptor.balancer.*;
-import com.predic8.membrane.core.interceptor.flow.*;
+import com.predic8.membrane.core.interceptor.flow.RequestInterceptor;
+import com.predic8.membrane.core.interceptor.flow.ResponseInterceptor;
 import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.proxies.Proxy;
-import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.transport.http.streampump.*;
-import org.apache.commons.text.*;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.transport.http.streampump.StreamPump;
+import org.apache.commons.text.StringEscapeUtils;
 
-import java.io.*;
-import java.net.*;
-import java.text.*;
+import java.io.StringWriter;
+import java.net.URLEncoder;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.balancer.BalancerUtil.*;
-import static com.predic8.membrane.core.interceptor.balancer.Node.Status.*;
-import static com.predic8.membrane.core.util.URLParamUtil.*;
+import static com.predic8.membrane.core.interceptor.balancer.Node.Status.TAKEOUT;
+import static com.predic8.membrane.core.util.URLParamUtil.createQueryString;
 import static com.predic8.membrane.core.util.xml.XMLTextUtil.isValidXMLSnippet;
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
-import static org.apache.commons.lang3.time.DurationFormatUtils.*;
+import static org.apache.commons.lang3.time.DurationFormatUtils.formatDurationHMS;
 
 public class AdminPageBuilder extends Html {
 
@@ -261,8 +263,11 @@ public class AdminPageBuilder extends Html {
             end();
             createTds(rule.getKey().getPort() == -1 ? "" : "" + rule.getKey().getPort(),
                     "" + rule.getStatisticCollector().getCount());
-            if (!readOnly)
-                td().a().href("/admin/proxy/delete?name=" + URLEncoder.encode(RuleUtil.getRuleIdentifier(rule), UTF_8)).span().classAttr("ui-icon ui-icon-trash").end(3);
+            if (!readOnly) {
+                td();
+                createPostIcon("/admin/proxy/delete?name=" + URLEncoder.encode(RuleUtil.getRuleIdentifier(rule), UTF_8), "ui-icon-trash", "delete");
+                end();
+            }
             end();
         }
         end();
@@ -529,7 +534,22 @@ public class AdminPageBuilder extends Html {
     }
 
     private void createIcon(String icon, String action, String tooltip, String query) {
-        a().href(createHRef("node", action, query)).span().classAttr("ui-icon " + icon).style("float:left;").title(tooltip).end(2);
+        createPostIcon(createHRef("node", action, query), icon, tooltip);
+    }
+
+    /**
+     * Actions that change the router's state are submitted as POST, never followed as links (CSRF protection).
+     */
+    private void createPostIcon(String href, String icon, String tooltip) {
+        form().classAttr("mb-post-action").action(href).method("POST");
+        button().type("submit").title(tooltip).span().classAttr("ui-icon " + icon).end(2);
+        end();
+    }
+
+    protected void createPostButton(String label, String ctrl, String action, String query) {
+        form().classAttr("mb-post-action").action(createHRef(ctrl, action, query)).method("POST");
+        button().type("submit").text(label).end();
+        end();
     }
 
     private String getFormatedHealth(String balancerName, String cluster) {
