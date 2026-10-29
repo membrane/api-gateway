@@ -3,11 +3,11 @@ setlocal EnableExtensions DisableDelayedExpansion
 
 set "DIR=%~dp0"
 if "%DIR:~-1%"=="\" set "DIR=%DIR:~0,-1%"
-set "IMAGE=predic8/membrane:7.7.0"
+set "IMAGE=predic8/membrane:7.8.0"
 
 rem Without an explicit -c the container falls back to its own baked-in
 rem conf/apis.yaml and silently ignores the one in this directory.
-set "ARGS=%*"
+set ARGS=%*
 if not defined ARGS if exist "%DIR%\conf\apis.yaml" set "ARGS=-c conf/apis.yaml"
 
 rem Ports 2000-2010, 8443 (TLS) and 9000 (admin console) are published.
