@@ -76,7 +76,11 @@ public class RhinoJavascriptLanguageSupport implements LanguageSupport {
             // neither in variables nor on built-in objects like Object.prototype
             final var scope = cx.initStandardObjects();
             parameters.forEach((name, value) -> ScriptableObject.putProperty(scope, name, Context.javaToJS(value, scope)));
-            return Context.jsToJava(script.exec(cx, scope, scope), Object.class);
+            final var result = script.exec(cx, scope, scope);
+            // jsToJava would convert undefined to the string "undefined"
+            if (Undefined.isUndefined(result))
+                return null;
+            return Context.jsToJava(result, Object.class);
         } catch (RhinoException re) {
             final var e = new ScriptException(re.getMessage(), re.sourceName(), re.lineNumber(), re.columnNumber());
             log.error("Error executing script: {}", e.getMessage());

@@ -415,6 +415,13 @@ public class JavascriptInterceptorTest {
 
     @ParameterizedTest
     @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
+    void returnStringUndefined(Class<LanguageSupport> engine) {
+        assertEquals(CONTINUE, executeScript("'undefined'", engine));
+        assertEquals("undefined", exc.getRequest().getBodyAsStringDecoded());
+    }
+
+    @ParameterizedTest
+    @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
     void returnNestedObject(Class<LanguageSupport> engine) {
         executeScript("({a: {b: [1, 'x']}})", engine);
         assertEquals("{\"a\":{\"b\":[1,\"x\"]}}", exc.getRequest().getBodyAsStringDecoded());

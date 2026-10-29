@@ -139,9 +139,6 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
         }
 
         if (res instanceof String s) {
-            if (s.equals("undefined")) {
-                return CONTINUE;
-            }
             msg = createResponseAndToExchangeIfThereIsNone(exc, flow, msg);
             msg.setBodyContent(s.getBytes(UTF_8));
             return CONTINUE;
