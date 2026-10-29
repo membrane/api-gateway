@@ -22,6 +22,7 @@ api:
   path:
     uri: /.well-known/apis.json
   flow:
+    - beautifier: {} # Make JSON pretty for humans
     - apisJson:
         collectionId: shop
         name: Example Shop
