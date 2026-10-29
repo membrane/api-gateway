@@ -357,7 +357,8 @@ class Http2ClientTest {
                 final var call = callAsync(client);
 
                 readUntilRequestHeaders(peer);
-                peer.getOutputStream().write(headersFrame(1, 0x5, new Encoder(4096), ":status", "200", "X-Upper", "a"));
+                // Without END_STREAM: the stream is still open, so it has to be reset.
+                peer.getOutputStream().write(headersFrame(1, 0x4, new Encoder(4096), ":status", "200", "X-Upper", "a"));
                 peer.getOutputStream().flush();
 
                 final var e = assertThrows(ExecutionException.class, () -> call.get(2, TimeUnit.SECONDS));
