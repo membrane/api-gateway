@@ -321,6 +321,29 @@ public class JavascriptInterceptorTest {
     }
 
     @ParameterizedTest
+    @ValueSource(classes = RhinoJavascriptLanguageSupport.class)
+    void consoleLogPrintsObjectsAsJson(Class<LanguageSupport> engine) {
+        exc.getRequest().setBodyContent("{\"id\":7}".getBytes());
+        exc.getRequest().getHeader().setContentType(APPLICATION_JSON);
+
+        final var out = new ByteArrayOutputStream();
+        final var stdout = System.out;
+        System.setOut(new PrintStream(out, true, UTF_8));
+        try {
+            assertEquals(CONTINUE, executeScript("""
+                    console.log(json, [1, 'a'], null);
+                    var r = {}; r.self = r;
+                    console.log(r);
+                    var m = new java.util.HashMap(); m.put('k', 'v');
+                    console.log(m);
+                    CONTINUE;""", engine));
+        } finally {
+            System.setOut(stdout);
+        }
+        assertEquals(List.of("{\"id\":7} [1,\"a\"] null", "[object Object]", "{k=v}"), out.toString(UTF_8).lines().toList());
+    }
+
+    @ParameterizedTest
     @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
     void undefinedResultKeepsBody(Class<LanguageSupport> engine) {
         exc.getRequest().setBodyContent("foo".getBytes());
