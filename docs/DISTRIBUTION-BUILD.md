@@ -4,7 +4,7 @@
 
 ## Preparation
 
-1. If there are breaking changes add them to docs/MIGRATIOM-GUIDE.md
+1. If there are breaking changes add them to docs/MIGRATION-GUIDE.md
 2. Create a release notes description in distribution/release-notes
 
 ## Creating the Release
@@ -17,7 +17,7 @@
 5. Squash and merge
    => Release action is started
 
-## Editing the Releasse Descriptiom
+## Editing the Release Description
 
 1. github/releases
 2. click on edit on the version
@@ -47,7 +47,7 @@
 ## Publishing the JSON Schema for YAML
 
 1. Look at gitlab membrane-api.io project. Is the file src/v7.8.0.json checked in?
-2. gitlab: membrane-api.io / Pipelines / New Pipeline / New Pipeline
+2. Check if Job starts. Otherwise: gitlab: membrane-api.io / Pipelines / New Pipeline / New Pipeline
 3. Try to download: https://www.membrane-api.io/v7.8.0.json
 
 ## Check Version
