@@ -388,6 +388,20 @@ public class JavascriptInterceptorTest {
         assertEquals("{\"a\":{\"b\":[1,\"x\"]}}", exc.getRequest().getBodyAsStringDecoded());
     }
 
+    @ParameterizedTest
+    @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
+    void returnArray(Class<LanguageSupport> engine) {
+        assertEquals(CONTINUE, executeScript("['x', {a: 'y'}, ['z']]", engine));
+        assertTrue(exc.getRequest().isJSON());
+        assertEquals("[\"x\",{\"a\":\"y\"},[\"z\"]]", exc.getRequest().getBodyAsStringDecoded());
+    }
+
+    @Test
+    void returnJavaByteArray() {
+        assertEquals(CONTINUE, executeScript("Java.to([104, 105], 'byte[]')"));
+        assertEquals("hi", exc.getRequest().getBodyAsStringDecoded());
+    }
+
     /**
      * Only with GraalVM json is a Java map, Rhino passes a Javascript object.
      */

@@ -28,6 +28,8 @@ import static org.apache.commons.text.StringEscapeUtils.escapeHtml4;
 /**
  * @description Executes a Javascript. The script can access and manipulate data from the request and response.
  * Use this or the Groovy plugin to extend the functions of Membrane by scripting. See the samples in examples/javascript.
+ * An object or array returned by the script, e.g. <code>({id: 7})</code> or <code>[1, 2]</code>, becomes the JSON
+ * body of the message.
  * Every execution of the script runs isolated: variables are not shared with other requests.
  * Objects created by the script, e.g. <code>{a: 1}</code> or the result of <code>JSON.parse()</code>, are only valid
  * while the script runs. To keep such an object on the exchange, store it as a string:
@@ -69,6 +71,11 @@ public class JavascriptInterceptor extends AbstractScriptInterceptor {
         } catch (Exception e) {
             throw new ConfigurationException("Could not compile: \n" + src,e);
         }
+    }
+
+    @Override
+    protected boolean isListSerializedToJson() {
+        return true;
     }
 
     @Override

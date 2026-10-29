@@ -13,18 +13,20 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.groovy;
 
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.router.*;
-import org.junit.jupiter.api.*;
-import org.springframework.context.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.router.DummyTestRouter;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationContext;
 
-import java.util.*;
+import java.util.Map;
 
-import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.Response.ok;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -165,6 +167,23 @@ public class GroovyInterceptorTest {
 		Map<String,Object> m = om.readValue(exc.getResponse().getBodyAsStringDecoded(),Map.class);
 		assertEquals("Roller", m.get("name"));
 		assertEquals("äöüÄÖÜ", m.get("desc"));
+	}
+
+	/**
+	 * Unlike with Javascript, a returned list is ignored: a script that ends with list.each {...} returns the list.
+	 */
+	@Test
+	void returnedListIsIgnored() throws Exception {
+		exc.getRequest().setBodyContent("foo".getBytes());
+
+		GroovyInterceptor i = new GroovyInterceptor() {{
+			src = "['a', 'b'].each { property.put(it, 'seen') }";
+		}};
+		i.init(router);
+
+		assertEquals(CONTINUE, i.handleRequest(exc));
+		assertEquals("foo", exc.getRequest().getBodyAsStringDecoded());
+		assertEquals("seen", exc.getProperty("b"));
 	}
 
 	@Test
