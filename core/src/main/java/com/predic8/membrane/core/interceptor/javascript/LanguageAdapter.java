@@ -16,16 +16,17 @@
 
 package com.predic8.membrane.core.interceptor.javascript;
 
-import com.predic8.membrane.core.exceptions.*;
-import com.predic8.membrane.core.lang.*;
-import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.util.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
-import org.springframework.context.*;
+import com.predic8.membrane.core.exceptions.ProblemDetails;
+import com.predic8.membrane.core.lang.LanguageSupport;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.util.ConfigurationException;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationContext;
 
-import java.util.*;
-import java.util.function.*;
+import java.util.Map;
+import java.util.function.Function;
 
 public abstract  class LanguageAdapter {
 
@@ -62,7 +63,7 @@ public abstract  class LanguageAdapter {
             // Ignore
         }
         try {
-            Class.forName("org.mozilla.javascript.engine.RhinoScriptEngine");
+            Class.forName("org.mozilla.javascript.Context");
             log.info("Found Rhino Javascript engine.");
             return new RhinoJavascriptLanguageAdapter(router);
         } catch (Exception e) {
@@ -86,7 +87,7 @@ public abstract  class LanguageAdapter {
             
             But you can also use the old Rhino Engine:
             
-            https://repo1.maven.org/maven2/org/mozilla/rhino-engine/""");
+            https://repo1.maven.org/maven2/org/mozilla/rhino/""");
     }
 
     public Function<Map<String, Object>, Object> compileScript(String script) {

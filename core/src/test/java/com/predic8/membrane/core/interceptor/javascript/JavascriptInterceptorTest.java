@@ -69,7 +69,7 @@ public class JavascriptInterceptorTest {
 
     @Test
     void isRhinoPresent() throws ClassNotFoundException {
-        Class.forName("org.mozilla.javascript.engine.RhinoScriptEngine");
+        Class.forName("org.mozilla.javascript.Context");
         assertTrue(true);
     }
 
