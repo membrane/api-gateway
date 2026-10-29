@@ -69,7 +69,8 @@ public class RhinoJavascriptLanguageSupport implements LanguageSupport {
             } catch (RhinoException re) {
                 final var e = new ScriptException(re.getMessage(), re.sourceName(), re.lineNumber(), re.columnNumber());
                 log.error("Error compiling script: {}", e.getMessage());
-                log.error("Error in Line: {}", getLineFromMultilineString(javascriptCode,e.getLineNumber()));
+                // Rhino counts the lines from 0
+                log.error("Error in Line: {}", getLineFromMultilineString(javascriptCode, e.getLineNumber() + 1));
                 log.error("Script:\n{}", javascriptCode);
                 throw new RuntimeException("Error compiling script:", e);
             }

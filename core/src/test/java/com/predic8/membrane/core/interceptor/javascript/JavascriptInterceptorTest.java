@@ -25,6 +25,9 @@ import com.predic8.membrane.core.lang.LanguageSupport;
 import com.predic8.membrane.core.lang.javascript.GraalVMJavascriptSupport;
 import com.predic8.membrane.core.lang.javascript.RhinoJavascriptLanguageSupport;
 import com.predic8.membrane.core.router.DefaultRouter;
+import com.predic8.membrane.test.TestAppender;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.Logger;
 import org.graalvm.polyglot.Context;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -100,6 +103,25 @@ public class JavascriptInterceptorTest {
         assertEquals(1,pd.getInternal().get("line"));
         assertEquals(1,pd.getInternal().get("column"));
         assertNotNull(pd.getInternal().get("engine"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(classes = RhinoJavascriptLanguageSupport.class)
+    void logsLineWithError(Class<LanguageSupport> engine) {
+        final var root = (Logger) LogManager.getRootLogger();
+        final var appender = new TestAppender("JavascriptInterceptorTest");
+        appender.start();
+        root.addAppender(appender);
+        try {
+            executeScript("""
+                    var a = 1;
+                    adsfasf;
+                    var b = 2;""", engine);
+        } finally {
+            root.removeAppender(appender);
+            appender.stop();
+        }
+        assertTrue(appender.getMessages().contains("Error in Line: adsfasf;"), appender.getMessages().toString());
     }
 
     @ParameterizedTest
