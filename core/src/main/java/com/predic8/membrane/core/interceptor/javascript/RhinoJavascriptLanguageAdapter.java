@@ -48,7 +48,7 @@ public class RhinoJavascriptLanguageAdapter extends LanguageAdapter {
             var console = {};
             console.log = function() {
               java.lang.System.out.println(new java.lang.String(Array.prototype.map.call(arguments, function(a) {
-                if (typeof a === 'object' && a !== null && !(a instanceof java.lang.Object)) {
+                if (typeof a === 'object' && a !== null && !(a instanceof java.lang.Object) && !(a instanceof Error)) {
                   try { return JSON.stringify(a); } catch (e) { }
                 }
                 return String(a);

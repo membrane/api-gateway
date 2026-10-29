@@ -336,11 +336,12 @@ public class JavascriptInterceptorTest {
                     console.log(r);
                     var m = new java.util.HashMap(); m.put('k', 'v');
                     console.log(m);
+                    console.log(new TypeError('boom'));
                     CONTINUE;""", engine));
         } finally {
             System.setOut(stdout);
         }
-        assertEquals(List.of("{\"id\":7} [1,\"a\"] null", "[object Object]", "{k=v}"), out.toString(UTF_8).lines().toList());
+        assertEquals(List.of("{\"id\":7} [1,\"a\"] null", "[object Object]", "{k=v}", "TypeError: boom"), out.toString(UTF_8).lines().toList());
     }
 
     @ParameterizedTest
