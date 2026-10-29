@@ -22,9 +22,7 @@ import org.graalvm.polyglot.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 
 public class GraalVMJavascriptSupport implements LanguageSupport {
@@ -32,6 +30,9 @@ public class GraalVMJavascriptSupport implements LanguageSupport {
     private static final Logger log = LoggerFactory.getLogger(GraalVMJavascriptSupport.class);
 
     private abstract static class GraalVMJavascriptExecutorPool<R> extends ScriptExecutorPool<Source, R> {
+
+        // Same as the default nesting limit of Jackson, which serializes the result
+        private static final int MAX_DEPTH = 1000;
 
         // Shared by all contexts, so that a script is only compiled once
         private static final Engine engine = Engine.create("js");
@@ -57,7 +58,7 @@ public class GraalVMJavascriptSupport implements LanguageSupport {
                 parameters.forEach(bindings::putMember);
 
                 // Values of the context are not usable after it is closed
-                return toJava(context.eval(source));
+                return toJava(context.eval(source), new HashSet<>());
             } catch (PolyglotException e) {
                 if (e.isSyntaxError()) {
                     SourceSection location = e.getSourceLocation();
@@ -67,17 +68,22 @@ public class GraalVMJavascriptSupport implements LanguageSupport {
                     log.warn("",e);
                 }
                 throw e;
+            } catch (ScriptResultException e) {
+                throw e;
             } catch (Exception e) {
                 log.error("Error compiling script:", e);
                 throw new RuntimeException("Error compiling script:", e);
             }
         }
 
-        private static Object toJava(Value value) {
+        /**
+         * @param ancestors values on the path from the result to value, to detect cycles
+         */
+        private static Object toJava(Value value, Set<Value> ancestors) {
             if (value.isNull() || value.canExecute())
                 return null;
             if (value.isHostObject())
-                return value.asHostObject();
+                return hostToJava(value, ancestors);
             if (value.isString())
                 return value.asString();
             if (value.isBoolean())
@@ -87,18 +93,70 @@ public class GraalVMJavascriptSupport implements LanguageSupport {
             if (value.isNumber())
                 return value.asDouble();
             if (value.hasArrayElements()) {
+                enter(value, ancestors);
                 final var list = new ArrayList<>();
                 for (long i = 0; i < value.getArraySize(); i++)
-                    list.add(toJava(value.getArrayElement(i)));
+                    list.add(toJava(value.getArrayElement(i), ancestors));
+                ancestors.remove(value);
                 return list;
             }
             if (value.hasMembers()) {
+                enter(value, ancestors);
                 final var map = new LinkedHashMap<String, Object>();
                 for (final var key : value.getMemberKeys())
-                    map.put(key, toJava(value.getMember(key)));
+                    map.put(key, toJava(value.getMember(key), ancestors));
+                ancestors.remove(value);
                 return map;
             }
             return value.toString();
+        }
+
+        /**
+         * Java maps and lists can contain Javascript objects, e.g. json.put('a', {b: 1}), so they are copied.
+         */
+        private static Object hostToJava(Value value, Set<Value> ancestors) {
+            final var object = value.asHostObject();
+            if (object instanceof Map<?, ?> map) {
+                enter(value, ancestors);
+                final var copy = new LinkedHashMap<>();
+                map.forEach((key, element) -> copy.put(key, elementToJava(value.getContext(), element, ancestors)));
+                ancestors.remove(value);
+                return copy;
+            }
+            if (object instanceof List<?> list) {
+                enter(value, ancestors);
+                final var copy = new ArrayList<>();
+                list.forEach(element -> copy.add(elementToJava(value.getContext(), element, ancestors)));
+                ancestors.remove(value);
+                return copy;
+            }
+            return object;
+        }
+
+        private static Object elementToJava(Context context, Object element, Set<Value> ancestors) {
+            final var value = context.asValue(element);
+            if (value.isHostObject())
+                return hostToJava(value, ancestors);
+            if (value.hasMembers() || value.hasArrayElements() || value.canExecute())
+                return toJava(value, ancestors);
+            // Strings, numbers, ... are kept as they are, e.g. a BigDecimal of the parsed json
+            return element;
+        }
+
+        private static void enter(Value value, Set<Value> ancestors) {
+            if (ancestors.size() >= MAX_DEPTH)
+                throw new ScriptResultException("Result of the script is nested deeper than %d levels.".formatted(MAX_DEPTH));
+            if (!ancestors.add(value))
+                throw new ScriptResultException("Result of the script contains a cycle.");
+        }
+
+        /**
+         * Without a stack trace, as it would only repeat toJava up to MAX_DEPTH times.
+         */
+        private static class ScriptResultException extends RuntimeException {
+            private ScriptResultException(String message) {
+                super(message, null, false, false);
+            }
         }
 
         @Override

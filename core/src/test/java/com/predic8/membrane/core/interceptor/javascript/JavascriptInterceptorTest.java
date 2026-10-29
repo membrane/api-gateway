@@ -257,6 +257,28 @@ public class JavascriptInterceptorTest {
 
     @ParameterizedTest
     @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
+    void builtInObjectOfPreviousRequestDoesNotLeak(Class<LanguageSupport> engine) {
+        initInterceptor("""
+                header.put('leak', '' + ({}).leak);
+                Object.prototype.leak = 'x';
+                """, engine);
+
+        for (int i = 0; i < 4 * Runtime.getRuntime().availableProcessors(); i++) {
+            final var exchange = new Exchange(null);
+            exchange.setRequest(new Request.Builder().body("foo").build());
+            interceptor.handleRequest(exchange);
+            assertEquals("undefined", exchange.getRequest().getHeader().getFirstValue("leak"));
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
+    void print(Class<LanguageSupport> engine) {
+        assertEquals(CONTINUE, executeScript("print('a', 1); CONTINUE;", engine));
+    }
+
+    @ParameterizedTest
+    @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
     void undefinedResultKeepsBody(Class<LanguageSupport> engine) {
         exc.getRequest().setBodyContent("foo".getBytes());
         assertEquals(CONTINUE, executeScript("var x = 1;", engine));
@@ -275,6 +297,45 @@ public class JavascriptInterceptorTest {
     void returnNestedObject(Class<LanguageSupport> engine) {
         executeScript("({a: {b: [1, 'x']}})", engine);
         assertEquals("{\"a\":{\"b\":[1,\"x\"]}}", exc.getRequest().getBodyAsStringDecoded());
+    }
+
+    /**
+     * Only with GraalVM json is a Java map, Rhino passes a Javascript object.
+     */
+    @Test
+    void returnJavaMapContainingObject() {
+        exc.getRequest().setBodyContent("{\"id\":7}".getBytes());
+        exc.getRequest().getHeader().setContentType(APPLICATION_JSON);
+
+        assertEquals(CONTINUE, executeScript("json.put('added', {value: [7]}); json;"));
+        assertEquals("{\"id\":7,\"added\":{\"value\":[7]}}", exc.getRequest().getBodyAsStringDecoded());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "var r = {}; r.self = r; r;",
+            "var r = {}; r.a = r; r.b = [r, r]; r;",
+            "var o = {}; for (var i = 0; i < 100000; i++) o = {c: o}; o;",
+    })
+    void unserializableResult(String src) {
+        assertEquals(ABORT, executeScript(src));
+        assertEquals(500, exc.getResponse().getStatusCode());
+    }
+
+    @Test
+    void cyclicJavaMapResult() {
+        exc.getRequest().setBodyContent("{\"id\":7}".getBytes());
+        exc.getRequest().getHeader().setContentType(APPLICATION_JSON);
+
+        assertEquals(ABORT, executeScript("json.put('self', json); json;"));
+        assertEquals(500, exc.getResponse().getStatusCode());
+    }
+
+    @ParameterizedTest
+    @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
+    void sharedObjectIsNoCycle(Class<LanguageSupport> engine) {
+        executeScript("var s = {v: 1}; ({a: s, b: [s]});", engine);
+        assertEquals("{\"a\":{\"v\":1},\"b\":[{\"v\":1}]}", exc.getRequest().getBodyAsStringDecoded());
     }
 
     @ParameterizedTest
