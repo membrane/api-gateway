@@ -246,6 +246,16 @@ public class JavascriptInterceptorTest {
         assertEquals("baz", exc.getResponse().getBodyAsStringDecoded());
     }
 
+    @ParameterizedTest
+    @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
+    void returnObjectInResponseFlowWithoutResponse(Class<LanguageSupport> engine) throws Exception {
+        initInterceptor("({id:7})", engine);
+        assertEquals(CONTINUE, interceptor.handleResponse(exc));
+        assertEquals(200, exc.getResponse().getStatusCode());
+        assertTrue(exc.getResponse().isJSON());
+        assertEquals(7, om.readValue(exc.getResponse().getBodyAsStringDecoded(), Map.class).get("id"));
+    }
+
     @SafeVarargs
     private Outcome executeScript(String src, Class<LanguageSupport>... engine) {
         initInterceptor(src, engine);

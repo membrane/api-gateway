@@ -103,6 +103,10 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
             return ABORT;
         }
 
+        if (res == null) {
+            return CONTINUE;
+        }
+
         if (res instanceof Outcome outcome) {
             return outcome;
         }
@@ -148,13 +152,10 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
             return CONTINUE;
         }
 
-        if (res == null) {
-            return CONTINUE;
-        }
-
         // Test for package name is needed cause the dependency is provided and maybe not on the classpath
         if (res.getClass().getPackageName().startsWith("org.graalvm.polyglot") && res instanceof Value value) {
             Map m = value.as(Map.class);
+            msg = createResponseAndToExchangeIfThereIsNone(exc, flow, msg);
             msg.getHeader().setContentType(APPLICATION_JSON);
             try {
                 msg.setBodyContent(om.writeValueAsBytes(m));
