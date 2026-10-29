@@ -24,7 +24,7 @@ class GroovyAddTimestampTutorialTest extends AbstractScriptingTutorialTest {
 
     @Override
     protected String getTutorialYaml() {
-        return "17-Groovy-Add-Timestamp.yaml";
+        return "30-Groovy-Add-Timestamp.yaml";
     }
 
     @Test

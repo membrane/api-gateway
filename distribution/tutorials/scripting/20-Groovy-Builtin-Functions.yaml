@@ -9,15 +9,15 @@
 # 1.) Start Membrane:
 #     with Docker:
 #       Linux/Mac:
-#         ./run-docker.sh -c 15-Groovy-Builtin-Functions.yaml
+#         ./run-docker.sh -c 20-Groovy-Builtin-Functions.yaml
 #       Windows:
-#         run-docker.cmd -c 15-Groovy-Builtin-Functions.yaml
+#         run-docker.cmd -c 20-Groovy-Builtin-Functions.yaml
 #
 #     or with Java:
 #       Linux/Mac:
-#         ./membrane.sh -c 15-Groovy-Builtin-Functions.yaml
+#         ./membrane.sh -c 20-Groovy-Builtin-Functions.yaml
 #       Windows:
-#         membrane.cmd -c 15-Groovy-Builtin-Functions.yaml
+#         membrane.cmd -c 20-Groovy-Builtin-Functions.yaml
 #
 # 2.) Send a JSON document:
 #     curl -d "{\"shop\":\"Tea & More\",\"teas\":[{\"name\":\"Earl Grey\"},{\"name\":\"Assam\"}]}" -H "Content-Type: application/json" localhost:2000

@@ -25,7 +25,7 @@ class GroovyBuiltinFunctionsTutorialTest extends AbstractScriptingTutorialTest {
 
     @Override
     protected String getTutorialYaml() {
-        return "15-Groovy-Builtin-Functions.yaml";
+        return "20-Groovy-Builtin-Functions.yaml";
     }
 
     @Test

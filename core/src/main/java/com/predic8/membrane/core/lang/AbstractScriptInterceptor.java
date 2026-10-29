@@ -91,6 +91,11 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
 
     protected abstract void initInternal();
 
+    /**
+     * @return the logger exposed to scripts as <code>log</code>
+     */
+    protected abstract Logger getScriptLogger();
+
     @SuppressWarnings("rawtypes")
     protected Outcome runScript(Exchange exc, Flow flow) {
 
@@ -204,6 +209,7 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
     private Map<String, Object> getParameterBindings(Exchange exc, Flow flow, Message msg) {
         var binding = createParameterBindings(this, exc, flow, scriptAccessesJson && msg.isJSON(), TEXT_SERIALIZATION);
         addOutcomeObjects(binding);
+        binding.put("log", getScriptLogger());
         return binding;
     }
 

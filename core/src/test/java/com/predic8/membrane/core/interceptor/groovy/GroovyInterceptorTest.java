@@ -17,6 +17,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.router.DummyTestRouter;
+import com.predic8.membrane.test.TestAppender;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.Logger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.ApplicationContext;
@@ -237,5 +240,27 @@ public class GroovyInterceptorTest {
 
 		assertEquals(CONTINUE, i.handleRequest(exc));
 		assertEquals("YWJj", exc.getRequest().getHeader().getFirstValue("X-Encoded"));
+	}
+
+	@Test
+	void logToGroovyLogger() throws Exception {
+		var logger = (Logger) LogManager.getLogger("com.predic8.membrane.groovy");
+		var appender = new TestAppender("groovy-script");
+		appender.start();
+		logger.addAppender(appender);
+		try {
+			GroovyInterceptor i = new GroovyInterceptor() {{
+				src = """
+					log.info "Running in the ${flow} flow"
+					CONTINUE""";
+			}};
+			i.init(router);
+
+			assertEquals(CONTINUE, i.handleRequest(exc));
+			assertTrue(appender.contains("Running in the REQUEST flow"));
+		} finally {
+			logger.removeAppender(appender);
+			appender.stop();
+		}
 	}
 }

@@ -23,7 +23,7 @@ public class GroovyResponseBuilderTutorialTest extends AbstractScriptingTutorial
 
     @Override
     protected String getTutorialYaml() {
-        return "20-Groovy-Response-Builder.yaml";
+        return "40-Groovy-Response-Builder.yaml";
     }
 
     @Test
@@ -35,6 +35,7 @@ public class GroovyResponseBuilderTutorialTest extends AbstractScriptingTutorial
         .then()
             .statusCode(200)
             .contentType("application/json")
+            .header("X-Country", "DE")
             .body("iban", equalTo("DE89370400440532013000"))
             .body("valid", equalTo(true));
         // @formatter:on
@@ -49,6 +50,7 @@ public class GroovyResponseBuilderTutorialTest extends AbstractScriptingTutorial
         .then()
             .statusCode(400)
             .contentType("application/json")
+            .header("X-Country", "DE")
             .body("iban", equalTo("DE89370400440532013001"))
             .body("valid", equalTo(false));
         // @formatter:on

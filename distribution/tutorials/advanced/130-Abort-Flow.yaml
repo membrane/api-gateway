@@ -1,0 +1,38 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.8.0.json
+#
+# Tutorial: Abort Flow
+#
+# When an interceptor rejects a request, Membrane aborts the flow and reverses the flow
+# of control back in direction of the client.
+#
+# 1.) Start Membrane:
+#     Linux/Mac:
+#       ./membrane.sh -c 130-Abort-Flow.yaml
+#     Windows:
+#       membrane.cmd -c 130-Abort-Flow.yaml
+#
+# 2.) Send valid JSON:
+#     curl -d "{\"a\":1}" -H "Content-Type: application/json" localhost:2000
+#
+# 3.) Send invalid JSON:
+#     curl -i -d "{\"a\":}" -H "Content-Type: application/json" localhost:2000
+
+api:
+  port: 2000
+  flow:
+    # Handle errors in an abort block
+    - abort:
+        - static:
+            src: "Error!"
+    # An aborted flow does not enter response blocks.
+    - response:
+        - log:
+            message: "Status: ${statusCode}"
+    # Invalid JSON causes the protection to abort the flow
+    - jsonProtection: {}
+    - return:
+        status: 200
+
+# See also:
+#  - ../security/30-JSON-Protection.yaml for the limits of jsonProtection
+#  - ../scripting/90-Groovy-Abort.yaml for handling errors with Groovy

@@ -11,7 +11,8 @@ instructions in the file.
 
 For examples of transforming messages with Groovy and JavaScript, see the
 [transformation](../transformation) tutorials. For reading, manipulating and generating XML with
-Groovy, see the [XML](../xml) tutorials.
+Groovy, see the [XML](../xml) tutorials. For reading, modifying and checking JSON with Groovy, see the
+[JSON](../json) tutorials.
 
 Reference:
 

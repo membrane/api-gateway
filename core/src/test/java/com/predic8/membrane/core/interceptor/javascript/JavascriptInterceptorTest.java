@@ -25,6 +25,9 @@ import com.predic8.membrane.core.lang.LanguageSupport;
 import com.predic8.membrane.core.lang.javascript.GraalVMJavascriptSupport;
 import com.predic8.membrane.core.lang.javascript.RhinoJavascriptLanguageSupport;
 import com.predic8.membrane.core.router.DefaultRouter;
+import com.predic8.membrane.test.TestAppender;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.Logger;
 import org.graalvm.polyglot.Context;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -237,6 +240,22 @@ public class JavascriptInterceptorTest {
         assertEquals("Bonn", exc.getRequest().getHeader().getFirstValue("city"));
     }
 
+
+    @ParameterizedTest
+    @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
+    void logToJavascriptLogger(Class<LanguageSupport> engine) {
+        final var logger = (Logger) LogManager.getLogger("com.predic8.membrane.javascript");
+        final var appender = new TestAppender("javascript-script");
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            assertEquals(CONTINUE, executeScript("log.info('Hello from ' + flow); CONTINUE", engine));
+            assertTrue(appender.contains("Hello from REQUEST"));
+        } finally {
+            logger.removeAppender(appender);
+            appender.stop();
+        }
+    }
 
     @SafeVarargs
     private Outcome executeScript(String src, Class<LanguageSupport>... engine) {

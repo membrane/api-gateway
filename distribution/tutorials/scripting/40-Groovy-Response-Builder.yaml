@@ -11,20 +11,21 @@
 # 1.) Start Membrane:
 #     with Docker:
 #       Linux/Mac:
-#         ./run-docker.sh -c 20-Groovy-Response-Builder.yaml
+#         ./run-docker.sh -c 40-Groovy-Response-Builder.yaml
 #       Windows:
-#         run-docker.cmd -c 20-Groovy-Response-Builder.yaml
+#         run-docker.cmd -c 40-Groovy-Response-Builder.yaml
 #
 #     or with Java:
 #       Linux/Mac:
-#         ./membrane.sh -c 20-Groovy-Response-Builder.yaml
+#         ./membrane.sh -c 40-Groovy-Response-Builder.yaml
 #       Windows:
-#         membrane.cmd -c 20-Groovy-Response-Builder.yaml
+#         membrane.cmd -c 40-Groovy-Response-Builder.yaml
 #
 # 2.) Check a valid IBAN:
 #     curl -i "localhost:2000?iban=DE89370400440532013000"
 #
 #     HTTP/1.1 200 OK
+#     X-Country: DE
 #
 #     {"iban":"DE89370400440532013000","valid":true}
 #
@@ -32,6 +33,7 @@
 #     curl -i "localhost:2000?iban=DE89370400440532013001"
 #
 #     HTTP/1.1 400 Bad Request
+#     X-Country: DE
 #
 #     {"iban":"DE89370400440532013001","valid":false}
 
@@ -52,6 +54,7 @@ api:
 
               Response.statusCode(valid ? 200 : 400)
                 .contentType('application/json')
+                .header('X-Country', iban.take(2))
                 .body(JsonOutput.toJson([iban: iban, valid: valid]))
                 .build()
 

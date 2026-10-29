@@ -24,7 +24,7 @@ class JavaScriptAddTimestampTutorialTest extends AbstractScriptingTutorialTest {
 
     @Override
     protected String getTutorialYaml() {
-        return "75-JavaScript-Add-Timestamp.yaml";
+        return "80-JavaScript-Add-Timestamp.yaml";
     }
 
     @Test

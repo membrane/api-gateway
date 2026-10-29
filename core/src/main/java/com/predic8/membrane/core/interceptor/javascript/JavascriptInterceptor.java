@@ -28,6 +28,7 @@ import static org.apache.commons.text.StringEscapeUtils.escapeHtml4;
 /**
  * @description Executes a Javascript. The script can access and manipulate data from the request and response.
  * Use this or the Groovy plugin to extend the functions of Membrane by scripting. A returned object or array is serialized to a JSON body.
+ * The variable <code>log</code> is an SLF4J logger named <code>com.predic8.membrane.javascript</code>.
  * See the tutorials in tutorials/scripting.
  * @yaml <pre><code>
  * api:
@@ -51,6 +52,8 @@ public class JavascriptInterceptor extends AbstractScriptInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(JavascriptInterceptor.class);
 
+    private static final Logger scriptLog = LoggerFactory.getLogger("com.predic8.membrane.javascript");
+
     protected LanguageAdapter adapter;
 
     public JavascriptInterceptor() {
@@ -66,6 +69,11 @@ public class JavascriptInterceptor extends AbstractScriptInterceptor {
         } catch (Exception e) {
             throw new ConfigurationException("Could not compile: \n" + src,e);
         }
+    }
+
+    @Override
+    protected Logger getScriptLogger() {
+        return scriptLog;
     }
 
     @Override

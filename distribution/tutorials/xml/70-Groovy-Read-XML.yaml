@@ -23,6 +23,8 @@
 #     curl -d @books.xml -H "Content-Type: application/xml" localhost:2000
 #
 #     [ "Clean Code", "Patterns of Enterprise Application Architecture", "The Art of Unix Programming", "Site Reliability Engineering", "The Phoenix Project" ]
+#
+# 3.) Check the console for the results of the other queries.
 
 api:
   port: 2000
@@ -31,6 +33,20 @@ api:
         - groovy:
             src: |
               def books = new groovy.xml.XmlSlurper().parse(message.getBodyAsStreamDecoded())
+
+              log.info "Number of books: ${books.book.size()}"
+              log.info "First title: ${books.book[0].title}"
+              log.info "Id of the third book: ${books.book[2].@id}"
+
+              def book5 = books.book.find { it.@id == '5' }
+              log.info "Title of book 5: ${book5.title}"
+              log.info "Authors of book 5: ${book5.author*.text()}"
+
+              log.info "Categories: ${books.book.category*.text().unique()}"
+              log.info "Oldest book: ${books.book.year*.toInteger().min()}"
+
+              // ** searches the whole document
+              log.info "Authors in the document: ${books.'**'.findAll { it.name() == 'author' }.size()}"
 
               // A returned list becomes the new JSON body.
               books.book.findAll { it.year.toInteger() > 2000 }.collect { it.title.text() }

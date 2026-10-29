@@ -14,14 +14,18 @@
 
 package com.predic8.membrane.tutorials.xml;
 
+import com.predic8.membrane.examples.util.ConsoleWatcher;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
 
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static io.restassured.http.ContentType.XML;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.hamcrest.Matchers.contains;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class GroovyReadXmlTutorialTest extends AbstractXmlTutorialTest {
     @Override
@@ -47,5 +51,36 @@ class GroovyReadXmlTutorialTest extends AbstractXmlTutorialTest {
                 "Site Reliability Engineering",
                 "The Phoenix Project"));
         // @formatter:on
+    }
+
+    @Test
+    void logsQueryResults() throws IOException, InterruptedException {
+        final var bookCountLogged = new CountDownLatch(1);
+        final var authorsLogged = new CountDownLatch(1);
+        final ConsoleWatcher watcher = (error, line) -> {
+            if (line.contains("Number of books: 10"))
+                bookCountLogged.countDown();
+            if (line.contains("Authors of book 5: [Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides]"))
+                authorsLogged.countDown();
+        };
+
+        process.addConsoleWatcher(watcher);
+        try {
+            // @formatter:off
+            given()
+                .body(readFileFromBaseDir("books.xml"))
+                .contentType(XML)
+            .when()
+                .post("http://localhost:2000")
+            .then()
+                .statusCode(200);
+            // @formatter:on
+
+            // Console output is relayed asynchronously and can arrive after the response.
+            assertTrue(bookCountLogged.await(5, SECONDS));
+            assertTrue(authorsLogged.await(5, SECONDS));
+        } finally {
+            process.removeConsoleWatcher(watcher);
+        }
     }
 }
