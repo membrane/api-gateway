@@ -377,6 +377,20 @@ public class JavascriptInterceptorTest {
         assertEquals("{\"id\":7,\"added\":{\"value\":[7]}}", exc.getRequest().getBodyAsStringDecoded());
     }
 
+    @Test
+    void returnJavaSetAndArrayContainingObjects() {
+        exc.getRequest().setBodyContent("{\"id\":7}".getBytes());
+        exc.getRequest().getHeader().setContentType(APPLICATION_JSON);
+
+        assertEquals(CONTINUE, executeScript("""
+                var set = new java.util.HashSet();
+                set.add({v: 1});
+                json.put('set', set);
+                json.put('array', Java.to([{v: 2}], 'java.lang.Object[]'));
+                json;"""));
+        assertEquals("{\"id\":7,\"set\":[{\"v\":1}],\"array\":[{\"v\":2}]}", exc.getRequest().getBodyAsStringDecoded());
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {
             "var r = {}; r.self = r; r;",

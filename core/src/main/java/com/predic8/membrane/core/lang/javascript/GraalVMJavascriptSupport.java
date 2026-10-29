@@ -112,7 +112,8 @@ public class GraalVMJavascriptSupport implements LanguageSupport {
         }
 
         /**
-         * Java maps and lists can contain Javascript objects, e.g. json.put('a', {b: 1}), so they are copied.
+         * Java maps, collections and arrays can contain Javascript objects, e.g. json.put('a', {b: 1}), so they are
+         * copied. Collections and arrays become lists.
          */
         private static Object hostToJava(Value value, Set<Value> ancestors) {
             final var object = value.asHostObject();
@@ -123,14 +124,19 @@ public class GraalVMJavascriptSupport implements LanguageSupport {
                 ancestors.remove(value);
                 return copy;
             }
-            if (object instanceof List<?> list) {
-                enter(value, ancestors);
-                final var copy = new ArrayList<>();
-                list.forEach(element -> copy.add(elementToJava(value.getContext(), element, ancestors)));
-                ancestors.remove(value);
-                return copy;
-            }
+            if (object instanceof Collection<?> collection)
+                return copyToList(value, collection, ancestors);
+            if (object instanceof Object[] array)
+                return copyToList(value, Arrays.asList(array), ancestors);
             return object;
+        }
+
+        private static List<Object> copyToList(Value value, Collection<?> elements, Set<Value> ancestors) {
+            enter(value, ancestors);
+            final var copy = new ArrayList<>();
+            elements.forEach(element -> copy.add(elementToJava(value.getContext(), element, ancestors)));
+            ancestors.remove(value);
+            return copy;
         }
 
         private static Object elementToJava(Context context, Object element, Set<Value> ancestors) {
