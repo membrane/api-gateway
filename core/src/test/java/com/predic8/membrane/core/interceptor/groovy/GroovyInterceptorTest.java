@@ -24,6 +24,7 @@ import java.util.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Response.ok;
+import static com.predic8.membrane.core.interceptor.FlowController.ABORTION_REASON;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -220,5 +221,18 @@ public class GroovyInterceptorTest {
 
 		assertEquals(CONTINUE, i.handleRequest(exc));
 		assertEquals("YWJj", exc.getRequest().getHeader().getFirstValue("X-Encoded"));
+	}
+
+	@Test
+	void exceptionInScriptIsAbortionReason() throws Exception {
+		GroovyInterceptor i = new GroovyInterceptor() {{
+			src = "throw new RuntimeException('Something went wrong')";
+		}};
+		i.init(router);
+
+		assertEquals(ABORT, i.handleRequest(exc));
+		assertEquals(500, exc.getResponse().getStatusCode());
+		var reason = assertInstanceOf(RuntimeException.class, exc.getProperty(ABORTION_REASON));
+		assertEquals("Something went wrong", reason.getMessage());
 	}
 }

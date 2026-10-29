@@ -89,4 +89,28 @@ public class ScriptingGroovyTutorialTest extends AbstractAdvancedTutorialTest {
         // @formatter:on
     }
 
+    @Test
+    void abortFlowPrintsAbortionReason() throws InterruptedException {
+        var abortionReasonLogged = new CountDownLatch(1);
+        ConsoleWatcher watcher = (error, line) -> {
+            if (line.contains("Aborted: Something went wrong"))
+                abortionReasonLogged.countDown();
+        };
+
+        process.addConsoleWatcher(watcher);
+        try {
+            // @formatter:off
+            given()
+            .when()
+                .get("http://localhost:2000/error")
+            .then()
+                .statusCode(500);
+            // @formatter:on
+
+            assertTrue(abortionReasonLogged.await(5, TimeUnit.SECONDS));
+        } finally {
+            process.removeConsoleWatcher(watcher);
+        }
+    }
+
 }

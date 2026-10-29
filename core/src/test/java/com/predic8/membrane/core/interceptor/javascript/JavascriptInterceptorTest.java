@@ -89,6 +89,7 @@ public class JavascriptInterceptorTest {
         Outcome outcome= executeScript("adsfasf;", engine);
         assertEquals(ABORT, outcome);
         assertEquals(500, exc.getResponse().getStatusCode());
+        assertInstanceOf(Exception.class, exc.getProperty(FlowController.ABORTION_REASON));
         ProblemDetails pd = parse(exc.getResponse());
         assertEquals(500, pd.getStatus());
         System.out.println("pd = " + pd);
