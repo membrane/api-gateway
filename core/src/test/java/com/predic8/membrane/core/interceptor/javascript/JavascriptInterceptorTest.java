@@ -246,7 +246,7 @@ public class JavascriptInterceptorTest {
                """, engine);
 
         Map<String,Object> m = om.readValue(exc.getRequest().getBodyAsStringDecoded(),Map.class);
-        assertEquals(7, ((Number) m.get("id")).intValue());
+        assertEquals(7.0, ((Number) m.get("id")).doubleValue());
         assertEquals("Roller", m.get("name"));
         assertEquals("äöüÄÖÜ", m.get("desc"));
     }
