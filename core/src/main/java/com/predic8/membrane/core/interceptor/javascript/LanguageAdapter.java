@@ -70,24 +70,15 @@ public abstract  class LanguageAdapter {
             // Ignore
         }
         throw new ConfigurationException("""
-            Fatal Error: No Javascript Engine!
-            
-            Membrane is configured to use Javascript, maybe in the proxies.xml file.
-            The needed Javascript engine is not shipped with Membrane to spare size
-            and to avoid security risks. However you can easiliy install an engine.
-            
-            We recommend to install the GraalVM Javascript Engine:
-            
-            1.) Download:
-            
-            https://repo1.maven.org/maven2/org/graalvm/js/js-scriptengine/22.3.0/js-scriptengine-22.3.0-javadoc.jar
-            
-            2.) Drop the JAR-file into MEMBRANE_HOME/libs
-            3.) Start Membrane.
-            
-            But you can also use the old Rhino Engine:
-            
-            https://repo1.maven.org/maven2/org/mozilla/rhino/""");
+            No Javascript engine found.
+
+            The javascript plugin needs Rhino or the GraalVM Javascript engine. Rhino is
+            part of the Membrane distribution (lib/rhino-*.jar). It may have been removed
+            or, when Membrane is embedded, excluded from the dependencies.
+
+            To use the GraalVM Javascript engine instead, see:
+
+            https://membrane-api.io/plugins/javascript.html""");
     }
 
     public Function<Map<String, Object>, Object> compileScript(String script) {
