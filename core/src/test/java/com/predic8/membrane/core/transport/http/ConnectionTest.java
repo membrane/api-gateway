@@ -32,6 +32,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -42,6 +43,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 public class ConnectionTest {
 
@@ -83,14 +85,15 @@ public class ConnectionTest {
 	 * A timeout while connecting has to be distinguishable from one while reading the response, because
 	 * only the former guarantees that nothing was sent. The JDK reports both as SocketTimeoutException.
 	 * A listening socket whose accept queue is full drops further SYNs, which is what makes the connect
-	 * time out here.
+	 * time out here. Windows refuses them instead, so the test is skipped there.
 	 */
 	@Test
 	void connectTimeoutSurfacesAsConnectTimeoutException() throws Exception {
 		List<Socket> queued = new ArrayList<>();
 		try (ServerSocket neverAccepting = new ServerSocket(0, 1)) {
 			int port = neverAccepting.getLocalPort();
-			fillAcceptQueue(port, queued);
+			assumeTrue(fillAcceptQueue(port, queued),
+					"The OS refuses connections to a full accept queue instead of dropping them, so a connect timeout cannot be provoked.");
 
 			assertThrows(ConnectTimeoutException.class,
 					() -> Connection.open("127.0.0.1", port, null, null, 200));
@@ -103,8 +106,10 @@ public class ConnectionTest {
 	/**
 	 * Connects until the accept queue of the never-accepting socket is full, from which point on the
 	 * kernel drops further SYNs rather than queueing them.
+	 *
+	 * @return false if the kernel refuses further connections instead of dropping their SYNs
 	 */
-	private static void fillAcceptQueue(int port, List<Socket> queued) throws IOException {
+	private static boolean fillAcceptQueue(int port, List<Socket> queued) throws IOException {
 		for (int i = 0; i < 10; i++) {
 			Socket s = new Socket();
 			try {
@@ -112,9 +117,13 @@ public class ConnectionTest {
 				queued.add(s);
 			} catch (SocketTimeoutException e) {
 				s.close();
-				return;
+				return true;
+			} catch (ConnectException e) {
+				s.close();
+				return false;
 			}
 		}
+		return true;
 	}
 
 	/**
