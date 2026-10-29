@@ -28,11 +28,21 @@
 
 ## Publishing to Maven Central
 
+Workflow should start automatically. Check if the release is available on Maven Central: https://central.sonatype.com/artifact/org.membrane-soa/membrane-api-gateway
+
+Otherwise:
+
 1. Run Action "Publish package to the Maven Central Repository" / Use Workflow from Tag: v7.8.0 / Release to v7.8.0
 2. Run Workflow
-3. Check if the release is available on Maven Central: https://central.sonatype.com/artifact/org.membrane-soa/membrane-api-gateway
 
 ## Publishing the Docker Image
+
+Workflow should start automatically. Check if the new version is tagged as latest: 
+
+docker run -it predic8/membrane 
+=> Membrane API Gateway 7.8.0 up and running!
+
+Otherwise:
 
 1. "Build Docker Image" action should be started automatically
 2. check that the image is at docker hub: https://hub.docker.com/r/predic8/membrane/tags
@@ -40,15 +50,13 @@
 4. Use Workflow from Tag: v7.8.0
 5. Existing tag to promote to latest: 7.8.0
 6. Run workflow
-7. Check if the new version is tagged as latest: docker run -it predic8/membrane
-   => Membrane API Gateway 7.8.0 up and running!
-
 
 ## Publishing the JSON Schema for YAML
 
+Workflow should start automatically. Try to download: https://www.membrane-api.io/v7.8.0.json
+
 1. Look at gitlab membrane-api.io project. Is the file src/v7.8.0.json checked in?
 2. Check if Job starts. Otherwise: gitlab: membrane-api.io / Pipelines / New Pipeline / New Pipeline
-3. Try to download: https://www.membrane-api.io/v7.8.0.json
 
 ## Check Version
 
