@@ -155,7 +155,7 @@ public class ConnectionManager {
 			return;
 		}
 
-		ConnectionKey key = createKey(connection.getHost(), connection.socket.getPort(),
+		ConnectionKey key = createKey(connection.getHost(), connection.getPort(),
 				connection.getSslProvider(), connection.getSniServerName(), connection.getProxyConfiguration(),
 				connection.getProxySSLProvider());
 		OldConnection o = new OldConnection(connection, keepAliveTimeout);

@@ -63,6 +63,7 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 
 	public final ConnectionManager mgr;
 	public final String host;
+	private final int port; // the target port, which differs from socket.getPort() if a proxy is used
 	private final SSLProvider sslProvider;
     private final String sniServerName;
 	private final ProxyConfiguration proxyConfiguration;
@@ -91,7 +92,7 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 	public static Connection open(String host, int port, String localHost, SSLProvider sslProvider, ConnectionManager mgr,
 								  int connectTimeout, @Nullable String sniServername, @Nullable ProxyConfiguration proxy,
 								  @Nullable SSLProvider proxySSLProvider, @Nullable String[] applicationProtocols) throws IOException {
-		Connection con = new Connection(mgr, host, sslProvider, sniServername, proxy, proxySSLProvider);
+		Connection con = new Connection(mgr, host, port, sslProvider, sniServername, proxy, proxySSLProvider);
 
 		String origHost = host;
 		int origPort = port;
@@ -179,9 +180,10 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 		return open(host, port, localHost, sslProvider, mgr, connectTimeout, null, null, null, null);
 	}
 
-	private Connection(ConnectionManager mgr, String host, @Nullable SSLProvider sslProvider, @Nullable String sniServerName, @Nullable ProxyConfiguration proxy, SSLProvider proxySSLProvider) {
+	private Connection(ConnectionManager mgr, String host, int port, @Nullable SSLProvider sslProvider, @Nullable String sniServerName, @Nullable ProxyConfiguration proxy, SSLProvider proxySSLProvider) {
 		this.mgr = mgr;
 		this.host = host;
+		this.port = port;
 		this.sslProvider = sslProvider;
         this.sniServerName = sniServerName;
 		this.proxyConfiguration = proxy;
@@ -354,6 +356,10 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 
 	public String getHost() {
 		return host;
+	}
+
+	public int getPort() {
+		return port;
 	}
 
 	void setKeepAttachedToExchange(boolean keepAttachedToExchange) {
