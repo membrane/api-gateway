@@ -18,12 +18,12 @@
 #       Windows:
 #         membrane.cmd -c 10-Rewrite-and-Redirect.yaml
 #
-# 2.) Rewrite a path. The backend receives /shop/v2/products/1:
-#       curl localhost:2000/store/products/1
+# 2.) Rewrite a path. The backend receives /shop/v2/products/13:
+#       curl localhost:2000/store/products/13
 #
 #       {
-#         "id" : 1,
-#         "name" : "Banana",
+#         "id" : 13,
+#         "name" : "Papaya",
 #         ...
 #
 # 3.) Rewrite the query string. The backend receives /shop/v2/products?limit=1:
@@ -37,10 +37,10 @@
 #           ...
 #
 # 4.) Redirect permanently:
-#       curl -i localhost:2000/v1/products/1
+#       curl -i localhost:2000/v1/products/13
 #
 #       HTTP/1.1 301 Moved Permanently
-#       Location: /store/products/1
+#       Location: /store/products/13
 #       ...
 #
 #     Add -L to follow the redirect.
