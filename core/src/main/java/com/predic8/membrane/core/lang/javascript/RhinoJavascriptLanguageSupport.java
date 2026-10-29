@@ -14,7 +14,6 @@
 package com.predic8.membrane.core.lang.javascript;
 
 import com.predic8.membrane.core.lang.LanguageSupport;
-import com.predic8.membrane.core.lang.ScriptExecutorPool;
 import org.mozilla.javascript.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,51 +46,43 @@ public class RhinoJavascriptLanguageSupport implements LanguageSupport {
             super.onContextCreated(cx);
             cx.setLanguageVersion(Context.VERSION_ES6);
             cx.setGeneratingDebug(true);
+            // The script is compiled for every execution. The interpreter compiles fast, while the compiled mode
+            // generates and loads several classes for every compilation.
+            cx.setInterpretedMode(true);
         }
     };
 
-    private abstract static class JavascriptScriptExecutorPool<R> extends ScriptExecutorPool<Script,R>{
-        private final String javascriptCode;
-
-        private JavascriptScriptExecutorPool(String expression) {
-            this.javascriptCode = expression;
-            init();
+    @Override
+    public Function<Map<String, Object>, Object> compileScript(ClassLoader classLoader, String script) {
+        // Compiled once in advance, so that a syntax error is reported at startup
+        try (var cx = contextFactory.enterContext()) {
+            compile(cx, script);
         }
+        return parameters -> execute(script, parameters);
+    }
 
-        @Override
-        protected Object invoke(Script script, Map<String, Object> parameters) {
-            try (var cx = contextFactory.enterContext()) {
-                // Fresh standard objects per execution: a previous exchange must not leave values behind,
-                // neither in variables nor on built-in objects like Object.prototype
-                final var scope = cx.initStandardObjects();
-                parameters.forEach((name, value) -> ScriptableObject.putProperty(scope, name, Context.javaToJS(value, scope)));
-                return Context.jsToJava(script.exec(cx, scope, scope), Object.class);
-            } catch (RhinoException re) {
-                final var e = new ScriptException(re.getMessage(), re.sourceName(), re.lineNumber(), re.columnNumber());
-                log.error("Error compiling script: {}", e.getMessage());
-                // Rhino counts the lines from 0
-                log.error("Error in Line: {}", getLineFromMultilineString(javascriptCode, e.getLineNumber() + 1));
-                log.error("Script:\n{}", javascriptCode);
-                throw new RuntimeException("Error compiling script:", e);
-            }
-        }
-
-        @Override
-        protected Script createOneScript() {
-            try (var cx = contextFactory.enterContext()) {
-                // Lines are counted from 0 as by the JSR 223 engine, RhinoJavascriptLanguageAdapter relies on it
-                return cx.compileString(javascriptCode, "eval", 0, null);
-            }
+    private static Object execute(String javascriptCode, Map<String, Object> parameters) {
+        try (var cx = contextFactory.enterContext()) {
+            // A compiled script is not reused: it keeps objects created by an execution, such as the strings array
+            // of a tagged template, together with the standard objects of that execution
+            final var script = compile(cx, javascriptCode);
+            // Fresh standard objects per execution: a previous exchange must not leave values behind,
+            // neither in variables nor on built-in objects like Object.prototype
+            final var scope = cx.initStandardObjects();
+            parameters.forEach((name, value) -> ScriptableObject.putProperty(scope, name, Context.javaToJS(value, scope)));
+            return Context.jsToJava(script.exec(cx, scope, scope), Object.class);
+        } catch (RhinoException re) {
+            final var e = new ScriptException(re.getMessage(), re.sourceName(), re.lineNumber(), re.columnNumber());
+            log.error("Error compiling script: {}", e.getMessage());
+            // Rhino counts the lines from 0
+            log.error("Error in Line: {}", getLineFromMultilineString(javascriptCode, e.getLineNumber() + 1));
+            log.error("Script:\n{}", javascriptCode);
+            throw new RuntimeException("Error compiling script:", e);
         }
     }
 
-    @Override
-    public Function<Map<String, Object>, Object> compileScript(ClassLoader classLoader, String script) {
-        return new JavascriptScriptExecutorPool<>(script) {
-            @Override
-            public Object apply(Map<String, Object> parameters) {
-                return this.execute(parameters);
-            }
-        };
+    private static Script compile(Context cx, String javascriptCode) {
+        // Lines are counted from 0 as by the JSR 223 engine, RhinoJavascriptLanguageAdapter relies on it
+        return cx.compileString(javascriptCode, "eval", 0, null);
     }
 }

@@ -198,7 +198,9 @@ public class JavascriptInterceptorTest {
         executeScript("""
                 Response.ok().body({"foo": 7}).build();
                 """, engine);
-        assertEquals("{\"foo\":7}", exc.getResponse().getBodyAsStringDecoded());
+        // The Rhino interpreter passes every number as a Double
+        final var expected = engine.equals(RhinoJavascriptLanguageSupport.class) ? "{\"foo\":7.0}" : "{\"foo\":7}";
+        assertEquals(expected, exc.getResponse().getBodyAsStringDecoded());
     }
 
 
@@ -212,7 +214,7 @@ public class JavascriptInterceptorTest {
                """, engine);
 
         Map<String,Object> m = om.readValue(exc.getRequest().getBodyAsStringDecoded(),Map.class);
-        assertEquals(7, m.get("id"));
+        assertEquals(7, ((Number) m.get("id")).intValue());
         assertEquals("Roller", m.get("name"));
         assertEquals("äöüÄÖÜ", m.get("desc"));
     }
@@ -294,6 +296,25 @@ public class JavascriptInterceptorTest {
             exchange.setRequest(new Request.Builder().body("foo").build());
             interceptor.handleRequest(exchange);
             assertEquals("undefined", exchange.getRequest().getHeader().getFirstValue("leak"));
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
+    void taggedTemplateOfPreviousRequestDoesNotLeak(Class<LanguageSupport> engine) {
+        // Rhino caches the strings array of a tagged template in the compiled script, with the Array.prototype of
+        // the execution that created it
+        initInterceptor("""
+                Array.prototype.requestId = function() { return header.get('id'); };
+                function tag(strings) { return strings.requestId(); }
+                header.put('seen', tag`x`);
+                """, engine);
+
+        for (int i = 0; i < 4 * Runtime.getRuntime().availableProcessors(); i++) {
+            final var exchange = new Exchange(null);
+            exchange.setRequest(new Request.Builder().header("id", "id-" + i).body("foo").build());
+            interceptor.handleRequest(exchange);
+            assertEquals("id-" + i, exchange.getRequest().getHeader().getFirstValue("seen"));
         }
     }
 
