@@ -120,7 +120,7 @@ public class GraalVMJavascriptSupport implements LanguageSupport {
             if (object instanceof Map<?, ?> map) {
                 enter(value, ancestors);
                 final var copy = new LinkedHashMap<>();
-                map.forEach((key, element) -> copy.put(key, elementToJava(value.getContext(), element, ancestors)));
+                map.forEach((key, element) -> copy.put(elementToJava(value.getContext(), key, ancestors), elementToJava(value.getContext(), element, ancestors)));
                 ancestors.remove(value);
                 return copy;
             }

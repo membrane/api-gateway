@@ -460,6 +460,21 @@ public class JavascriptInterceptorTest {
         assertEquals("{\"id\":7,\"set\":[{\"v\":1}],\"array\":[{\"v\":2}]}", exc.getRequest().getBodyAsStringDecoded());
     }
 
+    @Test
+    void returnJavaMapWithObjectKey() throws Exception {
+        exc.getRequest().setBodyContent("{\"id\":7}".getBytes());
+        exc.getRequest().getHeader().setContentType(APPLICATION_JSON);
+
+        assertEquals(CONTINUE, executeScript("""
+                var map = new java.util.HashMap();
+                map.put({k: 1}, 'v');
+                json.put('map', map);
+                json;"""));
+        // A non-string map key is serialized via toString(), which fails once the context is closed
+        final var map = om.readTree(exc.getRequest().getBodyAsStringDecoded()).get("map");
+        assertEquals(Map.of(Map.of("k", 1).toString(), "v"), om.convertValue(map, Map.class));
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {
             "var r = {}; r.self = r; r;",
