@@ -78,13 +78,26 @@ public class DynamicRegistration {
             throw new RuntimeException("Registration interceptorchain (request) had a problem");
 
         client.call(exc);
+
+        if (router.getFlowController().invokeResponseHandlers(exc, interceptors) != CONTINUE) {
+            discardBody(exc.getResponse());
+            throw new RuntimeException("Registration interceptorchain (response) had a problem");
+        }
+
         Response response = exc.getResponse();
-
-        router.getFlowController().invokeResponseHandlers(exc, interceptors);
-
-        if (response.getStatusCode() < 200 || response.getStatusCode() > 201)
+        if (response.getStatusCode() < 200 || response.getStatusCode() > 201) {
+            discardBody(response);
             throw new RuntimeException("Registration endpoint didn't return successful: " + response.getStatusMessage());
+        }
         return response;
+    }
+
+    /**
+     * Reads the body nobody else will read, so that the connection is released back into the pool.
+     */
+    private static void discardBody(Response response) {
+        if (response != null)
+            response.discardBody();
     }
 
     private String getRegistrationBody(List<String> callbackUris) throws IOException {
