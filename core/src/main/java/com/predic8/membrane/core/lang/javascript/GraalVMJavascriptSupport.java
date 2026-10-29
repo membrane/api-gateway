@@ -71,8 +71,8 @@ public class GraalVMJavascriptSupport implements LanguageSupport {
             } catch (ScriptResultException e) {
                 throw e;
             } catch (Exception e) {
-                log.error("Error compiling script:", e);
-                throw new RuntimeException("Error compiling script:", e);
+                log.error("Error executing script:", e);
+                throw new RuntimeException("Error executing script:", e);
             }
         }
 

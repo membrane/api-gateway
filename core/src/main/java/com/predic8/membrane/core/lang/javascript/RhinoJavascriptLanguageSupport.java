@@ -79,11 +79,11 @@ public class RhinoJavascriptLanguageSupport implements LanguageSupport {
             return Context.jsToJava(script.exec(cx, scope, scope), Object.class);
         } catch (RhinoException re) {
             final var e = new ScriptException(re.getMessage(), re.sourceName(), re.lineNumber(), re.columnNumber());
-            log.error("Error compiling script: {}", e.getMessage());
+            log.error("Error executing script: {}", e.getMessage());
             // Rhino counts the lines from 0
             log.error("Error in Line: {}", getLineFromMultilineString(javascriptCode, e.getLineNumber() + 1));
             log.error("Script:\n{}", javascriptCode);
-            throw new RuntimeException("Error compiling script:", e);
+            throw new RuntimeException("Error executing script:", e);
         }
     }
 
