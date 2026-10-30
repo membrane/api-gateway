@@ -103,6 +103,42 @@ class SSLProxyTest {
     }
 
     @Test
+    @DisplayName("A TLS connection whose SNI matches a wildcard sslProxy host is forwarded")
+    void forwardsConnectionWithSniMatchingWildcardHost() throws Exception {
+        final var forwarded = executor.submit(this::readFirstBytesFromBackend);
+        final var port = startRouterWithSSLProxy("*.example.com");
+
+        sendClientHello(port, "a.sni.example.com");
+
+        assertEquals(0x16, forwarded.get(5, SECONDS)[0], "expected a TLS handshake record");
+    }
+
+    @Test
+    @DisplayName("The SNI is compared with the sslProxy host ignoring ASCII case")
+    void forwardsConnectionWithSniInOtherCase() throws Exception {
+        final var forwarded = executor.submit(this::readFirstBytesFromBackend);
+        final var port = startRouterWithSSLProxy();
+
+        sendClientHello(port, "SNI.Example.COM");
+
+        assertEquals(0x16, forwarded.get(5, SECONDS)[0], "expected a TLS handshake record");
+    }
+
+    @Test
+    @DisplayName("An SNI longer than DNS allows does not match a wildcard sslProxy host")
+    void doesNotForwardConnectionWithOverlongSni() throws Exception {
+        final var forwarded = executor.submit(this::readFirstBytesFromBackend);
+        final var port = startRouterWithSSLProxy("*.example.com");
+
+        final var handshakeFailure = sendClientHello(port, "%s.%s.%s.%s.%s.example.com".formatted(
+                "a".repeat(60), "b".repeat(60), "c".repeat(60), "d".repeat(60), "e".repeat(60)));
+
+        assertThrows(TimeoutException.class, () -> forwarded.get(1, SECONDS));
+        assertNotNull(handshakeFailure);
+        assertTrue(handshakeFailure.getMessage().contains("unrecognized_name"), handshakeFailure.getMessage());
+    }
+
+    @Test
     @DisplayName("An sslProxy without a host is rejected: without a server name to match there is nothing to route on")
     void rejectsConfigurationWithoutHost() throws Exception {
         Path config = Files.writeString(tempDir.resolve("apis.yaml"), """
@@ -170,16 +206,24 @@ class SSLProxyTest {
     }
 
     private int startRouterWithSSLProxy(SSLInterceptor... interceptors) throws IOException {
+        return startRouterWithSSLProxy(SNI_HOST, interceptors);
+    }
+
+    private int startRouterWithSSLProxy(String host, SSLInterceptor... interceptors) throws IOException {
         int port = freePort();
         router = new TestRouter();
-        router.add(createSSLProxy(port, interceptors));
+        router.add(createSSLProxy(host, port, interceptors));
         router.start();
         return port;
     }
 
     private SSLProxy createSSLProxy(int port, SSLInterceptor... interceptors) {
+        return createSSLProxy(SNI_HOST, port, interceptors);
+    }
+
+    private SSLProxy createSSLProxy(String host, int port, SSLInterceptor... interceptors) {
         SSLProxy sslProxy = new SSLProxy();
-        sslProxy.setHost(SNI_HOST);
+        sslProxy.setHost(host);
         sslProxy.setPort(port);
         sslProxy.setUseAsDefault(false);
         sslProxy.setInterceptors(List.of(interceptors));
