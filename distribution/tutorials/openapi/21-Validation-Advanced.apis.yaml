@@ -8,7 +8,7 @@
 # Run jsonProtection before the validation: it rejects oversized or deeply nested JSON
 # cheaply, before the validator checks the values against regex patterns, which attackers
 # can target with ReDoS. See:
-# http://localhost:8080/security/membrane-redos-protection.html
+# https://www.membrane-api.io/security/membrane-redos-protection.html
 #
 # 1.) Start Membrane:
 #     Linux/Mac:
