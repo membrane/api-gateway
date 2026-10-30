@@ -16,11 +16,11 @@
 
 package com.predic8.membrane.core.interceptor.javascript;
 
-import com.predic8.membrane.core.exceptions.*;
-import com.predic8.membrane.core.lang.javascript.*;
-import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.exceptions.ProblemDetails;
+import com.predic8.membrane.core.lang.javascript.RhinoJavascriptLanguageSupport;
+import com.predic8.membrane.core.router.Router;
 
-import javax.script.*;
+import javax.script.ScriptException;
 
 public class RhinoJavascriptLanguageAdapter extends LanguageAdapter {
 
@@ -50,7 +50,7 @@ public class RhinoJavascriptLanguageAdapter extends LanguageAdapter {
               java.lang.System.out.println(new java.lang.String(s));
             };
             var json;
-            if (message.isJSON()) {
+            if (message != null && message.isJSON()) {
               json=JSON.parse(message.getBodyAsStringDecoded());
             }
             with(imports) {
