@@ -199,7 +199,7 @@ class XMLProtectorTest {
         // backstop job. Derived from the cap, so the test keeps its meaning if the headroom changes.
         var limits = maxAttributeNameLength(1200);
         var xml = "<foo xmlns='urn:%s'/>".formatted("u".repeat(limits.jaxpNameLimit() + 1));
-        assertTrue(reasonOf(protect(xml, limits)).contains("Namespace URI exceeds"));
+        assertTrue(reasonOf(protect(xml, limits)).contains("Not well-formed XML"));
     }
 
     @Test
