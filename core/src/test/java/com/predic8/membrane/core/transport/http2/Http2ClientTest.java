@@ -513,9 +513,13 @@ class Http2ClientTest {
         }
     }
 
-    /** A non-numeric :status is a malformed response: only its stream is reset, the connection stays usable. */
-    @Test
-    void invalidStatusFailsOnlyItsCall() throws Exception {
+    /**
+     * A :status that is not exactly three digits (RFC 9110 §15) is a malformed response (RFC 9113 §8.3): only its
+     * stream is reset, the connection stays usable.
+     */
+    @ParameterizedTest(name = ":status={0}")
+    @ValueSource(strings = {"abc", "+200", "0200", "-1", "20"})
+    void invalidStatusFailsOnlyItsCall(String status) throws Exception {
         final var router = new DefaultRouter();
         try (final var backend = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
             backend.setSoTimeout(2000);
@@ -527,7 +531,7 @@ class Http2ClientTest {
 
                 final var first = callAsync(client);
                 readUntilRequestHeaders(peer);
-                peer.getOutputStream().write(headersFrame(1, 0x4, encoder, ":status", "abc"));
+                peer.getOutputStream().write(headersFrame(1, 0x4, encoder, ":status", status));
                 peer.getOutputStream().flush();
 
                 final var e = assertThrows(ExecutionException.class, () -> first.get(2, TimeUnit.SECONDS));

@@ -417,13 +417,13 @@ public class Http2Logic {
                 ((Request) request).setUri(val);
                 log.debug("streamId=" + streamId1 + " uri=" + val);
             } else if (":status".equals(key) && request instanceof Response) {
-                try {
-                    ((Response) request).setStatusCode(Integer.parseInt(val));
-                } catch (NumberFormatException e) {
-                    // A malformed response, which only fails its stream rather than the whole connection.
+                // A status code is exactly three digits (RFC 9110 §15). Anything else, such as "+200" or "0200",
+                // which Integer.parseInt would accept, is a malformed response that only fails its stream.
+                if (!isValidStatus(val)) {
                     malformedField[0] = true;
                     return;
                 }
+                ((Response) request).setStatusCode(Integer.parseInt(val));
                 log.debug("streamId=" + streamId1 + " status=" + val);
             } else
                 header.add(key, val);
@@ -515,6 +515,15 @@ public class Http2Logic {
             if (b == 0 || b == '\r' || b == '\n')
                 return false;
         return value.length == 0 || (!isOptionalWhitespace((char) value[0]) && !isOptionalWhitespace((char) value[value.length - 1]));
+    }
+
+    private static boolean isValidStatus(String status) {
+        if (status.length() != 3)
+            return false;
+        for (int i = 0; i < 3; i++)
+            if (status.charAt(i) < '0' || status.charAt(i) > '9')
+                return false;
+        return true;
     }
 
     public InputStream getPackedHeaderStream(List<HeaderBlockFragment> headerFrames) {
