@@ -13,18 +13,20 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.groovy;
 
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.router.*;
-import org.junit.jupiter.api.*;
-import org.springframework.context.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.router.DummyTestRouter;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationContext;
 
-import java.util.*;
+import java.util.Map;
 
-import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.Response.ok;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -196,6 +198,36 @@ public class GroovyInterceptorTest {
 		i.init(router);
 		i.handleAbort(exc);
 		assertNull(exc.getResponse());
+	}
+
+	/**
+	 * E.g. a script in an abort block after a script in the request flow returned ABORT.
+	 */
+	@Test
+	void responseFlowWithoutResponse() throws Exception {
+		GroovyInterceptor i = new GroovyInterceptor() {{
+			src = """
+				// json is mentioned, so the body would be parsed as JSON
+				exc.setProperty('statusCode', statusCode)
+				CONTINUE""";
+		}};
+		i.init(router);
+
+		assertEquals(CONTINUE, i.handleResponse(exc));
+		assertTrue(exc.getProperties().containsKey("statusCode"));
+		assertNull(exc.getProperty("statusCode"));
+		assertNull(exc.getResponse());
+	}
+
+	@Test
+	void returnResponseInResponseFlowWithoutResponse() throws Exception {
+		GroovyInterceptor i = new GroovyInterceptor() {{
+			src = "Response.ok('created in abort').build()";
+		}};
+		i.init(router);
+
+		assertEquals(RETURN, i.handleResponse(exc));
+		assertEquals("created in abort", exc.getResponse().getBodyAsStringDecoded());
 	}
 
 	@Test
