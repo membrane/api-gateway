@@ -50,6 +50,8 @@ import static java.util.Locale.US;
  * @description <p>Rewrites the path and query of requests, or answers them with a redirect. Acts on requests only.</p>
  * <p>The mappings are checked in order against the path and query, and the first one that matches is applied.
  * Requests that match no mapping pass unchanged.</p>
+ * <p>A rewrite does not change the call to a target URL with a path such as <code>https://api.example.com/orders</code>:
+ * that URL is sent as it is. Redirects work with any target.</p>
  * <p>See tutorials/routing/10-Rewrite-and-Redirect.yaml.</p>
  * <h3>Security Hint</h3>
  * <p>The expressions run on the request path. Overlapping quantifiers such as <code>(.*)/(.*)</code> can take
@@ -149,7 +151,8 @@ public class RewriteInterceptor extends AbstractInterceptor {
         /**
          * @description Replacement for the matched part. <code>$1</code>, <code>$2</code>, ... insert the groups
          * captured by <code>from</code>. An absolute URL such as <code>https://example.com/$1</code> redirects by
-         * default; with <code>do: rewrite</code> it replaces the backend instead.
+         * default; with <code>do: rewrite</code> it replaces the backend instead, if the target URL has no path or
+         * only <code>/</code>. A target URL with a longer path is always called as configured.
          * @example /shop/v2/$1
          */
         @Required
