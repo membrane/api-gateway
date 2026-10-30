@@ -235,4 +235,17 @@ public class GroovyInterceptorTest {
 		var reason = assertInstanceOf(RuntimeException.class, exc.getProperty(ABORTION_REASON));
 		assertEquals("Something went wrong", reason.getMessage());
 	}
+
+	@Test
+	void exceptionInScriptKeepsEarlierAbortionReason() throws Exception {
+		var cause = new RuntimeException("Original cause");
+		exc.setProperty(ABORTION_REASON, cause);
+		GroovyInterceptor i = new GroovyInterceptor() {{
+			src = "throw new RuntimeException('Something went wrong')";
+		}};
+		i.init(router);
+
+		assertEquals(ABORT, i.handleRequest(exc));
+		assertSame(cause, exc.getProperty(ABORTION_REASON));
+	}
 }

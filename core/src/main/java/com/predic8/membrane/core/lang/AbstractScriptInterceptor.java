@@ -95,7 +95,9 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
         try {
             res = script.apply(getParameterBindings(exc, flow, msg));
         } catch (Exception e) {
-            exc.setProperty(ABORTION_REASON, e);
+            // Keep the original cause if a script in an abort flow fails as well
+            if (exc.getProperty(ABORTION_REASON) == null)
+                exc.setProperty(ABORTION_REASON, e);
             handleScriptExecutionException(exc, e);
             return ABORT;
         }
