@@ -7,6 +7,7 @@
 #   curl http://localhost:2000/groovy
 #   curl http://localhost:2000/random
 #   curl http://localhost:2000/response
+#   curl http://localhost:2000/error
 
 api:
   port: 2000
@@ -48,4 +49,21 @@ api:
               }
               """)
           .build()
+
+---
+# When a plugin fails, the flow runs back through the plugins before it.
+# Plugins nested in abort only run then. If the abort was caused by an
+# exception, it is available as the property abortionReason.
+api:
+  port: 2000
+  path:
+    uri: /error
+  flow:
+    - abort:
+        - groovy:
+            src: |
+              println "Aborted: ${property.abortionReason?.message}"
+    - groovy:
+        src: |
+          throw new RuntimeException("Something went wrong")
 
