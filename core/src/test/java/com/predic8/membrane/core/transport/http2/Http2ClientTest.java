@@ -484,6 +484,69 @@ class Http2ClientTest {
         }
     }
 
+    /** As for an oversized trailer, but the stream is reset with PROTOCOL_ERROR (RFC 9113 §8.1.1). */
+    @Test
+    void malformedTrailerFailsBodyRead() throws Exception {
+        final var router = new DefaultRouter();
+        try (final var backend = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
+            backend.setSoTimeout(2000);
+            final var connection = createConnection(router, backend);
+            try (final var peer = backend.accept()) {
+                peer.setSoTimeout(2000);
+                final var client = new Http2Client(connection, false);
+                final var call = callAsync(client);
+
+                readUntilRequestHeaders(peer);
+                final var encoder = new Encoder(4096);
+                peer.getOutputStream().write(headersFrame(1, 0x4, encoder, ":status", "200"));
+                peer.getOutputStream().write(DATA_1_AB);
+                peer.getOutputStream().write(headersFrame(1, 0x5, encoder, "X-Upper", "a"));
+                peer.getOutputStream().flush();
+
+                final var response = call.get(2, TimeUnit.SECONDS);
+                final var e = assertThrows(ReadingBodyException.class, response::getBodyAsStringDecoded);
+                assertTrue(e.getCause().getMessage().contains("malformed"), e.getCause().getMessage());
+                assertEquals(ERROR_PROTOCOL_ERROR, readUntilFrame(peer.getInputStream(), TYPE_RST_STREAM)[3]);
+            }
+        } finally {
+            router.stop();
+        }
+    }
+
+    /** A non-numeric :status is a malformed response: only its stream is reset, the connection stays usable. */
+    @Test
+    void invalidStatusFailsOnlyItsCall() throws Exception {
+        final var router = new DefaultRouter();
+        try (final var backend = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
+            backend.setSoTimeout(2000);
+            final var connection = createConnection(router, backend);
+            try (final var peer = backend.accept()) {
+                peer.setSoTimeout(2000);
+                final var client = new Http2Client(connection, false);
+                final var encoder = new Encoder(4096);
+
+                final var first = callAsync(client);
+                readUntilRequestHeaders(peer);
+                peer.getOutputStream().write(headersFrame(1, 0x4, encoder, ":status", "abc"));
+                peer.getOutputStream().flush();
+
+                final var e = assertThrows(ExecutionException.class, () -> first.get(2, TimeUnit.SECONDS));
+                final var cause = assertInstanceOf(IOException.class, e.getCause().getCause());
+                assertTrue(cause.getMessage().contains("malformed"), cause.getMessage());
+                assertEquals(ERROR_PROTOCOL_ERROR, readUntilFrame(peer.getInputStream(), TYPE_RST_STREAM)[3]);
+
+                final var second = callAsync(client);
+                readUntilFrame(peer.getInputStream(), TYPE_HEADERS);
+                peer.getOutputStream().write(headersFrame(3, 0x5, encoder, ":status", "200"));
+                peer.getOutputStream().flush();
+
+                assertEquals(200, second.get(2, TimeUnit.SECONDS).getStatusCode());
+            }
+        } finally {
+            router.stop();
+        }
+    }
+
     /** Padding (RFC 9113 §6.1, §6.2) is not part of the content, also with a pad length of 128 or more. */
     @Test
     void paddedFramesAreUnpadded() throws Exception {

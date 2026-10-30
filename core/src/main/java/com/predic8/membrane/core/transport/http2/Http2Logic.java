@@ -417,7 +417,13 @@ public class Http2Logic {
                 ((Request) request).setUri(val);
                 log.debug("streamId=" + streamId1 + " uri=" + val);
             } else if (":status".equals(key) && request instanceof Response) {
-                ((Response) request).setStatusCode(Integer.parseInt(val));
+                try {
+                    ((Response) request).setStatusCode(Integer.parseInt(val));
+                } catch (NumberFormatException e) {
+                    // A malformed response, which only fails its stream rather than the whole connection.
+                    malformedField[0] = true;
+                    return;
+                }
                 log.debug("streamId=" + streamId1 + " status=" + val);
             } else
                 header.add(key, val);
