@@ -22,6 +22,8 @@ import com.predic8.membrane.core.transport.http.Connection;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.twitter.hpack.Encoder;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
@@ -345,8 +347,13 @@ class Http2ClientTest {
         }
     }
 
-    @Test
-    void malformedResponseHeaderFieldFailsCall() throws Exception {
+    /**
+     * The stream is reset with PROTOCOL_ERROR (RFC 9113 §5.4.2, §8.1.1), also if the malformed header block ends
+     * the stream: the stream error is detected before the block's END_STREAM takes effect.
+     */
+    @ParameterizedTest(name = "endStream={0}")
+    @ValueSource(booleans = {false, true})
+    void malformedResponseHeaderFieldFailsCall(boolean endStream) throws Exception {
         final var router = new DefaultRouter();
         try (final var backend = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
             backend.setSoTimeout(2000);
@@ -357,8 +364,7 @@ class Http2ClientTest {
                 final var call = callAsync(client);
 
                 readUntilRequestHeaders(peer);
-                // Without END_STREAM: the stream is still open, so it has to be reset.
-                peer.getOutputStream().write(headersFrame(1, 0x4, new Encoder(4096), ":status", "200", "X-Upper", "a"));
+                peer.getOutputStream().write(headersFrame(1, endStream ? 0x5 : 0x4, new Encoder(4096), ":status", "200", "X-Upper", "a"));
                 peer.getOutputStream().flush();
 
                 final var e = assertThrows(ExecutionException.class, () -> call.get(2, TimeUnit.SECONDS));

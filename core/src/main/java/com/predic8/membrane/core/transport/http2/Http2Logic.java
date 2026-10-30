@@ -387,12 +387,13 @@ public class Http2Logic {
         final var malformedField = new boolean[1];
         // The whole block is decoded even if it gets rejected, so the HPACK dynamic table stays in sync.
         decoder.decode(getPackedHeaderStream(headerFrames), (name, value, sensitive) -> {
-            if (name.length + 2 + value.length >= MAX_LINE_LENGTH) {
-                oversizedField[0] = true;
-                return;
-            }
+            // Checked first: a malformed message is a protocol error, even if it is also too large.
             if (!isValidFieldName(name) || !isValidFieldValue(value)) {
                 malformedField[0] = true;
+                return;
+            }
+            if (name.length + 2 + value.length >= MAX_LINE_LENGTH) {
+                oversizedField[0] = true;
                 return;
             }
             // The name has been checked to be ASCII, so this charset reads it byte for byte.
@@ -426,6 +427,21 @@ public class Http2Logic {
         if (sb != null)
             log.debug(sb.toString());
 
+        if (malformedField[0]) {
+            // A malformed message is a stream error of type PROTOCOL_ERROR (RFC 9113 §8.1.1). It is rejected
+            // rather than forwarded without the field, as the HTTP/1.1 parser does.
+            log.info("Rejecting header block on stream {}: a header field name or value is malformed (RFC 9113 §8.2.1).", streamId1);
+            // Queued before anyone waiting on the stream is woken up, as they might reset it with another error code.
+            // The block's END_STREAM is not applied: it could close the stream before the reset is sent, and the
+            // frame sender drops frames for closed streams. Writing the reset closes the stream instead.
+            sender.send(streamId1, (encoder, peerSettings) -> List.of(RstStreamFrame.construct(streamId1, ERROR_PROTOCOL_ERROR)));
+            if (isTrailer)
+                streamInfo.abortReceiving(new IOException("HTTP/2 trailer on stream %d carries a malformed header field.".formatted(streamId1)));
+            else
+                messageHandler.handleMalformedHeaders(streamInfo);
+            return;
+        }
+
         if (oversizedField[0] || truncated) {
             log.info("Rejecting header block on stream {}: a header field exceeds {} bytes or the block exceeds {} bytes.",
                     streamId1, MAX_LINE_LENGTH, MAX_HEADER_LIST_SIZE);
@@ -441,22 +457,6 @@ public class Http2Logic {
                     streamInfo.receivedEndStream(false);
                 messageHandler.handleOversizedHeaders(streamInfo, headers.isEndStream());
             }
-            return;
-        }
-
-        if (malformedField[0]) {
-            // A malformed message is a stream error of type PROTOCOL_ERROR (RFC 9113 §8.1.1). It is rejected
-            // rather than forwarded without the field, as the HTTP/1.1 parser does.
-            log.info("Rejecting header block on stream {}: a header field name or value is malformed (RFC 9113 §8.2.1).", streamId1);
-            // Queued before anyone waiting on the stream is woken up, as they might reset it with another error code.
-            sender.send(streamId1, (encoder, peerSettings) -> List.of(RstStreamFrame.construct(streamId1, ERROR_PROTOCOL_ERROR)));
-            if (isTrailer)
-                // As for an oversized trailer: aborting before the end of stream is queued.
-                streamInfo.abortReceiving(new IOException("HTTP/2 trailer on stream %d carries a malformed header field.".formatted(streamId1)));
-            else
-                messageHandler.handleMalformedHeaders(streamInfo);
-            if (headers.isEndStream())
-                streamInfo.receivedEndStream(false);
             return;
         }
 

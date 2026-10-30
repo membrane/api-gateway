@@ -120,6 +120,18 @@ class Http2LogicTest {
         assertEquals(1, handler.malformedStreamId);
     }
 
+    /** A malformed message is a protocol error (RFC 9113 §8.1.1), even if it is also too large. */
+    @Test
+    void oversizedMalformedFieldIsRejectedAsMalformed() throws Exception {
+        final var handler = new RecordingHandler();
+
+        assertThrows(EndOfStreamException.class, () -> createLogic(requestHeadersFrame(bytes("X-Foo"), bytes("a".repeat(9000))), handler).handle());
+
+        assertNull(handler.message, "The request must not be handed over.");
+        assertEquals(1, handler.malformedStreamId);
+        assertEquals(0, handler.oversizedStreamId);
+    }
+
     @Test
     void lowerCaseTokenFieldIsAccepted() throws Exception {
         final var handler = new RecordingHandler();
@@ -161,6 +173,7 @@ class Http2LogicTest {
     private static class RecordingHandler implements Http2MessageHandler {
         Message message;
         int malformedStreamId;
+        int oversizedStreamId;
 
         @Override
         public Message createMessage() {
@@ -174,6 +187,7 @@ class Http2LogicTest {
 
         @Override
         public void handleOversizedHeaders(StreamInfo streamInfo, boolean endStream) {
+            oversizedStreamId = streamInfo.getStreamId();
         }
 
         @Override
