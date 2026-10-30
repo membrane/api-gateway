@@ -1,0 +1,79 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.7.1.json
+#
+# Tutorial: Groovy Built-in Variables
+#
+# Membrane passes the message, its parts and information about the exchange to
+# every script as ready-to-use variables.
+#
+# 1.) Start Membrane:
+#     with Docker:
+#       Linux/Mac:
+#         ./run-docker.sh -c 10-Groovy-Builtin-Variables.yaml
+#       Windows:
+#         run-docker.cmd -c 10-Groovy-Builtin-Variables.yaml
+#
+#     or with Java:
+#       Linux/Mac:
+#         ./membrane.sh -c 10-Groovy-Builtin-Variables.yaml
+#       Windows:
+#         membrane.cmd -c 10-Groovy-Builtin-Variables.yaml
+#
+# 2.) Send a request with a header, a cookie, a query parameter and a JSON body:
+#     curl -i -d "{\"name\":\"Oolong\"}" -H "Content-Type: application/json" -H "X-Customer: 42" -b "session=abc" "localhost:2000/shop/tea?limit=10"
+#
+#     HTTP/1.1 200 OK
+#     X-Flow: RESPONSE
+#     X-Status-Code: 200
+#
+#     {
+#       "flow" : "REQUEST",
+#       "method" : "POST",
+#       "path" : "/shop/tea?limit=10",
+#       "category" : "tea",
+#       "limit" : "10",
+#       "customer" : "42",
+#       "session" : "abc",
+#       "name" : "Oolong",
+#       "tenant" : "demo"
+#     }
+
+api:
+  port: 2000
+  path:
+    uri: /shop/{category}
+  flow:
+    - setProperty:
+        name: tenant
+        value: demo
+    - request:
+        - groovy:
+            src: |
+              // A returned map becomes the new JSON body.
+              [
+                flow: flow.toString(),
+                method: method,
+                path: path,
+                category: pathParam.category,
+                limit: param.limit[0],
+                customer: header['X-Customer'],
+                session: cookie.session,
+                name: json.name,
+                tenant: property.tenant
+              ]
+        - beautifier: {}
+    - response:
+        - groovy:
+            src: |
+              header.put('X-Flow', flow.toString())
+              header.put('X-Status-Code', statusCode.toString())
+              CONTINUE
+    - return:
+        status: 200
+
+# NOTE: header, cookie, body and json refer to the message of the current flow:
+#       the request in the request flow, the response in the response flow.
+#       param is only available in the request flow, statusCode and response
+#       only in the response flow.
+#
+#       All variables: https://www.membrane-api.io/scripting/builtin-variables.html
+#       Built-in functions: https://www.membrane-api.io/scripting/builtin-functions.html

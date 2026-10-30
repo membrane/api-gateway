@@ -39,16 +39,15 @@ import static org.apache.commons.text.StringEscapeUtils.escapeHtml4;
  *   <li>an <code>Outcome</code> (<code>CONTINUE</code>, <code>RETURN</code>, <code>ABORT</code>) is used as-is;</li>
  *   <li>a <code>Response</code> is set on the exchange and the flow returns;</li>
  *   <li>a <code>Request</code> replaces the current request;</li>
- *   <li>a <code>Map</code> is serialized to a JSON body;</li>
+ *   <li>a <code>Map</code> or <code>List</code> is serialized to a JSON body;</li>
  *   <li>a <code>String</code> or <code>byte[]</code> becomes the message body;</li>
  *   <li><code>null</code> or no value continues unchanged.</li>
  * </ul>
  * Bindings include <code>exc</code>/<code>exchange</code>, <code>flow</code>, <code>message</code>,
  * <code>header</code>, <code>body</code>, <code>request</code>, <code>response</code>, <code>params</code> (request
- * flow), <code>statusCode</code> (response flow), <code>property</code>, <code>json</code> (when the body is JSON), and
- * <code>spring</code> for bean lookups. Provide the script inline as the element body, or load it from a file with
- * <code>location</code>. See the examples under examples/scripting/groovy and the tutorial
- * tutorials/advanced/80-Scripting-Groovy.yaml.
+ * flow), <code>statusCode</code> (response flow), <code>property</code>, <code>json</code> (when the body is JSON),
+ * <code>log</code>, an SLF4J logger named <code>com.predic8.membrane.groovy</code>, and <code>spring</code> for bean lookups. Provide the script inline as the element body, or load it from a file with
+ * <code>location</code>. See the tutorials under tutorials/scripting.
  * <pre>
  * groovy:
  *   [ location: &lt;file-or-url&gt; ]   # alternative to an inline script
@@ -62,7 +61,7 @@ import static org.apache.commons.text.StringEscapeUtils.escapeHtml4;
  *   flow:
  *     - groovy:
  *         src: |
- *           println "Running in the ${flow} flow"
+ *           log.info "Running in the ${flow} flow"
  *           header.add "X-Groovy", "true"
  *           CONTINUE
  * </code></pre>
@@ -71,6 +70,8 @@ import static org.apache.commons.text.StringEscapeUtils.escapeHtml4;
 public class GroovyInterceptor extends AbstractScriptInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(GroovyInterceptor.class);
+
+    private static final Logger scriptLog = LoggerFactory.getLogger("com.predic8.membrane.groovy");
 
     public GroovyInterceptor() {
         name = "groovy";
@@ -89,6 +90,11 @@ public class GroovyInterceptor extends AbstractScriptInterceptor {
             logGroovyError(e);
             throw new ConfigurationException("Error in Groovy script initialization.",e);
         }
+    }
+
+    @Override
+    protected Logger getScriptLogger() {
+        return scriptLog;
     }
 
     private void logGroovyError(MultipleCompilationErrorsException e) {

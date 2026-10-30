@@ -13,18 +13,24 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.groovy;
 
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.router.*;
-import org.junit.jupiter.api.*;
-import org.springframework.context.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.router.DummyTestRouter;
+import com.predic8.membrane.test.TestAppender;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.Logger;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationContext;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 
-import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.Response.ok;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -168,6 +174,20 @@ public class GroovyInterceptorTest {
 	}
 
 	@Test
+	void returnList() throws Exception {
+		exc.setResponse(ok().build());
+
+		final var i = new GroovyInterceptor() {{
+			src = "['Roller', 'äöüÄÖÜ', 7]";
+		}};
+		i.init(router);
+
+		assertEquals(CONTINUE, i.handleResponse(exc));
+		assertTrue(exc.getResponse().isJSON());
+		assertEquals(List.of("Roller", "äöüÄÖÜ", 7), om.readValue(exc.getResponse().getBodyAsStringDecoded(), List.class));
+	}
+
+	@Test
 	public void jsonRequest() throws Exception {
 
 		exc.getRequest().setBodyContent("""
@@ -220,5 +240,27 @@ public class GroovyInterceptorTest {
 
 		assertEquals(CONTINUE, i.handleRequest(exc));
 		assertEquals("YWJj", exc.getRequest().getHeader().getFirstValue("X-Encoded"));
+	}
+
+	@Test
+	void logToGroovyLogger() throws Exception {
+		var logger = (Logger) LogManager.getLogger("com.predic8.membrane.groovy");
+		var appender = new TestAppender("groovy-script");
+		appender.start();
+		logger.addAppender(appender);
+		try {
+			GroovyInterceptor i = new GroovyInterceptor() {{
+				src = """
+					log.info "Running in the ${flow} flow"
+					CONTINUE""";
+			}};
+			i.init(router);
+
+			assertEquals(CONTINUE, i.handleRequest(exc));
+			assertTrue(appender.contains("Running in the REQUEST flow"));
+		} finally {
+			logger.removeAppender(appender);
+			appender.stop();
+		}
 	}
 }

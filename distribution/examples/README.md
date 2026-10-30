@@ -7,9 +7,9 @@ Have **10 minutes** and want to solve a task with Membrane? These hands-on examp
 * Docker 
 * As Windows service
 
-## [Scripting](scripting#scripting)
+## Scripting
 
-* Use Groovy and JavaScript for scripting
+Groovy and JavaScript scripting is covered by the [scripting tutorials](../tutorials/scripting).
 
 Samples of scripting with JSONPath, XPath and the expression language you can find in the [templating](templating#template---transforming-messages) folders or in the [orchestration tutorials](../tutorials/orchestration).
 

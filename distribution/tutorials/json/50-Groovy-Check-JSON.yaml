@@ -1,0 +1,56 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.8.0.json
+#
+# Tutorial: Check JSON with Groovy
+#
+# JSON Schema checks the structure of a document. Rules that depend on several
+# values or on calculations are easier to write in Groovy. Here an order may
+# contain at most 10 pieces of each article.
+#
+# 1.) Start Membrane:
+#     with Docker:
+#       Linux/Mac:
+#         ./run-docker.sh -c 50-Groovy-Check-JSON.yaml
+#       Windows:
+#         run-docker.cmd -c 50-Groovy-Check-JSON.yaml
+#
+#     or with Java:
+#       Linux/Mac:
+#         ./membrane.sh -c 50-Groovy-Check-JSON.yaml
+#       Windows:
+#         membrane.cmd -c 50-Groovy-Check-JSON.yaml
+#
+# 2.) Have a look at order.json, then send it to the API:
+#     curl -i -d @order.json -H "Content-Type: application/json" localhost:2000
+#
+#     HTTP/1.1 400 Bad Request
+#
+#     {"error":"At most 10 pieces per article","articles":["Butter"]}
+#
+# 3.) Send an order that follows the rule:
+#     curl -i -d "{\"id\":325,\"items\":[{\"article\":\"Tea\",\"quantity\":2,\"price\":1.87}]}" -H "Content-Type: application/json" localhost:2000
+#
+#     HTTP/1.1 200 OK
+#
+#     {"id":325,"items":[{"article":"Tea","quantity":2,"price":1.87}]}
+
+api:
+  port: 2000
+  flow:
+    - request:
+        - groovy:
+            src: |
+              def tooMany = json.items.findAll { it.quantity > 10 }.article
+
+              if (tooMany) {
+                // A returned Response ends the request flow and is sent back to the client.
+                return Response.statusCode(400)
+                  .contentType('application/json')
+                  .body(groovy.json.JsonOutput.toJson([error: 'At most 10 pieces per article', articles: tooMany]))
+                  .build()
+              }
+              CONTINUE
+    - return:
+        status: 200
+
+# See also:
+#  - ../scripting folder for more Groovy and JavaScript tutorials

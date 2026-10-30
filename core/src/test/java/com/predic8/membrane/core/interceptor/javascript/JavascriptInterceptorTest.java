@@ -16,25 +16,31 @@
 
 package com.predic8.membrane.core.interceptor.javascript;
 
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.exceptions.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.lang.*;
-import com.predic8.membrane.core.lang.javascript.*;
-import com.predic8.membrane.core.router.*;
-import org.graalvm.polyglot.*;
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.params.*;
-import org.junit.jupiter.params.provider.*;
-import org.springframework.context.support.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.predic8.membrane.core.exceptions.ProblemDetails;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.lang.LanguageSupport;
+import com.predic8.membrane.core.lang.javascript.GraalVMJavascriptSupport;
+import com.predic8.membrane.core.lang.javascript.RhinoJavascriptLanguageSupport;
+import com.predic8.membrane.core.router.DefaultRouter;
+import com.predic8.membrane.test.TestAppender;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.Logger;
+import org.graalvm.polyglot.Context;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.context.support.GenericApplicationContext;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 
-import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.util.ProblemDetailsTestUtil.*;
+import static com.predic8.membrane.core.util.ProblemDetailsTestUtil.parse;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SuppressWarnings("unchecked")
@@ -190,6 +196,17 @@ public class JavascriptInterceptorTest {
 
     @ParameterizedTest
     @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
+    void returnArray(Class<LanguageSupport> engine) throws Exception {
+        executeScript("""
+               ['Roller', 'äöüÄÖÜ'];
+               """, engine);
+
+        assertTrue(exc.getRequest().isJSON());
+        assertEquals(List.of("Roller", "äöüÄÖÜ"), om.readValue(exc.getRequest().getBodyAsStringDecoded(), List.class));
+    }
+
+    @ParameterizedTest
+    @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
     public void testProperties(Class<LanguageSupport> engine) {
 
         exc.getProperties().put("answer","42");
@@ -223,6 +240,22 @@ public class JavascriptInterceptorTest {
         assertEquals("Bonn", exc.getRequest().getHeader().getFirstValue("city"));
     }
 
+
+    @ParameterizedTest
+    @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
+    void logToJavascriptLogger(Class<LanguageSupport> engine) {
+        final var logger = (Logger) LogManager.getLogger("com.predic8.membrane.javascript");
+        final var appender = new TestAppender("javascript-script");
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            assertEquals(CONTINUE, executeScript("log.info('Hello from ' + flow); CONTINUE", engine));
+            assertTrue(appender.contains("Hello from REQUEST"));
+        } finally {
+            logger.removeAppender(appender);
+            appender.stop();
+        }
+    }
 
     @SafeVarargs
     private Outcome executeScript(String src, Class<LanguageSupport>... engine) {

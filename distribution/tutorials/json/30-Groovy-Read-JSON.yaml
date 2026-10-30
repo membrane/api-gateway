@@ -1,0 +1,56 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.8.0.json
+#
+# Tutorial: Read JSON with Groovy
+#
+# In a Groovy script, the variable json holds the request body as plain maps
+# and lists. Values keep their types, and Groovy one-liners can search, count
+# and check them.
+#
+# 1.) Start Membrane:
+#     with Docker:
+#       Linux/Mac:
+#         ./run-docker.sh -c 30-Groovy-Read-JSON.yaml
+#       Windows:
+#         run-docker.cmd -c 30-Groovy-Read-JSON.yaml
+#
+#     or with Java:
+#       Linux/Mac:
+#         ./membrane.sh -c 30-Groovy-Read-JSON.yaml
+#       Windows:
+#         membrane.cmd -c 30-Groovy-Read-JSON.yaml
+#
+# 2.) Have a look at animals.json, then send it to the API:
+#     curl -d @animals.json -H "Content-Type: application/json" localhost:2000
+#
+#     {"count":2,"names":["Skye","Molly"]}
+#
+# 3.) Check the console for the results of the queries:
+
+api:
+  port: 2000
+  flow:
+    - request:
+        - groovy:
+            src: |
+              log.info "Number of animals: ${json.animals.size()}"
+              log.info "First animal: ${json.animals[0].name}"
+              log.info "Names: ${json.animals.name}"
+              log.info "The cat: ${json.animals.find { it.species == 'cat' }.name}"
+              log.info "Legs in total: ${json.animals.legs.sum()}"
+              log.info "All have 4 legs: ${json.animals.every { it.legs == 4 }}"
+              log.info "Any birds: ${json.animals.any { it.species == 'bird' }}"
+              log.info "Count matches: ${json.number == json.animals.size()}"
+
+              // A returned map becomes the new JSON body.
+              [count: json.animals.size(), names: json.animals.name]
+    - return:
+        status: 200
+
+# Troubleshooting:
+#   Always send the header: Content-Type: application/json
+#
+# NOTE: For a single value in an interceptor, JSONPath is enough (see 10-JSONPath.yaml).
+#       Use Groovy once you need logic like find, every or sum.
+#
+# See also:
+#  - ../scripting folder for more Groovy and JavaScript tutorials
