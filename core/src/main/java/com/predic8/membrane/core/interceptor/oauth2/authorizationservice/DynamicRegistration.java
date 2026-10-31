@@ -126,6 +126,11 @@ public class DynamicRegistration {
         return interceptors;
     }
 
+    /**
+     * @description Plugins applied to the requests to the OpenID discovery and the registration endpoint. They run
+     * around the HTTP call, which always produces the response. A plugin may change or replace the response, but must
+     * not remove it.
+     */
     @MCChildElement(order = 20)
     public void setFlow(List<Interceptor> flow) {
         this.interceptors = flow;

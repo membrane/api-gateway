@@ -31,23 +31,25 @@ import static com.predic8.membrane.core.http.Response.ok;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.util.NetworkTestUtil.freePort;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
 class DynamicRegistrationTest {
 
-	private static final int BACKEND_PORT = 3071;
-	private static final String BACKEND_URL = "http://localhost:%d/".formatted(BACKEND_PORT);
 	private static final String BACKEND_BODY = """
 			{"client_id":"abc","client_secret":"secret"}""";
 
 	private final Set<Integer> backendConnections = Collections.synchronizedSet(new HashSet<>()); // hashcodes of all connections the backend received
 	private Router router;
+	private String backendUrl;
 
 	@BeforeEach
 	void setUp() throws Exception {
+		final var backendPort = freePort();
+		backendUrl = "http://localhost:%d/".formatted(backendPort);
 		router = new TestRouter();
-		final var sp = new ServiceProxy(new ServiceProxyKey(BACKEND_PORT), null, 0);
+		final var sp = new ServiceProxy(new ServiceProxyKey(backendPort), null, 0);
 		sp.getFlow().add(new AbstractInterceptor() {
 			@Override
 			public Outcome handleRequest(Exchange exc) {
@@ -83,8 +85,8 @@ class DynamicRegistrationTest {
 		return registration;
 	}
 
-	private static String retrieve(DynamicRegistration registration) throws Exception {
-		return retrieve(registration, BACKEND_URL);
+	private String retrieve(DynamicRegistration registration) throws Exception {
+		return retrieve(registration, backendUrl);
 	}
 
 	private static String retrieve(DynamicRegistration registration, String url) throws Exception {
@@ -100,7 +102,7 @@ class DynamicRegistrationTest {
 
 	@Test
 	void registersClient() throws Exception {
-		final var client = createRegistration(exc -> CONTINUE).registerWithCallbackAt(List.of("http://localhost/callback"), BACKEND_URL);
+		final var client = createRegistration(exc -> CONTINUE).registerWithCallbackAt(List.of("http://localhost/callback"), backendUrl);
 
 		assertEquals("abc", client.getClientId());
 		assertEquals("secret", client.getClientSecret());
@@ -129,13 +131,13 @@ class DynamicRegistrationTest {
 	void unsuccessfulStatusFails() {
 		final var registration = createRegistration(exc -> CONTINUE);
 
-		assertThrows(RuntimeException.class, () -> retrieve(registration, BACKEND_URL + "error"));
+		assertThrows(RuntimeException.class, () -> retrieve(registration, backendUrl + "error"));
 	}
 
 	@Test
 	void connectionIsReleasedAfterUnsuccessfulStatus() throws Exception {
 		final var registration = createRegistration(exc -> CONTINUE);
-		assertThrows(RuntimeException.class, () -> retrieve(registration, BACKEND_URL + "error"));
+		assertThrows(RuntimeException.class, () -> retrieve(registration, backendUrl + "error"));
 
 		assertEquals(BACKEND_BODY, retrieve(registration));
 
