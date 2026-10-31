@@ -355,6 +355,19 @@ public class MultipartFormDataValidatorTest extends AbstractValidatorTest {
     }
 
     @Test
+    void typelessPatternConstrainsTheWholeArray() throws ParseException {
+        var schema = new ObjectSchema().additionalProperties(false);
+        schema.addProperty("x-count", new ArraySchema().items(new IntegerSchema()));
+        schema.addPatternProperty("^x-", new Schema<>().uniqueItems(true));
+
+        assertTrue(validateParts(schema, "x-count", "1", "2").isEmpty());
+        assertTrue(!validateParts(schema, "x-count", "1", "1").isEmpty(),
+                "A typeless schema must reject duplicate array items");
+        assertTrue(!validateParts(schema, "x-count", "bad").isEmpty(),
+                "Individual items must still be validated");
+    }
+
+    @Test
     void arrayPatternWithoutItemsOnlyConstrainsCardinality() throws ParseException {
         var schema = new ObjectSchema().additionalProperties(false);
         schema.addProperty("x-count", new ArraySchema().items(new IntegerSchema()));

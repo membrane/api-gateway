@@ -249,8 +249,7 @@ public class MultipartFormDataValidator {
             }
             if (canReconstruct && err.size() == errorsBeforeField) {
                 for (var candidate : schemas)
-                    if (SchemaUtil.isArray(resolveSchema(candidate)))
-                        err.add(new SchemaValidator(api, candidate).validate(partCtx, reconstructed));
+                    err.add(new SchemaValidator(api, candidate).validate(partCtx, reconstructed));
             }
         }
         return err;
