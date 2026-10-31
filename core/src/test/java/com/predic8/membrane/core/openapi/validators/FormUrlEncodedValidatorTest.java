@@ -290,6 +290,19 @@ public class FormUrlEncodedValidatorTest extends AbstractValidatorTest {
     }
 
     @Test
+    void referencedFieldUsesSiblingTypeForDecodingWhenComponentIsTypeless() {
+        var component = new Schema<>().minimum(BigDecimal.TEN);
+        var field = new Schema<>().$ref("#/components/schemas/Count").type("integer");
+        var schema = new ObjectSchema().addProperty("count", field);
+        var api = new OpenAPI().components(new Components().addSchemas("Count", component));
+
+        assertEquals(1, new FormUrlEncodedValidator(api).validate(
+                new ValidationContext(), new MediaType().schema(schema), "count=1").size());
+        assertTrue(new FormUrlEncodedValidator(api).validate(
+                new ValidationContext(), new MediaType().schema(schema), "count=10").isEmpty());
+    }
+
+    @Test
     void conflictingArrayItemTypesAreRejected() {
         var schema = new ObjectSchema().additionalProperties(false);
         schema.addProperty("counts", new ArraySchema().items(new IntegerSchema()));

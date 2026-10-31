@@ -180,7 +180,7 @@ public class FormUrlEncodedValidator {
                 if (resolved == null)
                     throw new OpenAPIParsingException("Cannot resolve schema reference '%s' for form field '%s'."
                             .formatted(s.get$ref(), name));
-                return resolved;
+                return decodingSchema(s, resolved);
             }).toList();
             var decodingSchema = decodingSchema(decodingSchemas);
             // Decode once: converting separately could let the same field satisfy incompatible
@@ -213,6 +213,22 @@ public class FormUrlEncodedValidator {
         return schemas.stream()
                 .filter(s -> SchemaUtil.getEffectiveType(s) != null)
                 .findFirst().orElse(schemas.isEmpty() ? new Schema<>() : schemas.getFirst());
+    }
+
+    /**
+     * Keep a sibling type for decoding when the referenced component does not declare one.
+     * The component is shared by the OpenAPI model, so do not add the sibling type to it.
+     */
+    private Schema decodingSchema(Schema original, Schema resolved) {
+        if (SchemaUtil.getEffectiveType(resolved) != null || SchemaUtil.getEffectiveType(original) == null)
+            return resolved;
+
+        var decoding = new Schema<>();
+        decoding.setType(original.getType());
+        if (original.getTypes() != null)
+            decoding.setTypes(new LinkedHashSet<>(original.getTypes()));
+        decoding.setItems(resolved.getItems());
+        return decoding;
     }
 
     private Set<String> decodingTypes(Schema schema) {
