@@ -17,6 +17,9 @@ import com.predic8.membrane.core.openapi.util.UriTemplate;
 import io.swagger.v3.oas.models.media.IntegerSchema;
 import io.swagger.v3.oas.models.parameters.PathParameter;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.List;
 
@@ -135,6 +138,15 @@ protected String getOpenAPIFileName() {
     @Test
     void maximumBeyondDoublePrecision() {
         final var errors = validator.validate(get().path("/v1/limited/1/5.0000000000000000001"));
+        assertEquals(1, errors.size());
+        assertTrue(errors.getFirst().getMessage().contains("maximum"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"1e10000000", "1e2147483647"})
+    @Timeout(5)
+    void multipleOfWithExtremeExponent(String value) {
+        final var errors = validator.validate(get().path("/v1/multiples/" + value));
         assertEquals(1, errors.size());
         assertTrue(errors.getFirst().getMessage().contains("maximum"));
     }

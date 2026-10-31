@@ -23,6 +23,9 @@ import com.predic8.membrane.core.util.URIFactory;
 import jakarta.mail.internet.ContentType;
 import jakarta.mail.internet.ParseException;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -288,6 +291,34 @@ class UtilsTest {
     @Test
     void testConvertToBigDecimal_withInvalidString() {
         assertThrows(NumberFormatException.class, () -> convertToBigDecimal("invalid"));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "0, 0.25, true",
+            "1.5, 0.25, true",
+            "1.50, 0.5, true",
+            "1.51, 0.5, false",
+            "-1.5, 0.25, true",
+            "-1.51, 0.5, false",
+            "21, 7, true",
+            "24, 7, false",
+            "10, 1.00, true",
+            "0.0000000000000000001, 0.00000000000000000001, true",
+            "0.30000000000000000001, 0.1, false",
+            "1e10000000, 7, false",
+            "7e10000000, 7, true",
+            "1, 1e-10000000, true",
+            "1e-2147483647, 1, false",
+            "0e-2147483647, 1, true",
+            "1e2147483647, 1e-2147483647, true",
+            "1e-2147483647, 1e2147483647, false",
+            "1e2147483647, 3, false",
+            "100e2147483647, 1, true"
+    })
+    @Timeout(5)
+    void exactMultipleOfWithoutExpandingExponents(String value, String multiple, boolean valid) {
+        assertEquals(valid, isMultipleOf(new BigDecimal(value), new BigDecimal(multiple)));
     }
 
     @Test

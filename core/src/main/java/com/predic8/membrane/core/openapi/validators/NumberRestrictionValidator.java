@@ -16,16 +16,18 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.fasterxml.jackson.databind.node.*;
-import io.swagger.v3.oas.models.media.*;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.BooleanNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.swagger.v3.oas.models.media.Schema;
 
-import java.math.*;
+import java.math.BigDecimal;
 
-import static com.predic8.membrane.core.openapi.util.Utils.*;
+import static com.predic8.membrane.core.openapi.util.Utils.convertToBigDecimal;
+import static com.predic8.membrane.core.openapi.util.Utils.isMultipleOf;
 import static com.predic8.membrane.core.openapi.validators.ValidationError.v;
-import static com.predic8.membrane.core.openapi.validators.ValidationErrors.*;
-import static java.lang.String.*;
-import static java.math.BigDecimal.*;
+import static com.predic8.membrane.core.openapi.validators.ValidationErrors.error;
+import static java.lang.String.format;
 
 public class NumberRestrictionValidator {
 
@@ -69,9 +71,8 @@ public class NumberRestrictionValidator {
         if (schema.getMultipleOf() == null)
             return null;
 
-        BigDecimal multiplesOf = schema.getMultipleOf();
-        BigDecimal remainder = value.remainder(multiplesOf).stripTrailingZeros();
-        if (remainder.compareTo(ZERO) != 0) {
+        final var multiplesOf = schema.getMultipleOf();
+        if (!isMultipleOf(value, multiplesOf)) {
             return error(ctx, mask -> format("Value %s is not a multiple of %s.", v(value, mask), multiplesOf));
         }
 

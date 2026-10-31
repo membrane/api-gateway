@@ -102,6 +102,19 @@ paths:
       responses:
         '200':
           description: OK
+  /multiples/{value}:
+    get:
+      parameters:
+        - name: value
+          in: path
+          required: true
+          schema:
+            type: number
+            multipleOf: 1
+            maximum: 10
+      responses:
+        '200':
+          description: OK
   /pets/{petId}:
     get:
       parameters:
