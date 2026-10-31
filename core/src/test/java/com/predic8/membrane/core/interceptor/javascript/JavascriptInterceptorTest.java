@@ -257,8 +257,42 @@ public class JavascriptInterceptorTest {
         }
     }
 
+    void responseFlowWithoutResponse(Class<LanguageSupport> engine) {
+        initInterceptor("""
+                property.put('ran', 'yes');
+                var json = 'mentioned';
+                CONTINUE""", engine);
+        assertEquals(CONTINUE, interceptor.handleResponse(exc));
+        assertEquals("yes", exc.getProperty("ran"));
+        assertNull(exc.getResponse());
+    }
+
+    @ParameterizedTest
+    @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
+    void returnResponseInResponseFlowWithoutResponse(Class<LanguageSupport> engine) {
+        initInterceptor("Response.ok('baz').build()", engine);
+        assertEquals(RETURN, interceptor.handleResponse(exc));
+        assertEquals("baz", exc.getResponse().getBodyAsStringDecoded());
+    }
+
+    @ParameterizedTest
+    @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
+    void returnObjectInResponseFlowWithoutResponse(Class<LanguageSupport> engine) throws Exception {
+        initInterceptor("({id:7})", engine);
+        assertEquals(CONTINUE, interceptor.handleResponse(exc));
+        assertEquals(200, exc.getResponse().getStatusCode());
+        assertTrue(exc.getResponse().isJSON());
+        assertEquals(7, om.readValue(exc.getResponse().getBodyAsStringDecoded(), Map.class).get("id"));
+    }
+
     @SafeVarargs
     private Outcome executeScript(String src, Class<LanguageSupport>... engine) {
+        initInterceptor(src, engine);
+        return interceptor.handleRequest(exc);
+    }
+
+    @SafeVarargs
+    private void initInterceptor(String src, Class<LanguageSupport>... engine) {
         interceptor.setSrc(src);
 
         // Needed because GraalVMJavascriptSupport is not found using Class.forname() in the Interceptor!
@@ -273,6 +307,5 @@ public class JavascriptInterceptorTest {
         }
 
         interceptor.init(router);
-        return interceptor.handleRequest(exc);
     }
 }

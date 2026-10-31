@@ -163,6 +163,24 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
             return CONTINUE;
         }
 
+        // Test for package name is needed cause the dependency is provided and maybe not on the classpath
+        if (res.getClass().getPackageName().startsWith("org.graalvm.polyglot") && res instanceof Value value) {
+            Map m = value.as(Map.class);
+            msg = createResponseAndToExchangeIfThereIsNone(exc, flow, msg);
+            msg.getHeader().setContentType(APPLICATION_JSON);
+            try {
+                msg.setBodyContent(om.writeValueAsBytes(m));
+            } catch (JsonProcessingException e) {
+                log.error("", e);
+                internal(router.getConfiguration().isProduction(), getDisplayName())
+                        .addSubSee("json-processing-2")
+                        .detail("Error serializing Map to JSON")
+                        .exception(e)
+                        .buildAndSetResponse(exc);
+                return ABORT;
+            }
+            return CONTINUE;
+        }
         return CONTINUE;
     }
 
@@ -207,7 +225,7 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
     }
 
     private Map<String, Object> getParameterBindings(Exchange exc, Flow flow, Message msg) {
-        var binding = createParameterBindings(this, exc, flow, scriptAccessesJson && msg.isJSON(), TEXT_SERIALIZATION);
+        var binding = createParameterBindings(this, exc, flow, scriptAccessesJson && msg != null && msg.isJSON(), TEXT_SERIALIZATION);
         addOutcomeObjects(binding);
         binding.put("log", getScriptLogger());
         return binding;

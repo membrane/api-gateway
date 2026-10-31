@@ -47,9 +47,29 @@ import static com.predic8.membrane.core.util.text.TextUtil.toEnglishList;
 import static java.util.Locale.US;
 
 /**
- * @description <p>
- * Rewrites or redirects the path of incoming requests based on a mapping.
- * </p>
+ * @description <p>Rewrites the path and query of requests, or answers them with a redirect. Acts on requests only.</p>
+ * <p>The mappings are checked in order against the path and query, and the first one that matches is applied.
+ * Requests that match no mapping pass unchanged.</p>
+ * <p>A rewrite does not change the call to a target URL with a path such as <code>https://api.example.com/orders</code>:
+ * that URL is sent as it is. Redirects work with any target.</p>
+ * <p>See tutorials/routing/10-Rewrite-and-Redirect.yaml.</p>
+ * <h3>Security Hint</h3>
+ * <p>The expressions run on the request path. Overlapping quantifiers such as <code>(.*)/(.*)</code> can take
+ * a long time on crafted paths. See
+ * <a href="https://www.membrane-api.io/security/membrane-redos-protection.html">ReDoS Protection</a>.</p>
+ * @yaml <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - rewriter:
+ *         - from: ^/store/(.*)
+ *           to: /shop/v2/$1
+ *         - from: ^/v1/(.*)
+ *           to: /store/$1
+ *           do: redirect_permanent
+ *   target:
+ *     url: https://api.predic8.de
+ * </code></pre>
  * @topic 9. Misc
  */
 @MCElement(name = "rewriter", noEnvelope = true, component = false)
@@ -110,8 +130,9 @@ public class RewriteInterceptor extends AbstractInterceptor {
         }
 
         /**
-         * @description Java Regular expression
-         * @example ^/bank/(.*)
+         * @description Java regular expression searched in the path and query of the request. It is not anchored:
+         * use <code>^</code> to match from the start of the path.
+         * @example ^/store/(.*)
          */
         @Required
         @MCAttribute
@@ -128,8 +149,11 @@ public class RewriteInterceptor extends AbstractInterceptor {
         }
 
         /**
-         * @description Replacement string. Can contain references to matching groups.
-         * @example /axis2/$1
+         * @description Replacement for the matched part. <code>$1</code>, <code>$2</code>, ... insert the groups
+         * captured by <code>from</code>. An absolute URL such as <code>https://example.com/$1</code> redirects by
+         * default; with <code>do: rewrite</code> it replaces the backend instead, if the target URL has no path or
+         * only <code>/</code>. A target URL with a longer path is always called as configured.
+         * @example /shop/v2/$1
          */
         @Required
         @MCAttribute
@@ -144,9 +168,10 @@ public class RewriteInterceptor extends AbstractInterceptor {
         }
 
         /**
-         * @description What to do: "rewrite", "redirect_temporary" or "redirect_permanent".
-         * @default rewrite (default) or redirect_temporary (if "to" is an absolute URL like "https://...")
-         * @example redirect_temporary
+         * @description <code>rewrite</code> changes the request and passes it on. <code>redirect_temporary</code>
+         * (307) and <code>redirect_permanent</code> (301) answer with the new location without calling the backend.
+         * @default rewrite, or redirect_temporary if <code>to</code> is an absolute URL
+         * @example redirect_permanent
          */
         @MCAttribute
         public void setDo(Type do_) {
@@ -305,7 +330,7 @@ public class RewriteInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description Defines a regex and a replacement for the rewriting of the URI.
+     * @description Mappings from a regular expression to a replacement, checked in order.
      */
     @Required
     @MCChildElement
