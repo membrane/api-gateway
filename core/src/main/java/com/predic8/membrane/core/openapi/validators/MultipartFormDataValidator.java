@@ -277,7 +277,7 @@ public class MultipartFormDataValidator {
             JsonNode json;
             try {
                 json = new XmlToJsonConverter(api).convert(new String(part.content, UTF_8), propertySchema);
-            } catch (MixedContentException | MultipleElementsException e) {
+            } catch (MixedContentException | MultipleElementsException | UndeclaredContentException e) {
                 return err.add(ctx.statusCode(400), "Part '%s': %s".formatted(part.name, e.getMessage()));
             } catch (SAXException | XmlParseException | IOException e) {
                 return err.add(ctx.statusCode(400), "Part '%s' is declared as %s but its content could not be parsed as XML.".formatted(part.name, contentType));
