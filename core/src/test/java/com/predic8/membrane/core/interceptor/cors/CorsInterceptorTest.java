@@ -86,6 +86,26 @@ class CorsInterceptorTest {
             i.setOrigins("null http://membrane-api.io *");
             assertThrows(ConfigurationException.class, () -> i.init());
         }
+
+        @Test
+        void credentialsWithAllowAll() {
+            i.setAllowAll(true);
+            i.setCredentials(true);
+            i.setOrigins("https://trusted.example.com");
+            assertThrows(ConfigurationException.class, () -> i.init());
+        }
+
+        @Test
+        void invalidOriginIsRejected() {
+            assertThrows(ConfigurationException.class, () -> i.setOrigins("https://trusted.example.com ftp:/invalid"));
+        }
+
+        @Test
+        void invalidOriginKeepsPreviousOrigins() {
+            i.setOrigins("https://trusted.example.com");
+            assertThrows(ConfigurationException.class, () -> i.setOrigins("not-an-origin"));
+            assertEquals(Set.of("https://trusted.example.com"), i.getAllowedOrigins());
+        }
     }
 
     @Nested
