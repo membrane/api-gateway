@@ -198,8 +198,7 @@ public class MultipartFormDataValidator {
             var partCtx = ctx.addJSONpointerSegment(name);
             // Array occurrences represent one array value; a scalar schema cannot validate its items
             // instead of the array, which would incorrectly allow incompatible types to pass.
-            if (resolvedSchemas.stream().anyMatch(s -> SchemaUtil.getEffectiveType(s) != null
-                    && SchemaUtil.isArray(s) != array)) {
+            if (resolvedSchemas.stream().anyMatch(s -> !allowsArrayChoice(s, array))) {
                 err.add(partCtx.statusCode(400), "Multipart property '%s' has incompatible array and non-array schemas.".formatted(name));
                 continue;
             }
@@ -285,8 +284,36 @@ public class MultipartFormDataValidator {
 
     @SuppressWarnings("rawtypes")
     private Schema decodingSchema(List<Schema> schemas) {
-        return schemas.stream().filter(s -> SchemaUtil.getEffectiveType(s) != null)
-                .findFirst().orElse(schemas.getFirst());
+        var typed = schemas.stream().filter(s -> SchemaUtil.getEffectiveType(s) != null).toList();
+        // Prefer a schema whose chosen type is allowed by every other typed constraint.
+        var preferred = typed.stream().filter(candidate -> typed.stream().allMatch(s ->
+                        allowsType(s, SchemaUtil.getEffectiveType(candidate))))
+                .findFirst();
+        if (preferred.isPresent())
+            return preferred.get();
+        if (typed.isEmpty())
+            return schemas.getFirst();
+        var types = typed.getFirst().getTypes();
+        if (types != null)
+            for (Object type : types)
+                if (!"null".equals(type) && typed.stream().allMatch(s -> allowsType(s, type.toString())))
+                    return new Schema<>().type(type.toString());
+        return typed.getFirst();
+    }
+
+    private boolean allowsType(Schema schema, String type) {
+        return type.equals(schema.getType()) || schema.getTypes() != null && schema.getTypes().contains(type);
+    }
+
+    private boolean allowsArrayChoice(Schema schema, boolean array) {
+        if (SchemaUtil.getEffectiveType(schema) == null)
+            return true;
+        if (array)
+            return allowsType(schema, "array");
+        if (schema.getType() != null && !"array".equals(schema.getType()) && !"null".equals(schema.getType()))
+            return true;
+        return schema.getTypes() != null && schema.getTypes().stream()
+                .anyMatch(type -> !"array".equals(type) && !"null".equals(type));
     }
 
     /**

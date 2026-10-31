@@ -277,6 +277,28 @@ public class MultipartFormDataValidatorTest extends AbstractValidatorTest {
         assertEquals("/x-count", errors.get(0).getContext().getJSONpointer());
     }
 
+    @Test
+    void unionContainingStringAcceptsPlainStringPart() throws ParseException {
+        var union = new ComposedSchema().oneOf(List.of(new IntegerSchema(), new StringSchema()));
+        var schema = new ObjectSchema().additionalProperties(false);
+        schema.addProperty("value", union);
+
+        var errors = validateParts(schema, "value", "hello");
+
+        assertTrue(errors.isEmpty(), errors::toString);
+    }
+
+    @Test
+    void typeUnionAndStringPatternAcceptPlainStringPart() throws ParseException {
+        var union = new Schema<>().types(new java.util.LinkedHashSet<>(List.of("array", "string")));
+        var schema = new ObjectSchema().additionalProperties(false);
+        schema.addProperty("value", union);
+        schema.addPatternProperty("^value$", new StringSchema().minLength(3));
+
+        assertTrue(validateParts(schema, "value", "hello").isEmpty());
+        assertEquals(1, validateParts(schema, "value", "hi").size());
+    }
+
     @ParameterizedTest
     @CsvSource({"true", "false"})
     void patternOnlyDecodingIsIndependentOfInsertionOrder(boolean reverse) throws ParseException {
