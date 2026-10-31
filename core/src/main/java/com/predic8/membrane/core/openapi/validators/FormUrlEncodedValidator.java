@@ -129,50 +129,73 @@ public class FormUrlEncodedValidator {
         var errors = new ValidationErrors();
         Map<String, Schema> properties = schema.getProperties();
         Map<String, Schema> patternProperties = schema.getPatternProperties();
+        // Compile once per validation; regex order makes pattern-only decoding independent of map order.
+        var patterns = new LinkedHashMap<Pattern, Schema>();
+        if (patternProperties != null)
+            patternProperties.entrySet().stream().sorted(Map.Entry.comparingByKey())
+                    .forEach(entry -> patterns.put(Pattern.compile(entry.getKey()), entry.getValue()));
 
         for (var entry : form.entrySet()) {
             var name = entry.getKey();
             var values = entry.getValue();
-
+            // A declared property and all matching patterns apply together. Put the explicit
+            // property first so its type takes precedence when choosing how to decode the field.
+            var fieldSchemas = new ArrayList<Schema>();
             Schema propertySchema = properties != null ? properties.get(name) : null;
-            boolean matchesPattern = false;
-            if (patternProperties != null) {
-                for (var pattern : patternProperties.entrySet()) {
-                    if (Pattern.compile(pattern.getKey()).matcher(name).find()) {
-                        matchesPattern = true;
-                        errors.add(validateField(ctx.addJSONpointerSegment(name), pattern.getValue(), values));
-                    }
-                }
-            }
-            if (propertySchema == null && matchesPattern)
-                continue;
-            if (propertySchema == null) {
-                // An undeclared field is validated against an additionalProperties schema.
+            if (propertySchema != null)
+                fieldSchemas.add(propertySchema);
+            patterns.forEach((pattern, patternSchema) -> {
+                // JSON Schema patterns may match anywhere in the field name, not just the whole name.
+                if (pattern.matcher(name).find())
+                    fieldSchemas.add(patternSchema);
+            });
+            // A field is additional only if neither properties nor patternProperties covers it.
+            if (fieldSchemas.isEmpty()) {
                 var additional = SchemaUtil.getAdditionalProperties(schema);
                 if (FALSE.equals(additional))
                     errors.add(ctx, "The application/x-www-form-urlencoded body contains an unexpected property '%s'.".formatted(name));
                 if (!(additional instanceof Schema<?> additionalSchema))
                     continue;
-                propertySchema = additionalSchema;
+                fieldSchemas.add(additionalSchema);
             }
 
-            errors.add(validateField(ctx.addJSONpointerSegment(name), propertySchema, values));
+            // Resolve references for decoding, but keep the original schemas for validation,
+            // including any constraints next to a $ref.
+            var decodingSchemas = fieldSchemas.stream().map(s -> SchemaUtil.resolveRef(api, s)).toList();
+            var decodingSchema = decodingSchema(decodingSchemas);
+            // Decode once: converting separately could let the same field satisfy incompatible
+            // types (e.g. integer 1 for one schema and string "1" for another).
+            var node = SchemaUtil.isArray(decodingSchema)
+                    ? toArrayNode(values, decodingSchemas)
+                    : toNode(values.getFirst(), decodingSchema);
+            var fieldCtx = ctx.addJSONpointerSegment(name);
+            for (var fieldSchema : fieldSchemas)
+                errors.add(new SchemaValidator(api, fieldSchema).validate(fieldCtx, node));
         }
         return errors;
     }
 
-    private ValidationErrors validateField(ValidationContext ctx, Schema schema, List<String> values) {
-        schema = SchemaUtil.resolveRef(api, schema);
-        return new SchemaValidator(api, schema).validate(ctx, SchemaUtil.isArray(schema)
-                ? toArrayNode(values, schema)
-                : toNode(values.getFirst(), schema));
+    /**
+     * An explicit property takes precedence, then patterns in regex order. A schema without a type
+     * contributes constraints but must not hide the decoding type supplied by another schema.
+     * All applicable schemas subsequently validate the same node, including conflicting types.
+     */
+    private Schema decodingSchema(List<Schema> schemas) {
+        return schemas.stream()
+                .filter(s -> SchemaUtil.getEffectiveType(s) != null)
+                .findFirst().orElse(schemas.isEmpty() ? new Schema<>() : schemas.getFirst());
     }
 
-    private ArrayNode toArrayNode(List<String> values, Schema arraySchema) {
+    private ArrayNode toArrayNode(List<String> values, List<Schema> schemas) {
         ArrayNode arrayNode = JsonNodeFactory.instance.arrayNode();
         for (int i = 0; i < values.size(); i++) {
-            final var items = SchemaUtil.resolveRef(api, SchemaUtil.itemSchema(arraySchema, i));
-            arrayNode.add(items != null ? toNode(values.get(i), items) : JsonNodeFactory.instance.textNode(values.get(i)));
+            var itemSchemas = new ArrayList<Schema>();
+            for (var schema : schemas) {
+                var items = SchemaUtil.resolveRef(api, SchemaUtil.itemSchema(schema, i));
+                if (items != null)
+                    itemSchemas.add(items);
+            }
+            arrayNode.add(toNode(values.get(i), decodingSchema(itemSchemas)));
         }
         return arrayNode;
     }
