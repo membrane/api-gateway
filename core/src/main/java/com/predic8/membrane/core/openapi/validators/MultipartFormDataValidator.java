@@ -43,6 +43,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.*;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import static com.predic8.membrane.core.http.Header.CONTENT_TRANSFER_ENCODING;
 import static com.predic8.membrane.core.http.MimeType.*;
@@ -263,7 +264,14 @@ public class MultipartFormDataValidator {
         var patterns = new LinkedHashMap<Pattern, Schema>();
         if (patternProperties != null)
             patternProperties.entrySet().stream().sorted(Map.Entry.comparingByKey())
-                    .forEach(entry -> patterns.put(Pattern.compile(entry.getKey()), entry.getValue()));
+                    .forEach(entry -> {
+                        try {
+                            patterns.put(Pattern.compile(entry.getKey()), entry.getValue());
+                        } catch (PatternSyntaxException e) {
+                            throw new OpenAPIParsingException("Invalid multipart schema pattern '%s': %s"
+                                    .formatted(entry.getKey(), e.getDescription()));
+                        }
+                    });
         return patterns;
     }
 
