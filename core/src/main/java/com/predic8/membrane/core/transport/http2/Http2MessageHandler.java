@@ -64,4 +64,14 @@ public interface Http2MessageHandler {
      */
     void handleOversizedHeaders(StreamInfo streamInfo, boolean endStream) throws IOException;
 
+    /**
+     * Called instead of {@link #handleExchange} when a stream's header block carries a malformed field
+     * (RFC 9113 &sect;8.2.1). The block has been decoded and discarded, no message is handed over for the
+     * stream, and the stream is reset with PROTOCOL_ERROR.
+     *
+     * @param streamInfo the stream the header block was received on
+     */
+    default void handleMalformedHeaders(StreamInfo streamInfo) {
+    }
+
 }
