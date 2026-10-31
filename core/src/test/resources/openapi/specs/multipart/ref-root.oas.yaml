@@ -5,6 +5,37 @@ info:
 servers:
   - url: https://api.server.test
 paths:
+  /upload-siblings-closed:
+    post:
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/OpenUpload'
+              additionalProperties: false
+              properties:
+                name:
+                  type: string
+                token:
+                  type: string
+      responses:
+        '200':
+          description: OK
+  /upload-siblings:
+    post:
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/OpenUpload'
+              required: [token]
+              properties:
+                token:
+                  type: string
+                  maxLength: 3
+      responses:
+        '200':
+          description: OK
   /upload:
     post:
       requestBody:
@@ -18,6 +49,13 @@ paths:
           description: OK
 components:
   schemas:
+    OpenUpload:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          maxLength: 5
     Upload:
       type: object
       required:

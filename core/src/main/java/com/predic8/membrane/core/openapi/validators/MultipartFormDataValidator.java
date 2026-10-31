@@ -23,6 +23,7 @@ import com.predic8.membrane.core.openapi.model.Message;
 import com.predic8.membrane.core.openapi.util.SchemaUtil;
 import com.predic8.membrane.core.util.xml.parser.XmlParseException;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.SpecVersion;
 import io.swagger.v3.oas.models.media.Encoding;
 import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.Schema;
@@ -79,8 +80,8 @@ public class MultipartFormDataValidator {
             return err;
         }
 
-        // A $ref root has no required parts, properties or additionalProperties of its own.
-        var schema = SchemaUtil.resolveRef(api, mediaType.getSchema());
+        var declaredSchema = mediaType.getSchema();
+        var schema = SchemaUtil.resolveRef(api, declaredSchema);
         if (schema == null) {
             return err.add(ctx, "Cannot resolve the schema reference '%s'.".formatted(mediaType.getSchema().get$ref()));
         }
@@ -100,6 +101,13 @@ public class MultipartFormDataValidator {
 
         err.add(validateRequiredParts(ctx, schema, parts));
         err.add(validateParts(ctx, schema, mediaType.getEncoding(), parts));
+        // In OAS 3.1+, keywords alongside $ref apply as another schema to the same body.
+        // Keep their property rules separate from the referenced component's rules.
+        if (declaredSchema.get$ref() != null && declaredSchema.getSpecVersion() != SpecVersion.V30
+                && SchemaValidator.hasSiblings(declaredSchema)) {
+            err.add(validateRequiredParts(ctx, declaredSchema, parts));
+            err.add(validateParts(ctx, declaredSchema, mediaType.getEncoding(), parts));
+        }
         return err;
     }
 

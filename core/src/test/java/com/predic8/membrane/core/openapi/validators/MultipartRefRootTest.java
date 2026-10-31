@@ -69,6 +69,52 @@ class MultipartRefRootTest extends AbstractValidatorTest {
         assertEquals(1, errors.size(), () -> "Errors: " + errors);
     }
 
+    @Test
+    void missingSiblingRequiredPart() throws ParseException {
+        final var errors = validateSiblings(new MultipartBuilder()
+                .part("name", null, TEXT_PLAIN, null, "Bob").build());
+        assertTrue(errors.toString().contains("'token' is missing"), () -> "Errors: " + errors);
+    }
+
+    @Test
+    void missingReferencedRequiredPart() throws ParseException {
+        final var errors = validateSiblings(new MultipartBuilder()
+                .part("token", null, TEXT_PLAIN, null, "abc").build());
+        assertTrue(errors.toString().contains("'name' is missing"), () -> "Errors: " + errors);
+    }
+
+    @Test
+    void invalidSiblingPart() throws ParseException {
+        final var errors = validateSiblings(new MultipartBuilder()
+                .part("name", null, TEXT_PLAIN, null, "Bob")
+                .part("token", null, TEXT_PLAIN, null, "abcd").build());
+        assertEquals(1, errors.size(), () -> "Errors: " + errors);
+    }
+
+    @Test
+    void validSiblingAndReferencedParts() throws ParseException {
+        final var errors = validateSiblings(new MultipartBuilder()
+                .part("name", null, TEXT_PLAIN, null, "Bob")
+                .part("token", null, TEXT_PLAIN, null, "abc").build());
+        assertEquals(0, errors.size(), () -> "Errors: " + errors);
+    }
+
+    @Test
+    void siblingAdditionalPropertiesRejectsUnknownPart() throws ParseException {
+        final var errors = validator.validate(post().path("/upload-siblings-closed")
+                .mediaType(MultipartBuilder.CONTENT_TYPE)
+                .body(new MultipartBuilder()
+                        .part("name", null, TEXT_PLAIN, null, "Bob")
+                        .part("other", null, TEXT_PLAIN, null, "x").build()));
+        assertEquals(1, errors.size(), () -> "Errors: " + errors);
+        assertTrue(errors.getFirst().getMessage().contains("unexpected property 'other'"), () -> "Errors: " + errors);
+    }
+
+    private ValidationErrors validateSiblings(String body) throws ParseException {
+        return validator.validate(post().path("/upload-siblings")
+                .mediaType(MultipartBuilder.CONTENT_TYPE).body(body));
+    }
+
     private ValidationErrors validate(String body) throws ParseException {
         return validator.validate(post().path("/upload")
                 .mediaType(MultipartBuilder.CONTENT_TYPE)
