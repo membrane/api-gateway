@@ -290,6 +290,19 @@ public class FormUrlEncodedValidatorTest extends AbstractValidatorTest {
         assertTrue(error.getMessage().contains("extra"));
     }
 
+    @Test
+    void invalidPatternPropertiesRegexReportsSchemaConfigurationError() {
+        var schema = new ObjectSchema().additionalProperties(false);
+        schema.addPatternProperty("[", new StringSchema());
+
+        // A broken schema must use the configuration-error path, not a client validation error
+        // or an uncaught PatternSyntaxException. Include the offending keyword and regex for diagnosis.
+        var error = assertThrows(OpenAPIParsingException.class,
+                () -> validateSchema(schema, "field=value"));
+        assertTrue(error.getMessage().contains("patternProperties"), error::getMessage);
+        assertTrue(error.getMessage().contains("["), error::getMessage);
+    }
+
     private ValidationErrors validateSchema(Schema<?> schema, String body) {
         return new FormUrlEncodedValidator(new OpenAPI()).validate(
                 new ValidationContext(), new MediaType().schema(schema), body);
