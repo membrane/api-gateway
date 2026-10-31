@@ -16,6 +16,11 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.media.IntegerSchema;
+import io.swagger.v3.oas.models.media.MediaType;
+import io.swagger.v3.oas.models.media.ObjectSchema;
+import io.swagger.v3.oas.models.media.StringSchema;
 import jakarta.mail.internet.ParseException;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -164,6 +169,34 @@ public class FormUrlEncodedValidatorTest extends AbstractValidatorTest {
                     .mediaType(APPLICATION_X_WWW_FORM_URLENCODED)
                     .body(body));
         }
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "x-count=3,0",
+            "x-count=abc,1",
+            "other=3,1",
+            "prefix-x-count=3,0",
+            "x-count=3&other=3,1"
+    })
+    void patternPropertiesWithClosedSchema(String body, int expectedErrors) {
+        var schema = new ObjectSchema().additionalProperties(false);
+        schema.addPatternProperty("x-", new IntegerSchema());
+        var errors = new FormUrlEncodedValidator(new OpenAPI()).validate(
+                new ValidationContext(), new MediaType().schema(schema), body);
+        assertEquals(expectedErrors, errors.size(), errors::toString);
+    }
+
+    @Test
+    void allMatchingPatternsAndDeclaredPropertiesAreValidated() {
+        var schema = new ObjectSchema().additionalProperties(false);
+        schema.addProperty("x-name", new StringSchema().minLength(5));
+        schema.addPatternProperty("^x-", new StringSchema().minLength(4));
+        schema.addPatternProperty("name$", new StringSchema().minLength(3));
+        var errors = new FormUrlEncodedValidator(new OpenAPI()).validate(
+                new ValidationContext(), new MediaType().schema(schema), "x-name=a");
+        assertEquals(3, errors.size(), errors::toString);
+        assertTrue(errors.stream().allMatch(e -> "/x-name".equals(e.getContext().getJSONpointer())));
     }
 
     private ValidationErrors validateForm(String body) throws ParseException {

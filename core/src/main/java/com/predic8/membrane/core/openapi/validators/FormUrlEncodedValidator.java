@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import static com.predic8.membrane.core.openapi.util.SchemaUtil.isObjectOrArray;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.BODY;
@@ -127,12 +128,24 @@ public class FormUrlEncodedValidator {
     private ValidationErrors validateFields(ValidationContext ctx, Schema schema, Map<String, List<String>> form) {
         var errors = new ValidationErrors();
         Map<String, Schema> properties = schema.getProperties();
+        Map<String, Schema> patternProperties = schema.getPatternProperties();
 
         for (var entry : form.entrySet()) {
             var name = entry.getKey();
             var values = entry.getValue();
 
             Schema propertySchema = properties != null ? properties.get(name) : null;
+            boolean matchesPattern = false;
+            if (patternProperties != null) {
+                for (var pattern : patternProperties.entrySet()) {
+                    if (Pattern.compile(pattern.getKey()).matcher(name).find()) {
+                        matchesPattern = true;
+                        errors.add(validateField(ctx.addJSONpointerSegment(name), pattern.getValue(), values));
+                    }
+                }
+            }
+            if (propertySchema == null && matchesPattern)
+                continue;
             if (propertySchema == null) {
                 // An undeclared field is validated against an additionalProperties schema.
                 var additional = SchemaUtil.getAdditionalProperties(schema);
@@ -143,16 +156,16 @@ public class FormUrlEncodedValidator {
                 propertySchema = additionalSchema;
             }
 
-            propertySchema = SchemaUtil.resolveRef(api, propertySchema);
-            var fieldCtx = ctx.addJSONpointerSegment(name);
-
-            if (SchemaUtil.isArray(propertySchema)) {
-                errors.add(new SchemaValidator(api, propertySchema).validate(fieldCtx, toArrayNode(values, propertySchema)));
-            } else {
-                errors.add(new SchemaValidator(api, propertySchema).validate(fieldCtx, toNode(values.getFirst(), propertySchema)));
-            }
+            errors.add(validateField(ctx.addJSONpointerSegment(name), propertySchema, values));
         }
         return errors;
+    }
+
+    private ValidationErrors validateField(ValidationContext ctx, Schema schema, List<String> values) {
+        schema = SchemaUtil.resolveRef(api, schema);
+        return new SchemaValidator(api, schema).validate(ctx, SchemaUtil.isArray(schema)
+                ? toArrayNode(values, schema)
+                : toNode(values.getFirst(), schema));
     }
 
     private ArrayNode toArrayNode(List<String> values, Schema arraySchema) {
