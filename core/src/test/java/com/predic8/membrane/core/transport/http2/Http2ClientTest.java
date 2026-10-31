@@ -514,11 +514,11 @@ class Http2ClientTest {
     }
 
     /**
-     * A :status that is not exactly three digits (RFC 9110 §15) is a malformed response (RFC 9113 §8.3): only its
-     * stream is reset, the connection stays usable.
+     * A :status that is not exactly three digits between 100 and 599 (RFC 9110 §15) is a malformed response
+     * (RFC 9113 §8.3): only its stream is reset, the connection stays usable.
      */
     @ParameterizedTest(name = ":status={0}")
-    @ValueSource(strings = {"abc", "+200", "0200", "-1", "20"})
+    @ValueSource(strings = {"abc", "+200", "0200", "-1", "20", "000", "099", "600"})
     void invalidStatusFailsOnlyItsCall(String status) throws Exception {
         final var router = new DefaultRouter();
         try (final var backend = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {

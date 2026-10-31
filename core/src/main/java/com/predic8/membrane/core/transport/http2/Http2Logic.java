@@ -517,8 +517,11 @@ public class Http2Logic {
         return value.length == 0 || (!isOptionalWhitespace((char) value[0]) && !isOptionalWhitespace((char) value[value.length - 1]));
     }
 
+    /**
+     * Three digits between 100 and 599 (RFC 9110 §15).
+     */
     private static boolean isValidStatus(String status) {
-        if (status.length() != 3)
+        if (status.length() != 3 || status.charAt(0) < '1' || status.charAt(0) > '5')
             return false;
         for (int i = 0; i < 3; i++)
             if (status.charAt(i) < '0' || status.charAt(i) > '9')
