@@ -385,6 +385,7 @@ public class Http2Logic {
 
         final var oversizedField = new boolean[1];
         final var malformedField = new boolean[1];
+        final var statusReceived = new boolean[1];
         // The whole block is decoded even if it gets rejected, so the HPACK dynamic table stays in sync.
         decoder.decode(getPackedHeaderStream(headerFrames), (name, value, sensitive) -> {
             // Checked first: a malformed message is a protocol error, even if it is also too large.
@@ -424,6 +425,7 @@ public class Http2Logic {
                     return;
                 }
                 ((Response) request).setStatusCode(Integer.parseInt(val));
+                statusReceived[0] = true;
                 log.debug("streamId=" + streamId1 + " status=" + val);
             } else
                 header.add(key, val);
@@ -433,10 +435,14 @@ public class Http2Logic {
         if (sb != null)
             log.debug(sb.toString());
 
+        // Every response carries :status (RFC 9113 §8.3.2), trailers do not.
+        if (!isTrailer && request instanceof Response && !statusReceived[0])
+            malformedField[0] = true;
+
         if (malformedField[0]) {
             // A malformed message is a stream error of type PROTOCOL_ERROR (RFC 9113 §8.1.1). It is rejected
             // rather than forwarded without the field, as the HTTP/1.1 parser does.
-            log.info("Rejecting header block on stream {}: a header field name or value is malformed (RFC 9113 §8.2.1).", streamId1);
+            log.info("Rejecting header block on stream {}: it is malformed (RFC 9113 §8.1.1).", streamId1);
             // Queued before anyone waiting on the stream is woken up, as they might reset it with another error code.
             // The block's END_STREAM is not applied: it could close the stream before the reset is sent, and the
             // frame sender drops frames for closed streams. Writing the reset closes the stream instead.

@@ -520,6 +520,22 @@ class Http2ClientTest {
     @ParameterizedTest(name = ":status={0}")
     @ValueSource(strings = {"abc", "+200", "0200", "-1", "20", "000", "099", "600"})
     void invalidStatusFailsOnlyItsCall(String status) throws Exception {
+        malformedResponseFailsOnlyItsCall(":status", status);
+    }
+
+    /**
+     * Every response carries :status (RFC 9113 §8.3.2); a response header block without it is malformed.
+     */
+    @Test
+    void missingStatusFailsOnlyItsCall() throws Exception {
+        malformedResponseFailsOnlyItsCall("content-type", "text/plain");
+    }
+
+    /**
+     * Answers the first call with a header block of the given fields, expects it to fail with a stream reset, and
+     * checks that a second call on the same connection still works.
+     */
+    private void malformedResponseFailsOnlyItsCall(String... namesAndValues) throws Exception {
         final var router = new DefaultRouter();
         try (final var backend = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
             backend.setSoTimeout(2000);
@@ -531,7 +547,7 @@ class Http2ClientTest {
 
                 final var first = callAsync(client);
                 readUntilRequestHeaders(peer);
-                peer.getOutputStream().write(headersFrame(1, 0x4, encoder, ":status", status));
+                peer.getOutputStream().write(headersFrame(1, 0x4, encoder, namesAndValues));
                 peer.getOutputStream().flush();
 
                 final var e = assertThrows(ExecutionException.class, () -> first.get(2, TimeUnit.SECONDS));
