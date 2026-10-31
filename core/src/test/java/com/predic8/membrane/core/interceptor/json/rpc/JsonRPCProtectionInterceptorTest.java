@@ -352,6 +352,18 @@ class JsonRPCProtectionInterceptorTest {
                         null
                 ),
                 requestRejects(
+                        "trailing JSON value is rejected",
+                        "",
+                        """
+                        {"jsonrpc":"2.0","method":"rpc.echo","id":1}
+                        {"jsonrpc":"2.0","method":"rpc.forbidden","id":2}
+                        """,
+                        400,
+                        ERR_INVALID_REQUEST,
+                        "Invalid JSON-RPC payload",
+                        null
+                ),
+                requestRejects(
                         "payload must be an object or batch array",
                         "",
                         "1",

@@ -40,6 +40,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.fasterxml.jackson.core.StreamReadFeature.STRICT_DUPLICATE_DETECTION;
+import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_TRAILING_TOKENS;
 import static com.networknt.schema.InputFormat.JSON;
 import static com.networknt.schema.InputFormat.YAML;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
@@ -53,6 +54,7 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
 
     private final YAMLFactory factory = YAMLFactory.builder().enable(STRICT_DUPLICATE_DETECTION).build();
     private final ObjectMapper yamlObjectMapper = new ObjectMapper(factory);
+    private final ObjectMapper jsonObjectMapper = new ObjectMapper().enable(FAIL_ON_TRAILING_TOKENS);
 
     public static final String SCHEMA_VERSION_2020_12 = "2020-12";
 
@@ -139,7 +141,7 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
         try {
             assertions = inputFormat == YAML ?
                     handleMultipleYAMLDocuments(exc, flow) :
-                    schema.validate(exc.getMessage(flow).getBodyAsStringDecoded(), inputFormat);
+                    schema.validate(jsonObjectMapper.readTree(exc.getMessage(flow).getBodyAsStreamDecoded()));
         } catch (UncheckedIOException | IOException e) {
             String detail = e instanceof UncheckedIOException uioe && uioe.getCause() != null ?
                     uioe.getCause().getMessage() : e.getMessage();
