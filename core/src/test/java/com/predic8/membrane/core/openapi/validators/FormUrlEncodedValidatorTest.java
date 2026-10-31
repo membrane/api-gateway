@@ -28,6 +28,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 
 import java.math.BigDecimal;
 import java.net.URLEncoder;
+import java.util.LinkedHashSet;
 import java.util.List;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_X_WWW_FORM_URLENCODED;
@@ -227,6 +228,38 @@ public class FormUrlEncodedValidatorTest extends AbstractValidatorTest {
         schema.addPatternProperty("count$", new NumberSchema());
         assertTrue(validateSchema(schema, "count=1").isEmpty());
         assertFalse(validateSchema(schema, "count=1.5").isEmpty());
+    }
+
+    @ParameterizedTest
+    @CsvSource({"true", "false"})
+    void propertyAndPatternChooseCommonNumericType(boolean reverse) {
+        var schema = new ObjectSchema();
+        schema.addProperty("count", reverse ? new IntegerSchema() : new NumberSchema());
+        schema.addPatternProperty("^count$", reverse ? new NumberSchema() : new IntegerSchema());
+        assertTrue(validateSchema(schema, "count=42").isEmpty());
+        assertFalse(validateSchema(schema, "count=42.5").isEmpty());
+    }
+
+    @Test
+    void propertyAndPatternsChooseCommonTypeFromUnion() {
+        var union = new Schema<>();
+        union.setTypes(new LinkedHashSet<>(List.of("string", "number")));
+        var schema = new ObjectSchema();
+        schema.addProperty("count", union);
+        schema.addPatternProperty("^count", new NumberSchema());
+        schema.addPatternProperty("count$", new IntegerSchema().minimum(BigDecimal.TEN));
+        assertTrue(validateSchema(schema, "count=42").isEmpty());
+        assertFalse(validateSchema(schema, "count=1").isEmpty());
+        assertFalse(validateSchema(schema, "count=abc").isEmpty());
+    }
+
+    @Test
+    void arrayItemsChooseCommonNumericType() {
+        var schema = new ObjectSchema();
+        schema.addProperty("counts", new ArraySchema().items(new NumberSchema()));
+        schema.addPatternProperty("^counts$", new ArraySchema().items(new IntegerSchema()));
+        assertTrue(validateSchema(schema, "counts=42&counts=43").isEmpty());
+        assertFalse(validateSchema(schema, "counts=42&counts=43.5").isEmpty());
     }
 
     @Test

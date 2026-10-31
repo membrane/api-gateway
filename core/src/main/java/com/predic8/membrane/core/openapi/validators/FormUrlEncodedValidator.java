@@ -31,10 +31,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -156,8 +153,7 @@ public class FormUrlEncodedValidator {
         for (var entry : form.entrySet()) {
             var name = entry.getKey();
             var values = entry.getValue();
-            // A declared property and all matching patterns apply together. Put the explicit
-            // property first so its type takes precedence when choosing how to decode the field.
+            // A declared property and all matching patterns apply together.
             var fieldSchemas = new ArrayList<Schema>();
             Schema propertySchema = properties != null ? properties.get(name) : null;
             if (propertySchema != null)
@@ -200,14 +196,34 @@ public class FormUrlEncodedValidator {
     }
 
     /**
-     * An explicit property takes precedence, then patterns in regex order. A schema without a type
-     * contributes constraints but must not hide the decoding type supplied by another schema.
-     * All applicable schemas subsequently validate the same node, including conflicting types.
+     * Choose a type accepted by every applicable schema, treating integers as numbers and
+     * typeless schemas as unconstrained. Preserve declaration order among compatible types.
+     * If types conflict, retain a declared type so validation of the shared node reports it.
      */
     private Schema decodingSchema(List<Schema> schemas) {
+        var declaredTypes = schemas.stream().map(this::decodingTypes).filter(types -> !types.isEmpty()).toList();
+        if (!declaredTypes.isEmpty()) {
+            var compatibleTypes = new LinkedHashSet<>(declaredTypes.getFirst());
+            declaredTypes.forEach(compatibleTypes::retainAll);
+            // Form scalar decoding does not turn text into a JSON null.
+            compatibleTypes.remove("null");
+            if (!compatibleTypes.isEmpty())
+                return new Schema<>().type(compatibleTypes.getFirst());
+        }
         return schemas.stream()
                 .filter(s -> SchemaUtil.getEffectiveType(s) != null)
                 .findFirst().orElse(schemas.isEmpty() ? new Schema<>() : schemas.getFirst());
+    }
+
+    private Set<String> decodingTypes(Schema schema) {
+        var types = new LinkedHashSet<String>();
+        if (schema.getType() != null)
+            types.add(schema.getType());
+        else if (schema.getTypes() != null)
+            types.addAll(schema.getTypes());
+        if (types.contains("number"))
+            types.add("integer");
+        return types;
     }
 
     private ArrayNode toArrayNode(List<String> values, List<Schema> schemas) {
