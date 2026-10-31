@@ -35,6 +35,7 @@ import java.util.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.util.ProblemDetailsTestUtil.*;
+import static org.apache.commons.lang3.exception.ExceptionUtils.getThrowableList;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SuppressWarnings("unchecked")
@@ -89,7 +90,10 @@ public class JavascriptInterceptorTest {
         Outcome outcome= executeScript("adsfasf;", engine);
         assertEquals(ABORT, outcome);
         assertEquals(500, exc.getResponse().getStatusCode());
-        assertInstanceOf(Exception.class, exc.getProperty(FlowController.ABORTION_REASON));
+        // The engines wrap the error differently, but it names the undefined identifier
+        final var reason = assertInstanceOf(Exception.class, exc.getProperty(FlowController.ABORTION_REASON));
+        assertTrue(getThrowableList(reason).stream().anyMatch(t -> t.getMessage() != null && t.getMessage().contains("adsfasf")),
+                () -> "Unexpected abortion reason: " + reason);
         ProblemDetails pd = parse(exc.getResponse());
         assertEquals(500, pd.getStatus());
         System.out.println("pd = " + pd);
