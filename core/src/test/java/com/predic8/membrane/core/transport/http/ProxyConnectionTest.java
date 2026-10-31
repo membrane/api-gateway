@@ -157,6 +157,18 @@ class ProxyConnectionTest {
 			assertEquals(1, proxyConnections.size());
 			bound.close();
 		}
+
+		@Test
+		void boundConnectionToProxyIsKeptAfterServingAnotherTarget() throws Exception {
+			assertEquals(200, issueRequest("http://other.example.com/"));
+
+			final var second = get("http://backend.example.com/").buildExchange();
+			final var bound = callOnBoundConnection(get("http://backend.example.com/").buildExchange(), second);
+
+			assertSame(bound, second.getTargetConnection());
+			assertEquals(1, proxyConnections.size());
+			bound.close();
+		}
 	}
 
 	/**

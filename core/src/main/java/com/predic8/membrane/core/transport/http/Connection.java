@@ -196,9 +196,15 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
      * This does not directly check whether the same proxy is used, but that is actually irrelevant, since
      * proxyConfiguration is constant per HttpClient and ergo per ConnectionManager. Since only Connections
      * opened by the same HttpClient are managed by the same ConnectionManager, this is sufficient.
+     *
+     * A plain HTTP connection to a proxy matches every target, as the pool hands it out for any target.
      */
     public boolean isSame(String host, int port) {
-        return socket != null && host.equals(this.host) && port == this.port;
+        if (socket == null)
+            return false;
+        if (proxyConfiguration != null && sslProvider == null)
+            return true; // see ConnectionManager.createKey
+        return host.equals(this.host) && port == this.port;
     }
 
 	/** Closes the socket without flushing buffered output, unblocking outstanding I/O. */
