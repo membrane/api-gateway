@@ -58,7 +58,7 @@ public class Http2ProtocolHandler extends AbstractProtocolHandler {
             Connection con = connectionType.con();
 
             connectionFactory.getHttp2ClientPool().share(con.getHost(),
-                    con.socket.getPort(),
+                    con.getPort(),
                     connectionType.sslProvider(),
                     connectionType.sniServerName(),
                     configuration.getProxy(),
