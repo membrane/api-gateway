@@ -125,6 +125,20 @@ protected String getOpenAPIFileName() {
         assertTrue(errors.getFirst().getMessage().contains("not an integer"));
     }
 
+    @Test
+    void minimumBeyondDoubleRange() {
+        final var errors = validator.validate(get().path("/v1/limited/-%s/5".formatted("9".repeat(309))));
+        assertEquals(1, errors.size());
+        assertTrue(errors.getFirst().getMessage().contains("minimum"));
+    }
+
+    @Test
+    void maximumBeyondDoublePrecision() {
+        final var errors = validator.validate(get().path("/v1/limited/1/5.0000000000000000001"));
+        assertEquals(1, errors.size());
+        assertTrue(errors.getFirst().getMessage().contains("maximum"));
+    }
+
     /**
      * A path without template expressions: the declared path parameter is skipped like in a path with other expressions.
      */

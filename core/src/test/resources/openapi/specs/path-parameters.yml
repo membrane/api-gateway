@@ -84,6 +84,24 @@ paths:
       responses:
         '200':
           description: OK
+  /limited/{min}/{max}:
+    parameters:
+      - name: min
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+      - name: max
+        in: path
+        required: true
+        schema:
+          type: number
+          maximum: 5
+    get:
+      responses:
+        '200':
+          description: OK
   /pets/{petId}:
     get:
       parameters:

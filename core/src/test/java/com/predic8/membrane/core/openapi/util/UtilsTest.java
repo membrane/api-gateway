@@ -16,25 +16,29 @@
 
 package com.predic8.membrane.core.openapi.util;
 
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.util.*;
-import jakarta.mail.internet.*;
-import org.junit.jupiter.api.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.util.URIFactory;
+import jakarta.mail.internet.ContentType;
+import jakarta.mail.internet.ParseException;
+import org.junit.jupiter.api.Test;
 
-import java.io.*;
-import java.math.*;
-import java.net.*;
-import java.nio.charset.*;
-import java.util.*;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 
-import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.http.Request.*;
-import static com.predic8.membrane.core.http.Response.*;
+import static com.predic8.membrane.core.http.Header.CONTENT_TYPE;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
+import static com.predic8.membrane.core.http.Request.METHOD_POST;
+import static com.predic8.membrane.core.http.Request.post;
+import static com.predic8.membrane.core.http.Response.noContent;
 import static com.predic8.membrane.core.openapi.util.Utils.*;
-import static java.util.Objects.*;
+import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.*;
 
 class UtilsTest {
@@ -278,7 +282,7 @@ class UtilsTest {
 
     @Test
     void testConvertToBigDecimal_withString() {
-        assertEquals(BigDecimal.valueOf(678.90), convertToBigDecimal("678.90"));
+        assertEquals(new BigDecimal("678.90"), convertToBigDecimal("678.90"));
     }
 
     @Test
