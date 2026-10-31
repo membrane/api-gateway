@@ -32,6 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
@@ -85,7 +86,8 @@ public class ScriptingUtils {
         } else if (flow == RESPONSE) {
             var response = exc.getResponse();
             params.put("response", response);
-            params.put("statusCode", response.getStatusCode());
+            // No response yet, e.g. in an abort flow after the request flow was aborted
+            params.put("statusCode", response != null ? response.getStatusCode() : null);
         }
 
         if (msg != null) {
@@ -104,6 +106,12 @@ public class ScriptingUtils {
                 } catch (Exception e) {
                     log.info("Can't parse body as JSON: {}", e.getMessage());
                 }
+            }
+        } else {
+            // No message, e.g. no response in an abort flow. Bind null, so a script can test for it instead of
+            // failing on an undefined variable
+            for (var key : List.of("message", "body", "header", "headers", "cookie", "cookies", "json")) {
+                params.put(key, null);
             }
         }
 

@@ -20,6 +20,8 @@ import com.fasterxml.jackson.databind.node.*;
 import io.swagger.v3.oas.models.media.*;
 import org.slf4j.*;
 
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.regex.*;
 
 import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.*;
@@ -29,6 +31,8 @@ import static java.lang.String.*;
 public class StringRestrictionValidator {
 
     private static final Logger log = LoggerFactory.getLogger(StringRestrictionValidator.class);
+
+    private static final Map<String, Optional<Pattern>> PATTERNS = new ConcurrentHashMap<>();
 
     @SuppressWarnings("rawtypes")
     private final Schema schema;
@@ -71,13 +75,15 @@ public class StringRestrictionValidator {
             throw new IllegalStateException("String value expected, got " + value.getClass());
         }
 
-        if (isMaxlenExceeded(str)) {
+        final var maxLenExceeded = isMaxlenExceeded(str);
+        if (maxLenExceeded) {
             err.add(new ValidationError(ctx.schemaType(STRING), mask -> format("The string '%s' is %d characters long. MaxLength of %d is exceeded.", v(str, mask), str.length(), schema.getMaxLength())));
         }
         if (isMinLenExceeded(str)) {
             err.add(new ValidationError(ctx.schemaType(STRING), mask -> format("The string '%s' is %d characters long. The length of the string is shorter than the minLength of %d.", v(str, mask), str.length(), schema.getMinLength())));
         }
-        if (isPatternViolated(str)) {
+        // Rejected anyway: don't spend CPU running the regex over an oversized value.
+        if (!maxLenExceeded && isPatternViolated(str)) {
             err.add(new ValidationError(
                     ctx.schemaType(STRING),
                     mask -> format("The string '%s' does not match the pattern %s.", v(str, mask), schema.getPattern())
@@ -117,14 +123,24 @@ public class StringRestrictionValidator {
         if (schema.getPattern() == null)
             return false;
 
-        try {
-            // OpenAPI/JSON Schema semantics: the regex must match somewhere in the string (not necessarily the whole string).
-            return !Pattern.compile(schema.getPattern()).matcher(str).find();
-        } catch (PatternSyntaxException e) {
-            // Invalid regex in spec: treat as validation error (spec/config issue).
-            log.warn("Invalid pattern in OpenAPI spec: {}", schema.getPattern());
-            return true;
-        }
+        // OpenAPI/JSON Schema semantics: the regex must match somewhere in the string (not necessarily the whole string).
+        // Invalid regex in spec: treat as validation error (spec/config issue).
+        return compile(schema.getPattern()).map(p -> !p.matcher(str).find()).orElse(true);
+    }
+
+    /**
+     * Validators are created per validated value, so compiled patterns are cached here.
+     * @return the compiled pattern, or empty if the regex is invalid
+     */
+    static Optional<Pattern> compile(String regex) {
+        return PATTERNS.computeIfAbsent(regex, r -> {
+            try {
+                return Optional.of(Pattern.compile(r));
+            } catch (PatternSyntaxException e) {
+                log.warn("Invalid pattern in OpenAPI spec: {}", r);
+                return Optional.empty();
+            }
+        });
     }
 
     private boolean isEnumViolated(String str) {
