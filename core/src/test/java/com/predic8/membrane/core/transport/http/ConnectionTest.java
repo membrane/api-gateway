@@ -84,6 +84,8 @@ public class ConnectionTest {
 	public void testIsSame() {
 		assertTrue(conLocalhost.isSame("localhost", port, null, null, null));
 		assertTrue(con127_0_0_1.isSame("127.0.0.1", port, null, null, null));
+		assertFalse(conLocalhost.isSame("other.example.com", port, null, null, null), "different host");
+		assertFalse(conLocalhost.isSame("localhost", port + 1, null, null, null), "different port");
 	}
 
 	@Test

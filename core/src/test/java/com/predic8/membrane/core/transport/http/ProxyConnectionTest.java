@@ -28,6 +28,7 @@ import java.io.*;
 import java.util.*;
 import java.util.concurrent.atomic.*;
 
+import static com.predic8.membrane.core.exchange.Exchange.SNI_SERVER_NAME;
 import static com.predic8.membrane.core.exchange.Exchange.SSL_CONTEXT;
 import static com.predic8.membrane.core.http.Header.AUTHORIZATION;
 import static com.predic8.membrane.core.http.Request.METHOD_CONNECT;
@@ -329,6 +330,19 @@ class ProxyConnectionTest {
 		void boundTunnelIsKept() throws Exception {
 			final var second = createExchange();
 			final var bound = callOnBoundConnection(createExchange(), second);
+
+			assertSame(bound, second.getTargetConnection());
+			assertEquals(1, connectRequests.get());
+			bound.close();
+		}
+
+		@Test
+		void boundTunnelWithSniIsKept() throws Exception {
+			final var first = createExchange();
+			first.setProperty(SNI_SERVER_NAME, "backend.example.com");
+			final var second = createExchange();
+			second.setProperty(SNI_SERVER_NAME, "backend.example.com");
+			final var bound = callOnBoundConnection(first, second);
 
 			assertSame(bound, second.getTargetConnection());
 			assertEquals(1, connectRequests.get());
