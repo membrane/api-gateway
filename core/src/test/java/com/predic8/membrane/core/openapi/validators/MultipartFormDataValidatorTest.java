@@ -326,6 +326,28 @@ public class MultipartFormDataValidatorTest extends AbstractValidatorTest {
     }
 
     @Test
+    void declaredPlainTextValidatesObjectOrStringUnion() throws ParseException {
+        var union = new Schema<>().types(new java.util.LinkedHashSet<>(List.of("object", "string"))).minLength(6);
+        var schema = new ObjectSchema().addProperty("value", union);
+        var mediaType = new MediaType().schema(schema).addEncoding("value", new Encoding().contentType(TEXT_PLAIN));
+        var validator = new MultipartFormDataValidator(new OpenAPI());
+
+        for (var value : List.of("hello!", "hello")) {
+            var body = new MultipartBuilder().part("value", null, TEXT_PLAIN, null, value).build();
+            var errors = validator.validate(new ValidationContext().entity("REQUEST"), mediaType,
+                    Request.post().path("/upload").mediaType(MultipartBuilder.CONTENT_TYPE).body(body));
+            assertEquals(value.equals("hello!") ? 0 : 1, errors.size(), errors::toString);
+        }
+
+        var objectOnly = new MediaType().schema(new ObjectSchema().addProperty("value", new ObjectSchema()))
+                .addEncoding("value", new Encoding().contentType(TEXT_PLAIN));
+        var body = new MultipartBuilder().part("value", null, TEXT_PLAIN, null, "hello").build();
+        var errors = validator.validate(new ValidationContext().entity("REQUEST"), objectOnly,
+                Request.post().path("/upload").mediaType(MultipartBuilder.CONTENT_TYPE).body(body));
+        assertTrue(errors.isEmpty(), errors::toString);
+    }
+
+    @Test
     void multiTypePartTriesAnotherRepresentationWhenFirstFailsConstraints() throws ParseException {
         var union = new Schema<>().types(new java.util.LinkedHashSet<>(List.of("string", "integer")))
                 .minLength(2).minimum(java.math.BigDecimal.TWO);

@@ -440,8 +440,9 @@ public class MultipartFormDataValidator {
         }
 
         // Scalar parts can have several representations when matching schemas declare multiple types.
-        if (SchemaUtil.isScalar(propertySchema) || !isObjectOrArray(api, propertySchema) || allowsPlainStringAlternative(propertySchema)) {
-            return validateScalarPart(ctx, schemas, allowsPlainStringAlternative(propertySchema)
+        boolean plainString = isOfAnyMediaType(TEXT_PLAIN, contentType) && allowsType(propertySchema, "string");
+        if (SchemaUtil.isScalar(propertySchema) || !isObjectOrArray(api, propertySchema) || plainString) {
+            return validateScalarPart(ctx, schemas, plainString
                     ? new Schema<>().type("string") : propertySchema, new String(part.content, UTF_8));
         }
 
