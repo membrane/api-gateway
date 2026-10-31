@@ -1,0 +1,29 @@
+openapi: '3.1.0'
+info:
+  title: Multipart Root Reference API
+  version: '1.0'
+servers:
+  - url: https://api.server.test
+paths:
+  /upload:
+    post:
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Upload'
+      responses:
+        '200':
+          description: OK
+components:
+  schemas:
+    Upload:
+      type: object
+      required:
+        - name
+      additionalProperties: false
+      properties:
+        name:
+          type: string
+          maxLength: 5

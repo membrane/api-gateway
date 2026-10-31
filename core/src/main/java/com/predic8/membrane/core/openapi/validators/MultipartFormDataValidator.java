@@ -74,10 +74,15 @@ public class MultipartFormDataValidator {
         ctx = ctx.entityType(BODY);
         var err = new ValidationErrors();
 
-        var schema = mediaType.getSchema();
-        if (schema == null) {
+        if (mediaType.getSchema() == null) {
             // Without a schema there is nothing to validate the parts against.
             return err;
+        }
+
+        // A $ref root has no required parts, properties or additionalProperties of its own.
+        var schema = SchemaUtil.resolveRef(api, mediaType.getSchema());
+        if (schema == null) {
+            return err.add(ctx, "Cannot resolve the schema reference '%s'.".formatted(mediaType.getSchema().get$ref()));
         }
 
         var boundary = getBoundary(message);
