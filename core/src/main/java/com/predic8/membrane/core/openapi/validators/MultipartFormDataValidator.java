@@ -206,7 +206,7 @@ public class MultipartFormDataValidator {
                 if (occurrenceSchema == null)
                     continue;
 
-                err.add(validatePart(partCtx, occurrenceSchema, contentTypeOf(name, part, occurrenceSchema, encodings), part));
+                err.add(validatePart(partCtx, occurrenceSchema, contentTypeOf(name, part, occurrenceSchema, encodings), hasDeclaredContentType(name, encodings), part));
             }
         }
         return err;
@@ -235,7 +235,12 @@ public class MultipartFormDataValidator {
 
     private ValidationErrors validateEncodingContentType(ValidationContext ctx, String name, FormPart part, Map<String, Encoding> encodings) {
         var err = new ValidationErrors();
-        if (part.contentType == null || encodings == null)
+        if (part.contentType == null)
+            return err;
+        // A media range like application/* would match any declared encoding, but a part has one concrete type.
+        if (isMediaRange(part.contentType))
+            return err.add(ctx.statusCode(400), "Part '%s' has the media range '%s' as Content-Type, a concrete media type is required.".formatted(name, part.contentType));
+        if (encodings == null)
             return err;
         var encoding = encodings.get(name);
         if (encoding == null || encoding.getContentType() == null)
@@ -246,7 +251,7 @@ public class MultipartFormDataValidator {
     }
 
     @SuppressWarnings("rawtypes")
-    private ValidationErrors validatePart(ValidationContext ctx, Schema propertySchema, String contentType, FormPart part) {
+    private ValidationErrors validatePart(ValidationContext ctx, Schema propertySchema, String contentType, boolean declaredContentType, FormPart part) {
         var err = new ValidationErrors();
 
         // A false schema (e.g. items: false or prefixItems: [false]) allows no part at all. Without a
@@ -287,8 +292,18 @@ public class MultipartFormDataValidator {
                     .validate(ctx, SchemaUtil.parseScalar(new String(part.content, UTF_8), propertySchema)));
         }
 
-        // Opaque content (e.g. octet-stream for a complex type) is not validated against the schema.
-        return err;
+        // Opaque content is accepted if the encoding declares it (e.g. octet-stream for a complex type).
+        // A structured part must not escape its schema through a Content-Type chosen by the client.
+        if (declaredContentType || !isObjectOrArray(api, propertySchema))
+            return err;
+        return err.add(ctx.statusCode(400), "Part '%s' has Content-Type '%s', which cannot be validated against the schema.".formatted(part.name, contentType));
+    }
+
+    private boolean hasDeclaredContentType(String name, Map<String, Encoding> encodings) {
+        if (encodings == null)
+            return false;
+        var encoding = encodings.get(name);
+        return encoding != null && encoding.getContentType() != null;
     }
 
     @SuppressWarnings("rawtypes")

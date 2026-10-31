@@ -209,6 +209,14 @@ public class MimeType {
     }
 
     /**
+     * True if the media type is a range like {@code application/*} or {@code *}{@code /*}, i.e. its type
+     * or subtype is a wildcard. Parameters are ignored.
+     */
+    public static boolean isMediaRange(String mediaType) {
+        return mediaType.split(";")[0].contains("*");
+    }
+
+    /**
      * Matches an actual media type against one or more expected media types or ranges given as a
      * comma-separated list, e.g. {@code "image/png, image/jpeg"} or {@code "image/*"}.
      */
