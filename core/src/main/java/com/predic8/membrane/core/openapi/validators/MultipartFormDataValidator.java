@@ -427,6 +427,8 @@ public class MultipartFormDataValidator {
             try {
                 return err.add(validateDecodedPart(ctx, schemas, new JsonBody(new String(part.content, UTF_8)).getPayload()));
             } catch (Exception e) {
+                if (allowsPlainStringAlternative(propertySchema))
+                    return validateScalarPart(ctx, schemas, new Schema<>().type("string"), new String(part.content, UTF_8));
                 return err.add(ctx.statusCode(400), "Part '%s' is declared as %s but its content could not be parsed as JSON.".formatted(part.name, contentType));
             }
         }
@@ -438,8 +440,9 @@ public class MultipartFormDataValidator {
         }
 
         // Scalar parts can have several representations when matching schemas declare multiple types.
-        if (SchemaUtil.isScalar(propertySchema) || !isObjectOrArray(api, propertySchema)) {
-            return validateScalarPart(ctx, schemas, propertySchema, new String(part.content, UTF_8));
+        if (SchemaUtil.isScalar(propertySchema) || !isObjectOrArray(api, propertySchema) || allowsPlainStringAlternative(propertySchema)) {
+            return validateScalarPart(ctx, schemas, allowsPlainStringAlternative(propertySchema)
+                    ? new Schema<>().type("string") : propertySchema, new String(part.content, UTF_8));
         }
 
         // Opaque content is accepted if the encoding declares it (e.g. octet-stream for a complex type).
@@ -447,6 +450,11 @@ public class MultipartFormDataValidator {
         if (declaredContentType || !isObjectOrArray(api, propertySchema))
             return err;
         return err.add(ctx.statusCode(400), "Part '%s' has Content-Type '%s', which cannot be validated against the schema.".formatted(part.name, contentType));
+    }
+
+    private boolean allowsPlainStringAlternative(Schema<?> schema) {
+        return allowsType(schema, "array") && allowsType(schema, "string")
+                && schema.getItems() == null && schema.getPrefixItems() == null;
     }
 
     @SuppressWarnings("rawtypes")

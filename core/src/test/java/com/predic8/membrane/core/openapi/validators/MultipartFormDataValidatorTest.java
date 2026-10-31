@@ -289,6 +289,17 @@ public class MultipartFormDataValidatorTest extends AbstractValidatorTest {
     }
 
     @Test
+    void unionRejectsPartMatchingNeitherAlternative() throws ParseException {
+        var union = new ComposedSchema().oneOf(List.of(new IntegerSchema(), new StringSchema().minLength(10)));
+        var schema = new ObjectSchema().additionalProperties(false);
+        schema.addProperty("value", union);
+
+        var errors = validateParts(schema, "value", "hello");
+
+        assertTrue(!errors.isEmpty(), "The value must match one of the alternatives");
+    }
+
+    @Test
     void typeUnionAndStringPatternAcceptPlainStringPart() throws ParseException {
         var union = new Schema<>().types(new java.util.LinkedHashSet<>(List.of("array", "string")));
         var schema = new ObjectSchema().additionalProperties(false);
@@ -297,6 +308,21 @@ public class MultipartFormDataValidatorTest extends AbstractValidatorTest {
 
         assertTrue(validateParts(schema, "value", "hello").isEmpty());
         assertEquals(1, validateParts(schema, "value", "hi").size());
+    }
+
+    @Test
+    void arrayOrStringUnionAcceptsPlainStringWithoutItems() throws ParseException {
+        var union = new Schema<>().types(new java.util.LinkedHashSet<>(List.of("array", "string"))).minLength(6);
+        var schema = new ObjectSchema().additionalProperties(false);
+        schema.addProperty("value", union);
+
+        assertTrue(validateParts(schema, "value", "hello!").isEmpty());
+        assertTrue(!validateParts(schema, "value", "hello").isEmpty());
+        var body = new MultipartBuilder().part("value", null, null, null, "hello!").build();
+        var errors = new MultipartFormDataValidator(new OpenAPI()).validate(
+                new ValidationContext().entity("REQUEST"), new MediaType().schema(schema),
+                Request.post().path("/upload").mediaType(MultipartBuilder.CONTENT_TYPE).body(body));
+        assertTrue(errors.isEmpty(), errors::toString);
     }
 
     @Test
