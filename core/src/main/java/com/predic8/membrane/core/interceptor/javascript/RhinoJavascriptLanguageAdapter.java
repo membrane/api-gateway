@@ -77,7 +77,7 @@ public class RhinoJavascriptLanguageAdapter extends LanguageAdapter {
             };
             var print = console.log;
             var json;
-            if (message.isJSON()) {
+            if (message != null && message.isJSON()) {
               json=JSON.parse(message.getBodyAsStringDecoded());
             }
             with(imports) {

@@ -523,6 +523,36 @@ public class JavascriptInterceptorTest {
         return exchange.getRequest().getHeader().getFirstValue("json-id");
     }
 
+    @ParameterizedTest
+    @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
+    void responseFlowWithoutResponse(Class<LanguageSupport> engine) {
+        initInterceptor("""
+                property.put('ran', 'yes');
+                var json = 'mentioned';
+                CONTINUE""", engine);
+        assertEquals(CONTINUE, interceptor.handleResponse(exc));
+        assertEquals("yes", exc.getProperty("ran"));
+        assertNull(exc.getResponse());
+    }
+
+    @ParameterizedTest
+    @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
+    void returnResponseInResponseFlowWithoutResponse(Class<LanguageSupport> engine) {
+        initInterceptor("Response.ok('baz').build()", engine);
+        assertEquals(RETURN, interceptor.handleResponse(exc));
+        assertEquals("baz", exc.getResponse().getBodyAsStringDecoded());
+    }
+
+    @ParameterizedTest
+    @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
+    void returnObjectInResponseFlowWithoutResponse(Class<LanguageSupport> engine) throws Exception {
+        initInterceptor("({id:7})", engine);
+        assertEquals(CONTINUE, interceptor.handleResponse(exc));
+        assertEquals(200, exc.getResponse().getStatusCode());
+        assertTrue(exc.getResponse().isJSON());
+        assertEquals(7.0, ((Number) om.readValue(exc.getResponse().getBodyAsStringDecoded(), Map.class).get("id")).doubleValue());
+    }
+
     @SafeVarargs
     private Outcome executeScript(String src, Class<LanguageSupport>... engine) {
         initInterceptor(src, engine);

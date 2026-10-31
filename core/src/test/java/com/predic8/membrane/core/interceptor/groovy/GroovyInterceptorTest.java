@@ -217,6 +217,36 @@ public class GroovyInterceptorTest {
 		assertNull(exc.getResponse());
 	}
 
+	/**
+	 * E.g. a script in an abort block after a script in the request flow returned ABORT.
+	 */
+	@Test
+	void responseFlowWithoutResponse() throws Exception {
+		GroovyInterceptor i = new GroovyInterceptor() {{
+			src = """
+				// json is mentioned, so the body would be parsed as JSON
+				exc.setProperty('statusCode', statusCode)
+				CONTINUE""";
+		}};
+		i.init(router);
+
+		assertEquals(CONTINUE, i.handleResponse(exc));
+		assertTrue(exc.getProperties().containsKey("statusCode"));
+		assertNull(exc.getProperty("statusCode"));
+		assertNull(exc.getResponse());
+	}
+
+	@Test
+	void returnResponseInResponseFlowWithoutResponse() throws Exception {
+		GroovyInterceptor i = new GroovyInterceptor() {{
+			src = "Response.ok('created in abort').build()";
+		}};
+		i.init(router);
+
+		assertEquals(RETURN, i.handleResponse(exc));
+		assertEquals("created in abort", exc.getResponse().getBodyAsStringDecoded());
+	}
+
 	@Test
 	void returnString() throws Exception {
 		exc.setResponse(ok().build());

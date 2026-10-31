@@ -102,6 +102,10 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
             return ABORT;
         }
 
+        if (res == null) {
+            return CONTINUE;
+        }
+
         if (res instanceof Outcome outcome) {
             return outcome;
         }
@@ -141,10 +145,6 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
         if (res instanceof String s) {
             msg = createResponseAndToExchangeIfThereIsNone(exc, flow, msg);
             msg.setBodyContent(s.getBytes(UTF_8));
-            return CONTINUE;
-        }
-
-        if (res == null) {
             return CONTINUE;
         }
 
@@ -199,7 +199,7 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
     }
 
     private Map<String, Object> getParameterBindings(Exchange exc, Flow flow, Message msg) {
-        var binding = createParameterBindings(this, exc, flow, scriptAccessesJson && msg.isJSON(), TEXT_SERIALIZATION);
+        var binding = createParameterBindings(this, exc, flow, scriptAccessesJson && msg != null && msg.isJSON(), TEXT_SERIALIZATION);
         addOutcomeObjects(binding);
         return binding;
     }
