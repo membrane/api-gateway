@@ -28,6 +28,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
+import java.util.Objects;
 
 import static com.predic8.membrane.annot.Constants.USERAGENT;
 import static com.predic8.membrane.core.transport.http.ByteStreamLogging.*;
@@ -193,17 +194,15 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
     /**
      * Checks whether the (host,port) combination matches this combination.
      *
-     * This does not directly check whether the same proxy is used, but that is actually irrelevant, since
-     * proxyConfiguration is constant per HttpClient and ergo per ConnectionManager. Since only Connections
-     * opened by the same HttpClient are managed by the same ConnectionManager, this is sufficient.
-     *
      * A plain HTTP connection to a proxy matches every target, as the pool hands it out for any target.
      *
      * @param tls whether the request to the target needs TLS. A connection without TLS never matches such a request,
      *            and vice versa.
+     * @param proxy the proxy the request has to go through, or null. A connection bound to an inbound connection can
+     *              be offered to another HttpClient, which may use another proxy or none.
      */
-    public boolean isSame(String host, int port, boolean tls) {
-        if (socket == null || tls != (sslProvider != null))
+    public boolean isSame(String host, int port, boolean tls, @Nullable ProxyConfiguration proxy) {
+        if (socket == null || tls != (sslProvider != null) || !Objects.equals(proxy, proxyConfiguration))
             return false;
         if (proxyConfiguration != null && sslProvider == null)
             return true; // see ConnectionManager.createKey

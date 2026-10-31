@@ -65,7 +65,7 @@ public class ConnectionFactory {
     public OutgoingConnectionType getConnection(Exchange exc, HostColonPort target, int attempts) throws IOException {
 
         var sslProvider = getOutboundSSLProvider(exc, target);
-        var con = getExchangeAttachedConnection(exc, attempts, target, sslProvider != null);
+        var con = getExchangeAttachedConnection(exc, attempts, target, sslProvider != null, config.getProxy());
 
         boolean usingHttp2 = false;
 
@@ -98,12 +98,12 @@ public class ConnectionFactory {
      * is realized by binding the TCP connection to the Exchange here, and binding it to the next Exchange in
      * {@link HttpServerHandler}.
      */
-    private static @org.jetbrains.annotations.Nullable Connection getExchangeAttachedConnection(Exchange exc, int counter, HostColonPort target, boolean tls) throws IOException {
+    private static @org.jetbrains.annotations.Nullable Connection getExchangeAttachedConnection(Exchange exc, int counter, HostColonPort target, boolean tls, ProxyConfiguration proxy) throws IOException {
         Connection con = null;
         if (counter == 0) {
             con = exc.getTargetConnection();
             if (con != null) {
-                if (!con.isSame(target.host(), target.port(), tls)) {
+                if (!con.isSame(target.host(), target.port(), tls, proxy)) {
                     con.close();
                     con = null;
                 } else {

@@ -53,13 +53,17 @@ class ProxyConnectionTest {
 	}
 
 	private static HttpClient createClient(int proxyPort, boolean useHttp2) {
+		final var configuration = new HttpClientConfiguration();
+		configuration.setProxy(proxyConfiguration(proxyPort));
+		configuration.setUseExperimentalHttp2(useHttp2);
+		return new HttpClient(configuration);
+	}
+
+	private static ProxyConfiguration proxyConfiguration(int proxyPort) {
 		final var proxyConfiguration = new ProxyConfiguration();
 		proxyConfiguration.setHost("localhost");
 		proxyConfiguration.setPort(proxyPort);
-		final var configuration = new HttpClientConfiguration();
-		configuration.setProxy(proxyConfiguration);
-		configuration.setUseExperimentalHttp2(useHttp2);
-		return new HttpClient(configuration);
+		return proxyConfiguration;
 	}
 
 	private int getNumberInPool() {
@@ -181,8 +185,21 @@ class ProxyConnectionTest {
 			final var bound = callOnBoundConnection(get("http://backend.example.com/").buildExchange(),
 					get("http://backend.example.com/").buildExchange());
 
-			assertTrue(bound.isSame("other.example.com", 80, false));
-			assertFalse(bound.isSame("backend.example.com", 443, true));
+			assertTrue(bound.isSame("other.example.com", 80, false, proxyConfiguration(proxyPort)));
+			assertFalse(bound.isSame("backend.example.com", 443, true, proxyConfiguration(proxyPort)));
+			bound.close();
+		}
+
+		/**
+		 * The next request on the inbound connection may be handled by an HttpClient with another proxy or none.
+		 */
+		@Test
+		void boundConnectionToProxyIsNotSameForAnotherProxy() throws Exception {
+			final var bound = callOnBoundConnection(get("http://backend.example.com/").buildExchange(),
+					get("http://backend.example.com/").buildExchange());
+
+			assertFalse(bound.isSame("backend.example.com", 80, false, null));
+			assertFalse(bound.isSame("backend.example.com", 80, false, proxyConfiguration(proxyPort + 1)));
 			bound.close();
 		}
 	}

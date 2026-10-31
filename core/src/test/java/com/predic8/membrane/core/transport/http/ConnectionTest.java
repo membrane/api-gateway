@@ -23,6 +23,7 @@ import com.predic8.membrane.core.proxies.ServiceProxy;
 import com.predic8.membrane.core.proxies.ServiceProxyKey;
 import com.predic8.membrane.core.router.Router;
 import com.predic8.membrane.core.router.TestRouter;
+import com.predic8.membrane.core.transport.http.client.ProxyConfiguration;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.config.Configurator;
@@ -79,13 +80,24 @@ public class ConnectionTest {
 
 	@Test
 	public void testIsSame() {
-		assertTrue(conLocalhost.isSame("localhost", port, false));
-		assertTrue(con127_0_0_1.isSame("127.0.0.1", port, false));
+		assertTrue(conLocalhost.isSame("localhost", port, false, null));
+		assertTrue(con127_0_0_1.isSame("127.0.0.1", port, false, null));
 	}
 
 	@Test
 	void plainConnectionIsNotSameForTls() {
-		assertFalse(conLocalhost.isSame("localhost", port, true));
+		assertFalse(conLocalhost.isSame("localhost", port, true, null));
+	}
+
+	/**
+	 * A direct connection must not be reused for a request that has to go through a proxy.
+	 */
+	@Test
+	void directConnectionIsNotSameForProxy() {
+		final var proxy = new ProxyConfiguration();
+		proxy.setHost("localhost");
+		proxy.setPort(port);
+		assertFalse(conLocalhost.isSame("localhost", port, false, proxy));
 	}
 
 	/**
