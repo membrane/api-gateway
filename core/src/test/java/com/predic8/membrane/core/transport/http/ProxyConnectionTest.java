@@ -185,8 +185,9 @@ class ProxyConnectionTest {
 			final var bound = callOnBoundConnection(get("http://backend.example.com/").buildExchange(),
 					get("http://backend.example.com/").buildExchange());
 
-			assertTrue(bound.isSame("other.example.com", 80, false, proxyConfiguration(proxyPort)));
-			assertFalse(bound.isSame("backend.example.com", 443, true, proxyConfiguration(proxyPort)));
+			final var tls = new StaticSSLContext(new SSLParser(), new ResolverMap(), null);
+			assertTrue(bound.isSame("other.example.com", 80, null, null, proxyConfiguration(proxyPort)));
+			assertFalse(bound.isSame("backend.example.com", 443, tls, null, proxyConfiguration(proxyPort)));
 			bound.close();
 		}
 
@@ -198,9 +199,33 @@ class ProxyConnectionTest {
 			final var bound = callOnBoundConnection(get("http://backend.example.com/").buildExchange(),
 					get("http://backend.example.com/").buildExchange());
 
-			assertFalse(bound.isSame("backend.example.com", 80, false, null));
-			assertFalse(bound.isSame("backend.example.com", 80, false, proxyConfiguration(proxyPort + 1)));
+			assertFalse(bound.isSame("backend.example.com", 80, null, null, null));
+			assertFalse(bound.isSame("backend.example.com", 80, null, null, proxyConfiguration(proxyPort + 1)));
 			bound.close();
+		}
+
+		@Test
+		void boundConnectionIsNotUsedByClientWithAnotherProxy() throws Exception {
+			final var bound = callOnBoundConnection(get("http://backend.example.com/").buildExchange(),
+					get("http://backend.example.com/").buildExchange());
+
+			final var otherProxy = proxyConfiguration(proxyPort);
+			otherProxy.setHost("127.0.0.1"); // the same proxy, but configured differently
+			final var configuration = new HttpClientConfiguration();
+			configuration.setProxy(otherProxy);
+			final var otherClient = new HttpClient(configuration);
+			final var third = get("http://backend.example.com/").buildExchange();
+			third.setTargetConnection(bound);
+			try {
+				otherClient.call(third);
+				third.getResponse().readBody();
+			} finally {
+				otherClient.close();
+			}
+
+			assertTrue(bound.isClosed());
+			assertNotSame(bound, third.getTargetConnection());
+			assertEquals(2, proxyConnections.size());
 		}
 	}
 
@@ -307,6 +332,20 @@ class ProxyConnectionTest {
 
 			assertSame(bound, second.getTargetConnection());
 			assertEquals(1, connectRequests.get());
+			bound.close();
+		}
+
+		@Test
+		void boundTunnelIsNotSameForAnotherTlsSetup() throws Exception {
+			final var bound = callOnBoundConnection(createExchange(), createExchange());
+			final var proxyConfiguration = proxyConfiguration(proxyPort);
+
+			assertTrue(bound.isSame("localhost", backendPort, clientSSLContext, null, proxyConfiguration));
+			assertFalse(bound.isSame("localhost", backendPort, null, null, proxyConfiguration), "plain HTTP");
+			assertFalse(bound.isSame("localhost", backendPort, new StaticSSLContext(new SSLParser(), new ResolverMap(), null),
+					null, proxyConfiguration), "another SSL context");
+			assertFalse(bound.isSame("localhost", backendPort, clientSSLContext, "other.example.com", proxyConfiguration),
+					"another SNI server name");
 			bound.close();
 		}
 

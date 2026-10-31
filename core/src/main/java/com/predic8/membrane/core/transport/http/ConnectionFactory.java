@@ -65,12 +65,12 @@ public class ConnectionFactory {
     public OutgoingConnectionType getConnection(Exchange exc, HostColonPort target, int attempts) throws IOException {
 
         var sslProvider = getOutboundSSLProvider(exc, target);
-        var con = getExchangeAttachedConnection(exc, attempts, target, sslProvider != null, config.getProxy());
+        var sniServerName = exc.getProperty(SNI_SERVER_NAME, String.class);
+        var con = getExchangeAttachedConnection(exc, attempts, target, sslProvider, sniServerName, config.getProxy());
 
         boolean usingHttp2 = false;
 
         Http2Client h2c = null;
-        var sniServerName = exc.getProperty(SNI_SERVER_NAME, String.class);
 
         if (con == null && config.isUseExperimentalHttp2()) {
             h2c = http2ClientPool.reserveStream(target.host(), target.port(), sslProvider, sniServerName, config.getProxy(), proxySSLContext);
@@ -98,13 +98,18 @@ public class ConnectionFactory {
      * is realized by binding the TCP connection to the Exchange here, and binding it to the next Exchange in
      * {@link HttpServerHandler}.
      */
-    private static @org.jetbrains.annotations.Nullable Connection getExchangeAttachedConnection(Exchange exc, int counter, HostColonPort target, boolean tls, ProxyConfiguration proxy) throws IOException {
+    private static @org.jetbrains.annotations.Nullable Connection getExchangeAttachedConnection(Exchange exc, int counter, HostColonPort target, SSLProvider sslProvider, String sniServerName, ProxyConfiguration proxy) {
         Connection con = null;
         if (counter == 0) {
             con = exc.getTargetConnection();
             if (con != null) {
-                if (!con.isSame(target.host(), target.port(), tls, proxy)) {
-                    con.close();
+                if (!con.isSame(target.host(), target.port(), sslProvider, sniServerName, proxy)) {
+                    try {
+                        con.close();
+                    } catch (IOException e) {
+                        // close() releases the socket anyway, so the request can still use a new connection
+                        log.debug("Could not close the bound connection that does not match the request.", e);
+                    }
                     con = null;
                 } else {
                     con.setKeepAttachedToExchange(true);

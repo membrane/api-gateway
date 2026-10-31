@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.transport.http;
 
 
+import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Body;
 import com.predic8.membrane.core.http.ReadingBodyException;
@@ -24,6 +25,7 @@ import com.predic8.membrane.core.proxies.ServiceProxyKey;
 import com.predic8.membrane.core.router.Router;
 import com.predic8.membrane.core.router.TestRouter;
 import com.predic8.membrane.core.transport.http.client.ProxyConfiguration;
+import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.config.Configurator;
@@ -80,13 +82,13 @@ public class ConnectionTest {
 
 	@Test
 	public void testIsSame() {
-		assertTrue(conLocalhost.isSame("localhost", port, false, null));
-		assertTrue(con127_0_0_1.isSame("127.0.0.1", port, false, null));
+		assertTrue(conLocalhost.isSame("localhost", port, null, null, null));
+		assertTrue(con127_0_0_1.isSame("127.0.0.1", port, null, null, null));
 	}
 
 	@Test
 	void plainConnectionIsNotSameForTls() {
-		assertFalse(conLocalhost.isSame("localhost", port, true, null));
+		assertFalse(conLocalhost.isSame("localhost", port, new StaticSSLContext(new SSLParser(), null, null), null, null));
 	}
 
 	/**
@@ -97,7 +99,7 @@ public class ConnectionTest {
 		final var proxy = new ProxyConfiguration();
 		proxy.setHost("localhost");
 		proxy.setPort(port);
-		assertFalse(conLocalhost.isSame("localhost", port, false, proxy));
+		assertFalse(conLocalhost.isSame("localhost", port, null, null, proxy));
 	}
 
 	/**

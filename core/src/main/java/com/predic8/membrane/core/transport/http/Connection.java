@@ -192,21 +192,25 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
     }
 
     /**
-     * Checks whether the (host,port) combination matches this combination.
+     * Checks whether a request with these parameters may use this connection. The parameters are those that
+     * {@link ConnectionManager} pools connections by.
      *
      * A plain HTTP connection to a proxy matches every target, as the pool hands it out for any target.
      *
-     * @param tls whether the request to the target needs TLS. A connection without TLS never matches such a request,
-     *            and vice versa.
-     * @param proxy the proxy the request has to go through, or null. A connection bound to an inbound connection can
-     *              be offered to another HttpClient, which may use another proxy or none.
+     * A connection bound to an inbound connection can be offered to another HttpClient or to an exchange with
+     * another SSL context, so none of the parameters can be taken for granted.
+     *
+     * @param sslProvider the TLS configuration the request to the target needs, or null for plain HTTP
+     * @param sniServerName the server name the request sends in the TLS handshake, or null
+     * @param proxy the proxy the request has to go through, or null
      */
-    public boolean isSame(String host, int port, boolean tls, @Nullable ProxyConfiguration proxy) {
-        if (socket == null || tls != (sslProvider != null) || !Objects.equals(proxy, proxyConfiguration))
+    public boolean isSame(String host, int port, @Nullable SSLProvider sslProvider, @Nullable String sniServerName,
+                          @Nullable ProxyConfiguration proxy) {
+        if (socket == null || !Objects.equals(sslProvider, this.sslProvider) || !Objects.equals(proxy, proxyConfiguration))
             return false;
-        if (proxyConfiguration != null && sslProvider == null)
-            return true; // see ConnectionManager.createKey
-        return host.equals(this.host) && port == this.port;
+        if (sslProvider == null)
+            return proxyConfiguration != null || host.equals(this.host) && port == this.port; // see ConnectionManager.createKey
+        return host.equals(this.host) && port == this.port && Objects.equals(sniServerName, this.sniServerName);
     }
 
 	/** Closes the socket without flushing buffered output, unblocking outstanding I/O. */
