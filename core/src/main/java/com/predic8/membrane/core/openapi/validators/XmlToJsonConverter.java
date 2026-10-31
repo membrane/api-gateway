@@ -35,7 +35,14 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.regex.Pattern;
+
+import static javax.xml.XMLConstants.W3C_XML_SCHEMA_INSTANCE_NS_URI;
+import static javax.xml.XMLConstants.XMLNS_ATTRIBUTE_NS_URI;
 
 /**
  * Converts an XML document into a Jackson {@link JsonNode} tree, guided by an
@@ -108,11 +115,15 @@ public class XmlToJsonConverter {
 
     private ObjectNode convertObjectElement(Element element, Schema schema) {
         ObjectNode node = om.createObjectNode();
+        // Attributes and child elements mapped to a property, to detect undeclared content afterwards
+        final var consumed = Collections.newSetFromMap(new IdentityHashMap<Node, Boolean>());
 
         @SuppressWarnings("unchecked")
         Map<String, Schema> properties = (Map<String, Schema>) schema.getProperties();
-        if (properties == null)
+        if (properties == null) {
+            checkNoUndeclaredContent(element, schema, consumed);
             return node;
+        }
 
         for (Map.Entry<String, Schema> entry : properties.entrySet()) {
             String propName  = entry.getKey();
@@ -129,20 +140,66 @@ public class XmlToJsonConverter {
             } else if (isAttr) {
                 // Map XML attribute → JSON property. Check for presence (not emptiness) so that a
                 // present-but-empty attribute (e.g. sku="") is kept as "" instead of being dropped.
-                if (hasAttribute(element, xmlName))
+                if (hasAttribute(element, xmlName)) {
+                    consumed.add(attributeNode(element, xmlName));
                     node.set(propName, convertPrimitive(attributeValue(element, xmlName), propSchema));
+                }
 
             } else if ("array".equals(effectiveType(propSchema))) {
-                node.set(propName, convertArrayProperty(element, propName, propSchema));
+                node.set(propName, convertArrayProperty(element, propName, propSchema, consumed));
 
             } else {
                 // Regular single-valued child element
                 Element child = singleChildByName(element, xmlName);
-                if (child != null)
+                if (child != null) {
+                    consumed.add(child);
                     node.set(propName, convertElement(child, propSchema));
+                }
             }
         }
+        checkNoUndeclaredContent(element, schema, consumed);
         return node;
+    }
+
+    /**
+     * Rejects attributes and child elements no property was mapped to, if the schema forbids additional
+     * properties. The converted object only contains declared properties, so the validator cannot see
+     * such content, while the original body is forwarded with it. Namespace declarations and
+     * {@code xsi:} attributes are markup, not data, and content matching {@code patternProperties}
+     * (by local name) is allowed.
+     */
+    private static void checkNoUndeclaredContent(Element element, Schema schema, Set<Node> consumed) {
+        if (!Boolean.FALSE.equals(SchemaUtil.getAdditionalProperties(schema)))
+            return;
+
+        final var attributes = element.getAttributes();
+        for (int i = 0; i < attributes.getLength(); i++) {
+            final var attribute = attributes.item(i);
+            if (consumed.contains(attribute) || isMarkupAttribute(attribute) || matchesPatternProperty(schema, attribute))
+                continue;
+            throw new UndeclaredContentException("attribute", attribute.getNodeName(), element.getTagName());
+        }
+
+        final var children = element.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            if (!(children.item(i) instanceof Element child) || consumed.contains(child) || matchesPatternProperty(schema, child))
+                continue;
+            throw new UndeclaredContentException("element", child.getTagName(), element.getTagName());
+        }
+    }
+
+    private static boolean isMarkupAttribute(Node attribute) {
+        return XMLNS_ATTRIBUTE_NS_URI.equals(attribute.getNamespaceURI())
+            || W3C_XML_SCHEMA_INSTANCE_NS_URI.equals(attribute.getNamespaceURI());
+    }
+
+    @SuppressWarnings("unchecked")
+    private static boolean matchesPatternProperty(Schema schema, Node node) {
+        final Map<String, ?> patternProperties = schema.getPatternProperties();
+        if (patternProperties == null)
+            return false;
+        final var name = node.getLocalName() != null ? node.getLocalName() : node.getNodeName();
+        return patternProperties.keySet().stream().anyMatch(regex -> Pattern.compile(regex).matcher(name).find());
     }
 
     // -----------------------------------------------------------------------
@@ -165,7 +222,7 @@ public class XmlToJsonConverter {
     /**
      * Handles an array *property* inside an object, respecting {@code xml.wrapped}.
      */
-    private ArrayNode convertArrayProperty(Element parentElement, String propName, Schema propSchema) {
+    private ArrayNode convertArrayProperty(Element parentElement, String propName, Schema propSchema, Set<Node> consumed) {
         ArrayNode arrayNode = om.createArrayNode();
 
         boolean wrapped    = isXmlWrapped(propSchema);
@@ -176,6 +233,7 @@ public class XmlToJsonConverter {
             Element wrapperEl = singleChildByName(parentElement, wrapperName);
             if (wrapperEl == null)
                 return arrayNode;
+            consumed.add(wrapperEl);
             NodeList children = wrapperEl.getChildNodes();
             for (int i = 0; i < children.getLength(); i++) {
                 if (children.item(i) instanceof Element child)
@@ -189,8 +247,10 @@ public class XmlToJsonConverter {
                 if (!(children.item(i) instanceof Element child))
                     continue;
                 final var itemSchema = resolveRef(SchemaUtil.itemSchema(propSchema, arrayNode.size()));
-                if (xmlNameOf(propName, itemSchema).matches(child))
+                if (xmlNameOf(propName, itemSchema).matches(child)) {
+                    consumed.add(child);
                     arrayNode.add(convertElement(child, itemSchema));
+                }
             }
         }
         return arrayNode;
@@ -297,6 +357,13 @@ public class XmlToJsonConverter {
         return (name.namespaceURI() != null)
             ? element.hasAttributeNS(name.namespaceURI(), name.localName())
             : element.hasAttribute(name.qualifiedName());
+    }
+
+    /** Returns the attribute node, namespace-aware when the {@link XmlName} carries a namespace URI. */
+    private static Node attributeNode(Element element, XmlName name) {
+        return (name.namespaceURI() != null)
+            ? element.getAttributeNodeNS(name.namespaceURI(), name.localName())
+            : element.getAttributeNode(name.qualifiedName());
     }
 
     /** Reads an attribute value, namespace-aware when the {@link XmlName} carries a namespace URI. */

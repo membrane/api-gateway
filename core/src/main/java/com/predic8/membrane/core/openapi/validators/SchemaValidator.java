@@ -100,7 +100,7 @@ public class SchemaValidator implements JsonSchemaValidator {
             } else {
                 value = resolveValueAndParseJSON(obj);
             }
-        } catch (MixedContentException | MultipleElementsException e) {
+        } catch (MixedContentException | MultipleElementsException | UndeclaredContentException e) {
             return errors.add(new ValidationError(ctx.entityType(BODY), e.getMessage()));
         } catch (SAXException | XmlParseException e) {
             log.info("Cannot parse XML body. " + e);

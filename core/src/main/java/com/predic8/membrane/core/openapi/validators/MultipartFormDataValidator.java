@@ -23,9 +23,12 @@ import com.predic8.membrane.core.openapi.model.Message;
 import com.predic8.membrane.core.openapi.util.SchemaUtil;
 import com.predic8.membrane.core.util.xml.parser.XmlParseException;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.SpecVersion;
 import io.swagger.v3.oas.models.media.Encoding;
 import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.Schema;
+import jakarta.mail.internet.ContentType;
+import jakarta.mail.internet.ParseException;
 import org.apache.commons.fileupload.MultipartStream;
 import org.apache.commons.fileupload.ParameterParser;
 import org.slf4j.Logger;
@@ -74,10 +77,15 @@ public class MultipartFormDataValidator {
         ctx = ctx.entityType(BODY);
         var err = new ValidationErrors();
 
-        var schema = mediaType.getSchema();
-        if (schema == null) {
+        if (mediaType.getSchema() == null) {
             // Without a schema there is nothing to validate the parts against.
             return err;
+        }
+
+        var declaredSchema = mediaType.getSchema();
+        var schema = SchemaUtil.resolveRef(api, declaredSchema);
+        if (schema == null) {
+            return err.add(ctx, "Cannot resolve the schema reference '%s'.".formatted(mediaType.getSchema().get$ref()));
         }
 
         var boundary = getBoundary(message);
@@ -95,6 +103,13 @@ public class MultipartFormDataValidator {
 
         err.add(validateRequiredParts(ctx, schema, parts));
         err.add(validateParts(ctx, schema, mediaType.getEncoding(), parts));
+        // In OAS 3.1+, keywords alongside $ref apply as another schema to the same body.
+        // Keep their property rules separate from the referenced component's rules.
+        if (declaredSchema.get$ref() != null && declaredSchema.getSpecVersion() != SpecVersion.V30
+                && SchemaValidator.hasSiblings(declaredSchema)) {
+            err.add(validateRequiredParts(ctx, declaredSchema, parts));
+            err.add(validateParts(ctx, declaredSchema, mediaType.getEncoding(), parts));
+        }
         return err;
     }
 
@@ -159,9 +174,13 @@ public class MultipartFormDataValidator {
 
             var propertySchema = properties.get(name);
             if (propertySchema == null) {
-                if (FALSE.equals(schema.getAdditionalProperties()))
+                // An undeclared part is validated against an additionalProperties schema.
+                var additional = SchemaUtil.getAdditionalProperties(schema);
+                if (FALSE.equals(additional))
                     err.add(ctx.statusCode(400), "The multipart/form-data body contains an unexpected property '%s'.".formatted(name));
-                continue;
+                if (!(additional instanceof Schema<?> additionalSchema))
+                    continue;
+                propertySchema = additionalSchema;
             }
 
             // Resolve a $ref once here so the content-type default and the per-part validation below
@@ -197,7 +216,7 @@ public class MultipartFormDataValidator {
                 if (occurrenceSchema == null)
                     continue;
 
-                err.add(validatePart(partCtx, occurrenceSchema, contentTypeOf(name, part, occurrenceSchema, encodings), part));
+                err.add(validatePart(partCtx, occurrenceSchema, contentTypeOf(name, part, occurrenceSchema, encodings), hasDeclaredContentType(name, encodings), part));
             }
         }
         return err;
@@ -226,7 +245,20 @@ public class MultipartFormDataValidator {
 
     private ValidationErrors validateEncodingContentType(ValidationContext ctx, String name, FormPart part, Map<String, Encoding> encodings) {
         var err = new ValidationErrors();
-        if (part.contentType == null || encodings == null)
+        if (part.contentType == null)
+            return err;
+        try {
+            final var contentType = new ContentType(part.contentType);
+            if (contentType.getPrimaryType() == null || contentType.getPrimaryType().isBlank()
+                    || contentType.getSubType() == null || contentType.getSubType().isBlank())
+                return err.add(ctx.statusCode(400), "Part '%s' has an invalid Content-Type '%s'.".formatted(name, part.contentType));
+        } catch (ParseException e) {
+            return err.add(ctx.statusCode(400), "Part '%s' has an invalid Content-Type '%s'.".formatted(name, part.contentType));
+        }
+        // A media range like application/* would match any declared encoding, but a part has one concrete type.
+        if (isMediaRange(part.contentType))
+            return err.add(ctx.statusCode(400), "Part '%s' has the media range '%s' as Content-Type, a concrete media type is required.".formatted(name, part.contentType));
+        if (encodings == null)
             return err;
         var encoding = encodings.get(name);
         if (encoding == null || encoding.getContentType() == null)
@@ -237,7 +269,7 @@ public class MultipartFormDataValidator {
     }
 
     @SuppressWarnings("rawtypes")
-    private ValidationErrors validatePart(ValidationContext ctx, Schema propertySchema, String contentType, FormPart part) {
+    private ValidationErrors validatePart(ValidationContext ctx, Schema propertySchema, String contentType, boolean declaredContentType, FormPart part) {
         var err = new ValidationErrors();
 
         // A false schema (e.g. items: false or prefixItems: [false]) allows no part at all. Without a
@@ -263,7 +295,7 @@ public class MultipartFormDataValidator {
             JsonNode json;
             try {
                 json = new XmlToJsonConverter(api).convert(new String(part.content, UTF_8), propertySchema);
-            } catch (MixedContentException | MultipleElementsException e) {
+            } catch (MixedContentException | MultipleElementsException | UndeclaredContentException e) {
                 return err.add(ctx.statusCode(400), "Part '%s': %s".formatted(part.name, e.getMessage()));
             } catch (SAXException | XmlParseException | IOException e) {
                 return err.add(ctx.statusCode(400), "Part '%s' is declared as %s but its content could not be parsed as XML.".formatted(part.name, contentType));
@@ -278,8 +310,18 @@ public class MultipartFormDataValidator {
                     .validate(ctx, SchemaUtil.parseScalar(new String(part.content, UTF_8), propertySchema)));
         }
 
-        // Opaque content (e.g. octet-stream for a complex type) is not validated against the schema.
-        return err;
+        // Opaque content is accepted if the encoding declares it (e.g. octet-stream for a complex type).
+        // A structured part must not escape its schema through a Content-Type chosen by the client.
+        if (declaredContentType || !isObjectOrArray(api, propertySchema))
+            return err;
+        return err.add(ctx.statusCode(400), "Part '%s' has Content-Type '%s', which cannot be validated against the schema.".formatted(part.name, contentType));
+    }
+
+    private boolean hasDeclaredContentType(String name, Map<String, Encoding> encodings) {
+        if (encodings == null)
+            return false;
+        var encoding = encodings.get(name);
+        return encoding != null && encoding.getContentType() != null;
     }
 
     @SuppressWarnings("rawtypes")

@@ -91,7 +91,7 @@ Keep this file in sync when adding, renaming or removing a util class.
 | `OpenAPIUtil` | API id/version, 3.x vs Swagger 2 detection, path/parameter/property lookup, explode/query checks |
 | `SchemaUtil` | `$ref` resolution, effective type, string/array/scalar/object checks, item schema by position (`prefixItems`/`items`), parse scalar by schema |
 | `UriUtil` | Trim/ensure slashes, strip query, rewrite URL parts (not the same as `util/URIUtil`) |
-| `Utils` | Format validators (UUID, e-mail, date, IP, ISO codes, ...), stream/string conversion, validator request/response builders |
+| `Utils` | Format validators (UUID, e-mail, date, IP, ISO codes, ...), stream/string conversion, exact decimal conversion and divisibility, validator request/response builders |
 | `UriTemplateMatcher` | Match request paths against OpenAPI URI templates |
 | `UriTemplate` | Precompiled URI template (OpenAPI path templating, optionally regex literal parts); non-throwing match for hot paths (routing, validation) |
 | `OpenAPI32Parser` | OpenAPI 3.2 parsing shim |
