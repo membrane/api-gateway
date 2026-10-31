@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.transport.http;
 
 
+import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Body;
 import com.predic8.membrane.core.http.ReadingBodyException;
@@ -23,6 +24,8 @@ import com.predic8.membrane.core.proxies.ServiceProxy;
 import com.predic8.membrane.core.proxies.ServiceProxyKey;
 import com.predic8.membrane.core.router.Router;
 import com.predic8.membrane.core.router.TestRouter;
+import com.predic8.membrane.core.transport.http.client.ProxyConfiguration;
+import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.config.Configurator;
@@ -32,6 +35,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -41,7 +45,9 @@ import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.predic8.membrane.core.util.NetworkTestUtil.freePort;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 public class ConnectionTest {
 
@@ -49,17 +55,18 @@ public class ConnectionTest {
 	Connection con127_0_0_1;
 
 	Router router;
+	int port;
 
 	@BeforeEach
 	void setUp() throws Exception {
-
-		ServiceProxy proxy2000 = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 2000), "predic8.com", 80);
+		port = freePort();
+		final var proxy = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", port), "predic8.com", 80);
 		router = new TestRouter();
-		router.add(proxy2000);
+		router.add(proxy);
 		router.start();
 
-		conLocalhost = Connection.open("localhost", 2000, null, null, 30000);
-		con127_0_0_1 = Connection.open("127.0.0.1", 2000, null, null, 30000);
+		conLocalhost = Connection.open("localhost", port, null, null, 30000);
+		con127_0_0_1 = Connection.open("127.0.0.1", port, null, null, 30000);
 	}
 
 	@AfterEach
@@ -75,22 +82,41 @@ public class ConnectionTest {
 
 	@Test
 	public void testIsSame() {
-		assertTrue(conLocalhost.isSame("localhost", 2000));
-		assertTrue(con127_0_0_1.isSame("127.0.0.1", 2000));
+		assertTrue(conLocalhost.isSame("localhost", port, null, null, null));
+		assertTrue(con127_0_0_1.isSame("127.0.0.1", port, null, null, null));
+		assertFalse(conLocalhost.isSame("other.example.com", port, null, null, null), "different host");
+		assertFalse(conLocalhost.isSame("localhost", port + 1, null, null, null), "different port");
+	}
+
+	@Test
+	void plainConnectionIsNotSameForTls() {
+		assertFalse(conLocalhost.isSame("localhost", port, new StaticSSLContext(new SSLParser(), null, null), null, null));
+	}
+
+	/**
+	 * A direct connection must not be reused for a request that has to go through a proxy.
+	 */
+	@Test
+	void directConnectionIsNotSameForProxy() {
+		final var proxy = new ProxyConfiguration();
+		proxy.setHost("localhost");
+		proxy.setPort(port);
+		assertFalse(conLocalhost.isSame("localhost", port, null, null, proxy));
 	}
 
 	/**
 	 * A timeout while connecting has to be distinguishable from one while reading the response, because
 	 * only the former guarantees that nothing was sent. The JDK reports both as SocketTimeoutException.
 	 * A listening socket whose accept queue is full drops further SYNs, which is what makes the connect
-	 * time out here.
+	 * time out here. Windows refuses them instead, so the test is skipped there.
 	 */
 	@Test
 	void connectTimeoutSurfacesAsConnectTimeoutException() throws Exception {
 		List<Socket> queued = new ArrayList<>();
 		try (ServerSocket neverAccepting = new ServerSocket(0, 1)) {
 			int port = neverAccepting.getLocalPort();
-			fillAcceptQueue(port, queued);
+			assumeTrue(fillAcceptQueue(port, queued),
+					"The OS refuses connections to a full accept queue instead of dropping them, so a connect timeout cannot be provoked.");
 
 			assertThrows(ConnectTimeoutException.class,
 					() -> Connection.open("127.0.0.1", port, null, null, 200));
@@ -103,8 +129,10 @@ public class ConnectionTest {
 	/**
 	 * Connects until the accept queue of the never-accepting socket is full, from which point on the
 	 * kernel drops further SYNs rather than queueing them.
+	 *
+	 * @return false if the kernel refuses further connections instead of dropping their SYNs
 	 */
-	private static void fillAcceptQueue(int port, List<Socket> queued) throws IOException {
+	private static boolean fillAcceptQueue(int port, List<Socket> queued) throws IOException {
 		for (int i = 0; i < 10; i++) {
 			Socket s = new Socket();
 			try {
@@ -112,9 +140,13 @@ public class ConnectionTest {
 				queued.add(s);
 			} catch (SocketTimeoutException e) {
 				s.close();
-				return;
+				return true;
+			} catch (ConnectException e) {
+				s.close();
+				return false;
 			}
 		}
+		return true;
 	}
 
 	/**
@@ -197,7 +229,7 @@ public class ConnectionTest {
 		Configurator.setLevel(logger, Level.TRACE);
 		try {
 			assertTrue(ByteStreamLogging.isLoggingEnabled());
-			Connection.open("localhost", 2000, null, null, 30000).close();
+			Connection.open("localhost", port, null, null, 30000).close();
 		} finally {
 			Configurator.setLevel(logger, original);
 		}
