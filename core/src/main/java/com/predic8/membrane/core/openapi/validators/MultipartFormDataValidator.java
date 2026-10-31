@@ -362,15 +362,7 @@ public class MultipartFormDataValidator {
         // XML parts are converted to JSON (guided by the schema) and validated by the same
         // SchemaValidator. The conversion is done here so parse failures can name the part.
         if (isXML(contentType)) {
-            JsonNode json;
-            try {
-                json = new XmlToJsonConverter(api).convert(new String(part.content, UTF_8), propertySchema);
-            } catch (MixedContentException | MultipleElementsException | UndeclaredContentException e) {
-                return err.add(ctx.statusCode(400), "Part '%s': %s".formatted(part.name, e.getMessage()));
-            } catch (SAXException | XmlParseException | IOException e) {
-                return err.add(ctx.statusCode(400), "Part '%s' is declared as %s but its content could not be parsed as XML.".formatted(part.name, contentType));
-            }
-            return err.add(validateDecodedPart(ctx.content(XML), schemas, json));
+            return err.add(validateDecodedPart(ctx.content(XML), schemas, new String(part.content, UTF_8), part.name, contentType));
         }
 
         // Scalar parts (e.g. text/plain, the default for primitives) are validated by parsing the
@@ -394,6 +386,24 @@ public class MultipartFormDataValidator {
             // Keep the existing opaque-upload semantics, without skipping other matching constraints.
             if (!isBinaryString(resolveSchema(schema)))
                 errors.add(new SchemaValidator(api, schema).validate(ctx, value));
+        }
+        return errors;
+    }
+
+    @SuppressWarnings("rawtypes")
+    private ValidationErrors validateDecodedPart(ValidationContext ctx, List<Schema> schemas, String xml, String partName, String contentType) {
+        var errors = new ValidationErrors();
+        for (var schema : schemas) {
+            if (isBinaryString(resolveSchema(schema)))
+                continue;
+            try {
+                var json = new XmlToJsonConverter(api).convert(xml, schema);
+                errors.add(new SchemaValidator(api, schema).validate(ctx, json));
+            } catch (MixedContentException | MultipleElementsException | UndeclaredContentException e) {
+                errors.add(ctx.statusCode(400), "Part '%s': %s".formatted(partName, e.getMessage()));
+            } catch (SAXException | XmlParseException | IOException e) {
+                errors.add(ctx.statusCode(400), "Part '%s' is declared as %s but its content could not be parsed as XML.".formatted(partName, contentType));
+            }
         }
         return errors;
     }
