@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.function.IntUnaryOperator;
 import java.util.function.UnaryOperator;
 
+import static com.predic8.membrane.core.interceptor.soap.wsse.DecryptValidatePart.MAX_DATA_REFERENCES;
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityFaultCode.*;
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.getFirstChildByName;
 import static com.predic8.membrane.core.interceptor.soap.wsse.XmlEncryptionUtil.*;
@@ -638,6 +639,46 @@ class DecryptValidatePartTest extends AbstractWsSecurityTest {
         setBody(doc);
 
         assertFault(decrypter(ALIAS_1, decrypt()), INVALID_SECURITY);
+    }
+
+    @Test
+    void aReferenceListAtTheLimitDecrypts() throws Exception {
+        exchangeWithBody(PLAINTEXT_BODY);
+        encryptFor(ALIAS_1);
+        addEncryptedDataCopies(MAX_DATA_REFERENCES - 1);
+
+        assertEquals(Outcome.CONTINUE, decrypter(ALIAS_1, decrypt()).handleRequest(exchange));
+    }
+
+    /** Every reference is a lookup the sender gets for free, before any key has been checked. */
+    @Test
+    void aReferenceListAboveTheLimitIsRejected() throws Exception {
+        exchangeWithBody(PLAINTEXT_BODY);
+        encryptFor(ALIAS_1);
+        addEncryptedDataCopies(MAX_DATA_REFERENCES);
+
+        assertFault(decrypter(ALIAS_1, decrypt()), INVALID_SECURITY);
+    }
+
+    /**
+     * Adds {@code count} copies of the message's single {@code xenc:EncryptedData}, each under a
+     * fresh Id and named by its own {@code xenc:DataReference}, so every copy decrypts like the
+     * original.
+     */
+    private void addEncryptedDataCopies(int count) throws Exception {
+        final var doc = parseBody();
+        final var encryptedData = firstByTag(doc, XENC_NS, "EncryptedData");
+        final var dataReference = firstByTag(doc, XENC_NS, "DataReference");
+        for (int i = 0; i < count; i++) {
+            final var id = "ED-copy-" + i;
+            final var copy = (Element) encryptedData.cloneNode(true);
+            copy.setAttribute("Id", id);
+            encryptedData.getParentNode().appendChild(copy);
+            final var reference = (Element) dataReference.cloneNode(true);
+            reference.setAttribute("URI", "#" + id);
+            dataReference.getParentNode().appendChild(reference);
+        }
+        setBody(doc);
     }
 
     /**
