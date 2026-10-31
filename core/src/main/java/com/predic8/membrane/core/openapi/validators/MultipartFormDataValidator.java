@@ -178,6 +178,7 @@ public class MultipartFormDataValidator {
 
         for (var entry : parts.entrySet()) {
             var name = entry.getKey();
+            int errorsBeforeField = err.size();
 
             var schemas = collectMatchingSchemas(properties, name, patterns);
             if (schemas.isEmpty()) {
@@ -192,8 +193,7 @@ public class MultipartFormDataValidator {
 
             // Choose a schema for array handling and the default content type; scalar values may try other types.
             var resolvedSchemas = schemas.stream().map(this::resolveSchema).toList();
-            var partSchema = decodingSchema(resolvedSchemas);
-            boolean array = SchemaUtil.isArray(partSchema);
+            boolean array = SchemaUtil.isArray(decodingSchema(resolvedSchemas));
             boolean repeatedItems = treatsPartsAsArrayItems(array, resolvedSchemas);
             var partCtx = ctx.addJSONpointerSegment(name);
             // Array occurrences represent one array value; a scalar schema cannot validate its items
@@ -208,6 +208,8 @@ public class MultipartFormDataValidator {
 
             // A field name may occur multiple times (array items / multi-file fields), so validate every occurrence.
             var occurrences = entry.getValue();
+            var reconstructed = JsonNodeFactory.instance.arrayNode();
+            boolean canReconstruct = array && repeatedItems;
             for (int i = 0; i < occurrences.size(); i++) {
                 var part = occurrences.get(i);
 
@@ -216,18 +218,62 @@ public class MultipartFormDataValidator {
                 var contentTypeErrors = validateEncodingContentType(partCtx, name, part, encodings);
                 if (!contentTypeErrors.isEmpty()) {
                     err.add(contentTypeErrors);
+                    canReconstruct = false;
                     continue;
                 }
 
                 var occurrenceSchemas = collectOccurrenceSchemas(schemas, array, resolvedSchemas, i, repeatedItems);
-                if (occurrenceSchemas.isEmpty())
+                if (occurrenceSchemas.isEmpty()) {
+                    if (canReconstruct) {
+                        var unconstrained = new Schema<>();
+                        var value = reconstructPart(partCtx, List.of(unconstrained), unconstrained,
+                                contentTypeOf(name, part, unconstrained, encodings), part);
+                        if (value == null)
+                            canReconstruct = false;
+                        else
+                            reconstructed.add(value);
+                    }
                     continue;
+                }
                 var decodingSchema = decodingSchema(occurrenceSchemas.stream().map(this::resolveSchema).toList());
+                var contentType = contentTypeOf(name, part, decodingSchema, encodings);
                 err.add(validatePart(partCtx, occurrenceSchemas, decodingSchema,
-                        contentTypeOf(name, part, decodingSchema, encodings), hasDeclaredContentType(name, encodings), part));
+                        contentType, hasDeclaredContentType(name, encodings), part));
+                if (canReconstruct) {
+                    var value = reconstructPart(partCtx, occurrenceSchemas, decodingSchema, contentType, part);
+                    if (value == null)
+                        canReconstruct = false;
+                    else
+                        reconstructed.add(value);
+                }
+            }
+            if (canReconstruct && err.size() == errorsBeforeField) {
+                for (var candidate : schemas)
+                    if (SchemaUtil.isArray(resolveSchema(candidate)))
+                        err.add(new SchemaValidator(api, candidate).validate(partCtx, reconstructed));
             }
         }
         return err;
+    }
+
+    @SuppressWarnings("rawtypes")
+    private JsonNode reconstructPart(ValidationContext ctx, List<Schema> schemas, Schema schema, String contentType, FormPart part) {
+        var text = new String(part.content, UTF_8);
+        if (isBinaryString(schema))
+            return JsonNodeFactory.instance.textNode(text);
+        try {
+            if (isJson(contentType))
+                return new JsonBody(text).getPayload();
+            if (isXML(contentType))
+                return new XmlToJsonConverter(api).convert(text, schema);
+            if (SchemaUtil.isScalar(schema) || !isObjectOrArray(api, schema))
+                return scalarDecodingCandidates(schemas, schema, text).stream()
+                        .filter(value -> validateDecodedPart(ctx, schemas, value).isEmpty())
+                        .findFirst().orElse(null);
+        } catch (Exception e) {
+            // The per-occurrence validation reports malformed input.
+        }
+        return null;
     }
 
     private @NonNull ArrayList<Schema> collectOccurrenceSchemas(ArrayList<Schema> schemas, boolean array, List<Schema> resolvedSchemas, int i, boolean repeatedItems) {

@@ -345,6 +345,16 @@ public class MultipartFormDataValidatorTest extends AbstractValidatorTest {
     }
 
     @Test
+    void patternArrayValidatesUniqueItemsAcrossOccurrences() throws ParseException {
+        var schema = new ObjectSchema().additionalProperties(false);
+        schema.addPatternProperty("^x-", new ArraySchema().items(new IntegerSchema()).uniqueItems(true));
+
+        assertTrue(validateParts(schema, "x-count", "1", "2").isEmpty());
+        var errors = validateParts(schema, "x-count", "1", "1");
+        assertTrue(!errors.isEmpty(), "Duplicate array items must be rejected");
+    }
+
+    @Test
     void arrayPatternWithoutItemsOnlyConstrainsCardinality() throws ParseException {
         var schema = new ObjectSchema().additionalProperties(false);
         schema.addProperty("x-count", new ArraySchema().items(new IntegerSchema()));
