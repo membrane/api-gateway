@@ -166,10 +166,7 @@ public class ObjectValidator implements JsonSchemaValidator {
 
         ValidationErrors errors = new ValidationErrors();
 
-        // OAS 3.1 parses additionalProperties: true/false into a boolean schema, 3.0 into a Boolean. See #3562.
-        var additional = schema.getAdditionalProperties();
-        if (additional instanceof Schema<?> s && s.getBooleanSchemaValue() != null)
-            additional = s.getBooleanSchemaValue();
+        var additional = SchemaUtil.getAdditionalProperties(schema);
 
         if (additional instanceof Schema<?> s) {
             additionalProperties.forEach((propName, value) ->

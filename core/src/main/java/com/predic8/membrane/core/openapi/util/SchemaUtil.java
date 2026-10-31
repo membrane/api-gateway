@@ -107,6 +107,17 @@ public class SchemaUtil {
         return "binary".equals(format) || "byte".equals(format);
     }
 
+    /**
+     * Returns {@code additionalProperties} as a {@link Boolean}, a {@link Schema} or {@code null} if absent.
+     * OAS 3.1 parses {@code additionalProperties: true/false} into a boolean schema, 3.0 into a Boolean. See #3562.
+     */
+    public static Object getAdditionalProperties(Schema schema) {
+        var additional = schema.getAdditionalProperties();
+        if (additional instanceof Schema<?> s && s.getBooleanSchemaValue() != null)
+            return s.getBooleanSchemaValue();
+        return additional;
+    }
+
     /** True if the schema's effective type is {@code array}. */
     public static boolean isArray(Schema schema) {
         return "array".equals(getEffectiveType(schema));

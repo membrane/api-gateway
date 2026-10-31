@@ -134,9 +134,13 @@ public class FormUrlEncodedValidator {
 
             Schema propertySchema = properties != null ? properties.get(name) : null;
             if (propertySchema == null) {
-                if (FALSE.equals(schema.getAdditionalProperties()))
+                // An undeclared field is validated against an additionalProperties schema.
+                var additional = SchemaUtil.getAdditionalProperties(schema);
+                if (FALSE.equals(additional))
                     errors.add(ctx, "The application/x-www-form-urlencoded body contains an unexpected property '%s'.".formatted(name));
-                continue;
+                if (!(additional instanceof Schema<?> additionalSchema))
+                    continue;
+                propertySchema = additionalSchema;
             }
 
             propertySchema = SchemaUtil.resolveRef(api, propertySchema);

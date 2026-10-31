@@ -164,9 +164,13 @@ public class MultipartFormDataValidator {
 
             var propertySchema = properties.get(name);
             if (propertySchema == null) {
-                if (FALSE.equals(schema.getAdditionalProperties()))
+                // An undeclared part is validated against an additionalProperties schema.
+                var additional = SchemaUtil.getAdditionalProperties(schema);
+                if (FALSE.equals(additional))
                     err.add(ctx.statusCode(400), "The multipart/form-data body contains an unexpected property '%s'.".formatted(name));
-                continue;
+                if (!(additional instanceof Schema<?> additionalSchema))
+                    continue;
+                propertySchema = additionalSchema;
             }
 
             // Resolve a $ref once here so the content-type default and the per-part validation below
