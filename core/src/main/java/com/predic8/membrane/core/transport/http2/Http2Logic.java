@@ -41,6 +41,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.predic8.membrane.core.transport.http2.frame.Error.*;
 import static com.predic8.membrane.core.transport.http2.frame.Frame.*;
 import static com.predic8.membrane.core.transport.http2.frame.SettingsFrame.*;
+import static com.predic8.membrane.core.util.HttpUtil.isOptionalWhitespace;
+import static com.predic8.membrane.core.util.HttpUtil.isTchar;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
 public class Http2Logic {
     private static final Logger log = LoggerFactory.getLogger(Http2Logic.class.getName());
@@ -381,13 +384,21 @@ public class Http2Logic {
         }
 
         final var oversizedField = new boolean[1];
+        final var malformedField = new boolean[1];
+        final var statusReceived = new boolean[1];
         // The whole block is decoded even if it gets rejected, so the HPACK dynamic table stays in sync.
         decoder.decode(getPackedHeaderStream(headerFrames), (name, value, sensitive) -> {
+            // Checked first: a malformed message is a protocol error, even if it is also too large.
+            if (!isValidFieldName(name) || !isValidFieldValue(value)) {
+                malformedField[0] = true;
+                return;
+            }
             if (name.length + 2 + value.length >= MAX_LINE_LENGTH) {
                 oversizedField[0] = true;
                 return;
             }
-            String key = new String(name);
+            // The name has been checked to be ASCII, so this charset reads it byte for byte.
+            String key = new String(name, ISO_8859_1);
             String val = new String(value);
 
             if (sb != null) {
@@ -407,7 +418,14 @@ public class Http2Logic {
                 ((Request) request).setUri(val);
                 log.debug("streamId=" + streamId1 + " uri=" + val);
             } else if (":status".equals(key) && request instanceof Response) {
+                // A status code is exactly three digits (RFC 9110 §15). Anything else, such as "+200" or "0200",
+                // which Integer.parseInt would accept, is a malformed response that only fails its stream.
+                if (!isValidStatus(val)) {
+                    malformedField[0] = true;
+                    return;
+                }
                 ((Response) request).setStatusCode(Integer.parseInt(val));
+                statusReceived[0] = true;
                 log.debug("streamId=" + streamId1 + " status=" + val);
             } else
                 header.add(key, val);
@@ -416,6 +434,25 @@ public class Http2Logic {
 
         if (sb != null)
             log.debug(sb.toString());
+
+        // Every response carries :status (RFC 9113 §8.3.2), trailers do not.
+        if (!isTrailer && request instanceof Response && !statusReceived[0])
+            malformedField[0] = true;
+
+        if (malformedField[0]) {
+            // A malformed message is a stream error of type PROTOCOL_ERROR (RFC 9113 §8.1.1). It is rejected
+            // rather than forwarded without the field, as the HTTP/1.1 parser does.
+            log.info("Rejecting header block on stream {}: it is malformed (RFC 9113 §8.1.1).", streamId1);
+            // Queued before anyone waiting on the stream is woken up, as they might reset it with another error code.
+            // The block's END_STREAM is not applied: it could close the stream before the reset is sent, and the
+            // frame sender drops frames for closed streams. Writing the reset closes the stream instead.
+            sender.send(streamId1, (encoder, peerSettings) -> List.of(RstStreamFrame.construct(streamId1, ERROR_PROTOCOL_ERROR)));
+            if (isTrailer)
+                streamInfo.abortReceiving(new IOException("HTTP/2 trailer on stream %d carries a malformed header field.".formatted(streamId1)));
+            else
+                messageHandler.handleMalformedHeaders(streamInfo);
+            return;
+        }
 
         if (oversizedField[0] || truncated) {
             log.info("Rejecting header block on stream {}: a header field exceeds {} bytes or the block exceeds {} bytes.",
@@ -455,6 +492,47 @@ public class Http2Logic {
 
         if (headers.isEndStream())
             streamInfo.receivedEndStream(false);
+    }
+
+    /**
+     * Whether the field name is a lower-case RFC 9110 token, or a pseudo-header name: a colon followed by one.
+     * This is stricter than RFC 9113 &sect;8.2.1, which only excludes control characters, SP, upper-case letters
+     * and non-ASCII bytes. The HTTP/1.1 parser accepts tokens only, and a message received over HTTP/2 may be
+     * forwarded over HTTP/1.1.
+     */
+    static boolean isValidFieldName(byte[] name) {
+        final int start = name.length > 0 && name[0] == ':' ? 1 : 0;
+        if (name.length == start)
+            return false;
+        for (int i = start; i < name.length; i++) {
+            final int c = name[i] & 0xFF;
+            if ((c >= 'A' && c <= 'Z') || !isTchar(c))
+                return false;
+        }
+        return true;
+    }
+
+    /**
+     * Whether the field value carries no NUL, CR or LF, and does not start or end with SP or HTAB
+     * (RFC 9113 &sect;8.2.1).
+     */
+    static boolean isValidFieldValue(byte[] value) {
+        for (byte b : value)
+            if (b == 0 || b == '\r' || b == '\n')
+                return false;
+        return value.length == 0 || (!isOptionalWhitespace((char) value[0]) && !isOptionalWhitespace((char) value[value.length - 1]));
+    }
+
+    /**
+     * Three digits between 100 and 599 (RFC 9110 §15).
+     */
+    private static boolean isValidStatus(String status) {
+        if (status.length() != 3 || status.charAt(0) < '1' || status.charAt(0) > '5')
+            return false;
+        for (int i = 0; i < 3; i++)
+            if (status.charAt(i) < '0' || status.charAt(i) > '9')
+                return false;
+        return true;
     }
 
     public InputStream getPackedHeaderStream(List<HeaderBlockFragment> headerFrames) {

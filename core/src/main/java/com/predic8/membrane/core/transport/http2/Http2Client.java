@@ -116,6 +116,14 @@ public class Http2Client implements Runnable, AutoCloseable {
                 if (!endStream)
                     cancel(streamId);
             }
+
+            @Override
+            public void handleMalformedHeaders(StreamInfo streamInfo) {
+                final var streamId = streamInfo.getStreamId();
+                final var ri = responses.get(streamId);
+                if (ri != null)
+                    ri.fail(new IOException("HTTP/2 response headers on stream %d carry a malformed header field.".formatted(streamId)));
+            }
         });
 
         Thread thread = new Thread(this);

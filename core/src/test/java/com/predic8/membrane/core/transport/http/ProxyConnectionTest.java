@@ -1,0 +1,382 @@
+/* Copyright 2026 predic8 GmbH, www.predic8.com
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License. */
+
+package com.predic8.membrane.core.transport.http;
+
+import com.predic8.membrane.core.config.security.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.transport.http.client.*;
+import com.predic8.membrane.core.transport.ssl.*;
+import org.junit.jupiter.api.*;
+
+import java.io.*;
+import java.util.*;
+import java.util.concurrent.atomic.*;
+
+import static com.predic8.membrane.core.exchange.Exchange.SNI_SERVER_NAME;
+import static com.predic8.membrane.core.exchange.Exchange.SSL_CONTEXT;
+import static com.predic8.membrane.core.http.Header.AUTHORIZATION;
+import static com.predic8.membrane.core.http.Request.METHOD_CONNECT;
+import static com.predic8.membrane.core.http.Request.get;
+import static com.predic8.membrane.core.http.Response.ok;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.transport.http.client.protocol.Http2ProtocolHandler.HTTP2_PROTOCOL;
+import static com.predic8.membrane.core.util.NetworkTestUtil.freePort;
+import static com.predic8.membrane.core.util.NetworkTestUtil.freePorts;
+import static java.lang.Boolean.TRUE;
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * Checks that the {@link HttpClient} reuses its connection to an HTTP proxy.
+ */
+class ProxyConnectionTest {
+
+	private HttpClient client;
+
+	private static HttpClient createClient(int proxyPort) {
+		return createClient(proxyPort, false);
+	}
+
+	private static HttpClient createClient(int proxyPort, boolean useHttp2) {
+		final var configuration = new HttpClientConfiguration();
+		configuration.setProxy(proxyConfiguration(proxyPort));
+		configuration.setUseExperimentalHttp2(useHttp2);
+		return new HttpClient(configuration);
+	}
+
+	private static ProxyConfiguration proxyConfiguration(int proxyPort) {
+		final var proxyConfiguration = new ProxyConfiguration();
+		proxyConfiguration.setHost("localhost");
+		proxyConfiguration.setPort(proxyPort);
+		return proxyConfiguration;
+	}
+
+	private int getNumberInPool() {
+		return client.getConnectionFactory().getConnectionManager().getNumberInPool();
+	}
+
+	/**
+	 * Calls {@code first} with an NTLM header, which binds its target connection to the exchange, then calls
+	 * {@code second} on that bound connection, as done during an NTLM handshake.
+	 *
+	 * @return the connection bound by {@code first}
+	 */
+	private Connection callOnBoundConnection(Exchange first, Exchange second) throws Exception {
+		first.getRequest().getHeader().add(AUTHORIZATION, "NTLM abcd");
+		client.call(first);
+		first.getResponse().readBody();
+		final var bound = first.getTargetConnection();
+		assertNotNull(bound, "The connection should be bound to the exchange.");
+
+		second.setTargetConnection(bound);
+		client.call(second);
+		second.getResponse().readBody();
+		return bound;
+	}
+
+	/**
+	 * Plain HTTP: the client sends the absolute URL to the proxy, so one connection to the proxy serves every target.
+	 */
+	@Nested
+	class PlainHttp {
+
+		private int proxyPort;
+
+		private final Set<Integer> proxyConnections = Collections.synchronizedSet(new HashSet<>()); // hashcodes of all connections the proxy received
+		private Router proxy;
+
+		@BeforeEach
+		void setUp() throws Exception {
+			proxyPort = freePort();
+			proxy = new TestRouter();
+			final var sp = new ServiceProxy(new ServiceProxyKey("*", "*", ".*", proxyPort), "", -1);
+			sp.getFlow().add(new AbstractInterceptor() {
+				@Override
+				public Outcome handleRequest(Exchange exc) {
+					try {
+						exc.getRequest().readBody();
+					} catch (IOException e) {
+						throw new RuntimeException(e);
+					}
+					exc.setResponse(ok("OK.").build());
+					proxyConnections.add(((HttpServerHandler) exc.getHandler()).getSrcOut().hashCode());
+					return RETURN;
+				}
+			});
+			proxy.add(sp);
+			proxy.start();
+
+			client = createClient(proxyPort);
+		}
+
+		@AfterEach
+		void tearDown() {
+			client.close();
+			proxy.stop();
+		}
+
+		private int issueRequest(String url) throws Exception {
+			final var exchange = get(url).buildExchange();
+			client.call(exchange);
+			exchange.getResponse().readBody();
+			return exchange.getResponse().getStatusCode();
+		}
+
+		@Test
+		void connectionToProxyIsReused() throws Exception {
+			assertEquals(200, issueRequest("http://backend.example.com/"));
+			assertEquals(200, issueRequest("http://backend.example.com/"));
+
+			assertEquals(1, proxyConnections.size());
+			assertEquals(1, getNumberInPool());
+		}
+
+		@Test
+		void connectionToProxyIsReusedForDifferentTargets() throws Exception {
+			assertEquals(200, issueRequest("http://backend1.example.com/"));
+			assertEquals(200, issueRequest("http://backend2.example.com:8080/"));
+
+			assertEquals(1, proxyConnections.size());
+			assertEquals(1, getNumberInPool());
+		}
+
+		@Test
+		void boundConnectionToProxyIsKept() throws Exception {
+			final var second = get("http://backend.example.com/").buildExchange();
+			final var bound = callOnBoundConnection(get("http://backend.example.com/").buildExchange(), second);
+
+			assertSame(bound, second.getTargetConnection());
+			assertEquals(1, proxyConnections.size());
+			bound.close();
+		}
+
+		@Test
+		void boundConnectionToProxyIsKeptAfterServingAnotherTarget() throws Exception {
+			assertEquals(200, issueRequest("http://other.example.com/"));
+
+			final var second = get("http://backend.example.com/").buildExchange();
+			final var bound = callOnBoundConnection(get("http://backend.example.com/").buildExchange(), second);
+
+			assertSame(bound, second.getTargetConnection());
+			assertEquals(1, proxyConnections.size());
+			bound.close();
+		}
+
+		/**
+		 * An HTTPS target needs a CONNECT tunnel; a plain connection to the proxy would send the request in cleartext.
+		 */
+		@Test
+		void boundConnectionToProxyIsNotSameForTls() throws Exception {
+			final var bound = callOnBoundConnection(get("http://backend.example.com/").buildExchange(),
+					get("http://backend.example.com/").buildExchange());
+
+			final var tls = new StaticSSLContext(new SSLParser(), new ResolverMap(), null);
+			assertTrue(bound.isSame("other.example.com", 80, null, null, proxyConfiguration(proxyPort)));
+			assertFalse(bound.isSame("backend.example.com", 443, tls, null, proxyConfiguration(proxyPort)));
+			bound.close();
+		}
+
+		/**
+		 * The next request on the inbound connection may be handled by an HttpClient with another proxy or none.
+		 */
+		@Test
+		void boundConnectionToProxyIsNotSameForAnotherProxy() throws Exception {
+			final var bound = callOnBoundConnection(get("http://backend.example.com/").buildExchange(),
+					get("http://backend.example.com/").buildExchange());
+
+			assertFalse(bound.isSame("backend.example.com", 80, null, null, null));
+			assertFalse(bound.isSame("backend.example.com", 80, null, null, proxyConfiguration(proxyPort + 1)));
+			bound.close();
+		}
+
+		@Test
+		void boundConnectionIsNotUsedByClientWithAnotherProxy() throws Exception {
+			final var bound = callOnBoundConnection(get("http://backend.example.com/").buildExchange(),
+					get("http://backend.example.com/").buildExchange());
+
+			final var otherProxy = proxyConfiguration(proxyPort);
+			otherProxy.setHost("127.0.0.1"); // the same proxy, but configured differently
+			final var configuration = new HttpClientConfiguration();
+			configuration.setProxy(otherProxy);
+			final var otherClient = new HttpClient(configuration);
+			final var third = get("http://backend.example.com/").buildExchange();
+			third.setTargetConnection(bound);
+			try {
+				otherClient.call(third);
+				third.getResponse().readBody();
+			} finally {
+				otherClient.close();
+			}
+
+			assertTrue(bound.isClosed());
+			assertNotSame(bound, third.getTargetConnection());
+			assertEquals(2, proxyConnections.size());
+		}
+	}
+
+	/**
+	 * HTTPS: the client tunnels through the proxy using CONNECT, so each tunnel is bound to one target.
+	 */
+	@Nested
+	class Https {
+
+		private int proxyPort;
+		private int backendPort;
+
+		private final AtomicInteger connectRequests = new AtomicInteger();
+		private Router proxy;
+		private Router backend;
+		private SSLProvider clientSSLContext;
+
+		@BeforeEach
+		void setUp() throws Exception {
+			final var ports = freePorts(2);
+			proxyPort = ports[0];
+			backendPort = ports[1];
+			backend = new TestRouter();
+			final var sp = new ServiceProxy(new ServiceProxyKey(backendPort), null, 0);
+			sp.setSslInboundParser(createKeyStoreParser());
+			sp.getFlow().add(new AbstractInterceptor() {
+				@Override
+				public Outcome handleRequest(Exchange exc) {
+					exc.setResponse(ok("OK.").build());
+					return RETURN;
+				}
+			});
+			backend.add(sp);
+			backend.start();
+
+			proxy = new TestRouter();
+			final var proxyRule = new ProxyRule(new ProxyRuleKey(proxyPort));
+			proxyRule.getFlow().add(new AbstractInterceptor() {
+				@Override
+				public Outcome handleRequest(Exchange exc) {
+					if (METHOD_CONNECT.equals(exc.getRequest().getMethod()))
+						connectRequests.incrementAndGet();
+					return CONTINUE;
+				}
+			});
+			proxy.add(proxyRule);
+			proxy.start();
+
+			clientSSLContext = new StaticSSLContext(createTrustStoreParser(), new ResolverMap(), null);
+			client = createClient(proxyPort);
+		}
+
+		@AfterEach
+		void tearDown() {
+			client.close();
+			proxy.stop();
+			backend.stop();
+		}
+
+		private static SSLParser createKeyStoreParser() {
+			final var ssl = new SSLParser();
+			ssl.setUseExperimentalHttp2(true); // clients without HTTP/2 still get HTTP/1.1
+			ssl.setKeyStore(new KeyStore());
+			ssl.getKeyStore().setLocation("classpath:/ssl-rsa.keystore");
+			ssl.getKeyStore().setKeyPassword("secret");
+			return ssl;
+		}
+
+		private static SSLParser createTrustStoreParser() {
+			final var ssl = new SSLParser();
+			ssl.setTrustStore(new TrustStore());
+			ssl.getTrustStore().setLocation("classpath:/ssl-rsa-pub.keystore");
+			ssl.getTrustStore().setPassword("secret");
+			ssl.setEndpointIdentificationAlgorithm(""); // the certificate was not issued for 'localhost'
+			return ssl;
+		}
+
+		private int issueRequest() throws Exception {
+			final var exchange = createExchange();
+			client.call(exchange);
+			exchange.getResponse().readBody();
+			return exchange.getResponse().getStatusCode();
+		}
+
+		private Exchange createExchange() throws Exception {
+			final var exchange = get("https://localhost:%d/".formatted(backendPort)).buildExchange();
+			exchange.setProperty(SSL_CONTEXT, clientSSLContext);
+			return exchange;
+		}
+
+		@Test
+		void tunnelThroughProxyIsReused() throws Exception {
+			assertEquals(200, issueRequest());
+			assertEquals(200, issueRequest());
+
+			assertEquals(1, connectRequests.get());
+			assertEquals(1, getNumberInPool());
+		}
+
+		@Test
+		void boundTunnelIsKept() throws Exception {
+			final var second = createExchange();
+			final var bound = callOnBoundConnection(createExchange(), second);
+
+			assertSame(bound, second.getTargetConnection());
+			assertEquals(1, connectRequests.get());
+			bound.close();
+		}
+
+		@Test
+		void boundTunnelWithSniIsKept() throws Exception {
+			final var first = createExchange();
+			first.setProperty(SNI_SERVER_NAME, "backend.example.com");
+			final var second = createExchange();
+			second.setProperty(SNI_SERVER_NAME, "backend.example.com");
+			final var bound = callOnBoundConnection(first, second);
+
+			assertSame(bound, second.getTargetConnection());
+			assertEquals(1, connectRequests.get());
+			bound.close();
+		}
+
+		@Test
+		void boundTunnelIsNotSameForAnotherTlsSetup() throws Exception {
+			final var bound = callOnBoundConnection(createExchange(), createExchange());
+			final var proxyConfiguration = proxyConfiguration(proxyPort);
+
+			assertTrue(bound.isSame("localhost", backendPort, clientSSLContext, null, proxyConfiguration));
+			assertFalse(bound.isSame("localhost", backendPort, null, null, proxyConfiguration), "plain HTTP");
+			assertFalse(bound.isSame("localhost", backendPort, new StaticSSLContext(new SSLParser(), new ResolverMap(), null),
+					null, proxyConfiguration), "another SSL context");
+			assertFalse(bound.isSame("localhost", backendPort, clientSSLContext, "other.example.com", proxyConfiguration),
+					"another SNI server name");
+			bound.close();
+		}
+
+		@Test
+		void http2ConnectionThroughProxyIsReused() throws Exception {
+			client.close();
+			client = createClient(proxyPort, true);
+
+			for (int i = 0; i < 2; i++) {
+				final var exchange = createExchange();
+				client.call(exchange);
+				exchange.getResponse().readBody();
+				assertEquals(200, exchange.getResponse().getStatusCode());
+				assertEquals(TRUE, exchange.getProperty(HTTP2_PROTOCOL), "The request should use HTTP/2.");
+			}
+
+			assertEquals(1, connectRequests.get());
+		}
+	}
+}
