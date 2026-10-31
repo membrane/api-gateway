@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.predic8.membrane.core.openapi.OpenAPIParsingException;
 import com.predic8.membrane.core.openapi.model.Message;
 import com.predic8.membrane.core.openapi.util.SchemaUtil;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -161,7 +162,13 @@ public class FormUrlEncodedValidator {
 
             // Resolve references for decoding, but keep the original schemas for validation,
             // including any constraints next to a $ref.
-            var decodingSchemas = fieldSchemas.stream().map(s -> SchemaUtil.resolveRef(api, s)).toList();
+            var decodingSchemas = fieldSchemas.stream().map(s -> {
+                var resolved = SchemaUtil.resolveRef(api, s);
+                if (resolved == null)
+                    throw new OpenAPIParsingException("Cannot resolve schema reference '%s' for form field '%s'."
+                            .formatted(s.get$ref(), name));
+                return resolved;
+            }).toList();
             var decodingSchema = decodingSchema(decodingSchemas);
             // Decode once: converting separately could let the same field satisfy incompatible
             // types (e.g. integer 1 for one schema and string "1" for another).

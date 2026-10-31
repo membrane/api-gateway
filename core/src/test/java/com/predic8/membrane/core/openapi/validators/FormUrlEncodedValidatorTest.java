@@ -16,6 +16,8 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
+import com.predic8.membrane.core.openapi.OpenAPIParsingException;
+import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.*;
 import jakarta.mail.internet.ParseException;
@@ -262,6 +264,30 @@ public class FormUrlEncodedValidatorTest extends AbstractValidatorTest {
         var errors = validateSchema(schema, "counts=1&counts=2");
         assertEquals(List.of("/counts/0", "/counts/1"),
                 errors.stream().map(e -> e.getContext().getJSONpointer()).toList());
+    }
+
+    @ParameterizedTest
+    @CsvSource({"additionalProperties", "properties", "patternProperties"})
+    void unresolvedFieldSchemaRefReportsParsingError(String keyword) {
+        // Keep components/schemas present so reference lookup returns null for the missing target.
+        var api = new OpenAPI().components(new Components().addSchemas("Existing", new StringSchema()));
+        var schema = new ObjectSchema();
+        var ref = new Schema<>().$ref("#/components/schemas/Missing");
+        switch (keyword) {
+            case "additionalProperties" -> schema.setAdditionalProperties(ref);
+            case "properties" -> schema.addProperty("extra", ref);
+            case "patternProperties" -> {
+                // Even with a usable explicit type, a broken matching schema must not be skipped.
+                schema.addProperty("extra", new StringSchema());
+                schema.addPatternProperty("^extra$", ref);
+            }
+            default -> throw new IllegalArgumentException(keyword);
+        }
+
+        var error = assertThrows(OpenAPIParsingException.class, () -> new FormUrlEncodedValidator(api).validate(
+                new ValidationContext(), new MediaType().schema(schema), "extra=value"));
+        assertTrue(error.getMessage().contains("#/components/schemas/Missing"));
+        assertTrue(error.getMessage().contains("extra"));
     }
 
     private ValidationErrors validateSchema(Schema<?> schema, String body) {
