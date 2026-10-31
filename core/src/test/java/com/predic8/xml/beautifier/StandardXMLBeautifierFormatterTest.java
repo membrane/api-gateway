@@ -18,6 +18,7 @@ import org.junit.jupiter.api.*;
 
 import java.io.*;
 
+import static com.predic8.xml.beautifier.AbstractXMLBeautifierFormatter.*;
 import static java.nio.charset.StandardCharsets.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -173,6 +174,26 @@ class StandardXMLBeautifierFormatterTest {
         f.indent();
         f.writeText("X");
         assertEquals("   X", w.toString());
+    }
+
+    @Test
+    void indent_isCappedAtMaxIndent() throws IOException {
+        final var w = new StringWriter();
+        final var f = new StandardXMLBeautifierFormatter(w, MAX_INDENT + 100);
+
+        f.indent();
+        assertEquals(" ".repeat(MAX_INDENT), w.toString());
+    }
+
+    @Test
+    void indent_belowCapAfterDecrementingFromAboveCap() throws IOException {
+        final var w = new StringWriter();
+        final var f = new StandardXMLBeautifierFormatter(w, 0);
+
+        f.incrementIndentBy(MAX_INDENT + 100);
+        f.decrementIndentBy(MAX_INDENT + 98);
+        f.indent();
+        assertEquals("  ", w.toString());
     }
 
     @Test

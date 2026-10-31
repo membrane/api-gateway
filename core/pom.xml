@@ -150,6 +150,11 @@
             <version>2.6.0</version>
         </dependency>
         <dependency>
+            <groupId>com.google.re2j</groupId>
+            <artifactId>re2j</artifactId>
+            <version>1.8</version>
+        </dependency>
+        <dependency>
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>okhttp-jvm</artifactId>
             <version>5.3.2</version>
@@ -453,7 +458,9 @@
                     <includes>
                         <include>**/UnitTests.java</include>
                     </includes>
-                    <argLine>-Dfile.encoding=UTF-8 -Djdk.xml.maxGeneralEntitySizeLimit=0 -Djdk.xml.totalEntitySizeLimit=0</argLine>
+                    <!-- javax.xml.stream.*: use the JDK's StAX implementation, as at runtime. Woodstox is only on
+                         the test classpath through CXF, which instantiates it directly. -->
+                    <argLine>-Dfile.encoding=UTF-8 -Djdk.xml.maxGeneralEntitySizeLimit=0 -Djdk.xml.totalEntitySizeLimit=0 -Djavax.xml.stream.XMLInputFactory=com.sun.xml.internal.stream.XMLInputFactoryImpl -Djavax.xml.stream.XMLOutputFactory=com.sun.xml.internal.stream.XMLOutputFactoryImpl -Djavax.xml.stream.XMLEventFactory=com.sun.xml.internal.stream.events.XMLEventFactoryImpl</argLine>
                 </configuration>
             </plugin>
 

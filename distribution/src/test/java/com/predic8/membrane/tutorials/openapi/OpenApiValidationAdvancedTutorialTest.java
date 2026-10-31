@@ -14,39 +14,31 @@
 
 package com.predic8.membrane.tutorials.openapi;
 
-import com.predic8.membrane.examples.util.SubstringWaitableConsoleEvent;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.equalTo;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class OpenApiValidationAdvancedTutorialTest extends AbstractOpenAPITutorialTest {
 
     // Starts at the line break, so the replacement does not touch the instructions quoting the line
     private static final String VALIDATOR_COMMENTED = "\n#    - openapiValidator: {}";
     private static final String VALIDATOR_ACTIVE = "\n    - openapiValidator: {}";
-    private static final String VALIDATION_FAILED = "OpenAPI request validation failed";
-    private static final String FLOW_LOG = "==== REQUEST";
-
     @Override
     protected String getTutorialYaml() {
         return "21-Validation-Advanced.apis.yaml";
     }
 
     @Test
-    void validationBeforeFlowSkipsLog() throws Exception {
-        postNegativePrice();
-        assertFalse(logger.contains(FLOW_LOG));
+    void validationBeforeFlowRunsBeforeJsonProtection() {
+        postLongKey("OpenAPI message validation failed");
     }
 
     @Test
-    void validationInFlowRunsAfterLog() throws Exception {
+    void validationInFlowRunsAfterJsonProtection() throws Exception {
         restartWith(VALIDATOR_COMMENTED, VALIDATOR_ACTIVE);
         try {
-            postNegativePrice();
-            assertTrue(logger.contains(FLOW_LOG));
+            postLongKey("JSON Protection Violation");
         } finally {
             restartWith(VALIDATOR_ACTIVE, VALIDATOR_COMMENTED);
         }
@@ -58,25 +50,18 @@ public class OpenApiValidationAdvancedTutorialTest extends AbstractOpenAPITutori
         startMembrane();
     }
 
-    /**
-     * Returns once the validation failure is logged, so every line of the flow log before it is in the console.
-     */
-    private void postNegativePrice() throws Exception {
-        final var validationFailed = new SubstringWaitableConsoleEvent(process, VALIDATION_FAILED);
-
+    private void postLongKey(String expectedTitle) {
         // @formatter:off
         given()
             .contentType("application/json")
             .body("""
-            { "name": "Figs", "price": -2.7 }
+            {"weight":1}
             """)
         .when()
             .post("http://localhost:2000/store/products")
         .then()
             .statusCode(400)
-            .body("title", equalTo("OpenAPI message validation failed"));
+            .body("title", equalTo(expectedTitle));
         // @formatter:on
-
-        validationFailed.waitFor(5000);
     }
 }

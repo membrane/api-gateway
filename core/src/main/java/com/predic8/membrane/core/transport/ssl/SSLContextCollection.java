@@ -16,7 +16,7 @@ package com.predic8.membrane.core.transport.ssl;
 
 import com.oracle.util.ssl.SSLCapabilities;
 import com.oracle.util.ssl.SSLExplorer;
-import com.predic8.membrane.core.proxies.ServiceProxyKey;
+import com.predic8.membrane.core.proxies.HostPattern;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,7 +31,6 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.regex.Pattern;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -86,7 +85,7 @@ public class SSLContextCollection implements SSLProvider {
 	}
 
 	private final List<SSLContext> sslContexts;
-	private final List<Pattern> dnsNames;
+	private final List<HostPattern> dnsNames;
 
 	/**
 	 * @param sslContexts
@@ -94,12 +93,12 @@ public class SSLContextCollection implements SSLProvider {
 	 * @param dnsNames
 	 *            corresponding (=same length, 1:1 mapping) list of dnsName
 	 *            strings (same syntax as
-	 *            {@link ServiceProxyKey#setHost(String)})
+	 *            {@link com.predic8.membrane.core.proxies.ServiceProxyKey#setHost(String)})
 	 */
 	private SSLContextCollection(List<SSLContext> sslContexts, List<String> dnsNames) {
 		this.dnsNames = new ArrayList<>();
 		for (String dnsName : dnsNames)
-			this.dnsNames.add(Pattern.compile(ServiceProxyKey.createHostPattern(dnsName), Pattern.CASE_INSENSITIVE));
+			this.dnsNames.add(new HostPattern(dnsName));
 		this.sslContexts = sslContexts;
 	}
 
@@ -165,7 +164,7 @@ public class SSLContextCollection implements SSLProvider {
 		for (SNIServerName snisn : serverNames) {
 			String hostname = new String(snisn.getEncoded(), UTF_8);
 			for (int i = 0; i < dnsNames.size(); i++)
-				if (dnsNames.get(i).matcher(hostname).matches()) {
+				if (dnsNames.get(i).matches(hostname)) {
 					return sslContexts.get(i);
 				}
 		}
@@ -200,7 +199,7 @@ public class SSLContextCollection implements SSLProvider {
 	private SSLContext getSSLContextForHostname(String hostname) {
 		SSLContext sslContext = null;
 		for (int i = 0; i < dnsNames.size(); i++)
-			if (dnsNames.get(i).matcher(hostname).matches()) {
+			if (dnsNames.get(i).matches(hostname)) {
 				sslContext = sslContexts.get(i);
 				break;
 			}
