@@ -36,6 +36,8 @@ import static com.predic8.membrane.core.http.Response.ok;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static com.predic8.membrane.core.transport.http.client.protocol.Http2ProtocolHandler.HTTP2_PROTOCOL;
+import static com.predic8.membrane.core.util.NetworkTestUtil.freePort;
+import static com.predic8.membrane.core.util.NetworkTestUtil.freePorts;
 import static java.lang.Boolean.TRUE;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -89,15 +91,16 @@ class ProxyConnectionTest {
 	@Nested
 	class PlainHttp {
 
-		private static final int PROXY_PORT = 3048;
+		private int proxyPort;
 
 		private final Set<Integer> proxyConnections = Collections.synchronizedSet(new HashSet<>()); // hashcodes of all connections the proxy received
 		private Router proxy;
 
 		@BeforeEach
 		void setUp() throws Exception {
+			proxyPort = freePort();
 			proxy = new TestRouter();
-			final var sp = new ServiceProxy(new ServiceProxyKey("*", "*", ".*", PROXY_PORT), "", -1);
+			final var sp = new ServiceProxy(new ServiceProxyKey("*", "*", ".*", proxyPort), "", -1);
 			sp.getFlow().add(new AbstractInterceptor() {
 				@Override
 				public Outcome handleRequest(Exchange exc) {
@@ -114,7 +117,7 @@ class ProxyConnectionTest {
 			proxy.add(sp);
 			proxy.start();
 
-			client = createClient(PROXY_PORT);
+			client = createClient(proxyPort);
 		}
 
 		@AfterEach
@@ -169,6 +172,19 @@ class ProxyConnectionTest {
 			assertEquals(1, proxyConnections.size());
 			bound.close();
 		}
+
+		/**
+		 * An HTTPS target needs a CONNECT tunnel; a plain connection to the proxy would send the request in cleartext.
+		 */
+		@Test
+		void boundConnectionToProxyIsNotSameForTls() throws Exception {
+			final var bound = callOnBoundConnection(get("http://backend.example.com/").buildExchange(),
+					get("http://backend.example.com/").buildExchange());
+
+			assertTrue(bound.isSame("other.example.com", 80, false));
+			assertFalse(bound.isSame("backend.example.com", 443, true));
+			bound.close();
+		}
 	}
 
 	/**
@@ -177,8 +193,8 @@ class ProxyConnectionTest {
 	@Nested
 	class Https {
 
-		private static final int PROXY_PORT = 3068;
-		private static final int BACKEND_PORT = 3069;
+		private int proxyPort;
+		private int backendPort;
 
 		private final AtomicInteger connectRequests = new AtomicInteger();
 		private Router proxy;
@@ -187,8 +203,11 @@ class ProxyConnectionTest {
 
 		@BeforeEach
 		void setUp() throws Exception {
+			final var ports = freePorts(2);
+			proxyPort = ports[0];
+			backendPort = ports[1];
 			backend = new TestRouter();
-			final var sp = new ServiceProxy(new ServiceProxyKey(BACKEND_PORT), null, 0);
+			final var sp = new ServiceProxy(new ServiceProxyKey(backendPort), null, 0);
 			sp.setSslInboundParser(createKeyStoreParser());
 			sp.getFlow().add(new AbstractInterceptor() {
 				@Override
@@ -201,7 +220,7 @@ class ProxyConnectionTest {
 			backend.start();
 
 			proxy = new TestRouter();
-			final var proxyRule = new ProxyRule(new ProxyRuleKey(PROXY_PORT));
+			final var proxyRule = new ProxyRule(new ProxyRuleKey(proxyPort));
 			proxyRule.getFlow().add(new AbstractInterceptor() {
 				@Override
 				public Outcome handleRequest(Exchange exc) {
@@ -214,7 +233,7 @@ class ProxyConnectionTest {
 			proxy.start();
 
 			clientSSLContext = new StaticSSLContext(createTrustStoreParser(), new ResolverMap(), null);
-			client = createClient(PROXY_PORT);
+			client = createClient(proxyPort);
 		}
 
 		@AfterEach
@@ -250,7 +269,7 @@ class ProxyConnectionTest {
 		}
 
 		private Exchange createExchange() throws Exception {
-			final var exchange = get("https://localhost:%d/".formatted(BACKEND_PORT)).buildExchange();
+			final var exchange = get("https://localhost:%d/".formatted(backendPort)).buildExchange();
 			exchange.setProperty(SSL_CONTEXT, clientSSLContext);
 			return exchange;
 		}
@@ -277,7 +296,7 @@ class ProxyConnectionTest {
 		@Test
 		void http2ConnectionThroughProxyIsReused() throws Exception {
 			client.close();
-			client = createClient(PROXY_PORT, true);
+			client = createClient(proxyPort, true);
 
 			for (int i = 0; i < 2; i++) {
 				final var exchange = createExchange();

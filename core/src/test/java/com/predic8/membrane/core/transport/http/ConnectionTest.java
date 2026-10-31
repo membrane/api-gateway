@@ -42,6 +42,7 @@ import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.predic8.membrane.core.util.NetworkTestUtil.freePort;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
@@ -51,17 +52,18 @@ public class ConnectionTest {
 	Connection con127_0_0_1;
 
 	Router router;
+	int port;
 
 	@BeforeEach
 	void setUp() throws Exception {
-
-		ServiceProxy proxy2000 = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 2000), "predic8.com", 80);
+		port = freePort();
+		final var proxy = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", port), "predic8.com", 80);
 		router = new TestRouter();
-		router.add(proxy2000);
+		router.add(proxy);
 		router.start();
 
-		conLocalhost = Connection.open("localhost", 2000, null, null, 30000);
-		con127_0_0_1 = Connection.open("127.0.0.1", 2000, null, null, 30000);
+		conLocalhost = Connection.open("localhost", port, null, null, 30000);
+		con127_0_0_1 = Connection.open("127.0.0.1", port, null, null, 30000);
 	}
 
 	@AfterEach
@@ -77,8 +79,13 @@ public class ConnectionTest {
 
 	@Test
 	public void testIsSame() {
-		assertTrue(conLocalhost.isSame("localhost", 2000));
-		assertTrue(con127_0_0_1.isSame("127.0.0.1", 2000));
+		assertTrue(conLocalhost.isSame("localhost", port, false));
+		assertTrue(con127_0_0_1.isSame("127.0.0.1", port, false));
+	}
+
+	@Test
+	void plainConnectionIsNotSameForTls() {
+		assertFalse(conLocalhost.isSame("localhost", port, true));
 	}
 
 	/**
@@ -206,7 +213,7 @@ public class ConnectionTest {
 		Configurator.setLevel(logger, Level.TRACE);
 		try {
 			assertTrue(ByteStreamLogging.isLoggingEnabled());
-			Connection.open("localhost", 2000, null, null, 30000).close();
+			Connection.open("localhost", port, null, null, 30000).close();
 		} finally {
 			Configurator.setLevel(logger, original);
 		}

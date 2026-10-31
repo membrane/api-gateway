@@ -64,11 +64,11 @@ public class ConnectionFactory {
 
     public OutgoingConnectionType getConnection(Exchange exc, HostColonPort target, int attempts) throws IOException {
 
-        var con = getExchangeAttachedConnection(exc, attempts, target);
+        var sslProvider = getOutboundSSLProvider(exc, target);
+        var con = getExchangeAttachedConnection(exc, attempts, target, sslProvider != null);
 
         boolean usingHttp2 = false;
 
-        var sslProvider = getOutboundSSLProvider(exc, target);
         Http2Client h2c = null;
         var sniServerName = exc.getProperty(SNI_SERVER_NAME, String.class);
 
@@ -98,12 +98,12 @@ public class ConnectionFactory {
      * is realized by binding the TCP connection to the Exchange here, and binding it to the next Exchange in
      * {@link HttpServerHandler}.
      */
-    private static @org.jetbrains.annotations.Nullable Connection getExchangeAttachedConnection(Exchange exc, int counter, HostColonPort target) throws IOException {
+    private static @org.jetbrains.annotations.Nullable Connection getExchangeAttachedConnection(Exchange exc, int counter, HostColonPort target, boolean tls) throws IOException {
         Connection con = null;
         if (counter == 0) {
             con = exc.getTargetConnection();
             if (con != null) {
-                if (!con.isSame(target.host(), target.port())) {
+                if (!con.isSame(target.host(), target.port(), tls)) {
                     con.close();
                     con = null;
                 } else {

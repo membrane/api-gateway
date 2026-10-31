@@ -198,9 +198,12 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
      * opened by the same HttpClient are managed by the same ConnectionManager, this is sufficient.
      *
      * A plain HTTP connection to a proxy matches every target, as the pool hands it out for any target.
+     *
+     * @param tls whether the request to the target needs TLS. A connection without TLS never matches such a request,
+     *            and vice versa.
      */
-    public boolean isSame(String host, int port) {
-        if (socket == null)
+    public boolean isSame(String host, int port, boolean tls) {
+        if (socket == null || tls != (sslProvider != null))
             return false;
         if (proxyConfiguration != null && sslProvider == null)
             return true; // see ConnectionManager.createKey
