@@ -126,7 +126,7 @@ public class MimeTypeTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"application/json", "text/plain; charset=utf-8", "application/vnd.api+json"})
+    @ValueSource(strings = {"application/json", "text/plain; charset=utf-8", "application/vnd.api+json", ";", ""})
     void noMediaRange(String mediaType) {
         assertFalse(isMediaRange(mediaType));
     }

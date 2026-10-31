@@ -213,7 +213,7 @@ public class MimeType {
      * or subtype is a wildcard. Parameters are ignored.
      */
     public static boolean isMediaRange(String mediaType) {
-        return mediaType.split(";")[0].contains("*");
+        return mediaType.split(";", 2)[0].contains("*");
     }
 
     /**

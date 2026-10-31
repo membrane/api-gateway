@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.openapi.model.Request.post;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * The Content-Type of a part is client-controlled. It must not select a path that skips the schema
@@ -50,6 +51,14 @@ class MultipartPartContentTypeTest extends AbstractValidatorTest {
     void wildcardWithoutEncoding() throws ParseException {
         final var errors = meta("/plain", "*/*", "garbage");
         assertEquals(1, errors.size(), () -> "Errors: " + errors);
+    }
+
+    @Test
+    void malformedPartContentTypeIsRejected() throws ParseException {
+        final var errors = meta("/plain", ";", "garbage");
+        assertEquals(1, errors.size(), () -> "Errors: " + errors);
+        assertTrue(errors.getFirst().getMessage().contains("Content-Type"));
+        assertEquals(400, errors.getFirst().getContext().getStatusCode());
     }
 
     @Test

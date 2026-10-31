@@ -27,6 +27,8 @@ import io.swagger.v3.oas.models.SpecVersion;
 import io.swagger.v3.oas.models.media.Encoding;
 import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.Schema;
+import jakarta.mail.internet.ContentType;
+import jakarta.mail.internet.ParseException;
 import org.apache.commons.fileupload.MultipartStream;
 import org.apache.commons.fileupload.ParameterParser;
 import org.slf4j.Logger;
@@ -245,6 +247,14 @@ public class MultipartFormDataValidator {
         var err = new ValidationErrors();
         if (part.contentType == null)
             return err;
+        try {
+            final var contentType = new ContentType(part.contentType);
+            if (contentType.getPrimaryType() == null || contentType.getPrimaryType().isBlank()
+                    || contentType.getSubType() == null || contentType.getSubType().isBlank())
+                return err.add(ctx.statusCode(400), "Part '%s' has an invalid Content-Type '%s'.".formatted(name, part.contentType));
+        } catch (ParseException e) {
+            return err.add(ctx.statusCode(400), "Part '%s' has an invalid Content-Type '%s'.".formatted(name, part.contentType));
+        }
         // A media range like application/* would match any declared encoding, but a part has one concrete type.
         if (isMediaRange(part.contentType))
             return err.add(ctx.statusCode(400), "Part '%s' has the media range '%s' as Content-Type, a concrete media type is required.".formatted(name, part.contentType));
