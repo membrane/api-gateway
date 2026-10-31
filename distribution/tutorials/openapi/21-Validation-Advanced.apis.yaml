@@ -5,31 +5,32 @@
 # By default, Membrane validates against the OpenAPI document before the flow runs.
 # Placing openapiValidator in the flow moves the validation to that position.
 #
+# Run jsonProtection before the validation: it rejects oversized or deeply nested JSON
+# cheaply, before the validator checks the values against regex patterns, which attackers
+# can target with ReDoS. See:
+# https://www.membrane-api.io/security/membrane-redos-protection.html
+#
 # 1.) Start Membrane:
 #     Linux/Mac:
 #       ./membrane.sh -c 21-Validation-Advanced.apis.yaml
 #     Windows:
 #       membrane.cmd -c 21-Validation-Advanced.apis.yaml
 #
-# 2.) Create a product with a negative price:
-#     curl "http://localhost:2000/store/products" -H "Content-Type: application/json" -d "{ \"name\": \"Figs\", \"price\": -2.7}"
+# 2.) Send a product with a key longer than jsonProtection allows:
+#     curl "http://localhost:2000/store/products" -H "Content-Type: application/json" -d "{\"weight\":1}"
 #
-#     Response: 400 with the validation errors
-#     Log:      OpenAPI request validation failed for POST against 'Minimal Shop API' ...
+#     Response: 400 "OpenAPI message validation failed"
 #
-#     The validation rejected the request before the log plugin ran, so the request is not logged.
+#     The OpenAPI validation ran first and processed the request before jsonProtection.
 #
 # 3.) Remove the # in front of "- openapiValidator: {}" below and save the file.
 #     Membrane reloads the configuration.
 #
 # 4.) Repeat the curl from step 2.
 #
-#     Response: 400 with the validation errors
-#     Log:      ==== REQUEST  ===
-#               POST /store/products HTTP/1.1
-#               ...
-#               { "name": "Figs", "price": -2.7}
-#               OpenAPI request validation failed for POST against 'Minimal Shop API' ...
+#     Response: 400 "JSON Protection Violation" ... "Exceeded maxKeyLength."
+#
+#     Now jsonProtection rejects the request before it reaches the validation.
 
 api:
   port: 2000
@@ -37,6 +38,8 @@ api:
     - location: specs/minimal-shop-api.oas.yaml
       validateRequests: true
   flow:
+    - jsonProtection:
+        maxKeyLength: 5
     - log: {}
 #    - openapiValidator: {}
 
