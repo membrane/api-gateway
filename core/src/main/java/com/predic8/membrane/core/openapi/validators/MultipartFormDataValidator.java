@@ -190,7 +190,7 @@ public class MultipartFormDataValidator {
                 schemas.add(additionalSchema);
             }
 
-            // Choose decoding once, in stable order, without letting a typeless constraint hide a type.
+            // Choose a schema for array handling and the default content type; scalar values may try other types.
             var resolvedSchemas = schemas.stream().map(this::resolveSchema).toList();
             var partSchema = decodingSchema(resolvedSchemas);
             boolean array = SchemaUtil.isArray(partSchema);
@@ -392,10 +392,9 @@ public class MultipartFormDataValidator {
             return err.add(validateDecodedPart(ctx.content(XML), schemas, new String(part.content, UTF_8), part.name, contentType));
         }
 
-        // Scalar parts (e.g. text/plain, the default for primitives) are validated by parsing the
-        // raw text into the declared type and validating that value against the schema.
+        // Scalar parts can have several representations when matching schemas declare multiple types.
         if (SchemaUtil.isScalar(propertySchema) || !isObjectOrArray(api, propertySchema)) {
-            return err.add(validateDecodedPart(ctx, schemas, SchemaUtil.parseScalar(new String(part.content, UTF_8), propertySchema)));
+            return validateScalarPart(ctx, schemas, propertySchema, new String(part.content, UTF_8));
         }
 
         // Opaque content is accepted if the encoding declares it (e.g. octet-stream for a complex type).
@@ -403,6 +402,36 @@ public class MultipartFormDataValidator {
         if (declaredContentType || !isObjectOrArray(api, propertySchema))
             return err;
         return err.add(ctx.statusCode(400), "Part '%s' has Content-Type '%s', which cannot be validated against the schema.".formatted(part.name, contentType));
+    }
+
+    @SuppressWarnings("rawtypes")
+    private ValidationErrors validateScalarPart(ValidationContext ctx, List<Schema> schemas, Schema preferredSchema, String text) {
+        // Each candidate is checked against every schema: different representations must not
+        // independently satisfy different constraints on the same part.
+        ValidationErrors firstErrors = null;
+        for (var candidate : scalarDecodingCandidates(schemas, preferredSchema, text)) {
+            var errors = validateDecodedPart(ctx, schemas, candidate);
+            if (errors.isEmpty())
+                return errors;
+            if (firstErrors == null)
+                firstErrors = errors;
+        }
+        // If no representation works, report the preferred representation's errors.
+        return firstErrors;
+    }
+
+    private @NonNull LinkedHashSet<JsonNode> scalarDecodingCandidates(List<Schema> schemas, Schema preferredSchema, String text) {
+        var candidates = new LinkedHashSet<JsonNode>();
+        candidates.add(SchemaUtil.parseScalar(text, preferredSchema));
+        for (var schema : schemas) {
+            var resolved = resolveSchema(schema);
+            if (resolved.getType() != null)
+                candidates.add(SchemaUtil.parseScalar(text, new Schema<>().type(resolved.getType())));
+            if (resolved.getTypes() != null)
+                for (Object type : resolved.getTypes())
+                    candidates.add(SchemaUtil.parseScalar(text, new Schema<>().type(type.toString())));
+        }
+        return candidates;
     }
 
     @SuppressWarnings("rawtypes")

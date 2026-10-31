@@ -299,6 +299,31 @@ public class MultipartFormDataValidatorTest extends AbstractValidatorTest {
         assertEquals(1, validateParts(schema, "value", "hi").size());
     }
 
+    @Test
+    void multiTypePartTriesAnotherRepresentationWhenFirstFailsConstraints() throws ParseException {
+        var union = new Schema<>().types(new java.util.LinkedHashSet<>(List.of("string", "integer")))
+                .minLength(2).minimum(java.math.BigDecimal.TWO);
+        var schema = new ObjectSchema().additionalProperties(false);
+        schema.addProperty("value", union);
+        schema.addPatternProperty("^value$", new Schema<>().types(
+                new java.util.LinkedHashSet<>(List.of("string", "integer"))));
+
+        var valid = validateParts(schema, "value", "2");
+        assertTrue(valid.isEmpty(), valid::toString);
+        assertTrue(!validateParts(schema, "value", "1").isEmpty());
+    }
+
+    @Test
+    void candidateMustSatisfyEveryMatchingSchema() throws ParseException {
+        var schema = new ObjectSchema().additionalProperties(false);
+        schema.addProperty("value", new Schema<>().types(new java.util.LinkedHashSet<>(List.of("string", "integer")))
+                .minLength(2));
+        schema.addPatternProperty("^value$", new IntegerSchema().minimum(java.math.BigDecimal.TEN));
+
+        assertTrue(validateParts(schema, "value", "10").isEmpty());
+        assertTrue(!validateParts(schema, "value", "2").isEmpty());
+    }
+
     @ParameterizedTest
     @CsvSource({"true", "false"})
     void patternOnlyDecodingIsIndependentOfInsertionOrder(boolean reverse) throws ParseException {
