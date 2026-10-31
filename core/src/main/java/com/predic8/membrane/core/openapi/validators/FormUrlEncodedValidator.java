@@ -228,6 +228,7 @@ public class FormUrlEncodedValidator {
         if (original.getTypes() != null)
             decoding.setTypes(new LinkedHashSet<>(original.getTypes()));
         decoding.setItems(resolved.getItems());
+            decoding.setPrefixItems(resolved.getPrefixItems());
         return decoding;
     }
 
