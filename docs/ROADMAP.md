@@ -154,6 +154,13 @@ PRIO 3:
   - Story: 7.8 can validate SOAP header blocks (#3582) but leaves it off by default, so an update does not start rejecting messages whose headers passed before. With `bound`, the header blocks the WSDL binds with `soap:header` and `soap:headerfault` are validated against the WSDL's schemas.
   - **Breaking**: a message with an invalid bound header block is rejected. Name `headers: none` in the release notes as the way to keep the old behavior.
   - Change the default of the `headers` field and `@default` of `setHeaders` in `ValidatorInterceptor`, and of the `WSDLValidator` constructors without a `HeaderValidation` parameter.
+- To discuss: make the regex engine a swappable component, with RE2/J or a comparable linear-time engine as the default
+  - Story: configured regular expressions run on `java.util.regex`, which backtracks. Overlapping quantifiers can take quadratic or worse time on crafted requests (ReDoS). Today the operator has to avoid such patterns, see https://www.membrane-api.io/security/membrane-redos-protection.html.
+  - A linear-time engine such as RE2/J (`com.google.re2j`, 114 KB, no dependencies) rules this out whatever the pattern.
+  - Affected: every place a configured or spec-supplied pattern meets request data, e.g. `path` with `isRegExp`, `rewriter`, `regExReplacer`, `formValidation`, `rest2Soap` mappings, OpenAPI `pattern` and `patternProperties`, host matching.
+  - Idea: one engine abstraction (compile, find, matches, replace with groups) used by all of them, selected globally in the configuration (e.g. `re2` default, `java` opt-in), maybe overridable per element.
+  - **Breaking**: RE2 has no lookarounds, backreferences or possessive quantifiers. Configurations using them fail at startup with RE2 and need the `java` engine. Replacement syntax (`$1`) and flags (`(?i)`, Unicode case folding) differ in details.
+  - To decide: whether an invalid pattern under RE2 fails at startup or falls back to `java` with a warning; how OpenAPI/JSON Schema `pattern` (ECMA-262) maps onto the engines; the performance of RE2/J for short inputs compared with `java.util.regex`.
 - To discuss:
   - validator/ValidatorInterceptor is for WSDL, XSD, Schematron, JSON Schema?
   - Maybe we should split that to wsdlValidator, xmlSchemaValidator, jsonSchemaValidator?

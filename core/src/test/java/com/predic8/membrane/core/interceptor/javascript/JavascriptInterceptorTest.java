@@ -16,25 +16,28 @@
 
 package com.predic8.membrane.core.interceptor.javascript;
 
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.exceptions.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.lang.*;
-import com.predic8.membrane.core.lang.javascript.*;
-import com.predic8.membrane.core.router.*;
-import org.graalvm.polyglot.*;
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.params.*;
-import org.junit.jupiter.params.provider.*;
-import org.springframework.context.support.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.predic8.membrane.core.exceptions.ProblemDetails;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.interceptor.FlowController;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.lang.LanguageSupport;
+import com.predic8.membrane.core.lang.javascript.GraalVMJavascriptSupport;
+import com.predic8.membrane.core.lang.javascript.RhinoJavascriptLanguageSupport;
+import com.predic8.membrane.core.router.DefaultRouter;
+import org.graalvm.polyglot.Context;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.context.support.GenericApplicationContext;
 
-import java.util.*;
+import java.util.Map;
 
-import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.util.ProblemDetailsTestUtil.*;
+import static com.predic8.membrane.core.util.ProblemDetailsTestUtil.parse;
 import static org.apache.commons.lang3.exception.ExceptionUtils.getThrowableList;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -229,8 +232,44 @@ public class JavascriptInterceptorTest {
     }
 
 
+    @ParameterizedTest
+    @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
+    void responseFlowWithoutResponse(Class<LanguageSupport> engine) {
+        initInterceptor("""
+                property.put('ran', 'yes');
+                var json = 'mentioned';
+                CONTINUE""", engine);
+        assertEquals(CONTINUE, interceptor.handleResponse(exc));
+        assertEquals("yes", exc.getProperty("ran"));
+        assertNull(exc.getResponse());
+    }
+
+    @ParameterizedTest
+    @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
+    void returnResponseInResponseFlowWithoutResponse(Class<LanguageSupport> engine) {
+        initInterceptor("Response.ok('baz').build()", engine);
+        assertEquals(RETURN, interceptor.handleResponse(exc));
+        assertEquals("baz", exc.getResponse().getBodyAsStringDecoded());
+    }
+
+    @ParameterizedTest
+    @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
+    void returnObjectInResponseFlowWithoutResponse(Class<LanguageSupport> engine) throws Exception {
+        initInterceptor("({id:7})", engine);
+        assertEquals(CONTINUE, interceptor.handleResponse(exc));
+        assertEquals(200, exc.getResponse().getStatusCode());
+        assertTrue(exc.getResponse().isJSON());
+        assertEquals(7, om.readValue(exc.getResponse().getBodyAsStringDecoded(), Map.class).get("id"));
+    }
+
     @SafeVarargs
     private Outcome executeScript(String src, Class<LanguageSupport>... engine) {
+        initInterceptor(src, engine);
+        return interceptor.handleRequest(exc);
+    }
+
+    @SafeVarargs
+    private void initInterceptor(String src, Class<LanguageSupport>... engine) {
         interceptor.setSrc(src);
 
         // Needed because GraalVMJavascriptSupport is not found using Class.forname() in the Interceptor!
@@ -245,6 +284,5 @@ public class JavascriptInterceptorTest {
         }
 
         interceptor.init(router);
-        return interceptor.handleRequest(exc);
     }
 }
