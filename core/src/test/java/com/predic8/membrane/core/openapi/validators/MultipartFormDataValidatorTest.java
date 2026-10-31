@@ -18,6 +18,8 @@ package com.predic8.membrane.core.openapi.validators;
 
 import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.openapi.model.Request;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.media.*;
 import jakarta.mail.internet.ParseException;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -232,6 +234,99 @@ public class MultipartFormDataValidatorTest extends AbstractValidatorTest {
 
         assertEquals(1, errors.size(), () -> "Errors: " + errors);
         assertTrue(errors.get(0).getMessage().toLowerCase().contains("name"), () -> "Errors: " + errors);
+    }
+
+    @Test
+    void matchingPatternAllowsPartInClosedSchema() throws ParseException {
+        var errors = validatePatternPart("x-note", "hello");
+        assertTrue(errors.isEmpty(), errors::toString);
+    }
+
+    @Test
+    void matchingPatternValidatesPartValue() throws ParseException {
+        var errors = validatePatternPart("x-note", "hi");
+        assertEquals(1, errors.size(), errors::toString);
+        assertTrue(errors.get(0).getMessage().toLowerCase().contains("minlength"), errors::toString);
+        assertEquals("/x-note", errors.get(0).getContext().getJSONpointer());
+    }
+
+    @Test
+    void unmatchedPartRemainsRejectedInClosedSchema() throws ParseException {
+        var errors = validatePatternPart("other", "hello");
+        assertEquals(1, errors.size(), errors::toString);
+        assertTrue(errors.get(0).getMessage().contains("unexpected property 'other'"), errors::toString);
+    }
+
+    @Test
+    void declaredPropertyAndAllPatternsApplyTogether() throws ParseException {
+        var schema = new ObjectSchema().additionalProperties(false);
+        schema.addProperty("x-note", new StringSchema().minLength(5));
+        schema.addPatternProperty("^x-", new StringSchema().minLength(4));
+        schema.addPatternProperty("note", new StringSchema().minLength(3));
+        var errors = validateParts(schema, "x-note", "hi");
+        assertEquals(3, errors.size(), errors::toString);
+    }
+
+    @Test
+    void overlappingTypesUseTheSameDecodedValue() throws ParseException {
+        var schema = new ObjectSchema().additionalProperties(false);
+        schema.addProperty("x-count", new IntegerSchema());
+        schema.addPatternProperty("^x-", new StringSchema());
+        var errors = validateParts(schema, "x-count", "1");
+        assertEquals(1, errors.size(), errors::toString);
+        assertEquals("/x-count", errors.get(0).getContext().getJSONpointer());
+    }
+
+    @ParameterizedTest
+    @CsvSource({"true", "false"})
+    void patternOnlyDecodingIsIndependentOfInsertionOrder(boolean reverse) throws ParseException {
+        var schema = new ObjectSchema().additionalProperties(false);
+        if (reverse)
+            schema.addPatternProperty("count$", new StringSchema());
+        schema.addPatternProperty("^x-", new IntegerSchema());
+        schema.addPatternProperty("count$", new StringSchema());
+        assertEquals(1, validateParts(schema, "x-count", "1").size());
+    }
+
+    @Test
+    void patternArrayValidatesEveryOccurrenceAndCardinality() throws ParseException {
+        var schema = new ObjectSchema().additionalProperties(false);
+        schema.addPatternProperty("^x-", new ArraySchema().items(new IntegerSchema()).maxItems(2));
+        assertTrue(validateParts(schema, "x-count", "1", "2").isEmpty());
+        assertEquals(1, validateParts(schema, "x-count", "1", "bad").size());
+        assertEquals(1, validateParts(schema, "x-count", "1", "2", "3").size());
+    }
+
+    @Test
+    void arrayPatternWithoutItemsOnlyConstrainsCardinality() throws ParseException {
+        var schema = new ObjectSchema().additionalProperties(false);
+        schema.addProperty("x-count", new ArraySchema().items(new IntegerSchema()));
+        schema.addPatternProperty("^x-", new ArraySchema().maxItems(1));
+        assertTrue(validateParts(schema, "x-count", "1").isEmpty());
+        assertEquals(1, validateParts(schema, "x-count", "1", "2").size());
+    }
+
+    @Test
+    void arrayCannotSatisfyScalarPatternByValidatingItsItems() throws ParseException {
+        var schema = new ObjectSchema().additionalProperties(false);
+        schema.addProperty("x-count", new ArraySchema().items(new IntegerSchema()));
+        schema.addPatternProperty("^x-", new IntegerSchema());
+        assertEquals(1, validateParts(schema, "x-count", "1").size());
+    }
+
+    private ValidationErrors validatePatternPart(String name, String value) throws ParseException {
+        var schema = new ObjectSchema().additionalProperties(false);
+        schema.addPatternProperty("^x-", new StringSchema().minLength(3));
+        return validateParts(schema, name, value);
+    }
+
+    private ValidationErrors validateParts(Schema<?> schema, String name, String... values) throws ParseException {
+        var builder = new MultipartBuilder();
+        for (var value : values)
+            builder.part(name, null, TEXT_PLAIN, null, value);
+        return new MultipartFormDataValidator(new OpenAPI()).validate(
+                new ValidationContext().entity("REQUEST"), new MediaType().schema(schema),
+                Request.post().path("/upload").mediaType(MultipartBuilder.CONTENT_TYPE).body(builder.build()));
     }
 
     private ValidationErrors validateUpload(String body) throws ParseException {

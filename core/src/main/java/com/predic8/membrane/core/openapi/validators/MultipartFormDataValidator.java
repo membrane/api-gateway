@@ -17,7 +17,9 @@
 package com.predic8.membrane.core.openapi.validators;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.openapi.OpenAPIParsingException;
 import com.predic8.membrane.core.openapi.model.JsonBody;
 import com.predic8.membrane.core.openapi.model.Message;
 import com.predic8.membrane.core.openapi.util.SchemaUtil;
@@ -31,6 +33,7 @@ import jakarta.mail.internet.ContentType;
 import jakarta.mail.internet.ParseException;
 import org.apache.commons.fileupload.MultipartStream;
 import org.apache.commons.fileupload.ParameterParser;
+import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
@@ -39,6 +42,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.*;
+import java.util.regex.Pattern;
 
 import static com.predic8.membrane.core.http.Header.CONTENT_TRANSFER_ENCODING;
 import static com.predic8.membrane.core.http.MimeType.*;
@@ -169,39 +173,43 @@ public class MultipartFormDataValidator {
         // an empty map and let the loop below reject unexpected parts rather than returning early.
         Map<String, Schema> properties = schema.getProperties() != null ? schema.getProperties() : Map.of();
 
+        var patterns = compilePatternProperties(schema);
+
         for (var entry : parts.entrySet()) {
             var name = entry.getKey();
 
-            var propertySchema = properties.get(name);
-            if (propertySchema == null) {
+            var schemas = collectMatchingSchemas(properties, name, patterns);
+            if (schemas.isEmpty()) {
                 // An undeclared part is validated against an additionalProperties schema.
                 var additional = SchemaUtil.getAdditionalProperties(schema);
                 if (FALSE.equals(additional))
                     err.add(ctx.statusCode(400), "The multipart/form-data body contains an unexpected property '%s'.".formatted(name));
                 if (!(additional instanceof Schema<?> additionalSchema))
                     continue;
-                propertySchema = additionalSchema;
+                schemas.add(additionalSchema);
             }
 
-            // Resolve a $ref once here so the content-type default and the per-part validation below
-            // all operate on the referenced schema (which may be a scalar, an object, or an array).
-            var partSchema = SchemaUtil.resolveRef(api, propertySchema);
-            if (partSchema == null)
-                partSchema = propertySchema;
-
-            // For an array property each occurrence of the field name is one array item, so each
-            // part is validated against the schema of its position (prefixItems, then items) rather
-            // than the array schema itself. The array-level cardinality (minItems/maxItems) is checked
-            // here against the occurrence count.
-            var arraySchema = SchemaUtil.isArray(partSchema) ? partSchema : null;
-            if (arraySchema != null)
-                err.add(validateArrayCardinality(ctx.addJSONpointerSegment(name), arraySchema, entry.getValue().size()));
+            // Choose decoding once, in stable order, without letting a typeless constraint hide a type.
+            var resolvedSchemas = schemas.stream().map(this::resolveSchema).toList();
+            var partSchema = decodingSchema(resolvedSchemas);
+            boolean array = SchemaUtil.isArray(partSchema);
+            boolean repeatedItems = treatsPartsAsArrayItems(array, resolvedSchemas);
+            var partCtx = ctx.addJSONpointerSegment(name);
+            // Array occurrences represent one array value; a scalar schema cannot validate its items
+            // instead of the array, which would incorrectly allow incompatible types to pass.
+            if (resolvedSchemas.stream().anyMatch(s -> SchemaUtil.getEffectiveType(s) != null
+                    && SchemaUtil.isArray(s) != array)) {
+                err.add(partCtx.statusCode(400), "Multipart property '%s' has incompatible array and non-array schemas.".formatted(name));
+                continue;
+            }
+            if (array)
+                for (var candidate : resolvedSchemas)
+                    err.add(validateArrayCardinality(partCtx, candidate, entry.getValue().size()));
 
             // A field name may occur multiple times (array items / multi-file fields), so validate every occurrence.
             var occurrences = entry.getValue();
             for (int i = 0; i < occurrences.size(); i++) {
                 var part = occurrences.get(i);
-                var partCtx = ctx.addJSONpointerSegment(name);
 
                 // If the part carries an explicit Content-Type it must conform to the declared
                 // encoding; otherwise the body is not validated against a content type it was not sent with.
@@ -211,26 +219,79 @@ public class MultipartFormDataValidator {
                     continue;
                 }
 
-                var occurrenceSchema = arraySchema != null ? occurrenceSchema(arraySchema, i) : partSchema;
-                // An item after the prefix of an array without items is not constrained.
-                if (occurrenceSchema == null)
+                var occurrenceSchemas = collectOccurrenceSchemas(schemas, array, resolvedSchemas, i, repeatedItems);
+                if (occurrenceSchemas.isEmpty())
                     continue;
-
-                err.add(validatePart(partCtx, occurrenceSchema, contentTypeOf(name, part, occurrenceSchema, encodings), hasDeclaredContentType(name, encodings), part));
+                var decodingSchema = decodingSchema(occurrenceSchemas.stream().map(this::resolveSchema).toList());
+                err.add(validatePart(partCtx, occurrenceSchemas, decodingSchema,
+                        contentTypeOf(name, part, decodingSchema, encodings), hasDeclaredContentType(name, encodings), part));
             }
         }
         return err;
     }
 
+    private @NonNull ArrayList<Schema> collectOccurrenceSchemas(ArrayList<Schema> schemas, boolean array, List<Schema> resolvedSchemas, int i, boolean repeatedItems) {
+        var occurrenceSchemas = new ArrayList<Schema>();
+        for (int j = 0; j < schemas.size(); j++) {
+            var candidate = array ? occurrenceSchema(resolvedSchemas.get(j), i, repeatedItems) : schemas.get(j);
+            // An item after prefixItems without items is unconstrained.
+            if (candidate != null)
+                occurrenceSchemas.add(candidate);
+        }
+        return occurrenceSchemas;
+    }
+
+    private static boolean treatsPartsAsArrayItems(boolean array, List<Schema> resolvedSchemas) {
+        return array && resolvedSchemas.stream()
+                .anyMatch(s -> s.getItems() != null || s.getPrefixItems() != null);
+    }
+
+    private static @NonNull ArrayList<Schema> collectMatchingSchemas(Map<String, Schema> properties, String name, LinkedHashMap<Pattern, Schema> patterns) {
+        // Explicit properties and every matching pattern apply together.
+        var schemas = new ArrayList<Schema>();
+        if (properties.containsKey(name))
+            schemas.add(properties.get(name));
+        patterns.forEach((pattern, matchedSchema) -> {
+            if (pattern.matcher(name).find())
+                schemas.add(matchedSchema);
+        });
+        return schemas;
+    }
+
+    private static @NonNull LinkedHashMap<Pattern, Schema> compilePatternProperties(Schema schema) {
+        Map<String, Schema> patternProperties = schema.getPatternProperties();
+        var patterns = new LinkedHashMap<Pattern, Schema>();
+        if (patternProperties != null)
+            patternProperties.entrySet().stream().sorted(Map.Entry.comparingByKey())
+                    .forEach(entry -> patterns.put(Pattern.compile(entry.getKey()), entry.getValue()));
+        return patterns;
+    }
+
+    @SuppressWarnings("rawtypes")
+    private Schema resolveSchema(Schema schema) {
+        var resolved = SchemaUtil.resolveRef(api, schema);
+        if (resolved == null)
+            throw new OpenAPIParsingException("Cannot resolve multipart schema reference '%s'.".formatted(schema.get$ref()));
+        return resolved;
+    }
+
+    @SuppressWarnings("rawtypes")
+    private Schema decodingSchema(List<Schema> schemas) {
+        return schemas.stream().filter(s -> SchemaUtil.getEffectiveType(s) != null)
+                .findFirst().orElse(schemas.getFirst());
+    }
+
     /**
-     * The schema an occurrence of an array property is validated against. An array without items and
-     * prefixItems keeps validating each part against the array schema itself.
+     * Array constraints without items do not constrain individual occurrences. If none of the
+     * applicable arrays defines items or prefixItems, retain the existing JSON-array-per-part behavior.
      */
     @SuppressWarnings("rawtypes")
-    private Schema occurrenceSchema(Schema arraySchema, int index) {
+    private Schema occurrenceSchema(Schema arraySchema, int index, boolean repeatedItems) {
         if (arraySchema.getItems() == null && arraySchema.getPrefixItems() == null)
-            return arraySchema;
-        return SchemaUtil.resolveRef(api, SchemaUtil.itemSchema(arraySchema, index));
+            return !repeatedItems && SchemaUtil.isArray(arraySchema) || FALSE.equals(arraySchema.getBooleanSchemaValue())
+                    ? arraySchema : null;
+        var item = SchemaUtil.itemSchema(arraySchema, index);
+        return item == null ? null : resolveSchema(item);
     }
 
     @SuppressWarnings("rawtypes")
@@ -269,21 +330,22 @@ public class MultipartFormDataValidator {
     }
 
     @SuppressWarnings("rawtypes")
-    private ValidationErrors validatePart(ValidationContext ctx, Schema propertySchema, String contentType, boolean declaredContentType, FormPart part) {
+    private ValidationErrors validatePart(ValidationContext ctx, List<Schema> schemas, Schema propertySchema, String contentType, boolean declaredContentType, FormPart part) {
         var err = new ValidationErrors();
 
         // A false schema (e.g. items: false or prefixItems: [false]) allows no part at all. Without a
         // type it would fall through the content-type dispatch below unvalidated. See #3479.
-        if (FALSE.equals(propertySchema.getBooleanSchemaValue()))
+        if (schemas.stream().anyMatch(s -> FALSE.equals(resolveSchema(s).getBooleanSchemaValue())))
             return err.add(ctx.statusCode(400), "The schema is false and does not allow any value.");
 
         // Binary file uploads (type: string, format: binary/byte) are opaque, only their presence is checked.
         if (isBinaryString(propertySchema))
-            return err;
+            return validateDecodedPart(ctx, schemas,
+                    JsonNodeFactory.instance.textNode(new String(part.content, UTF_8)));
 
         if (isJson(contentType)) {
             try {
-                return err.add(new SchemaValidator(api, propertySchema).validate(ctx, new JsonBody(new String(part.content, UTF_8))));
+                return err.add(validateDecodedPart(ctx, schemas, new JsonBody(new String(part.content, UTF_8)).getPayload()));
             } catch (Exception e) {
                 return err.add(ctx.statusCode(400), "Part '%s' is declared as %s but its content could not be parsed as JSON.".formatted(part.name, contentType));
             }
@@ -300,14 +362,13 @@ public class MultipartFormDataValidator {
             } catch (SAXException | XmlParseException | IOException e) {
                 return err.add(ctx.statusCode(400), "Part '%s' is declared as %s but its content could not be parsed as XML.".formatted(part.name, contentType));
             }
-            return err.add(new SchemaValidator(api, propertySchema).validate(ctx.content(XML), json));
+            return err.add(validateDecodedPart(ctx.content(XML), schemas, json));
         }
 
         // Scalar parts (e.g. text/plain, the default for primitives) are validated by parsing the
         // raw text into the declared type and validating that value against the schema.
-        if (SchemaUtil.isScalar(propertySchema)) {
-            return err.add(new SchemaValidator(api, propertySchema)
-                    .validate(ctx, SchemaUtil.parseScalar(new String(part.content, UTF_8), propertySchema)));
+        if (SchemaUtil.isScalar(propertySchema) || !isObjectOrArray(api, propertySchema)) {
+            return err.add(validateDecodedPart(ctx, schemas, SchemaUtil.parseScalar(new String(part.content, UTF_8), propertySchema)));
         }
 
         // Opaque content is accepted if the encoding declares it (e.g. octet-stream for a complex type).
@@ -315,6 +376,18 @@ public class MultipartFormDataValidator {
         if (declaredContentType || !isObjectOrArray(api, propertySchema))
             return err;
         return err.add(ctx.statusCode(400), "Part '%s' has Content-Type '%s', which cannot be validated against the schema.".formatted(part.name, contentType));
+    }
+
+    @SuppressWarnings("rawtypes")
+    private ValidationErrors validateDecodedPart(ValidationContext ctx, List<Schema> schemas, JsonNode value) {
+        var errors = new ValidationErrors();
+        // Reuse the same node: decoding separately could satisfy conflicting integer/string schemas.
+        for (var schema : schemas) {
+            // Keep the existing opaque-upload semantics, without skipping other matching constraints.
+            if (!isBinaryString(resolveSchema(schema)))
+                errors.add(new SchemaValidator(api, schema).validate(ctx, value));
+        }
+        return errors;
     }
 
     private boolean hasDeclaredContentType(String name, Map<String, Encoding> encodings) {
