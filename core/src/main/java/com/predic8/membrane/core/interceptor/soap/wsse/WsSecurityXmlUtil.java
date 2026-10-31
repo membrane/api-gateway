@@ -556,20 +556,47 @@ public final class WsSecurityXmlUtil {
      *                      it is a {@code wsse:Reference} target
      */
     static Element resolveUniqueElementById(Document doc, String id, WsSecurityFaultCode ambiguityCode) {
-        List<Element> matches = new ArrayList<>();
-        forEachDescendantElement(doc.getDocumentElement(), element -> {
-            if (id.equals(idOf(element))) {
-                matches.add(element);
+        return new ElementsById(doc).resolveUnique(id, ambiguityCode);
+    }
+
+    /**
+     * Every {@code wsu:Id}/{@code Id} in a document, collected in one pass, for resolving many
+     * references without traversing the document once per reference.
+     *
+     * @see #resolveUniqueElementById(Document, String, WsSecurityFaultCode)
+     */
+    static final class ElementsById {
+
+        private final Map<String, Element> unique = new HashMap<>();
+        private final Set<String> ambiguous = new HashSet<>();
+
+        ElementsById(Document doc) {
+            forEachDescendantElement(doc.getDocumentElement(), element -> {
+                final var id = idOf(element);
+                if (id.isEmpty() || ambiguous.contains(id)) {
+                    return;
+                }
+                if (unique.putIfAbsent(id, element) != null) {
+                    unique.remove(id);
+                    ambiguous.add(id);
+                }
+            });
+        }
+
+        /**
+         * @see #resolveUniqueElementById(Document, String, WsSecurityFaultCode)
+         */
+        Element resolveUnique(String id, WsSecurityFaultCode ambiguityCode) {
+            if (ambiguous.contains(id)) {
+                throw new WsSecurityFaultException(ambiguityCode,
+                        "Id \"" + id + "\" is used by more than one element; rejecting as ambiguous.");
             }
-        });
-        if (matches.isEmpty()) {
-            throw new WsSecurityFaultException(ambiguityCode, "No element found with Id \"" + id + "\".");
+            final var element = unique.get(id);
+            if (element == null) {
+                throw new WsSecurityFaultException(ambiguityCode, "No element found with Id \"" + id + "\".");
+            }
+            return element;
         }
-        if (matches.size() > 1) {
-            throw new WsSecurityFaultException(ambiguityCode,
-                    "Id \"" + id + "\" is used by more than one element; rejecting as ambiguous.");
-        }
-        return matches.getFirst();
     }
 
     /**
