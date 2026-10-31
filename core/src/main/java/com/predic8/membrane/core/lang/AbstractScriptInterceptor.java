@@ -128,7 +128,15 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
 
         // Test for package name is needed cause the dependency is provided and maybe not on the classpath
         if (res.getClass().getPackageName().startsWith("org.graalvm.polyglot") && res instanceof Value value) {
-            res = value.hasArrayElements() ? value.as(List.class) : value.as(Map.class);
+            if (value.hasArrayElements()) {
+                res = value.as(List.class);
+            } else if (value.hasMembers()) {
+                res = value.as(Map.class);
+            } else if (value.isString()) {
+                res = value.asString();
+            } else {
+                return CONTINUE;
+            }
         }
 
         if (res instanceof Map || res instanceof List) {
@@ -163,24 +171,6 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
             return CONTINUE;
         }
 
-        // Test for package name is needed cause the dependency is provided and maybe not on the classpath
-        if (res.getClass().getPackageName().startsWith("org.graalvm.polyglot") && res instanceof Value value) {
-            Map m = value.as(Map.class);
-            msg = createResponseAndToExchangeIfThereIsNone(exc, flow, msg);
-            msg.getHeader().setContentType(APPLICATION_JSON);
-            try {
-                msg.setBodyContent(om.writeValueAsBytes(m));
-            } catch (JsonProcessingException e) {
-                log.error("", e);
-                internal(router.getConfiguration().isProduction(), getDisplayName())
-                        .addSubSee("json-processing-2")
-                        .detail("Error serializing Map to JSON")
-                        .exception(e)
-                        .buildAndSetResponse(exc);
-                return ABORT;
-            }
-            return CONTINUE;
-        }
         return CONTINUE;
     }
 
