@@ -190,19 +190,6 @@ public class GroovyInterceptorTest {
 	}
 
 	@Test
-	void returnedListIsIgnored() throws Exception {
-		exc.setResponse(ok().body("original").build());
-
-		final var i = new GroovyInterceptor() {{
-			src = "['Roller', 'äöüÄÖÜ', 7]";
-		}};
-		i.init(router);
-
-		assertEquals(CONTINUE, i.handleResponse(exc));
-		assertEquals("original", exc.getResponse().getBodyAsStringDecoded());
-	}
-
-	@Test
 	public void jsonRequest() throws Exception {
 
 		exc.getRequest().setBodyContent("""

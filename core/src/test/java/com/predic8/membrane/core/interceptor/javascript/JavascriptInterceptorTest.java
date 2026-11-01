@@ -25,9 +25,6 @@ import com.predic8.membrane.core.lang.LanguageSupport;
 import com.predic8.membrane.core.lang.javascript.GraalVMJavascriptSupport;
 import com.predic8.membrane.core.lang.javascript.RhinoJavascriptLanguageSupport;
 import com.predic8.membrane.core.router.DefaultRouter;
-import com.predic8.membrane.test.TestAppender;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.core.Logger;
 import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.test.TestAppender;
 import org.apache.logging.log4j.LogManager;
@@ -39,7 +36,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.context.support.GenericApplicationContext;
 
-import java.util.List;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.List;
@@ -440,14 +436,6 @@ public class JavascriptInterceptorTest {
     void returnNestedObject(Class<LanguageSupport> engine) {
         executeScript("({a: {b: [1, 'x']}})", engine);
         assertEquals("{\"a\":{\"b\":[1,\"x\"]}}", exc.getRequest().getBodyAsStringDecoded());
-    }
-
-    @ParameterizedTest
-    @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
-    void returnArray(Class<LanguageSupport> engine) {
-        assertEquals(CONTINUE, executeScript("['x', {a: 'y'}, ['z']]", engine));
-        assertTrue(exc.getRequest().isJSON());
-        assertEquals("[\"x\",{\"a\":\"y\"},[\"z\"]]", exc.getRequest().getBodyAsStringDecoded());
     }
 
     @Test

@@ -52,6 +52,9 @@ public final class HardenedStaxInputFactory {
     private static final ThreadLocal<XMLInputFactory> TL = ThreadLocal.withInitial(() -> {
         XMLInputFactory f = harden(XMLInputFactory.newInstance());
         f.setProperty(SUPPORT_DTD, FALSE);
+
+        // Set to no limit, otherwise the JDK settings might cap at an early limit of 100
+        setIfSupported(f, JDK_XML_MAX_ELEMENT_DEPTH, NO_DEPTH_LIMIT);
         return f;
     });
 
