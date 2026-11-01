@@ -139,7 +139,7 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
             }
         }
 
-        if (res instanceof Map || res instanceof List) {
+        if (res instanceof Map || (res instanceof List && isListSerializedToJson())) {
             msg = createResponseAndToExchangeIfThereIsNone(exc, flow, msg);
             msg.getHeader().setContentType(APPLICATION_JSON);
             try {
@@ -148,7 +148,7 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
                 log.error("", e);
                 internal(router.getConfiguration().isProduction(), getDisplayName())
                         .addSubSee("json-processing-1")
-                        .detail("Error serializing Map or List to JSON")
+                        .detail("Error serializing result to JSON")
                         .exception(e)
                         .buildAndSetResponse(exc);
                 return ABORT;
@@ -172,6 +172,13 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
         }
 
         return CONTINUE;
+    }
+
+    /**
+     * Whether a List returned by the script becomes a JSON body like a Map. Otherwise, it is ignored.
+     */
+    protected boolean isListSerializedToJson() {
+        return false;
     }
 
     /**

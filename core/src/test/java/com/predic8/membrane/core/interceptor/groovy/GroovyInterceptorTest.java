@@ -172,6 +172,23 @@ public class GroovyInterceptorTest {
 		assertEquals("äöüÄÖÜ", m.get("desc"));
 	}
 
+	/**
+	 * Unlike with Javascript, a returned list is ignored: a script that ends with list.each {...} returns the list.
+	 */
+	@Test
+	void returnedListIsIgnored() throws Exception {
+		exc.getRequest().setBodyContent("foo".getBytes());
+
+		GroovyInterceptor i = new GroovyInterceptor() {{
+			src = "['a', 'b'].each { property.put(it, 'seen') }";
+		}};
+		i.init(router);
+
+		assertEquals(CONTINUE, i.handleRequest(exc));
+		assertEquals("foo", exc.getRequest().getBodyAsStringDecoded());
+		assertEquals("seen", exc.getProperty("b"));
+	}
+
 	@Test
 	void returnedListIsIgnored() throws Exception {
 		exc.setResponse(ok().body("original").build());
