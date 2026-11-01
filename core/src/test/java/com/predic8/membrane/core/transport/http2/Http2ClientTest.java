@@ -184,9 +184,11 @@ class Http2ClientTest {
     /**
      * After GOAWAY the connection takes no new streams, so Http2ClientPool passes it over and a new
      * connection is opened.
+     * That holds for any last-stream-id, including 2^31-1, which a peer sends to announce a graceful shutdown.
      */
-    @Test
-    void goawayRejectsNewStreams() throws Exception {
+    @ParameterizedTest
+    @ValueSource(ints = {0, 1, Integer.MAX_VALUE})
+    void goawayRejectsNewStreams(int lastStreamId) throws Exception {
         final var router = new DefaultRouter();
         try (final var backend = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
             backend.setSoTimeout(2000);
@@ -194,7 +196,7 @@ class Http2ClientTest {
             try (final var peer = backend.accept()) {
                 peer.setSoTimeout(2000);
                 final var client = new Http2Client(connection, false);
-                peer.getOutputStream().write(GOAWAY_LAST_STREAM_0);
+                peer.getOutputStream().write(goaway(lastStreamId));
                 peer.getOutputStream().flush();
 
                 final var deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(2);
@@ -863,6 +865,12 @@ class Http2ClientTest {
         var received = 0;
         while (received < length)
             received += readUntilFrame(in, TYPE_DATA).length;
+    }
+
+    /** GOAWAY frame with the given last-stream-id and NO_ERROR. */
+    private static byte[] goaway(int lastStreamId) {
+        return new byte[]{0, 0, 8, TYPE_GOAWAY, 0, 0, 0, 0, 0,
+                (byte) (lastStreamId >>> 24), (byte) (lastStreamId >>> 16), (byte) (lastStreamId >>> 8), (byte) lastStreamId, 0, 0, 0, 0};
     }
 
     /** Builds a HEADERS frame whose header block holds the given name/value pairs. */

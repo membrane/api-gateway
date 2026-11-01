@@ -54,6 +54,8 @@ public class Http2Client implements Runnable, AutoCloseable {
     private volatile boolean closed;
     /** Lowest last-stream-id of the GOAWAY frames from the peer, Integer.MAX_VALUE before the first one. */
     private volatile int goawayLastStreamId = Integer.MAX_VALUE;
+    /** Set by the first GOAWAY. The peer may announce a graceful shutdown with a last-stream-id of 2^31-1. */
+    private volatile boolean goawayReceived;
 
     static class ResponseInfo {
         private final CountDownLatch cdl = new CountDownLatch(1);
@@ -138,6 +140,7 @@ public class Http2Client implements Runnable, AutoCloseable {
             public void handleGoaway(int lastStreamId, int errorCode) {
                 // Only the reader thread writes the field
                 goawayLastStreamId = Math.min(goawayLastStreamId, lastStreamId);
+                goawayReceived = true;
                 // A call registered concurrently either sees the new value in doCall or is failed here
                 responses.forEach((streamId, ri) -> {
                     if (streamId > goawayLastStreamId)
@@ -170,7 +173,7 @@ public class Http2Client implements Runnable, AutoCloseable {
             // registered concurrently is either drained there or rejected here.
             if (closed)
                 throw new IOException("HTTP/2 connection closed");
-            if (streamId > goawayLastStreamId)
+            if (goawayReceived)
                 throw new StreamNotProcessedException("The HTTP/2 peer sent GOAWAY and takes no new streams.");
 
             StreamInfo streamInfo = new StreamInfo(streamId, logic.sender, logic.peerSettings, logic.ourSettings);
@@ -235,7 +238,7 @@ public class Http2Client implements Runnable, AutoCloseable {
     }
 
     public boolean reserveStream() {
-        if (goawayLastStreamId != Integer.MAX_VALUE)
+        if (goawayReceived)
             return false;
 
         int max = getMax();
