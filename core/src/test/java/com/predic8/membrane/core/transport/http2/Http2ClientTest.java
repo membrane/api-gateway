@@ -90,8 +90,17 @@ class Http2ClientTest {
     /** RST_STREAM frame on stream 1 with error code REFUSED_STREAM. */
     private static final byte[] RST_STREAM_1_REFUSED_STREAM = {0, 0, 4, 0x3, 0, 0, 0, 0, 1, 0, 0, 0, 0x7};
 
+    /** RST_STREAM frame on stream 1 with error code CANCEL. */
+    private static final byte[] RST_STREAM_1_CANCEL = {0, 0, 4, 0x3, 0, 0, 0, 0, 1, 0, 0, 0, 0x8};
+
     /** PING frame without ACK and with an all-zero payload. */
     private static final byte[] PING = {0, 0, 8, 0x6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
+    /** GOAWAY frame with last-stream-id 0 and NO_ERROR: the peer processed no stream. */
+    private static final byte[] GOAWAY_LAST_STREAM_0 = {0, 0, 8, 0x7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
+    /** GOAWAY frame with last-stream-id 1 and NO_ERROR: the peer may still answer stream 1. */
+    private static final byte[] GOAWAY_LAST_STREAM_1 = {0, 0, 8, 0x7, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0};
 
     @Test
     void closeImmediatelyFailsPendingCall() throws Exception {
@@ -115,6 +124,94 @@ class Http2ClientTest {
             peer.getOutputStream().flush();
         });
         assertTrue(e.getMessage().contains("reset by the peer"), e.getMessage());
+    }
+
+    /** The peer did not process a refused stream (RFC 9113 §8.7), so the call may be retried for every method. */
+    @Test
+    void refusedStreamFailsCallAsUnprocessed() throws Exception {
+        final var e = assertPendingCallFails((client, peer) -> {
+            peer.getOutputStream().write(RST_STREAM_1_REFUSED_STREAM);
+            peer.getOutputStream().flush();
+        });
+        assertInstanceOf(StreamNotProcessedException.class, e);
+    }
+
+    @Test
+    void cancelledStreamIsNotReportedAsUnprocessed() throws Exception {
+        final var e = assertPendingCallFails((client, peer) -> {
+            peer.getOutputStream().write(RST_STREAM_1_CANCEL);
+            peer.getOutputStream().flush();
+        });
+        assertFalse(e instanceof StreamNotProcessedException);
+    }
+
+    /**
+     * The peer did not process streams above the GOAWAY's last-stream-id (RFC 9113 §6.8), so their calls fail at once,
+     * in a way that may be retried for every method.
+     */
+    @Test
+    void goawayFailsUnprocessedCall() throws Exception {
+        final var e = assertPendingCallFails((client, peer) -> {
+            peer.getOutputStream().write(GOAWAY_LAST_STREAM_0);
+            peer.getOutputStream().flush();
+        });
+        assertInstanceOf(StreamNotProcessedException.class, e);
+    }
+
+    @Test
+    void goawayKeepsProcessedCall() throws Exception {
+        final var router = new DefaultRouter();
+        try (final var backend = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
+            backend.setSoTimeout(2000);
+            final var connection = createConnection(router, backend);
+            try (final var peer = backend.accept()) {
+                peer.setSoTimeout(2000);
+                final var client = new Http2Client(connection, false);
+                final var call = callAsync(client);
+
+                readUntilRequestHeaders(peer);
+                peer.getOutputStream().write(GOAWAY_LAST_STREAM_1);
+                peer.getOutputStream().write(RESPONSE_HEADERS_200_END_STREAM);
+                peer.getOutputStream().flush();
+
+                assertEquals(200, call.get(2, TimeUnit.SECONDS).getStatusCode());
+            }
+        } finally {
+            router.stop();
+        }
+    }
+
+    /**
+     * After GOAWAY the connection takes no new streams: reserveStream() fails, which makes Http2ClientPool pass it over,
+     * and so does a call.
+     * That holds for any last-stream-id, including 2^31-1, which a peer sends to announce a graceful shutdown.
+     */
+    @ParameterizedTest
+    @ValueSource(ints = {0, 1, Integer.MAX_VALUE})
+    void goawayRejectsNewStreams(int lastStreamId) throws Exception {
+        final var router = new DefaultRouter();
+        try (final var backend = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
+            backend.setSoTimeout(2000);
+            final var connection = createConnection(router, backend);
+            try (final var peer = backend.accept()) {
+                peer.setSoTimeout(2000);
+                final var client = new Http2Client(connection, false);
+                peer.getOutputStream().write(goaway(lastStreamId));
+                peer.getOutputStream().flush();
+
+                final var deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(2);
+                while (client.reserveStream()) {
+                    if (System.nanoTime() > deadline)
+                        fail("The connection still takes new streams after GOAWAY");
+                    Thread.sleep(10);
+                }
+
+                final var e = assertThrows(ExecutionException.class, () -> callAsync(client).get(2, TimeUnit.SECONDS));
+                assertInstanceOf(StreamNotProcessedException.class, e.getCause().getCause());
+            }
+        } finally {
+            router.stop();
+        }
     }
 
     @Test
@@ -768,6 +865,12 @@ class Http2ClientTest {
         var received = 0;
         while (received < length)
             received += readUntilFrame(in, TYPE_DATA).length;
+    }
+
+    /** GOAWAY frame with the given last-stream-id and NO_ERROR. */
+    private static byte[] goaway(int lastStreamId) {
+        return new byte[]{0, 0, 8, TYPE_GOAWAY, 0, 0, 0, 0, 0,
+                (byte) (lastStreamId >>> 24), (byte) (lastStreamId >>> 16), (byte) (lastStreamId >>> 8), (byte) lastStreamId, 0, 0, 0, 0};
     }
 
     /** Builds a HEADERS frame whose header block holds the given name/value pairs. */
