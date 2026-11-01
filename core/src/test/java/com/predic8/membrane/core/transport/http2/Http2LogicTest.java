@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.transport.http2;
 
 import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.transport.http2.frame.FatalConnectionException;
 import com.predic8.membrane.core.util.EndOfStreamException;
@@ -28,6 +29,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Stream;
@@ -155,6 +157,146 @@ class Http2LogicTest {
 
         assertNotNull(handler.message);
         assertEquals("café", handler.message.getHeader().getFirstValue("x-foo"));
+    }
+
+    /** Requests RFC 9113 §8.1.1, §8.2.2 and §8.3 require to be treated as malformed, each found by h2spec. */
+    static Stream<Arguments> malformedRequests() {
+        return Stream.of(
+                arguments("unknown pseudo-header", (Object) withGet(":foo", "bar")),
+                arguments("response pseudo-header", (Object) withGet(":status", "200")),
+                arguments("pseudo-header after a regular field", (Object) fields(":method", "GET", ":scheme", "https", "x-foo", "bar", ":path", "/")),
+                arguments("connection-specific field", (Object) withGet("connection", "keep-alive")),
+                arguments("transfer-encoding", (Object) withGet("transfer-encoding", "chunked")),
+                arguments("upgrade", (Object) withGet("upgrade", "websocket")),
+                arguments("te other than trailers", (Object) withGet("te", "gzip")),
+                arguments("empty :path", (Object) fields(":method", "GET", ":scheme", "https", ":path", "")),
+                arguments("no :method", (Object) fields(":scheme", "https", ":path", "/")),
+                arguments("no :scheme", (Object) fields(":method", "GET", ":path", "/")),
+                arguments("no :path", (Object) fields(":method", "GET", ":scheme", "https")),
+                arguments("duplicate :method", (Object) withGet(":method", "GET")),
+                arguments("duplicate :scheme", (Object) fields(":method", "GET", ":scheme", "https", ":scheme", "https", ":path", "/")),
+                arguments("duplicate :path", (Object) fields(":method", "GET", ":scheme", "https", ":path", "/", ":path", "/")),
+                arguments("CONNECT without :authority", (Object) fields(":method", "CONNECT")),
+                arguments("CONNECT with :path", (Object) fields(":method", "CONNECT", ":authority", "example.com:443", ":path", "/")),
+                arguments("content-length but no body", (Object) withGet("content-length", "5")),
+                arguments("invalid content-length", (Object) withGet("content-length", "abc"))
+        );
+    }
+
+    /** The body of a request must be as long as its content-length (RFC 9113 §8.1.1). */
+    static Stream<Arguments> bodiesNotMatchingContentLength() throws IOException {
+        return Stream.of(
+                arguments("longer DATA frame", "1", (Object) new byte[][]{dataFrame(true, "test")}),
+                arguments("longer DATA frames", "3", (Object) new byte[][]{dataFrame(false, "ab"), dataFrame(true, "cd")}),
+                arguments("shorter DATA frames", "10", (Object) new byte[][]{dataFrame(false, "ab"), dataFrame(true, "cd")}),
+                arguments("shorter DATA frame before trailers", "10", (Object) new byte[][]{dataFrame(false, "ab"), headersFrame(true, new Encoder(4096), "x-foo", "bar")})
+        );
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("bodiesNotMatchingContentLength")
+    void bodyNotMatchingContentLengthFails(String description, String contentLength, byte[][] frames) throws Exception {
+        final var handler = new RecordingHandler();
+
+        assertThrows(EndOfStreamException.class, () -> createLogic(requestWithBody(contentLength, frames), handler).handle());
+
+        assertNotNull(handler.message);
+        assertThrows(ReadingBodyException.class, handler.message.getBody()::read);
+    }
+
+    @Test
+    void bodyMatchingContentLengthIsRead() throws Exception {
+        final var handler = new RecordingHandler();
+
+        assertThrows(EndOfStreamException.class, () -> createLogic(requestWithBody("4", dataFrame(false, "te"), dataFrame(true, "st")), handler).handle());
+
+        assertEquals("test", new String(handler.message.getBody().getContent(), ISO_8859_1));
+    }
+
+    /**
+     * A POST request declaring the given content-length, followed by the given frames. The encoders of the header
+     * blocks do not need to share state: they add literals to the dynamic table, but never refer to it.
+     */
+    private static byte[] requestWithBody(String contentLength, byte[]... frames) throws IOException {
+        final var in = new ByteArrayOutputStream();
+        in.write(headersFrame(false, new Encoder(4096), ":method", "POST", ":scheme", "https", ":path", "/", "content-length", contentLength));
+        for (final var frame : frames)
+            in.write(frame);
+        return in.toByteArray();
+    }
+
+    /** DATA frame on stream 1. */
+    private static byte[] dataFrame(boolean endStream, String payload) {
+        final var frame = new ByteArrayOutputStream();
+        frame.write(new byte[]{0, 0, (byte) payload.length(), 0x0, (byte) (endStream ? 0x1 : 0), 0, 0, 0, 1}, 0, 9);
+        frame.writeBytes(bytes(payload));
+        return frame.toByteArray();
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("malformedRequests")
+    void malformedRequestIsRejected(String description, String[] fields) throws Exception {
+        final var handler = new RecordingHandler();
+
+        assertThrows(EndOfStreamException.class, () -> createLogic(headersFrame(true, new Encoder(4096), fields), handler).handle());
+
+        assertNull(handler.message, "The request must not be handed over.");
+        assertEquals(1, handler.malformedStreamId);
+    }
+
+    static Stream<Arguments> wellFormedRequests() {
+        return Stream.of(
+                arguments("te: trailers", (Object) withGet("te", "trailers")),
+                arguments("CONNECT", (Object) fields(":method", "CONNECT", ":authority", "example.com:443"))
+        );
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("wellFormedRequests")
+    void wellFormedRequestIsAccepted(String description, String[] fields) throws Exception {
+        final var handler = new RecordingHandler();
+
+        assertThrows(EndOfStreamException.class, () -> createLogic(headersFrame(true, new Encoder(4096), fields), handler).handle());
+
+        assertNotNull(handler.message);
+        assertEquals(0, handler.malformedStreamId);
+    }
+
+    /** Trailers carry no pseudo-headers (RFC 9113 §8.1). The request was already handed over, so its body fails. */
+    @Test
+    void pseudoHeaderInTrailersFailsTheBody() throws Exception {
+        final var encoder = new Encoder(4096);
+        final var in = new ByteArrayOutputStream();
+        in.write(headersFrame(false, encoder, withGet()));
+        in.write(headersFrame(true, encoder, ":path", "/admin"));
+        final var handler = new RecordingHandler();
+
+        assertThrows(EndOfStreamException.class, () -> createLogic(in.toByteArray(), handler).handle());
+
+        assertNotNull(handler.message);
+        assertEquals("/", ((Request) handler.message).getUri());
+        assertThrows(ReadingBodyException.class, handler.message.getBody()::read);
+    }
+
+    /** The fields of a GET request, followed by the given ones. */
+    private static String[] withGet(String... extra) {
+        final var get = List.of(":method", "GET", ":scheme", "https", ":path", "/", ":authority", "localhost");
+        return Stream.concat(get.stream(), Stream.of(extra)).toArray(String[]::new);
+    }
+
+    private static String[] fields(String... namesAndValues) {
+        return namesAndValues;
+    }
+
+    /** HEADERS frame on stream 1 with END_HEADERS, carrying the given names and values in this order. */
+    private static byte[] headersFrame(boolean endStream, Encoder encoder, String... namesAndValues) throws IOException {
+        final var block = new ByteArrayOutputStream();
+        for (int i = 0; i < namesAndValues.length; i += 2)
+            encoder.encodeHeader(block, bytes(namesAndValues[i]), bytes(namesAndValues[i + 1]), false);
+        final var frame = new ByteArrayOutputStream();
+        frame.write(new byte[]{(byte) (block.size() >>> 16), (byte) (block.size() >>> 8), (byte) block.size(), 0x1, (byte) (endStream ? 0x5 : 0x4), 0, 0, 0, 1});
+        block.writeTo(frame);
+        return frame.toByteArray();
     }
 
     private static byte[] bytes(String s) {

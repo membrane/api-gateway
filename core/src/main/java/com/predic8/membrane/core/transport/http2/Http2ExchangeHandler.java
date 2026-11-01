@@ -219,11 +219,14 @@ public class Http2ExchangeHandler implements Runnable {
             private void sendData(byte[] content, int offset, int length) throws IOException {
                 int mOffset = offset;
                 while (mOffset < offset + length) {
-                    int mLength = Math.min(peerSettings.getMaxFrameSize(), length - (mOffset - offset));
+                    final var wantLength = Math.min(peerSettings.getMaxFrameSize(), length - (mOffset - offset));
 
-                    // as we do not send padding, reserve exactly the length we want to send
-                    streamInfo.getPeerFlowControl().reserve(mLength, streamId);
-                    peerFlowControl.reserve(mLength, streamId);
+                    // as we do not send padding, the frame is as long as the window both the stream and the
+                    // connection grant. The stream comes first: the connection window is shared with other streams.
+                    final var streamLength = streamInfo.getPeerFlowControl().reserve(wantLength, streamId);
+                    final var mLength = peerFlowControl.reserve(streamLength, streamId);
+                    if (mLength < streamLength)
+                        streamInfo.getPeerFlowControl().unreserve(streamLength - mLength);
 
                     Frame frame = new Frame();
                     frame.fill(TYPE_DATA,
