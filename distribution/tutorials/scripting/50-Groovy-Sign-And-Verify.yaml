@@ -19,9 +19,12 @@
 #     with Docker:
 #       Linux/Mac:
 #         MEMBRANE_DOCKER_OPTS="-e SECRET" ./run-docker.sh -c 50-Groovy-Sign-And-Verify.yaml
-#       Windows:
+#       Windows Command Prompt:
 #         set "MEMBRANE_DOCKER_OPTS=-e SECRET"
 #         run-docker.cmd -c 50-Groovy-Sign-And-Verify.yaml
+#       Windows PowerShell:
+#         $env:MEMBRANE_DOCKER_OPTS="-e SECRET"
+#         .\run-docker.cmd -c 50-Groovy-Sign-And-Verify.yaml
 #
 #     or with Java:
 #       Linux/Mac:
