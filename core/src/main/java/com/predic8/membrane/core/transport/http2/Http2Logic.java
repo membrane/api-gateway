@@ -227,7 +227,7 @@ public class Http2Logic {
      * closed as soon as their reset is written.
      */
     private boolean exceedsConcurrentStreamLimit(int newStreamId) {
-        final var limit = ourSettings.getMaxConcurrentStreams();
+        final var limit = maxConcurrentStreams();
         if (limit < 0)
             return false;
         var open = 0;
@@ -238,6 +238,21 @@ public class Http2Logic {
                 open++;
         }
         return open >= limit || runningExchanges.get() >= limit;
+    }
+
+    /**
+     * The lowest concurrent stream limit among the acknowledged SETTINGS and those sent but not yet acknowledged, or
+     * -1 if none sets one. A limit applies as soon as it is sent: a peer that delays its ACK must not open more
+     * streams in the meantime. Receiver thread only, like {@link #wantedSettings}.
+     */
+    private int maxConcurrentStreams() {
+        var limit = ourSettings.getMaxConcurrentStreams();
+        for (Settings settings : wantedSettings) {
+            final var wanted = settings.getMaxConcurrentStreams();
+            if (wanted >= 0 && (limit < 0 || wanted < limit))
+                limit = wanted;
+        }
+        return limit;
     }
 
     /** Stops the frame sender and wakes writers waiting for the connection's flow-control window. */
@@ -473,7 +488,7 @@ public class Http2Logic {
             // HEADERS on a stream refused before, arriving before its reset was written, are ignored.
             if (!refused)
                 return;
-            log.info("Refusing stream {}: the peer exceeds the limit of {} concurrent streams.", streamId1, ourSettings.getMaxConcurrentStreams());
+            log.info("Refusing stream {}: the peer exceeds the limit of {} concurrent streams.", streamId1, maxConcurrentStreams());
             // REFUSED_STREAM tells the peer that the request was not processed, so it may retry it (RFC 9113 §8.7).
             // Writing the reset closes the stream; DATA still in flight for it is not queued anymore.
             streamInfo.refuse(new IOException("HTTP/2 stream %d was refused.".formatted(streamId1)));

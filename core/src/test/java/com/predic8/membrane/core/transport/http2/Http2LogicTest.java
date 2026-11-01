@@ -306,6 +306,23 @@ class Http2LogicTest {
     }
 
     /**
+     * The limit applies before the client acknowledged the SETTINGS that announce it: otherwise a client that delays
+     * its ACK could open any number of streams.
+     */
+    @Test
+    void concurrentStreamLimitAppliesBeforeTheSettingsAreAcknowledged() throws Exception {
+        final var encoder = new Encoder(4096);
+        final var in = new ByteArrayOutputStream();
+        for (int streamId = 1; streamId <= 101; streamId += 2)
+            in.write(headersFrame(streamId, false, encoder, withGet()));
+        final var handler = new RecordingHandler();
+
+        assertThrows(EndOfStreamException.class, () -> createLogic(in.toByteArray(), handler).handle());
+
+        assertEquals(50, handler.exchanges);
+    }
+
+    /**
      * A request still being processed counts against the concurrent stream limit, even after the client reset its
      * stream (CVE-2023-44487, "Rapid Reset"): resetting streams does not let the client start more work.
      */
