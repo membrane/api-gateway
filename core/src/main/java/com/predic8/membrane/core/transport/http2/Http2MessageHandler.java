@@ -74,4 +74,15 @@ public interface Http2MessageHandler {
     default void handleMalformedHeaders(StreamInfo streamInfo) {
     }
 
+    /**
+     * Called when the peer sends GOAWAY: it opens no new streams and did not process, and will not process, any stream
+     * with an id above lastStreamId (RFC 9113 &sect;6.8). Streams up to lastStreamId may still complete. The peer may
+     * send GOAWAY more than once, with the same or a lower lastStreamId.
+     *
+     * @param lastStreamId the highest id of a stream the peer might have processed
+     * @param errorCode the peer's error code, see {@link com.predic8.membrane.core.transport.http2.frame.Error}
+     */
+    default void handleGoaway(int lastStreamId, int errorCode) {
+    }
+
 }

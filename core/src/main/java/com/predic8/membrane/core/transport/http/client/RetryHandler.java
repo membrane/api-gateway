@@ -20,6 +20,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.transport.http.ConnectTimeoutException;
 import com.predic8.membrane.core.transport.http.EOFWhileReadingFirstLineException;
 import com.predic8.membrane.core.transport.http.NoResponseException;
+import com.predic8.membrane.core.transport.http2.StreamNotProcessedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -228,6 +229,12 @@ public class RetryHandler {
         if (e instanceof ConnectTimeoutException) {
             log.debug("Connection to {} timed out before it was established.", dest);
             return !retryOnConnectTimeout;
+        }
+        // The backend announced that it did not process the request, e.g. with an HTTP/2 GOAWAY (RFC 9113 §8.7).
+        // Retrying is safe for any method.
+        if (e instanceof StreamNotProcessedException) {
+            log.debug("{} did not process the request: {}", dest, e.getMessage());
+            return false;
         }
         // The socket read took too long and exceeded the configured timeout. No data was received
         // from the server in time, but the request may already have been processed.
