@@ -21,10 +21,8 @@ import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 
 import static io.restassured.RestAssured.given;
-import static io.restassured.http.ContentType.JSON;
 import static io.restassured.http.ContentType.XML;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.hamcrest.Matchers.contains;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class GroovyReadXmlTutorialTest extends AbstractXmlTutorialTest {
@@ -34,7 +32,14 @@ class GroovyReadXmlTutorialTest extends AbstractXmlTutorialTest {
     }
 
     @Test
-    void keepsOnlyRecentBooks() throws IOException {
+    void logsRecentBooks() throws IOException, InterruptedException {
+        final var recentBooksLogged = new CountDownLatch(1);
+        final ConsoleWatcher watcher = (error, line) -> {
+            if (line.contains("Recent books: [Clean Code, Patterns of Enterprise Application Architecture, The Art of Unix Programming, Site Reliability Engineering, The Phoenix Project]"))
+                recentBooksLogged.countDown();
+        };
+        process.addConsoleWatcher(watcher);
+        try {
         // @formatter:off
         given()
             .body(readFileFromBaseDir("books.xml"))
@@ -42,15 +47,12 @@ class GroovyReadXmlTutorialTest extends AbstractXmlTutorialTest {
         .when()
             .post("http://localhost:2000")
         .then()
-            .statusCode(200)
-            .contentType(JSON)
-            .body("$", contains(
-                "Clean Code",
-                "Patterns of Enterprise Application Architecture",
-                "The Art of Unix Programming",
-                "Site Reliability Engineering",
-                "The Phoenix Project"));
+            .statusCode(200);
         // @formatter:on
+            assertTrue(recentBooksLogged.await(5, SECONDS));
+        } finally {
+            process.removeConsoleWatcher(watcher);
+        }
     }
 
     @Test

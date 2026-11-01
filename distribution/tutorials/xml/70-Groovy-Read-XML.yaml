@@ -4,7 +4,7 @@
 #
 # Groovy's XmlSlurper reads an XML document into an object you can navigate
 # like the document itself: books.book.title. A few lines of Groovy can pick
-# values out of XML and return them as JSON.
+# values out of XML and log them.
 #
 # 1.) Start Membrane:
 #     with Docker:
@@ -22,9 +22,7 @@
 # 2.) Have a look at books.xml, then send it to the API:
 #     curl -d @books.xml -H "Content-Type: application/xml" localhost:2000
 #
-#     [ "Clean Code", "Patterns of Enterprise Application Architecture", "The Art of Unix Programming", "Site Reliability Engineering", "The Phoenix Project" ]
-#
-# 3.) Check the console for the results of the other queries.
+# 3.) Check the console for the results of the queries.
 
 api:
   port: 2000
@@ -48,9 +46,8 @@ api:
               // ** searches the whole document
               log.info "Authors in the document: ${books.'**'.findAll { it.name() == 'author' }.size()}"
 
-              // A returned list becomes the new JSON body.
-              books.book.findAll { it.year.toInteger() > 2000 }.collect { it.title.text() }
-        - beautifier: {}
+              def titles = books.book.findAll { it.year.toInteger() > 2000 }.collect { it.title.text() }
+              log.info "Recent books: ${titles}"
     - return:
         status: 200
 
