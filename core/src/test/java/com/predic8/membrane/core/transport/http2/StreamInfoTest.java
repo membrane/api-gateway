@@ -55,6 +55,18 @@ class StreamInfoTest {
         }
     }
 
+    /** Nothing reads past the abort, so DATA still in flight would only take up memory until the stream is removed. */
+    @Test
+    void dataReceivedAfterAbortIsNotQueued() {
+        streamInfo.abortReceiving(new IOException("body rejected"));
+        final var data = new Frame();
+        data.fill(TYPE_DATA, 0, 1, "ab".getBytes(), 0, 2);
+
+        streamInfo.receivedDataFrame(data.asData());
+
+        assertEquals(1, streamInfo.getReceivedDataFramesQueued(), "Only the abort marker is queued.");
+    }
+
     @Test
     void withoutContentLengthAnyBodyIsKept() {
         assertTrue(streamInfo.keepsContentLength(100, true));

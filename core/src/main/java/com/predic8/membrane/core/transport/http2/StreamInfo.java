@@ -72,7 +72,9 @@ public class StreamInfo {
     }
 
     public void receivedDataFrame(DataFrame df) {
-        dataFramesReceived.add(df);
+        // Nothing reads past the abort marker, so DATA received after an abort is not queued.
+        if (abortCause == null)
+            dataFramesReceived.add(df);
         flowControl.received(df.getFrame().getLength());
 
         if (df.isEndStream()) {
@@ -98,6 +100,11 @@ public class StreamInfo {
             return true;
         expectedContentLength = -1;
         return false;
+    }
+
+    /** The number of received DATA frames waiting for the body reader, including the marker of an abort. */
+    int getReceivedDataFramesQueued() {
+        return dataFramesReceived.size();
     }
 
     public DataFrame removeDataFrame() throws IOException {
