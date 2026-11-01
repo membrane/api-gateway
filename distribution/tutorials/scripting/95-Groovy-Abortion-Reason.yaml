@@ -1,0 +1,43 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.8.0.json
+#
+# Tutorial: Read the Abortion Reason with Groovy
+#
+# When a plugin fails with an exception, Membrane aborts the flow. A Groovy
+# script in an abort block can read that exception from the property
+# abortionReason.
+#
+# 1.) Start Membrane:
+#     with Docker:
+#       Linux/Mac:
+#         ./run-docker.sh -c 95-Groovy-Abortion-Reason.yaml
+#       Windows:
+#         run-docker.cmd -c 95-Groovy-Abortion-Reason.yaml
+#
+#     or with Java:
+#       Linux/Mac:
+#         ./membrane.sh -c 95-Groovy-Abortion-Reason.yaml
+#       Windows:
+#         membrane.cmd -c 95-Groovy-Abortion-Reason.yaml
+#
+# 2.) Call the API:
+#     curl -i localhost:2000
+#
+#     HTTP/1.1 500 Internal Server Error
+#
+#     Membrane's console shows:
+#
+#     Aborted: Something went wrong
+
+api:
+  port: 2000
+  flow:
+    - abort:
+        - groovy:
+            src: |
+              println "Aborted: ${property.abortionReason?.message}"
+    - groovy:
+        src: |
+          throw new RuntimeException("Something went wrong")
+
+# NOTE: abortionReason is only set when an exception caused the abort. A script
+#       that returns ABORT leaves it empty, see 90-Groovy-Abort.yaml.
