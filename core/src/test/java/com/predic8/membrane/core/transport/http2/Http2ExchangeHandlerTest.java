@@ -80,6 +80,7 @@ class Http2ExchangeHandlerTest {
         final var streamInfo = openStream(1);
         writeBodyAsync(streamInfo);
         assertEquals(1, nextDataFrame(streamInfo).getLength());
+        assertEquals(0, availableWindow(streamInfo.getPeerFlowControl()));
     }
 
     /**
