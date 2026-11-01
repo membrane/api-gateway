@@ -2,9 +2,9 @@
 #
 # Tutorial: Read the Abortion Reason with Groovy
 #
-# When a plugin fails with an exception, Membrane aborts the flow. A Groovy
-# script in an abort block can read that exception from the property
-# abortionReason.
+# When a script fails with an exception, Membrane aborts the flow and stores
+# the exception in the property abortionReason. A Groovy script in an abort
+# block can read it from there.
 #
 # 1.) Start Membrane:
 #     with Docker:
