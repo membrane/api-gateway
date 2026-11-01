@@ -13,20 +13,27 @@
 
 package com.predic8.membrane.core.interceptor.javascript;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exceptions.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.lang.*;
-import com.predic8.membrane.core.util.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exceptions.ProblemDetails;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.lang.AbstractScriptInterceptor;
+import com.predic8.membrane.core.util.ConfigurationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static com.predic8.membrane.core.util.text.TextUtil.*;
-import static org.apache.commons.lang3.StringUtils.*;
-import static org.apache.commons.text.StringEscapeUtils.*;
+import static com.predic8.membrane.core.util.text.TextUtil.removeFinalChar;
+import static org.apache.commons.lang3.StringUtils.trim;
+import static org.apache.commons.text.StringEscapeUtils.escapeHtml4;
 
 /**
  * @description Executes a Javascript. The script can access and manipulate data from the request and response.
  * Use this or the Groovy plugin to extend the functions of Membrane by scripting. See the samples in examples/javascript.
+ * An object or array returned by the script, e.g. <code>({id: 7})</code> or <code>[1, 2]</code>, becomes the JSON
+ * body of the message.
+ * Every execution of the script runs isolated: variables are not shared with other requests.
+ * Objects created by the script, e.g. <code>{a: 1}</code> or the result of <code>JSON.parse()</code>, are only valid
+ * while the script runs. To keep such an object on the exchange, store it as a string:
+ * <code>property.put('order', JSON.stringify(order))</code>.
  * @yaml <pre><code>
  * api:
  *   port: 2000
@@ -64,6 +71,11 @@ public class JavascriptInterceptor extends AbstractScriptInterceptor {
         } catch (Exception e) {
             throw new ConfigurationException("Could not compile: \n" + src,e);
         }
+    }
+
+    @Override
+    protected boolean isListSerializedToJson() {
+        return true;
     }
 
     @Override

@@ -176,7 +176,7 @@
         <!-- Rhino Javascript Engine -->
         <dependency>
             <groupId>org.mozilla</groupId>
-            <artifactId>rhino-engine</artifactId>
+            <artifactId>rhino</artifactId>
             <version>1.9.0</version>
         </dependency>
         <dependency>

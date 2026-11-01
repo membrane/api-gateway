@@ -26,6 +26,10 @@ import com.predic8.membrane.core.lang.LanguageSupport;
 import com.predic8.membrane.core.lang.javascript.GraalVMJavascriptSupport;
 import com.predic8.membrane.core.lang.javascript.RhinoJavascriptLanguageSupport;
 import com.predic8.membrane.core.router.DefaultRouter;
+import com.predic8.membrane.core.util.ConfigurationException;
+import com.predic8.membrane.test.TestAppender;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.Logger;
 import org.graalvm.polyglot.Context;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,11 +37,17 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.context.support.GenericApplicationContext;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.util.List;
 import java.util.Map;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.http.MimeType.TEXT_PLAIN;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.util.ExceptionUtil.concatMessageAndCauseMessages;
 import static com.predic8.membrane.core.util.ProblemDetailsTestUtil.parse;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.commons.lang3.exception.ExceptionUtils.getThrowableList;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -70,7 +80,7 @@ public class JavascriptInterceptorTest {
 
     @Test
     void isRhinoPresent() throws ClassNotFoundException {
-        Class.forName("org.mozilla.javascript.engine.RhinoScriptEngine");
+        Class.forName("org.mozilla.javascript.Context");
         assertTrue(true);
     }
 
@@ -105,6 +115,55 @@ public class JavascriptInterceptorTest {
         assertEquals(1,pd.getInternal().get("line"));
         assertEquals(1,pd.getInternal().get("column"));
         assertNotNull(pd.getInternal().get("engine"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(classes = RhinoJavascriptLanguageSupport.class)
+    void logsLineWithError(Class<LanguageSupport> engine) {
+        final var root = (Logger) LogManager.getRootLogger();
+        final var appender = new TestAppender("JavascriptInterceptorTest");
+        appender.start();
+        root.addAppender(appender);
+        try {
+            executeScript("""
+                    var a = 1;
+                    adsfasf;
+                    var b = 2;""", engine);
+        } finally {
+            root.removeAppender(appender);
+            appender.stop();
+        }
+        assertTrue(appender.getMessages().contains("Error in Line: adsfasf;"), appender.getMessages().toString());
+    }
+
+    @ParameterizedTest
+    @ValueSource(classes = RhinoJavascriptLanguageSupport.class)
+    void syntaxErrorStopsStartup(Class<LanguageSupport> engine) {
+        final var e = assertThrows(ConfigurationException.class, () -> initInterceptor("""
+                var a = 1;
+                var b = ;""", engine));
+        final var message = concatMessageAndCauseMessages(e);
+        assertTrue(message.contains("line 2: var b = ;"), message);
+    }
+
+    /**
+     * The Rhino interpreter keeps the frames of Javascript calls on the heap, not on the stack of the thread.
+     */
+    @ParameterizedTest
+    @ValueSource(classes = RhinoJavascriptLanguageSupport.class)
+    void endlessRecursion(Class<LanguageSupport> engine) {
+        assertEquals(ABORT, executeScript("function f(n) { return f(n + 1); } f(0);", engine));
+        assertEquals(500, exc.getResponse().getStatusCode());
+    }
+
+    /**
+     * As deep as with the compiled mode of Rhino, which was used before.
+     */
+    @ParameterizedTest
+    @ValueSource(classes = RhinoJavascriptLanguageSupport.class)
+    void deepRecursion(Class<LanguageSupport> engine) {
+        assertEquals(CONTINUE, executeScript("function f(n) { return n == 0 ? 0 : 1 + f(n - 1); } '' + f(7500);", engine));
+        assertEquals("7500", exc.getRequest().getBodyAsStringDecoded());
     }
 
     @ParameterizedTest
@@ -177,7 +236,9 @@ public class JavascriptInterceptorTest {
         executeScript("""
                 Response.ok().body({"foo": 7}).build();
                 """, engine);
-        assertEquals("{\"foo\":7}", exc.getResponse().getBodyAsStringDecoded());
+        // The Rhino interpreter passes every number as a Double
+        final var expected = engine.equals(RhinoJavascriptLanguageSupport.class) ? "{\"foo\":7.0}" : "{\"foo\":7}";
+        assertEquals(expected, exc.getResponse().getBodyAsStringDecoded());
     }
 
 
@@ -191,7 +252,7 @@ public class JavascriptInterceptorTest {
                """, engine);
 
         Map<String,Object> m = om.readValue(exc.getRequest().getBodyAsStringDecoded(),Map.class);
-        assertEquals(7, m.get("id"));
+        assertEquals(7.0, ((Number) m.get("id")).doubleValue());
         assertEquals("Roller", m.get("name"));
         assertEquals("äöüÄÖÜ", m.get("desc"));
     }
@@ -231,6 +292,242 @@ public class JavascriptInterceptorTest {
         assertEquals("Bonn", exc.getRequest().getHeader().getFirstValue("city"));
     }
 
+    @ParameterizedTest
+    @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
+    void jsonOfPreviousRequestDoesNotLeak(Class<LanguageSupport> engine) {
+        initInterceptor("header.put('json-id', typeof json === 'object' ? '' + json.id : 'none');", engine);
+
+        // More runs than scripts in a pool, so every pooled script has seen a JSON request before the non-JSON ones
+        final var runs = 4 * Runtime.getRuntime().availableProcessors();
+        for (int i = 0; i < runs; i++)
+            assertEquals("7", jsonIdSeenByScript(new Request.Builder().body("{\"id\":7}").contentType(APPLICATION_JSON).build()));
+        for (int i = 0; i < runs; i++)
+            assertEquals("none", jsonIdSeenByScript(new Request.Builder().body("foo").contentType(TEXT_PLAIN).build()));
+    }
+
+    @ParameterizedTest
+    @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
+    void topLevelVariableOfPreviousRequestDoesNotLeak(Class<LanguageSupport> engine) {
+        initInterceptor("""
+                var counter = typeof counter === 'number' ? counter + 1 : 1;
+                header.put('counter', '' + counter);
+                """, engine);
+
+        for (int i = 0; i < 4 * Runtime.getRuntime().availableProcessors(); i++) {
+            final var exchange = new Exchange(null);
+            exchange.setRequest(new Request.Builder().body("foo").build());
+            interceptor.handleRequest(exchange);
+            assertEquals("1", exchange.getRequest().getHeader().getFirstValue("counter"));
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
+    void builtInObjectOfPreviousRequestDoesNotLeak(Class<LanguageSupport> engine) {
+        initInterceptor("""
+                header.put('leak', '' + ({}).leak);
+                Object.prototype.leak = 'x';
+                """, engine);
+
+        for (int i = 0; i < 4 * Runtime.getRuntime().availableProcessors(); i++) {
+            final var exchange = new Exchange(null);
+            exchange.setRequest(new Request.Builder().body("foo").build());
+            interceptor.handleRequest(exchange);
+            assertEquals("undefined", exchange.getRequest().getHeader().getFirstValue("leak"));
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
+    void taggedTemplateOfPreviousRequestDoesNotLeak(Class<LanguageSupport> engine) {
+        // Rhino caches the strings array of a tagged template in the compiled script, with the Array.prototype of
+        // the execution that created it
+        initInterceptor("""
+                Array.prototype.requestId = function() { return header.get('id'); };
+                function tag(strings) { return strings.requestId(); }
+                header.put('seen', tag`x`);
+                """, engine);
+
+        for (int i = 0; i < 4 * Runtime.getRuntime().availableProcessors(); i++) {
+            final var exchange = new Exchange(null);
+            exchange.setRequest(new Request.Builder().header("id", "id-" + i).body("foo").build());
+            interceptor.handleRequest(exchange);
+            assertEquals("id-" + i, exchange.getRequest().getHeader().getFirstValue("seen"));
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
+    void print(Class<LanguageSupport> engine) {
+        assertEquals(CONTINUE, executeScript("print('a', 1); CONTINUE;", engine));
+    }
+
+    /**
+     * Separated by spaces as by the print and console.log of GraalVM, whose output can not be captured here.
+     */
+    @ParameterizedTest
+    @ValueSource(classes = RhinoJavascriptLanguageSupport.class)
+    void printAndConsoleLogPrintAllArguments(Class<LanguageSupport> engine) {
+        final var out = new ByteArrayOutputStream();
+        final var stdout = System.out;
+        System.setOut(new PrintStream(out, true, UTF_8));
+        try {
+            executeScript("print('a', 1, undefined); console.log('b', 2); CONTINUE;", engine);
+        } finally {
+            System.setOut(stdout);
+        }
+        assertEquals(List.of("a 1 undefined", "b 2"), out.toString(UTF_8).lines().toList());
+    }
+
+    @ParameterizedTest
+    @ValueSource(classes = RhinoJavascriptLanguageSupport.class)
+    void consoleLogPrintsObjectsAsJson(Class<LanguageSupport> engine) {
+        exc.getRequest().setBodyContent("{\"id\":7}".getBytes());
+        exc.getRequest().getHeader().setContentType(APPLICATION_JSON);
+
+        final var out = new ByteArrayOutputStream();
+        final var stdout = System.out;
+        System.setOut(new PrintStream(out, true, UTF_8));
+        try {
+            assertEquals(CONTINUE, executeScript("""
+                    console.log(json, [1, 'a'], null);
+                    var r = {}; r.self = r;
+                    console.log(r);
+                    var m = new java.util.HashMap(); m.put('k', 'v');
+                    console.log(m);
+                    console.log(new TypeError('boom'));
+                    console.log({toJSON: function() {}});
+                    CONTINUE;""", engine));
+        } finally {
+            System.setOut(stdout);
+        }
+        assertEquals(List.of("{\"id\":7} [1,\"a\"] null", "[object Object]", "{k=v}", "TypeError: boom", "[object Object]"), out.toString(UTF_8).lines().toList());
+    }
+
+    @ParameterizedTest
+    @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
+    void undefinedResultKeepsBody(Class<LanguageSupport> engine) {
+        exc.getRequest().setBodyContent("foo".getBytes());
+        assertEquals(CONTINUE, executeScript("var x = 1;", engine));
+        assertEquals("foo", exc.getRequest().getBodyAsStringDecoded());
+    }
+
+    @ParameterizedTest
+    @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
+    void returnString(Class<LanguageSupport> engine) {
+        assertEquals(CONTINUE, executeScript("'bar'", engine));
+        assertEquals("bar", exc.getRequest().getBodyAsStringDecoded());
+    }
+
+    @ParameterizedTest
+    @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
+    void returnStringUndefined(Class<LanguageSupport> engine) {
+        assertEquals(CONTINUE, executeScript("'undefined'", engine));
+        assertEquals("undefined", exc.getRequest().getBodyAsStringDecoded());
+    }
+
+    @ParameterizedTest
+    @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
+    void returnNestedObject(Class<LanguageSupport> engine) {
+        executeScript("({a: {b: [1, 'x']}})", engine);
+        assertEquals("{\"a\":{\"b\":[1,\"x\"]}}", exc.getRequest().getBodyAsStringDecoded());
+    }
+
+    @ParameterizedTest
+    @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
+    void returnArray(Class<LanguageSupport> engine) {
+        assertEquals(CONTINUE, executeScript("['x', {a: 'y'}, ['z']]", engine));
+        assertTrue(exc.getRequest().isJSON());
+        assertEquals("[\"x\",{\"a\":\"y\"},[\"z\"]]", exc.getRequest().getBodyAsStringDecoded());
+    }
+
+    @Test
+    void returnJavaByteArray() {
+        assertEquals(CONTINUE, executeScript("Java.to([104, 105], 'byte[]')"));
+        assertEquals("hi", exc.getRequest().getBodyAsStringDecoded());
+    }
+
+    /**
+     * Only with GraalVM json is a Java map, Rhino passes a Javascript object.
+     */
+    @Test
+    void returnJavaMapContainingObject() {
+        exc.getRequest().setBodyContent("{\"id\":7}".getBytes());
+        exc.getRequest().getHeader().setContentType(APPLICATION_JSON);
+
+        assertEquals(CONTINUE, executeScript("json.put('added', {value: [7]}); json;"));
+        assertEquals("{\"id\":7,\"added\":{\"value\":[7]}}", exc.getRequest().getBodyAsStringDecoded());
+    }
+
+    @Test
+    void returnJavaSetAndArrayContainingObjects() {
+        exc.getRequest().setBodyContent("{\"id\":7}".getBytes());
+        exc.getRequest().getHeader().setContentType(APPLICATION_JSON);
+
+        assertEquals(CONTINUE, executeScript("""
+                var set = new java.util.HashSet();
+                set.add({v: 1});
+                json.put('set', set);
+                json.put('array', Java.to([{v: 2}], 'java.lang.Object[]'));
+                json;"""));
+        assertEquals("{\"id\":7,\"set\":[{\"v\":1}],\"array\":[{\"v\":2}]}", exc.getRequest().getBodyAsStringDecoded());
+    }
+
+    @Test
+    void returnJavaMapWithObjectKey() throws Exception {
+        exc.getRequest().setBodyContent("{\"id\":7}".getBytes());
+        exc.getRequest().getHeader().setContentType(APPLICATION_JSON);
+
+        assertEquals(CONTINUE, executeScript("""
+                var map = new java.util.HashMap();
+                map.put({k: 1}, 'v');
+                json.put('map', map);
+                json;"""));
+        // A non-string map key is serialized via toString(), which fails once the context is closed
+        final var map = om.readTree(exc.getRequest().getBodyAsStringDecoded()).get("map");
+        assertEquals(Map.of(Map.of("k", 1).toString(), "v"), om.convertValue(map, Map.class));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "var r = {}; r.self = r; r;",
+            "var r = {}; r.a = r; r.b = [r, r]; r;",
+            "var o = {}; for (var i = 0; i < 100000; i++) o = {c: o}; o;",
+    })
+    void unserializableResult(String src) {
+        assertEquals(ABORT, executeScript(src));
+        assertEquals(500, exc.getResponse().getStatusCode());
+    }
+
+    @Test
+    void cyclicJavaMapResult() {
+        exc.getRequest().setBodyContent("{\"id\":7}".getBytes());
+        exc.getRequest().getHeader().setContentType(APPLICATION_JSON);
+
+        assertEquals(ABORT, executeScript("json.put('self', json); json;"));
+        assertEquals(500, exc.getResponse().getStatusCode());
+    }
+
+    @ParameterizedTest
+    @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
+    void sharedObjectIsNoCycle(Class<LanguageSupport> engine) {
+        executeScript("var s = {v: 1}; ({a: s, b: [s]});", engine);
+        assertEquals("{\"a\":{\"v\":1},\"b\":[{\"v\":1}]}", exc.getRequest().getBodyAsStringDecoded());
+    }
+
+    @ParameterizedTest
+    @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
+    void stringifiedObjectStoredInProperty(Class<LanguageSupport> engine) {
+        executeScript("property.put('order', JSON.stringify({id: 7})); CONTINUE;", engine);
+        assertEquals("{\"id\":7}", exc.getProperty("order"));
+    }
+
+    private String jsonIdSeenByScript(Request request) {
+        final var exchange = new Exchange(null);
+        exchange.setRequest(request);
+        interceptor.handleRequest(exchange);
+        return exchange.getRequest().getHeader().getFirstValue("json-id");
+    }
 
     @ParameterizedTest
     @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
@@ -259,7 +556,7 @@ public class JavascriptInterceptorTest {
         assertEquals(CONTINUE, interceptor.handleResponse(exc));
         assertEquals(200, exc.getResponse().getStatusCode());
         assertTrue(exc.getResponse().isJSON());
-        assertEquals(7, om.readValue(exc.getResponse().getBodyAsStringDecoded(), Map.class).get("id"));
+        assertEquals(7.0, ((Number) om.readValue(exc.getResponse().getBodyAsStringDecoded(), Map.class).get("id")).doubleValue());
     }
 
     @SafeVarargs

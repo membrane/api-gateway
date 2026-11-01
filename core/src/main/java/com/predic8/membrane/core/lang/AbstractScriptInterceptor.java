@@ -29,12 +29,12 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.ConfigurationException;
 import groovy.lang.MissingPropertyException;
 import org.apache.commons.io.IOUtils;
-import org.graalvm.polyglot.Value;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -91,7 +91,6 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
 
     protected abstract void initInternal();
 
-    @SuppressWarnings("rawtypes")
     protected Outcome runScript(Exchange exc, Flow flow) {
 
         var msg = getMessage(exc, flow);
@@ -124,16 +123,16 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
             exc.setRequest(request);
         }
 
-        if (res instanceof Map m) {
+        if (res instanceof Map || (res instanceof List && isListSerializedToJson())) {
             msg = createResponseAndToExchangeIfThereIsNone(exc, flow, msg);
             msg.getHeader().setContentType(APPLICATION_JSON);
             try {
-                msg.setBodyContent(om.writeValueAsBytes(m));
+                msg.setBodyContent(om.writeValueAsBytes(res));
             } catch (JsonProcessingException e) {
                 log.error("", e);
                 internal(router.getConfiguration().isProduction(), getDisplayName())
                         .addSubSee("json-processing-1")
-                        .detail("Error serializing Map to JSON")
+                        .detail("Error serializing result to JSON")
                         .exception(e)
                         .buildAndSetResponse(exc);
                 return ABORT;
@@ -148,33 +147,19 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
         }
 
         if (res instanceof String s) {
-            if (s.equals("undefined")) {
-                return CONTINUE;
-            }
             msg = createResponseAndToExchangeIfThereIsNone(exc, flow, msg);
             msg.setBodyContent(s.getBytes(UTF_8));
             return CONTINUE;
         }
 
-        // Test for package name is needed cause the dependency is provided and maybe not on the classpath
-        if (res.getClass().getPackageName().startsWith("org.graalvm.polyglot") && res instanceof Value value) {
-            Map m = value.as(Map.class);
-            msg = createResponseAndToExchangeIfThereIsNone(exc, flow, msg);
-            msg.getHeader().setContentType(APPLICATION_JSON);
-            try {
-                msg.setBodyContent(om.writeValueAsBytes(m));
-            } catch (JsonProcessingException e) {
-                log.error("", e);
-                internal(router.getConfiguration().isProduction(), getDisplayName())
-                        .addSubSee("json-processing-2")
-                        .detail("Error serializing Map to JSON")
-                        .exception(e)
-                        .buildAndSetResponse(exc);
-                return ABORT;
-            }
-            return CONTINUE;
-        }
         return CONTINUE;
+    }
+
+    /**
+     * Whether a List returned by the script becomes a JSON body like a Map. Otherwise, it is ignored.
+     */
+    protected boolean isListSerializedToJson() {
+        return false;
     }
 
     /**
