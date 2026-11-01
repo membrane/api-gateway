@@ -92,7 +92,11 @@ class Http2ExchangeHandlerTest {
         sender.getConnectionFlowControl().reserve(peerSettings.getInitialWindowSize() - 1, 3);
         final var write = writeBodyAsync(streamInfo);
 
-        assertEquals(BODY, receiveBody(streamInfo, sender.getConnectionFlowControl()::increment));
+        assertEquals(BODY, receiveBody(streamInfo, length -> {
+            // The writer reserves window for each frame before it queues it: the 1 byte granted is used up.
+            assertEquals(0, availableWindow(sender.getConnectionFlowControl()));
+            sender.getConnectionFlowControl().increment(length);
+        }));
         write.get(2, SECONDS);
         assertEquals(peerSettings.getInitialWindowSize() - BODY.length(), availableWindow(streamInfo.getPeerFlowControl()));
     }
