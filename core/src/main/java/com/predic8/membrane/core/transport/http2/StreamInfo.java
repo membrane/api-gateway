@@ -54,6 +54,9 @@ public class StreamInfo {
     private Message message;
     private boolean isTrailer;
     private volatile IOException abortCause;
+    /** The content-length the message declares, or -1. Accessed on the receiver thread only. */
+    private long expectedContentLength = -1;
+    private long receivedContentLength;
 
     public StreamInfo(int streamId, FrameSender sender, Settings peerSettings, Settings ourSettings) {
         this.streamId = streamId;
@@ -75,6 +78,26 @@ public class StreamInfo {
         if (df.isEndStream()) {
             receivedEndStream(true);
         }
+    }
+
+    void expectContentLength(long contentLength) {
+        expectedContentLength = contentLength;
+    }
+
+    /**
+     * Counts received DATA against the declared content-length.
+     *
+     * @return false if more DATA arrived than declared, or the stream ends with less. Only once: the stream gets
+     *         reset then, so DATA still in flight is not checked anymore.
+     */
+    boolean keepsContentLength(int dataLength, boolean endStream) {
+        if (expectedContentLength < 0)
+            return true;
+        receivedContentLength += dataLength;
+        if (receivedContentLength <= expectedContentLength && (!endStream || receivedContentLength == expectedContentLength))
+            return true;
+        expectedContentLength = -1;
+        return false;
     }
 
     public DataFrame removeDataFrame() throws IOException {

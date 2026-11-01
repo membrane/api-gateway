@@ -54,4 +54,40 @@ class StreamInfoTest {
             Thread.interrupted();
         }
     }
+
+    @Test
+    void withoutContentLengthAnyBodyIsKept() {
+        assertTrue(streamInfo.keepsContentLength(100, true));
+    }
+
+    @Test
+    void bodyAsLongAsContentLengthIsKept() {
+        streamInfo.expectContentLength(4);
+
+        assertTrue(streamInfo.keepsContentLength(2, false));
+        assertTrue(streamInfo.keepsContentLength(2, true));
+    }
+
+    @Test
+    void longerBodyIsNotKeptBeforeItEnds() {
+        streamInfo.expectContentLength(4);
+
+        assertTrue(streamInfo.keepsContentLength(4, false));
+        assertFalse(streamInfo.keepsContentLength(1, false));
+    }
+
+    @Test
+    void shorterBodyIsNotKept() {
+        streamInfo.expectContentLength(4);
+
+        assertFalse(streamInfo.keepsContentLength(3, true));
+    }
+
+    @Test
+    void violationIsReportedOnce() {
+        streamInfo.expectContentLength(1);
+
+        assertFalse(streamInfo.keepsContentLength(2, false));
+        assertTrue(streamInfo.keepsContentLength(2, true));
+    }
 }

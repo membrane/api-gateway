@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.transport.http2;
 
 import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.MalformedHeaderException;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
@@ -30,8 +31,10 @@ import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -53,6 +56,11 @@ public class Http2Logic {
 
     /** Maximum size of a decoded header block, announced to the peer as SETTINGS_MAX_HEADER_LIST_SIZE. */
     static final int MAX_HEADER_LIST_SIZE = 64 * 1024;
+
+    private static final Set<String> REQUEST_PSEUDO_HEADERS = Set.of(":method", ":scheme", ":authority", ":path");
+
+    /** Fields that are meaningful for one connection only (RFC 9113 §8.2.2). */
+    private static final Set<String> CONNECTION_SPECIFIC_FIELDS = Set.of("connection", "keep-alive", "proxy-connection", "transfer-encoding", "upgrade");
 
     static {
         String maxLineLength = System.getProperty("membrane.core.http.body.maxlinelength");
@@ -250,6 +258,8 @@ public class Http2Logic {
             // Still in flight when the stream was closed, e.g. by our RST_STREAM. It counts against
             // the connection's window all the same (RFC 9113 §6.9).
             log.debug("Dropping DATA for closed stream {}.", dataFrame.getFrame().getStreamId());
+        } else if (!streamInfo.keepsContentLength(dataFrame.getDataLength(), dataFrame.isEndStream())) {
+            rejectBody(streamInfo);
         } else {
             streamInfo.receivedDataFrame(dataFrame);
         }
@@ -387,6 +397,8 @@ public class Http2Logic {
         final var oversizedField = new boolean[1];
         final var malformedField = new boolean[1];
         final var statusReceived = new boolean[1];
+        final var regularFieldReceived = new boolean[1];
+        final var pseudoHeaders = new HashSet<String>();
         // The whole block is decoded even if it gets rejected, so the HPACK dynamic table stays in sync.
         decoder.decode(getPackedHeaderStream(headerFrames), (name, value, sensitive) -> {
             // Checked first: a malformed message is a protocol error, even if it is also too large.
@@ -407,6 +419,22 @@ public class Http2Logic {
                 sb.append(": ");
                 sb.append(val);
                 sb.append("\n");
+            }
+
+            if (key.startsWith(":")) {
+                // Pseudo-headers come first, each once, and only those defined for the message. Trailers carry
+                // none (RFC 9113 §8.1, §8.3).
+                if (isTrailer || regularFieldReceived[0] || !pseudoHeaders.add(key) || !isPseudoHeaderOf(request, key)
+                        || (":path".equals(key) && val.isEmpty())) {
+                    malformedField[0] = true;
+                    return;
+                }
+            } else {
+                regularFieldReceived[0] = true;
+                if (request instanceof Request && isConnectionSpecific(key, val)) {
+                    malformedField[0] = true;
+                    return;
+                }
             }
 
             if (":method".equals(key) && request instanceof Request)
@@ -438,6 +466,10 @@ public class Http2Logic {
 
         // Every response carries :status (RFC 9113 §8.3.2), trailers do not.
         if (!isTrailer && request instanceof Response && !statusReceived[0])
+            malformedField[0] = true;
+
+        if (!isTrailer && request instanceof Request req && !malformedField[0]
+                && (!hasRequiredPseudoHeaders(req.getMethod(), pseudoHeaders) || !expectContentLength(streamInfo, header, headers.isEndStream())))
             malformedField[0] = true;
 
         if (malformedField[0]) {
@@ -483,6 +515,10 @@ public class Http2Logic {
         }
 
         if (isTrailer) {
+            if (headers.isEndStream() && !streamInfo.keepsContentLength(0, true)) {
+                rejectBody(streamInfo);
+                return;
+            }
             request.getBody().setTrailer(header);
         } else {
             if (!headers.isEndStream())
@@ -522,6 +558,60 @@ public class Http2Logic {
             if (b == 0 || b == '\r' || b == '\n')
                 return false;
         return value.length == 0 || (!isOptionalWhitespace((char) value[0]) && !isOptionalWhitespace((char) value[value.length - 1]));
+    }
+
+    /** Whether the pseudo-header is defined for this kind of message (RFC 9113 §8.3). */
+    private static boolean isPseudoHeaderOf(Message message, String name) {
+        if (message instanceof Request)
+            return REQUEST_PSEUDO_HEADERS.contains(name);
+        return ":status".equals(name);
+    }
+
+    /**
+     * Whether the field is connection-specific, which HTTP/2 does not allow (RFC 9113 §8.2.2). TE is allowed
+     * with the value "trailers" only.
+     */
+    private static boolean isConnectionSpecific(String name, String value) {
+        return CONNECTION_SPECIFIC_FIELDS.contains(name) || ("te".equals(name) && !"trailers".equalsIgnoreCase(value));
+    }
+
+    /**
+     * Whether the request carries :method, :scheme and :path, or for CONNECT only :method and :authority
+     * (RFC 9113 §8.3.1, §8.5).
+     */
+    private static boolean hasRequiredPseudoHeaders(String method, Set<String> pseudoHeaders) {
+        if ("CONNECT".equals(method))
+            return pseudoHeaders.equals(Set.of(":method", ":authority"));
+        return pseudoHeaders.containsAll(List.of(":method", ":scheme", ":path"));
+    }
+
+    /**
+     * Records the request's content-length, so its DATA can be checked against it (RFC 9113 §8.1.1).
+     *
+     * @return false if the content-length is invalid, or the request declares a body but ends with its headers
+     */
+    private static boolean expectContentLength(StreamInfo streamInfo, Header header, boolean endStream) {
+        final long contentLength;
+        try {
+            contentLength = header.getContentLength();
+        } catch (MalformedHeaderException e) {
+            return false;
+        }
+        if (endStream && contentLength > 0)
+            return false;
+        streamInfo.expectContentLength(contentLength);
+        return true;
+    }
+
+    /**
+     * Resets a stream whose body is not as long as its content-length, a stream error of type PROTOCOL_ERROR
+     * (RFC 9113 §8.1.1). The request has already been handed over, so its body fails.
+     */
+    private void rejectBody(StreamInfo streamInfo) throws IOException {
+        final var streamId = streamInfo.getStreamId();
+        log.info("Rejecting body on stream {}: its length differs from its content-length (RFC 9113 §8.1.1).", streamId);
+        sender.send(streamId, (encoder, peerSettings) -> List.of(RstStreamFrame.construct(streamId, ERROR_PROTOCOL_ERROR)));
+        streamInfo.abortReceiving(new IOException("HTTP/2 stream %d carries a body that differs from its content-length.".formatted(streamId)));
     }
 
     /**
