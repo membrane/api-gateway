@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.exceptions.ProblemDetails;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.interceptor.FlowController;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.lang.LanguageSupport;
 import com.predic8.membrane.core.lang.javascript.GraalVMJavascriptSupport;
@@ -47,6 +48,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.util.ExceptionUtil.concatMessageAndCauseMessages;
 import static com.predic8.membrane.core.util.ProblemDetailsTestUtil.parse;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.apache.commons.lang3.exception.ExceptionUtils.getThrowableList;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SuppressWarnings("unchecked")
@@ -101,6 +103,10 @@ public class JavascriptInterceptorTest {
         Outcome outcome= executeScript("adsfasf;", engine);
         assertEquals(ABORT, outcome);
         assertEquals(500, exc.getResponse().getStatusCode());
+        // The engines wrap the error differently, but it names the undefined identifier
+        final var reason = assertInstanceOf(Exception.class, exc.getProperty(FlowController.ABORTION_REASON));
+        assertTrue(getThrowableList(reason).stream().anyMatch(t -> t.getMessage() != null && t.getMessage().contains("adsfasf")),
+                () -> "Unexpected abortion reason: " + reason);
         ProblemDetails pd = parse(exc.getResponse());
         assertEquals(500, pd.getStatus());
         System.out.println("pd = " + pd);
