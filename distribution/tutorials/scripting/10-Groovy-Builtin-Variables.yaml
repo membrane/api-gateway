@@ -54,7 +54,7 @@ api:
                 method: method,
                 path: path,
                 category: pathParam.category,
-                limit: param.limit[0],
+                limit: param.limit?.getAt(0),
                 customer: header['X-Customer'],
                 session: cookie.session,
                 name: json.name,

@@ -62,7 +62,7 @@ api:
                 id: json.id,
                 date: convertDate(new Date(json.date)),
                 client: json.customer,
-                total: json.items.map(i => i.quantity * i.price).reduce((a, b) => a + b),
+                total: Math.round(json.items.map(i => i.quantity * i.price).reduce((a, b) => a + b) * 100) / 100,
                 positions: json.items.map(i => ({
                   pieces: i.quantity,
                   price: i.price,
