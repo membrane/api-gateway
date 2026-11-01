@@ -54,6 +54,7 @@ public class StreamInfo {
     private Message message;
     private boolean isTrailer;
     private volatile IOException abortCause;
+    private volatile boolean refused;
     /** The content-length the message declares, or -1. Accessed on the receiver thread only. */
     private long expectedContentLength = -1;
     private long receivedContentLength;
@@ -132,6 +133,19 @@ public class StreamInfo {
             return;
         abortCause = cause;
         dataFramesReceived.add(ABORTED);
+    }
+
+    /**
+     * Marks the stream as refused, before its RST_STREAM(REFUSED_STREAM) is queued. Until it is written, the stream
+     * stays known to the frame sender, but must not count against the concurrent stream limit anymore.
+     */
+    void refuse(IOException cause) {
+        refused = true;
+        abortReceiving(cause);
+    }
+
+    boolean isRefused() {
+        return refused;
     }
 
     private static DataFrame createAbortedMarker() {

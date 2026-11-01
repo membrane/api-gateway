@@ -278,6 +278,30 @@ class Http2LogicTest {
         assertThrows(ReadingBodyException.class, handler.message.getBody()::read);
     }
 
+    /**
+     * A stream beyond the advertised limit of 50 is refused (RFC 9113 §5.1.2). Its header block is decoded all the
+     * same: the next request refers to the field it added to the HPACK dynamic table.
+     */
+    @Test
+    void streamBeyondTheConcurrentStreamLimitIsRefused() throws Exception {
+        final var encoder = new Encoder(4096);
+        final var in = new ByteArrayOutputStream();
+        // Acknowledges the SETTINGS sent on connection start, which announce the limit.
+        in.write(SETTINGS_ACK);
+        for (int streamId = 1; streamId <= 99; streamId += 2)
+            in.write(headersFrame(streamId, false, encoder, withGet()));
+        in.write(headersFrame(101, false, encoder, withGet("x-refused", "1")));
+        // The client cancels stream 1, which makes room for one more.
+        in.write(new byte[]{0, 0, 4, 0x3, 0, 0, 0, 0, 1, 0, 0, 0, 0x8});
+        in.write(headersFrame(103, false, encoder, withGet("x-refused", "1")));
+        final var handler = new RecordingHandler();
+
+        assertThrows(EndOfStreamException.class, () -> createLogic(in.toByteArray(), handler).handle());
+
+        assertEquals(51, handler.exchanges, "50 streams and the one after the cancel are handed over.");
+        assertEquals("1", handler.message.getHeader().getFirstValue("x-refused"));
+    }
+
     /** The fields of a GET request, followed by the given ones. */
     private static String[] withGet(String... extra) {
         final var get = List.of(":method", "GET", ":scheme", "https", ":path", "/", ":authority", "localhost");
@@ -290,11 +314,16 @@ class Http2LogicTest {
 
     /** HEADERS frame on stream 1 with END_HEADERS, carrying the given names and values in this order. */
     private static byte[] headersFrame(boolean endStream, Encoder encoder, String... namesAndValues) throws IOException {
+        return headersFrame(1, endStream, encoder, namesAndValues);
+    }
+
+    private static byte[] headersFrame(int streamId, boolean endStream, Encoder encoder, String... namesAndValues) throws IOException {
         final var block = new ByteArrayOutputStream();
         for (int i = 0; i < namesAndValues.length; i += 2)
             encoder.encodeHeader(block, bytes(namesAndValues[i]), bytes(namesAndValues[i + 1]), false);
         final var frame = new ByteArrayOutputStream();
-        frame.write(new byte[]{(byte) (block.size() >>> 16), (byte) (block.size() >>> 8), (byte) block.size(), 0x1, (byte) (endStream ? 0x5 : 0x4), 0, 0, 0, 1});
+        frame.write(new byte[]{(byte) (block.size() >>> 16), (byte) (block.size() >>> 8), (byte) block.size(), 0x1, (byte) (endStream ? 0x5 : 0x4),
+                (byte) (streamId >>> 24), (byte) (streamId >>> 16), (byte) (streamId >>> 8), (byte) streamId});
         block.writeTo(frame);
         return frame.toByteArray();
     }
@@ -328,6 +357,7 @@ class Http2LogicTest {
 
     private static class RecordingHandler implements Http2MessageHandler {
         Message message;
+        int exchanges;
         int malformedStreamId;
         int oversizedStreamId;
 
@@ -339,6 +369,7 @@ class Http2LogicTest {
         @Override
         public void handleExchange(StreamInfo streamInfo, Message message, boolean showSSLExceptions, String remoteAddr) {
             this.message = message;
+            exchanges++;
         }
 
         @Override

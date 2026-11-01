@@ -162,6 +162,25 @@ public class Http2Logic {
                 || streamId % 2 == 1 && streamId < nextClientStreamId.get();
     }
 
+    /**
+     * Whether a new stream opened by the peer would exceed the limit announced in our SETTINGS. Only streams the
+     * peer opened that are open or half-closed count (RFC 9113 §5.1.2). Closed streams are removed from
+     * {@link #streams}; refused ones are closed as soon as their reset is written.
+     */
+    private boolean exceedsConcurrentStreamLimit(int newStreamId) {
+        final var limit = ourSettings.getMaxConcurrentStreams();
+        if (limit < 0)
+            return false;
+        var open = 0;
+        for (StreamInfo streamInfo : streams.values()) {
+            final var state = streamInfo.getState();
+            if (streamInfo.getStreamId() % 2 == newStreamId % 2 && !streamInfo.isRefused()
+                    && (state == StreamState.OPEN || state == StreamState.HALF_CLOSED_LOCAL || state == StreamState.HALF_CLOSED_REMOTE))
+                open++;
+        }
+        return open >= limit;
+    }
+
     /** Stops the frame sender and wakes writers waiting for the connection's flow-control window. */
     void stopSending() {
         synchronized (this) {
@@ -334,11 +353,13 @@ public class Http2Logic {
         if (streamId1 == 0 || headers.getHeaderBlockLength() < 0)
             throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
         StreamInfo streamInfo = streams.get(streamId1);
+        var refused = false;
 
         if (streamInfo == null) {
             // Like HEADERS on a stream in the CLOSED state, which receivedHeaders() rejects.
             if (isClosed(streamId1))
                 throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
+            refused = exceedsConcurrentStreamLimit(streamId1);
             streamInfo = new StreamInfo(streamId1, sender, peerSettings, ourSettings);
             streams.put(streamId1, streamInfo);
         }
@@ -372,6 +393,18 @@ public class Http2Logic {
                 throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
 
             headerFrames.add(last);
+        }
+
+        if (refused) {
+            // Decoded all the same, so the HPACK dynamic table stays in sync.
+            decoder.decode(getPackedHeaderStream(headerFrames), (name, value, sensitive) -> {});
+            decoder.endHeaderBlock();
+            log.info("Refusing stream {}: the peer exceeds the limit of {} concurrent streams.", streamId1, ourSettings.getMaxConcurrentStreams());
+            // REFUSED_STREAM tells the peer that the request was not processed, so it may retry it (RFC 9113 §8.7).
+            // Writing the reset closes the stream; DATA still in flight for it is not queued anymore.
+            streamInfo.refuse(new IOException("HTTP/2 stream %d was refused.".formatted(streamId1)));
+            sender.send(streamId1, (encoder, peerSettings) -> List.of(RstStreamFrame.construct(streamId1, ERROR_REFUSED_STREAM)));
+            return;
         }
 
         log.debug("header isTrailer={}", isTrailer);
