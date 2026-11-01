@@ -26,6 +26,7 @@ import java.util.AbstractMap;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -36,6 +37,9 @@ public abstract class ParameterizedRequest {
     protected final Exchange exc;
     protected final OAuth2AuthorizationServerInterceptor authServer;
     protected Map<String,String> params;
+
+    private static final Set<String> AUTHORIZATION_PARAMS = Set.of(ParamNames.CLIENT_ID, ParamNames.REDIRECT_URI,
+            ParamNames.RESPONSE_TYPE, ParamNames.SCOPE, ParamNames.SCOPE_INVALID, ParamNames.STATE, ParamNames.CLAIMS);
 
     protected abstract Response checkForMissingParameters() throws Exception;
     protected abstract Response processWithParameters() throws Exception;
@@ -98,10 +102,16 @@ public abstract class ParameterizedRequest {
         return builder.bodyEmpty().header(Header.WWW_AUTHENTICATE, authServer.getTokenGenerator().getTokenType() + " error=\""+errorValue+"\"").build();
     }
 
+    /**
+     * Copies only the authorization request parameters the flows read later. Other session attributes, like the
+     * user's consent or claims, must not come from the client.
+     */
     protected void addParams(SessionManager.Session session, Map<String,String> params){
         Map<String, String> userAttributes = session.getUserAttributes();
         synchronized (userAttributes) {
-            userAttributes.putAll(params);
+            for (String name : AUTHORIZATION_PARAMS)
+                if (params.containsKey(name))
+                    userAttributes.put(name, params.get(name));
         }
     }
 

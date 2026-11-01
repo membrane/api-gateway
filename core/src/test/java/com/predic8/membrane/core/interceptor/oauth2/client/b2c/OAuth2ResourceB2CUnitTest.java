@@ -40,10 +40,13 @@ import java.util.concurrent.atomic.AtomicReference;
 import static com.predic8.membrane.core.http.Header.SET_COOKIE;
 import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.interceptor.oauth2.client.b2c.MockAuthorizationServer.SERVER_PORT;
+import static com.predic8.membrane.core.interceptor.oauth2client.rf.OAuth2CallbackRequestHandler.MEMBRANE_FLOW_CONTEXT_MISMATCH_DESCRIPTION;
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.OAuth2CallbackRequestHandler.MEMBRANE_MISSING_SESSION_DESCRIPTION;
 import static com.predic8.membrane.core.util.ProblemDetailsTestUtil.parse;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
 import static com.predic8.membrane.core.util.URLParamUtil.parseQueryString;
+import static java.net.URLEncoder.encode;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
 public abstract class OAuth2ResourceB2CUnitTest extends OAuth2ResourceB2CTestSetup {
@@ -102,6 +105,22 @@ public abstract class OAuth2ResourceB2CUnitTest extends OAuth2ResourceB2CTestSet
 
         String response = excCallResource.getResponse().getBodyAsStringDecoded();
         assertTrue(response.contains(MEMBRANE_MISSING_SESSION_DESCRIPTION));
+    }
+
+    /**
+     * The flow context in the state parameter selects the token endpoint. A state that comes back with a
+     * flow context the login was not started with must be rejected before the code is exchanged.
+     */
+    @Test
+    void flowContextAddedToStateIsRejected() throws Exception {
+        var exc = browser.applyWithoutRedirect(get(tc.getClientAddress() + "/init"));
+        var state = parseQueryString(new URIFactory().create(exc.getResponse().getHeader().getFirstValue(Header.LOCATION)).getRawQuery(), ERROR).get("state");
+
+        exc = browser.apply(get(tc.getClientAddress() + "/oauth2callback?code=1234" + tc.susiFlowId + "&state="
+                + encode(state + "&fcd=" + tc.susiFlowId + "&fct=attacker", UTF_8)));
+
+        assertEquals(400, exc.getResponse().getStatusCode());
+        assertTrue(exc.getResponse().getBodyAsStringDecoded().contains(MEMBRANE_FLOW_CONTEXT_MISMATCH_DESCRIPTION));
     }
 
     private List<String> getLinesContaining(String haystackLines, String needle) {

@@ -177,6 +177,38 @@ class JSONYAMLSchemaValidatorTest {
         validator.validateMessage( exc, REQUEST);
     }
 
+    /**
+     * An additionalProperties error per forbidden property used to carry the whole object, so the
+     * error response grew with the number of properties times the body size.
+     */
+    @Test
+    void errorsDoNotContainTheInstance() throws Exception {
+        final var exc = get("/foo").body("""
+                {
+                    "name": "Bob",
+                    "secret": "hunter2"
+                }
+                """).buildExchange();
+        assertEquals(ABORT, validator.validateMessage(exc, REQUEST));
+        final var response = exc.getResponse().getBodyAsStringDecoded();
+        assertFalse(response.contains("hunter2"), response);
+        assertNull(new ObjectMapper().readTree(response).get("errors").get(0).get("node"));
+    }
+
+    @Test
+    void errorsAreLimited() throws Exception {
+        final var body = new StringBuilder("{");
+        for (var i = 0; i < 20; i++)
+            body.append("\"p%d\": %d,".formatted(i, i));
+        body.append("\"name\": \"Bob\"}");
+        final var exc = get("/foo").body(body.toString()).buildExchange();
+
+        assertEquals(ABORT, validator.validateMessage(exc, REQUEST));
+        final var response = new ObjectMapper().readTree(exc.getResponse().getBodyAsStreamDecoded());
+        assertEquals(10, response.get("errors").size());
+        assertTrue(response.get("errorsTruncated").asBoolean());
+    }
+
     @Test
     void malformedJson() throws Exception {
         Exchange exc = get("/foo").body("""
