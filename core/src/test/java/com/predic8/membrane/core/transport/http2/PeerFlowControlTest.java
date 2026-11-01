@@ -23,6 +23,7 @@ import java.io.InterruptedIOException;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -55,6 +56,30 @@ class PeerFlowControlTest {
 
         final var e = assertThrows(ExecutionException.class, () -> blocked.get(2, TimeUnit.SECONDS));
         assertInstanceOf(InterruptedIOException.class, e.getCause().getCause());
+    }
+
+    @Test
+    void reserveGetsOnlyTheAvailableWindow() throws Exception {
+        final var flowControl = new PeerFlowControl(0, sender, settings);
+        flowControl.reserve(settings.getInitialWindowSize() - 3, 1);
+
+        assertEquals(3, flowControl.reserve(10, 1));
+    }
+
+    @Test
+    void reserveGetsAtMostTheWantedLength() throws Exception {
+        assertEquals(10, new PeerFlowControl(0, sender, settings).reserve(10, 1));
+    }
+
+    @Test
+    void unreserveWakesReserveWaitingForWindow() throws Exception {
+        final var flowControl = exhaustedConnectionFlowControl();
+        final var blocked = reserveAsync(flowControl, new AtomicReference<>());
+        assertThrows(TimeoutException.class, () -> blocked.get(200, TimeUnit.MILLISECONDS));
+
+        flowControl.unreserve(1);
+
+        blocked.get(2, TimeUnit.SECONDS);
     }
 
     private PeerFlowControl exhaustedConnectionFlowControl() throws IOException {
