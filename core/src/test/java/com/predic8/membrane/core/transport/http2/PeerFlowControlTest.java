@@ -79,7 +79,7 @@ class PeerFlowControlTest {
 
         flowControl.unreserve(1);
 
-        blocked.get(2, TimeUnit.SECONDS);
+        assertEquals(1, blocked.get(2, TimeUnit.SECONDS));
     }
 
     private PeerFlowControl exhaustedConnectionFlowControl() throws IOException {
@@ -88,11 +88,11 @@ class PeerFlowControlTest {
         return flowControl;
     }
 
-    private static CompletableFuture<Void> reserveAsync(PeerFlowControl flowControl, AtomicReference<Thread> thread) {
-        return CompletableFuture.runAsync(() -> {
+    private static CompletableFuture<Integer> reserveAsync(PeerFlowControl flowControl, AtomicReference<Thread> thread) {
+        return CompletableFuture.supplyAsync(() -> {
             thread.set(Thread.currentThread());
             try {
-                flowControl.reserve(1, 1);
+                return flowControl.reserve(1, 1);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

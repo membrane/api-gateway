@@ -28,6 +28,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.IntConsumer;
 
 import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.http.Response.ok;
@@ -79,12 +80,19 @@ class Http2ExchangeHandlerTest {
         assertEquals(1, nextDataFrame(streamInfo).getLength());
     }
 
+    /**
+     * The stream grants the whole body, the connection only 1 byte. The stream window reserved beyond that must
+     * be given back correctly, or later frames would not fit or would exceed it.
+     */
     @Test
-    void smallConnectionWindowSendsPartialDataFrame() throws Exception {
+    void bodyIsSentThroughASmallConnectionWindow() throws Exception {
         final var streamInfo = openStream(peerSettings.getInitialWindowSize());
         sender.getConnectionFlowControl().reserve(peerSettings.getInitialWindowSize() - 1, 3);
-        writeBodyAsync(streamInfo);
-        assertEquals(1, nextDataFrame(streamInfo).getLength());
+        final var write = writeBodyAsync(streamInfo);
+
+        assertEquals(BODY, receiveBody(streamInfo, sender.getConnectionFlowControl()::increment));
+        write.get(2, SECONDS);
+        assertEquals(peerSettings.getInitialWindowSize() - BODY.length(), availableWindow(streamInfo.getPeerFlowControl()));
     }
 
     @Test
@@ -103,6 +111,15 @@ class Http2ExchangeHandlerTest {
         final var streamInfo = openStream(1);
         final var write = writeBodyAsync(streamInfo);
 
+        assertEquals(BODY, receiveBody(streamInfo, length -> windowUpdate(streamInfo, length)));
+        write.get(2, SECONDS);
+    }
+
+    /**
+     * Receives DATA frames until END_STREAM, granting window only for what arrived, as the peer would. The window
+     * the tests start with is 1 byte, so no frame may be longer.
+     */
+    private static String receiveBody(StreamInfo streamInfo, IntConsumer grantWindow) throws InterruptedException {
         final var received = new ByteArrayOutputStream();
         Frame frame;
         do {
@@ -110,12 +127,16 @@ class Http2ExchangeHandlerTest {
             assertTrue(frame.getLength() <= 1, "DATA frame exceeds the peer's window: " + frame.getLength());
             if (frame.getLength() > 0) {
                 received.write(frame.getContent(), 0, frame.getLength());
-                windowUpdate(streamInfo, frame.getLength());
+                grantWindow.accept(frame.getLength());
             }
         } while ((frame.getFlags() & FLAG_END_STREAM) == 0);
+        return received.toString(US_ASCII);
+    }
 
-        write.get(2, SECONDS);
-        assertEquals(BODY, received.toString(US_ASCII));
+    private static long availableWindow(PeerFlowControl flowControl) {
+        synchronized (flowControl) {
+            return flowControl.peerWindowSize - flowControl.peerWindowPosition;
+        }
     }
 
     /**
