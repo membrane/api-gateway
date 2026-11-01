@@ -23,6 +23,7 @@ import java.io.InterruptedIOException;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -57,17 +58,41 @@ class PeerFlowControlTest {
         assertInstanceOf(InterruptedIOException.class, e.getCause().getCause());
     }
 
+    @Test
+    void reserveGetsOnlyTheAvailableWindow() throws Exception {
+        final var flowControl = new PeerFlowControl(0, sender, settings);
+        flowControl.reserve(settings.getInitialWindowSize() - 3, 1);
+
+        assertEquals(3, flowControl.reserve(10, 1));
+    }
+
+    @Test
+    void reserveGetsAtMostTheWantedLength() throws Exception {
+        assertEquals(10, new PeerFlowControl(0, sender, settings).reserve(10, 1));
+    }
+
+    @Test
+    void unreserveWakesReserveWaitingForWindow() throws Exception {
+        final var flowControl = exhaustedConnectionFlowControl();
+        final var blocked = reserveAsync(flowControl, new AtomicReference<>());
+        assertThrows(TimeoutException.class, () -> blocked.get(200, TimeUnit.MILLISECONDS));
+
+        flowControl.unreserve(1);
+
+        assertEquals(1, blocked.get(2, TimeUnit.SECONDS));
+    }
+
     private PeerFlowControl exhaustedConnectionFlowControl() throws IOException {
         final var flowControl = new PeerFlowControl(0, sender, settings);
         flowControl.reserve(settings.getInitialWindowSize(), 1);
         return flowControl;
     }
 
-    private static CompletableFuture<Void> reserveAsync(PeerFlowControl flowControl, AtomicReference<Thread> thread) {
-        return CompletableFuture.runAsync(() -> {
+    private static CompletableFuture<Integer> reserveAsync(PeerFlowControl flowControl, AtomicReference<Thread> thread) {
+        return CompletableFuture.supplyAsync(() -> {
             thread.set(Thread.currentThread());
             try {
-                flowControl.reserve(1, 1);
+                return flowControl.reserve(1, 1);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
