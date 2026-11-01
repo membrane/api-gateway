@@ -1,0 +1,37 @@
+
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.8.0.json
+#
+# Tutorial: Groovy Script
+#
+# Try:
+#   curl -i http://localhost:2000/groovy
+#
+#   HTTP/1.1 200 OK
+#   Content-Type: application/json
+#   X-Timestamp: 2026-10-29T09:15:42.123456Z
+#
+#   {"msg":"Hello from Groovy!"}
+
+api:
+  port: 2000
+  path:
+    uri: /groovy
+  flow:
+    - request:
+        - groovy:
+            src: |
+              log.info "I run in the ${flow} flow"
+
+              // A returned map becomes the JSON body.
+              [msg: "Hello from Groovy!"]
+    - response:
+        - groovy:
+            src: |
+              log.info "I run in the ${flow} flow"
+              header.add("X-Timestamp", java.time.Instant.now().toString())
+              CONTINUE
+    - return:
+        status: 200
+
+# See also:
+#  - ../scripting folder for more Groovy and JavaScript tutorials

@@ -259,6 +259,17 @@ public class JavascriptInterceptorTest {
 
     @ParameterizedTest
     @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
+    void returnArray(Class<LanguageSupport> engine) throws Exception {
+        executeScript("""
+               ['Roller', 'äöüÄÖÜ'];
+               """, engine);
+
+        assertTrue(exc.getRequest().isJSON());
+        assertEquals(List.of("Roller", "äöüÄÖÜ"), om.readValue(exc.getRequest().getBodyAsStringDecoded(), List.class));
+    }
+
+    @ParameterizedTest
+    @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
     public void testProperties(Class<LanguageSupport> engine) {
 
         exc.getProperties().put("answer","42");
@@ -433,14 +444,6 @@ public class JavascriptInterceptorTest {
         assertEquals("{\"a\":{\"b\":[1,\"x\"]}}", exc.getRequest().getBodyAsStringDecoded());
     }
 
-    @ParameterizedTest
-    @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
-    void returnArray(Class<LanguageSupport> engine) {
-        assertEquals(CONTINUE, executeScript("['x', {a: 'y'}, ['z']]", engine));
-        assertTrue(exc.getRequest().isJSON());
-        assertEquals("[\"x\",{\"a\":\"y\"},[\"z\"]]", exc.getRequest().getBodyAsStringDecoded());
-    }
-
     @Test
     void returnJavaByteArray() {
         assertEquals(CONTINUE, executeScript("Java.to([104, 105], 'byte[]')"));
@@ -527,6 +530,22 @@ public class JavascriptInterceptorTest {
         exchange.setRequest(request);
         interceptor.handleRequest(exchange);
         return exchange.getRequest().getHeader().getFirstValue("json-id");
+    }
+
+    @ParameterizedTest
+    @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
+    void logToJavascriptLogger(Class<LanguageSupport> engine) {
+        final var logger = (Logger) LogManager.getLogger("com.predic8.membrane.javascript");
+        final var appender = new TestAppender("javascript-script");
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            assertEquals(CONTINUE, executeScript("log.info('Hello from ' + flow); CONTINUE", engine));
+            assertTrue(appender.contains("Hello from REQUEST"));
+        } finally {
+            logger.removeAppender(appender);
+            appender.stop();
+        }
     }
 
     @ParameterizedTest

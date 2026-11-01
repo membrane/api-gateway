@@ -1,0 +1,55 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.7.1.json
+#
+# Tutorial: Manipulate XML with Groovy
+#
+# Groovy's XmlParser reads an XML document into a tree you can change in place:
+# add or remove elements and attributes, or change text. Here the gateway
+# removes internal data from a book and adds a category before passing it on.
+#
+# 1.) Start Membrane:
+#     with Docker:
+#       Linux/Mac:
+#         ./run-docker.sh -c 80-Groovy-Manipulate-XML.yaml
+#       Windows:
+#         run-docker.cmd -c 80-Groovy-Manipulate-XML.yaml
+#
+#     or with Java:
+#       Linux/Mac:
+#         ./membrane.sh -c 80-Groovy-Manipulate-XML.yaml
+#       Windows:
+#         membrane.cmd -c 80-Groovy-Manipulate-XML.yaml
+#
+# 2.) Have a look at book.xml, then send it to the API:
+#     curl -d @book.xml -H "Content-Type: application/xml" localhost:2000
+#
+#     <book id="5" lang="en">
+#       <title>DESIGN PATTERNS</title>
+#       <author>Erich Gamma</author>
+#       <year>1994</year>
+#       <category>Architecture</category>
+#     </book>
+
+api:
+  port: 2000
+  flow:
+    - request:
+        - groovy:
+            src: |
+              def book = new groovy.xml.XmlParser().parse(message.getBodyAsStreamDecoded())
+
+              book.@lang = 'en'                                   // Add an attribute
+              book.title[0].value = book.title.text().toUpperCase() // Change a text
+              book.remove(book.stock[0])                          // Remove an element
+              book.appendNode('category', 'Architecture')         // Add an element
+
+              def writer = new StringWriter()
+              def printer = new groovy.xml.XmlNodePrinter(new PrintWriter(writer))
+              printer.preserveWhitespace = true // Keep text on the same line as its element
+              printer.print(book)
+
+              // A returned string becomes the new body.
+              writer.toString()
+    - return:
+        status: 200
+
+# NOTE: XmlParser documentation: https://groovy-lang.org/processing-xml.html

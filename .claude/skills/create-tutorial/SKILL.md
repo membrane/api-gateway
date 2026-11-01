@@ -61,6 +61,14 @@ same skeleton:
 api:
   port: 2000
   ...
+
+# Troubleshooting:
+#   <common mistake and its fix>
+#
+# NOTE: <caveat, alternative or background>
+#
+# See also:
+#  - ../<category> folder for <related topic>
 ```
 
 Hold to these conventions — they're what makes the set feel like one coherent course:
@@ -68,9 +76,15 @@ Hold to these conventions — they're what makes the set feel like one coherent 
 - **Pin the schema line** to whatever sibling files use (grep one: `grep -m1 schema=
   distribution/tutorials/<category>/*.yaml`). It tracks the current release version, so don't
   invent a number.
+- **The reader must reach the config without scrolling.** If something concrete only shows up
+  after two pages of comments, the reader leaves. The top block holds the title, a one- or
+  two-sentence intro and the numbered steps — nothing else.
 - **Keep the comment block short.** Steps are a command and its expected output — nothing more.
   Don't explain what the config does; the reader can see the config. Don't repeat information
   the `name:` field already provides.
+- **Show expected output only when it helps tell the story and is short.** A status line or a
+  one- or two-line body is fine. Shorten long JSON to the interesting part with `...`, and leave
+  out output the reader can derive from the config (e.g. one log line per visible `log.info`).
 - **No section-header comments** above each `api:` block. The `name:` field describes the API.
 - **No trailing `# ...` after a command** in a step. Readers copy the line into their shell,
   and Windows `cmd` doesn't treat `#` as a comment, so it would pass the text to the command.
@@ -81,13 +95,24 @@ Hold to these conventions — they're what makes the set feel like one coherent 
   ```
   Show every prompt an interactive tool asks, in order (e.g. `htpasswd` also asks
   `Re-type new password:`), so the reader isn't surprised by one the step left out.
-- **`NOTE:` blocks go at the end of the file**, after the config. Caveats, alternatives and
-  background (unsupported hash formats, other databases, "plaintext only for demos") would
-  otherwise come between the steps and the config. The top block stays steps only.
+- **Everything that is not a step goes at the end of the file**, after the config, as one
+  comment block (sections separated by a `#` line) in this order:
+  1. `Troubleshooting:` — common mistakes and their fix (e.g. a missing
+     `Content-Type: application/json`)
+  2. `NOTE:` — caveats, alternatives, background (unsupported hash formats, other databases,
+     "plaintext only for demos")
+  3. `See also:` — related tutorial folders or files as relative paths (`../scripting`)
+
+  Each of them would otherwise push the config further down.
 - **Inline comments only for the non-obvious WHY** — a surprising built-in, a hidden constraint.
   Never comment what the interceptor name already says.
-- **Keep the config minimal and focused** on the one concept the step teaches. Tutorials favor
-  clarity over completeness; richer setups belong under `distribution/examples/`.
+- **Keep the tutorial short: every line must contribute to the story or to what the step
+  teaches.** This applies to the config, the comments and the tail alike. Cut interceptors, log
+  lines, steps, notes and comments the lesson doesn't need, and merge notes that say related
+  things into one. Lines that make the behavior visible do contribute, e.g. log lines that show
+  which parts of the flow run in one case and not in the other. Tutorials favor clarity over
+  completeness.
+- **Say "interceptor", not "plugin"**, in comments and notes.
 - **Port 2000** is the house convention for tutorial listeners unless the lesson needs more.
 - Use `return: status: 200` not `return: {}`.
 - **"Continue with file NN-Title.yaml" only where the reader goes through the files in order:**
@@ -220,7 +245,11 @@ Avoid the verbose `${property.'membrane.security.schemes'[0].username}` — use 
 - [ ] `NN-Title.yaml` (or `.md` for curl-only steps) created with schema line, short numbered comment block, minimal config
 - [ ] Comment block: steps = command + expected output only; no prose repeating the config
 - [ ] No trailing `# ...` on command lines (Windows `cmd` passes it to the command); prompts on their own line
-- [ ] `NOTE:` blocks placed after the config at the end of the file, not in the top step block
+- [ ] Config visible without scrolling: top block = title, short intro, steps only
+- [ ] Every line serves the story: no extra interceptors, log lines, steps, notes or comments
+- [ ] "Interceptor", not "plugin"
+- [ ] Expected output only where it helps and is short; long JSON shortened with `...`
+- [ ] `Troubleshooting:`, `NOTE:`, `See also:` after the config, in that order, as one comment block
 - [ ] No section-header comments above `api:` blocks; `name:` describes them
 - [ ] `return: status: 200` used (not `return: {}`)
 - [ ] Template interpolations unquoted when `contentType: application/json`

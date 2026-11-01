@@ -26,14 +26,18 @@ import static org.apache.commons.lang3.StringUtils.trim;
 import static org.apache.commons.text.StringEscapeUtils.escapeHtml4;
 
 /**
- * @description Executes a Javascript. The script can access and manipulate data from the request and response.
+ * @description <p>Executes a Javascript. The script can access and manipulate data from the request and response.
  * Use this or the Groovy plugin to extend the functions of Membrane by scripting. See the samples in examples/javascript.
  * An object or array returned by the script, e.g. <code>({id: 7})</code> or <code>[1, 2]</code>, becomes the JSON
  * body of the message.
- * Every execution of the script runs isolated: variables are not shared with other requests.
+ * </p>
+ * <p>Every execution of the script runs isolated: variables are not shared with other requests.
  * Objects created by the script, e.g. <code>{a: 1}</code> or the result of <code>JSON.parse()</code>, are only valid
  * while the script runs. To keep such an object on the exchange, store it as a string:
- * <code>property.put('order', JSON.stringify(order))</code>.
+ * <code>property.put('order', JSON.stringify(order))</code>.</p>
+ * Use this or the Groovy plugin to extend the functions of Membrane by scripting. A returned object or array is serialized to a JSON body.
+ * <p>The variable <code>log</code> is an SLF4J logger named <code>com.predic8.membrane.javascript</code>.
+ * See the tutorials in tutorials/scripting.</p>
  * @yaml <pre><code>
  * api:
  *   port: 2000
@@ -56,7 +60,10 @@ public class JavascriptInterceptor extends AbstractScriptInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(JavascriptInterceptor.class);
 
+    private static final Logger scriptLog = LoggerFactory.getLogger("com.predic8.membrane.javascript");
+
     protected LanguageAdapter adapter;
+
 
     public JavascriptInterceptor() {
         name = "javascript";
@@ -71,6 +78,11 @@ public class JavascriptInterceptor extends AbstractScriptInterceptor {
         } catch (Exception e) {
             throw new ConfigurationException("Could not compile: \n" + src,e);
         }
+    }
+
+    @Override
+    protected Logger getScriptLogger() {
+        return scriptLog;
     }
 
     @Override

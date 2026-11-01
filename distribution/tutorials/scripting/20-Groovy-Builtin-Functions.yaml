@@ -1,0 +1,55 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.7.1.json
+#
+# Tutorial: Groovy Built-in Functions
+#
+# Besides variables, Membrane offers functions for common tasks like querying
+# the body with JSONPath, encoding values for URLs or Base64 and checking the
+# content type.
+#
+# 1.) Start Membrane:
+#     with Docker:
+#       Linux/Mac:
+#         ./run-docker.sh -c 20-Groovy-Builtin-Functions.yaml
+#       Windows:
+#         run-docker.cmd -c 20-Groovy-Builtin-Functions.yaml
+#
+#     or with Java:
+#       Linux/Mac:
+#         ./membrane.sh -c 20-Groovy-Builtin-Functions.yaml
+#       Windows:
+#         membrane.cmd -c 20-Groovy-Builtin-Functions.yaml
+#
+# 2.) Send a JSON document:
+#     curl -d "{\"shop\":\"Tea & More\",\"teas\":[{\"name\":\"Earl Grey\"},{\"name\":\"Assam\"}]}" -H "Content-Type: application/json" localhost:2000
+#
+#     {
+#       "isJSON" : true,
+#       "teas" : [ "Earl Grey", "Assam" ],
+#       "path" : "/shops/Tea%20%26%20More",
+#       "query" : "shop=Tea+%26+More",
+#       "authorization" : "Basic YWxpY2U6c2VjcmV0"
+#     }
+
+api:
+  port: 2000
+  flow:
+    - request:
+        - groovy:
+            src: |
+              def shop = jsonPath('$.shop')
+              [
+                isJSON: isJSON(),
+                teas: jsonPath('$.teas[*].name'),
+                path: '/shops/' + pathEncode(shop),
+                query: 'shop=' + urlEncode(shop),
+                authorization: 'Basic ' + base64Encode('alice:secret')
+              ]
+        - beautifier: {}
+    - return:
+        status: 200
+
+# NOTE: pathEncode() encodes a value for a path segment, urlEncode() for a query
+#       parameter. Note the different encoding of the space.
+#
+#       All functions: https://www.membrane-api.io/scripting/builtin-functions.html
+#       Built-in variables: https://www.membrane-api.io/scripting/builtin-variables.html
