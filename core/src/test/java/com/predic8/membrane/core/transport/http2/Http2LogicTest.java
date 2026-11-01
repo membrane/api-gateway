@@ -29,13 +29,16 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -278,6 +281,240 @@ class Http2LogicTest {
         assertThrows(ReadingBodyException.class, handler.message.getBody()::read);
     }
 
+    /**
+     * A stream beyond the advertised limit of 50 is refused (RFC 9113 §5.1.2). Its header block is decoded all the
+     * same: the next request refers to the field it added to the HPACK dynamic table.
+     */
+    @Test
+    void streamBeyondTheConcurrentStreamLimitIsRefused() throws Exception {
+        final var encoder = new Encoder(4096);
+        final var in = new ByteArrayOutputStream();
+        // Acknowledges the SETTINGS sent on connection start, which announce the limit.
+        in.write(SETTINGS_ACK);
+        for (int streamId = 1; streamId <= 99; streamId += 2)
+            in.write(headersFrame(streamId, false, encoder, withGet()));
+        in.write(headersFrame(101, false, encoder, withGet("x-refused", "1")));
+        // The client cancels stream 1, which makes room for one more.
+        in.write(rstStream(1));
+        in.write(headersFrame(103, false, encoder, withGet("x-refused", "1")));
+        final var handler = new RecordingHandler();
+
+        assertThrows(EndOfStreamException.class, () -> createLogic(in.toByteArray(), handler).handle());
+
+        assertEquals(51, handler.exchanges, "50 streams and the one after the cancel are handed over.");
+        assertEquals("1", handler.message.getHeader().getFirstValue("x-refused"));
+    }
+
+    /**
+     * The limit applies before the client acknowledged the SETTINGS that announce it: otherwise a client that delays
+     * its ACK could open any number of streams.
+     */
+    @Test
+    void concurrentStreamLimitAppliesBeforeTheSettingsAreAcknowledged() throws Exception {
+        final var encoder = new Encoder(4096);
+        final var in = new ByteArrayOutputStream();
+        for (int streamId = 1; streamId <= 101; streamId += 2)
+            in.write(headersFrame(streamId, false, encoder, withGet()));
+        final var handler = new RecordingHandler();
+
+        assertThrows(EndOfStreamException.class, () -> createLogic(in.toByteArray(), handler).handle());
+
+        assertEquals(50, handler.exchanges);
+    }
+
+    /**
+     * A request still being processed counts against the concurrent stream limit, even after the client reset its
+     * stream (CVE-2023-44487, "Rapid Reset"): resetting streams does not let the client start more work.
+     */
+    @Test
+    void resetStreamCountsUntilItsExchangeFinished() throws Exception {
+        final var encoder = new Encoder(4096);
+        final var in = new ByteArrayOutputStream();
+        in.write(SETTINGS_ACK);
+        for (int streamId = 1; streamId <= 99; streamId += 2) {
+            in.write(headersFrame(streamId, false, encoder, withGet()));
+            in.write(rstStream(streamId));
+        }
+        in.write(headersFrame(101, false, encoder, withGet()));
+        final var handler = new RecordingHandler();
+        final var logic = createLogic(in.toByteArray(), handler);
+        // Starts processing every request handed over, and finishes none.
+        handler.logic = logic;
+
+        assertThrows(EndOfStreamException.class, logic::handle);
+
+        assertEquals(50, handler.exchanges, "The 51st request is refused while the first 50 are still processed.");
+    }
+
+    @Test
+    void tooManyResetStreamsCloseTheConnection() throws Exception {
+        assertThrows(FatalConnectionException.class, () -> createLogic(openAndResetStreams(Http2Logic.MAX_RESETS_PER_WINDOW + 1)).handle());
+    }
+
+    @Test
+    void resetStreamsUpToTheLimitAreAccepted() throws Exception {
+        assertThrows(EndOfStreamException.class, () -> createLogic(openAndResetStreams(Http2Logic.MAX_RESETS_PER_WINDOW)).handle());
+    }
+
+    /** The resets are counted in a sliding window: a burst spanning the end of a 30-second period is still too many. */
+    @Test
+    void tooManyResetStreamsWithinThirtySecondsCloseTheConnection() throws Exception {
+        final var start = System.nanoTime();
+        final var logic = createLogic(openAndResetStreams(Http2Logic.MAX_RESETS_PER_WINDOW + 1));
+        final var resets = new AtomicInteger();
+        // All but the last reset 29 seconds after the connection started, the last one 2 seconds later.
+        logic.clock = () -> start + SECONDS.toNanos(resets.incrementAndGet() <= Http2Logic.MAX_RESETS_PER_WINDOW ? 29 : 31);
+
+        assertThrows(FatalConnectionException.class, logic::handle);
+    }
+
+    @Test
+    void resetStreamsOlderThanThirtySecondsAreNotCounted() throws Exception {
+        final var start = System.nanoTime();
+        final var logic = createLogic(openAndResetStreams(Http2Logic.MAX_RESETS_PER_WINDOW + 1));
+        final var resets = new AtomicInteger();
+        logic.clock = () -> start + SECONDS.toNanos(resets.incrementAndGet() <= Http2Logic.MAX_RESETS_PER_WINDOW ? 0 : 31);
+
+        assertThrows(EndOfStreamException.class, logic::handle);
+    }
+
+    /** A refused stream that the client resets before the refusal was written counts as one reset, not two. */
+    @Test
+    void refusedStreamResetByTheClientCountsOnce() throws Exception {
+        final var encoder = new Encoder(4096);
+        final var in = new ByteArrayOutputStream();
+        in.write(SETTINGS_ACK);
+        for (int streamId = 1; streamId <= 99; streamId += 2)
+            in.write(headersFrame(streamId, false, encoder, withGet()));
+        for (int i = 0; i < Http2Logic.MAX_RESETS_PER_WINDOW; i++) {
+            in.write(headersFrame(101 + 2 * i, false, encoder, withGet()));
+            in.write(rstStream(101 + 2 * i));
+        }
+
+        assertThrows(EndOfStreamException.class, () -> createLogic(in.toByteArray()).handle());
+    }
+
+    /**
+     * HEADERS on a refused stream, arriving before its reset was written, are ignored. Their header block is decoded
+     * all the same: the next request refers to the field it added to the HPACK dynamic table.
+     */
+    @Test
+    void headersOnARefusedStreamAreIgnored() throws Exception {
+        final var encoder = new Encoder(4096);
+        final var in = new ByteArrayOutputStream();
+        in.write(SETTINGS_ACK);
+        for (int streamId = 1; streamId <= 99; streamId += 2)
+            in.write(headersFrame(streamId, false, encoder, withGet()));
+        in.write(headersFrame(101, false, encoder, withGet()));
+        in.write(headersFrame(101, true, encoder, "x-trailer", "1"));
+        in.write(rstStream(1));
+        in.write(headersFrame(103, true, encoder, withGet("x-trailer", "1")));
+        final var handler = new RecordingHandler();
+
+        assertThrows(EndOfStreamException.class, () -> createLogic(in.toByteArray(), handler).handle());
+
+        assertEquals(51, handler.exchanges);
+        assertEquals("1", handler.message.getHeader().getFirstValue("x-trailer"));
+    }
+
+    /**
+     * CONTINUATION flood: a header block that does not end is buffered until its last fragment arrives. One that
+     * grows too large closes the connection, before it uses up the memory.
+     */
+    @Test
+    void headerBlockTooLargeToBufferClosesTheConnection() throws Exception {
+        final var in = new ByteArrayOutputStream();
+        in.write(frame(0x1, 0, new byte[0]));
+        final var fragment = new byte[16000];
+        for (int size = 0; size <= 3 * Http2Logic.MAX_HEADER_LIST_SIZE; size += fragment.length)
+            in.write(frame(0x9, 0, fragment));
+
+        assertThrows(FatalConnectionException.class, () -> createLogic(in.toByteArray()).handle());
+    }
+
+    /** CONTINUATION flood with empty frames, which never grow the block. */
+    @Test
+    void headerBlockInTooManyFragmentsClosesTheConnection() throws Exception {
+        final var in = new ByteArrayOutputStream();
+        in.write(frame(0x1, 0, new byte[0]));
+        for (int i = 0; i < 1000; i++)
+            in.write(frame(0x9, 0, new byte[0]));
+
+        assertThrows(FatalConnectionException.class, () -> createLogic(in.toByteArray()).handle());
+    }
+
+    @Test
+    void headerBlockInSeveralFragmentsIsAccepted() throws Exception {
+        final var block = new ByteArrayOutputStream();
+        final var encoder = new Encoder(4096);
+        final var fields = withGet("x-foo", "bar");
+        for (int i = 0; i < fields.length; i += 2)
+            encoder.encodeHeader(block, bytes(fields[i]), bytes(fields[i + 1]), false);
+        final var bytes = block.toByteArray();
+        final var in = new ByteArrayOutputStream();
+        // END_STREAM on HEADERS, END_HEADERS on the last of the CONTINUATION frames, each carrying 4 bytes.
+        in.write(frame(0x1, 0x1, Arrays.copyOfRange(bytes, 0, 4)));
+        for (int offset = 4; offset < bytes.length; offset += 4)
+            in.write(frame(0x9, offset + 4 >= bytes.length ? 0x4 : 0, Arrays.copyOfRange(bytes, offset, Math.min(offset + 4, bytes.length))));
+        final var handler = new RecordingHandler();
+
+        assertThrows(EndOfStreamException.class, () -> createLogic(in.toByteArray(), handler).handle());
+
+        assertEquals("bar", handler.message.getHeader().getFirstValue("x-foo"));
+    }
+
+    @Test
+    void headerBlockInTheMostFragmentsAllowedIsAccepted() throws Exception {
+        final var handler = new RecordingHandler();
+
+        assertThrows(EndOfStreamException.class, () -> createLogic(requestInFragments(Http2Logic.MAX_HEADER_BLOCK_FRAMES), handler).handle());
+
+        assertNotNull(handler.message);
+    }
+
+    @Test
+    void headerBlockInOneFragmentTooManyClosesTheConnection() throws Exception {
+        assertThrows(FatalConnectionException.class, () -> createLogic(requestInFragments(Http2Logic.MAX_HEADER_BLOCK_FRAMES + 1)).handle());
+    }
+
+    /** A GET request on stream 1, whose header block is carried by HEADERS followed by empty CONTINUATION frames. */
+    private static byte[] requestInFragments(int frames) throws IOException {
+        final var block = new ByteArrayOutputStream();
+        final var encoder = new Encoder(4096);
+        final var fields = withGet();
+        for (int i = 0; i < fields.length; i += 2)
+            encoder.encodeHeader(block, bytes(fields[i]), bytes(fields[i + 1]), false);
+        final var in = new ByteArrayOutputStream();
+        in.write(frame(0x1, 0x1, block.toByteArray()));
+        for (int i = 1; i < frames; i++)
+            in.write(frame(0x9, i == frames - 1 ? 0x4 : 0, new byte[0]));
+        return in.toByteArray();
+    }
+
+    /** A frame on stream 1. */
+    private static byte[] frame(int type, int flags, byte[] payload) {
+        final var frame = new ByteArrayOutputStream();
+        frame.write(new byte[]{(byte) (payload.length >>> 16), (byte) (payload.length >>> 8), (byte) payload.length, (byte) type, (byte) flags, 0, 0, 0, 1}, 0, 9);
+        frame.writeBytes(payload);
+        return frame.toByteArray();
+    }
+
+    /** Opens the given number of streams, each reset by the client right after its HEADERS frame. */
+    private static byte[] openAndResetStreams(int count) throws IOException {
+        final var encoder = new Encoder(4096);
+        final var in = new ByteArrayOutputStream();
+        for (int i = 0; i < count; i++) {
+            in.write(headersFrame(2 * i + 1, false, encoder, withGet()));
+            in.write(rstStream(2 * i + 1));
+        }
+        return in.toByteArray();
+    }
+
+    /** RST_STREAM with error code CANCEL. */
+    private static byte[] rstStream(int streamId) {
+        return new byte[]{0, 0, 4, 0x3, 0, (byte) (streamId >>> 24), (byte) (streamId >>> 16), (byte) (streamId >>> 8), (byte) streamId, 0, 0, 0, 0x8};
+    }
+
     /** The fields of a GET request, followed by the given ones. */
     private static String[] withGet(String... extra) {
         final var get = List.of(":method", "GET", ":scheme", "https", ":path", "/", ":authority", "localhost");
@@ -290,11 +527,16 @@ class Http2LogicTest {
 
     /** HEADERS frame on stream 1 with END_HEADERS, carrying the given names and values in this order. */
     private static byte[] headersFrame(boolean endStream, Encoder encoder, String... namesAndValues) throws IOException {
+        return headersFrame(1, endStream, encoder, namesAndValues);
+    }
+
+    private static byte[] headersFrame(int streamId, boolean endStream, Encoder encoder, String... namesAndValues) throws IOException {
         final var block = new ByteArrayOutputStream();
         for (int i = 0; i < namesAndValues.length; i += 2)
             encoder.encodeHeader(block, bytes(namesAndValues[i]), bytes(namesAndValues[i + 1]), false);
         final var frame = new ByteArrayOutputStream();
-        frame.write(new byte[]{(byte) (block.size() >>> 16), (byte) (block.size() >>> 8), (byte) block.size(), 0x1, (byte) (endStream ? 0x5 : 0x4), 0, 0, 0, 1});
+        frame.write(new byte[]{(byte) (block.size() >>> 16), (byte) (block.size() >>> 8), (byte) block.size(), 0x1, (byte) (endStream ? 0x5 : 0x4),
+                (byte) (streamId >>> 24), (byte) (streamId >>> 16), (byte) (streamId >>> 8), (byte) streamId});
         block.writeTo(frame);
         return frame.toByteArray();
     }
@@ -328,6 +570,9 @@ class Http2LogicTest {
 
     private static class RecordingHandler implements Http2MessageHandler {
         Message message;
+        int exchanges;
+        /** If set, every request handed over is reported as being processed, and none as finished. */
+        Http2Logic logic;
         int malformedStreamId;
         int oversizedStreamId;
 
@@ -339,6 +584,9 @@ class Http2LogicTest {
         @Override
         public void handleExchange(StreamInfo streamInfo, Message message, boolean showSSLExceptions, String remoteAddr) {
             this.message = message;
+            exchanges++;
+            if (logic != null)
+                logic.exchangeStarted();
         }
 
         @Override

@@ -30,7 +30,9 @@ import javax.annotation.concurrent.GuardedBy;
 import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -39,7 +41,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.LongSupplier;
 
 import static com.predic8.membrane.core.transport.http2.frame.Error.*;
 import static com.predic8.membrane.core.transport.http2.frame.Frame.*;
@@ -56,6 +60,21 @@ public class Http2Logic {
 
     /** Maximum size of a decoded header block, announced to the peer as SETTINGS_MAX_HEADER_LIST_SIZE. */
     static final int MAX_HEADER_LIST_SIZE = 64 * 1024;
+
+    /**
+     * Limits of a header block while its fragments arrive, before it is decoded. Twice the decoded limit leaves
+     * room for blocks that decode to more than {@link #MAX_HEADER_LIST_SIZE}: those are still rejected gracefully.
+     * A block beyond these limits closes the connection (CONTINUATION flood).
+     */
+    static final int MAX_HEADER_BLOCK_SIZE = 2 * MAX_HEADER_LIST_SIZE;
+    static final int MAX_HEADER_BLOCK_FRAMES = 64;
+
+    /**
+     * How many streams the peer may make end in a reset within {@link #RESET_WINDOW_NANOS}, by resetting them or
+     * by opening them beyond the concurrent stream limit, before the connection is closed (CVE-2023-44487).
+     */
+    static final int MAX_RESETS_PER_WINDOW = 200;
+    private static final long RESET_WINDOW_NANOS = TimeUnit.SECONDS.toNanos(30);
 
     private static final Set<String> REQUEST_PSEUDO_HEADERS = Set.of(":method", ":scheme", ":authority", ":path");
 
@@ -84,6 +103,15 @@ public class Http2Logic {
     final AtomicInteger nextClientStreamId = new AtomicInteger(1);
     /** Highest id of a stream the peer opened. Only accessed on the receiver thread. */
     private int highestPeerStreamId;
+    /** Requests handed over that are still being processed, see {@link #exchangeStarted()}. */
+    private final AtomicInteger runningExchanges = new AtomicInteger();
+    /**
+     * When the streams that ended in a reset within the last {@link #RESET_WINDOW_NANOS} did, oldest first, see
+     * {@link #countReset()}. Receiver thread only.
+     */
+    private final Deque<Long> recentResets = new ArrayDeque<>();
+    /** Supplies {@link System#nanoTime()}. Replaced in tests. */
+    LongSupplier clock = System::nanoTime;
     volatile boolean receiving = true;
     volatile Future<?> senderFuture;
     @GuardedBy("this")
@@ -160,6 +188,71 @@ public class Http2Logic {
     private boolean isClosed(int streamId) {
         return streamId % 2 == highestPeerStreamId % 2 && streamId <= highestPeerStreamId
                 || streamId % 2 == 1 && streamId < nextClientStreamId.get();
+    }
+
+    /**
+     * Called by the server when it starts processing a request handed over to
+     * {@link Http2MessageHandler#handleExchange}. Until {@link #exchangeFinished()}, the request counts against the
+     * concurrent stream limit, even after the peer reset its stream: resetting streams must not let the peer start
+     * more work than the limit (CVE-2023-44487, "Rapid Reset").
+     */
+    public void exchangeStarted() {
+        runningExchanges.incrementAndGet();
+    }
+
+    public void exchangeFinished() {
+        runningExchanges.decrementAndGet();
+    }
+
+    /**
+     * Counts a stream that ended in a reset, because the peer reset it or opened it beyond the concurrent stream
+     * limit. Too many of them close the connection with ENHANCE_YOUR_CALM (CVE-2023-44487, "Rapid Reset").
+     */
+    private void countReset() throws FatalConnectionException {
+        final var now = clock.getAsLong();
+        while (!recentResets.isEmpty() && now - recentResets.getFirst() > RESET_WINDOW_NANOS)
+            recentResets.removeFirst();
+        recentResets.addLast(now);
+        if (recentResets.size() > MAX_RESETS_PER_WINDOW) {
+            log.info("Closing HTTP/2 connection from {}: more than {} streams were reset within {} seconds.",
+                    remoteAddr, MAX_RESETS_PER_WINDOW, TimeUnit.NANOSECONDS.toSeconds(RESET_WINDOW_NANOS));
+            throw new FatalConnectionException(ERROR_ENHANCE_YOUR_CALM);
+        }
+    }
+
+    /**
+     * Whether a new stream opened by the peer would exceed the limit announced in our SETTINGS. Streams the
+     * peer opened that are open or half-closed count (RFC 9113 §5.1.2), and so do requests still being processed,
+     * whose stream may already be closed. Closed streams are removed from {@link #streams}; refused ones are
+     * closed as soon as their reset is written.
+     */
+    private boolean exceedsConcurrentStreamLimit(int newStreamId) {
+        final var limit = maxConcurrentStreams();
+        if (limit < 0)
+            return false;
+        var open = 0;
+        for (StreamInfo streamInfo : streams.values()) {
+            final var state = streamInfo.getState();
+            if (streamInfo.getStreamId() % 2 == newStreamId % 2 && !streamInfo.isRefused()
+                    && (state == StreamState.OPEN || state == StreamState.HALF_CLOSED_LOCAL || state == StreamState.HALF_CLOSED_REMOTE))
+                open++;
+        }
+        return open >= limit || runningExchanges.get() >= limit;
+    }
+
+    /**
+     * The lowest concurrent stream limit among the acknowledged SETTINGS and those sent but not yet acknowledged, or
+     * -1 if none sets one. A limit applies as soon as it is sent: a peer that delays its ACK must not open more
+     * streams in the meantime. Receiver thread only, like {@link #wantedSettings}.
+     */
+    private int maxConcurrentStreams() {
+        var limit = ourSettings.getMaxConcurrentStreams();
+        for (Settings settings : wantedSettings) {
+            final var wanted = settings.getMaxConcurrentStreams();
+            if (wanted >= 0 && (limit < 0 || wanted < limit))
+                limit = wanted;
+        }
+        return limit;
     }
 
     /** Stops the frame sender and wakes writers waiting for the connection's flow-control window. */
@@ -244,6 +337,9 @@ public class Http2Logic {
 
         streamInfo.receivedRstStream(rstStream.getErrorCode());
         messageHandler.handleStreamReset(streamId, rstStream.getErrorCode());
+        // A refused stream was counted when it was refused.
+        if (!streamInfo.isRefused())
+            countReset();
     }
 
     private void handleFrame(DataFrame dataFrame) throws IOException {
@@ -334,11 +430,13 @@ public class Http2Logic {
         if (streamId1 == 0 || headers.getHeaderBlockLength() < 0)
             throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
         StreamInfo streamInfo = streams.get(streamId1);
+        var refused = false;
 
         if (streamInfo == null) {
             // Like HEADERS on a stream in the CLOSED state, which receivedHeaders() rejects.
             if (isClosed(streamId1))
                 throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
+            refused = exceedsConcurrentStreamLimit(streamId1);
             streamInfo = new StreamInfo(streamId1, sender, peerSettings, ourSettings);
             streams.put(streamId1, streamInfo);
         }
@@ -357,6 +455,7 @@ public class Http2Logic {
         headerFrames.add(headers);
 
         HeaderBlockFragment last = headers;
+        var headerBlockLength = headers.getHeaderBlockLength();
 
         while (!last.isEndHeaders()) {
             Frame frame = new Frame(ourSettings);
@@ -372,6 +471,30 @@ public class Http2Logic {
                 throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
 
             headerFrames.add(last);
+            headerBlockLength += last.getHeaderBlockLength();
+            // The fragments are buffered until the block ends, so one that does not end would use up the memory
+            // (CONTINUATION flood). It cannot be skipped either: the HPACK table must be updated by every block.
+            if (headerBlockLength > MAX_HEADER_BLOCK_SIZE || headerFrames.size() > MAX_HEADER_BLOCK_FRAMES) {
+                log.info("Closing HTTP/2 connection from {}: the header block on stream {} exceeds {} bytes or {} frames.",
+                        remoteAddr, streamId1, MAX_HEADER_BLOCK_SIZE, MAX_HEADER_BLOCK_FRAMES);
+                throw new FatalConnectionException(ERROR_ENHANCE_YOUR_CALM);
+            }
+        }
+
+        if (refused || streamInfo.isRefused()) {
+            // Decoded all the same, so the HPACK dynamic table stays in sync.
+            decoder.decode(getPackedHeaderStream(headerFrames), (name, value, sensitive) -> {});
+            decoder.endHeaderBlock();
+            // HEADERS on a stream refused before, arriving before its reset was written, are ignored.
+            if (!refused)
+                return;
+            log.info("Refusing stream {}: the peer exceeds the limit of {} concurrent streams.", streamId1, maxConcurrentStreams());
+            // REFUSED_STREAM tells the peer that the request was not processed, so it may retry it (RFC 9113 §8.7).
+            // Writing the reset closes the stream; DATA still in flight for it is not queued anymore.
+            streamInfo.refuse(new IOException("HTTP/2 stream %d was refused.".formatted(streamId1)));
+            sender.send(streamId1, (encoder, peerSettings) -> List.of(RstStreamFrame.construct(streamId1, ERROR_REFUSED_STREAM)));
+            countReset();
+            return;
         }
 
         log.debug("header isTrailer={}", isTrailer);
