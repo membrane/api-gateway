@@ -143,6 +143,19 @@ class Http2LogicTest {
         assertEquals(0, handler.malformedStreamId);
     }
 
+    /**
+     * Values are read byte for byte, as by the HTTP/1.1 parser, whatever the default charset of the JVM is.
+     */
+    @Test
+    void nonAsciiValueIsDecodedByteForByte() throws Exception {
+        final var handler = new RecordingHandler();
+
+        assertThrows(EndOfStreamException.class, () -> createLogic(requestHeadersFrame(bytes("x-foo"), new byte[]{'c', 'a', 'f', (byte) 0xE9}), handler).handle());
+
+        assertNotNull(handler.message);
+        assertEquals("café", handler.message.getHeader().getFirstValue("x-foo"));
+    }
+
     private static byte[] bytes(String s) {
         return s.getBytes(ISO_8859_1);
     }
