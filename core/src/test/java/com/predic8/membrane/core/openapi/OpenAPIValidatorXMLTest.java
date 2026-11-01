@@ -34,6 +34,7 @@ class OpenAPIValidatorXMLTest {
     OpenAPIValidator validatorRequired;
     OpenAPIValidator validatorNamespaced;
     OpenAPIValidator validatorAttribute;
+    OpenAPIValidator validatorClosed;
 
     /** A valid order with all fields present and correct types. */
     final String validOrder = """
@@ -96,6 +97,11 @@ class OpenAPIValidatorXMLTest {
         validatorAttribute = new OpenAPIValidator(new URIFactory(),
                 new OpenAPIRecord(
                         parseOpenAPI(getResourceAsStream(this, "/openapi/specs/xml/xml-attribute.oas.yaml")),
+                        new OpenAPISpec()));
+
+        validatorClosed = new OpenAPIValidator(new URIFactory(),
+                new OpenAPIRecord(
+                        parseOpenAPI(getResourceAsStream(this, "/openapi/specs/xml/xml-closed-object.oas.yaml")),
                         new OpenAPISpec()));
     }
 
@@ -281,5 +287,62 @@ class OpenAPIValidatorXMLTest {
         var errors = validatorAttribute.validate(post().path("/products")
                 .xml("<product><name>Book</name></product>"));
         assertFalse(errors.isEmpty(), "Expected a missing-required error for absent attribute 'sku'");
+    }
+
+    // -----------------------------------------------------------------------
+    // additionalProperties: false — undeclared XML content must be rejected,
+    // not silently dropped during the XML-to-JSON conversion.
+    // -----------------------------------------------------------------------
+
+    @Test
+    void closedObjectWithOnlyDeclaredContentIsAccepted() throws ParseException {
+        var errors = validatorClosed.validate(post().path("/products").xml("""
+                <product sku="A-1">
+                  <name>Book</name>
+                  <price><amount>9.5</amount><currency>EUR</currency></price>
+                </product>
+                """));
+        assertEquals(0, errors.size(), "Expected no validation errors: " + errors);
+    }
+
+    @Test
+    void undeclaredElementInClosedObjectIsRejected() throws ParseException {
+        var errors = validatorClosed.validate(post().path("/products")
+                .xml("<product sku=\"A-1\"><name>Book</name><discount>100</discount></product>"));
+        assertFalse(errors.isEmpty(), "Expected an error for undeclared element 'discount'");
+    }
+
+    @Test
+    void undeclaredAttributeInClosedObjectIsRejected() throws ParseException {
+        var errors = validatorClosed.validate(post().path("/products")
+                .xml("<product sku=\"A-1\" isAdmin=\"true\"><name>Book</name></product>"));
+        assertFalse(errors.isEmpty(), "Expected an error for undeclared attribute 'isAdmin'");
+    }
+
+    @Test
+    void undeclaredElementInNestedClosedObjectIsRejected() throws ParseException {
+        var errors = validatorClosed.validate(post().path("/products").xml("""
+                <product sku="A-1">
+                  <name>Book</name>
+                  <price><amount>9.5</amount><currency>EUR</currency><rebate>9</rebate></price>
+                </product>
+                """));
+        assertFalse(errors.isEmpty(), "Expected an error for undeclared element 'rebate'");
+    }
+
+    /** Namespace declarations are not data and must not count as additional properties. */
+    @Test
+    void namespaceDeclarationInClosedObjectIsAccepted() throws ParseException {
+        var errors = validatorClosed.validate(post().path("/products")
+                .xml("<product xmlns:x=\"http://example.com/other\" sku=\"A-1\"><name>Book</name></product>"));
+        assertEquals(0, errors.size(), "Expected no validation errors: " + errors);
+    }
+
+    /** Without additionalProperties: false undeclared content stays allowed. */
+    @Test
+    void undeclaredElementInOpenObjectIsAccepted() throws ParseException {
+        var errors = validatorAttribute.validate(post().path("/products")
+                .xml("<product sku=\"A-1\" extra=\"x\"><name>Book</name><discount>100</discount></product>"));
+        assertEquals(0, errors.size(), "Expected no validation errors: " + errors);
     }
 }

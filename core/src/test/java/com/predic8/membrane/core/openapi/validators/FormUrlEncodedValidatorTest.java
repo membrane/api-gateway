@@ -16,20 +16,25 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
+import com.predic8.membrane.core.openapi.OpenAPIParsingException;
+import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.media.*;
 import jakarta.mail.internet.ParseException;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
+import java.math.BigDecimal;
 import java.net.URLEncoder;
+import java.util.LinkedHashSet;
 import java.util.List;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_X_WWW_FORM_URLENCODED;
 import static com.predic8.membrane.core.openapi.model.Request.post;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Validation of {@code application/x-www-form-urlencoded} request bodies (specs/x-www-form-urlencoded/form.yml):
@@ -164,6 +169,189 @@ public class FormUrlEncodedValidatorTest extends AbstractValidatorTest {
                     .mediaType(APPLICATION_X_WWW_FORM_URLENCODED)
                     .body(body));
         }
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "x-count=3,0",
+            "x-count=abc,1",
+            "other=3,1",
+            "prefix-x-count=3,0",
+            "x-count=3&other=3,1"
+    })
+    void patternPropertiesWithClosedSchema(String body, int expectedErrors) {
+        var schema = new ObjectSchema().additionalProperties(false);
+        schema.addPatternProperty("x-", new IntegerSchema());
+        var errors = new FormUrlEncodedValidator(new OpenAPI()).validate(
+                new ValidationContext(), new MediaType().schema(schema), body);
+        assertEquals(expectedErrors, errors.size(), errors::toString);
+    }
+
+    @Test
+    void allMatchingPatternsAndDeclaredPropertiesAreValidated() {
+        var schema = new ObjectSchema().additionalProperties(false);
+        schema.addProperty("x-name", new StringSchema().minLength(5));
+        schema.addPatternProperty("^x-", new StringSchema().minLength(4));
+        schema.addPatternProperty("name$", new StringSchema().minLength(3));
+        var errors = new FormUrlEncodedValidator(new OpenAPI()).validate(
+                new ValidationContext(), new MediaType().schema(schema), "x-name=a");
+        assertEquals(3, errors.size(), errors::toString);
+        assertTrue(errors.stream().allMatch(e -> "/x-name".equals(e.getContext().getJSONpointer())));
+    }
+
+    @Test
+    void declaredPropertyAndPatternMustValidateTheSameType() {
+        var schema = new ObjectSchema().additionalProperties(false);
+        schema.addProperty("count", new IntegerSchema());
+        schema.addPatternProperty("^count$", new StringSchema());
+        assertEquals(1, validateSchema(schema, "count=1").size());
+    }
+
+    @ParameterizedTest
+    @CsvSource({"true", "false"})
+    void conflictingPatternsFailRegardlessOfInsertionOrder(boolean reverse) {
+        var schema = new ObjectSchema().additionalProperties(false);
+        if (reverse)
+            schema.addPatternProperty("count$", new StringSchema());
+        schema.addPatternProperty("^count", new IntegerSchema());
+        schema.addPatternProperty("count$", new StringSchema());
+        assertEquals(1, validateSchema(schema, "count=1").size());
+    }
+
+    @ParameterizedTest
+    @CsvSource({"true", "false"})
+    void compatibleNumericPatternsPassRegardlessOfInsertionOrder(boolean reverse) {
+        var schema = new ObjectSchema().additionalProperties(false);
+        if (reverse)
+            schema.addPatternProperty("count$", new NumberSchema());
+        schema.addPatternProperty("^count", new IntegerSchema());
+        schema.addPatternProperty("count$", new NumberSchema());
+        assertTrue(validateSchema(schema, "count=1").isEmpty());
+        assertFalse(validateSchema(schema, "count=1.5").isEmpty());
+    }
+
+    @ParameterizedTest
+    @CsvSource({"true", "false"})
+    void propertyAndPatternChooseCommonNumericType(boolean reverse) {
+        var schema = new ObjectSchema();
+        schema.addProperty("count", reverse ? new IntegerSchema() : new NumberSchema());
+        schema.addPatternProperty("^count$", reverse ? new NumberSchema() : new IntegerSchema());
+        assertTrue(validateSchema(schema, "count=42").isEmpty());
+        assertFalse(validateSchema(schema, "count=42.5").isEmpty());
+    }
+
+    @Test
+    void propertyAndPatternsChooseCommonTypeFromUnion() {
+        var union = new Schema<>();
+        union.setTypes(new LinkedHashSet<>(List.of("string", "number")));
+        var schema = new ObjectSchema();
+        schema.addProperty("count", union);
+        schema.addPatternProperty("^count", new NumberSchema());
+        schema.addPatternProperty("count$", new IntegerSchema().minimum(BigDecimal.TEN));
+        assertTrue(validateSchema(schema, "count=42").isEmpty());
+        assertFalse(validateSchema(schema, "count=1").isEmpty());
+        assertFalse(validateSchema(schema, "count=abc").isEmpty());
+    }
+
+    @Test
+    void arrayItemsChooseCommonNumericType() {
+        var schema = new ObjectSchema();
+        schema.addProperty("counts", new ArraySchema().items(new NumberSchema()));
+        schema.addPatternProperty("^counts$", new ArraySchema().items(new IntegerSchema()));
+        assertTrue(validateSchema(schema, "counts=42&counts=43").isEmpty());
+        assertFalse(validateSchema(schema, "counts=42&counts=43.5").isEmpty());
+    }
+
+    @Test
+    void typelessPatternDoesNotHideDeclaredType() {
+        var schema = new ObjectSchema().additionalProperties(false);
+        schema.addPatternProperty("^count", new Schema<>().minimum(BigDecimal.TEN));
+        schema.addPatternProperty("count$", new IntegerSchema());
+        assertTrue(validateSchema(schema, "count=10").isEmpty());
+        assertEquals(1, validateSchema(schema, "count=1").size());
+    }
+
+    @Test
+    void repeatedValuesAreOneArrayForEveryMatchingSchema() {
+        var schema = new ObjectSchema().additionalProperties(false);
+        schema.addProperty("counts", new ArraySchema().items(new IntegerSchema()));
+        schema.addPatternProperty("^counts$", new Schema<>().maxItems(1));
+        assertTrue(validateSchema(schema, "counts=1").isEmpty());
+        assertEquals(1, validateSchema(schema, "counts=1&counts=2").size());
+    }
+
+    @Test
+    void arrayItemsUseTypesFromMatchingSchemas() {
+        var schema = new ObjectSchema().additionalProperties(false);
+        schema.addPatternProperty("^counts", new ArraySchema().items(new Schema<>().minimum(BigDecimal.TEN)));
+        schema.addPatternProperty("counts$", new ArraySchema().items(new IntegerSchema()));
+        assertTrue(validateSchema(schema, "counts=10&counts=11").isEmpty());
+        assertEquals(1, validateSchema(schema, "counts=10&counts=1").size());
+    }
+
+    @Test
+    void referencedFieldUsesSiblingTypeForDecodingWhenComponentIsTypeless() {
+        var component = new Schema<>().minimum(BigDecimal.TEN);
+        var field = new Schema<>().$ref("#/components/schemas/Count").type("integer");
+        var schema = new ObjectSchema().addProperty("count", field);
+        var api = new OpenAPI().components(new Components().addSchemas("Count", component));
+
+        assertEquals(1, new FormUrlEncodedValidator(api).validate(
+                new ValidationContext(), new MediaType().schema(schema), "count=1").size());
+        assertTrue(new FormUrlEncodedValidator(api).validate(
+                new ValidationContext(), new MediaType().schema(schema), "count=10").isEmpty());
+    }
+
+    @Test
+    void conflictingArrayItemTypesAreRejected() {
+        var schema = new ObjectSchema().additionalProperties(false);
+        schema.addProperty("counts", new ArraySchema().items(new IntegerSchema()));
+        schema.addPatternProperty("^counts$", new ArraySchema().items(new StringSchema()));
+        var errors = validateSchema(schema, "counts=1&counts=2");
+        assertEquals(List.of("/counts/0", "/counts/1"),
+                errors.stream().map(e -> e.getContext().getJSONpointer()).toList());
+    }
+
+    @ParameterizedTest
+    @CsvSource({"additionalProperties", "properties", "patternProperties"})
+    void unresolvedFieldSchemaRefReportsParsingError(String keyword) {
+        // Keep components/schemas present so reference lookup returns null for the missing target.
+        var api = new OpenAPI().components(new Components().addSchemas("Existing", new StringSchema()));
+        var schema = new ObjectSchema();
+        var ref = new Schema<>().$ref("#/components/schemas/Missing");
+        switch (keyword) {
+            case "additionalProperties" -> schema.setAdditionalProperties(ref);
+            case "properties" -> schema.addProperty("extra", ref);
+            case "patternProperties" -> {
+                // Even with a usable explicit type, a broken matching schema must not be skipped.
+                schema.addProperty("extra", new StringSchema());
+                schema.addPatternProperty("^extra$", ref);
+            }
+            default -> throw new IllegalArgumentException(keyword);
+        }
+
+        var error = assertThrows(OpenAPIParsingException.class, () -> new FormUrlEncodedValidator(api).validate(
+                new ValidationContext(), new MediaType().schema(schema), "extra=value"));
+        assertTrue(error.getMessage().contains("#/components/schemas/Missing"));
+        assertTrue(error.getMessage().contains("extra"));
+    }
+
+    @Test
+    void invalidPatternPropertiesRegexReportsSchemaConfigurationError() {
+        var schema = new ObjectSchema().additionalProperties(false);
+        schema.addPatternProperty("[", new StringSchema());
+
+        // A broken schema must use the configuration-error path, not a client validation error
+        // or an uncaught PatternSyntaxException. Include the offending keyword and regex for diagnosis.
+        var error = assertThrows(OpenAPIParsingException.class,
+                () -> validateSchema(schema, "field=value"));
+        assertTrue(error.getMessage().contains("patternProperties"), error::getMessage);
+        assertTrue(error.getMessage().contains("["), error::getMessage);
+    }
+
+    private ValidationErrors validateSchema(Schema<?> schema, String body) {
+        return new FormUrlEncodedValidator(new OpenAPI()).validate(
+                new ValidationContext(), new MediaType().schema(schema), body);
     }
 
     private ValidationErrors validateForm(String body) throws ParseException {

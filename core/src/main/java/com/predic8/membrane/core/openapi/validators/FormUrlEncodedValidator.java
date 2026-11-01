@@ -20,18 +20,20 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.predic8.membrane.core.openapi.OpenAPIParsingException;
 import com.predic8.membrane.core.openapi.model.Message;
 import com.predic8.membrane.core.openapi.util.SchemaUtil;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.Schema;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import static com.predic8.membrane.core.openapi.util.SchemaUtil.isObjectOrArray;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.BODY;
@@ -52,6 +54,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 @SuppressWarnings("rawtypes")
 public class FormUrlEncodedValidator {
 
+    private static final Logger log = LoggerFactory.getLogger(FormUrlEncodedValidator.class);
     private static final ObjectMapper om = new ObjectMapper();
 
     private final OpenAPI api;
@@ -127,35 +130,129 @@ public class FormUrlEncodedValidator {
     private ValidationErrors validateFields(ValidationContext ctx, Schema schema, Map<String, List<String>> form) {
         var errors = new ValidationErrors();
         Map<String, Schema> properties = schema.getProperties();
+        Map<String, Schema> patternProperties = schema.getPatternProperties();
+        // Compile once per validation; regex order makes pattern-only decoding independent of map order.
+        var patterns = new LinkedHashMap<Pattern, Schema>();
+        if (patternProperties != null)
+            patternProperties.entrySet().stream().sorted(Map.Entry.comparingByKey())
+                    .forEach(entry -> {
+                        try {
+                            patterns.put(Pattern.compile(entry.getKey()), entry.getValue());
+                        } catch (PatternSyntaxException e) {
+                            // Invalid schema configuration must not become a client validation error
+                            // or silently drop the constraints associated with this pattern.
+                            var message = "Invalid patternProperties regex '%s': %s (index %d)."
+                                    .formatted(entry.getKey(), e.getDescription(), e.getIndex());
+                            log.error(message);
+                            var error = new OpenAPIParsingException(message);
+                            error.initCause(e);
+                            throw error;
+                        }
+                    });
 
         for (var entry : form.entrySet()) {
             var name = entry.getKey();
             var values = entry.getValue();
-
+            // A declared property and all matching patterns apply together.
+            var fieldSchemas = new ArrayList<Schema>();
             Schema propertySchema = properties != null ? properties.get(name) : null;
-            if (propertySchema == null) {
-                if (FALSE.equals(schema.getAdditionalProperties()))
+            if (propertySchema != null)
+                fieldSchemas.add(propertySchema);
+            patterns.forEach((pattern, patternSchema) -> {
+                // JSON Schema patterns may match anywhere in the field name, not just the whole name.
+                if (pattern.matcher(name).find())
+                    fieldSchemas.add(patternSchema);
+            });
+            // A field is additional only if neither properties nor patternProperties covers it.
+            if (fieldSchemas.isEmpty()) {
+                var additional = SchemaUtil.getAdditionalProperties(schema);
+                if (FALSE.equals(additional))
                     errors.add(ctx, "The application/x-www-form-urlencoded body contains an unexpected property '%s'.".formatted(name));
-                continue;
+                if (!(additional instanceof Schema<?> additionalSchema))
+                    continue;
+                fieldSchemas.add(additionalSchema);
             }
 
-            propertySchema = SchemaUtil.resolveRef(api, propertySchema);
+            // Resolve references for decoding, but keep the original schemas for validation,
+            // including any constraints next to a $ref.
+            var decodingSchemas = fieldSchemas.stream().map(s -> {
+                var resolved = SchemaUtil.resolveRef(api, s);
+                if (resolved == null)
+                    throw new OpenAPIParsingException("Cannot resolve schema reference '%s' for form field '%s'."
+                            .formatted(s.get$ref(), name));
+                return decodingSchema(s, resolved);
+            }).toList();
+            var decodingSchema = decodingSchema(decodingSchemas);
+            // Decode once: converting separately could let the same field satisfy incompatible
+            // types (e.g. integer 1 for one schema and string "1" for another).
+            var node = SchemaUtil.isArray(decodingSchema)
+                    ? toArrayNode(values, decodingSchemas)
+                    : toNode(values.getFirst(), decodingSchema);
             var fieldCtx = ctx.addJSONpointerSegment(name);
-
-            if (SchemaUtil.isArray(propertySchema)) {
-                errors.add(new SchemaValidator(api, propertySchema).validate(fieldCtx, toArrayNode(values, propertySchema)));
-            } else {
-                errors.add(new SchemaValidator(api, propertySchema).validate(fieldCtx, toNode(values.getFirst(), propertySchema)));
-            }
+            for (var fieldSchema : fieldSchemas)
+                errors.add(new SchemaValidator(api, fieldSchema).validate(fieldCtx, node));
         }
         return errors;
     }
 
-    private ArrayNode toArrayNode(List<String> values, Schema arraySchema) {
+    /**
+     * Choose a type accepted by every applicable schema, treating integers as numbers and
+     * typeless schemas as unconstrained. Preserve declaration order among compatible types.
+     * If types conflict, retain a declared type so validation of the shared node reports it.
+     */
+    private Schema decodingSchema(List<Schema> schemas) {
+        var declaredTypes = schemas.stream().map(this::decodingTypes).filter(types -> !types.isEmpty()).toList();
+        if (!declaredTypes.isEmpty()) {
+            var compatibleTypes = new LinkedHashSet<>(declaredTypes.getFirst());
+            declaredTypes.forEach(compatibleTypes::retainAll);
+            // Form scalar decoding does not turn text into a JSON null.
+            compatibleTypes.remove("null");
+            if (!compatibleTypes.isEmpty())
+                return new Schema<>().type(compatibleTypes.getFirst());
+        }
+        return schemas.stream()
+                .filter(s -> SchemaUtil.getEffectiveType(s) != null)
+                .findFirst().orElse(schemas.isEmpty() ? new Schema<>() : schemas.getFirst());
+    }
+
+    /**
+     * Keep a sibling type for decoding when the referenced component does not declare one.
+     * The component is shared by the OpenAPI model, so do not add the sibling type to it.
+     */
+    private Schema decodingSchema(Schema original, Schema resolved) {
+        if (SchemaUtil.getEffectiveType(resolved) != null || SchemaUtil.getEffectiveType(original) == null)
+            return resolved;
+
+        var decoding = new Schema<>();
+        decoding.setType(original.getType());
+        if (original.getTypes() != null)
+            decoding.setTypes(new LinkedHashSet<>(original.getTypes()));
+        decoding.setItems(resolved.getItems());
+            decoding.setPrefixItems(resolved.getPrefixItems());
+        return decoding;
+    }
+
+    private Set<String> decodingTypes(Schema schema) {
+        var types = new LinkedHashSet<String>();
+        if (schema.getType() != null)
+            types.add(schema.getType());
+        else if (schema.getTypes() != null)
+            types.addAll(schema.getTypes());
+        if (types.contains("number"))
+            types.add("integer");
+        return types;
+    }
+
+    private ArrayNode toArrayNode(List<String> values, List<Schema> schemas) {
         ArrayNode arrayNode = JsonNodeFactory.instance.arrayNode();
         for (int i = 0; i < values.size(); i++) {
-            final var items = SchemaUtil.resolveRef(api, SchemaUtil.itemSchema(arraySchema, i));
-            arrayNode.add(items != null ? toNode(values.get(i), items) : JsonNodeFactory.instance.textNode(values.get(i)));
+            var itemSchemas = new ArrayList<Schema>();
+            for (var schema : schemas) {
+                var items = SchemaUtil.resolveRef(api, SchemaUtil.itemSchema(schema, i));
+                if (items != null)
+                    itemSchemas.add(items);
+            }
+            arrayNode.add(toNode(values.get(i), decodingSchema(itemSchemas)));
         }
         return arrayNode;
     }

@@ -203,6 +203,19 @@ Add regression tests before changing the incorrect behavior. Cover absent/empty/
 
 Avoid expanding unrelated unsupported WSDL features. Use the repository’s targeted test workflow. Do not commit or push. Report the model, compatibility implications, and test results.
 
+#### Harmonize JSON parsers
+
+- Story: JSON is parsed in many places with differently configured parsers. About 76 classes in `core` create their own `new ObjectMapper()`, mostly with Jackson's lenient defaults, e.g. trailing tokens are ignored. The JSON Schema, OpenAPI and JSON-RPC validators already reject trailing data; other parsers do not.
+- Central, immutable parser configuration in `JsonUtil` (shared `ObjectReader`s instead of mutable `ObjectMapper`s): strict by default (`FAIL_ON_TRAILING_TOKENS`, duplicate key detection), with one place for limits such as nesting depth and string length.
+- Every validator and every interceptor that parses a body uses it. Parse the body once and keep the `JsonNode` on the message (see JSONBody under Improvements).
+- **Breaking**: bodies that were accepted before, e.g. with trailing data or duplicate keys, are rejected.
+
+#### Get rid of old JSON parsers
+
+- `org.json` (`JsonToXml`, `Xml2JsonInterceptor`, `ElasticSearchExchangeStore`): replace with Jackson. Check that `xml2json`/`json2xml` output stays the same, or name the differences in the release notes.
+- `json-smart`: only there for `json-path`. Configure `json-path` with the Jackson provider and drop the direct dependency if possible.
+- Combine with the Jackson 3 upgrade.
+
 
 ### Resolve the backend URL (destination) late
 
