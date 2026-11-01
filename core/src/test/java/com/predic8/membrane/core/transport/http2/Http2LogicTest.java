@@ -33,10 +33,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -337,6 +339,67 @@ class Http2LogicTest {
         assertThrows(EndOfStreamException.class, () -> createLogic(openAndResetStreams(Http2Logic.MAX_RESETS_PER_WINDOW)).handle());
     }
 
+    /** The resets are counted in a sliding window: a burst spanning the end of a 30-second period is still too many. */
+    @Test
+    void tooManyResetStreamsWithinThirtySecondsCloseTheConnection() throws Exception {
+        final var start = System.nanoTime();
+        final var logic = createLogic(openAndResetStreams(Http2Logic.MAX_RESETS_PER_WINDOW + 1));
+        final var resets = new AtomicInteger();
+        // All but the last reset 29 seconds after the connection started, the last one 2 seconds later.
+        logic.clock = () -> start + SECONDS.toNanos(resets.incrementAndGet() <= Http2Logic.MAX_RESETS_PER_WINDOW ? 29 : 31);
+
+        assertThrows(FatalConnectionException.class, logic::handle);
+    }
+
+    @Test
+    void resetStreamsOlderThanThirtySecondsAreNotCounted() throws Exception {
+        final var start = System.nanoTime();
+        final var logic = createLogic(openAndResetStreams(Http2Logic.MAX_RESETS_PER_WINDOW + 1));
+        final var resets = new AtomicInteger();
+        logic.clock = () -> start + SECONDS.toNanos(resets.incrementAndGet() <= Http2Logic.MAX_RESETS_PER_WINDOW ? 0 : 31);
+
+        assertThrows(EndOfStreamException.class, logic::handle);
+    }
+
+    /** A refused stream that the client resets before the refusal was written counts as one reset, not two. */
+    @Test
+    void refusedStreamResetByTheClientCountsOnce() throws Exception {
+        final var encoder = new Encoder(4096);
+        final var in = new ByteArrayOutputStream();
+        in.write(SETTINGS_ACK);
+        for (int streamId = 1; streamId <= 99; streamId += 2)
+            in.write(headersFrame(streamId, false, encoder, withGet()));
+        for (int i = 0; i < Http2Logic.MAX_RESETS_PER_WINDOW; i++) {
+            in.write(headersFrame(101 + 2 * i, false, encoder, withGet()));
+            in.write(rstStream(101 + 2 * i));
+        }
+
+        assertThrows(EndOfStreamException.class, () -> createLogic(in.toByteArray()).handle());
+    }
+
+    /**
+     * HEADERS on a refused stream, arriving before its reset was written, are ignored. Their header block is decoded
+     * all the same: the next request refers to the field it added to the HPACK dynamic table.
+     */
+    @Test
+    void headersOnARefusedStreamAreIgnored() throws Exception {
+        final var encoder = new Encoder(4096);
+        final var in = new ByteArrayOutputStream();
+        in.write(SETTINGS_ACK);
+        for (int streamId = 1; streamId <= 99; streamId += 2)
+            in.write(headersFrame(streamId, false, encoder, withGet()));
+        in.write(headersFrame(101, false, encoder, withGet()));
+        in.write(headersFrame(101, true, encoder, "x-trailer", "1"));
+        in.write(rstStream(1));
+        in.write(headersFrame(103, true, encoder, withGet("x-trailer", "1")));
+        final var handler = new RecordingHandler();
+
+        assertThrows(EndOfStreamException.class, () -> createLogic(in.toByteArray(), handler).handle());
+
+        assertEquals(51, handler.exchanges);
+        assertEquals("1", handler.message.getHeader().getFirstValue("x-trailer"));
+    }
+
     /**
      * CONTINUATION flood: a header block that does not end is buffered until its last fragment arrives. One that
      * grows too large closes the connection, before it uses up the memory.
@@ -381,6 +444,34 @@ class Http2LogicTest {
         assertThrows(EndOfStreamException.class, () -> createLogic(in.toByteArray(), handler).handle());
 
         assertEquals("bar", handler.message.getHeader().getFirstValue("x-foo"));
+    }
+
+    @Test
+    void headerBlockInTheMostFragmentsAllowedIsAccepted() throws Exception {
+        final var handler = new RecordingHandler();
+
+        assertThrows(EndOfStreamException.class, () -> createLogic(requestInFragments(Http2Logic.MAX_HEADER_BLOCK_FRAMES), handler).handle());
+
+        assertNotNull(handler.message);
+    }
+
+    @Test
+    void headerBlockInOneFragmentTooManyClosesTheConnection() throws Exception {
+        assertThrows(FatalConnectionException.class, () -> createLogic(requestInFragments(Http2Logic.MAX_HEADER_BLOCK_FRAMES + 1)).handle());
+    }
+
+    /** A GET request on stream 1, whose header block is carried by HEADERS followed by empty CONTINUATION frames. */
+    private static byte[] requestInFragments(int frames) throws IOException {
+        final var block = new ByteArrayOutputStream();
+        final var encoder = new Encoder(4096);
+        final var fields = withGet();
+        for (int i = 0; i < fields.length; i += 2)
+            encoder.encodeHeader(block, bytes(fields[i]), bytes(fields[i + 1]), false);
+        final var in = new ByteArrayOutputStream();
+        in.write(frame(0x1, 0x1, block.toByteArray()));
+        for (int i = 1; i < frames; i++)
+            in.write(frame(0x9, i == frames - 1 ? 0x4 : 0, new byte[0]));
+        return in.toByteArray();
     }
 
     /** A frame on stream 1. */
