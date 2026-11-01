@@ -56,6 +56,11 @@ public class JavascriptInterceptor extends AbstractScriptInterceptor {
 
     protected LanguageAdapter adapter;
 
+    @Override
+    protected boolean isListSerializedToJson() {
+        return true;
+    }
+
     public JavascriptInterceptor() {
         name = "javascript";
     }

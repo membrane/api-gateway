@@ -257,6 +257,8 @@ public class JavascriptInterceptorTest {
         }
     }
 
+    @ParameterizedTest
+    @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
     void responseFlowWithoutResponse(Class<LanguageSupport> engine) {
         initInterceptor("""
                 property.put('ran', 'yes');

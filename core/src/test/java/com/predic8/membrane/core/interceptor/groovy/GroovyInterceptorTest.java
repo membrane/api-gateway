@@ -24,7 +24,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.ApplicationContext;
 
-import java.util.List;
 import java.util.Map;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
@@ -174,8 +173,8 @@ public class GroovyInterceptorTest {
 	}
 
 	@Test
-	void returnList() throws Exception {
-		exc.setResponse(ok().build());
+	void returnedListIsIgnored() throws Exception {
+		exc.setResponse(ok().body("original").build());
 
 		final var i = new GroovyInterceptor() {{
 			src = "['Roller', 'äöüÄÖÜ', 7]";
@@ -183,8 +182,7 @@ public class GroovyInterceptorTest {
 		i.init(router);
 
 		assertEquals(CONTINUE, i.handleResponse(exc));
-		assertTrue(exc.getResponse().isJSON());
-		assertEquals(List.of("Roller", "äöüÄÖÜ", 7), om.readValue(exc.getResponse().getBodyAsStringDecoded(), List.class));
+		assertEquals("original", exc.getResponse().getBodyAsStringDecoded());
 	}
 
 	@Test
