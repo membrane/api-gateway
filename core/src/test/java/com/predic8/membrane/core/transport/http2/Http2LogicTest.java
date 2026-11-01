@@ -29,6 +29,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -334,6 +335,60 @@ class Http2LogicTest {
     @Test
     void resetStreamsUpToTheLimitAreAccepted() throws Exception {
         assertThrows(EndOfStreamException.class, () -> createLogic(openAndResetStreams(Http2Logic.MAX_RESETS_PER_WINDOW)).handle());
+    }
+
+    /**
+     * CONTINUATION flood: a header block that does not end is buffered until its last fragment arrives. One that
+     * grows too large closes the connection, before it uses up the memory.
+     */
+    @Test
+    void headerBlockTooLargeToBufferClosesTheConnection() throws Exception {
+        final var in = new ByteArrayOutputStream();
+        in.write(frame(0x1, 0, new byte[0]));
+        final var fragment = new byte[16000];
+        for (int size = 0; size <= 3 * Http2Logic.MAX_HEADER_LIST_SIZE; size += fragment.length)
+            in.write(frame(0x9, 0, fragment));
+
+        assertThrows(FatalConnectionException.class, () -> createLogic(in.toByteArray()).handle());
+    }
+
+    /** CONTINUATION flood with empty frames, which never grow the block. */
+    @Test
+    void headerBlockInTooManyFragmentsClosesTheConnection() throws Exception {
+        final var in = new ByteArrayOutputStream();
+        in.write(frame(0x1, 0, new byte[0]));
+        for (int i = 0; i < 1000; i++)
+            in.write(frame(0x9, 0, new byte[0]));
+
+        assertThrows(FatalConnectionException.class, () -> createLogic(in.toByteArray()).handle());
+    }
+
+    @Test
+    void headerBlockInSeveralFragmentsIsAccepted() throws Exception {
+        final var block = new ByteArrayOutputStream();
+        final var encoder = new Encoder(4096);
+        final var fields = withGet("x-foo", "bar");
+        for (int i = 0; i < fields.length; i += 2)
+            encoder.encodeHeader(block, bytes(fields[i]), bytes(fields[i + 1]), false);
+        final var bytes = block.toByteArray();
+        final var in = new ByteArrayOutputStream();
+        // END_STREAM on HEADERS, END_HEADERS on the last of the CONTINUATION frames, each carrying 4 bytes.
+        in.write(frame(0x1, 0x1, Arrays.copyOfRange(bytes, 0, 4)));
+        for (int offset = 4; offset < bytes.length; offset += 4)
+            in.write(frame(0x9, offset + 4 >= bytes.length ? 0x4 : 0, Arrays.copyOfRange(bytes, offset, Math.min(offset + 4, bytes.length))));
+        final var handler = new RecordingHandler();
+
+        assertThrows(EndOfStreamException.class, () -> createLogic(in.toByteArray(), handler).handle());
+
+        assertEquals("bar", handler.message.getHeader().getFirstValue("x-foo"));
+    }
+
+    /** A frame on stream 1. */
+    private static byte[] frame(int type, int flags, byte[] payload) {
+        final var frame = new ByteArrayOutputStream();
+        frame.write(new byte[]{(byte) (payload.length >>> 16), (byte) (payload.length >>> 8), (byte) payload.length, (byte) type, (byte) flags, 0, 0, 0, 1}, 0, 9);
+        frame.writeBytes(payload);
+        return frame.toByteArray();
     }
 
     /** Opens the given number of streams, each reset by the client right after its HEADERS frame. */

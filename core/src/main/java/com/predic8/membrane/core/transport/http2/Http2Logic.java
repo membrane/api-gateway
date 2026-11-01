@@ -59,6 +59,14 @@ public class Http2Logic {
     static final int MAX_HEADER_LIST_SIZE = 64 * 1024;
 
     /**
+     * Limits of a header block while its fragments arrive, before it is decoded. Twice the decoded limit leaves
+     * room for blocks that decode to more than {@link #MAX_HEADER_LIST_SIZE}: those are still rejected gracefully.
+     * A block beyond these limits closes the connection (CONTINUATION flood).
+     */
+    static final int MAX_HEADER_BLOCK_SIZE = 2 * MAX_HEADER_LIST_SIZE;
+    static final int MAX_HEADER_BLOCK_FRAMES = 64;
+
+    /**
      * How many streams the peer may make end in a reset within {@link #RESET_WINDOW_NANOS}, by resetting them or
      * by opening them beyond the concurrent stream limit, before the connection is closed (CVE-2023-44487).
      */
@@ -424,6 +432,7 @@ public class Http2Logic {
         headerFrames.add(headers);
 
         HeaderBlockFragment last = headers;
+        var headerBlockLength = headers.getHeaderBlockLength();
 
         while (!last.isEndHeaders()) {
             Frame frame = new Frame(ourSettings);
@@ -439,6 +448,14 @@ public class Http2Logic {
                 throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
 
             headerFrames.add(last);
+            headerBlockLength += last.getHeaderBlockLength();
+            // The fragments are buffered until the block ends, so one that does not end would use up the memory
+            // (CONTINUATION flood). It cannot be skipped either: the HPACK table must be updated by every block.
+            if (headerBlockLength > MAX_HEADER_BLOCK_SIZE || headerFrames.size() > MAX_HEADER_BLOCK_FRAMES) {
+                log.info("Closing HTTP/2 connection from {}: the header block on stream {} exceeds {} bytes or {} frames.",
+                        remoteAddr, streamId1, MAX_HEADER_BLOCK_SIZE, MAX_HEADER_BLOCK_FRAMES);
+                throw new FatalConnectionException(ERROR_ENHANCE_YOUR_CALM);
+            }
         }
 
         if (refused) {
