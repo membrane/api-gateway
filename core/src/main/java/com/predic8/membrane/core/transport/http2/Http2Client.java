@@ -39,6 +39,7 @@ import static com.predic8.membrane.core.transport.http2.Http2ExchangeHandler.wri
 import static com.predic8.membrane.core.transport.http2.Http2Logic.getRemoteAddr;
 import static com.predic8.membrane.core.transport.http2.Http2ServerHandler.PREFACE;
 import static com.predic8.membrane.core.transport.http2.frame.Error.ERROR_CANCEL;
+import static com.predic8.membrane.core.transport.http2.frame.Error.ERROR_REFUSED_STREAM;
 
 public class Http2Client implements Runnable, AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(Http2Client.class);
@@ -51,6 +52,10 @@ public class Http2Client implements Runnable, AutoCloseable {
     @GuardedBy("this")
     private int reserved;
     private volatile boolean closed;
+    /** Lowest last-stream-id of the GOAWAY frames from the peer, Integer.MAX_VALUE before the first one. */
+    private volatile int goawayLastStreamId = Integer.MAX_VALUE;
+    /** Set by the first GOAWAY. The peer may announce a graceful shutdown with a last-stream-id of 2^31-1. */
+    private volatile boolean goawayReceived;
 
     static class ResponseInfo {
         private final CountDownLatch cdl = new CountDownLatch(1);
@@ -77,6 +82,9 @@ public class Http2Client implements Runnable, AutoCloseable {
 
         Response await() throws IOException, InterruptedException {
             cdl.await();
+            // Keeps the type, the RetryHandler decides by it
+            if (failure instanceof StreamNotProcessedException)
+                throw new StreamNotProcessedException(failure.getMessage(), failure);
             if (failure != null)
                 throw new IOException(failure.getMessage(), failure);
             return response;
@@ -103,8 +111,11 @@ public class Http2Client implements Runnable, AutoCloseable {
             @Override
             public void handleStreamReset(int streamId, int errorCode) {
                 ResponseInfo ri = responses.get(streamId);
-                if (ri != null)
-                    ri.fail(new IOException("HTTP/2 stream %d was reset by the peer with error code %d.".formatted(streamId, errorCode)));
+                if (ri == null)
+                    return;
+                final var message = "HTTP/2 stream %d was reset by the peer with error code %d.".formatted(streamId, errorCode);
+                // The peer did not process a refused stream (RFC 9113 §8.7)
+                ri.fail(errorCode == ERROR_REFUSED_STREAM ? new StreamNotProcessedException(message) : new IOException(message));
             }
 
             @Override
@@ -123,6 +134,18 @@ public class Http2Client implements Runnable, AutoCloseable {
                 final var ri = responses.get(streamId);
                 if (ri != null)
                     ri.fail(new IOException("HTTP/2 response headers on stream %d carry a malformed header field.".formatted(streamId)));
+            }
+
+            @Override
+            public void handleGoaway(int lastStreamId, int errorCode) {
+                // Only the reader thread writes the field
+                goawayLastStreamId = Math.min(goawayLastStreamId, lastStreamId);
+                goawayReceived = true;
+                // A call registered concurrently either sees the new value in doCall or is failed here
+                responses.forEach((streamId, ri) -> {
+                    if (streamId > goawayLastStreamId)
+                        ri.fail(new StreamNotProcessedException("The HTTP/2 peer sent GOAWAY and did not process stream %d.".formatted(streamId)));
+                });
             }
         });
 
@@ -150,6 +173,8 @@ public class Http2Client implements Runnable, AutoCloseable {
             // registered concurrently is either drained there or rejected here.
             if (closed)
                 throw new IOException("HTTP/2 connection closed");
+            if (goawayReceived)
+                throw new StreamNotProcessedException("The HTTP/2 peer sent GOAWAY and takes no new streams.");
 
             StreamInfo streamInfo = new StreamInfo(streamId, logic.sender, logic.peerSettings, logic.ourSettings);
             logic.streams.put(streamId, streamInfo);
@@ -213,6 +238,9 @@ public class Http2Client implements Runnable, AutoCloseable {
     }
 
     public boolean reserveStream() {
+        if (goawayReceived)
+            return false;
+
         int max = getMax();
 
         synchronized(this) {

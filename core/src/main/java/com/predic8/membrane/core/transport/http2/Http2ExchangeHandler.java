@@ -42,7 +42,8 @@ import static com.predic8.membrane.core.transport.http2.frame.Error.ERROR_INTERN
 import static com.predic8.membrane.core.transport.http2.frame.Frame.*;
 import static com.predic8.membrane.core.transport.http2.frame.HeadersFrame.FLAG_END_HEADERS;
 import static com.predic8.membrane.core.transport.http2.frame.HeadersFrame.FLAG_END_STREAM;
-import static java.nio.charset.StandardCharsets.US_ASCII;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static java.util.Locale.ROOT;
 
 public class Http2ExchangeHandler implements Runnable {
     private static final Logger log = LoggerFactory.getLogger(Http2ExchangeHandler.class.getName());
@@ -304,7 +305,7 @@ public class Http2ExchangeHandler implements Runnable {
         }
 
         for (HeaderField hf : header.getAllHeaderFields()) {
-            String key = hf.getHeaderName().toString().toLowerCase();
+            String key = hf.getHeaderName().toString().toLowerCase(ROOT);
             if ("keep-alive".equals(key) || "proxy-connection".equals(key) || "transfer-encoding".equals(key) || "upgrade".equals(key) || "connection".equals(key) || "host".equals(key))
                 continue;
 
@@ -319,7 +320,8 @@ public class Http2ExchangeHandler implements Runnable {
 
     private static void encodeHeader(Encoder encoder, ByteArrayOutputStream baos, StringBuilder sb, String key, String val) throws IOException {
         boolean sensitive = "set-cookie".equals(key);
-        encoder.encodeHeader(baos, key.getBytes(US_ASCII), val.getBytes(US_ASCII), sensitive);
+        // Byte for byte, as Header.write does for HTTP/1.1
+        encoder.encodeHeader(baos, key.getBytes(ISO_8859_1), val.getBytes(ISO_8859_1), sensitive);
         logHeader(sb, key, val, sensitive);
     }
 

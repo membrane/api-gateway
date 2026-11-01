@@ -25,6 +25,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -35,6 +36,7 @@ import static com.predic8.membrane.core.http.Response.ok;
 import static com.predic8.membrane.core.transport.http2.Http2ExchangeHandler.createHeadersFrames;
 import static com.predic8.membrane.core.transport.http2.Http2ExchangeHandler.writeMessageBody;
 import static com.predic8.membrane.core.transport.http2.frame.DataFrame.FLAG_END_STREAM;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -168,6 +170,27 @@ class Http2ExchangeHandlerTest {
         sender.getConnectionFlowControl().increment(increment);
     }
 
+    /**
+     * Values are written byte for byte, as by the HTTP/1.1 writer, instead of replacing non-ASCII characters.
+     */
+    @Test
+    void nonAsciiValueIsEncodedByteForByte() throws Exception {
+        final var headers = encodeRequestHeaders(get("/foo").header("X-Foo", "café").build());
+        assertEquals("café", headers.get("x-foo"));
+    }
+
+    @Test
+    void headerNamesAreLowerCasedIndependentOfDefaultLocale() throws Exception {
+        final var defaultLocale = Locale.getDefault();
+        Locale.setDefault(Locale.forLanguageTag("tr"));
+        try {
+            final var headers = encodeRequestHeaders(get("/foo").header("TITLE", "x").build());
+            assertEquals("x", headers.get("title"));
+        } finally {
+            Locale.setDefault(defaultLocale);
+        }
+    }
+
     private static Map<String, String> encodeRequestHeaders(Request request) throws IOException {
         final var frames = createHeadersFrames(request, request.getHeader(), 1, new Encoder(4096), new Settings(), false);
         assertEquals(1, frames.size());
@@ -177,7 +200,7 @@ class Http2ExchangeHandlerTest {
         final var decoder = new Decoder(8192, 4096);
         decoder.decode(new ByteArrayInputStream(headersFrame.getContent(), headersFrame.getHeaderBlockStartIndex(),
                         headersFrame.getHeaderBlockLength()),
-                (name, value, sensitive) -> headers.put(new String(name, US_ASCII), new String(value, US_ASCII)));
+                (name, value, sensitive) -> headers.put(new String(name, ISO_8859_1), new String(value, ISO_8859_1)));
         decoder.endHeaderBlock();
         return headers;
     }
