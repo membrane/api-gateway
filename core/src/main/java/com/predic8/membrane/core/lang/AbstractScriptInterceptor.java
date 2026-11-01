@@ -43,6 +43,7 @@ import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.Response.ok;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.FlowController.ABORTION_REASON;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.lang.ScriptingUtils.createParameterBindings;
@@ -105,6 +106,9 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
         try {
             res = script.apply(getParameterBindings(exc, flow, msg));
         } catch (Exception e) {
+            // Keep the original cause if a script in an abort flow fails as well
+            if (exc.getProperty(ABORTION_REASON) == null)
+                exc.setProperty(ABORTION_REASON, e);
             handleScriptExecutionException(exc, e);
             return ABORT;
         }

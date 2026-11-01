@@ -505,7 +505,13 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	@SuppressWarnings("unused")
 	@Mapping("/admin/call/?(\\?.*)?")
 	public Response handleCallRequest(Map<String, String> params, String relativeRootPath) {
-		return respond(getCallPage(params, relativeRootPath));
+		final long id;
+		try {
+			id = Long.parseLong(params.get("id"));
+		} catch (NumberFormatException e) {
+			return Response.badRequest("Invalid exchange id.").build();
+		}
+		return respond(getCallPage(params, id, relativeRootPath));
 	}
 
 	@SuppressWarnings("unused")
@@ -776,7 +782,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		return res;
 	}
 
-	private String getCallPage(final Map<String, String> params, String relativeRootPath) {
+	private String getCallPage(final Map<String, String> params, final long id, String relativeRootPath) {
 		StringWriter writer = new StringWriter();
 		return new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
@@ -790,7 +796,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 						"					$( \"#exchangeTab\" ).tabs();\r\n" +
 						"					$( \"#requestContentTab\" ).tabs();\r\n" +
 						"					$( \"#responseContentTab\" ).tabs();\r\n" +
-						"                   membrane.loadExchange("+params.get("id")+");\r\n"+
+						"                   membrane.loadExchange("+id+");\r\n"+
 						"				});").end();
 
 				div().id("exchangeTab");

@@ -214,8 +214,9 @@ public class Http2Logic {
     private void handleFrame(GoawayFrame goawayFrame) throws IOException {
         if (goawayFrame.getFrame().getStreamId() != 0)
             throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
+        goawayFrame.validateSize();
 
-        // TODO: implement this, once sending PUSH_PROMISE is implemented
+        messageHandler.handleGoaway(goawayFrame.getLastStreamId(), goawayFrame.getErrorCode());
     }
 
     private void handleFrame(RstStreamFrame rstStream) throws IOException {
@@ -397,9 +398,9 @@ public class Http2Logic {
                 oversizedField[0] = true;
                 return;
             }
-            // The name has been checked to be ASCII, so this charset reads it byte for byte.
+            // Byte for byte, as the HTTP/1.1 parser reads a field line. The name has been checked to be ASCII.
             String key = new String(name, ISO_8859_1);
-            String val = new String(value);
+            String val = new String(value, ISO_8859_1);
 
             if (sb != null) {
                 sb.append(key);

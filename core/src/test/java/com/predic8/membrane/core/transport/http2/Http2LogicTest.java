@@ -60,6 +60,7 @@ class Http2LogicTest {
                 arguments("DATA padded beyond its payload", new byte[]{0, 0, 2, 0x0, 0x8, 0, 0, 0, 1, 5, 'a'}),
                 arguments("HEADERS padded beyond its payload", new byte[]{0, 0, 2, 0x1, 0x4 | 0x8, 0, 0, 0, 1, 5, (byte) 0x88}),
                 arguments("SETTINGS with 5 bytes", new byte[]{0, 0, 5, 0x4, 0, 0, 0, 0, 0, 0, 0x3, 0, 0, 0}),
+                arguments("GOAWAY with 4 bytes", new byte[]{0, 0, 4, 0x7, 0, 0, 0, 0, 0, 0, 0, 0, 0}),
                 // The client opened stream 3, but even ids belong to the server, which opened none: stream 2 is idle.
                 arguments("WINDOW_UPDATE on an idle stream of the other parity", new byte[]{
                         0, 0, 3, 0x1, 0x5, 0, 0, 0, 3, (byte) 0x82, (byte) 0x84, (byte) 0x86,
@@ -141,6 +142,19 @@ class Http2LogicTest {
         assertNotNull(handler.message);
         assertEquals("b a\"r", handler.message.getHeader().getFirstValue("x-foo"));
         assertEquals(0, handler.malformedStreamId);
+    }
+
+    /**
+     * Values are read byte for byte, as by the HTTP/1.1 parser, whatever the default charset of the JVM is.
+     */
+    @Test
+    void nonAsciiValueIsDecodedByteForByte() throws Exception {
+        final var handler = new RecordingHandler();
+
+        assertThrows(EndOfStreamException.class, () -> createLogic(requestHeadersFrame(bytes("x-foo"), new byte[]{'c', 'a', 'f', (byte) 0xE9}), handler).handle());
+
+        assertNotNull(handler.message);
+        assertEquals("café", handler.message.getHeader().getFirstValue("x-foo"));
     }
 
     private static byte[] bytes(String s) {
