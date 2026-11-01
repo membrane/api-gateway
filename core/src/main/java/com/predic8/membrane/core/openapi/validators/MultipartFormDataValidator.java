@@ -257,9 +257,9 @@ public class MultipartFormDataValidator {
 
     @SuppressWarnings("rawtypes")
     private JsonNode reconstructPart(ValidationContext ctx, List<Schema> schemas, Schema schema, String contentType, FormPart part) {
-        var text = new String(part.content, UTF_8);
         if (isBinaryString(schema))
-            return JsonNodeFactory.instance.textNode(text);
+            return JsonNodeFactory.instance.textNode(Base64.getEncoder().encodeToString(part.content));
+        var text = new String(part.content, UTF_8);
         try {
             if (isJson(contentType))
                 return new JsonBody(text).getPayload();

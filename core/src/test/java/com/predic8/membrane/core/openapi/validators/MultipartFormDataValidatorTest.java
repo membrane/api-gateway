@@ -31,8 +31,7 @@ import java.util.List;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class MultipartFormDataValidatorTest extends AbstractValidatorTest {
 
@@ -296,7 +295,7 @@ public class MultipartFormDataValidatorTest extends AbstractValidatorTest {
 
         var errors = validateParts(schema, "value", "hello");
 
-        assertTrue(!errors.isEmpty(), "The value must match one of the alternatives");
+        assertFalse(errors.isEmpty(), "The value must match one of the alternatives");
     }
 
     @Test
@@ -317,7 +316,7 @@ public class MultipartFormDataValidatorTest extends AbstractValidatorTest {
         schema.addProperty("value", union);
 
         assertTrue(validateParts(schema, "value", "hello!").isEmpty());
-        assertTrue(!validateParts(schema, "value", "hello").isEmpty());
+        assertFalse(validateParts(schema, "value", "hello").isEmpty());
         var body = new MultipartBuilder().part("value", null, null, null, "hello!").build();
         var errors = new MultipartFormDataValidator(new OpenAPI()).validate(
                 new ValidationContext().entity("REQUEST"), new MediaType().schema(schema),
@@ -358,7 +357,7 @@ public class MultipartFormDataValidatorTest extends AbstractValidatorTest {
 
         var valid = validateParts(schema, "value", "2");
         assertTrue(valid.isEmpty(), valid::toString);
-        assertTrue(!validateParts(schema, "value", "1").isEmpty());
+        assertFalse(validateParts(schema, "value", "1").isEmpty());
     }
 
     @Test
@@ -369,7 +368,7 @@ public class MultipartFormDataValidatorTest extends AbstractValidatorTest {
         schema.addPatternProperty("^value$", new IntegerSchema().minimum(java.math.BigDecimal.TEN));
 
         assertTrue(validateParts(schema, "value", "10").isEmpty());
-        assertTrue(!validateParts(schema, "value", "2").isEmpty());
+        assertFalse(validateParts(schema, "value", "2").isEmpty());
     }
 
     @ParameterizedTest
@@ -399,7 +398,27 @@ public class MultipartFormDataValidatorTest extends AbstractValidatorTest {
 
         assertTrue(validateParts(schema, "x-count", "1", "2").isEmpty());
         var errors = validateParts(schema, "x-count", "1", "1");
-        assertTrue(!errors.isEmpty(), "Duplicate array items must be rejected");
+        assertFalse(errors.isEmpty(), "Duplicate array items must be rejected");
+    }
+
+    @Test
+    void binaryArrayUniqueItemsComparesBytes() throws ParseException {
+        var schema = new ObjectSchema().addProperties("files",
+                new ArraySchema().items(new StringSchema().format("binary")).uniqueItems(true));
+        var validator = new MultipartFormDataValidator(new OpenAPI());
+        var distinct = new MultipartBuilder()
+                .part("files", "a.bin", APPLICATION_OCTET_STREAM, "base64", "/w==")
+                .part("files", "b.bin", APPLICATION_OCTET_STREAM, "base64", "/g==")
+                .build();
+        var duplicate = new MultipartBuilder()
+                .part("files", "a.bin", APPLICATION_OCTET_STREAM, "base64", "/w==")
+                .part("files", "b.bin", APPLICATION_OCTET_STREAM, "base64", "/w==")
+                .build();
+
+        assertTrue(validator.validate(new ValidationContext().entity("REQUEST"), new MediaType().schema(schema),
+                Request.post().path("/upload").mediaType(MultipartBuilder.CONTENT_TYPE).body(distinct)).isEmpty());
+        assertFalse(validator.validate(new ValidationContext().entity("REQUEST"), new MediaType().schema(schema),
+                Request.post().path("/upload").mediaType(MultipartBuilder.CONTENT_TYPE).body(duplicate)).isEmpty());
     }
 
     @Test
@@ -409,10 +428,8 @@ public class MultipartFormDataValidatorTest extends AbstractValidatorTest {
         schema.addPatternProperty("^x-", new Schema<>().uniqueItems(true));
 
         assertTrue(validateParts(schema, "x-count", "1", "2").isEmpty());
-        assertTrue(!validateParts(schema, "x-count", "1", "1").isEmpty(),
-                "A typeless schema must reject duplicate array items");
-        assertTrue(!validateParts(schema, "x-count", "bad").isEmpty(),
-                "Individual items must still be validated");
+        assertFalse(validateParts(schema, "x-count", "1", "1").isEmpty(), "A typeless schema must reject duplicate array items");
+        assertFalse(validateParts(schema, "x-count", "bad").isEmpty(), "Individual items must still be validated");
     }
 
     @Test
