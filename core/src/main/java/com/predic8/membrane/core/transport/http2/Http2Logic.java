@@ -214,8 +214,9 @@ public class Http2Logic {
     private void handleFrame(GoawayFrame goawayFrame) throws IOException {
         if (goawayFrame.getFrame().getStreamId() != 0)
             throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
+        goawayFrame.validateSize();
 
-        // TODO: implement this, once sending PUSH_PROMISE is implemented
+        messageHandler.handleGoaway(goawayFrame.getLastStreamId(), goawayFrame.getErrorCode());
     }
 
     private void handleFrame(RstStreamFrame rstStream) throws IOException {

@@ -14,6 +14,8 @@
 
 package com.predic8.membrane.core.transport.http2.frame;
 
+import java.io.IOException;
+
 import static com.predic8.membrane.core.transport.http2.frame.Frame.TYPE_GOAWAY;
 
 public class GoawayFrame {
@@ -24,6 +26,12 @@ public class GoawayFrame {
 
     public GoawayFrame(Frame frame) {
         this.frame = frame;
+        // Rejected by validateSize()
+        if (frame.length < 8) {
+            lastStreamId = 0;
+            errorCode = 0;
+            return;
+        }
 
         lastStreamId = (frame.content[0] & 0x7F) << 24 |
                 (frame.content[1] & 0xFF) << 16 |
@@ -67,12 +75,25 @@ public class GoawayFrame {
         sb.append("\n  errorCode = ");
         sb.append(errorCode);
         sb.append("\n  additional debug data:\n");
-        frame.appendHex(sb, frame.content, 8, frame.length - 8, 2);
+        frame.appendHex(sb, frame.content, 8, Math.max(0, frame.length - 8), 2);
         sb.append("}");
         return sb.toString();
     }
 
     public Frame getFrame() {
         return frame;
+    }
+
+    public int getLastStreamId() {
+        return lastStreamId;
+    }
+
+    public int getErrorCode() {
+        return errorCode;
+    }
+
+    public void validateSize() throws IOException {
+        if (frame.length < 8)
+            throw new FatalConnectionException(Error.ERROR_FRAME_SIZE_ERROR);
     }
 }
