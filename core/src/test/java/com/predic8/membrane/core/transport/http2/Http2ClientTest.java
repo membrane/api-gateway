@@ -182,8 +182,8 @@ class Http2ClientTest {
     }
 
     /**
-     * After GOAWAY the connection takes no new streams, so Http2ClientPool passes it over and a new
-     * connection is opened.
+     * After GOAWAY the connection takes no new streams: reserveStream() fails, which makes Http2ClientPool pass it over,
+     * and so does a call.
      * That holds for any last-stream-id, including 2^31-1, which a peer sends to announce a graceful shutdown.
      */
     @ParameterizedTest
