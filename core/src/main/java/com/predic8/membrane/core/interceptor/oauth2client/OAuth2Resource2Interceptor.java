@@ -22,6 +22,7 @@ import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchange.snapshots.AbstractExchangeSnapshot;
 import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.HeaderName;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptorWithSession;
 import com.predic8.membrane.core.interceptor.Outcome;
@@ -243,7 +244,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
                 .toAbstractExchange();
         session.remove(OAuthUtils.oa2redictKeyNameInSession(oa2redirect));
 
-        doOriginalRequest(exc, originalExchange);
+        doOriginalRequest(exc, originalExchange, oa2redirect);
     }
 
     private boolean isLogoutRequest(Exchange exc) {
@@ -342,18 +343,41 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         return path.endsWith("/" + callbackPath);
     }
 
-    private void doOriginalRequest(Exchange exc, AbstractExchange originalRequest) {
+    /**
+     * Continues the request the user sent before logging in. The snapshot may have travelled through the
+     * browser (see {@link CookieOriginialExchangeStore}), so nothing in it may choose where the request
+     * goes: the current request was redirected to the original URI plus the {@code oa2redirect} parameter,
+     * and the route has already resolved its destination. Only that parameter is dropped from it.
+     * For the same reason the forwarded headers are the ones the gateway set on the current request.
+     */
+    private void doOriginalRequest(Exchange exc, AbstractExchange originalRequest, String oa2redirect) {
         originalRequest.getRequest().getHeader().add("Cookie", exc.getRequest().getHeader().getFirstValue("Cookie"));
+        copyForwardedHeaders(exc.getRequest().getHeader(), originalRequest.getRequest().getHeader());
+
+        final var destination = withoutOA2RedirectParameter(exc.getDestinations().getFirst(), oa2redirect);
+        final var originalRequestUri = withoutOA2RedirectParameter(exc.getOriginalRequestUri(), oa2redirect);
+
         exc.setRequest(originalRequest.getRequest());
+        exc.getRequest().setUri(originalRequestUri);
 
         exc.getDestinations().clear();
-        String xForwardedProto = originalRequest.getRequest().getHeader().getFirstValue(X_FORWARDED_PROTO);
-        String xForwardedHost = originalRequest.getRequest().getHeader().getFirstValue(X_FORWARDED_HOST);
-        String originalRequestUri = originalRequest.getOriginalRequestUri();
-        exc.getDestinations().add(xForwardedProto + "://" + xForwardedHost + originalRequestUri);
+        exc.getDestinations().add(destination);
 
         exc.setOriginalRequestUri(originalRequestUri);
-        exc.setOriginalHostHeader(xForwardedHost);
+    }
+
+    private static void copyForwardedHeaders(Header from, Header to) {
+        for (final var name : List.of(X_FORWARDED_FOR, X_FORWARDED_PROTO, X_FORWARDED_HOST)) {
+            to.removeFields(name);
+            from.getValues(new HeaderName(name)).forEach(to::add);
+        }
+    }
+
+    static String withoutOA2RedirectParameter(String uri, String oa2redirect) {
+        final var param = OA2REDIRECT + "=" + oa2redirect;
+        return uri.replace("&" + param, "")
+                .replace("?" + param + "&", "?")
+                .replace("?" + param, "");
     }
 
     private void appendAccessTokenToRequest(Exchange exc) {
