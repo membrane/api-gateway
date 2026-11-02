@@ -16,12 +16,14 @@
 
 package com.predic8.membrane.core.openapi.util;
 
+import com.predic8.membrane.core.openapi.OpenAPIParsingException;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.Schema;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.regex.PatternSyntaxException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -106,5 +108,26 @@ class SchemaUtilTest {
         assertSame(items, SchemaUtil.itemSchema(schema, 1));
         assertNull(SchemaUtil.itemSchema(new Schema().type("array").prefixItems(List.of(first)), 1));
         assertSame(items, SchemaUtil.itemSchema(new Schema().type("array").items(items), 0));
+    }
+
+    @Test
+    void patternPropertyPatternsAreCompiledOnceAndShared() {
+        final var schema = new Schema().addPatternProperty("^x-", new Schema());
+        final var patterns = SchemaUtil.getPatternPropertyPatterns(schema);
+        assertEquals(1, patterns.size());
+        assertTrue(patterns.getFirst().matcher("x-trace").find());
+        assertSame(patterns.getFirst(), SchemaUtil.getPatternPropertyPatterns(schema).getFirst());
+    }
+
+    @Test
+    void noPatternPropertiesGivesNoPatterns() {
+        assertTrue(SchemaUtil.getPatternPropertyPatterns(new Schema()).isEmpty());
+    }
+
+    @Test
+    void invalidPatternPropertyRegexIsSpecError() {
+        final var e = assertThrows(OpenAPIParsingException.class, () -> SchemaUtil.compilePatternPropertyRegex("["));
+        assertTrue(e.getMessage().contains("'['"), e::getMessage);
+        assertInstanceOf(PatternSyntaxException.class, e.getCause());
     }
 }

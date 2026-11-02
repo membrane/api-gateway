@@ -35,10 +35,7 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.Collections;
-import java.util.IdentityHashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Pattern;
 
 import static javax.xml.XMLConstants.W3C_XML_SCHEMA_INSTANCE_NS_URI;
@@ -172,17 +169,19 @@ public class XmlToJsonConverter {
         if (!Boolean.FALSE.equals(SchemaUtil.getAdditionalProperties(schema)))
             return;
 
+        final var patterns = SchemaUtil.getPatternPropertyPatterns(schema);
+
         final var attributes = element.getAttributes();
         for (int i = 0; i < attributes.getLength(); i++) {
             final var attribute = attributes.item(i);
-            if (consumed.contains(attribute) || isMarkupAttribute(attribute) || matchesPatternProperty(schema, attribute))
+            if (consumed.contains(attribute) || isMarkupAttribute(attribute) || matchesPatternProperty(patterns, attribute))
                 continue;
             throw new UndeclaredContentException("attribute", attribute.getNodeName(), element.getTagName());
         }
 
         final var children = element.getChildNodes();
         for (int i = 0; i < children.getLength(); i++) {
-            if (!(children.item(i) instanceof Element child) || consumed.contains(child) || matchesPatternProperty(schema, child))
+            if (!(children.item(i) instanceof Element child) || consumed.contains(child) || matchesPatternProperty(patterns, child))
                 continue;
             throw new UndeclaredContentException("element", child.getTagName(), element.getTagName());
         }
@@ -193,13 +192,9 @@ public class XmlToJsonConverter {
             || W3C_XML_SCHEMA_INSTANCE_NS_URI.equals(attribute.getNamespaceURI());
     }
 
-    @SuppressWarnings("unchecked")
-    private static boolean matchesPatternProperty(Schema schema, Node node) {
-        final Map<String, ?> patternProperties = schema.getPatternProperties();
-        if (patternProperties == null)
-            return false;
+    private static boolean matchesPatternProperty(List<Pattern> patterns, Node node) {
         final var name = node.getLocalName() != null ? node.getLocalName() : node.getNodeName();
-        return patternProperties.keySet().stream().anyMatch(regex -> Pattern.compile(regex).matcher(name).find());
+        return patterns.stream().anyMatch(pattern -> pattern.matcher(name).find());
     }
 
     // -----------------------------------------------------------------------

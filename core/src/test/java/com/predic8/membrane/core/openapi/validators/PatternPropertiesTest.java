@@ -14,13 +14,16 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
+import com.predic8.membrane.core.openapi.OpenAPIParsingException;
 import com.predic8.membrane.core.openapi.model.Request;
 import jakarta.mail.internet.ParseException;
 import org.junit.jupiter.api.Test;
 
+import java.util.regex.PatternSyntaxException;
+
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_XML;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class PatternPropertiesTest extends AbstractValidatorTest{
 
@@ -64,6 +67,32 @@ public class PatternPropertiesTest extends AbstractValidatorTest{
                 """));
         assertEquals(1, errors.size(), errors.toString());
         assertTrue(errors.toString().contains("x-trace"), errors.toString());
+    }
+
+    /**
+     * An invalid regex is a broken spec, not a client error: it is reported as OpenAPIParsingException
+     * instead of a raw PatternSyntaxException.
+     */
+    @Test
+    void invalidRegexInJsonBodyIsSpecError() {
+        final var e = assertThrows(OpenAPIParsingException.class, () -> validator.validate(Request.post().mediaType(APPLICATION_JSON).path("/invalid-regex").body("""
+                {"name": "a", "extra": "b"}
+                """)));
+        assertInvalidRegexMessage(e);
+    }
+
+    @Test
+    void invalidRegexInXmlBodyIsSpecError() {
+        final var e = assertThrows(OpenAPIParsingException.class, () -> validator.validate(Request.post().mediaType(APPLICATION_XML).path("/invalid-regex").body("""
+                <data><name>a</name><extra>b</extra></data>
+                """)));
+        assertInvalidRegexMessage(e);
+    }
+
+    private static void assertInvalidRegexMessage(OpenAPIParsingException e) {
+        assertTrue(e.getMessage().contains("patternProperties"), e::getMessage);
+        assertTrue(e.getMessage().contains("'['"), e::getMessage);
+        assertInstanceOf(PatternSyntaxException.class, e.getCause());
     }
 
 }

@@ -38,3 +38,27 @@ paths:
       responses:
         "200":
           description: "OK"
+  /invalid-regex:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InvalidRegex"
+          application/xml:
+            schema:
+              $ref: "#/components/schemas/InvalidRegex"
+      responses:
+        "200":
+          description: "OK"
+components:
+  schemas:
+    InvalidRegex:
+      type: object
+      properties:
+        name:
+          type: string
+      patternProperties:
+        "[":
+          type: string
+      additionalProperties: false

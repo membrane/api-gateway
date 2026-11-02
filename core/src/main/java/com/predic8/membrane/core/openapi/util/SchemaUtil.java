@@ -25,11 +25,20 @@ import io.swagger.v3.oas.models.media.Schema;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import static com.predic8.membrane.core.openapi.util.Utils.getComponentLocalNameFromRef;
 
 @SuppressWarnings("rawtypes")
 public class SchemaUtil {
+
+    /**
+     * Compiled {@code patternProperties} regexes by regex text, shared JVM-wide: {@link Pattern} is immutable
+     * and thread safe. Invalid regexes are not stored. See {@link #compilePatternPropertyRegex(String)}.
+     */
+    private static final Map<String, Pattern> PATTERN_PROPERTY_PATTERNS = new ConcurrentHashMap<>();
 
     /**
      * Looks up the schema referenced by {@code ref} under {@code #/components/schemas}.
@@ -116,6 +125,39 @@ public class SchemaUtil {
         if (additional instanceof Schema<?> s && s.getBooleanSchemaValue() != null)
             return s.getBooleanSchemaValue();
         return additional;
+    }
+
+    /**
+     * Returns the compiled {@code patternProperties} regexes of the schema, or an empty list if it has none.
+     *
+     * @throws OpenAPIParsingException if a regex is invalid, see {@link #compilePatternPropertyRegex(String)}
+     */
+    @SuppressWarnings("unchecked")
+    public static List<Pattern> getPatternPropertyPatterns(Schema schema) {
+        final Map<String, ?> patternProperties = schema.getPatternProperties();
+        if (patternProperties == null)
+            return List.of();
+        return patternProperties.keySet().stream().map(SchemaUtil::compilePatternPropertyRegex).toList();
+    }
+
+    /**
+     * Compiles a {@code patternProperties} regex. Validators are created per validated value, so compiled
+     * patterns are cached by regex. Only regexes of loaded specs become keys, entries are never removed.
+     *
+     * @throws OpenAPIParsingException if the regex is invalid. That is an error in the spec, not in the
+     *                                 validated message, and skipping the pattern would drop its constraints.
+     */
+    public static Pattern compilePatternPropertyRegex(String regex) {
+        return PATTERN_PROPERTY_PATTERNS.computeIfAbsent(regex, r -> {
+            try {
+                return Pattern.compile(r);
+            } catch (PatternSyntaxException e) {
+                final var error = new OpenAPIParsingException("Invalid patternProperties regex '%s': %s (index %d)."
+                        .formatted(r, e.getDescription(), e.getIndex()));
+                error.initCause(e);
+                throw error;
+            }
+        });
     }
 
     /** True if the schema's effective type is {@code array}. */
