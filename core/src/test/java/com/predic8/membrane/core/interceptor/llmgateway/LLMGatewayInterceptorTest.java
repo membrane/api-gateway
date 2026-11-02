@@ -17,6 +17,7 @@ package com.predic8.membrane.core.interceptor.llmgateway;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.chatcompletions.ChatCompletionsProvider;
+import com.predic8.membrane.core.interceptor.llmgateway.provider.openai.OpenAIProvider;
 import com.predic8.membrane.core.interceptor.llmgateway.store.AiApiUser;
 import com.predic8.membrane.core.openapi.validators.MultipartBuilder;
 import org.junit.jupiter.api.BeforeEach;
@@ -144,6 +145,75 @@ class LLMGatewayInterceptorTest {
         @Test
         void knownApiKeyIsForwarded() throws Exception {
             assertEquals(CONTINUE, interceptor.handleRequest(chatCompletionExchange("key-a")));
+        }
+    }
+
+    /**
+     * An endpoint the provider has no model input adapter for bypasses the model rules and the token
+     * budget. Once either is configured, such a request must be rejected before it gets the shared key.
+     */
+    @Nested
+    class UnrecognizedEndpoint {
+
+        private static final String EMBEDDINGS = "http://localhost/v1/embeddings";
+
+        private static final String EMBEDDINGS_REQUEST = """
+                {"model":"text-embedding-3-large","input":"Hi"}""";
+
+        @BeforeEach
+        void useOpenAIWithSharedKey() {
+            interceptor.setProvider(new OpenAIProvider());
+            interceptor.setApiKey("shared-key");
+        }
+
+        @Test
+        void isRejectedWithModelRules() throws Exception {
+            var policies = new DefaultPolicies();
+            policies.setModels(List.of("gpt-4o-mini"));
+            interceptor.setPolicies(policies);
+            interceptor.init();
+
+            var exchange = post(EMBEDDINGS).header(AUTHORIZATION, "Bearer client-key").json(EMBEDDINGS_REQUEST).buildExchange();
+
+            assertEquals(ABORT, interceptor.handleRequest(exchange));
+            assertEquals(400, exchange.getResponse().getStatusCode());
+            assertEquals("Bearer client-key", exchange.getRequest().getHeader().getFirstValue(AUTHORIZATION));
+        }
+
+        @Test
+        void isRejectedWithUserStore() throws Exception {
+            interceptor.setAiStore(initializedStoreWith(user("Alice", "key-a", 0)));
+            interceptor.init();
+
+            var exchange = post(EMBEDDINGS).header(AUTHORIZATION, "Bearer key-a").json(EMBEDDINGS_REQUEST).buildExchange();
+
+            assertEquals(ABORT, interceptor.handleRequest(exchange));
+            assertEquals(400, exchange.getResponse().getStatusCode());
+            assertEquals("Bearer key-a", exchange.getRequest().getHeader().getFirstValue(AUTHORIZATION));
+        }
+
+        /**
+         * A request without a body carries no model input the gateway could check.
+         */
+        @Test
+        void getIsRejectedWithUserStore() throws Exception {
+            interceptor.setAiStore(initializedStoreWith(user("Alice", "key-a", 0)));
+            interceptor.init();
+
+            var exchange = get("http://localhost/v1/files").header(AUTHORIZATION, "Bearer key-a").buildExchange();
+
+            assertEquals(ABORT, interceptor.handleRequest(exchange));
+            assertEquals(400, exchange.getResponse().getStatusCode());
+        }
+
+        @Test
+        void isForwardedWithSharedKeyWithoutRestrictions() throws Exception {
+            interceptor.init();
+
+            var exchange = post(EMBEDDINGS).header(AUTHORIZATION, "Bearer client-key").json(EMBEDDINGS_REQUEST).buildExchange();
+
+            assertEquals(CONTINUE, interceptor.handleRequest(exchange));
+            assertEquals("Bearer shared-key", exchange.getRequest().getHeader().getFirstValue(AUTHORIZATION));
         }
     }
 
