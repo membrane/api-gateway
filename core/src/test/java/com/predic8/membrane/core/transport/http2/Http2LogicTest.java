@@ -89,6 +89,27 @@ class Http2LogicTest {
         assertThrows(FatalConnectionException.class, () -> createLogic(in.toByteArray()).handle());
     }
 
+    /**
+     * Each PING is answered by a queued PING ACK. The sender does not run here, like for a client that does not read,
+     * so the answers pile up until the connection is closed. The SETTINGS sent on connection start are queued too.
+     */
+    @Test
+    void tooManyFramesWaitingToBeSentCloseTheConnection() throws Exception {
+        assertThrows(FatalConnectionException.class, () -> createLogic(pings(Http2Logic.MAX_BUFFERED_FRAMES)).handle());
+    }
+
+    @Test
+    void framesWaitingToBeSentUpToTheLimitAreAccepted() throws Exception {
+        assertThrows(EndOfStreamException.class, () -> createLogic(pings(Http2Logic.MAX_BUFFERED_FRAMES - 1)).handle());
+    }
+
+    private static byte[] pings(int count) {
+        final var in = new ByteArrayOutputStream();
+        for (int i = 0; i < count; i++)
+            in.writeBytes(new byte[]{0, 0, 8, 0x6, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8});
+        return in.toByteArray();
+    }
+
     @Test
     void initAfterStopSendingDoesNotStartSender() throws Exception {
         final var logic = createLogic(new byte[0]);
