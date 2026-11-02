@@ -21,16 +21,17 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static io.restassured.RestAssured.given;
+import static io.restassured.http.ContentType.JSON;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
-public class ScriptingGroovyTutorialTest extends AbstractAdvancedTutorialTest {
+public class GroovyScriptTutorialTest extends AbstractAdvancedTutorialTest {
 
     @Override
     protected String getTutorialYaml() {
-        return "80-Scripting-Groovy.yaml";
+        return "80-Groovy-Script.yaml";
     }
 
     @Test
@@ -38,9 +39,9 @@ public class ScriptingGroovyTutorialTest extends AbstractAdvancedTutorialTest {
         CountDownLatch requestFlowLogged = new CountDownLatch(1);
         CountDownLatch responseFlowLogged = new CountDownLatch(1);
         ConsoleWatcher watcher = (error, line) -> {
-            if (line.contains("I'm executed in the REQUEST flow"))
+            if (line.contains("I run in the REQUEST flow"))
                 requestFlowLogged.countDown();
-            if (line.contains("I'm executed in the RESPONSE flow"))
+            if (line.contains("I run in the RESPONSE flow"))
                 responseFlowLogged.countDown();
         };
 
@@ -51,7 +52,10 @@ public class ScriptingGroovyTutorialTest extends AbstractAdvancedTutorialTest {
             .when()
                 .get("http://localhost:2000/groovy")
             .then()
-                .statusCode(200);
+                .statusCode(200)
+                .contentType(JSON)
+                .header("X-Timestamp", notNullValue())
+                .body("msg", equalTo("Hello from Groovy!"));
             // @formatter:on
 
             // The gateway runs as a separate process; its console output is relayed
@@ -62,31 +66,6 @@ public class ScriptingGroovyTutorialTest extends AbstractAdvancedTutorialTest {
         } finally {
             process.removeConsoleWatcher(watcher);
         }
-    }
-
-    @Test
-    void randomEndpoint() {
-        // @formatter:off
-        given()
-        .when()
-            .get("http://localhost:2000/random")
-        .then()
-            .body(notNullValue());
-        // @formatter:on
-    }
-
-    @Test
-    void groovyCustomResponse() {
-        // @formatter:off
-        given()
-        .when()
-            .get("http://localhost:2000/response")
-        .then()
-            .statusCode(200)
-            .contentType("application/json")
-            .header("X-Foo", "bar")
-            .body("success", equalTo(true));
-        // @formatter:on
     }
 
 }

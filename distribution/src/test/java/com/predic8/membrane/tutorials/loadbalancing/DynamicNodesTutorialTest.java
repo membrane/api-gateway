@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Set;
 
 import static io.restassured.RestAssured.get;
+import static io.restassured.RestAssured.post;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -35,11 +36,11 @@ public class DynamicNodesTutorialTest extends AbstractLoadbalancingTutorialTest 
     void registerAndRemoveNodes() {
         get("http://localhost:2000").then().statusCode(503);
 
-        get(CLUSTER_MANAGER.formatted("up", 3001)).then().statusCode(204);
-        get(CLUSTER_MANAGER.formatted("up", 3002)).then().statusCode(204);
+        post(CLUSTER_MANAGER.formatted("up", 3001)).then().statusCode(204);
+        post(CLUSTER_MANAGER.formatted("up", 3002)).then().statusCode(204);
         assertEquals(Set.of("Node 1", "Node 2"), callTimes("http://localhost:2000", 2));
 
-        get(CLUSTER_MANAGER.formatted("down", 3001)).then().statusCode(204);
+        post(CLUSTER_MANAGER.formatted("down", 3001)).then().statusCode(204);
         assertEquals(Set.of("Node 2"), callTimes("http://localhost:2000", 4));
 
         // @formatter:off

@@ -1,0 +1,63 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.7.1.json
+#
+# Tutorial: Groovy Response Builder
+#
+# Groovy can do calculations that are too complex for plugins and templates.
+# With Response, a script builds a custom response including status code,
+# headers and body.
+#
+# This example checks an IBAN and returns 200 or 400 depending on the result.
+#
+# 1.) Start Membrane:
+#     with Docker:
+#       Linux/Mac:
+#         ./run-docker.sh -c 40-Groovy-Response-Builder.yaml
+#       Windows:
+#         run-docker.cmd -c 40-Groovy-Response-Builder.yaml
+#
+#     or with Java:
+#       Linux/Mac:
+#         ./membrane.sh -c 40-Groovy-Response-Builder.yaml
+#       Windows:
+#         membrane.cmd -c 40-Groovy-Response-Builder.yaml
+#
+# 2.) Check a valid IBAN:
+#     curl -i "localhost:2000?iban=DE89370400440532013000"
+#
+#     HTTP/1.1 200 OK
+#     X-Country: DE
+#
+#     {"iban":"DE89370400440532013000","valid":true}
+#
+# 3.) Change one digit:
+#     curl -i "localhost:2000?iban=DE89370400440532013001"
+#
+#     HTTP/1.1 400 Bad Request
+#     X-Country: DE
+#
+#     {"iban":"DE89370400440532013001","valid":false}
+
+api:
+  port: 2000
+  flow:
+    - request:
+        - groovy:
+            src: |
+              import groovy.json.JsonOutput
+
+              def iban = (param.iban?.getAt(0) ?: '').replace(' ', '').toUpperCase()
+
+              // Move country code and check digits to the end, replace letters
+              // with numbers (A=10 ... Z=35) and calculate modulo 97.
+              def digits = (iban.drop(4) + iban.take(4)).collect { Character.getNumericValue(it as char) }.join()
+              def valid = iban ==~ /[A-Z]{2}\d{2}[A-Z0-9]{11,30}/ && new BigInteger(digits) % 97 == 1
+
+              Response.statusCode(valid ? 200 : 400)
+                .contentType('application/json')
+                .header('X-Country', iban.take(2))
+                .body(JsonOutput.toJson([iban: iban, valid: valid]))
+                .build()
+
+# NOTE: An API gateway is not the right place for business logic. Keep it in
+#       the backend services. A short check like this IBAN validation is fine:
+#       it rejects malformed input early, before it reaches a backend.

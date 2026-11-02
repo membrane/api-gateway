@@ -91,6 +91,11 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
 
     protected abstract void initInternal();
 
+    /**
+     * @return the logger exposed to scripts as <code>log</code>
+     */
+    protected abstract Logger getScriptLogger();
+
     protected Outcome runScript(Exchange exc, Flow flow) {
 
         var msg = getMessage(exc, flow);
@@ -163,7 +168,7 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * If a script returns a String or a Map that should be interpreted as a successful message (200 OK) if there
+     * If a script returns a String, a Map or a List that should be interpreted as a successful message (200 OK) if there
      * is not a message already.
      * Design issue: Method does to things!
      *
@@ -205,6 +210,7 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
     private Map<String, Object> getParameterBindings(Exchange exc, Flow flow, Message msg) {
         var binding = createParameterBindings(this, exc, flow, scriptAccessesJson && msg != null && msg.isJSON(), TEXT_SERIALIZATION);
         addOutcomeObjects(binding);
+        binding.put("log", getScriptLogger());
         return binding;
     }
 

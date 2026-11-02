@@ -15,7 +15,55 @@ api:
   flow:
     - request:
         - json2Xml:
-            root: zoo # XML root element
+            root: zoo     # XML root element
+            array: list   # Element around a JSON array, default: array
+            item: entry   # Element for each array entry, default: item
         - beautifier: {} # Format
     - return:
         status: 200
+
+# NOTE: json2Xml converts dynamically: the XML structure is derived from the
+#       structure of the incoming JSON. There is no target schema. This is
+#       convenient, but has some drawbacks:
+#
+#       - Element names are taken from the JSON keys. Keys that are not valid
+#         XML names are changed, e.g. "first name" becomes first_name and
+#         "1st" becomes _1st.
+#       - Arrays are wrapped in an extra element. Without the array and item
+#         options the animals array becomes:
+#
+#           <animals>
+#             <array>
+#               <item>
+#                 <name>Skye</name>
+#                 ...
+#               </item>
+#               ...
+#             </array>
+#           </animals>
+#
+#         With array: list and item: entry as configured above:
+#
+#           <animals>
+#             <list>
+#               <entry>
+#                 <name>Skye</name>
+#                 ...
+#               </entry>
+#               ...
+#             </list>
+#           </animals>
+#
+#         The names apply to every array in the document, so they cannot be
+#         chosen per array, e.g. <animal> for animals and <keeper> for keepers.
+#       - Types are lost: 4 and "4" or true and "true" look the same in XML.
+#         null, "" and empty objects all become empty elements.
+#       - The output changes with the input: a missing field means a missing
+#         element, and without root the root element depends on the input.
+#       - Attributes, namespaces and a fixed element order, often required by
+#         an XML schema or WSDL, cannot be produced.
+#
+#       If the backend expects a specific XML format, follow json2Xml with an
+#       XSLT stylesheet (see 61-XSLT-Transformation-group.yaml) or a script
+#       that maps the result to the required format. A script can also build
+#       the XML directly from the JSON (see 90-Groovy-Generate-XML.yaml).
