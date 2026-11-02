@@ -21,10 +21,16 @@ import com.predic8.membrane.core.http.Chunk;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.CharsetDecoder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+
+import static java.nio.charset.CodingErrorAction.REPLACE;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public final class SSEParser {
 
@@ -37,6 +43,18 @@ public final class SSEParser {
      * How much of the buffer has already been searched for a line end.
      */
     private int scanned;
+
+    /**
+     * Chunk boundaries do not respect characters, so the decoder keeps the bytes of a character that
+     * is not complete yet until the next chunk arrives.
+     */
+    private final CharsetDecoder decoder = UTF_8.newDecoder().onMalformedInput(REPLACE).onUnmappableCharacter(REPLACE);
+    private ByteBuffer undecoded = ByteBuffer.allocate(0);
+
+    /**
+     * The buffer ended with a CR, so an LF at the start of the next chunk completes that line end.
+     */
+    private boolean afterCarriageReturn;
 
     private final List<SSEEvent> events = new ArrayList<>();
 
@@ -57,11 +75,11 @@ public final class SSEParser {
 
         log.debug("Parsing SSE chunk: {}", chunk);
 
-        buffer.append(chunk.toString());
+        buffer.append(decode(chunk));
 
         // Lines are read by offset and the consumed ones removed once at the end, so the buffer is
         // not shifted for every line.
-        var lineStart = 0;
+        var lineStart = skipLineFeedOfSplitCrLf();
         int lineEnd;
         while ((lineEnd = findLineEnd(lineStart)) >= 0) {
             final var line = buffer.substring(lineStart, lineEnd);
@@ -168,7 +186,29 @@ public final class SSEParser {
         return -1;
     }
 
+    private String decode(Chunk chunk) {
+        final var bytes = chunk.content() == null ? new byte[0] : chunk.content();
+        final var in = ByteBuffer.allocate(undecoded.remaining() + bytes.length).put(undecoded).put(bytes).flip();
+        // UTF-8 never yields more chars than bytes.
+        final var out = CharBuffer.allocate(in.remaining());
+        decoder.decode(in, out, false);
+        undecoded = in;
+        return out.flip().toString();
+    }
+
+    private int skipLineFeedOfSplitCrLf() {
+        if (!afterCarriageReturn || buffer.isEmpty()) {
+            return 0;
+        }
+        afterCarriageReturn = false;
+        return buffer.charAt(0) == '\n' ? 1 : 0;
+    }
+
     private int nextLineStart(int lineEnd) {
+        if (lineEnd + 1 == buffer.length() && buffer.charAt(lineEnd) == '\r') {
+            afterCarriageReturn = true;
+            return lineEnd + 1;
+        }
         if (lineEnd + 1 < buffer.length()
                 && buffer.charAt(lineEnd) == '\r'
                 && buffer.charAt(lineEnd + 1) == '\n') {
