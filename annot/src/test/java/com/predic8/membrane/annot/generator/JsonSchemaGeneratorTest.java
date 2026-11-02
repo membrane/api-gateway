@@ -169,6 +169,7 @@ class JsonSchemaGeneratorTest {
         var schema = listSchema();
         assertValid(schema, "abstractList: { strategies: [ { jsonStrategy: { shuffle: true } } ] }");
         assertInvalid(schema, "abstractList: { strategies: [ { shuffle: true } ] }");
+        assertInvalid(schema, "abstractList: { strategies: [ {} ] }");
     }
 
     @Test
