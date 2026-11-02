@@ -661,6 +661,11 @@ public class Http2Logic {
                 && (!hasRequiredPseudoHeaders(req.getMethod(), pseudoHeaders) || !expectContentLength(streamInfo, header, headers.isEndStream())))
             malformedField[0] = true;
 
+        // Trailers end the message: HEADERS without END_STREAM after it make it malformed (RFC 9113 §8.1).
+        final var trailerWithoutEndStream = isTrailer && !headers.isEndStream();
+        if (trailerWithoutEndStream)
+            malformedField[0] = true;
+
         if (malformedField[0]) {
             // A malformed message is a stream error of type PROTOCOL_ERROR (RFC 9113 §8.1.1). It is rejected
             // rather than forwarded without the field, as the HTTP/1.1 parser does.
@@ -670,7 +675,9 @@ public class Http2Logic {
             // frame sender drops frames for closed streams. Writing the reset closes the stream instead.
             sender.send(streamId1, (encoder, peerSettings) -> List.of(RstStreamFrame.construct(streamId1, ERROR_PROTOCOL_ERROR)));
             if (isTrailer)
-                streamInfo.abortReceiving(new IOException("HTTP/2 trailer on stream %d carries a malformed header field.".formatted(streamId1)));
+                streamInfo.abortReceiving(new IOException((trailerWithoutEndStream
+                        ? "HTTP/2 trailer on stream %d does not end the stream."
+                        : "HTTP/2 trailer on stream %d carries a malformed header field.").formatted(streamId1)));
             else
                 messageHandler.handleMalformedHeaders(streamInfo);
             return;

@@ -402,6 +402,29 @@ class Http2LogicTest {
     }
 
     /**
+     * Trailers end the message: HEADERS without END_STREAM after the request's header block make the request malformed
+     * (RFC 9113 §8.1), a stream error of type PROTOCOL_ERROR. The request was already handed over, so its body fails.
+     */
+    @Test
+    void trailersWithoutEndStreamFailTheBody() throws Exception {
+        final var encoder = new Encoder(4096);
+        final var request = headersFrame(false, encoder, withGet());
+        final var baseline = createLogic(request);
+        assertThrows(EndOfStreamException.class, baseline::handle);
+
+        final var in = new ByteArrayOutputStream();
+        in.write(request);
+        in.write(headersFrame(false, encoder, "x-trailer", "1"));
+        final var handler = new RecordingHandler();
+        final var logic = createLogic(in.toByteArray(), handler);
+
+        assertThrows(EndOfStreamException.class, logic::handle, "A stream error does not close the connection.");
+
+        assertEquals(baseline.sender.getBufferedFrames() + 1, logic.sender.getBufferedFrames(), "RST_STREAM is queued.");
+        assertThrows(ReadingBodyException.class, handler.message.getBody()::read);
+    }
+
+    /**
      * A stream beyond the advertised limit of 50 is refused (RFC 9113 §5.1.2). Its header block is decoded all the
      * same: the next request refers to the field it added to the HPACK dynamic table.
      */
