@@ -17,6 +17,7 @@
 package com.predic8.membrane.core.openapi.validators;
 
 import com.predic8.membrane.core.http.MimeType;
+import com.predic8.membrane.core.openapi.OpenAPIParsingException;
 import com.predic8.membrane.core.openapi.model.Request;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.*;
@@ -487,6 +488,16 @@ public class MultipartFormDataValidatorTest extends AbstractValidatorTest {
         var schema = new ObjectSchema().additionalProperties(false);
         schema.addPatternProperty("^x-", new StringSchema().minLength(3));
         return validateParts(schema, name, value);
+    }
+
+    @Test
+    void invalidPatternPropertiesRegexIsSpecError() {
+        final var schema = new ObjectSchema().additionalProperties(false);
+        schema.addPatternProperty("[", new StringSchema());
+
+        final var e = assertThrows(OpenAPIParsingException.class, () -> validateParts(schema, "field", "value"));
+        assertTrue(e.getMessage().contains("patternProperties"), e::getMessage);
+        assertTrue(e.getMessage().contains("'['"), e::getMessage);
     }
 
     private ValidationErrors validateParts(Schema<?> schema, String name, String... values) throws ParseException {

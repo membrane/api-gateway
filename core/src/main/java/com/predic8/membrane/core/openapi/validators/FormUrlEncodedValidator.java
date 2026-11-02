@@ -26,15 +26,13 @@ import com.predic8.membrane.core.openapi.util.SchemaUtil;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.Schema;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.util.*;
 import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
 
+import static com.predic8.membrane.core.openapi.util.SchemaUtil.compilePatternPropertyRegex;
 import static com.predic8.membrane.core.openapi.util.SchemaUtil.isObjectOrArray;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.BODY;
 import static java.lang.Boolean.FALSE;
@@ -54,7 +52,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 @SuppressWarnings("rawtypes")
 public class FormUrlEncodedValidator {
 
-    private static final Logger log = LoggerFactory.getLogger(FormUrlEncodedValidator.class);
     private static final ObjectMapper om = new ObjectMapper();
 
     private final OpenAPI api;
@@ -131,24 +128,11 @@ public class FormUrlEncodedValidator {
         var errors = new ValidationErrors();
         Map<String, Schema> properties = schema.getProperties();
         Map<String, Schema> patternProperties = schema.getPatternProperties();
-        // Compile once per validation; regex order makes pattern-only decoding independent of map order.
+        // Regex order makes pattern-only decoding independent of map order.
         var patterns = new LinkedHashMap<Pattern, Schema>();
         if (patternProperties != null)
             patternProperties.entrySet().stream().sorted(Map.Entry.comparingByKey())
-                    .forEach(entry -> {
-                        try {
-                            patterns.put(Pattern.compile(entry.getKey()), entry.getValue());
-                        } catch (PatternSyntaxException e) {
-                            // Invalid schema configuration must not become a client validation error
-                            // or silently drop the constraints associated with this pattern.
-                            var message = "Invalid patternProperties regex '%s': %s (index %d)."
-                                    .formatted(entry.getKey(), e.getDescription(), e.getIndex());
-                            log.error(message);
-                            var error = new OpenAPIParsingException(message);
-                            error.initCause(e);
-                            throw error;
-                        }
-                    });
+                    .forEach(entry -> patterns.put(compilePatternPropertyRegex(entry.getKey()), entry.getValue()));
 
         for (var entry : form.entrySet()) {
             var name = entry.getKey();
