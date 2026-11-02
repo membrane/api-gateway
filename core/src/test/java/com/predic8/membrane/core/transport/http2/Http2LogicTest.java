@@ -240,6 +240,46 @@ class Http2LogicTest {
     }
 
     /**
+     * DATA beyond the stream's receive window is a stream error of type FLOW_CONTROL_ERROR (RFC 9113 §6.9.1). The
+     * window is the 131070 bytes announced in our SETTINGS. The body is not read, so the window does not grow.
+     */
+    @Test
+    void dataBeyondTheStreamWindowFailsTheBody() throws Exception {
+        final var in = new ByteArrayOutputStream();
+        in.write(SETTINGS_ACK);
+        in.write(headersFrame(false, new Encoder(4096), ":method", "POST", ":scheme", "https", ":path", "/"));
+        // 7 frames fit into the window, the 8th exceeds it, the 9th follows the stream error.
+        for (int i = 0; i < 9; i++)
+            in.write(frame(0x0, 0, new byte[16384]));
+        final var handler = new RecordingHandler();
+        final var logic = createLogic(in.toByteArray(), handler);
+
+        assertThrows(EndOfStreamException.class, logic::handle, "A stream error does not close the connection.");
+
+        assertEquals(8, logic.streams.get(1).getReceivedDataFramesQueued(), "The 7 frames within the window and the abort marker.");
+        assertThrows(ReadingBodyException.class, handler.message.getBody()::read);
+    }
+
+    /**
+     * The peer may apply our SETTINGS_INITIAL_WINDOW_SIZE of 131070 as soon as it receives it, before we know it did
+     * (RFC 9113 §6.9.2). So DATA within that window is accepted on a stream opened before the SETTINGS are acknowledged,
+     * although the stream started with the default window of 65535.
+     */
+    @Test
+    void dataWithinTheAnnouncedWindowIsAcceptedBeforeTheSettingsAreAcknowledged() throws Exception {
+        final var in = new ByteArrayOutputStream();
+        in.write(headersFrame(false, new Encoder(4096), ":method", "POST", ":scheme", "https", ":path", "/"));
+        for (int i = 0; i < 7; i++)
+            in.write(frame(0x0, 0, new byte[16384]));
+        in.write(frame(0x0, 0x1, new byte[131070 - 7 * 16384]));
+        final var handler = new RecordingHandler();
+
+        assertThrows(EndOfStreamException.class, () -> createLogic(in.toByteArray(), handler).handle());
+
+        assertEquals(131070, handler.message.getBody().getContent().length);
+    }
+
+    /**
      * A POST request declaring the given content-length, followed by the given frames. The encoders of the header
      * blocks do not need to share state: they add literals to the dynamic table, but never refer to it.
      */

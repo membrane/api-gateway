@@ -279,6 +279,18 @@ public class Http2Logic {
         return limit;
     }
 
+    /**
+     * The largest initial window size among the acknowledged SETTINGS and those sent but not yet acknowledged. The
+     * peer applies SETTINGS as soon as it receives them, so it may already use a window size we sent before we
+     * receive its ACK. Receiver thread only, like {@link #wantedSettings}.
+     */
+    private int maxInitialWindowSize() {
+        var size = ourSettings.getInitialWindowSize();
+        for (Settings settings : wantedSettings)
+            size = Math.max(size, settings.getInitialWindowSize());
+        return size;
+    }
+
     /** Stops the frame sender and wakes writers waiting for the connection's flow-control window. */
     void stopSending() {
         synchronized (this) {
@@ -378,6 +390,11 @@ public class Http2Logic {
             // Still in flight when the stream was closed, e.g. by our RST_STREAM. It counts against
             // the connection's window all the same (RFC 9113 §6.9).
             log.debug("Dropping DATA for closed stream {}.", dataFrame.getFrame().getStreamId());
+        } else if (streamInfo.isReceiveWindowExceeded()) {
+            // Still in flight when the stream was reset for exceeding its window.
+            log.debug("Dropping DATA for stream {}, which exceeded its receive window.", streamInfo.getStreamId());
+        } else if (streamInfo.exceedsReceiveWindow(dataFrame.getFrame().getLength(), maxInitialWindowSize())) {
+            rejectDataBeyondWindow(streamInfo);
         } else if (!streamInfo.keepsContentLength(dataFrame.getDataLength(), dataFrame.isEndStream())) {
             rejectBody(streamInfo);
         } else {
@@ -769,6 +786,17 @@ public class Http2Logic {
         log.info("Rejecting body on stream {}: its length differs from its content-length (RFC 9113 §8.1.1).", streamId);
         sender.send(streamId, (encoder, peerSettings) -> List.of(RstStreamFrame.construct(streamId, ERROR_PROTOCOL_ERROR)));
         streamInfo.abortReceiving(new IOException("HTTP/2 stream %d carries a body that differs from its content-length.".formatted(streamId)));
+    }
+
+    /**
+     * Resets a stream whose peer sent DATA beyond the receive window, a stream error of type FLOW_CONTROL_ERROR
+     * (RFC 9113 §6.9.1). Without this, a peer could make us buffer any amount of DATA while the body is read slowly.
+     */
+    private void rejectDataBeyondWindow(StreamInfo streamInfo) throws IOException {
+        final var streamId = streamInfo.getStreamId();
+        log.info("Resetting stream {} from {}: the peer sent DATA beyond the receive window (RFC 9113 §6.9.1).", streamId, remoteAddr);
+        sender.send(streamId, (encoder, peerSettings) -> List.of(RstStreamFrame.construct(streamId, ERROR_FLOW_CONTROL_ERROR)));
+        streamInfo.abortReceiving(new IOException("HTTP/2 stream %d received DATA beyond its flow-control window.".formatted(streamId)));
     }
 
     /**
