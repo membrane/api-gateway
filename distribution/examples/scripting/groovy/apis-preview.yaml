@@ -5,8 +5,7 @@ components:
     bean:
       class: java.lang.String
       constructorArgs:
-        - constructorArg:
-            value: Greetings from Spring
+        - value: Greetings from Spring
 
 ---
 
