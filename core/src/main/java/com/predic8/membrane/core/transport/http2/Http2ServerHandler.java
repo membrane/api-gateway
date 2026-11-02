@@ -73,7 +73,15 @@ public class Http2ServerHandler extends AbstractHttpHandler {
 
                 exchange.setOriginalRequestUri(((Request)message).getUri());
 
-                executor.submit(new Http2ExchangeHandler(streamInfo, httpServerHandler.getTransport(), logic.sender, logic.peerSettings, logic.peerFlowControl, exchange, showSSLExceptions, remoteAddr));
+                final var exchangeHandler = new Http2ExchangeHandler(streamInfo, httpServerHandler.getTransport(), logic.sender, logic.peerSettings, logic.peerFlowControl, exchange, showSSLExceptions, remoteAddr);
+                logic.exchangeStarted();
+                executor.submit(() -> {
+                    try {
+                        exchangeHandler.run();
+                    } finally {
+                        logic.exchangeFinished();
+                    }
+                });
             }
 
             /** Answers 431 (RFC 6585) and, if the request is still open, ends it with RST_STREAM(NO_ERROR) (RFC 9113 §8.1). */

@@ -138,10 +138,19 @@ public abstract class ParameterizedRequest {
         return authServer.getSessionManager().getSession(exc);
     }
 
-    protected SessionManager.Session createSessionForAuthorizedClientWithParams() {
-        SessionManager.Session session = authServer.getSessionManager().createSession(exc);
+    /**
+     * Creates the session behind the tokens of a client that acts on its own behalf. No cookie is set: with one, the
+     * client could use the session at the authorization endpoint as if a user had logged in. Only the client and the
+     * scope are stored, so the request's other parameters cannot pose as user attributes.
+     */
+    protected SessionManager.Session createSessionForAuthorizedClient() {
+        SessionManager.Session session = authServer.getSessionManager().createSessionWithoutCookie();
+        Map<String, String> attributes = new HashMap<>();
+        attributes.put(ParamNames.CLIENT_ID, getClientId());
+        if (getScope() != null)
+            attributes.put(ParamNames.SCOPE, getScope());
         synchronized(session) {
-            session.preAuthorize(getClientId(), params);
+            session.preAuthorize(getClientId(), attributes);
             session.authorize();
         }
         return session;

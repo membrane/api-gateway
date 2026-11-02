@@ -68,6 +68,17 @@ class StreamInfoTest {
     }
 
     @Test
+    void refusedStreamFailsBodyRead() {
+        final var body = streamInfo.createBody();
+        final var cause = new IOException("refused");
+
+        streamInfo.refuse(cause);
+
+        assertTrue(streamInfo.isRefused());
+        assertSame(cause, assertThrows(ReadingBodyException.class, body::read).getCause());
+    }
+
+    @Test
     void withoutContentLengthAnyBodyIsKept() {
         assertTrue(streamInfo.keepsContentLength(100, true));
     }
