@@ -158,8 +158,8 @@ public class XmlToJsonConverter {
 
     /**
      * Converts attributes and child elements no property was mapped to, but whose local name matches a
-     * {@code patternProperties} regex, so the validator checks them against the pattern schemas. The first
-     * matching pattern's schema guides the conversion; the validator then checks every matching pattern.
+     * {@code patternProperties} regex, so the validator checks them against the pattern schemas. The type
+     * guiding the conversion is chosen from all matching patterns; the validator then checks every one.
      * A name that occurs more than once (or as attribute and element) is rejected, as for single-valued
      * properties.
      */
@@ -195,13 +195,17 @@ public class XmlToJsonConverter {
         }
     }
 
-    /** The resolved schema of the first pattern matching {@code name}, or {@code null} if none matches. */
+    /**
+     * The schema guiding the conversion of {@code name}, chosen from all matching patterns, since every
+     * matching pattern applies, or {@code null} if none matches.
+     */
     private Schema patternSchemaFor(Map<String, Schema> patternProperties, String name) {
-        for (final var entry : patternProperties.entrySet()) {
-            if (SchemaUtil.compilePatternPropertyRegex(entry.getKey()).matcher(name).find())
-                return resolveRef(entry.getValue());
-        }
-        return null;
+        final var matching = new ArrayList<Schema>();
+        patternProperties.forEach((regex, patternSchema) -> {
+            if (SchemaUtil.compilePatternPropertyRegex(regex).matcher(name).find())
+                matching.add(resolveRef(patternSchema));
+        });
+        return matching.isEmpty() ? null : SchemaUtil.decodingSchema(matching);
     }
 
     private static void setPatternProperty(ObjectNode node, String name, JsonNode value) {

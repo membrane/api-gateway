@@ -20,6 +20,22 @@ paths:
           application/xml:
             schema:
               $ref: "#/components/schemas/Item"
+  /untyped-first:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/xml:
+            schema:
+              $ref: "#/components/schemas/UntypedFirst"
+  /typed-first:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/xml:
+            schema:
+              $ref: "#/components/schemas/TypedFirst"
 
 components:
   schemas:
@@ -49,3 +65,22 @@ components:
       patternProperties:
         "^x-":
           type: integer
+    # Both patterns match 'x' and both apply, whatever their order.
+    UntypedFirst:
+      type: object
+      xml:
+        name: m
+      patternProperties:
+        "^x":
+          minimum: 0
+        "x$":
+          type: integer
+    TypedFirst:
+      type: object
+      xml:
+        name: m
+      patternProperties:
+        "x$":
+          type: integer
+        "^x":
+          minimum: 0

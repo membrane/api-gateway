@@ -22,6 +22,8 @@ import com.predic8.membrane.core.util.URIFactory;
 import jakarta.mail.internet.ParseException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import static com.predic8.membrane.core.openapi.model.Request.post;
 import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.getResourceAsStream;
@@ -405,5 +407,24 @@ class OpenAPIValidatorXMLTest {
         final var errors = validatorPattern.validate(post().path("/items")
                 .xml("<item><name>Book</name><x-weight>3</x-weight></item>"));
         assertEquals(0, errors.size(), "Expected no validation errors: " + errors);
+    }
+
+    /**
+     * Every matching pattern applies, so the conversion must not depend on which pattern is declared
+     * first: an untyped pattern must not turn the value into a string for a typed one.
+     */
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', value = {
+            "/untyped-first|<m><x>1</x></m>|0",
+            "/typed-first|<m><x>1</x></m>|0",
+            "/untyped-first|<m x=\"1\"/>|0",
+            "/typed-first|<m x=\"1\"/>|0",
+            "/untyped-first|<m><x>-1</x></m>|1",
+            "/typed-first|<m><x>-1</x></m>|1",
+            "/untyped-first|<m><x>a</x></m>|1",
+            "/typed-first|<m><x>a</x></m>|1"})
+    void overlappingPatternsApplyRegardlessOfOrder(String path, String xml, int count) throws ParseException {
+        final var errors = validatorPattern.validate(post().path(path).xml(xml));
+        assertEquals(count, errors.size(), errors::toString);
     }
 }

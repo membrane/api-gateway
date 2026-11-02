@@ -160,6 +160,35 @@ public class SchemaUtil {
         });
     }
 
+    /**
+     * Chooses the schema whose type guides decoding of a value that all {@code schemas} apply to, e.g. a
+     * property and its matching {@code patternProperties}. Untyped schemas do not decide the type; a type
+     * allowed by every typed schema is preferred, so the choice does not depend on declaration order.
+     * The schemas must already be resolved.
+     */
+    public static Schema decodingSchema(List<Schema> schemas) {
+        final var typed = schemas.stream().filter(s -> getEffectiveType(s) != null).toList();
+        // Prefer a schema whose chosen type is allowed by every other typed constraint.
+        final var preferred = typed.stream().filter(candidate -> typed.stream().allMatch(s ->
+                        allowsType(s, getEffectiveType(candidate))))
+                .findFirst();
+        if (preferred.isPresent())
+            return preferred.get();
+        if (typed.isEmpty())
+            return schemas.getFirst();
+        final var types = typed.getFirst().getTypes();
+        if (types != null)
+            for (Object type : types)
+                if (!"null".equals(type) && typed.stream().allMatch(s -> allowsType(s, type.toString())))
+                    return new Schema<>().type(type.toString());
+        return typed.getFirst();
+    }
+
+    /** True if {@code type} is the schema's {@code type} or one of its OAS 3.1 {@code types}. */
+    public static boolean allowsType(Schema schema, String type) {
+        return type.equals(schema.getType()) || schema.getTypes() != null && schema.getTypes().contains(type);
+    }
+
     /** True if the schema's effective type is {@code array}. */
     public static boolean isArray(Schema schema) {
         return "array".equals(getEffectiveType(schema));

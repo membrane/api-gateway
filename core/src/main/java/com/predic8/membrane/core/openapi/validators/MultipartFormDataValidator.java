@@ -340,29 +340,6 @@ public class MultipartFormDataValidator {
         return resolved;
     }
 
-    @SuppressWarnings("rawtypes")
-    private Schema decodingSchema(List<Schema> schemas) {
-        var typed = schemas.stream().filter(s -> SchemaUtil.getEffectiveType(s) != null).toList();
-        // Prefer a schema whose chosen type is allowed by every other typed constraint.
-        var preferred = typed.stream().filter(candidate -> typed.stream().allMatch(s ->
-                        allowsType(s, SchemaUtil.getEffectiveType(candidate))))
-                .findFirst();
-        if (preferred.isPresent())
-            return preferred.get();
-        if (typed.isEmpty())
-            return schemas.getFirst();
-        var types = typed.getFirst().getTypes();
-        if (types != null)
-            for (Object type : types)
-                if (!"null".equals(type) && typed.stream().allMatch(s -> allowsType(s, type.toString())))
-                    return new Schema<>().type(type.toString());
-        return typed.getFirst();
-    }
-
-    private boolean allowsType(Schema schema, String type) {
-        return type.equals(schema.getType()) || schema.getTypes() != null && schema.getTypes().contains(type);
-    }
-
     private boolean allowsArrayChoice(Schema schema, boolean array) {
         if (SchemaUtil.getEffectiveType(schema) == null)
             return true;
