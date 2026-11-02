@@ -84,6 +84,13 @@ public class Http2Logic {
      */
     static final int MAX_PENDING_REFUSED_STREAMS = MAX_RESETS_PER_WINDOW;
 
+    /**
+     * How many frames may wait to be sent. The peer makes us queue frames, e.g. by sending PING, SETTINGS or
+     * RST_STREAM, and while it does not read, they are not sent (CVE-2019-9512, CVE-2019-9514, CVE-2019-9515). DATA
+     * is limited per stream, so only such a peer reaches this limit.
+     */
+    static final int MAX_BUFFERED_FRAMES = 10_000;
+
     private static final Set<String> REQUEST_PSEUDO_HEADERS = Set.of(":method", ":scheme", ":authority", ":path");
 
     /** Fields that are meaningful for one connection only (RFC 9113 §8.2.2). */
@@ -177,6 +184,10 @@ public class Http2Logic {
                 Frame frame = new Frame(ourSettings);
                 frame.read(srcIn);
                 handleFrame(frame);
+                if (sender.getBufferedFrames() > MAX_BUFFERED_FRAMES) {
+                    log.info("Closing HTTP/2 connection from {}: more than {} frames are waiting to be sent.", remoteAddr, MAX_BUFFERED_FRAMES);
+                    throw new FatalConnectionException(ERROR_ENHANCE_YOUR_CALM);
+                }
             }
         } catch(EOFException eof) {
             throw new EndOfStreamException("");
@@ -446,6 +457,11 @@ public class Http2Logic {
         var refused = false;
 
         if (streamInfo == null) {
+            // The peer can only open streams with odd ids: a client opens streams with them (RFC 9113 §5.1.1), and a
+            // server opens even ones with PUSH_PROMISE only, which is rejected. Otherwise, a client could also open
+            // streams with even ids, beyond the concurrent stream limit counted for the odd ones.
+            if (streamId1 % 2 == 0)
+                throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
             // Like HEADERS on a stream in the CLOSED state, which receivedHeaders() rejects.
             if (isClosed(streamId1))
                 throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);

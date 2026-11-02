@@ -64,6 +64,11 @@ public class FrameSender implements Runnable {
         return connectionFlowControl;
     }
 
+    /** Frames queued but not sent or dropped yet. */
+    int getBufferedFrames() {
+        return totalBufferedFrames.get();
+    }
+
     public void send(Frame frame) {
         queue.put(frame);
         totalBufferedFrames.incrementAndGet();
