@@ -33,9 +33,9 @@ api:
         - groovy:
             src: |
               log.info "Number of animals: ${json.animals.size()}"
-              log.info "First animal: ${json.animals[0].name}"
+              log.info "First animal: ${json.animals[0]?.name}"
               log.info "Names: ${json.animals.name}"
-              log.info "The cat: ${json.animals.find { it.species == 'cat' }.name}"
+              log.info "The cat: ${json.animals.find { it.species == 'cat' }?.name}"
               log.info "Legs in total: ${json.animals.legs.sum()}"
               log.info "All have 4 legs: ${json.animals.every { it.legs == 4 }}"
               log.info "Any birds: ${json.animals.any { it.species == 'bird' }}"
