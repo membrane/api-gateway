@@ -74,7 +74,14 @@ public class StreamInfo {
 
     }
 
-    public void receivedDataFrame(DataFrame df) {
+    public void receivedDataFrame(DataFrame df) throws IOException {
+        if (df.getDataLength() == 0 && !df.isEndStream()) {
+            // Gives the body reader nothing to read. Queued, empty frames would fill the memory (CVE-2019-9518). Their
+            // padding counts against the window, so it is given back at once.
+            flowControl.received(df.getFrame().getLength());
+            flowControl.processed(df.getFrame().getLength());
+            return;
+        }
         // Nothing reads past the abort marker, so DATA received after an abort is not queued.
         if (abortCause == null)
             dataFramesReceived.add(df);

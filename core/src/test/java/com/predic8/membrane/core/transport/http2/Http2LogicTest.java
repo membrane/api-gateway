@@ -297,6 +297,31 @@ class Http2LogicTest {
     }
 
     /**
+     * DATA without data that does not end the stream gives the body reader nothing to read, so it is not queued:
+     * otherwise a peer could fill the memory with empty frames (CVE-2019-9518). Padding counts against the window and
+     * is given back at once: the padded frames use up the whole window, so the last frame only fits if it was.
+     */
+    @Test
+    void emptyDataFramesAreNotQueued() throws Exception {
+        final var in = new ByteArrayOutputStream();
+        in.write(SETTINGS_ACK);
+        in.write(headersFrame(false, new Encoder(4096), ":method", "POST", ":scheme", "https", ":path", "/"));
+        for (int i = 0; i < 1000; i++)
+            in.write(frame(0x0, 0, new byte[0]));
+        // PADDED with a pad length of 0: one byte of window each, the 131070 announced in our SETTINGS altogether.
+        for (int i = 0; i < 131070; i++)
+            in.write(frame(0x0, 0x8, new byte[]{0}));
+        in.write(dataFrame(true, "x"));
+        final var handler = new RecordingHandler();
+        final var logic = createLogic(in.toByteArray(), handler);
+
+        assertThrows(EndOfStreamException.class, logic::handle);
+
+        assertEquals(2, logic.streams.get(1).getReceivedDataFramesQueued(), "The last DATA frame and the abort marker.");
+        assertEquals("x", new String(handler.message.getBody().getContent(), ISO_8859_1));
+    }
+
+    /**
      * DATA after END_STREAM, on a half-closed (remote) stream, is a stream error of type STREAM_CLOSED (RFC 9113 §5.1,
      * §6.1). The stream is reset once: the second DATA frame is still in flight then and gets dropped.
      */
