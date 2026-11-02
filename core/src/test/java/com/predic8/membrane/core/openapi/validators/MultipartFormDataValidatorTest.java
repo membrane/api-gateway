@@ -449,6 +449,22 @@ public class MultipartFormDataValidatorTest extends AbstractValidatorTest {
         assertEquals(1, validateParts(schema, "x-count", "1").size());
     }
 
+    @ParameterizedTest
+    @CsvSource({"null", "'null,array'"})
+    void nullSchemaIsValidatedInsteadOfReportedAsArrayConflict(String types) throws ParseException {
+        final var nullSchema = types.contains(",")
+                ? new Schema<>().types(new java.util.LinkedHashSet<>(List.of(types.split(","))))
+                : new Schema<>().type(types);
+        final var schema = new ObjectSchema().additionalProperties(false);
+        schema.addProperty("x-count", new StringSchema());
+        schema.addPatternProperty("^x-", nullSchema);
+
+        final var errors = validateParts(schema, "x-count", "hi");
+
+        assertEquals(1, errors.size(), errors::toString);
+        assertFalse(errors.getFirst().getMessage().contains("incompatible array and non-array"), errors::toString);
+    }
+
     private ValidationErrors validatePatternPart(String name, String value) throws ParseException {
         var schema = new ObjectSchema().additionalProperties(false);
         schema.addPatternProperty("^x-", new StringSchema().minLength(3));

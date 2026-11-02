@@ -355,10 +355,11 @@ public class MultipartFormDataValidator {
             return true;
         if (array)
             return allowsType(schema, "array");
-        if (schema.getType() != null && !"array".equals(schema.getType()) && !"null".equals(schema.getType()))
+        // "null" is a non-array type, so SchemaValidator decides whether the part matches it.
+        if (schema.getType() != null && !"array".equals(schema.getType()))
             return true;
         return schema.getTypes() != null && schema.getTypes().stream()
-                .anyMatch(type -> !"array".equals(type) && !"null".equals(type));
+                .anyMatch(type -> !"array".equals(type));
     }
 
     /**
