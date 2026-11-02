@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.interceptor.llmgateway.provider.claude;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.AbstractModelInputRequest;
@@ -24,6 +25,9 @@ import java.io.IOException;
 import java.util.List;
 
 import static com.predic8.membrane.core.http.Header.ACCEPT_ENCODING;
+import static com.predic8.membrane.core.interceptor.llmgateway.provider.TokenEstimator.charsToTokens;
+import static com.predic8.membrane.core.interceptor.llmgateway.provider.TokenEstimator.countJsonSize;
+import static com.predic8.membrane.core.interceptor.llmgateway.provider.TokenEstimator.countText;
 
 /**
  * system field for system prompt
@@ -35,6 +39,11 @@ public class ClaudeLLMRequest extends AbstractModelInputRequest {
     public static final String X_API_KEY = "x-api-key";
 
     private static final String IDENTITY = "identity";
+
+    /**
+     * What an image or a document of unknown size counts for: about 1000 tokens.
+     */
+    private static final long FLAT_BLOCK_CHARS = 4000;
 
     public ClaudeLLMRequest(Exchange exchange) throws IOException {
         super(exchange);
@@ -74,28 +83,49 @@ public class ClaudeLLMRequest extends AbstractModelInputRequest {
         }
     }
 
+    /**
+     * Counts everything Anthropic bills as input: the system prompt as text or as text blocks, the
+     * tool definitions and every content block of the messages, including tool calls and their results.
+     */
     @Override
     public long estimateInputTokens() {
-        // System prompt
-        long tokens = json.path("system").asText().length() / 4;
-
-        // Messages
+        var chars = countText(json.path("system")) + countJsonSize(json.path("tools"));
         for (var message : json.path("messages")) {
-            var content = message.path("content");
-            if (content.isTextual()) {
-                tokens += content.asText().length() / 4;
-            } else if (content.isArray()) {
-                for (var block : content) {
-                    var type = block.path("type").asText();
-                    if (type.equals("text")) {
-                        tokens += block.path("text").asText().length() / 4;
-                    } else if (type.equals("image")) {
-                        tokens += 1000;
-                    }
-                }
-            }
+            chars += countContent(message.path("content"));
         }
-        return tokens;
+        return charsToTokens(chars);
+    }
+
+    private static long countContent(JsonNode content) {
+        if (!content.isArray())
+            return countText(content);
+        long chars = 0;
+        for (var block : content) {
+            chars += countBlock(block);
+        }
+        return chars;
+    }
+
+    private static long countBlock(JsonNode block) {
+        return switch (block.path("type").asText()) {
+            case "image" -> FLAT_BLOCK_CHARS;
+            case "document" -> countDocument(block.path("source"));
+            case "tool_use" -> countJsonSize(block.path("input"));
+            case "tool_result" -> countContent(block.path("content"));
+            default -> countText(block);
+        };
+    }
+
+    /**
+     * A PDF is billed by its pages, which cannot be told from the request, so it gets the same flat
+     * allowance as an image.
+     */
+    private static long countDocument(JsonNode source) {
+        return switch (source.path("type").asText()) {
+            case "text" -> countText(source.path("data"));
+            case "content" -> countContent(source.path("content"));
+            default -> FLAT_BLOCK_CHARS;
+        };
     }
 
     /**

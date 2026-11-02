@@ -15,6 +15,8 @@ package com.predic8.membrane.core.interceptor.llmgateway.provider.claude;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -96,19 +98,41 @@ class ClaudeLLMRequestTest {
     }
 
     /**
-     * Claude estimates one token per four characters, counting an image as 1000 tokens.
+     * The shared estimate: max(1, round(chars / 4.0 * 1.15)), an image counting as 4000 characters.
      */
     @Test
     void estimateInputTokensCountsSystemPromptAndMessages() throws Exception {
+        // 12 chars -> 3
         assertEquals(3, request("""
                 {"system":"12345678","messages":[{"content":"abcd"}]}""").estimateInputTokens());
     }
 
     @Test
     void estimateInputTokensCountsContentBlocks() throws Exception {
-        assertEquals(1002, request("""
+        // 8 + 4000 chars -> 1152
+        assertEquals(1152, request("""
                 {"messages":[{"content":[{"type":"text","text":"12345678"},{"type":"image"}]}]}""")
                 .estimateInputTokens());
+    }
+
+    /**
+     * Every input Anthropic bills for has to show up in the estimate, otherwise maxInputTokens and the
+     * user's budget can be passed by moving the text into a structure that is not counted. 4000
+     * characters are at least 1000 tokens at four characters per token.
+     */
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(delimiter = '|', textBlock = """
+            system as text blocks       | {"system":[{"type":"text","text":"%s"}],"messages":[{"role":"user","content":"Hi"}]}
+            tool definitions            | {"tools":[{"name":"t","description":"%s","input_schema":{"type":"object"}}],"messages":[{"role":"user","content":"Hi"}]}
+            tool result as text         | {"messages":[{"role":"user","content":[{"type":"tool_result","tool_use_id":"t1","content":"%s"}]}]}
+            tool result as text blocks  | {"messages":[{"role":"user","content":[{"type":"tool_result","tool_use_id":"t1","content":[{"type":"text","text":"%s"}]}]}]}
+            tool use input              | {"messages":[{"role":"assistant","content":[{"type":"tool_use","id":"t1","name":"t","input":{"q":"%s"}}]}]}
+            plain text document         | {"messages":[{"role":"user","content":[{"type":"document","source":{"type":"text","media_type":"text/plain","data":"%s"}}]}]}
+            """)
+    void estimateInputTokensCountsEveryBilledInput(String structure, String template) throws Exception {
+        var estimate = request(template.formatted("x".repeat(4000))).estimateInputTokens();
+
+        assertTrue(estimate >= 1000, "%s: estimated %d tokens for 4000 characters".formatted(structure, estimate));
     }
 
     @Test
