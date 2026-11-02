@@ -34,6 +34,7 @@ import static com.predic8.membrane.core.exceptions.ProblemDetails.security;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.util.text.TextUtil.escapeControlCharsForLog;
 import static java.util.EnumSet.of;
 import static org.apache.commons.text.StringEscapeUtils.escapeHtml4;
 
@@ -155,7 +156,7 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
         // we could make it possible that every key is checked instead of having the "kid" field mandatory
         // this would then need up to n checks per incoming JWT - could be a performance problem
         var key = jwks.getKeyByKid(kid).orElseThrow(() -> {
-            log.info("JWT signed by unknown key: {}",kid);
+            log.info("JWT signed by unknown key: {}", escapeControlCharsForLog(kid));
             return new JWTException(ERROR_UNKNOWN_KEY, ERROR_UNKNOWN_KEY_ID);
         });
 

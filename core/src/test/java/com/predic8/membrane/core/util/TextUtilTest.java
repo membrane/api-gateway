@@ -123,6 +123,32 @@ public class TextUtilTest {
     }
 
     @Test
+    void escapeControlCharsForLogLineBreaks() {
+        assertEquals("a\\nb\\rc", escapeControlCharsForLog("a\nb\rc"));
+    }
+
+    @Test
+    void escapeControlCharsForLogOtherControlCharacters() {
+        assertEquals("\\u001b[31m\\u0000\\u007f\\u0085\\u2028\\u2029", escapeControlCharsForLog("\u001b[31m\u0000\u007f\u0085  "));
+    }
+
+    @Test
+    void escapeControlCharsForLogKeepsTabQuotesAndBackslashes() {
+        assertEquals("a\tb \"c\" d\\e", escapeControlCharsForLog("a\tb \"c\" d\\e"));
+    }
+
+    @Test
+    void escapeControlCharsForLogKeepsPrintableUnicode() {
+        final var s = "Grüße 日本 😀";
+        assertSame(s, escapeControlCharsForLog(s));
+    }
+
+    @Test
+    void escapeControlCharsForLogNull() {
+        assertNull(escapeControlCharsForLog(null));
+    }
+
+    @Test
     void testUnifyIndent() {
         assertEquals("""
                 line1

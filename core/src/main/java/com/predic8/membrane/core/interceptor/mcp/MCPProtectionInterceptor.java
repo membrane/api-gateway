@@ -44,6 +44,7 @@ import static com.predic8.membrane.core.jsonrpc.JSONRPCRequest.parse;
 import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.ERR_INVALID_REQUEST;
 import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.error;
 import static com.predic8.membrane.core.mcp.MCPToolsList.METHOD;
+import static com.predic8.membrane.core.util.text.TextUtil.escapeControlCharsForLog;
 import static java.util.EnumSet.of;
 
 /**
@@ -231,7 +232,7 @@ public class MCPProtectionInterceptor extends AbstractInterceptor {
             return CONTINUE;
         }
 
-        log.info("Rejected MCP request: {}", error.message());
+        log.info("Rejected MCP request: {}", escapeControlCharsForLog(error.message()));
         if (error.notification()) {
             exc.setResponse(statusCode(error.httpStatus()).bodyEmpty().build());
             return ABORT;

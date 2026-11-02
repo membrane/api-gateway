@@ -31,6 +31,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
 import static com.predic8.membrane.core.util.TimerTaskUtil.createTimerTask;
+import static com.predic8.membrane.core.util.text.TextUtil.escapeControlCharsForLog;
 import static java.lang.System.currentTimeMillis;
 
 public class HttpEndpointListener extends Thread {
@@ -257,12 +258,12 @@ public class HttpEndpointListener extends Thread {
         sourceSocket.getOutputStream().flush();
     }
 
-    private String constructLogMessage(StringBuilder sb, InetAddress ip, Pair<byte[], Integer> receivedContent) {
+    static String constructLogMessage(StringBuilder sb, InetAddress ip, Pair<byte[], Integer> receivedContent) {
         return sb
                 .append("Concurrent connection limit reached for IP: ").append(ip.toString()).append(System.lineSeparator())
                 .append("Received the following content").append(System.lineSeparator())
                 .append("===START===").append(System.lineSeparator())
-                .append(new String(receivedContent.first(), 0, receivedContent.second())).append(System.lineSeparator())
+                .append(escapeControlCharsForLog(new String(receivedContent.first(), 0, receivedContent.second()))).append(System.lineSeparator())
                 .append("===END===").toString();
     }
 

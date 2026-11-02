@@ -41,6 +41,7 @@ import static com.predic8.membrane.core.http.Request.METHOD_POST;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.*;
+import static com.predic8.membrane.test.TestAppender.captureLog;
 import static org.junit.jupiter.api.Assertions.*;
 
 class MCPProtectionInterceptorTest {
@@ -363,6 +364,19 @@ class MCPProtectionInterceptorTest {
                 "MCP method 'resources/read' is not allowed.",
                 null
         );
+    }
+
+    @Test
+    void rejectedMethodIsLoggedWithEscapedLineBreaks() throws Exception {
+        final var exc = exchange(METHOD_POST, APPLICATION_JSON, """
+                {"jsonrpc":"2.0","id":1,"method":"evil\\nFORGED log line","params":{}}
+                """);
+        final var interceptor = interceptor("");
+
+        final var log = captureLog(() -> interceptor.handleRequest(exc));
+
+        assertTrue(log.contains("evil\\nFORGED log line"), log.getMessages().toString());
+        assertFalse(log.contains("\nFORGED"), log.getMessages().toString());
     }
 
     @Test

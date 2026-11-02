@@ -310,7 +310,7 @@ public class CacheInterceptor extends AbstractInterceptor {
 				if (headerName.equals("accept-encoding") && "identity".equals(header.getValue().toLowerCase(Locale.US)))
 					continue;
 				if (emitWarning)
-					log.warn("Could not cache request because of '" + header.getHeaderName() + "' header:\n" + request.getStartLine() + request.getHeader());
+					log.warn("Could not cache request because of '{}' header.", header.getHeaderName());
 				return false;
 			}
 		}
@@ -324,7 +324,7 @@ public class CacheInterceptor extends AbstractInterceptor {
 				continue;
 			if (!allowedResponseHeaders.contains(headerName)) {
 				if (emitWarning)
-					log.warn("Could not cache response because of '" + header.getHeaderName() + "' header:\n" + response.getStartLine() + response.getHeader());
+					log.warn("Could not cache response because of '{}' header.", header.getHeaderName());
 				return false;
 			}
 		}
