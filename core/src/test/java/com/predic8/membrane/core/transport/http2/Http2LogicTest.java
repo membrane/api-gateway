@@ -74,6 +74,8 @@ class Http2LogicTest {
                         0, 0, 4, 0x8, 0, 0, 0, 0, 2, 0, 0, 0, 1}),
                 // A GET request on stream 2: a client opens streams with odd ids only (RFC 9113 §5.1.1).
                 arguments("HEADERS opening a stream with an even id", new byte[]{0, 0, 3, 0x1, 0x5, 0, 0, 0, 2, (byte) 0x82, (byte) 0x84, (byte) 0x86}),
+                // A stream cannot depend on itself (RFC 9113 §5.3.1), also while it is idle.
+                arguments("PRIORITY of an idle stream depending on itself", new byte[]{0, 0, 5, 0x2, 0, 0, 0, 0, 1, 0, 0, 0, 1, 15}),
                 // The connection window starts at 65535, so it would exceed 2^31-1 (RFC 9113 §6.9.1).
                 arguments("WINDOW_UPDATE beyond 2^31-1 on the connection", new byte[]{0, 0, 4, 0x8, 0, 0, 0, 0, 0, 0x7F, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF}),
                 // A GET request on stream 1, whose window is raised to exactly 2^31-1. One more byte of initial window

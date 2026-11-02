@@ -459,6 +459,11 @@ public class Http2Logic {
 
         int streamId1 = priority.getFrame().getStreamId();
 
+        // A stream cannot depend on itself (RFC 9113 §5.3.1). Also checked for a stream that is not known, as it
+        // might be idle, and no RST_STREAM may be sent for an idle stream: a connection error, as for a known stream.
+        if (priority.getStreamDependency() == streamId1)
+            throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
+
         StreamInfo streamInfo = streams.get(streamId1);
 
         // For a closed or an idle stream: a stream created for an idle one would never close, counting
