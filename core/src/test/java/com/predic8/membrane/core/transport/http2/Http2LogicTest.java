@@ -69,7 +69,9 @@ class Http2LogicTest {
                 // The client opened stream 3, but even ids belong to the server, which opened none: stream 2 is idle.
                 arguments("WINDOW_UPDATE on an idle stream of the other parity", new byte[]{
                         0, 0, 3, 0x1, 0x5, 0, 0, 0, 3, (byte) 0x82, (byte) 0x84, (byte) 0x86,
-                        0, 0, 4, 0x8, 0, 0, 0, 0, 2, 0, 0, 0, 1})
+                        0, 0, 4, 0x8, 0, 0, 0, 0, 2, 0, 0, 0, 1}),
+                // A GET request on stream 2: a client opens streams with odd ids only (RFC 9113 §5.1.1).
+                arguments("HEADERS opening a stream with an even id", new byte[]{0, 0, 3, 0x1, 0x5, 0, 0, 0, 2, (byte) 0x82, (byte) 0x84, (byte) 0x86})
         );
     }
 

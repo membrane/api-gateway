@@ -457,6 +457,11 @@ public class Http2Logic {
         var refused = false;
 
         if (streamInfo == null) {
+            // The peer can only open streams with odd ids: a client opens streams with them (RFC 9113 §5.1.1), and a
+            // server opens even ones with PUSH_PROMISE only, which is rejected. Otherwise, a client could also open
+            // streams with even ids, beyond the concurrent stream limit counted for the odd ones.
+            if (streamId1 % 2 == 0)
+                throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
             // Like HEADERS on a stream in the CLOSED state, which receivedHeaders() rejects.
             if (isClosed(streamId1))
                 throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
