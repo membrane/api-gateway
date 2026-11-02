@@ -395,6 +395,37 @@ class Http2LogicTest {
     }
 
     /**
+     * Refused streams stay until their reset is written. The sender does not run here, like for a client that stops
+     * reading, so they pile up. Too many close the connection, even when they are spread out too far to be too many
+     * resets.
+     */
+    @Test
+    void tooManyRefusedStreamsWaitingForTheirResetCloseTheConnection() throws Exception {
+        assertThrows(FatalConnectionException.class, () -> refuseStreamsOneWindowApart(Http2Logic.MAX_PENDING_REFUSED_STREAMS + 1).handle());
+    }
+
+    @Test
+    void refusedStreamsWaitingForTheirResetUpToTheLimitAreAccepted() throws Exception {
+        assertThrows(EndOfStreamException.class, () -> refuseStreamsOneWindowApart(Http2Logic.MAX_PENDING_REFUSED_STREAMS).handle());
+    }
+
+    /** Opens 50 streams, which reach the limit, and then the given number of streams, which are refused 31 seconds apart. */
+    private static Http2Logic refuseStreamsOneWindowApart(int refused) throws IOException {
+        final var encoder = new Encoder(4096);
+        final var in = new ByteArrayOutputStream();
+        in.write(SETTINGS_ACK);
+        for (int streamId = 1; streamId <= 99; streamId += 2)
+            in.write(headersFrame(streamId, false, encoder, withGet()));
+        for (int i = 0; i < refused; i++)
+            in.write(headersFrame(101 + 2 * i, false, encoder, withGet()));
+        final var logic = createLogic(in.toByteArray());
+        final var start = System.nanoTime();
+        final var resets = new AtomicInteger();
+        logic.clock = () -> start + SECONDS.toNanos(31L * resets.incrementAndGet());
+        return logic;
+    }
+
+    /**
      * HEADERS on a refused stream, arriving before its reset was written, are ignored. Their header block is decoded
      * all the same: the next request refers to the field it added to the HPACK dynamic table.
      */

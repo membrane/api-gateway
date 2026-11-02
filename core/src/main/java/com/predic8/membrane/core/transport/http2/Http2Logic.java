@@ -76,6 +76,14 @@ public class Http2Logic {
     static final int MAX_RESETS_PER_WINDOW = 200;
     private static final long RESET_WINDOW_NANOS = TimeUnit.SECONDS.toNanos(30);
 
+    /**
+     * How many refused streams may wait for their RST_STREAM to be written. They stay in {@link #streams} until
+     * then, so a peer that stops reading would let them pile up, {@link #MAX_RESETS_PER_WINDOW} every
+     * {@link #RESET_WINDOW_NANOS}. A burst of this size already exceeds {@link #MAX_RESETS_PER_WINDOW}, so the
+     * cap only closes connections whose resets have not been written for longer than the window.
+     */
+    static final int MAX_PENDING_REFUSED_STREAMS = MAX_RESETS_PER_WINDOW;
+
     private static final Set<String> REQUEST_PSEUDO_HEADERS = Set.of(":method", ":scheme", ":authority", ":path");
 
     /** Fields that are meaningful for one connection only (RFC 9113 §8.2.2). */
@@ -218,6 +226,11 @@ public class Http2Logic {
                     remoteAddr, MAX_RESETS_PER_WINDOW, TimeUnit.NANOSECONDS.toSeconds(RESET_WINDOW_NANOS));
             throw new FatalConnectionException(ERROR_ENHANCE_YOUR_CALM);
         }
+    }
+
+    /** Refused streams whose RST_STREAM has not been written yet, see {@link #MAX_PENDING_REFUSED_STREAMS}. */
+    private long countPendingRefusedStreams() {
+        return streams.values().stream().filter(StreamInfo::isRefused).count();
     }
 
     /**
@@ -488,6 +501,11 @@ public class Http2Logic {
             // HEADERS on a stream refused before, arriving before its reset was written, are ignored.
             if (!refused)
                 return;
+            if (countPendingRefusedStreams() >= MAX_PENDING_REFUSED_STREAMS) {
+                log.info("Closing HTTP/2 connection from {}: {} refused streams are still waiting for their reset to be written.",
+                        remoteAddr, MAX_PENDING_REFUSED_STREAMS);
+                throw new FatalConnectionException(ERROR_ENHANCE_YOUR_CALM);
+            }
             log.info("Refusing stream {}: the peer exceeds the limit of {} concurrent streams.", streamId1, maxConcurrentStreams());
             // REFUSED_STREAM tells the peer that the request was not processed, so it may retry it (RFC 9113 §8.7).
             // Writing the reset closes the stream; DATA still in flight for it is not queued anymore.
