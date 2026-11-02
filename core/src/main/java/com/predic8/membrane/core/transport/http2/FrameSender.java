@@ -200,8 +200,11 @@ public class FrameSender implements Runnable {
                     log.debug("found another frame to send.");
                 }
 
-                if (frame.getType() == TYPE_STOP)
+                if (frame.getType() == TYPE_STOP) {
+                    // Frames queued before stopping, e.g. GOAWAY, must not stay in the buffer when the connection closes.
+                    out.flush();
                     break;
+                }
 
                 if (frame.getType() == Frame.TYPE_DATA || frame.getType() == Frame.TYPE_HEADERS || frame.getType() == Frame.TYPE_RST_STREAM) {
                     final var streamInfo = streams.get(frame.getStreamId());

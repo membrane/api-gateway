@@ -25,6 +25,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -39,6 +40,7 @@ import java.util.stream.Stream;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -87,6 +89,39 @@ class Http2LogicTest {
     @MethodSource("invalidFrames")
     void invalidFrameIsConnectionError(String description, byte[] frame) {
         assertThrows(FatalConnectionException.class, () -> createLogic(frame).handle());
+    }
+
+    /**
+     * A connection error is reported with GOAWAY before the connection is closed (RFC 9113 §5.4.1). It carries the
+     * error code and the last stream the client opened, which was handed over and may have been processed.
+     */
+    @Test
+    void connectionErrorSendsGoaway() throws Exception {
+        final var in = new ByteArrayOutputStream();
+        in.write(headersFrame(true, new Encoder(4096), withGet()));
+        // PING with 7 bytes: FRAME_SIZE_ERROR
+        in.write(new byte[]{0, 0, 7, 0x6, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7});
+        final var out = new ByteArrayOutputStream();
+        // Buffered like a socket's stream: the GOAWAY only arrives if the sender flushes it before it stops.
+        final var logic = new Http2Logic(EXECUTOR, new Socket(), new ByteArrayInputStream(in.toByteArray()), new BufferedOutputStream(out), false, new RecordingHandler());
+        logic.init();
+
+        assertThrows(FatalConnectionException.class, logic::handle);
+
+        final var goaway = firstFrame(out.toByteArray(), 0x7);
+        assertNotNull(goaway, "GOAWAY is sent.");
+        assertArrayEquals(new byte[]{0, 0, 0, 1, 0, 0, 0, 0x6}, goaway, "Last stream id 1, FRAME_SIZE_ERROR.");
+    }
+
+    /** The payload of the first frame of the given type in the output, or null. */
+    private static byte[] firstFrame(byte[] output, int type) {
+        for (int i = 0; i + 9 <= output.length; ) {
+            final var length = ((output[i] & 0xff) << 16) | ((output[i + 1] & 0xff) << 8) | (output[i + 2] & 0xff);
+            if (output[i + 3] == type)
+                return Arrays.copyOfRange(output, i + 9, i + 9 + length);
+            i += 9 + length;
+        }
+        return null;
     }
 
     /** Only the SETTINGS frame sent on connection start is acknowledged; a second ACK has nothing to acknowledge. */

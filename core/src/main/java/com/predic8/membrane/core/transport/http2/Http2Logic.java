@@ -38,10 +38,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.LongSupplier;
 
@@ -90,6 +92,12 @@ public class Http2Logic {
      * is limited per stream, so only such a peer reaches this limit.
      */
     static final int MAX_BUFFERED_FRAMES = 10_000;
+
+    /**
+     * How long a connection error waits for its GOAWAY to be written before the connection is closed. A peer that does
+     * not read would make it wait forever.
+     */
+    private static final long GOAWAY_TIMEOUT_MILLIS = 1000;
 
     private static final Set<String> REQUEST_PSEUDO_HEADERS = Set.of(":method", ":scheme", ":authority", ":path");
 
@@ -189,6 +197,9 @@ public class Http2Logic {
                     throw new FatalConnectionException(ERROR_ENHANCE_YOUR_CALM);
                 }
             }
+        } catch (FatalConnectionException e) {
+            sendGoaway(e.getErrorCode());
+            throw e;
         } catch(EOFException eof) {
             throw new EndOfStreamException("");
         } finally {
@@ -197,6 +208,25 @@ public class Http2Logic {
             for (StreamInfo streamInfo : streams.values())
                 streamInfo.abortReceiving(new IOException("HTTP/2 connection closed before the stream ended"));
         }
+    }
+
+    /**
+     * Reports a connection error to the peer with GOAWAY before the connection is closed (RFC 9113 §5.4.1). It names
+     * the last stream the peer opened, which may have been processed. Frames already queued are written first. The
+     * sender is stopped, and the GOAWAY waited for, up to {@link #GOAWAY_TIMEOUT_MILLIS}.
+     */
+    private void sendGoaway(int errorCode) {
+        sender.send(GoawayFrame.construct(0, highestPeerStreamId, errorCode));
+        stopSending();
+        final var future = senderFuture;
+        if (future == null)
+            return;
+        try {
+            future.get(GOAWAY_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } catch (ExecutionException | TimeoutException e) {
+            log.debug("GOAWAY to {} was not written: {}", remoteAddr, e.toString());        }
     }
 
     /**
