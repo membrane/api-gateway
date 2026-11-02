@@ -14,12 +14,17 @@
 
 package com.predic8.membrane.core.openapi.validators.parameters;
 
-import com.predic8.membrane.core.openapi.util.*;
-import com.predic8.membrane.core.openapi.validators.*;
-import io.swagger.v3.oas.models.parameters.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.openapi.OpenAPIParsingException;
+import com.predic8.membrane.core.openapi.util.OpenAPIUtil;
+import com.predic8.membrane.core.openapi.validators.AbstractValidatorTest;
+import com.predic8.membrane.core.openapi.validators.ValidationErrors;
+import io.swagger.v3.oas.models.parameters.Parameter;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 
 import static com.predic8.membrane.core.openapi.model.Request.get;
 import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.OBJECT;
@@ -100,6 +105,17 @@ class ExplodedObjectParameterTest extends AbstractValidatorTest {
             final var err = validator.validate(get().path("/pattern?y-trace=1"));
             assertEquals(1, err.size(), err.toString());
             assertTrue(err.getFirst().getMessage().contains("Unknown query parameter 'y-trace'"), err.toString());
+        }
+
+        /**
+         * An invalid regex is a spec error: it must neither be skipped, which drops its constraints, nor be
+         * reported as an error of the query string.
+         */
+        @Test
+        void invalidRegexIsSpecError() {
+            final var e = assertThrows(OpenAPIParsingException.class, () -> validator.validate(get().path("/pattern-invalid-regex?x-trace=1")));
+            assertTrue(e.getMessage().contains("patternProperties"), e::getMessage);
+            assertTrue(e.getMessage().contains("'['"), e::getMessage);
         }
 
         /**
