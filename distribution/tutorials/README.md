@@ -25,6 +25,11 @@ If your APIs use XML as input or output, this tutorial provides useful configura
 Learn how to use Membrane in more advanced scenarios. Topics include path rewriting, scripting, conditions and more.
 
 
+## [Scripting](scripting)
+
+Extend Membrane with Groovy scripts, e.g. to sign messages with an HMAC and verify the signature.
+
+
 ## [Routing](routing)
 
 Route API traffic with Membrane, e.g. as an outgoing API gateway that controls which headers

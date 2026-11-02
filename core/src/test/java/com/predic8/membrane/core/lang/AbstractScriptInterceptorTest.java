@@ -14,12 +14,13 @@
 
 package com.predic8.membrane.core.lang;
 
-import com.predic8.membrane.core.router.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.router.DefaultRouter;
+import com.predic8.membrane.core.router.Router;
+import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.nio.file.*;
-
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class AbstractScriptInterceptorTest {
 
@@ -37,6 +38,11 @@ class AbstractScriptInterceptorTest {
     private static final class TestScriptInterceptor extends AbstractScriptInterceptor {
         @Override
         protected void initInternal() {
+        }
+
+        @Override
+        protected Logger getScriptLogger() {
+            return LoggerFactory.getLogger(TestScriptInterceptor.class);
         }
 
         void setRouterForTest(Router router) {

@@ -18,7 +18,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Set;
 
-import static io.restassured.RestAssured.get;
+import static io.restassured.RestAssured.post;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class MultipleBalancersTutorialTest extends AbstractLoadbalancingTutorialTest {
@@ -36,7 +36,7 @@ public class MultipleBalancersTutorialTest extends AbstractLoadbalancingTutorial
         assertEquals(Set.of("Shop node 1", "Shop node 2"), callTimes(SHOP, 2));
         assertEquals(Set.of("Billing node 1", "Billing node 2"), callTimes(BILLING, 2));
 
-        get("http://localhost:9000/clustermanager/down?balancer=shop&host=localhost&port=3002").then().statusCode(204);
+        post("http://localhost:9000/clustermanager/down?balancer=shop&host=localhost&port=3002").then().statusCode(204);
 
         assertEquals(Set.of("Shop node 1"), callTimes(SHOP, 4));
         assertEquals(Set.of("Billing node 1", "Billing node 2"), callTimes(BILLING, 2));

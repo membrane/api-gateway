@@ -16,8 +16,8 @@
 #       503
 #
 # 3.) Register two nodes:
-#       curl "localhost:9000/clustermanager/up?host=localhost&port=3001"
-#       curl "localhost:9000/clustermanager/up?host=localhost&port=3002"
+#       curl -X POST "localhost:9000/clustermanager/up?host=localhost&port=3001"
+#       curl -X POST "localhost:9000/clustermanager/up?host=localhost&port=3002"
 #
 # 4.) Call the balancer a few times:
 #       curl localhost:2000
@@ -29,7 +29,7 @@
 #       Node 2
 #
 # 5.) Take node 1 out of service:
-#       curl "localhost:9000/clustermanager/down?host=localhost&port=3001"
+#       curl -X POST "localhost:9000/clustermanager/down?host=localhost&port=3001"
 #
 # 6.) Call the balancer again. Only node 2 answers:
 #       curl localhost:2000
