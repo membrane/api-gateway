@@ -20,7 +20,7 @@ Keep this file in sync when adding, renaming or removing a util class.
 
 | Class | Purpose |
 |---|---|
-| `HttpUtil` | Line reading, `X-Forwarded-For`, GMT date format, header creation, HTML error responses, status code messages, idempotent-method check, token/whitespace char classes |
+| `HttpUtil` | Line reading, `X-Forwarded-For`, GMT date format, header creation, HTML error responses, status code messages, idempotent-method check, cross-origin (CSRF) check, token/whitespace char classes |
 | `MediaTypeUtil` | Most specific matching media type from a set |
 | `ContentTypeDetector` | Effective content type of a `Message` |
 | `http/SSEParser` | Incremental Server-Sent Events parser (`SSEEvent` with `json()`) |

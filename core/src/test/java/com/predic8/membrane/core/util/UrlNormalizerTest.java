@@ -15,11 +15,14 @@
 package com.predic8.membrane.core.util;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.net.URISyntaxException;
 
 import static com.predic8.membrane.core.util.UrlNormalizer.normalizeBaseUrl;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class UrlNormalizerTest {
 
@@ -51,6 +54,12 @@ class UrlNormalizerTest {
     @Test
     void throwsOnMalformedUrl() {
         assertThrows(URISyntaxException.class, () -> normalizeBaseUrl("not a url"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"null", "example.com", "/path", "http://exa_mple.com", "mailto:someone@example.com"})
+    void throwsWithoutSchemeOrHost(String url) {
+        assertThrows(URISyntaxException.class, () -> normalizeBaseUrl(url));
     }
 
     @Test
