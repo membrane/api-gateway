@@ -416,14 +416,18 @@ public class MultipartFormDataValidator {
                     JsonNodeFactory.instance.textNode(new String(part.content, UTF_8)));
 
         if (isJson(contentType)) {
+            final JsonNode json;
+            // Only the parsing is guarded: errors from validating the parsed value, e.g. in the spec, must not
+            // be reported as unparsable content.
             try {
-                return err.add(validateDecodedPart(ctx, schemas, new JsonBody(new String(part.content, UTF_8)).getPayload()));
+                json = new JsonBody(new String(part.content, UTF_8)).getPayload();
             } catch (Exception e) {
                 // Only a JSON type derived from the schema may fall back; a declared application/json must parse.
                 if (part.contentType == null && !declaredContentType && allowsPlainStringAlternative(propertySchema))
                     return validateScalarPart(ctx, schemas, new Schema<>().type("string"), new String(part.content, UTF_8));
                 return err.add(ctx.statusCode(400), "Part '%s' is declared as %s but its content could not be parsed as JSON.".formatted(part.name, contentType));
             }
+            return err.add(validateDecodedPart(ctx, schemas, json));
         }
 
         // XML parts are converted to JSON (guided by the schema) and validated by the same

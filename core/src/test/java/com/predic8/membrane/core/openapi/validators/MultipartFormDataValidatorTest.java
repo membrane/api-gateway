@@ -500,6 +500,23 @@ public class MultipartFormDataValidatorTest extends AbstractValidatorTest {
         assertTrue(e.getMessage().contains("'['"), e::getMessage);
     }
 
+    /**
+     * A spec error found while validating a JSON part must not be reported as a part that cannot be parsed.
+     */
+    @Test
+    void invalidPatternPropertiesRegexInJsonPartIsSpecError() {
+        final var partSchema = new ObjectSchema();
+        partSchema.addPatternProperty("[", new StringSchema());
+        final var schema = new ObjectSchema().addProperty("value", partSchema);
+        final var body = new MultipartBuilder().part("value", null, APPLICATION_JSON, null, """
+                {"a": "b"}""").build();
+
+        final var e = assertThrows(OpenAPIParsingException.class, () -> new MultipartFormDataValidator(new OpenAPI()).validate(
+                new ValidationContext().entity("REQUEST"), new MediaType().schema(schema),
+                Request.post().path("/upload").mediaType(MultipartBuilder.CONTENT_TYPE).body(body)));
+        assertTrue(e.getMessage().contains("'['"), e::getMessage);
+    }
+
     private ValidationErrors validateParts(Schema<?> schema, String name, String... values) throws ParseException {
         var builder = new MultipartBuilder();
         for (var value : values)
