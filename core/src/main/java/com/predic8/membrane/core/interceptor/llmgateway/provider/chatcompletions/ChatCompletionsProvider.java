@@ -16,14 +16,12 @@ package com.predic8.membrane.core.interceptor.llmgateway.provider.chatcompletion
 
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMErrorCreator;
-import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMProvider;
-import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMRequest;
-import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMResponse;
+import com.predic8.membrane.core.interceptor.llmgateway.provider.*;
 
 import java.io.IOException;
 import java.util.function.Consumer;
 
+import static com.predic8.membrane.core.interceptor.llmgateway.provider.LLMProvider.endpointPath;
 import static com.predic8.membrane.core.interceptor.llmgateway.provider.LLMProvider.started;
 
 /**
@@ -49,7 +47,11 @@ import static com.predic8.membrane.core.interceptor.llmgateway.provider.LLMProvi
 public class ChatCompletionsProvider implements LLMProvider {
     @Override
     public LLMRequest getLLMRequest(Exchange request) throws IOException {
-        return new ChatCompletionsRequest(request);
+        // Compatible services put the endpoint under different prefixes, like /v1, /openai/v1 or /v1beta/openai.
+        if (endpointPath(request).endsWith("/chat/completions")) {
+            return new ChatCompletionsRequest(request);
+        }
+        return new BaseLLMRequest(request);
     }
 
     @Override

@@ -17,6 +17,8 @@ package com.predic8.membrane.core.interceptor.llmgateway;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.chatcompletions.ChatCompletionsProvider;
+import com.predic8.membrane.core.interceptor.llmgateway.provider.claude.ClaudeProvider;
+import com.predic8.membrane.core.interceptor.llmgateway.provider.google.GoogleProvider;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.openai.OpenAIProvider;
 import com.predic8.membrane.core.interceptor.llmgateway.store.AiApiUser;
 import com.predic8.membrane.core.openapi.validators.MultipartBuilder;
@@ -36,6 +38,8 @@ import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.http.Request.post;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.llmgateway.provider.claude.ClaudeLLMRequest.X_API_KEY;
+import static com.predic8.membrane.core.interceptor.llmgateway.provider.google.GoogleLLMRequest.X_GOOG_API_KEY;
 import static com.predic8.membrane.core.interceptor.llmgateway.store.AiApiStoreFixtures.initializedStoreWith;
 import static com.predic8.membrane.core.interceptor.llmgateway.store.AiApiStoreFixtures.user;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -214,6 +218,131 @@ class LLMGatewayInterceptorTest {
 
             assertEquals(CONTINUE, interceptor.handleRequest(exchange));
             assertEquals("Bearer shared-key", exchange.getRequest().getHeader().getFirstValue(AUTHORIZATION));
+        }
+    }
+
+    /**
+     * Every provider only reads model input from the endpoints it knows. Another path, like a batch
+     * endpoint, carries model input the restrictions cannot be applied to, so it must not get the
+     * shared key once restrictions are configured.
+     */
+    @Nested
+    class ProviderEndpoints {
+
+        @BeforeEach
+        void useSharedKeyAndUserStore() {
+            interceptor.setApiKey("shared-key");
+            interceptor.setAiStore(initializedStoreWith(user("Alice", "key-a", 0)));
+        }
+
+        @ParameterizedTest(name = "{0} POST {1}")
+        @CsvSource({
+                "claude, /v1/messages/batches",
+                "claude, /v1/messages/count_tokens",
+                "claude, /v1/messagesX",
+                "google, /v1beta/models/gemini-2.5-flash:batchGenerateContent",
+                "google, /v1beta/models/gemini-2.5-flash:countTokens",
+                "google, /v1beta/models/gemini-2.5-flash:embedContent",
+                "google, /v1beta/cachedContents",
+                "chatCompletions, /v1/embeddings",
+                "chatCompletions, /v1/audio/transcriptions",
+                "chatCompletions, /v1/chat/completions/abc",
+                "openai, /v1/responses/resp_1/cancel",
+                "openai, /v1/responses/input_tokens",
+                "openai, /v1/chat/completions/abc",
+                "openai, /v1/chat/completionsX",
+        })
+        void unsupportedEndpointIsRejected(String provider, String path) throws Exception {
+            useProvider(provider);
+
+            var exchange = post("http://localhost" + path).header(keyHeader(provider), keyValue(provider, "key-a")).json(CHAT_REQUEST).buildExchange();
+
+            assertEquals(ABORT, interceptor.handleRequest(exchange));
+            assertEquals(400, exchange.getResponse().getStatusCode());
+            assertEquals(keyValue(provider, "key-a"), exchange.getRequest().getHeader().getFirstValue(keyHeader(provider)));
+        }
+
+        @ParameterizedTest(name = "{0} POST {1}")
+        @CsvSource({
+                "claude, /v1/messages",
+                "claude, /v1/messages?beta=true",
+                "google, /v1beta/models/gemini-2.5-flash:generateContent",
+                "google, /v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse",
+                "google, /v1beta/models/gemini-2.5-flash%3AgenerateContent",
+                "google, /v1/models/gemini-2.5-flash:generateContent",
+                "chatCompletions, /v1/chat/completions",
+                "chatCompletions, /openai/v1/chat/completions",
+                "openai, /v1/chat/completions",
+                "openai, /v1/responses",
+                "openai, /v1/responses?x=1",
+        })
+        void supportedEndpointGetsSharedKey(String provider, String path) throws Exception {
+            useProvider(provider);
+
+            var exchange = post("http://localhost" + path).header(keyHeader(provider), keyValue(provider, "key-a")).json(CHAT_REQUEST).buildExchange();
+
+            assertEquals(CONTINUE, interceptor.handleRequest(exchange));
+            assertEquals(keyValue(provider, "shared-key"), exchange.getRequest().getHeader().getFirstValue(keyHeader(provider)));
+        }
+
+        /**
+         * Without restrictions every endpoint is forwarded, with the shared key in the header the
+         * provider expects it in.
+         */
+        @ParameterizedTest(name = "{0}")
+        @CsvSource({"claude", "google", "chatCompletions", "openai"})
+        void unsupportedEndpointGetsSharedKeyWithoutRestrictions(String provider) throws Exception {
+            interceptor.setAiStore(null);
+            useProvider(provider);
+
+            var exchange = post("http://localhost/v1/batches").header(keyHeader(provider), keyValue(provider, "client-key")).json("{}").buildExchange();
+
+            assertEquals(CONTINUE, interceptor.handleRequest(exchange));
+            assertEquals(keyValue(provider, "shared-key"), exchange.getRequest().getHeader().getFirstValue(keyHeader(provider)));
+        }
+
+        /**
+         * A batch request is not checked against the input token limit, so it must not get through.
+         */
+        @Test
+        void claudeBatchDoesNotBypassInputTokenLimit() throws Exception {
+            interceptor.setAiStore(null);
+            var policies = new DefaultPolicies();
+            policies.setMaxInputTokens(10);
+            interceptor.setPolicies(policies);
+            useProvider("claude");
+
+            var batch = """
+                    {"requests":[{"custom_id":"1","params":{"model":"claude-sonnet-4-5","max_tokens":10,
+                    "messages":[{"role":"user","content":"%s"}]}}]}""".formatted("x".repeat(4000));
+            var exchange = post("http://localhost/v1/messages/batches").header(X_API_KEY, "client-key").json(batch).buildExchange();
+
+            assertEquals(ABORT, interceptor.handleRequest(exchange));
+            assertEquals(400, exchange.getResponse().getStatusCode());
+            assertEquals("client-key", exchange.getRequest().getHeader().getFirstValue(X_API_KEY));
+        }
+
+        private void useProvider(String provider) {
+            interceptor.setProvider(switch (provider) {
+                case "claude" -> new ClaudeProvider();
+                case "google" -> new GoogleProvider();
+                case "chatCompletions" -> new ChatCompletionsProvider();
+                case "openai" -> new OpenAIProvider();
+                default -> throw new IllegalArgumentException(provider);
+            });
+            interceptor.init();
+        }
+
+        private static String keyHeader(String provider) {
+            return switch (provider) {
+                case "claude" -> X_API_KEY;
+                case "google" -> X_GOOG_API_KEY;
+                default -> AUTHORIZATION;
+            };
+        }
+
+        private static String keyValue(String provider, String key) {
+            return AUTHORIZATION.equals(keyHeader(provider)) ? "Bearer " + key : key;
         }
     }
 

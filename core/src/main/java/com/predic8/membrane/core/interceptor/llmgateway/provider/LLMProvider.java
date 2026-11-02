@@ -15,9 +15,12 @@
 package com.predic8.membrane.core.interceptor.llmgateway.provider;
 
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
 
 import java.io.IOException;
 import java.util.function.Consumer;
+
+import static com.predic8.membrane.core.openapi.util.UriUtil.trimQueryString;
 
 public interface LLMProvider {
 
@@ -30,6 +33,18 @@ public interface LLMProvider {
         return response;
     }
 
+    /**
+     * The path of the request without path parameters and query, to decide which endpoint is called.
+     * Dot-segments are already resolved and duplicate slashes merged, see {@link Request#getRoutingPath()}.
+     */
+    static String endpointPath(Exchange exchange) {
+        return trimQueryString(exchange.getRequest().getRoutingPath());
+    }
+
+    /**
+     * Returns a {@link ModelInputRequest} only for the endpoints the provider can read the model input
+     * of. The gateway relies on this to reject other endpoints when restrictions are configured.
+     */
     LLMRequest getLLMRequest(Exchange request) throws IOException;
     LLMResponse getLLMResponse(Exchange request, Consumer<LLMResponse> postProcessor);
     LLMErrorCreator getErrorCreator();

@@ -16,15 +16,14 @@ package com.predic8.membrane.core.interceptor.llmgateway.provider.claude;
 
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMErrorCreator;
-import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMProvider;
-import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMRequest;
-import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMResponse;
+import com.predic8.membrane.core.interceptor.llmgateway.provider.*;
 
 import java.io.IOException;
 import java.util.function.Consumer;
 
+import static com.predic8.membrane.core.interceptor.llmgateway.provider.LLMProvider.endpointPath;
 import static com.predic8.membrane.core.interceptor.llmgateway.provider.LLMProvider.started;
+import static com.predic8.membrane.core.interceptor.llmgateway.provider.claude.ClaudeLLMRequest.X_API_KEY;
 
 /**
  * @description (Experimental) Talks to the Anthropic Claude Messages API under <code>/v1/messages</code>. The api key travels in the
@@ -46,9 +45,25 @@ import static com.predic8.membrane.core.interceptor.llmgateway.provider.LLMProvi
 @MCElement( name="claude")
 public class ClaudeProvider implements LLMProvider {
 
+    private static final String MESSAGES = "/v1/messages";
+
     @Override
     public LLMRequest getLLMRequest(Exchange exchange) throws IOException {
-        return new ClaudeLLMRequest(exchange);
+        if (MESSAGES.equals(endpointPath(exchange))) {
+            return new ClaudeLLMRequest(exchange);
+        }
+        // Other endpoints, like the batches, only get the key in the header Claude expects it in.
+        return new BaseLLMRequest(exchange) {
+            @Override
+            protected String apiKeyHeaderName() {
+                return X_API_KEY;
+            }
+
+            @Override
+            protected boolean apiKeyIsBearer() {
+                return false;
+            }
+        };
     }
 
     @Override
