@@ -17,6 +17,7 @@
 package com.predic8.membrane.core.openapi.validators;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.openapi.OpenAPIParsingException;
@@ -206,7 +207,8 @@ public class MultipartFormDataValidator {
 
             // A field name may occur multiple times (array items / multi-file fields), so validate every occurrence.
             var occurrences = entry.getValue();
-            var reconstructed = JsonNodeFactory.instance.arrayNode();
+            // One array per schema: an XML conversion keeps only the content its schema declares.
+            final var reconstructed = schemas.stream().map(s -> JsonNodeFactory.instance.arrayNode()).toList();
             boolean canReconstruct = array && repeatedItems;
             for (int i = 0; i < occurrences.size(); i++) {
                 var part = occurrences.get(i);
@@ -224,12 +226,8 @@ public class MultipartFormDataValidator {
                 if (occurrenceSchemas.isEmpty()) {
                     if (canReconstruct) {
                         var unconstrained = new Schema<>();
-                        var value = reconstructPart(partCtx, List.of(unconstrained), unconstrained,
-                                contentTypeOf(name, part, unconstrained, encodings), part);
-                        if (value == null)
-                            canReconstruct = false;
-                        else
-                            reconstructed.add(value);
+                        canReconstruct = appendReconstructed(reconstructed, partCtx, resolvedSchemas, i, List.of(unconstrained),
+                                unconstrained, contentTypeOf(name, part, unconstrained, encodings), part);
                     }
                     continue;
                 }
@@ -237,20 +235,44 @@ public class MultipartFormDataValidator {
                 var contentType = contentTypeOf(name, part, decodingSchema, encodings);
                 err.add(validatePart(partCtx, occurrenceSchemas, decodingSchema,
                         contentType, hasDeclaredContentType(name, encodings), part));
-                if (canReconstruct) {
-                    var value = reconstructPart(partCtx, occurrenceSchemas, decodingSchema, contentType, part);
-                    if (value == null)
-                        canReconstruct = false;
-                    else
-                        reconstructed.add(value);
-                }
+                if (canReconstruct)
+                    canReconstruct = appendReconstructed(reconstructed, partCtx, resolvedSchemas, i, occurrenceSchemas,
+                            decodingSchema, contentType, part);
             }
             if (canReconstruct && err.size() == errorsBeforeField) {
-                for (var candidate : schemas)
-                    err.add(new SchemaValidator(api, candidate).validate(partCtx, reconstructed));
+                for (int j = 0; j < schemas.size(); j++)
+                    err.add(new SchemaValidator(api, schemas.get(j)).validate(partCtx, reconstructed.get(j)));
             }
         }
         return err;
+    }
+
+    /**
+     * Appends an occurrence to the reconstructed array of every applicable schema. XML is converted per
+     * schema with that schema's item schema, since a conversion drops content the schema does not declare;
+     * other content decodes the same for every schema and is shared.
+     *
+     * @return false if the occurrence cannot be reconstructed
+     */
+    @SuppressWarnings("rawtypes")
+    private boolean appendReconstructed(List<ArrayNode> reconstructed, ValidationContext ctx, List<Schema> resolvedSchemas, int index,
+                                        List<Schema> occurrenceSchemas, Schema decodingSchema, String contentType, FormPart part) {
+        if (!isXML(contentType) || isBinaryString(decodingSchema)) {
+            final var value = reconstructPart(ctx, occurrenceSchemas, decodingSchema, contentType, part);
+            if (value == null)
+                return false;
+            reconstructed.forEach(array -> array.add(value));
+            return true;
+        }
+        for (int j = 0; j < resolvedSchemas.size(); j++) {
+            final var item = occurrenceSchema(resolvedSchemas.get(j), index, true);
+            final Schema itemSchema = item != null ? item : new Schema<>();
+            final var value = reconstructPart(ctx, List.of(itemSchema), itemSchema, contentType, part);
+            if (value == null)
+                return false;
+            reconstructed.get(j).add(value);
+        }
+        return true;
     }
 
     @SuppressWarnings("rawtypes")

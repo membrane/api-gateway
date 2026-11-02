@@ -517,6 +517,30 @@ public class MultipartFormDataValidatorTest extends AbstractValidatorTest {
         assertTrue(e.getMessage().contains("'['"), e::getMessage);
     }
 
+    /**
+     * When a property and a pattern both apply to an XML array part, the reconstructed array must keep
+     * the content each schema needs, not only what the first schema's conversion retains.
+     */
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', value = {
+            "<root><a>A</a><b>B</b></root>|0",
+            "<root><a>A</a></root>|1",
+            "<root><b>B</b></root>|1"})
+    void xmlArrayPartMatchedByPropertyAndPattern(String xml, int count) throws ParseException {
+        final var schema = new ObjectSchema();
+        schema.addProperty("x-doc", new ArraySchema().items(new ObjectSchema()
+                .addProperty("a", new StringSchema()).addRequiredItem("a")));
+        schema.addPatternProperty("^x-", new ArraySchema().items(new ObjectSchema()
+                .addProperty("b", new StringSchema()).addRequiredItem("b")));
+        final var body = new MultipartBuilder().part("x-doc", null, APPLICATION_XML, null, xml).build();
+
+        final var errors = new MultipartFormDataValidator(new OpenAPI()).validate(
+                new ValidationContext().entity("REQUEST"), new MediaType().schema(schema),
+                Request.post().path("/upload").mediaType(MultipartBuilder.CONTENT_TYPE).body(body));
+
+        assertEquals(count, errors.size(), errors::toString);
+    }
+
     private ValidationErrors validateParts(Schema<?> schema, String name, String... values) throws ParseException {
         var builder = new MultipartBuilder();
         for (var value : values)
