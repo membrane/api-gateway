@@ -36,6 +36,7 @@ import java.util.regex.*;
 import static com.predic8.membrane.annot.Constants.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
 public abstract class OAuth2AuthorizationServerInterceptorBase {
@@ -113,6 +114,18 @@ public abstract class OAuth2AuthorizationServerInterceptorBase {
                       + "&redirect_uri=" + "http://localhost:2001/" + "oauth2callback"
                       + "&grant_type=authorization_code")
                 .buildExchange();
+    }
+
+    /**
+     * A token request whose extra parameters try to replace the identity of the user who logged in.
+     */
+    public static Callable<Exchange> getMockTokenRequestWithForeignIdentity() {
+        return () -> {
+            Exchange exc = getMockTokenRequest().call();
+            exc.getRequest().setBodyContent((exc.getRequest().getBodyAsStringDecoded()
+                    + "&username=alice&email=alice%40example.com").getBytes(UTF_8));
+            return exc;
+        };
     }
 
     static ExceptionThrowingConsumer<Exchange> getTokenAndTokenTypeFromResponse() {
