@@ -449,7 +449,10 @@ public class Http2Logic {
             if (windowUpdate.getWindowSizeIncrement() == 0)
                 throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
 
-            peerFlowControl.increment(windowUpdate.getWindowSizeIncrement());
+            if (!peerFlowControl.tryIncrement(windowUpdate.getWindowSizeIncrement())) {
+                log.info("Closing HTTP/2 connection from {}: a WINDOW_UPDATE makes the connection window exceed 2^31-1 (RFC 9113 §6.9.1).", remoteAddr);
+                throw new FatalConnectionException(ERROR_FLOW_CONTROL_ERROR);
+            }
         } else {
             if (windowUpdate.getWindowSizeIncrement() == 0)
                 throw new FatalConnectionException(ERROR_PROTOCOL_ERROR); // TODO: change to stream error
@@ -462,8 +465,22 @@ public class Http2Logic {
                 throw new FatalConnectionException(ERROR_PROTOCOL_ERROR); // stream not open // TODO: change to stream error
             }
 
-            streamInfo.getPeerFlowControl().increment(windowUpdate.getWindowSizeIncrement());
+            if (!streamInfo.getPeerFlowControl().tryIncrement(windowUpdate.getWindowSizeIncrement()))
+                rejectWindowOverflow(streamInfo);
         }
+    }
+
+    /**
+     * Resets a stream whose window a WINDOW_UPDATE would make exceed 2^31-1, a stream error of type FLOW_CONTROL_ERROR
+     * (RFC 9113 §6.9.1). No response will arrive for it then, so a call waiting for one fails.
+     */
+    private void rejectWindowOverflow(StreamInfo streamInfo) throws IOException {
+        final var streamId = streamInfo.getStreamId();
+        log.info("Resetting stream {} from {}: a WINDOW_UPDATE makes its window exceed 2^31-1 (RFC 9113 §6.9.1).", streamId, remoteAddr);
+        sender.send(streamId, (encoder, peerSettings) -> List.of(RstStreamFrame.construct(streamId, ERROR_FLOW_CONTROL_ERROR)));
+        final var cause = new IOException("A WINDOW_UPDATE makes the flow-control window of HTTP/2 stream %d exceed 2^31-1.".formatted(streamId));
+        streamInfo.abortReceiving(cause);
+        messageHandler.handleStreamError(streamInfo, cause);
     }
 
     private void handleFrame(HeadersFrame headers) throws IOException {
@@ -883,7 +900,11 @@ public class Http2Logic {
                         throw new FatalConnectionException(ERROR_FLOW_CONTROL_ERROR);
                     int delta = (int) settingsValue - peerSettings.getInitialWindowSize();
                     for (StreamInfo si : streams.values()) {
-                        si.getPeerFlowControl().increment(delta);
+                        if (!si.getPeerFlowControl().tryIncrement(delta)) {
+                            log.info("Closing HTTP/2 connection from {}: SETTINGS_INITIAL_WINDOW_SIZE makes the window of stream {} exceed 2^31-1 (RFC 9113 §6.9.2).",
+                                    remoteAddr, si.getStreamId());
+                            throw new FatalConnectionException(ERROR_FLOW_CONTROL_ERROR);
+                        }
                     }
                     peerSettings.setInitialWindowSize((int) settingsValue);
                 }

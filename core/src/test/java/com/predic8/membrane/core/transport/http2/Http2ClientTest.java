@@ -45,6 +45,7 @@ import java.util.concurrent.TimeUnit;
 import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.http.Request.post;
 import static com.predic8.membrane.core.transport.http2.frame.Error.ERROR_CANCEL;
+import static com.predic8.membrane.core.transport.http2.frame.Error.ERROR_FLOW_CONTROL_ERROR;
 import static com.predic8.membrane.core.transport.http2.frame.Error.ERROR_PROTOCOL_ERROR;
 import static com.predic8.membrane.core.transport.http2.frame.Frame.*;
 import static com.predic8.membrane.core.transport.http2.frame.DataFrame.FLAG_END_STREAM;
@@ -134,6 +135,20 @@ class Http2ClientTest {
             peer.getOutputStream().flush();
         });
         assertInstanceOf(StreamNotProcessedException.class, e);
+    }
+
+    /**
+     * A WINDOW_UPDATE that makes the stream window exceed 2^31-1 is a stream error of type FLOW_CONTROL_ERROR
+     * (RFC 9113 §6.9.1). The stream is reset, so no response will arrive and the call fails.
+     */
+    @Test
+    void windowUpdateBeyondTheMaximumFailsCall() throws Exception {
+        final var e = assertPendingCallFails((client, peer) -> {
+            peer.getOutputStream().write(new byte[]{0, 0, 4, TYPE_WINDOW_UPDATE, 0, 0, 0, 0, 1, 0x7F, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF});
+            peer.getOutputStream().flush();
+            assertEquals(ERROR_FLOW_CONTROL_ERROR, readUntilFrame(peer.getInputStream(), TYPE_RST_STREAM)[3]);
+        });
+        assertTrue(e.getMessage().contains("flow-control window"), e.getMessage());
     }
 
     @Test

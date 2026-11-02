@@ -71,7 +71,15 @@ class Http2LogicTest {
                         0, 0, 3, 0x1, 0x5, 0, 0, 0, 3, (byte) 0x82, (byte) 0x84, (byte) 0x86,
                         0, 0, 4, 0x8, 0, 0, 0, 0, 2, 0, 0, 0, 1}),
                 // A GET request on stream 2: a client opens streams with odd ids only (RFC 9113 §5.1.1).
-                arguments("HEADERS opening a stream with an even id", new byte[]{0, 0, 3, 0x1, 0x5, 0, 0, 0, 2, (byte) 0x82, (byte) 0x84, (byte) 0x86})
+                arguments("HEADERS opening a stream with an even id", new byte[]{0, 0, 3, 0x1, 0x5, 0, 0, 0, 2, (byte) 0x82, (byte) 0x84, (byte) 0x86}),
+                // The connection window starts at 65535, so it would exceed 2^31-1 (RFC 9113 §6.9.1).
+                arguments("WINDOW_UPDATE beyond 2^31-1 on the connection", new byte[]{0, 0, 4, 0x8, 0, 0, 0, 0, 0, 0x7F, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF}),
+                // A GET request on stream 1, whose window is raised to exactly 2^31-1. One more byte of initial window
+                // size would exceed it (RFC 9113 §6.9.2).
+                arguments("SETTINGS_INITIAL_WINDOW_SIZE pushing a stream window beyond 2^31-1", new byte[]{
+                        0, 0, 3, 0x1, 0x4, 0, 0, 0, 1, (byte) 0x82, (byte) 0x84, (byte) 0x86,
+                        0, 0, 4, 0x8, 0, 0, 0, 0, 1, 0x7F, (byte) 0xFF, 0, 0,
+                        0, 0, 6, 0x4, 0, 0, 0, 0, 0, 0, 0x4, 0, 1, 0, 0})
         );
     }
 
@@ -103,6 +111,34 @@ class Http2LogicTest {
     @Test
     void framesWaitingToBeSentUpToTheLimitAreAccepted() throws Exception {
         assertThrows(EndOfStreamException.class, () -> createLogic(pings(Http2Logic.MAX_BUFFERED_FRAMES - 1)).handle());
+    }
+
+    @Test
+    void windowUpdateUpToTheMaximumIsAccepted() {
+        final var increment = Integer.MAX_VALUE - 65535;
+        assertThrows(EndOfStreamException.class, () -> createLogic(new byte[]{0, 0, 4, 0x8, 0, 0, 0, 0, 0,
+                (byte) (increment >>> 24), (byte) (increment >>> 16), (byte) (increment >>> 8), (byte) increment}).handle());
+    }
+
+    /**
+     * A WINDOW_UPDATE that makes a stream window exceed 2^31-1 is a stream error of type FLOW_CONTROL_ERROR
+     * (RFC 9113 §6.9.1): the stream is reset, the connection stays open, and the window is not changed.
+     */
+    @Test
+    void windowUpdateBeyondTheMaximumResetsTheStream() throws Exception {
+        final var get = headersFrame(false, new Encoder(4096), withGet());
+        final var baseline = createLogic(get);
+        assertThrows(EndOfStreamException.class, baseline::handle);
+
+        final var in = new ByteArrayOutputStream();
+        in.write(get);
+        in.write(new byte[]{0, 0, 4, 0x8, 0, 0, 0, 0, 1, 0x7F, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF});
+        final var logic = createLogic(in.toByteArray());
+
+        assertThrows(EndOfStreamException.class, logic::handle, "A stream error does not close the connection.");
+
+        assertEquals(65535, logic.streams.get(1).getPeerFlowControl().peerWindowSize);
+        assertEquals(baseline.sender.getBufferedFrames() + 1, logic.sender.getBufferedFrames(), "RST_STREAM is queued.");
     }
 
     private static byte[] pings(int count) {

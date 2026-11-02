@@ -129,6 +129,13 @@ public class Http2Client implements Runnable, AutoCloseable {
             }
 
             @Override
+            public void handleStreamError(StreamInfo streamInfo, IOException cause) {
+                final var ri = responses.get(streamInfo.getStreamId());
+                if (ri != null)
+                    ri.fail(cause);
+            }
+
+            @Override
             public void handleMalformedHeaders(StreamInfo streamInfo) {
                 final var streamId = streamInfo.getStreamId();
                 final var ri = responses.get(streamId);
