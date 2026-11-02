@@ -22,8 +22,6 @@ import com.predic8.membrane.core.openapi.OpenAPIParsingException;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.Schema;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -35,8 +33,6 @@ import static com.predic8.membrane.core.openapi.util.Utils.getComponentLocalName
 
 @SuppressWarnings("rawtypes")
 public class SchemaUtil {
-
-    private static final Logger log = LoggerFactory.getLogger(SchemaUtil.class);
 
     /**
      * Compiled {@code patternProperties} regexes by regex text, shared JVM-wide: {@link Pattern} is immutable
@@ -156,9 +152,8 @@ public class SchemaUtil {
             try {
                 return Pattern.compile(r);
             } catch (PatternSyntaxException e) {
-                final var message = "Invalid patternProperties regex '%s': %s (index %d).".formatted(r, e.getDescription(), e.getIndex());
-                log.error(message);
-                final var error = new OpenAPIParsingException(message);
+                final var error = new OpenAPIParsingException("Invalid patternProperties regex '%s': %s (index %d)."
+                        .formatted(r, e.getDescription(), e.getIndex()));
                 error.initCause(e);
                 throw error;
             }
