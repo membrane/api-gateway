@@ -428,7 +428,8 @@ public class MultipartFormDataValidator {
             try {
                 return err.add(validateDecodedPart(ctx, schemas, new JsonBody(new String(part.content, UTF_8)).getPayload()));
             } catch (Exception e) {
-                if (allowsPlainStringAlternative(propertySchema))
+                // Only a JSON type derived from the schema may fall back; a declared application/json must parse.
+                if (part.contentType == null && !declaredContentType && allowsPlainStringAlternative(propertySchema))
                     return validateScalarPart(ctx, schemas, new Schema<>().type("string"), new String(part.content, UTF_8));
                 return err.add(ctx.statusCode(400), "Part '%s' is declared as %s but its content could not be parsed as JSON.".formatted(part.name, contentType));
             }

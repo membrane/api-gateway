@@ -324,6 +324,24 @@ public class MultipartFormDataValidatorTest extends AbstractValidatorTest {
         assertTrue(errors.isEmpty(), errors::toString);
     }
 
+    @ParameterizedTest
+    @CsvSource({"true", "false"})
+    void explicitJsonPartWithInvalidJsonIsRejectedForArrayOrStringUnion(boolean declaredByEncoding) throws ParseException {
+        final var union = new Schema<>().types(new java.util.LinkedHashSet<>(List.of("array", "string")));
+        final var mediaType = new MediaType().schema(new ObjectSchema().addProperty("value", union));
+        if (declaredByEncoding)
+            mediaType.addEncoding("value", new Encoding().contentType(APPLICATION_JSON));
+        final var body = new MultipartBuilder()
+                .part("value", null, declaredByEncoding ? null : APPLICATION_JSON, null, "hello!").build();
+
+        final var errors = new MultipartFormDataValidator(new OpenAPI()).validate(
+                new ValidationContext().entity("REQUEST"), mediaType,
+                Request.post().path("/upload").mediaType(MultipartBuilder.CONTENT_TYPE).body(body));
+
+        assertEquals(1, errors.size(), errors::toString);
+        assertTrue(errors.getFirst().getMessage().contains("could not be parsed as JSON"), errors::toString);
+    }
+
     @Test
     void declaredPlainTextValidatesObjectOrStringUnion() throws ParseException {
         var union = new Schema<>().types(new java.util.LinkedHashSet<>(List.of("object", "string"))).minLength(6);
