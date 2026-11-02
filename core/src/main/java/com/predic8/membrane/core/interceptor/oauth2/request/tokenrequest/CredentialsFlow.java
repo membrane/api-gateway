@@ -88,7 +88,7 @@ public class CredentialsFlow extends TokenRequest {
         token = createTokenForVerifiedClient(tokenClaims("aud", "scope", audiences, grantedScopes));
         expiration = authServer.getTokenGenerator().getExpiration();
 
-        SessionManager.Session session = createSessionForAuthorizedClientWithParams();
+        SessionManager.Session session = createSessionForAuthorizedClient();
         synchronized(session) {
             session.getUserAttributes().put(ACCESS_TOKEN, token);
         }

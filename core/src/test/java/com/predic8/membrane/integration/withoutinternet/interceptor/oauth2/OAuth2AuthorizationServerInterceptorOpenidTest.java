@@ -13,6 +13,7 @@
 
 package com.predic8.membrane.integration.withoutinternet.interceptor.oauth2;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.authentication.session.*;
@@ -42,7 +43,30 @@ public class OAuth2AuthorizationServerInterceptorOpenidTest extends OAuth2Author
         return Arrays.asList(testGoodAuthRequest(),
                 testGoodGrantedAuthCode(),
                 testGoodTokenRequest(),
-                testGoodUserinfoRequest());
+                testGoodUserinfoRequest(),
+                testTokenRequestCannotChangeIdentity());
+    }
+
+    /**
+     * Extra token request parameters must change neither the ID token nor the userinfo of the user who logged in.
+     */
+    private static Object[] testTokenRequestCannotChangeIdentity() {
+        return new Object[]{"testTokenRequestCannotChangeIdentity", runUntilGoodGrantedAuthCodeOpenid(), getMockTokenRequestWithForeignIdentity(), 200, identityOfJohnInIdTokenAndUserinfo()};
+    }
+
+    private static ExceptionThrowingConsumer<Exchange> identityOfJohnInIdTokenAndUserinfo() {
+        return exc -> {
+            final var idToken = parseSimpleJSONResponse(exc.getResponse()).get(ParamNames.ID_TOKEN);
+            final var payload = new ObjectMapper().readTree(Base64.getUrlDecoder().decode(idToken.split("\\.")[1]));
+            assertEquals("john", payload.get("sub").asText());
+            assertEquals("e@mail.com", payload.get("email").asText());
+
+            getTokenAndTokenTypeFromResponse().accept(exc);
+            final var userinfo = getMockUserinfoRequest().call();
+            OAuth2TestUtil.makeExchangeValid(userinfo);
+            oasi.handleRequest(userinfo);
+            assertEquals("e@mail.com", parseSimpleJSONResponse(userinfo.getResponse()).get("email"));
+        };
     }
 
     private static Object[] testGoodUserinfoRequest() {
