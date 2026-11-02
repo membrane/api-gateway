@@ -1,3 +1,18 @@
+# Migrate to Membrane 7.9
+
+See `distribution/release-notes/7.9.0.md` for the complete list of changes.
+
+## Cluster manager accepts only POST
+
+`clusterNotification` answers requests to `/clustermanager/up`, `/down` and `/takeout` with `405`
+unless they use POST. Switch scripts and node agents to POST and keep the parameters in the query string:
+
+```sh
+curl -X POST "localhost:9000/clustermanager/up?host=node1.example.com&port=8080"
+```
+
+`down` and `takeout` answer `404` for a node that is not registered. Register it with `up` first.
+
 # Migrate to Membrane 7.8
 
 This guide explains how to migrate existing Membrane installations to **Membrane 7.8**.

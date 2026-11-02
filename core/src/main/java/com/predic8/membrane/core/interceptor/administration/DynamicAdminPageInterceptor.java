@@ -16,7 +16,6 @@ package com.predic8.membrane.core.interceptor.administration;
 import com.predic8.membrane.annot.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchangestore.LimitedMemoryExchangeStore;
-import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
@@ -35,19 +34,19 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.DecimalFormat;
 import java.util.*;
 import java.util.regex.Pattern;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
-import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.Header.ALLOW;
 import static com.predic8.membrane.core.http.MimeType.TEXT_HTML_UTF8;
 import static com.predic8.membrane.core.http.Request.METHOD_POST;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.administration.AdminPageBuilder.createHRef;
 import static com.predic8.membrane.core.interceptor.rest.RESTInterceptor.getRelativeRootPath;
+import static com.predic8.membrane.core.util.HttpUtil.isCrossOrigin;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
 import static com.predic8.membrane.core.util.URLParamUtil.createQueryString;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -899,7 +898,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 					exc.setResponse(Response.methodNotAllowed().header(ALLOW, METHOD_POST).build());
 					return RETURN;
 				}
-				if (a.modifiesState() && isCrossOrigin(exc.getRequest())) {
+				if (a.modifiesState() && isCrossOrigin(exc)) {
 					log.info("Rejected cross-origin request to {}", pathQuery);
 					exc.setResponse(Response.forbidden("Cross-origin requests may not change the router's state.").build());
 					return RETURN;
@@ -909,27 +908,6 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 			}
 		}
 		return CONTINUE;
-	}
-
-	/**
-	 * Uses Fetch Metadata and falls back to comparing Origin with Host for browsers that do not send
-	 * Sec-Fetch-Site. A request with neither header does not come from a browser and cannot be forged
-	 * by a third-party site.
-	 */
-	static boolean isCrossOrigin(Request request) {
-		final var secFetchSite = request.getHeader().getFirstValue(SEC_FETCH_SITE);
-		if (secFetchSite != null)
-			return !"same-origin".equalsIgnoreCase(secFetchSite) && !"none".equalsIgnoreCase(secFetchSite);
-
-		final var origin = request.getHeader().getFirstValue(ORIGIN);
-		if (origin == null)
-			return false;
-		try {
-			final var authority = new URI(origin).getRawAuthority();
-			return authority == null || !authority.equalsIgnoreCase(request.getHeader().getHost());
-		} catch (URISyntaxException e) {
-			return true;
-		}
 	}
 
 	private Map<String, String> getParams(Exchange exc) throws URISyntaxException, IOException {
