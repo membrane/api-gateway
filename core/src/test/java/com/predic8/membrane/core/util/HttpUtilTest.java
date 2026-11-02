@@ -331,7 +331,8 @@ public class HttpUtilTest {
             "https, https://gateway.example.com, false",
             "https, http://gateway.example.com, true",
             "http, https://gateway.example.com, true",
-            "'https, http', https://gateway.example.com, false"
+            "'https, http', https://gateway.example.com, false",
+            "', https', https://gateway.example.com, false"
     })
     void crossOriginBehindTlsTerminatingProxy(String forwardedProto, String origin, boolean crossOrigin) throws Exception {
         assertEquals(crossOrigin, isCrossOrigin(Request.post("/")
@@ -352,6 +353,38 @@ public class HttpUtilTest {
                 .header(HOST, "internal:9000")
                 .header(X_FORWARDED_HOST, forwardedHost)
                 .header(X_FORWARDED_PROTO, "https")
+                .header(ORIGIN, origin).buildExchange()));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "https, https://gateway.example.com, false",
+            "https, http://gateway.example.com, true",
+            "http, http://gateway.example.com, false"
+    })
+    void emptyForwardedProtoFallsBackToProxyProtocol(String protocol, String origin, boolean crossOrigin) throws Exception {
+        final var exc = Request.post("/")
+                .header(HOST, "gateway.example.com")
+                .header(X_FORWARDED_PROTO, ",")
+                .header(ORIGIN, origin).buildExchange();
+        exc.setProxy(new ProxyRule() {
+            @Override
+            public String getProtocol() {
+                return protocol;
+            }
+        });
+        assertEquals(crossOrigin, isCrossOrigin(exc));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "http://gateway.example.com, false",
+            "http://attacker.example.com, true"
+    })
+    void emptyForwardedHostFallsBackToHost(String origin, boolean crossOrigin) throws Exception {
+        assertEquals(crossOrigin, isCrossOrigin(Request.post("/")
+                .header(HOST, "gateway.example.com")
+                .header(X_FORWARDED_HOST, ",")
                 .header(ORIGIN, origin).buildExchange()));
     }
 

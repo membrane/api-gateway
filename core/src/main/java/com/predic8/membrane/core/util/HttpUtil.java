@@ -39,6 +39,7 @@ import static com.predic8.membrane.annot.Constants.PRODUCT_NAME;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.TEXT_HTML_UTF8;
 import static com.predic8.membrane.core.http.Request.*;
+import static com.predic8.membrane.core.util.StringList.parseToList;
 import static com.predic8.membrane.core.util.UrlNormalizer.normalizeBaseUrl;
 import static com.predic8.membrane.core.util.Util.splitStringByComma;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -303,16 +304,16 @@ public class HttpUtil {
     }
 
     private static String getRequestHost(Exchange exc) {
-        final var forwardedHost = exc.getRequest().getHeader().getXForwardedHost();
-        if (forwardedHost != null)
-            return splitStringByComma(forwardedHost).getFirst().trim();
+        final var forwardedHosts = parseToList(exc.getRequest().getHeader().getXForwardedHost());
+        if (!forwardedHosts.isEmpty())
+            return forwardedHosts.getFirst();
         return exc.getRequest().getHeader().getHost();
     }
 
     private static String getRequestScheme(Exchange exc) {
-        final var forwardedProto = exc.getRequest().getHeader().getXForwardedProto();
-        if (forwardedProto != null)
-            return "https".equalsIgnoreCase(splitStringByComma(forwardedProto).getFirst().trim()) ? "https" : "http";
+        final var forwardedProtos = parseToList(exc.getRequest().getHeader().getXForwardedProto());
+        if (!forwardedProtos.isEmpty())
+            return "https".equalsIgnoreCase(forwardedProtos.getFirst()) ? "https" : "http";
         return exc.getProxy() instanceof SSLableProxy proxy ? proxy.getProtocol() : "http";
     }
 
