@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.interceptor.llmgateway.provider.claude;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.AbstractModelInputRequest;
@@ -22,7 +23,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.List;
 
 import static com.predic8.membrane.core.http.Header.ACCEPT_ENCODING;
 import static com.predic8.membrane.core.interceptor.llmgateway.provider.TokenEstimator.charsToTokens;
@@ -128,15 +128,6 @@ public class ClaudeLLMRequest extends AbstractModelInputRequest {
         };
     }
 
-    /**
-     * Returns the system prompt from the top-level {@code "system"} field,
-     * or an empty string if no system prompt is set.
-     */
-    @Override
-    public String getSystemPrompt() {
-        return json.path("system").asText("");
-    }
-
     private boolean isThinking() {
         var thinking = json.path("thinking");
         return thinking.isObject() && "enabled".equals(thinking.path("type").asText());
@@ -162,15 +153,39 @@ public class ClaudeLLMRequest extends AbstractModelInputRequest {
         return false;
     }
 
-    /**
-     * Concatenates all prompts (newline-separated) into the top-level {@code "system"} field.
-     *
-     * <p>Claude API wire format:
-     * <pre>{@code { "system": "prompt 1\nprompt 2", "messages": [...] }}</pre>
-     */
     @Override
-    public void setSystemPrompts(List<String> prompts) {
-        json.put("system", String.join("\n", prompts));
+    public void overwriteSystemPrompt(String prompt) {
+        json.put("system", prompt);
+    }
+
+    @Override
+    public void prependSystemPrompt(String prompt) {
+        systemBlocks().insert(0, textBlock(prompt));
+    }
+
+    @Override
+    public void appendSystemPrompt(String prompt) {
+        systemBlocks().add(textBlock(prompt));
+    }
+
+    /**
+     * The {@code "system"} field as text blocks, so that a prompt can be added next to the client's
+     * blocks without touching them and their {@code cache_control}. A string is turned into one block.
+     */
+    private ArrayNode systemBlocks() {
+        var system = json.get("system");
+        if (system instanceof ArrayNode blocks) {
+            return blocks;
+        }
+        var blocks = json.putArray("system");
+        if (system != null && system.isTextual() && !system.asText().isEmpty()) {
+            blocks.add(textBlock(system.asText()));
+        }
+        return blocks;
+    }
+
+    private ObjectNode textBlock(String text) {
+        return json.objectNode().put("type", "text").put("text", text);
     }
 
     /**

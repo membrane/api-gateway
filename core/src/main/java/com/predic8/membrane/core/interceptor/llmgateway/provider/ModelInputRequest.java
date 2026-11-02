@@ -35,9 +35,22 @@ public interface ModelInputRequest extends JSONMessage {
 
     List<String> getTools();
 
-    String getSystemPrompt();
+    /**
+     * Replaces the system prompt the client sent.
+     */
+    void overwriteSystemPrompt(String prompt);
 
-    void setSystemPrompts(List<String> prompts);
+    /**
+     * Adds the prompt before the system prompt the client sent, which is kept in the form the client
+     * sent it.
+     */
+    void prependSystemPrompt(String prompt);
+
+    /**
+     * Adds the prompt after the system prompt the client sent, which is kept in the form the client
+     * sent it.
+     */
+    void appendSystemPrompt(String prompt);
 
     void removeSystemPrompt();
 

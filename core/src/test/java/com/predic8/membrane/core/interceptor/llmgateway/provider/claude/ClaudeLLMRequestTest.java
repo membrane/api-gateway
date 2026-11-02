@@ -20,7 +20,6 @@ import org.junit.jupiter.params.provider.CsvSource;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.List;
 
 import static com.predic8.membrane.core.http.Header.ACCEPT_ENCODING;
 import static com.predic8.membrane.core.http.Request.post;
@@ -138,13 +137,11 @@ class ClaudeLLMRequestTest {
     @Test
     void systemPromptRoundTrip() throws Exception {
         var request = request("{}");
-        assertEquals("", request.getSystemPrompt());
 
-        request.setSystemPrompts(List.of("one", "two"));
-        assertEquals("one\ntwo", request.getSystemPrompt());
+        request.overwriteSystemPrompt("one");
+        assertEquals("one", request.getJson().path("system").asText());
 
         request.removeSystemPrompt();
-        assertEquals("", request.getSystemPrompt());
         assertFalse(request.getJson().has("system"));
     }
 
