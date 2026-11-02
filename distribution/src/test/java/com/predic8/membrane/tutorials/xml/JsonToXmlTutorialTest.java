@@ -42,10 +42,10 @@ public class JsonToXmlTutorialTest extends AbstractXmlTutorialTest {
             .statusCode(200)
             .contentType(XML)
             .body("zoo.number", equalTo("2"))
-            .body("zoo.animals.array.item.size()", greaterThanOrEqualTo(2))
-            .body("zoo.animals.array.item.name", hasItems("Skye", "Molly"))
-            .body("zoo.animals.array.item.species", hasItems("dog", "cat"))
-            .body("zoo.animals.array.item.find { it.name == 'Skye' }.legs", equalTo("4"));
+            .body("zoo.animals.list.entry.size()", greaterThanOrEqualTo(2))
+            .body("zoo.animals.list.entry.name", hasItems("Skye", "Molly"))
+            .body("zoo.animals.list.entry.species", hasItems("dog", "cat"))
+            .body("zoo.animals.list.entry.find { it.name == 'Skye' }.legs", equalTo("4"));
         // @formatter:on
     }
 }
