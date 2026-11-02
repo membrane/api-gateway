@@ -29,7 +29,6 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.ConfigurationException;
 import groovy.lang.MissingPropertyException;
 import org.apache.commons.io.IOUtils;
-import org.graalvm.polyglot.Value;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -97,7 +96,6 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
      */
     protected abstract Logger getScriptLogger();
 
-    @SuppressWarnings("rawtypes")
     protected Outcome runScript(Exchange exc, Flow flow) {
 
         var msg = getMessage(exc, flow);
@@ -128,19 +126,6 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
 
         if (res instanceof Request request) {
             exc.setRequest(request);
-        }
-
-        // Test for package name is needed cause the dependency is provided and maybe not on the classpath
-        if (res.getClass().getPackageName().startsWith("org.graalvm.polyglot") && res instanceof Value value) {
-            if (value.hasArrayElements()) {
-                res = value.as(List.class);
-            } else if (value.hasMembers()) {
-                res = value.as(Map.class);
-            } else if (value.isString()) {
-                res = value.asString();
-            } else {
-                return CONTINUE;
-            }
         }
 
         if (res instanceof Map || (res instanceof List && isListSerializedToJson())) {
