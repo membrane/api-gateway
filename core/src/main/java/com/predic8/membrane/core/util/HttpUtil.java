@@ -25,7 +25,6 @@ import com.predic8.membrane.core.transport.http.LineTooLongException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.text.DateFormat;
@@ -40,6 +39,7 @@ import static com.predic8.membrane.annot.Constants.PRODUCT_NAME;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.TEXT_HTML_UTF8;
 import static com.predic8.membrane.core.http.Request.*;
+import static com.predic8.membrane.core.util.UrlNormalizer.normalizeBaseUrl;
 import static com.predic8.membrane.core.util.Util.splitStringByComma;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptyList;
@@ -294,23 +294,10 @@ public class HttpUtil {
         if (origin == null)
             return false;
         try {
-            return !sameOrigin(new URI(origin), new URI(getRequestScheme(exc) + "://" + header.getHost()));
+            return !normalizeBaseUrl(origin).equals(normalizeBaseUrl(getRequestScheme(exc) + "://" + header.getHost()));
         } catch (URISyntaxException e) {
             return true;
         }
-    }
-
-    private static boolean sameOrigin(URI a, URI b) {
-        return a.getScheme() != null && a.getHost() != null && b.getHost() != null
-               && a.getScheme().equalsIgnoreCase(b.getScheme())
-               && a.getHost().equalsIgnoreCase(b.getHost())
-               && effectivePort(a) == effectivePort(b);
-    }
-
-    private static int effectivePort(URI uri) {
-        if (uri.getPort() != -1)
-            return uri.getPort();
-        return "https".equalsIgnoreCase(uri.getScheme()) ? 443 : 80;
     }
 
     private static String getRequestScheme(Exchange exc) {
