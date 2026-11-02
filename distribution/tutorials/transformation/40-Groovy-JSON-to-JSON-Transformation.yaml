@@ -1,0 +1,77 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.7.1.json
+#
+# Tutorial: JSON to JSON Transformation with Groovy
+#
+# A Groovy script can read the JSON body, compute new values and return a map
+# or an object that becomes the new JSON body.
+#
+# A template is enough when the output is mostly fixed text with a few values
+# filled in. Use Groovy when the transformation needs real logic: variables,
+# imported Java classes (e.g. to convert date formats), calculations like an
+# order total, or conditions. Groovy builds the result as a map, so the
+# serialized JSON is always valid - no hand-written commas or quotes.
+#
+# 1.) Start Membrane:
+#     with Docker:
+#       Linux/Mac:
+#         ./run-docker.sh -c 40-Groovy-JSON-to-JSON-Transformation.yaml
+#       Windows:
+#         run-docker.cmd -c 40-Groovy-JSON-to-JSON-Transformation.yaml
+#
+#     or with Java:
+#       Linux/Mac:
+#         ./membrane.sh -c 40-Groovy-JSON-to-JSON-Transformation.yaml
+#       Windows:
+#         membrane.cmd -c 40-Groovy-JSON-to-JSON-Transformation.yaml
+#
+# 2.) Have a look at order.json, then send it to the API:
+#     curl -d @order.json -H "Content-Type: application/json" localhost:2000
+#
+#     {
+#       "id" : 731,
+#       "date" : "2023-04-07",
+#       "client" : 17,
+#       "total" : 38.35,
+#       "positions" : [ {
+#         "pieces" : 5,
+#         "price" : 5.9,
+#         "article" : "Oolong"
+#       }, {
+#         "pieces" : 2,
+#         "price" : 2.95,
+#         "article" : "Assam"
+#       }, {
+#         "pieces" : 1,
+#         "price" : 2.95,
+#         "article" : "Darjeeling"
+#       } ]
+#     }
+
+api:
+  port: 2000
+  flow:
+    - request:
+        - groovy:
+            src: |
+              import java.text.*
+
+              def dfIn = new SimpleDateFormat("d MMM yyyy", Locale.US)
+              def dfOut = new SimpleDateFormat("yyyy-MM-dd")
+
+              // json holds the parsed request body. A returned map becomes the new JSON body.
+              [
+                id: json.id,
+                date: dfOut.format(dfIn.parse(json.date)),
+                client: json.customer,
+                total: json.items.collect { it.price * it.quantity }.sum(),
+                positions: json.items.collect {
+                  [
+                    pieces: it.quantity,
+                    price: it.price,
+                    article: it.description
+                  ]
+                }
+              ]
+        - beautifier: {}
+    - return:
+        status: 200
