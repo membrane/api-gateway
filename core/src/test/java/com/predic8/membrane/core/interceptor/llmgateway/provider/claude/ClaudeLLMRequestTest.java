@@ -127,6 +127,8 @@ class ClaudeLLMRequestTest {
             tool result as text blocks  | {"messages":[{"role":"user","content":[{"type":"tool_result","tool_use_id":"t1","content":[{"type":"text","text":"%s"}]}]}]}
             tool use input              | {"messages":[{"role":"assistant","content":[{"type":"tool_use","id":"t1","name":"t","input":{"q":"%s"}}]}]}
             plain text document         | {"messages":[{"role":"user","content":[{"type":"document","source":{"type":"text","media_type":"text/plain","data":"%s"}}]}]}
+            document title              | {"messages":[{"role":"user","content":[{"type":"document","title":"%s","source":{"type":"text","media_type":"text/plain","data":""}}]}]}
+            document context            | {"messages":[{"role":"user","content":[{"type":"document","context":"%s","source":{"type":"text","media_type":"text/plain","data":""}}]}]}
             """)
     void estimateInputTokensCountsEveryBilledInput(String structure, String template) throws Exception {
         var estimate = request(template.formatted("x".repeat(4000))).estimateInputTokens();

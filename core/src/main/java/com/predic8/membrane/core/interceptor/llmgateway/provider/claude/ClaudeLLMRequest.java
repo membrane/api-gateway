@@ -107,7 +107,7 @@ public class ClaudeLLMRequest extends AbstractModelInputRequest {
     private static long countBlock(JsonNode block) {
         return switch (block.path("type").asText()) {
             case "image" -> FLAT_BLOCK_CHARS;
-            case "document" -> countDocument(block.path("source"));
+            case "document" -> countText(block.path("title")) + countText(block.path("context")) + countDocument(block.path("source"));
             case "tool_use" -> countJsonSize(block.path("input"));
             case "tool_result" -> countContent(block.path("content"));
             default -> countText(block);
