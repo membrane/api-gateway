@@ -26,6 +26,7 @@ import java.util.AbstractMap;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -36,6 +37,9 @@ public abstract class ParameterizedRequest {
     protected final Exchange exc;
     protected final OAuth2AuthorizationServerInterceptor authServer;
     protected Map<String,String> params;
+
+    private static final Set<String> AUTHORIZATION_PARAMS = Set.of(ParamNames.CLIENT_ID, ParamNames.REDIRECT_URI,
+            ParamNames.RESPONSE_TYPE, ParamNames.SCOPE, ParamNames.SCOPE_INVALID, ParamNames.STATE, ParamNames.CLAIMS);
 
     protected abstract Response checkForMissingParameters() throws Exception;
     protected abstract Response processWithParameters() throws Exception;
@@ -98,10 +102,16 @@ public abstract class ParameterizedRequest {
         return builder.bodyEmpty().header(Header.WWW_AUTHENTICATE, authServer.getTokenGenerator().getTokenType() + " error=\""+errorValue+"\"").build();
     }
 
+    /**
+     * Copies only the authorization request parameters the flows read later. Other session attributes, like the
+     * user's consent or claims, must not come from the client.
+     */
     protected void addParams(SessionManager.Session session, Map<String,String> params){
         Map<String, String> userAttributes = session.getUserAttributes();
         synchronized (userAttributes) {
-            userAttributes.putAll(params);
+            for (String name : AUTHORIZATION_PARAMS)
+                if (params.containsKey(name))
+                    userAttributes.put(name, params.get(name));
         }
     }
 
@@ -128,10 +138,19 @@ public abstract class ParameterizedRequest {
         return authServer.getSessionManager().getSession(exc);
     }
 
-    protected SessionManager.Session createSessionForAuthorizedClientWithParams() {
-        SessionManager.Session session = authServer.getSessionManager().createSession(exc);
+    /**
+     * Creates the session behind the tokens of a client that acts on its own behalf. No cookie is set: with one, the
+     * client could use the session at the authorization endpoint as if a user had logged in. Only the client and the
+     * scope are stored, so the request's other parameters cannot pose as user attributes.
+     */
+    protected SessionManager.Session createSessionForAuthorizedClient() {
+        SessionManager.Session session = authServer.getSessionManager().createSessionWithoutCookie();
+        Map<String, String> attributes = new HashMap<>();
+        attributes.put(ParamNames.CLIENT_ID, getClientId());
+        if (getScope() != null)
+            attributes.put(ParamNames.SCOPE, getScope());
         synchronized(session) {
-            session.preAuthorize(getClientId(), params);
+            session.preAuthorize(getClientId(), attributes);
             session.authorize();
         }
         return session;

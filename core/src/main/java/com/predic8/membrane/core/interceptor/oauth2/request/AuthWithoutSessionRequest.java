@@ -39,8 +39,6 @@ public class AuthWithoutSessionRequest extends ParameterizedRequest {
         if(getClientId() == null || getRedirectUri() == null)
             return OAuth2Util.createParameterizedJsonErrorResponse("error", "invalid_request");
 
-        if(getResponseType() == null || getScope() == null)
-            return createParameterizedFormUrlencodedRedirect(exc, getState(), getRedirectUri(), "invalid_request");
         return new NoResponse();
     }
 
@@ -55,6 +53,9 @@ public class AuthWithoutSessionRequest extends ParameterizedRequest {
 
         if (!OAuth2Util.isAbsoluteUri(getRedirectUri()) || !getRedirectUri().equals(client.getCallbackUrl()))
             return OAuth2Util.createParameterizedJsonErrorResponse("error", "invalid_request");
+
+        if (getResponseType() == null || getScope() == null)
+            return createParameterizedFormUrlencodedRedirect(exc, getState(), client.getCallbackUrl(), "invalid_request");
 
         if (promptEqualsNone())
             return createParameterizedFormUrlencodedRedirect(exc, getState(), client.getCallbackUrl(), "login_required");

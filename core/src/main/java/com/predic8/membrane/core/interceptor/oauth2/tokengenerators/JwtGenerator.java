@@ -97,9 +97,14 @@ public class JwtGenerator {
         return jws;
     }
 
+    /**
+     * Additional claims carry values a client may have chosen, so they never replace the claims set by the server
+     * (iss, sub, aud, exp, iat, jti, nbf).
+     */
     private JwtClaims addNonDefaultClaims(JwtClaims claims, Claim[] additionalClaims) {
         for(Claim claim : additionalClaims)
-            claims.setClaim(claim.getName(),claim.getValue());
+            if (!claims.hasClaim(claim.getName()))
+                claims.setClaim(claim.getName(),claim.getValue());
         return claims;
     }
 
