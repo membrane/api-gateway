@@ -1,0 +1,4 @@
+<animals>
+    <location>Cologne Zoo</location>
+    <animal species="dog" legs="4">Skye</animal>
+</animals>

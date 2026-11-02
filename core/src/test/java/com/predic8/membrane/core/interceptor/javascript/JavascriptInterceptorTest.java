@@ -259,6 +259,17 @@ public class JavascriptInterceptorTest {
 
     @ParameterizedTest
     @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
+    void returnArrayWithUmlauts(Class<LanguageSupport> engine) throws Exception {
+        executeScript("""
+               ['Roller', 'äöüÄÖÜ'];
+               """, engine);
+
+        assertTrue(exc.getRequest().isJSON());
+        assertEquals(List.of("Roller", "äöüÄÖÜ"), om.readValue(exc.getRequest().getBodyAsStringDecoded(), List.class));
+    }
+
+    @ParameterizedTest
+    @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
     public void testProperties(Class<LanguageSupport> engine) {
 
         exc.getProperties().put("answer","42");
@@ -527,6 +538,22 @@ public class JavascriptInterceptorTest {
         exchange.setRequest(request);
         interceptor.handleRequest(exchange);
         return exchange.getRequest().getHeader().getFirstValue("json-id");
+    }
+
+    @ParameterizedTest
+    @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
+    void logToJavascriptLogger(Class<LanguageSupport> engine) {
+        final var logger = (Logger) LogManager.getLogger("com.predic8.membrane.javascript");
+        final var appender = new TestAppender("javascript-script");
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            assertEquals(CONTINUE, executeScript("log.info('Hello from ' + flow); CONTINUE", engine));
+            assertTrue(appender.contains("Hello from REQUEST"));
+        } finally {
+            logger.removeAppender(appender);
+            appender.stop();
+        }
     }
 
     @ParameterizedTest
