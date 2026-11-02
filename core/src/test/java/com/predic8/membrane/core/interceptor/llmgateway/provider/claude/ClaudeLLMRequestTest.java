@@ -145,6 +145,31 @@ class ClaudeLLMRequestTest {
         assertFalse(request.getJson().has("system"));
     }
 
+    /**
+     * Anthropic rejects an empty text block, so an empty prompt must leave the client's system prompt
+     * as it was sent.
+     */
+    @ParameterizedTest(name = "{0} to {1}")
+    @CsvSource(delimiter = '|', value = {
+            "prepend | {}",
+            "append  | {}",
+            "prepend | {\"system\":\"client\"}",
+            "append  | {\"system\":\"client\"}",
+            "prepend | {\"system\":[{\"type\":\"text\",\"text\":\"client\"}]}",
+            "append  | {\"system\":[{\"type\":\"text\",\"text\":\"client\"}]}",
+    })
+    void emptyPromptLeavesSystemPromptUnchanged(String action, String body) throws Exception {
+        final var request = request(body);
+        final var before = request.getJson().deepCopy();
+
+        if ("prepend".equals(action))
+            request.prependSystemPrompt("");
+        else
+            request.appendSystemPrompt("");
+
+        assertEquals(before, request.getJson());
+    }
+
     private static ClaudeLLMRequest request(String body) throws IOException, URISyntaxException {
         return new ClaudeLLMRequest(exchange(body));
     }

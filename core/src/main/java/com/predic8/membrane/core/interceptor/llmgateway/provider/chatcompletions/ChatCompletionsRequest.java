@@ -77,10 +77,13 @@ public class ChatCompletionsRequest extends AbstractOpenAiLLMRequest {
     }
 
     /**
-     * Adds a system message of its own, so the client's system messages stay as they were sent.
+     * Adds a system message of its own, so the client's system messages stay as they were sent. An
+     * empty prompt adds nothing.
      */
     @Override
     public void prependSystemPrompt(String prompt) {
+        if (prompt.isEmpty())
+            return;
         json.withArray("messages").insert(0, systemMessage(prompt));
     }
 
@@ -89,6 +92,8 @@ public class ChatCompletionsRequest extends AbstractOpenAiLLMRequest {
      */
     @Override
     public void appendSystemPrompt(String prompt) {
+        if (prompt.isEmpty())
+            return;
         var messages = json.withArray("messages");
         var index = 0;
         while (index < messages.size() && isSystemMessage(messages.get(index))) {

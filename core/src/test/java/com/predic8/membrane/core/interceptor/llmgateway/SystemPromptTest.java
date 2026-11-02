@@ -23,6 +23,8 @@ import com.predic8.membrane.core.interceptor.llmgateway.provider.google.GoogleLL
 import com.predic8.membrane.core.interceptor.llmgateway.provider.openai.OpenAiLLMResponsesRequest;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import static com.predic8.membrane.core.http.Request.post;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
@@ -178,6 +180,38 @@ class SystemPromptTest {
             assertJson("""
                     [{"text":"configured"},{"text":"one"},{"text":"two"}]""",
                     request.getJson().path("systemInstruction").path("parts"));
+        }
+
+        /**
+         * Providers reject empty text parts and messages, so an empty prompt must leave the client's
+         * system prompt as it was sent.
+         */
+        @ParameterizedTest(name = "{0} {1}: {2}")
+        @CsvSource(delimiter = '|', value = {
+                "PREPEND | " + GENERATE_CONTENT + " | {}",
+                "APPEND  | " + GENERATE_CONTENT + " | {}",
+                "PREPEND | " + GENERATE_CONTENT + " | {\"systemInstruction\":{\"parts\":[{\"text\":\"client\"}]}}",
+                "APPEND  | " + GENERATE_CONTENT + " | {\"systemInstruction\":{\"parts\":[{\"text\":\"client\"}]}}",
+                "PREPEND | " + CHAT_COMPLETIONS + " | {\"messages\":[{\"role\":\"user\",\"content\":\"Hi\"}]}",
+                "APPEND  | " + CHAT_COMPLETIONS + " | {\"messages\":[{\"role\":\"system\",\"content\":\"client\"},{\"role\":\"user\",\"content\":\"Hi\"}]}",
+                "PREPEND | " + RESPONSES + " | {}",
+                "APPEND  | " + RESPONSES + " | {}",
+                "APPEND  | " + RESPONSES + " | {\"instructions\":\"client\"}",
+        })
+        void emptyPromptLeavesClientPromptUnchanged(SystemPrompt.Action action, String url, String body) throws Exception {
+            final var request = switch (url) {
+                case GENERATE_CONTENT -> new GoogleLLMRequest(exchange(url, body));
+                case CHAT_COMPLETIONS -> new ChatCompletionsRequest(exchange(url, body));
+                case RESPONSES -> new OpenAiLLMResponsesRequest(exchange(url, body));
+                default -> throw new IllegalArgumentException(url);
+            };
+            final var before = request.getJson().deepCopy();
+
+            final var systemPrompt = new SystemPrompt();
+            systemPrompt.setAction(action);
+            assertEquals(CONTINUE, systemPrompt.handleRequest(request, new Exchange(null)));
+
+            assertEquals(before, request.getJson());
         }
 
         @Test

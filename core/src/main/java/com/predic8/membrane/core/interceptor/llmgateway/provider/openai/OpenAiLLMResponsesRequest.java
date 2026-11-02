@@ -44,18 +44,23 @@ public class OpenAiLLMResponsesRequest extends AbstractOpenAiLLMRequest {
     }
 
     /**
-     * {@code "instructions"} is a plain string, so both prompts are joined with a newline.
+     * {@code "instructions"} is a plain string, so both prompts are joined with a newline. An empty
+     * prompt leaves it as the client sent it.
      *
      * <p>OpenAI Responses API wire format:
      * <pre>{@code { "instructions": "prompt 1\nprompt 2", "input": "..." }}</pre>
      */
     @Override
     public void prependSystemPrompt(String prompt) {
+        if (prompt.isEmpty())
+            return;
         json.put("instructions", joinLines(prompt, json.path("instructions").asText("")));
     }
 
     @Override
     public void appendSystemPrompt(String prompt) {
+        if (prompt.isEmpty())
+            return;
         json.put("instructions", joinLines(json.path("instructions").asText(""), prompt));
     }
 

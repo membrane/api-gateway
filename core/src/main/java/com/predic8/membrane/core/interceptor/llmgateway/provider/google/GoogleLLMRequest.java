@@ -114,13 +114,20 @@ public class GoogleLLMRequest extends AbstractModelInputRequest {
                 .add(textPart(prompt));
     }
 
+    /**
+     * An empty prompt leaves the client's system instruction as it was sent: Gemini rejects empty parts.
+     */
     @Override
     public void prependSystemPrompt(String prompt) {
+        if (prompt.isEmpty())
+            return;
         systemParts().insert(0, textPart(prompt));
     }
 
     @Override
     public void appendSystemPrompt(String prompt) {
+        if (prompt.isEmpty())
+            return;
         systemParts().add(textPart(prompt));
     }
 

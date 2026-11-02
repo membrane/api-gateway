@@ -25,9 +25,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 
 import static com.predic8.membrane.core.http.Header.ACCEPT_ENCODING;
-import static com.predic8.membrane.core.interceptor.llmgateway.provider.TokenEstimator.charsToTokens;
-import static com.predic8.membrane.core.interceptor.llmgateway.provider.TokenEstimator.countJsonSize;
-import static com.predic8.membrane.core.interceptor.llmgateway.provider.TokenEstimator.countText;
+import static com.predic8.membrane.core.interceptor.llmgateway.provider.TokenEstimator.*;
 
 /**
  * system field for system prompt
@@ -158,13 +156,23 @@ public class ClaudeLLMRequest extends AbstractModelInputRequest {
         json.put("system", prompt);
     }
 
+    /**
+     * An empty prompt leaves the client's system prompt as it was sent: Anthropic rejects empty text blocks.
+     */
     @Override
     public void prependSystemPrompt(String prompt) {
+        if (prompt.isEmpty())
+            return;
         systemBlocks().insert(0, textBlock(prompt));
     }
 
+    /**
+     * An empty prompt leaves the client's system prompt as it was sent: Anthropic rejects empty text blocks.
+     */
     @Override
     public void appendSystemPrompt(String prompt) {
+        if (prompt.isEmpty())
+            return;
         systemBlocks().add(textBlock(prompt));
     }
 
