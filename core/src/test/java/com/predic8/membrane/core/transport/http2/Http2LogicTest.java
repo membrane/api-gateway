@@ -297,6 +297,27 @@ class Http2LogicTest {
     }
 
     /**
+     * DATA after END_STREAM, on a half-closed (remote) stream, is a stream error of type STREAM_CLOSED (RFC 9113 §5.1,
+     * §6.1). The stream is reset once: the second DATA frame is still in flight then and gets dropped.
+     */
+    @Test
+    void dataAfterEndStreamResetsTheStream() throws Exception {
+        final var get = headersFrame(true, new Encoder(4096), withGet());
+        final var baseline = createLogic(get);
+        assertThrows(EndOfStreamException.class, baseline::handle);
+
+        final var in = new ByteArrayOutputStream();
+        in.write(get);
+        in.write(dataFrame(false, "a"));
+        in.write(dataFrame(false, "b"));
+        final var logic = createLogic(in.toByteArray());
+
+        assertThrows(EndOfStreamException.class, logic::handle, "A stream error does not close the connection.");
+
+        assertEquals(baseline.sender.getBufferedFrames() + 1, logic.sender.getBufferedFrames(), "One RST_STREAM is queued.");
+    }
+
+    /**
      * The peer may apply our SETTINGS_INITIAL_WINDOW_SIZE of 131070 as soon as it receives it, before we know it did
      * (RFC 9113 §6.9.2). So DATA within that window is accepted on a stream opened before the SETTINGS are acknowledged,
      * although the stream started with the default window of 65535.

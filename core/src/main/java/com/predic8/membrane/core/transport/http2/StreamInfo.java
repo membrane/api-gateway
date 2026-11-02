@@ -58,8 +58,8 @@ public class StreamInfo {
     /** The content-length the message declares, or -1. Accessed on the receiver thread only. */
     private long expectedContentLength = -1;
     private long receivedContentLength;
-    /** Whether the peer sent DATA beyond the receive window. Accessed on the receiver thread only. */
-    private boolean receiveWindowExceeded;
+    /** Whether the stream was reset because of DATA the peer sent. Accessed on the receiver thread only. */
+    private boolean dataRejected;
 
     public StreamInfo(int streamId, FrameSender sender, Settings peerSettings, Settings ourSettings) {
         this.streamId = streamId;
@@ -110,19 +110,23 @@ public class StreamInfo {
      *
      * @param initialWindowSize the largest initial window size the peer may apply, see
      *                          {@link FlowControl#exceedsWindow(int, int)}
-     * @return true if the DATA exceeds the window. Only once: the stream gets reset then, see
-     *         {@link #isReceiveWindowExceeded()}.
+     * @return true if the DATA exceeds the window
      */
     boolean exceedsReceiveWindow(int length, int initialWindowSize) {
-        if (receiveWindowExceeded || !flowControl.exceedsWindow(length, initialWindowSize))
-            return false;
-        receiveWindowExceeded = true;
-        return true;
+        return flowControl.exceedsWindow(length, initialWindowSize);
     }
 
-    /** Whether the peer sent DATA beyond the receive window, so that its DATA is dropped until the stream is closed. */
-    boolean isReceiveWindowExceeded() {
-        return receiveWindowExceeded;
+    /** Marks the stream as reset because of DATA the peer sent, see {@link #isDataRejected()}. */
+    void rejectData() {
+        dataRejected = true;
+    }
+
+    /**
+     * Whether the stream was reset because of DATA the peer sent. More DATA may still be in flight then, which is
+     * dropped until the stream is closed.
+     */
+    boolean isDataRejected() {
+        return dataRejected;
     }
 
     /** The number of received DATA frames waiting for the body reader, including the marker of an abort. */
