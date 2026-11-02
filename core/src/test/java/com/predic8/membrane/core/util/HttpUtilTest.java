@@ -340,6 +340,21 @@ public class HttpUtilTest {
                 .header(ORIGIN, origin).buildExchange()));
     }
 
+    @ParameterizedTest
+    @CsvSource({
+            "gateway.example.com, https://gateway.example.com, false",
+            "'gateway.example.com, internal:9000', https://gateway.example.com, false",
+            "gateway.example.com, https://internal:9000, true",
+            "attacker.example.com, https://gateway.example.com, true"
+    })
+    void crossOriginBehindHostRewritingProxy(String forwardedHost, String origin, boolean crossOrigin) throws Exception {
+        assertEquals(crossOrigin, isCrossOrigin(Request.post("/")
+                .header(HOST, "internal:9000")
+                .header(X_FORWARDED_HOST, forwardedHost)
+                .header(X_FORWARDED_PROTO, "https")
+                .header(ORIGIN, origin).buildExchange()));
+    }
+
     @Test
     void plainHttpRequestDefaultsToPort80() throws Exception {
         assertFalse(isCrossOrigin(Request.post("/")

@@ -17,7 +17,8 @@ curl -X POST "localhost:9000/clustermanager/up?host=node1.example.com&port=8080"
 
 The admin console and the cluster manager compare a browser's `Origin` with the scheme, host and port
 the request reached Membrane with. If a reverse proxy or servlet container terminates TLS in front
-of Membrane, let it set `X-Forwarded-Proto: https`. Otherwise browsers that send `Origin` but no
+of Membrane, let it set `X-Forwarded-Proto: https`. If it rewrites `Host`, let it set
+`X-Forwarded-Host` to the original host. Otherwise browsers that send `Origin` but no
 `Sec-Fetch-Site` get `403` when they change state.
 
 # Migrate to Membrane 7.8

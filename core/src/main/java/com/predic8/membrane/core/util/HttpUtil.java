@@ -282,7 +282,9 @@ public class HttpUtil {
      * port, with default ports filled in) for browsers that do not send Sec-Fetch-Site. A request with neither
      * header does not come from a browser and cannot be forged by a third-party site.
      * <p>The request's scheme comes from X-Forwarded-Proto if present, otherwise from whether the proxy
-     * terminates TLS. A cross-site page cannot set X-Forwarded-Proto without a CORS preflight.</p>
+     * terminates TLS. Its host comes from the first X-Forwarded-Host entry if present, otherwise from Host.
+     * A cross-site page cannot set either X-Forwarded header without a CORS preflight, so they need no
+     * trusted-proxy configuration here.</p>
      */
     public static boolean isCrossOrigin(Exchange exc) {
         final var header = exc.getRequest().getHeader();
@@ -294,10 +296,17 @@ public class HttpUtil {
         if (origin == null)
             return false;
         try {
-            return !normalizeBaseUrl(origin).equals(normalizeBaseUrl(getRequestScheme(exc) + "://" + header.getHost()));
+            return !normalizeBaseUrl(origin).equals(normalizeBaseUrl(getRequestScheme(exc) + "://" + getRequestHost(exc)));
         } catch (URISyntaxException e) {
             return true;
         }
+    }
+
+    private static String getRequestHost(Exchange exc) {
+        final var forwardedHost = exc.getRequest().getHeader().getXForwardedHost();
+        if (forwardedHost != null)
+            return splitStringByComma(forwardedHost).getFirst().trim();
+        return exc.getRequest().getHeader().getHost();
     }
 
     private static String getRequestScheme(Exchange exc) {
