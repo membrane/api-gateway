@@ -35,6 +35,7 @@ class OpenAPIValidatorXMLTest {
     OpenAPIValidator validatorNamespaced;
     OpenAPIValidator validatorAttribute;
     OpenAPIValidator validatorClosed;
+    OpenAPIValidator validatorPattern;
 
     /** A valid order with all fields present and correct types. */
     final String validOrder = """
@@ -102,6 +103,11 @@ class OpenAPIValidatorXMLTest {
         validatorClosed = new OpenAPIValidator(new URIFactory(),
                 new OpenAPIRecord(
                         parseOpenAPI(getResourceAsStream(this, "/openapi/specs/xml/xml-closed-object.oas.yaml")),
+                        new OpenAPISpec()));
+
+        validatorPattern = new OpenAPIValidator(new URIFactory(),
+                new OpenAPIRecord(
+                        parseOpenAPI(getResourceAsStream(this, "/openapi/specs/xml/xml-pattern-properties.oas.yaml")),
                         new OpenAPISpec()));
     }
 
@@ -343,6 +349,61 @@ class OpenAPIValidatorXMLTest {
     void undeclaredElementInOpenObjectIsAccepted() throws ParseException {
         var errors = validatorAttribute.validate(post().path("/products")
                 .xml("<product sku=\"A-1\" extra=\"x\"><name>Book</name><discount>100</discount></product>"));
+        assertEquals(0, errors.size(), "Expected no validation errors: " + errors);
+    }
+
+    // -----------------------------------------------------------------------
+    // patternProperties — matching attributes and elements are converted and
+    // validated against the pattern's schema.
+    // -----------------------------------------------------------------------
+
+    @Test
+    void patternMatchedContentInClosedObjectIsAccepted() throws ParseException {
+        final var errors = validatorPattern.validate(post().path("/products")
+                .xml("<product sku=\"A-1\" x-stock=\"5\"><name>Book</name><x-weight>3</x-weight></product>"));
+        assertEquals(0, errors.size(), "Expected no validation errors: " + errors);
+    }
+
+    @Test
+    void invalidPatternMatchedElementIsRejected() throws ParseException {
+        final var errors = validatorPattern.validate(post().path("/products")
+                .xml("<product sku=\"A-1\"><name>Book</name><x-weight>heavy</x-weight></product>"));
+        assertFalse(errors.isEmpty(), "Expected an error for non-integer element 'x-weight'");
+    }
+
+    @Test
+    void invalidPatternMatchedAttributeIsRejected() throws ParseException {
+        final var errors = validatorPattern.validate(post().path("/products")
+                .xml("<product sku=\"A-1\" x-stock=\"500\"><name>Book</name></product>"));
+        assertFalse(errors.isEmpty(), "Expected an error for attribute 'x-stock' above maximum");
+    }
+
+    @Test
+    void undeclaredContentMatchingNoPatternIsRejected() throws ParseException {
+        final var errors = validatorPattern.validate(post().path("/products")
+                .xml("<product sku=\"A-1\"><name>Book</name><discount>3</discount></product>"));
+        assertFalse(errors.isEmpty(), "Expected an error for undeclared element 'discount'");
+    }
+
+    @Test
+    void repeatedPatternMatchedElementIsRejected() throws ParseException {
+        final var errors = validatorPattern.validate(post().path("/products")
+                .xml("<product sku=\"A-1\"><name>Book</name><x-weight>3</x-weight><x-weight>4</x-weight></product>"));
+        assertFalse(errors.isEmpty(), "Expected an error for repeated element 'x-weight'");
+    }
+
+    /** patternProperties constrain values regardless of additionalProperties. */
+    @Test
+    void invalidPatternMatchedElementInOpenObjectIsRejected() throws ParseException {
+        final var errors = validatorPattern.validate(post().path("/items")
+                .xml("<item><name>Book</name><x-weight>heavy</x-weight></item>"));
+        assertFalse(errors.isEmpty(), "Expected an error for non-integer element 'x-weight'");
+    }
+
+    @Test
+    void validPatternMatchedElementInOpenObjectIsAccepted() throws ParseException {
+        final var errors = validatorPattern.validate(post().path("/items")
+                .xml("<item><name>Book</name><x-weight>3</x-weight></item>"));
         assertEquals(0, errors.size(), "Expected no validation errors: " + errors);
     }
 }

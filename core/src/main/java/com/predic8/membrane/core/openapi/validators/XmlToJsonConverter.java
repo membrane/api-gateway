@@ -36,7 +36,6 @@ import org.xml.sax.SAXException;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.*;
-import java.util.regex.Pattern;
 
 import static javax.xml.XMLConstants.W3C_XML_SCHEMA_INSTANCE_NS_URI;
 import static javax.xml.XMLConstants.XMLNS_ATTRIBUTE_NS_URI;
@@ -117,10 +116,8 @@ public class XmlToJsonConverter {
 
         @SuppressWarnings("unchecked")
         Map<String, Schema> properties = (Map<String, Schema>) schema.getProperties();
-        if (properties == null) {
-            checkNoUndeclaredContent(element, schema, consumed);
-            return node;
-        }
+        if (properties == null)
+            properties = Map.of();
 
         for (Map.Entry<String, Schema> entry : properties.entrySet()) {
             String propName  = entry.getKey();
@@ -154,34 +151,90 @@ public class XmlToJsonConverter {
                 }
             }
         }
+        convertPatternProperties(element, schema, node, consumed);
         checkNoUndeclaredContent(element, schema, consumed);
         return node;
     }
 
     /**
-     * Rejects attributes and child elements no property was mapped to, if the schema forbids additional
-     * properties. The converted object only contains declared properties, so the validator cannot see
-     * such content, while the original body is forwarded with it. Namespace declarations and
-     * {@code xsi:} attributes are markup, not data, and content matching {@code patternProperties}
-     * (by local name) is allowed.
+     * Converts attributes and child elements no property was mapped to, but whose local name matches a
+     * {@code patternProperties} regex, so the validator checks them against the pattern schemas. The first
+     * matching pattern's schema guides the conversion; the validator then checks every matching pattern.
+     * A name that occurs more than once (or as attribute and element) is rejected, as for single-valued
+     * properties.
+     */
+    @SuppressWarnings("unchecked")
+    private void convertPatternProperties(Element element, Schema schema, ObjectNode node, Set<Node> consumed) {
+        final Map<String, Schema> patternProperties = schema.getPatternProperties();
+        if (patternProperties == null)
+            return;
+
+        final var attributes = element.getAttributes();
+        for (int i = 0; i < attributes.getLength(); i++) {
+            final var attribute = attributes.item(i);
+            if (consumed.contains(attribute) || isMarkupAttribute(attribute))
+                continue;
+            final var name = localNameOf(attribute);
+            final var patternSchema = patternSchemaFor(patternProperties, name);
+            if (patternSchema == null)
+                continue;
+            setPatternProperty(node, name, convertPrimitive(attribute.getNodeValue(), patternSchema));
+            consumed.add(attribute);
+        }
+
+        final var children = element.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            if (!(children.item(i) instanceof Element child) || consumed.contains(child))
+                continue;
+            final var name = localNameOf(child);
+            final var patternSchema = patternSchemaFor(patternProperties, name);
+            if (patternSchema == null)
+                continue;
+            setPatternProperty(node, name, convertElement(child, patternSchema));
+            consumed.add(child);
+        }
+    }
+
+    /** The resolved schema of the first pattern matching {@code name}, or {@code null} if none matches. */
+    private Schema patternSchemaFor(Map<String, Schema> patternProperties, String name) {
+        for (final var entry : patternProperties.entrySet()) {
+            if (SchemaUtil.compilePatternPropertyRegex(entry.getKey()).matcher(name).find())
+                return resolveRef(entry.getValue());
+        }
+        return null;
+    }
+
+    private static void setPatternProperty(ObjectNode node, String name, JsonNode value) {
+        if (node.has(name))
+            throw new MultipleElementsException(name);
+        node.set(name, value);
+    }
+
+    private static String localNameOf(Node node) {
+        return node.getLocalName() != null ? node.getLocalName() : node.getNodeName();
+    }
+
+    /**
+     * Rejects attributes and child elements no property or {@code patternProperties} regex was mapped to,
+     * if the schema forbids additional properties. The converted object only contains mapped content, so
+     * the validator cannot see such content, while the original body is forwarded with it. Namespace
+     * declarations and {@code xsi:} attributes are markup, not data.
      */
     private static void checkNoUndeclaredContent(Element element, Schema schema, Set<Node> consumed) {
         if (!Boolean.FALSE.equals(SchemaUtil.getAdditionalProperties(schema)))
             return;
 
-        final var patterns = SchemaUtil.getPatternPropertyPatterns(schema);
-
         final var attributes = element.getAttributes();
         for (int i = 0; i < attributes.getLength(); i++) {
             final var attribute = attributes.item(i);
-            if (consumed.contains(attribute) || isMarkupAttribute(attribute) || matchesPatternProperty(patterns, attribute))
+            if (consumed.contains(attribute) || isMarkupAttribute(attribute))
                 continue;
             throw new UndeclaredContentException("attribute", attribute.getNodeName(), element.getTagName());
         }
 
         final var children = element.getChildNodes();
         for (int i = 0; i < children.getLength(); i++) {
-            if (!(children.item(i) instanceof Element child) || consumed.contains(child) || matchesPatternProperty(patterns, child))
+            if (!(children.item(i) instanceof Element child) || consumed.contains(child))
                 continue;
             throw new UndeclaredContentException("element", child.getTagName(), element.getTagName());
         }
@@ -190,11 +243,6 @@ public class XmlToJsonConverter {
     private static boolean isMarkupAttribute(Node attribute) {
         return XMLNS_ATTRIBUTE_NS_URI.equals(attribute.getNamespaceURI())
             || W3C_XML_SCHEMA_INSTANCE_NS_URI.equals(attribute.getNamespaceURI());
-    }
-
-    private static boolean matchesPatternProperty(List<Pattern> patterns, Node node) {
-        final var name = node.getLocalName() != null ? node.getLocalName() : node.getNodeName();
-        return patterns.stream().anyMatch(pattern -> pattern.matcher(name).find());
     }
 
     // -----------------------------------------------------------------------
