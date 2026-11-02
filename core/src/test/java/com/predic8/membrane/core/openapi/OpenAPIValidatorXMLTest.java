@@ -427,4 +427,45 @@ class OpenAPIValidatorXMLTest {
         final var errors = validatorPattern.validate(post().path(path).xml(xml));
         assertEquals(count, errors.size(), errors::toString);
     }
+
+    /** Every matching object pattern applies, so the converted element keeps the content each one declares. */
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', value = {
+            "/open-patterns|<c><x><a>A</a><b>B</b></x></c>|0",
+            "/open-patterns|<c><x><a>A</a></x></c>|1",
+            "/open-patterns|<c><x><b>B</b></x></c>|1",
+            "/property-and-pattern|<c><x-doc><a>A</a><b>B</b></x-doc></c>|0",
+            "/property-and-pattern|<c><x-doc><a>A</a></x-doc></c>|1",
+            "/property-and-pattern|<c><x-doc><b>B</b></x-doc></c>|1"})
+    void overlappingObjectSchemasKeepContentOfEach(String path, String xml, int count) throws ParseException {
+        final var errors = validatorPattern.validate(post().path(path).xml(xml));
+        assertEquals(count, errors.size(), errors::toString);
+    }
+
+    /** A closed pattern still rejects content only another matching pattern declares, or none declares. */
+    @ParameterizedTest
+    @CsvSource({
+            "<c><x><a>A</a><b>B</b></x></c>",
+            "<c><x><a>A</a><b>B</b><z>Z</z></x></c>"})
+    void closedObjectPatternRejectsOtherContent(String xml) throws ParseException {
+        final var errors = validatorPattern.validate(post().path("/closed-pattern").xml(xml));
+        assertFalse(errors.isEmpty(), "Expected an error for content the closed pattern does not declare");
+    }
+
+    @Test
+    void closedObjectPatternAcceptsDeclaredContent() throws ParseException {
+        final var errors = validatorPattern.validate(post().path("/closed-pattern").xml("<c><x><a>A</a></x></c>"));
+        assertEquals(1, errors.size(), "Only the other pattern's required 'b' is missing: " + errors);
+    }
+
+    /** Merging recursive object schemas terminates and keeps the content of each, also when nested. */
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', value = {
+            "<c><x><a>A</a><b>1</b><child><a>A</a><b>2</b></child></x></c>|0",
+            "<c><x><a>A</a><b>1</b><child><a>A</a></child></x></c>|1",
+            "<c><x><a>A</a><b>1</b><child><a>A</a><b>two</b></child></x></c>|1"})
+    void recursiveObjectPatternsAreMerged(String xml, int count) throws ParseException {
+        final var errors = validatorPattern.validate(post().path("/recursive-patterns").xml(xml));
+        assertEquals(count, errors.size(), errors::toString);
+    }
 }

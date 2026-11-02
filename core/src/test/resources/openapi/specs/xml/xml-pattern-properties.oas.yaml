@@ -36,6 +36,38 @@ paths:
           application/xml:
             schema:
               $ref: "#/components/schemas/TypedFirst"
+  /open-patterns:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/xml:
+            schema:
+              $ref: "#/components/schemas/OpenPatterns"
+  /closed-pattern:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/xml:
+            schema:
+              $ref: "#/components/schemas/ClosedPattern"
+  /property-and-pattern:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/xml:
+            schema:
+              $ref: "#/components/schemas/PropertyAndPattern"
+  /recursive-patterns:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/xml:
+            schema:
+              $ref: "#/components/schemas/RecursivePatterns"
 
 components:
   schemas:
@@ -84,3 +116,84 @@ components:
           type: integer
         "^x":
           minimum: 0
+    # Two object patterns match 'x'; the element must keep the content both need.
+    OpenPatterns:
+      type: object
+      xml:
+        name: c
+      patternProperties:
+        "^x":
+          type: object
+          required: [a]
+          properties:
+            a:
+              type: string
+        "x$":
+          type: object
+          required: [b]
+          properties:
+            b:
+              type: string
+    ClosedPattern:
+      type: object
+      xml:
+        name: c
+      patternProperties:
+        "^x":
+          type: object
+          additionalProperties: false
+          required: [a]
+          properties:
+            a:
+              type: string
+        "x$":
+          type: object
+          required: [b]
+          properties:
+            b:
+              type: string
+    # A declared property and a matching pattern both apply to 'x-doc'.
+    PropertyAndPattern:
+      type: object
+      xml:
+        name: c
+      properties:
+        x-doc:
+          type: object
+          required: [a]
+          properties:
+            a:
+              type: string
+      patternProperties:
+        "^x-":
+          type: object
+          required: [b]
+          properties:
+            b:
+              type: string
+    # Merging two recursive schemas must terminate.
+    RecursivePatterns:
+      type: object
+      xml:
+        name: c
+      patternProperties:
+        "^x":
+          $ref: "#/components/schemas/NodeA"
+        "x$":
+          $ref: "#/components/schemas/NodeB"
+    NodeA:
+      type: object
+      required: [a]
+      properties:
+        a:
+          type: string
+        child:
+          $ref: "#/components/schemas/NodeA"
+    NodeB:
+      type: object
+      required: [b]
+      properties:
+        b:
+          type: integer
+        child:
+          $ref: "#/components/schemas/NodeB"

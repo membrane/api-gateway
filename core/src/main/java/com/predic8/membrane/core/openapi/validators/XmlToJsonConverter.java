@@ -71,6 +71,9 @@ public class XmlToJsonConverter {
 
     private final OpenAPI api;
 
+    /** Merged conversion schemas by the schemas they merge; also closes cycles of recursive schemas. */
+    private final Map<List<Identity>, Schema> conversionSchemas = new HashMap<>();
+
     public XmlToJsonConverter(OpenAPI api) {
         this.api = api;
     }
@@ -125,18 +128,20 @@ public class XmlToJsonConverter {
 
             XmlName xmlName = xmlNameOf(propName, propSchema);
             boolean isAttr = isXmlAttribute(propSchema);
+            // Patterns matching the property name apply as well; placement still follows the property schema.
+            final var valueSchema = conversionSchema(withMatchingPatterns(propSchema, schema, propName));
 
             if (isXmlText(propSchema)) {
                 // OAS 3.2 nodeType: text/cdata — the value is the containing element's text content,
                 // e.g. <price currency="USD">42</price> with currency as attribute and value as text.
-                node.set(propName, convertPrimitive(directTextContent(element), propSchema));
+                node.set(propName, convertPrimitive(directTextContent(element), valueSchema));
 
             } else if (isAttr) {
                 // Map XML attribute → JSON property. Check for presence (not emptiness) so that a
                 // present-but-empty attribute (e.g. sku="") is kept as "" instead of being dropped.
                 if (hasAttribute(element, xmlName)) {
                     consumed.add(attributeNode(element, xmlName));
-                    node.set(propName, convertPrimitive(attributeValue(element, xmlName), propSchema));
+                    node.set(propName, convertPrimitive(attributeValue(element, xmlName), valueSchema));
                 }
 
             } else if ("array".equals(effectiveType(propSchema))) {
@@ -147,7 +152,7 @@ public class XmlToJsonConverter {
                 Element child = singleChildByName(element, xmlName);
                 if (child != null) {
                     consumed.add(child);
-                    node.set(propName, convertElement(child, propSchema));
+                    node.set(propName, convertElement(child, valueSchema));
                 }
             }
         }
@@ -158,8 +163,8 @@ public class XmlToJsonConverter {
 
     /**
      * Converts attributes and child elements no property was mapped to, but whose local name matches a
-     * {@code patternProperties} regex, so the validator checks them against the pattern schemas. The type
-     * guiding the conversion is chosen from all matching patterns; the validator then checks every one.
+     * {@code patternProperties} regex, so the validator checks them against the pattern schemas. All matching
+     * patterns guide the conversion (see {@link #conversionSchema}); the validator then checks every one.
      * A name that occurs more than once (or as attribute and element) is rejected, as for single-valued
      * properties.
      */
@@ -196,16 +201,106 @@ public class XmlToJsonConverter {
     }
 
     /**
-     * The schema guiding the conversion of {@code name}, chosen from all matching patterns, since every
+     * The schema guiding the conversion of {@code name}, built from all matching patterns, since every
      * matching pattern applies, or {@code null} if none matches.
      */
     private Schema patternSchemaFor(Map<String, Schema> patternProperties, String name) {
+        final var matching = matchingPatternSchemas(patternProperties, name);
+        return matching.isEmpty() ? null : conversionSchema(matching);
+    }
+
+    private List<Schema> withMatchingPatterns(Schema propertySchema, Schema objectSchema, String name) {
+        @SuppressWarnings("unchecked")
+        final Map<String, Schema> patternProperties = objectSchema.getPatternProperties();
+        final var schemas = new ArrayList<Schema>();
+        schemas.add(propertySchema);
+        if (patternProperties != null)
+            schemas.addAll(matchingPatternSchemas(patternProperties, name));
+        return schemas;
+    }
+
+    private List<Schema> matchingPatternSchemas(Map<String, Schema> patternProperties, String name) {
         final var matching = new ArrayList<Schema>();
         patternProperties.forEach((regex, patternSchema) -> {
             if (SchemaUtil.compilePatternPropertyRegex(regex).matcher(name).find())
                 matching.add(resolveRef(patternSchema));
         });
-        return matching.isEmpty() ? null : SchemaUtil.decodingSchema(matching);
+        return matching;
+    }
+
+    /**
+     * Returns a schema that guides the conversion of a value all {@code schemas} (resolved) apply to, so
+     * the converted value keeps what each of them needs. It is only used for the conversion; the value is
+     * validated against the original schemas.
+     * <ul>
+     *   <li>One schema is used as it is.</li>
+     *   <li>Objects are merged: the union of properties and patternProperties (a name declared several
+     *       times is merged recursively), closed if any schema is closed. Content only another schema
+     *       declares is then kept, so a closed schema's validation rejects it.</li>
+     *   <li>Other values get the type chosen by {@link SchemaUtil#decodingSchema}. Arrays are not merged,
+     *       their conversion follows that schema only.</li>
+     * </ul>
+     * New schemas take their XML hints from the first schema. The spec's schemas are never changed.
+     */
+    private Schema conversionSchema(List<Schema> schemas) {
+        final var key = schemas.stream().map(Identity::new).distinct().toList();
+        if (key.size() == 1)
+            return schemas.getFirst();
+        final var cached = conversionSchemas.get(key);
+        if (cached != null)
+            return cached;
+
+        final var decoding = SchemaUtil.decodingSchema(schemas);
+        final var type = effectiveType(decoding);
+        final var object = "object".equals(type) || type == null && schemas.stream().anyMatch(s -> s.getProperties() != null);
+        if (!object && "array".equals(type))
+            return decoding;
+
+        final Schema merged = new Schema<>().type(object ? "object" : type);
+        merged.setXml(schemas.getFirst().getXml());
+        conversionSchemas.put(key, merged);
+        if (object)
+            mergeObjects(merged, schemas.stream().filter(s -> {
+                final var t = effectiveType(s);
+                return t == null || "object".equals(t);
+            }).toList());
+        return merged;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void mergeObjects(Schema merged, List<Schema> schemas) {
+        final var properties = new LinkedHashMap<String, List<Schema>>();
+        final var patternProperties = new LinkedHashMap<String, List<Schema>>();
+        for (final var schema : schemas) {
+            collect(properties, schema.getProperties());
+            collect(patternProperties, schema.getPatternProperties());
+            if (Boolean.FALSE.equals(SchemaUtil.getAdditionalProperties(schema)))
+                merged.setAdditionalProperties(false);
+        }
+        properties.forEach((name, declared) -> merged.addProperty(name, conversionSchema(declared)));
+        if (!patternProperties.isEmpty()) {
+            final var patterns = new LinkedHashMap<String, Schema>();
+            patternProperties.forEach((regex, declared) -> patterns.put(regex, conversionSchema(declared)));
+            merged.setPatternProperties(patterns);
+        }
+    }
+
+    private void collect(Map<String, List<Schema>> target, Map<String, Schema> schemas) {
+        if (schemas != null)
+            schemas.forEach((name, schema) -> target.computeIfAbsent(name, k -> new ArrayList<>()).add(resolveRef(schema)));
+    }
+
+    /** Compares schemas by identity: {@link Schema#equals} is deep and does not terminate on cycles. */
+    private record Identity(Schema schema) {
+        @Override
+        public boolean equals(Object o) {
+            return o instanceof Identity other && other.schema == schema;
+        }
+
+        @Override
+        public int hashCode() {
+            return System.identityHashCode(schema);
+        }
     }
 
     private static void setPatternProperty(ObjectNode node, String name, JsonNode value) {
