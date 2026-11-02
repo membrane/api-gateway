@@ -65,7 +65,12 @@ public class JwtSessionManager extends SessionManager {
                 rsaJsonWebKey.setKeyId(new BigInteger(130, random).toString(32));
                 rsaJsonWebKey.setUse("sig");
                 rsaJsonWebKey.setAlgorithm("RS256");
-                throw new RuntimeException("jwtSessionManager/@key is not set. Please use '" + rsaJsonWebKey.toJson(JsonWebKey.OutputControlLevel.INCLUDE_PRIVATE) + "'.");
+                // Printing the private key is intentional (getting-started convenience, not a CWE-532 leak): the
+                // operator can copy the suggested key into the configuration. Once the key is set, nothing is printed.
+                throw new RuntimeException(("No key configured for jwtSessionManager2. Suggested signing key (private JWK): %s " +
+                        "You can use this key by setting it as the key of jwtSessionManager2. Recommended: create your own " +
+                        "key with 'membrane.sh generate-jwk -o <file>'. This one has been written to the log and may be " +
+                        "readable by anyone with access to it.").formatted(rsaJsonWebKey.toJson(JsonWebKey.OutputControlLevel.INCLUDE_PRIVATE)));
             } else {
                 Map<String,Object> jwkJsonParsed = JsonUtil.parseJson(key);
                 rsaJsonWebKey = new RsaJsonWebKey(jwkJsonParsed);

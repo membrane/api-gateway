@@ -57,10 +57,16 @@ public class BearerJwtTokenGenerator implements TokenGenerator {
     public void init(Router router) throws Exception {
         if (jwk == null) {
             rsaJsonWebKey = generateKey();
+            // Printing the private key is intentional (getting-started convenience, not a CWE-532 leak): without a
+            // configured JWK a new key is generated on every start, and the operator copies it from this warning
+            // into the configuration. Once bearerJwtToken/jwk is set, no key is generated and nothing is printed.
             if (warningGeneratedKey)
-                log.warn("bearerJwtToken uses a generated key ('{}'). Sessions of this instance will not be compatible " +
-                                "with sessions of other (e.g. restarted) instances. To solve this, write the JWK into a file and " +
-                                "reference it using bearerJwtToken/jwk/location: ...",
+                log.warn("No key configured for bearerJwtToken. Generated a temporary signing key (private JWK): {} " +
+                                "Tokens signed with it are not accepted by other or restarted instances. You can keep this " +
+                                "key by saving it to a file and referencing it using bearerJwtToken/jwk/location. " +
+                                "Recommended: create your own key with 'membrane.sh generate-jwk -o <file>'. This one has " +
+                                "been written to the log and may be readable by anyone with access to it. Once a JWK is " +
+                                "configured, no key is logged.",
                         rsaJsonWebKey.toJson(JsonWebKey.OutputControlLevel.INCLUDE_PRIVATE));
         } else {
             rsaJsonWebKey = new RsaJsonWebKey(JsonUtil.parseJson(jwk.get(router.getResolverMap(), resolveBaseLocation(this, router))));
