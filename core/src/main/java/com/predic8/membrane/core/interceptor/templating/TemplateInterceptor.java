@@ -55,7 +55,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * <a href="https://docs.groovy-lang.org/docs/next/html/documentation/template-engines.html#_xmltemplateengine">XMLTemplateEngine</a>
  * otherwise <a href="https://docs.groovy-lang.org/docs/next/html/documentation/template-engines.html#_streamingtemplateengine">StreamingTemplateEngine</a>.
  * Values inserted into a template from an <i>.xml</i> file are not XML-escaped. To escape them, use <code>src</code>
- * or a file with another extension, together with an XML <code>contentType</code> such as <code>application/xml</code>.
+ * or a file with another extension (except <i>.json</i>), together with an XML <code>contentType</code> such as <code>application/xml</code>.
+ * A <i>.json</i> location always uses <code>application/json</code> instead of the configured <code>contentType</code>.
  * <p>See <a href="https://github.com/membrane/api-gateway/blob/master/distribution/tutorials/getting-started/110-Template.yaml">tutorials/getting-started/110-Template.yaml</a>.</p>
  *
  * When the <code>contentType</code> is a JSON variant (e.g., <code>application/json</code>), the engine automatically escapes all inserted values. For example, in the
