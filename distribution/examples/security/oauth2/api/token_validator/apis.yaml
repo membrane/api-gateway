@@ -31,4 +31,5 @@ api:
 api:
   port: 9001
   flow:
-    - adminConsole: {}
+    - adminConsole:
+        readOnly: true
