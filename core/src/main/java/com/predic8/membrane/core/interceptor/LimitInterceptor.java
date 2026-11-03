@@ -114,8 +114,9 @@ public class LimitInterceptor extends AbstractInterceptor {
 			return CONTINUE;
 
 		long len = msg.getHeader().getContentLength();
-		if (len != -1 && len > effectiveMaxBodyLength()) {
-			log.info("Message length of {} exceeded limit {}.",len,effectiveMaxBodyLength());
+		final var declaredLengthLimit = msg.getBody() instanceof EmptyBody ? maxBodyLength : effectiveMaxBodyLength();
+		if (len != -1 && len > declaredLengthLimit) {
+			log.info("Message length of {} exceeded limit {}.",len,declaredLengthLimit);
 			return tooLarge(exc);
 		}
 

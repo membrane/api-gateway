@@ -73,8 +73,26 @@ class LimitInterceptorTest {
         limit.setMaxBodyLength(5_000_000_000L);
         limit.init(new DummyTestRouter());
         final var exc = Request.post("/foo").header(CONTENT_LENGTH, "3000000000").buildExchange();
+        exc.getRequest().setBody(new Body(new ByteArrayInputStream(new byte[0])));
         assertEquals(ABORT, limit.handleRequest(exc));
         assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("Message is too large."));
+    }
+
+    @Test
+    void emptyBodyUsesConfiguredLimitForDeclaredLength() throws Exception {
+        final var limit = new LimitInterceptor();
+        limit.setMaxBodyLength(5_000_000_000L);
+        limit.init(new DummyTestRouter());
+        final var exc = Request.get("/foo").buildExchange();
+        final var response = Response.ok().build();
+        response.getHeader().removeFields(CONTENT_LENGTH);
+        response.getHeader().setContentLength(3_000_000_000L);
+        response.setBody(new EmptyBody());
+        exc.setResponse(response);
+        assertEquals(CONTINUE, limit.handleResponse(exc));
+        assertEquals(3_000_000_000L, response.getHeader().getContentLength());
+        response.getHeader().setContentLength(6_000_000_000L);
+        assertEquals(ABORT, limit.handleResponse(exc));
     }
 
     @Test
