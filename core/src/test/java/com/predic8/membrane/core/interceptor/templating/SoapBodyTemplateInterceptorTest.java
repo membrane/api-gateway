@@ -97,6 +97,23 @@ class SoapBodyTemplateInterceptorTest {
         assertTrue(body.contains("<name>&lt;/name&gt;&lt;evil/&gt;&lt;name&gt;</name>"), body);
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"text/plain", "application/json", "multipart/related; type=\"application/xop+xml\""})
+    void interpolatedValuesAreXmlEscapedRegardlessOfContentType(String contentType) throws Exception {
+        final var i = new SoapBodyTemplateInterceptor();
+        i.setContentType(contentType);
+        i.setSrc("<name>${property.city}</name>");
+        i.init(new DummyTestRouter());
+
+        final var exc = get("/foo").buildExchange();
+        exc.setProperty("city", "</name><evil/><name>");
+        i.handleRequest(exc);
+
+        final var body = exc.getRequest().getBodyAsStringDecoded();
+        assertTrue(body.contains("<name>&lt;/name&gt;&lt;evil/&gt;&lt;name&gt;</name>"), body);
+        assertEquals(contentType, exc.getRequest().getHeader().getContentType());
+    }
+
     @Test
     void prettyFormatsXml() throws Exception {
         final var i = new SoapBodyTemplateInterceptor();
