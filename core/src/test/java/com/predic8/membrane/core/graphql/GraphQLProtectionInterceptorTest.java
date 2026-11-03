@@ -160,6 +160,19 @@ public class GraphQLProtectionInterceptorTest {
     }
 
     @Test
+    void blockIntrospectionInInlineFragment() throws Exception {
+        final var body = """
+                {"query":"query q { ... on Query { __schema { types { name } } } }",
+                "operationName": "q"}""";
+        // Without the filter the document is valid, so a RETURN below can only come from the introspection check.
+        verifyPost("/", APPLICATION_JSON, body, CONTINUE);
+        verifyPost(buildGraphQLProtectionInterceptor(List.of(new IntrospectionFilter())), "/",
+                APPLICATION_JSON,
+                body,
+                RETURN);
+    }
+
+    @Test
     void blockIntrospectionInNamedFragment() throws Exception {
         final var body = """
                 {"query":"query q { ...F } fragment F on Query { __schema { types { name } } }",

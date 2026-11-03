@@ -27,7 +27,9 @@ public class IntrospectionFilter implements GraphQLFeatureFilter {
         ed.getOperationDefinitions().forEach(operation ->
                 checkSelections(operation.getSelections())
         );
-        // Named fragment spreads are not followed: every fragment definition is checked here instead.
+        // Introspection is forbidden at any depth, so checking every fragment definition once is equivalent to following
+        // every spread, without cycle handling or exponential expansion. Unused fragments are checked too (they are
+        // invalid per spec anyway). Don't switch to collectFields(): it does not descend into sub-selections.
         ed.getFragmentDefinitions().forEach(fragment ->
                 checkSelections(fragment.getSelections())
         );
