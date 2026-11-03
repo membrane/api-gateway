@@ -180,6 +180,14 @@ class JsonSchemaGeneratorTest {
     }
 
     @Test
+    void listOfConcreteTypeAcceptsEmptyItem() throws Exception {
+        var schema = listSchema();
+        assertValid(schema, "markerList: { markers: [ {} ] }");
+        assertValid(schema, "markerList: { markers: [ { marker: {} } ] }");
+        assertInvalid(schema, "markerList: { markers: [ { foo: {} } ] }");
+    }
+
+    @Test
     void flowItemIsOneObjectWithAPropertyPerPlugin() throws Exception {
         var items = flowSchema().at("/$defs/flowParser/items");
         assertEquals("object", items.path("type").asText());
@@ -444,6 +452,21 @@ class JsonSchemaGeneratorTest {
                 @MCChildElement
                 public void setRules(List<Rule> rules) {}
                 public List<Rule> getRules() { return null; }
+            }
+            ---
+            package com.predic8.membrane.demo;
+            import com.predic8.membrane.annot.*;
+            @MCElement(name="marker", component=false)
+            public class Marker {}
+            ---
+            package com.predic8.membrane.demo;
+            import com.predic8.membrane.annot.*;
+            import java.util.List;
+            @MCElement(name="markerList", topLevel=true, component=false)
+            public class MarkerListElement {
+                @MCChildElement
+                public void setMarkers(List<Marker> markers) {}
+                public List<Marker> getMarkers() { return null; }
             }
             """;
 

@@ -487,7 +487,10 @@ public class JsonSchemaGenerator extends AbstractGrammar {
             return itemsObjectSchema;
         }
 
-        itemsObjectSchema.type("object").additionalProperties(childSpec.getAnnotation().allowForeign()).minProperties(1);
+        itemsObjectSchema.type("object").additionalProperties(childSpec.getAnnotation().allowForeign());
+        // The parser binds "{}" to a concrete item type but cannot pick an implementation for an abstract one.
+        if (isAbstractOrInterface(childSpec.getTypeDeclaration()))
+            itemsObjectSchema.minProperties(1);
 
         if (parentElementInfo.getAnnotation().noEnvelope()) {
             setItemsIfArray(parentSchema, itemsObjectSchema);
