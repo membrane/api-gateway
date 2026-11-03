@@ -47,7 +47,6 @@ public abstract class AbstractTemplateInterceptor extends AbstractInterceptor {
     protected String contentType = getDefaultContentType();
 
     protected boolean pretty = false;
-    protected Prettifier prettifier = NullPrettifier.INSTANCE;
 
     protected Charset charset = UTF_8;
 
@@ -61,9 +60,6 @@ public abstract class AbstractTemplateInterceptor extends AbstractInterceptor {
             }
             src = readFromLocation();
         }
-
-        if (pretty)
-            prettifier = Prettifier.getInstance(contentType);
     }
 
     @Override
@@ -110,9 +106,10 @@ public abstract class AbstractTemplateInterceptor extends AbstractInterceptor {
         if (!pretty)
             return bytes;
         try {
-            return prettifier.prettify(unifyIndent(bytes, charset), charset);
+            // Chosen here, not in init(): subclasses may determine the content type later, e.g. from the template file.
+            return Prettifier.getInstance(getContentType()).prettify(unifyIndent(bytes, charset), charset);
         } catch (Exception e) {
-            log.debug("Error beautifying {}. Error: {}",contentType, e.getMessage());
+            log.debug("Error beautifying {}. Error: {}", getContentType(), e.getMessage());
             log.trace("Content: {}", truncateAfter(new String(bytes,charset), 100), e);
             return bytes;
         }
