@@ -227,6 +227,16 @@ public class Http2Client implements Runnable, AutoCloseable {
             // No more responses can arrive once the reader stops, e.g. when the peer disconnects.
             closed = true;
             failPendingResponses();
+            // After a connection error, nothing else closes the connection, as its streams are not closed. Closing it
+            // also ends a frame sender blocked on a peer that does not read. close() stopped receiving and closes the
+            // connection itself, once its GOAWAY is written.
+            if (logic.receiving) {
+                try {
+                    con.abort();
+                } catch (IOException e) {
+                    LOG.debug("Could not close HTTP/2 connection: {}", e.toString());
+                }
+            }
             updateThreadName(false);
         }
     }

@@ -421,9 +421,9 @@ public class Http2Logic {
             // the connection's window all the same (RFC 9113 §6.9). Closed streams are forgotten, so whether we reset
             // it is not known; DATA on a closed stream may be discarded either way (§5.1).
             log.debug("Dropping DATA for closed stream {}.", dataFrame.getFrame().getStreamId());
-        } else if (streamInfo.isDataRejected()) {
-            // Still in flight when the stream was reset because of its DATA.
-            log.debug("Dropping DATA for stream {}, which was reset because of its DATA.", streamInfo.getStreamId());
+        } else if (streamInfo.isResetForStreamError()) {
+            // Still in flight when the stream was reset because of a stream error.
+            log.debug("Dropping DATA for stream {}, which was reset because of a stream error.", streamInfo.getStreamId());
         } else if (streamInfo.getState() == StreamState.HALF_CLOSED_REMOTE) {
             rejectDataAfterEndStream(streamInfo);
         } else if (streamInfo.exceedsReceiveWindow(dataFrame.getFrame().getLength(), maxInitialWindowSize())) {
@@ -498,6 +498,9 @@ public class Http2Logic {
                 throw new FatalConnectionException(ERROR_PROTOCOL_ERROR); // stream not open // TODO: change to stream error
             }
 
+            // Still in flight when the stream was reset because of a stream error: the window does not matter anymore.
+            if (streamInfo.isResetForStreamError())
+                return;
             if (!streamInfo.getPeerFlowControl().tryIncrement(windowUpdate.getWindowSizeIncrement()))
                 rejectWindowOverflow(streamInfo);
         }
@@ -510,6 +513,7 @@ public class Http2Logic {
     private void rejectWindowOverflow(StreamInfo streamInfo) throws IOException {
         final var streamId = streamInfo.getStreamId();
         log.info("Resetting stream {} from {}: a WINDOW_UPDATE makes its window exceed 2^31-1 (RFC 9113 §6.9.1).", streamId, remoteAddr);
+        streamInfo.resetForStreamError();
         sender.send(streamId, (encoder, peerSettings) -> List.of(RstStreamFrame.construct(streamId, ERROR_FLOW_CONTROL_ERROR)));
         final var cause = new IOException("A WINDOW_UPDATE makes the flow-control window of HTTP/2 stream %d exceed 2^31-1.".formatted(streamId));
         streamInfo.abortReceiving(cause);
@@ -848,13 +852,16 @@ public class Http2Logic {
     /**
      * Resets a stream whose peer sent DATA beyond the receive window, a stream error of type FLOW_CONTROL_ERROR
      * (RFC 9113 §6.9.1). Without this, a peer could make us buffer any amount of DATA while the body is read slowly.
+     * A call still waiting for the response, as the DATA came before it, fails.
      */
     private void rejectDataBeyondWindow(StreamInfo streamInfo) throws IOException {
         final var streamId = streamInfo.getStreamId();
         log.info("Resetting stream {} from {}: the peer sent DATA beyond the receive window (RFC 9113 §6.9.1).", streamId, remoteAddr);
-        streamInfo.rejectData();
+        streamInfo.resetForStreamError();
         sender.send(streamId, (encoder, peerSettings) -> List.of(RstStreamFrame.construct(streamId, ERROR_FLOW_CONTROL_ERROR)));
-        streamInfo.abortReceiving(new IOException("HTTP/2 stream %d received DATA beyond its flow-control window.".formatted(streamId)));
+        final var cause = new IOException("HTTP/2 stream %d received DATA beyond its flow-control window.".formatted(streamId));
+        streamInfo.abortReceiving(cause);
+        messageHandler.handleStreamError(streamInfo, cause);
     }
 
     /**
@@ -864,7 +871,7 @@ public class Http2Logic {
     private void rejectDataAfterEndStream(StreamInfo streamInfo) throws IOException {
         final var streamId = streamInfo.getStreamId();
         log.info("Resetting stream {} from {}: the peer sent DATA after END_STREAM (RFC 9113 §6.1).", streamId, remoteAddr);
-        streamInfo.rejectData();
+        streamInfo.resetForStreamError();
         sender.send(streamId, (encoder, peerSettings) -> List.of(RstStreamFrame.construct(streamId, ERROR_STREAM_CLOSED)));
     }
 

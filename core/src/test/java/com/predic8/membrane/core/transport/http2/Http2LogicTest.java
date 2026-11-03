@@ -37,6 +37,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
+import static com.predic8.membrane.core.transport.http2.frame.Error.ERROR_FLOW_CONTROL_ERROR;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -75,7 +76,12 @@ class Http2LogicTest {
                 // A GET request on stream 2: a client opens streams with odd ids only (RFC 9113 §5.1.1).
                 arguments("HEADERS opening a stream with an even id", new byte[]{0, 0, 3, 0x1, 0x5, 0, 0, 0, 2, (byte) 0x82, (byte) 0x84, (byte) 0x86}),
                 // A stream cannot depend on itself (RFC 9113 §5.3.1), also while it is idle.
-                arguments("PRIORITY of an idle stream depending on itself", new byte[]{0, 0, 5, 0x2, 0, 0, 0, 0, 1, 0, 0, 0, 1, 15}),
+                arguments("PRIORITY of an idle stream depending on itself", new byte[]{0, 0, 5, 0x2, 0, 0, 0, 0, 1, 0, 0, 0, 1, 15})
+        );
+    }
+
+    static Stream<Arguments> windowOverflows() {
+        return Stream.of(
                 // The connection window starts at 65535, so it would exceed 2^31-1 (RFC 9113 §6.9.1).
                 arguments("WINDOW_UPDATE beyond 2^31-1 on the connection", new byte[]{0, 0, 4, 0x8, 0, 0, 0, 0, 0, 0x7F, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF}),
                 // A GET request on stream 1, whose window is raised to exactly 2^31-1. One more byte of initial window
@@ -85,6 +91,14 @@ class Http2LogicTest {
                         0, 0, 4, 0x8, 0, 0, 0, 0, 1, 0x7F, (byte) 0xFF, 0, 0,
                         0, 0, 6, 0x4, 0, 0, 0, 0, 0, 0, 0x4, 0, 1, 0, 0})
         );
+    }
+
+    /** A window exceeding 2^31-1 is a connection error of type FLOW_CONTROL_ERROR, the code its GOAWAY carries. */
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("windowOverflows")
+    void windowOverflowIsFlowControlError(String description, byte[] frames) {
+        final var e = assertThrows(FatalConnectionException.class, () -> createLogic(frames).handle());
+        assertEquals(ERROR_FLOW_CONTROL_ERROR, e.getErrorCode());
     }
 
     @ParameterizedTest(name = "{0}")
@@ -159,7 +173,8 @@ class Http2LogicTest {
 
     /**
      * A WINDOW_UPDATE that makes a stream window exceed 2^31-1 is a stream error of type FLOW_CONTROL_ERROR
-     * (RFC 9113 §6.9.1): the stream is reset, the connection stays open, and the window is not changed.
+     * (RFC 9113 §6.9.1): the stream is reset, the connection stays open, and the window is not changed. The stream is
+     * reset once: a second such WINDOW_UPDATE arrives before the reset is written and is ignored.
      */
     @Test
     void windowUpdateBeyondTheMaximumResetsTheStream() throws Exception {
@@ -170,12 +185,13 @@ class Http2LogicTest {
         final var in = new ByteArrayOutputStream();
         in.write(get);
         in.write(new byte[]{0, 0, 4, 0x8, 0, 0, 0, 0, 1, 0x7F, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF});
+        in.write(new byte[]{0, 0, 4, 0x8, 0, 0, 0, 0, 1, 0x7F, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF});
         final var logic = createLogic(in.toByteArray());
 
         assertThrows(EndOfStreamException.class, logic::handle, "A stream error does not close the connection.");
 
         assertEquals(65535, logic.streams.get(1).getPeerFlowControl().peerWindowSize);
-        assertEquals(baseline.sender.getBufferedFrames() + 1, logic.sender.getBufferedFrames(), "RST_STREAM is queued.");
+        assertEquals(baseline.sender.getBufferedFrames() + 1, logic.sender.getBufferedFrames(), "One RST_STREAM is queued.");
     }
 
     private static byte[] pings(int count) {

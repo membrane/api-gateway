@@ -151,6 +151,52 @@ class Http2ClientTest {
         assertTrue(e.getMessage().contains("flow-control window"), e.getMessage());
     }
 
+    /**
+     * DATA beyond the receive window, here even before the response headers, resets the stream with FLOW_CONTROL_ERROR
+     * (RFC 9113 §6.9.1). No response will arrive then, so the call fails. 8 frames exceed the 131070 bytes announced.
+     */
+    @Test
+    void dataBeyondTheWindowFailsCall() throws Exception {
+        final var e = assertPendingCallFails((client, peer) -> {
+            for (int i = 0; i < 8; i++) {
+                peer.getOutputStream().write(new byte[]{0, 0x40, 0, TYPE_DATA, 0, 0, 0, 0, 1});
+                peer.getOutputStream().write(new byte[16384]);
+            }
+            peer.getOutputStream().flush();
+            assertEquals(ERROR_FLOW_CONTROL_ERROR, readUntilFrame(peer.getInputStream(), TYPE_RST_STREAM)[3]);
+        });
+        assertTrue(e.getMessage().contains("flow-control window"), e.getMessage());
+    }
+
+    /**
+     * A connection error is reported with GOAWAY (RFC 9113 §5.4.1), and then the connection is closed: nothing else
+     * would close it, as its streams never reach the CLOSED state.
+     */
+    @Test
+    void connectionErrorSendsGoawayAndClosesTheConnection() throws Exception {
+        final var router = new DefaultRouter();
+        try (final var backend = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
+            backend.setSoTimeout(2000);
+            final var connection = createConnection(router, backend);
+            try (final var peer = backend.accept()) {
+                peer.setSoTimeout(2000);
+                final var client = new Http2Client(connection, false);
+                final var call = callAsync(client);
+
+                readUntilRequestHeaders(peer);
+                // PING with 7 bytes: FRAME_SIZE_ERROR
+                peer.getOutputStream().write(new byte[]{0, 0, 7, TYPE_PING, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7});
+                peer.getOutputStream().flush();
+
+                assertEquals(0x6, readUntilFrame(peer.getInputStream(), TYPE_GOAWAY)[7], "FRAME_SIZE_ERROR");
+                assertEquals(-1, peer.getInputStream().read(), "The connection is closed.");
+                assertThrows(ExecutionException.class, () -> call.get(2, TimeUnit.SECONDS));
+            }
+        } finally {
+            router.stop();
+        }
+    }
+
     @Test
     void cancelledStreamIsNotReportedAsUnprocessed() throws Exception {
         final var e = assertPendingCallFails((client, peer) -> {

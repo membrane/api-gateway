@@ -58,8 +58,8 @@ public class StreamInfo {
     /** The content-length the message declares, or -1. Accessed on the receiver thread only. */
     private long expectedContentLength = -1;
     private long receivedContentLength;
-    /** Whether the stream was reset because of DATA the peer sent. Accessed on the receiver thread only. */
-    private boolean dataRejected;
+    /** Whether we reset the stream because of a stream error the peer caused. Accessed on the receiver thread only. */
+    private boolean resetForStreamError;
 
     public StreamInfo(int streamId, FrameSender sender, Settings peerSettings, Settings ourSettings) {
         this.streamId = streamId;
@@ -123,17 +123,18 @@ public class StreamInfo {
         return flowControl.exceedsWindow(length, initialWindowSize);
     }
 
-    /** Marks the stream as reset because of DATA the peer sent, see {@link #isDataRejected()}. */
-    void rejectData() {
-        dataRejected = true;
+    /** Marks the stream as reset because of a stream error the peer caused, see {@link #isResetForStreamError()}. */
+    void resetForStreamError() {
+        resetForStreamError = true;
     }
 
     /**
-     * Whether the stream was reset because of DATA the peer sent. More DATA may still be in flight then, which is
-     * dropped until the stream is closed.
+     * Whether we reset the stream because of a stream error the peer caused, such as DATA beyond the window. More frames
+     * may still be in flight then, until the reset is written and the stream closed: they are dropped, so that the
+     * stream is reset only once.
      */
-    boolean isDataRejected() {
-        return dataRejected;
+    boolean isResetForStreamError() {
+        return resetForStreamError;
     }
 
     /** The number of received DATA frames waiting for the body reader, including the marker of an abort. */
