@@ -136,6 +136,42 @@ public class FormUrlEncodedValidatorTest extends AbstractValidatorTest {
      * A repeated key is converted item by item with the prefixItems schema of its position, otherwise
      * with items. See #3499.
      */
+    /**
+     * In OAS 3.1 the keywords next to a root {@code $ref} apply to the body as well as the referenced component.
+     */
+    @Nested
+    class RootRefSiblings extends AbstractValidatorTest {
+
+        @Override
+        protected String getOpenAPIFileName() {
+            return "/openapi/specs/x-www-form-urlencoded/ref-root.oas.yaml";
+        }
+
+        @Test
+        void validSiblingAndReferencedFields() throws ParseException {
+            final var errors = validateRootRef("/form-siblings", "name=Bob&token=abc");
+            assertTrue(errors.isEmpty(), () -> "Expected no errors but got: " + errors);
+        }
+
+        @ParameterizedTest
+        @CsvSource(delimiter = '|', value = {
+                "/form-siblings|name=Bob|'token' is missing",
+                "/form-siblings|token=abc|'name' is missing",
+                "/form-siblings|name=Bob&token=abcd|MaxLength of 3",
+                "/form-siblings-closed|name=Bob&other=x|unexpected property 'other'"})
+        void rejected(String path, String body, String message) throws ParseException {
+            final var errors = validateRootRef(path, body);
+            assertEquals(1, errors.size(), errors::toString);
+            assertTrue(errors.getFirst().getMessage().contains(message), errors::toString);
+        }
+
+        private ValidationErrors validateRootRef(String path, String body) throws ParseException {
+            return validator.validate(post().path(path)
+                    .mediaType(APPLICATION_X_WWW_FORM_URLENCODED)
+                    .body(body));
+        }
+    }
+
     @Nested
     class PrefixItems extends AbstractValidatorTest {
 
@@ -334,6 +370,18 @@ public class FormUrlEncodedValidatorTest extends AbstractValidatorTest {
                 new ValidationContext(), new MediaType().schema(schema), "extra=value"));
         assertTrue(error.getMessage().contains("#/components/schemas/Missing"));
         assertTrue(error.getMessage().contains("extra"));
+    }
+
+    /**
+     * A root reference that cannot be resolved is an error in the spec. It must not let every body pass.
+     */
+    @Test
+    void unresolvedRootSchemaRefReportsParsingError() {
+        var api = new OpenAPI().components(new Components().addSchemas("Existing", new StringSchema()));
+
+        var error = assertThrows(OpenAPIParsingException.class, () -> new FormUrlEncodedValidator(api).validate(
+                new ValidationContext(), new MediaType().schema(new Schema<>().$ref("#/components/schemas/Missing")), "a=b"));
+        assertTrue(error.getMessage().contains("#/components/schemas/Missing"), error::getMessage);
     }
 
     @Test

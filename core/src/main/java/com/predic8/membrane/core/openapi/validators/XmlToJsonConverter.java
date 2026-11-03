@@ -37,8 +37,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.*;
 
-import static javax.xml.XMLConstants.W3C_XML_SCHEMA_INSTANCE_NS_URI;
-import static javax.xml.XMLConstants.XMLNS_ATTRIBUTE_NS_URI;
+import static javax.xml.XMLConstants.*;
 
 /**
  * Converts an XML document into a Jackson {@link JsonNode} tree, guided by an
@@ -317,7 +316,7 @@ public class XmlToJsonConverter {
      * Rejects attributes and child elements no property or {@code patternProperties} regex was mapped to,
      * if the schema forbids additional properties. The converted object only contains mapped content, so
      * the validator cannot see such content, while the original body is forwarded with it. Namespace
-     * declarations and {@code xsi:} attributes are markup, not data.
+     * declarations, {@code xsi:} and {@code xml:} attributes (e.g. {@code xml:lang}) are markup, not data.
      */
     private static void checkNoUndeclaredContent(Element element, Schema schema, Set<Node> consumed) {
         if (!Boolean.FALSE.equals(SchemaUtil.getAdditionalProperties(schema)))
@@ -340,8 +339,10 @@ public class XmlToJsonConverter {
     }
 
     private static boolean isMarkupAttribute(Node attribute) {
-        return XMLNS_ATTRIBUTE_NS_URI.equals(attribute.getNamespaceURI())
-            || W3C_XML_SCHEMA_INSTANCE_NS_URI.equals(attribute.getNamespaceURI());
+        final var namespace = attribute.getNamespaceURI();
+        return XMLNS_ATTRIBUTE_NS_URI.equals(namespace)
+            || W3C_XML_SCHEMA_INSTANCE_NS_URI.equals(namespace)
+            || XML_NS_URI.equals(namespace);
     }
 
     // -----------------------------------------------------------------------

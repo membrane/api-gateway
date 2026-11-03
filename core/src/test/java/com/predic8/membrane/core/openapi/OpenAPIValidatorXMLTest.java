@@ -346,6 +346,15 @@ class OpenAPIValidatorXMLTest {
         assertEquals(0, errors.size(), "Expected no validation errors: " + errors);
     }
 
+    /** Attributes of the predefined {@code xml:} namespace are markup and must not count as additional properties. */
+    @ParameterizedTest
+    @CsvSource({"xml:lang,de", "xml:space,preserve", "xml:base,http://example.com/"})
+    void xmlNamespaceAttributeInClosedObjectIsAccepted(String attribute, String value) throws ParseException {
+        var errors = validatorClosed.validate(post().path("/products")
+                .xml("<product %s=\"%s\" sku=\"A-1\"><name>Book</name></product>".formatted(attribute, value)));
+        assertEquals(0, errors.size(), "Expected no validation errors: " + errors);
+    }
+
     /** Without additionalProperties: false undeclared content stays allowed. */
     @Test
     void undeclaredElementInOpenObjectIsAccepted() throws ParseException {

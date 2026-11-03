@@ -24,6 +24,7 @@ import com.predic8.membrane.core.openapi.OpenAPIParsingException;
 import com.predic8.membrane.core.openapi.model.Message;
 import com.predic8.membrane.core.openapi.util.SchemaUtil;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.SpecVersion;
 import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.Schema;
 
@@ -79,16 +80,26 @@ public class FormUrlEncodedValidator {
 
         // The media type schema may be a $ref to a component; resolve it so its properties and
         // required list are visible.
-        Schema schema = SchemaUtil.resolveRef(api, mediaType.getSchema());
-        if (schema == null) {
+        final var declaredSchema = mediaType.getSchema();
+        if (declaredSchema == null) {
             // Without a schema there is nothing to validate the fields against.
             return errors;
         }
+        Schema schema = SchemaUtil.resolveRef(api, declaredSchema);
+        if (schema == null)
+            throw new OpenAPIParsingException("Cannot resolve form schema reference '%s'.".formatted(declaredSchema.get$ref()));
 
         var form = parse(raw);
 
         errors.add(validateRequired(ctx, schema, form));
         errors.add(validateFields(ctx, schema, form));
+        // In OAS 3.1+, keywords alongside $ref apply as another schema to the same body.
+        // Keep their field rules separate from the referenced component's rules.
+        if (declaredSchema.get$ref() != null && declaredSchema.getSpecVersion() != SpecVersion.V30
+                && SchemaValidator.hasSiblings(declaredSchema)) {
+            errors.add(validateRequired(ctx, declaredSchema, form));
+            errors.add(validateFields(ctx, declaredSchema, form));
+        }
         return errors;
     }
 

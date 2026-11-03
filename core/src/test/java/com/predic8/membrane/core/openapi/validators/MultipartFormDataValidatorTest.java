@@ -19,6 +19,7 @@ package com.predic8.membrane.core.openapi.validators;
 import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.openapi.OpenAPIParsingException;
 import com.predic8.membrane.core.openapi.model.Request;
+import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.*;
 import jakarta.mail.internet.ParseException;
@@ -498,6 +499,20 @@ public class MultipartFormDataValidatorTest extends AbstractValidatorTest {
         final var e = assertThrows(OpenAPIParsingException.class, () -> validateParts(schema, "field", "value"));
         assertTrue(e.getMessage().contains("patternProperties"), e::getMessage);
         assertTrue(e.getMessage().contains("'['"), e::getMessage);
+    }
+
+    /**
+     * A root reference that cannot be resolved is an error in the spec, not in the request.
+     */
+    @Test
+    void unresolvedRootSchemaRefIsSpecError() throws ParseException {
+        final var api = new OpenAPI().components(new Components().addSchemas("Existing", new StringSchema()));
+        final var body = new MultipartBuilder().part("a", null, TEXT_PLAIN, null, "b").build();
+
+        final var e = assertThrows(OpenAPIParsingException.class, () -> new MultipartFormDataValidator(api).validate(
+                new ValidationContext().entity("REQUEST"), new MediaType().schema(new Schema<>().$ref("#/components/schemas/Missing")),
+                Request.post().path("/upload").mediaType(MultipartBuilder.CONTENT_TYPE).body(body)));
+        assertTrue(e.getMessage().contains("#/components/schemas/Missing"), e::getMessage);
     }
 
     /**

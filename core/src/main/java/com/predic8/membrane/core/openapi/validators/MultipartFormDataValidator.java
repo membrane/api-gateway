@@ -89,7 +89,7 @@ public class MultipartFormDataValidator {
         var declaredSchema = mediaType.getSchema();
         var schema = SchemaUtil.resolveRef(api, declaredSchema);
         if (schema == null) {
-            return err.add(ctx, "Cannot resolve the schema reference '%s'.".formatted(mediaType.getSchema().get$ref()));
+            throw new OpenAPIParsingException("Cannot resolve multipart schema reference '%s'.".formatted(declaredSchema.get$ref()));
         }
 
         var boundary = getBoundary(message);
