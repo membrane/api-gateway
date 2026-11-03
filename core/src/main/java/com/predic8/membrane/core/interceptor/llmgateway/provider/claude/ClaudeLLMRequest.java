@@ -110,6 +110,7 @@ public class ClaudeLLMRequest extends AbstractModelInputRequest {
             case "document" -> countText(block.path("title")) + countText(block.path("context")) + countDocument(block.path("source"));
             case "tool_use" -> countJsonSize(block.path("input"));
             case "tool_result" -> countContent(block.path("content"));
+            case "thinking" -> countText(block.path("thinking"));
             default -> countText(block);
         };
     }

@@ -127,6 +127,8 @@ class ClaudeLLMRequestTest {
             tool result as text blocks  | {"messages":[{"role":"user","content":[{"type":"tool_result","tool_use_id":"t1","content":[{"type":"text","text":"%s"}]}]}]}
             tool use input              | {"messages":[{"role":"assistant","content":[{"type":"tool_use","id":"t1","name":"t","input":{"q":"%s"}}]}]}
             plain text document         | {"messages":[{"role":"user","content":[{"type":"document","source":{"type":"text","media_type":"text/plain","data":"%s"}}]}]}
+            base64 PDF document         | {"messages":[{"role":"user","content":[{"type":"document","source":{"type":"base64","media_type":"application/pdf","data":"%s"}}]}]}
+            thinking block              | {"messages":[{"role":"assistant","content":[{"type":"thinking","thinking":"%s","signature":"s"}]}]}
             document title              | {"messages":[{"role":"user","content":[{"type":"document","title":"%s","source":{"type":"text","media_type":"text/plain","data":""}}]}]}
             document context            | {"messages":[{"role":"user","content":[{"type":"document","context":"%s","source":{"type":"text","media_type":"text/plain","data":""}}]}]}
             """)

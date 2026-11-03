@@ -17,6 +17,7 @@ package com.predic8.membrane.core.util.http;
 import com.predic8.membrane.core.http.Chunk;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
 import java.util.Set;
 
@@ -192,6 +193,22 @@ class SSEParserTest {
         parser.parse(new Chunk(Arrays.copyOfRange(bytes, euro + 2, bytes.length)));
 
         assertEquals("Grüße €", parser.drainEvents().getFirst().data());
+    }
+
+    /**
+     * A malformed byte is replaced by U+FFFD and does not drop the event.
+     */
+    @Test
+    void malformedByteIsReplacedAndEventIsKept() {
+        var parser = new SSEParser(Set.of("done"));
+        var out = new ByteArrayOutputStream();
+        out.writeBytes("data: a".getBytes(UTF_8));
+        out.write(0xFF); // never valid in UTF-8
+        out.writeBytes(" b\n\n".getBytes(UTF_8));
+
+        parser.parse(new Chunk(out.toByteArray()));
+
+        assertEquals("a\uFFFD b", parser.drainEvents().getFirst().data());
     }
 
     @Test
