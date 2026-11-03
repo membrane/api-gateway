@@ -80,13 +80,15 @@ public final class McpPayloadSanitizer {
             }
 
             // Decode only as much as the preview shows; a compressed body may expand far beyond it.
-            final var reader = new InputStreamReader(getContentAsStream(message), message.getCharsetOrDefault());
-            final var preview = new char[MAX_BODY_LENGTH + 1];
-            final int length = IOUtils.read(reader, preview);
-            if (length <= MAX_BODY_LENGTH) {
-                return new String(preview, 0, length);
+            // Closing releases the decoder, which stopped before the end of the body.
+            try (final var reader = new InputStreamReader(getContentAsStream(message), message.getCharsetOrDefault())) {
+                final var preview = new char[MAX_BODY_LENGTH + 1];
+                final int length = IOUtils.read(reader, preview);
+                if (length <= MAX_BODY_LENGTH) {
+                    return new String(preview, 0, length);
+                }
+                return new String(preview, 0, MAX_BODY_LENGTH) + "... <truncated>";
             }
-            return new String(preview, 0, MAX_BODY_LENGTH) + "... <truncated>";
         } catch (Exception e) {
             return BODY_UNAVAILABLE;
         }

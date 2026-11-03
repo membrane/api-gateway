@@ -22,6 +22,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -34,6 +35,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
+import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_TRAILING_TOKENS;
 import static com.predic8.membrane.core.jsonrpc.JSONRPCUtil.*;
 import static java.util.Objects.requireNonNull;
 
@@ -53,6 +55,13 @@ public class JSONRPCRequest {
     public static final String JSONRPC_VERSION = "2.0";
 
     private static final ObjectMapper OM = new ObjectMapper();
+
+    /**
+     * A request is exactly one JSON value. Checking for content after it also reads a stream to its
+     * end, so a decoding stream gets to report a body that ends early, e.g. a truncated deflate body
+     * whose decoded part already holds a complete request.
+     */
+    private static final ObjectReader TREE_READER = OM.reader().with(FAIL_ON_TRAILING_TOKENS);
     private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {};
     private static final TypeReference<List<Object>> LIST_TYPE = new TypeReference<>() {};
 
@@ -101,12 +110,12 @@ public class JSONRPCRequest {
 
     public static JSONRPCRequest parse(InputStream is) throws IOException {
         requireNonNull(is, "input stream must not be null");
-        return fromNode(OM.readTree(is));
+        return fromNode(TREE_READER.readTree(is));
     }
 
     public static JSONRPCRequest parse(String json) throws IOException {
         requireNonNull(json, "json must not be null");
-        return fromNode(OM.readTree(json));
+        return fromNode(TREE_READER.readTree(json));
     }
 
     public static JSONRPCRequest fromNode(JsonNode root) throws IOException {

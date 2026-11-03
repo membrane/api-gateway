@@ -52,6 +52,14 @@ class JSONRPCRequestTest {
         assertEquals(request, JSONRPCRequest.parse(input(json)));
     }
 
+    @Test
+    void contentAfterTheRequestIsRejected() throws IOException {
+        final var json = new JSONRPCRequest(1, "sum", List.of()).toJson() + " {}";
+
+        assertThrows(IOException.class, () -> JSONRPCRequest.parse(json));
+        assertThrows(IOException.class, () -> JSONRPCRequest.parse(input(json)));
+    }
+
     @ParameterizedTest(name = "{0}")
     @MethodSource("normalizedIds")
     void normalizesSupportedIds(String name, Object rawId, Object expectedId) {

@@ -55,6 +55,18 @@ class MessageUtilTest {
         }
     }
 
+    /**
+     * The decoded bytes are all there, only the Adler-32 checksum at the end of the zlib stream is
+     * cut off.
+     */
+    @Test
+    void truncatedZlibBodyWithoutAdlerTrailerIsRejected() throws Exception {
+        byte[] compressed = zlibDeflate("payload");
+        byte[] truncated = Arrays.copyOf(compressed, compressed.length - 1);
+
+        assertDecodingFails("Truncated deflate stream.", truncated);
+    }
+
     @Test
     void isZlibWrappedDetectsZlibHeaderOnly() {
         assertTrue(MessageUtil.isZlibWrapped(zlibDeflate("payload")));
