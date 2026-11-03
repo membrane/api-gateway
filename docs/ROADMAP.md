@@ -65,6 +65,19 @@ PRIO 3:
   - Keep the system property as a fallback, or deprecate it.
   - Document that zero or less means no limit.
   - Related: #3382 (a line over the limit gets a connection reset instead of 414/431), #3378 item 3 (8092 is probably a typo for 8192).
+- soapHeader interceptor
+  - Story: add or remove SOAP header blocks by configuration. Replaces the removed `add-soap-header` example, which needed a custom Java interceptor.
+  - Idea:
+    ```yaml
+    - soapHeader:
+        remove:
+          name: Security
+          namespaceUri: http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd
+        add: |
+          <ns1:token xmlns:ns1="http://example.com/auth">...</ns1:token>
+    ```
+  - Parse with the hardened XML parser.
+
 
 ## Membrane 8.0.0 (Java 25)
 
