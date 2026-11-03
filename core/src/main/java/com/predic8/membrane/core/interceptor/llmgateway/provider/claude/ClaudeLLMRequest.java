@@ -39,9 +39,14 @@ public class ClaudeLLMRequest extends AbstractModelInputRequest {
     private static final String IDENTITY = "identity";
 
     /**
-     * What an image or a document of unknown size counts for: about 1000 tokens.
+     * What an image counts for: about 1000 tokens.
      */
     private static final long FLAT_BLOCK_CHARS = 4000;
+
+    /**
+     * What a PDF counts for: one page, which Anthropic bills at about 1500 tokens or more.
+     */
+    private static final long PDF_PAGE_CHARS = 5220;
 
     public ClaudeLLMRequest(Exchange exchange) throws IOException {
         super(exchange);
@@ -116,14 +121,13 @@ public class ClaudeLLMRequest extends AbstractModelInputRequest {
     }
 
     /**
-     * A PDF is billed by its pages, which cannot be told from the request, so it gets the same flat
-     * allowance as an image.
+     * A PDF is billed by its pages, which cannot be told from the request, so it counts for one page.
      */
     private static long countDocument(JsonNode source) {
         return switch (source.path("type").asText()) {
             case "text" -> countText(source.path("data"));
             case "content" -> countContent(source.path("content"));
-            default -> FLAT_BLOCK_CHARS;
+            default -> PDF_PAGE_CHARS;
         };
     }
 

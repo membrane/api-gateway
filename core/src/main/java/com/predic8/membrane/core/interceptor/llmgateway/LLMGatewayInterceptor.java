@@ -141,11 +141,11 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * Whether model rules or a per-user token budget are configured. Only a request carrying model
-     * input can be checked against them.
+     * Whether model rules, a per-user token budget or a system prompt are configured. Only a request
+     * carrying model input can be checked against them or get the prompt.
      */
     private boolean isRestricted() {
-        return !(policies instanceof NullPolicies) || store instanceof AiApiUserStore;
+        return !(policies instanceof NullPolicies) || store instanceof AiApiUserStore || systemPrompt != null;
     }
 
     /**

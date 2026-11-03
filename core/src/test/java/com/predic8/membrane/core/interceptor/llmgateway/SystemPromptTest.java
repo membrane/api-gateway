@@ -182,6 +182,18 @@ class SystemPromptTest {
                     request.getJson().path("systemInstruction").path("parts"));
         }
 
+        @Test
+        void geminiPartsAreAllKeptOnAppend() throws Exception {
+            var request = new GoogleLLMRequest(exchange(GENERATE_CONTENT, """
+                    {"systemInstruction":{"parts":[{"text":"one"},{"text":"two"}]}}"""));
+
+            handle(APPEND, request);
+
+            assertJson("""
+                    [{"text":"one"},{"text":"two"},{"text":"configured"}]""",
+                    request.getJson().path("systemInstruction").path("parts"));
+        }
+
         /**
          * Providers reject empty text parts and messages, so an empty prompt must leave the client's
          * system prompt as it was sent.

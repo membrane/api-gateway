@@ -138,6 +138,21 @@ class ClaudeLLMRequestTest {
         assertTrue(estimate >= 1000, "%s: estimated %d tokens for 4000 characters".formatted(structure, estimate));
     }
 
+    /**
+     * Anthropic bills a PDF by its pages, at least about 1500 tokens for one page. The page count is not
+     * in the request, so every PDF counts for one page.
+     */
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(delimiter = '|', textBlock = """
+            base64 | {"messages":[{"role":"user","content":[{"type":"document","source":{"type":"base64","media_type":"application/pdf","data":"JVBERi0="}}]}]}
+            url    | {"messages":[{"role":"user","content":[{"type":"document","source":{"type":"url","url":"https://example.com/a.pdf"}}]}]}
+            """)
+    void pdfCountsForAtLeastOnePage(String source, String json) throws Exception {
+        var estimate = request(json).estimateInputTokens();
+
+        assertTrue(estimate >= 1500, "%s: estimated %d tokens for a PDF".formatted(source, estimate));
+    }
+
     @Test
     void systemPromptRoundTrip() throws Exception {
         var request = request("{}");

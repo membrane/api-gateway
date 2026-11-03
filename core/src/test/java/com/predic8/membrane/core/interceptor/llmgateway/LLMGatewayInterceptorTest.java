@@ -197,6 +197,24 @@ class LLMGatewayInterceptorTest {
         }
 
         /**
+         * The configured system prompt cannot be added to an endpoint the gateway does not read, so the
+         * request must not get through without it.
+         */
+        @Test
+        void isRejectedWithSystemPrompt() throws Exception {
+            var systemPrompt = new SystemPrompt();
+            systemPrompt.setContent("configured");
+            interceptor.setSystemPrompt(systemPrompt);
+            interceptor.init();
+
+            var exchange = post(EMBEDDINGS).header(AUTHORIZATION, "Bearer client-key").json(EMBEDDINGS_REQUEST).buildExchange();
+
+            assertEquals(ABORT, interceptor.handleRequest(exchange));
+            assertEquals(400, exchange.getResponse().getStatusCode());
+            assertEquals("Bearer client-key", exchange.getRequest().getHeader().getFirstValue(AUTHORIZATION));
+        }
+
+        /**
          * A request without a body carries no model input the gateway could check.
          */
         @Test
@@ -302,10 +320,10 @@ class LLMGatewayInterceptorTest {
         }
 
         /**
-         * A batch request is not checked against the input token limit, so it must not get through.
+         * A batch request carries no model input the gateway can check, so it is rejected.
          */
         @Test
-        void claudeBatchDoesNotBypassInputTokenLimit() throws Exception {
+        void claudeBatchIsRejectedAsUnsupportedEndpoint() throws Exception {
             interceptor.setAiStore(null);
             var policies = new DefaultPolicies();
             policies.setMaxInputTokens(10);
@@ -320,6 +338,23 @@ class LLMGatewayInterceptorTest {
             assertEquals(ABORT, interceptor.handleRequest(exchange));
             assertEquals(400, exchange.getResponse().getStatusCode());
             assertEquals("client-key", exchange.getRequest().getHeader().getFirstValue(X_API_KEY));
+        }
+
+        @Test
+        void claudeMessageOverInputTokenLimitIsRejected() throws Exception {
+            interceptor.setAiStore(null);
+            var policies = new DefaultPolicies();
+            policies.setMaxInputTokens(10);
+            interceptor.setPolicies(policies);
+            useProvider("claude");
+
+            var message = """
+                    {"model":"claude-sonnet-4-5","max_tokens":10,"messages":[{"role":"user","content":"%s"}]}"""
+                    .formatted("x".repeat(4000));
+            var exchange = post("http://localhost/v1/messages").header(X_API_KEY, "client-key").json(message).buildExchange();
+
+            assertEquals(ABORT, interceptor.handleRequest(exchange));
+            assertEquals(400, exchange.getResponse().getStatusCode());
         }
 
         private void useProvider(String provider) {
