@@ -200,7 +200,11 @@ public class ExecutableDocument {
                 '}';
     }
 
+    /**
+     * Read-only view, so that definitions are only added through {@link #add(ExecutableDefinition)}, which keeps the
+     * fragment index in sync.
+     */
     public List<ExecutableDefinition> getExecutableDefinitions() {
-        return executableDefinitions;
+        return Collections.unmodifiableList(executableDefinitions);
     }
 }

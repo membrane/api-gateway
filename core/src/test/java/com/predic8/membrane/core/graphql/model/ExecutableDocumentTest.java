@@ -39,6 +39,13 @@ class ExecutableDocumentTest {
     }
 
     @Test
+    void getExecutableDefinitionsIsReadOnly() throws Exception {
+        final var definitions = parse("query { ...a } fragment a on Query { x }").getExecutableDefinitions();
+        assertThrows(UnsupportedOperationException.class,
+                () -> definitions.add(new FragmentDefinition("b", null, null, List.of(new Field("y", null)))));
+    }
+
+    @Test
     void getFragmentDefinitionOfConstructedDocument() {
         final var fragment = new FragmentDefinition("a", null, null, List.of(new Field("x", null)));
         final var ed = new ExecutableDocument(new OperationDefinition(null, null, null, null, List.of()), fragment);
