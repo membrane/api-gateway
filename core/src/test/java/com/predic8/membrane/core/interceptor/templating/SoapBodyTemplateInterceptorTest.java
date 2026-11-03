@@ -13,13 +13,18 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.templating;
 
+import com.predic8.membrane.core.router.DummyTestRouter;
 import com.predic8.membrane.core.util.ConfigurationException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
+import static com.predic8.membrane.core.http.Request.get;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SoapBodyTemplateInterceptorTest {
 
@@ -74,6 +79,36 @@ class SoapBodyTemplateInterceptorTest {
         i.setContentType("text/xml;charset=UTF-8");
 
         assertEquals("text/xml;charset=UTF-8", i.getContentType());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"1.1", "1.2"})
+    void interpolatedValuesAreXmlEscaped(String version) throws Exception {
+        final var i = new SoapBodyTemplateInterceptor();
+        i.setVersion(version);
+        i.setSrc("<name>${property.city}</name>");
+        i.init(new DummyTestRouter());
+
+        final var exc = get("/foo").buildExchange();
+        exc.setProperty("city", "</name><evil/><name>");
+        i.handleRequest(exc);
+
+        final var body = exc.getRequest().getBodyAsStringDecoded();
+        assertTrue(body.contains("<name>&lt;/name&gt;&lt;evil/&gt;&lt;name&gt;</name>"), body);
+    }
+
+    @Test
+    void prettyFormatsXml() throws Exception {
+        final var i = new SoapBodyTemplateInterceptor();
+        i.setPretty(true);
+        i.setSrc("<a><b>1</b></a>");
+        i.init(new DummyTestRouter());
+
+        final var exc = get("/foo").buildExchange();
+        i.handleRequest(exc);
+
+        final var body = exc.getRequest().getBodyAsStringDecoded();
+        assertFalse(body.contains("<a><b>"), body);
     }
 
     private static void setSoapVersion(String version) {
