@@ -443,6 +443,28 @@ public class MultipartFormDataValidatorTest extends AbstractValidatorTest {
                 Request.post().path("/upload").mediaType(MultipartBuilder.CONTENT_TYPE).body(duplicate)).isEmpty());
     }
 
+    /**
+     * Binary items are compared by a digest, so a duplicate file is not copied into the error message.
+     */
+    @Test
+    void duplicateBinaryItemIsReportedByDigest() throws ParseException {
+        var schema = new ObjectSchema().addProperties("files",
+                new ArraySchema().items(new StringSchema().format("binary")).uniqueItems(true));
+        var content = "secret-file-content-".repeat(100);
+        var body = new MultipartBuilder()
+                .part("files", "a.bin", APPLICATION_OCTET_STREAM, null, content)
+                .part("files", "b.bin", APPLICATION_OCTET_STREAM, null, content)
+                .build();
+
+        var errors = new MultipartFormDataValidator(new OpenAPI()).validate(new ValidationContext().entity("REQUEST"),
+                new MediaType().schema(schema), Request.post().path("/upload").mediaType(MultipartBuilder.CONTENT_TYPE).body(body));
+        assertEquals(1, errors.size(), errors::toString);
+        var message = errors.getFirst().getMessage();
+        assertTrue(message.contains("sha256:"), message);
+        assertFalse(message.contains(Base64.getEncoder().encodeToString(content.getBytes(UTF_8)).substring(0, 40)), message);
+        assertTrue(message.length() < 500, message);
+    }
+
     @Test
     void typelessPatternConstrainsTheWholeArray() throws ParseException {
         var schema = new ObjectSchema().additionalProperties(false);

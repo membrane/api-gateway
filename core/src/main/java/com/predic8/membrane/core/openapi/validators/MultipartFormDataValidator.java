@@ -42,6 +42,8 @@ import org.xml.sax.SAXException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -275,10 +277,22 @@ public class MultipartFormDataValidator {
         return true;
     }
 
+    /**
+     * Stands for a binary part in a reconstructed array: equal for equal bytes, so uniqueItems works, but of
+     * constant size, so neither the array nor an error message holds a copy of the file.
+     */
+    private static String digest(byte[] content) {
+        try {
+            return "sha256:" + HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(content));
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 is required by every Java platform.", e);
+        }
+    }
+
     @SuppressWarnings("rawtypes")
     private JsonNode reconstructPart(ValidationContext ctx, List<Schema> schemas, Schema schema, String contentType, FormPart part) {
         if (isBinaryString(schema))
-            return JsonNodeFactory.instance.textNode(Base64.getEncoder().encodeToString(part.content));
+            return JsonNodeFactory.instance.textNode(digest(part.content));
         var text = new String(part.content, UTF_8);
         try {
             if (isJson(contentType))
@@ -410,9 +424,13 @@ public class MultipartFormDataValidator {
             return err.add(ctx.statusCode(400), "The schema is false and does not allow any value.");
 
         // Binary file uploads (type: string, format: binary/byte) are opaque, only their presence is checked.
-        if (isBinaryString(propertySchema))
+        // Other matching schemas that are not binary still apply to the content as text.
+        if (isBinaryString(propertySchema)) {
+            if (schemas.stream().allMatch(s -> isBinaryString(resolveSchema(s))))
+                return err;
             return validateDecodedPart(ctx, schemas,
                     JsonNodeFactory.instance.textNode(new String(part.content, UTF_8)));
+        }
 
         if (isJson(contentType)) {
             final JsonNode json;
