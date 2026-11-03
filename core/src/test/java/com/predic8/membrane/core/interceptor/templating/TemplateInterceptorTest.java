@@ -93,6 +93,19 @@ public class TemplateInterceptorTest {
         assertEquals(TEXT_PLAIN, r.getHeader().getContentType());
     }
 
+    @Test
+    void jsonArrayInXmlTemplateIsEscaped() throws Exception {
+        final var exchange = post("/cities").contentType(APPLICATION_JSON).body("""
+                { "city": ["</city><evil/><city>"] }
+                """).buildExchange();
+
+        invokeInterceptor(exchange, "<city>${json.city}</city>", APPLICATION_XML);
+
+        final var body = exchange.getRequest().getBodyAsStringDecoded();
+        assertFalse(body.contains("<evil/>"), body);
+        assertTrue(body.contains("&lt;evil/&gt;"), body);
+    }
+
     @SuppressWarnings("unchecked")
     @Test
     void createJson() throws Exception {
@@ -279,6 +292,15 @@ public class TemplateInterceptorTest {
         assertTrue(message.contains("secret-after"), message);
         assertFalse(message.contains("\uFFFF"), "End-of-input marker in the excerpt: " + message);
         assertTrue(body.contains("\"line\" : 2") || body.contains("\"line\":2"), body);
+    }
+
+    @Test
+    void prettyFormatsJsonFromFile() {
+        ti.setPretty(TRUE);
+        setAndHandleRequest("json/unformatted.json");
+
+        final var body = exc.getRequest().getBodyAsStringDecoded();
+        assertTrue(body.contains("\"baz\" : 720"), body);
     }
 
     @Test
