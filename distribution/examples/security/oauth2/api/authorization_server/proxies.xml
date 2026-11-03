@@ -34,7 +34,7 @@
         </api>
 
         <api port="9000">
-            <adminConsole/>
+            <adminConsole readOnly="true"/>
         </api>
 
     </router>

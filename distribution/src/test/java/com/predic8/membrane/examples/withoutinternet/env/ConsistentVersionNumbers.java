@@ -142,8 +142,6 @@ public class ConsistentVersionNumbers {
 		handlePOM(new File(baseDirectory.getAbsolutePath(), "/distribution/examples/extending-membrane/embedding-java/pom.xml"), false, versionTransformer);
 		handlePOM(new File(baseDirectory.getAbsolutePath(), "/distribution/examples/extending-membrane/custom-interceptor/pom.xml"), false, versionTransformer);
 		handlePOM(new File(baseDirectory.getAbsolutePath(), "/distribution/examples/xml/stax-interceptor/pom.xml"), false, versionTransformer);
-		handlePOM(new File(baseDirectory.getAbsolutePath(), "/distribution/examples/web-services-soap/add-soap-header/pom.xml"), false, versionTransformer);
-		handlePOM(new File(baseDirectory.getAbsolutePath(), "/distribution/examples/xml/basic-xml-interceptor/pom.xml"), false, versionTransformer);
 		handlePOM(new File(baseDirectory.getAbsolutePath(), "/distribution/examples/websockets/custom-websocket-interceptor/standalone/pom.xml"), false, versionTransformer);
 		handlePOM(new File(baseDirectory.getAbsolutePath(), "/distribution/examples/websockets/custom-websocket-interceptor/embedded/pom.xml"), false, versionTransformer);
 

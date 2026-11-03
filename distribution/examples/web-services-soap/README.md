@@ -2,7 +2,6 @@
 
 This section contains examples demonstrating SOAP service integration and mediation patterns.
 
-- [Add a Custom Header to SOAP Messages](add-soap-header#add-a-custom-header-to-soap-messages)
 - [REST 2 SOAP CONVERSION](rest2soap-json#rest-2-soap-conversion)
 - [SOAP to REST Example](rest2soap-template#soap-to-rest-example)
 - [REST 2 SOAP CONVERSION](rest2soap#rest-2-soap-conversion)
