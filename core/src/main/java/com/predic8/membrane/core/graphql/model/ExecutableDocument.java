@@ -25,11 +25,24 @@ import static com.predic8.membrane.core.graphql.Tokenizer.Type.*;
 public class ExecutableDocument {
     final List<ExecutableDefinition> executableDefinitions = new ArrayList<>();
 
+    /**
+     * Index of {@link #executableDefinitions} for fragment lookups during traversal. Holds the first definition of
+     * each name.
+     */
+    private final Map<String, FragmentDefinition> fragmentsByName = new HashMap<>();
+
     public ExecutableDocument() {
     }
 
     public ExecutableDocument(ExecutableDefinition... executableDefinitions) {
-        this.executableDefinitions.addAll(Arrays.asList(executableDefinitions));
+        for (final var definition : executableDefinitions)
+            add(definition);
+    }
+
+    private void add(ExecutableDefinition definition) {
+        executableDefinitions.add(definition);
+        if (definition instanceof FragmentDefinition fd)
+            fragmentsByName.putIfAbsent(fd.getName(), fd);
     }
 
     /**
@@ -52,13 +65,13 @@ public class ExecutableDocument {
                 if (t.string().equals("query") || t.string().equals("mutation") || t.string().equals("subscription")) {
                     OperationDefinition od = new OperationDefinition();
                     od.parse(t);
-                    executableDefinitions.add(od);
+                    add(od);
                     continue;
                 }
                 if (t.string().equals("fragment")) {
                     FragmentDefinition fd = new FragmentDefinition();
                     fd.parse(t);
-                    executableDefinitions.add(fd);
+                    add(fd);
                     continue;
                 }
             }
@@ -66,7 +79,7 @@ public class ExecutableDocument {
             if (executableDefinitions.isEmpty() && !shortHandQuery) {
                 OperationDefinition od = new OperationDefinition();
                 od.parse(t);
-                executableDefinitions.add(od);
+                add(od);
                 shortHandQuery = true;
                 continue;
             }
@@ -100,9 +113,7 @@ public class ExecutableDocument {
     }
 
     public Optional<FragmentDefinition> getFragmentDefinition(String name) {
-        return getFragmentDefinitions().stream()
-                .filter(fd -> name.equals(fd.getName()))
-                .findAny();
+        return Optional.ofNullable(fragmentsByName.get(name));
     }
 
     /**

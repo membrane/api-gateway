@@ -39,6 +39,19 @@ class ExecutableDocumentTest {
     }
 
     @Test
+    void getFragmentDefinitionOfConstructedDocument() {
+        final var fragment = new FragmentDefinition("a", null, null, List.of(new Field("x", null)));
+        final var ed = new ExecutableDocument(new OperationDefinition(null, null, null, null, List.of()), fragment);
+        assertSame(fragment, ed.getFragmentDefinition("a").orElseThrow());
+    }
+
+    @Test
+    void getFragmentDefinitionReturnsFirstOfDuplicateNames() throws Exception {
+        final var ed = parse("query { ...a } fragment a on Query { x } fragment a on Query { y }");
+        assertSame(ed.getFragmentDefinitions().getFirst(), ed.getFragmentDefinition("a").orElseThrow());
+    }
+
+    @Test
     void collectFieldsPlainFields() throws Exception {
         assertEquals(List.of("a", "b"), collectRootFieldNames("{ a b }"));
     }
