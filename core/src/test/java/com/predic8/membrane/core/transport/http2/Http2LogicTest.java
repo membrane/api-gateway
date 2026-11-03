@@ -218,6 +218,19 @@ class Http2LogicTest {
         assertFalse(reset.getMessage().getBody().hasTrailer(), "The trailers are ignored.");
         assertEquals(StreamState.OPEN, reset.getState(), "Their END_STREAM is not applied: the reset closes the stream.");
         assertEquals("1", handler.message.getHeader().getFirstValue("x-trailer"), "The HPACK dynamic table stayed in sync.");
+        assertEquals(bufferedFramesWithoutTheWindowOverflow() + 1, logic.sender.getBufferedFrames(), "The RST_STREAM stays queued.");
+    }
+
+    /** The frames {@link #trailersOnAStreamResetForAStreamErrorAreIgnored} queues without the WINDOW_UPDATE resetting stream 1. */
+    private static int bufferedFramesWithoutTheWindowOverflow() throws Exception {
+        final var encoder = new Encoder(4096);
+        final var in = new ByteArrayOutputStream();
+        in.write(headersFrame(false, encoder, withGet()));
+        in.write(headersFrame(true, encoder, "x-trailer", "1"));
+        in.write(headersFrame(3, true, encoder, withGet("x-trailer", "1")));
+        final var baseline = createLogic(in.toByteArray());
+        assertThrows(EndOfStreamException.class, baseline::handle);
+        return baseline.sender.getBufferedFrames();
     }
 
     private static byte[] pings(int count) {
