@@ -819,7 +819,8 @@ public class StreamingTemplateEngine extends groovy.text.StreamingTemplateEngine
 
         private int read(final Reader reader) throws IOException {
             int c = reader.read();
-            templateSource.append((char) c);
+            if (c != -1) // adjustment: (char) -1 would append U+FFFF to the source shown in error messages
+                templateSource.append((char) c);
             return c;
         }
     }
