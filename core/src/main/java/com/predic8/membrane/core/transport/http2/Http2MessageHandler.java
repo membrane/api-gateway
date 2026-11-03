@@ -56,6 +56,16 @@ public interface Http2MessageHandler {
     }
 
     /**
+     * Called when a stream is reset because of a stream error the peer caused, such as a flow-control error
+     * (RFC 9113 §5.4.2). The stream's body reader already fails with the cause; no response arrives anymore.
+     *
+     * @param streamInfo the reset stream
+     * @param cause describes the stream error
+     */
+    default void handleStreamError(StreamInfo streamInfo, IOException cause) {
+    }
+
+    /**
      * Called instead of {@link #handleExchange} when a stream's header block exceeds the header size limits.
      * The block has been decoded and discarded; no message is handed over for the stream.
      *

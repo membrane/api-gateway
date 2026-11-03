@@ -30,7 +30,7 @@ class StreamInfoTest {
     private final StreamInfo streamInfo = new StreamInfo(1, null, new Settings(), new Settings());
 
     @Test
-    void abortFailsBodyReadAfterReceivedData() {
+    void abortFailsBodyReadAfterReceivedData() throws Exception {
         final var body = streamInfo.createBody();
         final var data = new Frame();
         data.fill(TYPE_DATA, 0, 1, "ab".getBytes(), 0, 2);
@@ -57,7 +57,7 @@ class StreamInfoTest {
 
     /** Nothing reads past the abort, so DATA still in flight would only take up memory until the stream is removed. */
     @Test
-    void dataReceivedAfterAbortIsNotQueued() {
+    void dataReceivedAfterAbortIsNotQueued() throws Exception {
         streamInfo.abortReceiving(new IOException("body rejected"));
         final var data = new Frame();
         data.fill(TYPE_DATA, 0, 1, "ab".getBytes(), 0, 2);

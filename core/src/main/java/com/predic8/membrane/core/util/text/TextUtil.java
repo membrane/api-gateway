@@ -33,6 +33,7 @@ import java.io.StringWriter;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Optional;
+import java.util.function.Function;
 
 import static java.lang.Integer.MAX_VALUE;
 import static java.nio.charset.StandardCharsets.UTF_16BE;
@@ -256,9 +257,27 @@ public class TextUtil {
      * other control characters and the Unicode line separators U+2028/U+2029 become \\uXXXX.
      */
     public static String escapeForLog(String s) {
+        return escape(s, TextUtil::logEscape);
+    }
+
+    /**
+     * Escapes the control characters of an untrusted value that is embedded in a log message, so that it cannot
+     * forge log lines or inject terminal escape sequences: CR/LF become \r and \n, other control characters except
+     * TAB and the Unicode line separators U+2028/U+2029 become \\uXXXX. Unlike {@link #escapeForLog(String)} quotes
+     * and backslashes are kept, so the message stays readable.
+     *
+     * @return the escaped value, the value itself if nothing needs escaping, or null for null
+     */
+    public static String escapeControlCharsForLog(String s) {
+        if (s == null)
+            return null;
+        return escape(s, TextUtil::controlCharEscape);
+    }
+
+    private static String escape(String s, Function<Character, String> escaper) {
         StringBuilder sb = null;
         for (int i = 0; i < s.length(); i++) {
-            String replacement = logEscape(s.charAt(i));
+            String replacement = escaper.apply(s.charAt(i));
             if (replacement == null) {
                 if (sb != null) sb.append(s.charAt(i));
                 continue;
@@ -277,6 +296,17 @@ public class TextUtil {
             case '\r' -> "\\r";
             case '\t' -> "\\t";
             default -> Character.isISOControl(c) || c == ' ' || c == ' '
+                    ? "\\u%04x".formatted((int) c)
+                    : null;
+        };
+    }
+
+    private static String controlCharEscape(char c) {
+        return switch (c) {
+            case '\n' -> "\\n";
+            case '\r' -> "\\r";
+            case '\t' -> null;
+            default -> Character.isISOControl(c) || c == '\u2028' || c == '\u2029'
                     ? "\\u%04x".formatted((int) c)
                     : null;
         };

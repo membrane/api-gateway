@@ -190,7 +190,7 @@ public class PrometheusInterceptor extends AbstractInterceptor {
     }
 
     private void buildVersionLine(Context ctx) {
-        ctx.count.append("membrane_info{version=\"" + prometheusCompatibleName(VERSION) + "\"} 1\n");
+        ctx.count.append("membrane_info{version=\"" + VERSION + "\"} 1\n");
     }
 
     private void buildLoadBalancerLines(Context ctx) {

@@ -129,6 +129,10 @@ example/tutorial discovery and scaffolding.
 - SLF4J everywhere; no `System.out` in production code.
 - Attack/validation-detection log lines (e.g. XXE/DOCTYPE detection) are intentionally `info`,
   not `warn` — that's an ops-tunable level, not a severity bug to flag in review.
+- Log levels and sensitive data: `debug`/`trace` may log anything (raw headers, cookies,
+  bodies, unescaped input), because they are not for production; don't flag that in review. `info`,
+  `warn` and `error` must not expose secrets (credentials, tokens, session IDs, private keys)
+  and must escape untrusted values with `TextUtil.escapeControlCharsForLog`.
 
 ## Utility classes
 

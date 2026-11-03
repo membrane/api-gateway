@@ -25,6 +25,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -36,10 +37,13 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
+import static com.predic8.membrane.core.transport.http2.frame.Error.ERROR_FLOW_CONTROL_ERROR;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -71,14 +75,70 @@ class Http2LogicTest {
                         0, 0, 3, 0x1, 0x5, 0, 0, 0, 3, (byte) 0x82, (byte) 0x84, (byte) 0x86,
                         0, 0, 4, 0x8, 0, 0, 0, 0, 2, 0, 0, 0, 1}),
                 // A GET request on stream 2: a client opens streams with odd ids only (RFC 9113 §5.1.1).
-                arguments("HEADERS opening a stream with an even id", new byte[]{0, 0, 3, 0x1, 0x5, 0, 0, 0, 2, (byte) 0x82, (byte) 0x84, (byte) 0x86})
+                arguments("HEADERS opening a stream with an even id", new byte[]{0, 0, 3, 0x1, 0x5, 0, 0, 0, 2, (byte) 0x82, (byte) 0x84, (byte) 0x86}),
+                // A stream cannot depend on itself (RFC 9113 §5.3.1), also while it is idle.
+                arguments("PRIORITY of an idle stream depending on itself", new byte[]{0, 0, 5, 0x2, 0, 0, 0, 0, 1, 0, 0, 0, 1, 15})
         );
+    }
+
+    static Stream<Arguments> windowOverflows() {
+        return Stream.of(
+                // The connection window starts at 65535, so it would exceed 2^31-1 (RFC 9113 §6.9.1).
+                arguments("WINDOW_UPDATE beyond 2^31-1 on the connection", new byte[]{0, 0, 4, 0x8, 0, 0, 0, 0, 0, 0x7F, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF}),
+                // A GET request on stream 1, whose window is raised to exactly 2^31-1. One more byte of initial window
+                // size would exceed it (RFC 9113 §6.9.2).
+                arguments("SETTINGS_INITIAL_WINDOW_SIZE pushing a stream window beyond 2^31-1", new byte[]{
+                        0, 0, 3, 0x1, 0x4, 0, 0, 0, 1, (byte) 0x82, (byte) 0x84, (byte) 0x86,
+                        0, 0, 4, 0x8, 0, 0, 0, 0, 1, 0x7F, (byte) 0xFF, 0, 0,
+                        0, 0, 6, 0x4, 0, 0, 0, 0, 0, 0, 0x4, 0, 1, 0, 0})
+        );
+    }
+
+    /** A window exceeding 2^31-1 is a connection error of type FLOW_CONTROL_ERROR, the code its GOAWAY carries. */
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("windowOverflows")
+    void windowOverflowIsFlowControlError(String description, byte[] frames) {
+        final var e = assertThrows(FatalConnectionException.class, () -> createLogic(frames).handle());
+        assertEquals(ERROR_FLOW_CONTROL_ERROR, e.getErrorCode());
     }
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("invalidFrames")
     void invalidFrameIsConnectionError(String description, byte[] frame) {
         assertThrows(FatalConnectionException.class, () -> createLogic(frame).handle());
+    }
+
+    /**
+     * A connection error is reported with GOAWAY before the connection is closed (RFC 9113 §5.4.1). It carries the
+     * error code and the last stream the client opened, which was handed over and may have been processed.
+     */
+    @Test
+    void connectionErrorSendsGoaway() throws Exception {
+        final var in = new ByteArrayOutputStream();
+        in.write(headersFrame(true, new Encoder(4096), withGet()));
+        // PING with 7 bytes: FRAME_SIZE_ERROR
+        in.write(new byte[]{0, 0, 7, 0x6, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7});
+        final var out = new ByteArrayOutputStream();
+        // Buffered like a socket's stream: the GOAWAY only arrives if the sender flushes it before it stops.
+        final var logic = new Http2Logic(EXECUTOR, new Socket(), new ByteArrayInputStream(in.toByteArray()), new BufferedOutputStream(out), false, new RecordingHandler());
+        logic.init();
+
+        assertThrows(FatalConnectionException.class, logic::handle);
+
+        final var goaway = firstFrame(out.toByteArray(), 0x7);
+        assertNotNull(goaway, "GOAWAY is sent.");
+        assertArrayEquals(new byte[]{0, 0, 0, 1, 0, 0, 0, 0x6}, goaway, "Last stream id 1, FRAME_SIZE_ERROR.");
+    }
+
+    /** The payload of the first frame of the given type in the output, or null. */
+    private static byte[] firstFrame(byte[] output, int type) {
+        for (int i = 0; i + 9 <= output.length; ) {
+            final var length = ((output[i] & 0xff) << 16) | ((output[i + 1] & 0xff) << 8) | (output[i + 2] & 0xff);
+            if (output[i + 3] == type)
+                return Arrays.copyOfRange(output, i + 9, i + 9 + length);
+            i += 9 + length;
+        }
+        return null;
     }
 
     /** Only the SETTINGS frame sent on connection start is acknowledged; a second ACK has nothing to acknowledge. */
@@ -103,6 +163,74 @@ class Http2LogicTest {
     @Test
     void framesWaitingToBeSentUpToTheLimitAreAccepted() throws Exception {
         assertThrows(EndOfStreamException.class, () -> createLogic(pings(Http2Logic.MAX_BUFFERED_FRAMES - 1)).handle());
+    }
+
+    @Test
+    void windowUpdateUpToTheMaximumIsAccepted() {
+        final var increment = Integer.MAX_VALUE - 65535;
+        assertThrows(EndOfStreamException.class, () -> createLogic(new byte[]{0, 0, 4, 0x8, 0, 0, 0, 0, 0,
+                (byte) (increment >>> 24), (byte) (increment >>> 16), (byte) (increment >>> 8), (byte) increment}).handle());
+    }
+
+    /**
+     * A WINDOW_UPDATE that makes a stream window exceed 2^31-1 is a stream error of type FLOW_CONTROL_ERROR
+     * (RFC 9113 §6.9.1): the stream is reset, the connection stays open, and the window is not changed. The stream is
+     * reset once: a second such WINDOW_UPDATE arrives before the reset is written and is ignored.
+     */
+    @Test
+    void windowUpdateBeyondTheMaximumResetsTheStream() throws Exception {
+        final var get = headersFrame(false, new Encoder(4096), withGet());
+        final var baseline = createLogic(get);
+        assertThrows(EndOfStreamException.class, baseline::handle);
+
+        final var in = new ByteArrayOutputStream();
+        in.write(get);
+        in.write(new byte[]{0, 0, 4, 0x8, 0, 0, 0, 0, 1, 0x7F, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF});
+        in.write(new byte[]{0, 0, 4, 0x8, 0, 0, 0, 0, 1, 0x7F, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF});
+        final var logic = createLogic(in.toByteArray());
+
+        assertThrows(EndOfStreamException.class, logic::handle, "A stream error does not close the connection.");
+
+        assertEquals(65535, logic.streams.get(1).getPeerFlowControl().peerWindowSize);
+        assertEquals(baseline.sender.getBufferedFrames() + 1, logic.sender.getBufferedFrames(), "One RST_STREAM is queued.");
+    }
+
+    /**
+     * HEADERS on a stream reset because of a stream error, still in flight before the reset is written, are ignored
+     * like its DATA. Otherwise, trailers ending the stream could close it first, and the reset would never be sent.
+     * Their header block is decoded all the same: the next request refers to the field it added to the HPACK dynamic
+     * table.
+     */
+    @Test
+    void trailersOnAStreamResetForAStreamErrorAreIgnored() throws Exception {
+        final var encoder = new Encoder(4096);
+        final var in = new ByteArrayOutputStream();
+        in.write(headersFrame(false, encoder, withGet()));
+        in.write(new byte[]{0, 0, 4, 0x8, 0, 0, 0, 0, 1, 0x7F, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF});
+        in.write(headersFrame(true, encoder, "x-trailer", "1"));
+        in.write(headersFrame(3, true, encoder, withGet("x-trailer", "1")));
+        final var handler = new RecordingHandler();
+        final var logic = createLogic(in.toByteArray(), handler);
+
+        assertThrows(EndOfStreamException.class, logic::handle);
+
+        final var reset = logic.streams.get(1);
+        assertFalse(reset.getMessage().getBody().hasTrailer(), "The trailers are ignored.");
+        assertEquals(StreamState.OPEN, reset.getState(), "Their END_STREAM is not applied: the reset closes the stream.");
+        assertEquals("1", handler.message.getHeader().getFirstValue("x-trailer"), "The HPACK dynamic table stayed in sync.");
+        assertEquals(bufferedFramesWithoutTheWindowOverflow() + 1, logic.sender.getBufferedFrames(), "The RST_STREAM stays queued.");
+    }
+
+    /** The frames {@link #trailersOnAStreamResetForAStreamErrorAreIgnored} queues without the WINDOW_UPDATE resetting stream 1. */
+    private static int bufferedFramesWithoutTheWindowOverflow() throws Exception {
+        final var encoder = new Encoder(4096);
+        final var in = new ByteArrayOutputStream();
+        in.write(headersFrame(false, encoder, withGet()));
+        in.write(headersFrame(true, encoder, "x-trailer", "1"));
+        in.write(headersFrame(3, true, encoder, withGet("x-trailer", "1")));
+        final var baseline = createLogic(in.toByteArray());
+        assertThrows(EndOfStreamException.class, baseline::handle);
+        return baseline.sender.getBufferedFrames();
     }
 
     private static byte[] pings(int count) {
@@ -240,6 +368,92 @@ class Http2LogicTest {
     }
 
     /**
+     * DATA beyond the stream's receive window is a stream error of type FLOW_CONTROL_ERROR (RFC 9113 §6.9.1). The
+     * window is the 131070 bytes announced in our SETTINGS. The body is not read, so the window does not grow.
+     */
+    @Test
+    void dataBeyondTheStreamWindowFailsTheBody() throws Exception {
+        final var in = new ByteArrayOutputStream();
+        in.write(SETTINGS_ACK);
+        in.write(headersFrame(false, new Encoder(4096), ":method", "POST", ":scheme", "https", ":path", "/"));
+        // 7 frames fit into the window, the 8th exceeds it, the 9th follows the stream error.
+        for (int i = 0; i < 9; i++)
+            in.write(frame(0x0, 0, new byte[16384]));
+        final var handler = new RecordingHandler();
+        final var logic = createLogic(in.toByteArray(), handler);
+
+        assertThrows(EndOfStreamException.class, logic::handle, "A stream error does not close the connection.");
+
+        assertEquals(8, logic.streams.get(1).getReceivedDataFramesQueued(), "The 7 frames within the window and the abort marker.");
+        assertThrows(ReadingBodyException.class, handler.message.getBody()::read);
+    }
+
+    /**
+     * DATA without data that does not end the stream gives the body reader nothing to read, so it is not queued:
+     * otherwise a peer could fill the memory with empty frames (CVE-2019-9518). Padding counts against the window and
+     * is given back at once: the padded frames use up the whole window, so the last frame only fits if it was.
+     */
+    @Test
+    void emptyDataFramesAreNotQueued() throws Exception {
+        final var in = new ByteArrayOutputStream();
+        in.write(SETTINGS_ACK);
+        in.write(headersFrame(false, new Encoder(4096), ":method", "POST", ":scheme", "https", ":path", "/"));
+        for (int i = 0; i < 1000; i++)
+            in.write(frame(0x0, 0, new byte[0]));
+        // PADDED with a pad length of 0: one byte of window each, the 131070 announced in our SETTINGS altogether.
+        for (int i = 0; i < 131070; i++)
+            in.write(frame(0x0, 0x8, new byte[]{0}));
+        in.write(dataFrame(true, "x"));
+        final var handler = new RecordingHandler();
+        final var logic = createLogic(in.toByteArray(), handler);
+
+        assertThrows(EndOfStreamException.class, logic::handle);
+
+        assertEquals(2, logic.streams.get(1).getReceivedDataFramesQueued(), "The last DATA frame and the abort marker.");
+        assertEquals("x", new String(handler.message.getBody().getContent(), ISO_8859_1));
+    }
+
+    /**
+     * DATA after END_STREAM, on a half-closed (remote) stream, is a stream error of type STREAM_CLOSED (RFC 9113 §5.1,
+     * §6.1). The stream is reset once: the second DATA frame is still in flight then and gets dropped.
+     */
+    @Test
+    void dataAfterEndStreamResetsTheStream() throws Exception {
+        final var get = headersFrame(true, new Encoder(4096), withGet());
+        final var baseline = createLogic(get);
+        assertThrows(EndOfStreamException.class, baseline::handle);
+
+        final var in = new ByteArrayOutputStream();
+        in.write(get);
+        in.write(dataFrame(false, "a"));
+        in.write(dataFrame(false, "b"));
+        final var logic = createLogic(in.toByteArray());
+
+        assertThrows(EndOfStreamException.class, logic::handle, "A stream error does not close the connection.");
+
+        assertEquals(baseline.sender.getBufferedFrames() + 1, logic.sender.getBufferedFrames(), "One RST_STREAM is queued.");
+    }
+
+    /**
+     * The peer may apply our SETTINGS_INITIAL_WINDOW_SIZE of 131070 as soon as it receives it, before we know it did
+     * (RFC 9113 §6.9.2). So DATA within that window is accepted on a stream opened before the SETTINGS are acknowledged,
+     * although the stream started with the default window of 65535.
+     */
+    @Test
+    void dataWithinTheAnnouncedWindowIsAcceptedBeforeTheSettingsAreAcknowledged() throws Exception {
+        final var in = new ByteArrayOutputStream();
+        in.write(headersFrame(false, new Encoder(4096), ":method", "POST", ":scheme", "https", ":path", "/"));
+        for (int i = 0; i < 7; i++)
+            in.write(frame(0x0, 0, new byte[16384]));
+        in.write(frame(0x0, 0x1, new byte[131070 - 7 * 16384]));
+        final var handler = new RecordingHandler();
+
+        assertThrows(EndOfStreamException.class, () -> createLogic(in.toByteArray(), handler).handle());
+
+        assertEquals(131070, handler.message.getBody().getContent().length);
+    }
+
+    /**
      * A POST request declaring the given content-length, followed by the given frames. The encoders of the header
      * blocks do not need to share state: they add literals to the dynamic table, but never refer to it.
      */
@@ -301,6 +515,29 @@ class Http2LogicTest {
 
         assertNotNull(handler.message);
         assertEquals("/", ((Request) handler.message).getUri());
+        assertThrows(ReadingBodyException.class, handler.message.getBody()::read);
+    }
+
+    /**
+     * Trailers end the message: HEADERS without END_STREAM after the request's header block make the request malformed
+     * (RFC 9113 §8.1), a stream error of type PROTOCOL_ERROR. The request was already handed over, so its body fails.
+     */
+    @Test
+    void trailersWithoutEndStreamFailTheBody() throws Exception {
+        final var encoder = new Encoder(4096);
+        final var request = headersFrame(false, encoder, withGet());
+        final var baseline = createLogic(request);
+        assertThrows(EndOfStreamException.class, baseline::handle);
+
+        final var in = new ByteArrayOutputStream();
+        in.write(request);
+        in.write(headersFrame(false, encoder, "x-trailer", "1"));
+        final var handler = new RecordingHandler();
+        final var logic = createLogic(in.toByteArray(), handler);
+
+        assertThrows(EndOfStreamException.class, logic::handle, "A stream error does not close the connection.");
+
+        assertEquals(baseline.sender.getBufferedFrames() + 1, logic.sender.getBufferedFrames(), "RST_STREAM is queued.");
         assertThrows(ReadingBodyException.class, handler.message.getBody()::read);
     }
 

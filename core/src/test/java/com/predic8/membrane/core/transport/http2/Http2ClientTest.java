@@ -45,6 +45,7 @@ import java.util.concurrent.TimeUnit;
 import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.http.Request.post;
 import static com.predic8.membrane.core.transport.http2.frame.Error.ERROR_CANCEL;
+import static com.predic8.membrane.core.transport.http2.frame.Error.ERROR_FLOW_CONTROL_ERROR;
 import static com.predic8.membrane.core.transport.http2.frame.Error.ERROR_PROTOCOL_ERROR;
 import static com.predic8.membrane.core.transport.http2.frame.Frame.*;
 import static com.predic8.membrane.core.transport.http2.frame.DataFrame.FLAG_END_STREAM;
@@ -134,6 +135,66 @@ class Http2ClientTest {
             peer.getOutputStream().flush();
         });
         assertInstanceOf(StreamNotProcessedException.class, e);
+    }
+
+    /**
+     * A WINDOW_UPDATE that makes the stream window exceed 2^31-1 is a stream error of type FLOW_CONTROL_ERROR
+     * (RFC 9113 §6.9.1). The stream is reset, so no response will arrive and the call fails.
+     */
+    @Test
+    void windowUpdateBeyondTheMaximumFailsCall() throws Exception {
+        final var e = assertPendingCallFails((client, peer) -> {
+            peer.getOutputStream().write(new byte[]{0, 0, 4, TYPE_WINDOW_UPDATE, 0, 0, 0, 0, 1, 0x7F, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF});
+            peer.getOutputStream().flush();
+            assertEquals(ERROR_FLOW_CONTROL_ERROR, readUntilFrame(peer.getInputStream(), TYPE_RST_STREAM)[3]);
+        });
+        assertTrue(e.getMessage().contains("flow-control window"), e.getMessage());
+    }
+
+    /**
+     * DATA beyond the receive window, here even before the response headers, resets the stream with FLOW_CONTROL_ERROR
+     * (RFC 9113 §6.9.1). No response will arrive then, so the call fails. 8 frames exceed the 131070 bytes announced.
+     */
+    @Test
+    void dataBeyondTheWindowFailsCall() throws Exception {
+        final var e = assertPendingCallFails((client, peer) -> {
+            for (int i = 0; i < 8; i++) {
+                peer.getOutputStream().write(new byte[]{0, 0x40, 0, TYPE_DATA, 0, 0, 0, 0, 1});
+                peer.getOutputStream().write(new byte[16384]);
+            }
+            peer.getOutputStream().flush();
+            assertEquals(ERROR_FLOW_CONTROL_ERROR, readUntilFrame(peer.getInputStream(), TYPE_RST_STREAM)[3]);
+        });
+        assertTrue(e.getMessage().contains("flow-control window"), e.getMessage());
+    }
+
+    /**
+     * A connection error is reported with GOAWAY (RFC 9113 §5.4.1), and then the connection is closed: nothing else
+     * would close it, as its streams never reach the CLOSED state.
+     */
+    @Test
+    void connectionErrorSendsGoawayAndClosesTheConnection() throws Exception {
+        final var router = new DefaultRouter();
+        try (final var backend = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
+            backend.setSoTimeout(2000);
+            final var connection = createConnection(router, backend);
+            try (final var peer = backend.accept()) {
+                peer.setSoTimeout(2000);
+                final var client = new Http2Client(connection, false);
+                final var call = callAsync(client);
+
+                readUntilRequestHeaders(peer);
+                // PING with 7 bytes: FRAME_SIZE_ERROR
+                peer.getOutputStream().write(new byte[]{0, 0, 7, TYPE_PING, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7});
+                peer.getOutputStream().flush();
+
+                assertEquals(0x6, readUntilFrame(peer.getInputStream(), TYPE_GOAWAY)[7], "FRAME_SIZE_ERROR");
+                assertEquals(-1, peer.getInputStream().read(), "The connection is closed.");
+                assertThrows(ExecutionException.class, () -> call.get(2, TimeUnit.SECONDS));
+            }
+        } finally {
+            router.stop();
+        }
     }
 
     @Test

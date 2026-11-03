@@ -25,6 +25,7 @@ import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidF
 import static com.predic8.membrane.core.util.URLParamUtil.*;
 import static java.lang.String.*;
 import static java.util.Optional.*;
+import static com.predic8.membrane.core.util.text.TextUtil.escapeControlCharsForLog;
 
 /**
  * @description Extracts an API key from a URL query parameter. By default, the parameter name
@@ -51,7 +52,7 @@ public class ApiKeyQueryParamExtractor implements ApiKeyExtractor{
             queryParams = new TreeMap<>(CASE_INSENSITIVE_ORDER); // Handle key names case insensitive
             queryParams.putAll(getParams(new URIFactory(), exc, ERROR));
         } catch (Exception e) {
-            log.info("Error extracting query parameters. From " + exc.getRequest().getUri());
+            log.info("Error extracting query parameters. From {}", escapeControlCharsForLog(maskQueryValues(exc.getRequest().getUri())));
             return empty();
         }
 

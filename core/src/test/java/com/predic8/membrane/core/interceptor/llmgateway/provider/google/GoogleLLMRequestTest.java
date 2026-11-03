@@ -19,7 +19,6 @@ import org.junit.jupiter.params.provider.CsvSource;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.List;
 
 import static com.predic8.membrane.core.interceptor.llmgateway.provider.google.GoogleLLMRequest.X_GOOG_API_KEY;
 import static com.predic8.membrane.core.http.Request.post;
@@ -59,16 +58,15 @@ class GoogleLLMRequestTest {
 
     @Test
     void systemPromptRoundTrip() throws Exception {
-        var request = request("{}");
-        assertEquals("", request.getSystemPrompt());
+        var request = request("""
+                {"systemInstruction":{"parts":[{"text":"from client"},{"text":"more"}]}}""");
 
-        request.setSystemPrompts(List.of("one", "two"));
-        assertEquals("one\ntwo", request.getSystemPrompt());
-        assertEquals("one\ntwo", request.getJson()
-                .path("systemInstruction").path("parts").get(0).path("text").asText());
+        request.overwriteSystemPrompt("one");
+        var parts = request.getJson().path("systemInstruction").path("parts");
+        assertEquals(1, parts.size());
+        assertEquals("one", parts.get(0).path("text").asText());
 
         request.removeSystemPrompt();
-        assertEquals("", request.getSystemPrompt());
         assertFalse(request.getJson().has("systemInstruction"));
     }
 
