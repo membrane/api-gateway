@@ -169,10 +169,18 @@ public class GraphQLProtectionInterceptorTest {
                 "operationName": "q"}""";
         // Without the filter the document is valid, so a RETURN below can only come from the introspection check.
         verifyPost("/", APPLICATION_JSON, body, CONTINUE);
-        verifyPost(buildGraphQLProtectionInterceptor(List.of(new IntrospectionFilter())), "/",
+        final var gpi = buildGraphQLProtectionInterceptor(List.of(new IntrospectionFilter()));
+        verifyPost(gpi, "/",
                 APPLICATION_JSON,
                 body,
                 RETURN);
+        // An inline fragment without introspection is not rejected.
+        verifyPost(gpi, "/",
+                APPLICATION_JSON,
+                """
+                        {"query":"query q { ... on Query { x } }",
+                        "operationName": "q"}""",
+                CONTINUE);
     }
 
     @Test
