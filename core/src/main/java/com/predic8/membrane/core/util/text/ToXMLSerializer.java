@@ -33,7 +33,7 @@ public class ToXMLSerializer {
             case String s -> escapeXml11(s);
             case Node node -> nodeToString(node);
             case NodeList nl -> nodeListToString(nl);
-            default -> String.valueOf(o);
+            default -> escapeXml11(String.valueOf(o));
         };
     }
 

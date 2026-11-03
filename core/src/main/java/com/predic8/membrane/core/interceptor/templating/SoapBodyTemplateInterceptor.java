@@ -17,9 +17,11 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.util.soap.SoapVersion;
+import com.predic8.membrane.core.util.text.SerializationFunction;
 
 import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
 import static com.predic8.membrane.core.util.soap.SoapVersion.SOAP_11;
+import static com.predic8.membrane.core.util.text.SerializationFunction.XML_SERIALIZATION;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
@@ -76,6 +78,12 @@ public class SoapBodyTemplateInterceptor extends TemplateInterceptor {
     public String getContentType() {
         // A content type configured by the user takes precedence over the SOAP version default.
         return contentType != null ? contentType : version.getContentType();
+    }
+
+    @Override
+    protected SerializationFunction getEscaping() {
+        // The output is always a SOAP envelope, whatever the configured content type says.
+        return XML_SERIALIZATION;
     }
 
     public String getVersion() {
