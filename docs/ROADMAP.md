@@ -65,6 +65,19 @@ PRIO 3:
   - Keep the system property as a fallback, or deprecate it.
   - Document that zero or less means no limit.
   - Related: #3382 (a line over the limit gets a connection reset instead of 414/431), #3378 item 3 (8092 is probably a typo for 8192).
+- soapHeader interceptor
+  - Story: add or remove SOAP header blocks by configuration. Replaces the removed `add-soap-header` example, which needed a custom Java interceptor.
+  - Idea:
+    ```yaml
+    - soapHeader:
+        remove:
+          name: Security
+          namespaceUri: http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd
+        add: |
+          <ns1:token xmlns:ns1="http://example.com/auth">...</ns1:token>
+    ```
+  - Parse with the hardened XML parser.
+
 
 ## Membrane 8.0.0 (Java 25)
 
@@ -152,6 +165,12 @@ PRIO 3:
 - `groovy`: serialize a returned `List` to a JSON body like a `Map`
   - Story: since 7.9 the `javascript` plugin turns a returned array into a JSON body (`isListSerializedToJson()` in `AbstractScriptInterceptor`). `groovy` still ignores a returned `List`, so the two languages differ.
   - **Breaking**: `list.each {...}`, `collect` or `findAll` as the last statement returns a list, which then replaces the body. Name ending the script with `CONTINUE` in the release notes. Then remove the hook.
+- `template`: render `.xml` template files with the streaming engine and escape inserted values
+  - Story: a `template` whose `location` ends in `.xml` is rendered by Groovy's `XmlTemplateEngine`, which escapes only the template's own text. Values inserted with `${}`, also in attributes, and with `<gsp:expression>` are not escaped. All other templates use the adapted `StreamingTemplateEngine`, which escapes `${}` and `<%= %>` for the content type.
+  - Fix: drop `XmlTemplateEngine`. A `.xml` file only sets the content type to `application/xml` (as `.json` does for JSON) and is rendered by `StreamingTemplateEngine` with XML escaping. The output is no longer re-indented (`pretty: true` formats it). Check whether the built-in functions (`xpath()`, `user()`, ...) work in `.xml` files today; only the streaming engine sets the `fn` delegate.
+  - Raw XML stays possible as with inline templates: `<% out << x %>`, or a DOM node or node list, e.g. from `xpath()`.
+  - **Breaking**: `<gsp:scriptlet>` and `<gsp:expression>` are no longer processed. If a template declares the `http://groovy.codehaus.org/2005/gsp` namespace, fail at startup with a `ConfigurationException` that shows the rewrite (`<gsp:scriptlet>` → `<% %>`, `<gsp:expression>` → `${}`), so it is never output literally. Values that inserted markup through `${}` are escaped now. Comments are no longer removed. Rewrite `distribution/examples/templating/xml/template.xml`, or drop it with the examples.
+  - Until then, the `template` reference docs say that values in `.xml` files are not escaped.
 - Reorganisation of *Util* classes. Check for duplicates and right place.
 - WSDL validation: change the default of the `validator` attribute `headers` from `none` to `bound`
   - Story: 7.8 can validate SOAP header blocks (#3582) but leaves it off by default, so an update does not start rejecting messages whose headers passed before. With `bound`, the header blocks the WSDL binds with `soap:header` and `soap:headerfault` are validated against the WSDL's schemas.

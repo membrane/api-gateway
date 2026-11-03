@@ -9,7 +9,7 @@ Keep this file in sync when adding, renaming or removing a util class.
 | Class | Purpose |
 |---|---|
 | `StringUtil` | Truncate/tail, mask non-printable chars, add line numbers, split by comma, `yes`/`no` flag parsing, last element of a comma list |
-| `TextUtil` | Charset lookup, encoding detection from byte order mark or zero-byte pattern (`detectEncoding`), XML pretty-print, glob→regex, English list ("a, b and c"), capitalize, escape quotes, multiline indent handling (`unifyIndent`, `getLines`) |
+| `TextUtil` | Charset lookup, encoding detection from byte order mark or zero-byte pattern (`detectEncoding`), XML pretty-print, glob→regex, English list ("a, b and c"), capitalize, escape quotes, escape values for log lines (`escapeForLog` for quoted fields, `escapeControlCharsForLog` for untrusted values inside a message), multiline indent handling (`unifyIndent`, `getLines`) |
 | `SerializationUtil`, `SerializationFunction` | Pick a serializer by mime type or `Serialization`; path/header value encoding |
 | `ToJsonSerializer`, `ToTextSerializer`, `ToURLSerializer`, `ToXMLSerializer` | `Object` → JSON / plain text / URL-encoded / XML string |
 | `TerminalColors` | ANSI colors for console output, with global enable/disable |
@@ -28,7 +28,7 @@ Keep this file in sync when adding, renaming or removing a util class.
 | `URIUtil` | File path ↔ file URI conversion, path-char encoding, normalization |
 | `URIValidationUtil` | RFC 3986 character classes and host/port validation |
 | `URLUtil` | Authority, path+query, name component, port of a URL |
-| `URLParamUtil` | Query/form parameters from an `Exchange`; build, parse and encode query strings |
+| `URLParamUtil` | Query/form parameters from an `Exchange`; build, parse and encode query strings; mask query values for logging |
 | `UrlNormalizer` | Normalize a base URL |
 | `UriIllegalCharacterDetector` | Detect illegal characters in URIs |
 | `WebServerUtil` | Content type by file extension for static serving |

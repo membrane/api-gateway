@@ -34,6 +34,7 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
+import static com.predic8.membrane.core.util.text.TextUtil.escapeControlCharsForLog;
 
 
 /**
@@ -107,7 +108,7 @@ public class IdempotencyInterceptor extends AbstractLanguageInterceptor {
     }
 
     private Outcome handleDuplicateKey(Exchange exc, String key) {
-        log.info("Idempotency key {} has already been processed.", key);
+        log.info("Idempotency key {} has already been processed.", escapeControlCharsForLog(key));
         user(router.getConfiguration().isProduction(), "idempotency")
                 .status(409)
                 .detail("Idempotency key has already been processed.", true)
