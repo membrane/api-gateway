@@ -178,12 +178,15 @@ public class FrameSender implements Runnable {
     private Frame waitForNextFrame() throws InterruptedException {
         lock.lock();
         try {
+            // Checked under the lock: whoever queues a frame after this check signals only once we wait.
+            final var frame = getNextFrame();
+            if (frame != null)
+                return frame;
             hasFrame.await(1000, TimeUnit.MILLISECONDS);
         } finally {
             lock.unlock();
         }
-        Frame frame = getNextFrame();
-        return frame;
+        return getNextFrame();
     }
 
     @Override
@@ -200,8 +203,11 @@ public class FrameSender implements Runnable {
                     log.debug("found another frame to send.");
                 }
 
-                if (frame.getType() == TYPE_STOP)
+                if (frame.getType() == TYPE_STOP) {
+                    // Frames queued before stopping, e.g. GOAWAY, must not stay in the buffer when the connection closes.
+                    out.flush();
                     break;
+                }
 
                 if (frame.getType() == Frame.TYPE_DATA || frame.getType() == Frame.TYPE_HEADERS || frame.getType() == Frame.TYPE_RST_STREAM) {
                     final var streamInfo = streams.get(frame.getStreamId());
