@@ -1,0 +1,58 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.7.1.json
+#
+# Tutorial: Generate XML with Groovy
+#
+# Groovy's MarkupBuilder writes XML with code that looks like the document
+# itself: every method call becomes an element. Loops and conditions can be
+# mixed in, and special characters are escaped automatically.
+#
+# 1.) Start Membrane:
+#     with Docker:
+#       Linux/Mac:
+#         ./run-docker.sh -c 90-Groovy-Generate-XML.yaml
+#       Windows:
+#         run-docker.cmd -c 90-Groovy-Generate-XML.yaml
+#
+#     or with Java:
+#       Linux/Mac:
+#         ./membrane.sh -c 90-Groovy-Generate-XML.yaml
+#       Windows:
+#         membrane.cmd -c 90-Groovy-Generate-XML.yaml
+#
+# 2.) Send a JSON document:
+#     curl -d "{\"title\":\"Design Patterns\",\"year\":1994,\"authors\":[\"Erich Gamma\",\"Richard Helm\"]}" -H "Content-Type: application/json" localhost:2000
+#
+#     <book year="1994">
+#       <title>Design Patterns</title>
+#       <authors>
+#         <author>Erich Gamma</author>
+#         <author>Richard Helm</author>
+#       </authors>
+#     </book>
+
+api:
+  port: 2000
+  flow:
+    - request:
+        - groovy:
+            src: |
+              def writer = new StringWriter()
+              def xml = new groovy.xml.MarkupBuilder(writer)
+              xml.doubleQuotes = true
+
+              xml.book(year: json.year) {
+                title(json.title)
+                authors {
+                  json.authors.each { author(it) }
+                }
+              }
+
+              // A returned string becomes the new body.
+              writer.toString()
+        - setHeader:
+            name: Content-Type
+            value: application/xml
+    - return:
+        status: 200
+
+# NOTE: MarkupBuilder documentation: https://groovy-lang.org/processing-xml.html
