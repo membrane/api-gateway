@@ -91,19 +91,45 @@ public class URLParamUtil {
      * Masks the values of the query string so that a URI can be logged without the credentials it may carry,
      * e.g. {@code /foo?api-key=abc&x} becomes {@code /foo?api-key=***&***}. The query is split
      * textually, not parsed, so this also works for a query that failed to parse. Parameters without a
-     * {@code =} are masked completely, as the whole segment might be the secret.
+     * {@code =} are masked completely, as the whole segment might be the secret. The user info of an absolute
+     * URI, as a forward proxy receives it, is masked too: {@code http://user:password@host/} becomes
+     * {@code http://***@host/}.
      */
     public static String maskQueryValues(String uri) {
         if (uri == null)
             return null;
         final var idx = uri.indexOf('?');
         if (idx == -1)
-            return uri;
+            return maskUserInfo(uri);
         final var masked = new StringJoiner("&");
         for (final var segment : uri.substring(idx + 1).split("&", -1)) {
             masked.add(maskSegment(segment));
         }
-        return uri.substring(0, idx + 1) + masked;
+        return maskUserInfo(uri.substring(0, idx + 1)) + masked;
+    }
+
+    /**
+     * @param uri the part of a URI before its query
+     */
+    private static String maskUserInfo(String uri) {
+        final var schemeEnd = uri.indexOf("://");
+        if (schemeEnd <= 0 || containsAny(uri.substring(0, schemeEnd), "/#"))
+            return uri; // not an absolute URI
+        final var authorityStart = schemeEnd + 3;
+        var authorityEnd = uri.length();
+        for (final var delimiter : "/?#".toCharArray()) {
+            final var i = uri.indexOf(delimiter, authorityStart);
+            if (i != -1 && i < authorityEnd)
+                authorityEnd = i;
+        }
+        final var at = uri.lastIndexOf('@', authorityEnd - 1);
+        if (at < authorityStart)
+            return uri;
+        return uri.substring(0, authorityStart) + "***" + uri.substring(at);
+    }
+
+    private static boolean containsAny(String s, String chars) {
+        return s.chars().anyMatch(c -> chars.indexOf(c) != -1);
     }
 
     private static String maskSegment(String segment) {
