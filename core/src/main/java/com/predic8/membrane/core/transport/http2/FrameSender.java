@@ -178,12 +178,15 @@ public class FrameSender implements Runnable {
     private Frame waitForNextFrame() throws InterruptedException {
         lock.lock();
         try {
+            // Checked under the lock: whoever queues a frame after this check signals only once we wait.
+            final var frame = getNextFrame();
+            if (frame != null)
+                return frame;
             hasFrame.await(1000, TimeUnit.MILLISECONDS);
         } finally {
             lock.unlock();
         }
-        Frame frame = getNextFrame();
-        return frame;
+        return getNextFrame();
     }
 
     @Override
