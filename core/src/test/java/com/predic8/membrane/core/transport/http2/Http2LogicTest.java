@@ -198,6 +198,8 @@ class Http2LogicTest {
     /**
      * HEADERS on a stream reset because of a stream error, still in flight before the reset is written, are ignored
      * like its DATA. Otherwise, trailers ending the stream could close it first, and the reset would never be sent.
+     * Their header block is decoded all the same: the next request refers to the field it added to the HPACK dynamic
+     * table.
      */
     @Test
     void trailersOnAStreamResetForAStreamErrorAreIgnored() throws Exception {
@@ -206,13 +208,16 @@ class Http2LogicTest {
         in.write(headersFrame(false, encoder, withGet()));
         in.write(new byte[]{0, 0, 4, 0x8, 0, 0, 0, 0, 1, 0x7F, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF});
         in.write(headersFrame(true, encoder, "x-trailer", "1"));
+        in.write(headersFrame(3, true, encoder, withGet("x-trailer", "1")));
         final var handler = new RecordingHandler();
         final var logic = createLogic(in.toByteArray(), handler);
 
         assertThrows(EndOfStreamException.class, logic::handle);
 
-        assertFalse(handler.message.getBody().hasTrailer(), "The trailers are ignored.");
-        assertEquals(StreamState.OPEN, logic.streams.get(1).getState(), "Their END_STREAM is not applied: the reset closes the stream.");
+        final var reset = logic.streams.get(1);
+        assertFalse(reset.getMessage().getBody().hasTrailer(), "The trailers are ignored.");
+        assertEquals(StreamState.OPEN, reset.getState(), "Their END_STREAM is not applied: the reset closes the stream.");
+        assertEquals("1", handler.message.getHeader().getFirstValue("x-trailer"), "The HPACK dynamic table stayed in sync.");
     }
 
     private static byte[] pings(int count) {
