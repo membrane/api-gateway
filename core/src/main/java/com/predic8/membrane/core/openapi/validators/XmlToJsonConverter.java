@@ -409,14 +409,8 @@ public class XmlToJsonConverter {
             return om.getNodeFactory().textNode(text);
 
         return switch (type) {
-            case "integer" -> {
-                try { yield om.getNodeFactory().numberNode(Long.parseLong(text.trim())); }
-                catch (NumberFormatException e) { yield om.getNodeFactory().textNode(text); }
-            }
-            case "number" -> {
-                try { yield om.getNodeFactory().numberNode(Double.parseDouble(text.trim())); }
-                catch (NumberFormatException e) { yield om.getNodeFactory().textNode(text); }
-            }
+            case "integer" -> SchemaUtil.parseInteger(text);
+            case "number" -> SchemaUtil.parseNumber(text);
             case "boolean" -> {
                 // XML Schema xs:boolean has the lexical space {true, false, 1, 0} and is
                 // case-sensitive, so only these exact literals are valid (e.g. "True" is not).

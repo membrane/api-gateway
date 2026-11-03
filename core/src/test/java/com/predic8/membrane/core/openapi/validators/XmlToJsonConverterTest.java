@@ -17,6 +17,7 @@
 package com.predic8.membrane.core.openapi.validators;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.predic8.membrane.core.openapi.util.SchemaUtil;
 import com.predic8.membrane.core.util.xml.parser.XmlParseException;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -26,6 +27,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -67,6 +70,27 @@ class XmlToJsonConverterTest {
             assertTrue(node.get("active").isBoolean());
             assertTrue(node.get("active").asBoolean());
             assertEquals(19.99, node.get("total").asDouble(), 1e-9);
+        }
+
+        @Test
+        void numbersAreConvertedExactly() throws Exception {
+            final var node = converter.convert("""
+                    <order>
+                      <total>5.0000000000000000001</total>
+                      <count>123456789012345678901234567890</count>
+                    </order>
+                    """, obj().addProperty("total", number()).addProperty("count", integer()));
+
+            assertEquals(0, new BigDecimal("5.0000000000000000001").compareTo(node.get("total").decimalValue()));
+            assertEquals(new BigInteger("123456789012345678901234567890"), node.get("count").bigIntegerValue());
+        }
+
+        @Test
+        void numberLongerThanMaxLengthIsKeptAsText() throws Exception {
+            final var digits = "1".repeat(SchemaUtil.MAX_NUMBER_LENGTH + 1);
+            final var node = converter.convert("<order><total>%s</total></order>".formatted(digits),
+                    obj().addProperty("total", number()));
+            assertTrue(node.get("total").isTextual());
         }
 
         @Test

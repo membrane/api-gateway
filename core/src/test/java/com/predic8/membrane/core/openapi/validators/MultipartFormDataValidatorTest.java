@@ -28,6 +28,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
+import java.math.BigDecimal;
+import java.time.Duration;
 import java.util.Base64;
 import java.util.List;
 
@@ -499,6 +501,23 @@ public class MultipartFormDataValidatorTest extends AbstractValidatorTest {
         final var e = assertThrows(OpenAPIParsingException.class, () -> validateParts(schema, "field", "value"));
         assertTrue(e.getMessage().contains("patternProperties"), e::getMessage);
         assertTrue(e.getMessage().contains("'['"), e::getMessage);
+    }
+
+    @Test
+    void numberPartIsParsedExactly() throws ParseException {
+        final var schema = new ObjectSchema().addProperty("price", new Schema<>().type("number").maximum(new BigDecimal(5)));
+        final var errors = validateParts(schema, "price", "5.0000000000000000001");
+        assertEquals(1, errors.size(), errors::toString);
+        assertTrue(errors.getFirst().getMessage().contains("maximum"), errors::toString);
+    }
+
+    @Test
+    void numberPartLongerThanMaxLengthIsReported() {
+        final var schema = new ObjectSchema().addProperty("price", new Schema<>().type("number"));
+        final var digits = "1".repeat(1_000_000);
+        final var errors = assertTimeoutPreemptively(Duration.ofSeconds(2), () -> validateParts(schema, "price", digits));
+        assertEquals(1, errors.size(), errors::toString);
+        assertTrue(errors.getFirst().getMessage().contains("at most 1000"), errors::toString);
     }
 
     /**

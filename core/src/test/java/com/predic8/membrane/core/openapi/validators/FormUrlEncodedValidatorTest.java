@@ -28,6 +28,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 
 import java.math.BigDecimal;
 import java.net.URLEncoder;
+import java.time.Duration;
 import java.util.LinkedHashSet;
 import java.util.List;
 
@@ -382,6 +383,43 @@ public class FormUrlEncodedValidatorTest extends AbstractValidatorTest {
         var error = assertThrows(OpenAPIParsingException.class, () -> new FormUrlEncodedValidator(api).validate(
                 new ValidationContext(), new MediaType().schema(new Schema<>().$ref("#/components/schemas/Missing")), "a=b"));
         assertTrue(error.getMessage().contains("#/components/schemas/Missing"), error::getMessage);
+    }
+
+    @Test
+    void numberCloseToLimitIsRejected() {
+        var schema = new ObjectSchema().addProperty("price", new Schema<>().type("number").maximum(new BigDecimal(5)));
+        var errors = validateSchema(schema, "price=5.0000000000000000001");
+        assertEquals(1, errors.size(), errors::toString);
+        assertTrue(errors.getFirst().getMessage().contains("maximum"), errors::toString);
+    }
+
+    @Test
+    void integerBeyondLongIsCheckedAgainstMaximum() {
+        var schema = new ObjectSchema().addProperty("count", new Schema<>().type("integer").maximum(new BigDecimal(10)));
+        var errors = validateSchema(schema, "count=123456789012345678901");
+        assertEquals(1, errors.size(), errors::toString);
+        assertTrue(errors.getFirst().getMessage().contains("maximum"), errors::toString);
+    }
+
+    /**
+     * A number longer than the limit is reported by its length, without parsing it and without echoing it.
+     */
+    @ParameterizedTest
+    @CsvSource({"number", "integer"})
+    void numberLongerThanMaxLengthIsReported(String type) {
+        var schema = new ObjectSchema().addProperty("value", new Schema<>().type(type));
+        var body = "value=" + "1".repeat(1_000_000);
+        var errors = assertTimeoutPreemptively(Duration.ofSeconds(2), () -> validateSchema(schema, body));
+        assertEquals(1, errors.size(), errors::toString);
+        assertTrue(errors.getFirst().getMessage().contains("at most 1000"), errors::toString);
+        assertFalse(errors.getFirst().getMessage().contains("1111"), errors::toString);
+    }
+
+    @Test
+    void longNumberIsAcceptedAsString() {
+        var schema = new ObjectSchema().addProperty("value", new JsonSchema().types(new LinkedHashSet<>(List.of("number", "string"))));
+        var errors = validateSchema(schema, "value=" + "1".repeat(2000));
+        assertTrue(errors.isEmpty(), errors::toString);
     }
 
     @Test

@@ -23,6 +23,8 @@ import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.Schema;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -39,6 +41,12 @@ public class SchemaUtil {
      * and thread safe. Invalid regexes are not stored. See {@link #compilePatternPropertyRegex(String)}.
      */
     private static final Map<String, Pattern> PATTERN_PROPERTY_PATTERNS = new ConcurrentHashMap<>();
+
+    /**
+     * Longest text that is parsed as a number, the limit Jackson applies to numbers in JSON bodies by default
+     * ({@code StreamReadConstraints}). Parsing a number exactly takes quadratic time in its length.
+     */
+    public static final int MAX_NUMBER_LENGTH = 1000;
 
     /**
      * Looks up the schema referenced by {@code ref} under {@code #/components/schemas}.
@@ -241,14 +249,8 @@ public class SchemaUtil {
         if (type == null)
             return nf.textNode(text);
         return switch (type) {
-            case "integer" -> {
-                try { yield nf.numberNode(Long.parseLong(text.trim())); }
-                catch (NumberFormatException e) { yield nf.textNode(text); }
-            }
-            case "number" -> {
-                try { yield nf.numberNode(Double.parseDouble(text.trim())); }
-                catch (NumberFormatException e) { yield nf.textNode(text); }
-            }
+            case "integer" -> parseInteger(text);
+            case "number" -> parseNumber(text);
             case "boolean" -> switch (text.trim()) {
                 case "true" -> nf.booleanNode(true);
                 case "false" -> nf.booleanNode(false);
@@ -256,5 +258,41 @@ public class SchemaUtil {
             };
             default -> nf.textNode(text);
         };
+    }
+
+    /**
+     * Parses an integer exactly, also beyond the range of {@code long}. Text that is not an integer or longer than
+     * {@link #MAX_NUMBER_LENGTH} is kept as text, so the validator reports it.
+     */
+    public static JsonNode parseInteger(String text) {
+        final var trimmed = text.trim();
+        if (trimmed.length() <= MAX_NUMBER_LENGTH) {
+            try {
+                final var value = new BigInteger(trimmed);
+                return value.bitLength() < Long.SIZE
+                        ? JsonNodeFactory.instance.numberNode(value.longValue())
+                        : JsonNodeFactory.instance.numberNode(value);
+            } catch (NumberFormatException ignored) {
+                // Not an integer
+            }
+        }
+        return JsonNodeFactory.instance.textNode(text);
+    }
+
+    /**
+     * Parses a number exactly, without rounding it to a {@code double}. Text that is not a number, e.g.
+     * {@code NaN} or {@code 1d}, or longer than {@link #MAX_NUMBER_LENGTH} is kept as text, so the validator
+     * reports it.
+     */
+    public static JsonNode parseNumber(String text) {
+        final var trimmed = text.trim();
+        if (trimmed.length() <= MAX_NUMBER_LENGTH) {
+            try {
+                return JsonNodeFactory.instance.numberNode(new BigDecimal(trimmed));
+            } catch (NumberFormatException ignored) {
+                // Not a number
+            }
+        }
+        return JsonNodeFactory.instance.textNode(text);
     }
 }
