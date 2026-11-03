@@ -24,6 +24,7 @@ import java.util.regex.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
+import static com.predic8.membrane.core.util.text.TextUtil.escapeControlCharsForLog;
 import static java.net.URLDecoder.*;
 import static java.nio.charset.StandardCharsets.*;
 import static java.util.Collections.*;
@@ -81,9 +82,37 @@ public class URLParamUtil {
         try {
             return uriFactory.create(uri);
         } catch (URISyntaxException e) {
-            log.info("Error parsing query params: {} URI: {}", e.getMessage(), uri);
+            log.info("Error parsing query params: {} URI: {}", escapeControlCharsForLog(e.getReason()), escapeControlCharsForLog(maskQueryValues(uri)));
             throw e;
         }
+    }
+
+    /**
+     * Masks the values of the query string so that a URI can be logged without the credentials it may carry,
+     * e.g. {@code /foo?api-key=abc&x} becomes {@code /foo?api-key=***&***}. The query is split
+     * textually, not parsed, so this also works for a query that failed to parse. Parameters without a
+     * {@code =} are masked completely, as the whole segment might be the secret.
+     */
+    public static String maskQueryValues(String uri) {
+        if (uri == null)
+            return null;
+        final var idx = uri.indexOf('?');
+        if (idx == -1)
+            return uri;
+        final var masked = new StringJoiner("&");
+        for (final var segment : uri.substring(idx + 1).split("&", -1)) {
+            masked.add(maskSegment(segment));
+        }
+        return uri.substring(0, idx + 1) + masked;
+    }
+
+    private static String maskSegment(String segment) {
+        if (segment.isEmpty())
+            return segment;
+        final var eq = segment.indexOf('=');
+        if (eq == -1)
+            return "***";
+        return segment.substring(0, eq) + "=***";
     }
 
     public static String getStringParam(URIFactory uriFactory, Exchange exc, String name) throws Exception {

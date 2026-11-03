@@ -28,7 +28,7 @@ Keep this file in sync when adding, renaming or removing a util class.
 | `URIUtil` | File path ↔ file URI conversion, path-char encoding, normalization |
 | `URIValidationUtil` | RFC 3986 character classes and host/port validation |
 | `URLUtil` | Authority, path+query, name component, port of a URL |
-| `URLParamUtil` | Query/form parameters from an `Exchange`; build, parse and encode query strings |
+| `URLParamUtil` | Query/form parameters from an `Exchange`; build, parse and encode query strings; mask query values for logging |
 | `UrlNormalizer` | Normalize a base URL |
 | `UriIllegalCharacterDetector` | Detect illegal characters in URIs |
 | `WebServerUtil` | Content type by file extension for static serving |

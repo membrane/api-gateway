@@ -20,6 +20,7 @@ import org.junit.jupiter.api.*;
 import java.net.*;
 
 import static com.predic8.membrane.core.security.ApiKeySecurityScheme.In.*;
+import static com.predic8.membrane.test.TestAppender.captureLog;
 import static java.util.Optional.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -64,6 +65,13 @@ class ApiKeyQueryParamExtractorTest {
         assertEquals("123", lnv.key());
         assertEquals("ApiKey", lnv.name());
         assertEquals(QUERY, lnv.location());
+    }
+
+    @Test
+    void extractionErrorLogDoesNotContainKey() throws Exception {
+        final var log = captureLog(() -> aqeDefault.extract(getExchange("/foo/bar?api-key=%s&api-key=%s".formatted(API_KEY, API_KEY))));
+        assertTrue(log.contains("Error extracting query parameters. From /foo/bar?api-key=***&api-key=***"), log.getMessages().toString());
+        assertFalse(log.contains(API_KEY), log.getMessages().toString());
     }
 
     private static Exchange getExchange(String API_KEY) throws URISyntaxException {

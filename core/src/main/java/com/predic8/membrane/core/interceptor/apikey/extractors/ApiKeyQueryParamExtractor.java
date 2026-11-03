@@ -52,7 +52,7 @@ public class ApiKeyQueryParamExtractor implements ApiKeyExtractor{
             queryParams = new TreeMap<>(CASE_INSENSITIVE_ORDER); // Handle key names case insensitive
             queryParams.putAll(getParams(new URIFactory(), exc, ERROR));
         } catch (Exception e) {
-            log.info("Error extracting query parameters. From {}", escapeControlCharsForLog(exc.getRequest().getUri()));
+            log.info("Error extracting query parameters. From {}", escapeControlCharsForLog(maskQueryValues(exc.getRequest().getUri())));
             return empty();
         }
 
