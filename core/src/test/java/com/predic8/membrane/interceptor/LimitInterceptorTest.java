@@ -13,21 +13,28 @@
    limitations under the License. */
 package com.predic8.membrane.interceptor;
 
-import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.router.*;
-import org.jetbrains.annotations.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.interceptor.LimitInterceptor;
+import com.predic8.membrane.core.router.DummyTestRouter;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
-import java.io.*;
-import java.net.*;
-import java.util.zip.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URISyntaxException;
+import java.util.zip.DeflaterOutputStream;
+import java.util.zip.GZIPOutputStream;
 
 import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static java.nio.charset.StandardCharsets.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_FLOW;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static java.nio.charset.StandardCharsets.US_ASCII;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
 class LimitInterceptorTest {
@@ -133,6 +140,41 @@ class LimitInterceptorTest {
     void truncatedChunkedBodyIsAReadFailureNotARejection() throws Exception {
         final var exc = chunkedExchange(new ByteArrayInputStream("5\r\nsm".getBytes(US_ASCII)), null);
         assertThrows(ReadingBodyException.class, () -> li.handleRequest(exc));
+    }
+
+    @Test
+    void compressedXopIsLimitedBeforeMultipartParsing() throws Exception {
+        final var body = "--boundary\r\nContent-Type: application/xop+xml\r\nContent-ID: <root@test>\r\n\r\n"
+                + "<root>" + "x".repeat(100_000) + "</root>\r\n--boundary--\r\n";
+        final var compressed = deflate(body);
+        final var limit = new LimitInterceptor();
+        limit.setMaxBodyLength(1024);
+        limit.init(new DummyTestRouter());
+        final var exc = Request.post("/soap")
+                .body(java.util.Arrays.copyOf(compressed, compressed.length - 1))
+                .header(CONTENT_ENCODING, "deflate")
+                .header(CONTENT_TYPE, "multipart/related; type=\"application/xop+xml\"; boundary=boundary; start=\"<root@test>\"")
+                .buildExchange();
+        // The truncated checksum must never be reached: reject once decoded MIME exceeds the limit.
+        assertEquals(ABORT, limit.handleRequest(exc));
+        assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("Message is too large."));
+    }
+
+    @Test
+    void acceptedXopPreservesMultipartRepresentation() throws Exception {
+        final var body = "--boundary\r\nContent-Type: application/xop+xml; type=\"text/xml\"\r\n"
+                + "Content-ID: <root@test>\r\n\r\n<root/>\r\n--boundary--\r\n";
+        final var type = "multipart/related; type=\"application/xop+xml\"; boundary=boundary; start=\"<root@test>\"";
+        final var limit = new LimitInterceptor();
+        limit.setMaxBodyLength(1024);
+        limit.init(new DummyTestRouter());
+        final var exc = Request.post("/soap").body(deflate(body))
+                .header(CONTENT_ENCODING, "deflate").header(CONTENT_TYPE, type).buildExchange();
+        assertEquals(CONTINUE, limit.handleRequest(exc));
+        assertEquals(body, exc.getRequest().getBodyAsStringDecoded());
+        assertEquals(type, exc.getRequest().getHeader().getContentType());
+        assertNull(exc.getRequest().getHeader().getContentEncoding());
+        assertEquals(body.getBytes(UTF_8).length, exc.getRequest().getHeader().getContentLength());
     }
 
     private static void assertRejected(Exchange exc) {

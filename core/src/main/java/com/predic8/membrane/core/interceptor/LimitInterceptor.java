@@ -28,6 +28,7 @@ import java.io.InputStream;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.security;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.util.MessageUtil.getContentAsStream;
 
 /**
  * @description Enforces a maximum body size, rejecting oversized messages with a Problem Details 400 response.
@@ -38,6 +39,8 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
  * applied to the <b>decoded</b> (uncompressed) byte count, so Content-Encoding compression (gzip,
  * brotli, deflate) cannot be used to bypass it. The message is forwarded decoded, without
  * <code>Content-Encoding</code> and with a <code>Content-Length</code> that matches the decoded body.
+ * Multipart messages are measured and forwarded as decompressed MIME bytes, including headers,
+ * boundaries and attachments. XOP/MTOM reassembly is left to downstream consumers.
  * </p>
  * <p>See tutorials/security/60-SQL-Injection-Protection.yaml.</p>
  * @topic 3. Security and Validation
@@ -126,7 +129,9 @@ public class LimitInterceptor extends AbstractInterceptor {
 		// Reading to the end first lets the discard drain only what the decoder left unread, e.g. the
 		// last chunk after a deflate stream, so the connection stays in step.
 		final byte[] content;
-		try (final var limited = new LengthLimitingStream(msg.getBodyAsStreamDecoded())) {
+		// Limit decompression before any MIME parsing or XOP attachment buffering. Keeping the MIME
+		// representation also keeps the forwarded bytes consistent with the multipart Content-Type.
+		try (final var limited = new LengthLimitingStream(getContentAsStream(msg))) {
 			content = limited.readAllBytes();
 		} catch (LimitExceededException e) {
 			return tooLarge(exc);
