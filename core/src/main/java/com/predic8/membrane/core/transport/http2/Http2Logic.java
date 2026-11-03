@@ -581,11 +581,12 @@ public class Http2Logic {
             }
         }
 
-        if (refused || streamInfo.isRefused()) {
+        if (refused || streamInfo.isRefused() || streamInfo.isResetForStreamError()) {
             // Decoded all the same, so the HPACK dynamic table stays in sync.
             decoder.decode(getPackedHeaderStream(headerFrames), (name, value, sensitive) -> {});
             decoder.endHeaderBlock();
-            // HEADERS on a stream refused before, arriving before its reset was written, are ignored.
+            // HEADERS on a stream refused or reset for a stream error before, arriving before its reset was written, are
+            // ignored. Their END_STREAM could close the stream first, and the reset would then never be sent.
             if (!refused)
                 return;
             if (countPendingRefusedStreams() >= MAX_PENDING_REFUSED_STREAMS) {

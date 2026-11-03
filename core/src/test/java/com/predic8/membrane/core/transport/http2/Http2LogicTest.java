@@ -43,6 +43,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -192,6 +193,26 @@ class Http2LogicTest {
 
         assertEquals(65535, logic.streams.get(1).getPeerFlowControl().peerWindowSize);
         assertEquals(baseline.sender.getBufferedFrames() + 1, logic.sender.getBufferedFrames(), "One RST_STREAM is queued.");
+    }
+
+    /**
+     * HEADERS on a stream reset because of a stream error, still in flight before the reset is written, are ignored
+     * like its DATA. Otherwise, trailers ending the stream could close it first, and the reset would never be sent.
+     */
+    @Test
+    void trailersOnAStreamResetForAStreamErrorAreIgnored() throws Exception {
+        final var encoder = new Encoder(4096);
+        final var in = new ByteArrayOutputStream();
+        in.write(headersFrame(false, encoder, withGet()));
+        in.write(new byte[]{0, 0, 4, 0x8, 0, 0, 0, 0, 1, 0x7F, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF});
+        in.write(headersFrame(true, encoder, "x-trailer", "1"));
+        final var handler = new RecordingHandler();
+        final var logic = createLogic(in.toByteArray(), handler);
+
+        assertThrows(EndOfStreamException.class, logic::handle);
+
+        assertFalse(handler.message.getBody().hasTrailer(), "The trailers are ignored.");
+        assertEquals(StreamState.OPEN, logic.streams.get(1).getState(), "Their END_STREAM is not applied: the reset closes the stream.");
     }
 
     private static byte[] pings(int count) {
