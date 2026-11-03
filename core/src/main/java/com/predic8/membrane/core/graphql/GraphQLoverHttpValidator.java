@@ -353,6 +353,9 @@ public class GraphQLoverHttpValidator {
         if (fragment.isEmpty())
             return "Did not find fragment '" + fragmentName + "'.";
 
+        // fragmentNamesVisited holds the named fragments on the current path, so its size is the nesting depth.
+        if (fragmentNamesVisited.size() >= ExecutableDocument.MAX_FRAGMENT_NESTING)
+            return ExecutableDocument.FRAGMENTS_NESTED_TOO_DEEPLY;
         if (!fragmentNamesVisited.add(fragmentName))
             return "Fragment spreads form cycle ('" + fragmentName + "').";
         String err = checkSelections(ed, od, fragment.get().getSelections(), fieldStack, fragmentNamesVisited, budget);

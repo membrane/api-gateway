@@ -23,6 +23,15 @@ import java.util.*;
 import static com.predic8.membrane.core.graphql.Tokenizer.Type.*;
 
 public class ExecutableDocument {
+
+    /**
+     * Maximum number of named fragments spread inside each other. Traversals that expand fragments recurse once per
+     * level, so an unbounded chain of fragments could overflow the thread stack.
+     */
+    public static final int MAX_FRAGMENT_NESTING = 50;
+
+    public static final String FRAGMENTS_NESTED_TOO_DEEPLY = "Fragments are nested too deeply.";
+
     final List<ExecutableDefinition> executableDefinitions = new ArrayList<>();
 
     /**
@@ -125,26 +134,29 @@ public class ExecutableDocument {
      * the size of the document even for cyclic or repeatedly spread fragments.
      * </p>
      *
-     * @throws GraphQLOverHttpValidationException if a spread references a fragment that is not defined
+     * @throws GraphQLOverHttpValidationException if a spread references a fragment that is not defined, or named
+     *                                            fragments are nested deeper than {@link #MAX_FRAGMENT_NESTING}
      */
     public List<Field> collectFields(List<Selection> selections) {
         final var fields = new ArrayList<Field>();
-        collectFields(selections, new HashSet<>(), fields);
+        collectFields(selections, new HashSet<>(), fields, 0);
         return fields;
     }
 
-    private void collectFields(List<Selection> selections, Set<String> visitedFragments, List<Field> fields) {
+    private void collectFields(List<Selection> selections, Set<String> visitedFragments, List<Field> fields, int fragmentNesting) {
         if (selections == null)
             return;
         for (final var selection : selections) {
             if (selection instanceof Field field) {
                 fields.add(field);
             } else if (selection instanceof InlineFragment inlineFragment) {
-                collectFields(inlineFragment.getSelections(), visitedFragments, fields);
+                collectFields(inlineFragment.getSelections(), visitedFragments, fields, fragmentNesting);
             } else if (selection instanceof FragmentSpread spread && visitedFragments.add(spread.getFragmentName())) {
+                if (fragmentNesting >= MAX_FRAGMENT_NESTING)
+                    throw new GraphQLOverHttpValidationException(FRAGMENTS_NESTED_TOO_DEEPLY);
                 collectFields(getFragmentDefinition(spread.getFragmentName())
                         .orElseThrow(() -> new GraphQLOverHttpValidationException("Did not find fragment '%s'.".formatted(spread.getFragmentName())))
-                        .getSelections(), visitedFragments, fields);
+                        .getSelections(), visitedFragments, fields, fragmentNesting + 1);
             }
         }
     }

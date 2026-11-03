@@ -17,16 +17,19 @@ import com.predic8.membrane.core.router.DummyTestRouter;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.graphql.blocklist.FeatureBlocklist;
 import com.predic8.membrane.core.graphql.blocklist.filters.*;
+import com.predic8.membrane.core.graphql.model.ExecutableDocument;
 import com.predic8.membrane.core.graphql.model.OperationDefinition;
 import com.predic8.membrane.core.graphql.model.OperationType;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.Outcome;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
 
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
@@ -531,6 +534,59 @@ public class GraphQLProtectionInterceptorTest {
                 {"query":"%s", "operationName": "q"}""".formatted(query);
 
         assertTimeoutPreemptively(Duration.ofSeconds(5), () -> verifyPost("/", APPLICATION_JSON, body, RETURN));
+    }
+
+    @Test
+    void depthCheckRejectsLongFragmentChain() throws Throwable {
+        final var body = """
+                {"query":"query q { ...F0 }%s", "operationName": "q"}""".formatted(fragmentChain("Query", 100_000));
+        // The selection budget stops the walk after 10,000 visits. Whether that is reached before a stack overflow
+        // depends on JIT state; a small fixed stack makes the overflow deterministic as long as nesting is unbounded.
+        runWithStackSize(256 * 1024, () -> verifyPost("/", APPLICATION_JSON, body, RETURN));
+    }
+
+    private static void runWithStackSize(long stackSize, Executable executable) throws Throwable {
+        final var failure = new AtomicReference<Throwable>();
+        final var thread = new Thread(null, () -> {
+            try {
+                executable.execute();
+            } catch (Throwable t) {
+                failure.set(t);
+            }
+        }, "small-stack", stackSize);
+        thread.start();
+        thread.join();
+        if (failure.get() != null)
+            throw failure.get();
+    }
+
+    @Test
+    void mutationCountRejectsLongFragmentChain() throws Exception {
+        verifyPost("/", APPLICATION_JSON, """
+                {"query":"mutation m { ...F0 }%s", "operationName": "m"}""".formatted(fragmentChain("Mutation", 100_000)), RETURN);
+    }
+
+    @Test
+    void depthCheckAllowsMaxFragmentNesting() throws Exception {
+        // F0 to F{MAX - 1}: exactly MAX_FRAGMENT_NESTING fragments inside each other.
+        verifyPost("/", APPLICATION_JSON, """
+                {"query":"query q { ...F0 }%s", "operationName": "q"}""".formatted(fragmentChain("Query", ExecutableDocument.MAX_FRAGMENT_NESTING - 1)), CONTINUE);
+    }
+
+    @Test
+    void depthCheckRejectsFragmentNestingAboveMax() throws Exception {
+        verifyPost("/", APPLICATION_JSON, """
+                {"query":"query q { ...F0 }%s", "operationName": "q"}""".formatted(fragmentChain("Query", ExecutableDocument.MAX_FRAGMENT_NESTING)), RETURN);
+    }
+
+    /**
+     * Fragments F0 to F{length} where each one spreads the next and the last one selects field x.
+     */
+    static String fragmentChain(String type, int length) {
+        final var chain = new StringBuilder();
+        for (var n = 0; n < length; n++)
+            chain.append(" fragment F%d on %s { ...F%d }".formatted(n, type, n + 1));
+        return chain.append(" fragment F%d on %s { x }".formatted(length, type)).toString();
     }
 
     @Test

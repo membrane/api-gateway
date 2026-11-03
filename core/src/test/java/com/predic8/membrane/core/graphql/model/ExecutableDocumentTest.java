@@ -105,6 +105,33 @@ class ExecutableDocumentTest {
     }
 
     @Test
+    void collectFieldsRejectsLongFragmentChain() {
+        assertThrows(GraphQLOverHttpValidationException.class, () -> collectRootFieldNames(nestedFragments(100_000)));
+    }
+
+    @Test
+    void collectFieldsAllowsMaxFragmentNesting() throws Exception {
+        assertEquals(List.of("x"), collectRootFieldNames(nestedFragments(ExecutableDocument.MAX_FRAGMENT_NESTING)));
+    }
+
+    @Test
+    void collectFieldsRejectsFragmentNestingAboveMax() {
+        final var e = assertThrows(GraphQLOverHttpValidationException.class,
+                () -> collectRootFieldNames(nestedFragments(ExecutableDocument.MAX_FRAGMENT_NESTING + 1)));
+        assertEquals(ExecutableDocument.FRAGMENTS_NESTED_TOO_DEEPLY, e.getMessage());
+    }
+
+    /**
+     * A query spreading F1, where each fragment spreads the next one and F{depth} selects field x.
+     */
+    private static String nestedFragments(int depth) {
+        final var doc = new StringBuilder("query { ...F1 }");
+        for (var n = 1; n < depth; n++)
+            doc.append(" fragment F%d on Query { ...F%d }".formatted(n, n + 1));
+        return doc.append(" fragment F%d on Query { x }".formatted(depth)).toString();
+    }
+
+    @Test
     void collectFieldsFailsOnUndefinedFragment() throws Exception {
         final var e = assertThrows(GraphQLOverHttpValidationException.class, () -> collectRootFieldNames("query { ...missing }"));
         assertEquals("Did not find fragment 'missing'.", e.getMessage());
