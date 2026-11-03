@@ -92,6 +92,52 @@ public class ExecutableDocument {
                 .toList();
     }
 
+    public @NotNull List<FragmentDefinition> getFragmentDefinitions() {
+        return executableDefinitions.stream()
+                .filter(ed -> ed instanceof FragmentDefinition)
+                .map(ed -> (FragmentDefinition) ed)
+                .toList();
+    }
+
+    public Optional<FragmentDefinition> getFragmentDefinition(String name) {
+        return getFragmentDefinitions().stream()
+                .filter(fd -> name.equals(fd.getName()))
+                .findAny();
+    }
+
+    /**
+     * Returns the fields that are executed for a selection set, following the GraphQL algorithm
+     * <a href="https://spec.graphql.org/October2021/#CollectFields()">CollectFields</a>: inline fragments and named
+     * fragment spreads are expanded in place, the sub-selections of fields are not entered.
+     * <p>
+     * Like in the specification, a named fragment is expanded only once per call. This keeps the result linear in
+     * the size of the document even for cyclic or repeatedly spread fragments.
+     * </p>
+     *
+     * @throws GraphQLOverHttpValidationException if a spread references a fragment that is not defined
+     */
+    public List<Field> collectFields(List<Selection> selections) {
+        final var fields = new ArrayList<Field>();
+        collectFields(selections, new HashSet<>(), fields);
+        return fields;
+    }
+
+    private void collectFields(List<Selection> selections, Set<String> visitedFragments, List<Field> fields) {
+        if (selections == null)
+            return;
+        for (final var selection : selections) {
+            if (selection instanceof Field field) {
+                fields.add(field);
+            } else if (selection instanceof InlineFragment inlineFragment) {
+                collectFields(inlineFragment.getSelections(), visitedFragments, fields);
+            } else if (selection instanceof FragmentSpread spread && visitedFragments.add(spread.getFragmentName())) {
+                collectFields(getFragmentDefinition(spread.getFragmentName())
+                        .orElseThrow(() -> new GraphQLOverHttpValidationException("Did not find fragment '%s'.".formatted(spread.getFragmentName())))
+                        .getSelections(), visitedFragments, fields);
+            }
+        }
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

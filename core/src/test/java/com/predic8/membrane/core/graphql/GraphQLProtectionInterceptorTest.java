@@ -67,6 +67,59 @@ public class GraphQLProtectionInterceptorTest {
     }
 
     @Test
+    void blockSpecificMutationInInlineFragment() throws Exception {
+        verifyBlockedByMutationFilter("""
+                {"query":"mutation m { ... on Mutation { updateCategory(id: 6, name: \\"Changed\\") { id } } }",
+                "operationName": "m"}""");
+    }
+
+    @Test
+    void blockSpecificMutationInNamedFragment() throws Exception {
+        verifyBlockedByMutationFilter("""
+                {"query":"mutation m { ...F } fragment F on Mutation { updateCategory(id: 6, name: \\"Changed\\") { id } }",
+                "operationName": "m"}""");
+    }
+
+    private void verifyBlockedByMutationFilter(String body) throws Exception {
+        // Without the filter the document is valid, so a RETURN below can only come from the mutation filter.
+        verifyPost("/", APPLICATION_JSON, body, CONTINUE);
+        verifyPost(buildGraphQLProtectionInterceptor(List.of(new MutationFilter() {{
+                    setName("updateCategory");
+                }})), "/",
+                APPLICATION_JSON,
+                body,
+                RETURN);
+    }
+
+    @Test
+    void maxMutationsCountsFieldsInInlineFragment() throws Exception {
+        verifyExceedsMaxMutationsOfOne("""
+                {"query":"mutation m { ... on Mutation { a: addItem(name: \\"A\\") b: addItem(name: \\"B\\") } }",
+                "operationName": "m"}""");
+    }
+
+    @Test
+    void maxMutationsCountsFieldsInNamedFragment() throws Exception {
+        verifyExceedsMaxMutationsOfOne("""
+                {"query":"mutation m { ...F } fragment F on Mutation { a: addItem(name: \\"A\\") b: addItem(name: \\"B\\") }",
+                "operationName": "m"}""");
+    }
+
+    private void verifyExceedsMaxMutationsOfOne(String body) throws Exception {
+        final var gpi = new GraphQLProtectionInterceptor() {{
+            setMaxMutations(1);
+        }};
+        gpi.init(router);
+        // The same two mutations without a fragment exceed the limit.
+        verifyPost(gpi, "/", APPLICATION_JSON, """
+                {"query":"mutation m { a: addItem(name: \\"A\\") b: addItem(name: \\"B\\") }",
+                "operationName": "m"}""", RETURN);
+        // With the default limit of 5 the document is valid, so a RETURN below can only come from the mutation count.
+        verifyPost("/", APPLICATION_JSON, body, CONTINUE);
+        verifyPost(gpi, "/", APPLICATION_JSON, body, RETURN);
+    }
+
+    @Test
     void ok_POST() throws Exception {
         verifyPost("/",
                 APPLICATION_JSON,
@@ -101,6 +154,19 @@ public class GraphQLProtectionInterceptorTest {
                 APPLICATION_JSON,
                 """
                         {"query":"{ __type(name: \\"Mutation\\") { fields() { name description args { name description type { name kind ofType { name kind } } } } } }"}""",
+                RETURN);
+    }
+
+    @Test
+    void blockIntrospectionInNamedFragment() throws Exception {
+        final var body = """
+                {"query":"query q { ...F } fragment F on Query { __schema { types { name } } }",
+                "operationName": "q"}""";
+        // Without the filter the document is valid, so a RETURN below can only come from the introspection check.
+        verifyPost("/", APPLICATION_JSON, body, CONTINUE);
+        verifyPost(buildGraphQLProtectionInterceptor(List.of(new IntrospectionFilter())), "/",
+                APPLICATION_JSON,
+                body,
                 RETURN);
     }
 

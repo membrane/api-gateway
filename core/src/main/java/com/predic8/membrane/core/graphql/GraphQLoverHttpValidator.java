@@ -107,7 +107,7 @@ public class GraphQLoverHttpValidator {
     }
 
     private void checkMutations(ExecutableDocument ed) {
-        if (countMutations(ed.getExecutableDefinitions()) > maxMutations)
+        if (countMutations(ed) > maxMutations)
             throw new GraphQLOverHttpValidationException("Too many mutations defined in document.");
     }
 
@@ -268,8 +268,14 @@ public class GraphQLoverHttpValidator {
         }
     }
 
-    public static int countMutations(List<ExecutableDefinition> definitions) {
-        return (int) getMutationOperations(definitions).map(OperationDefinition::getSelections).mapToLong(List::size).sum();
+    /**
+     * Counts the mutation fields of all mutation operations, with fragments expanded. Fields that GraphQL would merge
+     * (same response key) are counted separately, so the result is never lower than the number of executed mutations.
+     */
+    public static int countMutations(ExecutableDocument ed) {
+        return getMutationOperations(ed.getExecutableDefinitions())
+                .mapToInt(mutation -> ed.collectFields(mutation.getSelections()).size())
+                .sum();
     }
 
     public static @NotNull Stream<OperationDefinition> getMutationOperations(List<ExecutableDefinition> definitions) {
@@ -320,11 +326,7 @@ public class GraphQLoverHttpValidator {
     private String checkFragmentSpread(FragmentSpread fragmentSpread, ExecutableDocument ed, OperationDefinition od, List<String> fieldStack, HashSet<String> fragmentNamesVisited) {
         String fragmentName = fragmentSpread.getFragmentName();
 
-        Optional<FragmentDefinition> fragment = ed.getExecutableDefinitions().stream()
-                .filter(ed2 -> ed2 instanceof FragmentDefinition)
-                .map(ed2 -> (FragmentDefinition) ed2)
-                .filter(ed2 -> fragmentName.equals(ed2.getName()))
-                .findAny();
+        final var fragment = ed.getFragmentDefinition(fragmentName);
 
         if (fragment.isEmpty())
             return "Did not find fragment '" + fragmentName + "'.";

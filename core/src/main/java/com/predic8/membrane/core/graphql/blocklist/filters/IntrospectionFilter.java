@@ -27,6 +27,10 @@ public class IntrospectionFilter implements GraphQLFeatureFilter {
         ed.getOperationDefinitions().forEach(operation ->
                 checkSelections(operation.getSelections())
         );
+        // Named fragment spreads are not followed: every fragment definition is checked here instead.
+        ed.getFragmentDefinitions().forEach(fragment ->
+                checkSelections(fragment.getSelections())
+        );
     }
 
     private void checkSelections(List<Selection> selections) throws GraphQLOverHttpValidationException {
