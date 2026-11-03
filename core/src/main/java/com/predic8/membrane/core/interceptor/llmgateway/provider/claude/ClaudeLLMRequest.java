@@ -14,6 +14,8 @@
 
 package com.predic8.membrane.core.interceptor.llmgateway.provider.claude;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.AbstractModelInputRequest;
@@ -21,9 +23,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.List;
 
 import static com.predic8.membrane.core.http.Header.ACCEPT_ENCODING;
+import static com.predic8.membrane.core.interceptor.llmgateway.provider.TokenEstimator.*;
 
 /**
  * system field for system prompt
@@ -35,6 +37,16 @@ public class ClaudeLLMRequest extends AbstractModelInputRequest {
     public static final String X_API_KEY = "x-api-key";
 
     private static final String IDENTITY = "identity";
+
+    /**
+     * What an image counts for: about 1000 tokens.
+     */
+    private static final long FLAT_BLOCK_CHARS = 4000;
+
+    /**
+     * What a PDF counts for: one page, which Anthropic bills at about 1500 tokens or more.
+     */
+    private static final long PDF_PAGE_CHARS = 5220;
 
     public ClaudeLLMRequest(Exchange exchange) throws IOException {
         super(exchange);
@@ -74,37 +86,49 @@ public class ClaudeLLMRequest extends AbstractModelInputRequest {
         }
     }
 
+    /**
+     * Counts everything Anthropic bills as input: the system prompt as text or as text blocks, the
+     * tool definitions and every content block of the messages, including tool calls and their results.
+     */
     @Override
     public long estimateInputTokens() {
-        // System prompt
-        long tokens = json.path("system").asText().length() / 4;
-
-        // Messages
+        var chars = countText(json.path("system")) + countJsonSize(json.path("tools"));
         for (var message : json.path("messages")) {
-            var content = message.path("content");
-            if (content.isTextual()) {
-                tokens += content.asText().length() / 4;
-            } else if (content.isArray()) {
-                for (var block : content) {
-                    var type = block.path("type").asText();
-                    if (type.equals("text")) {
-                        tokens += block.path("text").asText().length() / 4;
-                    } else if (type.equals("image")) {
-                        tokens += 1000;
-                    }
-                }
-            }
+            chars += countContent(message.path("content"));
         }
-        return tokens;
+        return charsToTokens(chars);
+    }
+
+    private static long countContent(JsonNode content) {
+        if (!content.isArray())
+            return countText(content);
+        long chars = 0;
+        for (var block : content) {
+            chars += countBlock(block);
+        }
+        return chars;
+    }
+
+    private static long countBlock(JsonNode block) {
+        return switch (block.path("type").asText()) {
+            case "image" -> FLAT_BLOCK_CHARS;
+            case "document" -> countText(block.path("title")) + countText(block.path("context")) + countDocument(block.path("source"));
+            case "tool_use" -> countJsonSize(block.path("input"));
+            case "tool_result" -> countContent(block.path("content"));
+            case "thinking" -> countText(block.path("thinking"));
+            default -> countText(block);
+        };
     }
 
     /**
-     * Returns the system prompt from the top-level {@code "system"} field,
-     * or an empty string if no system prompt is set.
+     * A PDF is billed by its pages, which cannot be told from the request, so it counts for one page.
      */
-    @Override
-    public String getSystemPrompt() {
-        return json.path("system").asText("");
+    private static long countDocument(JsonNode source) {
+        return switch (source.path("type").asText()) {
+            case "text" -> countText(source.path("data"));
+            case "content" -> countContent(source.path("content"));
+            default -> PDF_PAGE_CHARS;
+        };
     }
 
     private boolean isThinking() {
@@ -132,15 +156,49 @@ public class ClaudeLLMRequest extends AbstractModelInputRequest {
         return false;
     }
 
+    @Override
+    public void overwriteSystemPrompt(String prompt) {
+        json.put("system", prompt);
+    }
+
     /**
-     * Concatenates all prompts (newline-separated) into the top-level {@code "system"} field.
-     *
-     * <p>Claude API wire format:
-     * <pre>{@code { "system": "prompt 1\nprompt 2", "messages": [...] }}</pre>
+     * An empty prompt leaves the client's system prompt as it was sent: Anthropic rejects empty text blocks.
      */
     @Override
-    public void setSystemPrompts(List<String> prompts) {
-        json.put("system", String.join("\n", prompts));
+    public void prependSystemPrompt(String prompt) {
+        if (prompt.isEmpty())
+            return;
+        systemBlocks().insert(0, textBlock(prompt));
+    }
+
+    /**
+     * An empty prompt leaves the client's system prompt as it was sent: Anthropic rejects empty text blocks.
+     */
+    @Override
+    public void appendSystemPrompt(String prompt) {
+        if (prompt.isEmpty())
+            return;
+        systemBlocks().add(textBlock(prompt));
+    }
+
+    /**
+     * The {@code "system"} field as text blocks, so that a prompt can be added next to the client's
+     * blocks without touching them and their {@code cache_control}. A string is turned into one block.
+     */
+    private ArrayNode systemBlocks() {
+        var system = json.get("system");
+        if (system instanceof ArrayNode blocks) {
+            return blocks;
+        }
+        var blocks = json.putArray("system");
+        if (system != null && system.isTextual() && !system.asText().isEmpty()) {
+            blocks.add(textBlock(system.asText()));
+        }
+        return blocks;
+    }
+
+    private ObjectNode textBlock(String text) {
+        return json.objectNode().put("type", "text").put("text", text);
     }
 
     /**

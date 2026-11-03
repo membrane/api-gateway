@@ -35,8 +35,11 @@ import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.JSONPATH;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
+import static com.predic8.membrane.test.TestAppender.captureLog;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class IdempotencyInterceptorTest {
 
@@ -78,6 +81,17 @@ class IdempotencyInterceptorTest {
         assertEquals(409, duplicate.getResponse().getStatusCode());
         final var json = new ObjectMapper().readTree(duplicate.getResponse().getBodyAsStringDecoded());
         assertEquals("Idempotency key has already been processed.", json.get("detail").asText());
+    }
+
+    @Test
+    void duplicateKeyIsLoggedWithEscapedLineBreaks() throws Exception {
+        final var body = "{\"id\": \"abc\\nFORGED log line\"}";
+        assertEquals(CONTINUE, i.handleRequest(put("").body(body).contentType(APPLICATION_JSON).buildExchange()));
+
+        final var log = captureLog(() -> i.handleRequest(put("").body(body).contentType(APPLICATION_JSON).buildExchange()));
+
+        assertTrue(log.contains("abc\\nFORGED log line"), log.getMessages().toString());
+        assertFalse(log.contains("\nFORGED"), log.getMessages().toString());
     }
 
     @Test

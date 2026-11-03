@@ -14,15 +14,20 @@
 
 package com.predic8.membrane.core.interceptor.llmgateway.provider.chatcompletions;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.openai.AbstractOpenAiLLMRequest;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Set;
 
 import static java.util.Collections.emptyList;
 
 public class ChatCompletionsRequest extends AbstractOpenAiLLMRequest {
+
+    private static final Set<String> SYSTEM_ROLES = Set.of("system", "developer");
 
     public ChatCompletionsRequest(Exchange exchange) throws IOException {
         super(exchange);
@@ -55,57 +60,69 @@ public class ChatCompletionsRequest extends AbstractOpenAiLLMRequest {
     }
 
     /**
-     * Returns the content of the first {@code "role": "system"} message,
-     * or an empty string if none is present.
-     */
-    @Override
-    public String getSystemPrompt() {
-        for (var message : json.path("messages")) {
-            if ("system".equals(message.path("role").asText())) {
-                return message.path("content").asText("");
-            }
-        }
-        return "";
-    }
-
-    /**
-     * Replaces all system messages with one separate {@code {"role":"system","content":"..."}} message
-     * per prompt, prepended to the messages array in list order.
+     * Replaces all system and developer messages with one system message at the start.
      *
      * <p>Chat Completions API wire format:
      * <pre>{@code
      * { "messages": [
-     *     {"role": "system", "content": "prompt 1"},
-     *     {"role": "system", "content": "prompt 2"},
+     *     {"role": "system", "content": "prompt"},
      *     ...user messages...
      * ]}
      * }</pre>
      */
     @Override
-    public void setSystemPrompts(List<String> prompts) {
+    public void overwriteSystemPrompt(String prompt) {
         removeSystemPrompt();
-        var messages = json.withArray("messages");
-        // Insert in reverse so that prompts[0] ends up at index 0
-        for (int i = prompts.size() - 1; i >= 0; i--) {
-            var systemMessage = json.objectNode();
-            systemMessage.put("role", "system");
-            systemMessage.put("content", prompts.get(i));
-            messages.insert(0, systemMessage);
-        }
+        json.withArray("messages").insert(0, systemMessage(prompt));
     }
 
     /**
-     * Removes all {@code "role": "system"} messages from the {@code "messages"} array.
+     * Adds a system message of its own, so the client's system messages stay as they were sent. An
+     * empty prompt adds nothing.
+     */
+    @Override
+    public void prependSystemPrompt(String prompt) {
+        if (prompt.isEmpty())
+            return;
+        json.withArray("messages").insert(0, systemMessage(prompt));
+    }
+
+    /**
+     * Adds a system message after the system messages the conversation starts with.
+     */
+    @Override
+    public void appendSystemPrompt(String prompt) {
+        if (prompt.isEmpty())
+            return;
+        var messages = json.withArray("messages");
+        var index = 0;
+        while (index < messages.size() && isSystemMessage(messages.get(index))) {
+            index++;
+        }
+        messages.insert(index, systemMessage(prompt));
+    }
+
+    /**
+     * Removes all system and developer messages from the {@code "messages"} array. Newer OpenAI
+     * models take the system prompt as a developer message.
      * Has no effect if no system message is present.
      */
     @Override
     public void removeSystemPrompt() {
         var messages = json.withArray("messages");
         for (int i = messages.size() - 1; i >= 0; i--) {
-            if ("system".equals(messages.get(i).path("role").asText())) {
+            if (isSystemMessage(messages.get(i))) {
                 messages.remove(i);
             }
         }
+    }
+
+    private static boolean isSystemMessage(JsonNode message) {
+        return SYSTEM_ROLES.contains(message.path("role").asText());
+    }
+
+    private ObjectNode systemMessage(String prompt) {
+        return json.objectNode().put("role", "system").put("content", prompt);
     }
 
     @Override

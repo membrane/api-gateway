@@ -26,6 +26,7 @@ import org.jose4j.jws.JsonWebSignature;
 import org.jose4j.jwt.JwtClaims;
 import org.jose4j.lang.JoseException;
 import org.junit.jupiter.api.Named;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -34,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import static com.predic8.membrane.test.TestAppender.captureLog;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class JwtAuthInterceptorTest{
@@ -284,6 +286,27 @@ public class JwtAuthInterceptorTest{
         interceptor.handleRequest(exc);
 
         data.asserts().accept(exc);
+    }
+
+    @Test
+    void unknownKidIsLoggedWithEscapedLineBreaks() throws Exception {
+        final var privateKey = RsaJwkGenerator.generateJwk(2048);
+        privateKey.setKeyId(KID);
+        final var publicOnly = new RsaJsonWebKey(privateKey.getRsaPublicKey());
+        publicOnly.setKeyId(KID);
+        final var interceptor = prepareInterceptor(publicOnly);
+
+        privateKey.setKeyId("unknown\nFORGED log line");
+        final var exc = new Request.Builder()
+                .get("")
+                .header("Authorization", "Bearer " + getSignedJwt(privateKey))
+                .buildExchange();
+
+        final var log = captureLog(() -> interceptor.handleRequest(exc));
+
+        assertEquals(JwtAuthInterceptor.ERROR_UNKNOWN_KEY, unpackBody(exc).get("detail"));
+        assertTrue(log.contains("unknown\\nFORGED log line"), log.getMessages().toString());
+        assertFalse(log.contains("\nFORGED"), log.getMessages().toString());
     }
 
     private JwtAuthInterceptor prepareInterceptor(RsaJsonWebKey publicOnly) {

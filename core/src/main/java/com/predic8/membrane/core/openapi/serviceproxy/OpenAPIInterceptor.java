@@ -50,6 +50,7 @@ import static com.predic8.membrane.core.openapi.util.Utils.getOpenapiValidatorRe
 import static com.predic8.membrane.core.openapi.util.Utils.getOpenapiValidatorResponse;
 import static com.predic8.membrane.core.openapi.validators.ValidationErrors.empty;
 import static com.predic8.membrane.core.util.URIUtil.toDecodedDelimiterRoutingPaths;
+import static com.predic8.membrane.core.util.text.TextUtil.escapeControlCharsForLog;
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.*;
 
@@ -137,7 +138,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
 
             if (!errors.isEmpty()) {
                 log.info("OpenAPI request validation failed for {} against '{}': {}",
-                        exc.getRequest().getMethod(), rec.api.getInfo().getTitle(), errors.toString(maskValues(rec.api, MASK_VALUES_LOG)));
+                        exc.getRequest().getMethod(), rec.api.getInfo().getTitle(), escapeControlCharsForLog(errors.toString(maskValues(rec.api, MASK_VALUES_LOG))));
                 log.debug("OpenAPI request validation failed for URI {}", exc.getRequest().getUri());
                 apiProxy.statisticCollector.collect(errors);
                 createErrorResponse(exc, errors, ValidationErrors.Direction.REQUEST, validationDetails(rec.api), maskValues(rec.api, MASK_VALUES));
@@ -192,7 +193,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
 
             if (errors != null && errors.hasErrors()) {
                 log.info("OpenAPI response validation failed for {} against '{}': {}",
-                        exc.getRequest().getMethod(), rec.api.getInfo().getTitle(), errors.toString(maskValues(rec.api, MASK_VALUES_LOG)));
+                        exc.getRequest().getMethod(), rec.api.getInfo().getTitle(), escapeControlCharsForLog(errors.toString(maskValues(rec.api, MASK_VALUES_LOG))));
                 log.debug("OpenAPI response validation failed for URI {}", exc.getRequest().getUri());
                 exc.getResponse().setStatusCode(500); // A validation error in the response is a server error!
                 apiProxy.statisticCollector.collect(errors);

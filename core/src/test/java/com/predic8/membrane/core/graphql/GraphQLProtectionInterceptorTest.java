@@ -17,15 +17,19 @@ import com.predic8.membrane.core.router.DummyTestRouter;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.graphql.blocklist.FeatureBlocklist;
 import com.predic8.membrane.core.graphql.blocklist.filters.*;
+import com.predic8.membrane.core.graphql.model.ExecutableDocument;
 import com.predic8.membrane.core.graphql.model.OperationDefinition;
 import com.predic8.membrane.core.graphql.model.OperationType;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.Outcome;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
@@ -33,6 +37,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static java.net.URLEncoder.encode;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 
 public class GraphQLProtectionInterceptorTest {
 
@@ -64,6 +69,59 @@ public class GraphQLProtectionInterceptorTest {
                 """
                         {"query":"mutation abc{ addProduct(name: \\"Apple\\", price: 1.99) }"}""",
                 CONTINUE);
+    }
+
+    @Test
+    void blockSpecificMutationInInlineFragment() throws Exception {
+        verifyBlockedByMutationFilter("""
+                {"query":"mutation m { ... on Mutation { updateCategory(id: 6, name: \\"Changed\\") { id } } }",
+                "operationName": "m"}""");
+    }
+
+    @Test
+    void blockSpecificMutationInNamedFragment() throws Exception {
+        verifyBlockedByMutationFilter("""
+                {"query":"mutation m { ...F } fragment F on Mutation { updateCategory(id: 6, name: \\"Changed\\") { id } }",
+                "operationName": "m"}""");
+    }
+
+    private void verifyBlockedByMutationFilter(String body) throws Exception {
+        // Without the filter the document is valid, so a RETURN below can only come from the mutation filter.
+        verifyPost("/", APPLICATION_JSON, body, CONTINUE);
+        verifyPost(buildGraphQLProtectionInterceptor(List.of(new MutationFilter() {{
+                    setName("updateCategory");
+                }})), "/",
+                APPLICATION_JSON,
+                body,
+                RETURN);
+    }
+
+    @Test
+    void maxMutationsCountsFieldsInInlineFragment() throws Exception {
+        verifyExceedsMaxMutationsOfOne("""
+                {"query":"mutation m { ... on Mutation { a: addItem(name: \\"A\\") b: addItem(name: \\"B\\") } }",
+                "operationName": "m"}""");
+    }
+
+    @Test
+    void maxMutationsCountsFieldsInNamedFragment() throws Exception {
+        verifyExceedsMaxMutationsOfOne("""
+                {"query":"mutation m { ...F } fragment F on Mutation { a: addItem(name: \\"A\\") b: addItem(name: \\"B\\") }",
+                "operationName": "m"}""");
+    }
+
+    private void verifyExceedsMaxMutationsOfOne(String body) throws Exception {
+        final var gpi = new GraphQLProtectionInterceptor() {{
+            setMaxMutations(1);
+        }};
+        gpi.init(router);
+        // The same two mutations without a fragment exceed the limit.
+        verifyPost(gpi, "/", APPLICATION_JSON, """
+                {"query":"mutation m { a: addItem(name: \\"A\\") b: addItem(name: \\"B\\") }",
+                "operationName": "m"}""", RETURN);
+        // With the default limit of 5 the document is valid, so a RETURN below can only come from the mutation count.
+        verifyPost("/", APPLICATION_JSON, body, CONTINUE);
+        verifyPost(gpi, "/", APPLICATION_JSON, body, RETURN);
     }
 
     @Test
@@ -101,6 +159,40 @@ public class GraphQLProtectionInterceptorTest {
                 APPLICATION_JSON,
                 """
                         {"query":"{ __type(name: \\"Mutation\\") { fields() { name description args { name description type { name kind ofType { name kind } } } } } }"}""",
+                RETURN);
+    }
+
+    @Test
+    void blockIntrospectionInInlineFragment() throws Exception {
+        final var body = """
+                {"query":"query q { ... on Query { __schema { types { name } } } }",
+                "operationName": "q"}""";
+        // Without the filter the document is valid, so a RETURN below can only come from the introspection check.
+        verifyPost("/", APPLICATION_JSON, body, CONTINUE);
+        final var gpi = buildGraphQLProtectionInterceptor(List.of(new IntrospectionFilter()));
+        verifyPost(gpi, "/",
+                APPLICATION_JSON,
+                body,
+                RETURN);
+        // An inline fragment without introspection is not rejected.
+        verifyPost(gpi, "/",
+                APPLICATION_JSON,
+                """
+                        {"query":"query q { ... on Query { x } }",
+                        "operationName": "q"}""",
+                CONTINUE);
+    }
+
+    @Test
+    void blockIntrospectionInNamedFragment() throws Exception {
+        final var body = """
+                {"query":"query q { ...F } fragment F on Query { __schema { types { name } } }",
+                "operationName": "q"}""";
+        // Without the filter the document is valid, so a RETURN below can only come from the introspection check.
+        verifyPost("/", APPLICATION_JSON, body, CONTINUE);
+        verifyPost(buildGraphQLProtectionInterceptor(List.of(new IntrospectionFilter())), "/",
+                APPLICATION_JSON,
+                body,
                 RETURN);
     }
 
@@ -397,6 +489,113 @@ public class GraphQLProtectionInterceptorTest {
                 RETURN);
     }
 
+
+    @Test
+    void depthNotOKInLaterSibling() throws Exception {
+        verifyPost("/",
+                APPLICATION_JSON,
+                """
+                        {"query":"{ x a { b { c { d { e { f { g { h } } } } } } } }",
+                        "operationName": ""}""",
+                RETURN);
+    }
+
+    @Test
+    void depthNotOKInLaterNestedSibling() throws Exception {
+        verifyPost("/",
+                APPLICATION_JSON,
+                """
+                        {"query":"{ a { x b { c { d { e { f { g { h } } } } } } } }",
+                        "operationName": ""}""",
+                RETURN);
+    }
+
+    @Test
+    void depthNotOKAfterFragmentSpread() throws Exception {
+        verifyPost("/",
+                APPLICATION_JSON,
+                """
+                        {"query":"query q { ...F a { b { c { d { e { f { g { h } } } } } } } } fragment F on Query { x }",
+                        "operationName": "q"}""",
+                RETURN);
+    }
+
+    @Test
+    void recursionNotOKInLaterSibling() throws Exception {
+        verifyPost("/",
+                APPLICATION_JSON,
+                """
+                        {"query":"{ x a { a { a { a { a { a } } } } } }",
+                        "operationName": ""}""",
+                RETURN);
+    }
+
+    @Test
+    void depthCheckRejectsExponentialFragmentExpansion() {
+        // Each fragment spreads the next one twice: visiting every expansion would take 2^30 steps.
+        final var levels = 30;
+        final var query = new StringBuilder("query q { ...F0 }");
+        for (var n = 0; n < levels; n++)
+            query.append(" fragment F%d on Query { ...F%d ...F%d }".formatted(n, n + 1, n + 1));
+        query.append(" fragment F%d on Query { x }".formatted(levels));
+        final var body = """
+                {"query":"%s", "operationName": "q"}""".formatted(query);
+
+        assertTimeoutPreemptively(Duration.ofSeconds(5), () -> verifyPost("/", APPLICATION_JSON, body, RETURN));
+    }
+
+    @Test
+    void depthCheckRejectsLongFragmentChain() throws Throwable {
+        final var body = """
+                {"query":"query q { ...F0 }%s", "operationName": "q"}""".formatted(fragmentChain("Query", 100_000));
+        // The selection budget stops the walk after 10,000 visits. Whether that is reached before a stack overflow
+        // depends on JIT state; a small fixed stack makes the overflow deterministic as long as nesting is unbounded.
+        runWithStackSize(256 * 1024, () -> verifyPost("/", APPLICATION_JSON, body, RETURN));
+    }
+
+    private static void runWithStackSize(long stackSize, Executable executable) throws Throwable {
+        final var failure = new AtomicReference<Throwable>();
+        final var thread = new Thread(null, () -> {
+            try {
+                executable.execute();
+            } catch (Throwable t) {
+                failure.set(t);
+            }
+        }, "small-stack", stackSize);
+        thread.start();
+        thread.join();
+        if (failure.get() != null)
+            throw failure.get();
+    }
+
+    @Test
+    void mutationCountRejectsLongFragmentChain() throws Exception {
+        verifyPost("/", APPLICATION_JSON, """
+                {"query":"mutation m { ...F0 }%s", "operationName": "m"}""".formatted(fragmentChain("Mutation", 100_000)), RETURN);
+    }
+
+    @Test
+    void depthCheckAllowsMaxFragmentNesting() throws Exception {
+        // F0 to F{MAX - 1}: exactly MAX_FRAGMENT_NESTING fragments inside each other.
+        verifyPost("/", APPLICATION_JSON, """
+                {"query":"query q { ...F0 }%s", "operationName": "q"}""".formatted(fragmentChain("Query", ExecutableDocument.MAX_FRAGMENT_NESTING - 1)), CONTINUE);
+    }
+
+    @Test
+    void depthCheckRejectsFragmentNestingAboveMax() throws Exception {
+        verifyPost("/", APPLICATION_JSON, """
+                {"query":"query q { ...F0 }%s", "operationName": "q"}""".formatted(fragmentChain("Query", ExecutableDocument.MAX_FRAGMENT_NESTING)), RETURN);
+    }
+
+    /**
+     * Fragments F0 to F{length} where each one spreads the next and the last one selects field x.
+     */
+    static String fragmentChain(String type, int length) {
+        final var chain = new StringBuilder();
+        for (var n = 0; n < length; n++)
+            chain.append(" fragment F%d on %s { ...F%d }".formatted(n, type, n + 1));
+        return chain.append(" fragment F%d on %s { x }".formatted(length, type)).toString();
+    }
 
     @Test
     void recursionOK() throws Exception {

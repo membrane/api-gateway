@@ -45,6 +45,7 @@ import static com.predic8.membrane.core.interceptor.mcp.McpSessionContext.McpSes
 import static com.predic8.membrane.core.jsonrpc.JSONRPCRequest.parse;
 import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.*;
 import static com.predic8.membrane.core.util.MessageUtil.getContentAsStream;
+import static com.predic8.membrane.core.util.text.TextUtil.escapeControlCharsForLog;
 
 /**
  * @description MCP Server for Membrane. It allows querying Membrane's internal state and operation from an LLM
@@ -302,12 +303,12 @@ public class MembraneMCPServer extends AbstractInterceptor {
     }
 
     private McpHttpResult badRequest(Exchange exc, @Nullable JSONRPCRequest request, int code, String message, Exception exception) {
-        log.info("Rejected MCP request {} {}: {}", exc.getRequest().getMethod(), exc.getRequest().getUri(), exception.getMessage());
+        log.info("Rejected MCP request {} {}: {}", escapeControlCharsForLog(exc.getRequest().getMethod()), escapeControlCharsForLog(exc.getRequest().getUri()), escapeControlCharsForLog(exception.getMessage()));
         return new McpHttpResult(400, error(responseId(request), code, message, exception.getMessage()), Map.of());
     }
 
     private McpHttpResult internalError(Exchange exc, @Nullable JSONRPCRequest request, Exception exception) {
-        log.warn("Failed to handle MCP request {} {}.", exc.getRequest().getMethod(), exc.getRequest().getUri(), exception);
+        log.warn("Failed to handle MCP request {} {}.", escapeControlCharsForLog(exc.getRequest().getMethod()), escapeControlCharsForLog(exc.getRequest().getUri()), exception);
         return new McpHttpResult(
                 request != null && request.isNotification() ? 500 : 200,
                 error(responseId(request), ERR_INTERNAL_ERROR, "Internal error", exception.getMessage()),
