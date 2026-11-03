@@ -105,6 +105,26 @@ class ExecutableDocumentTest {
     }
 
     @Test
+    void collectFieldsBudgetIsSharedAcrossCalls() throws Exception {
+        // Many mutations spreading the same large fragment: each call alone stays below the budget.
+        final var fieldsPerFragment = 1_000;
+        final var mutations = ExecutableDocument.MAX_COLLECTED_SELECTIONS / fieldsPerFragment + 1;
+        final var doc = new StringBuilder();
+        for (var n = 0; n < mutations; n++)
+            doc.append("mutation m%d { ...F } ".formatted(n));
+        doc.append("fragment F on Mutation {");
+        for (var n = 0; n < fieldsPerFragment; n++)
+            doc.append(" a%d: x".formatted(n));
+        final var ed = parse(doc.append(" }").toString());
+
+        final var e = assertThrows(GraphQLOverHttpValidationException.class, () -> {
+            for (final var operation : ed.getOperationDefinitions())
+                ed.collectFields(operation.getSelections());
+        });
+        assertEquals(ExecutableDocument.TOO_MANY_SELECTIONS, e.getMessage());
+    }
+
+    @Test
     void collectFieldsRejectsLongFragmentChain() {
         assertThrows(GraphQLOverHttpValidationException.class, () -> collectRootFieldNames(nestedFragments(100_000)));
     }

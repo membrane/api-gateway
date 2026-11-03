@@ -32,6 +32,15 @@ public class ExecutableDocument {
 
     public static final String FRAGMENTS_NESTED_TOO_DEEPLY = "Fragments are nested too deeply.";
 
+    /**
+     * Maximum number of selections {@link #collectFields(List)} visits in total, across all calls on this document.
+     * Callers collect the fields of every mutation, so one large fragment spread by many operations would otherwise
+     * be expanded once per operation.
+     */
+    public static final int MAX_COLLECTED_SELECTIONS = 10_000;
+
+    public static final String TOO_MANY_SELECTIONS = "Too many selections after expanding fragments.";
+
     final List<ExecutableDefinition> executableDefinitions = new ArrayList<>();
 
     /**
@@ -39,6 +48,12 @@ public class ExecutableDocument {
      * each name.
      */
     private final Map<String, FragmentDefinition> fragmentsByName = new HashMap<>();
+
+    /**
+     * Shared by all {@link #collectFields(List)} calls. A document is created per request and not shared between
+     * threads.
+     */
+    private int remainingCollectedSelections = MAX_COLLECTED_SELECTIONS;
 
     public ExecutableDocument() {
     }
@@ -135,7 +150,9 @@ public class ExecutableDocument {
      * </p>
      *
      * @throws GraphQLOverHttpValidationException if a spread references a fragment that is not defined, or named
-     *                                            fragments are nested deeper than {@link #MAX_FRAGMENT_NESTING}
+     *                                            fragments are nested deeper than {@link #MAX_FRAGMENT_NESTING},
+     *                                            or all calls on this document together visit more than
+     *                                            {@link #MAX_COLLECTED_SELECTIONS} selections
      */
     public List<Field> collectFields(List<Selection> selections) {
         final var fields = new ArrayList<Field>();
@@ -147,6 +164,8 @@ public class ExecutableDocument {
         if (selections == null)
             return;
         for (final var selection : selections) {
+            if (--remainingCollectedSelections < 0)
+                throw new GraphQLOverHttpValidationException(TOO_MANY_SELECTIONS);
             if (selection instanceof Field field) {
                 fields.add(field);
             } else if (selection instanceof InlineFragment inlineFragment) {

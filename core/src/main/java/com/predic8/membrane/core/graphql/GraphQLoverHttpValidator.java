@@ -325,7 +325,7 @@ public class GraphQLoverHttpValidator {
             return "See server log.";
         }
         if (budget.exhausted())
-            return "Too many selections after expanding fragments.";
+            return ExecutableDocument.TOO_MANY_SELECTIONS;
 
         // @TODO Replace with polymorphism
         if (selection instanceof Field) {
