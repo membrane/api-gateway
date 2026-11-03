@@ -58,6 +58,8 @@ public class StreamInfo {
     /** The content-length the message declares, or -1. Accessed on the receiver thread only. */
     private long expectedContentLength = -1;
     private long receivedContentLength;
+    /** Whether we reset the stream because of a stream error the peer caused. Accessed on the receiver thread only. */
+    private boolean resetForStreamError;
 
     public StreamInfo(int streamId, FrameSender sender, Settings peerSettings, Settings ourSettings) {
         this.streamId = streamId;
@@ -72,7 +74,14 @@ public class StreamInfo {
 
     }
 
-    public void receivedDataFrame(DataFrame df) {
+    public void receivedDataFrame(DataFrame df) throws IOException {
+        if (df.getDataLength() == 0 && !df.isEndStream()) {
+            // Gives the body reader nothing to read. Queued, empty frames would fill the memory (CVE-2019-9518). Their
+            // padding counts against the window, so it is given back at once.
+            flowControl.received(df.getFrame().getLength());
+            flowControl.processed(df.getFrame().getLength());
+            return;
+        }
         // Nothing reads past the abort marker, so DATA received after an abort is not queued.
         if (abortCause == null)
             dataFramesReceived.add(df);
@@ -101,6 +110,31 @@ public class StreamInfo {
             return true;
         expectedContentLength = -1;
         return false;
+    }
+
+    /**
+     * Checks DATA, received next, against the receive window granted to the peer (RFC 9113 §6.9.1).
+     *
+     * @param initialWindowSize the largest initial window size the peer may apply, see
+     *                          {@link FlowControl#exceedsWindow(int, int)}
+     * @return true if the DATA exceeds the window
+     */
+    boolean exceedsReceiveWindow(int length, int initialWindowSize) {
+        return flowControl.exceedsWindow(length, initialWindowSize);
+    }
+
+    /** Marks the stream as reset because of a stream error the peer caused, see {@link #isResetForStreamError()}. */
+    void resetForStreamError() {
+        resetForStreamError = true;
+    }
+
+    /**
+     * Whether we reset the stream because of a stream error the peer caused, such as DATA beyond the window. More frames
+     * may still be in flight then, until the reset is written and the stream closed: they are dropped, so that the
+     * stream is reset only once.
+     */
+    boolean isResetForStreamError() {
+        return resetForStreamError;
     }
 
     /** The number of received DATA frames waiting for the body reader, including the marker of an abort. */

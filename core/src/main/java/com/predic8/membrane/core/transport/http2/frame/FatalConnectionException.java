@@ -17,6 +17,14 @@ package com.predic8.membrane.core.transport.http2.frame;
 import java.io.IOException;
 
 public class FatalConnectionException extends IOException {
+    private final int errorCode;
+
     public FatalConnectionException(int error) {
+        errorCode = error;
+    }
+
+    /** The error code of the connection error, see {@link Error}. */
+    public int getErrorCode() {
+        return errorCode;
     }
 }

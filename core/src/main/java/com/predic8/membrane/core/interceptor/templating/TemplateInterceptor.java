@@ -54,6 +54,9 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * header, query parameters, etc. If the extension of a referenced template file is <i>.xml</i> it will use
  * <a href="https://docs.groovy-lang.org/docs/next/html/documentation/template-engines.html#_xmltemplateengine">XMLTemplateEngine</a>
  * otherwise <a href="https://docs.groovy-lang.org/docs/next/html/documentation/template-engines.html#_streamingtemplateengine">StreamingTemplateEngine</a>.
+ * Values inserted into a template from an <i>.xml</i> file are not XML-escaped. To escape them, use <code>src</code>
+ * or a file with another extension (except <i>.json</i>), together with an XML <code>contentType</code> such as <code>application/xml</code>.
+ * A <i>.json</i> location always uses <code>application/json</code> instead of the configured <code>contentType</code>.
  * <p>See <a href="https://github.com/membrane/api-gateway/blob/master/distribution/tutorials/getting-started/110-Template.yaml">tutorials/getting-started/110-Template.yaml</a>.</p>
  *
  * When the <code>contentType</code> is a JSON variant (e.g., <code>application/json</code>), the engine automatically escapes all inserted values. For example, in the
@@ -98,11 +101,18 @@ public class TemplateInterceptor extends AbstractTemplateInterceptor {
         super.init();
         template = createTemplate();
 
-        escaping = getSerialization(contentType).or(() -> Optional.of(TEXT_SERIALIZATION)).get();
+        escaping = getEscaping();
 
         // If the template accesses somewhere the json variable make sure it is there
         // You can even access json in an XML or Text Template. See tests.
         scriptAccessesJson = src.contains("json.");
+    }
+
+    /**
+     * Escaping for values inserted into the template, chosen by the content type.
+     */
+    protected SerializationFunction getEscaping() {
+        return getSerialization(getContentType()).or(() -> Optional.of(TEXT_SERIALIZATION)).get();
     }
 
     protected Outcome handleInternal(Exchange exc, Flow flow) {
