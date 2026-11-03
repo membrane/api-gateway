@@ -16,9 +16,7 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.BooleanNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.JsonNode;
 import io.swagger.v3.oas.models.media.Schema;
 
 import java.math.BigDecimal;
@@ -43,11 +41,9 @@ public class NumberRestrictionValidator {
 
         ctx = ctx.schemaType(schema.getType());
 
-        if (obj instanceof ObjectNode)
-            return null;
-        if (obj instanceof ArrayNode)
-            return null;
-        if (obj instanceof BooleanNode)
+        // Numeric keywords only apply to numbers. A string is not parsed: digits in a string do not make it a
+        // number, and parsing a long one as BigDecimal takes quadratic time.
+        if (obj instanceof JsonNode node && !node.isNumber())
             return null;
 
         BigDecimal value;
