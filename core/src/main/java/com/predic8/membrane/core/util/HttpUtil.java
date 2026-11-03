@@ -18,12 +18,14 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.http.Response.ResponseBuilder;
+import com.predic8.membrane.core.proxies.SSLableProxy;
 import com.predic8.membrane.core.transport.http.EOFWhileReadingLineException;
 import com.predic8.membrane.core.transport.http.LineTooLongException;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -34,9 +36,11 @@ import java.util.TimeZone;
 
 import static com.predic8.membrane.annot.Constants.HTML_FOOTER;
 import static com.predic8.membrane.annot.Constants.PRODUCT_NAME;
-import static com.predic8.membrane.core.http.Header.X_FORWARDED_FOR;
+import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.TEXT_HTML_UTF8;
 import static com.predic8.membrane.core.http.Request.*;
+import static com.predic8.membrane.core.util.StringList.parseToList;
+import static com.predic8.membrane.core.util.UrlNormalizer.normalizeBaseUrl;
 import static com.predic8.membrane.core.util.Util.splitStringByComma;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptyList;
@@ -273,6 +277,45 @@ public class HttpUtil {
 			default -> false;
 		};
 	}
+
+    /**
+     * Uses Fetch Metadata and falls back to comparing Origin with the request's own origin (scheme, Host and
+     * port, with default ports filled in) for browsers that do not send Sec-Fetch-Site. A request with neither
+     * header does not come from a browser and cannot be forged by a third-party site.
+     * <p>The request's scheme comes from X-Forwarded-Proto if present, otherwise from whether the proxy
+     * terminates TLS. Its host comes from the first X-Forwarded-Host entry if present, otherwise from Host.
+     * A cross-site page cannot set either X-Forwarded header without a CORS preflight, so they need no
+     * trusted-proxy configuration here.</p>
+     */
+    public static boolean isCrossOrigin(Exchange exc) {
+        final var header = exc.getRequest().getHeader();
+        final var secFetchSite = header.getFirstValue(SEC_FETCH_SITE);
+        if (secFetchSite != null)
+            return !"same-origin".equalsIgnoreCase(secFetchSite) && !"none".equalsIgnoreCase(secFetchSite);
+
+        final var origin = header.getFirstValue(ORIGIN);
+        if (origin == null)
+            return false;
+        try {
+            return !normalizeBaseUrl(origin).equals(normalizeBaseUrl(getRequestScheme(exc) + "://" + getRequestHost(exc)));
+        } catch (URISyntaxException e) {
+            return true;
+        }
+    }
+
+    private static String getRequestHost(Exchange exc) {
+        final var forwardedHosts = parseToList(exc.getRequest().getHeader().getXForwardedHost());
+        if (!forwardedHosts.isEmpty())
+            return forwardedHosts.getFirst();
+        return exc.getRequest().getHeader().getHost();
+    }
+
+    private static String getRequestScheme(Exchange exc) {
+        final var forwardedProtos = parseToList(exc.getRequest().getHeader().getXForwardedProto());
+        if (!forwardedProtos.isEmpty())
+            return "https".equalsIgnoreCase(forwardedProtos.getFirst()) ? "https" : "http";
+        return exc.getProxy() instanceof SSLableProxy proxy ? proxy.getProtocol() : "http";
+    }
 
     public static String unescapedHtmlMessage(String caption, String text) {
         return "<html><head><title>" + caption
