@@ -19,11 +19,15 @@ import com.predic8.membrane.core.http.HeaderField;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.MimeType;
 
+import org.apache.commons.io.IOUtils;
+
+import java.io.InputStreamReader;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
 import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.util.MessageUtil.getContentAsStream;
 import static java.util.Locale.ROOT;
 
 public final class McpPayloadSanitizer {
@@ -75,11 +79,14 @@ public final class McpPayloadSanitizer {
                 return BINARY_BODY_OMITTED;
             }
 
-            String body = message.getBodyAsStringDecoded();
-            if (body.length() <= MAX_BODY_LENGTH) {
-                return body;
+            // Decode only as much as the preview shows; a compressed body may expand far beyond it.
+            final var reader = new InputStreamReader(getContentAsStream(message), message.getCharsetOrDefault());
+            final var preview = new char[MAX_BODY_LENGTH + 1];
+            final int length = IOUtils.read(reader, preview);
+            if (length <= MAX_BODY_LENGTH) {
+                return new String(preview, 0, length);
             }
-            return body.substring(0, MAX_BODY_LENGTH) + "... <truncated>";
+            return new String(preview, 0, MAX_BODY_LENGTH) + "... <truncated>";
         } catch (Exception e) {
             return BODY_UNAVAILABLE;
         }

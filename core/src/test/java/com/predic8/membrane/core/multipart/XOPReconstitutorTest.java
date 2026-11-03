@@ -161,6 +161,33 @@ class XOPReconstitutorTest {
         assertTrue(actual.contains("xop:Include"), "should fall back to the original multipart body");
     }
 
+    @Test
+    void inlinesDistinctReferencedParts() throws Exception {
+        Response response = response(
+                multipartBody(startPart("bin@test", "other@test"), binaryPart(), binaryPart("other@test", "abc")),
+                contentType("<root@test>"));
+
+        String reconstituted = reconstitutor.getReconstitutedMessage(response).getBodyAsStringDecoded();
+
+        assertTrue(reconstituted.contains("MDEyMzQ1Njc4OQ=="));
+        assertTrue(reconstituted.contains("YWJj"));
+    }
+
+    /**
+     * MEM-38 F-052: every reference used to inline the part again, so a small package referencing one
+     * attachment many times expanded without bound. SOAP 1.2 MTOM (4.3.1.1) forbids referencing an
+     * extracted part from more than one xop:Include, and XOP 1.0 serializes each optimized element
+     * into a new part.
+     */
+    @Test
+    void partReferencedTwiceIsRejected() {
+        Response response = response(multipartBody(startPart("bin@test", "bin@test"), binaryPart()),
+                contentType("<root@test>"));
+
+        var e = assertThrows(RuntimeException.class, () -> reconstitutor.getReconstitutedMessage(response));
+        assertEquals("Multipart with id bin@test is referenced more than once.", e.getMessage());
+    }
+
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
@@ -176,22 +203,33 @@ class XOPReconstitutorTest {
     }
 
     private static String startPart() {
+        return startPart("bin@test");
+    }
+
+    private static String startPart(String... referencedIds) {
+        var includes = new StringBuilder();
+        for (String id : referencedIds)
+            includes.append("<xop:Include xmlns:xop=\"http://www.w3.org/2004/08/xop/include\" href=\"cid:%s\"/>".formatted(id));
         return "Content-Type: application/xop+xml; charset=UTF-8; type=\"text/xml\";" + CRLF
                 + "Content-Transfer-Encoding: binary" + CRLF
                 + "Content-ID: <root@test>" + CRLF
                 + CRLF
                 + "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\">"
                 + "<soap:Body><data>"
-                + "<xop:Include xmlns:xop=\"http://www.w3.org/2004/08/xop/include\" href=\"cid:bin@test\"/>"
+                + includes
                 + "</data></soap:Body></soap:Envelope>";
     }
 
     private static String binaryPart() {
+        return binaryPart("bin@test", "0123456789");
+    }
+
+    private static String binaryPart(String id, String content) {
         return "Content-Type: application/octet-stream" + CRLF
                 + "Content-Transfer-Encoding: binary" + CRLF
-                + "Content-ID: <bin@test>" + CRLF
+                + "Content-ID: <" + id + ">" + CRLF
                 + CRLF
-                + "0123456789";
+                + content;
     }
 
     private static String multipartBody(String... parts) {

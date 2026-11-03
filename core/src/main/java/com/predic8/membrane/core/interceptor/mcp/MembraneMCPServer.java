@@ -44,6 +44,7 @@ import static com.predic8.membrane.core.interceptor.mcp.McpSessionContext.McpSes
 import static com.predic8.membrane.core.interceptor.mcp.McpSessionContext.McpSessionState.READY;
 import static com.predic8.membrane.core.jsonrpc.JSONRPCRequest.parse;
 import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.*;
+import static com.predic8.membrane.core.util.MessageUtil.getContentAsStream;
 
 /**
  * @description MCP Server for Membrane. It allows querying Membrane's internal state and operation from an LLM
@@ -96,7 +97,7 @@ public class MembraneMCPServer extends AbstractInterceptor {
 
         JSONRPCRequest request;
         try {
-            request = parse(exc.getRequest().getBodyAsStreamDecoded());
+            request = parse(getContentAsStream(exc.getRequest()));
         } catch (JsonProcessingException e) {
             return createResponse(badRequest(exc, null, ERR_PARSE_ERROR, "Parse error", e));
         } catch (IOException e) {

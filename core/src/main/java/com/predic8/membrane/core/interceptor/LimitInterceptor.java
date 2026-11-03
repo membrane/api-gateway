@@ -16,8 +16,9 @@ package com.predic8.membrane.core.interceptor;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Body;
+import com.predic8.membrane.core.http.EmptyBody;
 import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.ReadingBodyException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,8 +26,6 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.security;
-import static com.predic8.membrane.core.http.Header.CONTENT_ENCODING;
-import static com.predic8.membrane.core.http.Header.CONTENT_LENGTH;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
@@ -34,15 +33,11 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
  * @description Enforces a maximum body size, rejecting oversized messages with a Problem Details 400 response.
  * <p>
  * If a <code>Content-Length</code> header is already present and exceeds the limit, the message is
- * rejected immediately without reading the body. Otherwise body bytes are counted lazily as they
- * stream through; the limit is applied to the <b>decoded</b> (uncompressed) byte count, so
- * Content-Encoding compression (gzip, brotli, deflate) cannot be used to bypass it.
- * When decoding is applied, <code>Content-Encoding</code> and <code>Content-Length</code> are
- * removed from the forwarded message because the decoded size is not known ahead of time.
- * </p>
- * <p>
- * Due to Membrane's streaming architecture, request headers may already have been forwarded to
- * the backend when the limit is exceeded mid-body; in that case the backend connection is closed.
+ * rejected immediately without reading the body. Otherwise the body is read into memory before the
+ * message is passed on, so an oversized message is rejected before it is forwarded. The limit is
+ * applied to the <b>decoded</b> (uncompressed) byte count, so Content-Encoding compression (gzip,
+ * brotli, deflate) cannot be used to bypass it. The message is forwarded decoded, without
+ * <code>Content-Encoding</code> and with a <code>Content-Length</code> that matches the decoded body.
  * </p>
  * <p>See tutorials/security/60-SQL-Injection-Protection.yaml.</p>
  * @topic 3. Security and Validation
@@ -59,10 +54,24 @@ public class LimitInterceptor extends AbstractInterceptor {
 
 	private static final Logger log = LoggerFactory.getLogger(LimitInterceptor.class);
 
+	/**
+	 * The body is checked by reading it into one array, and a JVM cannot allocate a larger one: beyond
+	 * it, {@link InputStream#readAllBytes()} throws an {@link OutOfMemoryError} instead of the limit
+	 * rejecting the message.
+	 */
+	private static final long MAX_BUFFERED_LENGTH = Integer.MAX_VALUE - 8;
+
 	private long maxBodyLength = -1;
 
 	public LimitInterceptor() {
 		name = "limit interceptor";
+	}
+
+	@Override
+	public void init() {
+		super.init();
+		if (maxBodyLength > MAX_BUFFERED_LENGTH)
+			log.warn("maxBodyLength {} is larger than a body held in memory can be. Using {} instead.", maxBodyLength, MAX_BUFFERED_LENGTH);
 	}
 
 	@Override
@@ -86,6 +95,8 @@ public class LimitInterceptor extends AbstractInterceptor {
 
 	/**
 	 * @description Maximum body size in bytes, measured against the decoded (uncompressed) content.
+	 * Bodies up to this size are held in memory while they are checked, so values above 2147483639
+	 * (about 2 GiB), the largest block a JVM can allocate, act as 2147483639.
 	 * Set to <code>-1</code> to disable the limit.
 	 * @default -1
 	 * @example 10485760
@@ -100,21 +111,50 @@ public class LimitInterceptor extends AbstractInterceptor {
 			return CONTINUE;
 
 		long len = msg.getHeader().getContentLength();
-		if (len != -1 && len > maxBodyLength) {
-			log.info("Message length of {} exceeded limit {}.",len,maxBodyLength);
-			security(router.getConfiguration().isProduction(), getDisplayName())
-					.title("Message is too large.")
-					.detail("Message bodies must be smaller than limit.")
-					.internal("maxBodyLength", maxBodyLength)
-					.buildAndSetResponse(exc);
-			return ABORT;
+		if (len != -1 && len > effectiveMaxBodyLength()) {
+			log.info("Message length of {} exceeded limit {}.",len,effectiveMaxBodyLength());
+			return tooLarge(exc);
 		}
 
-		msg.setBody(new Body(new LengthLimitingStream(msg.getBodyAsStreamDecoded())));
-		msg.getHeader().removeFields(CONTENT_ENCODING);
-		msg.getHeader().removeFields(CONTENT_LENGTH);
+		// Nothing to limit. Replacing the body would add "Content-Length: 0", wrong for a HEAD response
+		// and not allowed for a 204.
+		if (msg.getBody() instanceof EmptyBody)
+			return CONTINUE;
 
+		// Read to the end instead of replacing the body with a limiting stream over it: replacing the
+		// body discards the old one, and a chunked body drops the chunks such a stream would still need.
+		// Reading to the end first lets the discard drain only what the decoder left unread, e.g. the
+		// last chunk after a deflate stream, so the connection stays in step.
+		final byte[] content;
+		try (final var limited = new LengthLimitingStream(msg.getBodyAsStreamDecoded())) {
+			content = limited.readAllBytes();
+		} catch (LimitExceededException e) {
+			return tooLarge(exc);
+		} catch (IOException e) {
+			throw new ReadingBodyException(e, msg);
+		}
+		msg.setBodyContent(content);
 		return CONTINUE;
+	}
+
+	private Outcome tooLarge(Exchange exc) {
+		security(router.getConfiguration().isProduction(), getDisplayName())
+				.title("Message is too large.")
+				.detail("Message bodies must be smaller than limit.")
+				.internal("maxBodyLength", effectiveMaxBodyLength())
+				.buildAndSetResponse(exc);
+		return ABORT;
+	}
+
+	private long effectiveMaxBodyLength() {
+		return Math.min(maxBodyLength, MAX_BUFFERED_LENGTH);
+	}
+
+	/** Tells the limit being exceeded apart from the body failing to arrive. */
+	private static final class LimitExceededException extends IOException {
+		LimitExceededException() {
+			super("Message body too large.");
+		}
 	}
 
 	public class LengthLimitingStream extends InputStream {
@@ -128,9 +168,9 @@ public class LimitInterceptor extends AbstractInterceptor {
 		}
 
 		private void checkPosition() throws IOException {
-			if (pos > maxBodyLength) {
-				log.info("Message length >= {} exceeded limit {}.",pos,maxBodyLength);
-				throw new IOException("Message body too large.");
+			if (pos > effectiveMaxBodyLength()) {
+				log.info("Message length >= {} exceeded limit {}.",pos,effectiveMaxBodyLength());
+				throw new LimitExceededException();
 			}
 		}
 

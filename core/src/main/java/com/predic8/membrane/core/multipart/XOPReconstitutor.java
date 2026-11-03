@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Writer;
 import java.util.HashMap;
+import java.util.HashSet;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.commons.codec.binary.Base64.encodeBase64;
@@ -164,6 +165,7 @@ public class XOPReconstitutor {
 			XMLEventReader parser = createEventReaderFromStream(inputStream);
 
 			boolean xopIncludeOpen = false;
+			final var included = new HashSet<String>();
 
 			while (parser.hasNext()) {
 				XMLEvent event = parser.nextEvent();
@@ -179,6 +181,13 @@ public class XOPReconstitutor {
 						Part p = parts.get("<" + href + ">");
 						if (p == null)
 							throw new RuntimeException("Did not find multipart with id " + href);
+						// SOAP 1.2 MTOM 4.3.1.1: an extracted part MUST NOT be referenced by more than one
+						// xop:Include. Inlining it again for every reference would let a small package
+						// expand without bound; with distinct references the output stays linear in the input.
+						if (!included.add(href)) {
+							log.info("Multipart with id {} is referenced more than once.", href);
+							throw new RuntimeException("Multipart with id %s is referenced more than once.".formatted(href));
+						}
 
 						writer.add(base64CharactersEvent(p.getBody()));
 						xopIncludeOpen = true;

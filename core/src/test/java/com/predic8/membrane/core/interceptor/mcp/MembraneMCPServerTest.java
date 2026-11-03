@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
 class MembraneMCPServerTest {
@@ -237,6 +238,36 @@ class MembraneMCPServerTest {
         assertEquals(202, initialized.getResponse().getStatusCode());
         assertEquals("", initialized.getResponse().getBodyAsStringDecoded());
         return sessionId;
+    }
+
+    /**
+     * MEM-38 F-052: the JSON-RPC body is parsed as JSON only, so a multipart XOP package is not
+     * reassembled first. An invalid package therefore ends as a JSON parse error, not as a failure
+     * of the XOP reassembly.
+     */
+    @Test
+    void xopPackageIsNotReassembledBeforeJsonParsing() throws Exception {
+        final var crlf = "\r\n";
+        final var boundary = "boundary";
+        final var include = "<xop:Include xmlns:xop=\"http://www.w3.org/2004/08/xop/include\" href=\"cid:bin@test\"/>";
+        final var body = "--" + boundary + crlf
+                + "Content-Type: application/xop+xml; type=\"text/xml\"" + crlf
+                + "Content-ID: <root@test>" + crlf + crlf
+                + "<a>" + include + include + "</a>" + crlf
+                + "--" + boundary + crlf
+                + "Content-Type: application/octet-stream" + crlf
+                + "Content-ID: <bin@test>" + crlf + crlf
+                + "0123456789" + crlf
+                + "--" + boundary + "--" + crlf;
+        final var exc = Request.post("http://localhost/mcp")
+                .header("Accept", POST_ACCEPT_HEADER)
+                .body(body.getBytes(UTF_8))
+                .header("Content-Type", "multipart/related; type=\"application/xop+xml\"; boundary=\"%s\"; start=\"<root@test>\"".formatted(boundary))
+                .buildExchange();
+
+        assertEquals(Outcome.RETURN, newServer().handleRequest(exc));
+        assertEquals(400, exc.getResponse().getStatusCode());
+        assertEquals(-32700, responseJson(exc).path("error").path("code").asInt());
     }
 
     private static JSONRPCRequest initializeRequest(String protocolVersion) {
