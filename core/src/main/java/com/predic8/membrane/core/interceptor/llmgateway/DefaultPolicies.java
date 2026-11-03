@@ -155,7 +155,8 @@ public class DefaultPolicies implements Policies {
 
     /**
      * @description Rejects a request whose input exceeds this number of tokens. The gateway estimates the input from
-     * the size of the request before it is forwarded, so the number the provider counts may differ.
+     * the size of the request before it is forwarded, so the number the provider counts may differ. Images and PDFs
+     * count for a fixed amount each, so large ones are underestimated.
      * @default 0 (unlimited)
      * @example 100
      */
