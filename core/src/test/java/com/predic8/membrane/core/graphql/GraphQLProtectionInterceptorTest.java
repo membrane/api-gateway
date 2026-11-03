@@ -24,6 +24,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,6 +34,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static java.net.URLEncoder.encode;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 
 public class GraphQLProtectionInterceptorTest {
 
@@ -463,6 +465,60 @@ public class GraphQLProtectionInterceptorTest {
                 RETURN);
     }
 
+
+    @Test
+    void depthNotOKInLaterSibling() throws Exception {
+        verifyPost("/",
+                APPLICATION_JSON,
+                """
+                        {"query":"{ x a { b { c { d { e { f { g { h } } } } } } } }",
+                        "operationName": ""}""",
+                RETURN);
+    }
+
+    @Test
+    void depthNotOKInLaterNestedSibling() throws Exception {
+        verifyPost("/",
+                APPLICATION_JSON,
+                """
+                        {"query":"{ a { x b { c { d { e { f { g { h } } } } } } } }",
+                        "operationName": ""}""",
+                RETURN);
+    }
+
+    @Test
+    void depthNotOKAfterFragmentSpread() throws Exception {
+        verifyPost("/",
+                APPLICATION_JSON,
+                """
+                        {"query":"query q { ...F a { b { c { d { e { f { g { h } } } } } } } } fragment F on Query { x }",
+                        "operationName": "q"}""",
+                RETURN);
+    }
+
+    @Test
+    void recursionNotOKInLaterSibling() throws Exception {
+        verifyPost("/",
+                APPLICATION_JSON,
+                """
+                        {"query":"{ x a { a { a { a { a { a } } } } } }",
+                        "operationName": ""}""",
+                RETURN);
+    }
+
+    @Test
+    void depthCheckRejectsExponentialFragmentExpansion() {
+        // Each fragment spreads the next one twice: visiting every expansion would take 2^30 steps.
+        final var levels = 30;
+        final var query = new StringBuilder("query q { ...F0 }");
+        for (var n = 0; n < levels; n++)
+            query.append(" fragment F%d on Query { ...F%d ...F%d }".formatted(n, n + 1, n + 1));
+        query.append(" fragment F%d on Query { x }".formatted(levels));
+        final var body = """
+                {"query":"%s", "operationName": "q"}""".formatted(query);
+
+        assertTimeoutPreemptively(Duration.ofSeconds(5), () -> verifyPost("/", APPLICATION_JSON, body, RETURN));
+    }
 
     @Test
     void recursionOK() throws Exception {

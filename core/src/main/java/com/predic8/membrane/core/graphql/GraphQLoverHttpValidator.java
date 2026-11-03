@@ -48,6 +48,12 @@ public class GraphQLoverHttpValidator {
     public static final String QUERY = "query";
     public static final String OPERATION_NAME = "operationName";
 
+    /**
+     * Upper bound for the selections visited by the depth and recursion check. Fragments are expanded where they are
+     * spread, so a small document can expand exponentially (each fragment spreading the next one twice).
+     */
+    static final int MAX_VISITED_SELECTIONS = 10_000;
+
     private final GraphQLParser graphQLParser = new GraphQLParser();
     private final ObjectMapper om = new ObjectMapper()
             .configure(FAIL_ON_READING_DUP_TREE_KEY, true)
@@ -291,31 +297,47 @@ public class GraphQLoverHttpValidator {
     }
 
     private String getDepthOrRecursionError(ExecutableDocument ed, OperationDefinition od) {
-        return checkSelections(ed, od, od.getSelections(), new ArrayList<>(), new HashSet<>());
+        return checkSelections(ed, od, od.getSelections(), new ArrayList<>(), new HashSet<>(), new SelectionBudget());
     }
 
-    private String checkSelections(ExecutableDocument ed, OperationDefinition od, List<Selection> selections, List<String> fieldStack, HashSet<String> fragmentNamesVisited) {
+    private static final class SelectionBudget {
+        private int remaining = MAX_VISITED_SELECTIONS;
+
+        boolean exhausted() {
+            return --remaining < 0;
+        }
+    }
+
+    private String checkSelections(ExecutableDocument ed, OperationDefinition od, List<Selection> selections, List<String> fieldStack, HashSet<String> fragmentNamesVisited, SelectionBudget budget) {
         if (selections == null)
             return null;
         for (Selection selection : selections) {
-            if (selection == null) {
-                log.error("Selection is null.");
-                return "See server log.";
-            }
-
-            // @TODO Replace with polymorphism
-            if (selection instanceof Field) {
-                return checkField((Field) selection, ed, od, fieldStack, fragmentNamesVisited);
-            }
-            if (selection instanceof FragmentSpread) {
-                return checkFragmentSpread((FragmentSpread) selection, ed, od, fieldStack, fragmentNamesVisited);
-            }
-            if (selection instanceof InlineFragment) {
-                return checkSelections(ed, od, ((InlineFragment) selection).getSelections(), fieldStack, fragmentNamesVisited);
-            }
-            return checkUnhandled(selection);
+            final var err = checkSelection(selection, ed, od, fieldStack, fragmentNamesVisited, budget);
+            if (err != null)
+                return err;
         }
         return null;
+    }
+
+    private String checkSelection(Selection selection, ExecutableDocument ed, OperationDefinition od, List<String> fieldStack, HashSet<String> fragmentNamesVisited, SelectionBudget budget) {
+        if (selection == null) {
+            log.error("Selection is null.");
+            return "See server log.";
+        }
+        if (budget.exhausted())
+            return "Too many selections after expanding fragments.";
+
+        // @TODO Replace with polymorphism
+        if (selection instanceof Field) {
+            return checkField((Field) selection, ed, od, fieldStack, fragmentNamesVisited, budget);
+        }
+        if (selection instanceof FragmentSpread) {
+            return checkFragmentSpread((FragmentSpread) selection, ed, od, fieldStack, fragmentNamesVisited, budget);
+        }
+        if (selection instanceof InlineFragment) {
+            return checkSelections(ed, od, ((InlineFragment) selection).getSelections(), fieldStack, fragmentNamesVisited, budget);
+        }
+        return checkUnhandled(selection);
     }
 
     private String checkUnhandled(Selection selection) {
@@ -323,7 +345,7 @@ public class GraphQLoverHttpValidator {
         return "See server log.";
     }
 
-    private String checkFragmentSpread(FragmentSpread fragmentSpread, ExecutableDocument ed, OperationDefinition od, List<String> fieldStack, HashSet<String> fragmentNamesVisited) {
+    private String checkFragmentSpread(FragmentSpread fragmentSpread, ExecutableDocument ed, OperationDefinition od, List<String> fieldStack, HashSet<String> fragmentNamesVisited, SelectionBudget budget) {
         String fragmentName = fragmentSpread.getFragmentName();
 
         final var fragment = ed.getFragmentDefinition(fragmentName);
@@ -333,7 +355,7 @@ public class GraphQLoverHttpValidator {
 
         if (!fragmentNamesVisited.add(fragmentName))
             return "Fragment spreads form cycle ('" + fragmentName + "').";
-        String err = checkSelections(ed, od, fragment.get().getSelections(), fieldStack, fragmentNamesVisited);
+        String err = checkSelections(ed, od, fragment.get().getSelections(), fieldStack, fragmentNamesVisited, budget);
         if (err != null)
             return err;
         fragmentNamesVisited.remove(fragmentName);
@@ -344,7 +366,7 @@ public class GraphQLoverHttpValidator {
     //  - Make testable
     //  - return void
     //  - case of error throw exception
-    private String checkField(Field field, ExecutableDocument ed, OperationDefinition od, List<String> fieldStack, HashSet<String> fragmentNamesVisited) {
+    private String checkField(Field field, ExecutableDocument ed, OperationDefinition od, List<String> fieldStack, HashSet<String> fragmentNamesVisited, SelectionBudget budget) {
         String fieldName = field.getName();
         fieldStack.add(fieldName);
         if (fieldStack.size() > maxDepth)
@@ -352,7 +374,7 @@ public class GraphQLoverHttpValidator {
         if (fieldStack.stream().filter(name -> name.equals(fieldName)).count() > maxRecursion)
             return "Max recursion exceeded.";
 
-        String err = checkSelections(ed, od, field.getSelections(), fieldStack, fragmentNamesVisited);
+        String err = checkSelections(ed, od, field.getSelections(), fieldStack, fragmentNamesVisited, budget);
         if (err != null)
             return err;
         fieldStack.remove(fieldStack.size() - 1);
