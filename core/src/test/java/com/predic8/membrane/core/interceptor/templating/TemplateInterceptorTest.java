@@ -275,6 +275,9 @@ public class TemplateInterceptorTest {
         assertEquals(500, exchange.getResponse().getStatusCode());
         assertTrue(body.contains("Error executing template."), body);
         assertTrue(body.contains("secret-before"), body);
+        final var message = om.readTree(body).get("message").asText();
+        assertTrue(message.contains("secret-after"), message);
+        assertFalse(message.contains("\uFFFF"), "End-of-input marker in the excerpt: " + message);
         assertTrue(body.contains("\"line\" : 2") || body.contains("\"line\":2"), body);
     }
 
