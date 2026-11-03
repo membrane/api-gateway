@@ -17,6 +17,7 @@ package com.predic8.membrane.core.multipart;
 import com.predic8.membrane.core.http.BodyCollectingMessageObserver;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.MessageUtil;
 import jakarta.mail.internet.ContentType;
@@ -112,7 +113,7 @@ public class XOPReconstitutor {
 				|| !innerContentType.getSubType().equals("xop+xml"))
 			return null;
 
-		byte[] body = fillInXOPParts(startPart.getInputStream(), parts);
+		byte[] body = fillInXOPParts(startPart.getInputStream(), parts, message);
 
 		Message m = new Message(){
 			@Override
@@ -157,7 +158,7 @@ public class XOPReconstitutor {
 	}
 
 	private byte[] fillInXOPParts(InputStream inputStream,
-			HashMap<String, Part> parts) throws XMLStreamException, FactoryConfigurationError {
+			HashMap<String, Part> parts, Message source) throws XMLStreamException, FactoryConfigurationError {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		XMLEventWriter writer = XMLOutputFactory.newInstance().createXMLEventWriter(baos);
 
@@ -186,7 +187,9 @@ public class XOPReconstitutor {
 						// expand without bound; with distinct references the output stays linear in the input.
 						if (!included.add(href)) {
 							log.info("Multipart with id {} is referenced more than once.", href);
-							throw new RuntimeException("Multipart with id %s is referenced more than once.".formatted(href));
+							// Attribute invalid input to its sender, even when decoded in the opposite flow.
+							throw new ReadingBodyException(new IOException(
+									"Multipart with id %s is referenced more than once.".formatted(href)), source);
 						}
 
 						writer.add(base64CharactersEvent(p.getBody()));

@@ -14,13 +14,19 @@
 
 package com.predic8.membrane.core.multipart;
 
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.router.DummyTestRouter;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.util.List;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
@@ -184,13 +190,47 @@ class XOPReconstitutorTest {
         Response response = response(multipartBody(startPart("bin@test", "bin@test"), binaryPart()),
                 contentType("<root@test>"));
 
-        var e = assertThrows(RuntimeException.class, () -> reconstitutor.getReconstitutedMessage(response));
-        assertEquals("Multipart with id bin@test is referenced more than once.", e.getMessage());
+        final var e = assertThrows(com.predic8.membrane.core.http.ReadingBodyException.class,
+                () -> reconstitutor.getReconstitutedMessage(response));
+        assertTrue(e.belongsTo(response));
+        assertEquals("Multipart with id bin@test is referenced more than once.", e.getCause().getMessage());
     }
 
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
+
+    @Test
+    void duplicateReferencesAreAttributedToTheSourceMessage() throws Exception {
+        final var router = new DummyTestRouter();
+        final var body = multipartBody(startPart("bin@test", "bin@test"), binaryPart());
+        for (final var requestBody : new boolean[]{true, false}) {
+            final var exc = Request.post("/soap").buildExchange();
+            final Message message;
+            if (requestBody) {
+                exc.getRequest().setBodyContent(body.getBytes(UTF_8));
+                exc.getRequest().getHeader().setContentType(contentType("<root@test>"));
+                message = exc.getRequest();
+            } else {
+                exc.setResponse(response(body, contentType("<root@test>")));
+                message = exc.getResponse();
+            }
+            final var decoder = new AbstractInterceptor() {
+                @Override
+                public Outcome handleRequest(Exchange exchange) {
+                    try (final var input = message.getBodyAsStreamDecoded()) {
+                        input.readAllBytes();
+                    } catch (IOException e) {
+                        throw new java.io.UncheckedIOException(e);
+                    }
+                    return Outcome.CONTINUE;
+                }
+            };
+            decoder.init(router);
+            assertEquals(Outcome.ABORT, router.getFlowController().invokeRequestHandlers(exc, List.of(decoder)));
+            assertEquals(requestBody ? 400 : 500, exc.getResponse().getStatusCode());
+        }
+    }
 
     /** A complete, well-formed XOP response with one start part and one referenced binary part. */
     private static Response xopResponse() {
