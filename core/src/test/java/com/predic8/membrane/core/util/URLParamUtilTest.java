@@ -26,6 +26,7 @@ import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
 import static com.predic8.membrane.core.util.URLParamUtil.*;
+import static com.predic8.membrane.test.TestAppender.captureLog;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class URLParamUtilTest {
@@ -97,5 +98,43 @@ public class URLParamUtilTest {
         var x = parseQueryString(null);
         assertNotNull(x);
         assertEquals(0, x.size());
+    }
+
+    @Test
+    void maskQueryValuesKeepsNamesAndMasksValues() {
+        assertEquals("/foo?api-key=***&api-key=***", maskQueryValues("/foo?api-key=secret&api-key=secret"));
+        assertEquals("/foo?a=***&***&&b=***", maskQueryValues("/foo?a=1&secret&&b="));
+        assertEquals("/foo?", maskQueryValues("/foo?"));
+        assertEquals("/foo", maskQueryValues("/foo"));
+        assertNull(maskQueryValues(null));
+    }
+
+    @Test
+    void maskQueryValuesMasksUserInfo() {
+        assertEquals("http://***@example.com/foo?a=***", maskQueryValues("http://user:password@example.com/foo?a=1"));
+        assertEquals("http://***@example.com", maskQueryValues("http://user:p@ss@example.com"));
+        assertEquals("http://***@example.com?a=***", maskQueryValues("http://user:password@example.com?a=1"));
+        assertEquals("http://example.com/foo@bar?a=***", maskQueryValues("http://example.com/foo@bar?a=1"));
+        assertEquals("/foo?url=***", maskQueryValues("/foo?url=http://user:password@example.com"));
+        assertEquals("/foo://user@bar", maskQueryValues("/foo://user@bar"));
+    }
+
+    @Test
+    void unparsableUriIsLoggedWithoutQueryValues() throws Exception {
+        final var exc = Request.get("/foo").buildExchange();
+        exc.getRequest().setUri("/foo?api-key=secret#a\nb"); // only a line break in the fragment fails the URI pattern
+        final var log = captureLog(() -> assertThrows(URISyntaxException.class, () -> getParams(new URIFactory(), exc, ERROR)));
+        assertTrue(log.contains("URI: /foo?api-key=***"), log.getMessages().toString());
+        assertFalse(log.contains("secret"), log.getMessages().toString());
+    }
+
+    @Test
+    void lineBreakBeforeQueryIsLoggedEscaped() throws Exception {
+        final var exc = Request.get("/foo").buildExchange();
+        exc.getRequest().setUri("/foo#a\n?api-key=secret"); // the line break stays in the logged part, masking keeps it
+        final var log = captureLog(() -> assertThrows(URISyntaxException.class, () -> getParams(new URIFactory(), exc, ERROR)));
+        assertTrue(log.contains("URI: /foo#a\\n?api-key=***"), log.getMessages().toString());
+        assertTrue(log.getMessages().stream().noneMatch(m -> m.contains("\n")), log.getMessages().toString());
+        assertFalse(log.contains("secret"), log.getMessages().toString());
     }
 }

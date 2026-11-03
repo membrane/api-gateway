@@ -13,11 +13,14 @@
    limitations under the License. */
 
 package com.predic8.membrane.test;
+import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.Logger;
 import org.apache.logging.log4j.core.appender.AbstractAppender;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeoutException;
 
@@ -27,6 +30,23 @@ public class TestAppender extends AbstractAppender {
 
     public TestAppender(String name) {
         super(name, null, null, false, null);
+    }
+
+    /**
+     * Runs the action and returns the messages logged meanwhile by any logger (on any thread).
+     */
+    public static TestAppender captureLog(Callable<?> action) throws Exception {
+        final var root = (Logger) LogManager.getRootLogger();
+        final var appender = new TestAppender("captureLog");
+        appender.start();
+        root.addAppender(appender);
+        try {
+            action.call();
+        } finally {
+            root.removeAppender(appender);
+            appender.stop();
+        }
+        return appender;
     }
 
     @Override

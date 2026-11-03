@@ -49,6 +49,7 @@ import static com.predic8.membrane.core.openapi.util.JsonTestUtil.convert2JSON;
 import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.createProxy;
 import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.getMapFromResponse;
 import static com.predic8.membrane.core.util.ProblemDetailsTestUtil.parse;
+import static com.predic8.membrane.test.TestAppender.captureLog;
 import static com.predic8.membrane.test.TestUtil.getPathFromResource;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -337,6 +338,21 @@ class OpenAPIInterceptorTest {
 
         assertEquals("POST", getMapFromResponse(exc).get("validation").get("method"));
         testValidationResults(getMapFromResponse(exc), "REQUEST");
+    }
+
+    @Test
+    void requestValidationErrorIsLoggedWithEscapedLineBreaks() throws Exception {
+        specCustomers.validateRequests = YES;
+        final var interceptor = new OpenAPIInterceptor(createProxy(router, specCustomers));
+        interceptor.init(router);
+        final var exc = post("/customers").contentType(APPLICATION_JSON)
+                .body("{\"id\": \"1\", \"firstName\": \"a\\nFORGED log line\"}").buildExchange();
+
+        final var log = captureLog(() -> interceptor.handleRequest(exc));
+
+        assertEquals(400, exc.getResponse().getStatusCode());
+        assertTrue(log.contains("a\\nFORGED log line"), log.getMessages().toString());
+        assertFalse(log.contains("\nFORGED"), log.getMessages().toString());
     }
 
     @Test
