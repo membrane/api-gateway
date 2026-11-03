@@ -111,6 +111,7 @@ public class TemplateInterceptor extends AbstractTemplateInterceptor {
         } catch (GroovyRuntimeException e) {
             log.warn("Groovy error executing template: {}", e.getMessage());
             internal(router.getConfiguration().isProduction(), getDisplayName())
+                    .title("Error executing template.")
                     .addSubSee("groovy")
                     .detail("Groovy error during template rendering.")
                     .exception(e)
@@ -118,34 +119,36 @@ public class TemplateInterceptor extends AbstractTemplateInterceptor {
                     .buildAndSetResponse(exc);
             return ABORT;
         } catch (TemplateExecutionException tee) {
+            // The message of tee quotes template source lines: internal only, so production mode hides it.
             ProblemDetails pd = internal(router.getConfiguration().isProduction(), getDisplayName())
-                    .topLevel("line",tee.getLineNumber())
-                    .topLevel("message", tee.getMessage())
+                    .title("Error executing template.")
+                    .internal("line", tee.getLineNumber())
+                    .exception(tee)
                     .stacktrace(false)
                     .addSubSee("execution");
             Throwable root = ExceptionUtil.getRootCause(tee);
             if (root instanceof MissingPropertyException mpe) {
                 log.warn("{}\n{}" ,root.getMessage(),tee.getMessage());
                 pd.detail(root.getMessage())
-                        .topLevel("property", mpe.getProperty())
+                        .internal("property", mpe.getProperty())
                         .buildAndSetResponse(exc);
                 return ABORT;
             }
             if (root instanceof MissingMethodException mme) {
                 log.warn("{}\n{}" ,root.getMessage(),tee.getMessage());
                 pd.detail(root.getMessage())
-                        .topLevel("method", mme.getMethod())
+                        .internal("method", mme.getMethod())
                         .buildAndSetResponse(exc);
                 return ABORT;
             }
             log.warn("Root cause: {}\n{}",root.getMessage(),tee.getMessage());
-            pd.exception(tee)
-                    .detail(root.getMessage())
+            pd.detail(root.getMessage())
                     .buildAndSetResponse(exc);
             return ABORT;
         } catch (Exception e) {
             log.warn("Error executing template"  , e);
             internal(router.getConfiguration().isProduction(), getDisplayName())
+                    .title("Error executing template.")
                     .addSubSee("rendering")
                     .exception(e)
                     .buildAndSetResponse(exc);
