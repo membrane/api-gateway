@@ -14,7 +14,10 @@
 
 package com.predic8.membrane.core.util.text;
 
+import org.codehaus.groovy.runtime.GStringImpl;
 import org.junit.jupiter.api.*;
+
+import java.util.*;
 
 import static com.predic8.membrane.core.util.text.ToXMLSerializer.*;
 import static com.predic8.membrane.core.util.xml.XMLTestUtil.*;
@@ -66,9 +69,16 @@ class ToXMLSerializerTest {
     }
 
     @Test
-    void defaultFallsBackToStringValueWithoutEscaping() {
+    void defaultFallsBackToStringValue() {
         assertEquals("42", toXML(42));
         assertEquals("true", toXML(true));
+    }
+
+    @Test
+    void defaultEscapesStringValue() {
+        assertEquals("[&lt;evil/&gt;, a &amp; b]", toXML(List.of("<evil/>", "a & b")));
+        // A Groovy string built with "${...}", e.g. in a template expression
+        assertEquals("&lt;evil/&gt;", toXML(new GStringImpl(new Object[]{"<evil/>"}, new String[]{"", ""})));
     }
 
     @Test
