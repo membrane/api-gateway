@@ -165,6 +165,29 @@ class JsonSchemaGeneratorTest {
     }
 
     @Test
+    void listOfAbstractTypeWithOneImplementationNeedsElementName() throws Exception {
+        var schema = listSchema();
+        assertValid(schema, "abstractList: { strategies: [ { jsonStrategy: { shuffle: true } } ] }");
+        assertInvalid(schema, "abstractList: { strategies: [ { shuffle: true } ] }");
+        assertInvalid(schema, "abstractList: { strategies: [ {} ] }");
+    }
+
+    @Test
+    void listOfConcreteTypeWithOneElementIsInlined() throws Exception {
+        var schema = listSchema();
+        assertValid(schema, "concreteList: { rules: [ { pattern: abc } ] }");
+        assertInvalid(schema, "concreteList: { rules: [ { rule: { pattern: abc } } ] }");
+    }
+
+    @Test
+    void listOfConcreteTypeAcceptsEmptyItem() throws Exception {
+        var schema = listSchema();
+        assertValid(schema, "markerList: { markers: [ {} ] }");
+        assertValid(schema, "markerList: { markers: [ { marker: {} } ] }");
+        assertInvalid(schema, "markerList: { markers: [ { foo: {} } ] }");
+    }
+
+    @Test
     void flowItemIsOneObjectWithAPropertyPerPlugin() throws Exception {
         var items = flowSchema().at("/$defs/flowParser/items");
         assertEquals("object", items.path("type").asText());
@@ -385,6 +408,70 @@ class JsonSchemaGeneratorTest {
 
     private static JsonNode requiredChildrenSchema() throws IOException {
         var result = compile(splitSources(MC_MAIN_DEMO + REQUIRED_CHILDREN_SOURCES), false);
+        assertCompilerResult(true, result);
+        return schema(result);
+    }
+
+    private static final String LIST_SOURCES = """
+            package com.predic8.membrane.demo;
+            public abstract class Strategy {}
+            ---
+            package com.predic8.membrane.demo;
+            import com.predic8.membrane.annot.*;
+            @MCElement(name="jsonStrategy", component=false)
+            public class JsonStrategy extends Strategy {
+                @MCAttribute
+                public void setShuffle(boolean shuffle) {}
+                public boolean isShuffle() { return false; }
+            }
+            ---
+            package com.predic8.membrane.demo;
+            import com.predic8.membrane.annot.*;
+            import java.util.List;
+            @MCElement(name="abstractList", topLevel=true, component=false)
+            public class AbstractListElement {
+                @MCChildElement
+                public void setStrategies(List<Strategy> strategies) {}
+                public List<Strategy> getStrategies() { return null; }
+            }
+            ---
+            package com.predic8.membrane.demo;
+            import com.predic8.membrane.annot.*;
+            @MCElement(name="rule", component=false)
+            public class Rule {
+                @MCAttribute
+                public void setPattern(String pattern) {}
+                public String getPattern() { return null; }
+            }
+            ---
+            package com.predic8.membrane.demo;
+            import com.predic8.membrane.annot.*;
+            import java.util.List;
+            @MCElement(name="concreteList", topLevel=true, component=false)
+            public class ConcreteListElement {
+                @MCChildElement
+                public void setRules(List<Rule> rules) {}
+                public List<Rule> getRules() { return null; }
+            }
+            ---
+            package com.predic8.membrane.demo;
+            import com.predic8.membrane.annot.*;
+            @MCElement(name="marker", component=false)
+            public class Marker {}
+            ---
+            package com.predic8.membrane.demo;
+            import com.predic8.membrane.annot.*;
+            import java.util.List;
+            @MCElement(name="markerList", topLevel=true, component=false)
+            public class MarkerListElement {
+                @MCChildElement
+                public void setMarkers(List<Marker> markers) {}
+                public List<Marker> getMarkers() { return null; }
+            }
+            """;
+
+    private static JsonNode listSchema() throws IOException {
+        var result = compile(splitSources(MC_MAIN_DEMO + LIST_SOURCES), false);
         assertCompilerResult(true, result);
         return schema(result);
     }
