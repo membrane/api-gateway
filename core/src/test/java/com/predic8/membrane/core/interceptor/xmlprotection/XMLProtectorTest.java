@@ -121,16 +121,26 @@ class XMLProtectorTest {
     @Test
     void DTDRemoval() throws Exception {
         // REWRITTEN, not ACCEPTED: the caller must forward the copy without the DTD
-        assertEquals(REWRITTEN, runOn("/xml/entity-expansion.lmx"));
-        assertTrue(output.length < input.length / 2);
-        assertFalse(new String(output, UTF_8).contains("ENTITY"));
+        assertEquals(REWRITTEN, protect("<?xml version='1.0'?><!DOCTYPE foo [<!ELEMENT foo ANY>]><foo/>", limits(true)));
+        assertFalse(new String(output, UTF_8).contains("DOCTYPE"));
     }
 
     @Test
-    void expandingEntities() throws Exception {
-        assertEquals(ACCEPTED, runOn("/xml/entity-expansion.lmx", limits(false)));
-        assertTrue(output.length > input.length / 2);
-        assertTrue(new String(output, UTF_8).contains("ENTITY"));
+    void entityBombIsRejectedWhileRemovingDtd() throws Exception {
+        assertTrue(reasonOf(runOn("/xml/entity-expansion.lmx")).contains("Entity declaration"));
+    }
+
+    @Test
+    void entityBombIsRejectedWhenKeepingDtd() throws Exception {
+        assertTrue(reasonOf(runOn("/xml/entity-expansion.lmx", limits(false))).contains("Entity declaration"));
+    }
+
+    @Test
+    void internalEntityIsRejectedBeforeAnAttributeExpandsIt() throws Exception {
+        // The parser replaces entity references in attribute values whatever IS_REPLACING_ENTITY_REFERENCES says
+        final var xml = "<?xml version='1.0'?><!DOCTYPE r [<!ENTITY e '%s'>]><r a='%s'/>"
+                .formatted("x".repeat(1000), "&e;".repeat(100));
+        assertTrue(reasonOf(protect(xml, limits(true))).contains("Entity declaration"));
     }
 
     @Test
@@ -199,7 +209,10 @@ class XMLProtectorTest {
         // backstop job. Derived from the cap, so the test keeps its meaning if the headroom changes.
         var limits = maxAttributeNameLength(1200);
         var xml = "<foo xmlns='urn:%s'/>".formatted("u".repeat(limits.jaxpNameLimit() + 1));
-        assertTrue(reasonOf(protect(xml, limits)).contains("Not well-formed XML"));
+        // The JDK parser applies the cap to the URI itself and fails the parse; Woodstox ignores the
+        // property, so XMLProtector's own namespace check is the one that rejects it
+        final var reason = reasonOf(protect(xml, limits));
+        assertTrue(reason.contains("Not well-formed XML") || reason.contains("Namespace URI exceeds"), reason);
     }
 
     @Test

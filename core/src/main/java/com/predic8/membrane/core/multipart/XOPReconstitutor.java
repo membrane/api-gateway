@@ -19,6 +19,7 @@ import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.MessageUtil;
+import com.predic8.membrane.core.util.xml.parser.HardenedStaxInputFactory;
 import jakarta.mail.internet.ContentType;
 import jakarta.mail.internet.ParseException;
 import org.slf4j.Logger;
@@ -51,14 +52,6 @@ public class XOPReconstitutor {
 	private static final Logger log = LoggerFactory.getLogger(XOPReconstitutor.class.getName());
 	private static final String XOP_NAMESPACE_URI = "http://www.w3.org/2004/08/xop/include";
 
-	private final XMLInputFactory xmlInputFactory;
-
-	public XOPReconstitutor() {
-		xmlInputFactory = XMLInputFactory.newInstance();
-		xmlInputFactory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false);
-		xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
-	}
-
 	public InputStream reconstituteIfNecessary(Message message) {
 		try {
 			Message reconstitutedMessage = getReconstitutedMessage(message);
@@ -71,9 +64,7 @@ public class XOPReconstitutor {
 	}
 
 	private XMLEventReader createEventReaderFromStream(InputStream is) throws XMLStreamException {
-		synchronized (xmlInputFactory) {
-			return xmlInputFactory.createXMLEventReader(is);
-		}
+		return HardenedStaxInputFactory.inputFactory().createXMLEventReader(is);
 	}
 
 	/**

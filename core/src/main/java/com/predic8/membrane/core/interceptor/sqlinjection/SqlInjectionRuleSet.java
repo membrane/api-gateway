@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.sqlinjection;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.re2j.Pattern;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -25,7 +26,6 @@ import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.regex.Pattern;
 
 /**
  * An immutable, ordered set of {@link SqlInjectionRule}s.
@@ -43,6 +43,9 @@ public class SqlInjectionRuleSet {
 
     private static final String CRS_RESOURCE = "crs-sqli-rules.json";
     private static final ObjectMapper MAPPER = new ObjectMapper();
+
+    /** The line terminators java.util.regex's {@code $} may match before. */
+    private static final String FINAL_LINE_BREAK = "(?:\\r\\n|[\\n\\r\\x{85}\\x{2028}\\x{2029}])?";
 
     private final List<SqlInjectionRule> rules;
 
@@ -74,7 +77,7 @@ public class SqlInjectionRuleSet {
                     pl,
                     List.copyOf(getTransformations(n)),
                     n.path("message").asText(),
-                    Pattern.compile(n.path("regex").asText()),
+                    compile(n.path("regex").asText()),
                     getRequires(n)));
         }
         return result;
@@ -88,7 +91,55 @@ public class SqlInjectionRuleSet {
     }
 
     private static @Nullable Pattern getRequires(JsonNode n) {
-        return n.hasNonNull("requires") ? Pattern.compile(n.get("requires").asText()) : null;
+        return n.hasNonNull("requires") ? compile(n.get("requires").asText()) : null;
+    }
+
+    /**
+     * Compiles a CRS regex with RE2/J, keeping two behaviors of java.util.regex that RE2/J lacks:
+     * <ul>
+     *     <li>{@code \s} matches a vertical tab (as in PCRE), so {@code \s} and {@code \S} are widened.</li>
+     *     <li>{@code $} also matches before a line break that ends the input, so an optional final line break
+     *     is put in front of it.</li>
+     * </ul>
+     */
+    static Pattern compile(String regex) {
+        return Pattern.compile(withJavaRegexSemantics(regex));
+    }
+
+    private static String withJavaRegexSemantics(String regex) {
+        final var sb = new StringBuilder(regex.length());
+        var inClass = false;
+        for (int i = 0; i < regex.length(); i++) {
+            final char c = regex.charAt(i);
+            if (c == '\\' && i + 1 < regex.length()) {
+                final char escaped = regex.charAt(++i);
+                if (escaped == 's')
+                    sb.append(inClass ? "\\s\\x0b" : "[\\s\\x0b]");
+                else if (escaped == 'S' && !inClass)
+                    sb.append("[^\\s\\x0b]");
+                else if (escaped == 'S')
+                    throw new IllegalArgumentException("\\S inside a character class is not supported: " + regex);
+                else
+                    sb.append(c).append(escaped);
+                continue;
+            }
+            if (c == '$' && !inClass) {
+                sb.append(FINAL_LINE_BREAK).append(c);
+                continue;
+            }
+            sb.append(c);
+            if (c == '[' && !inClass) {
+                inClass = true;
+                // '^' negates, and a ']' right after '[' or '[^' is a literal, not the end of the class
+                if (i + 1 < regex.length() && regex.charAt(i + 1) == '^')
+                    sb.append(regex.charAt(++i));
+                if (i + 1 < regex.length() && regex.charAt(i + 1) == ']')
+                    sb.append(regex.charAt(++i));
+            } else if (c == ']' && inClass) {
+                inClass = false;
+            }
+        }
+        return sb.toString();
     }
 
     /**

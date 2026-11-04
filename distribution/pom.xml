@@ -191,7 +191,7 @@
                         </goals>
                         <configuration>
                             <skipTests>false</skipTests>
-                            <test>ApisYamlSchemaValidationTest</test>
+                            <test>ApisYamlSchemaValidationTest,CrsSqliRuleTranspilerTest</test>
                         </configuration>
                     </execution>
                 </executions>

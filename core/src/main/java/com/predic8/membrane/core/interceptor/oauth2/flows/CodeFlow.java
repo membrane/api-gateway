@@ -19,6 +19,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
 import com.predic8.membrane.core.interceptor.oauth2.ParamNames;
+import com.predic8.membrane.core.interceptor.oauth2.SessionFinder;
 import com.predic8.membrane.core.util.URLUtil;
 
 import java.math.BigInteger;
@@ -32,10 +33,13 @@ public class CodeFlow extends OAuth2Flow{
 
     public Outcome getResponse() throws Exception {
         String code = generateAuthorizationCode();
+        SessionFinder.CodeIssuance issuance;
         synchronized(session){
             session.getUserAttributes().put(ParamNames.CODE,code);
+            issuance = new SessionFinder.CodeIssuance(session.getUserAttributes().get(ParamNames.CLIENT_ID),
+                    session.getUserAttributes().get(ParamNames.REDIRECT_URI));
         }
-        authServer.getSessionFinder().addSessionForCode(code,session);
+        authServer.getSessionFinder().addSessionForCode(code, session, issuance);
         return respondWithAuthorizationCodeAndRedirect(exc, code, session);
     }
 

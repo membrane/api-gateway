@@ -52,12 +52,20 @@ public class RefreshTokenFlow extends TokenRequest {
 
         String username;
         Map<String, Object> additionalClaims;
+        String issuedToClientId;
         try {
             username = authServer.getRefreshTokenGenerator().getUsername(getRefreshToken());
             additionalClaims = authServer.getRefreshTokenGenerator().getAdditionalClaims(getRefreshToken());
+            issuedToClientId = authServer.getRefreshTokenGenerator().getClientId(getRefreshToken());
         }catch(NoSuchElementException ex){
             log.info("Refresh token not accepted: token could not be resolved to a user.");
             return OAuth2Util.createParameterizedJsonErrorResponse("error", "invalid_request");
+        }
+
+        // RFC 6749, 6: only the client the refresh token was issued to may use it, whatever the token format
+        if (!getClientId().equals(issuedToClientId)) {
+            log.info("Refresh token not accepted: it was issued to another client.");
+            return OAuth2Util.createParameterizedJsonErrorResponse("error", "invalid_grant");
         }
 
         params.put(ParamNames.USERNAME,username);

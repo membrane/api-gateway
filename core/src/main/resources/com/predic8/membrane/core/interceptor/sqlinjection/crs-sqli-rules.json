@@ -50,8 +50,8 @@
   "id" : "942190",
   "paranoiaLevel" : 1,
   "transforms" : [ "urlDecodeUni", "removeCommentsChar" ],
-  "message" : "Detects MSSQL code execution and information gathering attempts",
-  "regex" : "(?i)[\\\"'`](?:[\\s\\x0b]*![\\s\\x0b]*[\\\"'0-9A-Z_-z]|;?[\\s\\x0b]*(?:having|select|union\\b[\\s\\x0b]*(?:all|(?:distin|sele)ct))\\b[\\s\\x0b]*[^\\s\\x0b])|\\b(?:(?:(?:c(?:onnection_id|urrent_user)|database|schema|user)[\\s\\x0b]*?|select.*?[0-9A-Z_a-z]?user)\\(|exec(?:ute)?[\\s\\x0b]+master\\.|from[^0-9A-Z_a-z]+information_schema[^0-9A-Z_a-z]|into[\\s\\x0b\\+]+(?:dump|out)file[\\s\\x0b]*?[\\\"'`]|union(?:[\\s\\x0b]select[\\s\\x0b]@|[\\s\\x0b\\(0-9A-Z_a-z]*?select))|[\\s\\x0b]*?exec(?:ute)?.*?[^0-9A-Z_a-z]xp_cmdshell|[^0-9A-Z_a-z]iif[\\s\\x0b]*?\\("
+  "message" : "Detects SQL code execution and information gathering attempts",
+  "regex" : "(?i)[\\\"'`](?:[\\s\\x0b]*![\\s\\x0b]*[\\\"'<->`]|;?[\\s\\x0b]*(?:having|select|union\\b[\\s\\x0b]*(?:all|(?:distin|sele)ct))\\b[\\s\\x0b]*[^\\s\\x0b])|\\b(?:(?:(?:c(?:onnection_id|urrent_user)|database|schema|user)[\\s\\x0b]*?|select.*?[0-9A-Z_a-z]?user)\\(|exec(?:ute)?[\\s\\x0b]+master\\.|from[^0-9A-Z_a-z]+information_schema[^0-9A-Z_a-z]|into[\\s\\x0b\\+]+(?:dump|out)file[\\s\\x0b]*?[\\\"'`]|union(?:[\\s\\x0b]select[\\s\\x0b]@|[\\s\\x0b\\(0-9A-Z_a-z]*?select))|[\\s\\x0b]*?exec(?:ute)?.*?[^0-9A-Z_a-z]xp_cmdshell|[^0-9A-Z_a-z]iif[\\s\\x0b]*?\\("
 }, {
   "id" : "942210",
   "paranoiaLevel" : 2,
@@ -189,7 +189,7 @@
   "paranoiaLevel" : 2,
   "transforms" : [ "urlDecodeUni" ],
   "message" : "SQL Injection Attack using (X)OR",
-  "regex" : "(?i)\\bx?or\\b(?:[\\s\\x0b]+[0-9]{1,10}(?:[\\s\\x0b]*[<->])?|[\\s\\x0b]*[\\\"'][^=]{1,10}[\\\"'])|[\\\"'][\\s\\x0b]+\\bx?or\\b[\\s\\x0b]+[^!\\+\\-<->]{1,20}[!\\+\\-<->]"
+  "regex" : "(?i)\\bx?or\\b(?:[\\s\\x0b]+[0-9]{1,10}(?:[\\s\\x0b]*[<->])?|[\\s\\x0b]*[\\\"'][^=]+[\\\"'])|[\\\"'][\\s\\x0b]+\\bx?or\\b[\\s\\x0b]+[^!\\+\\-<->]+[!\\+\\-<->]"
 }, {
   "id" : "942400",
   "paranoiaLevel" : 2,

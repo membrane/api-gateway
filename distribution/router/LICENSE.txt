@@ -115,8 +115,8 @@ distribution/src/main/java/com/predic8/membrane/build/.
 
 -------------------------------------------------------------------------------
 
-This product bundles RE2/J (com.google.re2j:re2j), which is used to match
-host names in linear time.
+This product bundles RE2/J (com.google.re2j:re2j) for regular expressions.
+
 Source: https://github.com/google/re2j
 
 RE2/J is a work derived from Russ Cox's RE2 in Go, whose license
