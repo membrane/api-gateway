@@ -16,11 +16,12 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.node.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 
-import java.math.*;
+import java.math.BigDecimal;
 
+import static com.predic8.membrane.core.openapi.util.SchemaUtil.MAX_NUMBER_LENGTH;
 import static com.predic8.membrane.core.openapi.validators.ValidationError.v;
 
 /**
@@ -61,7 +62,10 @@ public class NumberValidator implements JsonSchemaValidator {
             return null;
         }
         try {
-            if (value instanceof TextNode) {
+            if (value instanceof TextNode text) {
+                if (text.textValue().length() > MAX_NUMBER_LENGTH)
+                    return ValidationErrors.error(ctx.schemaType(NUMBER), "The value has %d characters, a number can have at most %d."
+                            .formatted(text.textValue().length(), MAX_NUMBER_LENGTH));
                 return ValidationErrors.error(ctx.schemaType(NUMBER), mask -> String.format("%s is not a number.", v(value, mask)));
             }
             if (value instanceof JsonNode jn) {

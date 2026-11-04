@@ -186,7 +186,8 @@ public class APIProxyKey extends ServiceProxyKey {
         if (getPath() == null || getPathTemplate().matches(path))
             return true;
         log.debug("Path {} doesn't match {}", path,getPath());
-        return path.startsWith(getPath());
+        // A regular expression is not compared as text, see issue #3621.
+        return !isPathRegExp() && path.startsWith(getPath());
     }
 
     /**

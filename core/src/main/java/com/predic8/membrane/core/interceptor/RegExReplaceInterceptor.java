@@ -13,25 +13,41 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.Required;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.HeaderField;
+import com.predic8.membrane.core.http.Message;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.interceptor.RegExReplaceInterceptor.TargetType.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
+import static com.predic8.membrane.core.http.Header.CONTENT_ENCODING;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.RegExReplaceInterceptor.TargetType.BODY;
+import static com.predic8.membrane.core.interceptor.RegExReplaceInterceptor.TargetType.HEADER;
 
 /**
- * @description Runs a regular-expression-replacement on either the message body (default) or all header values.
+ * @description <p>Replaces every match of a Java regular expression in the message body or in all header values.</p>
+ * <p>The body is decoded first and sent without <code>Content-Encoding</code> afterwards. Messages with a binary
+ * content type are left unchanged. If the body cannot be replaced, the flow is aborted with a 500 error.</p>
+ * <h3>Security Hint</h3>
+ * <p>The expression may run on requests and responses. Overlapping quantifiers such as <code>(.*),(.*)</code> can take
+ * a long time on crafted messages. See
+ * <a href="https://www.membrane-api.io/security/membrane-redos-protection.html">ReDoS Protection</a>.</p>
  * @yaml <pre><code>
  * api:
  *   port: 2000
  *   flow:
- *     - regExReplacer:
- *         regex: Hallo
- *         replace: Hello
+ *     - response:
+ *         - regExReplacer:
+ *             regex: 'http://backend\.internal:8080(/[^"\s]*)'
+ *             replace: 'https://api.example.com$1'
+ *   target:
+ *     url: http://backend.internal:8080
  * </code></pre>
  * @topic 2. Enterprise Integration Patterns
  */
@@ -105,8 +121,8 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description Regex to match against the body.
-     * @example Hallo
+     * @description Java regular expression. Every match is replaced.
+     * @example http://backend\.internal:8080(/[^"\s]*)
      */
     @Required
     @MCAttribute
@@ -119,8 +135,9 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description String used to replace matched parts.
-     * @example Hello
+     * @description Replacement for each match. <code>$1</code>, <code>$2</code>, ... insert the groups captured by
+     * <code>regex</code>; write <code>\$</code> for a literal dollar sign.
+     * @example https://api.example.com$1
      */
     @Required
     @MCAttribute
@@ -133,8 +150,8 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description Whether the replacement should affect the message <tt>body</tt> or the <tt>header</tt> values.
-     * Possible values are body and header.
+     * @description <code>body</code> replaces in the message body, <code>header</code> in the values of all header
+     * fields.
      * @default body
      * @example header
      */

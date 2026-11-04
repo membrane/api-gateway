@@ -18,7 +18,6 @@ import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.util.*;
-import org.slf4j.*;
 
 import java.util.*;
 
@@ -90,8 +89,6 @@ public class CorsInterceptor extends AbstractInterceptor {
      * - There is no Access-Control-Request-Credentials header in the spec!
      */
 
-    private static final Logger log = LoggerFactory.getLogger(CorsInterceptor.class);
-
     public static final String WILDCARD = "*";
 
     /**
@@ -123,6 +120,9 @@ public class CorsInterceptor extends AbstractInterceptor {
         // See: https://fetch.spec.whatwg.org/#cors-protocol-and-credentials
         if (allowCredentials && isWildcardOriginAllowed()) {
             throw new ConfigurationException("Access-Control-Allow-Credentials in combination with origin wildcard is forbidden");
+        }
+        if (allowCredentials && allowAll) {
+            throw new ConfigurationException("Access-Control-Allow-Credentials in combination with allowAll is forbidden");
         }
 
         preflightHandler = new PreflightHandler(this);
@@ -181,28 +181,21 @@ public class CorsInterceptor extends AbstractInterceptor {
      */
     @MCAttribute
     public void setOrigins(String origins) {
-        try {
-            Set<String> set = new HashSet<>();
-            for (String origin : splitBySpace(origins)) {
-                switch (origin) {
-                    case WILDCARD: set.add(WILDCARD); break;
-                    case NULL_STRING: set.add(NULL_STRING); break;
-                    default: {
-                        try {
-                            set.add(normalizeBaseUrl(origin));
-                        } catch (Exception e) {
-                            String msg = "Illegal value for cors origin: %s. Use http://..., https://... or null".formatted(origin);
-                            log.error(msg);
-                            throw new ConfigurationException(msg);
-                        }
+        Set<String> set = new HashSet<>();
+        for (String origin : splitBySpace(origins)) {
+            switch (origin) {
+                case WILDCARD: set.add(WILDCARD); break;
+                case NULL_STRING: set.add(NULL_STRING); break;
+                default: {
+                    try {
+                        set.add(normalizeBaseUrl(origin));
+                    } catch (Exception e) {
+                        throw new ConfigurationException("Illegal value for cors origin: %s. Use http://..., https://... or null".formatted(origin));
                     }
                 }
             }
-            this.allowedOrigins = set;
-        } catch (Exception e) {
-            log.error("Failed to parse origins list: {}", origins);
-            log.error(e.getMessage(), e);
         }
+        this.allowedOrigins = set;
     }
 
     public String getOrigins() {

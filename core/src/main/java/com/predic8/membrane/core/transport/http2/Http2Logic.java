@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.transport.http2;
 
 import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.MalformedHeaderException;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
@@ -29,18 +30,29 @@ import javax.annotation.concurrent.GuardedBy;
 import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.LongSupplier;
 
 import static com.predic8.membrane.core.transport.http2.frame.Error.*;
 import static com.predic8.membrane.core.transport.http2.frame.Frame.*;
 import static com.predic8.membrane.core.transport.http2.frame.SettingsFrame.*;
+import static com.predic8.membrane.core.util.HttpUtil.isOptionalWhitespace;
+import static com.predic8.membrane.core.util.HttpUtil.isTchar;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
 public class Http2Logic {
     private static final Logger log = LoggerFactory.getLogger(Http2Logic.class.getName());
@@ -50,6 +62,47 @@ public class Http2Logic {
 
     /** Maximum size of a decoded header block, announced to the peer as SETTINGS_MAX_HEADER_LIST_SIZE. */
     static final int MAX_HEADER_LIST_SIZE = 64 * 1024;
+
+    /**
+     * Limits of a header block while its fragments arrive, before it is decoded. Twice the decoded limit leaves
+     * room for blocks that decode to more than {@link #MAX_HEADER_LIST_SIZE}: those are still rejected gracefully.
+     * A block beyond these limits closes the connection (CONTINUATION flood).
+     */
+    static final int MAX_HEADER_BLOCK_SIZE = 2 * MAX_HEADER_LIST_SIZE;
+    static final int MAX_HEADER_BLOCK_FRAMES = 64;
+
+    /**
+     * How many streams the peer may make end in a reset within {@link #RESET_WINDOW_NANOS}, by resetting them or
+     * by opening them beyond the concurrent stream limit, before the connection is closed (CVE-2023-44487).
+     */
+    static final int MAX_RESETS_PER_WINDOW = 200;
+    private static final long RESET_WINDOW_NANOS = TimeUnit.SECONDS.toNanos(30);
+
+    /**
+     * How many refused streams may wait for their RST_STREAM to be written. They stay in {@link #streams} until
+     * then, so a peer that stops reading would let them pile up, {@link #MAX_RESETS_PER_WINDOW} every
+     * {@link #RESET_WINDOW_NANOS}. A burst of this size already exceeds {@link #MAX_RESETS_PER_WINDOW}, so the
+     * cap only closes connections whose resets have not been written for longer than the window.
+     */
+    static final int MAX_PENDING_REFUSED_STREAMS = MAX_RESETS_PER_WINDOW;
+
+    /**
+     * How many frames may wait to be sent. The peer makes us queue frames, e.g. by sending PING, SETTINGS or
+     * RST_STREAM, and while it does not read, they are not sent (CVE-2019-9512, CVE-2019-9514, CVE-2019-9515). DATA
+     * is limited per stream, so only such a peer reaches this limit.
+     */
+    static final int MAX_BUFFERED_FRAMES = 10_000;
+
+    /**
+     * How long a connection error waits for its GOAWAY to be written before the connection is closed. A peer that does
+     * not read would make it wait forever.
+     */
+    private static final long GOAWAY_TIMEOUT_MILLIS = 1000;
+
+    private static final Set<String> REQUEST_PSEUDO_HEADERS = Set.of(":method", ":scheme", ":authority", ":path");
+
+    /** Fields that are meaningful for one connection only (RFC 9113 §8.2.2). */
+    private static final Set<String> CONNECTION_SPECIFIC_FIELDS = Set.of("connection", "keep-alive", "proxy-connection", "transfer-encoding", "upgrade");
 
     static {
         String maxLineLength = System.getProperty("membrane.core.http.body.maxlinelength");
@@ -73,6 +126,15 @@ public class Http2Logic {
     final AtomicInteger nextClientStreamId = new AtomicInteger(1);
     /** Highest id of a stream the peer opened. Only accessed on the receiver thread. */
     private int highestPeerStreamId;
+    /** Requests handed over that are still being processed, see {@link #exchangeStarted()}. */
+    private final AtomicInteger runningExchanges = new AtomicInteger();
+    /**
+     * When the streams that ended in a reset within the last {@link #RESET_WINDOW_NANOS} did, oldest first, see
+     * {@link #countReset()}. Receiver thread only.
+     */
+    private final Deque<Long> recentResets = new ArrayDeque<>();
+    /** Supplies {@link System#nanoTime()}. Replaced in tests. */
+    LongSupplier clock = System::nanoTime;
     volatile boolean receiving = true;
     volatile Future<?> senderFuture;
     @GuardedBy("this")
@@ -130,7 +192,14 @@ public class Http2Logic {
                 Frame frame = new Frame(ourSettings);
                 frame.read(srcIn);
                 handleFrame(frame);
+                if (sender.getBufferedFrames() > MAX_BUFFERED_FRAMES) {
+                    log.info("Closing HTTP/2 connection from {}: more than {} frames are waiting to be sent.", remoteAddr, MAX_BUFFERED_FRAMES);
+                    throw new FatalConnectionException(ERROR_ENHANCE_YOUR_CALM);
+                }
             }
+        } catch (FatalConnectionException e) {
+            sendGoaway(e.getErrorCode());
+            throw e;
         } catch(EOFException eof) {
             throw new EndOfStreamException("");
         } finally {
@@ -142,6 +211,25 @@ public class Http2Logic {
     }
 
     /**
+     * Reports a connection error to the peer with GOAWAY before the connection is closed (RFC 9113 §5.4.1). It names
+     * the last stream the peer opened, which may have been processed. Frames already queued are written first. The
+     * sender is stopped, and the GOAWAY waited for, up to {@link #GOAWAY_TIMEOUT_MILLIS}.
+     */
+    private void sendGoaway(int errorCode) {
+        sender.send(GoawayFrame.construct(0, highestPeerStreamId, errorCode));
+        stopSending();
+        final var future = senderFuture;
+        if (future == null)
+            return;
+        try {
+            future.get(GOAWAY_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } catch (ExecutionException | TimeoutException e) {
+            log.debug("GOAWAY to {} was not written: {}", remoteAddr, e.toString());        }
+    }
+
+    /**
      * Closed streams are removed from {@link #streams}, so an unknown id belongs either to a closed
      * stream or to an idle one. Ids up to the highest one opened belong to closed streams (RFC 9113 §5.1.1).
      * Clients open odd ids and servers even ones, so only the opener's own ids are compared.
@@ -149,6 +237,88 @@ public class Http2Logic {
     private boolean isClosed(int streamId) {
         return streamId % 2 == highestPeerStreamId % 2 && streamId <= highestPeerStreamId
                 || streamId % 2 == 1 && streamId < nextClientStreamId.get();
+    }
+
+    /**
+     * Called by the server when it starts processing a request handed over to
+     * {@link Http2MessageHandler#handleExchange}. Until {@link #exchangeFinished()}, the request counts against the
+     * concurrent stream limit, even after the peer reset its stream: resetting streams must not let the peer start
+     * more work than the limit (CVE-2023-44487, "Rapid Reset").
+     */
+    public void exchangeStarted() {
+        runningExchanges.incrementAndGet();
+    }
+
+    public void exchangeFinished() {
+        runningExchanges.decrementAndGet();
+    }
+
+    /**
+     * Counts a stream that ended in a reset, because the peer reset it or opened it beyond the concurrent stream
+     * limit. Too many of them close the connection with ENHANCE_YOUR_CALM (CVE-2023-44487, "Rapid Reset").
+     */
+    private void countReset() throws FatalConnectionException {
+        final var now = clock.getAsLong();
+        while (!recentResets.isEmpty() && now - recentResets.getFirst() > RESET_WINDOW_NANOS)
+            recentResets.removeFirst();
+        recentResets.addLast(now);
+        if (recentResets.size() > MAX_RESETS_PER_WINDOW) {
+            log.info("Closing HTTP/2 connection from {}: more than {} streams were reset within {} seconds.",
+                    remoteAddr, MAX_RESETS_PER_WINDOW, TimeUnit.NANOSECONDS.toSeconds(RESET_WINDOW_NANOS));
+            throw new FatalConnectionException(ERROR_ENHANCE_YOUR_CALM);
+        }
+    }
+
+    /** Refused streams whose RST_STREAM has not been written yet, see {@link #MAX_PENDING_REFUSED_STREAMS}. */
+    private long countPendingRefusedStreams() {
+        return streams.values().stream().filter(StreamInfo::isRefused).count();
+    }
+
+    /**
+     * Whether a new stream opened by the peer would exceed the limit announced in our SETTINGS. Streams the
+     * peer opened that are open or half-closed count (RFC 9113 §5.1.2), and so do requests still being processed,
+     * whose stream may already be closed. Closed streams are removed from {@link #streams}; refused ones are
+     * closed as soon as their reset is written.
+     */
+    private boolean exceedsConcurrentStreamLimit(int newStreamId) {
+        final var limit = maxConcurrentStreams();
+        if (limit < 0)
+            return false;
+        var open = 0;
+        for (StreamInfo streamInfo : streams.values()) {
+            final var state = streamInfo.getState();
+            if (streamInfo.getStreamId() % 2 == newStreamId % 2 && !streamInfo.isRefused()
+                    && (state == StreamState.OPEN || state == StreamState.HALF_CLOSED_LOCAL || state == StreamState.HALF_CLOSED_REMOTE))
+                open++;
+        }
+        return open >= limit || runningExchanges.get() >= limit;
+    }
+
+    /**
+     * The lowest concurrent stream limit among the acknowledged SETTINGS and those sent but not yet acknowledged, or
+     * -1 if none sets one. A limit applies as soon as it is sent: a peer that delays its ACK must not open more
+     * streams in the meantime. Receiver thread only, like {@link #wantedSettings}.
+     */
+    private int maxConcurrentStreams() {
+        var limit = ourSettings.getMaxConcurrentStreams();
+        for (Settings settings : wantedSettings) {
+            final var wanted = settings.getMaxConcurrentStreams();
+            if (wanted >= 0 && (limit < 0 || wanted < limit))
+                limit = wanted;
+        }
+        return limit;
+    }
+
+    /**
+     * The largest initial window size among the acknowledged SETTINGS and those sent but not yet acknowledged. The
+     * peer applies SETTINGS as soon as it receives them, so it may already use a window size we sent before we
+     * receive its ACK. Receiver thread only, like {@link #wantedSettings}.
+     */
+    private int maxInitialWindowSize() {
+        var size = ourSettings.getInitialWindowSize();
+        for (Settings settings : wantedSettings)
+            size = Math.max(size, settings.getInitialWindowSize());
+        return size;
     }
 
     /** Stops the frame sender and wakes writers waiting for the connection's flow-control window. */
@@ -211,8 +381,9 @@ public class Http2Logic {
     private void handleFrame(GoawayFrame goawayFrame) throws IOException {
         if (goawayFrame.getFrame().getStreamId() != 0)
             throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
+        goawayFrame.validateSize();
 
-        // TODO: implement this, once sending PUSH_PROMISE is implemented
+        messageHandler.handleGoaway(goawayFrame.getLastStreamId(), goawayFrame.getErrorCode());
     }
 
     private void handleFrame(RstStreamFrame rstStream) throws IOException {
@@ -232,6 +403,9 @@ public class Http2Logic {
 
         streamInfo.receivedRstStream(rstStream.getErrorCode());
         messageHandler.handleStreamReset(streamId, rstStream.getErrorCode());
+        // A refused stream was counted when it was refused.
+        if (!streamInfo.isRefused())
+            countReset();
     }
 
     private void handleFrame(DataFrame dataFrame) throws IOException {
@@ -244,16 +418,21 @@ public class Http2Logic {
             if (!isClosed(dataFrame.getFrame().getStreamId()))
                 throw new FatalConnectionException(ERROR_STREAM_CLOSED); // TODO: change to stream error
             // Still in flight when the stream was closed, e.g. by our RST_STREAM. It counts against
-            // the connection's window all the same (RFC 9113 §6.9).
+            // the connection's window all the same (RFC 9113 §6.9). Closed streams are forgotten, so whether we reset
+            // it is not known; DATA on a closed stream may be discarded either way (§5.1).
             log.debug("Dropping DATA for closed stream {}.", dataFrame.getFrame().getStreamId());
+        } else if (streamInfo.isResetForStreamError()) {
+            // Still in flight when the stream was reset because of a stream error.
+            log.debug("Dropping DATA for stream {}, which was reset because of a stream error.", streamInfo.getStreamId());
+        } else if (streamInfo.getState() == StreamState.HALF_CLOSED_REMOTE) {
+            rejectDataAfterEndStream(streamInfo);
+        } else if (streamInfo.exceedsReceiveWindow(dataFrame.getFrame().getLength(), maxInitialWindowSize())) {
+            rejectDataBeyondWindow(streamInfo);
+        } else if (!streamInfo.keepsContentLength(dataFrame.getDataLength(), dataFrame.isEndStream())) {
+            rejectBody(streamInfo);
         } else {
             streamInfo.receivedDataFrame(dataFrame);
         }
-
-        // TODO: If a DATA frame is received
-        //   whose stream is not in "open" or "half-closed (local)" state, the
-        //   recipient MUST respond with a stream error (Section 5.4.2) of type
-        //   STREAM_CLOSED.
 
         flowControl.received(dataFrame.getFrame().getLength());
         flowControl.processed(dataFrame.getFrame().getLength());
@@ -280,6 +459,11 @@ public class Http2Logic {
 
         int streamId1 = priority.getFrame().getStreamId();
 
+        // A stream cannot depend on itself (RFC 9113 §5.3.1). Also checked for a stream that is not known, as it
+        // might be idle, and no RST_STREAM may be sent for an idle stream: a connection error, as for a known stream.
+        if (priority.getStreamDependency() == streamId1)
+            throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
+
         StreamInfo streamInfo = streams.get(streamId1);
 
         // For a closed or an idle stream: a stream created for an idle one would never close, counting
@@ -298,7 +482,10 @@ public class Http2Logic {
             if (windowUpdate.getWindowSizeIncrement() == 0)
                 throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
 
-            peerFlowControl.increment(windowUpdate.getWindowSizeIncrement());
+            if (!peerFlowControl.tryIncrement(windowUpdate.getWindowSizeIncrement())) {
+                log.info("Closing HTTP/2 connection from {}: a WINDOW_UPDATE makes the connection window exceed 2^31-1 (RFC 9113 §6.9.1).", remoteAddr);
+                throw new FatalConnectionException(ERROR_FLOW_CONTROL_ERROR);
+            }
         } else {
             if (windowUpdate.getWindowSizeIncrement() == 0)
                 throw new FatalConnectionException(ERROR_PROTOCOL_ERROR); // TODO: change to stream error
@@ -311,8 +498,26 @@ public class Http2Logic {
                 throw new FatalConnectionException(ERROR_PROTOCOL_ERROR); // stream not open // TODO: change to stream error
             }
 
-            streamInfo.getPeerFlowControl().increment(windowUpdate.getWindowSizeIncrement());
+            // Still in flight when the stream was reset because of a stream error: the window does not matter anymore.
+            if (streamInfo.isResetForStreamError())
+                return;
+            if (!streamInfo.getPeerFlowControl().tryIncrement(windowUpdate.getWindowSizeIncrement()))
+                rejectWindowOverflow(streamInfo);
         }
+    }
+
+    /**
+     * Resets a stream whose window a WINDOW_UPDATE would make exceed 2^31-1, a stream error of type FLOW_CONTROL_ERROR
+     * (RFC 9113 §6.9.1). No response will arrive for it then, so a call waiting for one fails.
+     */
+    private void rejectWindowOverflow(StreamInfo streamInfo) throws IOException {
+        final var streamId = streamInfo.getStreamId();
+        log.info("Resetting stream {} from {}: a WINDOW_UPDATE makes its window exceed 2^31-1 (RFC 9113 §6.9.1).", streamId, remoteAddr);
+        streamInfo.resetForStreamError();
+        sender.send(streamId, (encoder, peerSettings) -> List.of(RstStreamFrame.construct(streamId, ERROR_FLOW_CONTROL_ERROR)));
+        final var cause = new IOException("A WINDOW_UPDATE makes the flow-control window of HTTP/2 stream %d exceed 2^31-1.".formatted(streamId));
+        streamInfo.abortReceiving(cause);
+        messageHandler.handleStreamError(streamInfo, cause);
     }
 
     private void handleFrame(HeadersFrame headers) throws IOException {
@@ -320,11 +525,18 @@ public class Http2Logic {
         if (streamId1 == 0 || headers.getHeaderBlockLength() < 0)
             throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
         StreamInfo streamInfo = streams.get(streamId1);
+        var refused = false;
 
         if (streamInfo == null) {
+            // The peer can only open streams with odd ids: a client opens streams with them (RFC 9113 §5.1.1), and a
+            // server opens even ones with PUSH_PROMISE only, which is rejected. Otherwise, a client could also open
+            // streams with even ids, beyond the concurrent stream limit counted for the odd ones.
+            if (streamId1 % 2 == 0)
+                throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
             // Like HEADERS on a stream in the CLOSED state, which receivedHeaders() rejects.
             if (isClosed(streamId1))
                 throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
+            refused = exceedsConcurrentStreamLimit(streamId1);
             streamInfo = new StreamInfo(streamId1, sender, peerSettings, ourSettings);
             streams.put(streamId1, streamInfo);
         }
@@ -343,6 +555,7 @@ public class Http2Logic {
         headerFrames.add(headers);
 
         HeaderBlockFragment last = headers;
+        var headerBlockLength = headers.getHeaderBlockLength();
 
         while (!last.isEndHeaders()) {
             Frame frame = new Frame(ourSettings);
@@ -358,6 +571,36 @@ public class Http2Logic {
                 throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
 
             headerFrames.add(last);
+            headerBlockLength += last.getHeaderBlockLength();
+            // The fragments are buffered until the block ends, so one that does not end would use up the memory
+            // (CONTINUATION flood). It cannot be skipped either: the HPACK table must be updated by every block.
+            if (headerBlockLength > MAX_HEADER_BLOCK_SIZE || headerFrames.size() > MAX_HEADER_BLOCK_FRAMES) {
+                log.info("Closing HTTP/2 connection from {}: the header block on stream {} exceeds {} bytes or {} frames.",
+                        remoteAddr, streamId1, MAX_HEADER_BLOCK_SIZE, MAX_HEADER_BLOCK_FRAMES);
+                throw new FatalConnectionException(ERROR_ENHANCE_YOUR_CALM);
+            }
+        }
+
+        if (refused || streamInfo.isRefused() || streamInfo.isResetForStreamError()) {
+            // Decoded all the same, so the HPACK dynamic table stays in sync.
+            decoder.decode(getPackedHeaderStream(headerFrames), (name, value, sensitive) -> {});
+            decoder.endHeaderBlock();
+            // HEADERS on a stream refused or reset for a stream error before, arriving before its reset was written, are
+            // ignored. Their END_STREAM could close the stream first, and the reset would then never be sent.
+            if (!refused)
+                return;
+            if (countPendingRefusedStreams() >= MAX_PENDING_REFUSED_STREAMS) {
+                log.info("Closing HTTP/2 connection from {}: {} refused streams are still waiting for their reset to be written.",
+                        remoteAddr, MAX_PENDING_REFUSED_STREAMS);
+                throw new FatalConnectionException(ERROR_ENHANCE_YOUR_CALM);
+            }
+            log.info("Refusing stream {}: the peer exceeds the limit of {} concurrent streams.", streamId1, maxConcurrentStreams());
+            // REFUSED_STREAM tells the peer that the request was not processed, so it may retry it (RFC 9113 §8.7).
+            // Writing the reset closes the stream; DATA still in flight for it is not queued anymore.
+            streamInfo.refuse(new IOException("HTTP/2 stream %d was refused.".formatted(streamId1)));
+            sender.send(streamId1, (encoder, peerSettings) -> List.of(RstStreamFrame.construct(streamId1, ERROR_REFUSED_STREAM)));
+            countReset();
+            return;
         }
 
         log.debug("header isTrailer={}", isTrailer);
@@ -381,20 +624,46 @@ public class Http2Logic {
         }
 
         final var oversizedField = new boolean[1];
+        final var malformedField = new boolean[1];
+        final var statusReceived = new boolean[1];
+        final var regularFieldReceived = new boolean[1];
+        final var pseudoHeaders = new HashSet<String>();
         // The whole block is decoded even if it gets rejected, so the HPACK dynamic table stays in sync.
         decoder.decode(getPackedHeaderStream(headerFrames), (name, value, sensitive) -> {
+            // Checked first: a malformed message is a protocol error, even if it is also too large.
+            if (!isValidFieldName(name) || !isValidFieldValue(value)) {
+                malformedField[0] = true;
+                return;
+            }
             if (name.length + 2 + value.length >= MAX_LINE_LENGTH) {
                 oversizedField[0] = true;
                 return;
             }
-            String key = new String(name);
-            String val = new String(value);
+            // Byte for byte, as the HTTP/1.1 parser reads a field line. The name has been checked to be ASCII.
+            String key = new String(name, ISO_8859_1);
+            String val = new String(value, ISO_8859_1);
 
             if (sb != null) {
                 sb.append(key);
                 sb.append(": ");
                 sb.append(val);
                 sb.append("\n");
+            }
+
+            if (key.startsWith(":")) {
+                // Pseudo-headers come first, each once, and only those defined for the message. Trailers carry
+                // none (RFC 9113 §8.1, §8.3).
+                if (isTrailer || regularFieldReceived[0] || !pseudoHeaders.add(key) || !isPseudoHeaderOf(request, key)
+                        || (":path".equals(key) && val.isEmpty())) {
+                    malformedField[0] = true;
+                    return;
+                }
+            } else {
+                regularFieldReceived[0] = true;
+                if (request instanceof Request && isConnectionSpecific(key, val)) {
+                    malformedField[0] = true;
+                    return;
+                }
             }
 
             if (":method".equals(key) && request instanceof Request)
@@ -407,7 +676,14 @@ public class Http2Logic {
                 ((Request) request).setUri(val);
                 log.debug("streamId=" + streamId1 + " uri=" + val);
             } else if (":status".equals(key) && request instanceof Response) {
+                // A status code is exactly three digits (RFC 9110 §15). Anything else, such as "+200" or "0200",
+                // which Integer.parseInt would accept, is a malformed response that only fails its stream.
+                if (!isValidStatus(val)) {
+                    malformedField[0] = true;
+                    return;
+                }
                 ((Response) request).setStatusCode(Integer.parseInt(val));
+                statusReceived[0] = true;
                 log.debug("streamId=" + streamId1 + " status=" + val);
             } else
                 header.add(key, val);
@@ -416,6 +692,36 @@ public class Http2Logic {
 
         if (sb != null)
             log.debug(sb.toString());
+
+        // Every response carries :status (RFC 9113 §8.3.2), trailers do not.
+        if (!isTrailer && request instanceof Response && !statusReceived[0])
+            malformedField[0] = true;
+
+        if (!isTrailer && request instanceof Request req && !malformedField[0]
+                && (!hasRequiredPseudoHeaders(req.getMethod(), pseudoHeaders) || !expectContentLength(streamInfo, header, headers.isEndStream())))
+            malformedField[0] = true;
+
+        // Trailers end the message: HEADERS without END_STREAM after it make it malformed (RFC 9113 §8.1).
+        final var trailerWithoutEndStream = isTrailer && !headers.isEndStream();
+        if (trailerWithoutEndStream)
+            malformedField[0] = true;
+
+        if (malformedField[0]) {
+            // A malformed message is a stream error of type PROTOCOL_ERROR (RFC 9113 §8.1.1). It is rejected
+            // rather than forwarded without the field, as the HTTP/1.1 parser does.
+            log.info("Rejecting header block on stream {}: it is malformed (RFC 9113 §8.1.1).", streamId1);
+            // Queued before anyone waiting on the stream is woken up, as they might reset it with another error code.
+            // The block's END_STREAM is not applied: it could close the stream before the reset is sent, and the
+            // frame sender drops frames for closed streams. Writing the reset closes the stream instead.
+            sender.send(streamId1, (encoder, peerSettings) -> List.of(RstStreamFrame.construct(streamId1, ERROR_PROTOCOL_ERROR)));
+            if (isTrailer)
+                streamInfo.abortReceiving(new IOException((trailerWithoutEndStream
+                        ? "HTTP/2 trailer on stream %d does not end the stream."
+                        : "HTTP/2 trailer on stream %d carries a malformed header field.").formatted(streamId1)));
+            else
+                messageHandler.handleMalformedHeaders(streamInfo);
+            return;
+        }
 
         if (oversizedField[0] || truncated) {
             log.info("Rejecting header block on stream {}: a header field exceeds {} bytes or the block exceeds {} bytes.",
@@ -445,6 +751,10 @@ public class Http2Logic {
         }
 
         if (isTrailer) {
+            if (headers.isEndStream() && !streamInfo.keepsContentLength(0, true)) {
+                rejectBody(streamInfo);
+                return;
+            }
             request.getBody().setTrailer(header);
         } else {
             if (!headers.isEndStream())
@@ -455,6 +765,127 @@ public class Http2Logic {
 
         if (headers.isEndStream())
             streamInfo.receivedEndStream(false);
+    }
+
+    /**
+     * Whether the field name is a lower-case RFC 9110 token, or a pseudo-header name: a colon followed by one.
+     * This is stricter than RFC 9113 &sect;8.2.1, which only excludes control characters, SP, upper-case letters
+     * and non-ASCII bytes. The HTTP/1.1 parser accepts tokens only, and a message received over HTTP/2 may be
+     * forwarded over HTTP/1.1.
+     */
+    static boolean isValidFieldName(byte[] name) {
+        final int start = name.length > 0 && name[0] == ':' ? 1 : 0;
+        if (name.length == start)
+            return false;
+        for (int i = start; i < name.length; i++) {
+            final int c = name[i] & 0xFF;
+            if ((c >= 'A' && c <= 'Z') || !isTchar(c))
+                return false;
+        }
+        return true;
+    }
+
+    /**
+     * Whether the field value carries no NUL, CR or LF, and does not start or end with SP or HTAB
+     * (RFC 9113 &sect;8.2.1).
+     */
+    static boolean isValidFieldValue(byte[] value) {
+        for (byte b : value)
+            if (b == 0 || b == '\r' || b == '\n')
+                return false;
+        return value.length == 0 || (!isOptionalWhitespace((char) value[0]) && !isOptionalWhitespace((char) value[value.length - 1]));
+    }
+
+    /** Whether the pseudo-header is defined for this kind of message (RFC 9113 §8.3). */
+    private static boolean isPseudoHeaderOf(Message message, String name) {
+        if (message instanceof Request)
+            return REQUEST_PSEUDO_HEADERS.contains(name);
+        return ":status".equals(name);
+    }
+
+    /**
+     * Whether the field is connection-specific, which HTTP/2 does not allow (RFC 9113 §8.2.2). TE is allowed
+     * with the value "trailers" only.
+     */
+    private static boolean isConnectionSpecific(String name, String value) {
+        return CONNECTION_SPECIFIC_FIELDS.contains(name) || ("te".equals(name) && !"trailers".equalsIgnoreCase(value));
+    }
+
+    /**
+     * Whether the request carries :method, :scheme and :path, or for CONNECT only :method and :authority
+     * (RFC 9113 §8.3.1, §8.5).
+     */
+    private static boolean hasRequiredPseudoHeaders(String method, Set<String> pseudoHeaders) {
+        if ("CONNECT".equals(method))
+            return pseudoHeaders.equals(Set.of(":method", ":authority"));
+        return pseudoHeaders.containsAll(List.of(":method", ":scheme", ":path"));
+    }
+
+    /**
+     * Records the request's content-length, so its DATA can be checked against it (RFC 9113 §8.1.1).
+     *
+     * @return false if the content-length is invalid, or the request declares a body but ends with its headers
+     */
+    private static boolean expectContentLength(StreamInfo streamInfo, Header header, boolean endStream) {
+        final long contentLength;
+        try {
+            contentLength = header.getContentLength();
+        } catch (MalformedHeaderException e) {
+            return false;
+        }
+        if (endStream && contentLength > 0)
+            return false;
+        streamInfo.expectContentLength(contentLength);
+        return true;
+    }
+
+    /**
+     * Resets a stream whose body is not as long as its content-length, a stream error of type PROTOCOL_ERROR
+     * (RFC 9113 §8.1.1). The request has already been handed over, so its body fails.
+     */
+    private void rejectBody(StreamInfo streamInfo) throws IOException {
+        final var streamId = streamInfo.getStreamId();
+        log.info("Rejecting body on stream {}: its length differs from its content-length (RFC 9113 §8.1.1).", streamId);
+        sender.send(streamId, (encoder, peerSettings) -> List.of(RstStreamFrame.construct(streamId, ERROR_PROTOCOL_ERROR)));
+        streamInfo.abortReceiving(new IOException("HTTP/2 stream %d carries a body that differs from its content-length.".formatted(streamId)));
+    }
+
+    /**
+     * Resets a stream whose peer sent DATA beyond the receive window, a stream error of type FLOW_CONTROL_ERROR
+     * (RFC 9113 §6.9.1). Without this, a peer could make us buffer any amount of DATA while the body is read slowly.
+     * A call still waiting for the response, as the DATA came before it, fails.
+     */
+    private void rejectDataBeyondWindow(StreamInfo streamInfo) throws IOException {
+        final var streamId = streamInfo.getStreamId();
+        log.info("Resetting stream {} from {}: the peer sent DATA beyond the receive window (RFC 9113 §6.9.1).", streamId, remoteAddr);
+        streamInfo.resetForStreamError();
+        sender.send(streamId, (encoder, peerSettings) -> List.of(RstStreamFrame.construct(streamId, ERROR_FLOW_CONTROL_ERROR)));
+        final var cause = new IOException("HTTP/2 stream %d received DATA beyond its flow-control window.".formatted(streamId));
+        streamInfo.abortReceiving(cause);
+        messageHandler.handleStreamError(streamInfo, cause);
+    }
+
+    /**
+     * Resets a stream whose peer sent DATA after END_STREAM, a stream error of type STREAM_CLOSED (RFC 9113 §5.1,
+     * §6.1). The body has already ended, so it is not affected.
+     */
+    private void rejectDataAfterEndStream(StreamInfo streamInfo) throws IOException {
+        final var streamId = streamInfo.getStreamId();
+        log.info("Resetting stream {} from {}: the peer sent DATA after END_STREAM (RFC 9113 §6.1).", streamId, remoteAddr);
+        streamInfo.resetForStreamError();
+        sender.send(streamId, (encoder, peerSettings) -> List.of(RstStreamFrame.construct(streamId, ERROR_STREAM_CLOSED)));
+    }
+
+    /**
+     * Three digits between 100 and 599 (RFC 9110 §15).
+     */
+    private static boolean isValidStatus(String status) {
+        if (status.length() != 3 || status.charAt(0) < '1' || status.charAt(0) > '5')
+            return false;
+        for (int i = 0; i < 3; i++)
+            if (status.charAt(i) < '0' || status.charAt(i) > '9')
+                return false;
+        return true;
     }
 
     public InputStream getPackedHeaderStream(List<HeaderBlockFragment> headerFrames) {
@@ -529,7 +960,11 @@ public class Http2Logic {
                         throw new FatalConnectionException(ERROR_FLOW_CONTROL_ERROR);
                     int delta = (int) settingsValue - peerSettings.getInitialWindowSize();
                     for (StreamInfo si : streams.values()) {
-                        si.getPeerFlowControl().increment(delta);
+                        if (!si.getPeerFlowControl().tryIncrement(delta)) {
+                            log.info("Closing HTTP/2 connection from {}: SETTINGS_INITIAL_WINDOW_SIZE makes the window of stream {} exceed 2^31-1 (RFC 9113 §6.9.2).",
+                                    remoteAddr, si.getStreamId());
+                            throw new FatalConnectionException(ERROR_FLOW_CONTROL_ERROR);
+                        }
                     }
                     peerSettings.setInitialWindowSize((int) settingsValue);
                 }

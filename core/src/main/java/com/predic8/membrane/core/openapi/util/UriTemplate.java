@@ -19,6 +19,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.IntStream;
@@ -38,12 +39,14 @@ import static java.util.stream.Collectors.toMap;
 public final class UriTemplate {
 
     private final String template;
+    private final boolean regExp;
     private final Pattern pattern;
     private final List<String> parameterNames;
 
     private UriTemplate(String template, boolean regExp) {
         this.template = template;
-        this.pattern = compile(prepareTemplate(normalizeTemplate(template), regExp));
+        this.regExp = regExp;
+        this.pattern = compile(prepareTemplate(regExp ? template : normalizeTemplate(template), regExp));
         this.parameterNames = getUniqueParameterNames(template);
     }
 
@@ -57,6 +60,10 @@ public final class UriTemplate {
     }
 
     /**
+     * With regExp the template must match the whole path without the query, a trailing slash is not ignored:
+     * <code>^/foo$</code> matches <code>/foo</code> and <code>/foo?a=b</code>, but not <code>/foo/</code>. Without
+     * regExp a trailing slash of the template or the path is ignored.
+     *
      * @param regExp true if the literal parts are regular expressions
      * @throws IllegalArgumentException if a parameter occurs more than once or, without regExp, a curly brace is not part of a template expression
      * @throws PatternSyntaxException   if regExp is true and the template is no valid regular expression after replacing the parameters
@@ -80,8 +87,8 @@ public final class UriTemplate {
      * @return URL-decoded parameter values by name, or empty if the path does not match the template
      */
     public Optional<Map<String, String>> match(String uri) {
-        final var matcher = pattern.matcher(normalizePath(uri));
-        if (!matcher.matches())
+        final var matcher = matcher(uri);
+        if (matcher == null)
             return Optional.empty();
 
         return Optional.of(IntStream.range(0, parameterNames.size())
@@ -100,7 +107,19 @@ public final class UriTemplate {
     }
 
     public boolean matches(String uri) {
-        return pattern.matcher(normalizePath(uri)).matches();
+        return matcher(uri) != null;
+    }
+
+    /**
+     * A regular expression is matched against the path without the query as it is: unlike a template without regular
+     * expressions, <code>^/foo$</code> does not match <code>/foo/</code>. Appending a slash to both would break
+     * anchors, and wrapping the expression would break one like <code>\Q/foo</code> that quotes to the end.
+     *
+     * @return a matcher that matched the path, or null if the path does not match
+     */
+    private Matcher matcher(String uri) {
+        final var matcher = pattern.matcher(regExp ? cutOffQuery(uri) : normalizePath(uri));
+        return matcher.matches() ? matcher : null;
     }
 
     public String getTemplate() {

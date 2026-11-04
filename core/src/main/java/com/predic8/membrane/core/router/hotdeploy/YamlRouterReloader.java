@@ -17,6 +17,7 @@ package com.predic8.membrane.core.router.hotdeploy;
 import com.predic8.membrane.annot.yaml.ConfigurationParsingException;
 import com.predic8.membrane.core.router.DefaultRouter;
 import com.predic8.membrane.core.router.YamlConfigurationSource;
+import com.predic8.membrane.core.util.ConfigurationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -88,6 +89,15 @@ public final class YamlRouterReloader implements ConfigurationReloader {
     private void logReloadFailure(Exception e) {
         if (e instanceof ConfigurationParsingException) {
             log.error("Could not reload YAML configuration: {}", e.getMessage());
+            return;
+        }
+        // Like on startup: the message tells what to fix, a stack trace does not help
+        if (e instanceof ConfigurationException) {
+            if (e.getCause() != null)
+                log.error("Could not reload YAML configuration: {} Reason: {}", e.getMessage(), e.getCause().getMessage());
+            else
+                log.error("Could not reload YAML configuration: {}", e.getMessage());
+            log.debug("Stack trace of the configuration error:", e);
             return;
         }
         log.error("Could not reload YAML configuration.", e);

@@ -43,6 +43,21 @@ paths:
       responses:
         "200":
           description: Ok
+  /pattern-invalid-regex:
+    get:
+      parameters:
+        - name: filter
+          in: query
+          style: form
+          explode: true
+          schema:
+            type: object
+            patternProperties:
+              "[":
+                type: integer
+      responses:
+        "200":
+          description: Ok
   /pattern-collision:
     get:
       parameters:

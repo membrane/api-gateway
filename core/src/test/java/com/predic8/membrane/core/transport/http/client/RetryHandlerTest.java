@@ -19,6 +19,7 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.http.ConnectTimeoutException;
 import com.predic8.membrane.core.transport.http.HttpClientStatusEventBus;
 import com.predic8.membrane.core.transport.http.HttpClientStatusEventListener;
+import com.predic8.membrane.core.transport.http2.StreamNotProcessedException;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -184,6 +185,16 @@ class RetryHandlerTest {
             RetryableExchangeCallMock mock = new RetryableExchangeCallMock(new SocketException("Problem!"));
             assertThrows(SocketException.class, () -> rh.executeWithRetries(post("/foo").buildExchange(), mock));
             assertEquals(1, mock.attempts);
+        }
+
+        /**
+         * The backend did not process the request (RFC 9113 §8.7), so sending it again is safe for every method.
+         */
+        @Test
+        void streamNotProcessedIsRetriedForPost() {
+            RetryableExchangeCallMock mock = new RetryableExchangeCallMock(new StreamNotProcessedException("GOAWAY"));
+            assertThrows(StreamNotProcessedException.class, () -> rh.executeWithRetries(post("/foo").buildExchange(), mock));
+            assertEquals(3, mock.attempts);
         }
 
     }

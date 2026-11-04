@@ -110,16 +110,7 @@ public class ConnectionManager {
 
 		log.debug("Number of connections in pool: " + numberInPool.get());
 
-		String cacheHost = host;
-		int cachePort = port;
-		if (proxy != null && sslProvider == null) {
-			// if a proxy is used, but no SSLProvider, the host:port do not have to be included in the ConnectionKey,
-			// as this simply caches the connection to the proxy
-			cacheHost = "";
-			cachePort = 0;
-		}
-
-		ConnectionKey key = new ConnectionKey(cacheHost, cachePort, sslProvider, sniServerName, proxy, proxySSLContext);
+		ConnectionKey key = createKey(host, port, sslProvider, sniServerName, proxy, proxySSLContext);
 		long now = System.currentTimeMillis();
 
 		synchronized(this) {
@@ -164,7 +155,7 @@ public class ConnectionManager {
 			return;
 		}
 
-		ConnectionKey key = new ConnectionKey(connection.getHost(), connection.socket.getPort(),
+		ConnectionKey key = createKey(connection.getHost(), connection.getPort(),
 				connection.getSslProvider(), connection.getSniServerName(), connection.getProxyConfiguration(),
 				connection.getProxySSLProvider());
 		OldConnection o = new OldConnection(connection, keepAliveTimeout);
@@ -198,6 +189,17 @@ public class ConnectionManager {
 		} catch (Exception e) {
 			log.debug("Could not close pooled connection", e);
 		}
+	}
+
+	private static ConnectionKey createKey(String host, int port, SSLProvider sslProvider, @Nullable String sniServerName,
+										   @Nullable ProxyConfiguration proxy, @Nullable SSLProvider proxySSLProvider) {
+		if (proxy != null && sslProvider == null) {
+			// if a proxy is used, but no SSLProvider, the host:port do not have to be included in the ConnectionKey,
+			// as this simply caches the connection to the proxy
+			host = "";
+			port = 0;
+		}
+		return new ConnectionKey(host, port, sslProvider, sniServerName, proxy, proxySSLProvider);
 	}
 
 	private int closeOldConnections() {

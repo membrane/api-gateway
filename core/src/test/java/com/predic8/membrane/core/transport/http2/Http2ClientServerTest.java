@@ -208,6 +208,18 @@ public class Http2ClientServerTest {
     }
 
     /**
+     * Only open streams count against the concurrent stream limit of 50 (RFC 9113 §5.1.2), so more requests than
+     * that, one after another, still share one connection.
+     */
+    @Test
+    void moreSequentialRequestsThanTheConcurrentStreamLimit() throws Exception {
+        for (int i = 0; i < 60; i++)
+            test200("here");
+
+        assertEquals(1, connectionHashes.size());
+    }
+
+    /**
      * A body that is still unread cannot be sent twice unless it is retained, so a retried request
      * has to keep working over HTTP/2 just as it does over HTTP/1.
      */

@@ -108,6 +108,13 @@ public class DecryptValidatePart extends ValidatePart {
     private static final Set<String> LEGACY_DATA_ALGORITHMS = Set.of(AES128_CBC, AES192_CBC, AES256_CBC);
     private static final Set<String> LEGACY_KEY_TRANSPORT_ALGORITHMS = Set.of(RSA_1_5);
 
+    /**
+     * Far more than a real message carries - the body plus a few headers - yet small enough that
+     * a sender cannot make resolving the references expensive before any key has been checked.
+     * Santuario's secure validation caps a signature at 30 {@code ds:Reference}s for the same reason.
+     */
+    static final int MAX_DATA_REFERENCES = 100;
+
     private List<EncryptionReference> requiredReferences = new ArrayList<>();
     private List<LegacyEncryptionAlgorithm> allowedLegacyAlgorithms = List.of();
 
@@ -421,7 +428,15 @@ public class DecryptValidatePart extends ValidatePart {
         if (dataReferences.isEmpty()) {
             throw new WsSecurityFaultException(INVALID_SECURITY, "xenc:ReferenceList has no xenc:DataReference.");
         }
+        if (dataReferences.size() > MAX_DATA_REFERENCES) {
+            throw new WsSecurityFaultException(INVALID_SECURITY,
+                    "xenc:ReferenceList has %d xenc:DataReference elements; at most %d are accepted."
+                            .formatted(dataReferences.size(), MAX_DATA_REFERENCES));
+        }
 
+        // Indexed once rather than searched per reference, which would cost the sender nothing and
+        // this gateway a pass over the whole document for each one.
+        final var elementsById = new ElementsById(doc);
         List<Element> targets = new ArrayList<>();
         Set<String> seenIds = new HashSet<>();
         for (Element dataReference : dataReferences) {
@@ -439,7 +454,7 @@ public class DecryptValidatePart extends ValidatePart {
             }
             // Ambiguity is rejected inside: a duplicated Id would let an attacker aim the decryption
             // at an element of their choosing rather than the one the reference names.
-            Element target = resolveUniqueElementById(doc, uri.substring(1), INVALID_SECURITY);
+            Element target = elementsById.resolveUnique(uri.substring(1), INVALID_SECURITY);
             if (!isEncryptedData(target)) {
                 throw new WsSecurityFaultException(INVALID_SECURITY,
                         "xenc:DataReference does not point at an xenc:EncryptedData.");

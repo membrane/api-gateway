@@ -31,11 +31,11 @@ public class RewriteAndRedirectTutorialTest extends AbstractRoutingTutorialTest 
         // @formatter:off
         given()
         .when()
-            .get("http://localhost:2000/store/products/1")
+            .get("http://localhost:2000/store/products/13")
         .then()
             .statusCode(200)
-            .body("id", equalTo(1))
-            .body("name", equalTo("Banana"));
+            .body("id", equalTo(13))
+            .body("name", equalTo("Papaya"));
         // @formatter:on
     }
 
@@ -57,10 +57,10 @@ public class RewriteAndRedirectTutorialTest extends AbstractRoutingTutorialTest 
         given()
             .redirects().follow(false)
         .when()
-            .get("http://localhost:2000/v1/products/1")
+            .get("http://localhost:2000/v1/products/13")
         .then()
             .statusCode(301)
-            .header("Location", "/store/products/1");
+            .header("Location", "/store/products/13");
         // @formatter:on
     }
 

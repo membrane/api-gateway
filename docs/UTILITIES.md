@@ -9,7 +9,7 @@ Keep this file in sync when adding, renaming or removing a util class.
 | Class | Purpose |
 |---|---|
 | `StringUtil` | Truncate/tail, mask non-printable chars, add line numbers, split by comma, `yes`/`no` flag parsing, last element of a comma list |
-| `TextUtil` | Charset lookup, encoding detection from byte order mark or zero-byte pattern (`detectEncoding`), XML pretty-print, glob→regex, English list ("a, b and c"), capitalize, escape quotes, multiline indent handling (`unifyIndent`, `getLines`) |
+| `TextUtil` | Charset lookup, encoding detection from byte order mark or zero-byte pattern (`detectEncoding`), XML pretty-print, glob→regex, English list ("a, b and c"), capitalize, escape quotes, escape values for log lines (`escapeForLog` for quoted fields, `escapeControlCharsForLog` for untrusted values inside a message), multiline indent handling (`unifyIndent`, `getLines`) |
 | `SerializationUtil`, `SerializationFunction` | Pick a serializer by mime type or `Serialization`; path/header value encoding |
 | `ToJsonSerializer`, `ToTextSerializer`, `ToURLSerializer`, `ToXMLSerializer` | `Object` → JSON / plain text / URL-encoded / XML string |
 | `TerminalColors` | ANSI colors for console output, with global enable/disable |
@@ -20,7 +20,7 @@ Keep this file in sync when adding, renaming or removing a util class.
 
 | Class | Purpose |
 |---|---|
-| `HttpUtil` | Line reading, `X-Forwarded-For`, GMT date format, header creation, HTML error responses, status code messages, idempotent-method check, token/whitespace char classes |
+| `HttpUtil` | Line reading, `X-Forwarded-For`, GMT date format, header creation, HTML error responses, status code messages, idempotent-method check, cross-origin (CSRF) check, token/whitespace char classes |
 | `MediaTypeUtil` | Most specific matching media type from a set |
 | `ContentTypeDetector` | Effective content type of a `Message` |
 | `http/SSEParser` | Incremental Server-Sent Events parser (`SSEEvent` with `json()`) |
@@ -28,7 +28,7 @@ Keep this file in sync when adding, renaming or removing a util class.
 | `URIUtil` | File path ↔ file URI conversion, path-char encoding, normalization |
 | `URIValidationUtil` | RFC 3986 character classes and host/port validation |
 | `URLUtil` | Authority, path+query, name component, port of a URL |
-| `URLParamUtil` | Query/form parameters from an `Exchange`; build, parse and encode query strings |
+| `URLParamUtil` | Query/form parameters from an `Exchange`; build, parse and encode query strings; mask query values for logging |
 | `UrlNormalizer` | Normalize a base URL |
 | `UriIllegalCharacterDetector` | Detect illegal characters in URIs |
 | `WebServerUtil` | Content type by file extension for static serving |
@@ -78,6 +78,7 @@ Keep this file in sync when adding, renaming or removing a util class.
 | `util/DateAndTimeUtil` | Pretty-print time spans, parse configured ISO dates |
 | `util/Util` | Grab bag: line count, socket shutdown, thread pool, split by comma |
 | `util/ClassFinder` | Classpath scanning |
+| `util/ExtensionLoader` | Create the implementation of an optional Membrane extension (Kafka, JMS) by class name; `ConfigurationException` if missing |
 | `util/ComparatorFactory` | Comparators for admin-console statistics tables |
 | `util/BeanDefinitionBasePathUtil` | Resolve base location of a Spring bean definition |
 | `util/MemcachedConnector`, `util/RedisConnector` | Cache backends |
@@ -88,9 +89,9 @@ Keep this file in sync when adding, renaming or removing a util class.
 | Class | Purpose |
 |---|---|
 | `OpenAPIUtil` | API id/version, 3.x vs Swagger 2 detection, path/parameter/property lookup, explode/query checks |
-| `SchemaUtil` | `$ref` resolution, effective type, string/array/scalar/object checks, item schema by position (`prefixItems`/`items`), parse scalar by schema |
+| `SchemaUtil` | `$ref` resolution, effective type, decoding schema for several applying schemas, string/array/scalar/object checks, item schema by position (`prefixItems`/`items`), parse scalar by schema, cached `patternProperties` regexes (invalid → `OpenAPIParsingException`) |
 | `UriUtil` | Trim/ensure slashes, strip query, rewrite URL parts (not the same as `util/URIUtil`) |
-| `Utils` | Format validators (UUID, e-mail, date, IP, ISO codes, ...), stream/string conversion, validator request/response builders |
+| `Utils` | Format validators (UUID, e-mail, date, IP, ISO codes, ...), stream/string conversion, exact decimal conversion and divisibility, validator request/response builders |
 | `UriTemplateMatcher` | Match request paths against OpenAPI URI templates |
 | `UriTemplate` | Precompiled URI template (OpenAPI path templating, optionally regex literal parts); non-throwing match for hot paths (routing, validation) |
 | `OpenAPI32Parser` | OpenAPI 3.2 parsing shim |

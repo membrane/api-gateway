@@ -8,6 +8,8 @@ services, configurable in YAML or XML. Upstream: https://github.com/membrane/api
 - NEVER commit, push, or open/merge a PR unless the user explicitly asks for it in that moment.
   Stage nothing automatically; report what changed and wait.
 - Use `Closes #<issue>` in commit messages when the work resolves a filed issue.
+- Never mention Claude in commit messages, pull requests, or issues — no `Co-Authored-By: Claude`
+  trailer, no "Generated with Claude Code" footer, no reference in titles or bodies.
 - Never commit customer-derived artifacts — real customer names, WSDLs, XML, or sample payloads,
   not even as test fixtures. Generate synthetic equivalents (`example.com`-style) or reuse
   existing generic fixtures.
@@ -127,6 +129,10 @@ example/tutorial discovery and scaffolding.
 - SLF4J everywhere; no `System.out` in production code.
 - Attack/validation-detection log lines (e.g. XXE/DOCTYPE detection) are intentionally `info`,
   not `warn` — that's an ops-tunable level, not a severity bug to flag in review.
+- Log levels and sensitive data: `debug`/`trace` may log anything (raw headers, cookies,
+  bodies, unescaped input), because they are not for production; don't flag that in review. `info`,
+  `warn` and `error` must not expose secrets (credentials, tokens, session IDs, private keys)
+  and must escape untrusted values with `TextUtil.escapeControlCharsForLog`.
 
 ## Utility classes
 

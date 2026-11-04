@@ -33,11 +33,7 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.schemavalidation.json.JSONYAMLSchemaValidator.SCHEMA_VERSION_2020_12;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class JSONYAMLSchemaValidatorTest {
 
@@ -175,6 +171,70 @@ class JSONYAMLSchemaValidatorTest {
                 }
                 """).buildExchange();
         validator.validateMessage( exc, REQUEST);
+    }
+
+    /**
+     * json-schema-validator up to 2.0.1 skipped property names starting with '#' in additionalProperties.
+     */
+    @Test
+    void additionalPropertyStartingWithHash() throws Exception {
+        final var exc = get("/foo").body("""
+                {
+                    "name": "Bob",
+                    "#unknown": "foo"
+                }
+                """).buildExchange();
+        assertEquals(ABORT, validator.validateMessage(exc, REQUEST));
+    }
+
+    /**
+     * Only the first JSON value used to be validated while the whole body was forwarded.
+     */
+    @Test
+    void trailingJsonValue() throws Exception {
+        final var exc = get("/foo").body("""
+                {
+                    "name": "Bob"
+                }
+                {
+                    "age": -1
+                }
+                """).buildExchange();
+        assertEquals(ABORT, validator.validateMessage(exc, REQUEST));
+        assertEquals(1, validator.getInvalid());
+        assertEquals(0, validator.getValid());
+    }
+                                         
+    /**
+     * An additionalProperties error per forbidden property used to carry the whole object, so the
+     * error response grew with the number of properties times the body size.
+     */
+    @Test
+    void errorsDoNotContainTheInstance() throws Exception {
+        final var exc = get("/foo").body("""
+                {
+                    "name": "Bob",
+                    "secret": "hunter2"
+                }
+                """).buildExchange();
+        assertEquals(ABORT, validator.validateMessage(exc, REQUEST));
+        final var response = exc.getResponse().getBodyAsStringDecoded();
+        assertFalse(response.contains("hunter2"), response);
+        assertNull(new ObjectMapper().readTree(response).get("errors").get(0).get("node"));
+    }
+
+    @Test
+    void errorsAreLimited() throws Exception {
+        final var body = new StringBuilder("{");
+        for (var i = 0; i < 20; i++)
+            body.append("\"p%d\": %d,".formatted(i, i));
+        body.append("\"name\": \"Bob\"}");
+        final var exc = get("/foo").body(body.toString()).buildExchange();
+
+        assertEquals(ABORT, validator.validateMessage(exc, REQUEST));
+        final var response = new ObjectMapper().readTree(exc.getResponse().getBodyAsStreamDecoded());
+        assertEquals(10, response.get("errors").size());
+        assertTrue(response.get("errorsTruncated").asBoolean());
     }
 
     @Test

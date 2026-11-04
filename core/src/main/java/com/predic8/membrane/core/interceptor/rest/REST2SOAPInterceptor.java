@@ -53,7 +53,11 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 
 /**
- * @description Converts REST requests into SOAP messages.
+ * @description <p>Converts REST requests into SOAP messages.</p>
+ * <h3>Security Hint</h3>
+ * <p>The mapping expressions run on the request path. Overlapping quantifiers such as <code>(.*)/(.*)</code>
+ * can take a long time on crafted paths. See
+ * <a href="https://www.membrane-api.io/security/membrane-redos-protection.html">ReDoS Protection</a>.</p>
  * @topic 6. Web Services with SOAP and WSDL
  */
 @MCElement(name = "rest2Soap")

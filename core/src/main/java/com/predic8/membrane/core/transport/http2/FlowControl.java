@@ -34,6 +34,8 @@ public class FlowControl {
     public long ourWindowPositionProcessed;
     @GuardedBy("this")
     public final int ourWindowSizeStep;
+    /** The initial window size this window started with. */
+    private final int initialWindowSize;
 
 
     public FlowControl(int streamId, FrameSender sender, Settings ourSettings) {
@@ -41,6 +43,16 @@ public class FlowControl {
         this.sender = sender;
         ourWindowSize = ourSettings.getInitialWindowSize();
         ourWindowSizeStep = ourSettings.getInitialWindowSize();
+        initialWindowSize = ourSettings.getInitialWindowSize();
+    }
+
+    /**
+     * Whether DATA of the given length, received next, exceeds the window granted to the peer. If the given initial
+     * window size is larger than the one this window started with, the window is larger by the difference: a change of
+     * SETTINGS_INITIAL_WINDOW_SIZE applies to the windows of all streams (RFC 9113 §6.9.2).
+     */
+    public synchronized boolean exceedsWindow(int length, int currentInitialWindowSize) {
+        return ourWindowPositionReceived + length > ourWindowSize + Math.max(0, currentInitialWindowSize - initialWindowSize);
     }
 
     /**

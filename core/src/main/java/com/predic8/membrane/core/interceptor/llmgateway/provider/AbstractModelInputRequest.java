@@ -61,9 +61,9 @@ public abstract class AbstractModelInputRequest extends BaseLLMRequest implement
     private void readMultipart(Exchange exchange) throws IOException {
         try {
             for (var part : MultipartUtil.split(exchange.getRequest())) {
-                log.info("Part: name={} type={} size={}", part.getName(), part.getContentType(), part.getBody().length);
+                log.debug("Part: name={} type={} size={}", part.getName(), part.getContentType(), part.getBody().length);
                 if ("model".equals(part.getName())) {
-                    log.info("Model: {}", part.getBodyAsString());
+                    log.debug("Model: {}", part.getBodyAsString());
                     model = part.getBodyAsString();
                 }
             }
@@ -92,12 +92,17 @@ public abstract class AbstractModelInputRequest extends BaseLLMRequest implement
     }
 
     @Override
-    public String getSystemPrompt() {
-        return "";
+    public void overwriteSystemPrompt(String prompt) {
+        log.warn("Not supported.");
     }
 
     @Override
-    public void setSystemPrompts(List<String> prompts) {
+    public void prependSystemPrompt(String prompt) {
+        log.warn("Not supported.");
+    }
+
+    @Override
+    public void appendSystemPrompt(String prompt) {
         log.warn("Not supported.");
     }
 

@@ -46,10 +46,10 @@ public class AuthorizationCodeFlow extends TokenRequest {
         SessionManager.Session session = authServer.getSessionFinder().getSessionForCode(getCode());
         authServer.getSessionFinder().removeSessionForCode(getCode());
 
+        // The token request's parameters stay out of the session: ID tokens and userinfo read the user's claims from it
         String username;
         synchronized (session) {
             username = session.getUserName();
-            session.getUserAttributes().putAll(params);
         }
         Client client;
         try {

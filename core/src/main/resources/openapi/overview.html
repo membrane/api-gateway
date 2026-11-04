@@ -66,6 +66,7 @@ def effectivePath = { api, server ->
     (api.value.spec.hasRewrite() && api.value.spec.rewrite.basePath != null) ? api.value.spec.rewrite.basePath : com.predic8.membrane.core.openapi.util.UriUtil.getPathFromURL(uriFactory, server.url)
 }
 def hasRootServerPath = { api, server -> def p = effectivePath(api, server); p == '' || p == '/' }
+def h = { s -> org.apache.commons.text.StringEscapeUtils.escapeHtml4(s?.toString()) }
 %>
 
 
@@ -87,23 +88,23 @@ def hasRootServerPath = { api, server -> def p = effectivePath(api, server); p =
     <tr <% if (apis.size() > 1 && api.value.api.servers.any { server -> hasRootServerPath(api, server)}) { %> class="warning" <% } %> >
     <td>
         <!--suppress HtmlUnknownTarget -->
-        <a href="${pathUi}/${api.key}"><%= api.value.api.info.title %></a></td>
+        <a href="${pathUi}/${api.key}"><%= h(api.value.api.info.title) %></a></td>
     <td>
         <ul>
             <% for (server in api.value.api.servers) { %>
             <li>
-                <%= effectivePath(api, server) %><br>
-                <%= server.description != null ? server.description : "" %>
+                <%= h(effectivePath(api, server)) %><br>
+                <%= server.description != null ? h(server.description) : "" %>
             </li>
             <% } %>
         </ul>
 
     </td>
-    <td><%= api.value.api.info.version %></td>
+    <td><%= h(api.value.api.info.version) %></td>
     <td>
-        <%= api.value.api.openapi %>
+        <%= h(api.value.api.openapi) %>
         <% if (api.value.api.extensions?.'x-original-swagger-version') { %>
-        (from <%= api.value.api.extensions.'x-original-swagger-version' %>)
+        (from <%= h(api.value.api.extensions.'x-original-swagger-version') %>)
         <% } %>
     </td>
     <td><a href="${path}/${api.key}"><%= api.key %></a></td>

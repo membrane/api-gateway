@@ -169,6 +169,29 @@ class APIProxyKeyComplexMatchTest {
     }
 
     @Test
+    @DisplayName("A regular expression path anchored with $ matches (#3621)")
+    void regExpPathAnchoredWithDollar() {
+        var key = new APIProxyKey("", "", 80, "^\\/?$", "*", null, false);
+        key.setPathRegExp(true);
+        assertTrue(key.matchesPath("/"));
+        assertFalse(key.matchesPath("/foo"));
+    }
+
+    @Test
+    @DisplayName("A regular expression path is not matched as prefix")
+    void regExpPathIsNotPrefix() {
+        var key = new APIProxyKey("", "", 80, "/foo", "*", null, false);
+        key.setPathRegExp(true);
+        assertTrue(key.matchesPath("/foo"));
+        assertTrue(key.matchesPath("/foo?a=b"));
+        assertFalse(key.matchesPath("/foo/"));
+        assertFalse(key.matchesPath("/foo/bar"));
+
+        key.setPath("^/foo$");
+        assertFalse(key.matchesPath("/foo/"));
+    }
+
+    @Test
     @DisplayName("Without a path every path matches without parameters")
     void matchPathTemplateWithoutPath() {
         var key = new APIProxyKey("", "", 80, null, "*", null, false);
@@ -181,6 +204,7 @@ class APIProxyKeyComplexMatchTest {
     void matchesPathDoesNotSwallowSharedBasePath() {
         // Two APIs share the rewrite base path /jfa/api/ but are told apart by their configured path.
         var key = new APIProxyKey("", "", 8443, "/jfa/api/housekeeping", "*", null, true) {{
+            setPathRegExp(false);
             addBasePaths(new ArrayList<>(List.of("/jfa/api/")));
         }};
 
@@ -197,6 +221,7 @@ class APIProxyKeyComplexMatchTest {
     @DisplayName("Api docs paths stay reachable when the key was not built from OpenAPI specs, e.g. wsdl2openapi")
     void matchesPathAllowsRegisteredApiDocsPaths() {
         var key = new APIProxyKey("", "", 2000, "/service", "*", null, false) {{
+            setPathRegExp(false);
             addApiDocsPaths(new ArrayList<>(List.of("/api-docs")));
             addBasePaths(new ArrayList<>(List.of("/service")));
         }};

@@ -28,6 +28,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
+import java.time.Duration;
 
 import static com.predic8.membrane.annot.Constants.CRLF;
 import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
@@ -736,6 +737,51 @@ public class RequestTest {
         }
 
         @Test
+        void leadingSpaceIsPartOfMethod() throws IOException {
+            assertStartLine(" GET /foo HTTP/1.1", " GET", "/foo", "1.1");
+        }
+
+        @Test
+        void manySpacesWithoutVersionDoNotBacktrack() {
+            assertTimeoutPreemptively(Duration.ofSeconds(1), () -> {
+                var line = "a ".repeat(4000);
+                assertStartLine(line, line, "", "STOMP");
+            });
+        }
+
+        @Test
+        void manySpacesWithEmptyVersionDoNotBacktrack() {
+            assertTimeoutPreemptively(Duration.ofSeconds(1), () -> {
+                var line = "a ".repeat(3990) + "HTTP/";
+                assertStartLine(line, line, "", "STOMP");
+            });
+        }
+
+        /**
+         * Byte 0x85 is NEL, a line terminator for regex. The former regex parser stopped there and dropped or misread
+         * the parts around it.
+         */
+        @Test
+        void nextLineInVersionIsRejected() {
+            assertRejected("GET / HTTP/1.\u00851");
+        }
+
+        @Test
+        void nextLineAfterVersionIsRejected() {
+            assertRejected("GET / HTTP/1.0\u0085");
+        }
+
+        @Test
+        void nextLineInUriIsRejected() {
+            assertRejected("GET /a\u0085b HTTP/1.1");
+        }
+
+        @Test
+        void nextLineInMethodIsRejected() {
+            assertRejected("X\u0085GET / HTTP/1.1");
+        }
+
+        @Test
         void lineTooLong() {
             assertThrows(LineTooLongException.class, () -> parse(("GET /" + "a".repeat(9000) + " HTTP/1.1\r\n").getBytes(UTF_8)));
         }
@@ -795,6 +841,10 @@ public class RequestTest {
             assertEquals(method, req.getMethod());
             assertEquals(uri, req.getUri());
             assertEquals(version, req.getVersion());
+        }
+
+        private static void assertRejected(String startLine) {
+            assertThrows(EOFWhileReadingFirstLineException.class, () -> parse((startLine + "\r\n").getBytes(ISO_8859_1)));
         }
 
         private static Request parse(byte[] startLine) throws IOException {

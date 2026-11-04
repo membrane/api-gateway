@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=https://www.membrane-api.io/v7.7.1.json
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.8.0.json
 #
 # Tutorial: APIs.json
 #
@@ -22,6 +22,7 @@ api:
   path:
     uri: /.well-known/apis.json
   flow:
+    - beautifier: {} # Make JSON pretty for humans
     - apisJson:
         collectionId: shop
         name: Example Shop

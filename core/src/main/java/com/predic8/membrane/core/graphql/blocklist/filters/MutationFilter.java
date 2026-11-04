@@ -18,7 +18,6 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.graphql.GraphQLOverHttpValidationException;
 import com.predic8.membrane.core.graphql.model.ExecutableDocument;
 import com.predic8.membrane.core.graphql.model.Field;
-import com.predic8.membrane.core.graphql.model.Selection;
 
 import java.util.List;
 
@@ -32,16 +31,14 @@ public class MutationFilter implements GraphQLFeatureFilter {
     @Override
     public void filter(ExecutableDocument ed) throws GraphQLOverHttpValidationException {
         getMutationOperations(ed.getExecutableDefinitions()).forEach(mutation ->
-                checkMutationSelections(mutation.getSelections())
+                checkMutationFields(ed.collectFields(mutation.getSelections()))
         );
     }
 
-    private void checkMutationSelections(List<Selection> selections) throws GraphQLOverHttpValidationException {
-        selections.forEach(selection -> {
-            if (selection instanceof Field field) {
-                if (field.getName().equals(name)) {
-                    throw new GraphQLOverHttpValidationException("Mutation \"" + name + "\" not permitted.");
-                }
+    private void checkMutationFields(List<Field> fields) throws GraphQLOverHttpValidationException {
+        fields.forEach(field -> {
+            if (field.getName().equals(name)) {
+                throw new GraphQLOverHttpValidationException("Mutation \"" + name + "\" not permitted.");
             }
         });
     }

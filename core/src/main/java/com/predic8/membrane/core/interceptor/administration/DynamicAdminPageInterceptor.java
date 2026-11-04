@@ -40,10 +40,13 @@ import java.util.*;
 import java.util.regex.Pattern;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
+import static com.predic8.membrane.core.http.Header.ALLOW;
 import static com.predic8.membrane.core.http.MimeType.TEXT_HTML_UTF8;
+import static com.predic8.membrane.core.http.Request.METHOD_POST;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.administration.AdminPageBuilder.createHRef;
 import static com.predic8.membrane.core.interceptor.rest.RESTInterceptor.getRelativeRootPath;
+import static com.predic8.membrane.core.util.HttpUtil.isCrossOrigin;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
 import static com.predic8.membrane.core.util.URLParamUtil.createQueryString;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -177,7 +180,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	}
 
 	@SuppressWarnings("unused")
-	@Mapping("/admin/service-proxy/save/?(\\?.*)?")
+	@Mapping(value = "/admin/service-proxy/save/?(\\?.*)?", modifiesState = true)
 	public Response handleServiceProxySaveRequest(Map<String, String> params, String relativeRootPath) throws Exception {
 		if (readOnly)
 			return createReadOnlyErrorResponse();
@@ -200,7 +203,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	}
 
 	@SuppressWarnings("unused")
-	@Mapping("/admin/proxy/save/?(\\?.*)?")
+	@Mapping(value = "/admin/proxy/save/?(\\?.*)?", modifiesState = true)
 	public Response handleProxySaveRequest(Map<String, String> params, String relativeRootPath) throws Exception {
 		if (readOnly)
 			return createReadOnlyErrorResponse();
@@ -216,7 +219,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	}
 
 	@SuppressWarnings("unused")
-	@Mapping("/admin/service-proxy/delete/?(\\?.*)?")
+	@Mapping(value = "/admin/service-proxy/delete/?(\\?.*)?", modifiesState = true)
 	public Response handleServiceProxyDeleteRequest(Map<String, String> params, String relativeRootPath) {
 		if (readOnly)
 			return createReadOnlyErrorResponse();
@@ -228,7 +231,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	}
 
 	@SuppressWarnings("unused")
-	@Mapping("/admin/service-proxy/start/?(\\?.*)?")
+	@Mapping(value = "/admin/service-proxy/start/?(\\?.*)?", modifiesState = true)
 	public Response handleServiceProxyStartRequest(Map<String, String> params, String relativeRootPath)
 			throws Exception {
 		if (readOnly)
@@ -241,7 +244,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	}
 
 	@SuppressWarnings("unused")
-	@Mapping("/admin/proxy/delete/?(\\?.*)?")
+	@Mapping(value = "/admin/proxy/delete/?(\\?.*)?", modifiesState = true)
 	public Response handleProxyDeleteRequest(Map<String, String> params, String relativeRootPath) {
 		if (readOnly)
 			return createReadOnlyErrorResponse();
@@ -329,7 +332,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	}
 
 	@SuppressWarnings("unused")
-	@Mapping("/admin/clusters/save/?(\\?.*)?")
+	@Mapping(value = "/admin/clusters/save/?(\\?.*)?", modifiesState = true)
 	public Response handleClustersSaveRequest(Map<String, String> params, String relativeRootPath) {
 		if (readOnly)
 			return createReadOnlyErrorResponse();
@@ -368,7 +371,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 				p().text("Current threads: " + n.getThreads()).end();
 				p().text("Requests without responses: " + n.getLost()).end();
 				span().classAttr("mb-button");
-				createLink("Reset Counter", "node", "reset", createQueryString("balancer", balancer, "cluster",params.get("cluster"),"host",n.getHost(),"port", ""+n.getPort()));
+				createPostButton("Reset Counter", "node", "reset", createQueryString("balancer", balancer, "cluster",params.get("cluster"),"host",n.getHost(),"port", ""+n.getPort()));
 				end();
 				span().classAttr("mb-button");
 				createLink("Show Sessions", "node", "sessions", createQueryString("balancer", balancer, "cluster",params.get("cluster"),"host",n.getHost(),"port", ""+n.getPort()));
@@ -400,7 +403,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	}
 
 	@SuppressWarnings("unused")
-	@Mapping("/admin/node/save/?(\\?.*)?")
+	@Mapping(value = "/admin/node/save/?(\\?.*)?", modifiesState = true)
 	public Response handleNodeSaveRequest(Map<String, String> params, String relativeRootPath) {
 		if (readOnly)
 			return createReadOnlyErrorResponse();
@@ -419,8 +422,11 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	}
 
 	@SuppressWarnings("unused")
-	@Mapping("/admin/node/up/?(\\?.*)?")
+	@Mapping(value = "/admin/node/up/?(\\?.*)?", modifiesState = true)
 	public Response handleNodeUpRequest(Map<String, String> params, String relativeRootPath) {
+		if (!isExistingNode(params))
+			return createUnknownNodeResponse();
+
 		BalancerUtil.lookupBalancer(router, getBalancerParam(params)).up(
 				params.get("cluster"), params.get("host"),
 				Integer.parseInt(params.get("port")));
@@ -428,8 +434,11 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	}
 
 	@SuppressWarnings("unused")
-	@Mapping("/admin/node/takeout/?(\\?.*)?")
+	@Mapping(value = "/admin/node/takeout/?(\\?.*)?", modifiesState = true)
 	public Response handleNodeTakeoutRequest(Map<String, String> params, String relativeRootPath) {
+		if (!isExistingNode(params))
+			return createUnknownNodeResponse();
+
 		BalancerUtil.lookupBalancer(router, getBalancerParam(params)).takeout(
 				params.get("cluster"), params.get("host"),
 				Integer.parseInt(params.get("port")));
@@ -437,8 +446,11 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	}
 
 	@SuppressWarnings("unused")
-	@Mapping("/admin/node/down/?(\\?.*)?")
+	@Mapping(value = "/admin/node/down/?(\\?.*)?", modifiesState = true)
 	public Response handleNodeDownRequest(Map<String, String> params, String relativeRootPath) {
+		if (!isExistingNode(params))
+			return createUnknownNodeResponse();
+
 		BalancerUtil.lookupBalancer(router, getBalancerParam(params)).down(
 				params.get("cluster"), params.get("host"),
 				Integer.parseInt(params.get("port")));
@@ -446,7 +458,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	}
 
 	@SuppressWarnings("unused")
-	@Mapping("/admin/node/delete/?(\\?.*)?")
+	@Mapping(value = "/admin/node/delete/?(\\?.*)?", modifiesState = true)
 	public Response handleNodeDeleteRequest(Map<String, String> params, String relativeRootPath) {
 		if (readOnly)
 			return createReadOnlyErrorResponse();
@@ -458,8 +470,11 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	}
 
 	@SuppressWarnings("unused")
-	@Mapping("/admin/node/reset/?(\\?.*)?")
+	@Mapping(value = "/admin/node/reset/?(\\?.*)?", modifiesState = true)
 	public Response handleNodeResetRequest(Map<String, String> params, String relativeRootPath) {
+		if (!isExistingNode(params))
+			return createUnknownNodeResponse();
+
 		BalancerUtil.lookupBalancer(router, getBalancerParam(params)).getNode(
 				params.get("cluster"), params.get("host"),
 				Integer.parseInt(params.get("port"))).clearCounter();
@@ -489,7 +504,13 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	@SuppressWarnings("unused")
 	@Mapping("/admin/call/?(\\?.*)?")
 	public Response handleCallRequest(Map<String, String> params, String relativeRootPath) {
-		return respond(getCallPage(params, relativeRootPath));
+		final long id;
+		try {
+			id = Long.parseLong(params.get("id"));
+		} catch (NumberFormatException e) {
+			return Response.badRequest("Invalid exchange id.").build();
+		}
+		return respond(getCallPage(params, id, relativeRootPath));
 	}
 
 	@SuppressWarnings("unused")
@@ -760,7 +781,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		return res;
 	}
 
-	private String getCallPage(final Map<String, String> params, String relativeRootPath) {
+	private String getCallPage(final Map<String, String> params, final long id, String relativeRootPath) {
 		StringWriter writer = new StringWriter();
 		return new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
@@ -774,7 +795,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 						"					$( \"#exchangeTab\" ).tabs();\r\n" +
 						"					$( \"#requestContentTab\" ).tabs();\r\n" +
 						"					$( \"#responseContentTab\" ).tabs();\r\n" +
-						"                   membrane.loadExchange("+params.get("id")+");\r\n"+
+						"                   membrane.loadExchange("+id+");\r\n"+
 						"				});").end();
 
 				div().id("exchangeTab");
@@ -873,6 +894,15 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		for (Method m : getClass().getMethods() ) {
 			Mapping a = m.getAnnotation(Mapping.class);
 			if ( a != null && Pattern.matches(a.value(), pathQuery)) {
+				if (a.modifiesState() && !exc.getRequest().isPOSTRequest()) {
+					exc.setResponse(Response.methodNotAllowed().header(ALLOW, METHOD_POST).build());
+					return RETURN;
+				}
+				if (a.modifiesState() && isCrossOrigin(exc)) {
+					log.info("Rejected cross-origin request to {}", pathQuery);
+					exc.setResponse(Response.forbidden("Cross-origin requests may not change the router's state.").build());
+					return RETURN;
+				}
 				exc.setResponse((Response)m.invoke(this, new Object[] { getParams(exc), getRelativeRootPath(pathQuery) }));
 				return RETURN;
 			}
@@ -928,6 +958,20 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 
 	public void setUseXForwardedForAsClientAddr(boolean useXForwardedForAsClientAddr) {
 		this.useXForwardedForAsClientAddr = useXForwardedForAsClientAddr;
+	}
+
+	/**
+	 * Changing a node's status from the console must not add the node: the balancer would send traffic to any
+	 * host given in the request, even when the console is readOnly.
+	 */
+	private boolean isExistingNode(Map<String, String> params) {
+		return BalancerUtil.lookupBalancer(router, getBalancerParam(params)).hasNode(
+				params.get("cluster"), params.get("host"),
+				Integer.parseInt(params.get("port")));
+	}
+
+	private Response createUnknownNodeResponse() {
+		return Response.notFound().body("Unknown node.").build();
 	}
 
 	public Response createReadOnlyErrorResponse() {

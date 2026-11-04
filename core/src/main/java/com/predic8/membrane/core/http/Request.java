@@ -31,7 +31,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URISyntaxException;
 import java.util.HashSet;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.predic8.membrane.annot.Constants.CRLF;
@@ -45,7 +44,8 @@ public class Request extends Message {
 
     private static final Logger log = LoggerFactory.getLogger(Request.class);
 
-    private static final Pattern pattern = Pattern.compile("(.+?) (.+?) HTTP/(.+?)$");
+    private static final String HTTP_VERSION_PREFIX = " HTTP/";
+    private static final char NEXT_LINE = '\u0085';
     private static final Pattern stompPattern = Pattern.compile("^(.+?)$");
 
     public static final String METHOD_GET = "GET";
@@ -84,12 +84,14 @@ public class Request extends Message {
     protected void parseStartLine(InputStream in) throws IOException {
         try {
             String firstLine = HttpUtil.readLine(in);
-            Matcher matcher = pattern.matcher(firstLine);
-            if (matcher.find()) {
-                method = matcher.group(1);
-                uri = matcher.group(2);
-                version = matcher.group(3);
-            } else if (stompPattern.matcher(firstLine).find()) {
+            // readLine() maps each byte to one char and stops at CR and LF, so NEL (0x85) is the only regex line
+            // terminator that can remain. The former regex parser dropped or misread the parts around it, and
+            // stompPattern still accepts it at the end of the line.
+            if (firstLine.indexOf(NEXT_LINE) >= 0)
+                throw new EOFWhileReadingFirstLineException(firstLine);
+            if (parseHttpStartLine(firstLine))
+                return;
+            if (stompPattern.matcher(firstLine).find()) {
                 method = firstLine;
                 uri = "";
                 version = "STOMP";
@@ -101,6 +103,23 @@ public class Request extends Message {
                 throw new NoMoreRequestsException(); // happens regularly at the end of a keep-alive connection
             throw new EOFWhileReadingFirstLineException(e.getLineSoFar());
         }
+    }
+
+    /**
+     * Splits {@code <method> <uri> HTTP/<version>}. The method ends at the first space, the uri at the first
+     * " HTTP/" after it, and method, uri and version must not be empty.
+     */
+    private boolean parseHttpStartLine(final String line) {
+        final var methodEnd = line.indexOf(' ', 1);
+        if (methodEnd < 0)
+            return false;
+        final var uriEnd = line.indexOf(HTTP_VERSION_PREFIX, methodEnd + 2);
+        if (uriEnd < 0 || uriEnd + HTTP_VERSION_PREFIX.length() == line.length())
+            return false;
+        method = line.substring(0, methodEnd);
+        uri = line.substring(methodEnd + 1, uriEnd);
+        version = line.substring(uriEnd + HTTP_VERSION_PREFIX.length());
+        return true;
     }
 
     public String getMethod() {

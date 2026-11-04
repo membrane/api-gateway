@@ -141,6 +141,17 @@ public class Balancer {
 		getCluster(cluster).removeNode(new Node(host, port));
 	}
 
+	/**
+	 * Unlike {@link #up(String, String, int)} and the other node operations, this never creates the cluster or
+	 * the node.
+	 */
+	public boolean hasNode(String cName, String host, int port) {
+		if (cName == null)
+			return false;
+		final var cluster = clusters.get(cName);
+		return cluster != null && cluster.getNodes().contains(new Node(host, port));
+	}
+
 	public Node getNode(String cluster, String host, int port) {
 		return getCluster(cluster).getNode(new Node(host, port));
 	}

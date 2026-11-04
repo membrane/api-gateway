@@ -65,6 +65,19 @@ PRIO 3:
   - Keep the system property as a fallback, or deprecate it.
   - Document that zero or less means no limit.
   - Related: #3382 (a line over the limit gets a connection reset instead of 414/431), #3378 item 3 (8092 is probably a typo for 8192).
+- soapHeader interceptor
+  - Story: add or remove SOAP header blocks by configuration. Replaces the removed `add-soap-header` example, which needed a custom Java interceptor.
+  - Idea:
+    ```yaml
+    - soapHeader:
+        remove:
+          name: Security
+          namespaceUri: http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd
+        add: |
+          <ns1:token xmlns:ns1="http://example.com/auth">...</ns1:token>
+    ```
+  - Parse with the hardened XML parser.
+
 
 ## Membrane 8.0.0 (Java 25)
 
@@ -149,11 +162,27 @@ PRIO 3:
   - Also `kafkaConsumer` with retryInit: the consumer starts in `init()`, before the interceptors of the flow. If one of them fails, the API stays inactive with a running consumer that reads without delivering. Every retry replaces the API with a clone, and `clone()` and `replaceRule()` both initialize it, so the consumer is restarted twice per retry and the consumer group rebalances. Also, without the Kafka extension Membrane starts anyway with an inactive API, although the docs say it does not start. For now `kafkaConsumer` refuses to start when retryInit is on, but `AbstractProxy.init` swallows that exception under retryInit, so Membrane starts anyway with the API inactive and retries it forever.
   - Idea: `Proxy.destroy()`, called by `RuleManager.removeRule()` and by `replaceRule()` on the old API **before** `newProxy.init()`. A clone shares the consumer reference with the original, so stopping the old API after the clone was initialized would stop the clone's consumer. Stopping first also keeps two consumers of the same group from running at once.
   - Then look at `kafkaConsumer` again: drop the shared `AtomicReference` that clones need for `@PreDestroy`, allow hotDeploy and retryInit again, and check what happens when `newProxy.init()` fails after the old consumer was stopped.
+- `groovy`: serialize a returned `List` to a JSON body like a `Map`
+  - Story: since 7.9 the `javascript` plugin turns a returned array into a JSON body (`isListSerializedToJson()` in `AbstractScriptInterceptor`). `groovy` still ignores a returned `List`, so the two languages differ.
+  - **Breaking**: `list.each {...}`, `collect` or `findAll` as the last statement returns a list, which then replaces the body. Name ending the script with `CONTINUE` in the release notes. Then remove the hook.
+- `template`: render `.xml` template files with the streaming engine and escape inserted values
+  - Story: a `template` whose `location` ends in `.xml` is rendered by Groovy's `XmlTemplateEngine`, which escapes only the template's own text. Values inserted with `${}`, also in attributes, and with `<gsp:expression>` are not escaped. All other templates use the adapted `StreamingTemplateEngine`, which escapes `${}` and `<%= %>` for the content type.
+  - Fix: drop `XmlTemplateEngine`. A `.xml` file only sets the content type to `application/xml` (as `.json` does for JSON) and is rendered by `StreamingTemplateEngine` with XML escaping. The output is no longer re-indented (`pretty: true` formats it). Check whether the built-in functions (`xpath()`, `user()`, ...) work in `.xml` files today; only the streaming engine sets the `fn` delegate.
+  - Raw XML stays possible as with inline templates: `<% out << x %>`, or a DOM node or node list, e.g. from `xpath()`.
+  - **Breaking**: `<gsp:scriptlet>` and `<gsp:expression>` are no longer processed. If a template declares the `http://groovy.codehaus.org/2005/gsp` namespace, fail at startup with a `ConfigurationException` that shows the rewrite (`<gsp:scriptlet>` → `<% %>`, `<gsp:expression>` → `${}`), so it is never output literally. Values that inserted markup through `${}` are escaped now. Comments are no longer removed. Rewrite `distribution/examples/templating/xml/template.xml`, or drop it with the examples.
+  - Until then, the `template` reference docs say that values in `.xml` files are not escaped.
 - Reorganisation of *Util* classes. Check for duplicates and right place.
 - WSDL validation: change the default of the `validator` attribute `headers` from `none` to `bound`
   - Story: 7.8 can validate SOAP header blocks (#3582) but leaves it off by default, so an update does not start rejecting messages whose headers passed before. With `bound`, the header blocks the WSDL binds with `soap:header` and `soap:headerfault` are validated against the WSDL's schemas.
   - **Breaking**: a message with an invalid bound header block is rejected. Name `headers: none` in the release notes as the way to keep the old behavior.
   - Change the default of the `headers` field and `@default` of `setHeaders` in `ValidatorInterceptor`, and of the `WSDLValidator` constructors without a `HeaderValidation` parameter.
+- To discuss: make the regex engine a swappable component, with RE2/J or a comparable linear-time engine as the default
+  - Story: configured regular expressions run on `java.util.regex`, which backtracks. Overlapping quantifiers can take quadratic or worse time on crafted requests (ReDoS). Today the operator has to avoid such patterns, see https://www.membrane-api.io/security/membrane-redos-protection.html.
+  - A linear-time engine such as RE2/J (`com.google.re2j`, 114 KB, no dependencies) rules this out whatever the pattern.
+  - Affected: every place a configured or spec-supplied pattern meets request data, e.g. `path` with `isRegExp`, `rewriter`, `regExReplacer`, `formValidation`, `rest2Soap` mappings, OpenAPI `pattern` and `patternProperties`, host matching.
+  - Idea: one engine abstraction (compile, find, matches, replace with groups) used by all of them, selected globally in the configuration (e.g. `re2` default, `java` opt-in), maybe overridable per element.
+  - **Breaking**: RE2 has no lookarounds, backreferences or possessive quantifiers. Configurations using them fail at startup with RE2 and need the `java` engine. Replacement syntax (`$1`) and flags (`(?i)`, Unicode case folding) differ in details.
+  - To decide: whether an invalid pattern under RE2 fails at startup or falls back to `java` with a warning; how OpenAPI/JSON Schema `pattern` (ECMA-262) maps onto the engines; the performance of RE2/J for short inputs compared with `java.util.regex`.
 - To discuss:
   - validator/ValidatorInterceptor is for WSDL, XSD, Schematron, JSON Schema?
   - Maybe we should split that to wsdlValidator, xmlSchemaValidator, jsonSchemaValidator?
@@ -192,6 +221,31 @@ Correct the known WSDL 1.1 §3.5 discrepancy during this refactoring:
 Add regression tests before changing the incorrect behavior. Cover absent/empty/explicit parts, shared body/header parts, different bindings of the same message, required-header intersections, faults, and cyclic schema imports.
 
 Avoid expanding unrelated unsupported WSDL features. Use the repository’s targeted test workflow. Do not commit or push. Report the model, compatibility implications, and test results.
+
+#### Harmonize JSON parsers
+
+- Story: JSON is parsed in many places with differently configured parsers. About 76 classes in `core` create their own `new ObjectMapper()`, mostly with Jackson's lenient defaults, e.g. trailing tokens are ignored. The JSON Schema, OpenAPI and JSON-RPC validators already reject trailing data; other parsers do not.
+- Central, immutable parser configuration in `JsonUtil` (shared `ObjectReader`s instead of mutable `ObjectMapper`s): strict by default (`FAIL_ON_TRAILING_TOKENS`, duplicate key detection), with one place for limits such as nesting depth and string length.
+- Every validator and every interceptor that parses a body uses it. Parse the body once and keep the `JsonNode` on the message (see JSONBody under Improvements).
+- **Breaking**: bodies that were accepted before, e.g. with trailing data or duplicate keys, are rejected.
+
+#### Get rid of old JSON parsers
+
+- `org.json` (`JsonToXml`, `Xml2JsonInterceptor`, `ElasticSearchExchangeStore`): replace with Jackson. Check that `xml2json`/`json2xml` output stays the same, or name the differences in the release notes.
+- `json-smart`: only there for `json-path`. Configure `json-path` with the Jackson provider and drop the direct dependency if possible.
+- Combine with the Jackson 3 upgrade.
+
+#### Share field validation between urlencoded and multipart form bodies
+
+- Story: `FormUrlEncodedValidator` and `MultipartFormDataValidator` both map named fields onto an object schema, but each implements that logic itself: matching `properties`/`patternProperties`/`additionalProperties`, `required`, choosing a decoding schema when several schemas or types apply, building arrays from repeated fields (`items`/`prefixItems`, `minItems`/`maxItems`), and validating the whole value.
+- The copies have drifted apart: only the urlencoded `decodingSchema` treats `number` and `integer` as compatible. Multipart validates each part first and then decodes it a second time in `reconstructPart` to check whole-array keywords (`uniqueItems`, `contains`). Whenever the two decoding paths disagree, the rebuilt array is dropped and those keywords are silently skipped, e.g. `items: {type: [array, string]}` with plain-string parts gets past `uniqueItems`.
+- Idea: one shared field validator over `name → List<raw value>`, with a decoder for each format:
+  - urlencoded: percent-decoded text → scalar or JSON
+  - multipart: bytes + effective content type → JSON, XML, binary, `text/plain` (incl. base64 `Content-Transfer-Encoding`). The decoder reports parse errors per part, e.g. "Part 'x' could not be parsed as XML".
+  - Each value is decoded once and the result is validated once, so `reconstructPart` goes away.
+- Out of scope: query parameters (`QueryParameterValidator`). Their model is different, with one schema per parameter, `style`/`explode`, and objects spread over several keys. They keep sharing only `parseScalar` and `SchemaValidator`. The OAS 3.2 `in: querystring` parameter already reuses `FormUrlEncodedValidator`.
+- Related: `FormUrlEncodedValidator` ignores the media type's `encoding` (`style`/`explode` per property, using the same rules as query parameters). If that is ever supported, it is the place where form and query parsing would share code.
+- Check that the error messages and status codes of both validators stay the same, or name the differences in the release notes.
 
 
 ### Resolve the backend URL (destination) late

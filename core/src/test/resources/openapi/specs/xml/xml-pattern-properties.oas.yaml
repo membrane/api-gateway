@@ -1,0 +1,199 @@
+openapi: 3.1.0
+info:
+  title: XML Product API (patternProperties)
+  version: 1.0.0
+
+paths:
+  /products:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/xml:
+            schema:
+              $ref: "#/components/schemas/Product"
+  /items:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/xml:
+            schema:
+              $ref: "#/components/schemas/Item"
+  /untyped-first:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/xml:
+            schema:
+              $ref: "#/components/schemas/UntypedFirst"
+  /typed-first:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/xml:
+            schema:
+              $ref: "#/components/schemas/TypedFirst"
+  /open-patterns:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/xml:
+            schema:
+              $ref: "#/components/schemas/OpenPatterns"
+  /closed-pattern:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/xml:
+            schema:
+              $ref: "#/components/schemas/ClosedPattern"
+  /property-and-pattern:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/xml:
+            schema:
+              $ref: "#/components/schemas/PropertyAndPattern"
+  /recursive-patterns:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/xml:
+            schema:
+              $ref: "#/components/schemas/RecursivePatterns"
+
+components:
+  schemas:
+    Product:
+      type: object
+      additionalProperties: false
+      xml:
+        name: product
+      properties:
+        sku:
+          type: string
+          xml:
+            attribute: true
+        name:
+          type: string
+      patternProperties:
+        "^x-":
+          type: integer
+          maximum: 100
+    Item:
+      type: object
+      xml:
+        name: item
+      properties:
+        name:
+          type: string
+      patternProperties:
+        "^x-":
+          type: integer
+    # Both patterns match 'x' and both apply, whatever their order.
+    UntypedFirst:
+      type: object
+      xml:
+        name: m
+      patternProperties:
+        "^x":
+          minimum: 0
+        "x$":
+          type: integer
+    TypedFirst:
+      type: object
+      xml:
+        name: m
+      patternProperties:
+        "x$":
+          type: integer
+        "^x":
+          minimum: 0
+    # Two object patterns match 'x'; the element must keep the content both need.
+    OpenPatterns:
+      type: object
+      xml:
+        name: c
+      patternProperties:
+        "^x":
+          type: object
+          required: [a]
+          properties:
+            a:
+              type: string
+        "x$":
+          type: object
+          required: [b]
+          properties:
+            b:
+              type: string
+    ClosedPattern:
+      type: object
+      xml:
+        name: c
+      patternProperties:
+        "^x":
+          type: object
+          additionalProperties: false
+          required: [a]
+          properties:
+            a:
+              type: string
+        "x$":
+          type: object
+          required: [b]
+          properties:
+            b:
+              type: string
+    # A declared property and a matching pattern both apply to 'x-doc'.
+    PropertyAndPattern:
+      type: object
+      xml:
+        name: c
+      properties:
+        x-doc:
+          type: object
+          required: [a]
+          properties:
+            a:
+              type: string
+      patternProperties:
+        "^x-":
+          type: object
+          required: [b]
+          properties:
+            b:
+              type: string
+    # Merging two recursive schemas must terminate.
+    RecursivePatterns:
+      type: object
+      xml:
+        name: c
+      patternProperties:
+        "^x":
+          $ref: "#/components/schemas/NodeA"
+        "x$":
+          $ref: "#/components/schemas/NodeB"
+    NodeA:
+      type: object
+      required: [a]
+      properties:
+        a:
+          type: string
+        child:
+          $ref: "#/components/schemas/NodeA"
+    NodeB:
+      type: object
+      required: [b]
+      properties:
+        b:
+          type: integer
+        child:
+          $ref: "#/components/schemas/NodeB"

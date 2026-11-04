@@ -16,6 +16,7 @@ package com.predic8.membrane.integration.withoutinternet.interceptor.oauth2;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Named;
 
+import java.util.concurrent.Callable;
 import java.util.stream.Stream;
 
 public class AuthWithoutSessionRequestTest extends RequestParameterizedTest {
@@ -36,8 +37,39 @@ public class AuthWithoutSessionRequestTest extends RequestParameterizedTest {
                 testRedirectUriNotEqauls(),
                 testPromptIsNone(),
                 testUnsupportedResponseType(),
-                testEmptyScopeList()
+                testEmptyScopeList(),
+                testResponseTypeMissingWithUnregisteredRedirectUri(),
+                testScopeMissingWithUnregisteredRedirectUri(),
+                testConsentInAuthorizationRequestIsIgnored()
         ).map(data -> Named.of(data.testName(), data));
+    }
+
+    /**
+     * Error redirects go only to the registered callback of a known client, so the authorization server cannot be
+     * used as an open redirect.
+     */
+    private static RequestTestData testResponseTypeMissingWithUnregisteredRedirectUri() {
+        return new RequestTestData("testResponseTypeMissingWithUnregisteredRedirectUri", withUnregisteredRedirectUriAndWithout("&response_type=code"), 400, getInvalidRequestJson(), getResponseBody());
+    }
+
+    private static RequestTestData testScopeMissingWithUnregisteredRedirectUri() {
+        return new RequestTestData("testScopeMissingWithUnregisteredRedirectUri", withUnregisteredRedirectUriAndWithout("&scope=profile"), 400, getInvalidRequestJson(), getResponseBody());
+    }
+
+    private static Callable<Object> withUnregisteredRedirectUriAndWithout(String parameter) {
+        return () -> {
+            replaceValueFromRequestUri("redirect_uri=http://localhost:2001/oauth2callback", "redirect_uri=https://attacker.example.com/").call();
+            return removeValueFromRequestUri(parameter).call();
+        };
+    }
+
+    /**
+     * Only the user can give consent, on the consent page. A consent parameter in the authorization request must not
+     * reach the session.
+     */
+    private static RequestTestData testConsentInAuthorizationRequestIsIgnored() {
+        return new RequestTestData("testConsentInAuthorizationRequestIsIgnored", addValueToRequestUri("consent=true"), 302, getBool(false),
+                () -> OAuth2AuthorizationServerInterceptorBase.oasi.getSessionManager().getSession(exc).getUserAttributes().containsKey("consent"));
     }
 
     private static RequestTestData testPromptIsNone() {

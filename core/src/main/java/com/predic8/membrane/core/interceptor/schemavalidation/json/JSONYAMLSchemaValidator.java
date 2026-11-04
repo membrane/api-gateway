@@ -40,6 +40,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.fasterxml.jackson.core.StreamReadFeature.STRICT_DUPLICATE_DETECTION;
+import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_TRAILING_TOKENS;
 import static com.networknt.schema.InputFormat.JSON;
 import static com.networknt.schema.InputFormat.YAML;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
@@ -53,8 +54,14 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
 
     private final YAMLFactory factory = YAMLFactory.builder().enable(STRICT_DUPLICATE_DETECTION).build();
     private final ObjectMapper yamlObjectMapper = new ObjectMapper(factory);
+    private final ObjectMapper jsonObjectMapper = new ObjectMapper().enable(FAIL_ON_TRAILING_TOKENS);
 
     public static final String SCHEMA_VERSION_2020_12 = "2020-12";
+
+    /**
+     * Limits the work and the size of the response for a message with many violations.
+     */
+    static final int MAX_REPORTED_ERRORS = 10;
 
     private static final Set<String> LOGGED_ERROR_FIELDS = Set.of("message", "key", "keyword", "pointer");
 
@@ -139,12 +146,12 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
         try {
             assertions = inputFormat == YAML ?
                     handleMultipleYAMLDocuments(exc, flow) :
-                    schema.validate(exc.getMessage(flow).getBodyAsStringDecoded(), inputFormat);
+                    schema.validate(jsonObjectMapper.readTree(exc.getMessage(flow).getBodyAsStreamDecoded()));
         } catch (UncheckedIOException | IOException e) {
             String detail = e instanceof UncheckedIOException uioe && uioe.getCause() != null ?
                     uioe.getCause().getMessage() : e.getMessage();
             log.debug("Could not parse {} body: {}", inputFormat, detail, e);
-            return reportFailure(exc, flow, List.of(Map.of("message", "Could not parse " + inputFormat + " body: " + detail)));
+            return reportFailure(exc, flow, List.of(Map.of("message", "Could not parse " + inputFormat + " body: " + detail)), false);
         }
 
         if (assertions.isEmpty()) {
@@ -152,17 +159,21 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
             return CONTINUE;
         }
 
-        return reportFailure(exc, flow, getMapForProblemDetails(assertions));
+        return reportFailure(exc, flow, getMapForProblemDetails(assertions), assertions.size() > MAX_REPORTED_ERRORS);
     }
 
-    private Outcome reportFailure(Exchange exc, Flow flow, List<Map<String, Object>> mapForProblemDetails) {
+    private Outcome reportFailure(Exchange exc, Flow flow, List<Map<String, Object>> mapForProblemDetails, boolean truncated) {
         invalid.incrementAndGet();
         log.info("{} message did not validate against {}: {}", flow, jsonSchema, failedConstraints(mapForProblemDetails));
 
         failureHandler.handleFailure(mapForProblemDetails.toString(), exc);
 
         errorDetailsPolicy.problemDetails(getName(), getErrorTitle(),
-                        pd -> pd.topLevel("flow", flow.name()).topLevel("errors", mapForProblemDetails))
+                        pd -> {
+                            pd.topLevel("flow", flow.name()).topLevel("errors", mapForProblemDetails);
+                            if (truncated)
+                                pd.topLevel("errorsTruncated", true);
+                        })
                 .buildAndSetResponse(exc);
 
         return ABORT;
@@ -192,7 +203,7 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
     }
 
     private @NotNull List<Map<String, Object>> getMapForProblemDetails(List<Error> assertions) {
-        return assertions.stream().map(this::validationMessageToProblemDetailsMap).toList();
+        return assertions.stream().limit(MAX_REPORTED_ERRORS).map(this::validationMessageToProblemDetailsMap).toList();
     }
 
     private @NotNull Map<String, Object> validationMessageToProblemDetailsMap(Error vm) {
@@ -203,7 +214,6 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
             m.put("details", vm.getDetails());
         m.put("keyword", vm.getKeyword());
         m.put("pointer", getPointer(vm.getEvaluationPath()));
-        m.put("node", vm.getInstanceNode());
         return m;
     }
 

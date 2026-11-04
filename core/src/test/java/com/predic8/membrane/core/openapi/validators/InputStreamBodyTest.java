@@ -16,18 +16,30 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.predic8.membrane.core.openapi.model.*;
-import com.predic8.membrane.core.openapi.util.*;
+import com.predic8.membrane.core.openapi.model.InputStreamBody;
+import com.predic8.membrane.core.openapi.util.OpenAPITestUtils;
 import org.junit.jupiter.api.Test;
 
-import java.io.*;
+import java.io.IOException;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class InputStreamBodyTest {
 
     @Test
     public void asString() throws IOException {
         assertEquals("foo", new InputStreamBody(OpenAPITestUtils.toInputStrom("foo")).asString());
+    }
+
+    /**
+     * Only the first JSON value would be validated while the whole body is forwarded.
+     */
+    @Test
+    void trailingJsonValue() {
+        assertThrows(IOException.class, () -> new InputStreamBody(OpenAPITestUtils.toInputStrom("""
+                {"name":"Bob"}
+                {"age":-1}
+                """)).getJson());
     }
 }

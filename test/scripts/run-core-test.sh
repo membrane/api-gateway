@@ -46,7 +46,11 @@ RUN_CP="$CORE_DIR/target/test-classes:$CORE_DIR/target/classes:$(cat "$CP_FILE")
 # (not just the classpath), the way Surefire runs with basedir=core as CWD.
 cd "$CORE_DIR"
 # Matches core/pom.xml's Surefire argLine: some large generated XML configs
-# (e.g. Spring proxies.xml in tests) exceed JAXP's default entity-size limits.
+# (e.g. Spring proxies.xml in tests) exceed JAXP's default entity-size limits,
+# and the JDK's StAX implementation is used instead of Woodstox from CXF.
 java -Dfile.encoding=UTF-8 -Djdk.xml.maxGeneralEntitySizeLimit=0 -Djdk.xml.totalEntitySizeLimit=0 \
+     -Djavax.xml.stream.XMLInputFactory=com.sun.xml.internal.stream.XMLInputFactoryImpl \
+     -Djavax.xml.stream.XMLOutputFactory=com.sun.xml.internal.stream.XMLOutputFactoryImpl \
+     -Djavax.xml.stream.XMLEventFactory=com.sun.xml.internal.stream.events.XMLEventFactoryImpl \
      -Duser.language=en -Duser.country=US -cp "$RUN_CP" \
      com.predic8.membrane.devtools.SingleTestRunner "$TARGET" "$SELECTOR_KIND"

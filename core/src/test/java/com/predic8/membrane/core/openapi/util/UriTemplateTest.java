@@ -143,6 +143,46 @@ class UriTemplateTest {
         assertEquals(Map.of("id", "7"), UriTemplate.of("/(v1|v2)/users/{id}", true).match("/v1/users/7").orElseThrow());
     }
 
+    /**
+     * See issue #3621.
+     */
+    @Test
+    void regExpAnchoredAtEnd() {
+        final var root = UriTemplate.of("^\\/?$", true);
+        assertTrue(root.matches("/"));
+        assertFalse(root.matches("/foo"));
+
+        final var foo = UriTemplate.of("^/foo$", true);
+        assertTrue(foo.matches("/foo"));
+        assertTrue(foo.matches("/foo?a=b"));
+        assertFalse(foo.matches("/foo/bar"));
+    }
+
+    @Test
+    void regExpDoesNotTolerateTrailingSlash() {
+        assertFalse(UriTemplate.of("^/foo$", true).matches("/foo/"));
+        assertFalse(UriTemplate.of(".*/api/{name}", true).matches("/admin/api/orders/"));
+    }
+
+    @Test
+    void regExpTemplateEndingInSlashDoesNotMatchWithoutSlash() {
+        assertFalse(UriTemplate.of("/foo/", true).matches("/foo"));
+    }
+
+    @Test
+    void regExpThatQuotesOrCommentsToTheEnd() {
+        assertTrue(UriTemplate.of("\\Q/foo", true).matches("/foo"));
+        assertTrue(UriTemplate.of("(?x)/foo # comment", true).matches("/foo"));
+    }
+
+    @Test
+    void regExpAlternationIsAnchored() {
+        final var template = UriTemplate.of("^/a$|^/b$", true);
+        assertTrue(template.matches("/a"));
+        assertTrue(template.matches("/b"));
+        assertFalse(template.matches("/c"));
+    }
+
     @Test
     void isReusable() {
         final var template = UriTemplate.of("/foo/{id}");

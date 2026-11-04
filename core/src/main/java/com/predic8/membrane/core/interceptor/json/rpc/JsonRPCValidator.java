@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_TRAILING_TOKENS;
 import static com.predic8.membrane.core.interceptor.json.rpc.JsonRPCValidator.PayloadType.BATCH;
 import static com.predic8.membrane.core.interceptor.json.rpc.JsonRPCValidator.PayloadType.SINGLE;
 import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.*;
@@ -39,7 +40,7 @@ import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.*;
 public class JsonRPCValidator {
 
     private static final Logger log = LoggerFactory.getLogger(JsonRPCValidator.class);
-    private static final ObjectMapper om = new ObjectMapper();
+    private static final ObjectMapper om = new ObjectMapper().enable(FAIL_ON_TRAILING_TOKENS);
 
     private final BatchRule batchRule;
     private final List<Rule> rules;

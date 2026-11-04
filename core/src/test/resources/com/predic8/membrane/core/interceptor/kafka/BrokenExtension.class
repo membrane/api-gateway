@@ -1,1 +1,0 @@
-Not a class file: loading it throws a ClassFormatError (a LinkageError). Used by KafkaExtensionTest.

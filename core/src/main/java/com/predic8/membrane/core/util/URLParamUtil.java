@@ -24,6 +24,7 @@ import java.util.regex.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
+import static com.predic8.membrane.core.util.text.TextUtil.escapeControlCharsForLog;
 import static java.net.URLDecoder.*;
 import static java.nio.charset.StandardCharsets.*;
 import static java.util.Collections.*;
@@ -81,9 +82,63 @@ public class URLParamUtil {
         try {
             return uriFactory.create(uri);
         } catch (URISyntaxException e) {
-            log.info("Error parsing query params: {} URI: {}", e.getMessage(), uri);
+            log.info("Error parsing query params: {} URI: {}", escapeControlCharsForLog(e.getReason()), escapeControlCharsForLog(maskQueryValues(uri)));
             throw e;
         }
+    }
+
+    /**
+     * Masks the values of the query string so that a URI can be logged without the credentials it may carry,
+     * e.g. {@code /foo?api-key=abc&x} becomes {@code /foo?api-key=***&***}. The query is split
+     * textually, not parsed, so this also works for a query that failed to parse. Parameters without a
+     * {@code =} are masked completely, as the whole segment might be the secret. The user info of an absolute
+     * URI, as a forward proxy receives it, is masked too: {@code http://user:password@host/} becomes
+     * {@code http://***@host/}.
+     */
+    public static String maskQueryValues(String uri) {
+        if (uri == null)
+            return null;
+        final var idx = uri.indexOf('?');
+        if (idx == -1)
+            return maskUserInfo(uri);
+        final var masked = new StringJoiner("&");
+        for (final var segment : uri.substring(idx + 1).split("&", -1)) {
+            masked.add(maskSegment(segment));
+        }
+        return maskUserInfo(uri.substring(0, idx + 1)) + masked;
+    }
+
+    /**
+     * @param uri the part of a URI before its query
+     */
+    private static String maskUserInfo(String uri) {
+        final var schemeEnd = uri.indexOf("://");
+        if (schemeEnd <= 0 || containsAny(uri.substring(0, schemeEnd), "/#"))
+            return uri; // not an absolute URI
+        final var authorityStart = schemeEnd + 3;
+        var authorityEnd = uri.length();
+        for (final var delimiter : "/?#".toCharArray()) {
+            final var i = uri.indexOf(delimiter, authorityStart);
+            if (i != -1 && i < authorityEnd)
+                authorityEnd = i;
+        }
+        final var at = uri.lastIndexOf('@', authorityEnd - 1);
+        if (at < authorityStart)
+            return uri;
+        return uri.substring(0, authorityStart) + "***" + uri.substring(at);
+    }
+
+    private static boolean containsAny(String s, String chars) {
+        return s.chars().anyMatch(c -> chars.indexOf(c) != -1);
+    }
+
+    private static String maskSegment(String segment) {
+        if (segment.isEmpty())
+            return segment;
+        final var eq = segment.indexOf('=');
+        if (eq == -1)
+            return "***";
+        return segment.substring(0, eq) + "=***";
     }
 
     public static String getStringParam(URIFactory uriFactory, Exchange exc, String name) throws Exception {

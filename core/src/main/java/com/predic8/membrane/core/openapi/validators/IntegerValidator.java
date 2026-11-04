@@ -16,11 +16,12 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.openapi.model.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.predic8.membrane.core.openapi.model.Body;
 
-import java.math.*;
+import java.math.BigInteger;
 
+import static com.predic8.membrane.core.openapi.util.SchemaUtil.MAX_NUMBER_LENGTH;
 import static com.predic8.membrane.core.openapi.validators.ValidationError.v;
 import static com.predic8.membrane.core.openapi.validators.ValidationErrors.error;
 
@@ -47,8 +48,12 @@ public class IntegerValidator implements JsonSchemaValidator {
 
     public ValidationErrors validate(ValidationContext ctx, Object value) {
         if (value instanceof JsonNode j) {
-            return j.isIntegralNumber() ? null
-                    : error(ctx.schemaType("integer"),
+            if (j.isIntegralNumber())
+                return null;
+            if (j.isTextual() && j.textValue().length() > MAX_NUMBER_LENGTH)
+                return error(ctx.schemaType("integer"), "The value has %d characters, an integer can have at most %d."
+                        .formatted(j.textValue().length(), MAX_NUMBER_LENGTH));
+            return error(ctx.schemaType("integer"),
                     mask -> String.format("%s is not an integer.", v(j.asText(), mask)));
         }
         if (value instanceof String s) {

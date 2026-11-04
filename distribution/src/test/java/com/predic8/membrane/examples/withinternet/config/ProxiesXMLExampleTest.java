@@ -133,7 +133,7 @@ public class ProxiesXMLExampleTest extends AbstractSampleMembraneStartStopTestca
                .then().assertThat()
                .statusCode(200)
                .contentType(APPLICATION_JSON)
-               .body("apis[0]['name']",equalTo("Shop API Showcase"));
+               .body("apis[0]['name']",equalTo("Fruit Shop API"));
     }
 
     @Test

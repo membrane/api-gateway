@@ -15,10 +15,11 @@ package com.predic8.membrane.core.interceptor.llmgateway.provider.claude;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.List;
 
 import static com.predic8.membrane.core.http.Header.ACCEPT_ENCODING;
 import static com.predic8.membrane.core.http.Request.post;
@@ -96,32 +97,96 @@ class ClaudeLLMRequestTest {
     }
 
     /**
-     * Claude estimates one token per four characters, counting an image as 1000 tokens.
+     * The shared estimate: max(1, round(chars / 4.0 * 1.15)), an image counting as 4000 characters.
      */
     @Test
     void estimateInputTokensCountsSystemPromptAndMessages() throws Exception {
+        // 12 chars -> 3
         assertEquals(3, request("""
                 {"system":"12345678","messages":[{"content":"abcd"}]}""").estimateInputTokens());
     }
 
     @Test
     void estimateInputTokensCountsContentBlocks() throws Exception {
-        assertEquals(1002, request("""
+        // 8 + 4000 chars -> 1152
+        assertEquals(1152, request("""
                 {"messages":[{"content":[{"type":"text","text":"12345678"},{"type":"image"}]}]}""")
                 .estimateInputTokens());
+    }
+
+    /**
+     * Every input Anthropic bills for has to show up in the estimate, otherwise maxInputTokens and the
+     * user's budget can be passed by moving the text into a structure that is not counted. 4000
+     * characters are at least 1000 tokens at four characters per token.
+     */
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(delimiter = '|', textBlock = """
+            system as text blocks       | {"system":[{"type":"text","text":"%s"}],"messages":[{"role":"user","content":"Hi"}]}
+            tool definitions            | {"tools":[{"name":"t","description":"%s","input_schema":{"type":"object"}}],"messages":[{"role":"user","content":"Hi"}]}
+            tool result as text         | {"messages":[{"role":"user","content":[{"type":"tool_result","tool_use_id":"t1","content":"%s"}]}]}
+            tool result as text blocks  | {"messages":[{"role":"user","content":[{"type":"tool_result","tool_use_id":"t1","content":[{"type":"text","text":"%s"}]}]}]}
+            tool use input              | {"messages":[{"role":"assistant","content":[{"type":"tool_use","id":"t1","name":"t","input":{"q":"%s"}}]}]}
+            plain text document         | {"messages":[{"role":"user","content":[{"type":"document","source":{"type":"text","media_type":"text/plain","data":"%s"}}]}]}
+            base64 PDF document         | {"messages":[{"role":"user","content":[{"type":"document","source":{"type":"base64","media_type":"application/pdf","data":"%s"}}]}]}
+            thinking block              | {"messages":[{"role":"assistant","content":[{"type":"thinking","thinking":"%s","signature":"s"}]}]}
+            document title              | {"messages":[{"role":"user","content":[{"type":"document","title":"%s","source":{"type":"text","media_type":"text/plain","data":""}}]}]}
+            document context            | {"messages":[{"role":"user","content":[{"type":"document","context":"%s","source":{"type":"text","media_type":"text/plain","data":""}}]}]}
+            """)
+    void estimateInputTokensCountsEveryBilledInput(String structure, String template) throws Exception {
+        var estimate = request(template.formatted("x".repeat(4000))).estimateInputTokens();
+
+        assertTrue(estimate >= 1000, "%s: estimated %d tokens for 4000 characters".formatted(structure, estimate));
+    }
+
+    /**
+     * Anthropic bills a PDF by its pages, at least about 1500 tokens for one page. The page count is not
+     * in the request, so every PDF counts for one page.
+     */
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(delimiter = '|', textBlock = """
+            base64 | {"messages":[{"role":"user","content":[{"type":"document","source":{"type":"base64","media_type":"application/pdf","data":"JVBERi0="}}]}]}
+            url    | {"messages":[{"role":"user","content":[{"type":"document","source":{"type":"url","url":"https://example.com/a.pdf"}}]}]}
+            """)
+    void pdfCountsForAtLeastOnePage(String source, String json) throws Exception {
+        var estimate = request(json).estimateInputTokens();
+
+        assertTrue(estimate >= 1500, "%s: estimated %d tokens for a PDF".formatted(source, estimate));
     }
 
     @Test
     void systemPromptRoundTrip() throws Exception {
         var request = request("{}");
-        assertEquals("", request.getSystemPrompt());
 
-        request.setSystemPrompts(List.of("one", "two"));
-        assertEquals("one\ntwo", request.getSystemPrompt());
+        request.overwriteSystemPrompt("one");
+        assertEquals("one", request.getJson().path("system").asText());
 
         request.removeSystemPrompt();
-        assertEquals("", request.getSystemPrompt());
         assertFalse(request.getJson().has("system"));
+    }
+
+    /**
+     * Anthropic rejects an empty text block, so an empty prompt must leave the client's system prompt
+     * as it was sent.
+     */
+    @ParameterizedTest(name = "{0} to {1}")
+    @CsvSource(delimiter = '|', value = {
+            "prepend | {}",
+            "append  | {}",
+            "prepend | {\"system\":\"client\"}",
+            "append  | {\"system\":\"client\"}",
+            "prepend | {\"system\":[{\"type\":\"text\",\"text\":\"client\"}]}",
+            "append  | {\"system\":[{\"type\":\"text\",\"text\":\"client\"}]}",
+    })
+    void emptyPromptLeavesSystemPromptUnchanged(String action, String body) throws Exception {
+        final var request = request(body);
+        final var before = request.getJson().deepCopy();
+
+        if ("prepend".equals(action))
+            request.prependSystemPrompt("");
+        else
+            request.appendSystemPrompt("");
+
+        assertEquals(before, request.getJson());
     }
 
     private static ClaudeLLMRequest request(String body) throws IOException, URISyntaxException {

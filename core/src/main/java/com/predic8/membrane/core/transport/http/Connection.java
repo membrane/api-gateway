@@ -28,6 +28,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
+import java.util.Objects;
 
 import static com.predic8.membrane.annot.Constants.USERAGENT;
 import static com.predic8.membrane.core.transport.http.ByteStreamLogging.*;
@@ -63,6 +64,7 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 
 	public final ConnectionManager mgr;
 	public final String host;
+	private final int port; // the target port, which differs from socket.getPort() if a proxy is used
 	private final SSLProvider sslProvider;
     private final String sniServerName;
 	private final ProxyConfiguration proxyConfiguration;
@@ -91,7 +93,7 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 	public static Connection open(String host, int port, String localHost, SSLProvider sslProvider, ConnectionManager mgr,
 								  int connectTimeout, @Nullable String sniServername, @Nullable ProxyConfiguration proxy,
 								  @Nullable SSLProvider proxySSLProvider, @Nullable String[] applicationProtocols) throws IOException {
-		Connection con = new Connection(mgr, host, sslProvider, sniServername, proxy, proxySSLProvider);
+		Connection con = new Connection(mgr, host, port, sslProvider, sniServername, proxy, proxySSLProvider);
 
 		String origHost = host;
 		int origPort = port;
@@ -179,9 +181,10 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 		return open(host, port, localHost, sslProvider, mgr, connectTimeout, null, null, null, null);
 	}
 
-	private Connection(ConnectionManager mgr, String host, @Nullable SSLProvider sslProvider, @Nullable String sniServerName, @Nullable ProxyConfiguration proxy, SSLProvider proxySSLProvider) {
+	private Connection(ConnectionManager mgr, String host, int port, @Nullable SSLProvider sslProvider, @Nullable String sniServerName, @Nullable ProxyConfiguration proxy, SSLProvider proxySSLProvider) {
 		this.mgr = mgr;
 		this.host = host;
+		this.port = port;
 		this.sslProvider = sslProvider;
         this.sniServerName = sniServerName;
 		this.proxyConfiguration = proxy;
@@ -189,14 +192,25 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
     }
 
     /**
-     * Checks whether the (host,port) combination matches this combination.
+     * Checks whether a request with these parameters may use this connection. The parameters are those that
+     * {@link ConnectionManager} pools connections by.
      *
-     * This does not directly check whether the same proxy is used, but that is actually irrelevant, since
-     * proxyConfiguration is constant per HttpClient and ergo per ConnectionManager. Since only Connections
-     * opened by the same HttpClient are managed by the same ConnectionManager, this is sufficient.
+     * A plain HTTP connection to a proxy matches every target, as the pool hands it out for any target.
+     *
+     * A connection bound to an inbound connection can be offered to another HttpClient or to an exchange with
+     * another SSL context, so none of the parameters can be taken for granted.
+     *
+     * @param sslProvider the TLS configuration the request to the target needs, or null for plain HTTP
+     * @param sniServerName the server name the request sends in the TLS handshake, or null
+     * @param proxy the proxy the request has to go through, or null
      */
-    public boolean isSame(String host, int port) {
-        return socket != null && host.equals(this.host) && port == socket.getPort();
+    public boolean isSame(String host, int port, @Nullable SSLProvider sslProvider, @Nullable String sniServerName,
+                          @Nullable ProxyConfiguration proxy) {
+        if (socket == null || !Objects.equals(sslProvider, this.sslProvider) || !Objects.equals(proxy, proxyConfiguration))
+            return false;
+        if (sslProvider == null)
+            return proxyConfiguration != null || host.equals(this.host) && port == this.port; // see ConnectionManager.createKey
+        return host.equals(this.host) && port == this.port && Objects.equals(sniServerName, this.sniServerName);
     }
 
 	/** Closes the socket without flushing buffered output, unblocking outstanding I/O. */
@@ -354,6 +368,10 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 
 	public String getHost() {
 		return host;
+	}
+
+	public int getPort() {
+		return port;
 	}
 
 	void setKeepAttachedToExchange(boolean keepAttachedToExchange) {
