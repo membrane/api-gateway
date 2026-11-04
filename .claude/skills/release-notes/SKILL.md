@@ -99,7 +99,9 @@ Most subjects end in `(#NNNN)` — that's the PR. Turn it into a link
 `[#NNNN](https://github.com/membrane/api-gateway/pull/NNNN)`. If a subject has **two** trailing
 numbers (e.g. `... (#2988) (#2995)`), the last one is the merge PR — link that one.
 
-Skip commits whose PR is already covered by a fragment or an existing entry. For the remaining
+A commit whose PR already has a fragment or an existing entry is not skipped automatically: a PR
+can change more than its fragment says. Inspect its diff and write an entry for any user-visible
+change the fragment or entry does not describe. Skip only what is already described. For all other
 commits, read the subject (and the diff if the subject is unclear) and write a user-facing
 sentence. Strip conventional-commit prefixes (`feat:`, `fix:`, `chore:`, `build:`, `refactor:`,
 `docs:`) from the displayed text — they only inform which group the entry belongs in.
