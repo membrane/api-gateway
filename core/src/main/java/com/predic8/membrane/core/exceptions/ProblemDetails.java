@@ -168,7 +168,7 @@ public class ProblemDetails {
         // A body passed on by limit can exceed it wherever it is read
         var limitExceeded = throwableOfType(failure, LimitExceededException.class);
         if (limitExceeded != null)
-            return tooLarge(production, component, limitExceeded.getLimit());
+            return bodyLimitExceeded(production, component, limitExceeded.getLimit());
 
         if (!failure.isRequestBodyFailure(exchange))
             return internal(production, component)
@@ -197,7 +197,7 @@ public class ProblemDetails {
      *
      * @param maxBodyLength the limit in bytes, shown outside production only
      */
-    public static ProblemDetails tooLarge(boolean production, String component, long maxBodyLength) {
+    public static ProblemDetails bodyLimitExceeded(boolean production, String component, long maxBodyLength) {
         return security(production, component)
                 .title("Message is too large.")
                 .detail("Message bodies must be smaller than limit.")

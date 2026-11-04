@@ -23,7 +23,7 @@ import com.predic8.membrane.core.http.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.tooLarge;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.bodyLimitExceeded;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
@@ -133,7 +133,7 @@ public class LimitInterceptor extends AbstractInterceptor {
 	}
 
 	private Outcome reject(Exchange exc) {
-		tooLarge(router.getConfiguration().isProduction(), getDisplayName(), maxBodyLength).buildAndSetResponse(exc);
+		bodyLimitExceeded(router.getConfiguration().isProduction(), getDisplayName(), maxBodyLength).buildAndSetResponse(exc);
 		return ABORT;
 	}
 }
