@@ -19,6 +19,10 @@ import org.junit.jupiter.api.Named;
 import java.util.concurrent.Callable;
 import java.util.stream.Stream;
 
+import static com.predic8.membrane.integration.withoutinternet.interceptor.oauth2.OAuth2AuthorizationServerInterceptorBase.OTHER_CLIENT_CALLBACK;
+import static com.predic8.membrane.integration.withoutinternet.interceptor.oauth2.OAuth2AuthorizationServerInterceptorBase.OTHER_CLIENT_ID;
+import static com.predic8.membrane.integration.withoutinternet.interceptor.oauth2.OAuth2AuthorizationServerInterceptorBase.OTHER_CLIENT_SECRET;
+
 public class TokenRequestTest extends RequestParameterizedTest {
 
     @BeforeEach
@@ -37,8 +41,19 @@ public class TokenRequestTest extends RequestParameterizedTest {
                 testInvalidClient(),
                 testUnauthorizedClient(),
                 testRedirectUriNotAbsolute(),
-                testRedirectUriNotEquals()
+                testRedirectUriNotEquals(),
+                testCodeIssuedToOtherClient()
         ).map(data -> Named.of(data.testName(), data));
+    }
+
+    /**
+     * Another registered client must not redeem the code, even with its own valid credentials and callback.
+     */
+    private static RequestTestData testCodeIssuedToOtherClient() {
+        return new RequestTestData("testCodeIssuedToOtherClient",
+                replaceValueFromRequestBody("&client_id=abc&client_secret=def&redirect_uri=http://localhost:2001/oauth2callback",
+                        "&client_id=" + OTHER_CLIENT_ID + "&client_secret=" + OTHER_CLIENT_SECRET + "&redirect_uri=" + OTHER_CLIENT_CALLBACK),
+                400, getInvalidGrantJson(), getResponseBody());
     }
 
     private static RequestTestData testRedirectUriNotEquals() {

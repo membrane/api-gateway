@@ -42,6 +42,7 @@ public class OAuth2AuthorizationServerInterceptorNormalTest extends OAuth2Author
                 testGoodUserinfoRequest(),
                 testGoodRefreshRequest(),
                 testBadRefreshWithAccessTokenRequest(),
+                testBadRefreshByOtherClientRequest(),
                 testBadUserInfoWithRefreshTokenRequest(),
                 testClientCredentialsRequestStartsNoBrowserSession(),
                 testGoodRevocationRequest());
@@ -78,6 +79,13 @@ public class OAuth2AuthorizationServerInterceptorNormalTest extends OAuth2Author
                 .body("grant_type=client_credentials&client_id=abc&client_secret=def"
                         + "&response_type=id_token%20token&redirect_uri=http://localhost:2001/oauth2callback&username=alice")
                 .buildExchange();
+    }
+
+    /**
+     * A refresh token must only be accepted from the client it was issued to, whatever the token format.
+     */
+    private static Object[] testBadRefreshByOtherClientRequest() {
+        return new Object[]{"testBadRefreshByOtherClientRequest", runUntilGoodTokenRequest(),getMockRefreshByOtherClientRequest(),400,noPostprocessing()};
     }
 
     private static Object[] testBadUserInfoWithRefreshTokenRequest() {

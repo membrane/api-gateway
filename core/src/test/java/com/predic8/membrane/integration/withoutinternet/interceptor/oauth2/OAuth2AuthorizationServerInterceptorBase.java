@@ -41,6 +41,13 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public abstract class OAuth2AuthorizationServerInterceptorBase {
 
+    /**
+     * A second registered client, which must not be able to redeem codes or refresh tokens issued to the first.
+     */
+    static final String OTHER_CLIENT_ID = "other";
+    static final String OTHER_CLIENT_SECRET = "other-secret";
+    static final String OTHER_CLIENT_CALLBACK = "http://localhost:2001/other-callback";
+
     static Router router;
     static Exchange exc;
     static OAuth2AuthorizationServerInterceptor oasi;
@@ -174,6 +181,19 @@ public abstract class OAuth2AuthorizationServerInterceptorBase {
                 .body("refresh_token=" + afterTokenGenerationRefreshToken
                         + "&client_id=" + mas.getClientId()
                         + "&client_secret=" + mas.getClientSecret()
+                        + "&grant_type=refresh_token")
+                .buildExchange();
+    }
+
+    public static Callable<Exchange> getMockRefreshByOtherClientRequest() {
+        return () -> new Request.Builder()
+                .post(mas.getTokenEndpoint())
+                .header("User-Agent", USERAGENT)
+                .header(ACCEPT, APPLICATION_JSON)
+                .header(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED)
+                .body("refresh_token=" + afterTokenGenerationRefreshToken
+                        + "&client_id=" + OTHER_CLIENT_ID
+                        + "&client_secret=" + OTHER_CLIENT_SECRET
                         + "&grant_type=refresh_token")
                 .buildExchange();
     }
@@ -342,6 +362,7 @@ public abstract class OAuth2AuthorizationServerInterceptorBase {
         ArrayList<Client> clients = new ArrayList<>();
         Client john2 = new Client("abc","def","http://localhost:2001/oauth2callback", "authorization_code,password,client_credentials,refresh_token,implicit");
         clients.add(john2);
+        clients.add(new Client(OTHER_CLIENT_ID, OTHER_CLIENT_SECRET, OTHER_CLIENT_CALLBACK, "authorization_code,refresh_token"));
         cl.setClients(clients);
         oasi.setClientList(cl);
     }

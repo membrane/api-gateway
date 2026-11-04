@@ -16,7 +16,9 @@ package com.predic8.membrane.core.interceptor.oauth2;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager.Session;
 
+import javax.annotation.concurrent.GuardedBy;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -24,15 +26,31 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class SessionFinder {
 
+    /**
+     * The client and redirect URI of the authorization request a code was issued for. Kept per code, not in the
+     * session, as one browser session can authorize several clients.
+     */
+    public record CodeIssuance(String clientId, String redirectUri) {}
+
     private final ConcurrentHashMap<String, SessionManager.Session> authCodesToSession = new ConcurrentHashMap<>();
+
+    @GuardedBy("authCodesToSession")
+    private final Map<String, CodeIssuance> authCodesToIssuance = new HashMap<>();
 
     private final ConcurrentHashMap<String, SessionManager.Session> tokensToSession = new ConcurrentHashMap<>();
 
     private final ConcurrentHashMap<String, SessionManager.Session> refreshTokensToSession = new ConcurrentHashMap<>();
 
-    public void addSessionForCode(String code, SessionManager.Session session) {
+    public void addSessionForCode(String code, SessionManager.Session session, CodeIssuance issuance) {
         synchronized (authCodesToSession) {
             authCodesToSession.put(code, session);
+            authCodesToIssuance.put(code, issuance);
+        }
+    }
+
+    public CodeIssuance getIssuanceForCode(String code) {
+        synchronized (authCodesToSession) {
+            return authCodesToIssuance.get(code);
         }
     }
 
@@ -93,6 +111,7 @@ public class SessionFinder {
     public void removeSessionForCode(String code) {
         synchronized (authCodesToSession) {
             authCodesToSession.remove(code);
+            authCodesToIssuance.remove(code);
         }
     }
 
@@ -111,6 +130,9 @@ public class SessionFinder {
     public void cleanupSessions(Set<SessionManager.Session> sessionsToRemove) {
 
         cleanupMap(sessionsToRemove, authCodesToSession);
+        synchronized (authCodesToSession) {
+            authCodesToIssuance.keySet().retainAll(authCodesToSession.keySet());
+        }
         cleanupMap(sessionsToRemove, tokensToSession);
         cleanupMap(sessionsToRemove, refreshTokensToSession);
 
