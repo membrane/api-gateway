@@ -43,6 +43,8 @@ public class OAuth2CallbackRequestHandler {
     public static final String MEMBRANE_CSRF_TOKEN_MISSING_IN_SESSION = "MEMBRANE_CSRF_TOKEN_MISSING_IN_SESSION";
     public static final String MEMBRANE_CSRF_TOKEN_MISMATCH_DESCRIPTION = "CSRF token mismatch.";
     public static final String MEMBRANE_CSRF_TOKEN_MISMATCH = "MEMBRANE_CSRF_TOKEN_MISMATCH";
+    public static final String MEMBRANE_FLOW_CONTEXT_MISMATCH_DESCRIPTION = "Flow context in state does not match the one the login was started with.";
+    public static final String MEMBRANE_FLOW_CONTEXT_MISMATCH = "MEMBRANE_FLOW_CONTEXT_MISMATCH";
     public static final String MEMBRANE_EXCHANGE_NOT_FOUND_DESCRIPTION = "Exchange to reconstruct not found. Might be a replay of the login.";
     public static final String MEMBRANE_EXCHANGE_NOT_FOUND = "MEMBRANE_EXCHANGE_NOT_FOUND";
 

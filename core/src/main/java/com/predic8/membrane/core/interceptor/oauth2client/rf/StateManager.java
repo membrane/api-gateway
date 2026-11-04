@@ -24,6 +24,7 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import static com.predic8.membrane.core.http.Response.badRequest;
@@ -42,6 +43,8 @@ public class StateManager {
 
     private static final Logger log = LoggerFactory.getLogger(StateManager.class);
     private static final SecureRandom sr = new SecureRandom();
+    private static final String FLOW_CONTEXT_DEFAULT_PREFIX = "_flow_context_default_for_state_";
+    private static final String FLOW_CONTEXT_TRIGGER_PREFIX = "_flow_context_trigger_for_state_";
 
     private final String securityToken;
     private final String verifierId;
@@ -96,11 +99,36 @@ public class StateManager {
             }
         }
 
+        verifyFlowContext(session, stateFromUri);
+
         // state in session can be "merged" -> save the selected state in session overwriting the possibly merged value
         if (!(session.get(SESSION_PARAMETER_STATE).equals(stateFromUri.getSecurityToken()))) {
             log.debug("Replacing saved state '{}' with '{}'", session.get(SESSION_PARAMETER_STATE), stateFromUri.getSecurityToken());
         }
         session.put(SESSION_PARAMETER_STATE, stateFromUri.getSecurityToken());
+    }
+
+    /**
+     * The flow context selects the token endpoint the authorization code (together with the client
+     * credentials) is sent to. The state parameter comes back through the browser, so its flow context is
+     * only accepted if it is exactly the one this login was started with.
+     */
+    private static void verifyFlowContext(Session session, StateManager stateFromUri) throws OAuth2Exception {
+        final var token = stateFromUri.getSecurityToken();
+        final String defaultFlow = session.get(FLOW_CONTEXT_DEFAULT_PREFIX + token);
+        final String triggerFlow = session.get(FLOW_CONTEXT_TRIGGER_PREFIX + token);
+        session.remove(FLOW_CONTEXT_DEFAULT_PREFIX + token, FLOW_CONTEXT_TRIGGER_PREFIX + token);
+
+        final var fromUri = stateFromUri.getFlowContext();
+        if (Objects.equals(defaultFlow, fromUri == null ? null : fromUri.defaultFlow)
+                && Objects.equals(triggerFlow, fromUri == null ? null : fromUri.triggerFlow))
+            return;
+
+        log.warn("Flow context from URI {} does not match the one stored for its state.", fromUri);
+        throw new OAuth2Exception(
+                MEMBRANE_FLOW_CONTEXT_MISMATCH,
+                MEMBRANE_FLOW_CONTEXT_MISMATCH_DESCRIPTION,
+                badRequest().body(MEMBRANE_FLOW_CONTEXT_MISMATCH_DESCRIPTION).build());
     }
 
     private static boolean matchesCsrfToken(StateManager stateFromUri, Object stateFromSession) {
@@ -129,6 +157,13 @@ public class StateManager {
         if (session.get().containsKey(SESSION_PARAMETER_STATE))
             s = session.get(SESSION_PARAMETER_STATE) + SESSION_VALUE_SEPARATOR + s;
         session.put(SESSION_PARAMETER_STATE, s);
+
+        if (flowContext == null)
+            return;
+        if (flowContext.defaultFlow != null)
+            session.put(FLOW_CONTEXT_DEFAULT_PREFIX + securityToken, flowContext.defaultFlow);
+        if (flowContext.triggerFlow != null)
+            session.put(FLOW_CONTEXT_TRIGGER_PREFIX + securityToken, flowContext.triggerFlow);
     }
 
     public String getSecurityToken() {
