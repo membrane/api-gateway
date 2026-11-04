@@ -27,6 +27,7 @@ import com.predic8.membrane.core.transport.ssl.SSLProvider;
 import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
 import com.predic8.membrane.core.util.TimerManager;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,14 +67,15 @@ public class ConnectionFactory {
 
         var sslProvider = getOutboundSSLProvider(exc, target);
         var sniServerName = exc.getProperty(SNI_SERVER_NAME, String.class);
-        var con = getExchangeAttachedConnection(exc, attempts, target, sslProvider, sniServerName, config.getProxy());
+        var proxy = getProxy(target);
+        var con = getExchangeAttachedConnection(exc, attempts, target, sslProvider, sniServerName, proxy);
 
         boolean usingHttp2 = false;
 
         Http2Client h2c = null;
 
         if (con == null && config.isUseExperimentalHttp2()) {
-            h2c = http2ClientPool.reserveStream(target.host(), target.port(), sslProvider, sniServerName, config.getProxy(), proxySSLContext);
+            h2c = http2ClientPool.reserveStream(target.host(), target.port(), sslProvider, sniServerName, proxy, proxySSLContext);
             if (h2c != null) {
                 con = h2c.getConnection();
                 usingHttp2 = true;
@@ -82,7 +84,7 @@ public class ConnectionFactory {
 
         if (con == null) {
             con = connectionManager.getConnection(target.host(), target.port(), config.getConnection().getLocalAddr(), sslProvider, config.getConnection().getTimeout(),
-                    sniServerName, config.getProxy(), proxySSLContext, getApplicationProtocols());
+                    sniServerName, proxy, proxySSLContext, getApplicationProtocols());
             if (config.isUseExperimentalHttp2() && Http2TlsSupport.isHttp2(con.socket))
                 usingHttp2 = true;
             else
@@ -93,12 +95,19 @@ public class ConnectionFactory {
         return new OutgoingConnectionType(con, usingHttp2, sslProvider, h2c, sniServerName);
     }
 
+    private @Nullable ProxyConfiguration getProxy(HostColonPort target) {
+        var proxy = config.getProxy();
+        if (proxy == null || proxy.isBypassed(target.host()))
+            return null;
+        return proxy;
+    }
+
     /**
      * E.g. for protocols like NTLM, an outbound TCP connection gets bound to an inbound TCP connection. This
      * is realized by binding the TCP connection to the Exchange here, and binding it to the next Exchange in
      * {@link HttpServerHandler}.
      */
-    private static @org.jetbrains.annotations.Nullable Connection getExchangeAttachedConnection(Exchange exc, int counter, HostColonPort target, SSLProvider sslProvider, String sniServerName, ProxyConfiguration proxy) {
+    private static @Nullable Connection getExchangeAttachedConnection(Exchange exc, int counter, HostColonPort target, SSLProvider sslProvider, String sniServerName, ProxyConfiguration proxy) {
         Connection con = null;
         if (counter == 0) {
             con = exc.getTargetConnection();
@@ -134,7 +143,7 @@ public class ConnectionFactory {
         return defaultSSLProvider;
     }
 
-    private static @org.jetbrains.annotations.Nullable SSLContext getProxySSLContext(ProxyConfiguration proxy) {
+    private static @Nullable SSLContext getProxySSLContext(ProxyConfiguration proxy) {
         if (proxy != null && proxy.getSslParser() != null)
             return new StaticSSLContext(proxy.getSslParser(), new ResolverMap(), null);
         return null;
@@ -147,7 +156,7 @@ public class ConnectionFactory {
         return HTTP1_PROTOCOLS;
     }
 
-    private static @org.jetbrains.annotations.Nullable SSLContext getSSLContext(@NotNull HttpClientConfiguration configuration) {
+    private static @Nullable SSLContext getSSLContext(@NotNull HttpClientConfiguration configuration) {
         if (configuration.getSslParser() == null)
             return null;
         if (configuration.getBaseLocation() == null)
@@ -156,7 +165,7 @@ public class ConnectionFactory {
 
     }
 
-    private @org.jetbrains.annotations.Nullable Http2ClientPool getHttp2ClientPool(@NotNull HttpClientConfiguration configuration) {
+    private @Nullable Http2ClientPool getHttp2ClientPool(@NotNull HttpClientConfiguration configuration) {
         if (configuration.isUseExperimentalHttp2())
             return new Http2ClientPool(configuration.getConnection().getKeepAliveTimeout());
         return null;

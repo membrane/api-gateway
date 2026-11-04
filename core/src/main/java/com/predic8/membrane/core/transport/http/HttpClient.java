@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import java.net.MalformedURLException;
 
+import static com.predic8.membrane.core.http.Header.PROXY_AUTHORIZATION;
 import static com.predic8.membrane.core.transport.http.client.protocol.Http2ProtocolHandler.UPGRADED_PROTOCOL;
 import static com.predic8.membrane.core.util.HttpUtil.getPathAndQueryString;
 
@@ -68,20 +69,26 @@ public class HttpClient implements AutoCloseable {
     public void call(Exchange exc) throws Exception {
         var ph = protocolHandlerFactory.getHandler(exc, exc.getRequest().getHeader().getUpgradeProtocol());
         ph.checkUpgradeRequest(exc);
-        configuration.getRetryHandler().executeWithRetries(exc, this::dispatchCall);
+        // Each attempt starts from the request's own Proxy-Authorization, whatever an earlier attempt set.
+        final var inboundProxyAuthorization = exc.getRequest().getHeader().getFirstValue(PROXY_AUTHORIZATION);
+        configuration.getRetryHandler().executeWithRetries(exc,
+                (e, target, attempt) -> dispatchCall(e, target, attempt, inboundProxyAuthorization));
         ph.cleanup(exc);
     }
 
-    private boolean dispatchCall(Exchange exc, String target, int attempt) throws Exception {
+    private boolean dispatchCall(Exchange exc, String target, int attempt, @Nullable String inboundProxyAuthorization) throws Exception {
         setAuthorizationHeader(exc);
         var hcp = getHostColonPort(exc, target);
         adjustHostHeader(exc, hcp);
         var outConType = connectionFactory.getConnection(exc, hcp, attempt);
         setRequestURI(exc.getRequest(), target, outConType.con());
 
-        if (configuration.getProxy() != null && configuration.getProxy().isAuthentication() && outConType.sslProvider() == null) {
+        var proxy = outConType.con().getProxyConfiguration();
+        if (proxy != null && proxy.isAuthentication() && outConType.sslProvider() == null) {
             // if we use a proxy for a plain HTTP (=non-HTTPS) request, attach the proxy credentials.
-            exc.getRequest().getHeader().setProxyAuthorization(configuration.getProxy().getCredentials());
+            exc.getRequest().getHeader().setProxyAuthorization(proxy.getCredentials());
+        } else {
+            restoreInboundProxyAuthorization(exc, inboundProxyAuthorization);
         }
 
         protocolHandlerFactory.getHandlerForConnection(exc, outConType).handle(exc, outConType, hcp);
@@ -105,6 +112,16 @@ public class HttpClient implements AutoCloseable {
         if (configuration.isAdjustHostHeader() && (exc.getProxy() == null || exc.getProxy().isTargetAdjustHostHeader())) {
             exc.getRequest().getHeader().setHost(target.toString());
         }
+    }
+
+    // A retry can go direct (noProxy) or through a TLS tunnel after a proxied plain HTTP attempt, which
+    // replaced the header with the proxy credentials.
+    private static void restoreInboundProxyAuthorization(Exchange exc, @Nullable String inboundProxyAuthorization) {
+        final var header = exc.getRequest().getHeader();
+        if (inboundProxyAuthorization == null)
+            header.removeFields(PROXY_AUTHORIZATION);
+        else
+            header.setProxyAuthorization(inboundProxyAuthorization);
     }
 
     private void setAuthorizationHeader(Exchange exc) {
@@ -161,7 +178,7 @@ public class HttpClient implements AutoCloseable {
         }
 
         // Use complete URL with protocol and host. The proxy needs to know where to forward
-        if (configuration.getProxy() != null && !con.isTunneled()) {
+        if (con.getProxyConfiguration() != null && !con.isTunneled()) {
             req.setUri(dest);
             return;
         }

@@ -198,7 +198,7 @@ public class Http1ProtocolHandler extends AbstractProtocolHandler {
         if (!exchange.getRequest().isCONNECTRequest())
             return false;
 
-        if (configuration.getProxy() != null) {
+        if (ct.con().getProxyConfiguration() != null) {
             exchange.getRequest().write(ct.con().out, retainBodyForRetry());
             Response response = fromStream(ct.con().in, false);
             if (response.getStatusCode() > 299) {
