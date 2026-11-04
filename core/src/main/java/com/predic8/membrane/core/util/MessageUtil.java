@@ -13,10 +13,12 @@
    limitations under the License. */
 package com.predic8.membrane.core.util;
 
+import com.predic8.membrane.core.http.AbstractBody;
 import com.predic8.membrane.core.http.DecodingException;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.ReadingBodyException;
 import org.brotli.dec.BrotliInputStream;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,19 +40,37 @@ public class MessageUtil {
 	 * @see #getContent(Message)
 	 */
 	public static InputStream getContentAsStream(Message msg) {
+		return getContentAsStream(msg.getBody(), msg.getHeader().getContentEncoding(), msg);
+	}
+
+	/**
+	 * Like {@link #getContentAsStream(Message)}, for a body that is decoded on behalf of a message whose
+	 * header no longer describes it, e.g. because <code>Content-Encoding</code> was already removed.
+	 * <p>
+	 * The encoding is a parameter, not read from <code>message</code>, because
+	 * {@link com.predic8.membrane.core.http.LimitedBody} removes <code>Content-Encoding</code> from the
+	 * header when it takes over the body, before anything is decoded. A decoding failure shows up only
+	 * later, while the stream is read; looking the encoding up in the header then would find nothing, and
+	 * the failure would no longer be reported as a {@link DecodingException} naming the encoding.
+	 *
+	 * @param body            the body to decode
+	 * @param contentEncoding the <code>Content-Encoding</code> of the body, or <code>null</code>
+	 * @param message         the message failures are associated with
+	 */
+	public static InputStream getContentAsStream(AbstractBody body, @Nullable String contentEncoding, Message message) {
 		try {
-			if (msg.isGzip()) {
-				return associateDecodingFailures(new GZIPInputStream(msg.getBodyAsStream()), msg);
+			if ("gzip".equalsIgnoreCase(contentEncoding)) {
+				return associateDecodingFailures(new GZIPInputStream(body.getContentAsStream()), contentEncoding, message);
 			}
-			if (msg.isDeflate()) {
-				return associateDecodingFailures(inflating(msg.getBodyAsStream()), msg);
+			if ("deflate".equalsIgnoreCase(contentEncoding)) {
+				return associateDecodingFailures(inflating(body.getContentAsStream()), contentEncoding, message);
 			}
-			if (msg.isBrotli()) {
-				return associateDecodingFailures(new BrotliInputStream(msg.getBodyAsStream()), msg);
+			if ("br".equalsIgnoreCase(contentEncoding)) {
+				return associateDecodingFailures(new BrotliInputStream(body.getContentAsStream()), contentEncoding, message);
 			}
-			return msg.getBodyAsStream();
+			return body.getContentAsStream();
 		} catch (IOException e) {
-			throw decodingFailure(msg, e);
+			throw decodingFailure(message, contentEncoding, e);
 		}
 	}
 	
@@ -81,7 +101,7 @@ public class MessageUtil {
 			}
 			return msg.getBody().getContent();
 		} catch (IOException e) {
-			throw decodingFailure(msg, e);
+			throw decodingFailure(msg, msg.getHeader().getContentEncoding(), e);
 		}
 	}
 
@@ -89,9 +109,10 @@ public class MessageUtil {
 	 * Associates a read failure with the message it happened on, naming the Content-Encoding when the
 	 * message carries one. A body the sender did not label is not a decoding problem, so it keeps the
 	 * plain wrapping: {@link #getContentAsStream} reads an unencoded body through the same try block.
+	 * The encoding is passed in rather than read from <code>message</code>, whose header may no longer
+	 * carry it; see {@link #getContentAsStream(AbstractBody, String, Message)}.
 	 */
-	private static ReadingBodyException decodingFailure(Message message, IOException e) {
-		final String contentEncoding = message.getHeader().getContentEncoding();
+	private static ReadingBodyException decodingFailure(Message message, @Nullable String contentEncoding, IOException e) {
 		if (contentEncoding == null)
 			return new ReadingBodyException(e, message);
 		return new ReadingBodyException(new DecodingException(contentEncoding, e), message);
@@ -119,14 +140,14 @@ public class MessageUtil {
 	 * {@link com.predic8.membrane.core.exceptions.ProblemDetails#bodyFailure} rather than deciding a
 	 * status of their own; everything else lets it travel to the flow controller, which does the same.
 	 */
-	private static InputStream associateDecodingFailures(InputStream decoded, Message message) {
+	private static InputStream associateDecodingFailures(InputStream decoded, String contentEncoding, Message message) {
 		return new FilterInputStream(decoded) {
 			@Override
 			public int read() {
 				try {
 					return in.read();
 				} catch (IOException e) {
-					throw decodingFailure(message, e);
+					throw decodingFailure(message, contentEncoding, e);
 				}
 			}
 
@@ -135,7 +156,7 @@ public class MessageUtil {
 				try {
 					return in.read(bytes, offset, length);
 				} catch (IOException e) {
-					throw decodingFailure(message, e);
+					throw decodingFailure(message, contentEncoding, e);
 				}
 			}
 		};

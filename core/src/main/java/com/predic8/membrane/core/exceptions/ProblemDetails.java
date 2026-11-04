@@ -16,6 +16,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.DecodingException;
+import com.predic8.membrane.core.http.LimitExceededException;
 import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Interceptor;
@@ -164,6 +165,11 @@ public class ProblemDetails {
      */
     public static ProblemDetails bodyFailure(boolean production, String component, Exchange exchange,
                                              ReadingBodyException failure) {
+        // A body passed on by limit can exceed it wherever it is read
+        var limitExceeded = throwableOfType(failure, LimitExceededException.class);
+        if (limitExceeded != null)
+            return tooLarge(production, component, limitExceeded.getLimit());
+
         if (!failure.isRequestBodyFailure(exchange))
             return internal(production, component)
                     .addSubSee("reading-body")
@@ -184,6 +190,18 @@ public class ProblemDetails {
                 .title("Request body could not be decoded")
                 .topLevel("contentEncoding", decoding.getContentEncoding())
                 .detail(decoding.getMessage());
+    }
+
+    /**
+     * A message body is larger than the <code>limit</code> interceptor allows.
+     *
+     * @param maxBodyLength the limit in bytes, shown outside production only
+     */
+    public static ProblemDetails tooLarge(boolean production, String component, long maxBodyLength) {
+        return security(production, component)
+                .title("Message is too large.")
+                .detail("Message bodies must be smaller than limit.")
+                .internal("maxBodyLength", maxBodyLength);
     }
 
     public static ProblemDetails problemDetails(String type, boolean production) {
