@@ -14,12 +14,14 @@
 
 package com.predic8.membrane.core.interceptor.sqlinjection;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.io.IOException;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -159,6 +161,183 @@ class SqlInjectionRuleSetTest {
         // The rule set itself sees the still-encoded string; the urlDecodeUni transform must expose it.
         assertTrue(RULES.firstMatch("%27%20UNION%20SELECT").isPresent(),
                 "urlDecodeUni transform should expose the payload");
+    }
+
+    /**
+     * RE2/J's {@code \s} does not match a vertical tab, java.util.regex's does. Rule 942160 uses a bare
+     * {@code \s} without the {@code \x0b} that most CRS rules add.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "1 AND sleep\u000b(5)",
+            "1+AND+sleep%0b(5)"
+    })
+    void verticalTabIsWhitespace(String payload) {
+        var match = RULES.firstMatch(payload);
+        assertTrue(match.isPresent(), () -> "should have flagged: " + payload);
+        assertEquals("942160", match.get().id());
+    }
+
+    /**
+     * RE2/J's {@code $} matches only at the end of the input, java.util.regex's also before a final line
+     * break. Rule 942220 ends with {@code $}.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "2147483648\n",
+            "2147483648\r\n",
+            "2147483648%0a"
+    })
+    void endAnchorMatchesBeforeTrailingLineBreak(String payload) {
+        var match = RULES.firstMatch(payload);
+        assertTrue(match.isPresent(), () -> "should have flagged: " + payload);
+        assertEquals("942220", match.get().id());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "a\\sb", "a\\s*b", "a\\Sb", "a[\\s]b", "a[^\\s]b", "a[^\\s\\-]b", "a[\\s\\x0b]b", "a\\\\sb", "a[\\]\\s]b",
+            "a$", "^a$", "a$|b", "(?:a|b)$", "a\\$", "a[$]", "a\\\\$"
+    })
+    void translatedRegexMatchesLikeJavaRegex(String regex) {
+        var javaPattern = java.util.regex.Pattern.compile(regex);
+        var re2Pattern = SqlInjectionRuleSet.compile(regex);
+        for (var input : new String[]{"ab", "a b", "a\u000bb", "a\tb", "a\nb", "a\fb", "a\rb", "axb", "a-b", "a]b", "a\\sb", "a\u00a0b",
+                "a", "a\n", "a\r\n", "a\r", "a\u0085", "a\u2028", "a\u2029", "a\n\n", "a\nx", "a$", "a\\", "a\\\n"})
+            assertEquals(javaPattern.matcher(input).find(), re2Pattern.matcher(input).find(),
+                    () -> "regex %s on %s".formatted(regex, printable(input)));
+    }
+
+    /**
+     * Every bundled regex treats vertical tabs and a trailing line break like java.util.regex, the engine
+     * the CRS rules were matched with before RE2/J. Runs the payload table with every space replaced by a
+     * vertical tab, and with each line break appended.
+     */
+    @ParameterizedTest(name = "[{index}] rule {0}")
+    @MethodSource("allRuleIds")
+    void everyRuleMatchesLikeJavaRegex(String ruleId) throws IOException {
+        var javaPattern = java.util.regex.Pattern.compile(bundledRegex(ruleId));
+        var re2Pattern = rule(ruleId).regex();
+        crsRules().map(arguments -> (String) arguments.get()[0])
+                .flatMap(payload -> Stream.of(payload.replace(' ', '\u000b'), payload + "\n", payload + "\r\n", payload + "\r",
+                        payload + "\u0085", payload + "\u2028", payload + "\u2029"))
+                .forEach(input -> assertEquals(javaPattern.matcher(input).find(), re2Pattern.matcher(input).find(),
+                        () -> "rule %s on %s".formatted(ruleId, printable(input))));
+    }
+
+    private static String printable(String input) {
+        return input.replace("\u000b", "\\x0b").replace("\n", "\\n").replace("\r", "\\r")
+                .replace("\u0085", "\\u0085").replace("\u2028", "\\u2028").replace("\u2029", "\\u2029");
+    }
+
+    /** The regex as stored in the bundled resource, before {@link SqlInjectionRuleSet#compile} translates it. */
+    private static String bundledRegex(String ruleId) throws IOException {
+        try (var is = SqlInjectionRuleSet.class.getResourceAsStream("crs-sqli-rules.json")) {
+            for (var rule : new ObjectMapper().readTree(is))
+                if (rule.path("id").asText().equals(ruleId))
+                    return rule.path("regex").asText();
+        }
+        throw new AssertionError("rule not bundled: " + ruleId);
+    }
+
+    /**
+     * Branches of 942190 that the shared payload table does not reach, tested in isolation because
+     * lower-numbered rules would match first.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "exec master.dbo.sp_who",
+            "exec foo xp_cmdshell 'dir'",
+            "   execute foo xp_cmdshell 'dir'",
+            "select name, suser("
+    })
+    void rule942190MatchesItsBranches(String payload) {
+        assertTrue(rule("942190").matches(payload), () -> "942190 should match: " + payload);
+    }
+
+    /**
+     * Fragments that, repeated, made the backtracking engine read the input a quadratic or cubic number
+     * of times (e.g. 942190 on spaces, 942251 on spaces, 942370 on {@code ' or }).
+     */
+    private static final String[] REPEATED_FRAGMENTS = {
+            " ", "a", "'", "\"", "@", "!", "(", "' or ", "select ", "union", "execute "
+    };
+
+    /**
+     * Every bundled rule must read its input a linear number of times. The reads are counted instead of
+     * timed, so the test does not depend on the machine: doubling the input must at most roughly double
+     * the reads.
+     */
+    @ParameterizedTest(name = "[{index}] rule {0}")
+    @MethodSource("allRuleIds")
+    void everyRuleMatchesInLinearTime(String ruleId) {
+        var rule = rule(ruleId);
+        for (var fragment : REPEATED_FRAGMENTS) {
+            var reads = reads(rule, fragment, 4_000);
+            var readsDouble = reads(rule, fragment, 8_000);
+            assertTrue(readsDouble <= READ_LIMIT && readsDouble < 3 * reads,
+                    () -> "rule %s reads %d chars for 4000 and %d for 8000 chars of \"%s\"".formatted(
+                            ruleId, reads, readsDouble, fragment));
+        }
+    }
+
+    static Stream<String> allRuleIds() {
+        return BY_PARANOIA_LEVEL[4].rules().stream().map(SqlInjectionRule::id);
+    }
+
+    private static SqlInjectionRule rule(String ruleId) {
+        return BY_PARANOIA_LEVEL[4].rules().stream()
+                .filter(r -> r.id().equals(ruleId))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("rule not loaded: " + ruleId));
+    }
+
+    private static long reads(SqlInjectionRule rule, String fragment, int length) {
+        final var input = new CountingCharSequence(fragment.repeat(length / fragment.length()));
+        try {
+            rule.regex().matcher(input).find();
+        } catch (ReadLimitExceeded ignored) {
+            // far beyond linear; a count above READ_LIMIT fails the assertion
+        }
+        return input.reads;
+    }
+
+    private static class ReadLimitExceeded extends RuntimeException {
+    }
+
+    private static final long READ_LIMIT = 100_000_000L;
+
+    /** Counts {@link #charAt} calls and gives up once the count is clearly not linear. */
+    private static class CountingCharSequence implements CharSequence {
+
+        private final String value;
+        private long reads;
+
+        CountingCharSequence(String value) {
+            this.value = value;
+        }
+
+        @Override
+        public char charAt(int index) {
+            if (++reads > READ_LIMIT)
+                throw new ReadLimitExceeded();
+            return value.charAt(index);
+        }
+
+        @Override
+        public int length() {
+            return value.length();
+        }
+
+        @Override
+        public CharSequence subSequence(int start, int end) {
+            return value.subSequence(start, end);
+        }
+
+        @Override
+        public String toString() {
+            return value;
+        }
     }
 
     @Test
