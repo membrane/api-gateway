@@ -63,6 +63,22 @@ public class ContentTypeDetectorTest {
 	}
 
 	@Test
+	void soap() {
+		assertEquals(SOAP, detectEffectiveContentType(ok().
+				contentType(TEXT_XML_UTF8).
+				body("<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\"><s:Body/></s:Envelope>").
+				build()));
+	}
+
+	@Test
+	void soapWithDoctypeIsOnlyXml() {
+		assertEquals(XML, detectEffectiveContentType(ok().
+				contentType(TEXT_XML_UTF8).
+				body("<!DOCTYPE s:Envelope [<!ENTITY x \"y\">]><s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\"><s:Body/></s:Envelope>").
+				build()));
+	}
+
+	@Test
 	void unknown() {
 		assertEquals(UNKNOWN, detectEffectiveContentType(ok().build()));
 	}
