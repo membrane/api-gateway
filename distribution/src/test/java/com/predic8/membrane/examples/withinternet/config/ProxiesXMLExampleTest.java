@@ -14,17 +14,20 @@
 
 package com.predic8.membrane.examples.withinternet.config;
 
-import com.predic8.membrane.examples.util.*;
+import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcase;
 import org.json.JSONException;
-import org.junit.jupiter.api.*;
-import org.skyscreamer.jsonassert.*;
+import org.junit.jupiter.api.Test;
+import org.skyscreamer.jsonassert.JSONAssert;
 
-import java.util.concurrent.atomic.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.predic8.membrane.core.http.MimeType.*;
-import static io.restassured.RestAssured.*;
-import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.http.MimeType.TEXT_HTML;
+import static io.restassured.RestAssured.get;
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ProxiesXMLExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
@@ -127,7 +130,7 @@ public class ProxiesXMLExampleTest extends AbstractSampleMembraneStartStopTestca
                .then().assertThat()
                .statusCode(200)
                .contentType(APPLICATION_JSON)
-               .body("apis[0]['name']",equalTo("Shop API Showcase"));
+               .body("apis[0]['name']",equalTo("Fruit Shop API"));
     }
 
     @Test
