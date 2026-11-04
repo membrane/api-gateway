@@ -39,7 +39,18 @@ public class Tokenizer {
     private boolean eof;
 
     public Tokenizer(InputStream reader) {
-        this.reader = new CountingReader(new BufferedReader(new InputStreamReader(new BOMInputStream(reader))));
+        this.reader = new CountingReader(new BufferedReader(new InputStreamReader(withoutBOM(reader))));
+    }
+
+    /**
+     * The builder only declares {@link IOException}: it wraps the stream without reading from it.
+     */
+    private static InputStream withoutBOM(InputStream in) {
+        try {
+            return BOMInputStream.builder().setInputStream(in).get();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     /**
