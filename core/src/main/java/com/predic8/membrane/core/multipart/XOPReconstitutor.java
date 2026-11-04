@@ -60,6 +60,9 @@ public class XOPReconstitutor {
 			Message reconstitutedMessage = getReconstitutedMessage(message);
 			if (reconstitutedMessage != null)
 				return reconstitutedMessage.getBodyAsStream();
+		} catch (ReadingBodyException e) {
+			// Invalid input from the sender; already logged where it is detected.
+			log.debug("Falling back to the original body.", e);
 		} catch (Exception e) {
 			log.warn("", e);
 		}
@@ -172,8 +175,11 @@ public class XOPReconstitutor {
 							href = href.substring(4);
 
 						Part p = parts.get("<" + href + ">");
-						if (p == null)
-							throw new RuntimeException("Did not find multipart with id " + href);
+						if (p == null) {
+							log.info("Did not find multipart with id {}.", escapeControlCharsForLog(href));
+							throw new ReadingBodyException(new IOException(
+									"Did not find multipart with id %s.".formatted(href)), source);
+						}
 						// SOAP 1.2 MTOM 4.3.1.1: an extracted part MUST NOT be referenced by more than one
 						// xop:Include. Inlining it again for every reference would let a small package
 						// expand without bound; with distinct references the output stays linear in the input.
@@ -201,8 +207,8 @@ public class XOPReconstitutor {
 			}
 			writer.flush();
 		} catch (XMLStreamException e) {
-			log.warn("Received not-wellformed XML.");
-			return null;
+			log.info("Start part of XOP package is not well-formed XML: {}", escapeControlCharsForLog(e.getMessage()));
+			throw new ReadingBodyException(new IOException("Start part of XOP package is not well-formed XML."), source);
 		}
 		return baos.toByteArray();
 	}

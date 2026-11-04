@@ -152,10 +152,34 @@ class XOPReconstitutorTest {
     }
 
     @Test
-    void missingReferencedPartThrowsInGetReconstitutedMessage() {
+    void missingReferencedPartIsRejected() {
         // start part references cid:bin@test, but no such part is included
-        Response response = response(multipartBody(startPart()), contentType("<root@test>"));
-        assertThrows(RuntimeException.class, () -> reconstitutor.getReconstitutedMessage(response));
+        final var response = response(multipartBody(startPart()), contentType("<root@test>"));
+
+        final var e = assertThrows(com.predic8.membrane.core.http.ReadingBodyException.class,
+                () -> reconstitutor.getReconstitutedMessage(response));
+        assertTrue(e.belongsTo(response));
+        assertEquals("Did not find multipart with id bin@test.", e.getCause().getMessage());
+    }
+
+    @Test
+    void notWellFormedStartPartIsRejected() {
+        final var startPart = startPart().replace("</soap:Envelope>", "");
+        final var response = response(multipartBody(startPart, binaryPart()), contentType("<root@test>"));
+
+        final var e = assertThrows(com.predic8.membrane.core.http.ReadingBodyException.class,
+                () -> reconstitutor.getReconstitutedMessage(response));
+        assertTrue(e.belongsTo(response));
+        assertEquals("Start part of XOP package is not well-formed XML.", e.getCause().getMessage());
+    }
+
+    @Test
+    void notWellFormedStartPartFallsBackToOriginalStream() throws IOException {
+        final var startPart = startPart().replace("</soap:Envelope>", "");
+        final var response = response(multipartBody(startPart, binaryPart()), contentType("<root@test>"));
+
+        final var actual = IOUtils.toString(reconstitutor.reconstituteIfNecessary(response), UTF_8);
+        assertTrue(actual.contains("xop:Include"), "should fall back to the original multipart body");
     }
 
     @Test
@@ -203,6 +227,16 @@ class XOPReconstitutorTest {
                 () -> reconstitutor.getReconstitutedMessage(response));
         assertTrue(e.belongsTo(response));
         assertEquals("Multipart with id bin@test is referenced more than once.", e.getCause().getMessage());
+    }
+
+    @Test
+    void partReferencedTwiceFallsBackToOriginalStream() throws IOException {
+        final var response = response(multipartBody(startPart("bin@test", "bin@test"), binaryPart()),
+                contentType("<root@test>"));
+
+        final var actual = IOUtils.toString(reconstitutor.reconstituteIfNecessary(response), UTF_8);
+        assertTrue(actual.contains("xop:Include"), "should fall back to the original multipart body");
+        assertFalse(actual.contains("MDEyMzQ1Njc4OQ=="), "referenced part must not be inlined");
     }
 
     // -------------------------------------------------------------------------
