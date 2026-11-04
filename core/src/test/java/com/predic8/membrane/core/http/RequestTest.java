@@ -14,11 +14,13 @@
 
 package com.predic8.membrane.core.http;
 
+import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.util.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
 import java.net.*;
+import java.time.*;
 
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.Header.CONTENT_LENGTH;
@@ -27,6 +29,7 @@ import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.util.StringTestUtil.*;
 import static com.predic8.membrane.test.TestUtil.*;
 import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class RequestTest {
@@ -261,5 +264,222 @@ public class RequestTest {
 		reqPost.read(inPost, true);
 		assertFalse(reqPost.getBody().isRead());
         return reqPost.getBody();
+	}
+
+	@Nested
+	class ParseStartLine {
+
+		@Test
+		void originForm() throws IOException {
+			assertStartLine("GET /foo HTTP/1.1", "GET", "/foo", "1.1");
+		}
+
+		@Test
+		void queryIsPartOfUri() throws IOException {
+			assertStartLine("GET /foo?a=1&b=%20 HTTP/1.1", "GET", "/foo?a=1&b=%20", "1.1");
+		}
+
+		@Test
+		void absoluteForm() throws IOException {
+			assertStartLine("GET http://example.com:8080/foo HTTP/1.1", "GET", "http://example.com:8080/foo", "1.1");
+		}
+
+		@Test
+		void authorityForm() throws IOException {
+			assertStartLine("CONNECT example.com:443 HTTP/1.1", "CONNECT", "example.com:443", "1.1");
+		}
+
+		@Test
+		void asteriskForm() throws IOException {
+			assertStartLine("OPTIONS * HTTP/1.1", "OPTIONS", "*", "1.1");
+		}
+
+		@Test
+		void http10() throws IOException {
+			assertStartLine("POST /foo HTTP/1.0", "POST", "/foo", "1.0");
+		}
+
+		@Test
+		void extensionMethod() throws IOException {
+			assertStartLine("QUERY /foo HTTP/1.1", "QUERY", "/foo", "1.1");
+		}
+
+		@Test
+		void methodCaseIsKept() throws IOException {
+			assertStartLine("get /foo HTTP/1.1", "get", "/foo", "1.1");
+		}
+
+		@Test
+		void versionIsNotValidated() throws IOException {
+			assertStartLine("GET /foo HTTP/abc", "GET", "/foo", "abc");
+		}
+
+		@Test
+		void trailingWhitespaceIsPartOfVersion() throws IOException {
+			assertStartLine("GET /foo HTTP/1.1 ", "GET", "/foo", "1.1 ");
+		}
+
+		@Test
+		void spaceInUriIsPartOfUri() throws IOException {
+			assertStartLine("GET /a b HTTP/1.1", "GET", "/a b", "1.1");
+		}
+
+		@Test
+		void extraSpaceAfterMethodIsPartOfUri() throws IOException {
+			assertStartLine("GET  /foo HTTP/1.1", "GET", " /foo", "1.1");
+		}
+
+		@Test
+		void methodEndsAtFirstSpace() throws IOException {
+			assertStartLine("X GET /foo HTTP/1.1", "X", "GET /foo", "1.1");
+		}
+
+		@Test
+		void uriEndsAtFirstHttpVersion() throws IOException {
+			assertStartLine("GET /foo HTTP/1.1 HTTP/2", "GET", "/foo", "1.1 HTTP/2");
+		}
+
+		@Test
+		void bytesAreReadAsLatin1() throws IOException {
+			Request req = parse("GET /ä HTTP/1.1\r\n".getBytes(UTF_8));
+			assertEquals(new String("/ä".getBytes(UTF_8), ISO_8859_1), req.getUri());
+		}
+
+		@Test
+		void lfLineEnding() throws IOException {
+			Request req = parse("GET /foo HTTP/1.1\nHost: example.com\n".getBytes(UTF_8));
+			assertEquals("/foo", req.getUri());
+			assertEquals("1.1", req.getVersion());
+		}
+
+		@Test
+		void consumesOnlyTheStartLine() throws IOException {
+			InputStream in = new ByteArrayInputStream("GET /foo HTTP/1.1\r\nHost: example.com\r\n".getBytes(UTF_8));
+			new Request().parseStartLine(in);
+			assertEquals("Host: example.com\r\n", new String(in.readAllBytes(), UTF_8));
+		}
+
+		@Test
+		void longUri() throws IOException {
+			String uri = "/" + "a".repeat(8000);
+			assertStartLine("GET " + uri + " HTTP/1.1", "GET", uri, "1.1");
+		}
+
+		@Test
+		void leadingSpaceIsPartOfMethod() throws IOException {
+			assertStartLine(" GET /foo HTTP/1.1", " GET", "/foo", "1.1");
+		}
+
+		@Test
+		void manySpacesWithoutVersionDoNotBacktrack() {
+			assertTimeoutPreemptively(Duration.ofSeconds(1), () -> {
+				var line = "a ".repeat(4000);
+				assertStartLine(line, line, "", "STOMP");
+			});
+		}
+
+		@Test
+		void manySpacesWithEmptyVersionDoNotBacktrack() {
+			assertTimeoutPreemptively(Duration.ofSeconds(1), () -> {
+				var line = "a ".repeat(3990) + "HTTP/";
+				assertStartLine(line, line, "", "STOMP");
+			});
+		}
+
+		/**
+		 * Byte 0x85 is NEL, a line terminator for regex. The former regex parser stopped there and dropped or misread
+		 * the parts around it.
+		 */
+		@Test
+		void nextLineInVersionIsRejected() {
+			assertRejected("GET / HTTP/1.\u00851");
+		}
+
+		@Test
+		void nextLineAfterVersionIsRejected() {
+			assertRejected("GET / HTTP/1.0\u0085");
+		}
+
+		@Test
+		void nextLineInUriIsRejected() {
+			assertRejected("GET /a\u0085b HTTP/1.1");
+		}
+
+		@Test
+		void nextLineInMethodIsRejected() {
+			assertRejected("X\u0085GET / HTTP/1.1");
+		}
+
+		@Test
+		void lineTooLong() {
+			assertThrows(LineTooLongException.class, () -> parse(("GET /" + "a".repeat(9000) + " HTTP/1.1\r\n").getBytes(UTF_8)));
+		}
+
+		@Nested
+		class StompFallback {
+
+			@Test
+			void stompCommand() throws IOException {
+				assertStartLine("CONNECT", "CONNECT", "", "STOMP");
+			}
+
+			@Test
+			void missingVersion() throws IOException {
+				assertStartLine("GET /foo", "GET /foo", "", "STOMP");
+			}
+
+			@Test
+			void emptyVersion() throws IOException {
+				assertStartLine("GET /foo HTTP/", "GET /foo HTTP/", "", "STOMP");
+			}
+
+			@Test
+			void lowercaseProtocol() throws IOException {
+				assertStartLine("GET /foo http/1.1", "GET /foo http/1.1", "", "STOMP");
+			}
+
+			@Test
+			void tabSeparator() throws IOException {
+				assertStartLine("GET\t/foo HTTP/1.1", "GET\t/foo HTTP/1.1", "", "STOMP");
+			}
+		}
+
+		@Nested
+		class EndOfStream {
+
+			@Test
+			void emptyStream() {
+				assertThrows(NoMoreRequestsException.class, () -> parse(new byte[0]));
+			}
+
+			@Test
+			void emptyLine() {
+				assertThrows(NoMoreRequestsException.class, () -> parse("\r\n".getBytes(UTF_8)));
+			}
+
+			@Test
+			void eofInsideLine() {
+				EOFWhileReadingFirstLineException e = assertThrows(EOFWhileReadingFirstLineException.class,
+						() -> parse("GET /foo HT".getBytes(UTF_8)));
+				assertEquals("GET /foo HT", e.getLineSoFar());
+			}
+		}
+
+		private static void assertStartLine(String startLine, String method, String uri, String version) throws IOException {
+			Request req = parse((startLine + "\r\n").getBytes(UTF_8));
+			assertEquals(method, req.getMethod());
+			assertEquals(uri, req.getUri());
+			assertEquals(version, req.getVersion());
+		}
+
+		private static void assertRejected(String startLine) {
+			assertThrows(EOFWhileReadingFirstLineException.class, () -> parse((startLine + "\r\n").getBytes(ISO_8859_1)));
+		}
+
+		private static Request parse(byte[] startLine) throws IOException {
+			Request req = new Request();
+			req.parseStartLine(new ByteArrayInputStream(startLine));
+			return req;
+		}
 	}
 }
