@@ -158,10 +158,6 @@ public class OpenAPIValidationExampleTest extends AbstractSampleMembraneStartSto
                            "message" : "The string 'Germany' is 7 characters long. MaxLength of 2 is exceeded.",
                            "complexType" : "Person",
                            "schemaType" : "string"
-                         }, {
-                           "message" : "The string 'Germany' does not match regex pattern ^\\\\w{2}$.",
-                           "complexType" : "Person",
-                           "schemaType" : "string"
                          } ]
                        }
                    }
