@@ -69,11 +69,14 @@ public class HttpClient implements AutoCloseable {
     public void call(Exchange exc) throws Exception {
         var ph = protocolHandlerFactory.getHandler(exc, exc.getRequest().getHeader().getUpgradeProtocol());
         ph.checkUpgradeRequest(exc);
-        configuration.getRetryHandler().executeWithRetries(exc, this::dispatchCall);
+        // Each attempt starts from the request's own Proxy-Authorization, whatever an earlier attempt set.
+        final var inboundProxyAuthorization = exc.getRequest().getHeader().getFirstValue(PROXY_AUTHORIZATION);
+        configuration.getRetryHandler().executeWithRetries(exc,
+                (e, target, attempt) -> dispatchCall(e, target, attempt, inboundProxyAuthorization));
         ph.cleanup(exc);
     }
 
-    private boolean dispatchCall(Exchange exc, String target, int attempt) throws Exception {
+    private boolean dispatchCall(Exchange exc, String target, int attempt, @Nullable String inboundProxyAuthorization) throws Exception {
         setAuthorizationHeader(exc);
         var hcp = getHostColonPort(exc, target);
         adjustHostHeader(exc, hcp);
@@ -85,7 +88,7 @@ public class HttpClient implements AutoCloseable {
             // if we use a proxy for a plain HTTP (=non-HTTPS) request, attach the proxy credentials.
             exc.getRequest().getHeader().setProxyAuthorization(proxy.getCredentials());
         } else {
-            removeProxyCredentialsOfEarlierAttempt(exc);
+            restoreInboundProxyAuthorization(exc, inboundProxyAuthorization);
         }
 
         protocolHandlerFactory.getHandlerForConnection(exc, outConType).handle(exc, outConType, hcp);
@@ -111,15 +114,14 @@ public class HttpClient implements AutoCloseable {
         }
     }
 
-    // A retry can go direct (noProxy) or through a TLS tunnel after a proxied plain HTTP attempt. Only the value
-    // this client set is removed, a Proxy-Authorization header that came with the request is kept.
-    private void removeProxyCredentialsOfEarlierAttempt(Exchange exc) {
-        final var proxy = configuration.getProxy();
-        if (proxy == null || !proxy.isAuthentication())
-            return;
+    // A retry can go direct (noProxy) or through a TLS tunnel after a proxied plain HTTP attempt, which
+    // replaced the header with the proxy credentials.
+    private static void restoreInboundProxyAuthorization(Exchange exc, @Nullable String inboundProxyAuthorization) {
         final var header = exc.getRequest().getHeader();
-        if (proxy.getCredentials().equals(header.getFirstValue(PROXY_AUTHORIZATION)))
+        if (inboundProxyAuthorization == null)
             header.removeFields(PROXY_AUTHORIZATION);
+        else
+            header.setProxyAuthorization(inboundProxyAuthorization);
     }
 
     private void setAuthorizationHeader(Exchange exc) {

@@ -174,6 +174,31 @@ class HttpClientTest {
             assertEquals("Basic aW5ib3VuZA==", exc.getResponse().getBodyAsStringDecoded());
         }
 
+        @Test
+        void inboundProxyAuthorizationEqualToConfiguredCredentialsIsKeptForBypassedHost() throws Exception {
+            final var exc = get("http://localhost:%d/foo".formatted(BACKEND_PORT))
+                    .header(PROXY_AUTHORIZATION, "Basic YWxpY2U6c2VjcmV0")
+                    .buildExchange();
+            proxiedClient.call(exc);
+
+            assertEquals(0, proxyRequests.get());
+            assertEquals("Basic YWxpY2U6c2VjcmV0", exc.getResponse().getBodyAsStringDecoded());
+        }
+
+        @Test
+        void inboundProxyAuthorizationIsRestoredForBypassedHostAfterProxiedAttempt() throws Exception {
+            failFirstProxyRequest = true;
+            final var exc = get("/foo").header(PROXY_AUTHORIZATION, "Basic aW5ib3VuZA==").buildExchange();
+            exc.setDestinations(List.of(
+                    "http://127.0.0.1:%d/foo".formatted(BACKEND_PORT),
+                    "http://localhost:%d/foo".formatted(BACKEND_PORT)));
+            proxiedClient.call(exc);
+
+            assertEquals(1, proxyRequests.get());
+            assertEquals(200, exc.getResponse().getStatusCode());
+            assertEquals("Basic aW5ib3VuZA==", exc.getResponse().getBodyAsStringDecoded());
+        }
+
         @ParameterizedTest
         @ValueSource(strings = {"::1", "::/96"})
         void bypassedIpv6HostIsCalledDirectly(String noProxy) throws Exception {
