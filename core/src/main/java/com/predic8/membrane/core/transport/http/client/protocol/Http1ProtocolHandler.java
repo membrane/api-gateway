@@ -41,6 +41,7 @@ import static com.predic8.membrane.core.http.Response.ok;
 import static com.predic8.membrane.core.transport.http.MessageTracer.trace;
 import static com.predic8.membrane.core.transport.http.client.protocol.TcpProtocolHandler.TCP;
 import static com.predic8.membrane.core.transport.http.client.protocol.WebSocketProtocolHandler.WEBSOCKET;
+import static com.predic8.membrane.core.util.HttpUtil.isIdempotent;
 import static java.lang.Boolean.TRUE;
 import static java.lang.Math.min;
 import static java.lang.System.currentTimeMillis;
@@ -74,7 +75,7 @@ public class Http1ProtocolHandler extends AbstractProtocolHandler {
 
         trace(exchange.getRequest());
 
-        exchange.getRequest().write(ct.con().out, retainBodyForRetry());
+        exchange.getRequest().write(ct.con().out, retainBodyForRetry(exchange));
 
         // TODO only for HTTP1 ?
         exchange.setTimeReqSent(currentTimeMillis());
@@ -94,6 +95,20 @@ public class Http1ProtocolHandler extends AbstractProtocolHandler {
 
         // Only HTTP 1?
         checkUpgradeResponse(exchange);
+    }
+
+    /**
+     * Narrows {@link #retainBodyForRetry()} to idempotent methods, so that the body of a POST or PATCH
+     * is streamed to the backend instead of being read completely first.
+     * <p>
+     * Relies on the retry policy of {@link com.predic8.membrane.core.transport.http.client.RetryHandler}:
+     * over HTTP/1, it repeats a non-idempotent request only after the connection could not be
+     * established, i.e. before this handler has written anything. The body is then still unread and
+     * can be sent by the next attempt. After any part of the request was sent, such a request is not
+     * repeated.
+     */
+    private boolean retainBodyForRetry(Exchange exchange) {
+        return retainBodyForRetry() && isIdempotent(exchange.getRequest().getMethod());
     }
 
     @Override
@@ -159,7 +174,7 @@ public class Http1ProtocolHandler extends AbstractProtocolHandler {
         boolean bodyPending = exchange.getRequest().getHeader().is100ContinueExpected();
         while (response.getStatusCode() < 200 && response.getStatusCode() >= 100 && response.getStatusCode() != 101) {
             if (response.getStatusCode() == 100 && bodyPending) {
-                exchange.getRequest().getBody().write(getBodyTransferer(exchange, c), retainBodyForRetry());
+                exchange.getRequest().getBody().write(getBodyTransferer(exchange, c), retainBodyForRetry(exchange));
                 c.out.flush();
                 bodyPending = false;
             } else {
@@ -199,7 +214,7 @@ public class Http1ProtocolHandler extends AbstractProtocolHandler {
             return false;
 
         if (configuration.getProxy() != null) {
-            exchange.getRequest().write(ct.con().out, retainBodyForRetry());
+            exchange.getRequest().write(ct.con().out, retainBodyForRetry(exchange));
             Response response = fromStream(ct.con().in, false);
             if (response.getStatusCode() > 299) {
                 log.info("Proxy rejected CONNECT request with status code {}.", response.getStatusCode());
