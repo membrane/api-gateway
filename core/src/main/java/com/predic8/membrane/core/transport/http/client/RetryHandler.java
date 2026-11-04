@@ -110,8 +110,13 @@ public class RetryHandler {
 
     /**
      * Whether {@link #executeWithRetries(Exchange, RetryableCall)} can send the request more than once.
-     * Callers writing the request to the wire have to retain the body in that case, otherwise the
-     * replay has nothing left to send.
+     * A caller writing the request to the wire has to retain the body whenever the request may be
+     * repeated after it was written, otherwise the replay has nothing left to send.
+     * <p>
+     * A request with a non-idempotent method (RFC 9110 §9.2.2) is not repeated once it may have been
+     * applied. It is repeated only after a failure before anything was sent (connection refused,
+     * connect timeout, unknown host), or when the backend reports that it did not process the
+     * request (HTTP/2 GOAWAY).
      *
      * @return true if at least one retry attempt follows the initial call
      */

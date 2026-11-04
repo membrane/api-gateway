@@ -101,11 +101,11 @@ public class Http1ProtocolHandler extends AbstractProtocolHandler {
      * Narrows {@link #retainBodyForRetry()} to idempotent methods, so that the body of a POST or PATCH
      * is streamed to the backend instead of being read completely first.
      * <p>
-     * Relies on the retry policy of {@link com.predic8.membrane.core.transport.http.client.RetryHandler}:
-     * over HTTP/1, it repeats a non-idempotent request only after the connection could not be
-     * established, i.e. before this handler has written anything. The body is then still unread and
-     * can be sent by the next attempt. After any part of the request was sent, such a request is not
-     * repeated.
+     * A request with a non-idempotent method must not be repeated automatically once it may have been
+     * applied (RFC 9110 §9.2.2). Over HTTP/1, the
+     * {@link com.predic8.membrane.core.transport.http.client.RetryHandler} therefore repeats such a
+     * request only after a failure before this handler has written anything, e.g. a refused
+     * connection. The body is then still unread and the next attempt sends it.
      */
     private boolean retainBodyForRetry(Exchange exchange) {
         return retainBodyForRetry() && isIdempotent(exchange.getRequest().getMethod());
