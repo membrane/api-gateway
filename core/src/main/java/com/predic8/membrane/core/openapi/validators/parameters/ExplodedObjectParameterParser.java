@@ -14,23 +14,25 @@
 
 package com.predic8.membrane.core.openapi.validators.parameters;
 
-import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.node.*;
-import com.predic8.membrane.core.openapi.validators.*;
-import io.swagger.v3.oas.models.media.*;
-import org.slf4j.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.predic8.membrane.core.openapi.validators.SchemaValidator;
+import com.predic8.membrane.core.openapi.validators.ValidationContext;
+import com.predic8.membrane.core.openapi.validators.ValidationErrors;
+import io.swagger.v3.oas.models.media.Schema;
 
-import java.util.*;
-import java.util.regex.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.regex.Pattern;
 
-import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
-import static com.predic8.membrane.core.util.json.JsonUtil.*;
-import static java.net.URLDecoder.*;
-import static java.nio.charset.StandardCharsets.*;
+import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.resolveSchema;
+import static com.predic8.membrane.core.openapi.util.SchemaUtil.getPatternPropertyPatterns;
+import static com.predic8.membrane.core.util.json.JsonUtil.scalarAsJson;
+import static java.net.URLDecoder.decode;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class ExplodedObjectParameterParser extends AbstractParameterParser {
-
-    private static final Logger log = LoggerFactory.getLogger(ExplodedObjectParameterParser.class);
 
     private Set<String> otherParameterNames = Set.of();
 
@@ -104,7 +106,7 @@ public class ExplodedObjectParameterParser extends AbstractParameterParser {
     }
 
     private void patternProperties(Schema<?> schema, ObjectNode obj, Set<String> known) {
-        final var patterns = compilePatternProperties(schema);
+        final var patterns = getPatternPropertyPatterns(schema);
         if (patterns.isEmpty())
             return;
 
@@ -124,24 +126,6 @@ public class ExplodedObjectParameterParser extends AbstractParameterParser {
      */
     public void setOtherParameterNames(Set<String> otherParameterNames) {
         this.otherParameterNames = Set.copyOf(otherParameterNames);
-    }
-
-    /**
-     * Compiles the patternProperties regexes of the schema. Invalid regexes are logged and skipped.
-     */
-    public static List<Pattern> compilePatternProperties(Schema<?> schema) {
-        if (schema.getPatternProperties() == null)
-            return List.of();
-
-        final var patterns = new ArrayList<Pattern>();
-        schema.getPatternProperties().keySet().forEach(regex -> {
-            try {
-                patterns.add(Pattern.compile(regex));
-            } catch (PatternSyntaxException e) {
-                log.warn("Ignoring invalid patternProperties regex '{}': {}", regex, e.getMessage());
-            }
-        });
-        return List.copyOf(patterns);
     }
 
     /**

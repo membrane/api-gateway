@@ -146,7 +146,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
             }
         } catch (OpenAPIParsingException e) {
             String detail = "Could not parse OpenAPI with title %s. Check syntax and references.".formatted(rec.api.getInfo().getTitle());
-            log.warn(detail);
+            log.warn("{} {}", detail, e.getMessage());
             internal(router.getConfiguration().isProduction(), getDisplayName())
                     .addSubSee("openapi-parsing")
                     .flow(REQUEST)

@@ -100,7 +100,7 @@ public class SchemaValidator implements JsonSchemaValidator {
             } else {
                 value = resolveValueAndParseJSON(obj);
             }
-        } catch (MixedContentException | MultipleElementsException e) {
+        } catch (MixedContentException | MultipleElementsException | UndeclaredContentException e) {
             return errors.add(new ValidationError(ctx.entityType(BODY), e.getMessage()));
         } catch (SAXException | XmlParseException e) {
             log.info("Cannot parse XML body. " + e);
@@ -452,6 +452,9 @@ public class SchemaValidator implements JsonSchemaValidator {
                 case OBJECT -> new ObjectValidator(api, schema).validate(ctx, value);
                 default -> throw new RuntimeException("Should not happen! " + type);
             };
+        } catch (OpenAPIParsingException e) {
+            // An error in the spec must not be reported as a type mismatch of the validated value
+            throw e;
         } catch (Exception e) {
             return ValidationErrors.error(ctx, mask -> "%s is not of %s format.".formatted(v(value, mask), type));
         }

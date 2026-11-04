@@ -222,6 +222,31 @@ Add regression tests before changing the incorrect behavior. Cover absent/empty/
 
 Avoid expanding unrelated unsupported WSDL features. Use the repository’s targeted test workflow. Do not commit or push. Report the model, compatibility implications, and test results.
 
+#### Harmonize JSON parsers
+
+- Story: JSON is parsed in many places with differently configured parsers. About 76 classes in `core` create their own `new ObjectMapper()`, mostly with Jackson's lenient defaults, e.g. trailing tokens are ignored. The JSON Schema, OpenAPI and JSON-RPC validators already reject trailing data; other parsers do not.
+- Central, immutable parser configuration in `JsonUtil` (shared `ObjectReader`s instead of mutable `ObjectMapper`s): strict by default (`FAIL_ON_TRAILING_TOKENS`, duplicate key detection), with one place for limits such as nesting depth and string length.
+- Every validator and every interceptor that parses a body uses it. Parse the body once and keep the `JsonNode` on the message (see JSONBody under Improvements).
+- **Breaking**: bodies that were accepted before, e.g. with trailing data or duplicate keys, are rejected.
+
+#### Get rid of old JSON parsers
+
+- `org.json` (`JsonToXml`, `Xml2JsonInterceptor`, `ElasticSearchExchangeStore`): replace with Jackson. Check that `xml2json`/`json2xml` output stays the same, or name the differences in the release notes.
+- `json-smart`: only there for `json-path`. Configure `json-path` with the Jackson provider and drop the direct dependency if possible.
+- Combine with the Jackson 3 upgrade.
+
+#### Share field validation between urlencoded and multipart form bodies
+
+- Story: `FormUrlEncodedValidator` and `MultipartFormDataValidator` both map named fields onto an object schema, but each implements that logic itself: matching `properties`/`patternProperties`/`additionalProperties`, `required`, choosing a decoding schema when several schemas or types apply, building arrays from repeated fields (`items`/`prefixItems`, `minItems`/`maxItems`), and validating the whole value.
+- The copies have drifted apart: only the urlencoded `decodingSchema` treats `number` and `integer` as compatible. Multipart validates each part first and then decodes it a second time in `reconstructPart` to check whole-array keywords (`uniqueItems`, `contains`). Whenever the two decoding paths disagree, the rebuilt array is dropped and those keywords are silently skipped, e.g. `items: {type: [array, string]}` with plain-string parts gets past `uniqueItems`.
+- Idea: one shared field validator over `name → List<raw value>`, with a decoder for each format:
+  - urlencoded: percent-decoded text → scalar or JSON
+  - multipart: bytes + effective content type → JSON, XML, binary, `text/plain` (incl. base64 `Content-Transfer-Encoding`). The decoder reports parse errors per part, e.g. "Part 'x' could not be parsed as XML".
+  - Each value is decoded once and the result is validated once, so `reconstructPart` goes away.
+- Out of scope: query parameters (`QueryParameterValidator`). Their model is different, with one schema per parameter, `style`/`explode`, and objects spread over several keys. They keep sharing only `parseScalar` and `SchemaValidator`. The OAS 3.2 `in: querystring` parameter already reuses `FormUrlEncodedValidator`.
+- Related: `FormUrlEncodedValidator` ignores the media type's `encoding` (`style`/`explode` per property, using the same rules as query parameters). If that is ever supported, it is the place where form and query parsing would share code.
+- Check that the error messages and status codes of both validators stay the same, or name the differences in the release notes.
+
 
 ### Resolve the backend URL (destination) late
 
