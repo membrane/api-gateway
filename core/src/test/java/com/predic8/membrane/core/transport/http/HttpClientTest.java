@@ -21,8 +21,12 @@ import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.http.client.*;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.*;
+import org.junit.jupiter.params.provider.*;
 import org.mockito.*;
 
+import java.io.*;
+import java.net.*;
 import java.util.*;
 import java.util.concurrent.atomic.*;
 
@@ -30,6 +34,7 @@ import static com.predic8.membrane.core.http.Header.PROXY_AUTHORIZATION;
 import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 class HttpClientTest {
 
@@ -103,16 +108,20 @@ class HttpClientTest {
             proxy.add(rule);
             proxy.start();
 
+            proxiedClient = createProxiedClient("localhost");
+        }
+
+        private static HttpClient createProxiedClient(String noProxy) {
             var pc = new ProxyConfiguration();
             pc.setHost("localhost");
             pc.setPort(PROXY_PORT);
             pc.setAuthentication(true);
             pc.setUsername("alice");
             pc.setPassword("secret");
-            pc.setNoProxy("localhost");
+            pc.setNoProxy(noProxy);
             var hcc = new HttpClientConfiguration();
             hcc.setProxy(pc);
-            proxiedClient = new HttpClient(hcc);
+            return new HttpClient(hcc);
         }
 
         @AfterEach
@@ -163,6 +172,28 @@ class HttpClientTest {
             proxiedClient.call(exc);
 
             assertEquals("Basic aW5ib3VuZA==", exc.getResponse().getBodyAsStringDecoded());
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = {"::1", "::/96"})
+        void bypassedIpv6HostIsCalledDirectly(String noProxy) throws Exception {
+            assumeTrue(isIpv6LoopbackAvailable(), "IPv6 loopback is not available");
+            proxiedClient.close();
+            proxiedClient = createProxiedClient(noProxy);
+
+            final var exc = get("http://[::1]:%d/foo".formatted(BACKEND_PORT)).buildExchange();
+            proxiedClient.call(exc);
+
+            assertEquals(200, exc.getResponse().getStatusCode());
+            assertEquals(0, proxyRequests.get());
+        }
+
+        private static boolean isIpv6LoopbackAvailable() {
+            try (var ignored = new ServerSocket(0, 1, InetAddress.getByName("::1"))) {
+                return true;
+            } catch (IOException e) {
+                return false;
+            }
         }
     }
 }
