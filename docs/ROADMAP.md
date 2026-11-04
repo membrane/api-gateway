@@ -1,8 +1,15 @@
 # Membrane Roadmap
 
 PRIO 1:
-- Add performance tutorial or tuning guide
-  - forgetful exchange store
+- docker documentation:
+  - Look what is already there somewhere
+  - Creating docker image for Membrane
+  - Using the predic8/membrane image
+    - mounting
+      - apis.yaml
+      - conf/log4j.conf/yaml
+  - Memory with Java in Docker
+  - Image for minimal RAM usage
 - set backlog to 1000
   - provide production tutorial with backlog = 100
   - production = true
@@ -15,17 +22,20 @@ PRIO 1:
 - Register JSON Schema for YAML at: https://www.schemastore.org TB
 - create test asserting that connection reuse via proxy works TP
 - Central description of Membrane Languages, Cheat Sheets, links to their docs. TP
-- Central description of MEMBRANE_* environment variables
+- Central description of MEMBRANE_* environment variables CG
+  - Check https://www.membrane-api.io/gateway-documentation.html #configuration 
   - Like MEMBRANE_HOME...
-  - @coderabbitai look through the code base for usages of these variables and suggest documentation 
-- API gateway best practice document
+  - @coderabbitai look through the code base for usages of these variables and suggest documentation
+- API gateway best practice document TB
   - Start with conditions on the body (`if`, `choose`, API `test`) and media types:
     - Send the right Content-Type (`curl -d` sends form data); an empty body or one that is no XML/JSON at all is evaluated as an empty document, a broken XML/JSON body gives 400/502 whatever its Content-Type
     - Write fail-closed XPath guards: `not(/a = 'admin')` instead of `/a != 'admin'`. It is also true when `<a>` is missing, so a request without `<a>` counts as "not admin". `/a != 'admin'` is false then, which lets such a request slip past the guard
     - Check expected content-type at the beginning (Maybe an Interceptor like enforceContent)
 
 PRIO 2:
-- Remove MemoryExchangeStore
+- Add performance tutorial or tuning guide
+  - forgetful exchange store
+- Remove MemoryExchangeStore CG
   - It was used only by Membrane Monitor
 - Tutorial: Replace httpbin and catfact TB
 
@@ -42,7 +52,6 @@ PRIO 3:
   - Story: the keyword is never read, so arrays are validated as if it were absent. `unevaluatedItems: false` does not reject any items.
   - It applies to the items not evaluated by `prefixItems`, `items` or `contains`, including those of the `allOf`/`anyOf`/`oneOf`/`$ref` subschemas that validated successfully. `ObjectValidator` does the same for `unevaluatedProperties`.
   - Related: #3499 (`prefixItems`).
-- ReplaceInterceptor: Support Languages, tutorial/transformation
 - WebServiceExplorerInterceptor
   - Support multiple services, ports, ...
   - Refactor
@@ -83,7 +92,7 @@ PRIO 3:
 
 - change all maven packages to membrane-api.io
   - Needs changes at maven central
-- ReplaceInterceptor:
+- ReplaceInterceptor: TB
   - allow also XPath
   - allow to use expressions for the replacement
 - global:
