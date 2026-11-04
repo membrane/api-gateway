@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchangestore.ForgetfulExchangeStore;
+import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
@@ -27,11 +28,16 @@ import com.predic8.membrane.core.mcp.*;
 import com.predic8.membrane.core.router.TestRouter;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.zip.DeflaterOutputStream;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
 class MembraneMCPServerTest {
@@ -237,6 +243,61 @@ class MembraneMCPServerTest {
         assertEquals(202, initialized.getResponse().getStatusCode());
         assertEquals("", initialized.getResponse().getBodyAsStringDecoded());
         return sessionId;
+    }
+
+    /**
+     * MEM-38 F-052: the JSON-RPC body is parsed as JSON only, so a multipart XOP package is not
+     * reassembled first. An invalid package therefore ends as a JSON parse error, not as a failure
+     * of the XOP reassembly.
+     */
+    @Test
+    void xopPackageIsNotReassembledBeforeJsonParsing() throws Exception {
+        final var crlf = "\r\n";
+        final var boundary = "boundary";
+        final var include = "<xop:Include xmlns:xop=\"http://www.w3.org/2004/08/xop/include\" href=\"cid:bin@test\"/>";
+        final var body = "--" + boundary + crlf
+                + "Content-Type: application/xop+xml; type=\"text/xml\"" + crlf
+                + "Content-ID: <root@test>" + crlf + crlf
+                + "<a>" + include + include + "</a>" + crlf
+                + "--" + boundary + crlf
+                + "Content-Type: application/octet-stream" + crlf
+                + "Content-ID: <bin@test>" + crlf + crlf
+                + "0123456789" + crlf
+                + "--" + boundary + "--" + crlf;
+        final var exc = Request.post("http://localhost/mcp")
+                .header("Accept", POST_ACCEPT_HEADER)
+                .body(body.getBytes(UTF_8))
+                .header("Content-Type", "multipart/related; type=\"application/xop+xml\"; boundary=\"%s\"; start=\"<root@test>\"".formatted(boundary))
+                .buildExchange();
+
+        assertEquals(Outcome.RETURN, newServer().handleRequest(exc));
+        assertEquals(400, exc.getResponse().getStatusCode());
+        assertEquals(-32700, responseJson(exc).path("error").path("code").asInt());
+    }
+
+    /**
+     * Only the zlib checksum is missing, so the decoded part is a complete request. It must still be
+     * rejected rather than dispatched: the body did not arrive as sent.
+     */
+    @Test
+    void truncatedDeflateBodyIsNotDispatched() throws Exception {
+        final var compressed = zlib(initializeRequest("2025-03-26").toJson());
+        final var exc = Request.post("http://localhost/mcp")
+                .header("Accept", POST_ACCEPT_HEADER)
+                .body(Arrays.copyOf(compressed, compressed.length - 1))
+                .header("Content-Type", "application/json")
+                .header("Content-Encoding", "deflate")
+                .buildExchange();
+
+        assertThrows(ReadingBodyException.class, () -> newServer().handleRequest(exc));
+    }
+
+    private static byte[] zlib(String value) throws IOException {
+        final var bos = new ByteArrayOutputStream();
+        try (final var deflate = new DeflaterOutputStream(bos)) {
+            deflate.write(value.getBytes(UTF_8));
+        }
+        return bos.toByteArray();
     }
 
     private static JSONRPCRequest initializeRequest(String protocolVersion) {
