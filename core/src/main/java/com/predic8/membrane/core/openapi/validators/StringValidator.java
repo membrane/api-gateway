@@ -21,6 +21,8 @@ import com.fasterxml.jackson.databind.node.*;
 import io.swagger.v3.oas.models.media.*;
 import org.slf4j.*;
 
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.regex.*;
 
 import static com.predic8.membrane.core.openapi.util.Utils.*;
@@ -32,6 +34,8 @@ import static java.lang.String.*;
 public class StringValidator implements JsonSchemaValidator {
 
     private static final Logger log = LoggerFactory.getLogger(StringValidator.class.getName());
+
+    private static final Map<String, Pattern> PATTERNS = new ConcurrentHashMap<>();
 
     private final Schema schema;
 
@@ -195,7 +199,8 @@ public class StringValidator implements JsonSchemaValidator {
             errors.add(ctx, mask -> format("'%s' is not part of the enum %s.", v(value, mask), getEnumValues()));
         }
 
-        if (schema.getPattern() != null && !matchRegexPattern(value)) {
+        // StringRestrictionValidator rejects an oversized value anyway: don't spend CPU running the regex over it.
+        if (schema.getPattern() != null && !isMaxLengthExceeded(value) && !matchRegexPattern(value)) {
             errors.add(ctx, mask -> format("The string '%s' does not match regex pattern %s.", v(value, mask), schema.getPattern()));
         }
 
@@ -207,7 +212,12 @@ public class StringValidator implements JsonSchemaValidator {
         return String.join(",", schema.getEnum());
     }
 
+    private boolean isMaxLengthExceeded(String v) {
+        return schema.getMaxLength() != null && v.length() > schema.getMaxLength();
+    }
+
     private boolean matchRegexPattern(String v) {
-        return Pattern.compile(schema.getPattern()).matcher(v).find();
+        // Validators are created per validated value, so compiled patterns are cached here.
+        return PATTERNS.computeIfAbsent(schema.getPattern(), Pattern::compile).matcher(v).find();
     }
 }
