@@ -161,6 +161,15 @@ class XOPReconstitutorTest {
         assertTrue(actual.contains("xop:Include"), "should fall back to the original multipart body");
     }
 
+    @Test
+    void entityDeclaredInStartPartIsNotExpanded() throws IOException {
+        final var startPart = startPart().replace("<soap:Envelope ",
+                "<!DOCTYPE soap:Envelope [<!ENTITY e \"xyz\">]><soap:Envelope a=\"&e;&e;\" ");
+        final var response = response(multipartBody(startPart, binaryPart()), contentType("<root@test>"));
+
+        assertFalse(IOUtils.toString(reconstitutor.reconstituteIfNecessary(response), UTF_8).contains("xyzxyz"));
+    }
+
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------

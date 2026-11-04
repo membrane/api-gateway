@@ -22,9 +22,10 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 /**
- * Answers whether a {@code DOCTYPE} points outside the document it appeared in - by declaring an
- * external entity, or by referring to an external subset. Nothing here resolves such a reference;
- * it only reports that one is there, so that {@link XMLProtector} can decide what to do about it.
+ * Answers whether a {@code DOCTYPE} declares entities, and whether it points outside the document it
+ * appeared in - by declaring an external entity, or by referring to an external subset. Nothing here
+ * resolves such a reference; it only reports that one is there, so that {@link XMLProtector} can
+ * decide what to do about it.
  *
  * <p>Both answers are read off the {@link DTD} event alone, one of them from the declaration text,
  * as StAX exposes no parsed form of the external identifier.</p>
@@ -37,11 +38,19 @@ final class DoctypeInspector {
     private DoctypeInspector() {
     }
 
-    @SuppressWarnings("unchecked") // DTD.getEntities() is a raw List of EntityDeclaration by contract
     static boolean containsExternalEntityReferences(DTD dtd) {
-        List<EntityDeclaration> entities = dtd.getEntities();
-        return entities != null && entities.stream()
+        return entitiesOf(dtd).stream()
                 .anyMatch(entity -> entity.getPublicId() != null || entity.getSystemId() != null);
+    }
+
+    static boolean containsEntityDeclarations(DTD dtd) {
+        return !entitiesOf(dtd).isEmpty();
+    }
+
+    @SuppressWarnings("unchecked") // DTD.getEntities() is a raw List of EntityDeclaration by contract
+    private static List<EntityDeclaration> entitiesOf(DTD dtd) {
+        List<EntityDeclaration> entities = dtd.getEntities();
+        return entities != null ? entities : List.of();
     }
 
     static boolean hasExternalSubsetReference(DTD dtd) {

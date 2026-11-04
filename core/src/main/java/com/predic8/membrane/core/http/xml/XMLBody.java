@@ -15,17 +15,12 @@ package com.predic8.membrane.core.http.xml;
 
 import com.predic8.membrane.core.config.*;
 import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.util.xml.parser.HardenedStaxInputFactory;
 
 import javax.xml.stream.*;
 import javax.xml.stream.events.*;
 
 class XMLBody extends AbstractXmlElement {
-
-	private static final XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
-	static {
-		xmlInputFactory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false);
-		xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
-	}
 
 	private final Message msg;
 	private final String charset;
@@ -39,10 +34,7 @@ class XMLBody extends AbstractXmlElement {
 	public void write(XMLStreamWriter out) throws XMLStreamException {
 		out.writeAttribute("type", "xml");
 
-		XMLStreamReader parser;
-		synchronized(xmlInputFactory) {
-			parser = xmlInputFactory.createXMLStreamReader(msg.getBodyAsStreamDecoded(), charset);
-		}
+		XMLStreamReader parser = HardenedStaxInputFactory.inputFactory().createXMLStreamReader(msg.getBodyAsStreamDecoded(), charset);
 
 		boolean endDoc = false;
 		while (parser.hasNext()) {
