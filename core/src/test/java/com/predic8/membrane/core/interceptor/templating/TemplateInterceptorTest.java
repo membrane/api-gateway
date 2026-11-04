@@ -26,6 +26,8 @@ import org.json.JSONObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
@@ -258,6 +260,38 @@ public class TemplateInterceptorTest {
         ti.setPretty(TRUE);
         ti.init();
         assertArrayEquals(expectedPrettyJson.getBytes(UTF_8), ti.prettify(inputJson.getBytes(UTF_8)));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"${unknownVariable}", "${property.missing.foo}", "${unknownMethod()}"})
+    void productionHidesTemplateSourceOnError(String failingExpression) throws Exception {
+        router.getConfiguration().setProduction(true);
+        final var exchange = post("/foo").contentType(TEXT_PLAIN).body("x").buildExchange();
+
+        invokeInterceptor(exchange, "secret-before\n%s\nsecret-after".formatted(failingExpression), TEXT_PLAIN);
+
+        final var body = exchange.getResponse().getBodyAsStringDecoded();
+        assertEquals(500, exchange.getResponse().getStatusCode());
+        assertFalse(body.contains("secret"), body);
+        assertFalse(body.contains("\"line\""), body);
+        assertTrue(body.contains("See server log"), body);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"${unknownVariable}", "${property.missing.foo}", "${unknownMethod()}"})
+    void developmentShowsTemplateSourceOnError(String failingExpression) throws Exception {
+        final var exchange = post("/foo").contentType(TEXT_PLAIN).body("x").buildExchange();
+
+        invokeInterceptor(exchange, "secret-before\n%s\nsecret-after".formatted(failingExpression), TEXT_PLAIN);
+
+        final var body = exchange.getResponse().getBodyAsStringDecoded();
+        assertEquals(500, exchange.getResponse().getStatusCode());
+        assertTrue(body.contains("Error executing template."), body);
+        assertTrue(body.contains("secret-before"), body);
+        final var message = om.readTree(body).get("message").asText();
+        assertTrue(message.contains("secret-after"), message);
+        assertFalse(message.contains("\uFFFF"), "End-of-input marker in the excerpt: " + message);
+        assertTrue(body.contains("\"line\" : 2") || body.contains("\"line\":2"), body);
     }
 
     @Test

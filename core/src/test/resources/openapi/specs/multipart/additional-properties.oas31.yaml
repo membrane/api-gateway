@@ -1,0 +1,91 @@
+openapi: '3.1.0'
+info:
+  title: Form Additional Properties API
+  version: '1.0'
+servers:
+  - url: https://api.server.test
+paths:
+  /multipart-closed:
+    post:
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Closed'
+      responses:
+        '200':
+          description: OK
+  /multipart-typed:
+    post:
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Typed'
+      responses:
+        '200':
+          description: OK
+  /form-closed:
+    post:
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Closed'
+      responses:
+        '200':
+          description: OK
+  /form-typed:
+    post:
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Typed'
+      responses:
+        '200':
+          description: OK
+  /multipart-closed-inline:
+    post:
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                name:
+                  type: string
+      responses:
+        '200':
+          description: OK
+  /form-closed-inline:
+    post:
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                name:
+                  type: string
+      responses:
+        '200':
+          description: OK
+components:
+  schemas:
+    Closed:
+      type: object
+      additionalProperties: false
+      properties:
+        name:
+          type: string
+    Typed:
+      type: object
+      additionalProperties:
+        type: string
+        maxLength: 3
+      properties:
+        name:
+          type: string

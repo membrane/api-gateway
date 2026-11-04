@@ -119,20 +119,33 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
             exc.setProperty(MEMBRANE_AI_USER, user);
         }
 
+        var modelInput = exc.getRequest().isPOSTRequest() && llmReq instanceof ModelInputRequest mir ? mir : null;
+
+        // Decided before the shared key is installed, so a request the restrictions cannot be applied to never gets it.
+        if (modelInput == null && isRestricted()) {
+            log.info("Rejected {} {}: the model rules and token limits cannot be applied to this endpoint.", exc.getRequest().getMethod(), exc.getRequest().getUri());
+            exc.setResponse(errorCreator.invalidRequestError("This endpoint is not supported by the gateway."));
+            return ABORT;
+        }
+
         // If APIKey is specified, use that for the LLM. Overwrites keys from the client
         if (apiKey != null) {
             llmReq.setApiKey(apiKey);
         }
 
-        if (!exc.getRequest().isPOSTRequest()) {
+        if (modelInput == null) {
             return CONTINUE;
         }
 
-        if (!(llmReq instanceof ModelInputRequest mir)) {
-            return CONTINUE;
-        }
+        return rewriteModelInput(exc, modelInput, user);
+    }
 
-        return rewriteModelInput(exc, mir, user);
+    /**
+     * Whether model rules, a per-user token budget or a system prompt are configured. Only a request
+     * carrying model input can be checked against them or get the prompt.
+     */
+    private boolean isRestricted() {
+        return !(policies instanceof NullPolicies) || store instanceof AiApiUserStore || systemPrompt != null;
     }
 
     /**

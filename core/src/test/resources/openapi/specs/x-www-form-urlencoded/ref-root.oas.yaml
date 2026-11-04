@@ -1,0 +1,47 @@
+openapi: '3.1.0'
+info:
+  title: Form Root Reference API
+  version: '1.0'
+servers:
+  - url: https://api.server.test
+paths:
+  /form-siblings-closed:
+    post:
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/OpenForm'
+              additionalProperties: false
+              properties:
+                name:
+                  type: string
+                token:
+                  type: string
+      responses:
+        '200':
+          description: OK
+  /form-siblings:
+    post:
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/OpenForm'
+              required: [token]
+              properties:
+                token:
+                  type: string
+                  maxLength: 3
+      responses:
+        '200':
+          description: OK
+components:
+  schemas:
+    OpenForm:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          maxLength: 5

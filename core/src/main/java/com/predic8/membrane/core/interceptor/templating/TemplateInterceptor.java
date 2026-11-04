@@ -54,6 +54,9 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * header, query parameters, etc. If the extension of a referenced template file is <i>.xml</i> it will use
  * <a href="https://docs.groovy-lang.org/docs/next/html/documentation/template-engines.html#_xmltemplateengine">XMLTemplateEngine</a>
  * otherwise <a href="https://docs.groovy-lang.org/docs/next/html/documentation/template-engines.html#_streamingtemplateengine">StreamingTemplateEngine</a>.
+ * Values inserted into a template from an <i>.xml</i> file are not XML-escaped. To escape them, use <code>src</code>
+ * or a file with another extension (except <i>.json</i>), together with an XML <code>contentType</code> such as <code>application/xml</code>.
+ * A <i>.json</i> location always uses <code>application/json</code> instead of the configured <code>contentType</code>.
  * <p>See <a href="https://github.com/membrane/api-gateway/blob/master/distribution/tutorials/getting-started/110-Template.yaml">tutorials/getting-started/110-Template.yaml</a>.</p>
  *
  * When the <code>contentType</code> is a JSON variant (e.g., <code>application/json</code>), the engine automatically escapes all inserted values. For example, in the
@@ -118,6 +121,7 @@ public class TemplateInterceptor extends AbstractTemplateInterceptor {
         } catch (GroovyRuntimeException e) {
             log.warn("Groovy error executing template: {}", e.getMessage());
             internal(router.getConfiguration().isProduction(), getDisplayName())
+                    .title("Error executing template.")
                     .addSubSee("groovy")
                     .detail("Groovy error during template rendering.")
                     .exception(e)
@@ -125,34 +129,36 @@ public class TemplateInterceptor extends AbstractTemplateInterceptor {
                     .buildAndSetResponse(exc);
             return ABORT;
         } catch (TemplateExecutionException tee) {
+            // The message of tee quotes template source lines: internal only, so production mode hides it.
             ProblemDetails pd = internal(router.getConfiguration().isProduction(), getDisplayName())
-                    .topLevel("line",tee.getLineNumber())
-                    .topLevel("message", tee.getMessage())
+                    .title("Error executing template.")
+                    .internal("line", tee.getLineNumber())
+                    .exception(tee)
                     .stacktrace(false)
                     .addSubSee("execution");
             Throwable root = ExceptionUtil.getRootCause(tee);
             if (root instanceof MissingPropertyException mpe) {
                 log.warn("{}\n{}" ,root.getMessage(),tee.getMessage());
                 pd.detail(root.getMessage())
-                        .topLevel("property", mpe.getProperty())
+                        .internal("property", mpe.getProperty())
                         .buildAndSetResponse(exc);
                 return ABORT;
             }
             if (root instanceof MissingMethodException mme) {
                 log.warn("{}\n{}" ,root.getMessage(),tee.getMessage());
                 pd.detail(root.getMessage())
-                        .topLevel("method", mme.getMethod())
+                        .internal("method", mme.getMethod())
                         .buildAndSetResponse(exc);
                 return ABORT;
             }
             log.warn("Root cause: {}\n{}",root.getMessage(),tee.getMessage());
-            pd.exception(tee)
-                    .detail(root.getMessage())
+            pd.detail(root.getMessage())
                     .buildAndSetResponse(exc);
             return ABORT;
         } catch (Exception e) {
             log.warn("Error executing template"  , e);
             internal(router.getConfiguration().isProduction(), getDisplayName())
+                    .title("Error executing template.")
                     .addSubSee("rendering")
                     .exception(e)
                     .buildAndSetResponse(exc);

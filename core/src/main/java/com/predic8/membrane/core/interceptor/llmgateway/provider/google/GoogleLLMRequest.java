@@ -15,12 +15,12 @@
 package com.predic8.membrane.core.interceptor.llmgateway.provider.google;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.AbstractModelInputRequest;
 
 import java.io.IOException;
-import java.util.List;
 
 import static com.predic8.membrane.core.interceptor.llmgateway.provider.TokenEstimator.charsToTokens;
 import static com.predic8.membrane.core.interceptor.llmgateway.provider.TokenEstimator.countText;
@@ -102,37 +102,45 @@ public class GoogleLLMRequest extends AbstractModelInputRequest {
     }
 
     /**
-     * Returns the text of the first part inside {@code systemInstruction},
-     * or an empty string if no system prompt is set.
+     * Replaces any existing system instruction with one text part.
      *
      * <p>Gemini API wire format:
-     * <pre>{@code
-     * { "systemInstruction": { "parts": [{ "text": "You are a helpful assistant." }] } }
-     * }</pre>
+     * <pre>{@code { "systemInstruction": { "parts": [{ "text": "prompt" }] } }}</pre>
      */
     @Override
-    public String getSystemPrompt() {
-        for (var part : json.path("systemInstruction").path("parts")) {
-            if (part.path("text").isTextual()) {
-                return part.path("text").asText("");
-            }
-        }
-        return "";
+    public void overwriteSystemPrompt(String prompt) {
+        json.putObject("systemInstruction")
+                .putArray("parts")
+                .add(textPart(prompt));
     }
 
     /**
-     * Concatenates all prompts (newline-separated) into a single text part under
-     * {@code systemInstruction}. Replaces any existing system instruction.
-     *
-     * <p>Gemini API wire format:
-     * <pre>{@code { "systemInstruction": { "parts": [{ "text": "prompt 1\nprompt 2" }] } }}</pre>
+     * An empty prompt leaves the client's system instruction as it was sent: Gemini rejects empty parts.
      */
     @Override
-    public void setSystemPrompts(List<String> prompts) {
-        json.putObject("systemInstruction")
-                .putArray("parts")
-                .addObject()
-                .put("text", String.join("\n", prompts));
+    public void prependSystemPrompt(String prompt) {
+        if (prompt.isEmpty())
+            return;
+        systemParts().insert(0, textPart(prompt));
+    }
+
+    @Override
+    public void appendSystemPrompt(String prompt) {
+        if (prompt.isEmpty())
+            return;
+        systemParts().add(textPart(prompt));
+    }
+
+    /**
+     * The parts of the client's system instruction, created if there is none.
+     */
+    private ArrayNode systemParts() {
+        var instruction = json.get("systemInstruction") instanceof ObjectNode existing ? existing : json.putObject("systemInstruction");
+        return instruction.get("parts") instanceof ArrayNode parts ? parts : instruction.putArray("parts");
+    }
+
+    private ObjectNode textPart(String text) {
+        return json.objectNode().put("text", text);
     }
 
     /**

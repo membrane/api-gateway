@@ -23,6 +23,7 @@ import com.predic8.membrane.core.interceptor.llmgateway.provider.chatcompletions
 import java.io.IOException;
 import java.util.function.Consumer;
 
+import static com.predic8.membrane.core.interceptor.llmgateway.provider.LLMProvider.endpointPath;
 import static com.predic8.membrane.core.interceptor.llmgateway.provider.LLMProvider.started;
 
 /**
@@ -48,11 +49,11 @@ public class OpenAIProvider implements LLMProvider {
 
     @Override
     public LLMRequest getLLMRequest(Exchange exchange) throws IOException {
-        var uri = exchange.getRequest().getUri();
-        if (uri.startsWith("/v1/chat/completions")) {
+        var path = endpointPath(exchange);
+        if (path.equals("/v1/chat/completions")) {
             return new OpenAIChatCompletionsRequest(exchange);
         }
-        if (uri.startsWith("/v1/responses")) {
+        if (path.equals("/v1/responses")) {
             return new OpenAiLLMResponsesRequest(exchange);
         }
         return new BaseLLMRequest(exchange);
@@ -60,8 +61,7 @@ public class OpenAIProvider implements LLMProvider {
 
     @Override
     public LLMResponse getLLMResponse(Exchange exchange, Consumer<LLMResponse> postProcessor) {
-        var uri = exchange.getRequest().getUri();
-        if (uri.startsWith("/v1/responses")) {
+        if (endpointPath(exchange).equals("/v1/responses")) {
             return started(new OpenAiLLMResponsesResponse(exchange, postProcessor));
         }
         return started(new ChatCompletionsResponse(exchange, postProcessor));

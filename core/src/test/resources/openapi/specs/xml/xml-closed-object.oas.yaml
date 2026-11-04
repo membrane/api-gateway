@@ -1,0 +1,42 @@
+openapi: 3.1.0
+info:
+  title: XML Product API (closed objects)
+  version: 1.0.0
+
+paths:
+  /products:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/xml:
+            schema:
+              $ref: "#/components/schemas/Product"
+      responses:
+        "201":
+          description: Product created
+
+components:
+  schemas:
+    Product:
+      type: object
+      additionalProperties: false
+      xml:
+        name: product
+      properties:
+        sku:
+          type: string
+          xml:
+            attribute: true
+        name:
+          type: string
+        price:
+          $ref: "#/components/schemas/Price"
+    Price:
+      type: object
+      additionalProperties: false
+      properties:
+        amount:
+          type: number
+        currency:
+          type: string
