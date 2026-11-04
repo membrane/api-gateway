@@ -1,6 +1,6 @@
 ---
 name: release-notes
-description: Write release notes for the Membrane api-gateway repo. Two jobs. (1) Add a release-note fragment for the current branch or PR to `distribution/release-notes/next/`. (2) Assemble the notes for the next release from those fragments plus the commits since the last release, grouped into Breaking Changes / New Features / Improvements / Fixes / Security / Dependencies with PR links, written to `distribution/release-notes/<version>.md`. Use whenever the user wants to add a release note for a change, draft, collect, or write release notes / a changelog, prepare notes for the next GitHub release, or asks "what's unreleased on master". The user may name a base release (e.g. "since 7.2.3") or let the skill detect the latest one.
+description: Write release notes for the Membrane api-gateway repo. Two jobs. (1) Add a release-note fragment for the current branch or PR to `distribution/release-notes/next/`. (2) Assemble the notes for the next release from those fragments plus the commits since the last release, grouped into Security / New Features / Improvements / Fixes / Breaking Changes / Dependencies with PR links, written to `distribution/release-notes/<version>.md`. Use whenever the user wants to add a release note for a change, draft, collect, or write release notes / a changelog, prepare notes for the next GitHub release, or asks "what's unreleased on master". The user may name a base release (e.g. "since 7.2.3") or let the skill detect the latest one.
 ---
 
 # Release notes
@@ -131,13 +131,13 @@ When unsure, keep it — but keep it terse. Collapse several related dependency 
 
 Group entries in this order (skip any empty section). A fragment's `type` decides its section:
 
-- **Breaking Changes** (`breaking`): anything that can break an existing configuration, client or
-  custom code. Name what to do instead, and point to `docs/MIGRATION-GUIDE.md` where it has a section.
+- **Security** (`security`): anything security- or vulnerability-related. Surface these even if small.
 - **New Features** (`feature`): new plugins/interceptors, new config elements, genuinely new
   capabilities.
 - **Improvements** (`improvement`): enhancements to existing behavior, better logging, performance.
 - **Fixes** (`fix`): bug fixes.
-- **Security** (`security`): anything security- or vulnerability-related. Surface these even if small.
+- **Breaking Changes** (`breaking`): anything that can break an existing configuration, client or
+  custom code. Name what to do instead, and point to `docs/MIGRATION-GUIDE.md` where it has a section.
 - **Dependencies** (`dependencies`): dependency/BOM upgrades, collapsed into a few bullets.
 
 Within a section, group by `area` under `###` headings when the section has entries from more than
@@ -165,13 +165,13 @@ changes, what to do; it ends with the PR link.
 ```markdown
 # 7.9.0
 
-## Breaking Changes
-
-### Plugins
-- `clusterNotification`: `/clustermanager/up`, `/down` and `/takeout` accept only POST. Other methods are answered with `405`. See the migration guide [#3672](https://github.com/membrane/api-gateway/pull/3672)
-
 ## Fixes
 
 ### Plugins
 - `prometheus`: the `version` label of `membrane_info` now contains the version as it is, e.g. `7.7.1` [#3686](https://github.com/membrane/api-gateway/pull/3686)
+
+## Breaking Changes
+
+### Plugins
+- `clusterNotification`: `/clustermanager/up`, `/down` and `/takeout` accept only POST. Other methods are answered with `405`. See the migration guide [#3672](https://github.com/membrane/api-gateway/pull/3672)
 ```
