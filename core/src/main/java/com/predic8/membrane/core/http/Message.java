@@ -82,12 +82,19 @@ public abstract class Message {
 		body.read();
 	}
 
+	/**
+	 * Consumes the rest of the body. If that fails, e.g. because the body is larger than a limit allows,
+	 * the rest is still on the connection, so the message is marked <tt>Connection: close</tt>: the
+	 * failed body shows that only as long as it is not replaced, see {@link #setBody(AbstractBody)}.
+	 */
 	public void discardBody() {
         try {
             body.discard();
         } catch (ReadingBodyException e) {
             log.debug("Error discarding body ({}). Can be ignored.", e.getMessage());
         }
+        if (body.hasFailed())
+            header.setConnection(CLOSE);
     }
 
 	/**
