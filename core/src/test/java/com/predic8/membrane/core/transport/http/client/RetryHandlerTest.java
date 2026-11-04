@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.transport.http.client;
 
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.http.ConnectTimeoutException;
 import com.predic8.membrane.core.transport.http.HttpClientStatusEventBus;
@@ -28,6 +29,7 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.net.ConnectException;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
@@ -195,6 +197,18 @@ class RetryHandlerTest {
             RetryableExchangeCallMock mock = new RetryableExchangeCallMock(new StreamNotProcessedException("GOAWAY"));
             assertThrows(StreamNotProcessedException.class, () -> rh.executeWithRetries(post("/foo").buildExchange(), mock));
             assertEquals(3, mock.attempts);
+        }
+
+        /**
+         * A request body that could not be read cannot be sent again, so not even an idempotent request is
+         * retried: another attempt would only send the header fields again.
+         */
+        @Test
+        void requestBodyFailureIsNotRetried() throws Exception {
+            final var exc = get("/foo").buildExchange();
+            final var mock = new RetryableExchangeCallMock(new ReadingBodyException(new IOException("Message body too large."), exc.getRequest()));
+            assertThrows(ReadingBodyException.class, () -> rh.executeWithRetries(exc, mock));
+            assertEquals(1, mock.attempts);
         }
 
     }
