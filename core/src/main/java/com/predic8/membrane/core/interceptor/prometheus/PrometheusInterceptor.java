@@ -190,7 +190,7 @@ public class PrometheusInterceptor extends AbstractInterceptor {
     }
 
     private void buildVersionLine(Context ctx) {
-        ctx.count.append("membrane_info{version=\"" + prometheusCompatibleName(VERSION) + "\"} 1\n");
+        ctx.count.append("membrane_info{version=\"" + escapeLabelValue(VERSION) + "\"} 1\n");
     }
 
     private void buildLoadBalancerLines(Context ctx) {
@@ -230,7 +230,7 @@ public class PrometheusInterceptor extends AbstractInterceptor {
         for (Map.Entry<String, String> e : labels.entrySet()) {
             sb.append(e.getKey());
             sb.append("=\"");
-            sb.append(e.getValue());  // TODO Sanitize / Ok aber \ nicht wie prometheusCompatibleName
+            sb.append(escapeLabelValue(e.getValue()));
             sb.append("\",");
         }
         sb.append("} ");
@@ -400,6 +400,24 @@ public class PrometheusInterceptor extends AbstractInterceptor {
         names.put(name, result);
 
         return result;
+    }
+
+    /**
+     * Escapes a label value for the text exposition format. Label values may contain any UTF-8 character, so unlike
+     * {@link #prometheusCompatibleName(String)} nothing is replaced: only backslash, double quote and line feed are
+     * escaped, and Prometheus restores the original value when it parses them.
+     */
+    static String escapeLabelValue(String value) {
+        final var sb = new StringBuilder(value.length());
+        for (final var c : value.toCharArray()) {
+            switch (c) {
+                case '\\' -> sb.append("\\\\");
+                case '"' -> sb.append("\\\"");
+                case '\n' -> sb.append("\\n");
+                default -> sb.append(c);
+            }
+        }
+        return sb.toString();
     }
 
     private String prettyPrint(String ruleName) {

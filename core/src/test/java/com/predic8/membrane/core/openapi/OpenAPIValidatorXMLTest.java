@@ -22,6 +22,8 @@ import com.predic8.membrane.core.util.URIFactory;
 import jakarta.mail.internet.ParseException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import static com.predic8.membrane.core.openapi.model.Request.post;
 import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.getResourceAsStream;
@@ -34,6 +36,8 @@ class OpenAPIValidatorXMLTest {
     OpenAPIValidator validatorRequired;
     OpenAPIValidator validatorNamespaced;
     OpenAPIValidator validatorAttribute;
+    OpenAPIValidator validatorClosed;
+    OpenAPIValidator validatorPattern;
 
     /** A valid order with all fields present and correct types. */
     final String validOrder = """
@@ -96,6 +100,16 @@ class OpenAPIValidatorXMLTest {
         validatorAttribute = new OpenAPIValidator(new URIFactory(),
                 new OpenAPIRecord(
                         parseOpenAPI(getResourceAsStream(this, "/openapi/specs/xml/xml-attribute.oas.yaml")),
+                        new OpenAPISpec()));
+
+        validatorClosed = new OpenAPIValidator(new URIFactory(),
+                new OpenAPIRecord(
+                        parseOpenAPI(getResourceAsStream(this, "/openapi/specs/xml/xml-closed-object.oas.yaml")),
+                        new OpenAPISpec()));
+
+        validatorPattern = new OpenAPIValidator(new URIFactory(),
+                new OpenAPIRecord(
+                        parseOpenAPI(getResourceAsStream(this, "/openapi/specs/xml/xml-pattern-properties.oas.yaml")),
                         new OpenAPISpec()));
     }
 
@@ -281,5 +295,186 @@ class OpenAPIValidatorXMLTest {
         var errors = validatorAttribute.validate(post().path("/products")
                 .xml("<product><name>Book</name></product>"));
         assertFalse(errors.isEmpty(), "Expected a missing-required error for absent attribute 'sku'");
+    }
+
+    // -----------------------------------------------------------------------
+    // additionalProperties: false — undeclared XML content must be rejected,
+    // not silently dropped during the XML-to-JSON conversion.
+    // -----------------------------------------------------------------------
+
+    @Test
+    void closedObjectWithOnlyDeclaredContentIsAccepted() throws ParseException {
+        var errors = validatorClosed.validate(post().path("/products").xml("""
+                <product sku="A-1">
+                  <name>Book</name>
+                  <price><amount>9.5</amount><currency>EUR</currency></price>
+                </product>
+                """));
+        assertEquals(0, errors.size(), "Expected no validation errors: " + errors);
+    }
+
+    @Test
+    void undeclaredElementInClosedObjectIsRejected() throws ParseException {
+        var errors = validatorClosed.validate(post().path("/products")
+                .xml("<product sku=\"A-1\"><name>Book</name><discount>100</discount></product>"));
+        assertFalse(errors.isEmpty(), "Expected an error for undeclared element 'discount'");
+    }
+
+    @Test
+    void undeclaredAttributeInClosedObjectIsRejected() throws ParseException {
+        var errors = validatorClosed.validate(post().path("/products")
+                .xml("<product sku=\"A-1\" isAdmin=\"true\"><name>Book</name></product>"));
+        assertFalse(errors.isEmpty(), "Expected an error for undeclared attribute 'isAdmin'");
+    }
+
+    @Test
+    void undeclaredElementInNestedClosedObjectIsRejected() throws ParseException {
+        var errors = validatorClosed.validate(post().path("/products").xml("""
+                <product sku="A-1">
+                  <name>Book</name>
+                  <price><amount>9.5</amount><currency>EUR</currency><rebate>9</rebate></price>
+                </product>
+                """));
+        assertFalse(errors.isEmpty(), "Expected an error for undeclared element 'rebate'");
+    }
+
+    /** Namespace declarations are not data and must not count as additional properties. */
+    @Test
+    void namespaceDeclarationInClosedObjectIsAccepted() throws ParseException {
+        var errors = validatorClosed.validate(post().path("/products")
+                .xml("<product xmlns:x=\"http://example.com/other\" sku=\"A-1\"><name>Book</name></product>"));
+        assertEquals(0, errors.size(), "Expected no validation errors: " + errors);
+    }
+
+    /** Attributes of the predefined {@code xml:} namespace are markup and must not count as additional properties. */
+    @ParameterizedTest
+    @CsvSource({"xml:lang,de", "xml:space,preserve", "xml:base,http://example.com/"})
+    void xmlNamespaceAttributeInClosedObjectIsAccepted(String attribute, String value) throws ParseException {
+        var errors = validatorClosed.validate(post().path("/products")
+                .xml("<product %s=\"%s\" sku=\"A-1\"><name>Book</name></product>".formatted(attribute, value)));
+        assertEquals(0, errors.size(), "Expected no validation errors: " + errors);
+    }
+
+    /** Without additionalProperties: false undeclared content stays allowed. */
+    @Test
+    void undeclaredElementInOpenObjectIsAccepted() throws ParseException {
+        var errors = validatorAttribute.validate(post().path("/products")
+                .xml("<product sku=\"A-1\" extra=\"x\"><name>Book</name><discount>100</discount></product>"));
+        assertEquals(0, errors.size(), "Expected no validation errors: " + errors);
+    }
+
+    // -----------------------------------------------------------------------
+    // patternProperties — matching attributes and elements are converted and
+    // validated against the pattern's schema.
+    // -----------------------------------------------------------------------
+
+    @Test
+    void patternMatchedContentInClosedObjectIsAccepted() throws ParseException {
+        final var errors = validatorPattern.validate(post().path("/products")
+                .xml("<product sku=\"A-1\" x-stock=\"5\"><name>Book</name><x-weight>3</x-weight></product>"));
+        assertEquals(0, errors.size(), "Expected no validation errors: " + errors);
+    }
+
+    @Test
+    void invalidPatternMatchedElementIsRejected() throws ParseException {
+        final var errors = validatorPattern.validate(post().path("/products")
+                .xml("<product sku=\"A-1\"><name>Book</name><x-weight>heavy</x-weight></product>"));
+        assertFalse(errors.isEmpty(), "Expected an error for non-integer element 'x-weight'");
+    }
+
+    @Test
+    void invalidPatternMatchedAttributeIsRejected() throws ParseException {
+        final var errors = validatorPattern.validate(post().path("/products")
+                .xml("<product sku=\"A-1\" x-stock=\"500\"><name>Book</name></product>"));
+        assertFalse(errors.isEmpty(), "Expected an error for attribute 'x-stock' above maximum");
+    }
+
+    @Test
+    void undeclaredContentMatchingNoPatternIsRejected() throws ParseException {
+        final var errors = validatorPattern.validate(post().path("/products")
+                .xml("<product sku=\"A-1\"><name>Book</name><discount>3</discount></product>"));
+        assertFalse(errors.isEmpty(), "Expected an error for undeclared element 'discount'");
+    }
+
+    @Test
+    void repeatedPatternMatchedElementIsRejected() throws ParseException {
+        final var errors = validatorPattern.validate(post().path("/products")
+                .xml("<product sku=\"A-1\"><name>Book</name><x-weight>3</x-weight><x-weight>4</x-weight></product>"));
+        assertFalse(errors.isEmpty(), "Expected an error for repeated element 'x-weight'");
+    }
+
+    /** patternProperties constrain values regardless of additionalProperties. */
+    @Test
+    void invalidPatternMatchedElementInOpenObjectIsRejected() throws ParseException {
+        final var errors = validatorPattern.validate(post().path("/items")
+                .xml("<item><name>Book</name><x-weight>heavy</x-weight></item>"));
+        assertFalse(errors.isEmpty(), "Expected an error for non-integer element 'x-weight'");
+    }
+
+    @Test
+    void validPatternMatchedElementInOpenObjectIsAccepted() throws ParseException {
+        final var errors = validatorPattern.validate(post().path("/items")
+                .xml("<item><name>Book</name><x-weight>3</x-weight></item>"));
+        assertEquals(0, errors.size(), "Expected no validation errors: " + errors);
+    }
+
+    /**
+     * Every matching pattern applies, so the conversion must not depend on which pattern is declared
+     * first: an untyped pattern must not turn the value into a string for a typed one.
+     */
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', value = {
+            "/untyped-first|<m><x>1</x></m>|0",
+            "/typed-first|<m><x>1</x></m>|0",
+            "/untyped-first|<m x=\"1\"/>|0",
+            "/typed-first|<m x=\"1\"/>|0",
+            "/untyped-first|<m><x>-1</x></m>|1",
+            "/typed-first|<m><x>-1</x></m>|1",
+            "/untyped-first|<m><x>a</x></m>|1",
+            "/typed-first|<m><x>a</x></m>|1"})
+    void overlappingPatternsApplyRegardlessOfOrder(String path, String xml, int count) throws ParseException {
+        final var errors = validatorPattern.validate(post().path(path).xml(xml));
+        assertEquals(count, errors.size(), errors::toString);
+    }
+
+    /** Every matching object pattern applies, so the converted element keeps the content each one declares. */
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', value = {
+            "/open-patterns|<c><x><a>A</a><b>B</b></x></c>|0",
+            "/open-patterns|<c><x><a>A</a></x></c>|1",
+            "/open-patterns|<c><x><b>B</b></x></c>|1",
+            "/property-and-pattern|<c><x-doc><a>A</a><b>B</b></x-doc></c>|0",
+            "/property-and-pattern|<c><x-doc><a>A</a></x-doc></c>|1",
+            "/property-and-pattern|<c><x-doc><b>B</b></x-doc></c>|1"})
+    void overlappingObjectSchemasKeepContentOfEach(String path, String xml, int count) throws ParseException {
+        final var errors = validatorPattern.validate(post().path(path).xml(xml));
+        assertEquals(count, errors.size(), errors::toString);
+    }
+
+    /** A closed pattern still rejects content only another matching pattern declares, or none declares. */
+    @ParameterizedTest
+    @CsvSource({
+            "<c><x><a>A</a><b>B</b></x></c>",
+            "<c><x><a>A</a><b>B</b><z>Z</z></x></c>"})
+    void closedObjectPatternRejectsOtherContent(String xml) throws ParseException {
+        final var errors = validatorPattern.validate(post().path("/closed-pattern").xml(xml));
+        assertFalse(errors.isEmpty(), "Expected an error for content the closed pattern does not declare");
+    }
+
+    @Test
+    void closedObjectPatternAcceptsDeclaredContent() throws ParseException {
+        final var errors = validatorPattern.validate(post().path("/closed-pattern").xml("<c><x><a>A</a></x></c>"));
+        assertEquals(1, errors.size(), "Only the other pattern's required 'b' is missing: " + errors);
+    }
+
+    /** Merging recursive object schemas terminates and keeps the content of each, also when nested. */
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', value = {
+            "<c><x><a>A</a><b>1</b><child><a>A</a><b>2</b></child></x></c>|0",
+            "<c><x><a>A</a><b>1</b><child><a>A</a></child></x></c>|1",
+            "<c><x><a>A</a><b>1</b><child><a>A</a><b>two</b></child></x></c>|1"})
+    void recursiveObjectPatternsAreMerged(String xml, int count) throws ParseException {
+        final var errors = validatorPattern.validate(post().path("/recursive-patterns").xml(xml));
+        assertEquals(count, errors.size(), errors::toString);
     }
 }

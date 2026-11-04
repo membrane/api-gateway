@@ -1,0 +1,42 @@
+openapi: '3.1.1'
+info:
+  title: Multipart part Content-Type
+  version: '1.0'
+paths:
+  /encoded:
+    post:
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Upload'
+            encoding:
+              meta:
+                contentType: application/json
+      responses:
+        '200':
+          description: OK
+  /plain:
+    post:
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Upload'
+      responses:
+        '200':
+          description: OK
+components:
+  schemas:
+    Upload:
+      type: object
+      properties:
+        meta:
+          type: object
+          required: [id]
+          properties:
+            id:
+              type: integer
+        file:
+          type: string
+          format: binary

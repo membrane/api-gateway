@@ -16,16 +16,16 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.fasterxml.jackson.databind.node.*;
-import io.swagger.v3.oas.models.media.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import io.swagger.v3.oas.models.media.Schema;
 
-import java.math.*;
+import java.math.BigDecimal;
 
-import static com.predic8.membrane.core.openapi.util.Utils.*;
+import static com.predic8.membrane.core.openapi.util.Utils.convertToBigDecimal;
+import static com.predic8.membrane.core.openapi.util.Utils.isMultipleOf;
 import static com.predic8.membrane.core.openapi.validators.ValidationError.v;
-import static com.predic8.membrane.core.openapi.validators.ValidationErrors.*;
-import static java.lang.String.*;
-import static java.math.BigDecimal.*;
+import static com.predic8.membrane.core.openapi.validators.ValidationErrors.error;
+import static java.lang.String.format;
 
 public class NumberRestrictionValidator {
 
@@ -41,11 +41,9 @@ public class NumberRestrictionValidator {
 
         ctx = ctx.schemaType(schema.getType());
 
-        if (obj instanceof ObjectNode)
-            return null;
-        if (obj instanceof ArrayNode)
-            return null;
-        if (obj instanceof BooleanNode)
+        // Numeric keywords only apply to numbers. A string is not parsed: digits in a string do not make it a
+        // number, and parsing a long one as BigDecimal takes quadratic time.
+        if (obj instanceof JsonNode node && !node.isNumber())
             return null;
 
         BigDecimal value;
@@ -69,9 +67,8 @@ public class NumberRestrictionValidator {
         if (schema.getMultipleOf() == null)
             return null;
 
-        BigDecimal multiplesOf = schema.getMultipleOf();
-        BigDecimal remainder = value.remainder(multiplesOf).stripTrailingZeros();
-        if (remainder.compareTo(ZERO) != 0) {
+        final var multiplesOf = schema.getMultipleOf();
+        if (!isMultipleOf(value, multiplesOf)) {
             return error(ctx, mask -> format("Value %s is not a multiple of %s.", v(value, mask), multiplesOf));
         }
 

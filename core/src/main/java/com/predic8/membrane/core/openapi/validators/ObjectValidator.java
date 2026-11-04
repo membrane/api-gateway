@@ -21,20 +21,17 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.predic8.membrane.core.openapi.util.SchemaUtil;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.Schema;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.regex.Pattern;
 
-import static com.predic8.membrane.core.openapi.util.SchemaUtil.getSchemaNameFromRef;
+import static com.predic8.membrane.core.openapi.util.SchemaUtil.*;
 import static com.predic8.membrane.core.openapi.util.Utils.joinByComma;
 import static com.predic8.membrane.core.openapi.validators.ValidationError.v;
 import static com.predic8.membrane.core.openapi.validators.ValidationErrors.error;
 import static java.lang.String.format;
-import static java.util.Collections.emptySet;
 
 /**
  * Not supported:
@@ -166,10 +163,7 @@ public class ObjectValidator implements JsonSchemaValidator {
 
         ValidationErrors errors = new ValidationErrors();
 
-        // OAS 3.1 parses additionalProperties: true/false into a boolean schema, 3.0 into a Boolean. See #3562.
-        var additional = schema.getAdditionalProperties();
-        if (additional instanceof Schema<?> s && s.getBooleanSchemaValue() != null)
-            additional = s.getBooleanSchemaValue();
+        var additional = SchemaUtil.getAdditionalProperties(schema);
 
         if (additional instanceof Schema<?> s) {
             additionalProperties.forEach((propName, value) ->
@@ -235,9 +229,7 @@ public class ObjectValidator implements JsonSchemaValidator {
         }
 
         final Map<String, Schema> properties = current.getProperties();
-        final Map<String, Schema> patternProperties = current.getPatternProperties();
-        final var patterns = patternProperties == null ? List.<Pattern>of()
-                : patternProperties.keySet().stream().map(Pattern::compile).toList();
+        final var patterns = getPatternPropertyPatterns(current);
         node.fieldNames().forEachRemaining(name -> {
             if (current.getAdditionalProperties() != null
                 || current.getUnevaluatedProperties() != null && current != schema
@@ -327,21 +319,17 @@ public class ObjectValidator implements JsonSchemaValidator {
 
     private Map<String, JsonNode> getAdditionalProperties(JsonNode node) {
         Map<String, JsonNode> props = new HashMap<>();
-        Set<String> regexes = getRegexes();
+        final var patterns = getPatternPropertyPatterns(schema);
         for (Iterator<String> it = node.fieldNames(); it.hasNext(); ) {
             String propName = it.next();
             boolean declared = schema.getProperties() != null && schema.getProperties().containsKey(propName);
-            boolean matchesPattern = !regexes.isEmpty() && regexes.stream().anyMatch(r -> Pattern.compile(r).matcher(propName).find());
+            final var matchesPattern = patterns.stream().anyMatch(p -> p.matcher(propName).find());
             // Properties that match the pattern are not considered additional
             if (!declared && !matchesPattern) {
                 props.put(propName, node.get(propName));
             }
         }
         return props;
-    }
-
-    private @NotNull Set<String> getRegexes() {
-        return schema.getPatternProperties() != null ? ((Map<String, ?>) schema.getPatternProperties()).keySet() : emptySet();
     }
 
     private ValidationErrors validateRequiredProperties(ValidationContext ctx, JsonNode node) {
@@ -430,7 +418,7 @@ public class ObjectValidator implements JsonSchemaValidator {
         ValidationErrors errors = new ValidationErrors();
 
         getPatternPropertiesFromSchema().forEach((regex, propSchema) -> {
-            Pattern pattern = Pattern.compile(regex);
+            final var pattern = compilePatternPropertyRegex(regex);
 
             for (Iterator<String> it = node.fieldNames(); it.hasNext(); ) {
                 String fieldName = it.next();

@@ -21,9 +21,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 
+import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_TRAILING_TOKENS;
+
 public interface Body {
 
-    ObjectMapper om = new ObjectMapper();
+    ObjectMapper om = new ObjectMapper().enable(FAIL_ON_TRAILING_TOKENS);
 
     String asString() throws IOException;
 

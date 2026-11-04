@@ -17,8 +17,11 @@ package com.predic8.membrane.core.util.http;
 import com.predic8.membrane.core.http.Chunk;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayOutputStream;
+import java.util.Arrays;
 import java.util.Set;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
 class SSEParserTest {
@@ -145,6 +148,67 @@ class SSEParserTest {
 
         assertEquals("message", event.name());
         assertEquals("hello", event.data());
+    }
+
+    /**
+     * A CR at the end of one chunk and the LF at the start of the next are one line end, not two:
+     * the LF must not end the event before its second data line.
+     */
+    @Test
+    void crLfSplitAcrossChunksIsOneLineEnd() {
+        var parser = new SSEParser(Set.of("done"));
+
+        parser.parse(chunk("data: one\r"));
+        parser.parse(chunk("\ndata: two\r\n\r\n"));
+
+        var events = parser.drainEvents();
+        assertEquals(1, events.size());
+        assertEquals("one\ntwo", events.getFirst().data());
+    }
+
+    /**
+     * A lone CR is a line end of its own, so a line starting the next chunk is kept.
+     */
+    @Test
+    void crAtTheEndOfAChunkIsALineEnd() {
+        var parser = new SSEParser(Set.of("done"));
+
+        parser.parse(chunk("data: one\r"));
+        parser.parse(chunk("data: two\r\r"));
+
+        assertEquals("one\ntwo", parser.drainEvents().getFirst().data());
+    }
+
+    /**
+     * A character whose UTF-8 bytes are split over two chunks is decoded as a whole.
+     */
+    @Test
+    void multiByteCharacterSplitAcrossChunks() {
+        var parser = new SSEParser(Set.of("done"));
+        var bytes = "data: Grüße €\n\n".getBytes(UTF_8);
+        var euro = bytes.length - 5; // the first of the three bytes of €, followed by "\n\n"
+
+        parser.parse(new Chunk(Arrays.copyOfRange(bytes, 0, euro + 1)));
+        parser.parse(new Chunk(Arrays.copyOfRange(bytes, euro + 1, euro + 2)));
+        parser.parse(new Chunk(Arrays.copyOfRange(bytes, euro + 2, bytes.length)));
+
+        assertEquals("Grüße €", parser.drainEvents().getFirst().data());
+    }
+
+    /**
+     * A malformed byte is replaced by U+FFFD and does not drop the event.
+     */
+    @Test
+    void malformedByteIsReplacedAndEventIsKept() {
+        var parser = new SSEParser(Set.of("done"));
+        var out = new ByteArrayOutputStream();
+        out.writeBytes("data: a".getBytes(UTF_8));
+        out.write(0xFF); // never valid in UTF-8
+        out.writeBytes(" b\n\n".getBytes(UTF_8));
+
+        parser.parse(new Chunk(out.toByteArray()));
+
+        assertEquals("a\uFFFD b", parser.drainEvents().getFirst().data());
     }
 
     @Test

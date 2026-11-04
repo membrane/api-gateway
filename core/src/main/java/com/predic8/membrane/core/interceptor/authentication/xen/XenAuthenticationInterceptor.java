@@ -165,7 +165,16 @@ public class XenAuthenticationInterceptor extends AbstractInterceptor {
             rsaJsonWebKey.setUse("sig");
             rsaJsonWebKey.setAlgorithm("RS256");
 
-            LOG.warn("Using dynamically genererated key, you should write this as <jwtSessionManager ...><jwk>" + rsaJsonWebKey.toJson(JsonWebKey.OutputControlLevel.INCLUDE_PRIVATE) + "</jwk></jwtSessionManager> .");
+            // Printing the private key is intentional (getting-started convenience, not a CWE-532 leak): without a
+            // configured JWK a new key is generated on every start, and the operator copies it from this warning
+            // into the configuration. Once jwtSessionManager/jwk is set, no key is generated and nothing is printed.
+            LOG.warn("No key configured for xenAuthentication/jwtSessionManager. Generated a temporary signing key (private JWK): {} " +
+                            "Sessions signed with it are not accepted by other or restarted instances. You can keep this " +
+                            "key by saving it to a file and referencing it using jwtSessionManager/jwk/location. " +
+                            "Recommended: create your own key with 'membrane.sh generate-jwk -o <file>'. This one has " +
+                            "been written to the log and may be readable by anyone with access to it. Once a JWK is " +
+                            "configured, no key is logged.",
+                    rsaJsonWebKey.toJson(JsonWebKey.OutputControlLevel.INCLUDE_PRIVATE));
 
             return rsaJsonWebKey;
         }

@@ -23,13 +23,50 @@ import java.util.*;
 import static com.predic8.membrane.core.graphql.Tokenizer.Type.*;
 
 public class ExecutableDocument {
+
+    /**
+     * Maximum number of named fragments spread inside each other. Traversals that expand fragments recurse once per
+     * level, so an unbounded chain of fragments could overflow the thread stack.
+     */
+    public static final int MAX_FRAGMENT_NESTING = 50;
+
+    public static final String FRAGMENTS_NESTED_TOO_DEEPLY = "Fragments are nested too deeply.";
+
+    /**
+     * Maximum number of selections {@link #collectFields(List)} visits in total, across all calls on this document.
+     * Callers collect the fields of every mutation, so one large fragment spread by many operations would otherwise
+     * be expanded once per operation.
+     */
+    public static final int MAX_COLLECTED_SELECTIONS = 10_000;
+
+    public static final String TOO_MANY_SELECTIONS = "Too many selections after expanding fragments.";
+
     final List<ExecutableDefinition> executableDefinitions = new ArrayList<>();
+
+    /**
+     * Index of {@link #executableDefinitions} for fragment lookups during traversal. Holds the first definition of
+     * each name.
+     */
+    private final Map<String, FragmentDefinition> fragmentsByName = new HashMap<>();
+
+    /**
+     * Shared by all {@link #collectFields(List)} calls. A document is created per request and not shared between
+     * threads.
+     */
+    private int remainingCollectedSelections = MAX_COLLECTED_SELECTIONS;
 
     public ExecutableDocument() {
     }
 
     public ExecutableDocument(ExecutableDefinition... executableDefinitions) {
-        this.executableDefinitions.addAll(Arrays.asList(executableDefinitions));
+        for (final var definition : executableDefinitions)
+            add(definition);
+    }
+
+    private void add(ExecutableDefinition definition) {
+        executableDefinitions.add(definition);
+        if (definition instanceof FragmentDefinition fd)
+            fragmentsByName.putIfAbsent(fd.getName(), fd);
     }
 
     /**
@@ -52,13 +89,13 @@ public class ExecutableDocument {
                 if (t.string().equals("query") || t.string().equals("mutation") || t.string().equals("subscription")) {
                     OperationDefinition od = new OperationDefinition();
                     od.parse(t);
-                    executableDefinitions.add(od);
+                    add(od);
                     continue;
                 }
                 if (t.string().equals("fragment")) {
                     FragmentDefinition fd = new FragmentDefinition();
                     fd.parse(t);
-                    executableDefinitions.add(fd);
+                    add(fd);
                     continue;
                 }
             }
@@ -66,7 +103,7 @@ public class ExecutableDocument {
             if (executableDefinitions.isEmpty() && !shortHandQuery) {
                 OperationDefinition od = new OperationDefinition();
                 od.parse(t);
-                executableDefinitions.add(od);
+                add(od);
                 shortHandQuery = true;
                 continue;
             }
@@ -92,6 +129,57 @@ public class ExecutableDocument {
                 .toList();
     }
 
+    public @NotNull List<FragmentDefinition> getFragmentDefinitions() {
+        return executableDefinitions.stream()
+                .filter(ed -> ed instanceof FragmentDefinition)
+                .map(ed -> (FragmentDefinition) ed)
+                .toList();
+    }
+
+    public Optional<FragmentDefinition> getFragmentDefinition(String name) {
+        return Optional.ofNullable(fragmentsByName.get(name));
+    }
+
+    /**
+     * Returns the fields that are executed for a selection set, following the GraphQL algorithm
+     * <a href="https://spec.graphql.org/October2021/#CollectFields()">CollectFields</a>: inline fragments and named
+     * fragment spreads are expanded in place, the sub-selections of fields are not entered.
+     * <p>
+     * Like in the specification, a named fragment is expanded only once per call. This keeps the result linear in
+     * the size of the document even for cyclic or repeatedly spread fragments.
+     * </p>
+     *
+     * @throws GraphQLOverHttpValidationException if a spread references a fragment that is not defined, or named
+     *                                            fragments are nested deeper than {@link #MAX_FRAGMENT_NESTING},
+     *                                            or all calls on this document together visit more than
+     *                                            {@link #MAX_COLLECTED_SELECTIONS} selections
+     */
+    public List<Field> collectFields(List<Selection> selections) {
+        final var fields = new ArrayList<Field>();
+        collectFields(selections, new HashSet<>(), fields, 0);
+        return fields;
+    }
+
+    private void collectFields(List<Selection> selections, Set<String> visitedFragments, List<Field> fields, int fragmentNesting) {
+        if (selections == null)
+            return;
+        for (final var selection : selections) {
+            if (--remainingCollectedSelections < 0)
+                throw new GraphQLOverHttpValidationException(TOO_MANY_SELECTIONS);
+            if (selection instanceof Field field) {
+                fields.add(field);
+            } else if (selection instanceof InlineFragment inlineFragment) {
+                collectFields(inlineFragment.getSelections(), visitedFragments, fields, fragmentNesting);
+            } else if (selection instanceof FragmentSpread spread && visitedFragments.add(spread.getFragmentName())) {
+                if (fragmentNesting >= MAX_FRAGMENT_NESTING)
+                    throw new GraphQLOverHttpValidationException(FRAGMENTS_NESTED_TOO_DEEPLY);
+                collectFields(getFragmentDefinition(spread.getFragmentName())
+                        .orElseThrow(() -> new GraphQLOverHttpValidationException("Did not find fragment '%s'.".formatted(spread.getFragmentName())))
+                        .getSelections(), visitedFragments, fields, fragmentNesting + 1);
+            }
+        }
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -112,7 +200,11 @@ public class ExecutableDocument {
                 '}';
     }
 
+    /**
+     * Read-only view, so that definitions are only added through {@link #add(ExecutableDefinition)}, which keeps the
+     * fragment index in sync.
+     */
     public List<ExecutableDefinition> getExecutableDefinitions() {
-        return executableDefinitions;
+        return Collections.unmodifiableList(executableDefinitions);
     }
 }

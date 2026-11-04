@@ -45,6 +45,19 @@ public class PeerFlowControl {
         notifyAll();
     }
 
+    /**
+     * Increments the window as the peer asked, by a WINDOW_UPDATE or a change of SETTINGS_INITIAL_WINDOW_SIZE.
+     *
+     * @return false if the window would exceed 2^31-1, a flow-control error (RFC 9113 §6.9.1, §6.9.2). The window is
+     *         left unchanged then.
+     */
+    public synchronized boolean tryIncrement(int delta) {
+        if (available() + delta > Integer.MAX_VALUE)
+            return false;
+        increment(delta);
+        return true;
+    }
+
     private void used(int length) {
         peerWindowPosition += length;
         if (log.isDebugEnabled())

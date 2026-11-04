@@ -39,6 +39,7 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.util.FileUtil.readInputStream;
 import static com.predic8.membrane.core.util.URLParamUtil.getParams;
+import static com.predic8.membrane.core.util.text.TextUtil.escapeControlCharsForLog;
 import static java.util.Collections.emptyMap;
 
 public class ScriptingUtils {
@@ -81,7 +82,7 @@ public class ScriptingUtils {
                 params.put("params", qParams);
                 params.put("param", qParams);
             } catch (Exception e) {
-                log.info("Cannot parse query parameter from {}", exc.getRequest().getUri());
+                log.info("Cannot parse query parameter from {}", escapeControlCharsForLog(exc.getRequest().getUri()));
             }
         } else if (flow == RESPONSE) {
             var response = exc.getResponse();

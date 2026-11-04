@@ -47,6 +47,7 @@ import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.isOpenAPI3;
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.isSwagger2;
 import static com.predic8.membrane.core.openapi.util.UriUtil.trimQueryString;
 import static com.predic8.membrane.core.openapi.util.Utils.getResourceAsStream;
+import static org.apache.commons.text.StringEscapeUtils.escapeHtml4;
 
 /**
  * Serves the overview, the OpenAPI documents and the Swagger UI under {@link #PATH}. Shared by
@@ -196,7 +197,7 @@ public class OpenAPIPublisher {
     private String renderSwaggerUITemplate(String id, OpenAPI api) {
         Map<String, Object> tempCtx = new HashMap<>();
         tempCtx.put("openApiUrl", PATH + "/" + id);
-        tempCtx.put("openApiTitle", api.getInfo().getTitle());
+        tempCtx.put("openApiTitle", escapeHtml4(api.getInfo().getTitle()));
         return swaggerUiHtmlTemplate.make(tempCtx).toString();
     }
 
