@@ -26,8 +26,11 @@ import static java.lang.reflect.Modifier.*;
 import static java.util.Arrays.*;
 import static java.util.List.*;
 import static org.springframework.core.ResolvableType.*;
+import static org.springframework.util.ClassUtils.*;
 
 public class ReflectiveMethodHandler {
+
+    private static final List<Class<?>> NUMERIC_WIDENING_ORDER = of(Byte.class, Short.class, Integer.class, Long.class, Float.class, Double.class);
 
     private final Object target;
     private final List<Method> storedMethods;
@@ -91,11 +94,21 @@ public class ReflectiveMethodHandler {
 
     /**
      * Verifies that all TypeDescriptors match.
-     * Takes into account that a 'provided' TypeDescriptor should match a supertype 'template' TypeDescriptor.
+     * Takes into account that a 'provided' TypeDescriptor should match a supertype 'template' TypeDescriptor,
+     * and that a boxed number matches a primitive parameter it can be widened to (e.g. Integer for double).
      */
     boolean validateTypeSignature(List<TypeDescriptor> template, List<TypeDescriptor> provided) {
         return template.size() == provided.size() &&
                IntStream.range(0, template.size())
-                       .allMatch(i -> provided.get(i).isAssignableTo(template.get(i)));
+                       .allMatch(i -> provided.get(i).isAssignableTo(template.get(i)) ||
+                                      isWideningPrimitiveConversion(provided.get(i).getType(), template.get(i).getType()));
+    }
+
+    private static boolean isWideningPrimitiveConversion(Class<?> provided, Class<?> template) {
+        if (!template.isPrimitive())
+            return false;
+        final var from = NUMERIC_WIDENING_ORDER.indexOf(provided);
+        final var to = NUMERIC_WIDENING_ORDER.indexOf(resolvePrimitiveIfNecessary(template));
+        return from >= 0 && to >= 0 && from <= to;
     }
 }
