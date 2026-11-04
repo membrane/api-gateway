@@ -13,9 +13,32 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.oauth2client;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.exchange.snapshots.AbstractExchangeSnapshot;
 import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.interceptor.oauth2.OAuth2AnswerParameters;
+import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService;
+import com.predic8.membrane.core.interceptor.session.Session;
+import com.predic8.membrane.core.interceptor.session.SessionManager;
+import com.predic8.membrane.core.proxies.ServiceProxy;
+import com.predic8.membrane.core.proxies.ServiceProxyKey;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
+
+import static com.predic8.membrane.core.http.BodyCollectingMessageObserver.Strategy.ERROR;
+import static com.predic8.membrane.core.http.Header.X_FORWARDED_FOR;
+import static com.predic8.membrane.core.http.Header.X_FORWARDED_HOST;
+import static com.predic8.membrane.core.http.Header.X_FORWARDED_PROTO;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2Interceptor.withoutOA2RedirectParameter;
+import static com.predic8.membrane.core.interceptor.oauth2client.rf.OAuthUtils.oa2redictKeyNameInSession;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mock;
 
 class OAuth2Resource2InterceptorTest {
 
@@ -24,12 +47,13 @@ class OAuth2Resource2InterceptorTest {
     @BeforeEach
     void setup() throws Exception {
         oauth2 = new OAuth2Resource2Interceptor();
+        oauth2.setAuthService(mock(AuthorizationService.class));
 
         oauth2.setLogoutUrl("/login/logout");
         oauth2.setAfterLogoutUrl("/uebersicht");
         oauth2.setAppendAccessTokenToRequest(true);
 
-        oauth2.init();
+        oauth2.init(new HttpRouter());
     }
 
     @Test
@@ -50,5 +74,95 @@ class OAuth2Resource2InterceptorTest {
         exc.setOriginalRequestUri("/login/logout");
 
         oauth2.handleRequestInternal(exc);
+    }
+
+    /**
+     * The snapshot of the original request may come from a cookie the browser controls, so its forwarded
+     * headers must not select the upstream the restored request is sent to.
+     */
+    @Test
+    void restoredRequestKeepsTheDestinationOfTheRoute() throws Exception {
+        final var original = new Request.Builder()
+                .post("/foo?a=b")
+                .header(X_FORWARDED_PROTO, "http")
+                .header(X_FORWARDED_HOST, "internal.example.com")
+                .body("demobody")
+                .buildExchange();
+        original.setProxy(new ServiceProxy(new ServiceProxyKey(2000), "backend.example.com", 80));
+        final var session = validSession();
+        session.put(oa2redictKeyNameInSession("xyz"),
+                new ObjectMapper().writeValueAsString(new AbstractExchangeSnapshot(original, REQUEST, null, ERROR, 3000)));
+
+        final var exc = new Request.Builder().get("http://backend.example.com/foo?a=b&oa2redirect=xyz").buildExchange();
+        exc.setOriginalRequestUri("/foo?a=b&oa2redirect=xyz");
+        exc.setProperty(SessionManager.SESSION, session);
+
+        oauth2.handleRequestInternal(exc);
+
+        assertEquals(List.of("http://backend.example.com/foo?a=b"), exc.getDestinations());
+        assertEquals("/foo?a=b", exc.getOriginalRequestUri());
+        assertEquals("POST", exc.getRequest().getMethod());
+        assertEquals("demobody", exc.getRequest().getBodyAsStringDecoded());
+    }
+
+    /**
+     * The forwarded headers in the snapshot may have been edited in the browser; the restored request carries
+     * the ones the gateway set on the current request.
+     */
+    @Test
+    void restoredRequestKeepsTheForwardedHeadersOfTheCurrentRequest() throws Exception {
+        final var original = new Request.Builder()
+                .post("/foo")
+                .header(X_FORWARDED_FOR, "10.0.0.1")
+                .header(X_FORWARDED_PROTO, "http")
+                .header(X_FORWARDED_HOST, "internal.example.com")
+                .body("demobody")
+                .buildExchange();
+        original.setProxy(new ServiceProxy(new ServiceProxyKey(2000), "backend.example.com", 80));
+        final var session = validSession();
+        session.put(oa2redictKeyNameInSession("xyz"),
+                new ObjectMapper().writeValueAsString(new AbstractExchangeSnapshot(original, REQUEST, null, ERROR, 3000)));
+
+        final var exc = new Request.Builder()
+                .get("http://backend.example.com/foo?oa2redirect=xyz")
+                .header(X_FORWARDED_FOR, "203.0.113.7")
+                .header(X_FORWARDED_PROTO, "https")
+                .header(X_FORWARDED_HOST, "gateway.example.com")
+                .buildExchange();
+        exc.setOriginalRequestUri("/foo?oa2redirect=xyz");
+        exc.setProperty(SessionManager.SESSION, session);
+
+        oauth2.handleRequestInternal(exc);
+
+        final var header = exc.getRequest().getHeader();
+        assertEquals("203.0.113.7", header.getFirstValue(X_FORWARDED_FOR));
+        assertEquals("https", header.getFirstValue(X_FORWARDED_PROTO));
+        assertEquals("gateway.example.com", header.getFirstValue(X_FORWARDED_HOST));
+        assertEquals("demobody", exc.getRequest().getBodyAsStringDecoded());
+    }
+
+    @Test
+    void oa2RedirectParameterIsRemoved() {
+        assertEquals("/foo", withoutOA2RedirectParameter("/foo?oa2redirect=xyz", "xyz"));
+        assertEquals("/foo?a=b", withoutOA2RedirectParameter("/foo?a=b&oa2redirect=xyz", "xyz"));
+        assertEquals("/foo?a=b", withoutOA2RedirectParameter("/foo?oa2redirect=xyz&a=b", "xyz"));
+        assertEquals("/foo?a=b&c=d", withoutOA2RedirectParameter("/foo?a=b&oa2redirect=xyz&c=d", "xyz"));
+    }
+
+    /**
+     * Authenticated, holding an access token that is good for another hour.
+     */
+    private static Session validSession() throws Exception {
+        final var params = new OAuth2AnswerParameters();
+        params.setAccessToken("the-access-token");
+        params.setRefreshToken("the-refresh-token");
+        params.setExpiration("3600");
+        params.setReceivedAt(LocalDateTime.now());
+
+        final var session = new Session("username", new HashMap<>());
+        session.setOAuth2Answer(params.serialize());
+        session.setAccessToken(null, "the-access-token");
+        session.authorize("alice");
+        return session;
     }
 }
