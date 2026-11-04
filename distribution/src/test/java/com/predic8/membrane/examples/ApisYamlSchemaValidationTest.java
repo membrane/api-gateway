@@ -48,8 +48,10 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Every checked-in {@code *.apis.yaml} under {@code examples/} and {@code tutorials/} must
- * conform to Membrane's generated JSON schema.
+ * Every checked-in Membrane config under {@code examples/}, {@code tutorials/} and
+ * {@code router/conf/} must conform to Membrane's generated JSON schema. A YAML file counts as a
+ * Membrane config if it is named {@code *.apis.yaml} or declares the schema in a
+ * {@code # yaml-language-server: $schema=...} header.
  * <p>
  * Membrane's YAML parser is more permissive than the schema: for example
  * {@code ScalarValueConverter.coerceScalarOrReference} stringifies any scalar node - including a
@@ -81,21 +83,38 @@ class ApisYamlSchemaValidationTest {
         }
     }
 
+    private static final String SCHEMA_HEADER = "# yaml-language-server: $schema=https://www.membrane-api.io/";
+
     static Stream<String> getApisYamlConfigs() {
-        List<String> roots = List.of("examples", "tutorials");
+        List<String> roots = List.of("examples", "tutorials", "router/conf");
         return roots.stream()
                 .map(Paths::get)
                 .filter(Files::exists)
                 .flatMap(root -> {
                     try (Stream<Path> paths = Files.walk(root)) {
                         return paths.filter(Files::isRegularFile)
-                                .filter(p -> p.getFileName().toString().endsWith(".apis.yaml"))
+                                .filter(ApisYamlSchemaValidationTest::isMembraneConfig)
                                 .map(Path::toString)
+                                .sorted()
                                 .toList().stream();
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
                 });
+    }
+
+    // Other YAML (OpenAPI specs, Kubernetes manifests, ...) lacks the schema header and is not a Membrane config.
+    private static boolean isMembraneConfig(Path path) {
+        final var name = path.getFileName().toString();
+        if (name.endsWith(".apis.yaml"))
+            return true;
+        if (!name.endsWith(".yaml") && !name.endsWith(".yml"))
+            return false;
+        try (Stream<String> lines = Files.lines(path, UTF_8)) {
+            return lines.anyMatch(line -> line.startsWith(SCHEMA_HEADER));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @ParameterizedTest
@@ -108,7 +127,7 @@ class ApisYamlSchemaValidationTest {
                 JsonNode doc = it.next();
                 List<Error> errors = SCHEMA.validate(doc);
                 assertTrue(errors.isEmpty(), "Schema validation failed for " + yamlPath + ":\n"
-                        + errors.stream().map(Error::getMessage).collect(Collectors.joining("\n")));
+                        + errors.stream().map(e -> e.getInstanceLocation() + ": " + e.getMessage()).collect(Collectors.joining("\n")));
             }
         }
     }
