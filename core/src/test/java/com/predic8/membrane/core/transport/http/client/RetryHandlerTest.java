@@ -211,6 +211,38 @@ class RetryHandlerTest {
             assertEquals(1, mock.attempts);
         }
 
+        /**
+         * A response body that could not be read is the backend's failure, not the sender's. With another
+         * node available an idempotent request is sent there, unlike a failing request body.
+         */
+        @Test
+        void responseBodyFailureIsRetriedOnAnotherNode() throws Exception {
+            final var exc = get("/foo").buildExchange();
+            exc.setDestinations(List.of("http://node1.example.com/", "http://node2.example.com/"));
+            final var destinations = new ArrayList<String>();
+
+            rh.executeWithRetries(exc, (e, dest, attempt) -> {
+                destinations.add(dest);
+                if (attempt == 0)
+                    throw new ReadingBodyException(new IOException("Connection reset"), ok().build());
+                e.setResponse(ok().build());
+                return false;
+            });
+
+            assertEquals(List.of("http://node1.example.com/", "http://node2.example.com/"), destinations);
+            assertEquals(200, exc.getResponse().getStatusCode());
+        }
+
+        @Test
+        void responseBodyFailureIsNotRetriedForPost() throws Exception {
+            final var exc = post("/foo").buildExchange();
+            exc.setDestinations(List.of("http://node1.example.com/", "http://node2.example.com/"));
+            final var mock = new RetryableExchangeCallMock(new ReadingBodyException(new IOException("Connection reset"), ok().build()));
+
+            assertThrows(ReadingBodyException.class, () -> rh.executeWithRetries(exc, mock));
+            assertEquals(1, mock.attempts);
+        }
+
     }
 
     @Nested
