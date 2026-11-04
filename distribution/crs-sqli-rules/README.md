@@ -19,7 +19,18 @@ Intentionally dropped:
 - the CRS anomaly-scoring machinery (`setvar tx.*`, blocking evaluation) — the interceptor blocks on the first
   matching rule instead.
 
-Every extracted CRS regex compiles unchanged under `java.util.regex.Pattern`.
+Core matches the regexes with [RE2/J](https://github.com/google/re2j), which runs in
+linear time, instead of `java.util.regex`: with backtracking, many CRS rules take quadratic or cubic time on
+crafted input (e.g. 942190 on a long run of spaces). RE2/J supports no lookarounds and no backreferences; the
+transpiler fails if a CRS rule needs them.
+
+The JSON keeps the regexes unchanged. Core adjusts two constructs when it compiles them, so they match as before
+with `java.util.regex`:
+
+- `\s` and `\S` are widened to the vertical tab (`\x0b`), which RE2/J's `\s` lacks but PCRE's has. Most CRS rules
+  write `[\s\x0b]`, but some, like 942160, use a bare `\s`.
+- `$` also matches before a line break that ends the input. RE2/J's `$` matches only at the absolute end, so
+  `2147483648%0a` would slip past 942220.
 
 ## Build integration
 
@@ -30,7 +41,7 @@ stale.
 ## Regenerating against a new CRS release
 
 ```sh
-TAG=v4.0.0   # or main
+TAG=v4.30.0   # or main
 curl -fsSL \
   "https://raw.githubusercontent.com/coreruleset/coreruleset/$TAG/rules/REQUEST-942-APPLICATION-ATTACK-SQLI.conf" \
   -o distribution/crs-sqli-rules/REQUEST-942-APPLICATION-ATTACK-SQLI.conf

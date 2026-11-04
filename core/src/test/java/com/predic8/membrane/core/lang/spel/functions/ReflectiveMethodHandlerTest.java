@@ -125,6 +125,18 @@ public class ReflectiveMethodHandlerTest {
         assertTrue(rmh.validateTypeSignature(of(getTypeDescriptor(Map.class)), of(getTypeDescriptor(HashMap.class))));
     }
 
+    @Test
+    void validateWideningPrimitiveTypeSignatures() {
+        assertTrue(rmh.validateTypeSignature(of(getTypeDescriptor(double.class)), of(INT_TYPE_DESC)));
+        assertTrue(rmh.validateTypeSignature(of(getTypeDescriptor(long.class)), of(INT_TYPE_DESC)));
+    }
+
+    @Test
+    void validateNarrowingPrimitiveTypeSignatures() {
+        assertFalse(rmh.validateTypeSignature(of(getTypeDescriptor(int.class)), of(getTypeDescriptor(Double.class))));
+        assertFalse(rmh.validateTypeSignature(of(getTypeDescriptor(Double.class)), of(INT_TYPE_DESC)));
+    }
+
     @SuppressWarnings("unused")
     private static class TestFunctions {
 
