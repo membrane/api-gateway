@@ -17,7 +17,7 @@ permissions:
 jobs:
   build-release:
     if: github.event.pull_request.merged && startsWith(github.event.pull_request.title, 'Release ')
-    runs-on: ubuntu-latest
+    runs-on: warp-ubuntu-2404-x64-4x
     outputs:
       version: ${{ steps.get_version.outputs.VERSION }}
     steps:
@@ -124,7 +124,7 @@ jobs:
   # 'actions: write' off the Maven steps in build-release.
   trigger-docker:
     needs: build-release
-    runs-on: ubuntu-latest
+    runs-on: warp-ubuntu-2404-x64-4x
     permissions:
       contents: read
       actions: write
