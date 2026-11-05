@@ -339,6 +339,20 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 		}
 	}
 
+	@Override
+	public boolean waitForModification(long lastKnownModification, long timeoutMillis) throws InterruptedException {
+		final var deadline = System.currentTimeMillis() + timeoutMillis;
+		synchronized (this) {
+			while (lastKnownModification >= lastModification) {
+				final var remaining = deadline - System.currentTimeMillis();
+				if (remaining <= 0)
+					return false;
+				wait(remaining);
+			}
+			return true;
+		}
+	}
+
 	public int getMaxBodySize() {
 		return maxBodySize;
 	}
