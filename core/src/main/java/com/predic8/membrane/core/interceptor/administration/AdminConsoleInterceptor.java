@@ -106,6 +106,33 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 		apiV1.setInstanceName(instanceName);
 	}
 
+	public String getApiKey() {
+		return apiV1.getApiKey();
+	}
+
+	/**
+	 * @description If set, requests to the admin API (<code>/admin/api/v1</code>) must carry this key in the
+	 * <code>X-Api-Key</code> header. Set it on instances that are included as <code>peers</code> of another admin
+	 * console.
+	 */
+	@MCAttribute
+	public void setApiKey(String apiKey) {
+		apiV1.setApiKey(apiKey);
+	}
+
+	public List<AdminConsolePeer> getPeers() {
+		return apiV1.getPeers();
+	}
+
+	/**
+	 * @description Other Membrane instances to include, for example redundant instances behind a load balancer. The
+	 * console then lists the APIs and calls of all instances together.
+	 */
+	@MCChildElement
+	public void setPeers(List<AdminConsolePeer> peers) {
+		apiV1.setPeers(peers);
+	}
+
 	public boolean isUseXForwardedForAsClientAddr() {
 		return useXForwardedForAsClientAddr;
 	}
