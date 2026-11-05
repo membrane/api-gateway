@@ -14,6 +14,8 @@
 
 package com.predic8.membrane.core.http.xml;
 
+import com.predic8.membrane.core.http.CloseTrackingRequest;
+import com.predic8.membrane.core.http.Message;
 import org.junit.jupiter.api.Test;
 
 import javax.xml.stream.XMLOutputFactory;
@@ -47,12 +49,23 @@ class XMLBodyTest {
         assertFalse(written.contains("xyz"), written);
     }
 
+    @Test
+    void closesTheDecodedStream() throws Exception {
+        final var request = new CloseTrackingRequest(TEXT_XML_UTF8, "<foo/>");
+        write(request);
+        assertTrue(request.allStreamsClosed());
+    }
+
     private static String write(String body) throws XMLStreamException {
+        return write(ok().contentType(TEXT_XML_UTF8).body(body).build());
+    }
+
+    private static String write(Message message) throws XMLStreamException {
         final var out = new StringWriter();
         // The JDK's writer, as at runtime: Woodstox reaches the test classpath through CXF
         final var writer = XMLOutputFactory.newDefaultFactory().createXMLStreamWriter(out);
         writer.writeStartElement("body");
-        new XMLBody(ok().contentType(TEXT_XML_UTF8).body(body).build()).write(writer);
+        new XMLBody(message).write(writer);
         writer.writeEndElement();
         writer.flush();
         return out.toString();

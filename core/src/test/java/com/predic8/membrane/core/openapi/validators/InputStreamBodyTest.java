@@ -20,16 +20,46 @@ import com.predic8.membrane.core.openapi.model.InputStreamBody;
 import com.predic8.membrane.core.openapi.util.OpenAPITestUtils;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class InputStreamBodyTest {
 
     @Test
     public void asString() throws IOException {
         assertEquals("foo", new InputStreamBody(OpenAPITestUtils.toInputStrom("foo")).asString());
+    }
+
+    @Test
+    void asStringClosesTheStream() throws IOException {
+        final var in = new CloseFlagStream("foo");
+        new InputStreamBody(in).asString();
+        assertTrue(in.closed);
+    }
+
+    @Test
+    void asBytesClosesTheStream() throws IOException {
+        final var in = new CloseFlagStream("foo");
+        new InputStreamBody(in).asBytes();
+        assertTrue(in.closed);
+    }
+
+    private static class CloseFlagStream extends ByteArrayInputStream {
+        boolean closed;
+
+        CloseFlagStream(String content) {
+            super(content.getBytes(UTF_8));
+        }
+
+        @Override
+        public void close() {
+            closed = true;
+        }
     }
 
     /**

@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.multipart;
 
+import com.predic8.membrane.core.http.CloseTrackingRequest;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Request;
 import org.junit.jupiter.api.Test;
@@ -124,6 +125,14 @@ class PartRewriterTest {
     }
 
     /** Reads the rebuilt body back as a message, so it can be split again. */
+    @Test
+    void closesTheDecodedStream() throws Exception {
+        final var request = new CloseTrackingRequest("multipart/form-data; boundary=" + BOUNDARY,
+                "--" + BOUNDARY + "\r\n" + part("data", "application/xml", "<foo/>") + "\r\n--" + BOUNDARY + "--\r\n");
+        PartRewriter.rebuild(request, Map.of());
+        assertTrue(request.allStreamsClosed());
+    }
+
     private static Message rebuiltFrom(Message message, Map<Integer, byte[]> replacements) throws Exception {
         return multipartMessage(PartRewriter.rebuild(message, replacements));
     }

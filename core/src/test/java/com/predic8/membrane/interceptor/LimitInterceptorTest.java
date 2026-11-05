@@ -61,6 +61,30 @@ class LimitInterceptorTest {
         assertThrows(Exception.class, () -> exc.getRequest().readBody());
     }
 
+    @Test
+    void streamSmallClosesTheDecodedStream() throws Exception {
+        final var request = new CloseTrackingRequest("text/plain", SMALL);
+        final var exc = exchangeOf(request);
+        li.handleRequest(exc);
+        request.readBody();
+        assertTrue(request.allStreamsClosed());
+    }
+
+    @Test
+    void streamLargeClosesTheDecodedStream() throws Exception {
+        final var request = new CloseTrackingRequest("text/plain", LARGE);
+        final var exc = exchangeOf(request);
+        li.handleRequest(exc);
+        assertThrows(Exception.class, request::readBody);
+        assertTrue(request.allStreamsClosed());
+    }
+
+    private static Exchange exchangeOf(Request request) {
+        final var exc = new Exchange(null);
+        exc.setRequest(request);
+        return exc;
+    }
+
     private static @NotNull Exchange getExchangeWithLargeStreamRequest(String body) throws Exception {
         Request request = Request.post("/foo").header("dummy", "foo").build();
         request.setBody(new Body(new ByteArrayInputStream(body.getBytes())));

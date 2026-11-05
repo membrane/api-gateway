@@ -130,6 +130,7 @@ public class LimitInterceptor extends AbstractInterceptor {
 		private void checkPosition() throws IOException {
 			if (pos > maxBodyLength) {
 				log.info("Message length >= {} exceeded limit {}.",pos,maxBodyLength);
+				is.close();
 				throw new IOException("Message body too large.");
 			}
 		}
@@ -137,8 +138,10 @@ public class LimitInterceptor extends AbstractInterceptor {
 		@Override
 		public int read() throws IOException {
 			int i = is.read();
-			if (i == -1)
+			if (i == -1) {
+				is.close();
 				return i;
+			}
 			pos++;
 			checkPosition();
 			return i;
@@ -147,8 +150,10 @@ public class LimitInterceptor extends AbstractInterceptor {
 		@Override
 		public int read(byte[] b) throws IOException {
 			int l = is.read(b);
-			if (l == -1)
+			if (l == -1) {
+				is.close();
 				return l;
+			}
 			pos += l;
 			checkPosition();
 			return l;
@@ -157,8 +162,10 @@ public class LimitInterceptor extends AbstractInterceptor {
 		@Override
 		public int read(byte[] b, int off, int len) throws IOException {
 			int l = is.read(b, off, len);
-			if (l == -1)
+			if (l == -1) {
+				is.close();
 				return l;
+			}
 			pos += l;
 			checkPosition();
 			return l;
