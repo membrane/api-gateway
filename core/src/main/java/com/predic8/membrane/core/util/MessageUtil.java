@@ -13,20 +13,19 @@
    limitations under the License. */
 package com.predic8.membrane.core.util;
 
-import com.predic8.membrane.core.http.Chunk;
+import com.predic8.membrane.core.http.AbstractBody;
 import com.predic8.membrane.core.http.DecodingException;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.ReadingBodyException;
 import org.brotli.dec.BrotliInputStream;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.zip.DataFormatException;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.Inflater;
+import java.util.zip.InflaterInputStream;
 
 public class MessageUtil {
 
@@ -41,19 +40,37 @@ public class MessageUtil {
 	 * @see #getContent(Message)
 	 */
 	public static InputStream getContentAsStream(Message msg) {
+		return getContentAsStream(msg.getBody(), msg.getHeader().getContentEncoding(), msg);
+	}
+
+	/**
+	 * Like {@link #getContentAsStream(Message)}, for a body that is decoded on behalf of a message whose
+	 * header no longer describes it, e.g. because <code>Content-Encoding</code> was already removed.
+	 * <p>
+	 * The encoding is a parameter, not read from <code>message</code>, because
+	 * {@link com.predic8.membrane.core.http.LimitedBody} removes <code>Content-Encoding</code> from the
+	 * header when it takes over the body, before anything is decoded. A decoding failure shows up only
+	 * later, while the stream is read; looking the encoding up in the header then would find nothing, and
+	 * the failure would no longer be reported as a {@link DecodingException} naming the encoding.
+	 *
+	 * @param body            the body to decode
+	 * @param contentEncoding the <code>Content-Encoding</code> of the body, or <code>null</code>
+	 * @param message         the message failures are associated with
+	 */
+	public static InputStream getContentAsStream(AbstractBody body, @Nullable String contentEncoding, Message message) {
 		try {
-			if (msg.isGzip()) {
-				return associateDecodingFailures(new GZIPInputStream(msg.getBodyAsStream()), msg);
+			if ("gzip".equalsIgnoreCase(contentEncoding)) {
+				return associateDecodingFailures(new GZIPInputStream(body.getContentAsStream()), contentEncoding, message);
 			}
-			if (msg.isDeflate()) {
-				return new ByteArrayInputStream(getDecompressedData(msg.getBody().getContent()));
+			if ("deflate".equalsIgnoreCase(contentEncoding)) {
+				return associateDecodingFailures(inflating(body.getContentAsStream()), contentEncoding, message);
 			}
-			if (msg.isBrotli()) {
-				return associateDecodingFailures(new BrotliInputStream(msg.getBodyAsStream()), msg);
+			if ("br".equalsIgnoreCase(contentEncoding)) {
+				return associateDecodingFailures(new BrotliInputStream(body.getContentAsStream()), contentEncoding, message);
 			}
-			return msg.getBodyAsStream();
+			return body.getContentAsStream();
 		} catch (IOException e) {
-			throw decodingFailure(msg, e);
+			throw decodingFailure(message, contentEncoding, e);
 		}
 	}
 	
@@ -72,7 +89,9 @@ public class MessageUtil {
 				}
 			}
 			if (msg.isDeflate()) {
-				return getDecompressedData(msg.getBody().getContent());
+				try (var decoded = inflating(msg.getBodyAsStream())) {
+					return decoded.readAllBytes();
+				}
 			}
 			if (msg.isBrotli()) {
 				try (var is = msg.getBodyAsStream();
@@ -82,7 +101,7 @@ public class MessageUtil {
 			}
 			return msg.getBody().getContent();
 		} catch (IOException e) {
-			throw decodingFailure(msg, e);
+			throw decodingFailure(msg, msg.getHeader().getContentEncoding(), e);
 		}
 	}
 
@@ -90,9 +109,10 @@ public class MessageUtil {
 	 * Associates a read failure with the message it happened on, naming the Content-Encoding when the
 	 * message carries one. A body the sender did not label is not a decoding problem, so it keeps the
 	 * plain wrapping: {@link #getContentAsStream} reads an unencoded body through the same try block.
+	 * The encoding is passed in rather than read from <code>message</code>, whose header may no longer
+	 * carry it; see {@link #getContentAsStream(AbstractBody, String, Message)}.
 	 */
-	private static ReadingBodyException decodingFailure(Message message, IOException e) {
-		final String contentEncoding = message.getHeader().getContentEncoding();
+	private static ReadingBodyException decodingFailure(Message message, @Nullable String contentEncoding, IOException e) {
 		if (contentEncoding == null)
 			return new ReadingBodyException(e, message);
 		return new ReadingBodyException(new DecodingException(contentEncoding, e), message);
@@ -120,14 +140,14 @@ public class MessageUtil {
 	 * {@link com.predic8.membrane.core.exceptions.ProblemDetails#bodyFailure} rather than deciding a
 	 * status of their own; everything else lets it travel to the flow controller, which does the same.
 	 */
-	private static InputStream associateDecodingFailures(InputStream decoded, Message message) {
+	private static InputStream associateDecodingFailures(InputStream decoded, String contentEncoding, Message message) {
 		return new FilterInputStream(decoded) {
 			@Override
 			public int read() {
 				try {
 					return in.read();
 				} catch (IOException e) {
-					throw decodingFailure(message, e);
+					throw decodingFailure(message, contentEncoding, e);
 				}
 			}
 
@@ -136,7 +156,7 @@ public class MessageUtil {
 				try {
 					return in.read(bytes, offset, length);
 				} catch (IOException e) {
-					throw decodingFailure(message, e);
+					throw decodingFailure(message, contentEncoding, e);
 				}
 			}
 		};
@@ -157,63 +177,57 @@ public class MessageUtil {
 		return (cmf & 0x0f) == 8 && ((cmf << 8) | flg) % 31 == 0;
 	}
 
-	public static byte[] getDecompressedData(byte[] compressedData) throws IOException {
-		var decompressor = new Inflater(!isZlibWrapped(compressedData));
-		try {
-			decompressor.setInput(compressedData);
+	/**
+	 * Decodes the "deflate" coding while it is read, so a consumer reading through a size limit stops
+	 * the expansion as soon as the limit is reached. Peeks at the first two bytes to choose between
+	 * zlib and raw DEFLATE framing (see {@link #isZlibWrapped(byte[])}).
+	 */
+	private static InputStream inflating(InputStream compressed) throws IOException {
+		final var in = new PushbackInputStream(compressed, 2);
+		final var header = in.readNBytes(2);
+		in.unread(header);
+		return new DeflateInputStream(in, !isZlibWrapped(header));
+	}
 
-			List<Chunk> chunks = new ArrayList<>();
+	/**
+	 * Unlike its superclass, rejects a stream that ends early or asks for a preset dictionary instead of
+	 * reporting the end of the body: a truncated stream would otherwise surface as a JDK message about
+	 * ZLIB, and a dictionary request as a silently empty body. Membrane has no dictionary to supply.
+	 */
+	private static final class DeflateInputStream extends InflaterInputStream {
 
-			while (!decompressor.finished()) {
-				byte[] buf = new byte[1024];
-				int count;
-				try {
-					count = decompressor.inflate(buf);
-				} catch (DataFormatException e) {
-					throw new IOException(e);
-				}
-				// Zero output is valid when the stream has finished (including an empty body).
-				// Otherwise, retrying without new input or a dictionary can loop forever.
-				if (count == 0 && !decompressor.finished()) {
-					// A preset dictionary contains bytes shared by compressor and decoder in advance.
-					// Only a zlib-framed stream can signal this (via the FDICT header bit); Membrane
-					// does not supply one, so reject rather than stall waiting for it.
-					if (decompressor.needsDictionary()) {
-						log.info("Deflate stream requires a preset dictionary.");
-						throw new IOException("Deflate stream requires a preset dictionary.");
-					}
-					// The complete compressed body was supplied, so no more input can arrive.
-					if (decompressor.needsInput()) {
-						log.info("Truncated deflate stream.");
-						throw new IOException("Truncated deflate stream.");
-					}
-					// Reject any other stalled state instead of retrying indefinitely.
-					log.info("Deflate decompression made no progress.");
-					throw new IOException("Deflate decompression made no progress.");
-				}
-				if (buf.length == count) {
-                    chunks.add(new Chunk(buf));
-				} else if (count < buf.length) {
-					byte[] shortContent = new byte[count];
-					System.arraycopy(buf, 0, shortContent, 0, count);
-                    chunks.add(new Chunk(shortContent));
-				}
+		DeflateInputStream(InputStream in, boolean raw) {
+			super(in, new Inflater(raw));
+		}
+
+		@Override
+		public int read(byte[] b, int off, int len) throws IOException {
+			final int n = super.read(b, off, len);
+			if (n == -1 && inf.needsDictionary()) {
+				log.info("Deflate stream requires a preset dictionary.");
+				throw new IOException("Deflate stream requires a preset dictionary.");
 			}
+			return n;
+		}
 
-			log.debug("Number of decompressed chunks: {}", chunks.size());
-			if (!chunks.isEmpty()) {
-
-				var bos = new ByteArrayOutputStream();
-
-				for (Chunk chunk : chunks) {
-					bos.write(chunk.content());
-				}
-				return bos.toByteArray();
+		@Override
+		protected void fill() throws IOException {
+			len = in.read(buf, 0, buf.length);
+			if (len == -1) {
+				log.info("Truncated deflate stream.");
+				throw new IOException("Truncated deflate stream.");
 			}
-			return null;
-		} finally {
-			// Inflater is not AutoCloseable in Java 21, so use finally instead of try-with-resources.
-			decompressor.end();
+			inf.setInput(buf, 0, len);
+		}
+
+		/** The superclass only ends an Inflater it created itself. */
+		@Override
+		public void close() throws IOException {
+			try {
+				super.close();
+			} finally {
+				inf.end();
+			}
 		}
 	}
 }

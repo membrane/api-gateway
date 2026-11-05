@@ -104,6 +104,22 @@ class BodyStickyErrorTest {
         assertEquals(0, stream.getReadCallsAfterFailure());
     }
 
+    /**
+     * The rest of a body that failed is still on the connection, so it must not carry another message.
+     * Once the body is replaced, e.g. by an error response, the failure no longer shows on the message.
+     */
+    @Test
+    void messageDiscardBodyClosesConnectionWhenTheBodyFails() {
+        final var request = new Request();
+        request.setVersion("1.1");
+        request.setBody(body);
+        assertTrue(request.isKeepAlive());
+
+        request.discardBody();
+
+        assertFalse(request.isKeepAlive());
+    }
+
     @Test
     void bodyFailedFiresOnceAndClearsObservers() {
         RecordingObserver observer = new RecordingObserver();

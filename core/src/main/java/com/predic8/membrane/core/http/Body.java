@@ -254,6 +254,16 @@ public class Body extends AbstractBody {
 	}
 
 	/**
+	 * Unlike {@link #getLength()}, this never reads the body.
+	 *
+	 * @return the length the body was created with, and never reads beyond, or {@code -1} if it ends
+	 *         with the stream
+	 */
+	public long getDeclaredLength() {
+		return length;
+	}
+
+	/**
 	 * @return the content read into memory, or an empty array if there is none
 	 */
 	@Override

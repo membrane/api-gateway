@@ -562,6 +562,19 @@ public class ProblemDetailsTest {
         }
 
         @Test
+        @DisplayName("A body above the limit of the limit plugin gets its answer, wherever it is read")
+        void limitExceeded() throws Exception {
+            Exchange exc = Request.post("/").body("x").buildExchange();
+            var failure = new ReadingBodyException(new LimitExceededException(10), exc.getRequest());
+
+            ProblemDetails pd = bodyFailure(false, "validator", exc, failure);
+
+            assertEquals("Message is too large.", pd.getTitle());
+            assertEquals("security", pd.getType());
+            assertEquals(10L, pd.getInternal().get("maxBodyLength"));
+        }
+
+        @Test
         @DisplayName("A body failure that is not a decoding failure keeps its own cause and plain type")
         void readFailureWithoutDecoding() throws Exception {
             Exchange exc = Request.post("/").body("x").buildExchange();
