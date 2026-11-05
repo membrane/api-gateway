@@ -18,6 +18,7 @@ import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.MalformedHeaderException;
+import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.proxies.AbstractServiceProxy;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
@@ -186,6 +187,10 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
                     .stacktrace(false)
                     .buildAndSetResponse(exc);
             return ABORT;
+        } catch (ReadingBodyException e) {
+            // Not a problem with the backend: the request body could not be read, e.g. the client stopped
+            // sending or it exceeded a limit. The flow controller describes it, see ProblemDetails.bodyFailure().
+            throw e;
         } catch (Exception e) {
             log.error("", e);
             internal(router.getConfiguration().isProduction(), getDisplayName())
