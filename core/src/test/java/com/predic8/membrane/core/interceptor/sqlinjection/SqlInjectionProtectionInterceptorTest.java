@@ -15,14 +15,21 @@
 package com.predic8.membrane.core.interceptor.sqlinjection;
 
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.ChunkedBody;
+import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.router.DefaultRouter;
 import com.predic8.membrane.core.util.ConfigurationException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayInputStream;
+
+import static com.predic8.membrane.core.http.Header.TRANSFER_ENCODING;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.Request.get;
+import static com.predic8.membrane.core.http.Request.post;
+import static java.nio.charset.StandardCharsets.US_ASCII;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.sqlinjection.SqlInjectionProtectionInterceptor.OnDetect;
@@ -59,6 +66,19 @@ class SqlInjectionProtectionInterceptorTest {
         assertEquals(ABORT, interceptor.handleResponse(exc));
         assertEquals(502, exc.getResponse().getStatusCode());
         assertNotNull(exc.getResponse().getHeader().getFirstValue(X_PROTECTION));
+    }
+
+    /**
+     * A body that cannot be read, e.g. because the client stopped sending it, is not an error
+     * of the scanner: it is left to the flow controller, which describes it like any body failure.
+     */
+    @Test
+    void unreadableBodyIsLeftToTheFlowController() throws Exception {
+        final var request = post("/search").contentType(APPLICATION_JSON).header(TRANSFER_ENCODING, "chunked").build();
+        request.setBody(new ChunkedBody(new ByteArrayInputStream("5\r\n{\"q\"".getBytes(US_ASCII))));
+        final var exc = new Exchange(null);
+        exc.setRequest(request);
+        assertThrows(ReadingBodyException.class, () -> interceptor.handleRequest(exc));
     }
 
     @Test
