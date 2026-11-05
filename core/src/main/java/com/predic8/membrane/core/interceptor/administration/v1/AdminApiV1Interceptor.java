@@ -182,7 +182,7 @@ public class AdminApiV1Interceptor extends AbstractInterceptor {
         r.add(instance("GET", message + "/body", READ, exchanges::body));
         r.add(instance("GET", message + "/body/formatted", READ, exchanges::formatted));
         r.add(instance("GET", exchange + "/curl", READ, exchanges::curl));
-        r.add(notImplemented("GET", exchange + "/frames", "WebSocket frames are not recorded yet."));
+        r.add(instance("GET", exchange + "/frames", READ, new FramesResource(ctx)::frames));
         r.add(instance("POST", exchange + "/replay", ADMIN, tools::replay));
 
         r.add(collection("/statistics/apis", new Merge(CONCAT, "apis", null, null), monitoring::apiStatistics));

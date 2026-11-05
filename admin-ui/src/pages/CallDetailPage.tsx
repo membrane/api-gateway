@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api, ApiError, path, url, type ExchangeDetail, type Header, type Principal } from "../api/client";
 import { useLoad } from "../hooks";
 import { ErrorBox } from "../components/ErrorBox";
@@ -6,9 +6,10 @@ import { href } from "../router";
 import { bytes, statusClass, time } from "../util/format";
 
 type Message = "request" | "response";
+type Tab = Message | "frames";
 
 export function CallDetailPage({ instance, id }: { instance: string; id: string }) {
-  const [message, setMessage] = useState<Message>("request");
+  const [tab, setTab] = useState<Tab>("request");
   const exchange = useLoad((signal) => api.get<ExchangeDetail>(path("exchanges", instance, id), undefined, signal), [instance, id]);
   const e = exchange.data;
 
@@ -32,13 +33,13 @@ export function CallDetailPage({ instance, id }: { instance: string; id: string 
         </dl>
       )}
       <div className="tabs secondary" role="tablist">
-        {(["request", "response"] as Message[]).map((m) => (
-          <button key={m} role="tab" aria-selected={message === m} className={message === m ? "tab active" : "tab"} onClick={() => setMessage(m)}>
-            {m === "request" ? "Request" : "Response"}
+        {((e?.websocket ? ["request", "response", "frames"] : ["request", "response"]) as Tab[]).map((t) => (
+          <button key={t} role="tab" aria-selected={tab === t} className={tab === t ? "tab active" : "tab"} onClick={() => setTab(t)}>
+            {t === "request" ? "Request" : t === "response" ? "Response" : "WebSocket messages"}
           </button>
         ))}
       </div>
-      <MessageView key={message} instance={instance} id={id} message={message} />
+      {tab === "frames" ? <FramesView instance={instance} id={id} /> : <MessageView key={tab} instance={instance} id={id} message={tab} />}
       <Curl instance={instance} id={id} />
       <Replay instance={instance} id={id} exchange={e} />
     </section>
@@ -185,6 +186,56 @@ function MessageView({ instance, id, message }: { instance: string; id: string; 
         </>
       )}
     </div>
+  );
+}
+
+interface Frames {
+  total: number;
+  dropped?: number;
+  frames: { seq: number; time: string; direction: string; opcode: string; length: number; encoding: string; payload: string; truncated: boolean }[];
+}
+
+/**
+ * Messages recorded by wsRecord; refreshed every two seconds while the connection may still be open.
+ */
+function FramesView({ instance, id }: { instance: string; id: string }) {
+  const [tick, setTick] = useState(0);
+  const frames = useLoad((signal) => api.get<Frames>(path("exchanges", instance, id, "frames"), { limit: 1000 }, signal), [instance, id, tick]);
+  useEffect(() => {
+    const timer = setInterval(() => setTick((t) => t + 1), 2000);
+    return () => clearInterval(timer);
+  }, []);
+
+  if (frames.error) return <ErrorBox error={frames.error} />;
+  if (!frames.data) return null;
+  if (frames.data.total === 0) return <p className="muted">No messages recorded for this connection.</p>;
+  return (
+    <>
+      {!!frames.data.dropped && <p className="muted">{frames.data.dropped} older messages were not kept.</p>}
+      <div className="table-wrap">
+        <table>
+          <thead>
+            <tr><th className="num">#</th><th>Time</th><th>Direction</th><th>Type</th><th className="num">Size</th><th>Payload</th></tr>
+          </thead>
+          <tbody>
+            {frames.data.frames.map((f) => (
+              <tr key={f.seq}>
+                <td className="num">{f.seq}</td>
+                <td>{time(f.time)}</td>
+                <td>{f.direction === "clientToServer" ? "client → server" : "server → client"}</td>
+                <td>{f.opcode}</td>
+                <td className="num">{bytes(f.length)}</td>
+                <td className="payload">
+                  <code>{f.payload}</code>
+                  {f.encoding === "base64" && <span className="badge badge-muted">base64</span>}
+                  {f.truncated && <span className="badge badge-muted">truncated</span>}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 }
 

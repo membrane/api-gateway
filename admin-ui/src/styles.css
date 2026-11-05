@@ -172,6 +172,9 @@ pre.diff span { display: block; }
 .diff-file { font-weight: 600; }
 td.absent code { color: var(--muted); font-style: italic; }
 
+td.payload { white-space: normal; overflow-wrap: anywhere; max-width: 640px; }
+.badge-muted { color: var(--muted); border: 1px solid var(--border); }
+
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 
 @media (max-width: 640px) {

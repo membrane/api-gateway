@@ -709,7 +709,7 @@ paths:
     get:
       tags: [exchanges]
       operationId: listExchangeFrames
-      summary: WebSocket frames recorded for an upgraded exchange.
+      summary: WebSocket messages of an upgraded exchange, recorded by wsRecord in the webSocket flow. Answers 501 if no wsRecord is configured.
       parameters:
         - $ref: '#/components/parameters/offset'
         - $ref: '#/components/parameters/limit'
@@ -723,6 +723,7 @@ paths:
                   - $ref: '#/components/schemas/Page'
                   - type: object
                     properties:
+                      dropped: { type: integer, format: int64, description: "Older messages that were not kept." }
                       frames:
                         type: array
                         items: { $ref: '#/components/schemas/WebSocketFrame' }
@@ -1650,9 +1651,10 @@ components:
         seq: { type: integer, format: int64 }
         time: { type: string, format: date-time }
         direction: { type: string, enum: [clientToServer, serverToClient] }
-        opcode: { type: string, enum: [text, binary, ping, pong, close, continuation] }
+        opcode: { type: string, enum: [text, binary, ping, pong, close, continuation, other] }
         length: { type: integer }
-        payload: { type: string, description: "Text payload, or base64 for binary (truncated)." }
+        encoding: { type: string, enum: [text, base64], description: "text for UTF-8 text messages, base64 otherwise." }
+        payload: { type: string, description: "The payload, cut after the maxPayloadBytes of wsRecord." }
         truncated: { type: boolean }
 
     ExchangeStoreInfo:

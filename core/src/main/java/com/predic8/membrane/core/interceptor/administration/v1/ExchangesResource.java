@@ -44,7 +44,8 @@ final class ExchangesResource {
     record ExchangeSummary(String instance, long id, String time, Integer statusCode, String apiId, String proxy,
                            Integer listenPort, String protocol, String method, String path, String client,
                            String server, Integer serverPort, String reqContentType, Long reqContentLength,
-                           String respContentType, Long respContentLength, boolean completed, long duration) {
+                           String respContentType, Long respContentLength, boolean completed, long duration,
+                           boolean websocket) {
     }
 
     record NodeStatus(String node, Integer statusCode, String exception) {
@@ -54,7 +55,7 @@ final class ExchangesResource {
                           Integer listenPort, String protocol, String method, String path, String client,
                           String server, Integer serverPort, String reqContentType, Long reqContentLength,
                           String respContentType, Long respContentLength, boolean completed, long duration,
-                          List<String> destinations, List<NodeStatus> nodeStatus, String error,
+                          boolean websocket, List<String> destinations, List<NodeStatus> nodeStatus, String error,
                           String requestBodyFormat, String responseBodyFormat) {
     }
 
@@ -151,7 +152,7 @@ final class ExchangesResource {
         return ok(new ExchangeDetail(s.instance(), s.id(), s.time(), s.statusCode(), s.apiId(), s.proxy(),
                 s.listenPort(), s.protocol(), s.method(), s.path(), s.client(), s.server(), s.serverPort(),
                 s.reqContentType(), s.reqContentLength(), s.respContentType(), s.respContentLength(), s.completed(),
-                s.duration(), exc.getDestinations() == null ? null : List.copyOf(exc.getDestinations()),
+                s.duration(), s.websocket(), exc.getDestinations() == null ? null : List.copyOf(exc.getDestinations()),
                 nodeStatus(exc), exc.getErrorMessage(),
                 exc.getRequest() == null ? null : MessageText.format(exc.getRequestContentType()),
                 exc.getResponse() == null ? null : MessageText.format(exc.getResponseContentType())));
@@ -293,7 +294,9 @@ final class ExchangesResource {
                 res == null ? null : exc.getResponseContentType(),
                 res == null || !completed || exc.getResponseContentLength() == -1 ? null : (long) exc.getResponseContentLength(),
                 completed,
-                ExchangeFilter.duration(exc));
+                ExchangeFilter.duration(exc),
+                res != null && res.getStatusCode() == 101
+                && "websocket".equalsIgnoreCase(res.getHeader().getFirstValue("Upgrade")));
     }
 
     private static List<NodeStatus> nodeStatus(AbstractExchange exc) {
