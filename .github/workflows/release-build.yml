@@ -122,6 +122,9 @@ jobs:
   # docker-publish.yml predates the 'tag' input the API rejects it with 422 --
   # must not fail the release itself or block the jobs beside it. It also keeps
   # 'actions: write' off the Maven steps in build-release.
+  #
+  # Only a release cut from master moves the 'latest' Docker tag; a patch release
+  # on an older line (7.7.x, 6.x, ...) must not.
   trigger-docker:
     needs: build-release
     runs-on: ubuntu-latest
@@ -138,11 +141,15 @@ jobs:
           RELEASE_TAG: ${{ github.head_ref }}
         run: |
           set -euo pipefail
+          LATEST=false
+          if [ "$BASE_REF" = "master" ]; then
+            LATEST=true
+          fi
           gh workflow run docker-publish.yml \
             --repo "$REPO" \
             --ref "$BASE_REF" \
             --field tag="$RELEASE_TAG" \
-            --field latest=false
+            --field latest="$LATEST"
 
   # Same reason and setup as trigger-docker: 'release: published' does not fire
   # for a release created with GITHUB_TOKEN, so maven-publish.yml is dispatched
