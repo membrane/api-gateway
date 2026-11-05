@@ -737,7 +737,12 @@ paths:
     post:
       tags: [exchanges]
       operationId: replayExchange
-      summary: Send the recorded request again, optionally modified. The new exchange is recorded as usual.
+      summary: Send the recorded request again, optionally changed.
+      description: |
+        `gateway` sends the request to the port the exchange was received on, so it runs through the API's flow and
+        is recorded like any other call. `backend` sends it straight to the recorded backend; it is not recorded.
+        Method, path, header fields and body can be changed, but not the host the request is sent to.
+        Needs the `admin` role and a console that is not `readOnly`.
       requestBody:
         content:
           application/json:
@@ -748,18 +753,20 @@ paths:
                   type: string
                   enum: [gateway, backend]
                   default: gateway
-                method: { type: string }
-                path: { type: string }
+                method: { type: string, description: "Defaults to the recorded method." }
+                path: { type: string, description: "Path and query. Defaults to the recorded one." }
                 headers:
                   type: array
+                  description: "Replaces all header fields if present. Hop-by-hop fields are dropped."
                   items: { $ref: '#/components/schemas/Header' }
                 body: { type: string, description: "Replaces the body if present." }
       responses:
         '200':
-          description: The new exchange.
+          description: Response to the replayed request.
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ExchangeSummary' }
+              schema: { $ref: '#/components/schemas/ReplayResult' }
+        '502': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '4XX': { $ref: '#/components/responses/Problem' }
@@ -787,9 +794,18 @@ paths:
             application/json:
               schema:
                 type: object
+                required: [left, right, headers, body]
                 properties:
+                  left: { type: string }
+                  right: { type: string }
+                  startLine:
+                    type: object
+                    properties:
+                      left: { type: string }
+                      right: { type: string }
                   headers:
                     type: array
+                    description: "Header fields that differ; a missing side means the field is absent there."
                     items:
                       type: object
                       properties:
@@ -800,7 +816,8 @@ paths:
                     type: object
                     properties:
                       format: { type: string }
-                      unifiedDiff: { type: string }
+                      identical: { type: boolean }
+                      unifiedDiff: { type: string, description: "Unified diff of the formatted bodies; empty if identical." }
         '404': { $ref: '#/components/responses/NotFound' }
         '4XX': { $ref: '#/components/responses/Problem' }
         '5XX': { $ref: '#/components/responses/Problem' }
@@ -1603,6 +1620,29 @@ components:
       properties:
         name: { type: string }
         value: { type: string }
+
+    ReplayResult:
+      type: object
+      required: [target, url, statusCode, durationMillis, headers, body]
+      properties:
+        target: { type: string, enum: [gateway, backend] }
+        url: { type: string, description: "Where the request was sent." }
+        statusCode: { type: integer }
+        statusMessage: { type: [string, 'null'] }
+        durationMillis: { type: integer, format: int64 }
+        headers:
+          type: array
+          items: { $ref: '#/components/schemas/Header' }
+        body: { $ref: '#/components/schemas/FormattedBody' }
+
+    FormattedBody:
+      type: object
+      required: [format, text, truncated]
+      properties:
+        format: { type: string, enum: [json, xml, yaml, form, text, binary, empty] }
+        text: { type: string, description: "Pretty-printed body; empty for binary." }
+        truncated: { type: boolean }
+        originalLength: { type: integer, format: int64 }
 
     WebSocketFrame:
       type: object

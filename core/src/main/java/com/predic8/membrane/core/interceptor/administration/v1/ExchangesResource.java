@@ -316,10 +316,17 @@ final class ExchangesResource {
     }
 
     private AbstractExchange exchange(ApiRequest req) {
-        ctx.requireSelf(req.path(0));
+        return exchange(req.path(0), req.pathLong(1));
+    }
+
+    /**
+     * @throws ApiException 404 if the instance is not this one or the exchange is unknown
+     */
+    AbstractExchange exchange(String instance, long id) {
+        ctx.requireSelf(instance);
         final AbstractExchange exc;
         try {
-            exc = store().getExchangeById(req.pathLong(1));
+            exc = store().getExchangeById(id);
         } catch (UnsupportedOperationException e) {
             throw notImplemented("The exchange store (%s) cannot look up exchanges.".formatted(storeType(store())));
         }
@@ -332,7 +339,7 @@ final class ExchangesResource {
         return message(exchange(req), req.path(2));
     }
 
-    private static Message message(AbstractExchange exc, String which) {
+    static Message message(AbstractExchange exc, String which) {
         final Message msg = isResponse(which) ? exc.getResponse() : exc.getRequest();
         if (msg == null)
             throw notFound("The exchange has no %s (yet).".formatted(which));

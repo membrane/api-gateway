@@ -63,11 +63,13 @@ final class Aggregator {
     private final PeerClient client;
     private final Map<AdminConsolePeer, String> learnedNames = new ConcurrentHashMap<>();
     private final ExecutorService localCalls = Executors.newVirtualThreadPerTaskExecutor();
+    private final CallToolsResource tools;
 
-    Aggregator(ConsoleContext ctx, List<AdminConsolePeer> peers, PeerClient client) {
+    Aggregator(ConsoleContext ctx, List<AdminConsolePeer> peers, PeerClient client, CallToolsResource tools) {
         this.ctx = ctx;
         this.peers = List.copyOf(peers);
         this.client = client;
+        this.tools = tools;
     }
 
     Response handle(Route route, ApiRequest req, Principal principal, String rawPath, String rawQuery) throws Exception {
@@ -163,7 +165,65 @@ final class Aggregator {
             case CONCAT -> ok(concat(merge.field(), fetch(route, req, principal, rawPath, Map.of())));
             case FACETS -> ok(facets(fetch(route, req, principal, rawPath, Map.of())));
             case PAGE -> ok(page(route, req, principal, rawPath));
+            case HAR -> CallToolsResource.harResponse(HarExport.har(harEntries(CallToolsResource.exportRefs(req))));
+            case DIFF -> ok(diff(req));
         };
+    }
+
+    // ------------------------------------------------------------------ HAR and diff across instances
+
+    private List<ObjectNode> harEntries(List<CallToolsResource.Ref> refs) throws Exception {
+        final var byInstance = new LinkedHashMap<String, List<CallToolsResource.Ref>>();
+        for (final var ref : refs)
+            byInstance.computeIfAbsent(ref.instance(), k -> new ArrayList<>()).add(ref);
+
+        final var entries = new ArrayList<ObjectNode>();
+        for (final var e : byInstance.entrySet()) {
+            if (ctx.instanceName().equals(e.getKey())) {
+                entries.addAll(tools.localEntries(e.getValue()));
+                continue;
+            }
+            final var peer = peerNamed(e.getKey()).orElseThrow(() -> notFound("Unknown instance '%s'.".formatted(e.getKey())));
+            final var query = new StringJoiner("&");
+            e.getValue().forEach(ref -> query.add("id=" + encode(ref.toString())));
+            final var har = peerJson(peer, "/exchanges/export?" + query);
+            har.path("log").path("entries").forEach(entry -> entries.add((ObjectNode) entry));
+        }
+        return entries;
+    }
+
+    private CallToolsResource.Diff diff(ApiRequest req) throws Exception {
+        final var left = CallToolsResource.Ref.message(req.param("left").orElseThrow(() -> badRequest("Query parameter 'left' is required.")));
+        final var right = CallToolsResource.Ref.message(req.param("right").orElseThrow(() -> badRequest("Query parameter 'right' is required.")));
+        return CallToolsResource.diff(left, side(left), right, side(right));
+    }
+
+    private CallToolsResource.Side side(CallToolsResource.Ref ref) throws Exception {
+        if (ctx.instanceName().equals(ref.instance()))
+            return tools.localSide(ref);
+        final var peer = peerNamed(ref.instance()).orElseThrow(() -> notFound("Unknown instance '%s'.".formatted(ref.instance())));
+        final var base = "/exchanges/" + encode(ref.instance()) + "/" + ref.id() + "/" + ref.message();
+        final var headers = peerJson(peer, base + "/headers");
+        final var body = peerJson(peer, base + "/body/formatted?maxBytes=1048576");
+        final var list = new ArrayList<ExchangesResource.HeaderEntry>();
+        headers.path("headers").forEach(h -> list.add(new ExchangesResource.HeaderEntry(h.path("name").asText(), h.path("value").asText())));
+        return new CallToolsResource.Side(headers.path("startLine").asText(), list, body.path("format").asText(), body.path("text").asText());
+    }
+
+    /**
+     * GET on a peer's admin API; errors of the peer are passed on.
+     */
+    private JsonNode peerJson(AdminConsolePeer peer, String pathAndQuery) throws Exception {
+        final PeerResponse res;
+        try {
+            res = client.send(peer, "GET", AdminApiV1Interceptor.PREFIX + pathAndQuery, null, null, FORWARD_TIMEOUT).get();
+        } catch (ExecutionException e) {
+            throw new ApiException(502, "Bad gateway.", "The instance '%s' is not reachable.".formatted(label(peer)));
+        }
+        if (res.status() != 200)
+            throw new ApiException(res.status() == 404 ? 404 : 502, res.status() == 404 ? "Not found." : "Bad gateway.",
+                    "%s answered %d: %s".formatted(label(peer), res.status(), String.valueOf(problemDetail(res.body()))));
+        return MAPPER.readTree(res.body());
     }
 
     private ObjectNode page(Route route, ApiRequest req, Principal principal, String rawPath) throws Exception {

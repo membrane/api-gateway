@@ -5,6 +5,7 @@ import { ApisPage } from "./pages/ApisPage";
 import { CallsPage } from "./pages/CallsPage";
 import { CallDetailPage } from "./pages/CallDetailPage";
 import { SystemPage } from "./pages/SystemPage";
+import { DiffPage } from "./pages/DiffPage";
 import { ErrorBox } from "./components/ErrorBox";
 
 const TABS = [
@@ -55,6 +56,8 @@ function page(segments: string[]) {
       return <ApisPage />;
     case "system":
       return <SystemPage />;
+    case "diff":
+      return <DiffPage />;
     default:
       return <p>Page not found.</p>;
   }

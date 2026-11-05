@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { api, path, url, type ExchangeDetail, type Header } from "../api/client";
+import { api, ApiError, path, url, type ExchangeDetail, type Header, type Principal } from "../api/client";
 import { useLoad } from "../hooks";
 import { ErrorBox } from "../components/ErrorBox";
 import { href } from "../router";
@@ -40,8 +40,115 @@ export function CallDetailPage({ instance, id }: { instance: string; id: string 
       </div>
       <MessageView key={message} instance={instance} id={id} message={message} />
       <Curl instance={instance} id={id} />
+      <Replay instance={instance} id={id} exchange={e} />
     </section>
   );
+}
+
+interface ReplayResult {
+  url: string;
+  statusCode: number;
+  statusMessage?: string | null;
+  durationMillis: number;
+  headers: Header[];
+  body: { format: string; text: string; truncated: boolean };
+}
+
+/**
+ * Sends the recorded request again, optionally changed. Only offered when the caller may change state.
+ */
+function Replay({ instance, id, exchange }: { instance: string; id: string; exchange?: ExchangeDetail }) {
+  const me = useLoad((signal) => api.get<Principal>("/auth/me", undefined, signal), []);
+  const [open, setOpen] = useState(false);
+  const [target, setTarget] = useState<"gateway" | "backend">("gateway");
+  const [method, setMethod] = useState("");
+  const [requestPath, setRequestPath] = useState("");
+  const [headers, setHeaders] = useState("");
+  const [body, setBody] = useState("");
+  const [result, setResult] = useState<ReplayResult>();
+  const [error, setError] = useState<ApiError>();
+  const [sending, setSending] = useState(false);
+
+  if (!me.data || me.data.readOnly || !exchange) return null;
+
+  const start = async () => {
+    setOpen(true);
+    setMethod(exchange.method ?? "GET");
+    setRequestPath(exchange.path ?? "/");
+    const h = await api.get<{ headers: Header[] }>(path("exchanges", instance, id, "request", "headers"));
+    setHeaders(h.headers.map((x) => `${x.name}: ${x.value}`).join("\n"));
+    const b = await api.get<{ format: string; text: string }>(path("exchanges", instance, id, "request", "body", "formatted"));
+    setBody(b.format === "empty" || b.format === "binary" ? "" : b.text);
+  };
+
+  const send = async () => {
+    setSending(true);
+    setError(undefined);
+    setResult(undefined);
+    try {
+      setResult(await api.post<ReplayResult>(path("exchanges", instance, id, "replay"), {
+        target,
+        method,
+        path: requestPath,
+        headers: parseHeaders(headers),
+        body,
+      }));
+    } catch (e) {
+      setError(e instanceof ApiError ? e : new ApiError(0, String(e)));
+    } finally {
+      setSending(false);
+    }
+  };
+
+  if (!open) return <p><button className="button" onClick={start}>Replay…</button></p>;
+
+  return (
+    <div className="card replay">
+      <h2>Replay</h2>
+      <div className="filters">
+        <label>
+          Send to
+          <select value={target} onChange={(e) => setTarget(e.target.value as "gateway" | "backend")}>
+            <option value="gateway">gateway (runs through the API)</option>
+            <option value="backend">backend (directly)</option>
+          </select>
+        </label>
+        <label>Method <input value={method} onChange={(e) => setMethod(e.target.value)} size={8} /></label>
+        <label className="grow">Path <input value={requestPath} onChange={(e) => setRequestPath(e.target.value)} /></label>
+      </div>
+      <label className="block">Header fields (one per line)<textarea rows={6} value={headers} onChange={(e) => setHeaders(e.target.value)} /></label>
+      <label className="block">Body<textarea rows={8} value={body} onChange={(e) => setBody(e.target.value)} /></label>
+      <p>
+        <button className="button primary" onClick={send} disabled={sending}>{sending ? "Sending…" : "Send"}</button>{" "}
+        <button className="link" onClick={() => setOpen(false)}>Close</button>
+      </p>
+      {error && <ErrorBox error={error} />}
+      {result && (
+        <div>
+          <p>
+            <span className={"status " + statusClass(result.statusCode)}>{result.statusCode}</span> {result.statusMessage} in {result.durationMillis} ms from <code>{result.url}</code>
+          </p>
+          <table className="headers">
+            <tbody>
+              {result.headers.map((h, i) => <tr key={i}><th scope="row">{h.name}</th><td><code>{h.value}</code></td></tr>)}
+            </tbody>
+          </table>
+          {result.body.format !== "empty" && <pre className="body">{result.body.text}</pre>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Parses "Name: value" lines; lines without a colon are ignored. */
+export function parseHeaders(text: string): Header[] {
+  return text
+    .split(/\r?\n/)
+    .map((line) => {
+      const colon = line.indexOf(":");
+      return colon < 1 ? null : { name: line.slice(0, colon).trim(), value: line.slice(colon + 1).trim() };
+    })
+    .filter((h): h is Header => h !== null && h.name !== "");
 }
 
 function MessageView({ instance, id, message }: { instance: string; id: string; message: Message }) {

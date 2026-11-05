@@ -132,6 +132,46 @@ details { margin-top: 16px; }
 .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
 
+.toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+.toolbar .spacer { flex: 1; }
+.button.disabled { opacity: .5; pointer-events: none; }
+.button.primary { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.link { background: none; border: 0; padding: 0; color: var(--accent); cursor: pointer; font: inherit; }
+.link.muted { color: var(--muted); }
+.menu { position: relative; margin: 0; }
+.menu summary { list-style: none; }
+.menu summary::-webkit-details-marker { display: none; }
+.menu-body {
+  position: absolute;
+  z-index: 10;
+  margin-top: 4px;
+  min-width: 220px;
+  padding: 8px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 15%);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.menu-body ul { list-style: none; margin: 0; padding: 0; }
+.menu-body label.toggle { display: flex; gap: 6px; align-items: center; }
+tr.selected td { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+
+.replay { margin-top: 16px; }
+.replay textarea { width: 100%; font-family: var(--mono); font-size: 13px; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; }
+label.block { display: flex; flex-direction: column; gap: 4px; color: var(--muted); font-size: 12px; margin-bottom: 8px; }
+.filters label.grow { flex: 1; min-width: 200px; }
+.filters label.grow input { width: 100%; }
+
+pre.diff span { display: block; }
+.diff-add { color: var(--ok); background: color-mix(in srgb, var(--ok) 10%, transparent); }
+.diff-del { color: var(--error); background: color-mix(in srgb, var(--error) 10%, transparent); }
+.diff-hunk { color: var(--muted); }
+.diff-file { font-weight: 600; }
+td.absent code { color: var(--muted); font-style: italic; }
+
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 
 @media (max-width: 640px) {

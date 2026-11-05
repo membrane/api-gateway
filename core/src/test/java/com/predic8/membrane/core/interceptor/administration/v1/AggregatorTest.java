@@ -192,6 +192,23 @@ class AggregatorTest {
     }
 
     @Test
+    void exportsHarAcrossInstances() throws Exception {
+        final var res = get("/exchanges/export?id=node-a/%d&id=node-b/%d".formatted(a1, b1));
+        assertEquals(200, res.statusCode(), res.body());
+        final var entries = om.readTree(res.body()).get("log").get("entries");
+        assertEquals(2, entries.size());
+        assertEquals("node-a", entries.get(0).get("_instance").asText());
+        assertEquals("node-b", entries.get(1).get("_instance").asText());
+        assertEquals("response of /b1", entries.get(1).get("response").get("content").get("text").asText());
+    }
+
+    @Test
+    void comparesMessagesOfDifferentInstances() throws Exception {
+        final var diff = getJson("/exchanges/diff?left=node-a/%d/response&right=node-b/%d/response".formatted(a1, b1));
+        assertTrue(diff.get("body").get("unifiedDiff").asText().contains("-response of /a1\n+response of /b1\n"), diff.toString());
+    }
+
+    @Test
     void invalidPeerUrlIsAConfigurationError() {
         final var api = new AdminApiV1Interceptor();
         api.setPeers(List.of(peer("node-b:9000", null)));

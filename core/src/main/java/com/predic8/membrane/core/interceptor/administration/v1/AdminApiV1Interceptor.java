@@ -100,7 +100,15 @@ public class AdminApiV1Interceptor extends AbstractInterceptor {
         /**
          * The {@code /instances} list.
          */
-        INSTANCES
+        INSTANCES,
+        /**
+         * HAR export: the exchanges are fetched from the instances they belong to.
+         */
+        HAR,
+        /**
+         * Comparison of two messages that may belong to different instances.
+         */
+        DIFF
     }
 
     record Merge(Kind kind, String field, String defaultSort, String defaultOrder) {
@@ -127,16 +135,17 @@ public class AdminApiV1Interceptor extends AbstractInterceptor {
         super.init();
         final var ctx = new ConsoleContext(router, instanceName != null ? instanceName : defaultInstanceName(),
                 readOnly, useXForwardedForAsClientAddr, System.currentTimeMillis());
-        routes = routes(ctx);
+        final var exchanges = new ExchangesResource(ctx);
+        final var tools = new CallToolsResource(ctx, exchanges);
+        routes = routes(ctx, exchanges, tools);
         for (final var peer : peers)
             if (peer.getUrl() == null || !peer.getUrl().matches("(?i)https?://.+"))
                 throw new ConfigurationException("The url of an adminConsole peer must start with http:// or https://, but was: " + peer.getUrl());
-        aggregator = peers.isEmpty() ? null : new Aggregator(ctx, peers, new PeerClient());
+        aggregator = peers.isEmpty() ? null : new Aggregator(ctx, peers, new PeerClient(), tools);
     }
 
-    private static List<Route> routes(ConsoleContext ctx) {
+    private static List<Route> routes(ConsoleContext ctx, ExchangesResource exchanges, CallToolsResource tools) {
         final var apis = new ApisResource(ctx);
-        final var exchanges = new ExchangesResource(ctx);
         final var monitoring = new MonitoringResource(ctx);
         final var balancers = new BalancersResource(ctx);
         final var api = "/apis/" + SEGMENT + "/" + SEGMENT;
@@ -165,8 +174,8 @@ public class AdminApiV1Interceptor extends AbstractInterceptor {
         r.add(collection("/exchanges", new Merge(PAGE, "exchanges", "time", "desc"), exchanges::list));
         r.add(collection("/exchanges/facets", new Merge(FACETS, null, null, null), exchanges::facets));
         r.add(collection("/exchanges/store", new Merge(CONCAT, "stores", null, null), exchanges::stores));
-        r.add(notImplemented("GET", "/exchanges/export", "HAR export is not available yet."));
-        r.add(notImplemented("GET", "/exchanges/diff", "Comparing exchanges is not available yet."));
+        r.add(collection("/exchanges/export", new Merge(HAR, null, null, null), tools::export));
+        r.add(collection("/exchanges/diff", new Merge(DIFF, null, null, null), tools::diff));
         r.add(instance("GET", exchange, READ, exchanges::get));
         r.add(instance("GET", message + "/headers", READ, exchanges::headers));
         r.add(instance("GET", message + "/raw", READ, exchanges::raw));
@@ -174,7 +183,7 @@ public class AdminApiV1Interceptor extends AbstractInterceptor {
         r.add(instance("GET", message + "/body/formatted", READ, exchanges::formatted));
         r.add(instance("GET", exchange + "/curl", READ, exchanges::curl));
         r.add(notImplemented("GET", exchange + "/frames", "WebSocket frames are not recorded yet."));
-        r.add(notImplemented("POST", exchange + "/replay", "Replay is not available yet."));
+        r.add(instance("POST", exchange + "/replay", ADMIN, tools::replay));
 
         r.add(collection("/statistics/apis", new Merge(CONCAT, "apis", null, null), monitoring::apiStatistics));
         r.add(collection("/statistics/clients", new Merge(PAGE, "clients", "client", "asc"), monitoring::clientStatistics));
