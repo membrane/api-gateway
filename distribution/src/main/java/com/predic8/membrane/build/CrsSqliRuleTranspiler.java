@@ -134,7 +134,9 @@ public class CrsSqliRuleTranspiler {
         List<ObjectNode> rules = new ArrayList<>();
         ObjectNode pendingChain = null; // a rule awaiting its chained second condition
 
-        Matcher directives = DIRECTIVE.matcher(CONTINUATION.matcher(conf).replaceAll(""));
+        // A Windows checkout (core.autocrlf=true) has CRLF line endings, which CONTINUATION would not join.
+        final var lfConf = conf.replace("\r\n", "\n");
+        Matcher directives = DIRECTIVE.matcher(CONTINUATION.matcher(lfConf).replaceAll(""));
         while (directives.find()) {
             String directive = directives.group();
             Matcher op = OPERATOR.matcher(directive);
