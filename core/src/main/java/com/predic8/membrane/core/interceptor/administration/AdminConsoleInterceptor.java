@@ -49,10 +49,18 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 
 	private boolean useXForwardedForAsClientAddr = false;
 
+	/**
+	 * The new web UI, packaged separately (module admin-ui). Without it on the classpath only the old UI is served.
+	 */
+	static final String CONSOLE_INDEX = "/com/predic8/membrane/core/interceptor/administration/docBase/console/index.html";
+
 	public AdminConsoleInterceptor() {
 		name = "administration";
-		rewriteInterceptor.getMappings().add(new RewriteInterceptor.Mapping("^/?$", "/admin", "redirect"));
+		final var hasConsole = AdminConsoleInterceptor.class.getResource(CONSOLE_INDEX) != null;
+		rewriteInterceptor.getMappings().add(new RewriteInterceptor.Mapping("^/?$", hasConsole ? "/console/" : "/admin", "redirect"));
+		rewriteInterceptor.getMappings().add(new RewriteInterceptor.Mapping("^/console$", "/console/", "redirect"));
 		wsi.setDocBase("classpath:/com/predic8/membrane/core/interceptor/administration/docBase");
+		wsi.setIndex("index.html");
 	}
 
 	@Override

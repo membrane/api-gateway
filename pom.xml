@@ -64,6 +64,7 @@
 	<modules>
 		<module>annot</module>
 		<module>core</module>
+		<module>admin-ui</module>
 		<module>distribution</module>
 		<module>war</module>
 		<module>test</module>
@@ -93,6 +94,11 @@
 			<dependency>
 				<groupId>org.membrane-soa</groupId>
 				<artifactId>service-proxy-core</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.membrane-soa</groupId>
+				<artifactId>service-proxy-admin-ui</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>

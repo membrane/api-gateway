@@ -1,0 +1,28 @@
+{
+  "name": "membrane-admin-ui",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Web UI of the Membrane adminConsole, served under /console/",
+  "license": "Apache-2.0",
+  "scripts": {
+    "generate": "openapi-typescript ../core/src/main/resources/com/predic8/membrane/core/interceptor/administration/api/admin-api-v1.yaml -o src/api/schema.d.ts",
+    "dev": "npm run generate && vite",
+    "build": "npm run generate && tsc --noEmit && vite build",
+    "test": "npm run generate && vitest run"
+  },
+  "dependencies": {
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "18.3.12",
+    "@types/react-dom": "18.3.1",
+    "@vitejs/plugin-react": "4.3.4",
+    "jsdom": "25.0.1",
+    "openapi-typescript": "7.4.4",
+    "typescript": "5.6.3",
+    "vite": "5.4.11",
+    "vitest": "2.1.8"
+  }
+}

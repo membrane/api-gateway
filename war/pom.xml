@@ -35,6 +35,10 @@
             <groupId>org.membrane-soa</groupId>
             <artifactId>service-proxy-core</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.membrane-soa</groupId>
+            <artifactId>service-proxy-admin-ui</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>jakarta.servlet</groupId>
