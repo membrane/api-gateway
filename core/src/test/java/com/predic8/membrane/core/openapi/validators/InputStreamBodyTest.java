@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -47,6 +48,34 @@ public class InputStreamBodyTest {
         final var in = new CloseFlagStream("foo");
         new InputStreamBody(in).asBytes();
         assertTrue(in.closed);
+    }
+
+    @Test
+    void asStringClosesTheStreamWhenReadingFails() {
+        final var in = new FailingStream();
+        assertThrows(IOException.class, () -> new InputStreamBody(in).asString());
+        assertTrue(in.closed);
+    }
+
+    @Test
+    void asBytesClosesTheStreamWhenReadingFails() {
+        final var in = new FailingStream();
+        assertThrows(IOException.class, () -> new InputStreamBody(in).asBytes());
+        assertTrue(in.closed);
+    }
+
+    private static class FailingStream extends InputStream {
+        boolean closed;
+
+        @Override
+        public int read() throws IOException {
+            throw new IOException("read failed");
+        }
+
+        @Override
+        public void close() {
+            closed = true;
+        }
     }
 
     private static class CloseFlagStream extends ByteArrayInputStream {

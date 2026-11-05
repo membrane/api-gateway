@@ -32,7 +32,8 @@ class JSONBody extends AbstractXmlElement {
 	@Override
 	public void write(XMLStreamWriter out) throws XMLStreamException {
 		out.writeAttribute("type", "json");
-		try (final var jp = new JsonFactory().createParser(msg.getBodyAsStreamDecoded())) {
+		try (final var body = msg.getBodyAsStreamDecoded();
+			 final var jp = new JsonFactory().createParser(body)) {
 			final List<String> stack = new ArrayList<>();
 			String name = "root";
 			OUTER:

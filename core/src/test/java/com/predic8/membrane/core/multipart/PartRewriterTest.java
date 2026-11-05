@@ -124,7 +124,6 @@ class PartRewriterTest {
         assertThrows(IOException.class, () -> PartRewriter.rebuild(message, Map.of(0, injected)));
     }
 
-    /** Reads the rebuilt body back as a message, so it can be split again. */
     @Test
     void closesTheDecodedStream() throws Exception {
         final var request = new CloseTrackingRequest("multipart/form-data; boundary=" + BOUNDARY,
@@ -133,6 +132,17 @@ class PartRewriterTest {
         assertTrue(request.allStreamsClosed());
     }
 
+    @Test
+    void closesTheDecodedStreamWhenRebuildingFails() throws Exception {
+        final var request = new CloseTrackingRequest("multipart/form-data; boundary=" + BOUNDARY,
+                "--" + BOUNDARY + "\r\n" + part("data", "application/xml", "<foo/>") + "\r\n--" + BOUNDARY + "--\r\n");
+        final var injected = ("<foo/>\r\n--" + BOUNDARY + "--").getBytes(UTF_8);
+
+        assertThrows(IOException.class, () -> PartRewriter.rebuild(request, Map.of(0, injected)));
+        assertTrue(request.allStreamsClosed());
+    }
+
+    /** Reads the rebuilt body back as a message, so it can be split again. */
     private static Message rebuiltFrom(Message message, Map<Integer, byte[]> replacements) throws Exception {
         return multipartMessage(PartRewriter.rebuild(message, replacements));
     }

@@ -127,6 +127,15 @@ public class LimitInterceptor extends AbstractInterceptor {
 			this.is = is;
 		}
 
+		/** A failed read ends the body, so the decoder is released here; a failure to close is kept as suppressed. */
+		private void closeAfterFailure(IOException failure) {
+			try {
+				is.close();
+			} catch (IOException e) {
+				failure.addSuppressed(e);
+			}
+		}
+
 		private void checkPosition() throws IOException {
 			if (pos > maxBodyLength) {
 				log.info("Message length >= {} exceeded limit {}.",pos,maxBodyLength);
@@ -137,7 +146,13 @@ public class LimitInterceptor extends AbstractInterceptor {
 
 		@Override
 		public int read() throws IOException {
-			int i = is.read();
+			int i;
+			try {
+				i = is.read();
+			} catch (IOException e) {
+				closeAfterFailure(e);
+				throw e;
+			}
 			if (i == -1) {
 				is.close();
 				return i;
@@ -149,7 +164,13 @@ public class LimitInterceptor extends AbstractInterceptor {
 
 		@Override
 		public int read(byte[] b) throws IOException {
-			int l = is.read(b);
+			int l;
+			try {
+				l = is.read(b);
+			} catch (IOException e) {
+				closeAfterFailure(e);
+				throw e;
+			}
 			if (l == -1) {
 				is.close();
 				return l;
@@ -161,7 +182,13 @@ public class LimitInterceptor extends AbstractInterceptor {
 
 		@Override
 		public int read(byte[] b, int off, int len) throws IOException {
-			int l = is.read(b, off, len);
+			int l;
+			try {
+				l = is.read(b, off, len);
+			} catch (IOException e) {
+				closeAfterFailure(e);
+				throw e;
+			}
 			if (l == -1) {
 				is.close();
 				return l;
