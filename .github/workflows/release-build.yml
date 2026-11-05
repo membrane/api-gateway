@@ -143,3 +143,27 @@ jobs:
             --ref "$BASE_REF" \
             --field tag="$RELEASE_TAG" \
             --field latest=false
+
+  # Same reason and setup as trigger-docker: 'release: published' does not fire
+  # for a release created with GITHUB_TOKEN, so maven-publish.yml is dispatched
+  # on the base branch with the release tag as input.
+  trigger-maven-central:
+    needs: build-release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - name: Trigger Maven Central publishing
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          BASE_REF: ${{ github.base_ref }}
+          RELEASE_TAG: ${{ github.head_ref }}
+        run: |
+          set -euo pipefail
+          gh workflow run maven-publish.yml \
+            --repo "$REPO" \
+            --ref "$BASE_REF" \
+            --field tag="$RELEASE_TAG"
