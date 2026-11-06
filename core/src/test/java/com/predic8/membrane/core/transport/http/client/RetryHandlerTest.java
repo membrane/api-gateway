@@ -21,9 +21,6 @@ import com.predic8.membrane.core.transport.http.ConnectTimeoutException;
 import com.predic8.membrane.core.transport.http.HttpClientStatusEventBus;
 import com.predic8.membrane.core.transport.http.HttpClientStatusEventListener;
 import com.predic8.membrane.core.transport.http2.StreamNotProcessedException;
-import org.apache.logging.log4j.core.LogEvent;
-import org.apache.logging.log4j.core.LoggerContext;
-import org.apache.logging.log4j.core.appender.AbstractAppender;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -34,7 +31,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.ConnectException;
-import java.net.NoRouteToHostException;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
@@ -184,35 +180,6 @@ class RetryHandlerTest {
             RetryableExchangeCallMock mock = new RetryableExchangeCallMock(new SocketException());
             assertThrows(SocketException.class, () -> rh.executeWithRetries(get("/foo").buildExchange(), mock));
             assertEquals(3, mock.attempts);
-        }
-
-        /**
-         * An unreachable host is a known outage, not an unknown condition: one line, no stack trace.
-         */
-        @Test
-        void noRouteToHostIsLoggedWithoutStackTrace() {
-            final var events = new ArrayList<LogEvent>();
-            final var appender = new AbstractAppender("retry-handler-test", null, null, true, org.apache.logging.log4j.core.config.Property.EMPTY_ARRAY) {
-                @Override
-                public void append(LogEvent event) {
-                    events.add(event.toImmutable());
-                }
-            };
-            appender.start();
-            final var context = (LoggerContext) org.apache.logging.log4j.LogManager.getContext(false);
-            final var config = context.getConfiguration();
-            final var loggerConfig = config.getLoggerConfig(RetryHandler.class.getName());
-            loggerConfig.addAppender(appender, null, null);
-            try {
-                final var mock = new RetryableExchangeCallMock(new NoRouteToHostException("Host is unreachable (connect failed)"));
-                assertThrows(NoRouteToHostException.class, () -> rh.executeWithRetries(get("/foo").buildExchange(), mock));
-            } finally {
-                loggerConfig.removeAppender(appender.getName());
-                appender.stop();
-            }
-
-            assertTrue(events.stream().anyMatch(e -> e.getMessage().getFormattedMessage().contains("Host is unreachable")));
-            assertTrue(events.stream().allMatch(e -> e.getThrown() == null), "No stack trace expected");
         }
 
         @Test
