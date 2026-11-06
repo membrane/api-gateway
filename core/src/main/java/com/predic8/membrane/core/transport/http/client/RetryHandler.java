@@ -258,6 +258,9 @@ public class RetryHandler {
                 log.debug("Connection to {} was aborted externally.", dest);
             } else if (message.contains("reset")) {
                 log.debug("Connection to {} was reset externally.", dest);
+            } else if (e instanceof NoRouteToHostException) {
+                // A known outage (no route, firewall, host down), not an unknown condition: no stack trace.
+                log.warn("No route to {}: {}", dest, e.getMessage());
             } else {
                 logException(exc, attempt, e);
                 log.info("Unexpected SocketException: {}", e.getMessage(), e); // Unknown condition => log stacktrace
