@@ -20,6 +20,7 @@ import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
+import java.util.*;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -76,6 +77,19 @@ class LimitInterceptorTest {
         final var exc = exchangeOf(request);
         li.handleRequest(exc);
         assertThrows(Exception.class, request::readBody);
+        assertTrue(request.allStreamsClosed());
+    }
+
+    @Test
+    void truncatedGzipClosesTheDecodedStream() throws Exception {
+        final var limit = new LimitInterceptor();
+        limit.setMaxBodyLength(1000);
+        final var request = new CloseTrackingRequest("text/plain", "a".repeat(100));
+        final var gzip = request.getBody().getContent();
+        request.setBody(new Body(Arrays.copyOf(gzip, gzip.length - 8)));
+        final var exc = exchangeOf(request);
+        limit.handleRequest(exc);
+        assertThrows(ReadingBodyException.class, request::readBody);
         assertTrue(request.allStreamsClosed());
     }
 

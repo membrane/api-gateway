@@ -18,6 +18,7 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Body;
 import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.ReadingBodyException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -128,7 +129,7 @@ public class LimitInterceptor extends AbstractInterceptor {
 		}
 
 		/** A failed read ends the body, so the decoder is released here; a failure to close is kept as suppressed. */
-		private void closeAfterFailure(IOException failure) {
+		private void closeAfterFailure(Exception failure) {
 			try {
 				is.close();
 			} catch (IOException e) {
@@ -149,7 +150,7 @@ public class LimitInterceptor extends AbstractInterceptor {
 			int i;
 			try {
 				i = is.read();
-			} catch (IOException e) {
+			} catch (IOException | ReadingBodyException e) {
 				closeAfterFailure(e);
 				throw e;
 			}
@@ -167,7 +168,7 @@ public class LimitInterceptor extends AbstractInterceptor {
 			int l;
 			try {
 				l = is.read(b);
-			} catch (IOException e) {
+			} catch (IOException | ReadingBodyException e) {
 				closeAfterFailure(e);
 				throw e;
 			}
@@ -185,7 +186,7 @@ public class LimitInterceptor extends AbstractInterceptor {
 			int l;
 			try {
 				l = is.read(b, off, len);
-			} catch (IOException e) {
+			} catch (IOException | ReadingBodyException e) {
 				closeAfterFailure(e);
 				throw e;
 			}
