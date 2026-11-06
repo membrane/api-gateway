@@ -1,11 +1,13 @@
 name: unit-tests
 
 # Unit tests only (Surefire, `mvn test`) on every push, on free GitHub-hosted runners.
+# Pull requests from forks are tested too, since pushes to a fork don't trigger workflows here.
 # Integration and example tests run on demand with /testit or /testmerge (build-and-test-warp).
 
 on:
   push:
     branches: [ '**' ]
+  pull_request:
 
 permissions:
   contents: read
@@ -19,6 +21,8 @@ env:
 
 jobs:
   unit-tests:
+    # Branches of this repository are already tested by the push event; run PRs only when they come from a fork.
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:

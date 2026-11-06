@@ -184,9 +184,17 @@ jobs:
           else
             state=failure; desc="Tests failed (linux: $LINUX, windows: $WINDOWS)"; reaction=-1
           fi
-          gh api -X POST "repos/$REPO/statuses/$SHA" --silent \
-            -f state="$state" -f context="build-and-test-warp/$MODE" \
-            -f description="$desc" -f target_url="$RUN_URL"
+          # Only the run that owns the status may set the final result. A newer command for the
+          # same commit and mode re-points the pending status to its own run; a superseded run stays silent.
+          export CTX="build-and-test-warp/$MODE"
+          owner=$(gh api "repos/$REPO/commits/$SHA/status?per_page=100" --jq '.statuses[] | select(.context == env.CTX) | .target_url')
+          if [ "$owner" = "$RUN_URL" ]; then
+            gh api -X POST "repos/$REPO/statuses/$SHA" --silent \
+              -f state="$state" -f context="$CTX" \
+              -f description="$desc" -f target_url="$RUN_URL"
+          else
+            echo "Status $CTX now belongs to $owner; not overwriting it."
+          fi
           if [ "$EVENT" = "issue_comment" ]; then
             gh api -X POST "repos/$REPO/issues/comments/$COMMENT_ID/reactions" -f content="$reaction" --silent
           fi
