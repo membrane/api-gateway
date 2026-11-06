@@ -11,7 +11,7 @@ on:
         default: ''
 jobs:
   publish:
-    runs-on: warp-ubuntu-2404-x64-4x
+    runs-on: ubuntu-latest
     steps:
       # Without this the workflow deploys whatever ${{ github.ref }} points at,
       # so dispatching it on a branch deploys that branch's SNAPSHOT to Maven
