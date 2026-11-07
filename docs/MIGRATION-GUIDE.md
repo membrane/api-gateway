@@ -1,6 +1,19 @@
-# Migrate to Membrane 7.9
+# Migrate to Membrane 7.8.1
 
-See `distribution/release-notes/7.9.0.md` for the complete list of changes.
+See `distribution/release-notes/7.8.1.md` for the complete list of changes.
+
+## Admin console actions accept only POST
+
+Admin console actions that change the router, e.g. `/admin/service-proxy/save`, `/admin/proxy/delete`
+or `/admin/node/up`, answer `405` unless they use POST. Switch scripts that call them to POST and
+keep the parameters in the query string:
+
+```sh
+curl -X POST -u admin:membrane "localhost:9000/admin/node/down?balancer=Default&cluster=Default&host=node1.example.com&port=8080"
+```
+
+`node/up`, `node/down`, `node/takeout` and `node/reset` answer `404` for an unknown cluster or node
+instead of adding it. Add nodes with `node/save` or the `clusterNotification` plugin.
 
 ## Cluster manager accepts only POST
 
@@ -20,6 +33,54 @@ the request reached Membrane with. If a reverse proxy or servlet container termi
 of Membrane, let it set `X-Forwarded-Proto: https`. If it rewrites `Host`, let it set
 `X-Forwarded-Host` to the original host. Otherwise browsers that send `Origin` but no
 `Sec-Fetch-Site` get `403` when they change state.
+
+## JSON validation
+
+This affects the JSON Schema `validator`, `openapi` validation and `jsonRPCProtection`:
+
+- A body with data after the first JSON value, e.g. `{"a":1}{"b":2}` or JSON Lines/NDJSON, is
+  rejected.
+- JSON bodies are read as UTF-8 (or UTF-16/32), and the `charset` of the Content-Type is ignored. A
+  body encoded e.g. as ISO-8859-1 with non-ASCII characters is rejected as invalid JSON.
+
+Errors of the JSON Schema `validator` no longer contain `node`; use `pointer` to locate the error.
+At most 10 errors are reported, plus `"errorsTruncated": true` if there are more.
+
+## OpenAPI validation
+
+- `minimum`, `maximum`, `exclusiveMinimum`, `exclusiveMaximum` and `multipleOf` apply only to
+  numbers. Query parameters, form fields and XML values without a `type` are strings and are no
+  longer checked against them; declare `type: integer` or `type: number`.
+- `multipart/form-data`: a part with a media range as Content-Type (`application/*`) is rejected.
+  An object or array part sent as e.g. `text/plain` is rejected unless the `encoding` of the part
+  declares that Content-Type.
+- XML bodies: with `additionalProperties: false`, attributes and child elements that no property
+  maps to are rejected instead of dropped.
+
+## `xmlProtection` rejects entity declarations
+
+A `DOCTYPE` that declares an entity, also an internal one like `<!ENTITY e "x">`, is rejected,
+whatever `removeDTD` is set to. Clients have to send such documents without entity declarations.
+
+## Plugins
+
+- `javascript` with GraalVM: objects created by a script can't be used after it has finished.
+  Store them as strings, e.g. `property.put('order', JSON.stringify(order))`.
+- `javascript` with Rhino: whole numbers created in the script are passed to Java as floating point
+  numbers: `({id: 7})` sets the body to `{"id":7.0}`. A syntax error now stops Membrane from
+  starting.
+- `javascript`: a script that ends with an array sets the body to that array. End it with
+  `CONTINUE` to leave the message unchanged.
+- `rhino-engine` (JSR 223) is no longer bundled. Add it to `lib` if custom code uses
+  `getEngineByName("rhino")`.
+- `soapBody`: values inserted with `${...}` are XML-escaped also with a non-XML `contentType`, so
+  XML markup in a string value is no longer inserted as markup.
+- `cors`: `allowAll` together with `credentials`, or an invalid origin, is a configuration error at
+  startup.
+- `llmGateway`: with policies or a user store, requests to endpoints the restrictions can't be
+  applied to, e.g. `/v1/embeddings`, are rejected with `400`.
+- `prometheus`: the `version` label of `membrane_info` contains the version as it is, e.g. `7.8.1`
+  instead of `__8_1`. Adapt queries and alerts that filter on it.
 
 # Migrate to Membrane 7.8
 

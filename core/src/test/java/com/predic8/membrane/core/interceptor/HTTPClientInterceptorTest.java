@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.interceptor;
 
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.lang.ExchangeExpression.Language;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
@@ -32,6 +33,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.SocketTimeoutException;
 import java.net.URISyntaxException;
@@ -157,6 +159,27 @@ class HTTPClientInterceptorTest {
         var exc = post("/foo").buildExchange();
         testExpression(SPEL, exc, "${'&?äöü!'}",
                 "%26%3F%C3%A4%C3%B6%C3%BC%21", Serialization.URL);
+    }
+
+    /**
+     * The request body could not be read, e.g. the client stopped sending or it exceeded a limit. That is
+     * not a backend problem, so it is left to the flow controller instead of becoming a 500 here.
+     */
+    @Test
+    void requestBodyFailureIsLeftToTheFlowController() throws Exception {
+        final var exc = post("http://example.com/").buildExchange();
+        final var failure = new ReadingBodyException(new IOException("Message body too large."), exc.getRequest());
+        final var hci = new HTTPClientInterceptor(new HttpClient() {
+            @Override
+            public void call(Exchange exc) {
+                throw failure;
+            }
+        });
+        hci.init(router);
+        exc.setProxy(new NullProxy());
+        exc.getDestinations().add("http://example.com/");
+
+        assertSame(failure, assertThrows(ReadingBodyException.class, () -> hci.handleRequest(exc)));
     }
 
     /**

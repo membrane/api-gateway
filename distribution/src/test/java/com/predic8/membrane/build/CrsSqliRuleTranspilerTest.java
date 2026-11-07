@@ -38,6 +38,15 @@ class CrsSqliRuleTranspilerTest {
         assertEquals("(?i)union[\\s\\x0b]+select", rule.get("regex").asText());
     }
 
+    /**
+     * A Windows checkout with core.autocrlf=true has CRLF line endings; line continuations must still be joined.
+     */
+    @Test
+    void crlfLineEndingsGiveSameRulesAsLf() {
+        final var lf = rule("(?i)union[\\s\\x0b]+select");
+        assertEquals(CrsSqliRuleTranspiler.transpile(lf), CrsSqliRuleTranspiler.transpile(lf.replace("\n", "\r\n")));
+    }
+
     @Test
     void rejectsRegexNotSupportedByRe2() {
         final var e = assertThrows(IllegalStateException.class,
