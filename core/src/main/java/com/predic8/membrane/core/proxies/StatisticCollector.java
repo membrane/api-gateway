@@ -126,6 +126,31 @@ public class StatisticCollector {
 		return goodCount == 0 ? "" : nf.format(((double)totalTime)/goodCount) + " ms";
 	}
 
+	/**
+	 * @return the shortest duration in milliseconds, or -1 if no exchange completed
+	 */
+	public int getMinTimeMillis() {
+		return minTime == Integer.MAX_VALUE ? -1 : minTime;
+	}
+
+	/**
+	 * @return the longest duration in milliseconds, or -1 if no exchange completed
+	 */
+	public int getMaxTimeMillis() {
+		return maxTime;
+	}
+
+	/**
+	 * @return the average duration in milliseconds, or -1 if no exchange completed
+	 */
+	public double getAvgTimeMillis() {
+		return goodCount == 0 ? -1 : ((double) totalTime) / goodCount;
+	}
+
+	public int getErrors() {
+		return errorCount;
+	}
+
 	public long getGoodTotalTime() {
 		return totalTime;
 	}
