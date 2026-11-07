@@ -29,7 +29,6 @@ import org.slf4j.LoggerFactory;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
 import static com.predic8.membrane.core.http.Header.RETRY_AFTER;
@@ -228,22 +227,23 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
         return getOneBeforeTrustworthyProxy(xForwardedFor, trustedProxyCount);
     }
 
+    /**
+     * Walks from the connection peer towards the client: as long as the address is a trusted proxy, the X-Forwarded-For
+     * entry it added is followed. The first address that is not a trusted proxy is the client. Entries left of it were
+     * written by the client and are ignored.
+     */
     private String getClientIPfromTrustedProxyList(Exchange exc, List<String> xForwardedFor) {
-        log.debug("Checking list of trusted proxies");
-        if (xForwardedFor.size() <= trustedProxyList.size()) {
-            log.info("Forwarded-For entries {} leave no client entry before the trusted proxies {}", xForwardedFor, trustedProxyList);
-            return useRemoteIpAddress(exc);
+        final var peer = exc.getRemoteAddrIp();
+        if (peer == null || !trustedProxyList.contains(peer)) {
+            log.debug("Peer {} is not a trusted proxy, ignoring X-Forwarded-For.", peer);
+            return peer;
         }
-        for (int i = 1; i <= trustedProxyList.size(); i++) {
-            String trustedProxy = trustedProxyList.get(trustedProxyList.size() - i);
-            String forwardedFor = xForwardedFor.get(xForwardedFor.size() - i);
-            log.debug("Checking proxy {} against {}", trustedProxy, forwardedFor);
-            if (!Objects.equals(trustedProxy, forwardedFor)) {
-                log.info("Trusted proxy {} is not in X-Forwarded-For list {}, or not on the right position.", trustedProxy, xForwardedFor);
-                return useRemoteIpAddress(exc);
-            }
+        for (final var address : xForwardedFor.reversed()) {
+            if (!trustedProxyList.contains(address))
+                return address;
         }
-        return getOneBeforeTrustworthyProxy(xForwardedFor, trustedProxyList.size());
+        log.debug("All addresses in X-Forwarded-For {} are trusted proxies, using the peer address.", xForwardedFor);
+        return peer;
     }
 
     private static String useRemoteIpAddress(Exchange exc) {
@@ -317,7 +317,10 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
     }
 
     /**
-     * @description Comma separated list of trusted proxy servers and loadbalancers. Used to evaluate the X-Forwarded-For header.
+     * @description Comma separated list of the IP addresses of trusted proxy servers and loadbalancers, including the
+     * one that connects to Membrane. Used to evaluate the X-Forwarded-For header: starting with the address of the
+     * connection, trusted addresses are skipped from the end of the header, and the first untrusted address is the
+     * client. If the connection does not come from a trusted address, its address is used and the header is ignored.
      * If both <b>trustedProxyList</b> and <b>trustedProxyCount</b> is specified, the trustedProxyList is used to
      * determine the client ip address. To make this configuration active set <pre>isTrustForwardedFor</pre> to true.
      * @default empty String

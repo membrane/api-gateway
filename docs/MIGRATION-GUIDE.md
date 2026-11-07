@@ -1,3 +1,22 @@
+# Migrate to Membrane 7.8.2
+
+## `rateLimiter`: `trustedProxyList` includes the connecting proxy
+
+`trustedProxyList` lists every trusted proxy, including the one that connects to Membrane. The
+`rateLimiter` uses `X-Forwarded-For` only for requests from an address in the list, and counts a
+request by the first address that is not in the list, searched from the end of the header.
+
+Before, the list had to match the end of `X-Forwarded-For` without the connecting proxy. If you
+configured it that way, add the address of the proxy in front of Membrane:
+
+```yaml
+rateLimiter:
+  trustForwardedFor: true
+  trustedProxyList: 10.0.0.1,10.0.0.2   # 10.0.0.2 connects to Membrane
+```
+
+Otherwise all requests are counted by the address of that proxy.
+
 # Migrate to Membrane 7.8.1
 
 See `distribution/release-notes/7.8.1.md` for the complete list of changes.
