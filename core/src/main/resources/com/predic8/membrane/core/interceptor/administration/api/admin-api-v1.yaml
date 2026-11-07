@@ -483,7 +483,7 @@ paths:
                         description: Per instance modification counter.
                         additionalProperties: { type: integer, format: int64 }
         '501':
-          description: The exchange store of at least one instance does not support a requested filter.
+          description: The exchange store does not support a requested filter. When several instances are queried, an instance that does not support it is reported in `instances` with status `unsupported` instead, and the others answer.
           content:
             application/problem+json:
               schema: { $ref: '#/components/schemas/Problem' }
@@ -818,7 +818,10 @@ paths:
                     type: object
                     properties:
                       format: { type: string }
-                      identical: { type: boolean }
+                      identical:
+                        type: boolean
+                        description: Whether the bodies are equal. Binary bodies are compared by a hash, only on the same instance; truncated bodies are never reported as equal.
+                      truncated: { type: boolean, description: "Whether a body was longer than the compared text (1 MiB)." }
                       unifiedDiff: { type: string, description: "Unified diff of the formatted bodies; empty if identical." }
         '404': { $ref: '#/components/responses/NotFound' }
         '4XX': { $ref: '#/components/responses/Problem' }

@@ -170,6 +170,8 @@ export function CallsPage() {
               <tr key={key(e)} className={selected.includes(key(e)) ? "selected" : undefined}>
                 <td>
                   <input type="checkbox" aria-label={`Select call ${e.id} of ${e.instance}`} checked={selected.includes(key(e))} onChange={() => toggleSelected(key(e))} />
+                  {/* Independent of the chosen columns, every call can be opened. */}
+                  {!columns.includes("time") && <a className="open" href={href(["calls", e.instance, e.id])} aria-label={`Open call ${e.id} of ${e.instance}`}>›</a>}
                 </td>
                 {visible.map((c) => <td key={c.id} className={c.num ? "num" : c.id === "path" ? "path" : undefined}>{c.cell(e)}</td>)}
               </tr>

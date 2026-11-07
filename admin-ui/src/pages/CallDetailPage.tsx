@@ -80,17 +80,33 @@ function Replay({ instance, id, exchange }: { instance: string; id: string; exch
   const [result, setResult] = useState<ReplayResult>();
   const [error, setError] = useState<ApiError>();
   const [sending, setSending] = useState(false);
+  // Send is enabled once the recorded header fields and body are loaded.
+  const [ready, setReady] = useState(false);
+  // The recorded body is sent unless the user edits it: the shown text may be pretty-printed, truncated or empty.
+  const [bodyEdited, setBodyEdited] = useState(false);
+  const [bodyNote, setBodyNote] = useState<string>();
 
   if (!me.data || me.data.readOnly || !exchange) return null;
 
   const start = async () => {
     setOpen(true);
+    setReady(false);
+    setError(undefined);
+    setBodyEdited(false);
     setMethod(exchange.method ?? "GET");
     setRequestPath(exchange.path ?? "/");
-    const h = await api.get<{ headers: Header[] }>(path("exchanges", instance, id, "request", "headers"));
-    setHeaders(h.headers.map((x) => `${x.name}: ${x.value}`).join("\n"));
-    const b = await api.get<{ format: string; text: string }>(path("exchanges", instance, id, "request", "body", "formatted"));
-    setBody(b.format === "empty" || b.format === "binary" ? "" : b.text);
+    try {
+      const h = await api.get<{ headers: Header[] }>(path("exchanges", instance, id, "request", "headers"));
+      setHeaders(h.headers.map((x) => `${x.name}: ${x.value}`).join("\n"));
+      const b = await api.get<{ format: string; text: string; truncated: boolean }>(path("exchanges", instance, id, "request", "body", "formatted"));
+      setBody(b.format === "empty" || b.format === "binary" ? "" : b.text);
+      setBodyNote(b.format === "binary" ? "The recorded binary body is sent unless you enter another body."
+        : b.truncated ? "Only the beginning of the body is shown. The recorded body is sent unless you edit it."
+        : undefined);
+      setReady(true);
+    } catch (e) {
+      setError(e instanceof ApiError ? e : new ApiError(0, String(e)));
+    }
   };
 
   const send = async () => {
@@ -103,7 +119,7 @@ function Replay({ instance, id, exchange }: { instance: string; id: string; exch
         method,
         path: requestPath,
         headers: parseHeaders(headers),
-        body,
+        body: bodyEdited ? body : undefined, // left out: the server sends the recorded body
       }));
     } catch (e) {
       setError(e instanceof ApiError ? e : new ApiError(0, String(e)));
@@ -129,9 +145,13 @@ function Replay({ instance, id, exchange }: { instance: string; id: string; exch
         <label className="grow">Path <input value={requestPath} onChange={(e) => setRequestPath(e.target.value)} /></label>
       </div>
       <label className="block">Header fields (one per line)<textarea rows={6} value={headers} onChange={(e) => setHeaders(e.target.value)} /></label>
-      <label className="block">Body<textarea rows={8} value={body} onChange={(e) => setBody(e.target.value)} /></label>
+      <label className="block">
+        Body {bodyEdited ? "(edited)" : "(sent as recorded unless edited)"}
+        <textarea rows={8} value={body} onChange={(e) => { setBody(e.target.value); setBodyEdited(true); }} />
+      </label>
+      {bodyNote && !bodyEdited && <p className="muted">{bodyNote}</p>}
       <p>
-        <button className="button primary" onClick={send} disabled={sending}>{sending ? "Sending…" : "Send"}</button>{" "}
+        <button className="button primary" onClick={send} disabled={sending || !ready}>{sending ? "Sending…" : "Send"}</button>{" "}
         <button className="link" onClick={() => setOpen(false)}>Close</button>
       </p>
       {error && <ErrorBox error={error} />}

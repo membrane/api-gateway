@@ -66,7 +66,7 @@ final class HarExport {
         final var node = MAPPER.createObjectNode();
         node.put("method", req.getMethod());
         final var host = req.getHeader().getHost();
-        node.put("url", "http://" + (host == null ? "localhost" : host) + req.getUri());
+        node.put("url", "%s://%s%s".formatted(MessageText.inboundScheme(exc), host == null ? "localhost" : host, req.getUri()));
         node.put("httpVersion", "HTTP/" + req.getVersion());
         node.putArray("cookies");
         node.set("headers", headers(req));

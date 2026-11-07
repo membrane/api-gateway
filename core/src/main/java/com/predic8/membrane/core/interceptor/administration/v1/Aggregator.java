@@ -232,7 +232,9 @@ final class Aggregator {
         final var body = peerJson(peer, base + "/body/formatted?maxBytes=1048576");
         final var list = new ArrayList<ExchangesResource.HeaderEntry>();
         headers.path("headers").forEach(h -> list.add(new ExchangesResource.HeaderEntry(h.path("name").asText(), h.path("value").asText())));
-        return new CallToolsResource.Side(headers.path("startLine").asText(), list, body.path("format").asText(), body.path("text").asText());
+        // No hash of a peer's binary body: such bodies are not reported as identical.
+        return new CallToolsResource.Side(headers.path("startLine").asText(), list, body.path("format").asText(),
+                body.path("text").asText(), body.path("truncated").asBoolean(), null);
     }
 
     /**

@@ -97,6 +97,15 @@ class MessageTextTest {
     }
 
     @Test
+    void curlUsesHttpsForTlsListenersAlsoForStoredExchanges() throws Exception {
+        final var exc = Request.get("/q").header("Host", "gw.example.com").buildExchange();
+        final var proxy = new com.predic8.membrane.core.exchange.snapshots.FakeProxy(443);
+        proxy.setInboundTls(true);
+        exc.setProxy(proxy);
+        assertTrue(MessageText.curl(exc, false).startsWith("curl 'https://gw.example.com/q'"));
+    }
+
+    @Test
     void curlKeepsGetWithBody() throws Exception {
         final var exc = new Request.Builder().method("GET").url(new com.predic8.membrane.core.util.URIFactory(), "/q")
                 .header("Host", "gw.example.com").contentType("text/plain").body("b").buildExchange();
