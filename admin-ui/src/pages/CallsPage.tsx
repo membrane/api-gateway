@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { api, ApiError, url, type ExchangeSummary, type Page } from "../api/client";
+import { api, ApiError, download, type ExchangeSummary, type Page } from "../api/client";
 import { ErrorBox, PartialResult } from "../components/ErrorBox";
 import { href, replaceParams, useRoute } from "../router";
 import { bytes, statusClass, time } from "../util/format";
@@ -206,7 +206,8 @@ function Toolbar(props: {
     save("calls.savedFilters", next);
   };
   const { selected } = props;
-  const exportUrl = url("/exchanges/export") + "?" + selected.map((s) => "id=" + encodeURIComponent(s)).join("&");
+  const exportPath = "/exchanges/export?" + selected.map((s) => "id=" + encodeURIComponent(s)).join("&");
+  const [exportError, setExportError] = useState<ApiError>();
   const [left, right] = selected;
 
   return (
@@ -249,9 +250,14 @@ function Toolbar(props: {
       </details>
       <span className="spacer" />
       {selected.length > 0 && <span className="muted">{selected.length} selected</span>}
-      <a className={"button" + (selected.length === 0 ? " disabled" : "")} aria-disabled={selected.length === 0} href={selected.length ? exportUrl : undefined} download>
+      <button
+        type="button"
+        className="button"
+        disabled={selected.length === 0}
+        onClick={() => download(exportPath).then(() => setExportError(undefined), setExportError)}
+      >
         Export HAR
-      </a>
+      </button>
       <a
         className={"button" + (selected.length !== 2 ? " disabled" : "")}
         aria-disabled={selected.length !== 2}
@@ -261,6 +267,7 @@ function Toolbar(props: {
         Compare
       </a>
       {selected.length > 0 && <button className="link" onClick={props.onClearSelection}>Clear</button>}
+      {exportError && <ErrorBox error={exportError} />}
     </div>
   );
 }
