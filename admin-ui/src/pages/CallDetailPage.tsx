@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api, path, url, type ExchangeDetail, type Header } from "../api/client";
+import { api, download, path, type ApiError, type ExchangeDetail, type Header } from "../api/client";
 import { useLoad } from "../hooks";
 import { ErrorBox } from "../components/ErrorBox";
 import { href } from "../router";
@@ -63,6 +63,7 @@ function MessageView({ instance, id, message }: { instance: string; id: string; 
     (signal) => api.get<{ format: string; text: string; truncated: boolean; originalLength?: number }>(base + "/body/formatted", undefined, signal),
     [base],
   );
+  const [downloadError, setDownloadError] = useState<ApiError>();
 
   if (headers.error) return <ErrorBox error={headers.error} />;
   return (
@@ -84,8 +85,9 @@ function MessageView({ instance, id, message }: { instance: string; id: string; 
         <>
           <div className="body-bar">
             <span className="muted">{body.data.format}, {bytes(body.data.originalLength)}{body.data.truncated ? " (truncated)" : ""}</span>
-            <a className="button" href={url(base + "/body")} download>Download</a>
+            <button type="button" className="button" onClick={() => download(base + "/body").then(() => setDownloadError(undefined), setDownloadError)}>Download</button>
           </div>
+          {downloadError && <ErrorBox error={downloadError} />}
           {body.data.format === "binary" ? <p className="muted">Binary content.</p> : <pre className="body">{body.data.text}</pre>}
         </>
       )}
