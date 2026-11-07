@@ -13,6 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.core.http;
 
+import com.predic8.membrane.core.exceptions.ProblemDetails;
+
 import java.io.IOException;
 
 /**
@@ -22,10 +24,10 @@ import java.io.IOException;
  * <p>
  * Always travels wrapped in a {@link ReadingBodyException}, whose source says which message the
  * undecodable body belonged to. Keeping the coding in a field of its own lets
- * {@link com.predic8.membrane.core.exceptions.ProblemDetails#bodyFailure} name it to the sender in
- * production, where the detail text is withheld.
+ * {@link #describe(ProblemDetails)} name it to the sender in production, where the detail text is
+ * withheld.
  */
-public class DecodingException extends IOException {
+public class DecodingException extends IOException implements MessageProblem {
 
     private final String contentEncoding;
 
@@ -44,5 +46,16 @@ public class DecodingException extends IOException {
 
     public String getContentEncoding() {
         return contentEncoding;
+    }
+
+    /**
+     * The detail carries the decoder's wording, so production withholds it.
+     */
+    @Override
+    public ProblemDetails describe(ProblemDetails problem) {
+        return problem.addSubType("body-decoding")
+                .title("Request body could not be decoded")
+                .topLevel("contentEncoding", contentEncoding)
+                .detail(getMessage());
     }
 }

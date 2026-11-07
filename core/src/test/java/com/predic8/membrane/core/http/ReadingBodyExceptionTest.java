@@ -41,6 +41,13 @@ class ReadingBodyExceptionTest {
     }
 
     @Test
+    void messageProblemExplainsItselfWithoutBeingAnIoError() {
+        var cause = new ContentTypeException("application/json; charset",
+                new jakarta.mail.internet.ParseException("In parameter list <; charset>, expected '=', got \"null\""));
+        assertTrue(new ReadingBodyException(cause).exceptionMessageIsSufficient());
+    }
+
+    @Test
     void wrappedTwiceStillExplainsItself() {
         var inner = new ReadingBodyException(new SocketException("Connection reset"));
         assertTrue(new ReadingBodyException(inner).exceptionMessageIsSufficient());

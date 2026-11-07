@@ -590,6 +590,42 @@ public class ProblemDetailsTest {
             assertFalse(r.getBodyAsStringDecoded().contains(TRUNCATED_GZIP), r.getBodyAsStringDecoded());
         }
 
+        @Test
+        @DisplayName("Production tells the sender that its Content-Type could not be parsed, but not the parser's wording")
+        void unparsableContentTypeInProduction() throws Exception {
+            Exchange exc = Request.post("/").body("x").buildExchange();
+            var failure = new ReadingBodyException(new ContentTypeException("application/json; charset",
+                    new jakarta.mail.internet.ParseException("In parameter list <; charset>, expected '=', got \"null\"")),
+                    exc.getRequest());
+
+            Response r = bodyFailure(true, "validator", exc, failure).build();
+
+            assertEquals(400, r.getStatusCode());
+            JsonNode json = parseJson(r);
+            assertEquals("https://membrane-api.io/problems/user/content-type", json.get(TYPE).asText());
+            assertEquals("Content-Type header could not be parsed", json.get(TITLE).asText());
+            // The parser's reason is internal, so production appends the log key
+            assertTrue(json.get(DETAIL).asText().startsWith("The Content-Type header \"application/json; charset\" could not be parsed. "),
+                    json.get(DETAIL).asText());
+            assertFalse(r.getBodyAsStringDecoded().contains("expected '='"), r.getBodyAsStringDecoded());
+        }
+
+        @Test
+        @DisplayName("Production tells the sender why its XOP package could not be reassembled")
+        void xopReassemblyFailureInProduction() throws Exception {
+            Exchange exc = Request.post("/").body("x").buildExchange();
+            var failure = new ReadingBodyException(new com.predic8.membrane.core.multipart.XopReassemblyException(
+                    "Did not find multipart with id bin@test."), exc.getRequest());
+
+            Response r = bodyFailure(true, "validator", exc, failure).build();
+
+            assertEquals(400, r.getStatusCode());
+            JsonNode json = parseJson(r);
+            assertEquals("https://membrane-api.io/problems/user/xop", json.get(TYPE).asText());
+            assertEquals("XOP package could not be reassembled", json.get(TITLE).asText());
+            assertEquals("Did not find multipart with id bin@test.", json.get(DETAIL).asText());
+        }
+
         /**
          * {@link ProblemDetails#addSubSee} concatenates without a separator, so the factory has to be
          * the only one adding a suffix - a caller adding its own would run the two together.

@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.multipart;
 
 import com.predic8.membrane.core.http.BodyCollectingMessageObserver;
+import com.predic8.membrane.core.http.ContentTypeException;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.ReadingBodyException;
@@ -81,7 +82,7 @@ public class XOPReconstitutor {
 		if(message == null)
 			return null;
 
-		ContentType contentType = message.getHeader().getContentTypeObject();
+		ContentType contentType = contentType(message);
 		if (contentType == null || contentType.getPrimaryType() == null)
 			return null;
 		if (!contentType.getPrimaryType().equals("multipart")
@@ -152,6 +153,21 @@ public class XOPReconstitutor {
 		return byId;
 	}
 
+	/**
+	 * @return the Content-Type of the message, or null if it has none
+	 * @throws ReadingBodyException if the header cannot be parsed. That is a failure of the message, not
+	 * a sign that it is not XOP: its charset and media type, read from the same header, are unknown.
+	 */
+	private static ContentType contentType(Message message) {
+		try {
+			return message.getHeader().getContentTypeObject();
+		} catch (ParseException e) {
+			final var failure = new ContentTypeException(message.getHeader().getContentType(), e);
+			log.info("{}", failure.getMessage());
+			throw new ReadingBodyException(failure, message);
+		}
+	}
+
 	private byte[] fillInXOPParts(InputStream inputStream,
 			HashMap<String, Part> parts, Message source) throws XMLStreamException, FactoryConfigurationError {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -177,8 +193,8 @@ public class XOPReconstitutor {
 						Part p = parts.get("<" + href + ">");
 						if (p == null) {
 							log.info("Did not find multipart with id {}.", escapeControlCharsForLog(href));
-							throw new ReadingBodyException(new IOException(
-									"Did not find multipart with id %s.".formatted(href)), source);
+							throw new ReadingBodyException(new XopReassemblyException(
+									"Did not find multipart with id %s.".formatted(escapeControlCharsForLog(href))), source);
 						}
 						// SOAP 1.2 MTOM 4.3.1.1: an extracted part MUST NOT be referenced by more than one
 						// xop:Include. Inlining it again for every reference would let a small package
@@ -186,8 +202,8 @@ public class XOPReconstitutor {
 						if (!included.add(href)) {
 							log.info("Multipart with id {} is referenced more than once.", escapeControlCharsForLog(href));
 							// Attribute invalid input to its sender, even when decoded in the opposite flow.
-							throw new ReadingBodyException(new IOException(
-									"Multipart with id %s is referenced more than once.".formatted(href)), source);
+							throw new ReadingBodyException(new XopReassemblyException(
+									"Multipart with id %s is referenced more than once.".formatted(escapeControlCharsForLog(href))), source);
 						}
 
 						writer.add(base64CharactersEvent(p.getBody()));
@@ -208,7 +224,7 @@ public class XOPReconstitutor {
 			writer.flush();
 		} catch (XMLStreamException e) {
 			log.info("Start part of XOP package is not well-formed XML: {}", escapeControlCharsForLog(e.getMessage()));
-			throw new ReadingBodyException(new IOException("Start part of XOP package is not well-formed XML."), source);
+			throw new ReadingBodyException(new XopReassemblyException("Start part of XOP package is not well-formed XML."), source);
 		}
 		return baos.toByteArray();
 	}

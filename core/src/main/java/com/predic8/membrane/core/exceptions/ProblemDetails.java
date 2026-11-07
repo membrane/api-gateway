@@ -15,7 +15,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.DecodingException;
+import com.predic8.membrane.core.http.MessageProblem;
 import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Interceptor;
@@ -40,8 +40,6 @@ import static com.predic8.membrane.core.util.HttpUtil.getMessageForStatusCode;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Locale.ROOT;
 import static java.util.UUID.randomUUID;
-import static org.apache.commons.lang3.exception.ExceptionUtils.throwableOfType;
-
 
 /**
  * Utility class for <a href="https://datatracker.ietf.org/doc/html/rfc7807">ProblemDetails Spec</a>
@@ -152,10 +150,10 @@ public class ProblemDetails {
      * a {@link ReadingBodyException} with a response should describe it here instead of deciding a
      * status of its own, so the same broken body is not a 400 in one plugin and a 500 in the next.
      *
-     * <p>A body that could not be decoded names the Content-Encoding that failed in a field of its
-     * own. The composed explanation goes into the detail, which production withholds; the field and
-     * the subtype survive, so a sender still learns that its compression, and not its document, is
-     * what the gateway could not read.</p>
+     * <p>A cause that is a {@link MessageProblem} describes the failure of a request itself, e.g. a
+     * body that could not be decoded names the Content-Encoding that failed in a field that
+     * production keeps. Any other request body failure gets the plain user type, explained by the
+     * message of its root cause.</p>
      *
      * @param exchange the exchange the failure happened on, to tell whose body it was
      * @implNote sets the {@code see} suffix itself. {@link #addSubSee} concatenates without a
@@ -174,16 +172,10 @@ public class ProblemDetails {
                     // An I/O error is explained by its message and the place named in the detail.
                     .stacktrace(!failure.exceptionMessageIsSufficient());
 
-        var problem = user(production, component).flow(REQUEST).addSubSee("reading-body");
-        var decoding = throwableOfType(failure, DecodingException.class);
-        if (decoding == null)
-            return problem.detail(getRootCause(failure).getMessage());
-
-        return problem
-                .addSubType("body-decoding")
-                .title("Request body could not be decoded")
-                .topLevel("contentEncoding", decoding.getContentEncoding())
-                .detail(decoding.getMessage());
+        final var problem = user(production, component).flow(REQUEST).addSubSee("reading-body");
+        return MessageProblem.in(failure)
+                .map(described -> described.describe(problem))
+                .orElseGet(() -> problem.detail(getRootCause(failure).getMessage()));
     }
 
     public static ProblemDetails problemDetails(String type, boolean production) {
