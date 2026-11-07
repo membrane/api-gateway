@@ -40,11 +40,14 @@ public class ContentTypeException extends Exception implements MessageProblem {
         return contentType;
     }
 
+    /**
+     * Production logs the detail and the internal fields at info, so both escape the header value.
+     */
     @Override
     public ProblemDetails describe(ProblemDetails problem) {
         return problem.addSubType("content-type")
                 .title("Content-Type header could not be parsed")
-                .detail("The Content-Type header \"%s\" could not be parsed.".formatted(contentType), true)
-                .internal("reason", getCause().getMessage());
+                .detail("The Content-Type header \"%s\" could not be parsed.".formatted(escapeControlCharsForLog(contentType)), true)
+                .internal("reason", escapeControlCharsForLog(getCause().getMessage()));
     }
 }

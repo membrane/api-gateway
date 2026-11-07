@@ -641,6 +641,20 @@ public class ProblemDetailsTest {
         }
 
         @Test
+        @DisplayName("Production escapes control characters of an unparsable Content-Type before logging it")
+        void unparsableContentTypeIsEscapedInLog() throws Exception {
+            final var exc = Request.post("/").body("x").buildExchange();
+            final var failure = new ReadingBodyException(new ContentTypeException("application/json; charset\u001b[31m",
+                    new jakarta.mail.internet.ParseException("In parameter list <; charset\u001b[31m>, expected '=', got \"null\"")),
+                    exc.getRequest());
+
+            final var log = captureLog(() -> bodyFailure(true, "validator", exc, failure).build());
+
+            assertTrue(log.contains("could not be parsed"), log.getMessages().toString());
+            assertFalse(log.contains("\u001b"), log.getMessages().toString());
+        }
+
+        @Test
         @DisplayName("Production tells the sender why its XOP package could not be reassembled")
         void xopReassemblyFailureInProduction() throws Exception {
             Exchange exc = Request.post("/").body("x").buildExchange();
