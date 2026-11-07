@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api, ApiError, path, url, type ExchangeDetail, type Header, type Principal } from "../api/client";
 import { useLoad } from "../hooks";
 import { ErrorBox } from "../components/ErrorBox";
@@ -7,10 +7,22 @@ import { bytes, statusClass, time } from "../util/format";
 
 type Message = "request" | "response";
 
+const IN_FLIGHT_REFRESH_MS = 2000;
+
 export function CallDetailPage({ instance, id }: { instance: string; id: string }) {
   const [message, setMessage] = useState<Message>("request");
   const exchange = useLoad((signal) => api.get<ExchangeDetail>(path("exchanges", instance, id), undefined, signal), [instance, id]);
   const e = exchange.data;
+
+  // A call that is still running is refreshed until it completes; the next request starts after the previous ended.
+  const reload = exchange.reload;
+  const running = !!e && !e.completed && !exchange.error;
+  useEffect(() => {
+    if (!running || exchange.loading) return;
+    const timer = setTimeout(reload, IN_FLIGHT_REFRESH_MS);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [running, exchange.loading]);
 
   return (
     <section>
@@ -38,7 +50,7 @@ export function CallDetailPage({ instance, id }: { instance: string; id: string 
           </button>
         ))}
       </div>
-      <MessageView key={message} instance={instance} id={id} message={message} />
+      <MessageView key={message + (e?.completed ? "/completed" : "")} instance={instance} id={id} message={message} />
       <Curl instance={instance} id={id} />
       <Replay instance={instance} id={id} exchange={e} />
     </section>
@@ -190,6 +202,17 @@ function MessageView({ instance, id, message }: { instance: string; id: string; 
 
 function Curl({ instance, id }: { instance: string; id: string }) {
   const [shown, setShown] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
+  const copy = async () => {
+    try {
+      // Only available in secure contexts (HTTPS or localhost).
+      if (!navigator.clipboard) throw new Error("no clipboard");
+      await navigator.clipboard.writeText(curl.data ?? "");
+      setCopyFailed(false);
+    } catch {
+      setCopyFailed(true);
+    }
+  };
   const curl = useLoad(
     (signal) => (shown ? api.get<string>(path("exchanges", instance, id, "curl"), undefined, signal) : Promise.resolve("")),
     [instance, id, shown],
@@ -201,7 +224,8 @@ function Curl({ instance, id }: { instance: string; id: string }) {
       {curl.data && (
         <>
           <pre className="body">{curl.data}</pre>
-          <button className="button" onClick={() => navigator.clipboard?.writeText(curl.data ?? "")}>Copy</button>
+          <button className="button" onClick={copy}>Copy</button>
+          {copyFailed && <p className="muted" role="alert">The browser does not allow copying here. Select the command and copy it manually.</p>}
         </>
       )}
     </details>

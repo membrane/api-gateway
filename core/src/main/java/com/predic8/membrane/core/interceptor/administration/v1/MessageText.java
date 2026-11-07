@@ -14,10 +14,12 @@
 package com.predic8.membrane.core.interceptor.administration.v1;
 
 import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.exchange.snapshots.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.prettifier.*;
 import com.predic8.membrane.core.util.*;
 
+import java.io.*;
 import java.nio.charset.*;
 import java.util.*;
 
@@ -56,14 +58,17 @@ final class MessageText {
     static FormattedBody formatted(Message msg, String contentType, int maxBytes) throws Exception {
         if (msg == null || msg.isBodyEmpty())
             return new FormattedBody("empty", "", false, 0);
-        final var bytes = msg.getBodyAsStreamDecoded().readAllBytes();
         final var format = format(contentType);
-        if ("binary".equals(format))
-            return new FormattedBody(format, "", false, bytes.length);
-        final var truncated = bytes.length > maxBytes;
-        final var shown = truncated ? Arrays.copyOf(bytes, maxBytes) : bytes;
-        final var charset = msg.getCharsetOrDefault();
-        return new FormattedBody(format, pretty(format, contentType, shown, charset, truncated), truncated, bytes.length);
+        // Decode at most maxBytes into memory: a small compressed body can expand to gigabytes.
+        try (final var in = msg.getBodyAsStreamDecoded()) {
+            if ("binary".equals(format))
+                return new FormattedBody(format, "", false, in.transferTo(OutputStream.nullOutputStream()));
+            final var shown = in.readNBytes(maxBytes);
+            final var rest = in.transferTo(OutputStream.nullOutputStream());
+            final var truncated = rest > 0;
+            final var charset = msg.getCharsetOrDefault();
+            return new FormattedBody(format, pretty(format, contentType, shown, charset, truncated), truncated, shown.length + rest);
+        }
     }
 
     private static String pretty(String format, String contentType, byte[] bytes, Charset charset, boolean truncated) {
@@ -96,16 +101,20 @@ final class MessageText {
     static String curl(AbstractExchange exc, boolean backend) throws Exception {
         final var req = exc.getRequest();
         final var sb = new StringBuilder("curl");
-        if (!"GET".equals(req.getMethod()))
+        // With a body and no -X, curl would send POST.
+        if (!"GET".equals(req.getMethod()) || !req.isBodyEmpty())
             sb.append(" -X ").append(quote(req.getMethod()));
         sb.append(' ').append(quote(url(exc, backend)));
+        // A text body is emitted decoded; a binary body file keeps the recorded (encoded) bytes.
+        final var decodedBody = !req.isBodyEmpty() && !"binary".equals(format(exc.getRequestContentType()));
         for (final var field : req.getHeader().getAllHeaderFields()) {
-            if (CURL_SKIPPED_HEADERS.contains(field.getHeaderName().toString().toLowerCase(Locale.ROOT)))
+            final var name = field.getHeaderName().toString().toLowerCase(Locale.ROOT);
+            if (CURL_SKIPPED_HEADERS.contains(name) || (decodedBody && "content-encoding".equals(name)))
                 continue;
             sb.append(" \\\n  -H ").append(quote(field.getHeaderName() + ": " + field.getValue()));
         }
         if (!req.isBodyEmpty()) {
-            if ("binary".equals(format(exc.getRequestContentType())))
+            if (!decodedBody)
                 sb.append(" \\\n  --data-binary @request-body.bin");
             else
                 sb.append(" \\\n  --data-binary ").append(quote(req.getBodyAsStringDecoded()));
@@ -124,7 +133,14 @@ final class MessageText {
                 return "http://" + exc.getServer() + req.getUri();
         }
         final var host = req.getHeader().getHost();
-        return (host == null ? "http://localhost" : "http://" + host) + req.getUri();
+        return "%s://%s%s".formatted(inboundScheme(exc), host == null ? "localhost" : host, req.getUri());
+    }
+
+    /**
+     * @return the scheme the client used to call the gateway, also for exchanges restored from a store
+     */
+    static String inboundScheme(AbstractExchange exc) {
+        return FakeProxy.isInboundTls(exc.getProxy()) ? "https" : "http";
     }
 
     /**

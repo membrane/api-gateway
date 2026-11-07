@@ -29,6 +29,7 @@ import java.util.function.*;
 
 import static com.predic8.membrane.core.interceptor.administration.v1.ApiException.*;
 import static com.predic8.membrane.core.interceptor.administration.v1.ApiJson.*;
+import static com.predic8.membrane.core.util.text.TextUtil.escapeControlCharsForLog;
 import static java.nio.charset.StandardCharsets.*;
 
 /**
@@ -125,10 +126,10 @@ final class Aggregator {
     }
 
     /**
-     * Asks peers without a known name for it.
+     * Asks peers without a configured name for their current name.
      */
     private void learnNames() {
-        final var unnamed = peers.stream().filter(p -> name(p) == null).toList();
+        final var unnamed = peers.stream().filter(p -> p.getName() == null).toList();
         final var futures = unnamed.stream()
                 .map(p -> client.send(p, "GET", AdminApiV1Interceptor.PREFIX + "/instances", null, null, REQUEST_TIMEOUT)
                         .thenAccept(r -> remember(p, r)))
@@ -148,9 +149,33 @@ final class Aggregator {
         try {
             final var self = MAPPER.readTree(response.body()).path("self");
             if (self.isTextual())
-                learnedNames.put(peer, self.asText());
+                learn(peer, self.asText());
         } catch (Exception e) {
             // not an admin API
+        }
+    }
+
+    /**
+     * Records the instance name a peer reports. Replaces a previously learned name (the peer may have been replaced),
+     * but never takes a name that this instance or another peer already uses.
+     */
+    private void learn(AdminConsolePeer peer, String reported) {
+        if (peer.getName() != null) {
+            if (!peer.getName().equals(reported))
+                log.warn("adminConsole: peer {} is configured with name {}, but reports the instance name {}.",
+                        escapeControlCharsForLog(peer.getUrl()), escapeControlCharsForLog(peer.getName()), escapeControlCharsForLog(reported));
+            return;
+        }
+        synchronized (learnedNames) {
+            final var taken = ctx.instanceName().equals(reported)
+                              || peers.stream().anyMatch(p -> p != peer && reported.equals(name(p)));
+            if (taken) {
+                log.warn("adminConsole: peer {} reports the instance name {}, which is already used. Ignoring the peer's name.",
+                        escapeControlCharsForLog(peer.getUrl()), escapeControlCharsForLog(reported));
+                learnedNames.remove(peer);
+                return;
+            }
+            learnedNames.put(peer, reported);
         }
     }
 
@@ -230,10 +255,13 @@ final class Aggregator {
         final var merge = route.merge();
         final var offset = req.intParam("offset", 0, 0, Integer.MAX_VALUE);
         final var limit = req.intParam("limit", 50, 1, MAX_MERGED_WINDOW);
-        if (offset + limit > MAX_MERGED_WINDOW)
+        if (offset > MAX_MERGED_WINDOW - limit) // offset + limit could overflow
             throw badRequest("Across several instances, offset + limit may not exceed %d.".formatted(MAX_MERGED_WINDOW));
-        final var sort = req.param("sort").orElse(merge.defaultSort());
-        final var desc = "desc".equals(req.param("order").orElse(merge.defaultOrder()));
+        // Validate here: when only peers are selected, no local handler checks the values.
+        final var sort = merge.sorts().isEmpty()
+                ? req.param("sort").orElse(merge.defaultSort())
+                : req.enumParam("sort", merge.defaultSort(), merge.sorts());
+        final var desc = "desc".equals(req.enumParam("order", merge.defaultOrder(), Set.of("asc", "desc")));
 
         if (req.param("waitForModification").isPresent())
             waitForAnyModification(route, req, principal, rawPath);
@@ -271,29 +299,43 @@ final class Aggregator {
     }
 
     /**
-     * Long poll on all instances; returns when any of them reports a modification or all timed out.
+     * Long poll on the selected instances; returns when any of them answers (a modification or its own timeout) or
+     * the timeout elapsed. Failing peers count as unchanged, so they do not end the wait early.
      */
     private void waitForAnyModification(Route route, ApiRequest req, Principal principal, String rawPath) throws Exception {
         final var timeout = req.intParam("timeout", 30, 1, 60);
-        final var futures = new ArrayList<CompletableFuture<?>>();
-        futures.add(CompletableFuture.runAsync(() -> {
-            try {
-                route.handler().handle(req, principal);
-            } catch (Exception e) {
-                throw new CompletionException(e);
-            }
-        }, localCalls));
-        for (final var peer : selectedPeers(req))
-            futures.add(client.send(peer, "GET", rawPath + "?" + query(req, Map.of()), null, null,
-                    Duration.ofSeconds(timeout + 10L)));
+        final var answered = new CompletableFuture<Void>();
+        var waiting = 0;
+        final var selected = req.params("instance");
+        if (selected.isEmpty() || selected.contains(ctx.instanceName())) {
+            waiting++;
+            CompletableFuture.runAsync(() -> {
+                try {
+                    route.handler().handle(req, principal);
+                    answered.complete(null);
+                } catch (Exception e) {
+                    answered.completeExceptionally(e);
+                }
+            }, localCalls);
+        }
+        for (final var peer : selectedPeers(req)) {
+            waiting++;
+            client.send(peer, "GET", rawPath + "?" + query(req, Map.of()), null, null, Duration.ofSeconds(timeout + 10L))
+                    .thenAccept(r -> {
+                        if (r.status() / 100 == 2)
+                            answered.complete(null);
+                    });
+        }
+        if (waiting == 0)
+            return;
         try {
-            CompletableFuture.anyOf(futures.toArray(CompletableFuture[]::new)).get(timeout + 10L, TimeUnit.SECONDS);
+            answered.get(timeout + 10L, TimeUnit.SECONDS);
         } catch (ExecutionException e) {
             if (e.getCause() instanceof ApiException ae)
                 throw ae;
-            // a peer is down: answer with what the others have
+            throw e;
         } catch (TimeoutException e) {
-            // nothing changed anywhere
+            // nothing changed anywhere, or all selected peers failed
         }
     }
 
@@ -312,7 +354,7 @@ final class Aggregator {
             final var part = toPart(peer, e.getValue());
             if (part.ok()) {
                 if (part.body().path("self").isTextual())
-                    learnedNames.putIfAbsent(peer, part.body().get("self").asText());
+                    learn(peer, part.body().get("self").asText());
                 for (final var instance : part.body().path("instances")) {
                     if (!instance.path("self").asBoolean())
                         continue;
@@ -488,6 +530,7 @@ final class Aggregator {
             return Instant.parse(a.asText()).compareTo(Instant.parse(b.asText()));
         if (a.isNumber() && b.isNumber())
             return Double.compare(a.asDouble(), b.asDouble());
-        return a.asText().compareToIgnoreCase(b.asText());
+        // Same collation as the instances use: only API names sort case-insensitively.
+        return "name".equals(sort) ? a.asText().compareToIgnoreCase(b.asText()) : a.asText().compareTo(b.asText());
     }
 }

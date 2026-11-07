@@ -33,7 +33,7 @@ final class ApisResource {
 
     static final Set<String> KNOWN_TYPES = Set.of("api", "serviceProxy", "soapProxy", "proxy", "internal", "stompProxy", "kafkaConsumer");
 
-    private static final Map<String, Comparator<Indexed>> SORTS = Map.of(
+    static final Map<String, Comparator<Indexed>> SORTS = Map.of(
             "order", comparingInt(Indexed::order),
             "name", comparing(i -> String.valueOf(i.proxy().getName()), String.CASE_INSENSITIVE_ORDER),
             "type", comparing(i -> type(i.proxy())),
@@ -91,6 +91,8 @@ final class ApisResource {
         final var desc = "desc".equals(req.enumParam("order", "asc", Set.of("asc", "desc")));
         final var offset = req.intParam("offset", 0, 0, Integer.MAX_VALUE);
         final var limit = req.intParam("limit", 50, 1, 1000);
+        if (ctx.isExcluded(req))
+            return ok(new ApiPage(0, offset, limit, List.of()));
 
         final var all = indexed();
         final var filtered = all.stream()

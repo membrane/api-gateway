@@ -22,6 +22,7 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.Interceptor.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.util.ConfigurationException;
 import org.apache.commons.io.*;
 import org.slf4j.*;
 
@@ -73,6 +74,19 @@ public class FileExchangeStore extends AbstractExchangeStore {
     private record IndexEntry(long id, StoredExchange stored, Path file) {
     }
 
+    private static final AtomicInteger instances = new AtomicInteger();
+
+    /**
+     * Exchange properties of this store instance: several stores may snapshot the same exchange into different
+     * directories.
+     */
+    private final String fileBaseProperty = FILE_BASE + "." + instances.incrementAndGet();
+    private final String indexIdProperty = fileBaseProperty + ".id";
+
+    /**
+     * The highest exchange ID assigned so far. IDs are persisted in the exchange files, so they stay stable across
+     * restarts.
+     */
     private final AtomicLong nextId = new AtomicLong();
 
     /**
@@ -137,7 +151,12 @@ public class FileExchangeStore extends AbstractExchangeStore {
             return;
         try {
             switch (flow) {
-                case REQUEST -> writeFile(exc.getRequest(), base + "-" + REQUEST_SUFFIX, body);
+                case REQUEST -> {
+                    writeFile(exc.getRequest(), base + "-" + REQUEST_SUFFIX, body);
+                    // The response was snapped before the request body completed: reference the request file now.
+                    if (exc.getProperty(indexIdProperty) != null)
+                        writeExchangeFile(exc);
+                }
                 case ABORT, RESPONSE -> {
                     if (exc.getResponse() != null)
                         writeFile(exc.getResponse(), base + "-" + RESPONSE_SUFFIX, body);
@@ -156,7 +175,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
      */
     private String getBasePath(AbstractExchange exc) {
         synchronized (exc) {
-            final var existing = (String) exc.getProperty(FILE_BASE);
+            final var existing = (String) exc.getProperty(fileBaseProperty);
             if (existing != null)
                 return existing;
 
@@ -176,30 +195,37 @@ public class FileExchangeStore extends AbstractExchangeStore {
             buf.append("-");
             buf.append(counter.incrementAndGet());
             final var base = buf.toString();
-            exc.setProperty(FILE_BASE, base);
+            exc.setProperty(fileBaseProperty, base);
             exc.setProperty(MESSAGE_FILE_PATH, base);
             return base;
         }
     }
 
     /**
-     * Writes the metadata of a completed exchange next to its message files and adds it to the index.
+     * Writes the metadata of a completed exchange next to its message files and adds it to the index. A repeated
+     * call for the same exchange rewrites the file and updates its index entry.
      */
     private void writeExchangeFile(AbstractExchange exc) {
         final var base = getBasePath(exc);
         if (base == null)
             return;
-        final var stored = StoredExchange.of(exc, Path.of(base).getFileName().toString(), raw, saveBodyOnly,
+        ensureIndexLoaded();
+        final long id;
+        synchronized (exc) {
+            final var existing = (Long) exc.getProperty(indexIdProperty);
+            id = existing != null ? existing : nextId.incrementAndGet();
+            exc.setProperty(indexIdProperty, id);
+        }
+        final var stored = StoredExchange.of(id, exc, Path.of(base).getFileName().toString(), raw, saveBodyOnly,
                 new File(base + "-" + REQUEST_SUFFIX).exists(), exc.getResponse() != null);
         final var file = Path.of(base + "-" + EXCHANGE_SUFFIX);
-        ensureIndexLoaded();
         try {
             Files.writeString(file, om.writeValueAsString(stored), UTF_8);
         } catch (IOException e) {
             log.error("Could not write {}", file, e);
             return;
         }
-        addToIndex(stored, file);
+        addToIndex(id, stored, file);
     }
 
     private StringBuilder getDirectoryNameBuffer(Calendar time) {
@@ -275,11 +301,25 @@ public class FileExchangeStore extends AbstractExchangeStore {
             FileUtils.deleteDirectory(d);
         }
 
-        final var cutoff = now.getTimeInMillis();
+        final var cutoff = startOfFirstKeptDay(now);
         synchronized (this) {
             if (index.values().removeIf(e -> e.stored().time() < cutoff))
                 modify();
         }
+    }
+
+    /**
+     * @return the first midnight that is not before {@code cutoff}: day folders before it are deleted
+     */
+    private static long startOfFirstKeptDay(Calendar cutoff) {
+        final var day = (Calendar) cutoff.clone();
+        day.set(HOUR_OF_DAY, 0);
+        day.set(MINUTE, 0);
+        day.set(SECOND, 0);
+        day.set(MILLISECOND, 0);
+        if (day.before(cutoff))
+            day.add(DAY_OF_MONTH, 1);
+        return day.getTimeInMillis();
     }
 
     @Override
@@ -292,8 +332,12 @@ public class FileExchangeStore extends AbstractExchangeStore {
         return cleanupTimer != null;
     }
 
+    private record Loaded(StoredExchange stored, Path file) {
+    }
+
     /**
-     * Reads the newest {@code maxIndexed} exchange files once.
+     * Reads the newest {@code maxIndexed} readable exchange files once. Exchanges keep their persisted IDs; files
+     * written before IDs were persisted get new ones.
      */
     private synchronized void ensureIndexLoaded() {
         if (indexLoaded)
@@ -301,14 +345,18 @@ public class FileExchangeStore extends AbstractExchangeStore {
         indexLoaded = true;
         if (dir == null || !Files.isDirectory(Path.of(dir)))
             return;
-        final var files = newestExchangeFiles(Path.of(dir), maxIndexed);
-        for (final var file : files.reversed()) {
+        final var loaded = new ArrayList<Loaded>();
+        visitNewestExchangeFiles(Path.of(dir), file -> {
             try {
-                add(om.readValue(file.toFile(), StoredExchange.class), file);
+                loaded.add(new Loaded(om.readValue(file.toFile(), StoredExchange.class), file));
             } catch (Exception e) {
                 log.warn("Skipping unreadable exchange file {}: {}", file, e.getMessage());
             }
-        }
+            return loaded.size() < maxIndexed;
+        });
+        loaded.stream().mapToLong(l -> l.stored().id()).max().ifPresent(max -> nextId.accumulateAndGet(max, Math::max));
+        for (final var l : loaded.reversed())
+            add(l.stored().id() > 0 ? l.stored().id() : nextId.incrementAndGet(), l.stored(), l.file());
         modify();
     }
 
@@ -317,24 +365,60 @@ public class FileExchangeStore extends AbstractExchangeStore {
      */
     static List<Path> newestExchangeFiles(Path root, int limit) {
         final var result = new ArrayList<Path>();
+        if (limit > 0)
+            visitNewestExchangeFiles(root, f -> {
+                result.add(f);
+                return result.size() < limit;
+            });
+        return result;
+    }
+
+    /**
+     * Passes the exchange files to {@code visitor}, newest first, until it returns false.
+     */
+    private static void visitNewestExchangeFiles(Path root, java.util.function.Predicate<Path> visitor) {
         for (final var year : numericSubdirsDescending(root))
             for (final var month : numericSubdirsDescending(year))
                 for (final var day : numericSubdirsDescending(month)) {
+                    final List<Path> exchangeFiles;
                     try (var files = Files.list(day)) {
-                        final var exchangeFiles = files
+                        exchangeFiles = files
                                 .filter(f -> f.getFileName().toString().endsWith("-" + EXCHANGE_SUFFIX))
-                                .sorted(Comparator.comparing((Path f) -> f.getFileName().toString()).reversed())
+                                .sorted(NEWEST_FIRST)
                                 .toList();
-                        for (final var f : exchangeFiles) {
-                            if (result.size() >= limit)
-                                return result;
-                            result.add(f);
-                        }
                     } catch (IOException e) {
                         log.warn("Could not list {}: {}", day, e.getMessage());
+                        continue;
                     }
+                    for (final var f : exchangeFiles)
+                        if (!visitor.test(f))
+                            return;
                 }
-        return result;
+    }
+
+    /**
+     * Orders {@code <time>-<counter>-Exchange.json} names by time, then by the numeric counter, newest first.
+     */
+    static final Comparator<Path> NEWEST_FIRST = Comparator
+            .comparing((Path f) -> timePart(f.getFileName().toString()))
+            .thenComparingLong(f -> counterPart(f.getFileName().toString()))
+            .reversed();
+
+    private static String timePart(String name) {
+        final var dash = name.indexOf('-');
+        return dash < 0 ? name : name.substring(0, dash);
+    }
+
+    private static long counterPart(String name) {
+        final var dash = name.indexOf('-');
+        final var next = dash < 0 ? -1 : name.indexOf('-', dash + 1);
+        if (next < 0)
+            return -1;
+        try {
+            return Long.parseLong(name.substring(dash + 1, next));
+        } catch (NumberFormatException e) {
+            return -1;
+        }
     }
 
     private static List<Path> numericSubdirsDescending(Path parent) {
@@ -349,13 +433,15 @@ public class FileExchangeStore extends AbstractExchangeStore {
         }
     }
 
-    private synchronized void addToIndex(StoredExchange stored, Path file) {
-        add(stored, file);
+    private synchronized void addToIndex(long id, StoredExchange stored, Path file) {
+        if (index.containsKey(id))
+            index.put(id, new IndexEntry(id, stored, file)); // keeps the position of the entry
+        else
+            add(id, stored, file);
         modify();
     }
 
-    private void add(StoredExchange stored, Path file) {
-        final var id = nextId.incrementAndGet();
+    private void add(long id, StoredExchange stored, Path file) {
         index.put(id, new IndexEntry(id, stored, file));
         final var it = index.values().iterator();
         while (index.size() > maxIndexed && it.hasNext()) {
@@ -364,8 +450,11 @@ public class FileExchangeStore extends AbstractExchangeStore {
         }
     }
 
+    /**
+     * Advances the modification marker on every change, also within the same millisecond.
+     */
     private void modify() {
-        lastModification = System.currentTimeMillis();
+        lastModification = Math.max(lastModification + 1, System.currentTimeMillis());
         notifyAll();
     }
 
@@ -384,10 +473,10 @@ public class FileExchangeStore extends AbstractExchangeStore {
 
     @Override
     public boolean waitForModification(long lastKnownModification, long timeoutMillis) throws InterruptedException {
-        final var deadline = System.currentTimeMillis() + timeoutMillis;
+        final var deadline = System.nanoTime() + timeoutMillis * 1_000_000;
         synchronized (this) {
             while (lastKnownModification >= lastModification) {
-                final var remaining = deadline - System.currentTimeMillis();
+                final var remaining = (deadline - System.nanoTime()) / 1_000_000;
                 if (remaining <= 0)
                     return false;
                 wait(remaining);
@@ -429,6 +518,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
         exc.setRemoteAddrIp(s.remoteAddrIp());
         final var proxy = new FakeProxy(s.proxyPort());
         proxy.setName(s.proxyName());
+        proxy.setInboundTls(s.inboundTls());
         exc.setProxy(proxy);
         exc.setServer(s.server());
         try {
@@ -458,10 +548,24 @@ public class FileExchangeStore extends AbstractExchangeStore {
         if (stored.headers() != null)
             for (final var h : stored.headers())
                 header.add(h.name(), h.value());
-        if (stored.bodyFormatted())
+        if (stored.bodyFormatted()) {
             header.removeFields(Header.CONTENT_ENCODING);
+            // The formatted body was written as UTF-8, whatever charset the original declared.
+            final var contentType = header.getContentType();
+            if (contentType != null)
+                header.setContentType(withUtf8Charset(contentType));
+        }
         msg.setHeader(header);
         msg.setBody(withBody && stored.file() != null ? readBody(exchangeFile.resolveSibling(stored.file()), stored.headersInFile()) : new EmptyBody());
+    }
+
+    static String withUtf8Charset(String contentType) {
+        final var parts = contentType.split(";");
+        final var sb = new StringBuilder(parts[0].trim());
+        for (int i = 1; i < parts.length; i++)
+            if (!parts[i].trim().toLowerCase(Locale.ROOT).startsWith("charset="))
+                sb.append(';').append(parts[i]);
+        return sb.append("; charset=UTF-8").toString();
     }
 
     private static AbstractBody readBody(Path file, boolean headersInFile) throws IOException {
@@ -489,23 +593,28 @@ public class FileExchangeStore extends AbstractExchangeStore {
     /**
      * Metadata of an exchange written to {@code <time>-<number>-Exchange.json} next to its message files.
      */
-    record StoredExchange(int version, long time, String originalRequestUri, String status, String errorMessage,
+    /**
+     * @param id         the exchange ID in the admin console; 0 in files written before IDs were persisted
+     * @param inboundTls whether the client connected with TLS
+     */
+    record StoredExchange(int version, long id, long time, String originalRequestUri, String status, String errorMessage,
                           long timeReqSent, long timeReqReceived, long timeResSent, long timeResReceived,
                           List<String> destinations, String remoteAddr, String remoteAddrIp, String proxyName,
-                          int proxyPort, String server, StoredMessage request, StoredMessage response) {
+                          int proxyPort, boolean inboundTls, String server, StoredMessage request,
+                          StoredMessage response) {
 
-        static StoredExchange of(AbstractExchange exc, String baseName, boolean raw, boolean saveBodyOnly,
+        static StoredExchange of(long id, AbstractExchange exc, String baseName, boolean raw, boolean saveBodyOnly,
                                  boolean requestWritten, boolean responseWritten) {
             final var proxy = exc.getProxy();
             final var req = exc.getRequest();
             final var res = exc.getResponse();
-            return new StoredExchange(1, exc.getTime().getTimeInMillis(), exc.getOriginalRequestUri(),
+            return new StoredExchange(1, id, exc.getTime().getTimeInMillis(), exc.getOriginalRequestUri(),
                     exc.getStatus() == null ? null : exc.getStatus().name(), exc.getErrorMessage(),
                     exc.getTimeReqSent(), exc.getTimeReqReceived(), exc.getTimeResSent(), exc.getTimeResReceived(),
                     exc.getDestinations() == null ? List.of() : List.copyOf(exc.getDestinations()),
                     exc.getRemoteAddr(), exc.getRemoteAddrIp(),
                     proxy == null ? null : proxy.getName(), proxy == null ? -1 : proxy.getKey().getPort(),
-                    exc.getServer(),
+                    FakeProxy.isInboundTls(proxy), exc.getServer(),
                     req == null ? null : StoredMessage.of(req, req.getMethod(), req.getUri(), null, null,
                             requestWritten ? baseName + "-" + REQUEST_SUFFIX : null, raw, saveBodyOnly),
                     res == null ? null : StoredMessage.of(res, null, null, res.getStatusCode(), res.getStatusMessage(),
@@ -523,11 +632,13 @@ public class FileExchangeStore extends AbstractExchangeStore {
 
         static StoredMessage of(Message msg, String method, String uri, Integer statusCode, String statusMessage,
                                 String file, boolean raw, boolean saveBodyOnly) {
-            final var headers = Arrays.stream(msg.getHeader().getAllHeaderFields())
+            final var withHeaders = raw || !saveBodyOnly;
+            // saveBodyOnly: header fields (e.g. Authorization) are not stored anywhere, also not in the metadata.
+            final var headers = !withHeaders ? List.<StoredHeader>of() : Arrays.stream(msg.getHeader().getAllHeaderFields())
                     .map(f -> new StoredHeader(f.getHeaderName().toString(), f.getValue()))
                     .toList();
             return new StoredMessage(method, uri, statusCode, statusMessage, msg.getVersion(), headers, file,
-                    raw || !saveBodyOnly, !raw && msg.isXML());
+                    withHeaders, !raw && msg.isXML());
         }
     }
 
@@ -574,6 +685,17 @@ public class FileExchangeStore extends AbstractExchangeStore {
 
     public void removeAllExchanges(AbstractExchange[] exchanges) {
         // ignore
+    }
+
+    /**
+     * @return statistics per client over the indexed exchanges
+     */
+    @Override
+    public List<? extends ClientStatistics> getClientStatistics() {
+        final var clients = new HashMap<String, ClientStatisticsCollector>();
+        for (final var exc : getAllExchangesAsList())
+            clients.computeIfAbsent(exc.getRemoteAddr(), ClientStatisticsCollector::new).collect(exc);
+        return new ArrayList<>(clients.values());
     }
 
     public String getDir() {
@@ -649,6 +771,8 @@ public class FileExchangeStore extends AbstractExchangeStore {
      */
     @MCAttribute
     public void setMaxIndexed(int maxIndexed) {
+        if (maxIndexed < 1)
+            throw new ConfigurationException("fileExchangeStore: maxIndexed must be at least 1, but is %d.".formatted(maxIndexed));
         this.maxIndexed = maxIndexed;
     }
 
