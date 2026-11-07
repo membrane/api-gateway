@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.interceptor.ratelimit;
 
+import com.google.common.net.InetAddresses;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -234,16 +235,32 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
      */
     private String getClientIPfromTrustedProxyList(Exchange exc, List<String> xForwardedFor) {
         final var peer = exc.getRemoteAddrIp();
-        if (peer == null || !trustedProxyList.contains(peer)) {
+        if (peer == null || !isTrustedProxy(peer)) {
             log.debug("Peer {} is not a trusted proxy, ignoring X-Forwarded-For.", peer);
             return peer;
         }
         for (final var address : xForwardedFor.reversed()) {
-            if (!trustedProxyList.contains(address))
+            if (!isTrustedProxy(address))
                 return address;
         }
         log.debug("All addresses in X-Forwarded-For {} are trusted proxies, using the peer address.", xForwardedFor);
         return peer;
+    }
+
+    /**
+     * Compares IP addresses by value, so that e.g. <code>::1</code> in the list matches the peer address
+     * <code>0:0:0:0:0:0:0:1</code>.
+     */
+    private boolean isTrustedProxy(String address) {
+        return trustedProxyList.contains(normalizeAddress(address));
+    }
+
+    /**
+     * @return an IP address literal in its canonical form, anything else as it is. Never resolves a host name.
+     */
+    static String normalizeAddress(String address) {
+        final var trimmed = address.trim();
+        return InetAddresses.isInetAddress(trimmed) ? InetAddresses.toAddrString(InetAddresses.forString(trimmed)) : trimmed;
     }
 
     private static String useRemoteIpAddress(Exchange exc) {
@@ -321,13 +338,15 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
      * one that connects to Membrane. Used to evaluate the X-Forwarded-For header: starting with the address of the
      * connection, trusted addresses are skipped from the end of the header, and the first untrusted address is the
      * client. If the connection does not come from a trusted address, its address is used and the header is ignored.
+     * Each trusted proxy must append the address it received the request from to X-Forwarded-For (or replace the
+     * header with it); a proxy that only passes on the client's header lets the client choose its address.
      * If both <b>trustedProxyList</b> and <b>trustedProxyCount</b> is specified, the trustedProxyList is used to
      * determine the client ip address. To make this configuration active set <pre>isTrustForwardedFor</pre> to true.
      * @default empty String
      */
     @MCAttribute
     public void setTrustedProxyList(String trustedProxyList) {
-        this.trustedProxyList = Arrays.stream(trustedProxyList.split(",")).map(String::trim).toList();
+        this.trustedProxyList = Arrays.stream(trustedProxyList.split(",")).map(RateLimitInterceptor::normalizeAddress).toList();
     }
 
     @SuppressWarnings("unused")

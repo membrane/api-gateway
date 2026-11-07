@@ -547,6 +547,21 @@ public class RateLimitInterceptorTest {
 		assertEquals("134.3.7.8", interceptor.getClientIp(exc));
 	}
 
+	/**
+	 * The socket reports IPv6 addresses in full form, the configuration may use the compressed one.
+	 */
+	@Test
+	void getClientIpTrustedProxyListComparesAddressesByValue() {
+		final var interceptor = new RateLimitInterceptor();
+		interceptor.setTrustedProxyList("::1, 2001:db8::1");
+		interceptor.setTrustForwardedFor(true);
+
+		final var exc = new Request.Builder().header(X_FORWARDED_FOR, "134.3.7.8, 2001:0db8:0:0:0:0:0:1, 0:0:0:0:0:0:0:1").buildExchange();
+		exc.setRemoteAddrIp("0:0:0:0:0:0:0:1");
+
+		assertEquals("134.3.7.8", interceptor.getClientIp(exc));
+	}
+
 	@Test
 	void getClientIpTrustedProxyListWithOnlyTrustedAddressesUsesThePeer() {
 		final var interceptor = new RateLimitInterceptor();

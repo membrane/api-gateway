@@ -3,8 +3,10 @@
 ## `rateLimiter`: `trustedProxyList` includes the connecting proxy
 
 `trustedProxyList` lists every trusted proxy, including the one that connects to Membrane. The
-`rateLimiter` uses `X-Forwarded-For` only for requests from an address in the list, and counts a
-request by the first address that is not in the list, searched from the end of the header.
+`rateLimiter` uses `X-Forwarded-For` only for requests from an address in the list. The client
+address is then the first address that is not in the list, searched from the end of the header.
+Requests are counted by the client address unless a `keyExpression` yields a key. Each trusted proxy
+must append the address it received the request from to `X-Forwarded-For`.
 
 Before, the list had to match the end of `X-Forwarded-For` without the connecting proxy. If you
 configured it that way, add the address of the proxy in front of Membrane:
@@ -15,7 +17,7 @@ rateLimiter:
   trustedProxyList: 10.0.0.1,10.0.0.2   # 10.0.0.2 connects to Membrane
 ```
 
-Otherwise all requests are counted by the address of that proxy.
+Otherwise requests counted by client address are all counted by the address of that proxy.
 
 # Migrate to Membrane 7.8.1
 
