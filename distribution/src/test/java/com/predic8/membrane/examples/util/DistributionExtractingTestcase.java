@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.nio.file.Files;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -48,6 +49,9 @@ public abstract class DistributionExtractingTestcase {
 
     public static final String MEMBRANE_LOG_LEVEL = "info";
     public static final String LOCALHOST_2000 = "http://localhost:2000";
+
+    private static final List<String> REACTOR_MODULES = List.of("annot", "core");
+    private static boolean reactorArtifactsInstalled;
 
     private File unzipDir;
     private File membraneHome;
@@ -266,15 +270,56 @@ public abstract class DistributionExtractingTestcase {
     }
 
     protected void mavenPackage() throws Exception {
-        BufferLogger logger = new BufferLogger();
-        try (Process2 mvn = new Process2.Builder().in(baseDir).executable(mavenCommand("package")).withWatcher(logger).start()) {
-            int exitCode = mvn.waitForExit(60000);
+        installReactorArtifacts();
+        runMaven(baseDir, "package");
+    }
+
+    /**
+     * The examples built by {@link #mavenPackage()} depend on the SNAPSHOT core of this build.
+     * <code>mvn verify</code> does not install it, so on a machine that never ran <code>mvn install</code>
+     * Maven cannot resolve it. Installs the parent pom, annot and core from the reactor's target directories
+     * into the local repository.
+     */
+    private static synchronized void installReactorArtifacts() throws Exception {
+        if (reactorArtifactsInstalled)
+            return;
+        // Run from distribution/target: no pom.xml there, and the relative paths contain no spaces,
+        // which Process2 would split on.
+        final var targetDir = getTargetDir();
+        runMaven(targetDir, installFileArgs("../../pom.xml", "../../pom.xml"));
+        for (final var module : REACTOR_MODULES) {
+            final var jar = findModuleJar(targetDir, module);
+            if (jar == null) {
+                log.info("No {} jar in the reactor, relying on the local Maven repository.", module);
+                return;
+            }
+            runMaven(targetDir, installFileArgs("../../%s/pom.xml".formatted(module), "../../%s/target/%s".formatted(module, jar)));
+        }
+        reactorArtifactsInstalled = true;
+    }
+
+    private static String installFileArgs(String pomFile, String file) {
+        return "-B -N install:install-file -DpomFile=%s -Dfile=%s".formatted(pomFile, file);
+    }
+
+    private static String findModuleJar(File targetDir, String module) {
+        final var moduleTarget = new File(targetDir, "../../%s/target".formatted(module));
+        final var prefix = "service-proxy-%s-".formatted(module);
+        final var jars = moduleTarget.list((dir, name) -> name.startsWith(prefix) && name.endsWith(".jar")
+                && !name.endsWith("-sources.jar") && !name.endsWith("-javadoc.jar") && !name.endsWith("-tests.jar"));
+        return jars == null || jars.length != 1 ? null : jars[0];
+    }
+
+    private static void runMaven(File dir, String args) throws Exception {
+        final var logger = new BufferLogger();
+        try (final var mvn = new Process2.Builder().in(dir).executable(mavenCommand(args)).withWatcher(logger).start()) {
+            final var exitCode = mvn.waitForExit(60000);
             if (exitCode != 0)
                 throw new RuntimeException("Maven exited with code %d: %s".formatted(exitCode, logger));
         }
     }
 
-    protected String mavenCommand(String command) {
+    protected static String mavenCommand(String command) {
         return isWindows() ? "cmd /c mvn " + command : "mvn " + command;
     }
 }
