@@ -34,7 +34,7 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
       - name: Maven Build
-        run: mvn --batch-mode --update-snapshots -Pno-internet verify
+        run: mvn --batch-mode --update-snapshots -Pno-internet install
 
   test-windows:
     runs-on: warp-windows-2025-vs2026-x64-4x
@@ -50,4 +50,4 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
       - name: Maven Build
-        run: mvn --batch-mode --update-snapshots -Pno-internet verify
+        run: mvn --batch-mode --update-snapshots -Pno-internet install
