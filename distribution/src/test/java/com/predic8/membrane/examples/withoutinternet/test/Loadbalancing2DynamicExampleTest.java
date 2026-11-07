@@ -73,7 +73,7 @@ public class Loadbalancing2DynamicExampleTest extends DistributionExtractingTest
 			assertEquals(3, getRespondingNode("http://localhost:4002/"));
 
 			// Start Node 1
-			ha.getAndAssert(204, "http://localhost:9010/clustermanager/up?host=localhost&port=4000");
+			ha.postAndAssert(204, "http://localhost:9010/clustermanager/up?host=localhost&port=4000", "");
 
 			assertNodeStatus(
 					ha.getAndAssert200("http://localhost:9000/admin/clusters/show?cluster=Default"),
@@ -83,23 +83,23 @@ public class Loadbalancing2DynamicExampleTest extends DistributionExtractingTest
 			assertEquals(1, getRespondingNode("http://localhost:3023/service"));
 
 			// Start Node 2
-			ha.getAndAssert(204, "http://localhost:9010/clustermanager/up?host=localhost&port=4001");
+			ha.postAndAssert(204, "http://localhost:9010/clustermanager/up?host=localhost&port=4001", "");
 			checkWhatNodesAreResponding(new int[]{1,2});
 
 			// Start Node 3
-			ha.getAndAssert(204, "http://localhost:9010/clustermanager/up?host=localhost&port=4002");
+			ha.postAndAssert(204, "http://localhost:9010/clustermanager/up?host=localhost&port=4002", "");
 			checkWhatNodesAreResponding(new int[]{1,2,3});
 
 			// Stop Node 3
-			ha.getAndAssert(204, "http://localhost:9010/clustermanager/down?host=localhost&port=4002");
+			ha.postAndAssert(204, "http://localhost:9010/clustermanager/down?host=localhost&port=4002", "");
 			checkWhatNodesAreResponding(new int[]{1,2});
 
 			// Stop Node 2
-			ha.getAndAssert(204, "http://localhost:9010/clustermanager/down?host=localhost&port=4001");
+			ha.postAndAssert(204, "http://localhost:9010/clustermanager/down?host=localhost&port=4001", "");
 			checkWhatNodesAreResponding(new int[]{1});
 
 			// Stop Node 1
-			ha.getAndAssert(204, "http://localhost:9010/clustermanager/down?host=localhost&port=4000");
+			ha.postAndAssert(204, "http://localhost:9010/clustermanager/down?host=localhost&port=4000", "");
 			ha.getAndAssert(503,"http://localhost:3023/service");
 		}
 	}

@@ -21,12 +21,15 @@ import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.*;
+import org.junit.jupiter.params.provider.*;
 
 import javax.crypto.*;
 import javax.crypto.spec.*;
 import java.net.*;
 import java.security.*;
 
+import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.util.URLParamUtil.*;
 import static java.lang.System.currentTimeMillis;
 import static java.nio.charset.StandardCharsets.*;
@@ -62,47 +65,51 @@ public class ClusterNotificationInterceptorTest {
 
 	@Test
 	void upEndpoint() throws Exception {
-		GetMethod get = new GetMethod("http://localhost:3002/clustermanager/up?"+
+		PostMethod post = new PostMethod("http://localhost:3002/clustermanager/up?"+
 				createQueryString("host", "node1.clustera",
 						"port", "3018",
 						"cluster","c1"));
 
-		assertEquals(204, new HttpClient().executeMethod(get));
+		assertEquals(204, new HttpClient().executeMethod(post));
 		assertEquals("node1.clustera", BalancerUtil.lookupBalancer(router, "Default").getAllNodesByCluster("c1").getFirst().getHost());
 
 	}
 
 	@Test
 	void takeOutEndpoint() throws Exception {
-		GetMethod get = new GetMethod("http://localhost:3002/clustermanager/takeout?"+
+		assertEquals(204, notify("up", "c1"));
+
+		PostMethod post = new PostMethod("http://localhost:3002/clustermanager/takeout?"+
 				createQueryString("host", "node1.clustera",
 						"port", "3018",
 						"cluster","c1"));
 
-		assertEquals(204, new HttpClient().executeMethod(get));
+		assertEquals(204, new HttpClient().executeMethod(post));
 		assertEquals(1, BalancerUtil.lookupBalancer(router, "Default").getAllNodesByCluster("c1").size());
 		assertTrue(BalancerUtil.lookupBalancer(router, "Default").getAllNodesByCluster("c1").getFirst().isTakeOut());
 	}
 
 	@Test
 	void testDownEndpoint() throws Exception {
-		GetMethod get = new GetMethod("http://localhost:3002/clustermanager/down?"+
+		assertEquals(204, notify("up", "c1"));
+
+		PostMethod post = new PostMethod("http://localhost:3002/clustermanager/down?"+
 				createQueryString("host", "node1.clustera",
 						"port", "3018",
 						"cluster","c1"));
 
-		assertEquals(204, new HttpClient().executeMethod(get));
+		assertEquals(204, new HttpClient().executeMethod(post));
 		assertEquals(1, BalancerUtil.lookupBalancer(router, "Default").getAllNodesByCluster("c1").size());
         assertFalse(BalancerUtil.lookupBalancer(router, "Default").getAllNodesByCluster("c1").getFirst().isUp());
 	}
 
 	@Test
 	void testDefaultCluster() throws Exception {
-		GetMethod get = new GetMethod("http://localhost:3002/clustermanager/up?"+
+		PostMethod post = new PostMethod("http://localhost:3002/clustermanager/up?"+
 				createQueryString("host", "node1.clustera",
 						"port", "3018"));
 
-		assertEquals(204, new HttpClient().executeMethod(get));
+		assertEquals(204, new HttpClient().executeMethod(post));
 		assertEquals(1, BalancerUtil.lookupBalancer(router, "Default").getAllNodesByCluster("Default").size());
 		assertEquals("node1.clustera", BalancerUtil.lookupBalancer(router, "Default").getAllNodesByCluster("Default").getFirst().getHost());
 	}
@@ -115,17 +122,75 @@ public class ClusterNotificationInterceptorTest {
 		assertEquals(204, new HttpClient().executeMethod(getSecurityTestMethod(5004)));
 
 		interceptor.setTimeout(50);
-		GetMethod get = getSecurityTestMethod(currentTimeMillis());
-		assertEquals(204, new HttpClient().executeMethod(get));
-		assertEquals(204, new HttpClient().executeMethod(get));
+		PostMethod post = getSecurityTestMethod(currentTimeMillis());
+		assertEquals(204, new HttpClient().executeMethod(post));
+		assertEquals(204, new HttpClient().executeMethod(post));
 
 		Thread.sleep(100);
-		assertEquals(403, new HttpClient().executeMethod(get));
+		assertEquals(403, new HttpClient().executeMethod(post));
 
 	}
 
-	private GetMethod getSecurityTestMethod(long time) throws Exception {
-        return new GetMethod("http://localhost:3002/clustermanager/up?data=" +
+	@Test
+	void downUnknownNodeIsNotFound() throws Exception {
+		assertEquals(404, notify("down", "c1"));
+		assertTrue(BalancerUtil.lookupBalancer(router, "Default").getAllNodesByCluster("c1").isEmpty());
+	}
+
+	@Test
+	void takeOutUnknownNodeIsNotFound() throws Exception {
+		assertEquals(404, notify("takeout", "c1"));
+		assertTrue(BalancerUtil.lookupBalancer(router, "Default").getAllNodesByCluster("c1").isEmpty());
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {"up", "down", "takeout"})
+	void getIsNotAllowed(String command) throws Exception {
+		final var get = new GetMethod(notificationUrl(command, "c1"));
+		assertEquals(405, new HttpClient().executeMethod(get));
+		assertEquals("POST", get.getResponseHeader(ALLOW).getValue());
+		assertTrue(BalancerUtil.lookupBalancer(router, "Default").getAllNodesByCluster("c1").isEmpty());
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {"cross-site", "same-site"})
+	void crossSitePostIsForbidden(String secFetchSite) throws Exception {
+		final var post = new PostMethod(notificationUrl("up", "c1"));
+		post.setRequestHeader(SEC_FETCH_SITE, secFetchSite);
+		assertEquals(403, new HttpClient().executeMethod(post));
+		assertTrue(BalancerUtil.lookupBalancer(router, "Default").getAllNodesByCluster("c1").isEmpty());
+	}
+
+	@Test
+	void postWithForeignOriginIsForbidden() throws Exception {
+		final var post = new PostMethod(notificationUrl("up", "c1"));
+		post.setRequestHeader(ORIGIN, "https://attacker.example.com");
+		assertEquals(403, new HttpClient().executeMethod(post));
+		assertTrue(BalancerUtil.lookupBalancer(router, "Default").getAllNodesByCluster("c1").isEmpty());
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {"same-origin", "none"})
+	void sameOriginPostIsAccepted(String secFetchSite) throws Exception {
+		final var post = new PostMethod(notificationUrl("up", "c1"));
+		post.setRequestHeader(SEC_FETCH_SITE, secFetchSite);
+		assertEquals(204, new HttpClient().executeMethod(post));
+		assertEquals(1, BalancerUtil.lookupBalancer(router, "Default").getAllNodesByCluster("c1").size());
+	}
+
+	private int notify(String command, String cluster) throws Exception {
+		return new HttpClient().executeMethod(new PostMethod(notificationUrl(command, cluster)));
+	}
+
+	private static String notificationUrl(String command, String cluster) {
+		return "http://localhost:3002/clustermanager/" + command + "?" +
+				createQueryString("host", "node1.clustera",
+						"port", "3018",
+						"cluster", cluster);
+	}
+
+	private PostMethod getSecurityTestMethod(long time) throws Exception {
+        return new PostMethod("http://localhost:3002/clustermanager/up?data=" +
 				URLEncoder.encode(getEncryptedQueryString(getqParams(time)), UTF_8));
 	}
 

@@ -25,11 +25,13 @@ public class UrlNormalizer {
      *
      * @param url the URL string to normalize
      * @return the normalized base URL string
-     * @throws URISyntaxException       if the URL is malformed
+     * @throws URISyntaxException       if the URL is malformed or has no scheme or host
      * @throws IllegalArgumentException if the URL is null
      */
     public static String normalizeBaseUrl(String url) throws URISyntaxException {
         URI uri = new URI(url);
+        if (uri.getScheme() == null || uri.getHost() == null)
+            throw new URISyntaxException(url, "Scheme and host required");
         String scheme = uri.getScheme().toLowerCase();
         String host = uri.getHost().toLowerCase();
 

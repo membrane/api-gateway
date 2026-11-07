@@ -79,10 +79,10 @@ Nodes can be organized in clusters. You can manage them either through the web-b
 Nodes can also be controlled programmatically using the Cluster Manager API. For example, to temporarily disable node `localhost:4001`:
 
 ```bash
-curl "http://localhost:9010/clustermanager/down?balancer=default&host=localhost&port=4001"
+curl -X POST "http://localhost:9010/clustermanager/down?balancer=default&host=localhost&port=4001"
 ```
 
-Re-enable the node with `.../up?balancer=...`.
+Re-enable the node with `.../up?balancer=...`. The Cluster Manager API accepts only POST requests.
 
 
 ## Notes

@@ -47,7 +47,7 @@ public class Loadbalancing5MultipleExampleTest extends DistributionExtractingTes
 			assertNodeStatus(status, "localhost", 4000, "UP");
 			assertNodeStatus(status, "localhost", 4001, "UP");
 
-			ha.getAndAssert(204, "http://localhost:9010/clustermanager/down?balancer=balancer1&host=localhost&port=4001");
+			ha.postAndAssert(204, "http://localhost:9010/clustermanager/down?balancer=balancer1&host=localhost&port=4001", "");
 			Thread.sleep(1000);
 
 			status = ha.getAndAssert200("http://localhost:9000/admin/clusters/show?balancer=balancer1&cluster=Default");

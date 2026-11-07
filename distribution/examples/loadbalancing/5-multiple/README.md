@@ -40,8 +40,8 @@ To run the example execute the following steps:
 
 7. Nodes are identified by host name and port. Note that both nodes have status "UP".
 
-8. Open http://localhost:9010/clustermanager/down?balancer=balancer1&host=localhost&port=4001 in a different browser
-   tab. (No content will appear.) This sets the status of node 2 ( the one on port 4001 ) to "DOWN" and effectively disables it ( in balancer 1 ).
+8. Run `curl -X POST "http://localhost:9010/clustermanager/down?balancer=balancer1&host=localhost&port=4001"`.
+   (No content will appear.) This sets the status of node 2 ( the one on port 4001 ) to "DOWN" and effectively disables it ( in balancer 1 ).
    
 9. Then go back to the admin interface and refresh. Note that the second node now has status "DOWN".
 

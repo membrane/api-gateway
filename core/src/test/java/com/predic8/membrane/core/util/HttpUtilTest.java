@@ -23,6 +23,8 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
+import com.predic8.membrane.core.proxies.ProxyRule;
+
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.util.HttpUtil.*;
@@ -130,5 +132,136 @@ public class HttpUtilTest {
     })
     void idempotent(String method, boolean expected) {
         assertEquals(expected, isIdempotent(method));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "same-origin, false",
+            "none, false",
+            "same-site, true",
+            "cross-site, true",
+            "SAME-ORIGIN, false"
+    })
+    void crossOriginBySecFetchSite(String secFetchSite, boolean crossOrigin) throws Exception {
+        assertEquals(crossOrigin, isCrossOrigin(Request.post("/").header(SEC_FETCH_SITE, secFetchSite).buildExchange()));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "http://gateway.example.com:9000, false",
+            "HTTP://Gateway.Example.com:9000, false",
+            "https://gateway.example.com:9000, true",
+            "https://attacker.example.com, true",
+            "http://gateway.example.com, true",
+            "null, true",
+            "'http://exa mple.com', true"
+    })
+    void crossOriginByOrigin(String origin, boolean crossOrigin) throws Exception {
+        assertEquals(crossOrigin, isCrossOrigin(Request.post("/")
+                .header(HOST, "gateway.example.com:9000")
+                .header(ORIGIN, origin).buildExchange()));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "https://gateway.example.com, false",
+            "https://gateway.example.com:443, false",
+            "http://gateway.example.com, true",
+            "http://gateway.example.com:443, true",
+            "https://gateway.example.com:8443, true"
+    })
+    void crossOriginOnTlsProxy(String origin, boolean crossOrigin) throws Exception {
+        final var exc = Request.post("/")
+                .header(HOST, "gateway.example.com")
+                .header(ORIGIN, origin).buildExchange();
+        exc.setProxy(new ProxyRule() {
+            @Override
+            public String getProtocol() {
+                return "https";
+            }
+        });
+        assertEquals(crossOrigin, isCrossOrigin(exc));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "https, https://gateway.example.com, false",
+            "https, http://gateway.example.com, true",
+            "http, https://gateway.example.com, true",
+            "'https, http', https://gateway.example.com, false",
+            "', https', https://gateway.example.com, false"
+    })
+    void crossOriginBehindTlsTerminatingProxy(String forwardedProto, String origin, boolean crossOrigin) throws Exception {
+        assertEquals(crossOrigin, isCrossOrigin(Request.post("/")
+                .header(HOST, "gateway.example.com")
+                .header(X_FORWARDED_PROTO, forwardedProto)
+                .header(ORIGIN, origin).buildExchange()));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "gateway.example.com, https://gateway.example.com, false",
+            "'gateway.example.com, internal:9000', https://gateway.example.com, false",
+            "gateway.example.com, https://internal:9000, true",
+            "attacker.example.com, https://gateway.example.com, true"
+    })
+    void crossOriginBehindHostRewritingProxy(String forwardedHost, String origin, boolean crossOrigin) throws Exception {
+        assertEquals(crossOrigin, isCrossOrigin(Request.post("/")
+                .header(HOST, "internal:9000")
+                .header(X_FORWARDED_HOST, forwardedHost)
+                .header(X_FORWARDED_PROTO, "https")
+                .header(ORIGIN, origin).buildExchange()));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "https, https://gateway.example.com, false",
+            "https, http://gateway.example.com, true",
+            "http, http://gateway.example.com, false"
+    })
+    void emptyForwardedProtoFallsBackToProxyProtocol(String protocol, String origin, boolean crossOrigin) throws Exception {
+        final var exc = Request.post("/")
+                .header(HOST, "gateway.example.com")
+                .header(X_FORWARDED_PROTO, ",")
+                .header(ORIGIN, origin).buildExchange();
+        exc.setProxy(new ProxyRule() {
+            @Override
+            public String getProtocol() {
+                return protocol;
+            }
+        });
+        assertEquals(crossOrigin, isCrossOrigin(exc));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "http://gateway.example.com, false",
+            "http://attacker.example.com, true"
+    })
+    void emptyForwardedHostFallsBackToHost(String origin, boolean crossOrigin) throws Exception {
+        assertEquals(crossOrigin, isCrossOrigin(Request.post("/")
+                .header(HOST, "gateway.example.com")
+                .header(X_FORWARDED_HOST, ",")
+                .header(ORIGIN, origin).buildExchange()));
+    }
+
+    @Test
+    void plainHttpRequestDefaultsToPort80() throws Exception {
+        assertFalse(isCrossOrigin(Request.post("/")
+                .header(HOST, "gateway.example.com:80")
+                .header(ORIGIN, "http://gateway.example.com").buildExchange()));
+    }
+
+    @Test
+    void requestWithoutFetchMetadataOrOriginIsNotCrossOrigin() throws Exception {
+        assertFalse(isCrossOrigin(Request.post("/").header(HOST, "gateway.example.com:9000").buildExchange()));
+    }
+
+    @Test
+    void secFetchSiteWinsOverOrigin() throws Exception {
+        assertFalse(isCrossOrigin(Request.post("/")
+                .header(HOST, "gateway.example.com:9000")
+                .header(ORIGIN, "https://attacker.example.com")
+                .header(SEC_FETCH_SITE, "same-origin").buildExchange()));
     }
 }

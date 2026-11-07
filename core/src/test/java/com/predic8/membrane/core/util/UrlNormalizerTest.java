@@ -14,6 +14,8 @@
 
 package com.predic8.membrane.core.util;
 
+import org.junit.jupiter.params.*;
+import org.junit.jupiter.params.provider.*;
 import org.junit.jupiter.api.Test;
 
 import java.net.URISyntaxException;
@@ -66,5 +68,11 @@ class UrlNormalizerTest {
         // IPv6 host
         assertEquals("http://[2001:db8::1]",
                 UrlNormalizer.normalizeBaseUrl("http://[2001:db8::1]/"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"null", "example.com", "/path", "http://exa_mple.com", "mailto:someone@example.com"})
+    void throwsWithoutSchemeOrHost(String url) {
+        assertThrows(URISyntaxException.class, () -> normalizeBaseUrl(url));
     }
 }

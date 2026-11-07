@@ -39,6 +39,7 @@ import static com.predic8.membrane.core.http.Request.METHOD_POST;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.administration.AdminPageBuilder.*;
 import static com.predic8.membrane.core.interceptor.rest.RESTInterceptor.*;
+import static com.predic8.membrane.core.util.HttpUtil.isCrossOrigin;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
 import static com.predic8.membrane.core.util.URLParamUtil.*;
 import static java.nio.charset.StandardCharsets.*;
@@ -884,7 +885,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 					exc.setResponse(Response.methodNotAllowed().header(ALLOW, METHOD_POST).build());
 					return RETURN;
 				}
-				if (a.modifiesState() && isCrossOrigin(exc.getRequest())) {
+				if (a.modifiesState() && isCrossOrigin(exc)) {
 					log.info("Rejected cross-origin request to {}", pathQuery);
 					exc.setResponse(Response.forbidden("Cross-origin requests may not change the router's state.").build());
 					return RETURN;
@@ -894,27 +895,6 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 			}
 		}
 		return CONTINUE;
-	}
-
-	/**
-	 * Uses Fetch Metadata and falls back to comparing Origin with Host for browsers that do not send
-	 * Sec-Fetch-Site. A request with neither header does not come from a browser and cannot be forged
-	 * by a third-party site.
-	 */
-	static boolean isCrossOrigin(Request request) {
-		final var secFetchSite = request.getHeader().getFirstValue(SEC_FETCH_SITE);
-		if (secFetchSite != null)
-			return !"same-origin".equalsIgnoreCase(secFetchSite) && !"none".equalsIgnoreCase(secFetchSite);
-
-		final var origin = request.getHeader().getFirstValue(ORIGIN);
-		if (origin == null)
-			return false;
-		try {
-			final var authority = new URI(origin).getRawAuthority();
-			return authority == null || !authority.equalsIgnoreCase(request.getHeader().getHost());
-		} catch (URISyntaxException e) {
-			return true;
-		}
 	}
 
 	private Map<String, String> getParams(Exchange exc) throws URISyntaxException, IOException {

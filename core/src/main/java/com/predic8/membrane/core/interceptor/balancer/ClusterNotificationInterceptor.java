@@ -28,14 +28,22 @@ import java.util.*;
 import java.util.regex.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.http.Header.ALLOW;
+import static com.predic8.membrane.core.http.Request.METHOD_POST;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.balancer.BalancerUtil.*;
+import static com.predic8.membrane.core.util.HttpUtil.isCrossOrigin;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
 import static com.predic8.membrane.core.util.URLParamUtil.*;
 import static java.nio.charset.StandardCharsets.*;
 
 /**
  * @description Receives control messages to dynamically modify the configuration of a {@link LoadBalancingInterceptor}.
+ * Only POST is accepted; other methods are answered with 405. Requests a browser sends from another site are rejected
+ * with 403. <code>up</code> registers a node that is not known yet, <code>down</code> and <code>takeout</code> answer
+ * 404 for an unknown node.
+ * <p>Anyone who can call this endpoint can add backends and redirect traffic. Protect it, e.g. with
+ * <code>basicAuthentication</code>, or make it reachable from an internal network only.</p>
  * @explanation See also examples/loadbalancer-client-2 in the Membrane API Gateway distribution.
  * @topic 2. Enterprise Integration Patterns
  */
@@ -62,6 +70,15 @@ public class ClusterNotificationInterceptor extends AbstractInterceptor {
 		if (!m.matches()) return Outcome.CONTINUE;
 
 		log.debug("request received: {}",m.group(1));
+		if (!exc.getRequest().isPOSTRequest()) {
+			exc.setResponse(Response.methodNotAllowed().header(ALLOW, METHOD_POST).build());
+			return ABORT;
+		}
+		if (isCrossOrigin(exc)) {
+			log.info("Rejected cross-origin request to {}", exc.getOriginalRequestUri());
+			exc.setResponse(Response.forbidden("Cross-origin requests may not change the cluster.").build());
+			return ABORT;
+		}
 		if (validateSignature && !getParams(exc).containsKey("data")) {
 			exc.setResponse(Response.forbidden().build());
 			return Outcome.ABORT;
@@ -86,6 +103,10 @@ public class ClusterNotificationInterceptor extends AbstractInterceptor {
 					return Outcome.ABORT;
 				}
 
+				if (!"up".equals(m.group(1)) && !isExistingNode(params)) {
+					exc.setResponse(Response.notFound().build());
+					return ABORT;
+				}
 				updateClusterManager(m, params);
 
 				exc.setResponse(Response.noContent().build());
@@ -115,6 +136,11 @@ public class ClusterNotificationInterceptor extends AbstractInterceptor {
 					params.get("host"),
 					getPortParam(params));
 		}
+	}
+
+	private boolean isExistingNode(Map<String, String> params) {
+		return lookupBalancer(router, getBalancerParam(params))
+				.hasNode(getClusterParam(params), params.get("host"), getPortParam(params));
 	}
 
 	private boolean isTimedout(Map<String, String> params) {

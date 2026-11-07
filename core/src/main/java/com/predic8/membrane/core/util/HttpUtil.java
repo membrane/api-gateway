@@ -15,8 +15,10 @@
 package com.predic8.membrane.core.util;
 
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.http.Response.*;
+import com.predic8.membrane.core.proxies.SSLableProxy;
 import com.predic8.membrane.core.transport.http.*;
 
 import java.io.*;
@@ -25,6 +27,8 @@ import java.text.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.http.Header.ORIGIN;
+import static com.predic8.membrane.core.http.Header.SEC_FETCH_SITE;
 import static com.predic8.membrane.core.http.Header.X_FORWARDED_FOR;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Request.*;
@@ -224,5 +228,44 @@ public class HttpUtil {
         return unescapedHtmlMessage(
                 escapeHtml4(caption),
                 escapeHtml4(text));
+    }
+
+    /**
+     * Uses Fetch Metadata and falls back to comparing Origin with the request's own origin (scheme, Host and
+     * port, with default ports filled in) for browsers that do not send Sec-Fetch-Site. A request with neither
+     * header does not come from a browser and cannot be forged by a third-party site.
+     * <p>The request's scheme comes from X-Forwarded-Proto if present, otherwise from whether the proxy
+     * terminates TLS. Its host comes from the first X-Forwarded-Host entry if present, otherwise from Host.
+     * A cross-site page cannot set either X-Forwarded header without a CORS preflight, so they need no
+     * trusted-proxy configuration here.</p>
+     */
+    public static boolean isCrossOrigin(Exchange exc) {
+        final var header = exc.getRequest().getHeader();
+        final var secFetchSite = header.getFirstValue(SEC_FETCH_SITE);
+        if (secFetchSite != null)
+            return !"same-origin".equalsIgnoreCase(secFetchSite) && !"none".equalsIgnoreCase(secFetchSite);
+
+        final var origin = header.getFirstValue(ORIGIN);
+        if (origin == null)
+            return false;
+        try {
+            return !UrlNormalizer.normalizeBaseUrl(origin).equals(UrlNormalizer.normalizeBaseUrl(getRequestScheme(exc) + "://" + getRequestHost(exc)));
+        } catch (URISyntaxException e) {
+            return true;
+        }
+    }
+
+    private static String getRequestHost(Exchange exc) {
+        final var forwardedHosts = StringList.parseToList(exc.getRequest().getHeader().getXForwardedHost());
+        if (!forwardedHosts.isEmpty())
+            return forwardedHosts.getFirst();
+        return exc.getRequest().getHeader().getHost();
+    }
+
+    private static String getRequestScheme(Exchange exc) {
+        final var forwardedProtos = StringList.parseToList(exc.getRequest().getHeader().getXForwardedProto());
+        if (!forwardedProtos.isEmpty())
+            return "https".equalsIgnoreCase(forwardedProtos.getFirst()) ? "https" : "http";
+        return exc.getProxy() instanceof SSLableProxy proxy ? proxy.getProtocol() : "http";
     }
 }
