@@ -19,6 +19,11 @@ var membrane = function() {
 		return (/msie|trident/i).test(navigator.userAgent);
 	}
 
+	// DataTables writes cells with innerHTML, so recorded traffic must be escaped before it is rendered.
+	function escapeHtml(s) {
+		return $('<div>').text(s == null ? '' : String(s)).html();
+	}
+
 	function createLink(href, content, params) {
 		var i,
 		    url = encodeURI(href);
@@ -34,7 +39,7 @@ var membrane = function() {
 			}			
 		}
 		
-		return '<a href="'+url+'">'+content+'</a>';
+		return '<a href="'+url+'">'+escapeHtml(content)+'</a>';
 	}
 	
 	function loadExchange(exchangeId) {	
@@ -63,6 +68,7 @@ var membrane = function() {
 				                { "mDataProp": "name" },
 				                { "mDataProp": "value" }
 				              ],
+				  "aoColumnDefs": [{ "fnRender": function ( o, v ) { return escapeHtml(v); }, "aTargets": [ 0, 1 ] }],
 		    "fnServerData": function ( sSource, aoData, fnCallback ) {
 		        $.ajax( {            	  
 		          "dataType": 'json', 
@@ -157,13 +163,13 @@ var membrane = function() {
 		$('#request-meta').dataTable(getMetaTableConfiguration(function(data) {
 			var fullPath = "http://"+data.server+":"+data.serverPort+data.path;
 		return [
-		   ["Time", data.time],
-		   ["Method", data.method],
-   		   ["Path", data.method==="GET"?createLink(fullPath, data.path):data.path],
+		   ["Time", escapeHtml(data.time)],
+		   ["Method", escapeHtml(data.method)],
+   		   ["Path", data.method==="GET"?createLink(fullPath, data.path):escapeHtml(data.path)],
 		   ["Proxy", createLink(relativeRootPath + '/admin/service-proxy/show', data.proxy, [['name',data.proxy+':'+data.listenPort]])],
 		   ["Client", createLink(relativeRootPath + '/admin/calls',  data.client, [['client', data.client]])],
-		   ["Content Type", data.reqContentType],
-		   ["Length", data.reqContentLength]
+		   ["Content Type", escapeHtml(data.reqContentType)],
+		   ["Length", escapeHtml(data.reqContentLength)]
 		];}));
 		$('#request-node-status').dataTable(getMetaTableConfiguration(function(data) {
 			var res = [];
@@ -181,11 +187,11 @@ var membrane = function() {
 		loadText('#request-raw', requestRawUrl);
 		
 		$('#response-meta').dataTable(getMetaTableConfiguration(function(data) { return [
-		   ["Status Code", data.statusCode],
-		   ["Server", data.server],
-		   ["Content Type", data.respContentType],
-		   ["Length", data.respContentLength],
-		   ["Duration", data.duration]
+		   ["Status Code", escapeHtml(data.statusCode)],
+		   ["Server", escapeHtml(data.server)],
+		   ["Content Type", escapeHtml(data.respContentType)],
+		   ["Length", escapeHtml(data.respContentLength)],
+		   ["Duration", escapeHtml(data.duration)]
 		];}));
 		$('#response-headers').dataTable(getHeaderTableConfiguration(responseHeaderUrl));	
 		loadText('#response-raw', responseRawUrl);
@@ -198,6 +204,7 @@ var membrane = function() {
 
 	return {
 		createLink:createLink,
+		escapeHtml:escapeHtml,
 		loadExchange:loadExchange,
 		onFilterUpdate:onFilterUpdate,
 	}
@@ -347,8 +354,8 @@ $(function() {
 
 	function shorten(s) {
 		if (s.length < 80)
-			return s;
-		return s.replaceAll(new RegExp("(.{1,80})", "g"), "$1<wbr/>");
+			return membrane.escapeHtml(s);
+		return $.map(s.match(/.{1,80}/g), membrane.escapeHtml).join("<wbr/>");
 	}
 
 	membrane.messageTable = $('#message-stat-table').dataTable({
@@ -374,6 +381,18 @@ $(function() {
 	            	   return membrane.createLink(relativeRootPath + '/admin/service-proxy/show', v, [['name',v+':'+o.aData.listenPort]]);
 	               },
 	               "aTargets": [ 2 ]
+	           },
+	           {
+	               "fnRender": function ( o, v ) {
+	            	   return shorten(v);
+	               },
+	               "aTargets": [ 5 ]
+	           },
+	           {
+	               "fnRender": function ( o, v ) {
+	            	   return membrane.escapeHtml(v);
+	               },
+	               "aTargets": [ 1, 3, 4, 6, 7, 8, 9, 10, 11, 12 ]
 	           }
 		  ],
 		  "aoColumns": [
@@ -435,11 +454,6 @@ $(function() {
                 "url": sSource, 
                 "data": queryData, 
                 "success": function(data) {
-					if (data.exchanges) {
-						for (var i = 0; i < data.exchanges.length; i++) {
-							data.exchanges[i].path = shorten(data.exchanges[i].path);
-						}
-					}
                 	data.sEcho = aoData.sEcho;
                 	data.iTotalRecords = data.total;
                 	data.iTotalDisplayRecords = data.total;
