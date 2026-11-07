@@ -20,10 +20,10 @@ import org.junit.jupiter.api.TestInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.xpath.XPathFactory;
 import java.io.*;
 import java.nio.file.Files;
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
@@ -289,10 +289,11 @@ public abstract class DistributionExtractingTestcase {
         // which Process2 would split on.
         final var targetDir = getTargetDir();
         runMaven(targetDir, installFileArgs("../../pom.xml", "../../pom.xml"));
+        final var version = getReactorVersion(targetDir);
         for (final var module : REACTOR_MODULES) {
-            final var jar = findModuleJar(targetDir, module);
-            if (jar == null) {
-                log.info("No {} jar in the reactor, relying on the local Maven repository.", module);
+            final var jar = "service-proxy-%s-%s.jar".formatted(module, version);
+            if (!new File(targetDir, "../../%s/target/%s".formatted(module, jar)).isFile()) {
+                log.info("No {} in the reactor, relying on the local Maven repository.", jar);
                 continue;
             }
             runMaven(targetDir, installFileArgs("../../%s/pom.xml".formatted(module), "../../%s/target/%s".formatted(module, jar)));
@@ -304,15 +305,16 @@ public abstract class DistributionExtractingTestcase {
         return "-B -N install:install-file -DpomFile=%s -Dfile=%s".formatted(pomFile, file);
     }
 
-    private static String findModuleJar(File targetDir, String module) {
-        final var moduleTarget = new File(targetDir, "../../%s/target".formatted(module));
-        final var prefix = "service-proxy-%s-".formatted(module);
-        final var jars = moduleTarget.listFiles((dir, name) -> name.startsWith(prefix) && name.endsWith(".jar")
-                && !name.endsWith("-sources.jar") && !name.endsWith("-javadoc.jar") && !name.endsWith("-tests.jar"));
-        if (jars == null)
-            return null;
-        // After a version bump without "mvn clean", target/ also holds the jar of the previous version.
-        return Arrays.stream(jars).max(Comparator.comparingLong(File::lastModified)).map(File::getName).orElse(null);
+    /**
+     * The version of the root pom. A module's target directory can also hold jars of an earlier version
+     * (version bump without <code>mvn clean</code>), so the jar to install is selected by this version.
+     */
+    private static String getReactorVersion(File targetDir) throws Exception {
+        final var pom = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new File(targetDir, "../../pom.xml"));
+        final var version = XPathFactory.newInstance().newXPath().evaluate("/project/version", pom);
+        if (version.isBlank())
+            throw new RuntimeException("No /project/version in the root pom.xml.");
+        return version;
     }
 
     private static void runMaven(File dir, String args) throws Exception {
