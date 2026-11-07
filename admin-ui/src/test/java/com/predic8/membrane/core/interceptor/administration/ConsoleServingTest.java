@@ -48,8 +48,17 @@ class ConsoleServingTest {
         router.stop();
     }
 
+    /**
+     * The UI is not built with -Dskip.npm; then only the old console is served.
+     */
+    private static void assumeUiBuilt() {
+        Assumptions.assumeTrue(AdminConsoleInterceptor.class.getResource(AdminConsoleInterceptor.CONSOLE_INDEX) != null,
+                "The admin UI was not built.");
+    }
+
     @Test
     void rootRedirectsToTheNewConsole() throws Exception {
+        assumeUiBuilt();
         final var res = get("/");
         assertEquals(3, res.statusCode() / 100);
         assertTrue(res.headers().firstValue("Location").orElseThrow().endsWith("/console/"));
@@ -62,6 +71,7 @@ class ConsoleServingTest {
 
     @Test
     void servesTheConsoleAndItsAssets() throws Exception {
+        assumeUiBuilt();
         final var index = get("/console/");
         assertEquals(200, index.statusCode());
         assertTrue(index.body().contains("<div id=\"root\">"), index.body());

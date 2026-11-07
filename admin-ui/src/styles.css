@@ -125,6 +125,7 @@ tr.inactive td { color: var(--muted); }
 
 .headers th { font-weight: 500; vertical-align: top; }
 .headers td { white-space: normal; overflow-wrap: anywhere; }
+.pager { display: flex; align-items: center; gap: 12px; margin-top: 8px; }
 .body-bar { display: flex; justify-content: space-between; align-items: center; margin: 12px 0 6px; gap: 8px; }
 pre.body { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px; overflow: auto; max-height: 60vh; white-space: pre-wrap; overflow-wrap: anywhere; }
 details { margin-top: 16px; }

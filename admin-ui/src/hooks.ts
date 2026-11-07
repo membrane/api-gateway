@@ -17,7 +17,9 @@ export function useLoad<T>(load: (signal: AbortSignal) => Promise<T>, deps: unkn
     const controller = new AbortController();
     setState((s) => ({ ...s, loading: true }));
     load(controller.signal)
-      .then((data) => setState({ data, loading: false }))
+      .then((data) => {
+        if (!controller.signal.aborted) setState({ data, loading: false });
+      })
       .catch((e) => {
         if (controller.signal.aborted) return;
         setState({ error: e instanceof ApiError ? e : new ApiError(0, String(e)), loading: false });

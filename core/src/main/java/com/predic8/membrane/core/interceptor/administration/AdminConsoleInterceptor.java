@@ -77,12 +77,21 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 		if (exc.getRequest().getHeader().getFirstValue(X_REQUESTED_WITH) != null && exc.getResponse() != null)
 			exc.getResponse().getHeader().add(EXPIRES, "-1");
 
-		if (exc.getResponse() != null && exc.getRequest().getUri().startsWith("/console/")) {
+		// Also when an earlier step changed the destination to a console file.
+		if (exc.getResponse() != null && (isConsolePath(exc.getRequest().getUri())
+				|| exc.getDestinations().stream().anyMatch(AdminConsoleInterceptor::isConsolePath))) {
 			exc.getResponse().getHeader().setValue(CONTENT_SECURITY_POLICY, CONSOLE_CSP);
 			exc.getResponse().getHeader().setValue(X_CONTENT_TYPE_OPTIONS, "nosniff");
 		}
 
 		return result;
+	}
+
+	static boolean isConsolePath(String uri) {
+		if (uri == null)
+			return false;
+		final var path = uri.replaceFirst("^[a-zA-Z][a-zA-Z0-9+.-]*://[^/]*", "");
+		return path.startsWith("/console/");
 	}
 
 	@Override
@@ -133,7 +142,8 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 	/**
 	 * @description If set, requests to the admin API (<code>/admin/api/v1</code>) must carry this key in the
 	 * <code>X-Api-Key</code> header. Set it on instances that are included as <code>peers</code> of another admin
-	 * console.
+	 * console. The web console under <code>/console/</code> does not send a key, so open it on the aggregating
+	 * instance.
 	 */
 	@MCAttribute
 	public void setApiKey(String apiKey) {

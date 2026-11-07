@@ -18,6 +18,7 @@ export function CallsPage() {
   const filters = Object.fromEntries(FILTERS.map((f) => [f, route.params.get(f) ?? ""])) as Record<(typeof FILTERS)[number], string>;
   const [live, setLive] = useState(true);
   const [page, setPage] = useState<ExchangePage>();
+  const [offset, setOffset] = useState(0);
   const [error, setError] = useState<ApiError>();
   const lastModified = useRef<Record<string, number> | undefined>(undefined);
   const key = JSON.stringify(filters);
@@ -27,18 +28,23 @@ export function CallsPage() {
     lastModified.current = undefined;
     let timer: ReturnType<typeof setTimeout> | undefined;
 
+    // Live updates only on the first page: older pages would shift under the reader.
+    const following = live && offset === 0;
     const poll = async () => {
       try {
-        const wait = live && lastModified.current ? { waitForModification: JSON.stringify(lastModified.current), timeout: 30 } : {};
-        const result = await api.get<ExchangePage>("/exchanges", { ...filters, limit: PAGE_SIZE, ...wait }, controller.signal);
+        const wait = following && lastModified.current ? { waitForModification: JSON.stringify(lastModified.current), timeout: 30 } : {};
+        const result = await api.get<ExchangePage>("/exchanges", { ...filters, offset, limit: PAGE_SIZE, ...wait }, controller.signal);
         lastModified.current = result.lastModified;
         setPage(result);
         setError(undefined);
       } catch (e) {
         if (controller.signal.aborted) return;
-        setError(e instanceof ApiError ? e : new ApiError(0, String(e)));
+        const error = e instanceof ApiError ? e : new ApiError(0, String(e));
+        // A rejected filter: do not show the results of the previous filter below the error.
+        if (error.status >= 400 && error.status < 500) setPage(undefined);
+        setError(error);
       }
-      if (live && !controller.signal.aborted) timer = setTimeout(poll, 1000);
+      if (following && !controller.signal.aborted) timer = setTimeout(poll, 1000);
     };
     poll();
     return () => {
@@ -46,9 +52,12 @@ export function CallsPage() {
       if (timer) clearTimeout(timer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key, live]);
+  }, [key, live, offset]);
 
-  const setFilter = (name: string, value: string) => replaceParams(route, { ...filters, [name]: value || undefined });
+  const setFilter = (name: string, value: string) => {
+    setOffset(0);
+    replaceParams(route, { ...filters, [name]: value || undefined });
+  };
 
   return (
     <section>
@@ -103,7 +112,15 @@ export function CallsPage() {
           </tbody>
         </table>
       </div>
-      {page && <p className="muted">{page.exchanges.length} of {page.total} calls</p>}
+      {page && (
+        <div className="pager">
+          <button className="button" disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}>Newer</button>
+          <span className="muted">
+            {page.exchanges.length === 0 ? 0 : offset + 1}–{offset + page.exchanges.length} of {page.total} calls
+          </span>
+          <button className="button" disabled={offset + PAGE_SIZE >= page.total} onClick={() => setOffset(offset + PAGE_SIZE)}>Older</button>
+        </div>
+      )}
     </section>
   );
 }
