@@ -23,8 +23,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InterruptedIOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
@@ -45,12 +43,9 @@ public class StreamInfo {
     private final PeerFlowControl peerFlowControl;
     private final LinkedTransferQueue<DataFrame> dataFramesReceived = new LinkedTransferQueue<>();
     private final int streamId;
-    private final List<StreamInfo> priorityChildren = new ArrayList<>();
     private final LinkedTransferQueue<Frame> dataFramesToBeSent = new LinkedTransferQueue<>();
     private final Semaphore bufferedDataFrames = new Semaphore(4);
-    private StreamInfo priorityParent = null;
     private StreamState state = StreamState.IDLE;
-    private int weight;
     private Message message;
     private boolean isTrailer;
     private volatile IOException abortCause;
@@ -392,26 +387,6 @@ public class StreamInfo {
             this.trailer = trailer;
             return true;
         }
-    }
-
-    public List<StreamInfo> getPriorityChildren() {
-        return priorityChildren;
-    }
-
-    public StreamInfo getPriorityParent() {
-        return priorityParent;
-    }
-
-    public void setPriorityParent(StreamInfo priorityParent) {
-        this.priorityParent = priorityParent;
-    }
-
-    public int getWeight() {
-        return weight;
-    }
-
-    public void setWeight(int weight) {
-        this.weight = weight;
     }
 
     /**
