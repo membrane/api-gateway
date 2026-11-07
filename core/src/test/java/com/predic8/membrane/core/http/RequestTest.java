@@ -266,6 +266,82 @@ public class RequestTest {
         assertEquals("hello", written.getBodyAsStringDecoded());
     }
 
+    /**
+     * A request whose Content-Length and Transfer-Encoding were removed, e.g. by a headerFilter, or that never had
+     * them, e.g. an HTTP/2 request without content-length, must still tell the next hop where its body ends.
+     * Otherwise the body is read as the next request on the connection.
+     */
+    @Nested
+    class FramingIsAddedOnWrite {
+
+        private static final String SMUGGLED = "GET /admin HTTP/1.1\r\nHost: backend\r\n\r\n";
+
+        @Test
+        void streamedBodyIsSentChunked() throws Exception {
+            final var request = post("http://example.com/products")
+                    .body(new ByteArrayInputStream(SMUGGLED.getBytes(UTF_8)))
+                    .build();
+
+            final var written = writeAndReadBack(request);
+
+            assertTrue(written.getHeader().isChunked());
+            assertEquals(SMUGGLED, written.getBodyAsStringDecoded());
+        }
+
+        @Test
+        void bodyThatWasReadGetsContentLength() throws Exception {
+            final var request = post("http://example.com/products").body(SMUGGLED).build();
+            request.getHeader().removeFields(Header.CONTENT_LENGTH);
+
+            final var written = writeAndReadBack(request);
+
+            assertEquals(SMUGGLED.length(), written.getHeader().getContentLength());
+            assertEquals(SMUGGLED, written.getBodyAsStringDecoded());
+        }
+
+        @Test
+        void http10RequestGetsContentLength() throws Exception {
+            final var request = post("http://example.com/products")
+                    .version("1.0")
+                    .body(new ByteArrayInputStream(SMUGGLED.getBytes(UTF_8)))
+                    .build();
+
+            final var written = writeAndReadBack(request);
+
+            assertFalse(written.getHeader().isChunked());
+            assertEquals(SMUGGLED.length(), written.getHeader().getContentLength());
+        }
+
+        /**
+         * A servlet container hands over every request with a body stream, even a GET without a body.
+         */
+        @Test
+        void getWithEmptyStreamGetsNoFraming() throws Exception {
+            final var request = Request.get("http://example.com/products")
+                    .body(new ByteArrayInputStream(new byte[0]))
+                    .build();
+
+            final var out = new ByteArrayOutputStream();
+            request.write(out, true);
+
+            assertFalse(request.getHeader().isChunked(), out.toString(UTF_8));
+            assertFalse(request.getHeader().hasContentLength(), out.toString(UTF_8));
+            assertTrue(out.toString(UTF_8).endsWith("\r\n\r\n"));
+        }
+
+        private static Request writeAndReadBack(Request request) throws Exception {
+            final var out = new ByteArrayOutputStream();
+            request.write(out, true);
+
+            final var in = new ByteArrayInputStream(out.toByteArray());
+            final var written = new Request();
+            written.read(in, true);
+            written.getBody().getContent();
+            assertEquals(0, in.available(), () -> "Bytes after the request: " + out.toString(UTF_8));
+            return written;
+        }
+    }
+
     @Test
     void isHTTP11() {
         assertTrue(request.isHTTP11());
