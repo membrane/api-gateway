@@ -66,6 +66,12 @@ public abstract class AbstractExchange {
 	private String remoteAddr;
 	private String remoteAddrIp;
 
+	/**
+	 * Server of an exchange restored from storage, whose proxy is no longer available. Null for live exchanges, whose
+	 * server is derived from the proxy.
+	 */
+	private String server;
+
 	private ArrayList<Interceptor> interceptorStack = new ArrayList<>(10);
 
 	private ExchangeNodeStatusTracker nodeStatusTracker;
@@ -301,7 +307,16 @@ public abstract class AbstractExchange {
 		this.originalRequestUri = requestUri;
 	}
 
+	/**
+	 * Sets the server of an exchange restored from storage. Live exchanges derive it from their proxy.
+	 */
+	public void setServer(String server) {
+		this.server = server;
+	}
+
 	public String getServer() {
+		if (server != null)
+			return server;
 		if (getProxy() instanceof ProxyRule) {
 			try {
 				if (getRequest().isCONNECTRequest()) {
@@ -440,6 +455,7 @@ public abstract class AbstractExchange {
 		copy.setDestinations(new ArrayList<>(source.getDestinations()));
 		copy.setRemoteAddr(source.getRemoteAddr());
 		copy.setRemoteAddrIp(source.getRemoteAddrIp());
+		copy.setServer(((AbstractExchange) source).server);
 		copy.setInterceptorStack(new ArrayList<>(source.getInterceptorStack()));
 		copy.setNodeStatusTracker(source.getNodeStatusTracker() == null ? null : source.getNodeStatusTracker().clone());
 
