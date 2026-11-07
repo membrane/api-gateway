@@ -34,6 +34,7 @@ public class AdminConsolePeer {
     private String url;
     private String apiKey;
     private String name;
+    private boolean warnOnPlainHttp = true;
 
     public String getUrl() {
         return url;
@@ -56,7 +57,7 @@ public class AdminConsolePeer {
     /**
      * @description API key sent in the <code>X-Api-Key</code> header. Must match the <code>apiKey</code> of the peer's
      * <code>adminConsole</code>. The key is sent with every request: use an <code>https://</code> url unless the
-     * network is trusted.
+     * connection is protected otherwise, see <code>warnOnPlainHttp</code>.
      */
     @MCAttribute
     public void setApiKey(String apiKey) {
@@ -75,5 +76,20 @@ public class AdminConsolePeer {
     @MCAttribute
     public void setName(String name) {
         this.name = name;
+    }
+
+    public boolean isWarnOnPlainHttp() {
+        return warnOnPlainHttp;
+    }
+
+    /**
+     * @description Whether to log a warning at startup if an <code>apiKey</code> is sent to an <code>http://</code>
+     * url. Set it to <code>false</code> if the connection is protected otherwise, e.g. by a TLS-terminating sidecar or
+     * a trusted network.
+     * @default true
+     */
+    @MCAttribute
+    public void setWarnOnPlainHttp(boolean warnOnPlainHttp) {
+        this.warnOnPlainHttp = warnOnPlainHttp;
     }
 }
