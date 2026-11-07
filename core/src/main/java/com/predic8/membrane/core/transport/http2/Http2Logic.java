@@ -120,7 +120,6 @@ public class Http2Logic {
     final Settings peerSettings = new Settings();
     private final List<Settings> wantedSettings = new ArrayList<>();
     final Map<Integer, StreamInfo> streams = new ConcurrentHashMap<>();
-    private final PriorityTree priorityTree = new PriorityTree();
     private final ExecutorService executor;
     private final Http2MessageHandler messageHandler;
     final AtomicInteger nextClientStreamId = new AtomicInteger(1);
@@ -473,8 +472,6 @@ public class Http2Logic {
             return;
 
         streamInfo.receivedPriority();
-
-        priorityTree.reprioritize(streamInfo, priority.getWeight(), streams.get(priority.getStreamDependency()), priority.isExclusive());
     }
 
     private void handleFrame(WindowUpdateFrame windowUpdate) throws IOException {
@@ -546,10 +543,10 @@ public class Http2Logic {
 
         streamInfo.receivedHeaders();
 
-        if (headers.isPriority())
-            priorityTree.reprioritize(streamInfo, headers.getWeight(), streams.get(headers.getStreamDependency()), headers.isExclusive());
-        else
-            priorityTree.reprioritize(streamInfo, 16, null, false);
+        // Priority signaling is deprecated (RFC 9113 §5.3.2) and not used for sending, so only its validity is
+        // checked: a stream cannot depend on itself (RFC 9113 §5.3.1).
+        if (headers.isPriority() && headers.getStreamDependency() == streamId1)
+            throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
 
         List<HeaderBlockFragment> headerFrames = new ArrayList<>();
         headerFrames.add(headers);
