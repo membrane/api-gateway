@@ -22,6 +22,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.nio.file.Files;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
@@ -291,7 +293,7 @@ public abstract class DistributionExtractingTestcase {
             final var jar = findModuleJar(targetDir, module);
             if (jar == null) {
                 log.info("No {} jar in the reactor, relying on the local Maven repository.", module);
-                return;
+                continue;
             }
             runMaven(targetDir, installFileArgs("../../%s/pom.xml".formatted(module), "../../%s/target/%s".formatted(module, jar)));
         }
@@ -305,9 +307,12 @@ public abstract class DistributionExtractingTestcase {
     private static String findModuleJar(File targetDir, String module) {
         final var moduleTarget = new File(targetDir, "../../%s/target".formatted(module));
         final var prefix = "service-proxy-%s-".formatted(module);
-        final var jars = moduleTarget.list((dir, name) -> name.startsWith(prefix) && name.endsWith(".jar")
+        final var jars = moduleTarget.listFiles((dir, name) -> name.startsWith(prefix) && name.endsWith(".jar")
                 && !name.endsWith("-sources.jar") && !name.endsWith("-javadoc.jar") && !name.endsWith("-tests.jar"));
-        return jars == null || jars.length != 1 ? null : jars[0];
+        if (jars == null)
+            return null;
+        // After a version bump without "mvn clean", target/ also holds the jar of the previous version.
+        return Arrays.stream(jars).max(Comparator.comparingLong(File::lastModified)).map(File::getName).orElse(null);
     }
 
     private static void runMaven(File dir, String args) throws Exception {
