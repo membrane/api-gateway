@@ -1,0 +1,1890 @@
+openapi: 3.1.0
+info:
+  title: Membrane Admin API
+  version: 1.0.0-draft
+  description: |
+    REST API of the `adminConsole` plugin. It is consumed by the admin console web UI and can be
+    used by scripts.
+
+    **Instances.** Every response that contains runtime data is tagged with the name of the
+    instance it comes from. A console configured with `peers` aggregates: it forwards each
+    request to all peers in parallel, merges the results and reports the state of every peer in
+    `instances`. A peer that cannot be reached is reported as `down`; the response still contains
+    the data of the remaining instances (partial result). Use the `instance` query parameter to
+    restrict a request to some instances.
+
+    **Writes.** Operations that change state are `POST`/`PUT`/`DELETE` only. They are rejected
+    with `403` if the console is `readOnly` or the caller lacks the `admin` role, and with
+    `403` for cross-origin browser requests (CSRF protection; `Sec-Fetch-Site`, otherwise
+    `Origin` vs. request host).
+
+    **Roles.** A user has one or more roles: `viewer` (read everything), `admin` (all writes
+    except node control), `nodeOperator` (change the state of existing load balancer nodes:
+    up, down, takeout, reset counter). `nodeOperator` is a separate role and not implied by
+    `admin`. Node control is independent of `readOnly`. Without configured users the console
+    behaves as before: anonymous callers may do everything that `readOnly` permits, including
+    node control.
+
+    **Untrusted content.** Recorded messages are untrusted. Raw bodies are only served as
+    attachments with `X-Content-Type-Options: nosniff` and `Content-Security-Policy: sandbox`.
+
+    **Errors** use `application/problem+json` (RFC 9457).
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+servers:
+  - url: /admin/api/v1
+security:
+  - session: []
+  - apiKey: []
+  - {}
+tags:
+  - name: instances
+    description: The console's own instance and its peers.
+  - name: auth
+    description: Login and the current principal.
+  - name: apis
+    description: APIs and proxies of all types (`api`, `serviceProxy`, `soapProxy`, `proxy`, `internal`, `stompProxy`, ...).
+  - name: exchanges
+    description: Recorded calls from the exchange store.
+  - name: statistics
+    description: Aggregated statistics and time series.
+  - name: streams
+    description: Active stream pumps.
+  - name: balancers
+    description: Load balancers, clusters and nodes.
+  - name: plugins
+    description: Runtime state of plugins (rate limiters, circuit breakers, API key stores, sessions).
+  - name: tls
+    description: TLS certificates and ACME.
+  - name: system
+    description: Runtime and configuration state.
+  - name: logs
+    description: Gateway log tail.
+
+paths:
+
+  # ---------------------------------------------------------------- instances
+
+  /instances:
+    get:
+      tags: [instances]
+      operationId: listInstances
+      summary: The console's own instance and all configured peers with their state.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [instances]
+                properties:
+                  self:
+                    type: string
+                    description: Name of the instance answering this request.
+                  instances:
+                    type: array
+                    items: { $ref: '#/components/schemas/Instance' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '4XX': { $ref: '#/components/responses/Problem' }
+        '5XX': { $ref: '#/components/responses/Problem' }
+
+  # ---------------------------------------------------------------- auth
+
+  /auth/login:
+    post:
+      tags: [auth]
+      operationId: login
+      summary: Log in with one of the users configured on the console; sets a session cookie.
+      description: Planned. Not implemented yet; the server answers `501`.
+      security: [{}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username: { type: string }
+                password: { type: string, format: password }
+      responses:
+        '200':
+          description: Logged in.
+          headers:
+            Set-Cookie: { schema: { type: string } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Principal' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '4XX': { $ref: '#/components/responses/Problem' }
+        '5XX': { $ref: '#/components/responses/Problem' }
+  /auth/logout:
+    post:
+      tags: [auth]
+      operationId: logout
+      summary: Log out and invalidate the session.
+      description: Planned. Not implemented yet; the server answers `501`.
+      responses:
+        '204': { description: "Logged out." }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '4XX': { $ref: '#/components/responses/Problem' }
+        '5XX': { $ref: '#/components/responses/Problem' }
+  /auth/me:
+    get:
+      tags: [auth]
+      operationId: currentPrincipal
+      summary: Who is calling and what they may do. Without configured users, an anonymous principal is returned.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Principal' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '4XX': { $ref: '#/components/responses/Problem' }
+        '5XX': { $ref: '#/components/responses/Problem' }
+
+  # ---------------------------------------------------------------- apis
+
+  /apis:
+    get:
+      tags: [apis]
+      operationId: listApis
+      summary: List APIs and proxies of all types.
+      parameters:
+        - $ref: '#/components/parameters/instance'
+        - $ref: '#/components/parameters/offset'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/sort'
+        - $ref: '#/components/parameters/order'
+        - name: type
+          in: query
+          schema: { type: array, items: { $ref: '#/components/schemas/ApiType' } }
+          style: form
+          explode: false
+        - name: q
+          in: query
+          description: Free text search over name, path, host and target.
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Page'
+                  - type: object
+                    required: [apis]
+                    properties:
+                      apis:
+                        type: array
+                        items: { $ref: '#/components/schemas/ApiSummary' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '4XX': { $ref: '#/components/responses/Problem' }
+        '5XX': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [apis]
+      operationId: createApi
+      summary: Add an API at runtime from a YAML snippet (in memory only, not written back to the configuration).
+      description: Planned. Not implemented yet; the server answers `501`.
+      parameters:
+        - $ref: '#/components/parameters/instanceWrite'
+      requestBody:
+        required: true
+        content:
+          application/yaml:
+            schema: { type: string }
+            example: |
+              api:
+                port: 2000
+                path:
+                  uri: /shop
+                target:
+                  url: https://api.predic8.de
+      responses:
+        '201':
+          description: Created.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiSummary' }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '4XX': { $ref: '#/components/responses/Problem' }
+        '5XX': { $ref: '#/components/responses/Problem' }
+
+  /apis/{instance}/{apiId}:
+    parameters:
+      - $ref: '#/components/parameters/instancePath'
+      - $ref: '#/components/parameters/apiId'
+    get:
+      tags: [apis]
+      operationId: getApi
+      summary: Get one API with match, target and statistics.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiDetail' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '4XX': { $ref: '#/components/responses/Problem' }
+        '5XX': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [apis]
+      operationId: deleteApi
+      summary: Remove an API at runtime.
+      responses:
+        '204': { description: "Removed." }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '4XX': { $ref: '#/components/responses/Problem' }
+        '5XX': { $ref: '#/components/responses/Problem' }
+
+  /apis/{instance}/{apiId}/start:
+    parameters:
+      - $ref: '#/components/parameters/instancePath'
+      - $ref: '#/components/parameters/apiId'
+    post:
+      tags: [apis]
+      operationId: startApi
+      summary: Retry starting an inactive API.
+      responses:
+        '200':
+          description: Result of the start attempt.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiSummary' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '4XX': { $ref: '#/components/responses/Problem' }
+        '5XX': { $ref: '#/components/responses/Problem' }
+
+  /apis/{instance}/{apiId}/config:
+    parameters:
+      - $ref: '#/components/parameters/instancePath'
+      - $ref: '#/components/parameters/apiId'
+    get:
+      tags: [apis]
+      operationId: getApiConfig
+      summary: Effective configuration of the API rendered as YAML. Secrets are masked.
+      description: Planned. Not implemented yet; the server answers `501`.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/yaml:
+              schema: { type: string }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '4XX': { $ref: '#/components/responses/Problem' }
+        '5XX': { $ref: '#/components/responses/Problem' }
+
+  /apis/{instance}/{apiId}/flow:
+    parameters:
+      - $ref: '#/components/parameters/instancePath'
+      - $ref: '#/components/parameters/apiId'
+    get:
+      tags: [apis]
+      operationId: getApiFlow
+      summary: The API's flow as a tree, for visualization.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [flow]
+                properties:
+                  flow:
+                    type: array
+                    items: { $ref: '#/components/schemas/FlowNode' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '4XX': { $ref: '#/components/responses/Problem' }
+        '5XX': { $ref: '#/components/responses/Problem' }
+
+  /apis/{instance}/{apiId}/openapi:
+    parameters:
+      - $ref: '#/components/parameters/instancePath'
+      - $ref: '#/components/parameters/apiId'
+    get:
+      tags: [apis]
+      operationId: getApiOpenApi
+      summary: The OpenAPI document(s) an `api` is built from, if any.
+      description: Planned. Not implemented yet; the server answers `501`.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  documents:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: string }
+                        title: { type: string }
+                        version: { type: string }
+                        location: { type: string }
+                        validateRequests: { type: boolean }
+                        validateResponses: { type: boolean }
+                        href: { type: string, description: "Link to the document as served by the API." }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '4XX': { $ref: '#/components/responses/Problem' }
+        '5XX': { $ref: '#/components/responses/Problem' }
+
+  /transport/flow:
+    get:
+      tags: [apis]
+      operationId: getTransportFlow
+      summary: The global (transport level) flow.
+      parameters:
+        - $ref: '#/components/parameters/instance'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  instances:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        instance: { type: string }
+                        flow:
+                          type: array
+                          items: { $ref: '#/components/schemas/FlowNode' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '4XX': { $ref: '#/components/responses/Problem' }
+        '5XX': { $ref: '#/components/responses/Problem' }
+
+  /config:
+    get:
+      tags: [system]
+      operationId: getConfigStatus
+      summary: Where the configuration came from, when it was loaded, hot reload state and startup/validation errors.
+      description: Planned. Not implemented yet; the server answers `501`.
+      parameters:
+        - $ref: '#/components/parameters/instance'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  instances:
+                    type: array
+                    items: { $ref: '#/components/schemas/ConfigStatus' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '4XX': { $ref: '#/components/responses/Problem' }
+        '5XX': { $ref: '#/components/responses/Problem' }
+
+  # ---------------------------------------------------------------- exchanges
+
+  /exchanges:
+    get:
+      tags: [exchanges]
+      operationId: listExchanges
+      summary: Recorded calls, newest first by default, merged across instances.
+      description: |
+        With `waitForModification` the request blocks (long poll, up to `timeout` seconds) until
+        any queried instance records a change after the given state, then answers like a normal
+        request. Pass the `lastModified` object of the previous response, JSON encoded.
+
+        Paging across instances is done by requesting the first `offset + limit` matching
+        exchanges from every instance and merging them; `total` is the sum of the instances'
+        totals.
+      parameters:
+        - $ref: '#/components/parameters/instance'
+        - $ref: '#/components/parameters/offset'
+        - $ref: '#/components/parameters/limit'
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [time, statusCode, proxy, method, path, client, server, reqContentType, reqContentLength, respContentType, respContentLength, duration, instance]
+            default: time
+        - name: order
+          in: query
+          schema: { type: string, enum: [asc, desc], default: desc }
+        - name: method
+          in: query
+          schema: { type: string }
+        - name: statusCode
+          in: query
+          description: Exact code (`404`) or class (`4xx`).
+          schema: { type: string, pattern: '^[1-5]([0-9]{2}|xx)$' }
+        - name: proxy
+          in: query
+          schema: { type: string }
+        - name: client
+          in: query
+          schema: { type: string }
+        - name: server
+          in: query
+          schema: { type: string }
+        - name: reqContentType
+          in: query
+          schema: { type: string }
+        - name: respContentType
+          in: query
+          schema: { type: string }
+        - name: from
+          in: query
+          schema: { type: string, format: date-time }
+        - name: to
+          in: query
+          schema: { type: string, format: date-time }
+        - name: minDuration
+          in: query
+          description: Milliseconds.
+          schema: { type: integer, minimum: 0 }
+        - name: q
+          in: query
+          description: Free text search over method, path, client, server and content types.
+          schema: { type: string }
+        - name: header
+          in: query
+          description: '`name:value` substring match on request or response headers. Repeatable.'
+          schema: { type: array, items: { type: string } }
+          explode: true
+        - name: body
+          in: query
+          description: Substring match on request or response body. Expensive; stores that do not list bodies (`file`, persistent stores) answer 501.
+          schema: { type: string }
+        - name: waitForModification
+          in: query
+          schema: { type: string, description: "JSON encoded `lastModified` of a previous response." }
+        - name: timeout
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 60, default: 30 }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Page'
+                  - type: object
+                    required: [exchanges, lastModified]
+                    properties:
+                      exchanges:
+                        type: array
+                        items: { $ref: '#/components/schemas/ExchangeSummary' }
+                      lastModified:
+                        type: object
+                        description: Per instance modification counter.
+                        additionalProperties: { type: integer, format: int64 }
+        '501':
+          description: The exchange store does not support a requested filter. When several instances are queried, an instance that does not support it is reported in `instances` with status `unsupported` instead, and the others answer.
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '4XX': { $ref: '#/components/responses/Problem' }
+        '5XX': { $ref: '#/components/responses/Problem' }
+
+  /exchanges/facets:
+    get:
+      tags: [exchanges]
+      operationId: getExchangeFacets
+      summary: Distinct values present in the stores, to fill filter drop-downs.
+      parameters:
+        - $ref: '#/components/parameters/instance'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  method: { $ref: '#/components/schemas/StringList' }
+                  statusCode: { type: array, items: { type: integer } }
+                  proxy: { $ref: '#/components/schemas/StringList' }
+                  client: { $ref: '#/components/schemas/StringList' }
+                  server: { $ref: '#/components/schemas/StringList' }
+                  reqContentType: { $ref: '#/components/schemas/StringList' }
+                  respContentType: { $ref: '#/components/schemas/StringList' }
+                  instance: { $ref: '#/components/schemas/StringList' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '4XX': { $ref: '#/components/responses/Problem' }
+        '5XX': { $ref: '#/components/responses/Problem' }
+
+  /exchanges/store:
+    get:
+      tags: [exchanges]
+      operationId: getExchangeStores
+      summary: Type, capabilities and fill level of every instance's exchange store.
+      parameters:
+        - $ref: '#/components/parameters/instance'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  stores:
+                    type: array
+                    items: { $ref: '#/components/schemas/ExchangeStoreInfo' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '4XX': { $ref: '#/components/responses/Problem' }
+        '5XX': { $ref: '#/components/responses/Problem' }
+
+  /exchanges/export:
+    get:
+      tags: [exchanges]
+      operationId: exportExchanges
+      summary: Export a selection of exchanges as HAR 1.2.
+      parameters:
+        - name: id
+          in: query
+          required: true
+          description: '`instance/id` pairs. Repeatable.'
+          schema: { type: array, items: { type: string }, maxItems: 1000 }
+          explode: true
+      responses:
+        '200':
+          description: HAR file.
+          headers:
+            Content-Disposition: { schema: { type: string } }
+          content:
+            application/json:
+              schema: { type: object, description: "HAR 1.2 document." }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '4XX': { $ref: '#/components/responses/Problem' }
+        '5XX': { $ref: '#/components/responses/Problem' }
+
+  /exchanges/{instance}/{exchangeId}:
+    parameters:
+      - $ref: '#/components/parameters/instancePath'
+      - $ref: '#/components/parameters/exchangeId'
+    get:
+      tags: [exchanges]
+      operationId: getExchange
+      summary: Get one recorded exchange.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ExchangeDetail' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '4XX': { $ref: '#/components/responses/Problem' }
+        '5XX': { $ref: '#/components/responses/Problem' }
+
+  /exchanges/{instance}/{exchangeId}/{message}/headers:
+    parameters:
+      - $ref: '#/components/parameters/instancePath'
+      - $ref: '#/components/parameters/exchangeId'
+      - $ref: '#/components/parameters/message'
+    get:
+      tags: [exchanges]
+      operationId: getMessageHeaders
+      summary: Get the start line and headers of a request or response.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [headers]
+                properties:
+                  startLine: { type: string, description: "Request line or status line." }
+                  headers:
+                    type: array
+                    items: { $ref: '#/components/schemas/Header' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '4XX': { $ref: '#/components/responses/Problem' }
+        '5XX': { $ref: '#/components/responses/Problem' }
+
+  /exchanges/{instance}/{exchangeId}/{message}/raw:
+    parameters:
+      - $ref: '#/components/parameters/instancePath'
+      - $ref: '#/components/parameters/exchangeId'
+      - $ref: '#/components/parameters/message'
+    get:
+      tags: [exchanges]
+      operationId: getMessageRaw
+      summary: Whole message (start line, headers, decoded body) as text.
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema: { type: string }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '4XX': { $ref: '#/components/responses/Problem' }
+        '5XX': { $ref: '#/components/responses/Problem' }
+
+  /exchanges/{instance}/{exchangeId}/{message}/body:
+    parameters:
+      - $ref: '#/components/parameters/instancePath'
+      - $ref: '#/components/parameters/exchangeId'
+      - $ref: '#/components/parameters/message'
+    get:
+      tags: [exchanges]
+      operationId: downloadMessageBody
+      summary: Original (decoded) body with its content type, always as attachment.
+      responses:
+        '200':
+          description: Body.
+          headers:
+            Content-Disposition: { schema: { type: string } }
+            X-Content-Type-Options: { schema: { type: string, const: nosniff } }
+            Content-Security-Policy: { schema: { type: string, const: sandbox } }
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+        '204': { description: "The message has no body." }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '4XX': { $ref: '#/components/responses/Problem' }
+        '5XX': { $ref: '#/components/responses/Problem' }
+
+  /exchanges/{instance}/{exchangeId}/{message}/body/formatted:
+    parameters:
+      - $ref: '#/components/parameters/instancePath'
+      - $ref: '#/components/parameters/exchangeId'
+      - $ref: '#/components/parameters/message'
+    get:
+      tags: [exchanges]
+      operationId: getMessageBodyFormatted
+      summary: Body pretty-printed as text (JSON, XML, YAML, form data, ...), for display. Never HTML.
+      parameters:
+        - name: maxBytes
+          in: query
+          schema: { type: integer, default: 1048576 }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [format, text, truncated]
+                properties:
+                  format: { type: string, enum: [json, xml, yaml, form, text, binary, empty] }
+                  text: { type: string, description: "Pretty-printed body; empty for `binary`." }
+                  truncated: { type: boolean }
+                  originalLength: { type: integer, format: int64 }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '4XX': { $ref: '#/components/responses/Problem' }
+        '5XX': { $ref: '#/components/responses/Problem' }
+
+  /exchanges/{instance}/{exchangeId}/curl:
+    parameters:
+      - $ref: '#/components/parameters/instancePath'
+      - $ref: '#/components/parameters/exchangeId'
+    get:
+      tags: [exchanges]
+      operationId: getExchangeAsCurl
+      summary: The request as a curl command line.
+      parameters:
+        - name: target
+          in: query
+          description: Send to the gateway (`gateway`, as the client did) or directly to the backend (`backend`).
+          schema: { type: string, enum: [gateway, backend], default: gateway }
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema: { type: string }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '4XX': { $ref: '#/components/responses/Problem' }
+        '5XX': { $ref: '#/components/responses/Problem' }
+
+  /exchanges/{instance}/{exchangeId}/frames:
+    parameters:
+      - $ref: '#/components/parameters/instancePath'
+      - $ref: '#/components/parameters/exchangeId'
+    get:
+      tags: [exchanges]
+      operationId: listExchangeFrames
+      summary: WebSocket messages of an upgraded exchange, recorded by wsRecord in the webSocket flow. Answers 501 if no wsRecord is configured.
+      parameters:
+        - $ref: '#/components/parameters/offset'
+        - $ref: '#/components/parameters/limit'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Page'
+                  - type: object
+                    properties:
+                      dropped: { type: integer, format: int64, description: "Older messages that were not kept." }
+                      frames:
+                        type: array
+                        items: { $ref: '#/components/schemas/WebSocketFrame' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '4XX': { $ref: '#/components/responses/Problem' }
+        '5XX': { $ref: '#/components/responses/Problem' }
+
+  /exchanges/{instance}/{exchangeId}/replay:
+    parameters:
+      - $ref: '#/components/parameters/instancePath'
+      - $ref: '#/components/parameters/exchangeId'
+    post:
+      tags: [exchanges]
+      operationId: replayExchange
+      summary: Send the recorded request again, optionally changed.
+      description: |
+        `gateway` sends the request to the port the exchange was received on, so it runs through the API's flow and
+        is recorded like any other call. `backend` sends it straight to the recorded backend; it is not recorded.
+        Method, path, header fields and body can be changed, but not the host the request is sent to.
+        Needs the `admin` role and a console that is not `readOnly`.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                target:
+                  type: string
+                  enum: [gateway, backend]
+                  default: gateway
+                method: { type: string, description: "Defaults to the recorded method." }
+                path: { type: string, description: "Path and query. Defaults to the recorded one." }
+                headers:
+                  type: array
+                  description: "Replaces all header fields if present. Hop-by-hop fields are dropped."
+                  items: { $ref: '#/components/schemas/Header' }
+                body: { type: string, description: "Replaces the body if present." }
+      responses:
+        '200':
+          description: Response to the replayed request.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReplayResult' }
+        '502': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '4XX': { $ref: '#/components/responses/Problem' }
+        '5XX': { $ref: '#/components/responses/Problem' }
+
+  /exchanges/diff:
+    get:
+      tags: [exchanges]
+      operationId: diffExchanges
+      summary: Compare two messages (headers and formatted bodies).
+      parameters:
+        - name: left
+          in: query
+          required: true
+          description: '`instance/id/request|response`'
+          schema: { type: string }
+        - name: right
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [left, right, headers, body]
+                properties:
+                  left: { type: string }
+                  right: { type: string }
+                  startLine:
+                    type: object
+                    properties:
+                      left: { type: string }
+                      right: { type: string }
+                  headers:
+                    type: array
+                    description: "Header fields that differ; a missing side means the field is absent there."
+                    items:
+                      type: object
+                      properties:
+                        name: { type: string }
+                        left: { type: [string, 'null'] }
+                        right: { type: [string, 'null'] }
+                  body:
+                    type: object
+                    properties:
+                      format: { type: string }
+                      identical:
+                        type: boolean
+                        description: Whether the bodies are equal. Binary bodies are compared by a hash, only on the same instance; truncated bodies are never reported as equal.
+                      truncated: { type: boolean, description: "Whether a body was longer than the compared text (1 MiB)." }
+                      unifiedDiff: { type: string, description: "Unified diff of the formatted bodies; empty if identical." }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '4XX': { $ref: '#/components/responses/Problem' }
+        '5XX': { $ref: '#/components/responses/Problem' }
+
+  # ---------------------------------------------------------------- statistics
+
+  /statistics/apis:
+    get:
+      tags: [statistics]
+      operationId: getApiStatistics
+      summary: Per-API statistics, total and by status code.
+      parameters:
+        - $ref: '#/components/parameters/instance'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  apis:
+                    type: array
+                    items:
+                      allOf:
+                        - $ref: '#/components/schemas/InstanceTagged'
+                        - type: object
+                          properties:
+                            apiId: { type: string }
+                            name: { type: string }
+                            totals: { $ref: '#/components/schemas/Statistics' }
+                            byStatusCode:
+                              type: object
+                              additionalProperties: { $ref: '#/components/schemas/Statistics' }
+                            openBackendConnections: { type: integer }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '4XX': { $ref: '#/components/responses/Problem' }
+        '5XX': { $ref: '#/components/responses/Problem' }
+
+  /statistics/clients:
+    get:
+      tags: [statistics]
+      operationId: getClientStatistics
+      summary: Per-client statistics.
+      parameters:
+        - $ref: '#/components/parameters/instance'
+        - $ref: '#/components/parameters/offset'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/sort'
+        - $ref: '#/components/parameters/order'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Page'
+                  - type: object
+                    properties:
+                      clients:
+                        type: array
+                        items:
+                          allOf:
+                            - $ref: '#/components/schemas/InstanceTagged'
+                            - $ref: '#/components/schemas/Statistics'
+                            - type: object
+                              properties:
+                                client: { type: string }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '4XX': { $ref: '#/components/responses/Problem' }
+        '5XX': { $ref: '#/components/responses/Problem' }
+
+  /metrics/timeseries:
+    get:
+      tags: [statistics]
+      operationId: getTimeseries
+      summary: Request rate, error rate and latency percentiles over time, from an in-memory ring buffer.
+      description: Planned. Not implemented yet; the server answers `501`.
+      parameters:
+        - $ref: '#/components/parameters/instance'
+        - name: apiId
+          in: query
+          schema: { type: string }
+        - name: range
+          in: query
+          schema: { type: string, enum: [5m, 15m, 1h, 6h, 24h], default: 15m }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  stepSeconds: { type: integer }
+                  series:
+                    type: array
+                    items:
+                      allOf:
+                        - $ref: '#/components/schemas/InstanceTagged'
+                        - type: object
+                          properties:
+                            points:
+                              type: array
+                              items: { $ref: '#/components/schemas/MetricsPoint' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '4XX': { $ref: '#/components/responses/Problem' }
+        '5XX': { $ref: '#/components/responses/Problem' }
+
+  # ---------------------------------------------------------------- streams
+
+  /streams:
+    get:
+      tags: [streams]
+      operationId: listStreamPumps
+      summary: Active stream pumps (tunnels, WebSockets).
+      parameters:
+        - $ref: '#/components/parameters/instance'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  streams:
+                    type: array
+                    items: { $ref: '#/components/schemas/StreamPump' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '4XX': { $ref: '#/components/responses/Problem' }
+        '5XX': { $ref: '#/components/responses/Problem' }
+
+  # ---------------------------------------------------------------- balancers
+
+  /balancers:
+    get:
+      tags: [balancers]
+      operationId: listBalancers
+      summary: Load balancers with their clusters and nodes.
+      parameters:
+        - $ref: '#/components/parameters/instance'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  balancers:
+                    type: array
+                    items: { $ref: '#/components/schemas/Balancer' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '4XX': { $ref: '#/components/responses/Problem' }
+        '5XX': { $ref: '#/components/responses/Problem' }
+
+  /balancers/{instance}/{balancer}/clusters:
+    parameters:
+      - $ref: '#/components/parameters/instancePath'
+      - $ref: '#/components/parameters/balancer'
+    post:
+      tags: [balancers]
+      operationId: createCluster
+      summary: Add a cluster to a balancer.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string }
+      responses:
+        '201': { description: "Created." }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '4XX': { $ref: '#/components/responses/Problem' }
+        '5XX': { $ref: '#/components/responses/Problem' }
+
+  /balancers/{instance}/{balancer}/clusters/{cluster}/nodes:
+    parameters:
+      - $ref: '#/components/parameters/instancePath'
+      - $ref: '#/components/parameters/balancer'
+      - $ref: '#/components/parameters/cluster'
+    post:
+      tags: [balancers]
+      operationId: createNode
+      summary: Add a node to a cluster.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [host, port]
+              properties:
+                host: { type: string }
+                port: { type: integer, minimum: 1, maximum: 65535 }
+      responses:
+        '201':
+          description: Created.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Node' }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '4XX': { $ref: '#/components/responses/Problem' }
+        '5XX': { $ref: '#/components/responses/Problem' }
+
+  /balancers/{instance}/{balancer}/clusters/{cluster}/nodes/{node}:
+    parameters:
+      - $ref: '#/components/parameters/instancePath'
+      - $ref: '#/components/parameters/balancer'
+      - $ref: '#/components/parameters/cluster'
+      - $ref: '#/components/parameters/node'
+    get:
+      tags: [balancers]
+      operationId: getNode
+      summary: Get one node with status code counts and sessions.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NodeDetail' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '4XX': { $ref: '#/components/responses/Problem' }
+        '5XX': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [balancers]
+      operationId: deleteNode
+      summary: Remove a node from a cluster.
+      responses:
+        '204': { description: "Removed." }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '4XX': { $ref: '#/components/responses/Problem' }
+        '5XX': { $ref: '#/components/responses/Problem' }
+
+  /balancers/{instance}/{balancer}/clusters/{cluster}/nodes/{node}/{action}:
+    parameters:
+      - $ref: '#/components/parameters/instancePath'
+      - $ref: '#/components/parameters/balancer'
+      - $ref: '#/components/parameters/cluster'
+      - $ref: '#/components/parameters/node'
+      - name: action
+        in: path
+        required: true
+        schema: { type: string, enum: [up, down, takeout, reset] }
+    post:
+      tags: [balancers]
+      operationId: changeNodeState
+      summary: Change the state of an existing node. Requires the `nodeOperator` role; not affected by readOnly.
+      responses:
+        '200':
+          description: New node state.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Node' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '4XX': { $ref: '#/components/responses/Problem' }
+        '5XX': { $ref: '#/components/responses/Problem' }
+
+  # ---------------------------------------------------------------- plugins
+
+  /plugins/rate-limiters:
+    get:
+      tags: [plugins]
+      operationId: listRateLimiters
+      summary: Rate limiters and their current usage per key.
+      description: Planned. Not implemented yet; the server answers `501`.
+      parameters:
+        - $ref: '#/components/parameters/instance'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rateLimiters:
+                    type: array
+                    items: { $ref: '#/components/schemas/RateLimiter' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '4XX': { $ref: '#/components/responses/Problem' }
+        '5XX': { $ref: '#/components/responses/Problem' }
+  /plugins/rate-limiters/{instance}/{pluginId}/reset:
+    parameters:
+      - $ref: '#/components/parameters/instancePath'
+      - $ref: '#/components/parameters/pluginId'
+    post:
+      tags: [plugins]
+      operationId: resetRateLimiter
+      summary: Reset the counters of a rate limiter.
+      description: Planned. Not implemented yet; the server answers `501`.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                key: { type: string, description: "Reset only this key; all keys if absent." }
+      responses:
+        '204': { description: "Reset." }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '4XX': { $ref: '#/components/responses/Problem' }
+        '5XX': { $ref: '#/components/responses/Problem' }
+
+  /plugins/circuit-breakers:
+    get:
+      tags: [plugins]
+      operationId: listCircuitBreakers
+      summary: Circuit breakers and their state.
+      description: Planned. Not implemented yet; the server answers `501`.
+      parameters:
+        - $ref: '#/components/parameters/instance'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  circuitBreakers:
+                    type: array
+                    items: { $ref: '#/components/schemas/CircuitBreaker' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '4XX': { $ref: '#/components/responses/Problem' }
+        '5XX': { $ref: '#/components/responses/Problem' }
+  /plugins/circuit-breakers/{instance}/{pluginId}/reset:
+    parameters:
+      - $ref: '#/components/parameters/instancePath'
+      - $ref: '#/components/parameters/pluginId'
+    post:
+      tags: [plugins]
+      operationId: resetCircuitBreaker
+      summary: Close a circuit breaker.
+      description: Planned. Not implemented yet; the server answers `501`.
+      responses:
+        '204': { description: "Closed again." }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '4XX': { $ref: '#/components/responses/Problem' }
+        '5XX': { $ref: '#/components/responses/Problem' }
+
+  /plugins/credentials:
+    get:
+      tags: [plugins]
+      operationId: listCredentialStores
+      summary: API key stores, user stores, OAuth2 clients and session managers — counts and metadata only, never secrets.
+      description: Planned. Not implemented yet; the server answers `501`.
+      parameters:
+        - $ref: '#/components/parameters/instance'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  stores:
+                    type: array
+                    items: { $ref: '#/components/schemas/CredentialStore' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '4XX': { $ref: '#/components/responses/Problem' }
+        '5XX': { $ref: '#/components/responses/Problem' }
+
+  # ---------------------------------------------------------------- tls
+
+  /tls/certificates:
+    get:
+      tags: [tls]
+      operationId: listCertificates
+      summary: TLS certificates in use, with expiry and ACME state.
+      description: Planned. Not implemented yet; the server answers `501`.
+      parameters:
+        - $ref: '#/components/parameters/instance'
+        - name: expiresWithinDays
+          in: query
+          schema: { type: integer, minimum: 0 }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  certificates:
+                    type: array
+                    items: { $ref: '#/components/schemas/Certificate' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '4XX': { $ref: '#/components/responses/Problem' }
+        '5XX': { $ref: '#/components/responses/Problem' }
+
+  # ---------------------------------------------------------------- system
+
+  /system:
+    get:
+      tags: [system]
+      operationId: getSystem
+      summary: JVM and runtime information.
+      parameters:
+        - $ref: '#/components/parameters/instance'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  instances:
+                    type: array
+                    items: { $ref: '#/components/schemas/SystemInfo' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '4XX': { $ref: '#/components/responses/Problem' }
+        '5XX': { $ref: '#/components/responses/Problem' }
+
+  # ---------------------------------------------------------------- logs
+
+  /logs:
+    get:
+      tags: [logs]
+      operationId: getLogs
+      summary: Tail of the gateway log from an in-memory buffer. Messages are already escaped as for info-level logging.
+      description: Planned. Not implemented yet; the server answers `501`.
+      parameters:
+        - $ref: '#/components/parameters/instance'
+        - name: level
+          in: query
+          schema: { type: string, enum: [ERROR, WARN, INFO, DEBUG, TRACE], default: INFO }
+        - name: logger
+          in: query
+          schema: { type: string }
+        - name: q
+          in: query
+          schema: { type: string }
+        - name: after
+          in: query
+          description: Only entries with a higher sequence number (for polling).
+          schema: { type: integer, format: int64 }
+        - $ref: '#/components/parameters/limit'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries:
+                    type: array
+                    items: { $ref: '#/components/schemas/LogEntry' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '4XX': { $ref: '#/components/responses/Problem' }
+        '5XX': { $ref: '#/components/responses/Problem' }
+
+components:
+
+  securitySchemes:
+    session:
+      type: apiKey
+      in: cookie
+      name: MEMBRANE_ADMIN_SESSION
+    apiKey:
+      type: apiKey
+      in: header
+      name: X-Api-Key
+
+  parameters:
+    instance:
+      name: instance
+      in: query
+      description: Restrict to these instances (default all).
+      schema: { type: array, items: { type: string } }
+      style: form
+      explode: false
+    instanceWrite:
+      name: instance
+      in: query
+      description: Instance(s) to apply the change to (default all).
+      schema: { type: array, items: { type: string } }
+      style: form
+      explode: false
+    instancePath:
+      name: instance
+      in: path
+      required: true
+      schema: { type: string }
+    apiId:
+      name: apiId
+      in: path
+      required: true
+      description: Stable identifier of the API on its instance (URL encoded).
+      schema: { type: string }
+    exchangeId:
+      name: exchangeId
+      in: path
+      required: true
+      schema: { type: integer, format: int64 }
+    message:
+      name: message
+      in: path
+      required: true
+      schema: { type: string, enum: [request, response] }
+    balancer:
+      name: balancer
+      in: path
+      required: true
+      schema: { type: string }
+    cluster:
+      name: cluster
+      in: path
+      required: true
+      schema: { type: string }
+    node:
+      name: node
+      in: path
+      required: true
+      description: '`host:port`'
+      schema: { type: string }
+    pluginId:
+      name: pluginId
+      in: path
+      required: true
+      schema: { type: string }
+    offset:
+      name: offset
+      in: query
+      schema: { type: integer, minimum: 0, default: 0 }
+    limit:
+      name: limit
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 1000, default: 50 }
+    sort:
+      name: sort
+      in: query
+      schema: { type: string }
+    order:
+      name: order
+      in: query
+      schema: { type: string, enum: [asc, desc], default: asc }
+
+  responses:
+    Problem:
+      description: Error.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Unauthorized:
+      description: Not authenticated.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Forbidden:
+      description: readOnly console, insufficient role, or cross-origin request.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    NotFound:
+      description: Unknown instance or object.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+
+  schemas:
+
+    Problem:
+      type: object
+      properties:
+        type: { type: string }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        instance: { type: string }
+
+    StringList:
+      type: array
+      items: { type: string }
+
+    Page:
+      type: object
+      required: [total]
+      properties:
+        total: { type: integer, format: int64 }
+        offset: { type: integer }
+        limit: { type: integer }
+        instances:
+          type: array
+          description: State of every instance queried for this response; lets the UI flag partial results.
+          items: { $ref: '#/components/schemas/InstanceResult' }
+
+    InstanceTagged:
+      type: object
+      required: [instance]
+      properties:
+        instance: { type: string }
+
+    Instance:
+      type: object
+      required: [name, status]
+      properties:
+        name: { type: string }
+        url: { type: string, description: "Peer URL; absent for the console's own instance." }
+        self: { type: boolean }
+        status: { type: string, enum: [up, down, unauthorized, incompatible] }
+        error: { type: string }
+        version: { type: string, description: "Membrane version." }
+        apiVersion: { type: string, description: "Admin API version." }
+        startedAt: { type: string, format: date-time }
+        readOnly: { type: boolean }
+        latencyMillis: { type: integer }
+
+    InstanceResult:
+      type: object
+      required: [instance, status]
+      properties:
+        instance: { type: string }
+        status: { type: string, enum: [ok, down, unauthorized, error, unsupported] }
+        error: { type: string }
+
+    Principal:
+      type: object
+      required: [authenticated, roles]
+      properties:
+        authenticated: { type: boolean }
+        username: { type: string }
+        roles:
+          type: array
+          uniqueItems: true
+          items: { type: string, enum: [viewer, admin, nodeOperator] }
+        readOnly: { type: boolean, description: "True if the console is readOnly or the caller lacks the admin role." }
+        canControlNodes: { type: boolean, description: "True if the caller may change load balancer node state." }
+
+    ApiType:
+      type: string
+      enum: [api, serviceProxy, soapProxy, proxy, internal, stompProxy, kafkaConsumer, other]
+
+    ApiSummary:
+      allOf:
+        - $ref: '#/components/schemas/InstanceTagged'
+        - type: object
+          required: [apiId, name, type, active]
+          properties:
+            apiId: { type: string }
+            name: { type: string }
+            type: { $ref: '#/components/schemas/ApiType' }
+            order: { type: integer, description: "Position in the routing order." }
+            active: { type: boolean }
+            error: { type: string, description: "Why the API is inactive." }
+            match: { $ref: '#/components/schemas/Match' }
+            target: { $ref: '#/components/schemas/Target' }
+            hasOpenApi: { type: boolean }
+            count: { type: integer, format: int64 }
+            source: { $ref: '#/components/schemas/SourceLocation' }
+
+    ApiDetail:
+      allOf:
+        - $ref: '#/components/schemas/ApiSummary'
+        - type: object
+          properties:
+            description: { type: string }
+            totals: { $ref: '#/components/schemas/Statistics' }
+            byStatusCode:
+              type: object
+              additionalProperties: { $ref: '#/components/schemas/Statistics' }
+
+    Match:
+      type: object
+      properties:
+        port: { type: integer }
+        ip: { type: string, description: "Bind address." }
+        host: { type: string, description: "Virtual host pattern(s)." }
+        method: { type: string }
+        path: { type: string }
+        pathType: { type: string, enum: [prefix, regex, uriTemplate] }
+        test: { type: string, description: "Expression of the `test` attribute." }
+        tls: { type: boolean }
+
+    Target:
+      type: object
+      properties:
+        url: { type: string }
+        host: { type: string }
+        port: { type: integer }
+        tls: { type: boolean }
+        balancer: { type: string, description: "Name of the balancer, if the target is load balanced." }
+
+    SourceLocation:
+      type: object
+      properties:
+        file: { type: string }
+        line: { type: integer }
+
+    FlowNode:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, description: "Element name as in the configuration, e.g. `rateLimiter`." }
+        displayName: { type: string }
+        shortDescription: { type: string }
+        longDescription: { type: string }
+        docUrl: { type: string, description: "Reference page on membrane-api.io." }
+        flow:
+          type: string
+          enum: [request, response, both, abort]
+        condition: { type: string, description: "For `if`/`case`, the test expression." }
+        children:
+          type: array
+          description: Nested flow of `request`, `response`, `abort` and similar plugins. For `if`, the then-flow followed by an `else` node if present; for `choose`, one `case` (with `condition`) or `otherwise` node per branch.
+          items: { $ref: '#/components/schemas/FlowNode' }
+
+    ConfigStatus:
+      allOf:
+        - $ref: '#/components/schemas/InstanceTagged'
+        - type: object
+          properties:
+            files:
+              type: array
+              items:
+                type: object
+                properties:
+                  path: { type: string }
+                  format: { type: string, enum: [yaml, xml] }
+                  loadedAt: { type: string, format: date-time }
+            hotReload: { type: boolean }
+            lastReload:
+              type: object
+              properties:
+                at: { type: string, format: date-time }
+                success: { type: boolean }
+                error: { type: string }
+            errors:
+              type: array
+              items:
+                type: object
+                properties:
+                  apiId: { type: string }
+                  message: { type: string }
+                  location: { $ref: '#/components/schemas/SourceLocation' }
+
+    ExchangeSummary:
+      allOf:
+        - $ref: '#/components/schemas/InstanceTagged'
+        - type: object
+          required: [id, time]
+          properties:
+            id: { type: integer, format: int64 }
+            time: { type: string, format: date-time }
+            statusCode: { type: [integer, 'null'] }
+            apiId: { type: string }
+            proxy: { type: string }
+            listenPort: { type: integer }
+            protocol: { type: [string, 'null'], enum: ['1.0', '1.1', '2', null] }
+            method: { type: string }
+            path: { type: string }
+            client: { type: string }
+            server: { type: string }
+            serverPort: { type: integer }
+            reqContentType: { type: string }
+            reqContentLength: { type: integer, format: int64 }
+            respContentType: { type: string }
+            respContentLength: { type: integer, format: int64 }
+            completed: { type: boolean, description: "False while the response is still being received." }
+            duration: { type: integer, description: "Milliseconds." }
+            websocket: { type: boolean }
+
+    ExchangeDetail:
+      allOf:
+        - $ref: '#/components/schemas/ExchangeSummary'
+        - type: object
+          properties:
+            destinations:
+              type: array
+              items: { type: string }
+            nodeStatus:
+              type: array
+              description: Every balancer node tried, with status code or exception.
+              items:
+                type: object
+                properties:
+                  node: { type: string }
+                  statusCode: { type: integer }
+                  exception: { type: string }
+            error: { type: string, description: "Error/exception of the exchange, if any." }
+            requestBodyFormat: { type: string }
+            responseBodyFormat: { type: string }
+
+    Header:
+      type: object
+      required: [name, value]
+      properties:
+        name: { type: string }
+        value: { type: string }
+
+    ReplayResult:
+      type: object
+      required: [target, url, statusCode, durationMillis, headers, body]
+      properties:
+        target: { type: string, enum: [gateway, backend] }
+        url: { type: string, description: "Where the request was sent." }
+        statusCode: { type: integer }
+        statusMessage: { type: [string, 'null'] }
+        durationMillis: { type: integer, format: int64 }
+        headers:
+          type: array
+          items: { $ref: '#/components/schemas/Header' }
+        body: { $ref: '#/components/schemas/FormattedBody' }
+
+    FormattedBody:
+      type: object
+      required: [format, text, truncated]
+      properties:
+        format: { type: string, enum: [json, xml, yaml, form, text, binary, empty] }
+        text: { type: string, description: "Pretty-printed body; empty for binary." }
+        truncated: { type: boolean }
+        originalLength: { type: integer, format: int64 }
+
+    WebSocketFrame:
+      type: object
+      properties:
+        seq: { type: integer, format: int64 }
+        time: { type: string, format: date-time }
+        direction: { type: string, enum: [clientToServer, serverToClient] }
+        opcode: { type: string, enum: [text, binary, ping, pong, close, continuation, other] }
+        length: { type: integer }
+        encoding: { type: string, enum: [text, base64], description: "text for UTF-8 text messages, base64 otherwise." }
+        payload: { type: string, description: "The payload, cut after the maxPayloadBytes of wsRecord." }
+        truncated: { type: boolean }
+
+    ExchangeStoreInfo:
+      allOf:
+        - $ref: '#/components/schemas/InstanceTagged'
+        - type: object
+          properties:
+            type: { type: string, enum: [limitedMemory, memory, file, elasticSearch, mongoDB, loki, forgetful, other] }
+            maxBytes: { type: integer, format: int64 }
+            usedBytes: { type: integer, format: int64 }
+            count: { type: integer, format: int64 }
+            oldest: { type: string, format: date-time }
+            capabilities:
+              type: object
+              description: What the store can do; the UI hides unsupported features.
+              properties:
+                list: { type: boolean }
+                sort: { type: boolean }
+                waitForModification: { type: boolean }
+                bodySearch: { type: boolean }
+                headerSearch: { type: boolean }
+                timeRange: { type: boolean }
+                frames: { type: boolean }
+
+    Statistics:
+      type: object
+      properties:
+        count: { type: integer, format: int64 }
+        errors: { type: integer, format: int64 }
+        min: { type: integer, description: "Milliseconds." }
+        max: { type: integer }
+        avg: { type: number }
+        p50: { type: number }
+        p95: { type: number }
+        p99: { type: number }
+        requestBytes: { type: integer, format: int64 }
+        responseBytes: { type: integer, format: int64 }
+
+    MetricsPoint:
+      type: object
+      properties:
+        t: { type: string, format: date-time }
+        requests: { type: integer }
+        errors: { type: integer, description: "Responses >= 500 and failed exchanges." }
+        p50: { type: number }
+        p95: { type: number }
+        p99: { type: number }
+
+    StreamPump:
+      allOf:
+        - $ref: '#/components/schemas/InstanceTagged'
+        - type: object
+          properties:
+            name: { type: string }
+            proxy: { type: string }
+            createdAt: { type: string, format: date-time }
+            activeSeconds: { type: integer }
+            transferredBytes: { type: integer, format: int64 }
+
+    Balancer:
+      allOf:
+        - $ref: '#/components/schemas/InstanceTagged'
+        - type: object
+          properties:
+            name: { type: string }
+            failover: { type: boolean }
+            clusters:
+              type: array
+              items:
+                type: object
+                properties:
+                  name: { type: string }
+                  nodes:
+                    type: array
+                    items: { $ref: '#/components/schemas/Node' }
+
+    Node:
+      type: object
+      properties:
+        host: { type: string }
+        port: { type: integer }
+        status: { type: string, enum: [UP, DOWN, TAKEOUT] }
+        count: { type: integer, format: int64 }
+        errorRate: { type: number, description: "0..1" }
+        lastUp: { type: string, format: date-time }
+        sessions: { type: integer }
+        threads: { type: integer }
+        healthCheck:
+          type: object
+          description: Result of the last active health check, if one is configured.
+          properties:
+            at: { type: string, format: date-time }
+            healthy: { type: boolean }
+            detail: { type: string }
+
+    NodeDetail:
+      allOf:
+        - $ref: '#/components/schemas/Node'
+        - type: object
+          properties:
+            byStatusCode:
+              type: object
+              additionalProperties: { type: integer, format: int64 }
+            sessionList:
+              type: array
+              items:
+                type: object
+                properties:
+                  id: { type: string, description: "Truncated/hashed, never the full session id." }
+                  lastUsed: { type: string, format: date-time }
+
+    RateLimiter:
+      allOf:
+        - $ref: '#/components/schemas/InstanceTagged'
+        - type: object
+          properties:
+            pluginId: { type: string }
+            apiId: { type: string }
+            requestLimit: { type: integer }
+            period: { type: string, description: "ISO 8601 duration." }
+            keyExpression: { type: string }
+            keys:
+              type: array
+              description: Top keys by usage in the current period.
+              items:
+                type: object
+                properties:
+                  key: { type: string }
+                  used: { type: integer }
+                  resetsAt: { type: string, format: date-time }
+
+    CircuitBreaker:
+      allOf:
+        - $ref: '#/components/schemas/InstanceTagged'
+        - type: object
+          properties:
+            pluginId: { type: string }
+            apiId: { type: string }
+            state: { type: string, enum: [closed, open, halfOpen] }
+            failures: { type: integer }
+            openedAt: { type: string, format: date-time }
+
+    CredentialStore:
+      allOf:
+        - $ref: '#/components/schemas/InstanceTagged'
+        - type: object
+          properties:
+            pluginId: { type: string }
+            apiId: { type: string }
+            kind: { type: string, enum: [apiKeys, users, oauth2Clients, sessions, jwks] }
+            implementation: { type: string, description: "E.g. `simple`, `file`, `jdbc`, `mongo`, `redis`." }
+            entries: { type: integer, description: "Number of keys/users/active sessions, if the store can count them." }
+            scopes: { $ref: '#/components/schemas/StringList' }
+
+    Certificate:
+      allOf:
+        - $ref: '#/components/schemas/InstanceTagged'
+        - type: object
+          properties:
+            usage: { type: string, enum: [server, client, trust, acme] }
+            apiIds: { $ref: '#/components/schemas/StringList' }
+            alias: { type: string }
+            subject: { type: string }
+            issuer: { type: string }
+            subjectAltNames: { $ref: '#/components/schemas/StringList' }
+            notBefore: { type: string, format: date-time }
+            notAfter: { type: string, format: date-time }
+            sha256: { type: string }
+            acme:
+              type: object
+              properties:
+                status: { type: string, enum: [valid, renewing, failed, pending] }
+                lastRenewal: { type: string, format: date-time }
+                error: { type: string }
+
+    SystemInfo:
+      allOf:
+        - $ref: '#/components/schemas/InstanceTagged'
+        - type: object
+          properties:
+            membraneVersion: { type: string }
+            javaVersion: { type: string }
+            os: { type: string }
+            startedAt: { type: string, format: date-time }
+            uptimeSeconds: { type: integer, format: int64 }
+            heap:
+              type: object
+              properties:
+                used: { type: integer, format: int64 }
+                committed: { type: integer, format: int64 }
+                max: { type: integer, format: int64 }
+            threads:
+              type: object
+              properties:
+                live: { type: integer }
+                peak: { type: integer }
+                daemon: { type: integer }
+            gc:
+              type: array
+              items:
+                type: object
+                properties:
+                  name: { type: string }
+                  count: { type: integer, format: int64 }
+                  timeMillis: { type: integer, format: int64 }
+            cpus: { type: integer }
+
+    LogEntry:
+      allOf:
+        - $ref: '#/components/schemas/InstanceTagged'
+        - type: object
+          properties:
+            seq: { type: integer, format: int64 }
+            time: { type: string, format: date-time }
+            level: { type: string }
+            logger: { type: string }
+            thread: { type: string }
+            message: { type: string }
+            exception: { type: string }
