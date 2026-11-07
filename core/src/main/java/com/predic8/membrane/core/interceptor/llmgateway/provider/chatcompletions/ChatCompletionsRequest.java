@@ -48,12 +48,15 @@ public class ChatCompletionsRequest extends AbstractOpenAiLLMRequest {
     /**
      * Lowers every output limit field the client sent to the given maximum, as backends differ in which of
      * {@code max_tokens} and {@code max_completion_tokens} they use. Values below the maximum are kept. Without a
-     * client limit, the limit is written to {@link #outputLimitField()}.
+     * client limit, the limit is written to {@link #outputLimitField()}. A field sent as {@code null} means no limit
+     * and is removed, as some models reject the field the provider does not use.
      */
     @Override
     public void setMaxOutputTokens(int maxOutputTokens) {
         var present = false;
         for (final var field : OUTPUT_LIMIT_FIELDS) {
+            if (json.has(field) && json.get(field).isNull())
+                json.remove(field);
             if (!json.has(field))
                 continue;
             present = true;

@@ -141,6 +141,23 @@ class DefaultPoliciesTest {
         assertEquals(100, request.getJson().path("max_completion_tokens").asLong());
     }
 
+    /**
+     * A limit field sent as null means no limit. It is removed, and the limit goes to the provider's field: o-series
+     * models reject max_tokens.
+     */
+    @Test
+    void aNullLimitIsReplacedByTheProvidersField() throws Exception {
+        final var policies = policies();
+        policies.setMaxOutputTokens(100);
+        final var request = chatCompletionsRequest("openai", """
+                {"max_tokens":null}""");
+
+        assertEquals(CONTINUE, policies.handleRequest(request, new Exchange(null)));
+
+        assertFalse(request.getJson().has("max_tokens"));
+        assertEquals(100, request.getJson().path("max_completion_tokens").asLong());
+    }
+
     @ParameterizedTest
     @CsvSource({"chatCompletions, max_tokens", "openai, max_completion_tokens"})
     void withoutAClientLimitTheProvidersFieldIsSet(String provider, String field) throws Exception {
