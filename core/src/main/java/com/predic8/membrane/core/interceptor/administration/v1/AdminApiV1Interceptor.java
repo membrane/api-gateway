@@ -326,8 +326,8 @@ public class AdminApiV1Interceptor extends AbstractInterceptor {
                 if (!names.add(peer.getName()))
                     throw new ConfigurationException("adminConsole: the instance name '%s' is used more than once.".formatted(peer.getName()));
             }
-            if (peer.getApiKey() != null && peer.getUrl().regionMatches(true, 0, "http:", 0, 5))
-                log.warn("adminConsole: the API key for peer {} is sent over plain HTTP. Use https:// unless the network is trusted.",
+            if (peer.isWarnOnPlainHttp() && peer.getApiKey() != null && peer.getUrl().regionMatches(true, 0, "http:", 0, 5))
+                log.warn("adminConsole: the API key for peer {} is sent over plain HTTP. Use https://, or set warnOnPlainHttp: false if the connection is protected otherwise.",
                         escapeControlCharsForLog(peer.getUrl()));
         }
     }
