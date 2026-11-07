@@ -685,6 +685,11 @@ public class Http2Logic {
                 ((Response) request).setStatusCode(Integer.parseInt(val));
                 statusReceived[0] = true;
                 log.debug("streamId=" + streamId1 + " status=" + val);
+            } else if ("host".equals(key) && request instanceof Request && header.getHost() != null) {
+                // :authority and host, or several host fields, must name the same host (RFC 9113 §8.3.1). Only one
+                // Host field is kept, so the gateway and an HTTP/1.1 backend, which may read another one, agree.
+                if (!header.getHost().equalsIgnoreCase(val))
+                    malformedField[0] = true;
             } else
                 header.add(key, val);
         });
