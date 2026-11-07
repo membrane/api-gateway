@@ -15,7 +15,7 @@ package com.predic8.membrane.core.interceptor.administration;
 
 import com.predic8.membrane.core.exchangestore.LimitedMemoryExchangeStore;
 import com.predic8.membrane.core.interceptor.rest.QueryParameter;
-import com.predic8.membrane.core.router.TestRouter;
+import com.predic8.membrane.core.HttpRouter;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,13 +31,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AdminRESTInterceptorTest {
 
-    private TestRouter router;
+    private HttpRouter router;
     private LimitedMemoryExchangeStore store;
     private AdminRESTInterceptor interceptor;
 
     @BeforeEach
     void setUp() {
-        router = new TestRouter();
+        router = new HttpRouter();
         store = new LimitedMemoryExchangeStore();
         router.setExchangeStore(store);
         interceptor = new AdminRESTInterceptor();

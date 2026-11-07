@@ -23,7 +23,7 @@ import com.predic8.membrane.core.proxies.ProxyRule;
 import com.predic8.membrane.core.proxies.ProxyRuleKey;
 import com.predic8.membrane.core.proxies.ServiceProxy;
 import com.predic8.membrane.core.proxies.ServiceProxyKey;
-import com.predic8.membrane.core.router.TestRouter;
+import com.predic8.membrane.core.HttpRouter;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,19 +33,19 @@ import org.junit.jupiter.params.provider.ValueSource;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.interceptor.balancer.Balancer.DEFAULT_NAME;
 import static com.predic8.membrane.core.interceptor.balancer.Node.Status.UP;
-import static com.predic8.membrane.core.proxies.RuleManager.RuleDefinitionSource.MANUAL;
+import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.MANUAL;
 import static org.junit.jupiter.api.Assertions.*;
 
 class DynamicAdminPageInterceptorTest {
 
     private static final String DELETE_VICTIM = "/admin/service-proxy/delete?name=victim%3A3999";
 
-    private TestRouter router;
+    private HttpRouter router;
     private DynamicAdminPageInterceptor interceptor;
 
     @BeforeEach
-    void setUp() {
-        router = new TestRouter();
+    void setUp() throws Exception {
+        router = new HttpRouter();
         router.init();
 
         final var victim = new ServiceProxy(new ServiceProxyKey("*", "*", ".*", 3999, null), "localhost", 80);
