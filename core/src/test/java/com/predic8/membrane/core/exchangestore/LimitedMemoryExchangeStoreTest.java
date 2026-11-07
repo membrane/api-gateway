@@ -54,6 +54,34 @@ public class LimitedMemoryExchangeStoreTest {
 
 	}
 
+	@Test
+	void waitForModificationWithTimeoutGivesUp() throws Exception {
+		final var s = new LimitedMemoryExchangeStore();
+		final var start = System.currentTimeMillis();
+		assertFalse(s.waitForModification(s.getLastModified(), 200));
+		assertTrue(System.currentTimeMillis() - start >= 150);
+	}
+
+	@Test
+	void waitForModificationWithTimeoutReturnsOnModification() throws Exception {
+		final var s = new LimitedMemoryExchangeStore();
+		final var known = s.getLastModified();
+		Thread.sleep(2);
+		s.snap(getExchange("x"), Flow.RESPONSE);
+		assertTrue(s.waitForModification(known, 10_000));
+	}
+
+	@Test
+	void everyModificationAdvancesTheMarker() throws Exception {
+		final var s = new LimitedMemoryExchangeStore();
+		final var before = s.getLastModified();
+		s.snap(getExchange("a"), Flow.RESPONSE);
+		final var middle = s.getLastModified();
+		s.snap(getExchange("b"), Flow.RESPONSE);
+		assertTrue(middle > before);
+		assertTrue(s.getLastModified() > middle);
+	}
+
 	private void assertStore(int pos, String value) {
 		assertEquals(value, store.getAllExchangesAsList().get(pos).getProperty("id"));
 	}
