@@ -33,7 +33,7 @@ final class ApisResource {
 
     static final Set<String> KNOWN_TYPES = Set.of("api", "serviceProxy", "soapProxy", "proxy", "internal", "stompProxy", "kafkaConsumer");
 
-    private static final Map<String, Comparator<Indexed>> SORTS = Map.of(
+    static final Map<String, Comparator<Indexed>> SORTS = Map.of(
             "order", comparingInt(Indexed::order),
             "name", comparing(i -> String.valueOf(i.proxy().getName()), String.CASE_INSENSITIVE_ORDER),
             "type", comparing(i -> type(i.proxy())),

@@ -74,7 +74,7 @@ final class MonitoringResource {
     record SystemInfos(List<SystemInfo> instances) {
     }
 
-    private static final Map<String, Comparator<ClientStatistics>> CLIENT_SORTS = Map.of(
+    static final Map<String, Comparator<ClientStatistics>> CLIENT_SORTS = Map.of(
             "client", comparing(ClientStatistics::getClient, nullsFirst(naturalOrder())),
             "count", comparingInt(ClientStatistics::getCount),
             "min", comparingLong(ClientStatistics::getMinDuration),
