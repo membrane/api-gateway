@@ -269,8 +269,12 @@ public abstract class DistributionExtractingTestcase {
         BufferLogger logger = new BufferLogger();
         try (Process2 mvn = new Process2.Builder().in(baseDir).executable(mavenCommand("package")).withWatcher(logger).start()) {
             int exitCode = mvn.waitForExit(60000);
-            if (exitCode != 0)
-                throw new RuntimeException("Maven exited with code %d: %s".formatted(exitCode, logger));
+            if (exitCode == 0)
+                return;
+            // The example depends on the SNAPSHOT artifacts of this build, which only `mvn install` puts into the local repository.
+            if (logger.contains("Could not find artifact org.membrane-soa:"))
+                throw new RuntimeException("Maven exited with code %d. The artifacts of this build are not in the local Maven repository. Run 'mvn install' (not 'mvn verify') first: %s".formatted(exitCode, logger));
+            throw new RuntimeException("Maven exited with code %d: %s".formatted(exitCode, logger));
         }
     }
 
