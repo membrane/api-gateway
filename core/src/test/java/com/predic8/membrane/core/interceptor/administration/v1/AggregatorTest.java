@@ -199,6 +199,64 @@ class AggregatorTest {
     }
 
     @Test
+    void hugeOffsetIsRejectedWithoutOverflow() throws Exception {
+        assertEquals(400, get("/exchanges?offset=2147483647&limit=1").statusCode());
+    }
+
+    @Test
+    void sortIsValidatedAlsoWhenOnlyPeersAreSelected() throws Exception {
+        assertEquals(400, get("/exchanges?instance=node-b&sort=bogus").statusCode());
+        assertEquals(400, get("/exchanges?instance=node-b&order=up").statusCode());
+    }
+
+    @Test
+    void longPollOnPeersOnlyIsNotEndedByThisInstance() throws Exception {
+        final var lastModified = getJson("/exchanges?instance=node-b").get("lastModified").toString();
+        final var start = System.currentTimeMillis();
+        final var res = get("/exchanges?instance=node-b&timeout=1&waitForModification=" + URLEncoder.encode(lastModified, UTF_8));
+        assertEquals(200, res.statusCode());
+        assertTrue(System.currentTimeMillis() - start >= 900);
+    }
+
+    @Test
+    void peerUrlNeedsHostAndNoFragment() {
+        for (final var url : List.of("http:///node-b", "http://node-b:9000/#x", "ftp://node-b")) {
+            final var api = new AdminApiV1Interceptor();
+            api.setPeers(List.of(peer(url, null)));
+            assertThrows(ConfigurationException.class, () -> api.init(new TestRouter()), url);
+        }
+    }
+
+    @Test
+    void duplicateInstanceNamesAreAConfigurationError() {
+        final var a = peer("http://localhost:1", null);
+        a.setName("node-x");
+        final var b = peer("http://localhost:2", null);
+        b.setName("node-x");
+        final var api = new AdminApiV1Interceptor();
+        api.setPeers(List.of(a, b));
+        assertThrows(ConfigurationException.class, () -> api.init(new TestRouter()));
+
+        final var self = peer("http://localhost:1", null);
+        self.setName("node-a");
+        final var api2 = new AdminApiV1Interceptor();
+        api2.setInstanceName("node-a");
+        api2.setPeers(List.of(self));
+        assertThrows(ConfigurationException.class, () -> api2.init(new TestRouter()));
+    }
+
+    @Test
+    void comparatorSortsPathsCaseSensitivelyAndNamesCaseInsensitively() {
+        final var upper = om.createObjectNode().put("path", "/B").put("name", "B");
+        final var lower = om.createObjectNode().put("path", "/a").put("name", "a");
+        final var list = new ArrayList<JsonNode>(List.of(lower, upper));
+        list.sort(Aggregator.comparator("path", false));
+        assertEquals(List.of(upper, lower), list);
+        list.sort(Aggregator.comparator("name", false));
+        assertEquals(List.of(lower, upper), list);
+    }
+
+    @Test
     void comparatorSortsTimesWithDifferentPrecision() {
         final var early = om.createObjectNode().put("time", "2026-11-05T10:00:00Z");
         final var late = om.createObjectNode().put("time", "2026-11-05T10:00:00.5Z");

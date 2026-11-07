@@ -144,6 +144,41 @@ class AdminApiV1InterceptorTest {
     }
 
     @Test
+    void literalPlusInPathIsNotASpace() throws Exception {
+        final var plus = new ServiceProxy(new ServiceProxyKey("*", "GET", "/c", 3998, null), "backend.example.com", 8080);
+        plus.setName("c++");
+        plus.init(router);
+        router.getRuleManager().addProxy(plus, MANUAL);
+
+        assertEquals("c++", json(get(API + "/apis/node-a/c++%3A3998")).get("name").asText());
+    }
+
+    @Test
+    void instanceFilterExcludingThisInstanceReturnsNothing() throws Exception {
+        assertEquals(0, json(get(API + "/apis?instance=node-b")).get("total").asInt());
+        assertEquals(1, json(get(API + "/apis?instance=node-b,node-a")).get("total").asInt());
+        assertEquals(0, json(get(API + "/system?instance=node-b")).get("instances").size());
+        assertEquals(0, json(get(API + "/statistics/apis?instance=node-b")).get("apis").size());
+    }
+
+    @Test
+    void rejectsInvalidInstanceNames() {
+        for (final var name : java.util.List.of("", " ", "a,b", "a/b")) {
+            final var api = new AdminApiV1Interceptor();
+            api.setInstanceName(name);
+            assertThrows(com.predic8.membrane.core.util.ConfigurationException.class, () -> api.init(router), name);
+        }
+    }
+
+    @Test
+    void rejectsTrailingJson() throws Exception {
+        addBalancer();
+        final var res = sendUnvalidated(Request.post(API + "/balancers/node-a/Default/clusters")
+                .contentType("application/json").body("{\"name\":\"blue\"} {\"name\":\"red\"}"), false).getResponse();
+        assertEquals(400, res.getStatusCode());
+    }
+
+    @Test
     void deletesApi() throws Exception {
         assertEquals(204, send(Request.delete(VICTIM), false).getStatusCode());
         assertNull(RuleUtil.findRuleByIdentifier(router, "victim:3999"));
@@ -217,6 +252,19 @@ class AdminApiV1InterceptorTest {
 
         assertEquals(5, page.get("total").asInt());
         assertEquals(1, page.get("exchanges").size());
+    }
+
+    @Test
+    void hugeOffsetIsAnEmptyPage() throws Exception {
+        snap("/a", 200);
+        final var page = json(get(API + "/exchanges?offset=2147483647&limit=1000"));
+        assertEquals(1, page.get("total").asInt());
+        assertEquals(0, page.get("exchanges").size());
+    }
+
+    @Test
+    void waitForModificationNullIsBadRequest() throws Exception {
+        assertEquals(400, get(API + "/exchanges?waitForModification=null").getStatusCode());
     }
 
     @Test

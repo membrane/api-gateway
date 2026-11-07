@@ -72,12 +72,12 @@ public interface ExchangeStore {
 
 	/**
 	 * Like {@link #waitForModification(long)}, but gives up after {@code timeoutMillis}.
-	 * Stores that cannot signal modifications return immediately.
+	 * Stores that cannot signal modifications return false immediately.
 	 *
-	 * @return whether the store was modified after {@code lastKnownModification}
+	 * @return whether the store signalled a modification after {@code lastKnownModification}
 	 */
 	default boolean waitForModification(long lastKnownModification, long timeoutMillis) throws InterruptedException {
-		return getLastModified() > lastKnownModification;
+		return false;
 	}
 
     ExchangeQueryResult getFilteredSortedPaged(QueryParameter params, boolean useXForwardedForAsClientAddr) throws Exception;

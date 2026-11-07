@@ -103,7 +103,13 @@ public class AdminApiV1Interceptor extends AbstractInterceptor {
         INSTANCES
     }
 
-    record Merge(Kind kind, String field, String defaultSort, String defaultOrder) {
+    /**
+     * @param sorts allowed values of the {@code sort} parameter of a {@code PAGE}; checked before fanning out
+     */
+    record Merge(Kind kind, String field, String defaultSort, String defaultOrder, Set<String> sorts) {
+        Merge(Kind kind, String field, String defaultSort, String defaultOrder) {
+            this(kind, field, defaultSort, defaultOrder, Set.of());
+        }
     }
 
     record Route(String method, Pattern pattern, Access access, Handler handler, Scope scope, Merge merge) {
@@ -125,12 +131,12 @@ public class AdminApiV1Interceptor extends AbstractInterceptor {
     @Override
     public void init() {
         super.init();
+        if (instanceName != null)
+            validateInstanceName(instanceName);
         final var ctx = new ConsoleContext(router, instanceName != null ? instanceName : defaultInstanceName(),
                 readOnly, useXForwardedForAsClientAddr, System.currentTimeMillis());
         routes = routes(ctx);
-        for (final var peer : peers)
-            if (peer.getUrl() == null || !peer.getUrl().matches("(?i)https?://.+"))
-                throw new ConfigurationException("The url of an adminConsole peer must start with http:// or https://, but was: " + peer.getUrl());
+        validatePeers(ctx.instanceName());
         aggregator = peers.isEmpty() ? null : new Aggregator(ctx, peers, new PeerClient());
     }
 
@@ -151,7 +157,7 @@ public class AdminApiV1Interceptor extends AbstractInterceptor {
         r.add(notImplemented("POST", "/auth/login", "Login is not available yet."));
         r.add(notImplemented("POST", "/auth/logout", "Login is not available yet."));
 
-        r.add(collection("/apis", new Merge(PAGE, "apis", "order", "asc"), apis::list));
+        r.add(collection("/apis", new Merge(PAGE, "apis", "order", "asc", ApisResource.SORTS.keySet()), apis::list));
         r.add(notImplemented("POST", "/apis", "Adding APIs is not available yet."));
         r.add(instance("GET", api, READ, apis::get));
         r.add(instance("DELETE", api, ADMIN, apis::delete));
@@ -162,7 +168,7 @@ public class AdminApiV1Interceptor extends AbstractInterceptor {
         r.add(collection("/transport/flow", new Merge(CONCAT, "instances", null, null), apis::transportFlow));
         r.add(notImplemented("GET", "/config", "The configuration status is not available yet."));
 
-        r.add(collection("/exchanges", new Merge(PAGE, "exchanges", "time", "desc"), exchanges::list));
+        r.add(collection("/exchanges", new Merge(PAGE, "exchanges", "time", "desc", ExchangesResource.SORTS), exchanges::list));
         r.add(collection("/exchanges/facets", new Merge(FACETS, null, null, null), exchanges::facets));
         r.add(collection("/exchanges/store", new Merge(CONCAT, "stores", null, null), exchanges::stores));
         r.add(notImplemented("GET", "/exchanges/export", "HAR export is not available yet."));
@@ -177,7 +183,7 @@ public class AdminApiV1Interceptor extends AbstractInterceptor {
         r.add(notImplemented("POST", exchange + "/replay", "Replay is not available yet."));
 
         r.add(collection("/statistics/apis", new Merge(CONCAT, "apis", null, null), monitoring::apiStatistics));
-        r.add(collection("/statistics/clients", new Merge(PAGE, "clients", "client", "asc"), monitoring::clientStatistics));
+        r.add(collection("/statistics/clients", new Merge(PAGE, "clients", "client", "asc", MonitoringResource.CLIENT_SORTS.keySet()), monitoring::clientStatistics));
         r.add(notImplemented("GET", "/metrics/timeseries", "Time series are not collected yet."));
         r.add(collection("/streams", new Merge(CONCAT, "streams", null, null), monitoring::streams));
         r.add(collection("/system", new Merge(CONCAT, "instances", null, null), monitoring::system));
@@ -305,8 +311,47 @@ public class AdminApiV1Interceptor extends AbstractInterceptor {
     private static List<String> pathParams(Matcher matcher) {
         final var params = new ArrayList<String>(matcher.groupCount());
         for (int i = 1; i <= matcher.groupCount(); i++)
-            params.add(URLDecoder.decode(matcher.group(i), UTF_8));
+            // A literal '+' is part of the segment (names may contain it), not an encoded space.
+            params.add(URLDecoder.decode(matcher.group(i).replace("+", "%2B"), UTF_8));
         return List.copyOf(params);
+    }
+
+    private void validatePeers(String self) {
+        final var names = new HashSet<String>();
+        names.add(self);
+        for (final var peer : peers) {
+            validatePeerUrl(peer.getUrl());
+            if (peer.getName() != null) {
+                validateInstanceName(peer.getName());
+                if (!names.add(peer.getName()))
+                    throw new ConfigurationException("adminConsole: the instance name '%s' is used more than once.".formatted(peer.getName()));
+            }
+            if (peer.getApiKey() != null && peer.getUrl().regionMatches(true, 0, "http:", 0, 5))
+                log.warn("adminConsole: the API key for peer {} is sent over plain HTTP. Use https:// unless the network is trusted.",
+                        escapeControlCharsForLog(peer.getUrl()));
+        }
+    }
+
+    static void validatePeerUrl(String url) {
+        final java.net.URI uri;
+        try {
+            uri = url == null ? null : new java.net.URI(url);
+        } catch (java.net.URISyntaxException e) {
+            throw new ConfigurationException("The url of an adminConsole peer is invalid: " + url);
+        }
+        if (uri == null || uri.getScheme() == null || !uri.getScheme().matches("(?i)https?") || uri.getHost() == null
+            || uri.getRawFragment() != null || uri.getRawQuery() != null)
+            throw new ConfigurationException("The url of an adminConsole peer must be http:// or https:// with a host, and without query or fragment, but was: " + url);
+    }
+
+    /**
+     * Instance names are path segments and values of the comma separated {@code instance} filter.
+     */
+    static void validateInstanceName(String name) {
+        if (name.isBlank())
+            throw new ConfigurationException("adminConsole: instanceName must not be empty.");
+        if (name.contains(",") || name.contains("/"))
+            throw new ConfigurationException("adminConsole: instanceName '%s' must not contain ',' or '/'.".formatted(name));
     }
 
     private static String defaultInstanceName() {
