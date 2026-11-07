@@ -118,12 +118,13 @@ jobs:
         with:
           ref: ${{ needs.parse.outputs.sha }}
           persist-credentials: false
+      # No Maven cache: this job runs the PR's code in master's cache scope (issue_comment),
+      # so a cache saved here could be restored by builds of master.
       - name: Set up JDK 21
         uses: actions/setup-java@v6
         with:
           java-version: '21'
           distribution: 'temurin'
-          cache: 'maven'
       - name: Maven Build (/testit, without internet)
         if: needs.parse.outputs.mode == 'testit'
         run: mvn --batch-mode --update-snapshots -Pno-internet verify
@@ -146,12 +147,12 @@ jobs:
         with:
           ref: ${{ needs.parse.outputs.sha }}
           persist-credentials: false
+      # No Maven cache, see test-linux.
       - name: Set up JDK 21
         uses: actions/setup-java@v6
         with:
           java-version: '21'
           distribution: 'temurin'
-          cache: 'maven'
       - name: Maven Build (/testmerge, all tests)
         run: mvn --batch-mode --update-snapshots install
 
