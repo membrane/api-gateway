@@ -29,6 +29,8 @@ public class ChatCompletionsRequest extends AbstractOpenAiLLMRequest {
 
     private static final Set<String> SYSTEM_ROLES = Set.of("system", "developer");
 
+    private static final List<String> OUTPUT_LIMIT_FIELDS = List.of("max_tokens", "max_completion_tokens");
+
     public ChatCompletionsRequest(Exchange exchange) throws IOException {
         super(exchange);
 
@@ -43,9 +45,31 @@ public class ChatCompletionsRequest extends AbstractOpenAiLLMRequest {
         }
     }
 
+    /**
+     * Lowers every output limit field the client sent to the given maximum, as backends differ in which of
+     * {@code max_tokens} and {@code max_completion_tokens} they use. Values below the maximum are kept. Without a
+     * client limit, the limit is written to {@link #outputLimitField()}.
+     */
     @Override
     public void setMaxOutputTokens(int maxOutputTokens) {
-        json.put("max_tokens", maxOutputTokens);
+        var present = false;
+        for (final var field : OUTPUT_LIMIT_FIELDS) {
+            if (!json.has(field))
+                continue;
+            present = true;
+            final var requested = json.path(field).asLong(0);
+            if (requested <= 0 || requested > maxOutputTokens)
+                json.put(field, maxOutputTokens);
+        }
+        if (!present)
+            json.put(outputLimitField(), maxOutputTokens);
+    }
+
+    /**
+     * @return the field a limit is written to when the client sent none
+     */
+    protected String outputLimitField() {
+        return "max_tokens";
     }
 
     public List<String> getTools() {
@@ -125,12 +149,13 @@ public class ChatCompletionsRequest extends AbstractOpenAiLLMRequest {
         return json.objectNode().put("role", "system").put("content", prompt);
     }
 
+    /**
+     * The larger of {@code max_tokens} and {@code max_completion_tokens}, since it is up to the backend which one it
+     * uses.
+     */
     @Override
     public long getRequestedMaxOutputTokens() {
-        // Prefer max_completion_tokens (modern OpenAI/o1+), fall back to max_tokens (legacy / all other providers)
-        long v = json.path("max_completion_tokens").asLong(0);
-        if (v > 0) return v;
-        return json.path("max_tokens").asLong(0);
+        return Math.max(json.path("max_completion_tokens").asLong(0), json.path("max_tokens").asLong(0));
     }
 
 }

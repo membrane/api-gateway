@@ -16,9 +16,13 @@ package com.predic8.membrane.core.interceptor.llmgateway;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.ModelInputRequest;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.chatcompletions.ChatCompletionsErrorCreator;
+import com.predic8.membrane.core.interceptor.llmgateway.provider.chatcompletions.ChatCompletionsRequest;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.claude.ClaudeLLMRequest;
+import com.predic8.membrane.core.interceptor.llmgateway.provider.openai.OpenAIChatCompletionsRequest;
 import com.predic8.membrane.core.util.ConfigurationException;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.util.List;
 
@@ -95,6 +99,61 @@ class DefaultPoliciesTest {
         assertEquals(50, request.getRequestedMaxOutputTokens());
     }
 
+    /**
+     * Chat Completions has two output limit fields, max_tokens and max_completion_tokens. Neither may exceed the
+     * maximum, whichever one the provider writes the limit to.
+     */
+    @ParameterizedTest(name = "{0} {1}")
+    @CsvSource(delimiter = '|', value = {
+            "chatCompletions | {\"max_completion_tokens\":100000}",
+            "chatCompletions | {\"max_completion_tokens\":50,\"max_tokens\":100000}",
+            "chatCompletions | {\"max_tokens\":50,\"max_completion_tokens\":100000}",
+            "openai          | {\"max_tokens\":100000}",
+            "openai          | {\"max_completion_tokens\":50,\"max_tokens\":100000}",
+            "openai          | {\"max_tokens\":50,\"max_completion_tokens\":100000}",
+    })
+    void noChatCompletionsOutputLimitFieldExceedsTheMaximum(String provider, String body) throws Exception {
+        final var policies = policies();
+        policies.setMaxOutputTokens(100);
+        final var request = chatCompletionsRequest(provider, body);
+
+        assertEquals(CONTINUE, policies.handleRequest(request, new Exchange(null)));
+
+        for (final var field : List.of("max_tokens", "max_completion_tokens")) {
+            final var value = request.getJson().path(field);
+            assertTrue(value.isMissingNode() || value.asLong() <= 100, () -> "%s is %s".formatted(field, value));
+        }
+    }
+
+    /**
+     * A field below the maximum is kept as the client sent it.
+     */
+    @Test
+    void aChatCompletionsLimitBelowTheMaximumIsKept() throws Exception {
+        final var policies = policies();
+        policies.setMaxOutputTokens(100);
+        final var request = chatCompletionsRequest("chatCompletions", """
+                {"max_tokens":50,"max_completion_tokens":100000}""");
+
+        assertEquals(CONTINUE, policies.handleRequest(request, new Exchange(null)));
+
+        assertEquals(50, request.getJson().path("max_tokens").asLong());
+        assertEquals(100, request.getJson().path("max_completion_tokens").asLong());
+    }
+
+    @ParameterizedTest
+    @CsvSource({"chatCompletions, max_tokens", "openai, max_completion_tokens"})
+    void withoutAClientLimitTheProvidersFieldIsSet(String provider, String field) throws Exception {
+        final var policies = policies();
+        policies.setMaxOutputTokens(100);
+        final var request = chatCompletionsRequest(provider, "{}");
+
+        assertEquals(CONTINUE, policies.handleRequest(request, new Exchange(null)));
+
+        assertEquals(1, request.getJson().size());
+        assertEquals(100, request.getJson().path(field).asLong());
+    }
+
     @Test
     void tooManyInputTokensAreRejected() throws Exception {
         var policies = policies();
@@ -126,6 +185,11 @@ class DefaultPoliciesTest {
         var policies = new DefaultPolicies();
         policies.init(new ChatCompletionsErrorCreator());
         return policies;
+    }
+
+    private static ModelInputRequest chatCompletionsRequest(String provider, String body) throws Exception {
+        final var exchange = post("http://localhost/v1/chat/completions").json(body).buildExchange();
+        return "openai".equals(provider) ? new OpenAIChatCompletionsRequest(exchange) : new ChatCompletionsRequest(exchange);
     }
 
     private static ModelInputRequest request(String body) throws Exception {
