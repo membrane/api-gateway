@@ -562,6 +562,12 @@ public class RateLimitInterceptorTest {
 		assertEquals("134.3.7.8", interceptor.getClientIp(exc));
 	}
 
+	@ParameterizedTest
+	@ValueSource(strings = {"fe80::1%no-such-interface", "unknown", "198.51.100.7:4711"})
+	void addressesThatAreNotCanonicalIpLiteralsAreKeptAsTheyAre(String address) {
+		assertEquals(address, RateLimitInterceptor.normalizeAddress(" " + address + " "));
+	}
+
 	@Test
 	void getClientIpTrustedProxyListWithOnlyTrustedAddressesUsesThePeer() {
 		final var interceptor = new RateLimitInterceptor();

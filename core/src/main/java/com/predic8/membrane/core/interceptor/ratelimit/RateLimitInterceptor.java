@@ -256,11 +256,18 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
     }
 
     /**
-     * @return an IP address literal in its canonical form, anything else as it is. Never resolves a host name.
+     * @return an IP address literal in its canonical form, anything else as it is, e.g. an IPv6 address with a scope
+     * that does not exist on this host. Never resolves a host name.
      */
     static String normalizeAddress(String address) {
         final var trimmed = address.trim();
-        return InetAddresses.isInetAddress(trimmed) ? InetAddresses.toAddrString(InetAddresses.forString(trimmed)) : trimmed;
+        if (!InetAddresses.isInetAddress(trimmed))
+            return trimmed;
+        try {
+            return InetAddresses.toAddrString(InetAddresses.forString(trimmed));
+        } catch (IllegalArgumentException e) {
+            return trimmed;
+        }
     }
 
     private static String useRemoteIpAddress(Exchange exc) {
