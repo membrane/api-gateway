@@ -22,6 +22,7 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.router.DummyTestRouter;
+import org.apache.commons.fileupload.MultipartStream;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -247,6 +248,7 @@ class XOPReconstitutorTest {
 
         final var e = assertThrows(ReadingBodyException.class, () -> reconstitutor.getReconstitutedMessage(response));
         assertTrue(e.belongsTo(response));
+        assertInstanceOf(MultipartStream.MalformedStreamException.class, e.getCause());
     }
 
     @Test
@@ -257,6 +259,17 @@ class XOPReconstitutorTest {
 
         final var e = assertThrows(ReadingBodyException.class, () -> reconstitutor.getReconstitutedMessage(response));
         assertTrue(e.belongsTo(response));
+        assertEquals("Content-Transfer-Encoding 'base64' is not supported.", e.getCause().getMessage());
+    }
+
+    @Test
+    void partHeaderLineWithoutColonIsRejected() {
+        final var response = response(multipartBody(startPart(), binaryPartWithHeaderLineWithoutColon()),
+                contentType("<root@test>"));
+
+        final var e = assertThrows(ReadingBodyException.class, () -> reconstitutor.getReconstitutedMessage(response));
+        assertTrue(e.belongsTo(response));
+        assertEquals("Malformed multipart part header: a line has no colon.", e.getCause().getMessage());
     }
 
     @Test
@@ -305,7 +318,8 @@ class XOPReconstitutorTest {
                 multipartBody(startPart()), // referenced part is missing
                 complete.substring(0, complete.indexOf("0123456789")), // truncated
                 multipartBody(startPart(), binaryPart().replace("Transfer-Encoding: binary", "Transfer-Encoding: base64")),
-                multipartBody(startPart().replace(" href=\"cid:bin@test\"", ""), binaryPart()))) {
+                multipartBody(startPart().replace(" href=\"cid:bin@test\"", ""), binaryPart()),
+                multipartBody(startPart(), binaryPartWithHeaderLineWithoutColon()))) {
             assertEquals(400, statusAfterDecoding(body, true), body);
         }
     }
@@ -376,6 +390,11 @@ class XOPReconstitutorTest {
 
     private static String binaryPart() {
         return binaryPart("bin@test", "0123456789");
+    }
+
+    /** The broken line is the Content-Type, so the part keeps its Content-ID and is still found. */
+    private static String binaryPartWithHeaderLineWithoutColon() {
+        return binaryPart().replace("Content-Type: application/octet-stream", "Content-Type application/octet-stream");
     }
 
     private static String binaryPart(String id, String content) {
