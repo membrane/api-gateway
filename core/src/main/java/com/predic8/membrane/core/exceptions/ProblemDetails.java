@@ -37,6 +37,7 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.util.ExceptionUtil.concatMessageAndCauseMessages;
 import static com.predic8.membrane.core.util.ExceptionUtil.getRootCause;
 import static com.predic8.membrane.core.util.HttpUtil.getMessageForStatusCode;
+import static com.predic8.membrane.core.util.text.TextUtil.escapeControlCharsForLog;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Locale.ROOT;
 import static java.util.UUID.randomUUID;
@@ -341,15 +342,20 @@ public class ProblemDetails {
 
         try {
             MDC.put(LOG_KEY, logKey);
+            // Title, detail, internal fields and exception message may echo what the sender sent
+            final var escapedTitle = escapeControlCharsForLog(title);
+            final var escapedDetail = escapeControlCharsForLog(detail);
+            final var escapedInternal = escapeControlCharsForLog(String.valueOf(internalFields));
             if (exception != null) {
                 log.info("type={}, title={}, detail={}, internal={} message={}",
-                        getTypeSubtypeString(), title, detail, internalFields, exception.getMessage());
+                        getTypeSubtypeString(), escapedTitle, escapedDetail, escapedInternal,
+                        escapeControlCharsForLog(exception.getMessage()));
                 if (stacktrace) {
                     log.info("Stacktrace for hidden details:", exception);
                 }
             } else {
                 log.info("type={}, title={}, detail={}, internal={}",
-                        getTypeSubtypeString(), title, detail, internalFields);
+                        getTypeSubtypeString(), escapedTitle, escapedDetail, escapedInternal);
             }
         } finally {
             MDC.remove(LOG_KEY);
