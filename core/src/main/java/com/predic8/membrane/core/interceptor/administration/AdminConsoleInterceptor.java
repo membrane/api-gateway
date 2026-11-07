@@ -52,6 +52,13 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 	/**
 	 * The new web UI, packaged separately (module admin-ui). Without it on the classpath only the old UI is served.
 	 */
+	/**
+	 * The UI loads only its own bundled scripts and styles and talks only to this origin. Injected markup can therefore
+	 * neither run script nor send data elsewhere, and other sites cannot frame the console.
+	 */
+	static final String CONSOLE_CSP = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; " +
+			"connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'";
+
 	static final String CONSOLE_INDEX = "/com/predic8/membrane/core/interceptor/administration/docBase/console/index.html";
 
 	public AdminConsoleInterceptor() {
@@ -69,6 +76,11 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 
 		if (exc.getRequest().getHeader().getFirstValue(X_REQUESTED_WITH) != null && exc.getResponse() != null)
 			exc.getResponse().getHeader().add(EXPIRES, "-1");
+
+		if (exc.getResponse() != null && exc.getRequest().getUri().startsWith("/console/")) {
+			exc.getResponse().getHeader().setValue(CONTENT_SECURITY_POLICY, CONSOLE_CSP);
+			exc.getResponse().getHeader().setValue(X_CONTENT_TYPE_OPTIONS, "nosniff");
+		}
 
 		return result;
 	}
