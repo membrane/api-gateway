@@ -61,8 +61,9 @@ final class FramesResource {
         if (connection.isEmpty())
             return ok(new FramePage(0, offset, limit, 0, List.of()));
 
-        final var messages = connection.get().messages();
-        final var dropped = connection.get().count() - messages.size();
+        final var snapshot = connection.get().snapshot();
+        final var messages = snapshot.messages();
+        final var dropped = snapshot.count() - messages.size();
         final var page = messages.stream().skip(offset).limit(limit).map(FramesResource::frame).toList();
         return ok(new FramePage(messages.size(), offset, limit, Math.max(0, dropped), page));
     }

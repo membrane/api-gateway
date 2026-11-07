@@ -76,6 +76,16 @@ public class WebSocketRecordInterceptor implements WebSocketInterceptorInterface
         }
 
         /**
+         * The kept messages and the number of messages seen, read together.
+         */
+        public record Snapshot(List<RecordedMessage> messages, long count) {
+        }
+
+        public synchronized Snapshot snapshot() {
+            return new Snapshot(List.copyOf(messages), count);
+        }
+
+        /**
          * @return number of messages seen, including dropped ones
          */
         public synchronized long count() {
@@ -88,9 +98,10 @@ public class WebSocketRecordInterceptor implements WebSocketInterceptorInterface
     private int maxConnections = 100;
 
     /**
-     * Connections by the id of the exchange that opened them, least recently used first. Guarded by {@code this}.
+     * Connections by the id of the exchange that opened them, least recently active first: a frame moves its
+     * connection to the end, reading it in the admin console does not. Guarded by {@code this}.
      */
-    private final LinkedHashMap<Long, Connection> connections = new LinkedHashMap<>(16, 0.75f, true) {
+    private final LinkedHashMap<Long, Connection> connections = new LinkedHashMap<>() {
         @Override
         protected boolean removeEldestEntry(Map.Entry<Long, Connection> eldest) {
             return size() > maxConnections;
@@ -109,7 +120,9 @@ public class WebSocketRecordInterceptor implements WebSocketInterceptorInterface
         if (exchange != null) {
             final Connection connection;
             synchronized (this) {
-                connection = connections.computeIfAbsent(exchange.getId(), id -> new Connection(maxMessages));
+                final var existing = connections.remove(exchange.getId());
+                connection = existing != null ? existing : new Connection(maxMessages);
+                connections.put(exchange.getId(), connection);
             }
             connection.add(System.currentTimeMillis(), frameTravelsToRight, frame.getOpcode(),
                     frame.getPayload() == null ? new byte[0] : frame.getPayload(), maxPayloadBytes);

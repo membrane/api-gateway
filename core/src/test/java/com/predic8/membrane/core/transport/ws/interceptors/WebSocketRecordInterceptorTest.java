@@ -91,6 +91,34 @@ class WebSocketRecordInterceptorTest {
     }
 
     @Test
+    void readingAConnectionDoesNotChangeTheEvictionOrder() throws Exception {
+        final var recorder = new WebSocketRecordInterceptor();
+        recorder.setMaxConnections(2);
+        final var a = exchange();
+        final var b = exchange();
+        final var c = exchange();
+        recorder.handleFrame(text("1", a), true, f -> {});
+        recorder.handleFrame(text("2", b), true, f -> {});
+        recorder.connection(a.getId()); // an admin console read
+        recorder.handleFrame(text("3", c), true, f -> {});
+
+        assertTrue(recorder.connection(a.getId()).isEmpty());
+        assertTrue(recorder.connection(b.getId()).isPresent());
+    }
+
+    @Test
+    void snapshotReadsMessagesAndCountTogether() throws Exception {
+        final var recorder = new WebSocketRecordInterceptor();
+        recorder.setMaxMessages(1);
+        final var a = exchange();
+        recorder.handleFrame(text("1", a), true, f -> {});
+        recorder.handleFrame(text("2", a), true, f -> {});
+        final var snapshot = recorder.connection(a.getId()).orElseThrow().snapshot();
+        assertEquals(1, snapshot.messages().size());
+        assertEquals(2, snapshot.count());
+    }
+
+    @Test
     void recordedPayloadIsACopy() throws Exception {
         final var recorder = new WebSocketRecordInterceptor();
         final var a = exchange();
