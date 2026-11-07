@@ -302,10 +302,10 @@ $(function() {
 	               "fnRender": function ( o, v ) {
 	               		r = "";
 	            		if (v['delete']) {
-	            			r += '<a class="action" href="'+v['delete']+'" title="Delete"><span class="ui-icon ui-icon-trash"></span></a>';
+	            			r += '<form class="mb-post-action" method="POST" action="'+v['delete']+'"><button type="submit" title="Delete"><span class="ui-icon ui-icon-trash"></span></button></form>';
 	           			}
 	           			if (v['start']) {
-	            			r += '<a class="action" href="'+v['start']+'" title="Start"><span class="ui-icon ui-icon-play"></span></a>';
+	            			r += '<form class="mb-post-action" method="POST" action="'+v['start']+'"><button type="submit" title="Start"><span class="ui-icon ui-icon-play"></span></button></form>';
 	         			}
 						return r;
 	               },

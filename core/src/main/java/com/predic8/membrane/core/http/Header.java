@@ -93,6 +93,9 @@ public class Header {
 
 	public static final String ORIGIN = "Origin";
 
+    public static final String SEC_FETCH_SITE = "Sec-Fetch-Site";
+    public static final String ALLOW = "Allow";
+
 	public static final String X_HTTP_METHOD_OVERRIDE = "X-HTTP-Method-Override";
 
 	public static final String SEC_WEBSOCKET_ACCEPT = "Sec-WebSocket-Accept";
