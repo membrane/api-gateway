@@ -2,7 +2,8 @@ name: build-and-test-warp
 
 # Paid WarpBuild test runs, started on demand by a PR comment from someone with write access:
 #   /testit     Linux:           mvn -Pno-internet verify
-#   /testmerge  Linux + Windows: mvn verify (all tests, including the distribution example/tutorial ITs)
+#   /testmerge  Linux + Windows: mvn install (all tests, including the distribution example/tutorial ITs;
+#               install, because some example ITs build examples against this build's SNAPSHOT core)
 # Note: issue_comment always runs this file from the default branch.
 
 on:
@@ -128,7 +129,7 @@ jobs:
         run: mvn --batch-mode --update-snapshots -Pno-internet verify
       - name: Maven Build (/testmerge, all tests)
         if: needs.parse.outputs.mode == 'testmerge'
-        run: mvn --batch-mode --update-snapshots verify
+        run: mvn --batch-mode --update-snapshots install
 
   test-windows:
     needs: parse
@@ -152,7 +153,7 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
       - name: Maven Build (/testmerge, all tests)
-        run: mvn --batch-mode --update-snapshots verify
+        run: mvn --batch-mode --update-snapshots install
 
   report:
     needs: [parse, test-linux, test-windows]
