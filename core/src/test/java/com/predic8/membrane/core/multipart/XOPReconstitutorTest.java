@@ -137,6 +137,66 @@ class XOPReconstitutorTest {
     }
 
     // -------------------------------------------------------------------------
+    // Unparsable Content-Type header
+    // -------------------------------------------------------------------------
+
+    private static final String UNPARSABLE_CONTENT_TYPE = "application/json; charset";
+
+    @Test
+    void unparsableContentTypeIsRejected() {
+        final var response = response("{}", UNPARSABLE_CONTENT_TYPE);
+
+        final var e = assertThrows(com.predic8.membrane.core.http.ReadingBodyException.class,
+                () -> reconstitutor.getReconstitutedMessage(response));
+        assertTrue(e.belongsTo(response));
+        assertInstanceOf(com.predic8.membrane.core.http.ContentTypeException.class, e.getCause());
+        assertEquals("Content-Type header could not be parsed: In parameter list <; charset>, expected '=', got \"null\"",
+                e.getCause().getMessage());
+    }
+
+    @Test
+    void unparsableContentTypeFallsBackToOriginalStream() throws IOException {
+        final var response = response("{}", UNPARSABLE_CONTENT_TYPE);
+
+        assertEquals("{}", IOUtils.toString(reconstitutor.reconstituteIfNecessary(response), UTF_8));
+    }
+
+    /**
+     * Decoding the body of a message with an unparsable Content-Type is the sender's error for a
+     * request (400) and the gateway's for a backend response (500), not an internal error for both.
+     */
+    @Test
+    void unparsableContentTypeIsAttributedToTheSourceMessage() throws Exception {
+        final var router = new DummyTestRouter();
+        for (final var requestBody : new boolean[]{true, false}) {
+            final var exc = Request.post("/json").buildExchange();
+            final Message message;
+            if (requestBody) {
+                exc.getRequest().setBodyContent("{}".getBytes(UTF_8));
+                exc.getRequest().getHeader().setContentType(UNPARSABLE_CONTENT_TYPE);
+                message = exc.getRequest();
+            } else {
+                exc.setResponse(response("{}", UNPARSABLE_CONTENT_TYPE));
+                message = exc.getResponse();
+            }
+            final var decoder = new AbstractInterceptor() {
+                @Override
+                public Outcome handleRequest(Exchange exchange) {
+                    try (final var input = message.getBodyAsStreamDecoded()) {
+                        input.readAllBytes();
+                    } catch (IOException e) {
+                        throw new java.io.UncheckedIOException(e);
+                    }
+                    return Outcome.CONTINUE;
+                }
+            };
+            decoder.init(router);
+            assertEquals(Outcome.ABORT, router.getFlowController().invokeRequestHandlers(exc, List.of(decoder)));
+            assertEquals(requestBody ? 400 : 500, exc.getResponse().getStatusCode());
+        }
+    }
+
+    // -------------------------------------------------------------------------
     // Fallback behaviour — reconstituteIfNecessary never throws
     // -------------------------------------------------------------------------
 

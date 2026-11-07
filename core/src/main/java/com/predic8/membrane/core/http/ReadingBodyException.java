@@ -94,7 +94,8 @@ public class ReadingBodyException extends RuntimeException {
      *     <li>{@link IOException} from the body framing, for example an invalid chunk size</li>
      * </ul>
      * <p>
-     * Also true for a failure without a cause: its message is the whole explanation.
+     * Also true for a failure without a cause: its message is the whole explanation. And for a
+     * {@link MessageProblem} in the cause chain: it describes what is wrong with the message.
      * </p>
      * <p>
      * False for causes that are not I/O errors, such as a {@link RuntimeException} from a decoder
@@ -103,6 +104,8 @@ public class ReadingBodyException extends RuntimeException {
      * @return boolean indicating whether the message of the exception provides all details
      */
     public boolean exceptionMessageIsSufficient() {
-        return getCause() == null || throwableOfType(this, IOException.class) != null;
+        return getCause() == null
+                || throwableOfType(this, IOException.class) != null
+                || MessageProblem.in(this).isPresent();
     }
 }

@@ -27,12 +27,14 @@ import java.io.StringReader;
 import java.net.SocketException;
 import java.net.URISyntaxException;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.Header.ACCEPT;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.util.CollectionsUtil.toList;
+import static com.predic8.membrane.test.TestAppender.captureLog;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ProblemDetailsTest {
@@ -249,6 +251,17 @@ public class ProblemDetailsTest {
             assertTrue(detail.startsWith("Origin not allowed by CORS policy. Internal details are hidden."), detail);
             assertTrue(detail.contains("key"), detail);
             assertFalse(detail.contains("evil"), detail);
+        }
+
+        @Test
+        @DisplayName("A public detail with nothing internal hides nothing, so it gets no log key even with an exception")
+        void publicDetailWithoutInternalsGetsNoLogKey() throws Exception {
+            final var j = parseJson(user(true, "a")
+                    .detail("Did not find multipart with id bin@example.com.", true)
+                    .exception(new IllegalStateException("Did not find multipart with id bin@example.com."))
+                    .build());
+
+            assertEquals("Did not find multipart with id bin@example.com.", j.get(DETAIL).asText());
         }
 
         @Test
@@ -588,6 +601,73 @@ public class ProblemDetailsTest {
             assertEquals("https://membrane-api.io/problems/user/body-decoding", json.get(TYPE).asText());
             assertEquals("gzip", json.get("contentEncoding").asText());
             assertFalse(r.getBodyAsStringDecoded().contains(TRUNCATED_GZIP), r.getBodyAsStringDecoded());
+        }
+
+        @Test
+        @DisplayName("Production logs the withheld reason under the key it gives the sender, without a stack trace")
+        void productionLogsRequestBodyFailureUnderLogKey() throws Exception {
+            final var exc = Request.post("/").body("x").buildExchange();
+            final var response = new AtomicReference<Response>();
+
+            final var log = captureLog(() -> {
+                response.set(bodyFailure(true, "openapi", exc, decodingFailure(exc.getRequest())).build());
+                return null;
+            });
+
+            final var json = parseJson(response.get());
+            assertTrue(json.hasNonNull(DETAIL) && json.get(DETAIL).asText().contains("See server log (key:"), json.toString());
+            assertTrue(log.contains(TRUNCATED_GZIP), log.getMessages().toString());
+            assertFalse(log.contains("Stacktrace for hidden details"), log.getMessages().toString());
+        }
+
+        @Test
+        @DisplayName("Production tells the sender that its Content-Type could not be parsed, but not the parser's wording")
+        void unparsableContentTypeInProduction() throws Exception {
+            Exchange exc = Request.post("/").body("x").buildExchange();
+            var failure = new ReadingBodyException(new ContentTypeException("application/json; charset",
+                    new jakarta.mail.internet.ParseException("In parameter list <; charset>, expected '=', got \"null\"")),
+                    exc.getRequest());
+
+            Response r = bodyFailure(true, "validator", exc, failure).build();
+
+            assertEquals(400, r.getStatusCode());
+            JsonNode json = parseJson(r);
+            assertEquals("https://membrane-api.io/problems/user/content-type", json.get(TYPE).asText());
+            assertEquals("Content-Type header could not be parsed", json.get(TITLE).asText());
+            // The parser's reason is internal, so production appends the log key
+            assertTrue(json.get(DETAIL).asText().startsWith("The Content-Type header \"application/json; charset\" could not be parsed. "),
+                    json.get(DETAIL).asText());
+            assertFalse(r.getBodyAsStringDecoded().contains("expected '='"), r.getBodyAsStringDecoded());
+        }
+
+        @Test
+        @DisplayName("Production escapes control characters of an unparsable Content-Type before logging it")
+        void unparsableContentTypeIsEscapedInLog() throws Exception {
+            final var exc = Request.post("/").body("x").buildExchange();
+            final var failure = new ReadingBodyException(new ContentTypeException("application/json; charset\u001b[31m",
+                    new jakarta.mail.internet.ParseException("In parameter list <; charset\u001b[31m>, expected '=', got \"null\"")),
+                    exc.getRequest());
+
+            final var log = captureLog(() -> bodyFailure(true, "validator", exc, failure).build());
+
+            assertTrue(log.contains("could not be parsed"), log.getMessages().toString());
+            assertFalse(log.contains("\u001b"), log.getMessages().toString());
+        }
+
+        @Test
+        @DisplayName("Production tells the sender why its XOP package could not be reassembled")
+        void xopReassemblyFailureInProduction() throws Exception {
+            Exchange exc = Request.post("/").body("x").buildExchange();
+            var failure = new ReadingBodyException(new com.predic8.membrane.core.multipart.XopReassemblyException(
+                    "Did not find multipart with id bin@test."), exc.getRequest());
+
+            Response r = bodyFailure(true, "validator", exc, failure).build();
+
+            assertEquals(400, r.getStatusCode());
+            JsonNode json = parseJson(r);
+            assertEquals("https://membrane-api.io/problems/user/xop", json.get(TYPE).asText());
+            assertEquals("XOP package could not be reassembled", json.get(TITLE).asText());
+            assertEquals("Did not find multipart with id bin@test.", json.get(DETAIL).asText());
         }
 
         /**
