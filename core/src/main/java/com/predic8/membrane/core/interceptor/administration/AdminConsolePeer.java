@@ -55,7 +55,8 @@ public class AdminConsolePeer {
 
     /**
      * @description API key sent in the <code>X-Api-Key</code> header. Must match the <code>apiKey</code> of the peer's
-     * <code>adminConsole</code>.
+     * <code>adminConsole</code>. The key is sent with every request: use an <code>https://</code> url unless the
+     * network is trusted.
      */
     @MCAttribute
     public void setApiKey(String apiKey) {
@@ -67,7 +68,8 @@ public class AdminConsolePeer {
     }
 
     /**
-     * @description Instance name of the peer. If not set, it is read from the peer.
+     * @description Instance name of the peer. Must equal the <code>instanceName</code> of the peer's
+     * <code>adminConsole</code>. If not set, it is read from the peer.
      * @default the <code>instanceName</code> of the peer
      */
     @MCAttribute

@@ -16,10 +16,11 @@ package com.predic8.membrane.core.interceptor.administration.v1;
 import com.fasterxml.jackson.databind.node.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import org.slf4j.*;
 
+import java.io.*;
+import java.security.*;
 import java.util.*;
 import java.util.regex.*;
 
@@ -83,13 +84,21 @@ final class CallToolsResource {
     /**
      * One side of a comparison.
      */
-    record Side(String startLine, List<ExchangesResource.HeaderEntry> headers, String format, String text) {
+    /**
+     * @param truncated whether {@code text} is only the beginning of the body
+     * @param sha256    hash of the decoded body, for binary bodies of this instance; null otherwise
+     */
+    record Side(String startLine, List<ExchangesResource.HeaderEntry> headers, String format, String text,
+                boolean truncated, String sha256) {
     }
 
     record HeaderDiff(String name, String left, String right) {
     }
 
-    record BodyDiff(String format, boolean identical, String unifiedDiff) {
+    /**
+     * @param truncated whether a body was longer than the compared text
+     */
+    record BodyDiff(String format, boolean identical, boolean truncated, String unifiedDiff) {
     }
 
     record StartLines(String left, String right) {
@@ -162,7 +171,16 @@ final class CallToolsResource {
         final var headers = Arrays.stream(msg.getHeader().getAllHeaderFields())
                 .map(f -> new ExchangesResource.HeaderEntry(f.getHeaderName().toString(), f.getValue()))
                 .toList();
-        return new Side(msg.getStartLine().trim(), headers, body.format(), body.text());
+        return new Side(msg.getStartLine().trim(), headers, body.format(), body.text(), body.truncated(),
+                "binary".equals(body.format()) ? sha256(msg) : null);
+    }
+
+    private static String sha256(Message msg) throws Exception {
+        final var digest = MessageDigest.getInstance("SHA-256");
+        try (final var in = new DigestInputStream(msg.getBodyAsStreamDecoded(), digest)) {
+            in.transferTo(OutputStream.nullOutputStream());
+        }
+        return HexFormat.of().formatHex(digest.digest());
     }
 
     static Diff diff(Ref left, Side l, Ref right, Side r) {
@@ -180,8 +198,20 @@ final class CallToolsResource {
         }
         final var unified = TextDiff.unified(l.text(), r.text(), left.toString(), right.toString());
         final var format = Objects.equals(l.format(), r.format()) ? l.format() : l.format() + "/" + r.format();
+        final var truncated = l.truncated() || r.truncated();
         return new Diff(left.toString(), right.toString(), new StartLines(l.startLine(), r.startLine()), headers,
-                new BodyDiff(format, unified.isEmpty(), unified));
+                new BodyDiff(format, identical(l, r, unified, truncated), truncated, unified));
+    }
+
+    /**
+     * Binary bodies have no text, so they are compared by their hashes; a missing hash never counts as equal. Text
+     * bodies are equal only if no text was cut off.
+     */
+    private static boolean identical(Side l, Side r, String unified, boolean truncated) {
+        if ("binary".equals(l.format()) || "binary".equals(r.format()))
+            return "binary".equals(l.format()) && "binary".equals(r.format())
+                   && l.sha256() != null && l.sha256().equals(r.sha256());
+        return !truncated && unified.isEmpty();
     }
 
     /**
@@ -286,8 +316,7 @@ final class CallToolsResource {
         if (proxy == null || proxy.getKey().getPort() <= 0)
             throw badRequest("The exchange was not received on a port and cannot be replayed through the gateway.");
         final var ip = proxy.getKey().getIp();
-        final var tls = proxy instanceof SSLableProxy sp && sp.isInboundSSL();
-        return "%s://%s:%d%s".formatted(tls ? "https" : "http", ip == null || ip.isBlank() ? "localhost" : ip,
+        return "%s://%s:%d%s".formatted(MessageText.inboundScheme(exc), ip == null || ip.isBlank() ? "localhost" : ip,
                 proxy.getKey().getPort(), path);
     }
 

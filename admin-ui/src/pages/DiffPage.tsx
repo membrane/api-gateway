@@ -8,7 +8,7 @@ interface Diff {
   right: string;
   startLine?: { left?: string; right?: string };
   headers: { name: string; left?: string | null; right?: string | null }[];
-  body: { format?: string; identical?: boolean; unifiedDiff?: string };
+  body: { format?: string; identical?: boolean; truncated?: boolean; unifiedDiff?: string };
 }
 
 /**
@@ -61,8 +61,15 @@ export function DiffPage() {
           </div>
           {diff.data.headers.length === 0 && <p className="muted">The header fields are the same.</p>}
           <h2>Body</h2>
+          {diff.data.body.truncated && <p className="muted">The bodies are long: only their beginnings are compared.</p>}
           {diff.data.body.identical ? (
             <p className="muted">The bodies are the same ({diff.data.body.format}).</p>
+          ) : !diff.data.body.unifiedDiff ? (
+            <p className="muted">
+              {diff.data.body.format?.includes("binary")
+                ? "Binary bodies: they differ, or they cannot be compared across instances."
+                : "The compared beginnings are the same."}
+            </p>
           ) : (
             <pre className="body diff">
               {(diff.data.body.unifiedDiff ?? "").split("\n").map((line, i) => (

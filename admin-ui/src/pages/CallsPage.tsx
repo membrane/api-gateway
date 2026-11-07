@@ -47,6 +47,7 @@ export function CallsPage() {
   const filters = filtersFrom(route.params);
   const [live, setLive] = useState(true);
   const [page, setPage] = useState<ExchangePage>();
+  const [offset, setOffset] = useState(0);
   const [error, setError] = useState<ApiError>();
   const [columns, setColumns] = useState<string[]>(() => load("calls.columns", DEFAULT_COLUMNS));
   const [selected, setSelected] = useState<string[]>([]);
@@ -59,19 +60,26 @@ export function CallsPage() {
     lastModified.current = undefined;
     let timer: ReturnType<typeof setTimeout> | undefined;
 
+    // Live updates only on the first page: older pages would shift under the reader.
+    const following = live && offset === 0;
     const poll = async () => {
       try {
-        const wait = live && lastModified.current ? { waitForModification: JSON.stringify(lastModified.current), timeout: 30 } : {};
-        const result = await api.get<ExchangePage>("/exchanges", { ...apiQuery(filters), limit: PAGE_SIZE, ...wait }, controller.signal);
+        const wait = following && lastModified.current ? { waitForModification: JSON.stringify(lastModified.current), timeout: 30 } : {};
+        const result = await api.get<ExchangePage>("/exchanges", { ...apiQuery(filters), offset, limit: PAGE_SIZE, ...wait }, controller.signal);
         lastModified.current = result.lastModified;
         setPage(result);
         setError(undefined);
       } catch (e) {
         if (controller.signal.aborted) return;
-        setError(e instanceof ApiError ? e : new ApiError(0, String(e)));
-        if (e instanceof ApiError && e.status >= 400 && e.status < 500) return; // a bad filter does not get better by polling
+        const error = e instanceof ApiError ? e : new ApiError(0, String(e));
+        setError(error);
+        if (error.status >= 400 && error.status < 500) {
+          // A rejected filter: do not show the results of the previous filter below the error. Polling does not help.
+          setPage(undefined);
+          return;
+        }
       }
-      if (live && !controller.signal.aborted) timer = setTimeout(poll, 1000);
+      if (following && !controller.signal.aborted) timer = setTimeout(poll, 1000);
     };
     poll();
     return () => {
@@ -79,9 +87,10 @@ export function CallsPage() {
       if (timer) clearTimeout(timer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterKey, live]);
+  }, [filterKey, live, offset]);
 
   const setFilters = (next: Partial<Filters>) => {
+    setOffset(0);
     const merged = { ...filters, ...next };
     replaceParams(route, Object.fromEntries(Object.entries(merged).map(([k, v]) => [k, v || undefined])));
   };
@@ -161,6 +170,8 @@ export function CallsPage() {
               <tr key={key(e)} className={selected.includes(key(e)) ? "selected" : undefined}>
                 <td>
                   <input type="checkbox" aria-label={`Select call ${e.id} of ${e.instance}`} checked={selected.includes(key(e))} onChange={() => toggleSelected(key(e))} />
+                  {/* Independent of the chosen columns, every call can be opened. */}
+                  {!columns.includes("time") && <a className="open" href={href(["calls", e.instance, e.id])} aria-label={`Open call ${e.id} of ${e.instance}`}>›</a>}
                 </td>
                 {visible.map((c) => <td key={c.id} className={c.num ? "num" : c.id === "path" ? "path" : undefined}>{c.cell(e)}</td>)}
               </tr>
@@ -168,7 +179,15 @@ export function CallsPage() {
           </tbody>
         </table>
       </div>
-      {page && <p className="muted">{page.exchanges.length} of {page.total} calls</p>}
+      {page && (
+        <div className="pager">
+          <button className="button" disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}>Newer</button>
+          <span className="muted">
+            {page.exchanges.length === 0 ? 0 : offset + 1}–{offset + page.exchanges.length} of {page.total} calls
+          </span>
+          <button className="button" disabled={offset + PAGE_SIZE >= page.total} onClick={() => setOffset(offset + PAGE_SIZE)}>Older</button>
+        </div>
+      )}
     </section>
   );
 }

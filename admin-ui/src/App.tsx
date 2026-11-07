@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { api, type Instance } from "./api/client";
 import { useLoad } from "./hooks";
 import { href, useRoute } from "./router";
@@ -7,6 +8,8 @@ import { CallDetailPage } from "./pages/CallDetailPage";
 import { SystemPage } from "./pages/SystemPage";
 import { DiffPage } from "./pages/DiffPage";
 import { ErrorBox } from "./components/ErrorBox";
+
+const INSTANCES_REFRESH_MS = 15_000;
 
 const TABS = [
   { id: "calls", label: "Calls" },
@@ -18,6 +21,15 @@ export function App() {
   const route = useRoute();
   const instances = useLoad((signal) => api.get<{ self: string; instances: Instance[] }>("/instances", undefined, signal), []);
   const tab = route.segments[0] ?? "calls";
+
+  // Peers go down and come back: refresh their state, starting the next request only after the previous one ended.
+  const reloadInstances = instances.reload;
+  useEffect(() => {
+    if (instances.loading) return;
+    const timer = setTimeout(reloadInstances, INSTANCES_REFRESH_MS);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [instances.loading]);
 
   return (
     <div className="app">
@@ -51,7 +63,10 @@ export function App() {
 function page(segments: string[]) {
   switch (segments[0] ?? "calls") {
     case "calls":
-      return segments.length >= 3 ? <CallDetailPage instance={segments[1]} id={segments[2]} /> : <CallsPage />;
+      // Keyed by call: switching calls must not show the previous call's data while the new one loads.
+      return segments.length >= 3
+        ? <CallDetailPage key={segments[1] + "/" + segments[2]} instance={segments[1]} id={segments[2]} />
+        : <CallsPage />;
     case "apis":
       return <ApisPage />;
     case "system":

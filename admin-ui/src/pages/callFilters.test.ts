@@ -11,7 +11,7 @@ describe("call filters", () => {
   it("sends times as RFC 3339", () => {
     const f = filtersFrom(new URLSearchParams("from=2026-11-05T10:00"));
     const from = apiQuery(f).from!;
-    expect(from).toMatch(/^2026-11-0[45]T\d\d:00:00\.000Z$/);
+    expect(from).toMatch(/^2026-11-0[45]T\d\d:\d\d:00\.000Z$/); // offsets like +05:30 change the minutes
     expect(new Date(from).getTime()).toBe(new Date("2026-11-05T10:00").getTime());
   });
 

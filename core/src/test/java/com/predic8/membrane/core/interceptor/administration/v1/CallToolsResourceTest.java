@@ -187,6 +187,31 @@ class CallToolsResourceTest {
     }
 
     @Test
+    void binaryBodiesAreComparedByTheirHash() {
+        assertTrue(bodyDiff(binary("aa"), binary("aa")).identical());
+        assertFalse(bodyDiff(binary("aa"), binary("bb")).identical());
+        assertFalse(bodyDiff(binary(null), binary(null)).identical()); // e.g. a peer's body
+        assertFalse(bodyDiff(binary("aa"), new CallToolsResource.Side("", List.of(), "empty", "", false, null)).identical());
+    }
+
+    @Test
+    void truncatedBodiesAreNotReportedAsIdentical() {
+        final var cut = new CallToolsResource.Side("", List.of(), "text", "same beginning", true, null);
+        final var diff = bodyDiff(cut, cut);
+        assertFalse(diff.identical());
+        assertTrue(diff.truncated());
+    }
+
+    private static CallToolsResource.BodyDiff bodyDiff(CallToolsResource.Side l, CallToolsResource.Side r) {
+        return CallToolsResource.diff(CallToolsResource.Ref.message("node-a/1/request"), l,
+                CallToolsResource.Ref.message("node-a/2/request"), r).body();
+    }
+
+    private static CallToolsResource.Side binary(String sha256) {
+        return new CallToolsResource.Side("POST / HTTP/1.1", List.of(), "binary", "", false, sha256);
+    }
+
+    @Test
     void diffNeedsValidReferences() throws Exception {
         assertEquals(400, send(Request.get(API + "/exchanges/diff?left=node-a/1/body&right=node-a/1/request"), false).getStatusCode());
         assertEquals(404, send(Request.get(API + "/exchanges/diff?left=node-a/123456/request&right=node-a/123456/request"), false).getStatusCode());

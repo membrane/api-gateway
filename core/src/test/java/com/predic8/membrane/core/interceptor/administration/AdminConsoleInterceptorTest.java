@@ -66,6 +66,26 @@ class AdminConsoleInterceptorTest {
         assertNull(handle("/admin").getResponse().getHeader().getFirstValue(CONTENT_SECURITY_POLICY));
     }
 
+    /**
+     * An earlier step may have changed the destination, e.g. from /viewer to a console file.
+     */
+    @Test
+    void consoleFileServedForAnotherRequestPathCarriesThePolicy() throws Exception {
+        final var exc = Request.get("/viewer").buildExchange();
+        exc.getDestinations().add("/console/index.html");
+        console.handleRequest(exc);
+        assertNotNull(exc.getResponse());
+        assertNotNull(exc.getResponse().getHeader().getFirstValue(CONTENT_SECURITY_POLICY));
+    }
+
+    @Test
+    void consolePath() {
+        assertTrue(AdminConsoleInterceptor.isConsolePath("/console/a.js"));
+        assertTrue(AdminConsoleInterceptor.isConsolePath("http://host:9000/console/"));
+        assertFalse(AdminConsoleInterceptor.isConsolePath("/admin/console/"));
+        assertFalse(AdminConsoleInterceptor.isConsolePath(null));
+    }
+
     private Exchange handle(String path) throws Exception {
         final var exc = Request.get(path).buildExchange();
         exc.getDestinations().add(path);

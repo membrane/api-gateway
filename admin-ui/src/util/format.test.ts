@@ -19,7 +19,7 @@ describe("format", () => {
   it("time keeps unparsable input", () => {
     expect(time("not a date")).toBe("not a date");
     expect(time(undefined)).toBe("");
-    expect(time("2026-11-05T10:00:00.123Z")).toMatch(/^2026-11-0[45] \d\d:\d\d:00\.123$/);
+    expect(time("2026-11-05T10:00:00.123Z")).toMatch(/^2026-11-0[4-6] \d\d:\d\d:00\.123$/); // UTC-12 to UTC+14
   });
 
   it("statusClass", () => {

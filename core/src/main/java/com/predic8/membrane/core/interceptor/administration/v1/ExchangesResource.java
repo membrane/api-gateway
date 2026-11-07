@@ -88,6 +88,8 @@ final class ExchangesResource {
                   List<String> instance) {
     }
 
+    private static final String WAIT_FOR_MODIFICATION_FORMAT = "Query parameter 'waitForModification' must be the JSON encoded 'lastModified' object of a previous response.";
+
     private final ConsoleContext ctx;
 
     ExchangesResource(ConsoleContext ctx) {
@@ -100,8 +102,7 @@ final class ExchangesResource {
         final var sort = req.enumParam("sort", "time", SORTS);
         final var order = req.enumParam("order", "desc", Set.of("asc", "desc"));
         final var filter = ExchangeFilter.of(req, ctx.useXForwardedForAsClientAddr());
-        final var instances = req.params("instance");
-        if (!instances.isEmpty() && !instances.contains(ctx.instanceName()))
+        if (ctx.isExcluded(req))
             return ok(new ExchangePage(0, offset, limit, List.of(), List.of(), Map.of()));
 
         final var store = store();
@@ -120,6 +121,8 @@ final class ExchangesResource {
     }
 
     Response facets(ApiRequest req) {
+        if (ctx.isExcluded(req))
+            return ok(new Facets(List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of()));
         final var collector = new PropertyValueCollector();
         collector.setUseXForwardedForAsClientAddr(ctx.useXForwardedForAsClientAddr());
         store().collect(collector);
@@ -130,6 +133,8 @@ final class ExchangesResource {
     }
 
     Response stores(ApiRequest req) {
+        if (ctx.isExcluded(req))
+            return ok(new Stores(List.of()));
         final var store = store();
         final var type = storeType(store);
         final var inMemory = isListedInMemory(store);
@@ -214,8 +219,10 @@ final class ExchangesResource {
             lastModified = ApiJson.MAPPER.readValue(known.get(), new TypeReference<>() {
             });
         } catch (Exception e) {
-            throw badRequest("Query parameter 'waitForModification' must be the JSON encoded 'lastModified' object of a previous response.");
+            throw badRequest(WAIT_FOR_MODIFICATION_FORMAT);
         }
+        if (lastModified == null)
+            throw badRequest(WAIT_FOR_MODIFICATION_FORMAT);
         final var mine = lastModified.get(ctx.instanceName());
         if (mine != null)
             store.waitForModification(mine, timeout * 1000L);
@@ -224,10 +231,11 @@ final class ExchangesResource {
     private ExchangeQueryResult queryInMemory(ExchangeStore store, ExchangeFilter filter, String sort, String order,
                                               int offset, int limit) {
         final List<AbstractExchange> snapshot;
-        final long lastModified;
+        // Read the marker first: stores return a fresh copy from getAllExchangesAsList(), and an exchange recorded
+        // after the copy must not be covered by the returned marker.
+        final var lastModified = store.getLastModified();
         final var all = store.getAllExchangesAsList();
         synchronized (all) {
-            lastModified = store.getLastModified();
             snapshot = new ArrayList<>(all);
         }
         final var matching = new ArrayList<AbstractExchange>();
@@ -235,7 +243,7 @@ final class ExchangesResource {
             if (filter.test(exc))
                 matching.add(exc);
         matching.sort(getAbstractExchangeComparator("instance".equals(sort) ? "time" : sort, order));
-        final var page = matching.subList(Math.min(offset, matching.size()), Math.min(offset + limit, matching.size()));
+        final var page = matching.subList(Math.min(offset, matching.size()), (int) Math.min((long) offset + limit, matching.size()));
         return new ExchangeQueryResult(List.copyOf(page), matching.size(), lastModified);
     }
 
