@@ -351,7 +351,7 @@ class Http1ProtocolHandlerTest {
         @Test
         void bodyIsReplayedWhenOneRetryIsConfigured() throws Exception {
             Http1ProtocolHandler handler = handlerWithRetries(1);
-            Exchange exc = streamedPostExchange("hello");
+            Exchange exc = streamedExchange(METHOD_PUT, "hello");
 
             assertTrue(sendOnFreshConnection(handler, exc).contains("hello"), "body on first attempt");
             assertTrue(sendOnFreshConnection(handler, exc).contains("hello"), "body on the retry");
@@ -360,10 +360,31 @@ class Http1ProtocolHandlerTest {
         @Test
         void bodyIsReplayedWithDefaultRetries() throws Exception {
             Http1ProtocolHandler handler = handlerWithRetries(2);
-            Exchange exc = streamedPostExchange("hello");
+            Exchange exc = streamedExchange(METHOD_PUT, "hello");
 
             assertTrue(sendOnFreshConnection(handler, exc).contains("hello"), "body on first attempt");
             assertTrue(sendOnFreshConnection(handler, exc).contains("hello"), "body on the retry");
+        }
+
+        /**
+         * The RetryHandler repeats a non-idempotent request only if it could not connect, before
+         * anything was written. So its body is streamed to the backend instead of being read first.
+         */
+        @ParameterizedTest
+        @ValueSource(strings = {METHOD_POST, METHOD_PATCH})
+        void nonIdempotentBodyIsStreamedWithDefaultRetries(String method) throws Exception {
+            final var exc = streamedExchange(method, "hello");
+
+            assertTrue(sendOnFreshConnection(handlerWithRetries(2), exc).contains("hello"));
+            assertTrue(exc.getRequest().getBody().wasStreamed(), "body must not be retained");
+        }
+
+        @Test
+        void idempotentBodyIsRetainedWithDefaultRetries() throws Exception {
+            final var exc = streamedExchange(METHOD_PUT, "hello");
+
+            sendOnFreshConnection(handlerWithRetries(2), exc);
+            assertFalse(exc.getRequest().getBody().wasStreamed());
         }
 
         private static Http1ProtocolHandler handlerWithRetries(int retries) {
@@ -376,9 +397,9 @@ class Http1ProtocolHandlerTest {
          * A body that is still unread and backed by a stream - the case where the retainBody flag decides
          * whether the body survives the first write.
          */
-        private static Exchange streamedPostExchange(String body) throws Exception {
-            byte[] payload = body.getBytes(ISO_8859_1);
-            return post("/foo").body(payload.length, new ByteArrayInputStream(payload)).buildExchange();
+        private static Exchange streamedExchange(String method, String body) throws Exception {
+            final var payload = body.getBytes(ISO_8859_1);
+            return post("/foo").method(method).body(payload.length, new ByteArrayInputStream(payload)).buildExchange();
         }
 
         /**

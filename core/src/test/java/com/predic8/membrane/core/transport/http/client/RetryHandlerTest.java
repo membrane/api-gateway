@@ -18,14 +18,20 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.http.ConnectTimeoutException;
+import com.predic8.membrane.core.transport.http.EOFWhileReadingFirstLineException;
 import com.predic8.membrane.core.transport.http.HttpClientStatusEventBus;
 import com.predic8.membrane.core.transport.http.HttpClientStatusEventListener;
+import com.predic8.membrane.core.transport.http.NoResponseException;
 import com.predic8.membrane.core.transport.http2.StreamNotProcessedException;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,15 +39,20 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
+import static com.predic8.membrane.core.http.Request.METHOD_PATCH;
+import static com.predic8.membrane.core.http.Request.METHOD_POST;
 import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.http.Request.post;
 import static com.predic8.membrane.core.http.Response.ok;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 class RetryHandlerTest {
 
@@ -315,6 +326,54 @@ class RetryHandlerTest {
             return new ConnectTimeoutException("Connecting to example.com:80 timed out after 10000ms.",
                     new SocketTimeoutException("Connect timed out"));
         }
+    }
+
+    /**
+     * A non-idempotent request must not be repeated once it may have been applied (RFC 9110 §9.2.2).
+     * Http1ProtocolHandler relies on this: it streams the body of a POST or PATCH instead of retaining
+     * it, so if one of these failures, which can happen after the request was written, were retried,
+     * the next node would receive an empty or truncated body. Several nodes are configured because
+     * that is where a retry would be most tempting.
+     */
+    @Nested
+    class NonIdempotentAfterWrite {
+
+        @ParameterizedTest(name = "{0} after {1}")
+        @MethodSource("com.predic8.membrane.core.transport.http.client.RetryHandlerTest#failuresAfterWrite")
+        void isNotRetried(String method, Exception failure) throws Exception {
+            final var mock = new RetryableExchangeCallMock(failure);
+            final var exc = onTwoNodes(method);
+
+            assertThrows(failure.getClass(), () -> rh.executeWithRetries(exc, mock));
+            assertEquals(1, mock.attempts);
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = {METHOD_POST, METHOD_PATCH})
+        void isNotRetriedAfterServerError(String method) throws Exception {
+            rh.setFailOverOn5XX(true);
+            final var mock = new RetryableExchangeCallMock(503);
+
+            rh.executeWithRetries(onTwoNodes(method), mock);
+
+            assertEquals(1, mock.attempts);
+        }
+
+        private static Exchange onTwoNodes(String method) throws URISyntaxException {
+            final var exc = post("/foo").method(method).buildExchange();
+            exc.setDestinations(List.of("http://node1.example.com/", "http://node2.example.com/"));
+            return exc;
+        }
+    }
+
+    static Stream<Arguments> failuresAfterWrite() {
+        return Stream.of(METHOD_POST, METHOD_PATCH).flatMap(method -> Stream.<Exception>of(
+                new SocketTimeoutException("Read timed out"),
+                new SocketException("Connection reset"),
+                new EOFWhileReadingFirstLineException(""),
+                new NoResponseException(new IOException("Connection closed")),
+                new IOException("Unexpected failure")
+        ).map(failure -> arguments(method, failure)));
     }
 
     @Test

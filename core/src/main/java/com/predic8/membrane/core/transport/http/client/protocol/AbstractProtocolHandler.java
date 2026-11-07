@@ -46,7 +46,9 @@ public abstract class AbstractProtocolHandler implements ProtocolHandler {
     /**
      * A body that is only streamed through cannot be sent a second time, so it has to be retained
      * whenever the {@link com.predic8.membrane.core.transport.http.client.RetryHandler} may replay
-     * the request.
+     * the request after it was written. This retains it whenever a retry is possible at all. A
+     * handler may narrow it where its protocol rules out such a replay for some requests, see
+     * {@link com.predic8.membrane.core.transport.http.client.RetryHandler#isRetryPossible()}.
      */
     protected boolean retainBodyForRetry() {
         return configuration.getRetryHandler().isRetryPossible();
