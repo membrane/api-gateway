@@ -17,6 +17,8 @@ import com.predic8.membrane.core.exceptions.ProblemDetails;
 
 import java.io.IOException;
 
+import static com.predic8.membrane.core.util.text.TextUtil.escapeControlCharsForLog;
+
 /**
  * Indicates that a body could not be decoded with the Content-Encoding it was labelled with: a gzip
  * stream that stops short, bytes that are not in the declared format at all, a deflate stream framed
@@ -32,7 +34,8 @@ public class DecodingException extends IOException implements MessageProblem {
     private final String contentEncoding;
 
     public DecodingException(String contentEncoding, IOException cause) {
-        super("Could not decode body with Content-Encoding \"%s\": %s".formatted(contentEncoding, describe(cause)), cause);
+        // Logged at info, so escape the coding: the sender chose it
+        super("Could not decode body with Content-Encoding \"%s\": %s".formatted(escapeControlCharsForLog(contentEncoding), describe(cause)), cause);
         this.contentEncoding = contentEncoding;
     }
 

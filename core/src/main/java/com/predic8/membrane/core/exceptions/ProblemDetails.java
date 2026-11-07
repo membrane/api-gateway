@@ -172,7 +172,10 @@ public class ProblemDetails {
                     // An I/O error is explained by its message and the place named in the detail.
                     .stacktrace(!failure.exceptionMessageIsSufficient());
 
-        final var problem = user(production, component).flow(REQUEST).addSubSee("reading-body");
+        // The exception makes production log what it withholds, under the key it gives the sender
+        final var problem = user(production, component).flow(REQUEST).addSubSee("reading-body")
+                .exception(failure)
+                .stacktrace(!failure.exceptionMessageIsSufficient());
         return MessageProblem.in(failure)
                 .map(described -> described.describe(problem))
                 .orElseGet(() -> problem.detail(getRootCause(failure).getMessage()));
@@ -229,8 +232,9 @@ public class ProblemDetails {
      *                                 for text written for the client. The text may echo values the client sent
      *                                 itself (e.g. a rejected header value or a requested document id), but put
      *                                 internal values such as configuration, backend data, stack traces or
-     *                                 exception messages into {@link #internal(String, Object)}. {@code false}
-     *                                 hides the detail in production mode.
+     *                                 exception messages into {@link #internal(String, Object)}. With nothing
+     *                                 internal, production then gives no log key and does not log an attached
+     *                                 exception. {@code false} hides the detail in production mode.
      * @return Instance
      */
     public ProblemDetails detail(String humanReadableExplanation, boolean showInProduction) {
@@ -328,7 +332,9 @@ public class ProblemDetails {
     }
 
     private void provideLogKeyInsteadOfDetails(Map<String, Object> root) {
-        if (internalFields.isEmpty() && exception == null)
+        // A detail written for the sender explains the problem on its own, so with nothing internal
+        // there is nothing hidden for a key to point to, not even the message of an exception.
+        if (internalFields.isEmpty() && (exception == null || publicDetail && detail != null))
             return;
 
         var logKey = randomUUID().toString();

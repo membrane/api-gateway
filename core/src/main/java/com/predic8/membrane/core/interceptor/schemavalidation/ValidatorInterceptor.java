@@ -226,7 +226,6 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
         else
             log.error("", e);
         bodyFailure(router.getConfiguration().isProduction(), getDisplayName(), exc, e)
-                .exception(e)
                 .buildAndSetResponse(exc);
         return ABORT;
     }
