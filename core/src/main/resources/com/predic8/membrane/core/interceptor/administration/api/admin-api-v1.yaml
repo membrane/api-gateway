@@ -97,6 +97,7 @@ paths:
       tags: [auth]
       operationId: login
       summary: Log in with one of the users configured on the console; sets a session cookie.
+      description: Planned. Not implemented yet; the server answers `501`.
       security: [{}]
       requestBody:
         required: true
@@ -124,6 +125,7 @@ paths:
       tags: [auth]
       operationId: logout
       summary: Log out and invalidate the session.
+      description: Planned. Not implemented yet; the server answers `501`.
       responses:
         '204': { description: "Logged out." }
         '401': { $ref: '#/components/responses/Unauthorized' }
@@ -1468,13 +1470,10 @@ components:
         - type: object
           properties:
             description: { type: string }
-            statistics:
+            totals: { $ref: '#/components/schemas/Statistics' }
+            byStatusCode:
               type: object
-              properties:
-                totals: { $ref: '#/components/schemas/Statistics' }
-                byStatusCode:
-                  type: object
-                  additionalProperties: { $ref: '#/components/schemas/Statistics' }
+              additionalProperties: { $ref: '#/components/schemas/Statistics' }
 
     Match:
       type: object

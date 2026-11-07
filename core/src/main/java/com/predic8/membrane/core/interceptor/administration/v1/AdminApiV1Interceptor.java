@@ -125,6 +125,8 @@ public class AdminApiV1Interceptor extends AbstractInterceptor {
     @Override
     public void init() {
         super.init();
+        if (instanceName != null)
+            validateInstanceName(instanceName);
         final var ctx = new ConsoleContext(router, instanceName != null ? instanceName : defaultInstanceName(),
                 readOnly, useXForwardedForAsClientAddr, System.currentTimeMillis());
         routes = routes(ctx);
@@ -305,8 +307,19 @@ public class AdminApiV1Interceptor extends AbstractInterceptor {
     private static List<String> pathParams(Matcher matcher) {
         final var params = new ArrayList<String>(matcher.groupCount());
         for (int i = 1; i <= matcher.groupCount(); i++)
-            params.add(URLDecoder.decode(matcher.group(i), UTF_8));
+            // A literal '+' is part of the segment (names may contain it), not an encoded space.
+            params.add(URLDecoder.decode(matcher.group(i).replace("+", "%2B"), UTF_8));
         return List.copyOf(params);
+    }
+
+    /**
+     * Instance names are path segments and values of the comma separated {@code instance} filter.
+     */
+    static void validateInstanceName(String name) {
+        if (name.isBlank())
+            throw new ConfigurationException("adminConsole: instanceName must not be empty.");
+        if (name.contains(",") || name.contains("/"))
+            throw new ConfigurationException("adminConsole: instanceName '%s' must not contain ',' or '/'.".formatted(name));
     }
 
     private static String defaultInstanceName() {

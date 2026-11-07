@@ -91,6 +91,8 @@ final class ApisResource {
         final var desc = "desc".equals(req.enumParam("order", "asc", Set.of("asc", "desc")));
         final var offset = req.intParam("offset", 0, 0, Integer.MAX_VALUE);
         final var limit = req.intParam("limit", 50, 1, 1000);
+        if (ctx.isExcluded(req))
+            return ok(new ApiPage(0, offset, limit, List.of()));
 
         final var all = indexed();
         final var filtered = all.stream()

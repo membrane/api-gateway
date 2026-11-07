@@ -99,7 +99,12 @@ record ExchangeFilter(String method, Integer statusCode, Integer statusClass, St
                && (body == null || bodyContains(req) || bodyContains(res));
     }
 
+    /**
+     * @return 0 unless both the time the request was sent and the time the response was received are recorded
+     */
     static long duration(AbstractExchange exc) {
+        if (exc.getTimeReqSent() <= 0 || exc.getTimeResReceived() <= 0)
+            return 0;
         return Math.max(0, exc.getTimeResReceived() - exc.getTimeReqSent());
     }
 

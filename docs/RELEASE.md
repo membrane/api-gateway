@@ -24,7 +24,8 @@ Merging the "Release 7.8.0" pull request starts **Create Release** (`release-bui
 
 - creates the GitHub release v7.8.0 as a **pre-release**,
 - triggers the website pipeline that publishes the JSON Schema (step 7),
-- starts **Build Docker Image** with `latest=false` (step 6),
+- starts **Build Docker Image**, with `latest=true` for a release from `master`, otherwise `latest=false` (step 6),
+- starts **Publish package to the Maven Central Repository** (step 5),
 - opens a "Snapshot version" pull request (step 9).
 
 Wait for it to finish before continuing.
@@ -37,18 +38,17 @@ Wait for it to finish before continuing.
 4. Click "Update release".
 5. Make sure the release is shown as latest on the GitHub project homepage.
 
-## 5. Maven Central (manual)
+## 5. Maven Central
 
-This workflow never starts on its own: the release is created with `GITHUB_TOKEN`, which does not trigger other workflows.
-
-1. GitHub Actions: run **Publish package to the Maven Central Repository** (`maven-publish.yml`):
-   - Use workflow from: tag `v7.8.0`
+1. **Automatic:** check that **Publish package to the Maven Central Repository** (`maven-publish.yml`) succeeded.
 2. Check that the release appears at https://central.sonatype.com/artifact/org.membrane-soa/membrane-api-gateway (this can take a while).
+
+If it did not start or failed, run it manually: GitHub Actions → **Publish package to the Maven Central Repository** → Use workflow from: the release branch (e.g. `master`), tag: `v7.8.0`.
 
 ## 6. Docker Image
 
-1. **Automatic:** check that **Build Docker Image** succeeded and that `7.8.0` is listed at https://hub.docker.com/r/predic8/membrane/tags
-2. **Manual:** the build does not move `latest`. Run **Promote Docker Tag to Latest** (`update-docker-latest.yml`); skip this for a patch release on an older line:
+1. **Automatic:** check that **Build Docker Image** succeeded and that `7.8.0` is listed at https://hub.docker.com/r/predic8/membrane/tags. For a release cut from `master`, the build also moves `latest` to it; a release from an older line (e.g. 7.7.x) leaves `latest` alone.
+2. If `latest` has to be moved by hand, run **Promote Docker Tag to Latest** (`update-docker-latest.yml`):
    - Use workflow from: tag `v7.8.0`
    - Existing tag to promote to latest: `7.8.0`
 3. Check:

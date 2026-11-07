@@ -17,6 +17,7 @@ package com.predic8.membrane.core.multipart;
 import com.predic8.membrane.core.http.BodyCollectingMessageObserver;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.MessageUtil;
 import com.predic8.membrane.core.util.xml.parser.HardenedStaxInputFactory;
@@ -37,7 +38,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Writer;
 import java.util.HashMap;
+import java.util.HashSet;
 
+import static com.predic8.membrane.core.util.text.TextUtil.escapeControlCharsForLog;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.commons.codec.binary.Base64.encodeBase64;
 
@@ -57,6 +60,9 @@ public class XOPReconstitutor {
 			Message reconstitutedMessage = getReconstitutedMessage(message);
 			if (reconstitutedMessage != null)
 				return reconstitutedMessage.getBodyAsStream();
+		} catch (ReadingBodyException e) {
+			// Invalid input from the sender; already logged where it is detected.
+			log.debug("Falling back to the original body.", e);
 		} catch (Exception e) {
 			log.warn("", e);
 		}
@@ -102,7 +108,7 @@ public class XOPReconstitutor {
 				|| !innerContentType.getSubType().equals("xop+xml"))
 			return null;
 
-		byte[] body = fillInXOPParts(startPart.getInputStream(), parts);
+		byte[] body = fillInXOPParts(startPart.getInputStream(), parts, message);
 
 		Message m = new Message(){
 			@Override
@@ -147,7 +153,7 @@ public class XOPReconstitutor {
 	}
 
 	private byte[] fillInXOPParts(InputStream inputStream,
-			HashMap<String, Part> parts) throws XMLStreamException, FactoryConfigurationError {
+			HashMap<String, Part> parts, Message source) throws XMLStreamException, FactoryConfigurationError {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		XMLEventWriter writer = XMLOutputFactory.newInstance().createXMLEventWriter(baos);
 
@@ -155,6 +161,7 @@ public class XOPReconstitutor {
 			XMLEventReader parser = createEventReaderFromStream(inputStream);
 
 			boolean xopIncludeOpen = false;
+			final var included = new HashSet<String>();
 
 			while (parser.hasNext()) {
 				XMLEvent event = parser.nextEvent();
@@ -168,8 +175,20 @@ public class XOPReconstitutor {
 							href = href.substring(4);
 
 						Part p = parts.get("<" + href + ">");
-						if (p == null)
-							throw new RuntimeException("Did not find multipart with id " + href);
+						if (p == null) {
+							log.info("Did not find multipart with id {}.", escapeControlCharsForLog(href));
+							throw new ReadingBodyException(new IOException(
+									"Did not find multipart with id %s.".formatted(href)), source);
+						}
+						// SOAP 1.2 MTOM 4.3.1.1: an extracted part MUST NOT be referenced by more than one
+						// xop:Include. Inlining it again for every reference would let a small package
+						// expand without bound; with distinct references the output stays linear in the input.
+						if (!included.add(href)) {
+							log.info("Multipart with id {} is referenced more than once.", escapeControlCharsForLog(href));
+							// Attribute invalid input to its sender, even when decoded in the opposite flow.
+							throw new ReadingBodyException(new IOException(
+									"Multipart with id %s is referenced more than once.".formatted(href)), source);
+						}
 
 						writer.add(base64CharactersEvent(p.getBody()));
 						xopIncludeOpen = true;
@@ -188,8 +207,8 @@ public class XOPReconstitutor {
 			}
 			writer.flush();
 		} catch (XMLStreamException e) {
-			log.warn("Received not-wellformed XML.");
-			return null;
+			log.info("Start part of XOP package is not well-formed XML: {}", escapeControlCharsForLog(e.getMessage()));
+			throw new ReadingBodyException(new IOException("Start part of XOP package is not well-formed XML."), source);
 		}
 		return baos.toByteArray();
 	}

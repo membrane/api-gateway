@@ -97,6 +97,8 @@ final class MonitoringResource {
     }
 
     Response apiStatistics(ApiRequest req) {
+        if (ctx.isExcluded(req))
+            return ok(new ApiStatisticsList(List.of()));
         final var result = new ArrayList<ApiStatistics>();
         for (final var proxy : ctx.router().getRuleManager().getRules()) {
             final var totals = new StatisticCollector(true);
@@ -132,6 +134,8 @@ final class MonitoringResource {
         final var desc = "desc".equals(req.enumParam("order", "asc", Set.of("asc", "desc")));
         final var offset = req.intParam("offset", 0, 0, Integer.MAX_VALUE);
         final var limit = req.intParam("limit", 50, 1, 1000);
+        if (ctx.isExcluded(req))
+            return ok(new ClientPage(0, offset, limit, List.of()));
         final var clients = new ArrayList<ClientStatistics>(ctx.router().getExchangeStore().getClientStatistics());
         clients.sort(desc ? CLIENT_SORTS.get(sort).reversed() : CLIENT_SORTS.get(sort));
         final var page = clients.stream().skip(offset).limit(limit)
@@ -142,6 +146,8 @@ final class MonitoringResource {
     }
 
     Response streams(ApiRequest req) {
+        if (ctx.isExcluded(req))
+            return ok(new StreamPumps(List.of()));
         final var now = System.currentTimeMillis();
         final var pumps = ctx.router().getStatistics().getStreamPumpStats().getStreamPumps().stream()
                 .map(p -> new StreamPumpInfo(ctx.instanceName(), p.getName(), p.getServiceProxyName(),
@@ -151,6 +157,8 @@ final class MonitoringResource {
     }
 
     Response system(ApiRequest req) {
+        if (ctx.isExcluded(req))
+            return ok(new SystemInfos(List.of()));
         final var memory = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
         final var threads = ManagementFactory.getThreadMXBean();
         final var runtime = ManagementFactory.getRuntimeMXBean();
