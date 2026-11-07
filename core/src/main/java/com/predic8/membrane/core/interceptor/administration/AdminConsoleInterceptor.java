@@ -142,8 +142,7 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 	/**
 	 * @description If set, requests to the admin API (<code>/admin/api/v1</code>) must carry this key in the
 	 * <code>X-Api-Key</code> header. Set it on instances that are included as <code>peers</code> of another admin
-	 * console. The web console under <code>/console/</code> does not send a key, so open it on the aggregating
-	 * instance.
+	 * console. The web console under <code>/console/</code> asks for the key and keeps it for the browser tab.
 	 */
 	@MCAttribute
 	public void setApiKey(String apiKey) {

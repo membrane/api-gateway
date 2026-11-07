@@ -26,12 +26,14 @@ import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.URIFactory;
+import com.predic8.membrane.test.TestAppender;
 import org.junit.jupiter.api.*;
 
 import java.net.*;
 import java.net.http.*;
 import java.util.*;
 
+import static com.predic8.membrane.test.TestAppender.captureLog;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static java.nio.charset.StandardCharsets.*;
@@ -213,6 +215,28 @@ class AggregatorTest {
         final var api = new AdminApiV1Interceptor();
         api.setPeers(List.of(peer("node-b:9000", null)));
         assertThrows(ConfigurationException.class, () -> api.init(new TestRouter()));
+    }
+
+    /**
+     * A key sent over plain HTTP gets a warning, unless the connection is protected otherwise, e.g. by a TLS sidecar.
+     */
+    @Test
+    void apiKeyOverPlainHttpIsWarnedAboutUnlessDisabled() throws Exception {
+        assertTrue(initWithPeer(peer("http://node-b.example.com:9000", "key")).contains("sent over plain HTTP"));
+        assertFalse(initWithPeer(peer("https://node-b.example.com:9000", "key")).contains("sent over plain HTTP"));
+
+        final var protectedPeer = peer("http://node-b.example.com:9000", "key");
+        protectedPeer.setWarnOnPlainHttp(false);
+        assertFalse(initWithPeer(protectedPeer).contains("sent over plain HTTP"));
+    }
+
+    private static TestAppender initWithPeer(AdminConsolePeer peer) throws Exception {
+        final var api = new AdminApiV1Interceptor();
+        api.setPeers(List.of(peer));
+        return captureLog(() -> {
+            api.init(new TestRouter());
+            return null;
+        });
     }
 
     @Test
