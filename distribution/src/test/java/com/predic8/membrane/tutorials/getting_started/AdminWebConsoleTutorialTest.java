@@ -35,6 +35,19 @@ public class AdminWebConsoleTutorialTest extends AbstractGettingStartedTutorialT
             .get("http://localhost:9000")
         .then()
             .statusCode(200)
+            .body(containsString("<title>Membrane Console</title>"));
+        // @formatter:on
+    }
+
+    @Test
+    void previousAdminConsole() {
+        // @formatter:off
+        given()
+            .auth().preemptive().basic("admin", "admin")
+        .when()
+            .get("http://localhost:9000/admin")
+        .then()
+            .statusCode(200)
             .body(containsString("<!DOCTYPE html>"));
         // @formatter:on
     }

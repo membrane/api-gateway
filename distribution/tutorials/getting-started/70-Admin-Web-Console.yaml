@@ -12,6 +12,9 @@
 #
 #     Username: admin
 #     Password: admin
+#
+#     The previous Admin Console is still available at:
+#     http://localhost:9000/admin
 
 api:
   port: 9000
