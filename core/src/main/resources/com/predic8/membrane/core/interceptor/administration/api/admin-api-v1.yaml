@@ -189,6 +189,7 @@ paths:
       tags: [apis]
       operationId: createApi
       summary: Add an API at runtime from a YAML snippet (in memory only, not written back to the configuration).
+      description: Planned. Not implemented yet; the server answers `501`.
       parameters:
         - $ref: '#/components/parameters/instanceWrite'
       requestBody:
@@ -269,6 +270,7 @@ paths:
       tags: [apis]
       operationId: getApiConfig
       summary: Effective configuration of the API rendered as YAML. Secrets are masked.
+      description: Planned. Not implemented yet; the server answers `501`.
       responses:
         '200':
           description: OK
@@ -311,6 +313,7 @@ paths:
       tags: [apis]
       operationId: getApiOpenApi
       summary: The OpenAPI document(s) an `api` is built from, if any.
+      description: Planned. Not implemented yet; the server answers `501`.
       responses:
         '200':
           description: OK
@@ -368,6 +371,7 @@ paths:
       tags: [system]
       operationId: getConfigStatus
       summary: Where the configuration came from, when it was loaded, hot reload state and startup/validation errors.
+      description: Planned. Not implemented yet; the server answers `501`.
       parameters:
         - $ref: '#/components/parameters/instance'
       responses:
@@ -902,6 +906,7 @@ paths:
       tags: [statistics]
       operationId: getTimeseries
       summary: Request rate, error rate and latency percentiles over time, from an in-memory ring buffer.
+      description: Planned. Not implemented yet; the server answers `501`.
       parameters:
         - $ref: '#/components/parameters/instance'
         - name: apiId
@@ -1101,6 +1106,7 @@ paths:
       tags: [plugins]
       operationId: listRateLimiters
       summary: Rate limiters and their current usage per key.
+      description: Planned. Not implemented yet; the server answers `501`.
       parameters:
         - $ref: '#/components/parameters/instance'
       responses:
@@ -1125,6 +1131,7 @@ paths:
       tags: [plugins]
       operationId: resetRateLimiter
       summary: Reset the counters of a rate limiter.
+      description: Planned. Not implemented yet; the server answers `501`.
       requestBody:
         content:
           application/json:
@@ -1144,6 +1151,7 @@ paths:
       tags: [plugins]
       operationId: listCircuitBreakers
       summary: Circuit breakers and their state.
+      description: Planned. Not implemented yet; the server answers `501`.
       parameters:
         - $ref: '#/components/parameters/instance'
       responses:
@@ -1168,6 +1176,7 @@ paths:
       tags: [plugins]
       operationId: resetCircuitBreaker
       summary: Close a circuit breaker.
+      description: Planned. Not implemented yet; the server answers `501`.
       responses:
         '204': { description: "Closed again." }
         '403': { $ref: '#/components/responses/Forbidden' }
@@ -1180,6 +1189,7 @@ paths:
       tags: [plugins]
       operationId: listCredentialStores
       summary: API key stores, user stores, OAuth2 clients and session managers — counts and metadata only, never secrets.
+      description: Planned. Not implemented yet; the server answers `501`.
       parameters:
         - $ref: '#/components/parameters/instance'
       responses:
@@ -1204,6 +1214,7 @@ paths:
       tags: [tls]
       operationId: listCertificates
       summary: TLS certificates in use, with expiry and ACME state.
+      description: Planned. Not implemented yet; the server answers `501`.
       parameters:
         - $ref: '#/components/parameters/instance'
         - name: expiresWithinDays
@@ -1255,6 +1266,7 @@ paths:
       tags: [logs]
       operationId: getLogs
       summary: Tail of the gateway log from an in-memory buffer. Messages are already escaped as for info-level logging.
+      description: Planned. Not implemented yet; the server answers `501`.
       parameters:
         - $ref: '#/components/parameters/instance'
         - name: level
