@@ -49,6 +49,9 @@ public class Header {
 	public static final String CONTENT_ENCODING = "Content-Encoding";
 	public static final String CONTENT_LENGTH = "Content-Length";
 	public static final String CONTENT_TYPE = "Content-Type";
+    public static final String CONTENT_DISPOSITION = "Content-Disposition";
+    public static final String CONTENT_SECURITY_POLICY = "Content-Security-Policy";
+    public static final String X_CONTENT_TYPE_OPTIONS = "X-Content-Type-Options";
 	public static final String CONNECTION = "Connection";
 	public static final String PROXY_CONNECTION = "Proxy-Connection";
 	public static final String HOST = "Host";

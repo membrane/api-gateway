@@ -181,7 +181,11 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 		if (msg== null || msg.isBodyEmpty()) {
 			return noContent().build();
 		}
-		ResponseBuilder rb = ok().contentType(ct).body(msg.getBodyAsStream(), false);
+		// The body is attacker-controlled: never let it render as a document on the admin origin.
+		ResponseBuilder rb = ok().contentType(ct).body(msg.getBodyAsStream(), false)
+				.header(CONTENT_DISPOSITION, "attachment")
+				.header(X_CONTENT_TYPE_OPTIONS, "nosniff")
+				.header(CONTENT_SECURITY_POLICY, "sandbox");
 		String contentEncoding = msg.getHeader().getContentEncoding();
 		if (contentEncoding != null)
 			rb.header(CONTENT_ENCODING, contentEncoding);
