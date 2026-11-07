@@ -31,4 +31,12 @@ record ConsoleContext(Router router, String instanceName, boolean readOnly, bool
         if (!instanceName.equals(instance))
             throw notFound("Unknown instance.");
     }
+
+    /**
+     * @return whether the {@code instance} query parameter of a collection request excludes this instance
+     */
+    boolean isExcluded(ApiRequest req) {
+        final var instances = req.params("instance");
+        return !instances.isEmpty() && !instances.contains(instanceName);
+    }
 }

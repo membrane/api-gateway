@@ -61,6 +61,15 @@ class MessageTextTest {
     }
 
     @Test
+    void reportsTheDecodedLengthOfTruncatedBodies() throws Exception {
+        final var msg = Request.post("/").contentType("text/plain").body("x".repeat(10_000)).build();
+        final var body = MessageText.formatted(msg, "text/plain", 10);
+        assertTrue(body.truncated());
+        assertEquals(10, body.text().length());
+        assertEquals(10_000, body.originalLength());
+    }
+
+    @Test
     void doesNotRenderBinaryBodies() throws Exception {
         final var msg = Request.post("/").contentType("image/png").body(new byte[]{1, 2, 3}).build();
         final var body = MessageText.formatted(msg, "image/png", 1024);
@@ -85,5 +94,40 @@ class MessageTextTest {
         assertTrue(curl.contains("-H 'X-Evil: '\\''; rm -rf / #'"));
         assertTrue(curl.contains("--data-binary 'it'\\''s'"));
         assertFalse(curl.contains("Host:"));
+    }
+
+    @Test
+    void curlKeepsGetWithBody() throws Exception {
+        final var exc = new Request.Builder().method("GET").url(new com.predic8.membrane.core.util.URIFactory(), "/q")
+                .header("Host", "gw.example.com").contentType("text/plain").body("b").buildExchange();
+        assertTrue(MessageText.curl(exc, false).startsWith("curl -X 'GET' "));
+    }
+
+    @Test
+    void curlDropsContentEncodingOfDecodedTextBodies() throws Exception {
+        final var exc = gzipped("text/plain");
+        final var curl = MessageText.curl(exc, false);
+        assertTrue(curl.contains("--data-binary 'hello'"), curl);
+        assertFalse(curl.toLowerCase().contains("content-encoding"), curl);
+    }
+
+    @Test
+    void curlKeepsContentEncodingOfBinaryBodies() throws Exception {
+        final var exc = gzipped("application/octet-stream");
+        assertTrue(MessageText.curl(exc, false).contains("-H 'Content-Encoding: gzip'"));
+    }
+
+    private static com.predic8.membrane.core.exchange.Exchange gzipped(String contentType) throws Exception {
+        final var exc = Request.post("/q").header("Host", "gw.example.com").contentType(contentType).body(gzip("hello")).buildExchange();
+        exc.getRequest().getHeader().setValue("Content-Encoding", "gzip");
+        return exc;
+    }
+
+    private static byte[] gzip(String text) throws Exception {
+        final var bytes = new java.io.ByteArrayOutputStream();
+        try (var out = new java.util.zip.GZIPOutputStream(bytes)) {
+            out.write(text.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        }
+        return bytes.toByteArray();
     }
 }

@@ -55,6 +55,8 @@ final class BalancersResource {
     }
 
     Response list(ApiRequest req) {
+        if (ctx.isExcluded(req))
+            return ok(new Balancers(List.of()));
         final var result = new ArrayList<BalancerInfo>();
         for (final var lbi : BalancerUtil.collectBalancers(ctx.router())) {
             final var balancer = lbi.getClusterManager();

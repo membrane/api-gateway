@@ -31,7 +31,8 @@ import static java.nio.charset.StandardCharsets.*;
 final class ApiJson {
 
     static final ObjectMapper MAPPER = new ObjectMapper()
-            .setSerializationInclusion(JsonInclude.Include.NON_NULL);
+            .setSerializationInclusion(JsonInclude.Include.NON_NULL)
+            .enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
 
     private ApiJson() {
     }
