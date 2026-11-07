@@ -26,7 +26,7 @@ public class ComparatorFactory {
 
     public static Comparator<AbstractExchange> getAbstractExchangeComparator(String propName, String order) {
         if ("statusCode".equals(propName)) {
-            return new PropertyComparator<>(order, exc -> exc.getResponse().getStatusCode());
+            return new PropertyComparator<>(order, exc -> exc.getResponse() == null ? null : exc.getResponse().getStatusCode());
         } else if ("proxy".equals(propName)) {
             return new PropertyComparator<>(order, exc -> exc.getProxy().toString());
         } else if ("method".equals(propName)) {
@@ -44,7 +44,7 @@ public class ComparatorFactory {
         } else if ("respContentType".equals(propName)) {
             return new PropertyComparator<>(order, AbstractExchange::getResponseContentType);
         } else if ("respContentLength".equals(propName)) {
-            return new PropertyComparator<>(order, AbstractExchange::getResponseContentLength);
+            return new PropertyComparator<>(order, exc -> exc.getResponse() == null ? null : exc.getResponseContentLength());
         } else if ("duration".equals(propName)) {
             return new PropertyComparator<>(order, exc -> exc.getTimeResReceived() - exc.getTimeReqSent());
         } else if ("msgFilePath".equals(propName)) {
