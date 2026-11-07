@@ -179,6 +179,29 @@ class DynamicAdminPageInterceptorTest {
         assertEquals(UP, balancer.getNode(DEFAULT_NAME, "localhost", 8080).getStatus());
     }
 
+    /**
+     * The id used to be inserted unquoted into an inline script, so a link could run script in the console's origin.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"1);alert(document.domain);//", "1%29%3Balert%281%29%3B%2F%2F", "abc", "", "1.5"})
+    void callPageRejectsNonNumericId(String id) throws Exception {
+        final var exc = dispatch(Request.get("/admin/call?id=" + id));
+        assertEquals(400, exc.getResponse().getStatusCode());
+        assertFalse(exc.getResponse().getBodyAsStringDecoded().contains("alert"));
+    }
+
+    @Test
+    void callPageRejectsMissingId() throws Exception {
+        assertEquals(400, dispatch(Request.get("/admin/call")).getResponse().getStatusCode());
+    }
+
+    @Test
+    void callPageLoadsExchangeWithNumericId() throws Exception {
+        final var exc = dispatch(Request.get("/admin/call?id=42"));
+        assertEquals(200, exc.getResponse().getStatusCode());
+        assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("membrane.loadExchange(42);"));
+    }
+
     private Balancer addBalancer() {
         final var lb = new LoadBalancingInterceptor();
         lb.setName(DEFAULT_NAME);
