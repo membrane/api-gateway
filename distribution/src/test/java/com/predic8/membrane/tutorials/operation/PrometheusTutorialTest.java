@@ -21,7 +21,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 
 /**
  * Verifies tutorial step 50-Prometheus.yaml: the prometheus plugin exposes
- * membrane_count metrics at /metrics after traffic hits the backends.
+ * membrane_count metrics at /metrics after traffic hits the backends, plus JVM metrics.
  */
 public class PrometheusTutorialTest extends AbstractOperationTutorialTest {
 
@@ -44,7 +44,8 @@ public class PrometheusTutorialTest extends AbstractOperationTutorialTest {
             .get("http://localhost:2000/metrics")
         .then()
             .statusCode(200)
-            .body(containsString("membrane_count"));
+            .body(containsString("membrane_count"))
+            .body(containsString("jvm_memory_used_bytes{area=\"heap\""));
         // @formatter:on
     }
 }
