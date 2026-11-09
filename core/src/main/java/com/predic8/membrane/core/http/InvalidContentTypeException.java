@@ -14,7 +14,6 @@
 
 package com.predic8.membrane.core.http;
 
-import com.predic8.membrane.core.exceptions.ProblemDetails;
 import jakarta.mail.internet.ParseException;
 
 import static com.predic8.membrane.core.util.text.TextUtil.escapeControlCharsForLog;
@@ -26,11 +25,11 @@ import static com.predic8.membrane.core.util.text.TextUtil.escapeControlCharsFor
  * Travels wrapped in a {@link ReadingBodyException}, whose source says which message the header
  * belongs to.
  */
-public class ContentTypeException extends Exception implements MessageProblem {
+public class InvalidContentTypeException extends Exception {
 
     private final String contentType;
 
-    public ContentTypeException(String contentType, ParseException cause) {
+    public InvalidContentTypeException(String contentType, ParseException cause) {
         // Logged at info, so escape the parser's wording: it quotes the header value
         super("Content-Type header could not be parsed: " + escapeControlCharsForLog(cause.getMessage()), cause);
         this.contentType = contentType;
@@ -38,16 +37,5 @@ public class ContentTypeException extends Exception implements MessageProblem {
 
     public String getContentType() {
         return contentType;
-    }
-
-    /**
-     * Production logs the detail and the internal fields at info, so both escape the header value.
-     */
-    @Override
-    public ProblemDetails describe(ProblemDetails problem) {
-        return problem.addSubType("content-type")
-                .title("Content-Type header could not be parsed")
-                .detail("The Content-Type header \"%s\" could not be parsed.".formatted(escapeControlCharsForLog(contentType)), true)
-                .internal("reason", escapeControlCharsForLog(getCause().getMessage()));
     }
 }

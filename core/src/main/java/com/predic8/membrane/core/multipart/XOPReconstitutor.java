@@ -15,7 +15,7 @@
 package com.predic8.membrane.core.multipart;
 
 import com.predic8.membrane.core.http.BodyCollectingMessageObserver;
-import com.predic8.membrane.core.http.ContentTypeException;
+import com.predic8.membrane.core.http.InvalidContentTypeException;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.ReadingBodyException;
@@ -162,7 +162,7 @@ public class XOPReconstitutor {
 		try {
 			return message.getHeader().getContentTypeObject();
 		} catch (ParseException e) {
-			final var failure = new ContentTypeException(message.getHeader().getContentType(), e);
+			final var failure = new InvalidContentTypeException(message.getHeader().getContentType(), e);
 			log.info("{}", failure.getMessage());
 			throw new ReadingBodyException(failure, message);
 		}

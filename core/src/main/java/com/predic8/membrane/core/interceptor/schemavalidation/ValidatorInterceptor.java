@@ -34,7 +34,7 @@ import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.bodyFailure;
+import static com.predic8.membrane.core.exceptions.BodyFailureProblems.bodyFailure;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;

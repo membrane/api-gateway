@@ -149,7 +149,7 @@ class XOPReconstitutorTest {
         final var e = assertThrows(com.predic8.membrane.core.http.ReadingBodyException.class,
                 () -> reconstitutor.getReconstitutedMessage(response));
         assertTrue(e.belongsTo(response));
-        assertInstanceOf(com.predic8.membrane.core.http.ContentTypeException.class, e.getCause());
+        assertInstanceOf(com.predic8.membrane.core.http.InvalidContentTypeException.class, e.getCause());
         assertEquals("Content-Type header could not be parsed: In parameter list <; charset>, expected '=', got \"null\"",
                 e.getCause().getMessage());
     }

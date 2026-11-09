@@ -15,8 +15,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.MessageProblem;
-import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import org.jetbrains.annotations.NotNull;
@@ -35,12 +33,12 @@ import static com.predic8.membrane.core.http.Response.statusCode;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.util.ExceptionUtil.concatMessageAndCauseMessages;
-import static com.predic8.membrane.core.util.ExceptionUtil.getRootCause;
 import static com.predic8.membrane.core.util.HttpUtil.getMessageForStatusCode;
 import static com.predic8.membrane.core.util.text.TextUtil.escapeControlCharsForLog;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Locale.ROOT;
 import static java.util.UUID.randomUUID;
+
 
 /**
  * Utility class for <a href="https://datatracker.ietf.org/doc/html/rfc7807">ProblemDetails Spec</a>
@@ -144,44 +142,6 @@ public class ProblemDetails {
                 .component(component);
     }
 
-    /**
-     * Describes a failure to read a message body, attributed to the end of the exchange it belongs
-     * to: a request body the sender could not deliver in readable form is the sender's error, while
-     * anything else - a backend response body above all - is the gateway's. Every place that answers
-     * a {@link ReadingBodyException} with a response should describe it here instead of deciding a
-     * status of its own, so the same broken body is not a 400 in one plugin and a 500 in the next.
-     *
-     * <p>A cause that is a {@link MessageProblem} describes the failure of a request itself, e.g. a
-     * body that could not be decoded names the Content-Encoding that failed in a field that
-     * production keeps. Any other request body failure gets the plain user type, explained by the
-     * message of its root cause.</p>
-     *
-     * @param exchange the exchange the failure happened on, to tell whose body it was
-     * @implNote sets the {@code see} suffix itself. {@link #addSubSee} concatenates without a
-     * separator, so a caller adding one of its own would run the two together into a single
-     * malformed segment.
-     */
-    public static ProblemDetails bodyFailure(boolean production, String component, Exchange exchange,
-                                             ReadingBodyException failure) {
-        if (!failure.isRequestBodyFailure(exchange))
-            return internal(production, component)
-                    .addSubSee("reading-body")
-                    .detail(failure.belongsTo(exchange.getResponse())
-                            ? "Could not read the response body from the backend."
-                            : "Could not read the message body.")
-                    .exception(failure)
-                    // An I/O error is explained by its message and the place named in the detail.
-                    .stacktrace(!failure.exceptionMessageIsSufficient());
-
-        // The exception makes production log what it withholds, under the key it gives the sender
-        final var problem = user(production, component).flow(REQUEST).addSubSee("reading-body")
-                .exception(failure)
-                .stacktrace(!failure.exceptionMessageIsSufficient());
-        return MessageProblem.in(failure)
-                .map(described -> described.describe(problem))
-                .orElseGet(() -> problem.detail(getRootCause(failure).getMessage()));
-    }
-
     public static ProblemDetails problemDetails(String type, boolean production) {
         ProblemDetails pd = new ProblemDetails();
         pd.type = type;
@@ -233,9 +193,8 @@ public class ProblemDetails {
      *                                 for text written for the client. The text may echo values the client sent
      *                                 itself (e.g. a rejected header value or a requested document id), but put
      *                                 internal values such as configuration, backend data, stack traces or
-     *                                 exception messages into {@link #internal(String, Object)}. With nothing
-     *                                 internal, production then gives no log key and does not log an attached
-     *                                 exception. {@code false} hides the detail in production mode.
+     *                                 exception messages into {@link #internal(String, Object)}. {@code false}
+     *                                 hides the detail in production mode.
      * @return Instance
      */
     public ProblemDetails detail(String humanReadableExplanation, boolean showInProduction) {
@@ -333,9 +292,7 @@ public class ProblemDetails {
     }
 
     private void provideLogKeyInsteadOfDetails(Map<String, Object> root) {
-        // A detail written for the sender explains the problem on its own, so with nothing internal
-        // there is nothing hidden for a key to point to, not even the message of an exception.
-        if (internalFields.isEmpty() && (exception == null || publicDetail && detail != null))
+        if (internalFields.isEmpty() && exception == null)
             return;
 
         var logKey = randomUUID().toString();

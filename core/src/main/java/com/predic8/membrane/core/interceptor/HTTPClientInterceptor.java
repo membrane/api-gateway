@@ -189,7 +189,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
             return ABORT;
         } catch (ReadingBodyException e) {
             // Not a problem with the backend: the request body could not be read, e.g. the client stopped
-            // sending or it exceeded a limit. The flow controller describes it, see ProblemDetails.bodyFailure().
+            // sending or it exceeded a limit. The flow controller describes it, see BodyFailureProblems.bodyFailure().
             throw e;
         } catch (Exception e) {
             log.error("", e);

@@ -14,9 +14,9 @@
 
 package com.predic8.membrane.core.multipart;
 
-import com.predic8.membrane.core.exceptions.ProblemDetails;
-import com.predic8.membrane.core.http.MessageProblem;
 import com.predic8.membrane.core.http.ReadingBodyException;
+
+import java.io.IOException;
 
 /**
  * Indicates that an XOP/MTOM package cannot be reassembled, e.g. because a referenced part is
@@ -25,16 +25,9 @@ import com.predic8.membrane.core.http.ReadingBodyException;
  * Travels wrapped in a {@link ReadingBodyException}, whose source says which message the package
  * belongs to.
  */
-public class XopReassemblyException extends Exception implements MessageProblem {
+public class XopReassemblyException extends IOException {
 
     public XopReassemblyException(String message) {
         super(message);
-    }
-
-    @Override
-    public ProblemDetails describe(ProblemDetails problem) {
-        return problem.addSubType("xop")
-                .title("XOP package could not be reassembled")
-                .detail(getMessage(), true);
     }
 }
