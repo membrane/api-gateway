@@ -15,8 +15,12 @@
 package com.predic8.membrane.core.interceptor.prometheus;
 
 import com.sun.management.UnixOperatingSystemMXBean;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.management.BufferPoolMXBean;
+import java.lang.management.OperatingSystemMXBean;
+import java.util.function.LongSupplier;
 
 import static com.predic8.membrane.core.interceptor.prometheus.PrometheusInterceptor.escapeLabelValue;
 import static java.lang.management.ManagementFactory.*;
@@ -31,6 +35,8 @@ import static java.lang.management.MemoryType.HEAP;
  */
 final class JvmMetrics {
 
+    private static final Logger log = LoggerFactory.getLogger(JvmMetrics.class);
+
     private JvmMetrics() {
     }
 
@@ -41,7 +47,7 @@ final class JvmMetrics {
         bufferPools(sb);
         gcPauses(sb);
         family(sb, "jvm_threads_live_threads", "gauge", sample("jvm_threads_live_threads", "", getThreadMXBean().getThreadCount()));
-        files(sb);
+        files(sb, getOperatingSystemMXBean());
         processCpuUsage(sb);
         family(sb, "process_start_time_seconds", "gauge", sample("process_start_time_seconds", "", getRuntimeMXBean().getStartTime() / 1000.0));
         family(sb, "jvm_info", "gauge", sample("jvm_info", "{version=\"%s\",vendor=\"%s\",runtime=\"%s\"}".formatted(
@@ -111,11 +117,28 @@ final class JvmMetrics {
         family(sb, "jvm_gc_pause_seconds", "summary", samples);
     }
 
-    private static void files(final StringBuilder sb) {
-        if (!(getOperatingSystemMXBean() instanceof UnixOperatingSystemMXBean os)) // e.g. Windows
+    static void files(final StringBuilder sb, final OperatingSystemMXBean bean) {
+        if (!(bean instanceof UnixOperatingSystemMXBean os)) // e.g. Windows
             return;
-        family(sb, "process_files_open_files", "gauge", sample("process_files_open_files", "", os.getOpenFileDescriptorCount()));
-        family(sb, "process_files_max_files", "gauge", sample("process_files_max_files", "", os.getMaxFileDescriptorCount()));
+        fileDescriptors(sb, "process_files_open_files", os::getOpenFileDescriptorCount);
+        fileDescriptors(sb, "process_files_max_files", os::getMaxFileDescriptorCount);
+    }
+
+    /**
+     * The JDK throws an {@link InternalError} when it cannot read the count, e.g. on Linux when
+     * <code>/proc/self/fd</code> cannot be opened because the process is out of file descriptors. An
+     * <code>Error</code> is not caught by the request handling, so it would drop the whole scrape. The metric is left
+     * out instead.
+     */
+    private static void fileDescriptors(final StringBuilder sb, final String name, final LongSupplier count) {
+        final long value;
+        try {
+            value = count.getAsLong();
+        } catch (InternalError e) {
+            log.debug("Cannot read {}.", name, e);
+            return;
+        }
+        family(sb, name, "gauge", sample(name, "", value));
     }
 
     private static void processCpuUsage(final StringBuilder sb) {

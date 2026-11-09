@@ -25,6 +25,8 @@ import java.util.regex.Pattern;
 
 import static java.lang.management.ManagementFactory.getOperatingSystemMXBean;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class JvmMetricsTest {
 
@@ -77,6 +79,20 @@ class JvmMetricsTest {
             assertTrue(seenSeries.add(sample.group(1) + sample.group(2)), "Duplicate series: " + line);
             assertDoesNotThrow(() -> Double.parseDouble(sample.group(3)), line);
         }
+    }
+
+    /**
+     * On Linux the JDK opens <code>/proc/self/fd</code> to count the descriptors and throws an {@link InternalError}
+     * when that fails, e.g. because the process is out of file descriptors.
+     */
+    @Test
+    void unreadableFileDescriptorCountIsLeftOut() {
+        final var os = mock(UnixOperatingSystemMXBean.class);
+        when(os.getOpenFileDescriptorCount()).thenThrow(new InternalError("Unable to open directory /proc/self/fd"));
+        when(os.getMaxFileDescriptorCount()).thenReturn(1024L);
+        final var sb = new StringBuilder();
+        JvmMetrics.files(sb, os);
+        assertEquals("# TYPE process_files_max_files gauge\nprocess_files_max_files 1024\n", sb.toString());
     }
 
     private static boolean belongsTo(String metric, String family, String type) {
