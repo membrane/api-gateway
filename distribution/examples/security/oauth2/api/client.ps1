@@ -35,4 +35,4 @@ $tokenEndpointResult = getToken
 Write-Host "Got Token:" $tokenEndpointResult.access_token
 Write-Host
 $result = sendRequestToTarget  $tokenEndpointResult
-Write-Host "Got": $result.Content
+Write-Host "Got:" $result.Content
