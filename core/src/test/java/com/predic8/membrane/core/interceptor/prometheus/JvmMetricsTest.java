@@ -95,6 +95,16 @@ class JvmMetricsTest {
         assertEquals("# TYPE process_files_max_files gauge\nprocess_files_max_files 1024\n", sb.toString());
     }
 
+    @Test
+    void unavailableFileDescriptorCountIsLeftOut() {
+        final var os = mock(UnixOperatingSystemMXBean.class);
+        when(os.getOpenFileDescriptorCount()).thenReturn(10L);
+        when(os.getMaxFileDescriptorCount()).thenReturn(-1L);
+        final var sb = new StringBuilder();
+        JvmMetrics.files(sb, os);
+        assertEquals("# TYPE process_files_open_files gauge\nprocess_files_open_files 10\n", sb.toString());
+    }
+
     private static boolean belongsTo(String metric, String family, String type) {
         if (type.equals("summary"))
             return metric.equals(family + "_count") || metric.equals(family + "_sum");

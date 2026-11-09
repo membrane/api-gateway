@@ -128,7 +128,7 @@ final class JvmMetrics {
      * The JDK throws an {@link InternalError} when it cannot read the count, e.g. on Linux when
      * <code>/proc/self/fd</code> cannot be opened because the process is out of file descriptors. An
      * <code>Error</code> is not caught by the request handling, so it would drop the whole scrape. The metric is left
-     * out instead.
+     * out instead, as it is when the bean returns a negative count.
      */
     private static void fileDescriptors(final StringBuilder sb, final String name, final LongSupplier count) {
         final long value;
@@ -138,6 +138,8 @@ final class JvmMetrics {
             log.debug("Cannot read {}.", name, e);
             return;
         }
+        if (value < 0) // not available, e.g. on OpenJ9
+            return;
         family(sb, name, "gauge", sample(name, "", value));
     }
 
