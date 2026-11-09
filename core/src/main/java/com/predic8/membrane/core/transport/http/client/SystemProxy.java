@@ -122,7 +122,16 @@ public final class SystemProxy {
         if (httpProxy == null && httpsProxy == null)
             return null;
         return new SystemProxy("JVM system properties", httpProxy, httpsProxy,
-                nonProxyHosts(properties.getProperty("http.nonProxyHosts", DEFAULT_NON_PROXY_HOSTS)));
+                nonProxyHosts(withDefaultNonProxyHosts(properties.getProperty("http.nonProxyHosts"))));
+    }
+
+    // Like the JDK: a custom list keeps the defaults, only an empty one removes them.
+    private static String withDefaultNonProxyHosts(@Nullable String nonProxyHosts) {
+        if (nonProxyHosts == null)
+            return DEFAULT_NON_PROXY_HOSTS;
+        if (nonProxyHosts.isEmpty())
+            return "";
+        return nonProxyHosts + "|" + DEFAULT_NON_PROXY_HOSTS;
     }
 
     private static @Nullable ProxyConfiguration proxyFromProperties(Properties properties, String scheme, int defaultPort) {

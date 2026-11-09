@@ -174,8 +174,19 @@ class SystemProxyTest {
 
             assertNull(proxy.select(new HostColonPort(false, "orders.internal.example.com", 80)));
             assertNull(proxy.select(new HostColonPort(false, "192.168.1.1", 80)));
-            assertNotNull(proxy.select(new HostColonPort(false, "localhost", 80)), "the JDK default no longer applies");
+            assertNull(proxy.select(new HostColonPort(false, "localhost", 80)), "the JDK keeps its defaults");
+            assertNull(proxy.select(new HostColonPort(false, "127.0.0.1", 80)), "the JDK keeps its defaults");
             assertNotNull(proxy.select(HTTP_TARGET));
+        }
+
+        @Test
+        void emptyNonProxyHostsDropsTheDefaults() {
+            final var proxy = fromProperties(
+                    "http.proxyHost", "proxy.example.com",
+                    "http.nonProxyHosts", "");
+
+            assertNotNull(proxy.select(new HostColonPort(false, "localhost", 80)));
+            assertNotNull(proxy.select(new HostColonPort(false, "127.0.0.1", 80)));
         }
 
         @Test
