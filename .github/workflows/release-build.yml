@@ -17,7 +17,7 @@ permissions:
 jobs:
   build-release:
     if: github.event.pull_request.merged && startsWith(github.event.pull_request.title, 'Release ')
-    runs-on: warp-ubuntu-2404-x64-4x
+    runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.get_version.outputs.VERSION }}
     steps:
@@ -127,7 +127,7 @@ jobs:
   # on an older line (7.7.x, 6.x, ...) must not.
   trigger-docker:
     needs: build-release
-    runs-on: warp-ubuntu-2404-x64-4x
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       actions: write

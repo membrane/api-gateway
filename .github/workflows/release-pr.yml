@@ -15,7 +15,7 @@ on:
         required: true
 jobs:
   create-pr:
-    runs-on: warp-ubuntu-2404-x64-4x
+    runs-on: ubuntu-latest
     steps:
       - name: Set up Java
         uses: actions/setup-java@v6

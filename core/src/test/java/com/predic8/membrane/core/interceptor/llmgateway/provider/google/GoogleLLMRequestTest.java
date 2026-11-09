@@ -92,6 +92,41 @@ class GoogleLLMRequestTest {
         assertEquals(1, request.getJson().path("generationConfig").path("temperature").asInt());
     }
 
+    /**
+     * The Gemini API also accepts the proto field names, so the output limit must apply to them as well.
+     */
+    @Test
+    void snakeCaseMaxOutputTokensAreReadAndReplaced() throws Exception {
+        var request = request("""
+                {"generation_config":{"temperature":1,"max_output_tokens":100000}}""");
+        assertEquals(100000, request.getRequestedMaxOutputTokens());
+
+        request.setMaxOutputTokens(42);
+
+        assertFalse(request.getJson().has("generation_config"));
+        assertEquals(42, request.getJson().path("generationConfig").path("maxOutputTokens").asInt());
+        assertFalse(request.getJson().path("generationConfig").has("max_output_tokens"));
+        assertEquals(1, request.getJson().path("generationConfig").path("temperature").asInt());
+    }
+
+    @Test
+    void snakeCaseSystemInstructionIsCounted() throws Exception {
+        assertEquals(request("""
+                {"systemInstruction":{"parts":[{"text":"abcdefgh"}]}}""").estimateInputTokens(),
+                request("""
+                {"system_instruction":{"parts":[{"text":"abcdefgh"}]}}""").estimateInputTokens());
+    }
+
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', value = {
+            "{\"systemInstruction\":{},\"system_instruction\":{}}",
+            "{\"generationConfig\":{},\"generation_config\":{}}",
+            "{\"generationConfig\":{\"maxOutputTokens\":1,\"max_output_tokens\":100000}}",
+    })
+    void bothSpellingsOfAFieldAreRejected(String body) {
+        assertThrows(IllegalArgumentException.class, () -> request(body));
+    }
+
     @Test
     void apiKeyIsReadFromAndWrittenToGoogleHeader() throws Exception {
         var exchange = post("http://localhost/v1beta/models/m:generateContent").json("{}").buildExchange();
