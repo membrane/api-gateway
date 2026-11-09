@@ -25,11 +25,13 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import static com.predic8.membrane.core.http.Request.post;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.llmgateway.SystemPrompt.Action.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -168,6 +170,63 @@ class SystemPromptTest {
                     [{"role":"system","content":"configured"},
                      {"role":"user","content":"Hi"}]""",
                     request.getJson().path("messages"));
+        }
+
+        /**
+         * In the Responses API, system and developer messages in {@code input} act as system prompts.
+         */
+        @ParameterizedTest
+        @EnumSource(value = SystemPrompt.Action.class, names = {"OVERWRITE", "REMOVE"})
+        void responsesSystemAndDeveloperInputItemsAreRemoved(SystemPrompt.Action action) throws Exception {
+            var request = new OpenAiLLMResponsesRequest(exchange(RESPONSES, """
+                    {"instructions":"from client",
+                     "input":[{"role":"developer","content":"from client"},
+                              {"type":"message","role":"system","content":[{"type":"input_text","text":"from client"}]},
+                              {"role":"user","content":"Hi"}]}"""));
+
+            handle(action, request);
+
+            assertJson("""
+                    [{"role":"user","content":"Hi"}]""",
+                    request.getJson().path("input"));
+            assertEquals(action == OVERWRITE ? "configured" : "", request.getJson().path("instructions").asText(""));
+        }
+
+        @Test
+        void responsesInputItemsAreKeptOnPrepend() throws Exception {
+            var request = new OpenAiLLMResponsesRequest(exchange(RESPONSES, """
+                    {"input":[{"role":"developer","content":"from client"},{"role":"user","content":"Hi"}]}"""));
+
+            handle(PREPEND, request);
+
+            assertEquals(2, request.getJson().path("input").size());
+        }
+
+        /**
+         * The Gemini API also accepts the proto field name {@code system_instruction}.
+         */
+        @ParameterizedTest
+        @EnumSource(value = SystemPrompt.Action.class, names = {"OVERWRITE", "REMOVE"})
+        void geminiSnakeCaseSystemInstructionIsReplaced(SystemPrompt.Action action) throws Exception {
+            var request = new GoogleLLMRequest(exchange(GENERATE_CONTENT, """
+                    {"system_instruction":{"parts":[{"text":"from client"}]}}"""));
+
+            handle(action, request);
+
+            assertFalse(request.getJson().has("system_instruction"));
+            assertEquals(action == OVERWRITE ? 1 : 0, request.getJson().path("systemInstruction").path("parts").size());
+        }
+
+        @Test
+        void geminiSnakeCaseSystemInstructionIsKeptOnPrepend() throws Exception {
+            var request = new GoogleLLMRequest(exchange(GENERATE_CONTENT, """
+                    {"system_instruction":{"parts":[{"text":"one"}]}}"""));
+
+            handle(PREPEND, request);
+
+            assertJson("""
+                    {"systemInstruction":{"parts":[{"text":"configured"},{"text":"one"}]}}""",
+                    request.getJson());
         }
 
         @Test
