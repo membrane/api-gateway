@@ -17,12 +17,15 @@ package com.predic8.membrane.core.interceptor.schemavalidation;
 import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.wsdl.parser.*;
 import com.predic8.membrane.core.util.wsdl.parser.Operation.Direction;
+import com.predic8.membrane.core.util.wsdl.parser.schema.Schema;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.w3c.dom.Element;
 
 import javax.xml.namespace.QName;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.util.wsdl.parser.Binding.Style.RPC;
@@ -33,12 +36,237 @@ public class WSDLMessageElementExtractor {
 
     private static final Logger log = LoggerFactory.getLogger(WSDLMessageElementExtractor.class.getName());
 
+    /**
+     * Stands for an empty SOAP Body among the body elements: the one of a document style message
+     * without a body part, e.g. one without any part or with all its parts bound as
+     * {@code soap:header}. No element can have an empty local name, so it never matches a real one.
+     */
+    public static final QName EMPTY_BODY = new QName("", "");
+
     public static Set<QName> getPossibleRequestElements(Definitions definitions, String serviceName) {
         return getPossibleElements(definitions, INPUT, serviceName);
     }
 
     public static Set<QName> getPossibleResponseElements(Definitions definitions, String serviceName) {
         return getPossibleElements(definitions, OUTPUT, serviceName);
+    }
+
+    /**
+     * Header blocks a request may carry, as declared via {@code soap:header} on the inputs of the
+     * service's binding operations.
+     */
+    public static Set<QName> getPossibleRequestHeaderElements(Definitions definitions, String serviceName) {
+        return getHeaderElements(getHeaders(definitions, serviceName, BindingOperation::getInputs), getGlobalElements(definitions));
+    }
+
+    /**
+     * Header blocks a response may carry, as declared via {@code soap:header} on the outputs of the
+     * service's binding operations.
+     */
+    public static Set<QName> getPossibleResponseHeaderElements(Definitions definitions, String serviceName) {
+        return getHeaderElements(getHeaders(definitions, serviceName, BindingOperation::getOutputs), getGlobalElements(definitions));
+    }
+
+    /**
+     * Header blocks a fault may carry, as declared via {@code soap:headerfault} in the
+     * {@code soap:header} elements of the service's binding operations. A fault about a header
+     * block carries its details in header blocks, not in the detail (SOAP 1.1 &sect;4.4).
+     */
+    public static Set<QName> getPossibleFaultHeaderElements(Definitions definitions, String serviceName) {
+        final var headers = getHeaders(definitions, serviceName,
+                operation -> Stream.concat(operation.getInputs().stream(), operation.getOutputs().stream()).toList());
+        final var headerFaults = headers.stream()
+                .flatMap(header -> header.getHeaderFaults().stream())
+                .toList();
+        return getHeaderElements(headerFaults, getGlobalElements(definitions));
+    }
+
+    /**
+     * Header blocks a request must carry, by its body element: those bound via {@code soap:header}
+     * on the input of the binding operation the body element belongs to.
+     */
+    public static Map<QName, Set<QName>> getRequiredRequestHeaderElements(Definitions definitions, String serviceName) {
+        return getRequiredHeaderElements(definitions, serviceName, INPUT);
+    }
+
+    /**
+     * Header blocks a response must carry, by its body element: those bound via {@code soap:header}
+     * on the output of the binding operation the body element belongs to.
+     */
+    public static Map<QName, Set<QName>> getRequiredResponseHeaderElements(Definitions definitions, String serviceName) {
+        return getRequiredHeaderElements(definitions, serviceName, OUTPUT);
+    }
+
+    /**
+     * If a body element belongs to several binding operations, e.g. of two ports, only the header
+     * blocks all of them bind are required, so no message one of them allows is rejected. Header
+     * parts that cannot be resolved to an element are skipped; {@link #getHeaderElements} warns
+     * about them.
+     */
+    private static Map<QName, Set<QName>> getRequiredHeaderElements(Definitions definitions, String serviceName, Direction direction) {
+        final var result = new HashMap<QName, Set<QName>>();
+        for (var binding : getHeaderBindings(definitions, serviceName)) {
+            for (var bindingOperation : binding.getBindingOperations()) {
+                final var operation = binding.getPortType().findOperation(bindingOperation.getName());
+                if (operation.isEmpty())
+                    continue;
+                final var required = (direction == INPUT ? bindingOperation.getInputs() : bindingOperation.getOutputs()).stream()
+                        .flatMap(message -> message.getHeaders().stream())
+                        .map(SoapHeader::resolvePart)
+                        .flatMap(Optional::stream)
+                        .map(Part::getElementQName)
+                        .filter(Objects::nonNull)
+                        .collect(toSet());
+                for (var bodyElement : getBodyElements(definitions, binding, operation.get(), direction)) {
+                    result.merge(bodyElement, required, (a, b) -> a.stream().filter(b::contains).collect(toSet()));
+                }
+            }
+        }
+        result.replaceAll((bodyElement, required) -> Set.copyOf(required));
+        return Map.copyOf(result);
+    }
+
+    /**
+     * The body elements of the operation's messages in that direction in the binding, derived like
+     * {@link #getPossibleElements}: without services, every port type counts as document style.
+     * A message without a body part has {@link #EMPTY_BODY}.
+     */
+    private static Set<QName> getBodyElements(Definitions definitions, Binding binding, Operation operation, Direction direction) {
+        if (operation.getMessagesByDirection(direction).isEmpty())
+            return Set.of();
+        if (binding.getStyle() == RPC && !definitions.getServices().isEmpty())
+            return Set.of(new QName(definitions.getTargetNamespace(), getElementNameRPC(operation, direction)));
+        final var bindingMessages = getBindingMessages(binding, operation, direction);
+        return operation.getMessagesByDirection(direction).stream()
+                .map(message -> getBodyPart(message, bindingMessages))
+                .map(WSDLMessageElementExtractor::getBodyElement)
+                .filter(Objects::nonNull)
+                .collect(toSet());
+    }
+
+    /**
+     * @param bodyPart null if the message has no body part
+     * @return null if the part names a type instead of an element
+     */
+    private static QName getBodyElement(Part bodyPart) {
+        if (bodyPart == null)
+            return EMPTY_BODY;
+        return bodyPart.getElementQName();
+    }
+
+    /**
+     * The global element declarations of the WSDL's schemas, including those of the schemas they
+     * include or import.
+     */
+    public static Set<QName> getGlobalElements(Definitions definitions) {
+        final var result = new HashSet<QName>();
+        final var visited = Collections.newSetFromMap(new IdentityHashMap<Schema, Boolean>());
+        definitions.getSchemas().forEach(schema -> addGlobalElements(schema, result, visited));
+        return result;
+    }
+
+    /**
+     * Included elements are already merged into the including schema and take its target
+     * namespace. Embedded schemas are linked to each other by namespace, so imports may form a
+     * cycle; each schema is visited only once.
+     */
+    private static void addGlobalElements(Schema schema, Set<QName> result, Set<Schema> visited) {
+        if (!visited.add(schema))
+            return;
+        for (var element : schema.getSchemaElements()) {
+            result.add(new QName(schema.getTargetNamespace(), element.getName()));
+        }
+        for (var schemaImport : schema.getImports()) {
+            if (schemaImport.getSchema() != null)
+                addGlobalElements(schemaImport.getSchema(), result, visited);
+        }
+    }
+
+    /**
+     * A {@code soap:header} or {@code soap:headerfault} whose header block cannot be validated is
+     * skipped with a warning rather than rejected: the rest of the WSDL is still validatable, and
+     * the header block is just not validated. That is the case if its part cannot be found, if the
+     * part names a type instead of an element, or if none of the WSDL's schemas declares the
+     * element, e.g. WS-Security bound without its schema.
+     *
+     * @param declared the global elements of the WSDL's schemas
+     */
+    private static Set<QName> getHeaderElements(List<SoapHeader> headers, Set<QName> declared) {
+        var result = new HashSet<QName>();
+        for (var header : headers) {
+            var resolved = header.resolvePart();
+            if (resolved.isEmpty()) {
+                log.warn("soap:{} part {} of message {} cannot be found, so the header block it describes is not validated.", header.getElement().getLocalName(), header.getPart(), header.getMessage());
+                continue;
+            }
+            var part = resolved.get();
+            var element = part.getElementQName();
+            if (element == null) {
+                log.warn("soap:{} part {} names a type instead of an element, so the header block it describes is not validated.", header.getElement().getLocalName(), part.getName());
+                continue;
+            }
+            if (!declared.contains(element)) {
+                log.warn("soap:{} part {} of message {} binds element {}, which none of the WSDL's schemas declares, so the header block it describes is not validated.", header.getElement().getLocalName(), header.getPart(), header.getMessage(), element);
+                continue;
+            }
+            result.add(element);
+        }
+        return result;
+    }
+
+    private static List<SoapHeader> getHeaders(Definitions definitions, String serviceName, Function<BindingOperation, List<BindingOperationMessage>> messages) {
+        return getHeaderBindings(definitions, serviceName).stream()
+                .flatMap(binding -> binding.getBindingOperations().stream())
+                .flatMap(operation -> messages.apply(operation).stream())
+                .flatMap(message -> message.getHeaders().stream())
+                .toList();
+    }
+
+    /**
+     * Without services all bindings count, just as {@link #getTypesByStyle} then counts all port
+     * types.
+     */
+    private static List<Binding> getHeaderBindings(Definitions definitions, String serviceName) {
+        if (definitions.getServices().isEmpty()) {
+            return definitions.getBindings();
+        }
+        return getBindings(definitions, serviceName);
+    }
+
+    /**
+     * The binding's input resp. output of the operation; none for faults.
+     */
+    private static List<BindingOperationMessage> getBindingMessages(Binding binding, Operation operation, Direction direction) {
+        if (direction == FAULT)
+            return List.of();
+        return binding.findBindingOperation(operation.getName()).stream()
+                .flatMap(bindingOperation -> (direction == INPUT ? bindingOperation.getInputs() : bindingOperation.getOutputs()).stream())
+                .toList();
+    }
+
+    /**
+     * Message parts the binding messages carry as {@code soap:header}. A part bound as header
+     * anywhere else, e.g. in another binding, on another operation or in the other direction, may
+     * still be a body part here. Unresolvable ones are skipped silently; {@link #getHeaderElements}
+     * already warns about them.
+     */
+    private static Set<Element> getHeaderPartElements(List<BindingOperationMessage> bindingMessages) {
+        return bindingMessages.stream()
+                .flatMap(message -> message.getHeaders().stream())
+                .map(SoapHeader::resolvePart)
+                .flatMap(Optional::stream)
+                .map(Part::getElement)
+                .collect(toSet());
+    }
+
+    /**
+     * The port type's bindings among those {@link #getHeaderBindings} considers.
+     */
+    private static List<Binding> getHeaderBindings(Definitions definitions, String serviceName, PortType portType) {
+        final var names = getHeaderBindings(definitions, serviceName).stream().map(Binding::getName).collect(toSet());
+        return definitions.getBindings(portType).stream()
+                .filter(binding -> names.contains(binding.getName()))
+                .toList();
     }
 
     /**
@@ -99,9 +327,12 @@ public class WSDLMessageElementExtractor {
         return Stream.concat(portTypes.portTypesDocument().stream(), portTypes.portTypesRPC().stream()).toList();
     }
 
+    /**
+     * @return the body elements, {@link #EMPTY_BODY} for a document style message without a body part
+     */
     public static Set<QName> getPossibleElements(Definitions definitions, Direction direction, String serviceName) {
         var portTypes = getTypesByStyle(definitions, serviceName);
-        var result = new HashSet<>(getElementQNameForDocumentStyle(direction, portTypes));
+        var result = new HashSet<>(getElementQNameForDocumentStyle(definitions, serviceName, direction, portTypes));
         result.addAll(getElementQNamesForRPCStyle(definitions, direction, portTypes));
         return result;
     }
@@ -114,9 +345,9 @@ public class WSDLMessageElementExtractor {
                 .collect(toSet());
     }
 
-    private static @NotNull Set<QName> getElementQNameForDocumentStyle(Direction direction, PortTypesByStyle portTypes) {
-        return getParts(direction, portTypes.portTypesDocument())
-                .map(Part::getElementQName)
+    private static @NotNull Set<QName> getElementQNameForDocumentStyle(Definitions definitions, String serviceName, Direction direction, PortTypesByStyle portTypes) {
+        return getParts(definitions, serviceName, direction, portTypes.portTypesDocument())
+                .map(WSDLMessageElementExtractor::getBodyElement)
                 .filter(Objects::nonNull)
                 .collect(toSet());
     }
@@ -166,13 +397,64 @@ public class WSDLMessageElementExtractor {
         return operation.getName();
     }
 
-    private static @NotNull Stream<Part> getParts(Direction direction, List<PortType> result) {
-        return result.stream().map(PortType::getOperations)
-                .flatMap(Collection::stream)
-                .map(op -> op.getMessagesByDirection(direction))
-                .flatMap(Collection::stream)
-                .map(Message::getPart)
-                .filter(Objects::nonNull); // Message can have no parts.
+    /**
+     * @return the body parts, null for a message without one
+     */
+    private static @NotNull Stream<Part> getParts(Definitions definitions, String serviceName, Direction direction, List<PortType> result) {
+        return result.stream()
+                .flatMap(portType -> {
+                    final var bindings = getHeaderBindings(definitions, serviceName, portType);
+                    return portType.getOperations().stream()
+                            .flatMap(op -> op.getMessagesByDirection(direction).stream()
+                                    .flatMap(message -> getBodyParts(bindings, op, direction, message)));
+                });
+    }
+
+    /**
+     * The message's body part in each of the port type's bindings. A part one binding carries as
+     * {@code soap:header} may be the body part of another, so each binding's body part counts. A
+     * port type without a binding carries no part as header.
+     *
+     * @return the body parts, null for a binding in which the message has none
+     */
+    private static Stream<Part> getBodyParts(List<Binding> bindings, Operation operation, Direction direction, Message message) {
+        if (bindings.isEmpty())
+            return Stream.of(getBodyPart(message, List.of()));
+        return bindings.stream()
+                .map(binding -> getBodyPart(message, getBindingMessages(binding, operation, direction)));
+    }
+
+    /**
+     * Document style only uses one part for the body: the first one {@code soap:body/@parts}
+     * lists, even if it is also bound as {@code soap:header}. Without that attribute, the first
+     * part not bound as {@code soap:header}. Listed names the message does not have are ignored,
+     * and if none of them is found, the body part is chosen as without the attribute.
+     *
+     * @param bindingMessages the binding's input resp. output carrying the message; none if the
+     *                        port type has no binding
+     * @return the body part, or null if the message has none
+     */
+    private static Part getBodyPart(Message message, List<BindingOperationMessage> bindingMessages) {
+        final var listed = bindingMessages.stream()
+                .map(BindingOperationMessage::getBody)
+                .flatMap(Optional::stream)
+                .map(SoapBody::getParts)
+                .flatMap(Optional::stream)
+                .findFirst();
+        if (listed.isPresent()) {
+            if (listed.get().isEmpty())
+                return null;
+            final var part = listed.get().stream()
+                    .flatMap(name -> message.getParts().stream().filter(p -> name.equals(p.getName())))
+                    .findFirst();
+            if (part.isPresent())
+                return part.get();
+        }
+        final var headerParts = getHeaderPartElements(bindingMessages);
+        return message.getParts().stream()
+                .filter(part -> !headerParts.contains(part.getElement()))
+                .findFirst()
+                .orElse(null);
     }
 
     private record PortTypesByStyle(List<PortType> portTypesRPC, List<PortType> portTypesDocument) {

@@ -128,10 +128,14 @@ public class HttpTransport extends Transport {
 			log.debug("Waiting for running exchanges to finish.");
 			executorService.shutdown();
 			try {
+				long lastWarning = now;
 				while (true) {
                     closeConnections(closeOnlyIdleConnections(now));
-					if (executorService.awaitTermination(5, SECONDS))
+					if (executorService.awaitTermination(1, SECONDS))
 						break;
+					if (System.currentTimeMillis() - lastWarning < 5000)
+						continue;
+					lastWarning = System.currentTimeMillis();
 					log.warn("Still waiting for running exchanges to finish. (Set <transport forceSocketCloseOnHotDeployAfter=\"{}\"> to a lower value to forcibly close connections more quickly.",forceSocketCloseOnHotDeployAfter);
 				}
 			} catch (InterruptedException e) {

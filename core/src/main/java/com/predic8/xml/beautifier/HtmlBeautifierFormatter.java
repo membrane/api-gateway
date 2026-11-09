@@ -14,7 +14,10 @@
 
 package com.predic8.xml.beautifier;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.Writer;
+
+import static org.apache.commons.text.StringEscapeUtils.escapeHtml4;
 
 public class HtmlBeautifierFormatter extends AbstractXMLBeautifierFormatter {
 
@@ -27,9 +30,9 @@ public class HtmlBeautifierFormatter extends AbstractXMLBeautifierFormatter {
 			return;
 		}
 		if (prefix != null && !prefix.isEmpty()) {
-			writer.write("<span class='p'>" + prefix + "</span>:<span class='e'>" + localName);
+			writer.write("<span class='p'>" + escapeHtml4(prefix) + "</span>:<span class='e'>" + escapeHtml4(localName));
 		} else {
-			writer.write("<span class='e'>" + localName);
+			writer.write("<span class='e'>" + escapeHtml4(localName));
 		}
 	} 
 	
@@ -38,11 +41,11 @@ public class HtmlBeautifierFormatter extends AbstractXMLBeautifierFormatter {
 			return;
 		}
 		if (prefix != null && !prefix.isEmpty()) {
-			writer.write("<span class='a'> xmlns:" + prefix + "</span>=\"");
-			writer.write("<span class='v'>" + nsUri + "</span>\"");
+			writer.write("<span class='a'> xmlns:" + escapeHtml4(prefix) + "</span>=\"");
+			writer.write("<span class='v'>" + escapeHtml4(nsUri) + "</span>\"");
 		} else {
 			writer.write("<span class='a'> xmlns</span>=\"");
-			writer.write("<span class='v'>" + nsUri + "</span>\"");
+			writer.write("<span class='v'>" + escapeHtml4(nsUri) + "</span>\"");
 		}
 	}
 	
@@ -51,19 +54,24 @@ public class HtmlBeautifierFormatter extends AbstractXMLBeautifierFormatter {
 			return;
 		}
 		if (prefix != null && !prefix.isEmpty())
-			writer.write("<span class='a'>" + prefix +":</span>");
+			writer.write("<span class='a'>" + escapeHtml4(prefix) +":</span>");
 						
 		if (value.startsWith("http://"))
 		{
-			writer.write("<span class='a'>" + localName + "</span>=\"");
-			writer.write("<span class='v'><a href=\"/restgate/index.do?URL=" + value + "\">" + value + "</a></span>\"");
+			writer.write("<span class='a'>" + escapeHtml4(localName) + "</span>=\"");
+			writer.write("<span class='v'><a href=\"/restgate/index.do?URL=" + escapeHtml4(value) + "\">" + escapeHtml4(value) + "</a></span>\"");
 		}
 		else{
-			writer.write("<span class='a'>" + localName + "</span>=\"");
-			writer.write("<span class='v'>" + value + "</span>\"");
+			writer.write("<span class='a'>" + escapeHtml4(localName) + "</span>=\"");
+			writer.write("<span class='v'>" + escapeHtml4(value) + "</span>\"");
 		}
 	}
 	
+
+	@Override
+	public void writeText(String text) throws IOException {
+		writer.write(escapeHtml4(text));
+	}
 
 	public void writeComment(String text) throws IOException {
 		writer.write("<div class='c'>");

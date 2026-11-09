@@ -47,6 +47,7 @@ import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.isOpenAPI3;
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.isSwagger2;
 import static com.predic8.membrane.core.openapi.util.UriUtil.trimQueryString;
 import static com.predic8.membrane.core.openapi.util.Utils.getResourceAsStream;
+import static org.apache.commons.text.StringEscapeUtils.escapeHtml4;
 
 /**
  * Serves the overview, the OpenAPI documents and the Swagger UI under {@link #PATH}. Shared by
@@ -57,6 +58,7 @@ public class OpenAPIPublisher {
     private static final Logger log = LoggerFactory.getLogger(OpenAPIPublisher.class);
 
     public static final String PATH = "/api-docs";
+    private static final String SEE_OVERVIEW = "See " + PATH + " for the available documents.";
     public static final String PATH_UI = "/api-docs/ui";
     private static final Pattern PATTERN_META = Pattern.compile(PATH + "?/(.+)");
     private static final Pattern PATTERN_UI = Pattern.compile(PATH + "?/ui(?:/(.*))?");
@@ -104,7 +106,7 @@ public class OpenAPIPublisher {
                     .addSubType("openapi")
                     .status(404)
                     .addSubSee("wrong-id")
-                    .detail("Please specify an id of an OpenAPI document. Path should match this pattern: /api-docs/ui/<<id>>")
+                    .detail("Please specify an id of an OpenAPI document. Path should match this pattern: /api-docs/ui/<<id>>. " + SEE_OVERVIEW, true)
                     .buildAndSetResponse(exc);
             return RETURN;
         }
@@ -162,7 +164,7 @@ public class OpenAPIPublisher {
                 .status(404)
                 .addSubType("openapi")
                 .addSubSee("wrong-id")
-                .detail("OpenAPI document with the id %s not found.".formatted(id), true)
+                .detail("OpenAPI document with the id %s not found. %s".formatted(id, SEE_OVERVIEW), true)
                 .topLevel("id", id)
                 .buildAndSetResponse(exc);
         return RETURN;
@@ -195,7 +197,7 @@ public class OpenAPIPublisher {
     private String renderSwaggerUITemplate(String id, OpenAPI api) {
         Map<String, Object> tempCtx = new HashMap<>();
         tempCtx.put("openApiUrl", PATH + "/" + id);
-        tempCtx.put("openApiTitle", api.getInfo().getTitle());
+        tempCtx.put("openApiTitle", escapeHtml4(api.getInfo().getTitle()));
         return swaggerUiHtmlTemplate.make(tempCtx).toString();
     }
 

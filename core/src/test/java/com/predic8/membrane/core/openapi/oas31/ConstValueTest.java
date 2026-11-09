@@ -56,4 +56,26 @@ public class ConstValueTest {
         );
         assertEquals(expectedErrorSize, errors.size());
     }
+
+    static Stream<Arguments> nonStringConstProvider() {
+        return Stream.of(
+                Arguments.of("/const-number", "5", 0),
+                Arguments.of("/const-number", "5.0", 0),
+                Arguments.of("/const-number", "6", 1),
+                Arguments.of("/const-object", "{\"a\": [1, 2.5]}", 0),
+                Arguments.of("/const-object", "{\"a\": [1.0, 2.50]}", 0),
+                Arguments.of("/const-object", "{\"a\": [2.5, 1]}", 1),
+                Arguments.of("/const-object", "{\"a\": [1, 2.5], \"b\": 1}", 1)
+        );
+    }
+
+    /**
+     * See #3587.
+     */
+    @ParameterizedTest
+    @MethodSource("nonStringConstProvider")
+    void nonStringConst(String path, String requestBody, int expectedErrorSize) throws ParseException {
+        var errors = validator.validate(post().path(path).body(requestBody).mediaType(APPLICATION_JSON));
+        assertEquals(expectedErrorSize, errors.size(), errors.toString());
+    }
 }

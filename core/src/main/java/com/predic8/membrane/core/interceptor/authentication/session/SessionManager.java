@@ -213,6 +213,19 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 		return createSession(exc,id);
 	}
 
+	/**
+	 * Creates a session that no cookie refers to, e.g. one only backing the tokens of a client. It expires like any
+	 * other session.
+	 */
+	public Session createSessionWithoutCookie() {
+		final var id = generateSessionID();
+		final var s = new Session();
+		synchronized (sessions) {
+			sessions.put(id, s);
+		}
+		return s;
+	}
+
 	private Session createSession(Exchange exc, String id)
 	{
 		Session s = new Session();

@@ -22,6 +22,8 @@ import com.predic8.membrane.core.transport.http.Connection;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.twitter.hpack.Encoder;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
@@ -43,6 +45,8 @@ import java.util.concurrent.TimeUnit;
 import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.http.Request.post;
 import static com.predic8.membrane.core.transport.http2.frame.Error.ERROR_CANCEL;
+import static com.predic8.membrane.core.transport.http2.frame.Error.ERROR_FLOW_CONTROL_ERROR;
+import static com.predic8.membrane.core.transport.http2.frame.Error.ERROR_PROTOCOL_ERROR;
 import static com.predic8.membrane.core.transport.http2.frame.Frame.*;
 import static com.predic8.membrane.core.transport.http2.frame.DataFrame.FLAG_END_STREAM;
 import static com.predic8.membrane.core.transport.http2.frame.SettingsFrame.ID_SETTINGS_MAX_HEADER_LIST_SIZE;
@@ -87,8 +91,17 @@ class Http2ClientTest {
     /** RST_STREAM frame on stream 1 with error code REFUSED_STREAM. */
     private static final byte[] RST_STREAM_1_REFUSED_STREAM = {0, 0, 4, 0x3, 0, 0, 0, 0, 1, 0, 0, 0, 0x7};
 
+    /** RST_STREAM frame on stream 1 with error code CANCEL. */
+    private static final byte[] RST_STREAM_1_CANCEL = {0, 0, 4, 0x3, 0, 0, 0, 0, 1, 0, 0, 0, 0x8};
+
     /** PING frame without ACK and with an all-zero payload. */
     private static final byte[] PING = {0, 0, 8, 0x6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
+    /** GOAWAY frame with last-stream-id 0 and NO_ERROR: the peer processed no stream. */
+    private static final byte[] GOAWAY_LAST_STREAM_0 = {0, 0, 8, 0x7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
+    /** GOAWAY frame with last-stream-id 1 and NO_ERROR: the peer may still answer stream 1. */
+    private static final byte[] GOAWAY_LAST_STREAM_1 = {0, 0, 8, 0x7, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0};
 
     @Test
     void closeImmediatelyFailsPendingCall() throws Exception {
@@ -112,6 +125,154 @@ class Http2ClientTest {
             peer.getOutputStream().flush();
         });
         assertTrue(e.getMessage().contains("reset by the peer"), e.getMessage());
+    }
+
+    /** The peer did not process a refused stream (RFC 9113 §8.7), so the call may be retried for every method. */
+    @Test
+    void refusedStreamFailsCallAsUnprocessed() throws Exception {
+        final var e = assertPendingCallFails((client, peer) -> {
+            peer.getOutputStream().write(RST_STREAM_1_REFUSED_STREAM);
+            peer.getOutputStream().flush();
+        });
+        assertInstanceOf(StreamNotProcessedException.class, e);
+    }
+
+    /**
+     * A WINDOW_UPDATE that makes the stream window exceed 2^31-1 is a stream error of type FLOW_CONTROL_ERROR
+     * (RFC 9113 §6.9.1). The stream is reset, so no response will arrive and the call fails.
+     */
+    @Test
+    void windowUpdateBeyondTheMaximumFailsCall() throws Exception {
+        final var e = assertPendingCallFails((client, peer) -> {
+            peer.getOutputStream().write(new byte[]{0, 0, 4, TYPE_WINDOW_UPDATE, 0, 0, 0, 0, 1, 0x7F, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF});
+            peer.getOutputStream().flush();
+            assertEquals(ERROR_FLOW_CONTROL_ERROR, readUntilFrame(peer.getInputStream(), TYPE_RST_STREAM)[3]);
+        });
+        assertTrue(e.getMessage().contains("flow-control window"), e.getMessage());
+    }
+
+    /**
+     * DATA beyond the receive window, here even before the response headers, resets the stream with FLOW_CONTROL_ERROR
+     * (RFC 9113 §6.9.1). No response will arrive then, so the call fails. 8 frames exceed the 131070 bytes announced.
+     */
+    @Test
+    void dataBeyondTheWindowFailsCall() throws Exception {
+        final var e = assertPendingCallFails((client, peer) -> {
+            for (int i = 0; i < 8; i++) {
+                peer.getOutputStream().write(new byte[]{0, 0x40, 0, TYPE_DATA, 0, 0, 0, 0, 1});
+                peer.getOutputStream().write(new byte[16384]);
+            }
+            peer.getOutputStream().flush();
+            assertEquals(ERROR_FLOW_CONTROL_ERROR, readUntilFrame(peer.getInputStream(), TYPE_RST_STREAM)[3]);
+        });
+        assertTrue(e.getMessage().contains("flow-control window"), e.getMessage());
+    }
+
+    /**
+     * A connection error is reported with GOAWAY (RFC 9113 §5.4.1), and then the connection is closed: nothing else
+     * would close it, as its streams never reach the CLOSED state.
+     */
+    @Test
+    void connectionErrorSendsGoawayAndClosesTheConnection() throws Exception {
+        final var router = new DefaultRouter();
+        try (final var backend = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
+            backend.setSoTimeout(2000);
+            final var connection = createConnection(router, backend);
+            try (final var peer = backend.accept()) {
+                peer.setSoTimeout(2000);
+                final var client = new Http2Client(connection, false);
+                final var call = callAsync(client);
+
+                readUntilRequestHeaders(peer);
+                // PING with 7 bytes: FRAME_SIZE_ERROR
+                peer.getOutputStream().write(new byte[]{0, 0, 7, TYPE_PING, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7});
+                peer.getOutputStream().flush();
+
+                assertEquals(0x6, readUntilFrame(peer.getInputStream(), TYPE_GOAWAY)[7], "FRAME_SIZE_ERROR");
+                assertEquals(-1, peer.getInputStream().read(), "The connection is closed.");
+                assertThrows(ExecutionException.class, () -> call.get(2, TimeUnit.SECONDS));
+            }
+        } finally {
+            router.stop();
+        }
+    }
+
+    @Test
+    void cancelledStreamIsNotReportedAsUnprocessed() throws Exception {
+        final var e = assertPendingCallFails((client, peer) -> {
+            peer.getOutputStream().write(RST_STREAM_1_CANCEL);
+            peer.getOutputStream().flush();
+        });
+        assertFalse(e instanceof StreamNotProcessedException);
+    }
+
+    /**
+     * The peer did not process streams above the GOAWAY's last-stream-id (RFC 9113 §6.8), so their calls fail at once,
+     * in a way that may be retried for every method.
+     */
+    @Test
+    void goawayFailsUnprocessedCall() throws Exception {
+        final var e = assertPendingCallFails((client, peer) -> {
+            peer.getOutputStream().write(GOAWAY_LAST_STREAM_0);
+            peer.getOutputStream().flush();
+        });
+        assertInstanceOf(StreamNotProcessedException.class, e);
+    }
+
+    @Test
+    void goawayKeepsProcessedCall() throws Exception {
+        final var router = new DefaultRouter();
+        try (final var backend = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
+            backend.setSoTimeout(2000);
+            final var connection = createConnection(router, backend);
+            try (final var peer = backend.accept()) {
+                peer.setSoTimeout(2000);
+                final var client = new Http2Client(connection, false);
+                final var call = callAsync(client);
+
+                readUntilRequestHeaders(peer);
+                peer.getOutputStream().write(GOAWAY_LAST_STREAM_1);
+                peer.getOutputStream().write(RESPONSE_HEADERS_200_END_STREAM);
+                peer.getOutputStream().flush();
+
+                assertEquals(200, call.get(2, TimeUnit.SECONDS).getStatusCode());
+            }
+        } finally {
+            router.stop();
+        }
+    }
+
+    /**
+     * After GOAWAY the connection takes no new streams: reserveStream() fails, which makes Http2ClientPool pass it over,
+     * and so does a call.
+     * That holds for any last-stream-id, including 2^31-1, which a peer sends to announce a graceful shutdown.
+     */
+    @ParameterizedTest
+    @ValueSource(ints = {0, 1, Integer.MAX_VALUE})
+    void goawayRejectsNewStreams(int lastStreamId) throws Exception {
+        final var router = new DefaultRouter();
+        try (final var backend = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
+            backend.setSoTimeout(2000);
+            final var connection = createConnection(router, backend);
+            try (final var peer = backend.accept()) {
+                peer.setSoTimeout(2000);
+                final var client = new Http2Client(connection, false);
+                peer.getOutputStream().write(goaway(lastStreamId));
+                peer.getOutputStream().flush();
+
+                final var deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(2);
+                while (client.reserveStream()) {
+                    if (System.nanoTime() > deadline)
+                        fail("The connection still takes new streams after GOAWAY");
+                    Thread.sleep(10);
+                }
+
+                final var e = assertThrows(ExecutionException.class, () -> callAsync(client).get(2, TimeUnit.SECONDS));
+                assertInstanceOf(StreamNotProcessedException.class, e.getCause().getCause());
+            }
+        } finally {
+            router.stop();
+        }
     }
 
     @Test
@@ -344,6 +505,36 @@ class Http2ClientTest {
         }
     }
 
+    /**
+     * The stream is reset with PROTOCOL_ERROR (RFC 9113 §5.4.2, §8.1.1), also if the malformed header block ends
+     * the stream: the stream error is detected before the block's END_STREAM takes effect.
+     */
+    @ParameterizedTest(name = "endStream={0}")
+    @ValueSource(booleans = {false, true})
+    void malformedResponseHeaderFieldFailsCall(boolean endStream) throws Exception {
+        final var router = new DefaultRouter();
+        try (final var backend = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
+            backend.setSoTimeout(2000);
+            final var connection = createConnection(router, backend);
+            try (final var peer = backend.accept()) {
+                peer.setSoTimeout(2000);
+                final var client = new Http2Client(connection, false);
+                final var call = callAsync(client);
+
+                readUntilRequestHeaders(peer);
+                peer.getOutputStream().write(headersFrame(1, endStream ? 0x5 : 0x4, new Encoder(4096), ":status", "200", "X-Upper", "a"));
+                peer.getOutputStream().flush();
+
+                final var e = assertThrows(ExecutionException.class, () -> call.get(2, TimeUnit.SECONDS));
+                final var cause = assertInstanceOf(IOException.class, e.getCause().getCause());
+                assertTrue(cause.getMessage().contains("malformed"), cause.getMessage());
+                assertEquals(ERROR_PROTOCOL_ERROR, readUntilFrame(peer.getInputStream(), TYPE_RST_STREAM)[3]);
+            }
+        } finally {
+            router.stop();
+        }
+    }
+
     @Test
     void oversizedResponseHeaderFieldFailsCall() throws Exception {
         final var router = new DefaultRouter();
@@ -445,6 +636,89 @@ class Http2ClientTest {
                 final var response = call.get(2, TimeUnit.SECONDS);
                 final var e = assertThrows(ReadingBodyException.class, response::getBodyAsStringDecoded);
                 assertTrue(e.getCause().getMessage().contains("header size limit"), e.getCause().getMessage());
+            }
+        } finally {
+            router.stop();
+        }
+    }
+
+    /** As for an oversized trailer, but the stream is reset with PROTOCOL_ERROR (RFC 9113 §8.1.1). */
+    @Test
+    void malformedTrailerFailsBodyRead() throws Exception {
+        final var router = new DefaultRouter();
+        try (final var backend = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
+            backend.setSoTimeout(2000);
+            final var connection = createConnection(router, backend);
+            try (final var peer = backend.accept()) {
+                peer.setSoTimeout(2000);
+                final var client = new Http2Client(connection, false);
+                final var call = callAsync(client);
+
+                readUntilRequestHeaders(peer);
+                final var encoder = new Encoder(4096);
+                peer.getOutputStream().write(headersFrame(1, 0x4, encoder, ":status", "200"));
+                peer.getOutputStream().write(DATA_1_AB);
+                peer.getOutputStream().write(headersFrame(1, 0x5, encoder, "X-Upper", "a"));
+                peer.getOutputStream().flush();
+
+                final var response = call.get(2, TimeUnit.SECONDS);
+                final var e = assertThrows(ReadingBodyException.class, response::getBodyAsStringDecoded);
+                assertTrue(e.getCause().getMessage().contains("malformed"), e.getCause().getMessage());
+                assertEquals(ERROR_PROTOCOL_ERROR, readUntilFrame(peer.getInputStream(), TYPE_RST_STREAM)[3]);
+            }
+        } finally {
+            router.stop();
+        }
+    }
+
+    /**
+     * A :status that is not exactly three digits between 100 and 599 (RFC 9110 §15) is a malformed response
+     * (RFC 9113 §8.3): only its stream is reset, the connection stays usable.
+     */
+    @ParameterizedTest(name = ":status={0}")
+    @ValueSource(strings = {"abc", "+200", "0200", "-1", "20", "000", "099", "600"})
+    void invalidStatusFailsOnlyItsCall(String status) throws Exception {
+        malformedResponseFailsOnlyItsCall(":status", status);
+    }
+
+    /**
+     * Every response carries :status (RFC 9113 §8.3.2); a response header block without it is malformed.
+     */
+    @Test
+    void missingStatusFailsOnlyItsCall() throws Exception {
+        malformedResponseFailsOnlyItsCall("content-type", "text/plain");
+    }
+
+    /**
+     * Answers the first call with a header block of the given fields, expects it to fail with a stream reset, and
+     * checks that a second call on the same connection still works.
+     */
+    private void malformedResponseFailsOnlyItsCall(String... namesAndValues) throws Exception {
+        final var router = new DefaultRouter();
+        try (final var backend = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
+            backend.setSoTimeout(2000);
+            final var connection = createConnection(router, backend);
+            try (final var peer = backend.accept()) {
+                peer.setSoTimeout(2000);
+                final var client = new Http2Client(connection, false);
+                final var encoder = new Encoder(4096);
+
+                final var first = callAsync(client);
+                readUntilRequestHeaders(peer);
+                peer.getOutputStream().write(headersFrame(1, 0x4, encoder, namesAndValues));
+                peer.getOutputStream().flush();
+
+                final var e = assertThrows(ExecutionException.class, () -> first.get(2, TimeUnit.SECONDS));
+                final var cause = assertInstanceOf(IOException.class, e.getCause().getCause());
+                assertTrue(cause.getMessage().contains("malformed"), cause.getMessage());
+                assertEquals(ERROR_PROTOCOL_ERROR, readUntilFrame(peer.getInputStream(), TYPE_RST_STREAM)[3]);
+
+                final var second = callAsync(client);
+                readUntilFrame(peer.getInputStream(), TYPE_HEADERS);
+                peer.getOutputStream().write(headersFrame(3, 0x5, encoder, ":status", "200"));
+                peer.getOutputStream().flush();
+
+                assertEquals(200, second.get(2, TimeUnit.SECONDS).getStatusCode());
             }
         } finally {
             router.stop();
@@ -652,6 +926,12 @@ class Http2ClientTest {
         var received = 0;
         while (received < length)
             received += readUntilFrame(in, TYPE_DATA).length;
+    }
+
+    /** GOAWAY frame with the given last-stream-id and NO_ERROR. */
+    private static byte[] goaway(int lastStreamId) {
+        return new byte[]{0, 0, 8, TYPE_GOAWAY, 0, 0, 0, 0, 0,
+                (byte) (lastStreamId >>> 24), (byte) (lastStreamId >>> 16), (byte) (lastStreamId >>> 8), (byte) lastStreamId, 0, 0, 0, 0};
     }
 
     /** Builds a HEADERS frame whose header block holds the given name/value pairs. */

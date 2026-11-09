@@ -296,6 +296,22 @@ class XMLProtectionInterceptorTest {
     }
 
     @Test
+    @DisplayName("An internal entity is a security violation, even while DTDs are being removed")
+    void internalEntityIsRejected() throws Exception {
+        final var exc = xml("""
+                <?xml version="1.0"?>
+                <!DOCTYPE foo [
+                     <!ENTITY e "expanded">
+                   ]>
+                <foo a="&e;"/>
+                """);
+
+        assertEquals(ABORT, interceptor().handleRequest(exc));
+        assertRejectedByPolicy(exc);
+        assertTrue(bodyOf(exc).contains("Entity declaration"));
+    }
+
+    @Test
     void tooLongElementNameIsRejected() throws Exception {
         Exchange exc = xmlFrom("/xml/long-element-name.xml");
 

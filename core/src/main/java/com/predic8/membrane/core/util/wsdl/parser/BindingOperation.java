@@ -37,4 +37,8 @@ public class BindingOperation extends WSDLElement{
     public List<BindingOperationMessage> getInputs() {
         return instantiateWSDLChildren("input", BindingOperationMessage.class);
     }
+
+    public List<BindingOperationMessage> getOutputs() {
+        return instantiateWSDLChildren("output", BindingOperationMessage.class);
+    }
 }

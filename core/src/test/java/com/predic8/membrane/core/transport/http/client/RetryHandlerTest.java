@@ -15,10 +15,12 @@
 package com.predic8.membrane.core.transport.http.client;
 
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.http.ConnectTimeoutException;
 import com.predic8.membrane.core.transport.http.HttpClientStatusEventBus;
 import com.predic8.membrane.core.transport.http.HttpClientStatusEventListener;
+import com.predic8.membrane.core.transport.http2.StreamNotProcessedException;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -27,6 +29,7 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.net.ConnectException;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
@@ -183,6 +186,60 @@ class RetryHandlerTest {
         void socketExceptionPost() {
             RetryableExchangeCallMock mock = new RetryableExchangeCallMock(new SocketException("Problem!"));
             assertThrows(SocketException.class, () -> rh.executeWithRetries(post("/foo").buildExchange(), mock));
+            assertEquals(1, mock.attempts);
+        }
+
+        /**
+         * The backend did not process the request (RFC 9113 §8.7), so sending it again is safe for every method.
+         */
+        @Test
+        void streamNotProcessedIsRetriedForPost() {
+            RetryableExchangeCallMock mock = new RetryableExchangeCallMock(new StreamNotProcessedException("GOAWAY"));
+            assertThrows(StreamNotProcessedException.class, () -> rh.executeWithRetries(post("/foo").buildExchange(), mock));
+            assertEquals(3, mock.attempts);
+        }
+
+        /**
+         * A request body that could not be read cannot be sent again, so not even an idempotent request is
+         * retried: another attempt would only send the header fields again.
+         */
+        @Test
+        void requestBodyFailureIsNotRetried() throws Exception {
+            final var exc = get("/foo").buildExchange();
+            final var mock = new RetryableExchangeCallMock(new ReadingBodyException(new IOException("Message body too large."), exc.getRequest()));
+            assertThrows(ReadingBodyException.class, () -> rh.executeWithRetries(exc, mock));
+            assertEquals(1, mock.attempts);
+        }
+
+        /**
+         * A response body that could not be read is the backend's failure, not the sender's. With another
+         * node available an idempotent request is sent there, unlike a failing request body.
+         */
+        @Test
+        void responseBodyFailureIsRetriedOnAnotherNode() throws Exception {
+            final var exc = get("/foo").buildExchange();
+            exc.setDestinations(List.of("http://node1.example.com/", "http://node2.example.com/"));
+            final var destinations = new ArrayList<String>();
+
+            rh.executeWithRetries(exc, (e, dest, attempt) -> {
+                destinations.add(dest);
+                if (attempt == 0)
+                    throw new ReadingBodyException(new IOException("Connection reset"), ok().build());
+                e.setResponse(ok().build());
+                return false;
+            });
+
+            assertEquals(List.of("http://node1.example.com/", "http://node2.example.com/"), destinations);
+            assertEquals(200, exc.getResponse().getStatusCode());
+        }
+
+        @Test
+        void responseBodyFailureIsNotRetriedForPost() throws Exception {
+            final var exc = post("/foo").buildExchange();
+            exc.setDestinations(List.of("http://node1.example.com/", "http://node2.example.com/"));
+            final var mock = new RetryableExchangeCallMock(new ReadingBodyException(new IOException("Connection reset"), ok().build()));
+
+            assertThrows(ReadingBodyException.class, () -> rh.executeWithRetries(exc, mock));
             assertEquals(1, mock.attempts);
         }
 

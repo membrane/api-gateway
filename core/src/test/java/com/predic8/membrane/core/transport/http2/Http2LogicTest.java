@@ -15,20 +15,36 @@
 package com.predic8.membrane.core.transport.http2;
 
 import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.transport.http2.frame.FatalConnectionException;
+import com.predic8.membrane.core.util.EndOfStreamException;
+import com.twitter.hpack.Encoder;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.net.Socket;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
+import static com.predic8.membrane.core.transport.http2.frame.Error.ERROR_FLOW_CONTROL_ERROR;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
@@ -53,17 +69,76 @@ class Http2LogicTest {
                 arguments("DATA padded beyond its payload", new byte[]{0, 0, 2, 0x0, 0x8, 0, 0, 0, 1, 5, 'a'}),
                 arguments("HEADERS padded beyond its payload", new byte[]{0, 0, 2, 0x1, 0x4 | 0x8, 0, 0, 0, 1, 5, (byte) 0x88}),
                 arguments("SETTINGS with 5 bytes", new byte[]{0, 0, 5, 0x4, 0, 0, 0, 0, 0, 0, 0x3, 0, 0, 0}),
+                arguments("GOAWAY with 4 bytes", new byte[]{0, 0, 4, 0x7, 0, 0, 0, 0, 0, 0, 0, 0, 0}),
                 // The client opened stream 3, but even ids belong to the server, which opened none: stream 2 is idle.
                 arguments("WINDOW_UPDATE on an idle stream of the other parity", new byte[]{
                         0, 0, 3, 0x1, 0x5, 0, 0, 0, 3, (byte) 0x82, (byte) 0x84, (byte) 0x86,
-                        0, 0, 4, 0x8, 0, 0, 0, 0, 2, 0, 0, 0, 1})
+                        0, 0, 4, 0x8, 0, 0, 0, 0, 2, 0, 0, 0, 1}),
+                // A GET request on stream 2: a client opens streams with odd ids only (RFC 9113 §5.1.1).
+                arguments("HEADERS opening a stream with an even id", new byte[]{0, 0, 3, 0x1, 0x5, 0, 0, 0, 2, (byte) 0x82, (byte) 0x84, (byte) 0x86}),
+                // A stream cannot depend on itself (RFC 9113 §5.3.1), also while it is idle.
+                arguments("PRIORITY of an idle stream depending on itself", new byte[]{0, 0, 5, 0x2, 0, 0, 0, 0, 1, 0, 0, 0, 1, 15})
         );
+    }
+
+    static Stream<Arguments> windowOverflows() {
+        return Stream.of(
+                // The connection window starts at 65535, so it would exceed 2^31-1 (RFC 9113 §6.9.1).
+                arguments("WINDOW_UPDATE beyond 2^31-1 on the connection", new byte[]{0, 0, 4, 0x8, 0, 0, 0, 0, 0, 0x7F, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF}),
+                // A GET request on stream 1, whose window is raised to exactly 2^31-1. One more byte of initial window
+                // size would exceed it (RFC 9113 §6.9.2).
+                arguments("SETTINGS_INITIAL_WINDOW_SIZE pushing a stream window beyond 2^31-1", new byte[]{
+                        0, 0, 3, 0x1, 0x4, 0, 0, 0, 1, (byte) 0x82, (byte) 0x84, (byte) 0x86,
+                        0, 0, 4, 0x8, 0, 0, 0, 0, 1, 0x7F, (byte) 0xFF, 0, 0,
+                        0, 0, 6, 0x4, 0, 0, 0, 0, 0, 0, 0x4, 0, 1, 0, 0})
+        );
+    }
+
+    /** A window exceeding 2^31-1 is a connection error of type FLOW_CONTROL_ERROR, the code its GOAWAY carries. */
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("windowOverflows")
+    void windowOverflowIsFlowControlError(String description, byte[] frames) {
+        final var e = assertThrows(FatalConnectionException.class, () -> createLogic(frames).handle());
+        assertEquals(ERROR_FLOW_CONTROL_ERROR, e.getErrorCode());
     }
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("invalidFrames")
     void invalidFrameIsConnectionError(String description, byte[] frame) {
         assertThrows(FatalConnectionException.class, () -> createLogic(frame).handle());
+    }
+
+    /**
+     * A connection error is reported with GOAWAY before the connection is closed (RFC 9113 §5.4.1). It carries the
+     * error code and the last stream the client opened, which was handed over and may have been processed.
+     */
+    @Test
+    void connectionErrorSendsGoaway() throws Exception {
+        final var in = new ByteArrayOutputStream();
+        in.write(headersFrame(true, new Encoder(4096), withGet()));
+        // PING with 7 bytes: FRAME_SIZE_ERROR
+        in.write(new byte[]{0, 0, 7, 0x6, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7});
+        final var out = new ByteArrayOutputStream();
+        // Buffered like a socket's stream: the GOAWAY only arrives if the sender flushes it before it stops.
+        final var logic = new Http2Logic(EXECUTOR, new Socket(), new ByteArrayInputStream(in.toByteArray()), new BufferedOutputStream(out), false, new RecordingHandler());
+        logic.init();
+
+        assertThrows(FatalConnectionException.class, logic::handle);
+
+        final var goaway = firstFrame(out.toByteArray(), 0x7);
+        assertNotNull(goaway, "GOAWAY is sent.");
+        assertArrayEquals(new byte[]{0, 0, 0, 1, 0, 0, 0, 0x6}, goaway, "Last stream id 1, FRAME_SIZE_ERROR.");
+    }
+
+    /** The payload of the first frame of the given type in the output, or null. */
+    private static byte[] firstFrame(byte[] output, int type) {
+        for (int i = 0; i + 9 <= output.length; ) {
+            final var length = ((output[i] & 0xff) << 16) | ((output[i + 1] & 0xff) << 8) | (output[i + 2] & 0xff);
+            if (output[i + 3] == type)
+                return Arrays.copyOfRange(output, i + 9, i + 9 + length);
+            i += 9 + length;
+        }
+        return null;
     }
 
     /** Only the SETTINGS frame sent on connection start is acknowledged; a second ACK has nothing to acknowledge. */
@@ -76,6 +151,95 @@ class Http2LogicTest {
         assertThrows(FatalConnectionException.class, () -> createLogic(in.toByteArray()).handle());
     }
 
+    /**
+     * Each PING is answered by a queued PING ACK. The sender does not run here, like for a client that does not read,
+     * so the answers pile up until the connection is closed. The SETTINGS sent on connection start are queued too.
+     */
+    @Test
+    void tooManyFramesWaitingToBeSentCloseTheConnection() throws Exception {
+        assertThrows(FatalConnectionException.class, () -> createLogic(pings(Http2Logic.MAX_BUFFERED_FRAMES)).handle());
+    }
+
+    @Test
+    void framesWaitingToBeSentUpToTheLimitAreAccepted() throws Exception {
+        assertThrows(EndOfStreamException.class, () -> createLogic(pings(Http2Logic.MAX_BUFFERED_FRAMES - 1)).handle());
+    }
+
+    @Test
+    void windowUpdateUpToTheMaximumIsAccepted() {
+        final var increment = Integer.MAX_VALUE - 65535;
+        assertThrows(EndOfStreamException.class, () -> createLogic(new byte[]{0, 0, 4, 0x8, 0, 0, 0, 0, 0,
+                (byte) (increment >>> 24), (byte) (increment >>> 16), (byte) (increment >>> 8), (byte) increment}).handle());
+    }
+
+    /**
+     * A WINDOW_UPDATE that makes a stream window exceed 2^31-1 is a stream error of type FLOW_CONTROL_ERROR
+     * (RFC 9113 §6.9.1): the stream is reset, the connection stays open, and the window is not changed. The stream is
+     * reset once: a second such WINDOW_UPDATE arrives before the reset is written and is ignored.
+     */
+    @Test
+    void windowUpdateBeyondTheMaximumResetsTheStream() throws Exception {
+        final var get = headersFrame(false, new Encoder(4096), withGet());
+        final var baseline = createLogic(get);
+        assertThrows(EndOfStreamException.class, baseline::handle);
+
+        final var in = new ByteArrayOutputStream();
+        in.write(get);
+        in.write(new byte[]{0, 0, 4, 0x8, 0, 0, 0, 0, 1, 0x7F, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF});
+        in.write(new byte[]{0, 0, 4, 0x8, 0, 0, 0, 0, 1, 0x7F, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF});
+        final var logic = createLogic(in.toByteArray());
+
+        assertThrows(EndOfStreamException.class, logic::handle, "A stream error does not close the connection.");
+
+        assertEquals(65535, logic.streams.get(1).getPeerFlowControl().peerWindowSize);
+        assertEquals(baseline.sender.getBufferedFrames() + 1, logic.sender.getBufferedFrames(), "One RST_STREAM is queued.");
+    }
+
+    /**
+     * HEADERS on a stream reset because of a stream error, still in flight before the reset is written, are ignored
+     * like its DATA. Otherwise, trailers ending the stream could close it first, and the reset would never be sent.
+     * Their header block is decoded all the same: the next request refers to the field it added to the HPACK dynamic
+     * table.
+     */
+    @Test
+    void trailersOnAStreamResetForAStreamErrorAreIgnored() throws Exception {
+        final var encoder = new Encoder(4096);
+        final var in = new ByteArrayOutputStream();
+        in.write(headersFrame(false, encoder, withGet()));
+        in.write(new byte[]{0, 0, 4, 0x8, 0, 0, 0, 0, 1, 0x7F, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF});
+        in.write(headersFrame(true, encoder, "x-trailer", "1"));
+        in.write(headersFrame(3, true, encoder, withGet("x-trailer", "1")));
+        final var handler = new RecordingHandler();
+        final var logic = createLogic(in.toByteArray(), handler);
+
+        assertThrows(EndOfStreamException.class, logic::handle);
+
+        final var reset = logic.streams.get(1);
+        assertFalse(reset.getMessage().getBody().hasTrailer(), "The trailers are ignored.");
+        assertEquals(StreamState.OPEN, reset.getState(), "Their END_STREAM is not applied: the reset closes the stream.");
+        assertEquals("1", handler.message.getHeader().getFirstValue("x-trailer"), "The HPACK dynamic table stayed in sync.");
+        assertEquals(bufferedFramesWithoutTheWindowOverflow() + 1, logic.sender.getBufferedFrames(), "The RST_STREAM stays queued.");
+    }
+
+    /** The frames {@link #trailersOnAStreamResetForAStreamErrorAreIgnored} queues without the WINDOW_UPDATE resetting stream 1. */
+    private static int bufferedFramesWithoutTheWindowOverflow() throws Exception {
+        final var encoder = new Encoder(4096);
+        final var in = new ByteArrayOutputStream();
+        in.write(headersFrame(false, encoder, withGet()));
+        in.write(headersFrame(true, encoder, "x-trailer", "1"));
+        in.write(headersFrame(3, true, encoder, withGet("x-trailer", "1")));
+        final var baseline = createLogic(in.toByteArray());
+        assertThrows(EndOfStreamException.class, baseline::handle);
+        return baseline.sender.getBufferedFrames();
+    }
+
+    private static byte[] pings(int count) {
+        final var in = new ByteArrayOutputStream();
+        for (int i = 0; i < count; i++)
+            in.writeBytes(new byte[]{0, 0, 8, 0x6, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8});
+        return in.toByteArray();
+    }
+
     @Test
     void initAfterStopSendingDoesNotStartSender() throws Exception {
         final var logic = createLogic(new byte[0]);
@@ -85,20 +249,645 @@ class Http2LogicTest {
         assertNull(logic.senderFuture);
     }
 
+    /** Field names and values RFC 9113 §8.2.1 requires to be treated as malformed. */
+    static Stream<Arguments> malformedFields() {
+        return Stream.of(
+                arguments("upper-case name", bytes("X-Foo"), bytes("bar")),
+                arguments("non-ASCII name", "authorızation".getBytes(UTF_8), bytes("secret")),
+                arguments("name with space", bytes("x foo"), bytes("bar")),
+                arguments("name with colon", bytes("x:foo"), bytes("bar")),
+                arguments("name with control character", bytes("x\u0001foo"), bytes("bar")),
+                // An empty name is not listed: the HPACK decoder already rejects it as a connection error.
+                arguments("value with NUL", bytes("x-foo"), bytes("b\0ar")),
+                arguments("value with CR", bytes("x-foo"), bytes("b\rar")),
+                arguments("value with LF", bytes("x-foo"), bytes("b\nar")),
+                arguments("value with leading space", bytes("x-foo"), bytes(" bar")),
+                arguments("value with trailing tab", bytes("x-foo"), bytes("bar\t"))
+        );
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("malformedFields")
+    void malformedFieldIsRejected(String description, byte[] name, byte[] value) throws Exception {
+        final var handler = new RecordingHandler();
+
+        assertThrows(EndOfStreamException.class, () -> createLogic(requestHeadersFrame(name, value), handler).handle());
+
+        assertNull(handler.message, "The request must not be handed over.");
+        assertEquals(1, handler.malformedStreamId);
+    }
+
+    /** A malformed message is a protocol error (RFC 9113 §8.1.1), even if it is also too large. */
+    @Test
+    void oversizedMalformedFieldIsRejectedAsMalformed() throws Exception {
+        final var handler = new RecordingHandler();
+
+        assertThrows(EndOfStreamException.class, () -> createLogic(requestHeadersFrame(bytes("X-Foo"), bytes("a".repeat(9000))), handler).handle());
+
+        assertNull(handler.message, "The request must not be handed over.");
+        assertEquals(1, handler.malformedStreamId);
+        assertEquals(0, handler.oversizedStreamId);
+    }
+
+    @Test
+    void lowerCaseTokenFieldIsAccepted() throws Exception {
+        final var handler = new RecordingHandler();
+
+        assertThrows(EndOfStreamException.class, () -> createLogic(requestHeadersFrame(bytes("x-foo"), bytes("b a\"r")), handler).handle());
+
+        assertNotNull(handler.message);
+        assertEquals("b a\"r", handler.message.getHeader().getFirstValue("x-foo"));
+        assertEquals(0, handler.malformedStreamId);
+    }
+
+    /**
+     * Values are read byte for byte, as by the HTTP/1.1 parser, whatever the default charset of the JVM is.
+     */
+    @Test
+    void nonAsciiValueIsDecodedByteForByte() throws Exception {
+        final var handler = new RecordingHandler();
+
+        assertThrows(EndOfStreamException.class, () -> createLogic(requestHeadersFrame(bytes("x-foo"), new byte[]{'c', 'a', 'f', (byte) 0xE9}), handler).handle());
+
+        assertNotNull(handler.message);
+        assertEquals("café", handler.message.getHeader().getFirstValue("x-foo"));
+    }
+
+    /** Requests RFC 9113 §8.1.1, §8.2.2 and §8.3 require to be treated as malformed, each found by h2spec. */
+    static Stream<Arguments> malformedRequests() {
+        return Stream.of(
+                arguments("unknown pseudo-header", (Object) withGet(":foo", "bar")),
+                arguments("response pseudo-header", (Object) withGet(":status", "200")),
+                arguments("pseudo-header after a regular field", (Object) fields(":method", "GET", ":scheme", "https", "x-foo", "bar", ":path", "/")),
+                arguments("connection-specific field", (Object) withGet("connection", "keep-alive")),
+                arguments("transfer-encoding", (Object) withGet("transfer-encoding", "chunked")),
+                arguments("upgrade", (Object) withGet("upgrade", "websocket")),
+                arguments("te other than trailers", (Object) withGet("te", "gzip")),
+                arguments("empty :path", (Object) fields(":method", "GET", ":scheme", "https", ":path", "")),
+                arguments("no :method", (Object) fields(":scheme", "https", ":path", "/")),
+                arguments("no :scheme", (Object) fields(":method", "GET", ":path", "/")),
+                arguments("no :path", (Object) fields(":method", "GET", ":scheme", "https")),
+                arguments("duplicate :method", (Object) withGet(":method", "GET")),
+                arguments("duplicate :scheme", (Object) fields(":method", "GET", ":scheme", "https", ":scheme", "https", ":path", "/")),
+                arguments("duplicate :path", (Object) fields(":method", "GET", ":scheme", "https", ":path", "/", ":path", "/")),
+                arguments("CONNECT without :authority", (Object) fields(":method", "CONNECT")),
+                arguments("CONNECT with :path", (Object) fields(":method", "CONNECT", ":authority", "example.com:443", ":path", "/")),
+                arguments("content-length but no body", (Object) withGet("content-length", "5")),
+                arguments("invalid content-length", (Object) withGet("content-length", "abc"))
+        );
+    }
+
+    /** The body of a request must be as long as its content-length (RFC 9113 §8.1.1). */
+    static Stream<Arguments> bodiesNotMatchingContentLength() throws IOException {
+        return Stream.of(
+                arguments("longer DATA frame", "1", (Object) new byte[][]{dataFrame(true, "test")}),
+                arguments("longer DATA frames", "3", (Object) new byte[][]{dataFrame(false, "ab"), dataFrame(true, "cd")}),
+                arguments("shorter DATA frames", "10", (Object) new byte[][]{dataFrame(false, "ab"), dataFrame(true, "cd")}),
+                arguments("shorter DATA frame before trailers", "10", (Object) new byte[][]{dataFrame(false, "ab"), headersFrame(true, new Encoder(4096), "x-foo", "bar")})
+        );
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("bodiesNotMatchingContentLength")
+    void bodyNotMatchingContentLengthFails(String description, String contentLength, byte[][] frames) throws Exception {
+        final var handler = new RecordingHandler();
+
+        assertThrows(EndOfStreamException.class, () -> createLogic(requestWithBody(contentLength, frames), handler).handle());
+
+        assertNotNull(handler.message);
+        assertThrows(ReadingBodyException.class, handler.message.getBody()::read);
+    }
+
+    @Test
+    void bodyMatchingContentLengthIsRead() throws Exception {
+        final var handler = new RecordingHandler();
+
+        assertThrows(EndOfStreamException.class, () -> createLogic(requestWithBody("4", dataFrame(false, "te"), dataFrame(true, "st")), handler).handle());
+
+        assertEquals("test", new String(handler.message.getBody().getContent(), ISO_8859_1));
+    }
+
+    /**
+     * DATA beyond the stream's receive window is a stream error of type FLOW_CONTROL_ERROR (RFC 9113 §6.9.1). The
+     * window is the 131070 bytes announced in our SETTINGS. The body is not read, so the window does not grow.
+     */
+    @Test
+    void dataBeyondTheStreamWindowFailsTheBody() throws Exception {
+        final var in = new ByteArrayOutputStream();
+        in.write(SETTINGS_ACK);
+        in.write(headersFrame(false, new Encoder(4096), ":method", "POST", ":scheme", "https", ":path", "/"));
+        // 7 frames fit into the window, the 8th exceeds it, the 9th follows the stream error.
+        for (int i = 0; i < 9; i++)
+            in.write(frame(0x0, 0, new byte[16384]));
+        final var handler = new RecordingHandler();
+        final var logic = createLogic(in.toByteArray(), handler);
+
+        assertThrows(EndOfStreamException.class, logic::handle, "A stream error does not close the connection.");
+
+        assertEquals(8, logic.streams.get(1).getReceivedDataFramesQueued(), "The 7 frames within the window and the abort marker.");
+        assertThrows(ReadingBodyException.class, handler.message.getBody()::read);
+    }
+
+    /**
+     * DATA without data that does not end the stream gives the body reader nothing to read, so it is not queued:
+     * otherwise a peer could fill the memory with empty frames (CVE-2019-9518). Padding counts against the window and
+     * is given back at once: the padded frames use up the whole window, so the last frame only fits if it was.
+     */
+    @Test
+    void emptyDataFramesAreNotQueued() throws Exception {
+        final var in = new ByteArrayOutputStream();
+        in.write(SETTINGS_ACK);
+        in.write(headersFrame(false, new Encoder(4096), ":method", "POST", ":scheme", "https", ":path", "/"));
+        for (int i = 0; i < 1000; i++)
+            in.write(frame(0x0, 0, new byte[0]));
+        // PADDED with a pad length of 0: one byte of window each, the 131070 announced in our SETTINGS altogether.
+        for (int i = 0; i < 131070; i++)
+            in.write(frame(0x0, 0x8, new byte[]{0}));
+        in.write(dataFrame(true, "x"));
+        final var handler = new RecordingHandler();
+        final var logic = createLogic(in.toByteArray(), handler);
+
+        assertThrows(EndOfStreamException.class, logic::handle);
+
+        assertEquals(2, logic.streams.get(1).getReceivedDataFramesQueued(), "The last DATA frame and the abort marker.");
+        assertEquals("x", new String(handler.message.getBody().getContent(), ISO_8859_1));
+    }
+
+    /**
+     * DATA after END_STREAM, on a half-closed (remote) stream, is a stream error of type STREAM_CLOSED (RFC 9113 §5.1,
+     * §6.1). The stream is reset once: the second DATA frame is still in flight then and gets dropped.
+     */
+    @Test
+    void dataAfterEndStreamResetsTheStream() throws Exception {
+        final var get = headersFrame(true, new Encoder(4096), withGet());
+        final var baseline = createLogic(get);
+        assertThrows(EndOfStreamException.class, baseline::handle);
+
+        final var in = new ByteArrayOutputStream();
+        in.write(get);
+        in.write(dataFrame(false, "a"));
+        in.write(dataFrame(false, "b"));
+        final var logic = createLogic(in.toByteArray());
+
+        assertThrows(EndOfStreamException.class, logic::handle, "A stream error does not close the connection.");
+
+        assertEquals(baseline.sender.getBufferedFrames() + 1, logic.sender.getBufferedFrames(), "One RST_STREAM is queued.");
+    }
+
+    /**
+     * The peer may apply our SETTINGS_INITIAL_WINDOW_SIZE of 131070 as soon as it receives it, before we know it did
+     * (RFC 9113 §6.9.2). So DATA within that window is accepted on a stream opened before the SETTINGS are acknowledged,
+     * although the stream started with the default window of 65535.
+     */
+    @Test
+    void dataWithinTheAnnouncedWindowIsAcceptedBeforeTheSettingsAreAcknowledged() throws Exception {
+        final var in = new ByteArrayOutputStream();
+        in.write(headersFrame(false, new Encoder(4096), ":method", "POST", ":scheme", "https", ":path", "/"));
+        for (int i = 0; i < 7; i++)
+            in.write(frame(0x0, 0, new byte[16384]));
+        in.write(frame(0x0, 0x1, new byte[131070 - 7 * 16384]));
+        final var handler = new RecordingHandler();
+
+        assertThrows(EndOfStreamException.class, () -> createLogic(in.toByteArray(), handler).handle());
+
+        assertEquals(131070, handler.message.getBody().getContent().length);
+    }
+
+    /**
+     * A POST request declaring the given content-length, followed by the given frames. The encoders of the header
+     * blocks do not need to share state: they add literals to the dynamic table, but never refer to it.
+     */
+    private static byte[] requestWithBody(String contentLength, byte[]... frames) throws IOException {
+        final var in = new ByteArrayOutputStream();
+        in.write(headersFrame(false, new Encoder(4096), ":method", "POST", ":scheme", "https", ":path", "/", "content-length", contentLength));
+        for (final var frame : frames)
+            in.write(frame);
+        return in.toByteArray();
+    }
+
+    /** DATA frame on stream 1. */
+    private static byte[] dataFrame(boolean endStream, String payload) {
+        final var frame = new ByteArrayOutputStream();
+        frame.write(new byte[]{0, 0, (byte) payload.length(), 0x0, (byte) (endStream ? 0x1 : 0), 0, 0, 0, 1}, 0, 9);
+        frame.writeBytes(bytes(payload));
+        return frame.toByteArray();
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("malformedRequests")
+    void malformedRequestIsRejected(String description, String[] fields) throws Exception {
+        final var handler = new RecordingHandler();
+
+        assertThrows(EndOfStreamException.class, () -> createLogic(headersFrame(true, new Encoder(4096), fields), handler).handle());
+
+        assertNull(handler.message, "The request must not be handed over.");
+        assertEquals(1, handler.malformedStreamId);
+    }
+
+    static Stream<Arguments> wellFormedRequests() {
+        return Stream.of(
+                arguments("te: trailers", (Object) withGet("te", "trailers")),
+                arguments("CONNECT", (Object) fields(":method", "CONNECT", ":authority", "example.com:443"))
+        );
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("wellFormedRequests")
+    void wellFormedRequestIsAccepted(String description, String[] fields) throws Exception {
+        final var handler = new RecordingHandler();
+
+        assertThrows(EndOfStreamException.class, () -> createLogic(headersFrame(true, new Encoder(4096), fields), handler).handle());
+
+        assertNotNull(handler.message);
+        assertEquals(0, handler.malformedStreamId);
+    }
+
+    /** Trailers carry no pseudo-headers (RFC 9113 §8.1). The request was already handed over, so its body fails. */
+    @Test
+    void pseudoHeaderInTrailersFailsTheBody() throws Exception {
+        final var encoder = new Encoder(4096);
+        final var in = new ByteArrayOutputStream();
+        in.write(headersFrame(false, encoder, withGet()));
+        in.write(headersFrame(true, encoder, ":path", "/admin"));
+        final var handler = new RecordingHandler();
+
+        assertThrows(EndOfStreamException.class, () -> createLogic(in.toByteArray(), handler).handle());
+
+        assertNotNull(handler.message);
+        assertEquals("/", ((Request) handler.message).getUri());
+        assertThrows(ReadingBodyException.class, handler.message.getBody()::read);
+    }
+
+    /**
+     * Trailers end the message: HEADERS without END_STREAM after the request's header block make the request malformed
+     * (RFC 9113 §8.1), a stream error of type PROTOCOL_ERROR. The request was already handed over, so its body fails.
+     */
+    @Test
+    void trailersWithoutEndStreamFailTheBody() throws Exception {
+        final var encoder = new Encoder(4096);
+        final var request = headersFrame(false, encoder, withGet());
+        final var baseline = createLogic(request);
+        assertThrows(EndOfStreamException.class, baseline::handle);
+
+        final var in = new ByteArrayOutputStream();
+        in.write(request);
+        in.write(headersFrame(false, encoder, "x-trailer", "1"));
+        final var handler = new RecordingHandler();
+        final var logic = createLogic(in.toByteArray(), handler);
+
+        assertThrows(EndOfStreamException.class, logic::handle, "A stream error does not close the connection.");
+
+        assertEquals(baseline.sender.getBufferedFrames() + 1, logic.sender.getBufferedFrames(), "RST_STREAM is queued.");
+        assertThrows(ReadingBodyException.class, handler.message.getBody()::read);
+    }
+
+    /**
+     * A stream beyond the advertised limit of 50 is refused (RFC 9113 §5.1.2). Its header block is decoded all the
+     * same: the next request refers to the field it added to the HPACK dynamic table.
+     */
+    @Test
+    void streamBeyondTheConcurrentStreamLimitIsRefused() throws Exception {
+        final var encoder = new Encoder(4096);
+        final var in = new ByteArrayOutputStream();
+        // Acknowledges the SETTINGS sent on connection start, which announce the limit.
+        in.write(SETTINGS_ACK);
+        for (int streamId = 1; streamId <= 99; streamId += 2)
+            in.write(headersFrame(streamId, false, encoder, withGet()));
+        in.write(headersFrame(101, false, encoder, withGet("x-refused", "1")));
+        // The client cancels stream 1, which makes room for one more.
+        in.write(rstStream(1));
+        in.write(headersFrame(103, false, encoder, withGet("x-refused", "1")));
+        final var handler = new RecordingHandler();
+
+        assertThrows(EndOfStreamException.class, () -> createLogic(in.toByteArray(), handler).handle());
+
+        assertEquals(51, handler.exchanges, "50 streams and the one after the cancel are handed over.");
+        assertEquals("1", handler.message.getHeader().getFirstValue("x-refused"));
+    }
+
+    /**
+     * The limit applies before the client acknowledged the SETTINGS that announce it: otherwise a client that delays
+     * its ACK could open any number of streams.
+     */
+    @Test
+    void concurrentStreamLimitAppliesBeforeTheSettingsAreAcknowledged() throws Exception {
+        final var encoder = new Encoder(4096);
+        final var in = new ByteArrayOutputStream();
+        for (int streamId = 1; streamId <= 101; streamId += 2)
+            in.write(headersFrame(streamId, false, encoder, withGet()));
+        final var handler = new RecordingHandler();
+
+        assertThrows(EndOfStreamException.class, () -> createLogic(in.toByteArray(), handler).handle());
+
+        assertEquals(50, handler.exchanges);
+    }
+
+    /**
+     * A request still being processed counts against the concurrent stream limit, even after the client reset its
+     * stream (CVE-2023-44487, "Rapid Reset"): resetting streams does not let the client start more work.
+     */
+    @Test
+    void resetStreamCountsUntilItsExchangeFinished() throws Exception {
+        final var encoder = new Encoder(4096);
+        final var in = new ByteArrayOutputStream();
+        in.write(SETTINGS_ACK);
+        for (int streamId = 1; streamId <= 99; streamId += 2) {
+            in.write(headersFrame(streamId, false, encoder, withGet()));
+            in.write(rstStream(streamId));
+        }
+        in.write(headersFrame(101, false, encoder, withGet()));
+        final var handler = new RecordingHandler();
+        final var logic = createLogic(in.toByteArray(), handler);
+        // Starts processing every request handed over, and finishes none.
+        handler.logic = logic;
+
+        assertThrows(EndOfStreamException.class, logic::handle);
+
+        assertEquals(50, handler.exchanges, "The 51st request is refused while the first 50 are still processed.");
+    }
+
+    @Test
+    void tooManyResetStreamsCloseTheConnection() throws Exception {
+        assertThrows(FatalConnectionException.class, () -> createLogic(openAndResetStreams(Http2Logic.MAX_RESETS_PER_WINDOW + 1)).handle());
+    }
+
+    @Test
+    void resetStreamsUpToTheLimitAreAccepted() throws Exception {
+        assertThrows(EndOfStreamException.class, () -> createLogic(openAndResetStreams(Http2Logic.MAX_RESETS_PER_WINDOW)).handle());
+    }
+
+    /** The resets are counted in a sliding window: a burst spanning the end of a 30-second period is still too many. */
+    @Test
+    void tooManyResetStreamsWithinThirtySecondsCloseTheConnection() throws Exception {
+        final var start = System.nanoTime();
+        final var logic = createLogic(openAndResetStreams(Http2Logic.MAX_RESETS_PER_WINDOW + 1));
+        final var resets = new AtomicInteger();
+        // All but the last reset 29 seconds after the connection started, the last one 2 seconds later.
+        logic.clock = () -> start + SECONDS.toNanos(resets.incrementAndGet() <= Http2Logic.MAX_RESETS_PER_WINDOW ? 29 : 31);
+
+        assertThrows(FatalConnectionException.class, logic::handle);
+    }
+
+    @Test
+    void resetStreamsOlderThanThirtySecondsAreNotCounted() throws Exception {
+        final var start = System.nanoTime();
+        final var logic = createLogic(openAndResetStreams(Http2Logic.MAX_RESETS_PER_WINDOW + 1));
+        final var resets = new AtomicInteger();
+        logic.clock = () -> start + SECONDS.toNanos(resets.incrementAndGet() <= Http2Logic.MAX_RESETS_PER_WINDOW ? 0 : 31);
+
+        assertThrows(EndOfStreamException.class, logic::handle);
+    }
+
+    /** A refused stream that the client resets before the refusal was written counts as one reset, not two. */
+    @Test
+    void refusedStreamResetByTheClientCountsOnce() throws Exception {
+        final var encoder = new Encoder(4096);
+        final var in = new ByteArrayOutputStream();
+        in.write(SETTINGS_ACK);
+        for (int streamId = 1; streamId <= 99; streamId += 2)
+            in.write(headersFrame(streamId, false, encoder, withGet()));
+        for (int i = 0; i < Http2Logic.MAX_RESETS_PER_WINDOW; i++) {
+            in.write(headersFrame(101 + 2 * i, false, encoder, withGet()));
+            in.write(rstStream(101 + 2 * i));
+        }
+
+        assertThrows(EndOfStreamException.class, () -> createLogic(in.toByteArray()).handle());
+    }
+
+    /**
+     * Refused streams stay until their reset is written. The sender does not run here, like for a client that stops
+     * reading, so they pile up. Too many close the connection, even when they are spread out too far to be too many
+     * resets.
+     */
+    @Test
+    void tooManyRefusedStreamsWaitingForTheirResetCloseTheConnection() throws Exception {
+        assertThrows(FatalConnectionException.class, () -> refuseStreamsOneWindowApart(Http2Logic.MAX_PENDING_REFUSED_STREAMS + 1).handle());
+    }
+
+    @Test
+    void refusedStreamsWaitingForTheirResetUpToTheLimitAreAccepted() throws Exception {
+        assertThrows(EndOfStreamException.class, () -> refuseStreamsOneWindowApart(Http2Logic.MAX_PENDING_REFUSED_STREAMS).handle());
+    }
+
+    /** Opens 50 streams, which reach the limit, and then the given number of streams, which are refused 31 seconds apart. */
+    private static Http2Logic refuseStreamsOneWindowApart(int refused) throws IOException {
+        final var encoder = new Encoder(4096);
+        final var in = new ByteArrayOutputStream();
+        in.write(SETTINGS_ACK);
+        for (int streamId = 1; streamId <= 99; streamId += 2)
+            in.write(headersFrame(streamId, false, encoder, withGet()));
+        for (int i = 0; i < refused; i++)
+            in.write(headersFrame(101 + 2 * i, false, encoder, withGet()));
+        final var logic = createLogic(in.toByteArray());
+        final var start = System.nanoTime();
+        final var resets = new AtomicInteger();
+        logic.clock = () -> start + SECONDS.toNanos(31L * resets.incrementAndGet());
+        return logic;
+    }
+
+    /**
+     * HEADERS on a refused stream, arriving before its reset was written, are ignored. Their header block is decoded
+     * all the same: the next request refers to the field it added to the HPACK dynamic table.
+     */
+    @Test
+    void headersOnARefusedStreamAreIgnored() throws Exception {
+        final var encoder = new Encoder(4096);
+        final var in = new ByteArrayOutputStream();
+        in.write(SETTINGS_ACK);
+        for (int streamId = 1; streamId <= 99; streamId += 2)
+            in.write(headersFrame(streamId, false, encoder, withGet()));
+        in.write(headersFrame(101, false, encoder, withGet()));
+        in.write(headersFrame(101, true, encoder, "x-trailer", "1"));
+        in.write(rstStream(1));
+        in.write(headersFrame(103, true, encoder, withGet("x-trailer", "1")));
+        final var handler = new RecordingHandler();
+
+        assertThrows(EndOfStreamException.class, () -> createLogic(in.toByteArray(), handler).handle());
+
+        assertEquals(51, handler.exchanges);
+        assertEquals("1", handler.message.getHeader().getFirstValue("x-trailer"));
+    }
+
+    /**
+     * CONTINUATION flood: a header block that does not end is buffered until its last fragment arrives. One that
+     * grows too large closes the connection, before it uses up the memory.
+     */
+    @Test
+    void headerBlockTooLargeToBufferClosesTheConnection() throws Exception {
+        final var in = new ByteArrayOutputStream();
+        in.write(frame(0x1, 0, new byte[0]));
+        final var fragment = new byte[16000];
+        for (int size = 0; size <= 3 * Http2Logic.MAX_HEADER_LIST_SIZE; size += fragment.length)
+            in.write(frame(0x9, 0, fragment));
+
+        assertThrows(FatalConnectionException.class, () -> createLogic(in.toByteArray()).handle());
+    }
+
+    /** CONTINUATION flood with empty frames, which never grow the block. */
+    @Test
+    void headerBlockInTooManyFragmentsClosesTheConnection() throws Exception {
+        final var in = new ByteArrayOutputStream();
+        in.write(frame(0x1, 0, new byte[0]));
+        for (int i = 0; i < 1000; i++)
+            in.write(frame(0x9, 0, new byte[0]));
+
+        assertThrows(FatalConnectionException.class, () -> createLogic(in.toByteArray()).handle());
+    }
+
+    @Test
+    void headerBlockInSeveralFragmentsIsAccepted() throws Exception {
+        final var block = new ByteArrayOutputStream();
+        final var encoder = new Encoder(4096);
+        final var fields = withGet("x-foo", "bar");
+        for (int i = 0; i < fields.length; i += 2)
+            encoder.encodeHeader(block, bytes(fields[i]), bytes(fields[i + 1]), false);
+        final var bytes = block.toByteArray();
+        final var in = new ByteArrayOutputStream();
+        // END_STREAM on HEADERS, END_HEADERS on the last of the CONTINUATION frames, each carrying 4 bytes.
+        in.write(frame(0x1, 0x1, Arrays.copyOfRange(bytes, 0, 4)));
+        for (int offset = 4; offset < bytes.length; offset += 4)
+            in.write(frame(0x9, offset + 4 >= bytes.length ? 0x4 : 0, Arrays.copyOfRange(bytes, offset, Math.min(offset + 4, bytes.length))));
+        final var handler = new RecordingHandler();
+
+        assertThrows(EndOfStreamException.class, () -> createLogic(in.toByteArray(), handler).handle());
+
+        assertEquals("bar", handler.message.getHeader().getFirstValue("x-foo"));
+    }
+
+    @Test
+    void headerBlockInTheMostFragmentsAllowedIsAccepted() throws Exception {
+        final var handler = new RecordingHandler();
+
+        assertThrows(EndOfStreamException.class, () -> createLogic(requestInFragments(Http2Logic.MAX_HEADER_BLOCK_FRAMES), handler).handle());
+
+        assertNotNull(handler.message);
+    }
+
+    @Test
+    void headerBlockInOneFragmentTooManyClosesTheConnection() throws Exception {
+        assertThrows(FatalConnectionException.class, () -> createLogic(requestInFragments(Http2Logic.MAX_HEADER_BLOCK_FRAMES + 1)).handle());
+    }
+
+    /** A GET request on stream 1, whose header block is carried by HEADERS followed by empty CONTINUATION frames. */
+    private static byte[] requestInFragments(int frames) throws IOException {
+        final var block = new ByteArrayOutputStream();
+        final var encoder = new Encoder(4096);
+        final var fields = withGet();
+        for (int i = 0; i < fields.length; i += 2)
+            encoder.encodeHeader(block, bytes(fields[i]), bytes(fields[i + 1]), false);
+        final var in = new ByteArrayOutputStream();
+        in.write(frame(0x1, 0x1, block.toByteArray()));
+        for (int i = 1; i < frames; i++)
+            in.write(frame(0x9, i == frames - 1 ? 0x4 : 0, new byte[0]));
+        return in.toByteArray();
+    }
+
+    /** A frame on stream 1. */
+    private static byte[] frame(int type, int flags, byte[] payload) {
+        final var frame = new ByteArrayOutputStream();
+        frame.write(new byte[]{(byte) (payload.length >>> 16), (byte) (payload.length >>> 8), (byte) payload.length, (byte) type, (byte) flags, 0, 0, 0, 1}, 0, 9);
+        frame.writeBytes(payload);
+        return frame.toByteArray();
+    }
+
+    /** Opens the given number of streams, each reset by the client right after its HEADERS frame. */
+    private static byte[] openAndResetStreams(int count) throws IOException {
+        final var encoder = new Encoder(4096);
+        final var in = new ByteArrayOutputStream();
+        for (int i = 0; i < count; i++) {
+            in.write(headersFrame(2 * i + 1, false, encoder, withGet()));
+            in.write(rstStream(2 * i + 1));
+        }
+        return in.toByteArray();
+    }
+
+    /** RST_STREAM with error code CANCEL. */
+    private static byte[] rstStream(int streamId) {
+        return new byte[]{0, 0, 4, 0x3, 0, (byte) (streamId >>> 24), (byte) (streamId >>> 16), (byte) (streamId >>> 8), (byte) streamId, 0, 0, 0, 0x8};
+    }
+
+    /** The fields of a GET request, followed by the given ones. */
+    private static String[] withGet(String... extra) {
+        final var get = List.of(":method", "GET", ":scheme", "https", ":path", "/", ":authority", "localhost");
+        return Stream.concat(get.stream(), Stream.of(extra)).toArray(String[]::new);
+    }
+
+    private static String[] fields(String... namesAndValues) {
+        return namesAndValues;
+    }
+
+    /** HEADERS frame on stream 1 with END_HEADERS, carrying the given names and values in this order. */
+    private static byte[] headersFrame(boolean endStream, Encoder encoder, String... namesAndValues) throws IOException {
+        return headersFrame(1, endStream, encoder, namesAndValues);
+    }
+
+    private static byte[] headersFrame(int streamId, boolean endStream, Encoder encoder, String... namesAndValues) throws IOException {
+        final var block = new ByteArrayOutputStream();
+        for (int i = 0; i < namesAndValues.length; i += 2)
+            encoder.encodeHeader(block, bytes(namesAndValues[i]), bytes(namesAndValues[i + 1]), false);
+        final var frame = new ByteArrayOutputStream();
+        frame.write(new byte[]{(byte) (block.size() >>> 16), (byte) (block.size() >>> 8), (byte) block.size(), 0x1, (byte) (endStream ? 0x5 : 0x4),
+                (byte) (streamId >>> 24), (byte) (streamId >>> 16), (byte) (streamId >>> 8), (byte) streamId});
+        block.writeTo(frame);
+        return frame.toByteArray();
+    }
+
+    private static byte[] bytes(String s) {
+        return s.getBytes(ISO_8859_1);
+    }
+
+    /** HEADERS frame on stream 1 with END_STREAM and END_HEADERS: a GET request carrying the given field. */
+    private static byte[] requestHeadersFrame(byte[] name, byte[] value) throws IOException {
+        final var encoder = new Encoder(4096);
+        final var block = new ByteArrayOutputStream();
+        encoder.encodeHeader(block, bytes(":method"), bytes("GET"), false);
+        encoder.encodeHeader(block, bytes(":scheme"), bytes("https"), false);
+        encoder.encodeHeader(block, bytes(":path"), bytes("/"), false);
+        encoder.encodeHeader(block, bytes(":authority"), bytes("localhost"), false);
+        encoder.encodeHeader(block, name, value, false);
+        final var frame = new ByteArrayOutputStream();
+        frame.write(new byte[]{(byte) (block.size() >>> 16), (byte) (block.size() >>> 8), (byte) block.size(), 0x1, 0x5, 0, 0, 0, 1});
+        block.writeTo(frame);
+        return frame.toByteArray();
+    }
+
     private static Http2Logic createLogic(byte[] input) {
-        return new Http2Logic(EXECUTOR, new Socket(), new ByteArrayInputStream(input), new ByteArrayOutputStream(), false, new Http2MessageHandler() {
-            @Override
-            public Message createMessage() {
-                return new Request();
-            }
+        return createLogic(input, new RecordingHandler());
+    }
 
-            @Override
-            public void handleExchange(StreamInfo streamInfo, Message message, boolean showSSLExceptions, String remoteAddr) {
-            }
+    private static Http2Logic createLogic(byte[] input, Http2MessageHandler handler) {
+        return new Http2Logic(EXECUTOR, new Socket(), new ByteArrayInputStream(input), new ByteArrayOutputStream(), false, handler);
+    }
 
-            @Override
-            public void handleOversizedHeaders(StreamInfo streamInfo, boolean endStream) {
-            }
-        });
+    private static class RecordingHandler implements Http2MessageHandler {
+        Message message;
+        int exchanges;
+        /** If set, every request handed over is reported as being processed, and none as finished. */
+        Http2Logic logic;
+        int malformedStreamId;
+        int oversizedStreamId;
+
+        @Override
+        public Message createMessage() {
+            return new Request();
+        }
+
+        @Override
+        public void handleExchange(StreamInfo streamInfo, Message message, boolean showSSLExceptions, String remoteAddr) {
+            this.message = message;
+            exchanges++;
+            if (logic != null)
+                logic.exchangeStarted();
+        }
+
+        @Override
+        public void handleOversizedHeaders(StreamInfo streamInfo, boolean endStream) {
+            oversizedStreamId = streamInfo.getStreamId();
+        }
+
+        @Override
+        public void handleMalformedHeaders(StreamInfo streamInfo) {
+            malformedStreamId = streamInfo.getStreamId();
+        }
     }
 }

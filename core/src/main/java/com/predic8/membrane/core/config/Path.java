@@ -20,25 +20,30 @@ import com.predic8.membrane.annot.MCTextContent;
 
 
 /**
- * @explanation <p>
- *              The element's content is matched against the request path.
- *              </p>
- *
- *              <p>
- *              If <tt>isRegExp="true"</tt>, the entire path must match the regular expression.
- *              If <tt>isRegExp="false"</tt>, the path must start with the specified string.
- *              </p>
- *
- *              <p>
- *              When <tt>&lt;path/&gt;</tt> appears inside a <tt>&lt;soapProxy/&gt;</tt>,
- *              the <tt>isRegExp</tt> attribute must not be used.
- *              </p>
- *
- *              <p>
- *              When placed within an <tt>&lt;api&gt;</tt> (rather than a <tt>&lt;serviceProxy&gt;</tt>),
- *              you may use a URI template (e.g. <tt>/books/{id}</tt>). The path parameter will be
- *              available in scripts via the <tt>pathParam</tt> variable.
- *              </p>
+ * @description <p>Selects the requests an API handles by their path. A plain path matches every request path that
+ * starts with it. In an <code>api</code>, the path can also be a URI template such as <code>/books/{id}</code>; the
+ * parameter values are available as <code>pathParam</code>, e.g. <code>${pathParam.id}</code> in the target URL.</p>
+ * <p>See tutorials/getting-started/60-Basic-Path-Routing.yaml and
+ * tutorials/advanced/20-Path-Parameter-Routing.yaml.</p>
+ * <h3>Security Hint</h3>
+ * <p>A regular expression runs on every request before authentication. Overlapping quantifiers such as
+ * <code>(.*)/(.*)</code> can take a long time on crafted paths. See
+ * <a href="https://www.membrane-api.io/security/membrane-redos-protection.html">ReDoS Protection</a>.</p>
+ * @yaml <pre><code>
+ * api:
+ *   port: 2000
+ *   path:
+ *     uri: /shop
+ *   target:
+ *     url: https://api.predic8.de
+ * ---
+ * api:
+ *   port: 2000
+ *   path:
+ *     uri: /fruits/{id}
+ *   target:
+ *     url: https://api.predic8.de/shop/v2/products/${pathParam.id}
+ * </code></pre>
  */
 @MCElement(name="path", component =false, mixed=true)
 public class Path {
@@ -60,7 +65,9 @@ public class Path {
 	}
 
 	/**
-	 * @description If set to true the content will be evaluated as a <a href="http://docs.oracle.com/javase/1.4.2/docs/api/java/util/regex/Pattern.html">Java Regular Expression</a>.
+	 * @description <p>If true, <code>uri</code> is a Java regular expression that must match the whole path. In an
+	 * <code>api</code>, the query is ignored and <code>{name}</code> parameters can be used; in a
+	 * <code>serviceProxy</code>, the expression must also match the query. Not supported in a <code>soapProxy</code>.</p>
 	 * @default false
 	 * @example true
 	 */
@@ -73,6 +80,10 @@ public class Path {
 		return uri;
 	}
 
+	/**
+	 * @description The path prefix, URI template or regular expression to match.
+	 * @example /shop
+	 */
 	@MCTextContent
 	public void setUri(String uri) {
 		this.uri = uri;

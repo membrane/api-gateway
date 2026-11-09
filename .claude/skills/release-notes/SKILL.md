@@ -1,17 +1,56 @@
 ---
 name: release-notes
-description: Generate GitHub release notes for the Membrane api-gateway repo by collecting the commits between the last release and master, grouping them into Features / Improvements / Fixes / Security / Dependencies, and linking each to its PR. Use whenever the user wants to draft, extract, or write release notes / a changelog / "what changed since the last release", prepare notes for the next GitHub release, or asks "what's unreleased on master". The user may name a base release (e.g. "since 7.2.3") or let the skill detect the latest one.
+description: Write release notes for the Membrane api-gateway repo. Two jobs. (1) Add a release-note fragment for the current branch or PR to `distribution/release-notes/next/`. (2) Assemble the notes for the next release from those fragments plus the commits since the last release, grouped into Security / New Features / Improvements / Fixes / Breaking Changes / Dependencies with PR links, written to `distribution/release-notes/<version>.md`. Use whenever the user wants to add a release note for a change, draft, collect, or write release notes / a changelog, prepare notes for the next GitHub release, or asks "what's unreleased on master". The user may name a base release (e.g. "since 7.2.3") or let the skill detect the latest one.
 ---
 
 # Release notes
 
-Produce release notes for the next Membrane release by diffing **master against the last
-release** and turning the intervening commits into a clean, grouped, PR-linked changelog —
-the kind that goes on the project's GitHub Releases page.
+Release notes for the next release are collected as **fragments**: one small file per change in
+`distribution/release-notes/next/`. Each PR adds its own file, so PRs never conflict on a shared
+notes file, and no version number is needed until the release.
+
+Before a release, the fragments and the commit history since the last release are merged into
+`distribution/release-notes/<version>.md`. That file becomes the body of the GitHub release
+(`release-build.yml`), so it must exist before **Pull Request for Release** runs.
 
 Repo: `membrane/api-gateway`. PR URL pattern: `https://github.com/membrane/api-gateway/pull/<N>`.
 
-## 1. Determine the range: `<base>..master`
+Decide which job the user wants:
+- **Add a fragment** for a change ("add a release note for this", "release note for my PR"): section A.
+- **Assemble** the notes for a release ("write the release notes", "what's unreleased"): section B.
+
+## Fragment format
+
+```markdown
+---
+type: breaking
+area: Plugins
+---
+- `clusterNotification`: `/clustermanager/up`, `/down` and `/takeout` accept only POST. Other methods are answered with `405`. Scripts that call the cluster manager with GET have to use POST. See the migration guide.
+```
+
+- File name: a short kebab-case slug of the change, e.g. `cluster-notification-post.md`. Prefix the
+  PR or issue number if it is known (`3672-cluster-notification-post.md`).
+- `type`: `breaking`, `feature`, `improvement`, `fix`, `security` or `dependencies`.
+- `area` (optional): the `###` subsection, e.g. `OpenAPI`, `Plugins`, `WSDL and SOAP`. Reuse an area
+  that existing notes already use (`grep -h '^### ' distribution/release-notes/*.md | sort | uniq -c`).
+- Body: one or more `-` bullets. A PR or issue link at the end of a bullet is optional; section B
+  adds the PR link when it is missing.
+
+## A. Add a fragment
+
+1. Look at what the branch changes for users: `git log --oneline master..HEAD` and
+   `git diff master...HEAD --stat`, then the relevant diffs. If nothing is user-visible (see
+   section B, step 3), say so and don't write a fragment.
+2. Pick `type` and `area`. A change that can break an existing configuration, client or custom
+   code is `breaking`, even if it is also a fix.
+3. Write the bullets in the house style (see "Style" below).
+4. Create `distribution/release-notes/next/` if it does not exist, write the fragment, and show it
+   to the user. Don't commit it.
+
+## B. Assemble the notes for a release
+
+### 1. Determine the range: `<base>..master`
 
 The base is the **last released version**. Releases are marked by a commit whose subject is
 `Release X.Y.Z (#PR)` (immediately followed by a `Snapshot version` commit). The local tags
@@ -28,21 +67,31 @@ lag behind, so detect the base from these commits, not from `git tag`.
   ```
   Take its hash as `BASE` and read the version from its subject.
 
-The **new version** being released is the pom version minus `-SNAPSHOT`:
+The **new version** is decided when the release is cut, not by the pom. Ask the user for it unless
+they named it. The pom version minus `-SNAPSHOT` (`grep -m1 '<version>' pom.xml`) is only a
+suggestion.
+
+If the range is empty (master == last release) and there are no fragments, say so and stop.
+
+### 2. Collect
+
+Two sources, used together:
+
+**Fragments** are the primary source. Their text was written by the author of the change, so keep
+it; only fix obvious mistakes and adapt it to the style below.
 ```bash
-grep -m1 '<version>' pom.xml   # e.g. 7.2.4-SNAPSHOT  ->  7.2.4
+ls distribution/release-notes/next/*.md
 ```
-
-Sanity-check the range before writing anything:
+For a fragment without a PR link, find the PR from the commit that added it:
 ```bash
-git log --oneline $BASE..master | wc -l      # how many commits
-git log --pretty="%s" $BASE..master          # the subjects to triage
+git log --diff-filter=A --format=%s -- distribution/release-notes/next/<file>.md
 ```
-If the range is empty (master == last release), say so and stop.
+The `(#NNNN)` at the end of that subject is the PR.
 
-## 2. Collect and enrich
+An existing `distribution/release-notes/<version>.md` that holds unreleased notes (written before
+fragments were introduced) is a source as well: keep its entries.
 
-For each commit on `$BASE..master`, pull the subject and the trailing PR number:
+**Commits** in `$BASE..master` fill the gaps:
 ```bash
 git log --pretty="%s" $BASE..master
 ```
@@ -50,11 +99,17 @@ Most subjects end in `(#NNNN)` — that's the PR. Turn it into a link
 `[#NNNN](https://github.com/membrane/api-gateway/pull/NNNN)`. If a subject has **two** trailing
 numbers (e.g. `... (#2988) (#2995)`), the last one is the merge PR — link that one.
 
-Read the subject for meaning; rewrite terse or `type:`-prefixed subjects into a user-facing
+A commit whose PR already has a fragment or an existing entry is not skipped automatically: a PR
+can change more than its fragment says. Inspect its diff and write an entry for any user-visible
+change the fragment or entry does not describe. Skip only what is already described. For all other
+commits, read the subject (and the diff if the subject is unclear) and write a user-facing
 sentence. Strip conventional-commit prefixes (`feat:`, `fix:`, `chore:`, `build:`, `refactor:`,
 `docs:`) from the displayed text — they only inform which group the entry belongs in.
 
-## 3. Drop the noise
+At the end, list for the user the entries that came from commits rather than fragments, so they
+can check them: these were written without the author's input.
+
+### 3. Drop the noise
 
 Omit commits that aren't worth a release-note line:
 - Release plumbing: `Release X.Y.Z`, `Snapshot version`, version bumps of the project itself.
@@ -74,47 +129,51 @@ Omit commits that aren't worth a release-note line:
 When unsure, keep it — but keep it terse. Collapse several related dependency bumps into a single
 "Dependencies" bullet rather than one line each.
 
-## 4. Group and write
+### 4. Group and write
 
-Group entries by intent, in this order (skip any empty section):
+Group entries in this order (skip any empty section). A fragment's `type` decides its section:
 
-- **New Features** — new plugins/interceptors, new config elements, genuinely new capabilities
-  (`feat:`, "Add <feature>", new tutorials/examples that ship new behavior).
-- **Improvements** — enhancements & refactors to existing behavior, better logging, perf, docs.
-- **Fixes** — bug fixes (`fix:`, "Fix ...").
-- **Security** — anything security- or vulnerability-related (`Security fixes`, CVE/dependency
-  hardening). Surface these even if small.
-- **Dependencies** — dependency/BOM upgrades, collapsed into a few bullets.
+- **Security** (`security`): anything security- or vulnerability-related. Surface these even if small.
+- **New Features** (`feature`): new plugins/interceptors, new config elements, genuinely new
+  capabilities.
+- **Improvements** (`improvement`): enhancements to existing behavior, better logging, performance.
+- **Fixes** (`fix`): bug fixes.
+- **Breaking Changes** (`breaking`): anything that can break an existing configuration, client or
+  custom code. Name what to do instead, and point to `docs/MIGRATION-GUIDE.md` where it has a section.
+- **Dependencies** (`dependencies`): dependency/BOM upgrades, collapsed into a few bullets.
 
-Match the house style in [docs/RELEASE_NOTES.md](docs/RELEASE_NOTES.md): a top-level `#`
-version header, optional one-paragraph intro for a notable release, then `##` sections with
-`-` bullets. Each bullet is one sentence in plain language with the PR link at the end.
+Within a section, group by `area` under `###` headings when the section has entries from more than
+one area. Order the areas as the previous release notes do; put new areas after them.
 
-```markdown
-# 7.2.4
+### 5. Deliver
 
-## New Features
-- Add CorrelationId support with examples and tests [#2987](https://github.com/membrane/api-gateway/pull/2987)
-- `oauth2client`: handle the client-credentials flow [#2969](https://github.com/membrane/api-gateway/pull/2969)
+Write `distribution/release-notes/<version>.md` (merge into it if it already exists), delete the
+fragments it now contains, and show the result to the user. Don't commit. The user reviews and
+commits it before running **Pull Request for Release** (`docs/RELEASE.md`).
 
-## Improvements
-- OpenAPI validation now covers multipart, XML and form-url-encoded bodies [#2980](https://github.com/membrane/api-gateway/pull/2980)
-- Log OpenAPI request/response validation failures [#2982](https://github.com/membrane/api-gateway/pull/2982)
-
-## Fixes
-- `ResolverMap.combine`: fix combining paths like `?foo=http://` [#2997](https://github.com/membrane/api-gateway/pull/2997)
-
-## Security
-- Reduce dependency vulnerabilities in `pom.xml` [#2973](https://github.com/membrane/api-gateway/pull/2973)
-```
-
-## 5. Deliver
-
-By default, **print the notes in the conversation** so the user can paste them into the GitHub
-release. The project also keeps per-version files in `distribution/release-notes/<version>.md` —
-**only write that file if the user asks** to save it, and use the new version number as the
-filename (e.g. `distribution/release-notes/7.2.4.md`).
+If the user only asked what is unreleased, print the notes in the conversation instead and leave
+the files alone.
 
 End with a one-line footer the user can include:
 `**Full changelog:** <base-version>...<new-version>` linking
 `https://github.com/membrane/api-gateway/compare/v<base>...v<new>`.
+
+## Style
+
+Follow `distribution/release-notes/7.8.0.md`: a `# <version>` header, `##` sections, optional `###`
+areas, `-` bullets. Each bullet says in plain language what changed for the user and, for breaking
+changes, what to do; it ends with the PR link.
+
+```markdown
+# 7.9.0
+
+## Fixes
+
+### Plugins
+- `prometheus`: the `version` label of `membrane_info` now contains the version as it is, e.g. `7.7.1` [#3686](https://github.com/membrane/api-gateway/pull/3686)
+
+## Breaking Changes
+
+### Plugins
+- `clusterNotification`: `/clustermanager/up`, `/down` and `/takeout` accept only POST. Other methods are answered with `405`. See the migration guide [#3672](https://github.com/membrane/api-gateway/pull/3672)
+```

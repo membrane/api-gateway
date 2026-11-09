@@ -56,6 +56,16 @@ public interface Http2MessageHandler {
     }
 
     /**
+     * Called when a stream is reset because of a stream error the peer caused, such as a flow-control error
+     * (RFC 9113 §5.4.2). The stream's body reader already fails with the cause; no response arrives anymore.
+     *
+     * @param streamInfo the reset stream
+     * @param cause describes the stream error
+     */
+    default void handleStreamError(StreamInfo streamInfo, IOException cause) {
+    }
+
+    /**
      * Called instead of {@link #handleExchange} when a stream's header block exceeds the header size limits.
      * The block has been decoded and discarded; no message is handed over for the stream.
      *
@@ -63,5 +73,26 @@ public interface Http2MessageHandler {
      * @param endStream whether the peer ended the stream with the header block
      */
     void handleOversizedHeaders(StreamInfo streamInfo, boolean endStream) throws IOException;
+
+    /**
+     * Called instead of {@link #handleExchange} when a stream's header block carries a malformed field
+     * (RFC 9113 &sect;8.2.1). The block has been decoded and discarded, no message is handed over for the
+     * stream, and the stream is reset with PROTOCOL_ERROR.
+     *
+     * @param streamInfo the stream the header block was received on
+     */
+    default void handleMalformedHeaders(StreamInfo streamInfo) {
+    }
+
+    /**
+     * Called when the peer sends GOAWAY: it opens no new streams and did not process, and will not process, any stream
+     * with an id above lastStreamId (RFC 9113 &sect;6.8). Streams up to lastStreamId may still complete. The peer may
+     * send GOAWAY more than once, with the same or a lower lastStreamId.
+     *
+     * @param lastStreamId the highest id of a stream the peer might have processed
+     * @param errorCode the peer's error code, see {@link com.predic8.membrane.core.transport.http2.frame.Error}
+     */
+    default void handleGoaway(int lastStreamId, int errorCode) {
+    }
 
 }

@@ -42,7 +42,9 @@ public class OAuth2AuthorizationServerInterceptorNormalTest extends OAuth2Author
                 testGoodUserinfoRequest(),
                 testGoodRefreshRequest(),
                 testBadRefreshWithAccessTokenRequest(),
+                testBadRefreshByOtherClientRequest(),
                 testBadUserInfoWithRefreshTokenRequest(),
+                testClientCredentialsRequestStartsNoBrowserSession(),
                 testGoodRevocationRequest());
     }
 
@@ -60,6 +62,30 @@ public class OAuth2AuthorizationServerInterceptorNormalTest extends OAuth2Author
 
     private static Object[] testBadRefreshWithAccessTokenRequest() {
         return new Object[]{"testBadRefreshWithAccessTokenRequest", runUntilGoodTokenRequest(),getMockInvalidRefreshWithAccessTokenRequest(),400,noPostprocessing()};
+    }
+
+    /**
+     * The session behind a client's token must not reach the authorization endpoint: with its cookie, the client
+     * could get ID tokens for a user it named in the token request.
+     */
+    private static Object[] testClientCredentialsRequestStartsNoBrowserSession() {
+        return new Object[]{"testClientCredentialsRequestStartsNoBrowserSession", noPreprocessing(), getMockClientCredentialsWithBrowserParamsRequest(), 200,
+                (ExceptionThrowingConsumer<Exchange>) exchange -> assertNull(exchange.getResponse().getHeader().getFirstValue("Set-Cookie"))};
+    }
+
+    public static Callable<Exchange> getMockClientCredentialsWithBrowserParamsRequest() {
+        return () -> new Request.Builder().post(mas.getTokenEndpoint())
+                .header(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED)
+                .body("grant_type=client_credentials&client_id=abc&client_secret=def"
+                        + "&response_type=id_token%20token&redirect_uri=http://localhost:2001/oauth2callback&username=alice")
+                .buildExchange();
+    }
+
+    /**
+     * A refresh token must only be accepted from the client it was issued to, whatever the token format.
+     */
+    private static Object[] testBadRefreshByOtherClientRequest() {
+        return new Object[]{"testBadRefreshByOtherClientRequest", runUntilGoodTokenRequest(),getMockRefreshByOtherClientRequest(),400,noPostprocessing()};
     }
 
     private static Object[] testBadUserInfoWithRefreshTokenRequest() {

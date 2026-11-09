@@ -26,6 +26,8 @@ import org.json.JSONObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
@@ -89,6 +91,19 @@ public class TemplateInterceptorTest {
         var r = exchange.getRequest();
         assertTrue(r.getBodyAsStringDecoded().contains("City: Da Nang"));
         assertEquals(TEXT_PLAIN, r.getHeader().getContentType());
+    }
+
+    @Test
+    void jsonArrayInXmlTemplateIsEscaped() throws Exception {
+        final var exchange = post("/cities").contentType(APPLICATION_JSON).body("""
+                { "city": ["</city><evil/><city>"] }
+                """).buildExchange();
+
+        invokeInterceptor(exchange, "<city>${json.city}</city>", APPLICATION_XML);
+
+        final var body = exchange.getRequest().getBodyAsStringDecoded();
+        assertFalse(body.contains("<evil/>"), body);
+        assertTrue(body.contains("&lt;evil/&gt;"), body);
     }
 
     @SuppressWarnings("unchecked")
@@ -245,6 +260,47 @@ public class TemplateInterceptorTest {
         ti.setPretty(TRUE);
         ti.init();
         assertArrayEquals(expectedPrettyJson.getBytes(UTF_8), ti.prettify(inputJson.getBytes(UTF_8)));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"${unknownVariable}", "${property.missing.foo}", "${unknownMethod()}"})
+    void productionHidesTemplateSourceOnError(String failingExpression) throws Exception {
+        router.getConfiguration().setProduction(true);
+        final var exchange = post("/foo").contentType(TEXT_PLAIN).body("x").buildExchange();
+
+        invokeInterceptor(exchange, "secret-before\n%s\nsecret-after".formatted(failingExpression), TEXT_PLAIN);
+
+        final var body = exchange.getResponse().getBodyAsStringDecoded();
+        assertEquals(500, exchange.getResponse().getStatusCode());
+        assertFalse(body.contains("secret"), body);
+        assertFalse(body.contains("\"line\""), body);
+        assertTrue(body.contains("See server log"), body);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"${unknownVariable}", "${property.missing.foo}", "${unknownMethod()}"})
+    void developmentShowsTemplateSourceOnError(String failingExpression) throws Exception {
+        final var exchange = post("/foo").contentType(TEXT_PLAIN).body("x").buildExchange();
+
+        invokeInterceptor(exchange, "secret-before\n%s\nsecret-after".formatted(failingExpression), TEXT_PLAIN);
+
+        final var body = exchange.getResponse().getBodyAsStringDecoded();
+        assertEquals(500, exchange.getResponse().getStatusCode());
+        assertTrue(body.contains("Error executing template."), body);
+        assertTrue(body.contains("secret-before"), body);
+        final var message = om.readTree(body).get("message").asText();
+        assertTrue(message.contains("secret-after"), message);
+        assertFalse(message.contains("\uFFFF"), "End-of-input marker in the excerpt: " + message);
+        assertTrue(body.contains("\"line\" : 2") || body.contains("\"line\":2"), body);
+    }
+
+    @Test
+    void prettyFormatsJsonFromFile() {
+        ti.setPretty(TRUE);
+        setAndHandleRequest("json/unformatted.json");
+
+        final var body = exc.getRequest().getBodyAsStringDecoded();
+        assertTrue(body.contains("\"baz\" : 720"), body);
     }
 
     @Test

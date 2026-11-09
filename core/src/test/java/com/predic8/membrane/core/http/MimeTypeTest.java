@@ -118,4 +118,16 @@ public class MimeTypeTest {
         assertFalse(MimeType.isImage((jakarta.activation.MimeType) null));
         assertFalse(MimeType.isHtml((jakarta.activation.MimeType) null));
     }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"*/*", "application/*", "application/*; charset=utf-8"})
+    void mediaRange(String mediaType) {
+        assertTrue(isMediaRange(mediaType));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"application/json", "text/plain; charset=utf-8", "application/vnd.api+json", ";", ""})
+    void noMediaRange(String mediaType) {
+        assertFalse(isMediaRange(mediaType));
+    }
 }

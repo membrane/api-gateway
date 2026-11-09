@@ -67,7 +67,7 @@ public class FirstApiProxyConfigurationTutorialTest extends AbstractGettingStart
             .get("http://localhost:2000")
         .then()
             .statusCode(200)
-            .body(containsString("Shop API Showcase"));
+            .body(containsString("api.predic8.de:api-predic8-de"));
         // @formatter:on
 
         assertEquals(List.of("CONNECT api.predic8.de:443"), proxiedRequests);

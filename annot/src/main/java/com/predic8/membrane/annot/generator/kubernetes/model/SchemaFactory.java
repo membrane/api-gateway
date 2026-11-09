@@ -67,6 +67,10 @@ public class SchemaFactory {
         return anyOf;
     }
 
+    public static RequiredKey requiredKey(String key) {
+        return new RequiredKey(key);
+    }
+
     public static Schema schema(String name) {
         return new Schema(name);
     }

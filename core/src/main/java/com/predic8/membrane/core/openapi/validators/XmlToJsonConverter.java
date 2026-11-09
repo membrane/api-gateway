@@ -35,7 +35,9 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.Map;
+import java.util.*;
+
+import static javax.xml.XMLConstants.*;
 
 /**
  * Converts an XML document into a Jackson {@link JsonNode} tree, guided by an
@@ -67,6 +69,9 @@ public class XmlToJsonConverter {
     private static final ObjectMapper om = new ObjectMapper();
 
     private final OpenAPI api;
+
+    /** Merged conversion schemas by the schemas they merge; also closes cycles of recursive schemas. */
+    private final Map<List<Identity>, Schema> conversionSchemas = new HashMap<>();
 
     public XmlToJsonConverter(OpenAPI api) {
         this.api = api;
@@ -108,11 +113,13 @@ public class XmlToJsonConverter {
 
     private ObjectNode convertObjectElement(Element element, Schema schema) {
         ObjectNode node = om.createObjectNode();
+        // Attributes and child elements mapped to a property, to detect undeclared content afterwards
+        final var consumed = Collections.newSetFromMap(new IdentityHashMap<Node, Boolean>());
 
         @SuppressWarnings("unchecked")
         Map<String, Schema> properties = (Map<String, Schema>) schema.getProperties();
         if (properties == null)
-            return node;
+            properties = Map.of();
 
         for (Map.Entry<String, Schema> entry : properties.entrySet()) {
             String propName  = entry.getKey();
@@ -120,29 +127,222 @@ public class XmlToJsonConverter {
 
             XmlName xmlName = xmlNameOf(propName, propSchema);
             boolean isAttr = isXmlAttribute(propSchema);
+            // Patterns matching the property name apply as well; placement still follows the property schema.
+            final var valueSchema = conversionSchema(withMatchingPatterns(propSchema, schema, propName));
 
             if (isXmlText(propSchema)) {
                 // OAS 3.2 nodeType: text/cdata — the value is the containing element's text content,
                 // e.g. <price currency="USD">42</price> with currency as attribute and value as text.
-                node.set(propName, convertPrimitive(directTextContent(element), propSchema));
+                node.set(propName, convertPrimitive(directTextContent(element), valueSchema));
 
             } else if (isAttr) {
                 // Map XML attribute → JSON property. Check for presence (not emptiness) so that a
                 // present-but-empty attribute (e.g. sku="") is kept as "" instead of being dropped.
-                if (hasAttribute(element, xmlName))
-                    node.set(propName, convertPrimitive(attributeValue(element, xmlName), propSchema));
+                if (hasAttribute(element, xmlName)) {
+                    consumed.add(attributeNode(element, xmlName));
+                    node.set(propName, convertPrimitive(attributeValue(element, xmlName), valueSchema));
+                }
 
             } else if ("array".equals(effectiveType(propSchema))) {
-                node.set(propName, convertArrayProperty(element, propName, propSchema));
+                node.set(propName, convertArrayProperty(element, propName, propSchema, consumed));
 
             } else {
                 // Regular single-valued child element
                 Element child = singleChildByName(element, xmlName);
-                if (child != null)
-                    node.set(propName, convertElement(child, propSchema));
+                if (child != null) {
+                    consumed.add(child);
+                    node.set(propName, convertElement(child, valueSchema));
+                }
             }
         }
+        convertPatternProperties(element, schema, node, consumed);
+        checkNoUndeclaredContent(element, schema, consumed);
         return node;
+    }
+
+    /**
+     * Converts attributes and child elements no property was mapped to, but whose local name matches a
+     * {@code patternProperties} regex, so the validator checks them against the pattern schemas. All matching
+     * patterns guide the conversion (see {@link #conversionSchema}); the validator then checks every one.
+     * A name that occurs more than once (or as attribute and element) is rejected, as for single-valued
+     * properties.
+     */
+    @SuppressWarnings("unchecked")
+    private void convertPatternProperties(Element element, Schema schema, ObjectNode node, Set<Node> consumed) {
+        final Map<String, Schema> patternProperties = schema.getPatternProperties();
+        if (patternProperties == null)
+            return;
+
+        final var attributes = element.getAttributes();
+        for (int i = 0; i < attributes.getLength(); i++) {
+            final var attribute = attributes.item(i);
+            if (consumed.contains(attribute) || isMarkupAttribute(attribute))
+                continue;
+            final var name = localNameOf(attribute);
+            final var patternSchema = patternSchemaFor(patternProperties, name);
+            if (patternSchema == null)
+                continue;
+            setPatternProperty(node, name, convertPrimitive(attribute.getNodeValue(), patternSchema));
+            consumed.add(attribute);
+        }
+
+        final var children = element.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            if (!(children.item(i) instanceof Element child) || consumed.contains(child))
+                continue;
+            final var name = localNameOf(child);
+            final var patternSchema = patternSchemaFor(patternProperties, name);
+            if (patternSchema == null)
+                continue;
+            setPatternProperty(node, name, convertElement(child, patternSchema));
+            consumed.add(child);
+        }
+    }
+
+    /**
+     * The schema guiding the conversion of {@code name}, built from all matching patterns, since every
+     * matching pattern applies, or {@code null} if none matches.
+     */
+    private Schema patternSchemaFor(Map<String, Schema> patternProperties, String name) {
+        final var matching = matchingPatternSchemas(patternProperties, name);
+        return matching.isEmpty() ? null : conversionSchema(matching);
+    }
+
+    private List<Schema> withMatchingPatterns(Schema propertySchema, Schema objectSchema, String name) {
+        @SuppressWarnings("unchecked")
+        final Map<String, Schema> patternProperties = objectSchema.getPatternProperties();
+        final var schemas = new ArrayList<Schema>();
+        schemas.add(propertySchema);
+        if (patternProperties != null)
+            schemas.addAll(matchingPatternSchemas(patternProperties, name));
+        return schemas;
+    }
+
+    private List<Schema> matchingPatternSchemas(Map<String, Schema> patternProperties, String name) {
+        final var matching = new ArrayList<Schema>();
+        patternProperties.forEach((regex, patternSchema) -> {
+            if (SchemaUtil.compilePatternPropertyRegex(regex).matcher(name).find())
+                matching.add(resolveRef(patternSchema));
+        });
+        return matching;
+    }
+
+    /**
+     * Returns a schema that guides the conversion of a value all {@code schemas} (resolved) apply to, so
+     * the converted value keeps what each of them needs. It is only used for the conversion; the value is
+     * validated against the original schemas.
+     * <ul>
+     *   <li>One schema is used as it is.</li>
+     *   <li>Objects are merged: the union of properties and patternProperties (a name declared several
+     *       times is merged recursively), closed if any schema is closed. Content only another schema
+     *       declares is then kept, so a closed schema's validation rejects it.</li>
+     *   <li>Other values get the type chosen by {@link SchemaUtil#decodingSchema}. Arrays are not merged,
+     *       their conversion follows that schema only.</li>
+     * </ul>
+     * New schemas take their XML hints from the first schema. The spec's schemas are never changed.
+     */
+    private Schema conversionSchema(List<Schema> schemas) {
+        final var key = schemas.stream().map(Identity::new).distinct().toList();
+        if (key.size() == 1)
+            return schemas.getFirst();
+        final var cached = conversionSchemas.get(key);
+        if (cached != null)
+            return cached;
+
+        final var decoding = SchemaUtil.decodingSchema(schemas);
+        final var type = effectiveType(decoding);
+        final var object = "object".equals(type) || type == null && schemas.stream().anyMatch(s -> s.getProperties() != null);
+        if (!object && "array".equals(type))
+            return decoding;
+
+        final Schema merged = new Schema<>().type(object ? "object" : type);
+        merged.setXml(schemas.getFirst().getXml());
+        conversionSchemas.put(key, merged);
+        if (object)
+            mergeObjects(merged, schemas.stream().filter(s -> {
+                final var t = effectiveType(s);
+                return t == null || "object".equals(t);
+            }).toList());
+        return merged;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void mergeObjects(Schema merged, List<Schema> schemas) {
+        final var properties = new LinkedHashMap<String, List<Schema>>();
+        final var patternProperties = new LinkedHashMap<String, List<Schema>>();
+        for (final var schema : schemas) {
+            collect(properties, schema.getProperties());
+            collect(patternProperties, schema.getPatternProperties());
+            if (Boolean.FALSE.equals(SchemaUtil.getAdditionalProperties(schema)))
+                merged.setAdditionalProperties(false);
+        }
+        properties.forEach((name, declared) -> merged.addProperty(name, conversionSchema(declared)));
+        if (!patternProperties.isEmpty()) {
+            final var patterns = new LinkedHashMap<String, Schema>();
+            patternProperties.forEach((regex, declared) -> patterns.put(regex, conversionSchema(declared)));
+            merged.setPatternProperties(patterns);
+        }
+    }
+
+    private void collect(Map<String, List<Schema>> target, Map<String, Schema> schemas) {
+        if (schemas != null)
+            schemas.forEach((name, schema) -> target.computeIfAbsent(name, k -> new ArrayList<>()).add(resolveRef(schema)));
+    }
+
+    /** Compares schemas by identity: {@link Schema#equals} is deep and does not terminate on cycles. */
+    private record Identity(Schema schema) {
+        @Override
+        public boolean equals(Object o) {
+            return o instanceof Identity other && other.schema == schema;
+        }
+
+        @Override
+        public int hashCode() {
+            return System.identityHashCode(schema);
+        }
+    }
+
+    private static void setPatternProperty(ObjectNode node, String name, JsonNode value) {
+        if (node.has(name))
+            throw new MultipleElementsException(name);
+        node.set(name, value);
+    }
+
+    private static String localNameOf(Node node) {
+        return node.getLocalName() != null ? node.getLocalName() : node.getNodeName();
+    }
+
+    /**
+     * Rejects attributes and child elements no property or {@code patternProperties} regex was mapped to,
+     * if the schema forbids additional properties. The converted object only contains mapped content, so
+     * the validator cannot see such content, while the original body is forwarded with it. Namespace
+     * declarations, {@code xsi:} and {@code xml:} attributes (e.g. {@code xml:lang}) are markup, not data.
+     */
+    private static void checkNoUndeclaredContent(Element element, Schema schema, Set<Node> consumed) {
+        if (!Boolean.FALSE.equals(SchemaUtil.getAdditionalProperties(schema)))
+            return;
+
+        final var attributes = element.getAttributes();
+        for (int i = 0; i < attributes.getLength(); i++) {
+            final var attribute = attributes.item(i);
+            if (consumed.contains(attribute) || isMarkupAttribute(attribute))
+                continue;
+            throw new UndeclaredContentException("attribute", attribute.getNodeName(), element.getTagName());
+        }
+
+        final var children = element.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            if (!(children.item(i) instanceof Element child) || consumed.contains(child))
+                continue;
+            throw new UndeclaredContentException("element", child.getTagName(), element.getTagName());
+        }
+    }
+
+    private static boolean isMarkupAttribute(Node attribute) {
+        final var namespace = attribute.getNamespaceURI();
+        return XMLNS_ATTRIBUTE_NS_URI.equals(namespace)
+            || W3C_XML_SCHEMA_INSTANCE_NS_URI.equals(namespace)
+            || XML_NS_URI.equals(namespace);
     }
 
     // -----------------------------------------------------------------------
@@ -154,11 +354,10 @@ public class XmlToJsonConverter {
      */
     private ArrayNode convertArrayElement(Element element, Schema schema) {
         ArrayNode arrayNode = om.createArrayNode();
-        Schema itemSchema = resolveRef(schema.getItems());
         NodeList children = element.getChildNodes();
         for (int i = 0; i < children.getLength(); i++) {
             if (children.item(i) instanceof Element child)
-                arrayNode.add(convertElement(child, itemSchema));
+                arrayNode.add(convertElement(child, SchemaUtil.itemSchema(schema, arrayNode.size())));
         }
         return arrayNode;
     }
@@ -166,31 +365,35 @@ public class XmlToJsonConverter {
     /**
      * Handles an array *property* inside an object, respecting {@code xml.wrapped}.
      */
-    private ArrayNode convertArrayProperty(Element parentElement, String propName, Schema propSchema) {
+    private ArrayNode convertArrayProperty(Element parentElement, String propName, Schema propSchema, Set<Node> consumed) {
         ArrayNode arrayNode = om.createArrayNode();
 
-        Schema itemSchema  = resolveRef(propSchema.getItems());
         boolean wrapped    = isXmlWrapped(propSchema);
         XmlName wrapperName = xmlNameOf(propName, propSchema);          // name of wrapper / sibling element
-        XmlName itemName    = xmlNameOf(propName, itemSchema);          // name of each item element
 
         if (wrapped) {
             // Items live inside a single wrapper element  <wrapperName><itemName/><itemName/>…</wrapperName>
             Element wrapperEl = singleChildByName(parentElement, wrapperName);
             if (wrapperEl == null)
                 return arrayNode;
+            consumed.add(wrapperEl);
             NodeList children = wrapperEl.getChildNodes();
             for (int i = 0; i < children.getLength(); i++) {
                 if (children.item(i) instanceof Element child)
-                    arrayNode.add(convertElement(child, itemSchema));
+                    arrayNode.add(convertElement(child, SchemaUtil.itemSchema(propSchema, arrayNode.size())));
             }
         } else {
-            // Items are direct children of the parent element with the item's xml.name
+            // Items are direct children of the parent element with the item's xml.name. The item schema is
+            // picked by position (prefixItems, then items), so the expected name is that of the next item.
             NodeList children = parentElement.getChildNodes();
             for (int i = 0; i < children.getLength(); i++) {
-                if (children.item(i) instanceof Element child
-                    && itemName.matches(child))
+                if (!(children.item(i) instanceof Element child))
+                    continue;
+                final var itemSchema = resolveRef(SchemaUtil.itemSchema(propSchema, arrayNode.size()));
+                if (xmlNameOf(propName, itemSchema).matches(child)) {
+                    consumed.add(child);
                     arrayNode.add(convertElement(child, itemSchema));
+                }
             }
         }
         return arrayNode;
@@ -206,14 +409,8 @@ public class XmlToJsonConverter {
             return om.getNodeFactory().textNode(text);
 
         return switch (type) {
-            case "integer" -> {
-                try { yield om.getNodeFactory().numberNode(Long.parseLong(text.trim())); }
-                catch (NumberFormatException e) { yield om.getNodeFactory().textNode(text); }
-            }
-            case "number" -> {
-                try { yield om.getNodeFactory().numberNode(Double.parseDouble(text.trim())); }
-                catch (NumberFormatException e) { yield om.getNodeFactory().textNode(text); }
-            }
+            case "integer" -> SchemaUtil.parseInteger(text);
+            case "number" -> SchemaUtil.parseNumber(text);
             case "boolean" -> {
                 // XML Schema xs:boolean has the lexical space {true, false, 1, 0} and is
                 // case-sensitive, so only these exact literals are valid (e.g. "True" is not).
@@ -297,6 +494,13 @@ public class XmlToJsonConverter {
         return (name.namespaceURI() != null)
             ? element.hasAttributeNS(name.namespaceURI(), name.localName())
             : element.hasAttribute(name.qualifiedName());
+    }
+
+    /** Returns the attribute node, namespace-aware when the {@link XmlName} carries a namespace URI. */
+    private static Node attributeNode(Element element, XmlName name) {
+        return (name.namespaceURI() != null)
+            ? element.getAttributeNodeNS(name.namespaceURI(), name.localName())
+            : element.getAttributeNode(name.qualifiedName());
     }
 
     /** Reads an attribute value, namespace-aware when the {@link XmlName} carries a namespace URI. */

@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=https://www.membrane-api.io/v7.7.1.json
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.8.1.json
 api:
   name: Token Validator
   port: 2000
@@ -31,4 +31,5 @@ api:
 api:
   port: 9001
   flow:
-    - adminConsole: {}
+    - adminConsole:
+        readOnly: true

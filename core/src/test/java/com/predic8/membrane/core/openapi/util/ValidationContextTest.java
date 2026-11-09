@@ -16,10 +16,12 @@
 
 package com.predic8.membrane.core.openapi.util;
 
-import com.predic8.membrane.core.openapi.validators.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.openapi.validators.ValidationContext;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.BODY;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ValidationContextTest {
 
@@ -33,5 +35,18 @@ public class ValidationContextTest {
                         .addJSONpointerSegment("only-numbers")
                         .addJSONpointerSegment("1")
                         .getLocationForRequest());
+    }
+
+    /**
+     * Segments are escaped as defined by RFC 6901 and keep their boundaries. See #3568.
+     */
+    @Test
+    void addJSONpointerSegmentKeepsSegmentBoundaries() {
+        assertEquals("/a~1b/c~0d/0",
+                new ValidationContext()
+                        .addJSONpointerSegment("a/b")
+                        .addJSONpointerSegment("c~d")
+                        .addJSONpointerSegment("0")
+                        .getJSONpointer());
     }
 }

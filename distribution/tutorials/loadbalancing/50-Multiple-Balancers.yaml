@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=https://www.membrane-api.io/v7.7.1.json
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.8.1.json
 #
 # Tutorial: Multiple Balancers
 #
@@ -28,7 +28,7 @@
 #       Billing node 2
 #
 # 3.) Take shop node 2 out of service:
-#       curl "localhost:9000/clustermanager/down?balancer=shop&host=localhost&port=3002"
+#       curl -X POST "localhost:9000/clustermanager/down?balancer=shop&host=localhost&port=3002"
 #
 # 4.) Call both balancers again:
 #       curl localhost:2000/shop

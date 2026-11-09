@@ -1,0 +1,115 @@
+openapi: "3.1.0"
+info:
+  title: Prefix Items API
+  version: '1.0'
+paths:
+  /closed:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              prefixItems:
+                - type: string
+                - type: integer
+              items: false
+      responses:
+        "200":
+          description: "OK"
+  /open:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              prefixItems:
+                - type: string
+                - type: integer
+      responses:
+        "200":
+          description: "OK"
+  /rest:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              prefixItems:
+                - type: string
+              items:
+                type: integer
+      responses:
+        "200":
+          description: "OK"
+  /ref:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Point'
+      responses:
+        "200":
+          description: "OK"
+  /form:
+    post:
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                closed:
+                  type: array
+                  prefixItems:
+                    - type: integer
+                    - type: string
+                  items: false
+                open:
+                  type: array
+                  prefixItems:
+                    - type: integer
+      responses:
+        "200":
+          description: "OK"
+  /multipart:
+    post:
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                rest:
+                  type: array
+                  prefixItems:
+                    - type: integer
+                    - type: string
+                  items:
+                    type: boolean
+                open:
+                  type: array
+                  prefixItems:
+                    - type: integer
+                closed:
+                  type: array
+                  prefixItems:
+                    - type: integer
+                    - false
+                  items: false
+      responses:
+        "200":
+          description: "OK"
+components:
+  schemas:
+    Point:
+      type: array
+      prefixItems:
+        - $ref: '#/components/schemas/Coordinate'
+        - $ref: '#/components/schemas/Coordinate'
+      items: false
+    Coordinate:
+      type: number

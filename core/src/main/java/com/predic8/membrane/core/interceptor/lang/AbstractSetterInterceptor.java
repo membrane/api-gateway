@@ -17,6 +17,7 @@ package com.predic8.membrane.core.interceptor.lang;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.core.exceptions.ProblemDetails;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.lang.ExchangeExpressionException;
 import com.predic8.membrane.core.util.ExceptionUtil;
@@ -28,6 +29,7 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static org.apache.commons.lang3.exception.ExceptionUtils.throwableOfType;
 
 public abstract class AbstractSetterInterceptor extends AbstractExchangeExpressionInterceptor {
 
@@ -57,6 +59,10 @@ public abstract class AbstractSetterInterceptor extends AbstractExchangeExpressi
         } catch (Exception e) {
             var msg = "Error evaluating expression %s for field %s".formatted(expression, fieldName);
             if (failOnError) {
+                // FlowController answers an unreadable body like any other plugin's (400 body-decoding)
+                var bodyFailure = throwableOfType(e, ReadingBodyException.class);
+                if (bodyFailure != null)
+                    throw bodyFailure;
                 if (e instanceof ExchangeExpressionException eee) {
                     var pd = prepareProblemDetails(eee.emptyProblemDetails(isProduction(), getDisplayName(), flow), msg);
                     eee.provideDetails(pd);

@@ -18,10 +18,13 @@ import com.predic8.membrane.core.http.HeaderField;
 import com.predic8.membrane.core.http.HeaderName;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.util.ConfigurationException;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,6 +43,8 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.schemavalidation.WSDLValidator.HeaderValidation.*;
+import static java.time.Duration.ofSeconds;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -55,13 +60,54 @@ public class WSDLValidatorTest {
     public static final String HELLO_SOAP12_WSDL = "src/test/resources/ws/hello-soap12.wsdl";
     public static final String RPC_WITH_FAULT_WSDL = "src/test/resources/ws/rpc-with-fault.wsdl";
     public static final String TWO_FAULTS_PER_OPERATION_WSDL = "src/test/resources/ws/two-faults-per-operation.wsdl";
+    public static final String CITIES_WITH_SOAP_HEADER_WSDL = "src/test/resources/ws/cities-with-soap-header.wsdl";
+    public static final String CITIES_WITH_SOAP12_HEADER_WSDL = "src/test/resources/ws/cities-with-soap12-header.wsdl";
+    public static final String UNBOUND_HEADER_WSDL = "src/test/resources/ws/unbound-header.wsdl";
+    public static final String UNVALIDATABLE_HEADERS_WSDL = "src/test/resources/ws/unvalidatable-soap-headers.wsdl";
+    public static final String HEADER_PART_PER_BINDING_WSDL = "src/test/resources/ws/header-part-per-binding.wsdl";
+    public static final String BODY_PART_ALSO_HEADER_WSDL = "src/test/resources/ws/body-part-also-header.wsdl";
+    public static final String HEADER_DECLARES_SOAP_ATTRIBUTES_WSDL = "src/test/resources/ws/header-declares-soap-attributes.wsdl";
+    public static final String REQUIRED_HEADERS_WSDL = "src/test/resources/ws/required-soap-headers.wsdl";
+    public static final String MESSAGE_WITHOUT_PART_WSDL = "src/test/resources/ws/message-without-part.wsdl";
+    public static final String HEADER_ONLY_REQUEST_WSDL = "src/test/resources/ws/header-only-request.wsdl";
 
-    private static final String WELL_FORMED_FAULT_11 = soap11("""
+    private static final String PING_HEADER = """
+            <p:PingHeader xmlns:p="https://example.com/ping">42</p:PingHeader>
+            """;
+
+    private static final String REQUIRED_REQUEST_HEADER = """
+            <hd:RequestHeader xmlns:hd="https://example.com/header"><hd:MessageId>1</hd:MessageId></hd:RequestHeader>
+            """;
+
+    private static final String MISSING_REQUEST_HEADER = "The SOAP header block {https://example.com/header}RequestHeader required by the WSDL binding is missing.";
+
+    private static final String GET_CITY_EXAMPLE_COM = """
+            <cs:getCity xmlns:cs="https://example.com/cities"><name>Bonn</name></cs:getCity>
+            """;
+
+    private static final String VALID_REQUEST_HEADER = """
+            <hd:RequestHeader xmlns:hd="https://example.com/header">
+                <hd:MessageId>1</hd:MessageId>
+                <hd:Language>de</hd:Language>
+            </hd:RequestHeader>
+            """;
+
+    private static final String INVALID_UNBOUND_REQUEST_HEADER = """
+            <hd:RequestHeader xmlns:hd="https://example.com/header"><unknown/><hd:MessageId>1</hd:MessageId></hd:RequestHeader>
+            """;
+
+    private static final String INVALID_HEADER_FAULT = """
+            <hd:HeaderFault xmlns:hd="https://example.com/header"><unknown/></hd:HeaderFault>
+            """;
+
+    private static final String FAULT_11 = """
             <s11:Fault>
                 <faultcode>Server</faultcode>
                 <faultstring>City not found</faultstring>
             </s11:Fault>
-            """);
+            """;
+
+    private static final String WELL_FORMED_FAULT_11 = soap11(FAULT_11);
 
     private static final String MALFORMED_FAULT_11 = soap11("""
             <s11:Fault>
@@ -658,6 +704,1032 @@ public class WSDLValidatorTest {
         }
     }
 
+    @Test
+    void emptyBodyForMessageWithoutPart() throws Exception {
+        final var exc = getResponseExchange("""
+                <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope">
+                    <soap:Body/>
+                </soap:Envelope>
+                """);
+
+        assertEquals(CONTINUE, createValidator(MESSAGE_WITHOUT_PART_WSDL, null, false).validateMessage(exc, RESPONSE));
+    }
+
+    @Test
+    void emptyBodyForMessageWithPart() throws Exception {
+        final var exc = getRequestExchange(soap12(""));
+
+        assertEquals(ABORT, createValidator(MESSAGE_WITHOUT_PART_WSDL, null, false).validateMessage(exc, REQUEST));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains("An empty SOAP Body is not a valid request. Possible elements are [{https://example.com/empty}MyRequest]"), body);
+    }
+
+    @Test
+    void elementForMessageWithoutPart() throws Exception {
+        final var exc = getResponseExchange(soap12("""
+                <e:MyRequest xmlns:e="https://example.com/empty"><e:name>foo</e:name></e:MyRequest>
+                """));
+
+        assertEquals(ABORT, createValidator(MESSAGE_WITHOUT_PART_WSDL, null, false).validateMessage(exc, RESPONSE));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains("{https://example.com/empty}MyRequest is not a valid response element. Possible elements are [an empty Body]"), body);
+    }
+
+    @Test
+    void textInBodyForMessageWithoutPart() throws Exception {
+        final var exc = getResponseExchange(soap12("foo"));
+
+        assertEquals(ABORT, createValidator(MESSAGE_WITHOUT_PART_WSDL, null, false).validateMessage(exc, RESPONSE));
+    }
+
+    @Test
+    void emptyBodyForMessageWithOnlyHeaderPart() throws Exception {
+        final var exc = getRequestExchange(soap11WithHeader(PING_HEADER, ""));
+
+        assertEquals(CONTINUE, createValidator(HEADER_ONLY_REQUEST_WSDL, null, BOUND, true).validateMessage(exc, REQUEST));
+    }
+
+    @Test
+    void emptyBodyWithInvalidHeader() throws Exception {
+        final var exc = getRequestExchange(soap11WithHeader("""
+                <p:PingHeader xmlns:p="https://example.com/ping"><p:foo/></p:PingHeader>
+                """, ""));
+
+        assertEquals(ABORT, createValidator(HEADER_ONLY_REQUEST_WSDL, BOUND).validateMessage(exc, REQUEST));
+    }
+
+    @Test
+    void emptyBodyWithoutRequiredHeader() throws Exception {
+        final var exc = getRequestExchange(soap11WithoutHeader(""));
+
+        assertEquals(ABORT, createValidator(HEADER_ONLY_REQUEST_WSDL, null, BOUND, true).validateMessage(exc, REQUEST));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains("The SOAP header block {https://example.com/ping}PingHeader required by the WSDL binding is missing."), body);
+    }
+
+    /**
+     * An empty Body has no content to validate, but the rest of the message is still checked.
+     */
+    @Test
+    void emptyBodyInUnclosedEnvelope() throws Exception {
+        final var exc = getResponseExchange("""
+                <s12:Envelope xmlns:s12="http://www.w3.org/2003/05/soap-envelope">
+                  <s12:Body/>
+                """);
+
+        assertEquals(ABORT, createValidator(MESSAGE_WITHOUT_PART_WSDL, null, false).validateMessage(exc, RESPONSE));
+    }
+
+    @Test
+    void emptyBodyWithInvalidBlockInSecondHeader() throws Exception {
+        final var exc = getRequestExchange("""
+                <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                  <s11:Header>%s</s11:Header>
+                  <s11:Header><p:PingHeader xmlns:p="https://example.com/ping"><p:foo/></p:PingHeader></s11:Header>
+                  <s11:Body/>
+                </s11:Envelope>
+                """.formatted(PING_HEADER));
+
+        assertEquals(ABORT, createValidator(HEADER_ONLY_REQUEST_WSDL, BOUND).validateMessage(exc, REQUEST));
+        assertSecondHeaderReportedOnce(exc);
+    }
+
+    @Test
+    void emptyBodyWithHeaderAfterBody() throws Exception {
+        final var exc = getRequestExchange("""
+                <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                  <s11:Header>%s</s11:Header>
+                  <s11:Body/>
+                  <s11:Header><p:PingHeader xmlns:p="https://example.com/ping"><p:foo/></p:PingHeader></s11:Header>
+                </s11:Envelope>
+                """.formatted(PING_HEADER));
+
+        assertEquals(ABORT, createValidator(HEADER_ONLY_REQUEST_WSDL, BOUND).validateMessage(exc, REQUEST));
+        assertHeaderAfterBodyReportedOnce(exc);
+    }
+
+    @Test
+    void emptyBodyFollowedBySecondBody() throws Exception {
+        final var exc = getResponseExchange("""
+                <s12:Envelope xmlns:s12="http://www.w3.org/2003/05/soap-envelope">
+                  <s12:Body/>
+                  <s12:Body><e:MyRequest xmlns:e="https://example.com/empty"><e:unknown/></e:MyRequest></s12:Body>
+                </s12:Envelope>
+                """);
+
+        assertEquals(ABORT, createValidator(MESSAGE_WITHOUT_PART_WSDL, null, false).validateMessage(exc, RESPONSE));
+        assertReportedOnce(exc, "The SOAP Envelope must not contain more than one Body");
+    }
+
+    @Test
+    void secondBody() throws Exception {
+        final var exc = getRequestExchange("""
+                <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                  <s11:Body>%s</s11:Body>
+                  <s11:Body>%s</s11:Body>
+                </s11:Envelope>
+                """.formatted(GET_CITY_EXAMPLE_COM, GET_CITY_EXAMPLE_COM));
+
+        assertEquals(ABORT, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, null, false).validateMessage(exc, REQUEST));
+        assertReportedOnce(exc, "The SOAP Envelope must not contain more than one Body");
+    }
+
+    /**
+     * A message of each SOAP version with an empty and with a populated Body, each allowed by its
+     * WSDL. The envelope of each is checked the same way.
+     */
+    private enum EnvelopeCase {
+        SOAP11_EMPTY_BODY(SOAP11_NS, "", HEADER_ONLY_REQUEST_WSDL, REQUEST),
+        SOAP11_POPULATED_BODY(SOAP11_NS, GET_CITY_EXAMPLE_COM, CITIES_WITH_SOAP_HEADER_WSDL, REQUEST),
+        SOAP12_EMPTY_BODY(SOAP12_NS, "", MESSAGE_WITHOUT_PART_WSDL, RESPONSE),
+        SOAP12_POPULATED_BODY(SOAP12_NS, MY_REQUEST, MESSAGE_WITHOUT_PART_WSDL, REQUEST);
+
+        private final String namespace;
+        private final String body;
+        private final String wsdl;
+        private final Interceptor.Flow flow;
+
+        EnvelopeCase(String namespace, String body, String wsdl, Interceptor.Flow flow) {
+            this.namespace = namespace;
+            this.body = body.strip(); // keeps the line numbers of the cases equal
+            this.wsdl = wsdl;
+            this.flow = flow;
+        }
+
+        /**
+         * @param template a message with {@code %1$s} for the envelope namespace and {@code %2$s}
+         *                 for the Body content
+         */
+        Exchange exchange(String template) throws URISyntaxException {
+            final var message = template.formatted(namespace, body);
+            return flow == REQUEST ? getRequestExchange(message) : getResponseExchange(message);
+        }
+    }
+
+    private static final String MY_REQUEST = """
+            <e:MyRequest xmlns:e="https://example.com/empty"><e:name>foo</e:name></e:MyRequest>
+            """;
+
+    @ParameterizedTest
+    @EnumSource
+    void validEnvelope(EnvelopeCase envelope) throws Exception {
+        final var validator = createValidator(envelope.wsdl, null, false);
+        final var exc = envelope.exchange("""
+                <soap:Envelope xmlns:soap="%1$s">
+                  <soap:Header/>
+                  <soap:Body>%2$s</soap:Body>
+                </soap:Envelope>
+                """);
+
+        assertEquals(CONTINUE, validator.validateMessage(exc, envelope.flow));
+        assertEquals(1, validator.getValid());
+        assertEquals(0, validator.getInvalid());
+    }
+
+    @ParameterizedTest
+    @EnumSource
+    void secondHeaderInEnvelope(EnvelopeCase envelope) throws Exception {
+        assertEnvelopeRejected(envelope, """
+                <soap:Envelope xmlns:soap="%1$s">
+                  <soap:Header/>
+                  <soap:Header/>
+                  <soap:Body>%2$s</soap:Body>
+                </soap:Envelope>
+                """, "The SOAP Envelope must not contain more than one Header.", 3);
+    }
+
+    @ParameterizedTest
+    @EnumSource
+    void headerAfterBodyInEnvelope(EnvelopeCase envelope) throws Exception {
+        assertEnvelopeRejected(envelope, """
+                <soap:Envelope xmlns:soap="%1$s">
+                  <soap:Body>%2$s</soap:Body>
+                  <soap:Header/>
+                </soap:Envelope>
+                """, "The SOAP Header must come before the Body.", 3);
+    }
+
+    @ParameterizedTest
+    @EnumSource
+    void secondBodyInEnvelope(EnvelopeCase envelope) throws Exception {
+        assertEnvelopeRejected(envelope, """
+                <soap:Envelope xmlns:soap="%1$s">
+                  <soap:Body>%2$s</soap:Body>
+                  <soap:Body>%2$s</soap:Body>
+                </soap:Envelope>
+                """, "The SOAP Envelope must not contain more than one Body.", 3);
+    }
+
+    @ParameterizedTest
+    @EnumSource
+    void malformedEnvelope(EnvelopeCase envelope) throws Exception {
+        assertEnvelopeRejected(envelope, """
+                <soap:Envelope xmlns:soap="%1$s">
+                  <soap:Body>%2$s</soap:Body>
+                </soap:Envelop>
+                """, null, 3);
+    }
+
+    @ParameterizedTest
+    @EnumSource
+    void truncatedEnvelope(EnvelopeCase envelope) throws Exception {
+        assertEnvelopeRejected(envelope, """
+                <soap:Envelope xmlns:soap="%1$s">
+                  <soap:Body>%2$s</soap:Body>
+                """, null, 3);
+    }
+
+    @ParameterizedTest
+    @EnumSource
+    void contentAfterEnvelope(EnvelopeCase envelope) throws Exception {
+        assertEnvelopeRejected(envelope, """
+                <soap:Envelope xmlns:soap="%1$s">
+                  <soap:Body>%2$s</soap:Body>
+                </soap:Envelope>
+                <soap:Envelope xmlns:soap="%1$s"/>
+                """, null, 4);
+    }
+
+    @ParameterizedTest
+    @EnumSource(names = {"SOAP12_EMPTY_BODY", "SOAP12_POPULATED_BODY"})
+    void elementAfterBodyInSoap12(EnvelopeCase envelope) throws Exception {
+        assertEnvelopeRejected(envelope, """
+                <soap:Envelope xmlns:soap="%1$s">
+                  <soap:Body>%2$s</soap:Body>
+                  <t:Trailer xmlns:t="https://example.com/trailer"/>
+                </soap:Envelope>
+                """, "A SOAP 1.2 Envelope must not contain an element after the Body.", 3);
+    }
+
+    /**
+     * SOAP 1.1 allows further elements after the Body.
+     */
+    @ParameterizedTest
+    @EnumSource(names = {"SOAP11_EMPTY_BODY", "SOAP11_POPULATED_BODY"})
+    void elementAfterBodyInSoap11(EnvelopeCase envelope) throws Exception {
+        final var exc = envelope.exchange("""
+                <soap:Envelope xmlns:soap="%1$s">
+                  <soap:Body>%2$s</soap:Body>
+                  <t:Trailer xmlns:t="https://example.com/trailer"/>
+                </soap:Envelope>
+                """);
+
+        assertEquals(CONTINUE, createValidator(envelope.wsdl, null, false).validateMessage(exc, envelope.flow));
+    }
+
+    @ParameterizedTest
+    @EnumSource
+    void bodyOfOtherSoapVersion(EnvelopeCase envelope) throws Exception {
+        final var other = envelope.namespace.equals(SOAP11_NS) ? SOAP12_NS : SOAP11_NS;
+        assertEnvelopeRejected(envelope, """
+                <soap:Envelope xmlns:soap="%1$s">
+                  <other:Body xmlns:other="OTHER">%2$s</other:Body>
+                </soap:Envelope>
+                """.replace("OTHER", other), "The SOAP Body must be in the namespace of the Envelope, " + envelope.namespace + ".", 2);
+    }
+
+    /**
+     * Rejected with a single error at the line given.
+     *
+     * @param error the error, or {@code null} for one reported by the XML parser
+     */
+    private static void assertEnvelopeRejected(EnvelopeCase envelope, String template, String error, int line) throws Exception {
+        final var validator = createValidator(envelope.wsdl, null, false);
+        final var exc = envelope.exchange(template);
+
+        assertEquals(ABORT, validator.validateMessage(exc, envelope.flow));
+        assertEquals(0, validator.getValid());
+        assertEquals(1, validator.getInvalid());
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        if (error != null)
+            assertReportedOnce(exc, error);
+        assertReportedOnce(exc, "<line>");
+        assertTrue(body.contains("<line>%d</line>".formatted(line)), body);
+    }
+
+    /**
+     * A message that does not get as far as the Body is no SOAP message.
+     */
+    @Test
+    void malformedHeaderIsNotSoap() throws Exception {
+        final var exc = getRequestExchange(soap11WithHeader("<a></b>", GET_CITY_EXAMPLE_COM));
+
+        assertEquals(ABORT, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, null, false).validateMessage(exc, REQUEST));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains("Not a valid SOAP message."), body);
+    }
+
+    @Test
+    void truncatedFault() throws Exception {
+        final var exc = getResponseExchange(WELL_FORMED_FAULT_11.replace("</s11:Envelope>", ""));
+
+        assertEquals(ABORT, createValidator(CITIES_WSDL, null, false).validateMessage(exc, RESPONSE));
+        assertReportedOnce(exc, "<line>");
+    }
+
+    /**
+     * skipFaults lets a fault through unchecked, its envelope as well.
+     */
+    @Test
+    void skipFaultsSkipsEnvelopeOfFault() throws Exception {
+        final var exc = getResponseExchange("""
+                <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                  <s11:Header/>
+                  <s11:Header/>
+                  <s11:Body>%s</s11:Body>
+                </s11:Envelope>
+                """.formatted(FAULT_11));
+
+        assertEquals(CONTINUE, createValidator(CITIES_WSDL, null, true).validateMessage(exc, RESPONSE));
+    }
+
+    /**
+     * A body element named Fault in a namespace of its own is no fault, so skipFaults does not let
+     * it through.
+     */
+    @Test
+    void skipFaultsValidatesFaultOfOtherNamespace() throws Exception {
+        final var exc = getResponseExchange(soap11("""
+                <x:Fault xmlns:x="https://example.com/x"><anything/></x:Fault>
+                """));
+
+        assertEquals(ABORT, createValidator(CITIES_WSDL, null, true).validateMessage(exc, RESPONSE));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains("{https://example.com/x}Fault is not a valid response element"), body);
+    }
+
+    /**
+     * A Fault followed by another element is no fault message, so skipFaults does not let the
+     * element through.
+     */
+    @Test
+    void skipFaultsRejectsElementAfterFault() throws Exception {
+        final var exc = getResponseExchange(soap11(FAULT_11 + """
+                <cs:getCityResponse xmlns:cs="https://predic8.de/cities"><unknown/></cs:getCityResponse>
+                """));
+
+        assertEquals(ABORT, createValidator(CITIES_WSDL, null, true).validateMessage(exc, RESPONSE));
+        assertReportedOnce(exc, "A SOAP Body with a Fault must not contain any other element.");
+    }
+
+    @Test
+    void unqualifiedHeaderBlock() throws Exception {
+        final var exc = getRequestExchange(soap11WithHeader("<Block/>", GET_CITY_EXAMPLE_COM));
+
+        assertEquals(ABORT, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, null, false).validateMessage(exc, REQUEST));
+        assertReportedOnce(exc, "A SOAP header block must be namespace-qualified.");
+    }
+
+    @Test
+    void validationDetailsOffHidesEnvelopeError() throws Exception {
+        final var exc = getRequestExchange("""
+                <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                  <s11:Body><cit:getCity xmlns:cit="https://predic8.de/cities"><name>Bonn</name></cit:getCity></s11:Body>
+                  <s11:Body/>
+                </s11:Envelope>
+                """);
+
+        assertEquals(ABORT, createValidator(new ErrorDetailsPolicy(false, false)).validateMessage(exc, REQUEST));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains("WSDL message validation failed"), body);
+        assertFalse(body.contains("more than one Body"), body);
+        assertFalse(body.contains("<detail>"), body);
+    }
+
+    @Test
+    void bodyPartAfterHeaderPartIsTheRequestElement() throws Exception {
+        var exc = getRequestExchange(soap11WithHeader("", """
+                <cs:getCity xmlns:cs="https://example.com/cities"><name>Bonn</name></cs:getCity>
+                """));
+
+        assertEquals(CONTINUE, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, null, false).validateMessage(exc, REQUEST));
+    }
+
+    @Test
+    void headerPartIsNoRequestElement() throws Exception {
+        var exc = getRequestExchange(soap11WithHeader("", """
+                <hd:RequestHeader xmlns:hd="https://example.com/header"><hd:MessageId>1</hd:MessageId><hd:Language>de</hd:Language></hd:RequestHeader>
+                """));
+
+        assertEquals(ABORT, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, null, false).validateMessage(exc, REQUEST));
+    }
+
+    @Test
+    void bodyPartOfOneBindingIsHeaderPartOfAnother() throws Exception {
+        final var exc = getRequestExchange(soap11WithHeader("", GET_CITY_EXAMPLE_COM));
+
+        assertEquals(CONTINUE, createValidator(HEADER_PART_PER_BINDING_WSDL, null, false).validateMessage(exc, REQUEST));
+    }
+
+    @Test
+    void explicitBodyPartAlsoBoundAsHeader() throws Exception {
+        final var exc = getRequestExchange(soap11(GET_CITY_EXAMPLE_COM));
+
+        assertEquals(CONTINUE, createValidator(BODY_PART_ALSO_HEADER_WSDL, null, false).validateMessage(exc, REQUEST));
+    }
+
+    @Test
+    void validDeclaredHeader() throws Exception {
+        var exc = getRequestExchange(soap11WithHeader(VALID_REQUEST_HEADER, GET_CITY_EXAMPLE_COM));
+
+        assertEquals(CONTINUE, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, BOUND).validateMessage(exc, REQUEST));
+    }
+
+    @Test
+    void unknownElementInDeclaredHeader() throws Exception {
+        var exc = getRequestExchange(soap11WithHeader("""
+                <hd:RequestHeader xmlns:hd="https://example.com/header">
+                    <unknown/>
+                    <hd:MessageId>1</hd:MessageId>
+                    <hd:Language>de</hd:Language>
+                </hd:RequestHeader>
+                """, GET_CITY_EXAMPLE_COM));
+
+        assertEquals(ABORT, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, BOUND).validateMessage(exc, REQUEST));
+        assertEquals(REQUEST.name(), exc.getResponse().getHeader().getFirstValue(VALIDATION_ERROR_SOURCE));
+        assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("unknown"), exc.getResponse().getBodyAsStringDecoded());
+    }
+
+    @Test
+    void invalidValueInDeclaredHeader() throws Exception {
+        var exc = getRequestExchange(soap11WithHeader("""
+                <hd:RequestHeader xmlns:hd="https://example.com/header">
+                    <hd:MessageId>1</hd:MessageId>
+                    <hd:Language>not a language</hd:Language>
+                </hd:RequestHeader>
+                """, GET_CITY_EXAMPLE_COM));
+
+        assertEquals(ABORT, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, BOUND).validateMessage(exc, REQUEST));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains("not a language"), body);
+        assertFalse(body.contains("cvc-elt.1.a"), body);
+    }
+
+    @Test
+    void headerErrorReportsLineInMessage() throws Exception {
+        final var exc = getRequestExchange("""
+                <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                  <s11:Header>
+                    <hd:RequestHeader xmlns:hd="https://example.com/header">
+                      <hd:MessageId>1</hd:MessageId>
+                      <hd:Language>not a language</hd:Language>
+                    </hd:RequestHeader>
+                  </s11:Header>
+                  <s11:Body><cs:getCity xmlns:cs="https://example.com/cities"><name>Bonn</name></cs:getCity></s11:Body>
+                </s11:Envelope>
+                """);
+
+        assertEquals(ABORT, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, BOUND).validateMessage(exc, REQUEST));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains("<line>5</line>"), body);
+    }
+
+    /**
+     * SOAP puts the header in front of the body, so a header after it is rejected, valid or not.
+     */
+    @Test
+    void headerAfterBody() throws Exception {
+        final var exc = getRequestExchange("""
+                <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                  <s11:Body>%s</s11:Body>
+                  <s11:Header>%s</s11:Header>
+                </s11:Envelope>
+                """.formatted(GET_CITY_EXAMPLE_COM, VALID_REQUEST_HEADER));
+
+        assertEquals(ABORT, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, null, false).validateMessage(exc, REQUEST));
+        assertHeaderAfterBodyReportedOnce(exc);
+    }
+
+    @Test
+    void headerBeforeAndAfterBody() throws Exception {
+        final var exc = getRequestExchange("""
+                <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                  <s11:Header>%s</s11:Header>
+                  <s11:Body>%s</s11:Body>
+                  <s11:Header>%s</s11:Header>
+                </s11:Envelope>
+                """.formatted(VALID_REQUEST_HEADER, GET_CITY_EXAMPLE_COM, VALID_REQUEST_HEADER));
+
+        assertEquals(ABORT, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, null, false).validateMessage(exc, REQUEST));
+        assertHeaderAfterBodyReportedOnce(exc);
+    }
+
+    @Test
+    void headerAfterBodyOfFault() throws Exception {
+        final var exc = getResponseExchange("""
+                <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                  <s11:Body>
+                    <s11:Fault>
+                      <faultcode>Server</faultcode>
+                      <faultstring>City not found</faultstring>
+                    </s11:Fault>
+                  </s11:Body>
+                  <s11:Header/>
+                </s11:Envelope>
+                """);
+
+        assertEquals(ABORT, createValidator(CITIES_WSDL, null, false).validateMessage(exc, RESPONSE));
+        assertHeaderAfterBodyReportedOnce(exc);
+    }
+
+    /**
+     * SOAP allows only one header, so a second one is rejected, valid or not.
+     */
+    @Test
+    void secondHeader() throws Exception {
+        final var exc = getRequestExchange("""
+                <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                  <s11:Header>%s</s11:Header>
+                  <s11:Header>%s</s11:Header>
+                  <s11:Body>%s</s11:Body>
+                </s11:Envelope>
+                """.formatted(VALID_REQUEST_HEADER, VALID_REQUEST_HEADER, GET_CITY_EXAMPLE_COM));
+
+        assertEquals(ABORT, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, null, false).validateMessage(exc, REQUEST));
+        assertSecondHeaderReportedOnce(exc);
+    }
+
+    /**
+     * Header blocks are only read from the first header, so a second header must not let an
+     * invalid block through.
+     */
+    @Test
+    void invalidBlockInSecondHeader() throws Exception {
+        final var exc = getRequestExchange("""
+                <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                  <s11:Header/>
+                  <s11:Header>
+                    <hd:RequestHeader xmlns:hd="https://example.com/header">
+                      <hd:MessageId>1</hd:MessageId>
+                      <hd:Language>not a language</hd:Language>
+                    </hd:RequestHeader>
+                  </s11:Header>
+                  <s11:Body>%s</s11:Body>
+                </s11:Envelope>
+                """.formatted(GET_CITY_EXAMPLE_COM));
+
+        assertEquals(ABORT, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, BOUND).validateMessage(exc, REQUEST));
+        assertSecondHeaderReportedOnce(exc);
+    }
+
+    @Test
+    void secondHeaderOfFault() throws Exception {
+        final var exc = getResponseExchange("""
+                <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                  <s11:Header/>
+                  <s11:Header/>
+                  <s11:Body>
+                    <s11:Fault>
+                      <faultcode>Server</faultcode>
+                      <faultstring>City not found</faultstring>
+                    </s11:Fault>
+                  </s11:Body>
+                </s11:Envelope>
+                """);
+
+        assertEquals(ABORT, createValidator(CITIES_WSDL, null, false).validateMessage(exc, RESPONSE));
+        assertSecondHeaderReportedOnce(exc);
+    }
+
+    private static void assertHeaderAfterBodyReportedOnce(Exchange exc) {
+        assertReportedOnce(exc, "The SOAP Header must come before the Body");
+    }
+
+    private static void assertSecondHeaderReportedOnce(Exchange exc) {
+        assertReportedOnce(exc, "The SOAP Envelope must not contain more than one Header");
+    }
+
+    private static void assertReportedOnce(Exchange exc, String error) {
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertEquals(1, body.split(error, -1).length - 1, body);
+    }
+
+    /**
+     * Each header block used to be validated by parsing the whole message again, so the time grew
+     * with the square of the message size.
+     */
+    @Test
+    void manyHeaderBlocks() throws Exception {
+        final var validator = createValidator(CITIES_WITH_SOAP_HEADER_WSDL, BOUND);
+        final var exc = getRequestExchange(soap11WithHeader(VALID_REQUEST_HEADER.repeat(10_000), GET_CITY_EXAMPLE_COM));
+
+        assertTimeoutPreemptively(ofSeconds(5), () -> assertEquals(CONTINUE, validator.validateMessage(exc, REQUEST)));
+    }
+
+    @Test
+    void invalidBodyReportsOnlyTheSchemaDeclaringIt() throws Exception {
+        final var exc = getRequestExchange(soap11WithHeader(VALID_REQUEST_HEADER, """
+                <cs:getCity xmlns:cs="https://example.com/cities"><unknown/></cs:getCity>
+                """));
+
+        assertEquals(ABORT, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, null, false).validateMessage(exc, REQUEST));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains("unknown"), body);
+        assertFalse(body.contains("cvc-elt.1.a"), body);
+    }
+
+    @Test
+    void invalidDeclaredHeaderAfterUndeclaredOne() throws Exception {
+        var exc = getRequestExchange(soap11WithHeader("""
+                <ns2:Block xmlns:ns2="http://membrane-api.io"><anything/></ns2:Block>
+                <hd:RequestHeader xmlns:hd="https://example.com/header"><hd:MessageId>1</hd:MessageId></hd:RequestHeader>
+                """, GET_CITY_EXAMPLE_COM));
+
+        assertEquals(ABORT, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, BOUND).validateMessage(exc, REQUEST));
+    }
+
+    @Test
+    void undeclaredHeaderIsNotValidated() throws Exception {
+        var exc = getRequestExchange(soap11WithHeader("""
+                <ns2:Block xmlns:ns2="http://membrane-api.io"><anything/></ns2:Block>
+                """ + VALID_REQUEST_HEADER, GET_CITY_EXAMPLE_COM));
+
+        assertEquals(CONTINUE, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, BOUND).validateMessage(exc, REQUEST));
+    }
+
+    @Test
+    void soapAttributesOnDeclaredHeader() throws Exception {
+        var exc = getRequestExchange(soap11WithHeader("""
+                <hd:RequestHeader xmlns:hd="https://example.com/header" s11:mustUnderstand="1" s11:actor="http://schemas.xmlsoap.org/soap/actor/next">
+                    <hd:MessageId>1</hd:MessageId>
+                    <hd:Language>de</hd:Language>
+                </hd:RequestHeader>
+                """, GET_CITY_EXAMPLE_COM));
+
+        assertEquals(CONTINUE, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, BOUND).validateMessage(exc, REQUEST));
+    }
+
+    /**
+     * The schema does not declare the SOAP attributes, so the errors are about the content, not
+     * about them.
+     */
+    @Test
+    void invalidDeclaredHeaderWithSoapAttributes() throws Exception {
+        final var exc = getRequestExchange(soap11WithHeader("""
+                <hd:RequestHeader xmlns:hd="https://example.com/header" s11:mustUnderstand="1">
+                    <hd:Language>de</hd:Language>
+                </hd:RequestHeader>
+                """, GET_CITY_EXAMPLE_COM));
+
+        assertEquals(ABORT, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, BOUND).validateMessage(exc, REQUEST));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains("cvc-complex-type.2.4"), body);
+        assertFalse(body.contains("mustUnderstand"), body);
+    }
+
+    /**
+     * A header block's schema may declare the SOAP attributes, even as required.
+     */
+    @Test
+    void soapAttributeRequiredByHeaderSchema() throws Exception {
+        final var exc = getRequestExchange(soap11WithHeader("""
+                <cs:trace xmlns:cs="https://example.com/cities" s11:mustUnderstand="1">abc</cs:trace>
+                """, GET_CITY_EXAMPLE_COM));
+
+        assertEquals(CONTINUE, createValidator(HEADER_DECLARES_SOAP_ATTRIBUTES_WSDL, BOUND).validateMessage(exc, REQUEST));
+    }
+
+    @Test
+    void soapAttributeRequiredByHeaderSchemaMissing() throws Exception {
+        final var exc = getRequestExchange(soap11WithHeader("""
+                <cs:trace xmlns:cs="https://example.com/cities">abc</cs:trace>
+                """, GET_CITY_EXAMPLE_COM));
+
+        assertEquals(ABORT, createValidator(HEADER_DECLARES_SOAP_ATTRIBUTES_WSDL, BOUND).validateMessage(exc, REQUEST));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains("cvc-complex-type.4"), body);
+    }
+
+    @Test
+    void soapAttributeDeclaredByHeaderSchemaInvalid() throws Exception {
+        final var exc = getRequestExchange(soap11WithHeader("""
+                <cs:trace xmlns:cs="https://example.com/cities" s11:mustUnderstand="true">abc</cs:trace>
+                """, GET_CITY_EXAMPLE_COM));
+
+        assertEquals(ABORT, createValidator(HEADER_DECLARES_SOAP_ATTRIBUTES_WSDL, BOUND).validateMessage(exc, REQUEST));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains("cvc-pattern-valid"), body);
+        assertFalse(body.contains("cvc-complex-type.4"), body);
+    }
+
+    /**
+     * WS-Security marks a signed header block with a wsu:Id that the block's schema does not
+     * declare.
+     */
+    @Test
+    void signedDeclaredHeader() throws Exception {
+        var exc = getRequestExchange(soap11WithHeader("""
+                <hd:RequestHeader xmlns:hd="https://example.com/header"
+                                  xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" wsu:Id="id-1">
+                    <hd:MessageId>1</hd:MessageId>
+                    <hd:Language>de</hd:Language>
+                </hd:RequestHeader>
+                """, GET_CITY_EXAMPLE_COM));
+
+        assertEquals(CONTINUE, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, BOUND).validateMessage(exc, REQUEST));
+    }
+
+    /**
+     * The SOAP 1.2 attributes of a header block are ignored, as the SOAP 1.1 ones are.
+     */
+    @Test
+    void validSoap12Header() throws Exception {
+        var exc = getRequestExchange(soap12WithHeader("""
+                <hd:RequestHeader xmlns:hd="https://example.com/header" s12:mustUnderstand="true" s12:role="http://www.w3.org/2003/05/soap-envelope/role/next" s12:relay="true">
+                    <hd:MessageId>1</hd:MessageId>
+                    <hd:Language>de</hd:Language>
+                </hd:RequestHeader>
+                """, GET_CITY_EXAMPLE_COM));
+
+        assertEquals(CONTINUE, createValidator(CITIES_WITH_SOAP12_HEADER_WSDL, BOUND).validateMessage(exc, REQUEST));
+    }
+
+    @Test
+    void invalidSoap12Header() throws Exception {
+        var exc = getRequestExchange(soap12WithHeader("""
+                <hd:RequestHeader xmlns:hd="https://example.com/header"><unknown/><hd:MessageId>1</hd:MessageId></hd:RequestHeader>
+                """, GET_CITY_EXAMPLE_COM));
+
+        assertEquals(ABORT, createValidator(CITIES_WITH_SOAP12_HEADER_WSDL, BOUND).validateMessage(exc, REQUEST));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains(SOAP12_NS), "Expected a SOAP 1.2 fault envelope but got: " + body);
+        assertTrue(body.contains("unknown"), body);
+    }
+
+    @Test
+    void soap12HeaderFaultIsValidatedInFault() throws Exception {
+        var exc = getResponseExchange(soap12WithHeader(INVALID_HEADER_FAULT, """
+                <s12:Fault>
+                    <s12:Code><s12:Value>s12:Sender</s12:Value></s12:Code>
+                    <s12:Reason><s12:Text xml:lang="en">Unknown language</s12:Text></s12:Reason>
+                </s12:Fault>
+                """));
+
+        assertEquals(ABORT, createValidator(CITIES_WITH_SOAP12_HEADER_WSDL, BOUND).validateMessage(exc, RESPONSE));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains("unknown"), body);
+    }
+
+    @Test
+    void responseHeaderIsValidated() throws Exception {
+        var exc = getResponseExchange(soap11WithHeader("""
+                <hd:ResponseHeader xmlns:hd="https://example.com/header"><hd:Language>de</hd:Language></hd:ResponseHeader>
+                """, """
+                <cs:getCityResponse xmlns:cs="https://example.com/cities"><population>300000</population></cs:getCityResponse>
+                """));
+
+        assertEquals(ABORT, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, BOUND).validateMessage(exc, RESPONSE));
+        assertEquals(RESPONSE.name(), exc.getResponse().getHeader().getFirstValue(VALIDATION_ERROR_SOURCE));
+    }
+
+    @Test
+    void requestHeaderIsNotValidatedInResponse() throws Exception {
+        var exc = getResponseExchange(soap11WithHeader("""
+                <hd:RequestHeader xmlns:hd="https://example.com/header"><unknown/></hd:RequestHeader>
+                """, """
+                <cs:getCityResponse xmlns:cs="https://example.com/cities"><population>300000</population></cs:getCityResponse>
+                """));
+
+        // Only the response's own declared header blocks are validated in the response flow.
+        assertEquals(CONTINUE, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, BOUND).validateMessage(exc, RESPONSE));
+    }
+
+    @Test
+    void headersAreNotValidatedByDefault() throws Exception {
+        var exc = getRequestExchange(soap11WithHeader("""
+                <hd:RequestHeader xmlns:hd="https://example.com/header"><unknown/></hd:RequestHeader>
+                """, GET_CITY_EXAMPLE_COM));
+
+        assertEquals(CONTINUE, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, null, false).validateMessage(exc, REQUEST));
+    }
+
+    /**
+     * There is nothing to validate a bound header block against if none of the WSDL's schemas
+     * declares its element, e.g. WS-Security bound without its schema.
+     */
+    @ParameterizedTest
+    @EnumSource(value = WSDLValidator.HeaderValidation.class, names = {"BOUND", "DECLARED"})
+    void boundHeaderWithoutDeclarationIsNotValidated(WSDLValidator.HeaderValidation headerValidation) throws Exception {
+        var exc = getRequestExchange(soap11WithHeader("""
+                <wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"/>
+                """, GET_CITY_EXAMPLE_COM));
+
+        assertEquals(CONTINUE, createValidator(UNVALIDATABLE_HEADERS_WSDL, headerValidation).validateMessage(exc, REQUEST));
+    }
+
+    @Test
+    void unboundHeaderIsNotValidatedWithBound() throws Exception {
+        var exc = getRequestExchange(soap11WithHeader(INVALID_UNBOUND_REQUEST_HEADER, GET_CITY_EXAMPLE_COM));
+
+        assertEquals(CONTINUE, createValidator(UNBOUND_HEADER_WSDL, BOUND).validateMessage(exc, REQUEST));
+    }
+
+    @Test
+    void unboundButDeclaredHeaderIsValidated() throws Exception {
+        var exc = getRequestExchange(soap11WithHeader(INVALID_UNBOUND_REQUEST_HEADER, GET_CITY_EXAMPLE_COM));
+
+        assertEquals(ABORT, createValidator(UNBOUND_HEADER_WSDL, DECLARED).validateMessage(exc, REQUEST));
+        assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("unknown"), exc.getResponse().getBodyAsStringDecoded());
+    }
+
+    @Test
+    void validUnboundButDeclaredHeader() throws Exception {
+        var exc = getRequestExchange(soap11WithHeader("""
+                <hd:RequestHeader xmlns:hd="https://example.com/header"><hd:MessageId>1</hd:MessageId></hd:RequestHeader>
+                <tr:TraceHeader xmlns:tr="https://example.com/trace"><tr:TraceId>42</tr:TraceId></tr:TraceHeader>
+                """, GET_CITY_EXAMPLE_COM));
+
+        assertEquals(CONTINUE, createValidator(UNBOUND_HEADER_WSDL, DECLARED).validateMessage(exc, REQUEST));
+    }
+
+    @Test
+    void headerDeclaredInImportedSchemaIsValidated() throws Exception {
+        var exc = getRequestExchange(soap11WithHeader("""
+                <tr:TraceHeader xmlns:tr="https://example.com/trace"><tr:SpanId>42</tr:SpanId></tr:TraceHeader>
+                """, GET_CITY_EXAMPLE_COM));
+
+        assertEquals(ABORT, createValidator(UNBOUND_HEADER_WSDL, DECLARED).validateMessage(exc, REQUEST));
+    }
+
+    @Test
+    void undeclaredHeaderIsNotValidatedWithDeclared() throws Exception {
+        var exc = getRequestExchange(soap11WithHeader("""
+                <ns2:Block xmlns:ns2="http://membrane-api.io"><anything/></ns2:Block>
+                """, GET_CITY_EXAMPLE_COM));
+
+        assertEquals(CONTINUE, createValidator(UNBOUND_HEADER_WSDL, DECLARED).validateMessage(exc, REQUEST));
+    }
+
+    @Test
+    void unboundButDeclaredHeaderIsValidatedInResponse() throws Exception {
+        var exc = getResponseExchange(soap11WithHeader(INVALID_UNBOUND_REQUEST_HEADER, """
+                <cs:getCityResponse xmlns:cs="https://example.com/cities"><population>300000</population></cs:getCityResponse>
+                """));
+
+        assertEquals(ABORT, createValidator(UNBOUND_HEADER_WSDL, DECLARED).validateMessage(exc, RESPONSE));
+    }
+
+    @Test
+    void declaredHeaderIsValidatedInFault() throws Exception {
+        final var exc = getResponseExchange(soap11WithHeader(INVALID_UNBOUND_REQUEST_HEADER, FAULT_11));
+
+        assertEquals(ABORT, createValidator(UNBOUND_HEADER_WSDL, DECLARED).validateMessage(exc, RESPONSE));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains("unknown"), body);
+    }
+
+    @Test
+    void unboundHeaderIsNotValidatedInFaultWithBound() throws Exception {
+        final var exc = getResponseExchange(soap11WithHeader(INVALID_UNBOUND_REQUEST_HEADER, FAULT_11));
+
+        assertEquals(CONTINUE, createValidator(UNBOUND_HEADER_WSDL, BOUND).validateMessage(exc, RESPONSE));
+    }
+
+    /**
+     * A fault about a header block carries its details in a header block bound via
+     * soap:headerfault (SOAP 1.1 §4.4, WSDL 1.1 §3.7).
+     */
+    @Test
+    void headerFaultIsValidatedInFault() throws Exception {
+        final var exc = getResponseExchange(soap11WithHeader(INVALID_HEADER_FAULT, FAULT_11));
+
+        assertEquals(ABORT, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, BOUND).validateMessage(exc, RESPONSE));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains("unknown"), body);
+    }
+
+    @Test
+    void validHeaderFaultInFault() throws Exception {
+        final var exc = getResponseExchange(soap11WithHeader("""
+                <hd:HeaderFault xmlns:hd="https://example.com/header"><hd:Reason>Unknown language</hd:Reason></hd:HeaderFault>
+                """, FAULT_11));
+
+        assertEquals(CONTINUE, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, BOUND).validateMessage(exc, RESPONSE));
+    }
+
+    @Test
+    void headerFaultIsNotValidatedInResponse() throws Exception {
+        final var exc = getResponseExchange(soap11WithHeader(INVALID_HEADER_FAULT, """
+                <cs:getCityResponse xmlns:cs="https://example.com/cities"><population>300000</population></cs:getCityResponse>
+                """));
+
+        assertEquals(CONTINUE, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, BOUND).validateMessage(exc, RESPONSE));
+    }
+
+    @Test
+    void boundHeaderIsStillValidatedWithDeclared() throws Exception {
+        var exc = getRequestExchange(soap11WithHeader("""
+                <hd:RequestHeader xmlns:hd="https://example.com/header"><unknown/><hd:MessageId>1</hd:MessageId><hd:Language>de</hd:Language></hd:RequestHeader>
+                """, GET_CITY_EXAMPLE_COM));
+
+        assertEquals(ABORT, createValidator(CITIES_WITH_SOAP_HEADER_WSDL, DECLARED).validateMessage(exc, REQUEST));
+    }
+
+    @Test
+    void missingBoundHeaderIsNotRequiredByDefault() throws Exception {
+        final var exc = getRequestExchange(soap11WithoutHeader(GET_CITY_EXAMPLE_COM));
+
+        assertEquals(CONTINUE, createValidator(REQUIRED_HEADERS_WSDL, "Single", BOUND, false).validateMessage(exc, REQUEST));
+    }
+
+    @Test
+    void missingRequiredHeader() throws Exception {
+        final var exc = getRequestExchange(soap11WithoutHeader(GET_CITY_EXAMPLE_COM));
+
+        assertEquals(ABORT, createValidator(REQUIRED_HEADERS_WSDL, "Single", BOUND, true).validateMessage(exc, REQUEST));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains(MISSING_REQUEST_HEADER), body);
+    }
+
+    @Test
+    void missingRequiredHeaderBlock() throws Exception {
+        final var exc = getRequestExchange(soap11(GET_CITY_EXAMPLE_COM));
+
+        assertEquals(ABORT, createValidator(REQUIRED_HEADERS_WSDL, "Single", BOUND, true).validateMessage(exc, REQUEST));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains(MISSING_REQUEST_HEADER), body);
+    }
+
+    @Test
+    void presentRequiredHeader() throws Exception {
+        final var exc = getRequestExchange(soap11WithHeader(REQUIRED_REQUEST_HEADER, GET_CITY_EXAMPLE_COM));
+
+        assertEquals(CONTINUE, createValidator(REQUIRED_HEADERS_WSDL, "Single", BOUND, true).validateMessage(exc, REQUEST));
+    }
+
+    @Test
+    void invalidRequiredHeaderIsReportedAsInvalid() throws Exception {
+        final var exc = getRequestExchange(soap11WithHeader("""
+                <hd:RequestHeader xmlns:hd="https://example.com/header"><unknown/></hd:RequestHeader>
+                """, GET_CITY_EXAMPLE_COM));
+
+        assertEquals(ABORT, createValidator(REQUIRED_HEADERS_WSDL, "Single", BOUND, true).validateMessage(exc, REQUEST));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains("unknown"), body);
+        assertFalse(body.contains("is missing"), body);
+    }
+
+    @Test
+    void requiredHeaderOnlyForItsOperation() throws Exception {
+        final var exc = getRequestExchange(soap11WithoutHeader("""
+                <cs:getVersion xmlns:cs="https://example.com/cities"/>
+                """));
+
+        assertEquals(CONTINUE, createValidator(REQUIRED_HEADERS_WSDL, "Single", BOUND, true).validateMessage(exc, REQUEST));
+    }
+
+    @Test
+    void missingRequiredResponseHeader() throws Exception {
+        final var exc = getResponseExchange(soap11WithoutHeader("""
+                <cs:getCityResponse xmlns:cs="https://example.com/cities"><population>300000</population></cs:getCityResponse>
+                """));
+
+        assertEquals(ABORT, createValidator(REQUIRED_HEADERS_WSDL, "Single", BOUND, true).validateMessage(exc, RESPONSE));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains("{https://example.com/header}ResponseHeader required by the WSDL binding is missing"), body);
+    }
+
+    /**
+     * In service Both, getCity is also bound by a binding without soap:header, so its request may
+     * come without a header.
+     */
+    @Test
+    void requiredHeadersIntersectAcrossBindings() throws Exception {
+        final var exc = getRequestExchange(soap11WithoutHeader(GET_CITY_EXAMPLE_COM));
+
+        assertEquals(CONTINUE, createValidator(REQUIRED_HEADERS_WSDL, "Both", BOUND, true).validateMessage(exc, REQUEST));
+    }
+
+    @Test
+    void requiredRpcHeader() throws Exception {
+        final var exc = getRequestExchange(soap11WithoutHeader("""
+                <cs:lookup xmlns:cs="https://example.com/cities"><name>Bonn</name></cs:lookup>
+                """));
+
+        assertEquals(ABORT, createValidator(REQUIRED_HEADERS_WSDL, "Rpc", NONE, true).validateMessage(exc, REQUEST));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains(MISSING_REQUEST_HEADER), body);
+    }
+
+    /**
+     * Presence is checked even if no header block is validated.
+     */
+    @Test
+    void requiredHeaderWithHeadersNone() throws Exception {
+        final var exc = getRequestExchange(soap11WithoutHeader(GET_CITY_EXAMPLE_COM));
+
+        assertEquals(ABORT, createValidator(REQUIRED_HEADERS_WSDL, "Single", NONE, true).validateMessage(exc, REQUEST));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains(MISSING_REQUEST_HEADER), body);
+    }
+
+    @Test
+    void faultNeedsNoHeader() throws Exception {
+        final var exc = getResponseExchange(soap11WithoutHeader(FAULT_11));
+
+        assertEquals(CONTINUE, createValidator(REQUIRED_HEADERS_WSDL, "Single", BOUND, true).validateMessage(exc, RESPONSE));
+    }
+
     private static Exchange getRequestExchange(String body) throws URISyntaxException {
         return Request.post("/foo").body(body).contentType(TEXT_XML).buildExchange();
     }
@@ -671,12 +1743,38 @@ public class WSDLValidatorTest {
                """.formatted(body);
     }
 
+    private static String soap11WithHeader(String header, String body) {
+        return """
+               <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                  <s11:Header>%s</s11:Header>
+                  <s11:Body>%s</s11:Body>
+               </s11:Envelope>
+               """.formatted(header, body);
+    }
+
+    private static String soap11WithoutHeader(String body) {
+        return """
+               <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                  <s11:Body>%s</s11:Body>
+               </s11:Envelope>
+               """.formatted(body);
+    }
+
     private static String soap12(String body) {
         return """
                <s12:Envelope xmlns:s12="http://www.w3.org/2003/05/soap-envelope">
                   <s12:Body>%s</s12:Body>
                </s12:Envelope>
                """.formatted(body);
+    }
+
+    private static String soap12WithHeader(String header, String body) {
+        return """
+               <s12:Envelope xmlns:s12="http://www.w3.org/2003/05/soap-envelope">
+                  <s12:Header>%s</s12:Header>
+                  <s12:Body>%s</s12:Body>
+               </s12:Envelope>
+               """.formatted(header, body);
     }
 
     private static void dumpResonseBody(Exchange exc) {
@@ -693,6 +1791,20 @@ public class WSDLValidatorTest {
 
     private static WSDLValidator createValidator(String location, String serviceName, boolean skipFaults) {
         var validator = new WSDLValidator(new ResolverMap(), location, serviceName, (msg, exc) -> log.info("Validation failure: {}", msg), skipFaults);
+        validator.init();
+        return validator;
+    }
+
+    private static WSDLValidator createValidator(String location, WSDLValidator.HeaderValidation headerValidation) {
+        var validator = new WSDLValidator(new ResolverMap(), location, null,
+                (msg, exc) -> log.info("Validation failure: {}", msg), false, ErrorDetailsPolicy.FULL, headerValidation);
+        validator.init();
+        return validator;
+    }
+
+    private static WSDLValidator createValidator(String location, String serviceName, WSDLValidator.HeaderValidation headerValidation, boolean requireBoundHeaders) {
+        final var validator = new WSDLValidator(new ResolverMap(), location, serviceName,
+                (msg, exc) -> log.info("Validation failure: {}", msg), false, ErrorDetailsPolicy.FULL, headerValidation, requireBoundHeaders);
         validator.init();
         return validator;
     }

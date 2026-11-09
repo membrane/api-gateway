@@ -15,6 +15,9 @@ package com.predic8.membrane.core.proxies;
 
 import org.junit.jupiter.api.*;
 
+import java.time.*;
+import java.util.*;
+
 import static com.predic8.membrane.core.http.Request.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -141,12 +144,100 @@ public class ServiceProxyKeyTest {
 		testHostMatch("[::1]", "[::1]:2000x", false);
 	}
 
+	@Test
+	@DisplayName("Host names are compared ignoring ASCII case")
+	void hostMatchIgnoresAsciiCase() {
+		testHostMatch("foo.predic8.de", "FOO.Predic8.DE");
+		testHostMatch("FOO.PREDIC8.DE", "foo.predic8.de");
+		testHostMatch("*.Predic8.de", "Foo.PREDIC8.de");
+	}
+
+	@Test
+	@DisplayName("Non-ASCII characters are not case folded onto ASCII letters")
+	void hostMatchDoesNotFoldUnicodeOntoAscii() {
+		testHostMatch("kapi.predic8.de", "Kapi.predic8.de", false); // Kelvin sign
+		testHostMatch("sapi.predic8.de", "ſapi.predic8.de", false); // long s
+		testHostMatch("*.kapi.predic8.de", "a.Kapi.predic8.de", false);
+	}
+
+	@Test
+	@DisplayName("Characters of the configured host are literals, not regex syntax")
+	void hostMatchTreatsHostAsLiteral() {
+		testHostMatch("foo.predic8.de", "fooxpredic8.de", false);
+		testHostMatch("a+b", "aab", false);
+		testHostMatch("a+b", "a+b");
+		testHostMatch("(bar)", "(bar)");
+	}
+
+	@Test
+	@DisplayName("The whole host name has to match, not a part of it")
+	void hostMatchIsAnchored() {
+		testHostMatch("predic8.de", "foo.predic8.de", false);
+		testHostMatch("foo.predic8.de", "foo.predic8.de.example.com", false);
+		testHostMatch("*.predic8.de", "foo.predic8.de.example.com", false);
+	}
+
+	@Test
+	@DisplayName("A wildcard matches one or more characters, dots included")
+	void hostWildcardMatchesOneOrMoreCharacters() {
+		testHostMatch("*.predic8.de", "a.b.predic8.de");
+		testHostMatch("*.predic8.de", ".predic8.de", false);
+		testHostMatch("*.predic8.de", "predic8.de", false);
+		testHostMatch("api-*.predic8.de", "api-v1.predic8.de");
+		testHostMatch("api-*.predic8.de", "api-.predic8.de", false);
+		testHostMatch("192.168.*", "192.168.1.5");
+		testHostMatch("foo*", "foo", false);
+		testHostMatch("*.*.predic8.de", "a.b.predic8.de");
+		testHostMatch("*.*.predic8.de", "a.predic8.de", false);
+		testHostMatch("foo.example.com *.*.predic8.de", "a.b.c.predic8.de");
+	}
+
+	@Test
+	@DisplayName("A wildcard does not match line terminators")
+	void hostWildcardDoesNotMatchLineTerminators() {
+		for (var terminator : List.of("\n", "\r", "\u0085", " ", " "))
+			testHostMatch("*.predic8.de", "a%sb.predic8.de".formatted(terminator), false);
+	}
+
+	@Test
+	@DisplayName("A missing Host header matches only the host wildcard")
+	void hostMatchWithoutHostHeader() {
+		testHostMatch("foo.predic8.de", null, false);
+		testHostMatch("*", null);
+	}
+
+	@Test
+	@DisplayName("A copied key matches the same hosts as the original")
+	void copiedKeyMatchesSameHosts() {
+		final var copy = new ServiceProxyKey(new ServiceProxyKey("*.predic8.de", "GET", null, 80));
+		assertTrue(copy.matchesHostHeader("foo.predic8.de"));
+		assertFalse(copy.matchesHostHeader("foo.example.com"));
+	}
+
+	@Test
+	@DisplayName("Host names longer than DNS allows do not match")
+	void hostMatchRejectsOverlongHostNames() {
+		final var maxLength = "a".repeat(255 - ".predic8.de".length()) + ".predic8.de";
+		testHostMatch("*.predic8.de", maxLength);
+		testHostMatch("*.predic8.de", "a" + maxLength, false);
+		testHostMatch("*.predic8.de", maxLength + ":8080");
+		testHostMatch("*", "a" + maxLength);
+	}
+
+	@Test
+	@DisplayName("Matching takes linear time, however many wildcards the host has")
+	void hostMatchWithManyWildcardsIsFast() {
+		final var key = new ServiceProxyKey("*.*.*.*.*.predic8.de", "GET", null, 80);
+		final var host = "a.".repeat(126) + "a";
+		assertTimeoutPreemptively(Duration.ofSeconds(1), () -> assertFalse(key.matchesHostHeader(host)));
+	}
+
 	private void testHostMatch(String hostArg, String hostHeader) {
 		testHostMatch(hostArg, hostHeader, true);
 	}
 
 	private void testHostMatch(String hostArg, String hostHeader, boolean result) {
-		assertEquals(new ServiceProxyKey(hostArg, "GET", null, 80).matchesHostHeader(hostHeader), result);
+		assertEquals(result, new ServiceProxyKey(hostArg, "GET", null, 80).matchesHostHeader(hostHeader));
 	}
 
 	@Test

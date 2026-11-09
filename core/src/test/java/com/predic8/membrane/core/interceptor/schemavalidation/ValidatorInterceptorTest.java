@@ -23,6 +23,7 @@ import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.util.ConfigurationException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -37,6 +38,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.test.TestUtil.getPathFromResource;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
@@ -187,6 +189,28 @@ public class ValidatorInterceptorTest {
 
     private byte[] getContent(String fileName) throws IOException {
         return Files.readAllBytes(Path.of(fileName));
+    }
+
+    @Test
+    void headersWithoutWsdlIsRejected() {
+        var interceptor = new ValidatorInterceptor();
+        interceptor.setResourceResolver(new ResolverMap());
+        interceptor.setSchema("src/test/resources/validation/order.xsd");
+        interceptor.setHeaders(WSDLValidator.HeaderValidation.DECLARED);
+
+        var e = assertThrows(ConfigurationException.class, () -> interceptor.init(router));
+        assertTrue(e.getMessage().contains("headers"), e.getMessage());
+    }
+
+    @Test
+    void requireBoundHeadersWithoutWsdlIsRejected() {
+        final var interceptor = new ValidatorInterceptor();
+        interceptor.setResourceResolver(new ResolverMap());
+        interceptor.setSchema("src/test/resources/validation/order.xsd");
+        interceptor.setRequireBoundHeaders(true);
+
+        final var e = assertThrows(ConfigurationException.class, () -> interceptor.init(router));
+        assertTrue(e.getMessage().contains("requireBoundHeaders"), e.getMessage());
     }
 
     private ValidatorInterceptor createSchemaValidatorInterceptor(String schema) {

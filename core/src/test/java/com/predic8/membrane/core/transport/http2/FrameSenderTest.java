@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.transport.http2;
 
 import com.predic8.membrane.core.transport.http2.frame.Frame;
+import com.predic8.membrane.core.transport.http2.frame.GoawayFrame;
 import com.predic8.membrane.core.transport.http2.frame.RstStreamFrame;
 import com.twitter.hpack.Decoder;
 import com.twitter.hpack.Encoder;
@@ -25,6 +26,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.predic8.membrane.core.transport.http2.frame.Error.ERROR_CANCEL;
 import static com.predic8.membrane.core.transport.http2.frame.Frame.*;
@@ -224,6 +226,50 @@ class FrameSenderTest {
 
         assertEquals(List.of(TYPE_HEADERS, TYPE_DATA), frameTypes(out.toByteArray()));
         assertEquals(StreamState.HALF_CLOSED_LOCAL, streamInfo.getState());
+    }
+
+    /**
+     * A frame can be queued after the sender found none and before it waits for the next one, here while it
+     * flushes. Its signal must not get lost, otherwise the sender only finds the frame once its wait times out.
+     */
+    @Test
+    void frameQueuedWhileTheSenderGoesIdleIsSentRightAway() throws Exception {
+        final var written = new CountDownLatch(1);
+        final var sender = new AtomicReference<FrameSender>();
+        final var out = new ByteArrayOutputStream() {
+            private boolean queued;
+
+            @Override
+            public void flush() {
+                if (queued)
+                    return;
+                queued = true;
+                sender.get().send(GoawayFrame.construct(0, 1, 0));
+            }
+
+            @Override
+            public synchronized void write(int b) {
+                super.write(b);
+                written.countDown();
+            }
+
+            @Override
+            public synchronized void write(byte[] b, int off, int len) {
+                super.write(b, off, len);
+                written.countDown();
+            }
+        };
+        sender.set(new FrameSender(out, new Encoder(4096), new Settings(), new ConcurrentHashMap<>(), "test"));
+
+        final var thread = new Thread(sender.get());
+        thread.start();
+        try {
+            assertTrue(written.await(500, MILLISECONDS), "The frame is sent without waiting for the wait to time out.");
+        } finally {
+            sender.get().stop();
+            thread.join(2000);
+        }
+        assertEquals(List.of(TYPE_GOAWAY), frameTypes(out.toByteArray()));
     }
 
     private static byte[] encodeHeader(Encoder encoder, String name, String value) throws IOException {

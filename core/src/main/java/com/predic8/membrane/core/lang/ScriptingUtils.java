@@ -32,12 +32,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.util.FileUtil.readInputStream;
 import static com.predic8.membrane.core.util.URLParamUtil.getParams;
+import static com.predic8.membrane.core.util.text.TextUtil.escapeControlCharsForLog;
 import static java.util.Collections.emptyMap;
 
 public class ScriptingUtils {
@@ -80,12 +82,13 @@ public class ScriptingUtils {
                 params.put("params", qParams);
                 params.put("param", qParams);
             } catch (Exception e) {
-                log.info("Cannot parse query parameter from {}", exc.getRequest().getUri());
+                log.info("Cannot parse query parameter from {}", escapeControlCharsForLog(exc.getRequest().getUri()));
             }
         } else if (flow == RESPONSE) {
             var response = exc.getResponse();
             params.put("response", response);
-            params.put("statusCode", response.getStatusCode());
+            // No response yet, e.g. in an abort flow after the request flow was aborted
+            params.put("statusCode", response != null ? response.getStatusCode() : null);
         }
 
         if (msg != null) {
@@ -104,6 +107,12 @@ public class ScriptingUtils {
                 } catch (Exception e) {
                     log.info("Can't parse body as JSON: {}", e.getMessage());
                 }
+            }
+        } else {
+            // No message, e.g. no response in an abort flow. Bind null, so a script can test for it instead of
+            // failing on an undefined variable
+            for (var key : List.of("message", "body", "header", "headers", "cookie", "cookies", "json")) {
+                params.put(key, null);
             }
         }
 

@@ -22,8 +22,6 @@ import com.predic8.membrane.core.interceptor.llmgateway.provider.ModelInputReque
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
-
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
 /**
@@ -64,22 +62,21 @@ public class SystemPrompt {
     private String content = "";
 
     public Outcome handleRequest(ModelInputRequest mir, Exchange exc) {
-        var instructions = mir.getSystemPrompt() == null ? "" : mir.getSystemPrompt();
         switch (action) {
             case OVERWRITE -> {
                 log.debug("Overwriting instructions: {}", content);
-                mir.setSystemPrompts(List.of(content));
+                mir.overwriteSystemPrompt(content);
             }
             case PREPEND -> {
                 log.debug("Prepending instructions: {}", content);
-                mir.setSystemPrompts(List.of(content, instructions));
+                mir.prependSystemPrompt(content);
             }
             case APPEND -> {
                 log.debug("Appending instructions: {}", content);
-                mir.setSystemPrompts(List.of(instructions, content));
+                mir.appendSystemPrompt(content);
             }
             case REMOVE -> {
-                log.info("Removing instructions: {}", instructions);
+                log.debug("Removing instructions.");
                 mir.removeSystemPrompt();
             }
         }
@@ -92,8 +89,8 @@ public class SystemPrompt {
 
     /**
      * @description What to do with the system prompt the client sent. <code>OVERWRITE</code> replaces it,
-     * <code>APPEND</code> and <code>PREPEND</code> combine both with a newline between them, and
-     * <code>REMOVE</code> drops it and ignores the content.
+     * <code>APPEND</code> and <code>PREPEND</code> add the content after or before it and keep the client's prompt
+     * as it was sent, and <code>REMOVE</code> drops it and ignores the content.
      * @default OVERWRITE
      * @example PREPEND
      */

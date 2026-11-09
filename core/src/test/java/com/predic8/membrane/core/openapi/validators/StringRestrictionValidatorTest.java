@@ -131,6 +131,49 @@ class StringRestrictionValidatorTest {
         });
     }
 
+    @Test
+    void patternSkippedWhenMaxLengthExceeded() {
+        final var validator = new StringRestrictionValidator(
+                new Schema<>().type("string").maxLength(3).pattern("^[0-9]+$")
+        );
+        run(c -> {
+            final var err = validator.validate(c, "abcd");
+            assertEquals(1, err.size());
+            assertTrue(err.getFirst().getMessage().contains("MaxLength"));
+        });
+    }
+
+    @Test
+    void invalidPatternSkippedWhenMaxLengthExceeded() {
+        final var validator = new StringRestrictionValidator(
+                new Schema<>().type("string").maxLength(3).pattern("[invalid(")
+        );
+        run(c -> {
+            final var err = validator.validate(c, "abcd");
+            assertEquals(1, err.size());
+            assertTrue(err.getFirst().getMessage().contains("MaxLength"));
+        });
+    }
+
+    @Test
+    void patternCheckedWithinMaxLength() {
+        final var validator = new StringRestrictionValidator(
+                new Schema<>().type("string").maxLength(5).pattern("^[0-9]+$")
+        );
+        run(c -> {
+            final var err = validator.validate(c, "abc");
+            assertEquals(1, err.size());
+            assertTrue(err.getFirst().getMessage().contains("does not match the pattern"));
+        });
+    }
+
+    @Test
+    void patternIsCompiledOnce() {
+        assertSame(StringRestrictionValidator.compile("[a-z]+").orElseThrow(),
+                StringRestrictionValidator.compile("[a-z]+").orElseThrow());
+        assertTrue(StringRestrictionValidator.compile("[invalid(").isEmpty());
+    }
+
     private void run(java.util.function.Consumer<ValidationContext> test) {
         test.accept(ctx);
 

@@ -90,7 +90,10 @@ class ScalarValueConverterTest {
         return Stream.of(
                 Arguments.of(IntegerAttributes.class, "5", 5),
                 Arguments.of(EnumAttributes.class, "\"FAST\"", FAST),
-                Arguments.of(StringAttributes.class, "\"value\"", "value")
+                Arguments.of(StringAttributes.class, "\"value\"", "value"),
+                Arguments.of(StringAttributes.class, "30000", "30000"),
+                Arguments.of(StringAttributes.class, "1.5", "1.5"),
+                Arguments.of(StringAttributes.class, "true", "true")
         );
     }
 

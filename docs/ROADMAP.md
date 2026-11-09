@@ -1,10 +1,15 @@
 # Membrane Roadmap
 
-
-
 PRIO 1:
-- Add performance tutorial or tuning guide
-  - forgetful exchange store
+- docker documentation:
+  - Look what is already there somewhere
+  - Creating docker image for Membrane
+  - Using the predic8/membrane image
+    - mounting
+      - apis.yaml
+      - conf/log4j.conf/yaml
+  - Memory with Java in Docker
+  - Image for minimal RAM usage
 - set backlog to 1000
   - provide production tutorial with backlog = 100
   - production = true
@@ -17,17 +22,20 @@ PRIO 1:
 - Register JSON Schema for YAML at: https://www.schemastore.org TB
 - create test asserting that connection reuse via proxy works TP
 - Central description of Membrane Languages, Cheat Sheets, links to their docs. TP
-- Central description of MEMBRANE_* environment variables
+- Central description of MEMBRANE_* environment variables CG
+  - Check https://www.membrane-api.io/gateway-documentation.html #configuration 
   - Like MEMBRANE_HOME...
-  - @coderabbitai look through the code base for usages of these variables and suggest documentation 
-- API gateway best practice document
+  - @coderabbitai look through the code base for usages of these variables and suggest documentation
+- API gateway best practice document TB
   - Start with conditions on the body (`if`, `choose`, API `test`) and media types:
     - Send the right Content-Type (`curl -d` sends form data); an empty body or one that is no XML/JSON at all is evaluated as an empty document, a broken XML/JSON body gives 400/502 whatever its Content-Type
     - Write fail-closed XPath guards: `not(/a = 'admin')` instead of `/a != 'admin'`. It is also true when `<a>` is missing, so a request without `<a>` counts as "not admin". `/a != 'admin'` is false then, which lets such a request slip past the guard
     - Check expected content-type at the beginning (Maybe an Interceptor like enforceContent)
 
 PRIO 2:
-- Remove MemoryExchangeStore
+- Add performance tutorial or tuning guide
+  - forgetful exchange store
+- Remove MemoryExchangeStore CG
   - It was used only by Membrane Monitor
 - Tutorial: Replace httpbin and catfact TB
 
@@ -40,7 +48,10 @@ PRIO 3:
   - Security: return 400 if the routing path selects a different path item than this matrix-aware path. Otherwise `/customers/;x/orders` would be validated against `/customers/{id}/orders`, while a backend that merges slashes serves a literal `/customers/orders`.
   - Open: the style may differ per method of one path item; `;jsessionid` next to matrix values ends up in exploded objects with `additionalProperties`. The RFC 6570 form `/customers{id}` → `/customers;id=7` stays out of scope.
   - Related: `simple`-style array/object path parameters are not parsed either, `PathParametersValidator` validates the raw string.
-- ReplaceInterceptor: Support Languages, tutorial/transformation
+- OpenAPI: support `unevaluatedItems` (JSON Schema 2020-12, OAS 3.1 and later)
+  - Story: the keyword is never read, so arrays are validated as if it were absent. `unevaluatedItems: false` does not reject any items.
+  - It applies to the items not evaluated by `prefixItems`, `items` or `contains`, including those of the `allOf`/`anyOf`/`oneOf`/`$ref` subschemas that validated successfully. `ObjectValidator` does the same for `unevaluatedProperties`.
+  - Related: #3499 (`prefixItems`).
 - WebServiceExplorerInterceptor
   - Support multiple services, ports, ...
   - Refactor
@@ -63,12 +74,25 @@ PRIO 3:
   - Keep the system property as a fallback, or deprecate it.
   - Document that zero or less means no limit.
   - Related: #3382 (a line over the limit gets a connection reset instead of 414/431), #3378 item 3 (8092 is probably a typo for 8192).
+- soapHeader interceptor
+  - Story: add or remove SOAP header blocks by configuration. Replaces the removed `add-soap-header` example, which needed a custom Java interceptor.
+  - Idea:
+    ```yaml
+    - soapHeader:
+        remove:
+          name: Security
+          namespaceUri: http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd
+        add: |
+          <ns1:token xmlns:ns1="http://example.com/auth">...</ns1:token>
+    ```
+  - Parse with the hardened XML parser.
+
 
 ## Membrane 8.0.0 (Java 25)
 
 - change all maven packages to membrane-api.io
   - Needs changes at maven central
-- ReplaceInterceptor:
+- ReplaceInterceptor: TB
   - allow also XPath
   - allow to use expressions for the replacement
 - global:
@@ -147,7 +171,106 @@ PRIO 3:
   - Also `kafkaConsumer` with retryInit: the consumer starts in `init()`, before the interceptors of the flow. If one of them fails, the API stays inactive with a running consumer that reads without delivering. Every retry replaces the API with a clone, and `clone()` and `replaceRule()` both initialize it, so the consumer is restarted twice per retry and the consumer group rebalances. Also, without the Kafka extension Membrane starts anyway with an inactive API, although the docs say it does not start. For now `kafkaConsumer` refuses to start when retryInit is on, but `AbstractProxy.init` swallows that exception under retryInit, so Membrane starts anyway with the API inactive and retries it forever.
   - Idea: `Proxy.destroy()`, called by `RuleManager.removeRule()` and by `replaceRule()` on the old API **before** `newProxy.init()`. A clone shares the consumer reference with the original, so stopping the old API after the clone was initialized would stop the clone's consumer. Stopping first also keeps two consumers of the same group from running at once.
   - Then look at `kafkaConsumer` again: drop the shared `AtomicReference` that clones need for `@PreDestroy`, allow hotDeploy and retryInit again, and check what happens when `newProxy.init()` fails after the old consumer was stopped.
+- `groovy`: serialize a returned `List` to a JSON body like a `Map`
+  - Story: since 7.9 the `javascript` plugin turns a returned array into a JSON body (`isListSerializedToJson()` in `AbstractScriptInterceptor`). `groovy` still ignores a returned `List`, so the two languages differ.
+  - **Breaking**: `list.each {...}`, `collect` or `findAll` as the last statement returns a list, which then replaces the body. Name ending the script with `CONTINUE` in the release notes. Then remove the hook.
+- `template`: render `.xml` template files with the streaming engine and escape inserted values
+  - Story: a `template` whose `location` ends in `.xml` is rendered by Groovy's `XmlTemplateEngine`, which escapes only the template's own text. Values inserted with `${}`, also in attributes, and with `<gsp:expression>` are not escaped. All other templates use the adapted `StreamingTemplateEngine`, which escapes `${}` and `<%= %>` for the content type.
+  - Fix: drop `XmlTemplateEngine`. A `.xml` file only sets the content type to `application/xml` (as `.json` does for JSON) and is rendered by `StreamingTemplateEngine` with XML escaping. The output is no longer re-indented (`pretty: true` formats it). Check whether the built-in functions (`xpath()`, `user()`, ...) work in `.xml` files today; only the streaming engine sets the `fn` delegate.
+  - Raw XML stays possible as with inline templates: `<% out << x %>`, or a DOM node or node list, e.g. from `xpath()`.
+  - **Breaking**: `<gsp:scriptlet>` and `<gsp:expression>` are no longer processed. If a template declares the `http://groovy.codehaus.org/2005/gsp` namespace, fail at startup with a `ConfigurationException` that shows the rewrite (`<gsp:scriptlet>` → `<% %>`, `<gsp:expression>` → `${}`), so it is never output literally. Values that inserted markup through `${}` are escaped now. Comments are no longer removed. Rewrite `distribution/examples/templating/xml/template.xml`, or drop it with the examples.
+  - Until then, the `template` reference docs say that values in `.xml` files are not escaped.
 - Reorganisation of *Util* classes. Check for duplicates and right place.
+- WSDL validation: change the default of the `validator` attribute `headers` from `none` to `bound`
+  - Story: 7.8 can validate SOAP header blocks (#3582) but leaves it off by default, so an update does not start rejecting messages whose headers passed before. With `bound`, the header blocks the WSDL binds with `soap:header` and `soap:headerfault` are validated against the WSDL's schemas.
+  - **Breaking**: a message with an invalid bound header block is rejected. Name `headers: none` in the release notes as the way to keep the old behavior.
+  - Change the default of the `headers` field and `@default` of `setHeaders` in `ValidatorInterceptor`, and of the `WSDLValidator` constructors without a `HeaderValidation` parameter.
+- To discuss: make the regex engine a swappable component, with RE2/J or a comparable linear-time engine as the default
+  - Story: configured regular expressions run on `java.util.regex`, which backtracks. Overlapping quantifiers can take quadratic or worse time on crafted requests (ReDoS). Today the operator has to avoid such patterns, see https://www.membrane-api.io/security/membrane-redos-protection.html.
+  - A linear-time engine such as RE2/J (`com.google.re2j`, 114 KB, no dependencies) rules this out whatever the pattern.
+  - Affected: every place a configured or spec-supplied pattern meets request data, e.g. `path` with `isRegExp`, `rewriter`, `regExReplacer`, `formValidation`, `rest2Soap` mappings, OpenAPI `pattern` and `patternProperties`, host matching.
+  - Idea: one engine abstraction (compile, find, matches, replace with groups) used by all of them, selected globally in the configuration (e.g. `re2` default, `java` opt-in), maybe overridable per element.
+  - **Breaking**: RE2 has no lookarounds, backreferences or possessive quantifiers. Configurations using them fail at startup with RE2 and need the `java` engine. Replacement syntax (`$1`) and flags (`(?i)`, Unicode case folding) differ in details.
+  - To decide: whether an invalid pattern under RE2 fails at startup or falls back to `java` with a warning; how OpenAPI/JSON Schema `pattern` (ECMA-262) maps onto the engines; the performance of RE2/J for short inputs compared with `java.util.regex`.
+- To discuss:
+  - validator/ValidatorInterceptor is for WSDL, XSD, Schematron, JSON Schema?
+  - Maybe we should split that to wsdlValidator, xmlSchemaValidator, jsonSchemaValidator?
+  - It might be confusing to have a wsdl or boundHeader property visible when JSON Schema validation is needed.
+
+### Refactorings for v8
+
+#### Build one immutable WSDL binding-validation model
+
+Refactor WSDL validation metadata extraction into one immutable model built during validator initialization.
+
+Relevant classes:
+- WSDLMessageElementExtractor
+- WSDLValidator
+- BindingOperationMessage
+- SoapBody
+- SoapHeader
+
+Body selection, possible headers, required headers, and fault headers currently perform overlapping traversals of services, bindings, operations, and schemas. Consolidate that work while retaining enough per-binding information to derive each validation rule correctly.
+
+Requirements:
+- Resolve the selected services, bindings, operations, message directions, and parts once.
+- Discover global schema elements once, retaining cycle protection for schema imports.
+- Represent empty bodies explicitly.
+- Preserve documented service-wide header selection and required-header intersections across alternative bindings.
+- Preserve SOAP version handling, RPC behavior, fault handling, abstract-WSDL behavior, configuration defaults, and existing warning behavior.
+- Derive runtime lookup sets/maps from the model rather than repeating extraction logic.
+- Use immutable collections after initialization.
+
+Correct the known WSDL 1.1 §3.5 discrepancy during this refactoring:
+- Absent soap:body/@parts includes all message parts; header binding does not subtract a part.
+- parts="" selects no body parts.
+- Explicit parts selects the named parts, including a part also bound as a header.
+  Update header-only fixtures to specify parts="" where appropriate.
+
+Add regression tests before changing the incorrect behavior. Cover absent/empty/explicit parts, shared body/header parts, different bindings of the same message, required-header intersections, faults, and cyclic schema imports.
+
+Avoid expanding unrelated unsupported WSDL features. Use the repository’s targeted test workflow. Do not commit or push. Report the model, compatibility implications, and test results.
+
+#### Harmonize JSON parsers
+
+- Story: JSON is parsed in many places with differently configured parsers. About 76 classes in `core` create their own `new ObjectMapper()`, mostly with Jackson's lenient defaults, e.g. trailing tokens are ignored. The JSON Schema, OpenAPI and JSON-RPC validators already reject trailing data; other parsers do not.
+- Central, immutable parser configuration in `JsonUtil` (shared `ObjectReader`s instead of mutable `ObjectMapper`s): strict by default (`FAIL_ON_TRAILING_TOKENS`, duplicate key detection), with one place for limits such as nesting depth and string length.
+- Every validator and every interceptor that parses a body uses it. Parse the body once and keep the `JsonNode` on the message (see JSONBody under Improvements).
+- **Breaking**: bodies that were accepted before, e.g. with trailing data or duplicate keys, are rejected.
+
+#### Get rid of old JSON parsers
+
+- `org.json` (`JsonToXml`, `Xml2JsonInterceptor`, `ElasticSearchExchangeStore`): replace with Jackson. Check that `xml2json`/`json2xml` output stays the same, or name the differences in the release notes.
+- `json-smart`: only there for `json-path`. Configure `json-path` with the Jackson provider and drop the direct dependency if possible.
+- Combine with the Jackson 3 upgrade.
+
+#### Share field validation between urlencoded and multipart form bodies
+
+- Story: `FormUrlEncodedValidator` and `MultipartFormDataValidator` both map named fields onto an object schema, but each implements that logic itself: matching `properties`/`patternProperties`/`additionalProperties`, `required`, choosing a decoding schema when several schemas or types apply, building arrays from repeated fields (`items`/`prefixItems`, `minItems`/`maxItems`), and validating the whole value.
+- The copies have drifted apart: only the urlencoded `decodingSchema` treats `number` and `integer` as compatible. Multipart validates each part first and then decodes it a second time in `reconstructPart` to check whole-array keywords (`uniqueItems`, `contains`). Whenever the two decoding paths disagree, the rebuilt array is dropped and those keywords are silently skipped, e.g. `items: {type: [array, string]}` with plain-string parts gets past `uniqueItems`.
+- Idea: one shared field validator over `name → List<raw value>`, with a decoder for each format:
+  - urlencoded: percent-decoded text → scalar or JSON
+  - multipart: bytes + effective content type → JSON, XML, binary, `text/plain` (incl. base64 `Content-Transfer-Encoding`). The decoder reports parse errors per part, e.g. "Part 'x' could not be parsed as XML".
+  - Each value is decoded once and the result is validated once, so `reconstructPart` goes away.
+- Out of scope: query parameters (`QueryParameterValidator`). Their model is different, with one schema per parameter, `style`/`explode`, and objects spread over several keys. They keep sharing only `parseScalar` and `SchemaValidator`. The OAS 3.2 `in: querystring` parameter already reuses `FormUrlEncodedValidator`.
+- Related: `FormUrlEncodedValidator` ignores the media type's `encoding` (`style`/`explode` per property, using the same rules as query parameters). If that is ever supported, it is the place where form and query parsing would share code.
+- Check that the error messages and status codes of both validators stay the same, or name the differences in the release notes.
+
+
+### Resolve the backend URL (destination) late
+
+- Story: the `DispatchingInterceptor` runs in the transport chain before the proxy's flow and copies the target into `exc.getDestinations()`. With a target `url` without a path it is target + request path; a target `url` with a path is used as it is; with `host`/`port` it is `scheme://host:port` + request path; without a target it is the request URI. URL templates stay unevaluated until `HTTPClientInterceptor` calls `Target.applyModifications()` after the flow. Finally, `HttpClient.setRequestURI()` overwrites the request URI with the path and query of the destination.
+- Problems:
+  - Changes to the request URI in the flow do not reach the backend, only changes to the destination do. That is why the `rewriter` rewrites both the destinations and the request URI.
+  - The unevaluated `${...}` of a target URL template travels through the whole flow. Every interceptor that parses a destination has to tolerate it. Cause of #3497 and #3531, see #3512.
+  - The destination has two roles: backend URL (HTTP client, retries over several destinations, internal routing, `reverseProxying`) and "current request path". `webServer`, `RESTInterceptor`, the admin console, `WSDLPublisherInterceptor`, `oauth2Resource2` and `cache` take the path from the destination. That only works because the dispatcher copies the request URI when there is no target. With a target URL with a path, both roles diverge.
+- Idea: like other gateways (nginx, Envoy, Spring Cloud Gateway), derive the backend URL as late as possible from the target and the current request path, after the template is evaluated. Interceptors that choose another backend (`balancer`, `destination`, `call`, `openapi` servers, `rest2Soap`, `wsdl2openapi`, ...) set it explicitly. The `rewriter` then rewrites only the request URI.
+- To decide:
+  - The model for a target URL with a path: used as it is (today), or target path + request path (Apache `ProxyPass`, Kong).
+  - How interceptors that read the path from the destination get it: from the request URI or from a dedicated "routing path".
+  - How several destinations (`balancer`, `RetryHandler` failover) and internal routing (`internal:` destinations, `RuleManager` matching internal proxies by the destination's authority) fit.
+  - Path normalization and SSRF when combining target and request path (dot segments, `//x` as a network-path reference, encoded slashes `%2F`); checks in the flow (`if`, `openapi` validation, path-based authorization) must see the path that is sent to the backend.
+- **Breaking**: interceptors and Groovy/SpEL scripts that read or write `exc.getDestinations()` in the flow see different values.
 
 ## Breaking Changes
 

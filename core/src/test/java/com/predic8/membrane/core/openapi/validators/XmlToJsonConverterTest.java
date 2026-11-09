@@ -17,6 +17,7 @@
 package com.predic8.membrane.core.openapi.validators;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.predic8.membrane.core.openapi.util.SchemaUtil;
 import com.predic8.membrane.core.util.xml.parser.XmlParseException;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -25,6 +26,10 @@ import io.swagger.v3.oas.models.media.XML;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -65,6 +70,27 @@ class XmlToJsonConverterTest {
             assertTrue(node.get("active").isBoolean());
             assertTrue(node.get("active").asBoolean());
             assertEquals(19.99, node.get("total").asDouble(), 1e-9);
+        }
+
+        @Test
+        void numbersAreConvertedExactly() throws Exception {
+            final var node = converter.convert("""
+                    <order>
+                      <total>5.0000000000000000001</total>
+                      <count>123456789012345678901234567890</count>
+                    </order>
+                    """, obj().addProperty("total", number()).addProperty("count", integer()));
+
+            assertEquals(0, new BigDecimal("5.0000000000000000001").compareTo(node.get("total").decimalValue()));
+            assertEquals(new BigInteger("123456789012345678901234567890"), node.get("count").bigIntegerValue());
+        }
+
+        @Test
+        void numberLongerThanMaxLengthIsKeptAsText() throws Exception {
+            final var digits = "1".repeat(SchemaUtil.MAX_NUMBER_LENGTH + 1);
+            final var node = converter.convert("<order><total>%s</total></order>".formatted(digits),
+                    obj().addProperty("total", number()));
+            assertTrue(node.get("total").isTextual());
         }
 
         @Test
@@ -790,6 +816,81 @@ class XmlToJsonConverterTest {
         }
     }
 
+    /**
+     * The items of an array are converted with the prefixItems schema of their position, otherwise
+     * with items. See #3499.
+     */
+    @Nested
+    class PrefixItems {
+
+        @Test
+        void wrappedArray() throws Exception {
+            final var xml = """
+                    <order>
+                      <point><v>1</v><v>a</v><v>true</v></point>
+                    </order>
+                    """;
+            final var schema = obj().addProperty("point",
+                    prefixArray(bool(), integer(), str()).xml(new XML().wrapped(true)));
+
+            final var point = converter.convert(xml, schema).get("point");
+
+            assertTrue(point.get(0).isIntegralNumber());
+            assertTrue(point.get(1).isTextual());
+            assertTrue(point.get(2).isBoolean());
+        }
+
+        @Test
+        void unwrappedArray() throws Exception {
+            final var xml = """
+                    <order>
+                      <point>1</point>
+                      <point>2.5</point>
+                    </order>
+                    """;
+            final var schema = obj().addProperty("point", prefixArray(null, integer(), number()));
+
+            final var point = converter.convert(xml, schema).get("point");
+
+            assertTrue(point.get(0).isIntegralNumber());
+            assertEquals(2.5, point.get(1).asDouble(), 1e-9);
+        }
+
+        @Test
+        void unwrappedArrayMatchesTheXmlNameOfThePrefixItem() throws Exception {
+            final var xml = """
+                    <order>
+                      <tag>1</tag>
+                      <label>a</label>
+                    </order>
+                    """;
+            final var schema = obj().addProperty("tags", prefixArray(str().xml(new XML().name("label")),
+                    integer().xml(new XML().name("tag"))));
+
+            final var tags = converter.convert(xml, schema).get("tags");
+
+            assertEquals(2, tags.size(), tags::toString);
+            assertTrue(tags.get(0).isIntegralNumber());
+            assertEquals("a", tags.get(1).asText());
+        }
+
+        @Test
+        void itemsAfterPrefixWithoutItemsStayText() throws Exception {
+            final var node = converter.convert("<numbers><a>1</a><b>2</b></numbers>", prefixArray(null, integer()));
+
+            assertTrue(node.get(0).isIntegralNumber());
+            assertTrue(node.get(1).isTextual());
+        }
+
+        @Test
+        void referencedPrefixItem() throws Exception {
+            converter = new XmlToJsonConverter(new OpenAPI().components(new Components().addSchemas("Id", integer())));
+            final var schema = prefixArray(null, new Schema().$ref("#/components/schemas/Id"));
+
+            assertTrue(converter.convert("<ids><id>7</id></ids>", schema).get(0).isIntegralNumber());
+        }
+    }
+
     // -----------------------------------------------------------------------
     // $ref resolution
     // -----------------------------------------------------------------------
@@ -924,5 +1025,9 @@ class XmlToJsonConverterTest {
 
     private static Schema array(Schema items) {
         return new Schema().type("array").items(items);
+    }
+
+    private static Schema prefixArray(Schema items, Schema... prefixItems) {
+        return new Schema().type("array").prefixItems(List.of(prefixItems)).items(items);
     }
 }

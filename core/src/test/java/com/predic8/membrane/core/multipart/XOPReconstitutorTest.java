@@ -14,13 +14,19 @@
 
 package com.predic8.membrane.core.multipart;
 
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.router.DummyTestRouter;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.util.List;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
@@ -146,10 +152,34 @@ class XOPReconstitutorTest {
     }
 
     @Test
-    void missingReferencedPartThrowsInGetReconstitutedMessage() {
+    void missingReferencedPartIsRejected() {
         // start part references cid:bin@test, but no such part is included
-        Response response = response(multipartBody(startPart()), contentType("<root@test>"));
-        assertThrows(RuntimeException.class, () -> reconstitutor.getReconstitutedMessage(response));
+        final var response = response(multipartBody(startPart()), contentType("<root@test>"));
+
+        final var e = assertThrows(com.predic8.membrane.core.http.ReadingBodyException.class,
+                () -> reconstitutor.getReconstitutedMessage(response));
+        assertTrue(e.belongsTo(response));
+        assertEquals("Did not find multipart with id bin@test.", e.getCause().getMessage());
+    }
+
+    @Test
+    void notWellFormedStartPartIsRejected() {
+        final var startPart = startPart().replace("</soap:Envelope>", "");
+        final var response = response(multipartBody(startPart, binaryPart()), contentType("<root@test>"));
+
+        final var e = assertThrows(com.predic8.membrane.core.http.ReadingBodyException.class,
+                () -> reconstitutor.getReconstitutedMessage(response));
+        assertTrue(e.belongsTo(response));
+        assertEquals("Start part of XOP package is not well-formed XML.", e.getCause().getMessage());
+    }
+
+    @Test
+    void notWellFormedStartPartFallsBackToOriginalStream() throws IOException {
+        final var startPart = startPart().replace("</soap:Envelope>", "");
+        final var response = response(multipartBody(startPart, binaryPart()), contentType("<root@test>"));
+
+        final var actual = IOUtils.toString(reconstitutor.reconstituteIfNecessary(response), UTF_8);
+        assertTrue(actual.contains("xop:Include"), "should fall back to the original multipart body");
     }
 
     @Test
@@ -161,9 +191,89 @@ class XOPReconstitutorTest {
         assertTrue(actual.contains("xop:Include"), "should fall back to the original multipart body");
     }
 
+    @Test
+    void entityDeclaredInStartPartIsNotExpanded() throws IOException {
+        final var startPart = startPart().replace("<soap:Envelope ",
+                "<!DOCTYPE soap:Envelope [<!ENTITY e \"xyz\">]><soap:Envelope a=\"&e;&e;\" ");
+        final var response = response(multipartBody(startPart, binaryPart()), contentType("<root@test>"));
+
+        assertFalse(IOUtils.toString(reconstitutor.reconstituteIfNecessary(response), UTF_8).contains("xyzxyz"));
+    }
+
+    @Test
+    void inlinesDistinctReferencedParts() throws Exception {
+        Response response = response(
+                multipartBody(startPart("bin@test", "other@test"), binaryPart(), binaryPart("other@test", "abc")),
+                contentType("<root@test>"));
+
+        String reconstituted = reconstitutor.getReconstitutedMessage(response).getBodyAsStringDecoded();
+
+        assertTrue(reconstituted.contains("MDEyMzQ1Njc4OQ=="));
+        assertTrue(reconstituted.contains("YWJj"));
+    }
+
+    /**
+     * MEM-38 F-052: every reference used to inline the part again, so a small package referencing one
+     * attachment many times expanded without bound. SOAP 1.2 MTOM (4.3.1.1) forbids referencing an
+     * extracted part from more than one xop:Include, and XOP 1.0 serializes each optimized element
+     * into a new part.
+     */
+    @Test
+    void partReferencedTwiceIsRejected() {
+        Response response = response(multipartBody(startPart("bin@test", "bin@test"), binaryPart()),
+                contentType("<root@test>"));
+
+        final var e = assertThrows(com.predic8.membrane.core.http.ReadingBodyException.class,
+                () -> reconstitutor.getReconstitutedMessage(response));
+        assertTrue(e.belongsTo(response));
+        assertEquals("Multipart with id bin@test is referenced more than once.", e.getCause().getMessage());
+    }
+
+    @Test
+    void partReferencedTwiceFallsBackToOriginalStream() throws IOException {
+        final var response = response(multipartBody(startPart("bin@test", "bin@test"), binaryPart()),
+                contentType("<root@test>"));
+
+        final var actual = IOUtils.toString(reconstitutor.reconstituteIfNecessary(response), UTF_8);
+        assertTrue(actual.contains("xop:Include"), "should fall back to the original multipart body");
+        assertFalse(actual.contains("MDEyMzQ1Njc4OQ=="), "referenced part must not be inlined");
+    }
+
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
+
+    @Test
+    void duplicateReferencesAreAttributedToTheSourceMessage() throws Exception {
+        final var router = new DummyTestRouter();
+        final var body = multipartBody(startPart("bin@test", "bin@test"), binaryPart());
+        for (final var requestBody : new boolean[]{true, false}) {
+            final var exc = Request.post("/soap").buildExchange();
+            final Message message;
+            if (requestBody) {
+                exc.getRequest().setBodyContent(body.getBytes(UTF_8));
+                exc.getRequest().getHeader().setContentType(contentType("<root@test>"));
+                message = exc.getRequest();
+            } else {
+                exc.setResponse(response(body, contentType("<root@test>")));
+                message = exc.getResponse();
+            }
+            final var decoder = new AbstractInterceptor() {
+                @Override
+                public Outcome handleRequest(Exchange exchange) {
+                    try (final var input = message.getBodyAsStreamDecoded()) {
+                        input.readAllBytes();
+                    } catch (IOException e) {
+                        throw new java.io.UncheckedIOException(e);
+                    }
+                    return Outcome.CONTINUE;
+                }
+            };
+            decoder.init(router);
+            assertEquals(Outcome.ABORT, router.getFlowController().invokeRequestHandlers(exc, List.of(decoder)));
+            assertEquals(requestBody ? 400 : 500, exc.getResponse().getStatusCode());
+        }
+    }
 
     /** A complete, well-formed XOP response with one start part and one referenced binary part. */
     private static Response xopResponse() {
@@ -176,22 +286,33 @@ class XOPReconstitutorTest {
     }
 
     private static String startPart() {
+        return startPart("bin@test");
+    }
+
+    private static String startPart(String... referencedIds) {
+        var includes = new StringBuilder();
+        for (String id : referencedIds)
+            includes.append("<xop:Include xmlns:xop=\"http://www.w3.org/2004/08/xop/include\" href=\"cid:%s\"/>".formatted(id));
         return "Content-Type: application/xop+xml; charset=UTF-8; type=\"text/xml\";" + CRLF
                 + "Content-Transfer-Encoding: binary" + CRLF
                 + "Content-ID: <root@test>" + CRLF
                 + CRLF
                 + "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\">"
                 + "<soap:Body><data>"
-                + "<xop:Include xmlns:xop=\"http://www.w3.org/2004/08/xop/include\" href=\"cid:bin@test\"/>"
+                + includes
                 + "</data></soap:Body></soap:Envelope>";
     }
 
     private static String binaryPart() {
+        return binaryPart("bin@test", "0123456789");
+    }
+
+    private static String binaryPart(String id, String content) {
         return "Content-Type: application/octet-stream" + CRLF
                 + "Content-Transfer-Encoding: binary" + CRLF
-                + "Content-ID: <bin@test>" + CRLF
+                + "Content-ID: <" + id + ">" + CRLF
                 + CRLF
-                + "0123456789";
+                + content;
     }
 
     private static String multipartBody(String... parts) {

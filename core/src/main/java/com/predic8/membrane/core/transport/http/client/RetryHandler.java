@@ -17,9 +17,11 @@ package com.predic8.membrane.core.transport.http.client;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.transport.http.ConnectTimeoutException;
 import com.predic8.membrane.core.transport.http.EOFWhileReadingFirstLineException;
 import com.predic8.membrane.core.transport.http.NoResponseException;
+import com.predic8.membrane.core.transport.http2.StreamNotProcessedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -208,7 +210,12 @@ public class RetryHandler {
 
     private boolean shouldAbortRetries(Exchange exc, Exception e, String dest, int attempt) {
         log.debug("Checking if call should abort immediately. Exception {}", e.getMessage());
-
+        // The request body could not be read, e.g. the client stopped sending or it exceeded a limit. Its
+        // failure is recorded, so another attempt would only send the request header fields again.
+        if (e instanceof ReadingBodyException rbe && rbe.belongsTo(exc.getRequest())) {
+            log.debug("Request body could not be read: {}", e.getMessage());
+            return true;
+        }
         // switch with throwable is only possible in Java 21 with preview features
         if (e instanceof MalformedURLException || e instanceof URISyntaxException) {
             log.debug("URI {} caused: {}", dest, e);
@@ -228,6 +235,12 @@ public class RetryHandler {
         if (e instanceof ConnectTimeoutException) {
             log.debug("Connection to {} timed out before it was established.", dest);
             return !retryOnConnectTimeout;
+        }
+        // The backend announced that it did not process the request, e.g. with an HTTP/2 GOAWAY (RFC 9113 §8.7).
+        // Retrying is safe for any method.
+        if (e instanceof StreamNotProcessedException) {
+            log.debug("{} did not process the request: {}", dest, e.getMessage());
+            return false;
         }
         // The socket read took too long and exceeded the configured timeout. No data was received
         // from the server in time, but the request may already have been processed.

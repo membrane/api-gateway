@@ -30,7 +30,7 @@ class StreamInfoTest {
     private final StreamInfo streamInfo = new StreamInfo(1, null, new Settings(), new Settings());
 
     @Test
-    void abortFailsBodyReadAfterReceivedData() {
+    void abortFailsBodyReadAfterReceivedData() throws Exception {
         final var body = streamInfo.createBody();
         final var data = new Frame();
         data.fill(TYPE_DATA, 0, 1, "ab".getBytes(), 0, 2);
@@ -53,5 +53,64 @@ class StreamInfoTest {
         } finally {
             Thread.interrupted();
         }
+    }
+
+    /** Nothing reads past the abort, so DATA still in flight would only take up memory until the stream is removed. */
+    @Test
+    void dataReceivedAfterAbortIsNotQueued() throws Exception {
+        streamInfo.abortReceiving(new IOException("body rejected"));
+        final var data = new Frame();
+        data.fill(TYPE_DATA, 0, 1, "ab".getBytes(), 0, 2);
+
+        streamInfo.receivedDataFrame(data.asData());
+
+        assertEquals(1, streamInfo.getReceivedDataFramesQueued(), "Only the abort marker is queued.");
+    }
+
+    @Test
+    void refusedStreamFailsBodyRead() {
+        final var body = streamInfo.createBody();
+        final var cause = new IOException("refused");
+
+        streamInfo.refuse(cause);
+
+        assertTrue(streamInfo.isRefused());
+        assertSame(cause, assertThrows(ReadingBodyException.class, body::read).getCause());
+    }
+
+    @Test
+    void withoutContentLengthAnyBodyIsKept() {
+        assertTrue(streamInfo.keepsContentLength(100, true));
+    }
+
+    @Test
+    void bodyAsLongAsContentLengthIsKept() {
+        streamInfo.expectContentLength(4);
+
+        assertTrue(streamInfo.keepsContentLength(2, false));
+        assertTrue(streamInfo.keepsContentLength(2, true));
+    }
+
+    @Test
+    void longerBodyIsNotKeptBeforeItEnds() {
+        streamInfo.expectContentLength(4);
+
+        assertTrue(streamInfo.keepsContentLength(4, false));
+        assertFalse(streamInfo.keepsContentLength(1, false));
+    }
+
+    @Test
+    void shorterBodyIsNotKept() {
+        streamInfo.expectContentLength(4);
+
+        assertFalse(streamInfo.keepsContentLength(3, true));
+    }
+
+    @Test
+    void violationIsReportedOnce() {
+        streamInfo.expectContentLength(1);
+
+        assertFalse(streamInfo.keepsContentLength(2, false));
+        assertTrue(streamInfo.keepsContentLength(2, true));
     }
 }

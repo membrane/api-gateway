@@ -16,6 +16,7 @@ package com.predic8.membrane.core.util.wsdl.parser;
 
 import org.w3c.dom.Node;
 
+import java.util.List;
 import java.util.Optional;
 
 import static com.predic8.membrane.core.util.wsdl.parser.WSDLParserUtil.getLocalName;
@@ -32,6 +33,14 @@ public class SoapHeader extends WSDLElement {
 
     public String getMessage() {
         return getAttribute("message");
+    }
+
+    /**
+     * The soap:headerfault children: the header blocks of a fault about this header block. They
+     * have the same attributes as a soap:header.
+     */
+    public List<SoapHeader> getHeaderFaults() {
+        return instantiateChildren("headerfault", SoapHeader.class);
     }
 
     /** The message part the header carries; empty if the message or the part cannot be found. */

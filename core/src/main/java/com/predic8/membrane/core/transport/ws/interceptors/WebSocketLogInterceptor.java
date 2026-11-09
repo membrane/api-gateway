@@ -24,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static com.predic8.membrane.core.transport.ws.interceptors.WebSocketLogInterceptor.Encoding.HEX;
+import static com.predic8.membrane.core.util.text.TextUtil.escapeControlCharsForLog;
 
 /**
  * @description Logs every WebSocket message and its direction at level INFO.
@@ -74,7 +75,7 @@ public class WebSocketLogInterceptor implements WebSocketInterceptorInterface {
     @Override
     public void handleFrame(WebSocketFrame frame, boolean frameTravelsToRight, WebSocketSender sender) throws Exception {
         log.info("Frame travels from " + (frameTravelsToRight ? "client to server" : "server to client"));
-        log.info(encoding == HEX ? frame.toStringHex() : frame.toString());
+        log.info(encoding == HEX ? frame.toStringHex() : escapeControlCharsForLog(frame.toString()));
         sender.handleFrame(frame);
     }
 }

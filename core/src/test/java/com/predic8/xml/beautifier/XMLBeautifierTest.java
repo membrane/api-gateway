@@ -19,6 +19,7 @@ import org.junit.jupiter.api.*;
 import java.io.*;
 import java.nio.charset.*;
 
+import static com.predic8.xml.beautifier.AbstractXMLBeautifierFormatter.*;
 import static java.nio.charset.StandardCharsets.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -184,6 +185,22 @@ public class XMLBeautifierTest {
                 "Expected no CDATA sections in output. Got:\n" + result
         );
         assertFalse(result.contains("CDATA"), "Expected no CDATA sections in output");
+    }
+
+    @Test
+    @DisplayName("Deep nesting: indentation stops at MAX_INDENT")
+    void deepNesting_indentationIsCapped() throws Exception {
+        final var depth = 150;
+        final var xml = "<a>".repeat(depth) + "</a>".repeat(depth);
+
+        final var out = new StringWriter();
+        new XMLBeautifier(new StandardXMLBeautifierFormatter(out, 0)).parse(new StringReader(xml));
+        final var result = out.toString();
+
+        result.lines().forEach(line -> assertTrue(line.length() - line.stripLeading().length() <= MAX_INDENT,
+                "Expected at most %d leading spaces in: %s".formatted(MAX_INDENT, line.strip())));
+        // The innermost element is written as <a />
+        assertEquals(depth - 1, result.split("<a>", -1).length - 1);
     }
 
     @Test

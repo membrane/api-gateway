@@ -19,7 +19,6 @@ import org.junit.jupiter.params.provider.CsvSource;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.List;
 
 import static com.predic8.membrane.core.interceptor.llmgateway.provider.google.GoogleLLMRequest.X_GOOG_API_KEY;
 import static com.predic8.membrane.core.http.Request.post;
@@ -59,16 +58,15 @@ class GoogleLLMRequestTest {
 
     @Test
     void systemPromptRoundTrip() throws Exception {
-        var request = request("{}");
-        assertEquals("", request.getSystemPrompt());
+        var request = request("""
+                {"systemInstruction":{"parts":[{"text":"from client"},{"text":"more"}]}}""");
 
-        request.setSystemPrompts(List.of("one", "two"));
-        assertEquals("one\ntwo", request.getSystemPrompt());
-        assertEquals("one\ntwo", request.getJson()
-                .path("systemInstruction").path("parts").get(0).path("text").asText());
+        request.overwriteSystemPrompt("one");
+        var parts = request.getJson().path("systemInstruction").path("parts");
+        assertEquals(1, parts.size());
+        assertEquals("one", parts.get(0).path("text").asText());
 
         request.removeSystemPrompt();
-        assertEquals("", request.getSystemPrompt());
         assertFalse(request.getJson().has("systemInstruction"));
     }
 
@@ -92,6 +90,41 @@ class GoogleLLMRequestTest {
 
         assertEquals(42, request.getRequestedMaxOutputTokens());
         assertEquals(1, request.getJson().path("generationConfig").path("temperature").asInt());
+    }
+
+    /**
+     * The Gemini API also accepts the proto field names, so the output limit must apply to them as well.
+     */
+    @Test
+    void snakeCaseMaxOutputTokensAreReadAndReplaced() throws Exception {
+        var request = request("""
+                {"generation_config":{"temperature":1,"max_output_tokens":100000}}""");
+        assertEquals(100000, request.getRequestedMaxOutputTokens());
+
+        request.setMaxOutputTokens(42);
+
+        assertFalse(request.getJson().has("generation_config"));
+        assertEquals(42, request.getJson().path("generationConfig").path("maxOutputTokens").asInt());
+        assertFalse(request.getJson().path("generationConfig").has("max_output_tokens"));
+        assertEquals(1, request.getJson().path("generationConfig").path("temperature").asInt());
+    }
+
+    @Test
+    void snakeCaseSystemInstructionIsCounted() throws Exception {
+        assertEquals(request("""
+                {"systemInstruction":{"parts":[{"text":"abcdefgh"}]}}""").estimateInputTokens(),
+                request("""
+                {"system_instruction":{"parts":[{"text":"abcdefgh"}]}}""").estimateInputTokens());
+    }
+
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', value = {
+            "{\"systemInstruction\":{},\"system_instruction\":{}}",
+            "{\"generationConfig\":{},\"generation_config\":{}}",
+            "{\"generationConfig\":{\"maxOutputTokens\":1,\"max_output_tokens\":100000}}",
+    })
+    void bothSpellingsOfAFieldAreRejected(String body) {
+        assertThrows(IllegalArgumentException.class, () -> request(body));
     }
 
     @Test

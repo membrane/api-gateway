@@ -17,7 +17,9 @@ import com.predic8.membrane.annot.Constants;
 import com.predic8.membrane.core.exchange.*;
 import org.junit.jupiter.api.*;
 
+import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
 import static com.predic8.membrane.core.http.Request.post;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.http.Response.ok;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -57,6 +59,34 @@ public class MessageAnalyserTest {
 		assertEquals(Constants.SoapVersion.SOAP11, exc.getProperty(MessageAnalyser.RESPONSE_SOAP_VERSION));
 		assertEquals("getBuecher", exc.getProperty(MessageAnalyser.RESPONSE_SOAP_OPERATION));
 		assertEquals("http://predic8.de", exc.getProperty(MessageAnalyser.RESPONSE_SOAP_OPERATION_NS));
+	}
+
+	@Test
+	void unparsableRequestIsPassedOnUnanalysed() throws Exception {
+		final var exc = post("/test").contentType(TEXT_XML).body("Wrong!<foo/>").buildExchange();
+
+		assertEquals(CONTINUE, analyser.handleRequest(exc));
+		assertNull(exc.getProperty(MessageAnalyser.REQUEST_ROOT_ELEMENT_NAME));
+	}
+
+	@Test
+	void unparsableResponseIsPassedOnUnanalysed() {
+		final var exc = new Exchange(null);
+		exc.setResponse(ok().contentType(TEXT_XML).body("Wrong!<foo/>").build());
+
+		assertEquals(CONTINUE, analyser.handleResponse(exc));
+		assertNull(exc.getProperty(MessageAnalyser.RESPONSE_ROOT_ELEMENT_NAME));
+	}
+
+	@Test
+	void entityDeclaredInDoctypeIsNotExpanded() throws Exception {
+		// Beyond the parsers' own limits once expanded (JDK: entityExpansionLimit, as the test JVM lifts
+		// the entity size limits; Woodstox: maximum attribute size), so expanding it fails the analysis
+		final var body = "<!DOCTYPE s:Envelope [<!ENTITY e '%s'>]><s:Envelope xmlns:s='%s' a='%s'><s:Body><op/></s:Body></s:Envelope>"
+				.formatted("x".repeat(60), Constants.SOAP11_NS, "&e;".repeat(70_000));
+		final var exc = post("/test").contentType(TEXT_XML).body(body).buildExchange();
+
+		assertEquals(CONTINUE, analyser.handleRequest(exc));
 	}
 
 	private Exchange getResponse(String path) {

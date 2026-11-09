@@ -40,7 +40,7 @@ import static javax.tools.StandardLocation.CLASS_OUTPUT;
 
 public class YamlDocsGenerator {
 
-    private static final int DOC_FORMAT_VERSION = 1;
+    private static final int DOC_FORMAT_VERSION = 2;
     private static final String OUTPUT_FILE = "docs.yaml";
 
     private static final ObjectMapper YAML_MAPPER = new ObjectMapper(
@@ -88,6 +88,7 @@ public class YamlDocsGenerator {
                 if (ed.name != null && !ed.name.isBlank()) {
                     el.put("name", ed.name);
                 }
+                el.put("jsonSchemaDef", ed.jsonSchemaDef);
                 if (ed.doc != null && !ed.doc.isEmpty()) {
                     el.put("doc", ed.doc);
                 }
@@ -128,14 +129,15 @@ public class YamlDocsGenerator {
         Map<String, Map<String, ElementDoc>> out = new TreeMap<>();
 
         for (MainInfo main : m.getMains()) {
-            collect(main, out);
+            collect(m, main, out);
         }
 
         out.entrySet().removeIf(e -> e.getValue().isEmpty());
         return out;
     }
 
-    private void collect(MainInfo main, Map<String, Map<String, ElementDoc>> out) {
+    // Every element is listed, documented or not: the reference docs map JSON schema $defs keys to element ids through jsonSchemaDef.
+    private void collect(Model m, MainInfo main, Map<String, Map<String, ElementDoc>> out) {
         Map<String, ElementDoc> elements = out.computeIfAbsent(main.getAnnotation().targetNamespace(), __ -> new TreeMap<>());
 
         for (ElementInfo ei : main.getElements().values()) {
@@ -144,19 +146,14 @@ public class YamlDocsGenerator {
             Map<String, Map<String, String>> children = childDocs(ei);
             Map<String, String> otherAttrs = otherAttributesDoc(ei);
 
-            if (!isHasAnyDoc(elementDoc, attrs, children, otherAttrs)) continue;
-
-            elements.put(ei.getId(), getElementDoc(ei, elementDoc, attrs, children, otherAttrs));
+            elements.put(ei.getId(), getElementDoc(ei, ei.getXSDTypeName(m), elementDoc, attrs, children, otherAttrs));
         }
     }
 
-    private static boolean isHasAnyDoc(Map<String, String> elementDoc, Map<String, Map<String, String>> attrs, Map<String, Map<String, String>> children, Map<String, String> otherAttrs) {
-        return !elementDoc.isEmpty() || !attrs.isEmpty() || !children.isEmpty() || !otherAttrs.isEmpty();
-    }
-
-    private static @NotNull ElementDoc getElementDoc(ElementInfo ei, Map<String, String> elementDoc, Map<String, Map<String, String>> attrs, Map<String, Map<String, String>> children, Map<String, String> otherAttrs) {
+    private static @NotNull ElementDoc getElementDoc(ElementInfo ei, String jsonSchemaDef, Map<String, String> elementDoc, Map<String, Map<String, String>> attrs, Map<String, Map<String, String>> children, Map<String, String> otherAttrs) {
         ElementDoc ed = new ElementDoc();
         ed.name = ei.getAnnotation() != null ? ei.getAnnotation().name() : null;
+        ed.jsonSchemaDef = jsonSchemaDef;
         ed.doc = elementDoc;
         ed.attributes = attrs;
         ed.children = children;
@@ -204,6 +201,7 @@ public class YamlDocsGenerator {
 
     private static final class ElementDoc {
         String name;
+        String jsonSchemaDef;
         Map<String, String> doc = Map.of();
         Map<String, Map<String, String>> attributes = Map.of();
         Map<String, Map<String, String>> children = Map.of();

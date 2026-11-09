@@ -24,6 +24,7 @@ import com.predic8.membrane.core.interceptor.XMLSupport;
 import com.predic8.membrane.core.lang.ExchangeExpression.InterceptorAdapter;
 import com.predic8.membrane.core.lang.ExchangeExpression.Language;
 import com.predic8.membrane.core.lang.TemplateExchangeExpression;
+import com.predic8.membrane.core.openapi.util.UriUtil;
 import com.predic8.membrane.core.router.Router;
 import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.text.SerializationFunction;
@@ -32,11 +33,13 @@ import com.predic8.membrane.core.util.text.TerminalColors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
+import static com.predic8.membrane.core.util.URIFactory.ALLOW_ILLEGAL_CHARACTERS_URI_FACTORY;
 import static com.predic8.membrane.core.util.TemplateUtil.containsTemplateMarker;
 import static com.predic8.membrane.core.util.text.SerializationUtil.getSerialization;
 import static com.predic8.membrane.core.util.text.TerminalColors.RESET;
@@ -73,6 +76,11 @@ public class Target implements XMLSupport {
      * If url contains template marker ${}, if not expression evaluation is skipped
      */
     private boolean urlIsTemplate = false;
+
+    /**
+     * See {@link #isUrlUsedAsIs()}, derived from url once, it is read on every request
+     */
+    private boolean urlUsedAsIs;
 
     private boolean adjustHostHeader = true;
 
@@ -154,6 +162,28 @@ public class Target implements XMLSupport {
     }
 
     /**
+     * A URL with a path, e.g. http://backend/api/orders, is the destination as it is: the request path is not
+     * appended and a rewriter does not change the destinations. Without a path, the request path is appended to the
+     * URL, see DispatchingInterceptor.
+     */
+    public boolean isUrlUsedAsIs() {
+        return urlUsedAsIs;
+    }
+
+    private static boolean isUsedAsIs(String url) {
+        if (!url.startsWith("http") && !url.startsWith("internal"))
+            return true;
+        try {
+            // Here illegal character as $ { } are allowed in the URI to make URL expressions possible.
+            // The URL is from the target in the configuration, maintained by admin
+            final var basePath = UriUtil.getPathFromURL(ALLOW_ILLEGAL_CHARACTERS_URI_FACTORY, url);
+            return basePath != null && !basePath.isEmpty() && !"/".equals(basePath);
+        } catch (URISyntaxException | IllegalArgumentException e) {
+            throw new ConfigurationException("Invalid target URL: %s".formatted(url), e);
+        }
+    }
+
+    /**
      * @description Host name or IP address of the target. Ignored when <code>url</code> is set.
      * @example localhost
      */
@@ -193,6 +223,7 @@ public class Target implements XMLSupport {
     @MCAttribute
     public void setUrl(String url) {
         this.url = url;
+        urlUsedAsIs = url != null && isUsedAsIs(url);
     }
 
     public SSLParser getSslParser() {

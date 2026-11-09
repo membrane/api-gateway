@@ -1,0 +1,124 @@
+openapi: '3.1.0'
+info:
+  title: Enum Test API
+  version: '1.0'
+servers:
+  - url: https://api.server.test/
+paths:
+  /enum:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                state:
+                  # See https://json-schema.org/understanding-json-schema/reference/generic.html
+                  # enum without type
+                  type: string
+                  enum:
+                    - red
+                    - amber
+                    - green
+      responses:
+        '200':
+          description: OK
+  /enum-without-type:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                state:
+                  # See https://json-schema.org/understanding-json-schema/reference/generic.html
+                  # enum without type
+                  enum:
+                    - red
+                    - amber
+                    - green
+                    - 42
+                    - null
+      responses:
+        '200':
+          description: OK
+  /enum-object:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              enum:
+                - a: 1
+      responses:
+        '200':
+          description: OK
+  /enum-mixed:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              enum:
+                - 42
+                - red
+                - [1, 2]
+      responses:
+        '200':
+          description: OK
+  /enum-integer:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: integer
+              enum:
+                - 1
+                - 2
+      responses:
+        '200':
+          description: OK
+  /enum-typed-object:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - a
+              enum:
+                - a: 1
+                  b: 2.0
+                - b: 3
+      responses:
+        '200':
+          description: OK
+  /enum-declared-type:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: integer
+              enum:
+                - a
+                - 1
+      responses:
+        '200':
+          description: OK
+  /enum-query:
+    get:
+      parameters:
+        - in: query
+          name: n
+          schema:
+            enum:
+              - 1
+              - 2
+      responses:
+        '200':
+          description: OK

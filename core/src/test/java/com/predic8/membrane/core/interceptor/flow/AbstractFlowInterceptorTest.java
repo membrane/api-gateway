@@ -25,10 +25,14 @@ import com.predic8.membrane.core.proxies.ServiceProxy;
 import com.predic8.membrane.core.router.DummyTestRouter;
 import com.predic8.membrane.core.router.Router;
 import com.predic8.membrane.core.router.TestRouter;
+import com.predic8.membrane.test.TestAppender;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.Logger;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.Request.get;
@@ -65,12 +69,33 @@ class AbstractFlowInterceptorTest {
     }
 
     @Test
-    void nestedExceptionNamesPluginUriAndFlow() throws Exception {
-        var exc = get("/foo").buildExchange();
+    void nestedExceptionNamesPluginAndFlow() throws Exception {
+        var exc = get("/foo?api_key=secret").buildExchange();
 
         requestFlowThrowing(new DummyTestRouter(), new RuntimeException("boom")).handleRequest(exc);
 
-        assertEquals("Aborting! Exception caused in thrower during /foo REQUEST flow.", parse(exc).get(DETAIL).asText());
+        assertEquals("Aborting! Exception caused in thrower during REQUEST flow.", parse(exc).get(DETAIL).asText());
+    }
+
+    @Test
+    void nestedExceptionDoesNotLogRequestUriInProduction() throws Exception {
+        final var exc = get("/foo?api_key=secret").buildExchange();
+
+        final var log = captureLog(() -> requestFlowThrowing(productionRouter(), new RuntimeException("boom")).handleRequest(exc));
+
+        assertTrue(log.contains("thrower"));
+        assertFalse(log.contains("api_key=secret"), log.getMessages().toString());
+    }
+
+    @Test
+    void nestedReadingBodyExceptionDoesNotLogRequestUri() throws Exception {
+        final var exc = get("/foo?api_key=secret").buildExchange();
+
+        final var log = captureLog(() -> requestFlowThrowing(new DummyTestRouter(),
+                new ReadingBodyException(new IOException("broken"), exc.getRequest())).handleRequest(exc));
+
+        assertTrue(log.contains("thrower"));
+        assertFalse(log.contains("api_key=secret"), log.getMessages().toString());
     }
 
     @Test
@@ -95,6 +120,20 @@ class AbstractFlowInterceptorTest {
         ri.setFlow(List.of(thrower));
         ri.init(router, new ServiceProxy());
         return ri;
+    }
+
+    private static TestAppender captureLog(Callable<?> action) throws Exception {
+        final var root = (Logger) LogManager.getRootLogger();
+        final var appender = new TestAppender("AbstractFlowInterceptorTest");
+        appender.start();
+        root.addAppender(appender);
+        try {
+            action.call();
+        } finally {
+            root.removeAppender(appender);
+            appender.stop();
+        }
+        return appender;
     }
 
     private static JsonNode parse(Exchange exc) throws IOException {

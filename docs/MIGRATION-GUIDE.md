@@ -1,3 +1,235 @@
+# Migrate to Membrane 7.8.1
+
+See `distribution/release-notes/7.8.1.md` for the complete list of changes.
+
+## Admin console actions accept only POST
+
+Admin console actions that change the router, e.g. `/admin/service-proxy/save`, `/admin/proxy/delete`
+or `/admin/node/up`, answer `405` unless they use POST. Switch scripts that call them to POST and
+keep the parameters in the query string:
+
+```sh
+curl -X POST -u admin:membrane "localhost:9000/admin/node/down?balancer=Default&cluster=Default&host=node1.example.com&port=8080"
+```
+
+`node/up`, `node/down`, `node/takeout` and `node/reset` answer `404` for an unknown cluster or node
+instead of adding it. Add nodes with `node/save` or the `clusterNotification` plugin.
+
+## Cluster manager accepts only POST
+
+`clusterNotification` answers requests to `/clustermanager/up`, `/down` and `/takeout` with `405`
+unless they use POST. Switch scripts and node agents to POST and keep the parameters in the query string:
+
+```sh
+curl -X POST "localhost:9000/clustermanager/up?host=node1.example.com&port=8080"
+```
+
+`down` and `takeout` answer `404` for a node that is not registered. Register it with `up` first.
+
+## Admin console and cluster manager behind a TLS-terminating proxy
+
+The admin console and the cluster manager compare a browser's `Origin` with the scheme, host and port
+the request reached Membrane with. If a reverse proxy or servlet container terminates TLS in front
+of Membrane, let it set `X-Forwarded-Proto: https`. If it rewrites `Host`, let it set
+`X-Forwarded-Host` to the original host. Otherwise browsers that send `Origin` but no
+`Sec-Fetch-Site` get `403` when they change state.
+
+## JSON validation
+
+This affects the JSON Schema `validator`, `openapi` validation and `jsonRPCProtection`:
+
+- A body with data after the first JSON value, e.g. `{"a":1}{"b":2}` or JSON Lines/NDJSON, is
+  rejected.
+- JSON bodies are read as UTF-8 (or UTF-16/32), and the `charset` of the Content-Type is ignored. A
+  body encoded e.g. as ISO-8859-1 with non-ASCII characters is rejected as invalid JSON.
+
+Errors of the JSON Schema `validator` no longer contain `node`; use `pointer` to locate the error.
+At most 10 errors are reported, plus `"errorsTruncated": true` if there are more.
+
+## OpenAPI validation
+
+- `minimum`, `maximum`, `exclusiveMinimum`, `exclusiveMaximum` and `multipleOf` apply only to
+  numbers. Query parameters, form fields and XML values without a `type` are strings and are no
+  longer checked against them; declare `type: integer` or `type: number`.
+- `multipart/form-data`: a part with a media range as Content-Type (`application/*`) is rejected.
+  An object or array part sent as e.g. `text/plain` is rejected unless the `encoding` of the part
+  declares that Content-Type.
+- XML bodies: with `additionalProperties: false`, attributes and child elements that no property
+  maps to are rejected instead of dropped.
+
+## `xmlProtection` rejects entity declarations
+
+A `DOCTYPE` that declares an entity, also an internal one like `<!ENTITY e "x">`, is rejected,
+whatever `removeDTD` is set to. Clients have to send such documents without entity declarations.
+
+## Plugins
+
+- `javascript` with GraalVM: objects created by a script can't be used after it has finished.
+  Store them as strings, e.g. `property.put('order', JSON.stringify(order))`.
+- `javascript` with Rhino: whole numbers created in the script are passed to Java as floating point
+  numbers: `({id: 7})` sets the body to `{"id":7.0}`. A syntax error now stops Membrane from
+  starting.
+- `javascript`: a script that ends with an array sets the body to that array. End it with
+  `CONTINUE` to leave the message unchanged.
+- `rhino-engine` (JSR 223) is no longer bundled. Add it to `lib` if custom code uses
+  `getEngineByName("rhino")`.
+- `soapBody`: values inserted with `${...}` are XML-escaped also with a non-XML `contentType`, so
+  XML markup in a string value is no longer inserted as markup.
+- `cors`: `allowAll` together with `credentials`, or an invalid origin, is a configuration error at
+  startup.
+- `llmGateway`: with policies or a user store, requests to endpoints the restrictions can't be
+  applied to, e.g. `/v1/embeddings`, are rejected with `400`.
+- `prometheus`: the `version` label of `membrane_info` contains the version as it is, e.g. `7.8.1`
+  instead of `__8_1`. Adapt queries and alerts that filter on it.
+
+# Migrate to Membrane 7.8
+
+This guide explains how to migrate existing Membrane installations to **Membrane 7.8**.
+See `distribution/release-notes/7.8.0.md` for the complete list of changes.
+
+## Configuration errors at startup
+
+Some mistakes that used to fail per request now stop Membrane from starting. Check the log after
+the update:
+
+| Log message                                                        | Fix                                                                                                                       |
+|--------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------|
+| `Paths ... of OpenAPI ... are identical, they differ only in parameter names.` | Use the same parameter names in equivalent OpenAPI paths (`/pets/{id}` and `/pets/{petId}`) or merge them.  |
+| `Cannot use path ... as URI template`                              | Remove stray braces (`/a/{b}}`) and duplicate parameters (`/{id}/{id}`).                                                  |
+| `One bean was asked. But found 2 beans of class ...XmlConfig`      | Merge the global `xmlConfig`s in `components` into one, or reference the others with `$ref` from the plugins that need them. |
+| `Invalid target URL: ...`                                          | Fix the `url` of the `target`.                                                                                            |
+| *(error about the missing Kafka extension)*                        | Put the Membrane Kafka Extension on the classpath when using `kafkaProducer` or `kafkaConsumer`.                          |
+
+The OpenAPI path check only applies when requests or responses are validated. As a stopgap, turn
+validation off for that OpenAPI.
+
+## URI templates match literally
+
+Paths with templates (`api` `path` and OpenAPI paths) no longer treat `.`, `+`, `$`, `(`, `)` or `*`
+as regular expression characters: `/files/{name}.json` no longer matches `/files/aXjson`. If you
+relied on a regular expression, set `isRegExp: true`:
+
+```yaml
+api:
+  port: 2000
+  path:
+    uri: /files/.*\.json
+    isRegExp: true
+```
+
+A `+` in a path parameter is no longer decoded to a space, and an unescaped `#` no longer matches a
+path parameter.
+
+## `rewriter` no longer rewrites target URLs with a path
+
+A `target` `url` with a path, like `http://backend.example.com/api/orders`, is used as it is.
+Mappings that matched the path of the target URL have no effect anymore; put the path into the
+target URL instead. Redirect rules are matched against the request path, not the destination.
+
+## XPath and JSONPath read the body according to its Content-Type
+
+This affects `if`, `choose`, the API `test`, `for`, `setHeader`, `setProperty`, the `keyExpression`
+of `rateLimiter` and `${...}` templates:
+
+- XPath parses XML, JSONPath parses JSON. A body without Content-Type or with `text/plain` is parsed
+  as well. Other media types and empty bodies are evaluated against an empty document/object.
+- A body that does not parse is rejected with `400` (request) or `502` (response) instead of `500`.
+- JSONPath returns `null` instead of `""` for a missing field.
+
+Make sure clients send the right `Content-Type`, e.g. `curl -H 'Content-Type: application/json'`.
+
+## `xpath()` uses the plugin's `xmlConfig`
+
+The `xpath()` function of SpEL and Groovy now uses the `xmlConfig` of its plugin and falls back to
+the global one only when the plugin has none. A prefix declared only in the global `xmlConfig` is
+not found in a plugin with its own `xmlConfig`; declare it there as well.
+
+## `APIsJSON` replaced by `apisJson`
+
+`APIsJSON` is removed. The new `apisJson` plugin follows APIs.json 0.24:
+
+| `APIsJSON`       | `apisJson`                                            |
+|------------------|-------------------------------------------------------|
+| `collectionName` | `name`                                                |
+| `rootDomain`     | removed                                               |
+| `apisJsonUrl`    | `baseUrl` (without it, URLs come from the `Host` header) |
+
+```yaml
+# before
+APIsJSON:
+  collectionId: shop
+  collectionName: Example Shop
+  rootDomain: example
+  apisJsonUrl: https://api.example.com/apis.json
+
+# now
+apisJson:
+  collectionId: shop
+  name: Example Shop
+  baseUrl: https://api.example.com
+```
+
+See `distribution/tutorials/discovery/10-APIs-JSON.yaml`.
+
+## Routing
+
+- A path with an encoded `;`, `/` or `\` (`%3B`, `%2F`, `%5C`) is rejected with `400` if decoding
+  it would select another API, OpenAPI document or validated OpenAPI path.
+- An absolute-form request (`GET http://a.example.com/orders`) is routed by the host of the request
+  target instead of the `Host` header, and the `Host` header is replaced with it.
+- A regular expression `path` (`isRegExp: true`) of an `api` no longer ignores a trailing slash:
+  `^/foo$` matches `/foo` but not `/foo/`. Write `^/foo/?$` to accept both. It is also no longer
+  matched as a prefix: `/foo` no longer routes `/foo/bar`; write `/foo.*` for that. Regular
+  expression paths of a `serviceProxy` are unchanged.
+
+## OpenAPI validation
+
+- Properties not allowed by `additionalProperties: false` or `unevaluatedProperties: false` are
+  reported one error per property, at the property (`REQUEST/BODY#/color`). Adapt clients that
+  parse the error location or message.
+- OpenAPI 3.1/3.2: `patternProperties` regexes are no longer anchored. Add `^` and `$` to match
+  whole property names.
+- OpenAPI 3.1/3.2: a boolean schema `false` now rejects every value, and `enum`/`const` are checked
+  for every type. Requests that passed before may now be rejected.
+
+## WSDL validation
+
+The SOAP envelope structure is validated: the `Header` must come before the `Body`, only one
+`Header` and one `Body`, both in the namespace of the `Envelope`, namespace-qualified header
+blocks, and a `Fault` must be alone in the `Body`. Fix clients or backends that send such messages.
+
+## Plugins
+
+- `rateLimiter`: if the `keyExpression` fails or yields no value, the request is counted by client
+  IP instead of a shared `unknown` key.
+- `xmlContentFilter` and `soapStackTraceFilter`: a body that cannot be parsed (including any body
+  with a `DOCTYPE`) is rejected with `400` (request) or `500` (response) instead of being forwarded
+  unfiltered.
+
+## WebSockets
+
+With frame interceptors (`wsLog`, `wsStompReassembler`, `wsInterceptor`):
+
+- Messages are limited to 16 MiB. Raise the limit with `maxMessageSize` on `webSocket` if needed.
+- `permessage-deflate` is no longer negotiated. A `groovy` plugin that removed
+  `Sec-WebSocket-Extensions` can be dropped.
+- A failing interceptor closes the connection with status `1011`.
+- Interceptors are initialized once at startup, not per connection. Custom `wsInterceptor`s must
+  keep per-connection state elsewhere.
+
+Upgraded connections are no longer closed by `connection.soTimeout` on the backend side.
+
+## Java API (when using Membrane as a library)
+
+- `WebSocketFrame.tryRead` takes the maximum payload size and throws `WebSocketFrameTooLargeException`.
+- `WebSocketConnection.onMessage` is only called for text and binary messages;
+  `WEBSOCKET_CLOSED_POLL_INTERVAL_MILLISECONDS` is removed.
+- `StreamPumpStats` is per router: use `router.getStatistics().getStreamPumpStats()`.
+- The `Router` parameter is removed from `TemplateExchangeExpression.newInstance`, the constructors
+  of `XPathExchangeExpression` and `JsonpathExchangeExpression`, and `Target.applyModifications`.
+
+---
+
 # Migrate to Membrane 7.6
 
 This guide explains how to migrate existing Membrane installations to **Membrane 7.6**.

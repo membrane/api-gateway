@@ -45,22 +45,39 @@ public class PeerFlowControl {
         notifyAll();
     }
 
+    /**
+     * Increments the window as the peer asked, by a WINDOW_UPDATE or a change of SETTINGS_INITIAL_WINDOW_SIZE.
+     *
+     * @return false if the window would exceed 2^31-1, a flow-control error (RFC 9113 §6.9.1, §6.9.2). The window is
+     *         left unchanged then.
+     */
+    public synchronized boolean tryIncrement(int delta) {
+        if (available() + delta > Integer.MAX_VALUE)
+            return false;
+        increment(delta);
+        return true;
+    }
+
     private void used(int length) {
         peerWindowPosition += length;
         if (log.isDebugEnabled())
             log.debug("stream=" + streamId + " size=" + peerWindowSize + " pos=" + peerWindowPosition + " diff=" + (peerWindowSize - peerWindowPosition));
     }
 
-    private boolean canUse(int length) {
-        return peerWindowSize - peerWindowPosition >= length;
+    private long available() {
+        return peerWindowSize - peerWindowPosition;
     }
 
     /**
+     * Reserves up to {@code wantLength} bytes of the window, waiting only while none is available. The peer grants
+     * more window only for DATA it received, so waiting until all of {@code wantLength} fits could wait forever.
+     *
+     * @return the number of bytes reserved, between 1 and {@code wantLength}
      * @throws IOException if the frame sender stops while waiting, as the peer will not grant more window then
      */
-    public synchronized void reserve(int wantLength, int streamId) throws IOException {
+    public synchronized int reserve(int wantLength, int streamId) throws IOException {
         boolean warned = false;
-        while(!canUse(wantLength)) {
+        while (available() <= 0) {
             if (sender.isStopped())
                 throw new IOException("HTTP/2 frame sender stopped while stream %d waited for flow-control window".formatted(streamId));
             if (!warned) {
@@ -75,7 +92,15 @@ public class PeerFlowControl {
             }
         }
 
-        used(wantLength);
+        final var length = (int) Math.min(wantLength, available());
+        used(length);
+        return length;
+    }
+
+    /** Returns window reserved by {@link #reserve(int, int)} that will not be used. */
+    public synchronized void unreserve(int length) {
+        used(-length);
+        notifyAll();
     }
 
     /** Wakes writers waiting in {@link #reserve(int, int)}, so they notice that the frame sender stopped. */

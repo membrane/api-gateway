@@ -94,6 +94,16 @@ public class JsonUtil {
     }
 
     /**
+     * Escapes a reference token of a JSON Pointer as defined by RFC 6901: ~ becomes ~0, then / becomes ~1.
+     *
+     * @param segment raw, unescaped segment, e.g. a property name
+     * @return segment to append to a JSON Pointer after a /
+     */
+    public static String escapeJsonPointerSegment(String segment) {
+        return segment.replace("~", "~0").replace("/", "~1");
+    }
+
+    /**
      * Get JSON object from message body.
      * The caller must deal with the possibility that the body is not a JSON object or
      * there are parsing errors.

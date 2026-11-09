@@ -44,13 +44,9 @@ public class AuthorizationCodeFlow extends TokenRequest {
         if(!authServer.getSessionFinder().hasSessionForCode(getCode()))
             return OAuth2Util.createParameterizedJsonErrorResponse("error", "invalid_request");
         SessionManager.Session session = authServer.getSessionFinder().getSessionForCode(getCode());
+        SessionFinder.CodeIssuance issuance = authServer.getSessionFinder().getIssuanceForCode(getCode());
         authServer.getSessionFinder().removeSessionForCode(getCode());
 
-        String username;
-        synchronized (session) {
-            username = session.getUserName();
-            session.getUserAttributes().putAll(params);
-        }
         Client client;
         try {
             synchronized (authServer.getClientList()) {
@@ -65,6 +61,16 @@ public class AuthorizationCodeFlow extends TokenRequest {
 
         if(!OAuth2Util.isAbsoluteUri(getRedirectUri()) || !getRedirectUri().equals(client.getCallbackUrl()))
             return OAuth2Util.createParameterizedJsonErrorResponse("error", "invalid_request");
+
+        // RFC 6749, 4.1.3: only the client the code was issued to may redeem it, with the same redirect_uri
+        if (issuance == null || !client.getClientId().equals(issuance.clientId()) || !getRedirectUri().equals(issuance.redirectUri()))
+            return OAuth2Util.createParameterizedJsonErrorResponse("error", "invalid_grant");
+
+        // The token request's parameters stay out of the session: ID tokens and userinfo read the user's claims from it
+        String username;
+        synchronized (session) {
+            username = session.getUserName();
+        }
 
         String grantTypes = client.getGrantTypes();
         if (!grantTypes.contains(getGrantType())) {

@@ -45,7 +45,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * @description <p>Prohibits XML documents to be passed through that look like XML attacks on older parsers. Too many
- * attributes, too long element names are such indications. DTD definitions will simply be removed.</p>
+ * attributes, too long element names are such indications. DTD definitions will simply be removed; a DTD
+ * that declares entities is rejected.</p>
  * <p>XML documents carried inside a multipart body are inspected part by part, so a document uploaded
  * as an attachment is checked like a plain XML body. A part the plugin had to take a DTD out of is
  * written back into the body; the other parts pass through unchanged.</p>
@@ -334,7 +335,8 @@ public class XMLProtectionInterceptor extends AbstractBodyProtectionInterceptor 
     }
 
     /**
-     * @description Whether to remove the DTD from incoming requests.
+     * @description Whether to remove the DTD from incoming requests. A DTD that declares entities is
+     * rejected either way.
      * @default true
      */
     @MCAttribute

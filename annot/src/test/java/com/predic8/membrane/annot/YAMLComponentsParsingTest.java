@@ -311,6 +311,41 @@ public class YAMLComponentsParsingTest {
    }
 
     @Test
+    void objectLevelRefSatisfiesRequiredChild() {
+        assertStructure(
+                parse("""
+                        components:
+                          token:
+                            bearerToken:
+                              header: Authorization
+                        ---
+                        api:
+                          flow:
+                            - requiredBearerToken:
+                                $ref: "#/components/token"
+                        """),
+                clazz("Components"),
+                clazz("ApiElement",
+                        property("flow", list(
+                                clazz("RequiredBearerTokenElement",
+                                        property("bearerToken",
+                                                clazz("BearerTokenElement",
+                                                        property("header", value("Authorization")))))
+                        )))
+        );
+    }
+
+    @Test
+    void requiredChildMissingWithoutRefError() {
+        var ex = assertThrows(RuntimeException.class, () -> parse("""
+                api:
+                  flow:
+                    - requiredBearerToken: {}
+                """));
+        assertAnyErrorContains(ex, "Missing required fields: [bearerToken]");
+    }
+
+    @Test
     public void flowRefTypeMismatchError() {
         var ex = assertThrows(RuntimeException.class, () -> parse("""
                 components:
@@ -622,7 +657,25 @@ public class YAMLComponentsParsingTest {
             ---
             package com.predic8.membrane.demo;
             import com.predic8.membrane.annot.*;
-            
+
+            @MCElement(name="requiredBearerToken")
+            public class RequiredBearerTokenElement extends FlowItem {
+                BearerTokenElement bearerToken;
+
+                public BearerTokenElement getBearerToken() {
+                    return bearerToken;
+                }
+
+                @Required
+                @MCChildElement
+                public void setBearerToken(BearerTokenElement bearerToken) {
+                    this.bearerToken = bearerToken;
+                }
+            }
+            ---
+            package com.predic8.membrane.demo;
+            import com.predic8.membrane.annot.*;
+
             @MCElement(name="demoBean")
             public class BeanElement {
             }

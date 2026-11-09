@@ -17,10 +17,7 @@ package com.predic8.membrane.core.proxies;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
-import java.util.regex.*;
-
 import static com.predic8.membrane.core.util.NetworkUtil.hostWithoutPort;
-import static java.util.regex.Pattern.*;
 
 /**
  * Adds HTTP specific stuff like Method
@@ -31,7 +28,7 @@ public class ServiceProxyKey extends AbstractRuleKey {
     private String method = "*";
     private String host = "*";
     private boolean isHostWildCard = true;
-    private Pattern hostPattern;
+    private HostPattern hostPattern;
 
     public ServiceProxyKey(RuleKey key) {
         super(key);
@@ -94,9 +91,8 @@ public class ServiceProxyKey extends AbstractRuleKey {
         this.host = host.trim();
         isHostWildCard = "*".equals(this.host);
         if (!isHostWildCard) {
-            String pattern = createHostPattern(this.host);
-            log.debug("Created host pattern match: {}", pattern);
-            this.hostPattern = Pattern.compile(pattern, CASE_INSENSITIVE);
+            this.hostPattern = new HostPattern(this.host);
+            log.debug("Created host pattern match: {}", hostPattern);
         } else {
             this.hostPattern = null;
         }
@@ -165,13 +161,13 @@ public class ServiceProxyKey extends AbstractRuleKey {
 
         log.debug("Rule host: {} Request host: {}", host, requestHost);
 
-        return hostPattern.matcher(requestHost).matches();
+        return hostPattern.matches(requestHost);
     }
 
     /**
      * The pattern used to match the host name, or null if any host name matches.
      */
-    public Pattern getHostPattern() {
+    public HostPattern getHostPattern() {
         return hostPattern;
     }
 

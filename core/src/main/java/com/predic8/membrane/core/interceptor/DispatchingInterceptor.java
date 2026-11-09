@@ -16,7 +16,6 @@ package com.predic8.membrane.core.interceptor;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exceptions.ProblemDetails;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.openapi.util.UriUtil;
 import com.predic8.membrane.core.proxies.AbstractServiceProxy;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -34,7 +33,6 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.resolver.ResolverMap.combine;
-import static com.predic8.membrane.core.util.URIFactory.ALLOW_ILLEGAL_CHARACTERS_URI_FACTORY;
 
 /**
  * @description This interceptor adds the destination specified in the target
@@ -125,15 +123,9 @@ public class DispatchingInterceptor extends AbstractInterceptor {
 
         if (asp.getTargetURL() != null) {
             var targetURL = asp.getTargetURL();
-            if (targetURL.startsWith("http") || targetURL.startsWith("internal")) {
-                // Here illegal character as $ { } are allowed in the URI to make URL expressions possible.
-                // The URL is from the target in the configuration, maintained by admin
-                var basePath = UriUtil.getPathFromURL(ALLOW_ILLEGAL_CHARACTERS_URI_FACTORY, targetURL);
-                if (basePath == null || basePath.isEmpty() || "/".equals(basePath)) {
-                    return combine(router.getConfiguration().getUriFactory(),targetURL,asPathReference(getUri(exc)));
-                }
-            }
-            return targetURL;
+            if (asp.getTarget().isUrlUsedAsIs())
+                return targetURL;
+            return combine(router.getConfiguration().getUriFactory(),targetURL,asPathReference(getUri(exc)));
         }
         if (asp.getTargetHost() != null) {
             return new URL(asp.getTargetScheme(), asp.getTargetHost(), asp.getTargetPort(), getUri(exc)).toString();

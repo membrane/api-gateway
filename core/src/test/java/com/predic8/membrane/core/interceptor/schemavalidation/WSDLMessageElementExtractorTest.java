@@ -24,6 +24,7 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 import javax.xml.namespace.QName;
+import java.util.Map;
 import java.util.Set;
 
 import static com.predic8.membrane.core.interceptor.schemavalidation.WSDLMessageElementExtractor.*;
@@ -34,6 +35,10 @@ class WSDLMessageElementExtractorTest {
     private static final String CITIES_NS = "https://predic8.de/cities";
     private static final QName GET_CITY_QNAME = new QName(CITIES_NS, "getCity");
     private static final QName GET_CITYRESPONSE_QNAME = new QName(CITIES_NS, "getCityResponse");
+
+    private static final String EXAMPLE_CITIES_NS = "https://example.com/cities";
+    private static final String EXAMPLE_HEADER_NS = "https://example.com/header";
+    private static final QName REQUEST_HEADER = new QName(EXAMPLE_HEADER_NS, "RequestHeader");
 
     private static final String CALC_NS = "http://example.com/calc";
     private static final String SVC_NS = "http://example.com/svc";
@@ -151,6 +156,143 @@ class WSDLMessageElementExtractorTest {
         var e = assertThrows(ConfigurationException.class, () -> getPossibleFaultDetailElements(definitions, null));
         assertTrue(e.getMessage().contains("NotFoundFault"), e.getMessage());
         assertTrue(e.getMessage().contains("has no part"), e.getMessage());
+    }
+
+    @Test
+    void headerElements() throws Exception {
+        var definitions = getDefinitions("classpath:/ws/cities-with-soap-header.wsdl");
+
+        assertEquals(Set.of(new QName("https://example.com/header", "RequestHeader")), getPossibleRequestHeaderElements(definitions, null));
+        assertEquals(Set.of(new QName("https://example.com/header", "ResponseHeader")), getPossibleResponseHeaderElements(definitions, null));
+        assertEquals(Set.of(new QName("https://example.com/header", "HeaderFault")), getPossibleFaultHeaderElements(definitions, null));
+    }
+
+    /**
+     * The request message lists its soap:header part first; the body element is the first part
+     * not bound as header.
+     */
+    @Test
+    void headerPartIsNoBodyElement() throws Exception {
+        var definitions = getDefinitions("classpath:/ws/cities-with-soap-header.wsdl");
+
+        assertEquals(Set.of(new QName("https://example.com/cities", "getCity")), getPossibleRequestElements(definitions, null));
+        assertEquals(Set.of(new QName("https://example.com/cities", "getCityResponse")), getPossibleResponseElements(definitions, null));
+    }
+
+    @Test
+    void headerElsewhereDoesNotHideBodyPart() throws Exception {
+        final var definitions = getDefinitions("classpath:/ws/header-reuses-body-part.wsdl");
+
+        assertEquals(Set.of(new QName("https://example.com/cities", "getCity"),
+                new QName("https://example.com/cities", "audit")), getPossibleRequestElements(definitions, null));
+        assertEquals(Set.of(new QName("https://example.com/cities", "getCityResponse"),
+                new QName("https://example.com/cities", "auditResponse")), getPossibleResponseElements(definitions, null));
+    }
+
+    @Test
+    void explicitBodyPartAlsoBoundAsHeader() throws Exception {
+        final var definitions = getDefinitions("classpath:/ws/body-part-also-header.wsdl");
+
+        assertEquals(Set.of(new QName("https://example.com/cities", "getCity"),
+                new QName("https://example.com/cities", "trace"), EMPTY_BODY), getPossibleRequestElements(definitions, null));
+    }
+
+    @Test
+    void headerOfOneBindingDoesNotHideBodyPartOfAnother() throws Exception {
+        final var definitions = getDefinitions("classpath:/ws/header-part-per-binding.wsdl");
+
+        assertEquals(Set.of(new QName("https://example.com/cities", "getCity"),
+                new QName("https://example.com/cities", "trace")), getPossibleRequestElements(definitions, null));
+    }
+
+    /**
+     * A header that cannot be identified is not validated, but the rest of the WSDL still is.
+     */
+    @Test
+    void unvalidatableHeadersAreSkippedWithWarning() throws Exception {
+        var root = (Logger) LogManager.getRootLogger();
+        var appender = new TestAppender("WSDLMessageElementExtractorTest");
+        appender.start();
+        root.addAppender(appender);
+        try {
+            var definitions = getDefinitions("classpath:/ws/unvalidatable-soap-headers.wsdl");
+
+            assertTrue(getPossibleRequestHeaderElements(definitions, null).isEmpty());
+            assertTrue(getPossibleResponseHeaderElements(definitions, null).isEmpty());
+            assertTrue(getPossibleFaultHeaderElements(definitions, null).isEmpty());
+            assertEquals(Set.of(new QName("https://example.com/cities", "getCity")), getPossibleRequestElements(definitions, null));
+            assertTrue(appender.contains("names a type instead of an element"), appender.getMessages().toString());
+            assertTrue(appender.contains("binds element {http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd}Security, which none of the WSDL's schemas declares"), appender.getMessages().toString());
+            assertTrue(appender.contains("missing of message cs:ResponseHeader cannot be found"), appender.getMessages().toString());
+            assertTrue(appender.contains("soap:headerfault part missing of message cs:Security cannot be found"), appender.getMessages().toString());
+        } finally {
+            root.removeAppender(appender);
+            appender.stop();
+        }
+    }
+
+    @Test
+    void globalElementsIncludeImportedSchemas() throws Exception {
+        var elements = getGlobalElements(getDefinitions("classpath:/ws/unbound-header.wsdl"));
+
+        assertEquals(Set.of(new QName("https://example.com/header", "RequestHeader"),
+                new QName("https://example.com/trace", "TraceHeader"),
+                new QName("https://example.com/cities", "getCity"),
+                new QName("https://example.com/cities", "getCityResponse")), elements);
+    }
+
+    @Test
+    void globalElementsOfCyclicEmbeddedImports() throws Exception {
+        var elements = getGlobalElements(getDefinitions("classpath:/ws/cyclic-embedded-imports.wsdl"));
+
+        assertEquals(Set.of(new QName("https://example.com/a", "A"),
+                new QName("https://example.com/b", "B")), elements);
+    }
+
+    @Test
+    void noHeaderElements() throws Exception {
+        assertTrue(getPossibleRequestHeaderElements(getDefinitions("classpath:/ws/cities.wsdl"), null).isEmpty());
+    }
+
+    @Test
+    void messageWithoutPartHasEmptyBody() throws Exception {
+        final var definitions = getDefinitions("classpath:/ws/message-without-part.wsdl");
+
+        assertEquals(Set.of(new QName("https://example.com/empty", "MyRequest")), getPossibleRequestElements(definitions, null));
+        assertEquals(Set.of(EMPTY_BODY), getPossibleResponseElements(definitions, null));
+    }
+
+    @Test
+    void messageWithOnlyHeaderPartHasEmptyBody() throws Exception {
+        final var definitions = getDefinitions("classpath:/ws/header-only-request.wsdl");
+
+        assertEquals(Set.of(EMPTY_BODY), getPossibleRequestElements(definitions, null));
+        assertEquals(Map.of(EMPTY_BODY, Set.of(new QName("https://example.com/ping", "PingHeader"))),
+                getRequiredRequestHeaderElements(definitions, null));
+    }
+
+    @Test
+    void requiredHeaderElementsPerBodyElement() throws Exception {
+        final var definitions = getDefinitions("classpath:/ws/required-soap-headers.wsdl");
+
+        assertEquals(Map.of(new QName(EXAMPLE_CITIES_NS, "getCity"), Set.of(REQUEST_HEADER),
+                        new QName(EXAMPLE_CITIES_NS, "getVersion"), Set.of()),
+                getRequiredRequestHeaderElements(definitions, "Single"));
+        assertEquals(Map.of(new QName(EXAMPLE_CITIES_NS, "getCityResponse"), Set.of(new QName(EXAMPLE_HEADER_NS, "ResponseHeader")),
+                        new QName(EXAMPLE_CITIES_NS, "getVersionResponse"), Set.of()),
+                getRequiredResponseHeaderElements(definitions, "Single"));
+    }
+
+    @Test
+    void requiredHeaderElementsIntersectAcrossBindings() throws Exception {
+        assertEquals(Set.of(), getRequiredRequestHeaderElements(getDefinitions("classpath:/ws/required-soap-headers.wsdl"), "Both")
+                .get(new QName(EXAMPLE_CITIES_NS, "getCity")));
+    }
+
+    @Test
+    void requiredHeaderElementsOfRpcOperation() throws Exception {
+        assertEquals(Map.of(new QName(EXAMPLE_CITIES_NS, "lookup"), Set.of(REQUEST_HEADER)),
+                getRequiredRequestHeaderElements(getDefinitions("classpath:/ws/required-soap-headers.wsdl"), "Rpc"));
     }
 
     private static @NotNull Definitions getDefinitions(String location) throws Exception {

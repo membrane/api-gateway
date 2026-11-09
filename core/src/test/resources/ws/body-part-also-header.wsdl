@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    getCity: the request message has a single part, which the binding lists in soap:body/@parts
+    and also binds as soap:header. The explicit soap:body binding makes it the body part.
+    ping: soap:body/@parts is empty, so the request has no body part.
+    trace: soap:body/@parts names no part of the message, so the body part is the first part not
+    bound as soap:header.
+-->
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:cs="https://example.com/cities"
+                  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                  xmlns:s="http://schemas.xmlsoap.org/wsdl/soap/"
+                  targetNamespace="https://example.com/cities" name="cities">
+    <wsdl:types>
+        <xsd:schema targetNamespace="https://example.com/cities">
+            <xsd:element name="getCity">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="name" type="xsd:string"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="ping" type="xsd:string"/>
+            <xsd:element name="trace" type="xsd:string"/>
+            <xsd:element name="traceId" type="xsd:string"/>
+            <xsd:element name="getCityResponse">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="population" type="xsd:integer"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+        </xsd:schema>
+    </wsdl:types>
+    <wsdl:message name="City">
+        <wsdl:part name="city" element="cs:getCity"/>
+    </wsdl:message>
+    <wsdl:message name="Ping">
+        <wsdl:part name="ping" element="cs:ping"/>
+    </wsdl:message>
+    <wsdl:message name="Trace">
+        <wsdl:part name="traceId" element="cs:traceId"/>
+        <wsdl:part name="trace" element="cs:trace"/>
+    </wsdl:message>
+    <wsdl:message name="CityResponse">
+        <wsdl:part name="body" element="cs:getCityResponse"/>
+    </wsdl:message>
+    <wsdl:portType name="CityPort">
+        <wsdl:operation name="getCity">
+            <wsdl:input message="cs:City"/>
+            <wsdl:output message="cs:CityResponse"/>
+        </wsdl:operation>
+        <wsdl:operation name="ping">
+            <wsdl:input message="cs:Ping"/>
+        </wsdl:operation>
+        <wsdl:operation name="trace">
+            <wsdl:input message="cs:Trace"/>
+        </wsdl:operation>
+    </wsdl:portType>
+    <wsdl:binding name="CityBinding" type="cs:CityPort">
+        <s:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+        <wsdl:operation name="getCity">
+            <s:operation soapAction="https://example.com/cities/getCity"/>
+            <wsdl:input>
+                <s:header message="cs:City" part="city" use="literal"/>
+                <s:body parts="city" use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <s:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="ping">
+            <s:operation soapAction="https://example.com/cities/ping"/>
+            <wsdl:input>
+                <s:body parts="" use="literal"/>
+            </wsdl:input>
+        </wsdl:operation>
+        <wsdl:operation name="trace">
+            <s:operation soapAction="https://example.com/cities/trace"/>
+            <wsdl:input>
+                <s:header message="cs:Trace" part="traceId" use="literal"/>
+                <s:body parts="unknown" use="literal"/>
+            </wsdl:input>
+        </wsdl:operation>
+    </wsdl:binding>
+    <wsdl:service name="CityService">
+        <wsdl:port name="CityPort" binding="cs:CityBinding">
+            <s:address location="https://example.com/cities"/>
+        </wsdl:port>
+    </wsdl:service>
+</wsdl:definitions>

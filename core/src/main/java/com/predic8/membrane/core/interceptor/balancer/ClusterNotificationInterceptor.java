@@ -28,17 +28,25 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.predic8.membrane.core.http.Header.ALLOW;
+import static com.predic8.membrane.core.http.Request.METHOD_POST;
 import static com.predic8.membrane.core.http.Response.noContent;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.balancer.BalancerUtil.*;
+import static com.predic8.membrane.core.util.HttpUtil.isCrossOrigin;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
 import static com.predic8.membrane.core.util.URLParamUtil.parseQueryString;
 
 /**
  * @description Receives control requests at <code>/clustermanager/{up|down|takeout}</code>, with <code>host</code>
  * and <code>port</code> (and optional <code>balancer</code>/<code>cluster</code>) query parameters, and applies
- * them to update a load balancer's node status. Responds with 204 on success, 400 when required parameters are
- * missing or invalid, and 403 when the request's <code>time</code> parameter is older than <code>timeout</code>.
+ * them to update a load balancer's node status. Only POST is accepted; other methods are answered with 405.
+ * Requests a browser sends from another site are rejected with 403. <code>up</code> registers a node that is not
+ * known yet, <code>down</code> and <code>takeout</code> answer 404 for an unknown node. Responds with 204 on
+ * success, 400 when required parameters are missing or invalid, and 403 when the request's <code>time</code>
+ * parameter is older than <code>timeout</code>.
+ * <p>Anyone who can call this endpoint can add backends and redirect traffic. Protect it, e.g. with
+ * <code>basicAuthentication</code>, or make it reachable from an internal network only.</p>
  * @topic 2. Enterprise Integration Patterns
  */
 @MCElement(name = "clusterNotification")
@@ -63,6 +71,16 @@ public class ClusterNotificationInterceptor extends AbstractInterceptor {
 
         log.debug("request received: {}", m.group(1));
 
+        if (!exc.getRequest().isPOSTRequest()) {
+            exc.setResponse(Response.methodNotAllowed().header(ALLOW, METHOD_POST).build());
+            return ABORT;
+        }
+        if (isCrossOrigin(exc)) {
+            log.info("Rejected cross-origin request to {}", exc.getOriginalRequestUri());
+            exc.setResponse(Response.forbidden("Cross-origin requests may not change the cluster.").build());
+            return ABORT;
+        }
+
         Map<String, String> params;
         try {
             params = getParams(exc);
@@ -71,6 +89,10 @@ public class ClusterNotificationInterceptor extends AbstractInterceptor {
 
             if (isTimedout(params)) {
                 exc.setResponse(Response.forbidden().build());
+                return ABORT;
+            }
+            if (!"up".equals(m.group(1)) && !isExistingNode(params)) {
+                exc.setResponse(Response.notFound().build());
                 return ABORT;
             }
             updateClusterManager(m, params);
@@ -106,6 +128,11 @@ public class ClusterNotificationInterceptor extends AbstractInterceptor {
                     params.get("host"),
                     getPortParam(params));
         }
+    }
+
+    private boolean isExistingNode(Map<String, String> params) {
+        return lookupBalancer(router, getBalancerParam(params))
+                .hasNode(getClusterParam(params), params.get("host"), getPortParam(params));
     }
 
     private boolean isTimedout(Map<String, String> params) {

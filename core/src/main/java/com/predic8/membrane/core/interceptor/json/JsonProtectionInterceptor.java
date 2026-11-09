@@ -37,14 +37,22 @@ import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static java.util.EnumSet.of;
 
 /**
- * @description <p>Enforces restrictions on JSON request bodies to protect against JSON-based attacks and resource exhaustion.
- * Validates against configurable limits to prevent attacks such as:</p>
+ * @description <p>Rejects JSON request bodies that are malformed or exceed configurable limits, protecting the gateway
+ * and backends against JSON-based attacks and resource exhaustion. A rejected request gets a
+ * <code>400 Bad Request</code> response. The checks guard against:</p>
  * <ul>
- *   <li>Deeply nested JSON structures (billion laughs attack)</li>
- *   <li>Memory exhaustion from oversized payloads</li>
- *   <li>Prototype pollution via __proto__ keys in JavaScript backends</li>
- *   <li>Duplicate key attacks ({"foo": 1, "foo": 2})</li>
+ *   <li>Deeply nested structures and oversized documents, objects, arrays and strings</li>
+ *   <li>Prototype pollution via <code>__proto__</code> keys in JavaScript backends</li>
+ *   <li>Duplicate keys, such as <code>{"foo": 1, "foo": 2}</code></li>
  * </ul>
+ * <p>The scan is streaming and cheap, so it belongs in front of more expensive processing. This matters most for
+ * OpenAPI validation: the validator parses the whole document and matches values against the regular expressions of
+ * the schema's <code>pattern</code> keywords, and keys against those of <code>patternProperties</code> and
+ * <code>propertyNames</code>. Attackers can target these expressions with ReDoS. By default, OpenAPI
+ * validation runs before the flow; place <code>openapiValidator</code> in the flow after <code>jsonProtection</code>
+ * so the limits apply first. See
+ * <a href="https://www.membrane-api.io/security/membrane-redos-protection.html">ReDoS Protection</a> and
+ * <a href="https://github.com/membrane/api-gateway/blob/master/distribution/tutorials/openapi/21-Validation-Advanced.apis.yaml">tutorials/openapi/21-Validation-Advanced.apis.yaml</a>.</p>
  * <p>JSON documents carried inside a multipart body are inspected part by part, so a JSON document
  * uploaded as an attachment is checked like a plain JSON body.</p>
  *
@@ -52,17 +60,15 @@ import static java.util.EnumSet.of;
  *
  * @yaml
  * <pre><code>
- * - jsonProtection:
- *     maxDepth: 20
- *     maxKeyLength: 50
- *     maxObjectSize: 100
- *     maxTokens: 1000
- *     maxStringLength: 1000
- *     maxArraySize: 100
- *     maxSize: 10000
- *     blockProto: true
- *     reportError: true
- *     otherContentTypes: SKIP
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - jsonProtection:
+ *         maxDepth: 20
+ *         maxStringLength: 1000
+ *         maxArraySize: 100
+ *   target:
+ *     url: https://api.predic8.de
  * </code></pre>
  *
  * @topic 3. Security and Validation
@@ -194,9 +200,9 @@ public class JsonProtectionInterceptor extends AbstractBodyProtectionInterceptor
     }
 
     /**
-     * @description Overwrites default error reporting behaviour. If set to true, errors will provide ProblemDetails body,
-     * if set to false, errors will throw exceptions resulting in 400 Bad Request responses without any details.
-     * @default Depends on production configuration. In production mode default is false otherwise true.
+     * @description Whether the 400 response carries a ProblemDetails body describing the violation. If false, the
+     * response has no details.
+     * @default false in production mode, otherwise true
      * @param reportError
      */
     @MCAttribute
@@ -316,7 +322,7 @@ public class JsonProtectionInterceptor extends AbstractBodyProtectionInterceptor
     }
 
     /**
-     * @description Maximum size of JSON arrays. For example, <code>[[1,2],[3,4,5]]</code> has a
+     * @description Maximum size of JSON arrays. For example, <code>[[1,2],[3,4,5]]</code> has an
      * array size of 2. The nested arrays have sizes of 2 and 3.
      * @default 1000
      * @param maxArraySize

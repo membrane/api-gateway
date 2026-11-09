@@ -70,6 +70,23 @@ class SOAPXMLFilterTest {
         assertTrue(out.contains("SearchCriteria"), out);
     }
 
+    /**
+     * Only the Body that is a child of the envelope holds the payload, not a SOAP Body nested in
+     * an element after it, which SOAP 1.1 allows.
+     */
+    @Test
+    void ignoresBodyNestedInElementAfterBody() throws Exception {
+        String out = filterSoapBody("""
+                <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soapenv:Body><req:Request xmlns:req="http://example.com/svc"/></soapenv:Body>
+                  <t:Trailer xmlns:t="http://example.com/t"><soapenv:Body><t:Smuggled/></soapenv:Body></t:Trailer>
+                </soapenv:Envelope>
+                """);
+
+        assertTrue(out.contains("Request"), out);
+        assertFalse(out.contains("Smuggled"), out);
+    }
+
     private static String filterSoapBody(String soap) throws Exception {
         TransformerFactory tf = TransformerFactory.newInstance();
         tf.setFeature(javax.xml.XMLConstants.FEATURE_SECURE_PROCESSING, true);

@@ -16,15 +16,15 @@ package com.predic8.membrane.core.interceptor.llmgateway.provider.google;
 
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMErrorCreator;
-import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMProvider;
-import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMRequest;
-import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMResponse;
+import com.predic8.membrane.core.interceptor.llmgateway.provider.*;
 
 import java.io.IOException;
 import java.util.function.Consumer;
+import java.util.regex.Pattern;
 
+import static com.predic8.membrane.core.interceptor.llmgateway.provider.LLMProvider.endpointPath;
 import static com.predic8.membrane.core.interceptor.llmgateway.provider.LLMProvider.started;
+import static com.predic8.membrane.core.interceptor.llmgateway.provider.google.GoogleLLMRequest.X_GOOG_API_KEY;
 
 /**
  * @description (Experimental) Talks to the Google Gemini API, where the model is named in the path rather than in the request body,
@@ -46,9 +46,28 @@ import static com.predic8.membrane.core.interceptor.llmgateway.provider.LLMProvi
 @MCElement( name="google",id = "google-ai-provider")
 public class GoogleProvider implements LLMProvider {
 
+    /**
+     * E.g. /v1beta/models/gemini-2.5-pro:generateContent, also with the colon percent-encoded.
+     */
+    private static final Pattern GENERATE_CONTENT = Pattern.compile("/v1(beta)?/models/[\\w.-]+(:|%3[aA])(generateContent|streamGenerateContent)");
+
     @Override
     public LLMRequest getLLMRequest(Exchange exchange) throws IOException {
-        return new GoogleLLMRequest(exchange);
+        if (GENERATE_CONTENT.matcher(endpointPath(exchange)).matches()) {
+            return new GoogleLLMRequest(exchange);
+        }
+        // Other endpoints, like batchGenerateContent, only get the key in the header Gemini expects it in.
+        return new BaseLLMRequest(exchange) {
+            @Override
+            protected String apiKeyHeaderName() {
+                return X_GOOG_API_KEY;
+            }
+
+            @Override
+            protected boolean apiKeyIsBearer() {
+                return false;
+            }
+        };
     }
 
     @Override

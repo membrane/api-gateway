@@ -18,6 +18,7 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.lang.AbstractExchangeExpressionInterceptor;
 import com.predic8.membrane.core.lang.ExchangeExpression;
@@ -39,6 +40,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
 import static com.predic8.membrane.core.util.HttpUtil.getForwardedForList;
 import static java.lang.String.join;
+import static org.apache.commons.lang3.exception.ExceptionUtils.throwableOfType;
 
 /**
  * @description <p>The <i>rateLimiter</i> plugin limits the number of requests of a client in a period of time.
@@ -161,7 +163,11 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
         try {
             value = exchangeExpression.evaluate(exc, REQUEST, String.class);
         } catch (Exception e) {
-            // A broken body is the client's error and is answered with 400 instead of being counted
+            // A broken body is the client's error and is answered with 400 instead of being counted.
+            // An unreadable body (e.g. invalid Content-Encoding) is answered by FlowController
+            var bodyFailure = throwableOfType(e, ReadingBodyException.class);
+            if (bodyFailure != null)
+                throw bodyFailure;
             if (e instanceof ExchangeExpressionException eee && eee.isBodyError())
                 throw eee;
             log.info("Error evaluating expression {} for rate limit. Fallback to client IP.", expression); // Can be pretty common

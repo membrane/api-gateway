@@ -31,7 +31,8 @@ import java.util.Map;
 import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.getApi;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class OpenAPIPublisherTest {
 
@@ -51,7 +52,19 @@ class OpenAPIPublisherTest {
                 .handle(exc, DummyTestRouter.productionRouter()));
 
         assertEquals(404, exc.getResponse().getStatusCode());
-        assertEquals("OpenAPI document with the id wrong-id not found.", problem(exc).get("detail").asText());
+        assertEquals("OpenAPI document with the id wrong-id not found. See /api-docs for the available documents.",
+                problem(exc).get("detail").asText());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"/api-docs/wrong-id", "/api-docs/ui/wrong-id", "/api-docs/ui/"})
+    void notFoundRefersToOverviewInProduction(String uri) throws Exception {
+        final var exc = get(uri).buildExchange();
+
+        publisher.handle(exc, DummyTestRouter.productionRouter());
+
+        assertEquals(404, exc.getResponse().getStatusCode());
+        assertTrue(problem(exc).get("detail").asText().contains("See /api-docs for the available documents."));
     }
 
     @Test

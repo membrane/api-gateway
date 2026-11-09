@@ -16,29 +16,35 @@
 
 package com.predic8.membrane.core.openapi.util;
 
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.HeaderField;
 import com.predic8.membrane.core.openapi.model.Body;
 import com.predic8.membrane.core.openapi.model.Request;
 import com.predic8.membrane.core.openapi.model.Response;
-import com.predic8.membrane.core.openapi.validators.*;
-import com.predic8.membrane.core.security.*;
-import jakarta.mail.internet.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.openapi.validators.ValidationErrors;
+import com.predic8.membrane.core.security.SecurityScheme;
+import jakarta.mail.internet.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.math.*;
-import java.net.*;
-import java.time.*;
-import java.time.format.*;
-import java.util.*;
-import java.util.regex.*;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.ResolverStyle;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import static com.predic8.membrane.core.exchange.Exchange.*;
-import static java.lang.Double.*;
-import static java.nio.charset.StandardCharsets.*;
-import static java.util.regex.Pattern.*;
+import static com.predic8.membrane.core.exchange.Exchange.SECURITY_SCHEMES;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.regex.Pattern.compile;
 
 public class Utils {
 
@@ -211,9 +217,37 @@ public class Utils {
             return new BigDecimal(jn.asText());
         }
         if (obj instanceof String s) {
-            return BigDecimal.valueOf(parseDouble(s));
+            return new BigDecimal(s);
         }
         return (BigDecimal) obj;
+    }
+
+    /**
+     * Checks exact divisibility without expanding a compact exponent into a huge integer quotient.
+     *
+     * @param value the value to check
+     * @param multiple the positive divisor, as required by OpenAPI's multipleOf keyword
+     */
+    public static boolean isMultipleOf(BigDecimal value, BigDecimal multiple) {
+        if (value.signum() == 0)
+            return true;
+
+        final var numerator = value.unscaledValue().abs();
+        final var denominator = multiple.unscaledValue().abs();
+        // The quotient is numerator * 10^scaleDifference / denominator. Use long because the
+        // difference of two valid BigDecimal scales can overflow int.
+        final var scaleDifference = (long) multiple.scale() - value.scale();
+        if (scaleDifference >= 0) {
+            final var powerRemainder = BigInteger.TEN.modPow(BigInteger.valueOf(scaleDifference), denominator);
+            return numerator.mod(denominator).multiply(powerRemainder).mod(denominator).signum() == 0;
+        }
+
+        // A nonzero coefficient with p digits cannot contain 10^p as a factor. Only construct a
+        // power of ten when its size is bounded by the coefficient already present in the input.
+        if (-scaleDifference >= value.precision())
+            return false;
+        final var scaledDenominator = denominator.multiply(BigInteger.TEN.pow((int) -scaleDifference));
+        return numerator.mod(scaledDenominator).signum() == 0;
     }
 
     public static String joinByComma(Collection<String> l) {

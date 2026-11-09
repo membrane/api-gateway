@@ -18,12 +18,17 @@ import com.predic8.membrane.core.proxies.Proxy;
 import com.predic8.membrane.core.router.hotdeploy.YamlRouterReloader;
 import com.predic8.membrane.core.transport.Transport;
 import com.predic8.membrane.core.transport.http.HttpTransport;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.Logger;
+import org.apache.logging.log4j.core.appender.AbstractAppender;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import static com.predic8.membrane.core.router.YamlRouterBootstrap.loadIntoRouter;
 import static org.junit.jupiter.api.Assertions.*;
@@ -175,6 +180,56 @@ class YamlHotDeploymentTest {
             assertSame(before, router.getTransport());
             assertEquals(List.of("first"), getRuleNames(router));
         } finally {
+            router.stop();
+        }
+    }
+
+    @Test
+    void shouldLogConfigurationErrorOnReloadWithoutStackTrace() throws Exception {
+        Path config = tempDir.resolve("apis.yaml");
+        Files.writeString(config, configWithInternal("first", "https://example.com"));
+
+        DefaultRouter router = new DefaultRouter();
+        final var events = new CopyOnWriteArrayList<LogEvent>();
+        final var appender = new AbstractAppender("YamlHotDeploymentTest", null, null, false, null) {
+            @Override
+            public void append(LogEvent event) {
+                events.add(event.toImmutable());
+            }
+        };
+        appender.start();
+        final var reloaderLog = (Logger) LogManager.getLogger(YamlRouterReloader.class);
+        reloaderLog.addAppender(appender);
+        try {
+            YamlRouterReloader reloader = new YamlRouterReloader(router, loadIntoRouter(router, config.toString()));
+            router.setConfigurationReloader(reloader);
+            router.start();
+
+            // The JMS extension is not on the classpath, so init() throws a ConfigurationException
+            Files.writeString(config, """
+                    configuration:
+                      hotDeploy: false
+                    ---
+                    internal:
+                      name: second
+                      flow:
+                        - jmsProducer:
+                            jmsConnection:
+                              connectionFactory: com.example.ConnectionFactory
+                            queue: orders
+                    """);
+
+            assertTrue(reloader.reload());
+            assertEquals(List.of("first"), getRuleNames(router));
+
+            final var error = events.stream()
+                    .filter(e -> e.getMessage().getFormattedMessage().startsWith("Could not reload YAML configuration"))
+                    .findFirst().orElseThrow();
+            assertEquals("Could not reload YAML configuration: The Membrane JMS Extension is needed for the jmsProducer interceptor. Ask info@predic8.de.",
+                    error.getMessage().getFormattedMessage());
+            assertNull(error.getThrown());
+        } finally {
+            reloaderLog.removeAppender(appender);
             router.stop();
         }
     }

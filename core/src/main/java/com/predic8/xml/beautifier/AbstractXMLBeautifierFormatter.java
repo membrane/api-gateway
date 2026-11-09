@@ -18,6 +18,11 @@ import java.io.*;
 
 public abstract class AbstractXMLBeautifierFormatter implements XMLBeautifierFormatter {
 
+	/**
+	 * Most spaces written per line. Deeper elements are written at this indentation.
+	 */
+	public static final int MAX_INDENT = 200; // 100 levels at XMLBeautifier's 2 spaces per level
+
 	protected Writer writer;
 
 	protected int indent;
@@ -28,7 +33,7 @@ public abstract class AbstractXMLBeautifierFormatter implements XMLBeautifierFor
 	}
 
 	public void indent() throws IOException {
-		for (int i = 0; i < indent; i++) {
+		for (int i = 0; i < Math.min(indent, MAX_INDENT); i++) {
 			writer.write(" ");
 		}
 	}

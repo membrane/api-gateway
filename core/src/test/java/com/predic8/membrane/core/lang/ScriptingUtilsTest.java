@@ -14,9 +14,9 @@
 
 package com.predic8.membrane.core.lang;
 
-import com.predic8.membrane.core.lang.ExchangeExpression.InterceptorAdapter;
 import com.predic8.membrane.core.config.Path;
 import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.lang.ExchangeExpression.InterceptorAdapter;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
 import com.predic8.membrane.core.router.DefaultRouter;
 import org.jetbrains.annotations.NotNull;
@@ -32,6 +32,7 @@ import java.util.Map;
 
 import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ScriptingUtilsTest {
@@ -81,6 +82,18 @@ class ScriptingUtilsTest {
             var bindings = ScriptingUtils.createParameterBindings(new InterceptorAdapter(new DefaultRouter()), get("/foo").json(json).buildExchange(), REQUEST, true, null);
             assertNotNull(bindings);
             return bindings;
+        }
+    }
+
+    @Test
+    @DisplayName("Response flow without a response, e.g. in an abort block after the request flow was aborted")
+    void responseFlowWithoutResponse() throws URISyntaxException {
+        final var bindings = ScriptingUtils.createParameterBindings(new InterceptorAdapter(new DefaultRouter()), get("/foo").buildExchange(), RESPONSE, true, null);
+        assertNull(bindings.get("response"));
+        assertNull(bindings.get("statusCode"));
+        for (final var key : List.of("message", "body", "header", "headers", "cookie", "cookies", "json")) {
+            assertTrue(bindings.containsKey(key), key);
+            assertNull(bindings.get(key), key);
         }
     }
 

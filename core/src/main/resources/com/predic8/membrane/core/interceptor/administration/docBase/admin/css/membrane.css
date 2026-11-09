@@ -2,6 +2,18 @@
 	font-size: 0.8cm;
 }
 
+form.mb-post-action {
+	display: inline-block;
+	margin: 0;
+}
+
+form.mb-post-action button:has(.ui-icon) {
+	border: 0;
+	padding: 0;
+	background: none;
+	cursor: pointer;
+}
+
 .mb-param {
 	margin-top: 10px;
 	margin-bottom: 10px;

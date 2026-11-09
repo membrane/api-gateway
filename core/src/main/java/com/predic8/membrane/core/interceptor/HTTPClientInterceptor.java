@@ -18,6 +18,7 @@ import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.MalformedHeaderException;
+import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.proxies.AbstractServiceProxy;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
@@ -31,6 +32,7 @@ import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_FLOW;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.util.text.TextUtil.escapeControlCharsForLog;
 
 /**
  * @description The <i>httpClient</i> sends the request of an exchange to a Web
@@ -143,7 +145,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
                     .buildAndSetResponse(exc);
             return ABORT;
         } catch (MalformedURLException e) {
-            log.info("Malformed URL. Requested path is: {} {}", exc.getRequest().getUri(), e.getMessage());
+            log.info("Malformed URL. Requested path is: {} {}", escapeControlCharsForLog(exc.getRequest().getUri()), escapeControlCharsForLog(e.getMessage()));
             log.debug("", e);
             user(router.getConfiguration().isProduction(), getDisplayName())
                     .title("Request path or 'Host' header is malformed")
@@ -185,6 +187,10 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
                     .stacktrace(false)
                     .buildAndSetResponse(exc);
             return ABORT;
+        } catch (ReadingBodyException e) {
+            // Not a problem with the backend: the request body could not be read, e.g. the client stopped
+            // sending or it exceeded a limit. The flow controller describes it, see ProblemDetails.bodyFailure().
+            throw e;
         } catch (Exception e) {
             log.error("", e);
             internal(router.getConfiguration().isProduction(), getDisplayName())

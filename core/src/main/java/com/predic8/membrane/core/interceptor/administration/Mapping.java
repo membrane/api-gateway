@@ -14,13 +14,19 @@
 
 package com.predic8.membrane.core.interceptor.administration;
 
-import java.lang.annotation.*;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
 
-import static java.lang.annotation.ElementType.*;
-import static java.lang.annotation.RetentionPolicy.*;
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 @Retention(RUNTIME)
 @Target(METHOD)
 public @interface Mapping {
 	String value();
+
+	/**
+	 * Handlers that change the router's state only accept same-origin POST requests (CSRF protection).
+	 */
+	boolean modifiesState() default false;
 }

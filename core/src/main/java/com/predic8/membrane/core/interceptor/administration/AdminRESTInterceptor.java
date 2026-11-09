@@ -39,7 +39,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-import static com.predic8.membrane.core.http.Header.CONTENT_ENCODING;
+import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.TEXT_HTML_UTF8;
 import static com.predic8.membrane.core.http.MimeType.TEXT_PLAIN_UTF8;
 import static com.predic8.membrane.core.http.Response.noContent;
@@ -196,7 +196,11 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 		if (msg== null || msg.isBodyEmpty()) {
 			return noContent().build();
 		}
-		ResponseBuilder rb = ok().contentType(ct).body(msg.getBodyAsStream(), false);
+		// The body is attacker-controlled: never let it render as a document on the admin origin.
+		ResponseBuilder rb = ok().contentType(ct).body(msg.getBodyAsStream(), false)
+				.header(CONTENT_DISPOSITION, "attachment")
+				.header(X_CONTENT_TYPE_OPTIONS, "nosniff")
+				.header(CONTENT_SECURITY_POLICY, "sandbox");
 		String contentEncoding = msg.getHeader().getContentEncoding();
 		if (contentEncoding != null)
 			rb.header(CONTENT_ENCODING, contentEncoding);

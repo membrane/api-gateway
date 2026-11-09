@@ -203,4 +203,11 @@ public class SchemaObject extends AbstractSchema<SchemaObject> {
     public boolean hasProperty(String name) {
         return properties.stream().anyMatch(p -> name.equals(p.getName()));
     }
+
+    public AbstractSchema<?> getProperty(String name) {
+        return properties.stream()
+                .filter(p -> name.equals(p.getName()))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("No property: %s".formatted(name)));
+    }
 }

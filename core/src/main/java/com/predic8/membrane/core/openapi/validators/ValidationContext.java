@@ -25,6 +25,7 @@ import java.util.function.BooleanSupplier;
 import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
+import static com.predic8.membrane.core.util.json.JsonUtil.escapeJsonPointerSegment;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 
 public class ValidationContext {
@@ -350,9 +351,12 @@ public class ValidationContext {
         return content == Content.XML;
     }
 
+    /**
+     * @param segment raw, unescaped segment, e.g. a property name. It is escaped as defined by RFC 6901.
+     */
     public ValidationContext addJSONpointerSegment(String segment) {
         ValidationContext ctx = this.deepCopy();
-        ctx.jsonPointer = ctx.jsonPointer + "/" + segment;
+        ctx.jsonPointer = ctx.jsonPointer + "/" + escapeJsonPointerSegment(segment);
         return ctx;
     }
 

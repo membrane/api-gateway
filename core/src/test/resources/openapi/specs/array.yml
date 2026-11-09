@@ -30,12 +30,6 @@ components:
             type: number
         prefixed:
           type: array
-#          prefixItems:   # As of 2022-11-20 parser does not support OpenAPI 3.1.0
-#            - type: string
-#            - type: string
-#              enum: ["DE","FR","IT","PL"]
-#            - type: integer
-#            - type: boolean
         min-max:
           type: array
           minItems: 2

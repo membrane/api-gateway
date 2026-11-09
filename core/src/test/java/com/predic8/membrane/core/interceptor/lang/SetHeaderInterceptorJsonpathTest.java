@@ -14,17 +14,23 @@
 
 package com.predic8.membrane.core.interceptor.lang;
 
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.lang.ExchangeExpression.*;
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.params.*;
-import org.junit.jupiter.params.provider.*;
+import com.predic8.membrane.core.http.ReadingBodyException;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.lang.ExchangeExpression.Language;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
-import java.util.stream.*;
+import java.util.stream.Stream;
 
-import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
+import static com.predic8.membrane.core.http.Header.CONTENT_ENCODING;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.lang.ExchangeExpression.Language.JSONPATH;
 import static org.junit.jupiter.api.Assertions.*;
 
 class SetHeaderInterceptorJsonpathTest extends AbstractSetHeaderInterceptorTest {
@@ -147,6 +153,33 @@ class SetHeaderInterceptorJsonpathTest extends AbstractSetHeaderInterceptorTest 
         interceptor.setFailOnError(false);
         interceptor.init(router);
         assertEquals(CONTINUE, interceptor.handleRequest(exchange));
+    }
+
+    @Test
+    void undecodableRequestBodyIsLeftToFlowController() throws Exception {
+        exchange.setRequest(undecodableRequest());
+        interceptor.setValue("${$.name}");
+        interceptor.init(router);
+        // FlowController answers it with 400 body-decoding
+        assertThrows(ReadingBodyException.class, () -> interceptor.handleRequest(exchange));
+    }
+
+    @Test
+    void undecodableRequestBodyIgnoredWithoutFailOnError() throws Exception {
+        exchange.setRequest(undecodableRequest());
+        interceptor.setValue("${$.name}");
+        interceptor.setFailOnError(false);
+        interceptor.init(router);
+        assertEquals(CONTINUE, interceptor.handleRequest(exchange));
+    }
+
+    /**
+     * Not gzip-compressed. The header is set after the body, which would remove it.
+     */
+    private static Request undecodableRequest() throws Exception {
+        var request = new Request.Builder().post("/boo").contentType(APPLICATION_JSON).body("{\"name\":\"Mango\"}").build();
+        request.getHeader().setValue(CONTENT_ENCODING, "gzip");
+        return request;
     }
 
     @Test
