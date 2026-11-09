@@ -58,9 +58,9 @@ public final class SystemProxy {
     private final String source;
     private final @Nullable ProxyConfiguration httpProxy;
     private final @Nullable ProxyConfiguration httpsProxy;
-    private final Predicate<String> bypass;
+    private final Predicate<HostColonPort> bypass;
 
-    private SystemProxy(String source, @Nullable ProxyConfiguration httpProxy, @Nullable ProxyConfiguration httpsProxy, Predicate<String> bypass) {
+    private SystemProxy(String source, @Nullable ProxyConfiguration httpProxy, @Nullable ProxyConfiguration httpsProxy, Predicate<HostColonPort> bypass) {
         this.source = source;
         this.httpProxy = httpProxy;
         this.httpsProxy = httpsProxy;
@@ -102,7 +102,7 @@ public final class SystemProxy {
      * @return the proxy for the target, or null if the target is reached directly
      */
     public @Nullable ProxyConfiguration select(HostColonPort target) {
-        if (bypass.test(target.host()))
+        if (bypass.test(target))
             return null;
         return target.useSSL() ? httpsProxy : httpProxy;
     }
@@ -121,8 +121,9 @@ public final class SystemProxy {
         final var httpsProxy = proxyFromProperties(properties, "https", 443);
         if (httpProxy == null && httpsProxy == null)
             return null;
+        final var nonProxyHosts = nonProxyHosts(withDefaultNonProxyHosts(properties.getProperty("http.nonProxyHosts")));
         return new SystemProxy("JVM system properties", httpProxy, httpsProxy,
-                nonProxyHosts(withDefaultNonProxyHosts(properties.getProperty("http.nonProxyHosts"))));
+                target -> nonProxyHosts.test(target.host()));
     }
 
     // Like the JDK: a custom list keeps the defaults, only an empty one removes them.
@@ -185,8 +186,11 @@ public final class SystemProxy {
         if (httpProxy == null && httpsProxy == null)
             return null;
         final var noProxy = getenv(env, "no_proxy");
-        final Predicate<String> bypass = noProxy != null ? NoProxyList.parse(noProxy, "the environment variable no_proxy")::matches : host -> false;
-        return new SystemProxy("environment variables", httpProxy, httpsProxy, bypass);
+        if (noProxy == null)
+            return new SystemProxy("environment variables", httpProxy, httpsProxy, target -> false);
+        final var noProxyList = NoProxyList.parse(noProxy, "the environment variable no_proxy");
+        return new SystemProxy("environment variables", httpProxy, httpsProxy,
+                target -> noProxyList.matches(target.host(), target.port()));
     }
 
     /**

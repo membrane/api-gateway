@@ -63,16 +63,24 @@ class ProxyConfigurationTest {
 
     @Test
     void nothingIsBypassedWithoutNoProxy() {
-        assertFalse(proxy.isBypassed("localhost"));
+        assertFalse(proxy.isBypassed("localhost", 80));
     }
 
     @Test
     void hostsInNoProxyAreBypassed() {
         proxy.setNoProxy("localhost, .internal.example.com");
 
-        assertTrue(proxy.isBypassed("localhost"));
-        assertTrue(proxy.isBypassed("orders.internal.example.com"));
-        assertFalse(proxy.isBypassed("www.example.com"));
+        assertTrue(proxy.isBypassed("localhost", 80));
+        assertTrue(proxy.isBypassed("orders.internal.example.com", 80));
+        assertFalse(proxy.isBypassed("www.example.com", 80));
+    }
+
+    @Test
+    void noProxyEntryWithPortBypassesOnlyThatPort() {
+        proxy.setNoProxy("internal.example.com:8080");
+
+        assertTrue(proxy.isBypassed("internal.example.com", 8080));
+        assertFalse(proxy.isBypassed("internal.example.com", 443));
     }
 
     @Test
@@ -86,6 +94,6 @@ class ProxyConfigurationTest {
         assertThrows(ConfigurationException.class, () -> proxy.setNoProxy("10.0.0.0/33"));
 
         assertEquals("localhost", proxy.getNoProxy());
-        assertTrue(proxy.isBypassed("localhost"));
+        assertTrue(proxy.isBypassed("localhost", 80));
     }
 }

@@ -112,7 +112,7 @@ public class ConnectionFactory {
     private @Nullable ProxyConfiguration getProxy(HostColonPort target) {
         var proxy = config.getProxy();
         if (proxy != null)
-            return proxy.isBypassed(target.host()) ? null : proxy;
+            return proxy.isBypassed(target.host(), target.port()) ? null : proxy;
         if (systemProxy != null)
             return systemProxy.select(target);
         return null;

@@ -190,6 +190,17 @@ class HttpClientTest {
         }
 
         @Test
+        void onlyOwnProxyCredentialsAreRemovedForBypassedHost() throws Exception {
+            client = new HttpClient(authenticatedProxyBypassingLocalhost());
+            final var exc = get("http://localhost:%d/foo".formatted(BACKEND_PORT)).buildExchange();
+            exc.getRequest().getHeader().add(PROXY_AUTHORIZATION, "Basic YWxpY2U6c2VjcmV0");
+            exc.getRequest().getHeader().add(PROXY_AUTHORIZATION, "Basic aW5ib3VuZA==");
+            client.call(exc);
+
+            assertEquals("Basic aW5ib3VuZA==", exc.getResponse().getBodyAsStringDecoded());
+        }
+
+        @Test
         void inboundProxyAuthorizationIsKeptForBypassedHost() throws Exception {
             client = new HttpClient(authenticatedProxyBypassingLocalhost());
             final var exc = get("http://localhost:%d/foo".formatted(BACKEND_PORT))

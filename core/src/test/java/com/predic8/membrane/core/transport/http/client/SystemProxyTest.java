@@ -103,10 +103,20 @@ class SystemProxyTest {
         }
 
         @Test
+        void noProxyWithPort() {
+            final var proxy = fromEnv(Map.of(
+                    "http_proxy", "http://proxy.example.com:3128",
+                    "NO_PROXY", "internal.example.com:8080"));
+
+            assertNull(proxy.select(new HostColonPort(false, "internal.example.com", 8080)));
+            assertNotNull(proxy.select(new HostColonPort(false, "internal.example.com", 80)));
+        }
+
+        @Test
         void invalidNoProxyNamesTheVariable() {
             final var e = assertThrows(ConfigurationException.class, () -> fromEnv(Map.of(
                     "http_proxy", "http://proxy.example.com:3128",
-                    "NO_PROXY", "internal.example.com:8080")));
+                    "NO_PROXY", "api.*.example.com")));
             assertTrue(e.getMessage().contains("no_proxy"));
         }
 

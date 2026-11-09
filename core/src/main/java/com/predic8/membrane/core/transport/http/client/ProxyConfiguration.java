@@ -183,7 +183,8 @@ public class ProxyConfiguration {
 	 *              <code>example.com</code>, <code>.example.com</code> or <code>*.example.com</code> matches
 	 *              the domain and all of its subdomains. An IPv4 or IPv6 address, optionally with a CIDR prefix,
 	 *              matches targets given as an IP address. Host names are not resolved for this check.
-	 *              <code>*</code> bypasses the proxy for every host. Ports are not supported.
+	 *              <code>*</code> bypasses the proxy for every host. An entry followed by a port, such as
+	 *              <code>internal.example.com:8080</code> or <code>[::1]:8080</code>, applies to that port only.
 	 * @default (not set)
 	 * @example localhost, .internal.example.com, 10.0.0.0/8
 	 */
@@ -195,10 +196,10 @@ public class ProxyConfiguration {
 	}
 
 	/**
-	 * @return true if requests to the host must not be sent through this proxy
+	 * @return true if requests to the host and port must not be sent through this proxy
 	 */
-	public boolean isBypassed(String host) {
-		return noProxyList != null && noProxyList.matches(host);
+	public boolean isBypassed(String host, int port) {
+		return noProxyList != null && noProxyList.matches(host, port);
 	}
 
 	/**

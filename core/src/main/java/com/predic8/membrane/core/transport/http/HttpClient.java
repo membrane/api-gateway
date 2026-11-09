@@ -121,11 +121,14 @@ public class HttpClient implements AutoCloseable {
     // of this client's proxies are removed, any other Proxy-Authorization header that came with the request is kept.
     private void removeProxyCredentialsOfEarlierAttempt(Exchange exc) {
         final var header = exc.getRequest().getHeader();
-        final var value = header.getFirstValue(PROXY_AUTHORIZATION);
-        if (value == null)
-            return;
-        if (connectionFactory.getProxies().stream().anyMatch(proxy -> proxy.isAuthentication() && value.equals(proxy.getCredentials())))
-            header.removeFields(PROXY_AUTHORIZATION);
+        for (var field : header.getAllHeaderFields()) {
+            if (field.getHeaderName().hasName(PROXY_AUTHORIZATION) && isCredentialsOfOwnProxy(field.getValue()))
+                header.remove(field);
+        }
+    }
+
+    private boolean isCredentialsOfOwnProxy(String value) {
+        return connectionFactory.getProxies().stream().anyMatch(proxy -> proxy.isAuthentication() && value.equals(proxy.getCredentials()));
     }
 
     private void setAuthorizationHeader(Exchange exc) {
