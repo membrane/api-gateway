@@ -176,9 +176,11 @@ public class HttpClientConfiguration implements ApplicationContextAware {
      * <code>proxy</code> is configured here. The JVM system properties <code>http.proxyHost</code>,
      * <code>http.proxyPort</code>, <code>https.proxyHost</code>, <code>https.proxyPort</code> and
      * <code>http.nonProxyHosts</code> are used if set. Otherwise the environment variables <code>HTTP_PROXY</code>,
-     * <code>HTTPS_PROXY</code> and <code>NO_PROXY</code> (or their lowercase variants) are used. The scheme of the
-     * target selects the HTTP or HTTPS proxy. A proxy URL may contain credentials, e.g.
-     * <code>http://user:password&#64;proxy.example.com:3128</code>.
+     * <code>HTTPS_PROXY</code> and <code>NO_PROXY</code> (or their lowercase variants) are used. The two sources are
+     * not combined: if <code>http.proxyHost</code> or <code>https.proxyHost</code> is set, the environment variables are
+     * ignored, so a scheme without a proxy there is called directly. The scheme of the target selects the HTTP or HTTPS
+     * proxy. A proxy URL may contain credentials, e.g. <code>http://user:password&#64;proxy.example.com:3128</code>.
+     * The certificate of an <code>https://</code> proxy is checked against the default trust store of the JVM.
      * @default false
      * @example true
      */

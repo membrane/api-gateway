@@ -78,7 +78,7 @@ public final class SystemProxy {
         return proxy;
     }
 
-    static @Nullable SystemProxy read(Map<String, String> env, Properties properties) {
+    public static @Nullable SystemProxy read(Map<String, String> env, Properties properties) {
         final var fromProperties = fromProperties(properties);
         return fromProperties != null ? fromProperties : fromEnvironment(env);
     }
@@ -176,7 +176,7 @@ public final class SystemProxy {
         if (httpProxy == null && httpsProxy == null)
             return null;
         final var noProxy = getenv(env, "no_proxy");
-        final Predicate<String> bypass = noProxy != null ? NoProxyList.parse(noProxy)::matches : host -> false;
+        final Predicate<String> bypass = noProxy != null ? NoProxyList.parse(noProxy, "the environment variable no_proxy")::matches : host -> false;
         return new SystemProxy("environment variables", httpProxy, httpsProxy, bypass);
     }
 

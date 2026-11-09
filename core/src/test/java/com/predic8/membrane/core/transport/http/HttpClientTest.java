@@ -164,6 +164,32 @@ class HttpClientTest {
         }
 
         @Test
+        void retryToHostBypassedBySystemProxyDropsItsCredentials() throws Exception {
+            failFirstProxyRequest = true;
+            client = clientWithSystemProxyFromEnvironment();
+            final var exc = get("/foo").buildExchange();
+            exc.setDestinations(List.of(
+                    "http://127.0.0.1:%d/foo".formatted(BACKEND_PORT),
+                    "http://localhost:%d/foo".formatted(BACKEND_PORT)));
+            client.call(exc);
+
+            assertEquals(1, proxyRequests.get());
+            assertEquals(200, exc.getResponse().getStatusCode());
+            assertEquals("", exc.getResponse().getBodyAsStringDecoded());
+        }
+
+        @Test
+        void inboundProxyAuthorizationIsKeptForHostBypassedBySystemProxy() throws Exception {
+            client = clientWithSystemProxyFromEnvironment();
+            final var exc = get("http://localhost:%d/foo".formatted(BACKEND_PORT))
+                    .header(PROXY_AUTHORIZATION, "Basic aW5ib3VuZA==")
+                    .buildExchange();
+            client.call(exc);
+
+            assertEquals("Basic aW5ib3VuZA==", exc.getResponse().getBodyAsStringDecoded());
+        }
+
+        @Test
         void inboundProxyAuthorizationIsKeptForBypassedHost() throws Exception {
             client = new HttpClient(authenticatedProxyBypassingLocalhost());
             final var exc = get("http://localhost:%d/foo".formatted(BACKEND_PORT))
@@ -216,6 +242,15 @@ class HttpClientTest {
             System.setProperty("http.proxyPort", String.valueOf(PROXY_PORT));
             // Without it, the JDK default would bypass the proxy for 127.*
             System.setProperty("http.nonProxyHosts", "");
+        }
+
+        private static HttpClient clientWithSystemProxyFromEnvironment() {
+            final var systemProxy = SystemProxy.read(Map.of(
+                    "http_proxy", "http://alice:secret@localhost:%d".formatted(PROXY_PORT),
+                    "no_proxy", "localhost"), new Properties());
+            final var hcc = new HttpClientConfiguration();
+            hcc.setUseSystemProxy(true);
+            return new HttpClient(hcc, null, () -> systemProxy);
         }
 
         private static HttpClientConfiguration authenticatedProxyBypassingLocalhost() {

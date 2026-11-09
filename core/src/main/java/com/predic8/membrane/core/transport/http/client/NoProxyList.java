@@ -52,6 +52,13 @@ public final class NoProxyList {
      * @throws ConfigurationException if an entry is neither a domain nor an IP address or range
      */
     public static NoProxyList parse(String list) {
+        return parse(list, "noProxy");
+    }
+
+    /**
+     * @param setting where the list comes from, named in the error message
+     */
+    public static NoProxyList parse(String list, String setting) {
         var matchAll = false;
         final var domains = new ArrayList<String>();
         final var ipRanges = new ArrayList<Target>();
@@ -64,12 +71,12 @@ public final class NoProxyList {
                 matchAll = true;
                 continue;
             }
-            final var ipRange = parseIpRange(normalize(entry));
+            final var ipRange = parseIpRange(normalize(entry), setting);
             if (ipRange.isPresent()) {
                 ipRanges.add(ipRange.get());
                 continue;
             }
-            domains.add(toDomain(entry));
+            domains.add(toDomain(entry, setting));
         }
         return new NoProxyList(matchAll, domains, ipRanges);
     }
@@ -87,21 +94,21 @@ public final class NoProxyList {
         return false;
     }
 
-    private static Optional<Target> parseIpRange(String entry) {
+    private static Optional<Target> parseIpRange(String entry, String setting) {
         if (IPV4_LITERAL.matcher(entry.split("/")[0]).matches())
-            return Optional.of(Ipv4Target.tryCreate(entry).orElseThrow(() -> invalidEntry(entry)));
+            return Optional.of(Ipv4Target.tryCreate(entry).orElseThrow(() -> invalidEntry(entry, setting)));
         // Ipv6Target would resolve anything that is not an IPv6 literal via DNS, so only hand it entries with a colon.
         if (entry.contains(":"))
-            return Optional.of(Ipv6Target.tryCreate(entry).orElseThrow(() -> invalidEntry(entry)));
+            return Optional.of(Ipv6Target.tryCreate(entry).orElseThrow(() -> invalidEntry(entry, setting)));
         return Optional.empty();
     }
 
-    private static String toDomain(String entry) {
+    private static String toDomain(String entry, String setting) {
         // "*.example.com" is the http.nonProxyHosts spelling, ".example.com" the NO_PROXY one. Both mean the same here.
         var domain = entry.startsWith("*.") ? entry.substring(2) : entry;
         domain = normalize(domain.startsWith(".") ? domain.substring(1) : domain);
         if (domain.isEmpty() || domain.contains("*") || domain.contains("/"))
-            throw invalidEntry(entry);
+            throw invalidEntry(entry, setting);
         return domain;
     }
 
@@ -124,8 +131,8 @@ public final class NoProxyList {
         return host.endsWith(".") ? host.substring(0, host.length() - 1) : host;
     }
 
-    private static ConfigurationException invalidEntry(String entry) {
-        return new ConfigurationException(("The noProxy entry '%s' is neither a host name, a domain like .example.com, "
-                + "nor an IP address or range like 10.0.0.0/8.").formatted(entry));
+    private static ConfigurationException invalidEntry(String entry, String setting) {
+        return new ConfigurationException(("The entry '%s' in %s is neither a host name, a domain like .example.com, "
+                + "nor an IP address or range like 10.0.0.0/8. Ports are not supported.").formatted(entry, setting));
     }
 }

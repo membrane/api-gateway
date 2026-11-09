@@ -102,6 +102,14 @@ class SystemProxyTest {
             assertNotNull(proxy.select(HTTP_TARGET));
         }
 
+        @Test
+        void invalidNoProxyNamesTheVariable() {
+            final var e = assertThrows(ConfigurationException.class, () -> fromEnv(Map.of(
+                    "http_proxy", "http://proxy.example.com:3128",
+                    "NO_PROXY", "internal.example.com:8080")));
+            assertTrue(e.getMessage().contains("no_proxy"));
+        }
+
         @ParameterizedTest
         @ValueSource(strings = {"socks5://proxy.example.com:1080", "http://", "http://proxy example.com"})
         void invalidUrlIsRejectedWithoutRevealingIt(String url) {

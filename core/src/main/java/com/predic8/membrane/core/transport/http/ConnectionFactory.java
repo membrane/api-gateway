@@ -37,6 +37,7 @@ import java.io.IOException;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import static com.predic8.membrane.core.exchange.Exchange.SNI_SERVER_NAME;
 import static com.predic8.membrane.core.exchange.Exchange.SSL_CONTEXT;
@@ -52,6 +53,7 @@ public class ConnectionFactory {
     private final Http2ClientPool http2ClientPool;
     private final HttpClientConfiguration config;
     private final @Nullable SystemProxy systemProxy;
+    private final List<ProxyConfiguration> proxies;
     private final Map<ProxyConfiguration, SSLContext> proxySSLContexts;
     private final SSLContext sslContext;
 
@@ -59,11 +61,17 @@ public class ConnectionFactory {
     private static SSLProvider defaultSSLProvider;
 
     public ConnectionFactory(HttpClientConfiguration config, TimerManager timerManager) {
+        this(config, timerManager, SystemProxy::read);
+    }
+
+    ConnectionFactory(HttpClientConfiguration config, TimerManager timerManager, Supplier<SystemProxy> systemProxy) {
         this.config = config;
         if (config.getProxy() != null)
             config.getProxy().validate();
         this.http2ClientPool = getHttp2ClientPool(config);
-        this.systemProxy = config.getProxy() == null && config.isUseSystemProxy() ? SystemProxy.read() : null;
+        this.systemProxy = config.getProxy() == null && config.isUseSystemProxy() ? systemProxy.get() : null;
+        this.proxies = config.getProxy() != null ? List.of(config.getProxy())
+                : this.systemProxy != null ? this.systemProxy.getProxies() : List.of();
         this.proxySSLContexts = createProxySSLContexts();
         this.sslContext = getSSLContext(config);
         connectionManager = new ConnectionManager(config.getConnection().getKeepAliveTimeout(), timerManager);
@@ -147,8 +155,6 @@ public class ConnectionFactory {
     }
 
     private Map<ProxyConfiguration, SSLContext> createProxySSLContexts() {
-        final var proxies = config.getProxy() != null ? List.of(config.getProxy())
-                : systemProxy != null ? systemProxy.getProxies() : List.<ProxyConfiguration>of();
         final var contexts = new IdentityHashMap<ProxyConfiguration, SSLContext>();
         for (var proxy : proxies) {
             if (proxy.getSslParser() != null)
@@ -181,6 +187,13 @@ public class ConnectionFactory {
 
     public @Nullable SSLContext getProxySSLContext(@Nullable ProxyConfiguration proxy) {
         return proxy != null ? proxySSLContexts.get(proxy) : null;
+    }
+
+    /**
+     * @return every proxy this factory may route a connection through
+     */
+    public List<ProxyConfiguration> getProxies() {
+        return proxies;
     }
 
     public Http2ClientPool getHttp2ClientPool() {

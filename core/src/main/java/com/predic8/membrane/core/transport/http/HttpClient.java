@@ -17,6 +17,7 @@ package com.predic8.membrane.core.transport.http;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
+import com.predic8.membrane.core.transport.http.client.SystemProxy;
 import com.predic8.membrane.core.transport.http.client.protocol.ProtocolHandlerFactory;
 import com.predic8.membrane.core.transport.http.streampump.StreamPump;
 import com.predic8.membrane.core.util.TimerManager;
@@ -26,6 +27,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.net.MalformedURLException;
+import java.util.function.Supplier;
 
 import static com.predic8.membrane.core.http.Header.PROXY_AUTHORIZATION;
 import static com.predic8.membrane.core.transport.http.client.protocol.Http2ProtocolHandler.UPGRADED_PROTOCOL;
@@ -61,8 +63,12 @@ public class HttpClient implements AutoCloseable {
     }
 
     public HttpClient(@Nullable HttpClientConfiguration clientConfiguration, @Nullable TimerManager timerManager) {
+        this(clientConfiguration, timerManager, SystemProxy::read);
+    }
+
+    HttpClient(@Nullable HttpClientConfiguration clientConfiguration, @Nullable TimerManager timerManager, Supplier<SystemProxy> systemProxy) {
         configuration = clientConfiguration != null ? clientConfiguration : new HttpClientConfiguration();
-        connectionFactory = new ConnectionFactory(this.configuration, timerManager);
+        connectionFactory = new ConnectionFactory(this.configuration, timerManager, systemProxy);
         protocolHandlerFactory = new ProtocolHandlerFactory(configuration, connectionFactory);
     }
 
@@ -111,14 +117,14 @@ public class HttpClient implements AutoCloseable {
         }
     }
 
-    // A retry can go direct (noProxy) or through a TLS tunnel after a proxied plain HTTP attempt. Only the value
-    // this client set is removed, a Proxy-Authorization header that came with the request is kept.
+    // A retry can go direct (noProxy) or through a TLS tunnel after a proxied plain HTTP attempt. Only the credentials
+    // of this client's proxies are removed, any other Proxy-Authorization header that came with the request is kept.
     private void removeProxyCredentialsOfEarlierAttempt(Exchange exc) {
-        final var proxy = configuration.getProxy();
-        if (proxy == null || !proxy.isAuthentication())
-            return;
         final var header = exc.getRequest().getHeader();
-        if (proxy.getCredentials().equals(header.getFirstValue(PROXY_AUTHORIZATION)))
+        final var value = header.getFirstValue(PROXY_AUTHORIZATION);
+        if (value == null)
+            return;
+        if (connectionFactory.getProxies().stream().anyMatch(proxy -> proxy.isAuthentication() && value.equals(proxy.getCredentials())))
             header.removeFields(PROXY_AUTHORIZATION);
     }
 
