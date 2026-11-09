@@ -1,53 +1,205 @@
 name: build-and-test-warp
 
+# Paid WarpBuild test runs, started on demand by a PR comment from someone with write access:
+#   /testit     Linux:           mvn -Pno-internet verify
+#   /testmerge  Linux + Windows: mvn install (all tests, including the distribution example/tutorial ITs;
+#               install, because some example ITs build examples against this build's SNAPSHOT core)
+# Note: issue_comment always runs this file from the default branch.
+# Trust: the test jobs run the PR's code in master's context. They get no secrets and a read-only
+# token, but that code can still write to master's Actions cache. Read a fork PR's diff before
+# commenting /testit or /testmerge on it.
+
 on:
-  push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
+  issue_comment:
+    types: [created]
   workflow_dispatch:
+    inputs:
+      mode:
+        description: "Which test set to run"
+        type: choice
+        options: [testit, testmerge]
+        default: testit
 
-permissions:
-  contents: read
-
-# A newer push to the same PR cancels the older run; runs on master are never cancelled.
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+permissions: {}
 
 env:
-  # Set at job level so it applies on both bash (Linux) and pwsh (Windows).
   MAVEN_OPTS: -Xmx3000m
 
 jobs:
-  test-ubuntu:
+  parse:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.issue.pull_request &&
+       (startsWith(github.event.comment.body, '/testit') || startsWith(github.event.comment.body, '/testmerge')))
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+      statuses: write
+    outputs:
+      mode: ${{ steps.resolve.outputs.mode }}
+      sha: ${{ steps.resolve.outputs.sha }}
+      pr: ${{ steps.resolve.outputs.pr }}
+    steps:
+      - name: Check that the commenter has write access
+        if: github.event_name == 'issue_comment'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          ACTOR: ${{ github.event.comment.user.login }}
+        run: |
+          perm=$(gh api "repos/$REPO/collaborators/$ACTOR/permission" --jq .permission || echo none)
+          echo "$ACTOR has permission: $perm"
+          case "$perm" in
+            admin|maintain|write) ;;
+            *) echo "::error::Only users with write access can start WarpBuild test runs."; exit 1 ;;
+          esac
+
+      - name: Resolve mode and commit
+        id: resolve
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          EVENT: ${{ github.event_name }}
+          BODY: ${{ github.event.comment.body }}
+          PR: ${{ github.event.issue.number }}
+          INPUT_MODE: ${{ inputs.mode }}
+          SHA: ${{ github.sha }}
+        run: |
+          if [ "$EVENT" = "issue_comment" ]; then
+            case "$BODY" in
+              /testmerge*) mode=testmerge ;;
+              *)           mode=testit ;;
+            esac
+            sha=$(gh api "repos/$REPO/pulls/$PR" --jq .head.sha)
+          else
+            mode="$INPUT_MODE"
+            sha="$SHA"
+            PR=""
+          fi
+          echo "mode=$mode sha=$sha pr=$PR"
+          {
+            echo "mode=$mode"
+            echo "sha=$sha"
+            echo "pr=$PR"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: React to the comment
+        if: github.event_name == 'issue_comment'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          COMMENT_ID: ${{ github.event.comment.id }}
+        run: gh api -X POST "repos/$REPO/issues/comments/$COMMENT_ID/reactions" -f content=eyes --silent
+
+      - name: Set pending commit status
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ steps.resolve.outputs.sha }}
+          MODE: ${{ steps.resolve.outputs.mode }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh api -X POST "repos/$REPO/statuses/$SHA" --silent \
+            -f state=pending -f context="build-and-test-warp/$MODE" \
+            -f description="Running on WarpBuild" -f target_url="$RUN_URL"
+
+  test-linux:
+    needs: parse
     runs-on: warp-ubuntu-2404-x64-4x
     timeout-minutes: 90
+    permissions:
+      contents: read
+    # A newer command of the same kind on the same PR cancels the older run.
+    concurrency:
+      group: build-and-test-warp-${{ needs.parse.outputs.pr || github.ref }}-${{ needs.parse.outputs.mode }}-linux
+      cancel-in-progress: true
     steps:
       - uses: actions/checkout@v7
         with:
+          ref: ${{ needs.parse.outputs.sha }}
           persist-credentials: false
+      # No Maven cache: this job runs the PR's code in master's cache scope (issue_comment),
+      # so a cache saved here could be restored by builds of master.
       - name: Set up JDK 21
         uses: actions/setup-java@v6
         with:
           java-version: '21'
           distribution: 'temurin'
-          cache: 'maven'
-      - name: Maven Build
+      - name: Maven Build (/testit, without internet)
+        if: needs.parse.outputs.mode == 'testit'
         run: mvn --batch-mode --update-snapshots -Pno-internet verify
+      - name: Maven Build (/testmerge, all tests)
+        if: needs.parse.outputs.mode == 'testmerge'
+        run: mvn --batch-mode --update-snapshots install
 
   test-windows:
+    needs: parse
+    if: needs.parse.outputs.mode == 'testmerge'
     runs-on: warp-windows-2025-vs2026-x64-4x
     timeout-minutes: 90
+    permissions:
+      contents: read
+    concurrency:
+      group: build-and-test-warp-${{ needs.parse.outputs.pr || github.ref }}-${{ needs.parse.outputs.mode }}-windows
+      cancel-in-progress: true
     steps:
       - uses: actions/checkout@v7
         with:
+          ref: ${{ needs.parse.outputs.sha }}
           persist-credentials: false
+      # No Maven cache, see test-linux.
       - name: Set up JDK 21
         uses: actions/setup-java@v6
         with:
           java-version: '21'
           distribution: 'temurin'
-          cache: 'maven'
-      - name: Maven Build
-        run: mvn --batch-mode --update-snapshots -Pno-internet verify
+      - name: Maven Build (/testmerge, all tests)
+        run: mvn --batch-mode --update-snapshots install
+
+  report:
+    needs: [parse, test-linux, test-windows]
+    if: always() && needs.parse.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      issues: write
+      pull-requests: write
+      statuses: write
+    steps:
+      - name: Set final commit status and react to the comment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          EVENT: ${{ github.event_name }}
+          COMMENT_ID: ${{ github.event.comment.id }}
+          SHA: ${{ needs.parse.outputs.sha }}
+          MODE: ${{ needs.parse.outputs.mode }}
+          LINUX: ${{ needs.test-linux.result }}
+          WINDOWS: ${{ needs.test-windows.result }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          echo "linux=$LINUX windows=$WINDOWS"
+          if [ "$LINUX" = "cancelled" ] || [ "$WINDOWS" = "cancelled" ]; then
+            state=error; desc="Cancelled"; reaction=confused
+          elif [ "$LINUX" = "success" ] && { [ "$WINDOWS" = "success" ] || [ "$WINDOWS" = "skipped" ]; }; then
+            state=success; desc="Tests passed"; reaction=+1
+          else
+            state=failure; desc="Tests failed (linux: $LINUX, windows: $WINDOWS)"; reaction=-1
+          fi
+          # Only the run that owns the status may set the final result. A newer command for the
+          # same commit and mode re-points the pending status to its own run; a superseded run stays silent.
+          export CTX="build-and-test-warp/$MODE"
+          owner=$(gh api "repos/$REPO/commits/$SHA/status?per_page=100" --jq '.statuses[] | select(.context == env.CTX) | .target_url')
+          if [ "$owner" = "$RUN_URL" ]; then
+            gh api -X POST "repos/$REPO/statuses/$SHA" --silent \
+              -f state="$state" -f context="$CTX" \
+              -f description="$desc" -f target_url="$RUN_URL"
+          else
+            echo "Status $CTX now belongs to $owner; not overwriting it."
+          fi
+          if [ "$EVENT" = "issue_comment" ]; then
+            gh api -X POST "repos/$REPO/issues/comments/$COMMENT_ID/reactions" -f content="$reaction" --silent
+          fi
