@@ -113,6 +113,25 @@ public class ResponseTest {
         assertEquals("1.1", res3.getVersion());
     }
 
+    /**
+     * The backend is not trusted. A backend that echoes the request line must not get the client's query values
+     * into the exception message, which ends up in logs and problem details.
+     */
+    @Test
+    void invalidStatusLineIsReportedWithMaskedQueryValues() {
+        final var e = assertThrows(RuntimeException.class, () -> new Response().parseStartLine(
+                new ByteArrayInputStream("GET /orders?api-key=secret HTTP/1.1\r\n".getBytes(ISO_8859_1))));
+        assertEquals("Invalid server response: GET /orders?api-key=***", e.getMessage());
+    }
+
+    @Test
+    void invalidStatusLineIsReportedTruncatedAndWithoutControlCharacters() {
+        final var line = "SSH-2.0-OpenSSH_9.6\u001b[2J" + "x".repeat(100);
+        final var e = assertThrows(RuntimeException.class, () -> new Response().parseStartLine(
+                new ByteArrayInputStream((line + "\r\n").getBytes(ISO_8859_1))));
+        assertEquals("Invalid server response: " + "SSH-2.0-OpenSSH_9.6_[2J" + "x".repeat(57), e.getMessage());
+    }
+
     @Test
     void testUnchunkedHtmlRead() throws Exception {
         res1.read(in1, true);

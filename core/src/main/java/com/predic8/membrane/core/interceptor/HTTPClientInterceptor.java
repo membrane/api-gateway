@@ -32,6 +32,7 @@ import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_FLOW;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.util.URLParamUtil.uriForLog;
 import static com.predic8.membrane.core.util.text.TextUtil.escapeControlCharsForLog;
 
 /**
@@ -90,7 +91,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
             httpClient.call(exc);
             return RETURN;
         } catch (ConnectException e) {
-            var msg = "Target %s is not reachable.".formatted(getDestination(exc));
+            var msg = "Target %s is not reachable.".formatted(uriForLog(getDestination(exc)));
             log.warn("{} {}", msg, PROXIES_HINT);
             gateway(router.getConfiguration().isProduction(), getDisplayName())
                     .title("Bad Gateway")
@@ -123,7 +124,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
             // "is not reachable.", which is also what a refused connection logs, so the three were
             // indistinguishable in the log.
             boolean whileConnecting = e instanceof ConnectTimeoutException;
-            var msg = "Target %s timed out %s.".formatted(getDestination(exc),
+            var msg = "Target %s timed out %s.".formatted(uriForLog(getDestination(exc)),
                     whileConnecting ? "while the connection was being established, no request was sent"
                                     : "while waiting for the response, the request had already been sent");
             log.info("{} Reason: {}", msg, e.getMessage());
@@ -178,7 +179,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
         } catch (MalformedHeaderException e) {
             // The backend response has invalid framing (e.g. conflicting Content-Length),
             // RFC 9112 §6.3. We cannot safely forward it, so reject with 502 Bad Gateway.
-            log.warn("Backend {} returned a response with invalid framing: {}", getDestination(exc), e.getMessage());
+            log.warn("Backend {} returned a response with invalid framing: {}", uriForLog(getDestination(exc)), escapeControlCharsForLog(e.getMessage()));
             gateway(router.getConfiguration().isProduction(), getDisplayName())
                     .title("Bad Gateway")
                     .status(502)
