@@ -29,12 +29,10 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
-import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.wsdl.parser.BindingOperation;
 import com.predic8.membrane.core.util.wsdl.parser.Definitions;
 import com.predic8.membrane.core.util.wsdl.parser.Operation;
-import com.predic8.membrane.core.util.wsdl.parser.WSDLParserException;
 import com.predic8.membrane.core.util.xml.XMLInputSourceUtil;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.Schema;
@@ -60,12 +58,10 @@ import static com.predic8.membrane.core.interceptor.wsdl2openapi.OperationRouter
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.Wsdl2OpenApiConverter.*;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.camelToKebab;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisher.PATH;
-import static com.predic8.membrane.core.resolver.ResolverMap.combine;
 import static com.predic8.membrane.core.util.HttpUtil.getMessageForStatusCode;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
 import static com.predic8.membrane.core.util.URLParamUtil.getParams;
 import static com.predic8.membrane.core.util.wsdl.parser.Definitions.SOAPVersion.SOAP_12;
-import static com.predic8.membrane.core.util.wsdl.parser.Definitions.parse;
 import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.OUTPUT;
 import static org.w3c.dom.DOMException.INVALID_CHARACTER_ERR;
 
@@ -183,8 +179,8 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
         apiProxy = validateAndGetApiProxy();
         basePath = getBasePath();
 
-        definitions = parseWsdl();
-        var selectedPort = selectPort();
+        definitions = WsdlLoader.parseWsdl(router, getBeanBaseLocation(), wsdl);
+        var selectedPort = WsdlLoader.selectPort(definitions, wsdl, service, port);
         operationsByName = operations != null ? operations.getMap() : Map.of();
         initOperationFlows();
 
@@ -237,24 +233,6 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
         }
 
         return api;
-    }
-
-    private Definitions parseWsdl() {
-        try {
-            ResolverMap resolverMap = router.getResolverMap();
-            String resolvedWsdl = combine(router.getConfiguration().getUriFactory(), getBeanBaseLocation(), wsdl);
-            return parse(resolverMap, resolvedWsdl);
-        } catch (Exception e) {
-            throw new ConfigurationException("Cannot parse WSDL '%s': %s".formatted(wsdl, e.getMessage()), e);
-        }
-    }
-
-    private SelectedPort selectPort() {
-        try {
-            return SelectedPort.select(definitions, service, port);
-        } catch (WSDLParserException e) {
-            throw new ConfigurationException("Cannot select a port of WSDL '%s': %s".formatted(wsdl, e.getMessage()), e);
-        }
     }
 
     private void initOperationFlows() {
@@ -380,7 +358,7 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
 
         } catch (SoapFaultException fault) {
             log.debug("SOAP fault received for operation {}: [{}] {}", operationName, fault.getFaultCode(), fault.getFaultMessage());
-            exc.setResponse(soapFaultResponse(fault));
+            exc.setResponse(SoapFaultProblemDetails.of(fault, router.getConfiguration().isProduction(), getDisplayName()));
             return ABORT;
         } catch (BackendErrorException e) {
             log.error("Operation {} failed: {}", operationName, e.getMessage());
@@ -485,27 +463,6 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
      */
     private static InputSource soapSource(Response response, InputStream body) {
         return XMLInputSourceUtil.getInputSource(body, response.getHeader().getCharset());
-    }
-
-    /**
-     * A fault becomes a 500: the gateway cannot tell whether the backend rejected the input, broke,
-     * or timed out, so the most generic status is the only honest one. Nothing in the response names
-     * the technology behind the API — the fault code and the backend's fault message stay internal,
-     * development-mode aids, because an operator may not want clients to know a legacy service sits
-     * behind the gateway, and a faultstring can carry a class name or an internal host name.
-     */
-    private Response soapFaultResponse(SoapFaultException fault) {
-        var pd = problemDetails(OPERATION_ERROR_TYPE, router.getConfiguration().isProduction())
-                .component(getDisplayName())
-                .status(500)
-                .title("Operation failed")
-                .detail("The service could not complete the operation.")
-                .internal("faultCode", fault.getFaultCode())
-                .internal("faultMessage", fault.getFaultMessage());
-        if (fault.getSoapDetail() != null) {
-            pd.topLevel(FAULT_DETAILS_FIELD, fault.getSoapDetail());
-        }
-        return pd.build();
     }
 
     /**

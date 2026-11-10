@@ -23,7 +23,10 @@ import com.predic8.membrane.core.util.xml.parser.XmlParseException;
 import io.swagger.v3.oas.models.media.*;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.xml.sax.InputSource;
 
+import javax.xml.namespace.QName;
+import java.io.StringReader;
 import java.util.Map;
 import java.util.Set;
 
@@ -1141,5 +1144,29 @@ class Soap2JsonTransformerTest {
         assertEquals("java", tags.get(0).asText());
         assertTrue(tags.get(1).isNull());
         assertEquals("api", tags.get(2).asText());
+    }
+
+    @Test
+    void theBodySchemaIsPickedByTheQualifiedNameOfTheBodyElement() throws Exception {
+        final var population = new ObjectSchema().addProperty("population", new IntegerSchema());
+        final Soap2JsonTransformer.BodySchema lookup = element ->
+                element.equals(new QName("https://predic8.de/cities", "getCityResponse")) ? population : null;
+
+        final var json = new Soap2JsonTransformer(Map.of())
+                .transform(new InputSource(new StringReader(CITIES_SOAP11_RESPONSE)), lookup, null);
+
+        assertTrue(mapper.readTree(json).get("population").isNumber());
+    }
+
+    @Test
+    void aBodyElementTheLookupRejectsIsNotConverted() {
+        final var element = new QName("https://predic8.de/cities", "getCityResponse");
+        final Soap2JsonTransformer.BodySchema lookup = e -> {
+            throw new UndeclaredBodyElementException(e, "CityPort");
+        };
+
+        final var e = assertThrows(UndeclaredBodyElementException.class, () -> new Soap2JsonTransformer(Map.of())
+                .transform(new InputSource(new StringReader(CITIES_SOAP11_RESPONSE)), lookup, null));
+        assertEquals(element, e.getElement());
     }
 }

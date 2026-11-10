@@ -20,6 +20,7 @@ import org.w3c.dom.*;
 import org.xml.sax.InputSource;
 
 import javax.xml.XMLConstants;
+import javax.xml.namespace.QName;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -53,6 +54,21 @@ public class Soap2JsonTransformer {
      */
     private final Map<String, Schema<?>> components;
 
+    /**
+     * Picks the schema for the element the SOAP Body carries, once the message has been parsed and
+     * that element is known. A caller that already knows which message it converts ignores the name.
+     */
+    @FunctionalInterface
+    interface BodySchema {
+        /**
+         * @param bodyElement the namespace and local name of the Body's first child element
+         * @return the schema to type that element with; {@code null} converts it untyped
+         * @throws UndeclaredBodyElementException if the caller has no schema for that element and
+         *                                        refuses to convert it untyped
+         */
+        Schema<?> forElement(QName bodyElement) throws UndeclaredBodyElementException;
+    }
+
     /** Pass an empty map where there are no schemas to resolve against. */
     public Soap2JsonTransformer(Map<String, Schema<?>> components) {
         this.components = components;
@@ -74,7 +90,7 @@ public class Soap2JsonTransformer {
      */
     public String transform(String soapXml, Schema<?> responseSchema, Schema<?> faultDetailSchema) throws Exception {
         return MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(
-                toJson(new InputSource(new StringReader(soapXml)), responseSchema, faultDetailSchema));
+                toJson(new InputSource(new StringReader(soapXml)), ignored -> responseSchema, faultDetailSchema));
     }
 
     /**
@@ -83,11 +99,20 @@ public class Soap2JsonTransformer {
      * byte order mark or the XML declaration. The caller closes the source's stream.
      */
     public byte[] transform(InputSource soapXml, Schema<?> responseSchema, Schema<?> faultDetailSchema) throws Exception {
-        return MAPPER.writerWithDefaultPrettyPrinter().writeValueAsBytes(
-                toJson(soapXml, responseSchema, faultDetailSchema));
+        return transform(soapXml, ignored -> responseSchema, faultDetailSchema);
     }
 
-    private Object toJson(InputSource soapXml, Schema<?> responseSchema, Schema<?> faultDetailSchema) throws Exception {
+    /**
+     * Transforms a SOAP document to UTF-8 JSON, typing the Body's element with the schema
+     * {@code bodySchema} picks for it. A Fault is not looked up: {@code faultDetailSchema} types its
+     * detail. Encoding and stream handling as in {@link #transform(InputSource, Schema, Schema)}.
+     */
+    byte[] transform(InputSource soapXml, BodySchema bodySchema, Schema<?> faultDetailSchema) throws Exception {
+        return MAPPER.writerWithDefaultPrettyPrinter().writeValueAsBytes(
+                toJson(soapXml, bodySchema, faultDetailSchema));
+    }
+
+    private Object toJson(InputSource soapXml, BodySchema bodySchema, Schema<?> faultDetailSchema) throws Exception {
         var doc = getInstance().parse(soapXml);
 
         Element body = getSoapBody(doc);
@@ -104,6 +129,8 @@ public class Soap2JsonTransformer {
             throw buildFaultException(responseElement, faultDetailSchema);
         }
 
+        final var responseSchema = bodySchema.forElement(
+                new QName(responseElement.getNamespaceURI(), responseElement.getLocalName()));
         if (isNil(responseElement)) return null;
         if (isScalarRoot(responseElement, responseSchema)) return leafValue(responseElement, responseSchema);
         return elementToMap(responseElement, responseSchema);
