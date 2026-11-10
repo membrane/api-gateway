@@ -112,6 +112,25 @@ class Soap2JsonInterceptorTest {
     }
 
     @Test
+    void aRequestRecordsItsOperationForJson2Soap() throws Exception {
+        final var exc = requestExchange(GET_ARTICLE_REQUEST);
+
+        interceptor.handleRequest(exc);
+        assertEquals("getArticle", exc.getProperty(Soap2JsonInterceptor.OPERATION_PROPERTY));
+    }
+
+    @Test
+    void aResponseOrAFaultRecordsNoOperation() throws Exception {
+        final var response = responseExchange(TEXT_XML_UTF8, GET_ARTICLE_RESPONSE);
+        interceptor.handleResponse(response);
+        assertNull(response.getProperty(Soap2JsonInterceptor.OPERATION_PROPERTY));
+
+        final var fault = requestExchange(OUT_OF_STOCK_FAULT);
+        interceptor.handleRequest(fault);
+        assertNull(fault.getProperty(Soap2JsonInterceptor.OPERATION_PROPERTY));
+    }
+
+    @Test
     void aResponseIsConvertedWithTypedValuesAndArrays() throws Exception {
         final var exc = responseExchange(TEXT_XML_UTF8, GET_ARTICLE_RESPONSE);
 

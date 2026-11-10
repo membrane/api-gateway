@@ -30,7 +30,6 @@ import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.util.ConfigurationException;
-import com.predic8.membrane.core.util.wsdl.parser.BindingOperation;
 import com.predic8.membrane.core.util.wsdl.parser.Definitions;
 import com.predic8.membrane.core.util.wsdl.parser.Operation;
 import com.predic8.membrane.core.util.xml.XMLInputSourceUtil;
@@ -43,8 +42,6 @@ import org.xml.sax.InputSource;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -61,7 +58,6 @@ import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisher.PA
 import static com.predic8.membrane.core.util.HttpUtil.getMessageForStatusCode;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
 import static com.predic8.membrane.core.util.URLParamUtil.getParams;
-import static com.predic8.membrane.core.util.wsdl.parser.Definitions.SOAPVersion.SOAP_12;
 import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.OUTPUT;
 import static org.w3c.dom.DOMException.INVALID_CHARACTER_ERR;
 
@@ -267,12 +263,12 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
     }
 
     private OperationRuntime buildOperationRuntime(SelectedPort port, String operationName) {
-        validateSoapAction(port, operationName);
+        WsdlLoader.validateSoapAction(port, wsdl, operationName);
         Optional<Operation> wsdlOp = port.findOperation(operationName);
         return new OperationRuntime(
                 new Json2SoapTransformer(port, operationName, xsdToSchema.getSchemasByNamespace()),
-                requestContentType(port, operationName),
-                soapActionHeader(port, operationName),
+                port.requestContentType(operationName),
+                port.soapActionHeader(operationName),
                 xsdToSchema.convertMessageParts(wsdlOp.map(op -> op.getMessagesByDirection(OUTPUT)).orElse(List.of())),
                 xsdToSchema.convertFaultDetail(wsdlOp.map(Operation::getFaults).orElse(List.of())),
                 // An operation the WSDL does not resolve keeps the two-way path: it is the one that
@@ -637,44 +633,6 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
                 .exception(e)
                 .buildAndSetResponse(exc);
         return ABORT;
-    }
-
-    private static String getSOAPAction(SelectedPort port, String operationName) {
-        return port.findBindingOperation(operationName)
-                .map(BindingOperation::getSoapAction)
-                .orElse("");
-    }
-
-    /**
-     * Both SOAP versions require the action to be a URI (SOAP 1.1 section 6.1.1, RFC 3902), which
-     * is what lets it go between quotes unescaped: a URI cannot contain a quote or a backslash.
-     */
-    private void validateSoapAction(SelectedPort port, String operationName) {
-        String action = getSOAPAction(port, operationName);
-        if (action == null || action.isEmpty()) return;
-        try {
-            new URI(action);
-        } catch (URISyntaxException e) {
-            throw new ConfigurationException("""
-                    The WSDL '%s' gives operation '%s' the SOAP action '%s', which is not a URI.
-                    SOAP requires the action to be a URI. Percent-encode characters such as quotes, backslashes or spaces.""".formatted(wsdl, operationName, action), e);
-        }
-    }
-
-    /** SOAP 1.2 announces the action in the media type (RFC 3902), where SOAP 1.1 uses a header. */
-    private static String requestContentType(SelectedPort port, String operationName) {
-        if (port.soapVersion() != SOAP_12) return TEXT_XML;
-        String action = getSOAPAction(port, operationName);
-        return action == null || action.isEmpty() ? APPLICATION_SOAP_XML
-                : "%s; action=\"%s\"".formatted(APPLICATION_SOAP_XML, action);
-    }
-
-    /**
-     * The SOAPAction header value: quoted, as SOAP 1.1 section 6.1.1 requires, and a quoted empty
-     * string where the WSDL gives no action (WS-I Basic Profile R2744, R2745).
-     */
-    private static String soapActionHeader(SelectedPort port, String operationName) {
-        return port.soapVersion() == SOAP_12 ? null : "\"%s\"".formatted(getSOAPAction(port, operationName));
     }
 
     private String getServiceAddress() {

@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.util.wsdl.parser.Definitions;
+import com.predic8.membrane.core.util.wsdl.parser.Operation;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
@@ -101,6 +102,30 @@ class Json2SoapTransformerTest {
         assertEquals(List.of("street", "city"),
                 getChildElements(shipmentEl).stream().map(Element::getLocalName).toList(),
                 "the referenced element's own sequence must order its children");
+    }
+
+    @Test
+    void anOutputTransformerWritesTheResponseElementInSchemaOrder() throws Exception {
+        final var definitions = Definitions.parse(new ResolverMap(), "classpath:/ws/two-operations-with-faults.wsdl");
+        final var transformer = new Json2SoapTransformer(SelectedPort.select(definitions, null, null), "getArticle",
+                Operation.Direction.OUTPUT, definitions.getSchemasByNamespace());
+
+        final var response = getFirstChildElement(bodyOf(parseXml(transformer.transform(
+                "{\"tag\": [\"a\", \"b\"], \"available\": true, \"price\": 4.5, \"name\": \"Coffee\"}"))));
+
+        assertEquals("getArticleResponse", response.getLocalName());
+        assertEquals("https://example.com/shop", response.getNamespaceURI());
+        assertEquals(List.of("name", "price", "available", "tag", "tag"),
+                getChildElements(response).stream().map(Element::getLocalName).toList());
+    }
+
+    @Test
+    void anOutputTransformerOfAOneWayOperationReportsTheMissingMessage() {
+        final var transformer = new Json2SoapTransformer(SelectedPort.select(qualifiedDefinitions, null, null), "sendMessage",
+                Operation.Direction.OUTPUT, qualifiedDefinitions.getSchemasByNamespace());
+
+        final var e = assertThrows(IllegalArgumentException.class, () -> transformer.transform("{}"));
+        assertEquals("No output message found for operation: sendMessage", e.getMessage());
     }
 
     @Test

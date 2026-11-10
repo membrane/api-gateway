@@ -20,7 +20,10 @@ import com.predic8.membrane.core.util.wsdl.parser.*;
 import java.util.List;
 import java.util.Optional;
 
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_SOAP_XML;
+import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
 import static com.predic8.membrane.core.util.wsdl.parser.Definitions.SOAPVersion.SOAP_11;
+import static com.predic8.membrane.core.util.wsdl.parser.Definitions.SOAPVersion.SOAP_12;
 
 /**
  * The one port of a WSDL a wsdl2openapi instance serves. A port fixes everything the plugin needs:
@@ -165,5 +168,29 @@ record SelectedPort(Service service, String name, PortType portType, Binding bin
     /** The SOAP version the port's binding speaks: the one requests are sent in. SOAP 1.1 without a binding. */
     Definitions.SOAPVersion soapVersion() {
         return binding != null ? binding.getSoapVersion() : SOAP_11;
+    }
+
+    /** The SOAP action the binding gives the operation; empty where it gives none. */
+    String soapAction(String operationName) {
+        return findBindingOperation(operationName)
+                .map(BindingOperation::getSoapAction)
+                .orElse("");
+    }
+
+    /** SOAP 1.2 announces the action in the media type (RFC 3902), where SOAP 1.1 uses a header. */
+    String requestContentType(String operationName) {
+        if (soapVersion() != SOAP_12) return TEXT_XML;
+        String action = soapAction(operationName);
+        return action == null || action.isEmpty() ? APPLICATION_SOAP_XML
+                : "%s; action=\"%s\"".formatted(APPLICATION_SOAP_XML, action);
+    }
+
+    /**
+     * The SOAPAction header value: quoted, as SOAP 1.1 section 6.1.1 requires, and a quoted empty
+     * string where the WSDL gives no action (WS-I Basic Profile R2744, R2745). {@code null} for
+     * SOAP 1.2, which sends no such header.
+     */
+    String soapActionHeader(String operationName) {
+        return soapVersion() == SOAP_12 ? null : "\"%s\"".formatted(soapAction(operationName));
     }
 }

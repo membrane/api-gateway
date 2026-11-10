@@ -26,7 +26,9 @@ import com.predic8.membrane.core.util.xml.XMLInputSourceUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.xml.namespace.QName;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
@@ -55,6 +57,11 @@ import static com.predic8.membrane.core.util.text.TextUtil.escapeControlCharsFor
  * result. Only document/literal messages are supported. Messages without a body pass through
  * unchanged.
  * </p>
+ * <p>
+ * In the request flow, the operation the request belongs to is recorded in the exchange property
+ * <code>membrane.soap.operation</code>, so that <i>json2Soap</i> can turn the JSON answer of a
+ * backend back into that operation's SOAP response.
+ * </p>
  * <pre>
  * soap2Json:
  *   wsdl: &lt;url or path&gt;
@@ -77,6 +84,12 @@ import static com.predic8.membrane.core.util.text.TextUtil.escapeControlCharsFor
 public class Soap2JsonInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(Soap2JsonInterceptor.class);
+
+    /**
+     * The exchange property holding the name of the WSDL operation of the exchange. Written by
+     * soap2Json in the request flow, read by json2Soap when it has no configured operation.
+     */
+    public static final String OPERATION_PROPERTY = "membrane.soap.operation";
 
     private String wsdl;
     private String service;
@@ -125,16 +138,24 @@ public class Soap2JsonInterceptor extends AbstractInterceptor {
             return notXml(exc, flow, msg.getHeader().getContentType());
         }
         final var schemas = bodySchemas;
+        final var bodyElement = new AtomicReference<QName>();
         try {
             byte[] json;
             try (var body = msg.getBodyAsStreamDecoded()) {
                 json = new Soap2JsonTransformer(schemas.components()).transform(
                         XMLInputSourceUtil.getInputSource(body, msg.getHeader().getCharset()),
-                        schemas::forElement,
+                        element -> {
+                            bodyElement.set(element);
+                            return schemas.forElement(element);
+                        },
                         schemas.faultDetailSchema());
             }
             msg.setBodyContent(json);
             msg.getHeader().setContentType(APPLICATION_JSON);
+            if (flow == REQUEST) {
+                schemas.inputOperation(bodyElement.get())
+                        .ifPresent(operation -> exc.setProperty(OPERATION_PROPERTY, operation));
+            }
             return CONTINUE;
         } catch (ReadingBodyException e) {
             // FlowController answers a body that could not be read; this is not a conversion error.

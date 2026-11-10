@@ -18,6 +18,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.util.wsdl.parser.Message;
 import com.predic8.membrane.core.util.wsdl.parser.Operation;
+import com.predic8.membrane.core.util.wsdl.parser.Operation.Direction;
 import com.predic8.membrane.core.util.wsdl.parser.Part;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -40,7 +41,8 @@ import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.*;
 import static com.predic8.membrane.core.util.wsdl.parser.Definitions.SOAPVersion.SOAP_12;
 
 /**
- * Transforms JSON request to SOAP XML envelope.
+ * Transforms a JSON body to a SOAP XML envelope: the input message of an operation, or, for a
+ * transformer built for {@link Direction#OUTPUT}, its output message.
  * JSON keys prefixed with "@" are mapped to XML attributes instead of child elements.
  * A {@code null} value becomes an element marked {@code xsi:nil="true"}, or, for an attribute,
  * no attribute at all.
@@ -70,14 +72,15 @@ public class Json2SoapTransformer {
     private static final TransformerFactory TRANSFORMER_FACTORY = TransformerFactory.newInstance();
 
     private final String operationName;
+    private final Direction direction;
     private final Map<String, List<Element>> schemasByNamespace;
     private final XsdContentModel contentModel;
     private final boolean soap12;
-    /** The operation's request element, or {@code null} when the WSDL does not define a usable one. */
-    private final RequestElement requestElement;
-    /** Why the operation has no usable request element, reported by every {@link #transform} call. */
+    /** The element of the operation's message, or {@code null} when the WSDL does not define a usable one. */
+    private final BodyElement bodyElement;
+    /** Why the operation has no usable body element, reported by every {@link #transform} call. */
     private final String unusableReason;
-    /** The field metadata of every declaration reachable from the request element. */
+    /** The field metadata of every declaration reachable from the body element. */
     private final Map<XsdContext, FieldContext> fieldContexts;
 
     /**
@@ -90,21 +93,31 @@ public class Json2SoapTransformer {
      */
     public Json2SoapTransformer(SelectedPort port, String operationName,
                                 Map<String, List<Element>> schemasByNamespace) {
+        this(port, operationName, Direction.INPUT, schemasByNamespace);
+    }
+
+    /**
+     * @param direction {@link Direction#INPUT} for a request, {@link Direction#OUTPUT} for a response
+     * @see #Json2SoapTransformer(SelectedPort, String, Map)
+     */
+    Json2SoapTransformer(SelectedPort port, String operationName, Direction direction,
+                         Map<String, List<Element>> schemasByNamespace) {
         this.operationName = operationName;
+        this.direction = direction;
         this.schemasByNamespace = schemasByNamespace;
         this.contentModel = new XsdContentModel(schemasByNamespace);
         this.soap12 = port.soapVersion() == SOAP_12;
 
         var contexts = new HashMap<XsdContext, FieldContext>();
-        RequestElement resolved = null;
+        BodyElement resolved = null;
         String reason = null;
         try {
-            resolved = resolveRequestElement(port, contexts);
+            resolved = resolveBodyElement(port, contexts);
         } catch (IllegalArgumentException e) {
             // Reported per request, as before: one unusable operation must not stop the others.
             reason = e.getMessage();
         }
-        this.requestElement = resolved;
+        this.bodyElement = resolved;
         this.unusableReason = reason;
         this.fieldContexts = Map.copyOf(contexts);
     }
@@ -112,7 +125,7 @@ public class Json2SoapTransformer {
     public byte[] transform(String jsonBody) throws Exception {
         JsonNode jsonNode = MAPPER.readTree(jsonBody);
 
-        if (requestElement == null) {
+        if (bodyElement == null) {
             throw new IllegalArgumentException(unusableReason);
         }
 
@@ -122,37 +135,39 @@ public class Json2SoapTransformer {
         Element operationElement = createOperationElement(doc);
         envelope.body().appendChild(operationElement);
 
-        mapJsonToElement(jsonNode, operationElement, doc, requestElement.fields());
+        mapJsonToElement(jsonNode, operationElement, doc, bodyElement.fields());
 
         return documentToBytes(doc);
     }
 
-    /** The element a request's SOAP body carries, and the field metadata of its content. */
-    private record RequestElement(String name, String namespace, FieldContext fields) {}
+    /** The element the SOAP body carries, and the field metadata of its content. */
+    private record BodyElement(String name, String namespace, FieldContext fields) {}
 
     /**
-     * Resolves the operation's request element from the WSDL, collecting the field metadata of every
-     * declaration reachable from it into {@code contexts}.
+     * Resolves the element of the operation's message in this transformer's direction from the
+     * WSDL, collecting the field metadata of every declaration reachable from it into
+     * {@code contexts}.
      *
-     * @throws IllegalArgumentException if the operation, its input message, or the element of its
-     *                                  first part cannot be found
+     * @throws IllegalArgumentException if the operation, its message, or the element of its first
+     *                                  part cannot be found
      */
-    private RequestElement resolveRequestElement(SelectedPort port, Map<XsdContext, FieldContext> contexts) {
+    private BodyElement resolveBodyElement(SelectedPort port, Map<XsdContext, FieldContext> contexts) {
         Operation operation = port.findOperation(operationName)
                 .orElseThrow(() -> new IllegalArgumentException("Operation not found: " + operationName));
 
-        Message inputMessage = operation.getInputMessage()
-                .orElseThrow(() -> new IllegalArgumentException("No input message found for operation: " + operationName));
-        List<Part> parts = inputMessage.getParts();
+        final var messageKind = direction.name().toLowerCase(Locale.ROOT);
+        Message message = operation.getMessagesByDirection(direction).stream().findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("No %s message found for operation: %s".formatted(messageKind, operationName)));
+        List<Part> parts = message.getParts();
         if (parts.isEmpty()) {
-            throw new IllegalArgumentException("Input message has no parts for operation: " + operationName);
+            throw new IllegalArgumentException("The %s message has no parts for operation: %s".formatted(messageKind, operationName));
         }
         Part part = parts.getFirst();
         String elementName = part.getElementName();
         if (elementName == null) {
             throw new IllegalArgumentException("Part has no element name for operation: " + operationName);
         }
-        return new RequestElement(elementName, part.getElementNamespace(),
+        return new BodyElement(elementName, part.getElementNamespace(),
                 resolveFieldContexts(findXsdContext(part.getElementQName()), contexts));
     }
 
@@ -207,9 +222,9 @@ public class Json2SoapTransformer {
     }
 
     private Element createOperationElement(Document doc) {
-        String namespace = requestElement.namespace();
+        String namespace = bodyElement.namespace();
 
-        Element opElement = doc.createElementNS(namespace, requestElement.name());
+        Element opElement = doc.createElementNS(namespace, bodyElement.name());
 
         if (namespace != null && !namespace.isEmpty()) {
             String prefix = "ns";

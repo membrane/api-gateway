@@ -19,6 +19,7 @@ import com.predic8.membrane.core.util.wsdl.parser.Definitions;
 import org.junit.jupiter.api.Test;
 
 import javax.xml.namespace.QName;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -56,6 +57,25 @@ class SoapBodySchemasTest {
 
         final var e = assertThrows(UndeclaredBodyElementException.class, () -> schemas.forElement(element));
         assertEquals(element, e.getElement());
+    }
+
+    @Test
+    void anInputElementNamesItsOperation() throws Exception {
+        final var schemas = schemasOf("classpath:/ws/two-operations-with-faults.wsdl");
+
+        assertEquals(Optional.of("placeOrder"), schemas.inputOperation(new QName(SHOP_NS, "placeOrder")));
+        assertEquals(Optional.empty(), schemas.inputOperation(new QName(SHOP_NS, "placeOrderResponse")),
+                "an output element names no operation of a request");
+    }
+
+    @Test
+    void anInputElementOfSeveralOperationsNamesNone() throws Exception {
+        final var schemas = schemasOf("classpath:/ws/shared-input-element.wsdl");
+        final var ns = "https://example.com/shared";
+
+        assertEquals(Optional.empty(), schemas.inputOperation(new QName(ns, "query")));
+        assertEquals(Optional.of("ping"), schemas.inputOperation(new QName(ns, "ping")));
+        assertNotNull(schemas.forElement(new QName(ns, "query")), "the element is still converted");
     }
 
     @Test

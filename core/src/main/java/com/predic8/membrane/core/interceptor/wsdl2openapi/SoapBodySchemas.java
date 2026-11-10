@@ -21,9 +21,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.xml.namespace.QName;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.INPUT;
 import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.OUTPUT;
@@ -44,12 +47,17 @@ import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.OUT
  *
  * @param portName          the name of the port, for error messages
  * @param bodySchemas       the schema of each Body element, by its qualified name
+ * @param inputOperations   the operation whose input message carries the element, by the
+ *                          element's qualified name. An element that the input of several
+ *                          operations carries is missing: its operation cannot be told from the
+ *                          Body, and WS-I Basic Profile R2710 rules such WSDLs out anyway.
  * @param faultDetailSchema types the detail of a SOAP Fault: one property per fault the port's
  *                          operations declare, since a Fault does not say which operation failed
  * @param components        the named types the schemas refer to; see {@link XsdToSchema#getComponents()}
  */
 record SoapBodySchemas(String portName,
                        Map<QName, Schema<?>> bodySchemas,
+                       Map<QName, String> inputOperations,
                        Schema<?> faultDetailSchema,
                        Map<String, Schema<?>> components) {
 
@@ -62,10 +70,13 @@ record SoapBodySchemas(String portName,
      */
     static SoapBodySchemas of(SelectedPort port, XsdToSchema xsdToSchema) {
         final var bodySchemas = new LinkedHashMap<QName, Schema<?>>();
+        final var inputOperations = new LinkedHashMap<QName, String>();
+        final var sharedInputs = new HashSet<QName>();
         final var faults = new LinkedHashMap<String, Operation.Fault>();
         for (final Operation operation : port.operations()) {
             for (final Message message : operation.getMessagesByDirection(INPUT)) {
-                addMessage(message, operation, xsdToSchema, bodySchemas);
+                addMessage(message, operation, xsdToSchema, bodySchemas)
+                        .ifPresent(element -> addInputOperation(element, operation, inputOperations, sharedInputs));
             }
             for (final Message message : operation.getMessagesByDirection(OUTPUT)) {
                 addMessage(message, operation, xsdToSchema, bodySchemas);
@@ -82,23 +93,36 @@ record SoapBodySchemas(String portName,
         }
         final var faultDetailSchema = xsdToSchema.convertFaultDetail(List.copyOf(faults.values()));
         // Copied only now: converting the fault details may still have added components.
-        return new SoapBodySchemas(port.name(), Map.copyOf(bodySchemas), faultDetailSchema,
-                Map.copyOf(xsdToSchema.getComponents()));
+        return new SoapBodySchemas(port.name(), Map.copyOf(bodySchemas), Map.copyOf(inputOperations),
+                faultDetailSchema, Map.copyOf(xsdToSchema.getComponents()));
     }
 
-    private static void addMessage(Message message, Operation operation, XsdToSchema xsdToSchema,
-                                   Map<QName, Schema<?>> bodySchemas) {
+    /** Indexes the message; returns its element, or empty if the message cannot be indexed. */
+    private static Optional<QName> addMessage(Message message, Operation operation, XsdToSchema xsdToSchema,
+                                              Map<QName, Schema<?>> bodySchemas) {
         final var parts = message.getParts();
         if (parts.size() != 1 || parts.getFirst().getElementQName() == null) {
             log.debug("Message '{}' of operation '{}' is not a document/literal message with a single element part, skipping",
                     message.getName(), operation.getName());
-            return;
+            return Optional.empty();
         }
         final var element = parts.getFirst().getElementQName();
         // The same element always yields the same schema, so the first message to name it wins.
         if (!bodySchemas.containsKey(element)) {
             bodySchemas.put(element, xsdToSchema.convert(element));
         }
+        return Optional.of(element);
+    }
+
+    private static void addInputOperation(QName element, Operation operation, Map<QName, String> inputOperations,
+                                          Set<QName> sharedInputs) {
+        if (sharedInputs.contains(element)) return;
+        final var first = inputOperations.putIfAbsent(element, operation.getName());
+        if (first == null) return;
+        log.debug("The input element {} is shared by operations '{}' and '{}', so its operation cannot be told from the Body",
+                element, first, operation.getName());
+        inputOperations.remove(element);
+        sharedInputs.add(element);
     }
 
     /**
@@ -110,5 +134,10 @@ record SoapBodySchemas(String portName,
         final var schema = bodySchemas.get(element);
         if (schema == null) throw new UndeclaredBodyElementException(element, portName);
         return schema;
+    }
+
+    /** The operation whose input message carries {@code element}; empty if there is not exactly one. */
+    Optional<String> inputOperation(QName element) {
+        return Optional.ofNullable(inputOperations.get(element));
     }
 }
