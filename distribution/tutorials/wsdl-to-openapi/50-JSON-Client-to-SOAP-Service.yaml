@@ -1,0 +1,76 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.8.1.json
+#
+# Tutorial: JSON Client to SOAP Service with WSDL
+#
+# Call a SOAP service with JSON. json2Soap turns the JSON request into a SOAP request, soap2Json
+# turns the SOAP response back into JSON. Both take the types, the element order and the lists from
+# the XML Schema in the WSDL instead of guessing them from the message.
+#
+# 1.) Start Membrane
+#    Linux/Mac:
+#      ./membrane.sh -c 50-JSON-Client-to-SOAP-Service.yaml
+#    Windows:
+#      membrane.cmd -c 50-JSON-Client-to-SOAP-Service.yaml
+#
+# 2.) Call the service with JSON
+#    curl -d "{\"name\":\"Bonn\"}" -H "Content-Type: application/json" localhost:2000
+#
+#      {
+#        "country" : "Germany",
+#        "population" : 327000
+#      }
+#
+#    population is a number because the WSDL declares it as xsd:integer, not because it looks
+#    like one.
+#
+# 3.) Look at the SOAP messages in the log
+#
+# 4.) Ask for a city the service does not know
+#    curl -d "{\"name\":\"Atlantis\"}" -H "Content-Type: application/json" localhost:2000
+#
+#      {
+#        "title" : "Operation failed",
+#        "status" : 500,
+#        "details" : {
+#          "errorcode" : "404",
+#          "errormessage" : "Do not know Atlantis. Try Bonn, London or New York"
+#        },
+#        ...
+#      }
+#
+#    The SOAP fault of the service becomes a problem details document.
+
+api:
+  port: 2000
+  name: JSON to SOAP Converter
+  flow:
+    - request:
+        - json2Soap:
+            wsdl: cities.wsdl
+            operation: getCity
+    - response:
+        - soap2Json:
+            wsdl: cities.wsdl
+  target:
+    url: http://localhost:2001/city-service
+
+---
+api:
+  port: 2001
+  name: City SOAP Service Backend
+  path:
+    uri: /city-service
+  flow:
+    - beautifier: {}
+    - log:
+        label: "****** SOAP Message *******"
+    - sampleSoapService: {}
+
+# NOTE:
+#   Unlike wsdl2openapi, json2Soap and soap2Json publish no OpenAPI and have no routing: they
+#   convert the messages of whatever API they are placed in. json2Soap needs the operation, since
+#   a JSON body does not say which message it is; soap2Json finds it from the element in the
+#   SOAP Body.
+#
+# See also:
+#  - 60-SOAP-Client-to-JSON-Backend.yaml for the other direction: a SOAP interface for a JSON backend
