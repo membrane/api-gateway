@@ -3,6 +3,8 @@ setlocal
 if not defined MEMBRANE_HOME (>&2 echo start_router.cmd: MEMBRANE_HOME not set & exit /b 1)
 set "CLASSPATH=%MEMBRANE_HOME%\conf;%MEMBRANE_HOME%\lib\*"
 
+set | findstr /B /I /R /C:"JAVA_OPTS=.*-Dlog4j\.configurationFile=" >nul && call :normalize_java_opts
+
 rem === Terminal Color Detection ==============================================
 
 set "DISABLE_COLORS=true"
@@ -54,3 +56,40 @@ if not "%status%"=="0" (
   >&2 echo CLASSPATH: %CLASSPATH%
 )
 exit /b %status%
+
+:normalize_java_opts
+setlocal EnableDelayedExpansion
+set "REST=!JAVA_OPTS!"
+set "NEW="
+:normalize_next
+if not defined REST goto :normalize_done
+if "!REST:~0,1!"==" " (
+    set "REST=!REST:~1!"
+    goto :normalize_next
+)
+set "REST_IN=!REST!"
+set "REST="
+for /f "eol= tokens=1* delims= " %%A in ("!REST_IN!") do (
+    set "TOK=%%A"
+    set "REST=%%B"
+)
+set "BARE=!TOK:"=!"
+if "!BARE:~0,26!"=="-Dlog4j.configurationFile=" call :resolve_log4j_path
+if defined NEW (set "NEW=!NEW! !TOK!") else set "NEW=!TOK!"
+goto :normalize_next
+:normalize_done
+for /f "eol= delims=" %%V in ("!NEW!") do endlocal & set "JAVA_OPTS=%%V"
+exit /b 0
+
+rem Absolute paths, UNC paths and URIs are left unchanged, like in start_router.sh.
+:resolve_log4j_path
+set "VAL=!BARE:~26!"
+if not defined VAL exit /b 0
+if "!VAL:~0,1!"=="\" exit /b 0
+if "!VAL:~0,1!"=="/" exit /b 0
+if "!VAL:~1,1!"==":" exit /b 0
+if /I "!VAL:~0,5!"=="file:" exit /b 0
+if not "!VAL:://=!"=="!VAL!" exit /b 0
+rem Quoted because MEMBRANE_HOME may contain spaces (e.g. C:\Program Files\membrane).
+set "TOK="-Dlog4j.configurationFile=!MEMBRANE_HOME!\!VAL!""
+exit /b 0
