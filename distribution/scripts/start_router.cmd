@@ -88,14 +88,37 @@ goto :normalize_next
 for /f "eol= delims=" %%V in ("!NEW!") do endlocal & set "JAVA_OPTS=%%V"
 exit /b 0
 
-rem Absolute paths, UNC paths and URIs are left unchanged, like in start_router.sh.
+rem Log4j accepts a comma-separated list of locations, so each one is resolved on its own.
 :resolve_log4j_path
 set "VAL=!BARE:~26!"
 if not defined VAL exit /b 0
-if "!VAL:~0,1!"=="\" exit /b 0
-if "!VAL:~0,1!"=="/" exit /b 0
-rem Windows file names cannot contain ":", so any colon means a drive path or a URI/resource prefix (file:, classpath:, ...).
-if not "!VAL::=!"=="!VAL!" exit /b 0
+set "OUT="
+set "LOC="
+set "CHANGED="
+:resolve_next_char
+if not defined VAL goto :resolve_done
+set "C=!VAL:~0,1!"
+set "VAL=!VAL:~1!"
+if not "!C!"=="," (
+    set "LOC=!LOC!!C!"
+    goto :resolve_next_char
+)
+call :resolve_location
+set "OUT=!OUT!,"
+goto :resolve_next_char
+:resolve_done
+call :resolve_location
 rem Quoted because MEMBRANE_HOME may contain spaces (e.g. C:\Program Files\membrane).
-set "TOK="-Dlog4j.configurationFile=!MEMBRANE_HOME!\!VAL!""
+if defined CHANGED set "TOK="-Dlog4j.configurationFile=!OUT!""
+exit /b 0
+
+rem Absolute paths, UNC paths and URIs are left unchanged, like in start_router.sh.
+rem Windows file names cannot contain ":", so any colon means a drive path or a URI/resource prefix (file:, classpath:, ...).
+:resolve_location
+if defined LOC if not "!LOC:~0,1!"=="\" if not "!LOC:~0,1!"=="/" if "!LOC::=!"=="!LOC!" (
+    set "LOC=!MEMBRANE_HOME!\!LOC!"
+    set "CHANGED=1"
+)
+set "OUT=!OUT!!LOC!"
+set "LOC="
 exit /b 0
