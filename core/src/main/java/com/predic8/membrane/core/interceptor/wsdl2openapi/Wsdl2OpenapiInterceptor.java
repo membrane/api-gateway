@@ -21,6 +21,7 @@ import com.predic8.membrane.core.interceptor.soap2json.SoapFaultProblemDetails;
 import com.predic8.membrane.core.interceptor.soap2json.SelectedPort;
 import com.predic8.membrane.core.interceptor.soap2json.WsdlLoader;
 import com.predic8.membrane.core.interceptor.soap2json.WsdlPartsToSchema;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.annot.MCAttribute;
@@ -40,6 +41,7 @@ import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.wsdl.parser.Definitions;
 import com.predic8.membrane.core.util.wsdl.parser.Operation;
 import com.predic8.membrane.core.util.xml.XMLInputSourceUtil;
+import com.predic8.membrane.core.util.xml.schema.UnmappableJsonException;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.Schema;
 import org.slf4j.Logger;
@@ -615,6 +617,13 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
                     .exception(e)
                     .buildAndSetResponse(exc);
             return ABORT;
+        } catch (JsonProcessingException e) {
+            log.debug("The request body of operation {} is not valid JSON", operationName, e);
+            return invalidJson(exc, "The request body is not valid JSON.", e);
+        } catch (UnmappableJsonException e) {
+            log.debug("The request body of operation {} cannot be mapped to XML", operationName, e);
+            // Its message is fixed text, written for the client.
+            return invalidJson(exc, e.getMessage(), e);
         } catch (DOMException e) {
             // A field name the JSON body carries is not a legal XML name — a client mistake, so a
             // 400 rather than the 500 any other transformation failure gets. Every other DOM error
@@ -633,6 +642,17 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
         }
 
         return CONTINUE;
+    }
+
+    /** A request body that is no JSON object or value is the client's mistake: a 400. */
+    private Outcome invalidJson(Exchange exc, String detail, Exception e) {
+        user(router.getConfiguration().isProduction(), getDisplayName())
+                .status(400)
+                .title("Invalid JSON")
+                .detail(detail, true)
+                .exception(e)
+                .buildAndSetResponse(exc);
+        return ABORT;
     }
 
     private Outcome transformationFailed(Exchange exc, String operationName, Exception e) {

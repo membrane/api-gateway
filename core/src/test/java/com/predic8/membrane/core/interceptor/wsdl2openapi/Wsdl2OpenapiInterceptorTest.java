@@ -804,6 +804,33 @@ class Wsdl2OpenapiInterceptorTest {
         );
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"[{\"name\": \"Bonn\"}]", "{\"name\": "})
+    void aBodyThatIsNoJsonObjectIsAClientError(String body) throws Exception {
+        // An array or broken JSON is the client's mistake, not a failure of the gateway.
+        assertEquals(400, requestResponse(body).getStatusCode());
+    }
+
+    @Test
+    void invalidJsonNextToAPathParameterIsAClientError() throws Exception {
+        // With URL parameters the body is parsed to merge them in, so it fails there instead.
+        var settings = new OperationSettings();
+        settings.setPath("/cities/{name}");
+        settings.setMethod("PUT");
+        var operations = new OperationsConfig();
+        operations.setEntry(Map.of("getCity", settings));
+
+        var interceptor = wsdl2openapi("classpath:/ws/cities.wsdl");
+        interceptor.setOperations(operations);
+        interceptor.init(new DummyTestRouter(), apiProxyWith(interceptor));
+
+        var exc = new Exchange(null);
+        exc.setRequest(new Request.Builder().put("/cities/Berlin").body("{\"name\": ").build());
+
+        assertEquals(Outcome.ABORT, interceptor.handleRequest(exc));
+        assertEquals(400, exc.getResponse().getStatusCode());
+    }
+
     @Test
     void pathParameterWinsOverTheSameFieldInTheBody() throws Exception {
         // The URL selected the resource. A body repeating the field — it is not in the published
