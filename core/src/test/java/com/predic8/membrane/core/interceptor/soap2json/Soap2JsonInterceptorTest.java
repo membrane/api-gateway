@@ -164,6 +164,34 @@ class Soap2JsonInterceptorTest {
     }
 
     @Test
+    void undeclaredFaultDetailStaysOutOfAProductionResponse() throws Exception {
+        final var exc = responseExchange(TEXT_XML_UTF8, OUT_OF_STOCK_FAULT.replace("</detail>",
+                "<trace>at com.example.Stock(db-host-3)</trace></detail>"));
+        interceptor.getRouter().getConfiguration().setProduction(true);
+
+        assertEquals(ABORT, interceptor.handleResponse(exc));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertEquals(3, MAPPER.readTree(body).get("details").get("outOfStock").get("available").asInt(), body);
+        assertFalse(body.contains("db-host-3"), "undeclared fault detail must not reach the client: " + body);
+    }
+
+    @Test
+    void aResponseElementInTheRequestFlowIsRejected() throws Exception {
+        final var exc = requestExchange(GET_ARTICLE_RESPONSE);
+
+        assertEquals(ABORT, interceptor.handleRequest(exc));
+        assertEquals(400, exc.getResponse().getStatusCode());
+    }
+
+    @Test
+    void aRequestElementInTheResponseFlowIsRejected() {
+        final var exc = responseExchange(TEXT_XML_UTF8, GET_ARTICLE_REQUEST);
+
+        assertEquals(ABORT, interceptor.handleResponse(exc));
+        assertEquals(500, exc.getResponse().getStatusCode());
+    }
+
+    @Test
     void aFaultInTheRequestFlowIsAClientError() throws Exception {
         final var exc = requestExchange(OUT_OF_STOCK_FAULT);
 

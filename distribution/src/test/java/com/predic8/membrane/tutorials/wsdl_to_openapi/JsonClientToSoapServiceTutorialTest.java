@@ -56,6 +56,7 @@ public class JsonClientToSoapServiceTutorialTest extends AbstractWsdl2OpenAPITut
         .then()
             .statusCode(500)
             .body("title", equalTo("Operation failed"))
+            .body("details.errorcode", equalTo(404))
             .body("details.errormessage", equalTo("Do not know Atlantis. Try Bonn, London or New York"));
         // @formatter:on
     }

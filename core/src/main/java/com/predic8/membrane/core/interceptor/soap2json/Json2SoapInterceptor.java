@@ -27,6 +27,7 @@ import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.SOAPUtil.FaultCode;
 import com.predic8.membrane.core.util.wsdl.parser.Operation;
 import com.predic8.membrane.core.util.wsdl.parser.WSDLParserException;
+import com.predic8.membrane.core.util.xml.schema.UnmappableJsonException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.DOMException;
@@ -211,6 +212,9 @@ public class Json2SoapInterceptor extends AbstractInterceptor {
             throw e;
         } catch (JsonProcessingException e) {
             return clientError(exc, flow, current, "Invalid JSON", "The body is not valid JSON.", e);
+        } catch (UnmappableJsonException e) {
+            // Its message is fixed text, written for the client.
+            return clientError(exc, flow, current, "Invalid JSON", e.getMessage(), e);
         } catch (DOMException e) {
             // A key of the JSON is not a legal XML name. Every other DOM error is the gateway's own.
             if (e.code != INVALID_CHARACTER_ERR) return conversionFailed(exc, flow, current, operationName, e);

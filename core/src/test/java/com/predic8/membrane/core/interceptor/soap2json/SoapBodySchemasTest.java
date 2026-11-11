@@ -38,10 +38,19 @@ class SoapBodySchemasTest {
     void inputAndOutputElementsOfEveryOperationAreIndexed() throws Exception {
         final var schemas = schemasOf("classpath:/ws/two-operations-with-faults.wsdl");
 
-        assertEquals(Set.of(new QName(SHOP_NS, "getArticle"), new QName(SHOP_NS, "getArticleResponse"),
-                        new QName(SHOP_NS, "placeOrder"), new QName(SHOP_NS, "placeOrderResponse")),
-                schemas.bodySchemas().keySet());
-        assertNotNull(schemas.forElement(new QName(SHOP_NS, "getArticleResponse")).getProperties().get("price"));
+        assertEquals(Set.of(new QName(SHOP_NS, "getArticle"), new QName(SHOP_NS, "placeOrder")),
+                schemas.requestSchemas().keySet());
+        assertEquals(Set.of(new QName(SHOP_NS, "getArticleResponse"), new QName(SHOP_NS, "placeOrderResponse")),
+                schemas.responseSchemas().keySet());
+        assertNotNull(schemas.forResponse(new QName(SHOP_NS, "getArticleResponse")).getProperties().get("price"));
+    }
+
+    @Test
+    void anOutputElementIsNoRequestAndAnInputElementNoResponse() throws Exception {
+        final var schemas = schemasOf("classpath:/ws/two-operations-with-faults.wsdl");
+
+        assertThrows(UndeclaredElementException.class, () -> schemas.forRequest(new QName(SHOP_NS, "getArticleResponse")));
+        assertThrows(UndeclaredElementException.class, () -> schemas.forResponse(new QName(SHOP_NS, "getArticle")));
     }
 
     @Test
@@ -56,7 +65,7 @@ class SoapBodySchemasTest {
         final var schemas = schemasOf("classpath:/ws/two-operations-with-faults.wsdl");
         final var element = new QName("https://example.com/other", "getArticle");
 
-        final var e = assertThrows(UndeclaredElementException.class, () -> schemas.forElement(element));
+        final var e = assertThrows(UndeclaredElementException.class, () -> schemas.forRequest(element));
         assertEquals(element, e.getElement());
     }
 
@@ -76,7 +85,7 @@ class SoapBodySchemasTest {
 
         assertEquals(Optional.empty(), schemas.inputOperation(new QName(ns, "query")));
         assertEquals(Optional.of("ping"), schemas.inputOperation(new QName(ns, "ping")));
-        assertNotNull(schemas.forElement(new QName(ns, "query")), "the element is still converted");
+        assertNotNull(schemas.forRequest(new QName(ns, "query")), "the element is still converted");
     }
 
     @Test

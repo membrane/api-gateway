@@ -360,7 +360,7 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
 
         } catch (SoapFaultException fault) {
             log.debug("SOAP fault received for operation {}: [{}] {}", operationName, fault.getFaultCode(), fault.getFaultMessage());
-            exc.setResponse(SoapFaultProblemDetails.of(fault, router.getConfiguration().isProduction(), getDisplayName()));
+            exc.setResponse(SoapFaultProblemDetails.of(fault, runtime.faultDetailSchema(), router.getConfiguration().isProduction(), getDisplayName()));
             return ABORT;
         } catch (BackendErrorException e) {
             log.error("Operation {} failed: {}", operationName, e.getMessage());
@@ -498,7 +498,10 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
      */
     static String mergeUrlParamsIntoJson(String existingBody, Map<String, String> queryParams,
                                          Map<String, String> pathParams) throws Exception {
-        if (queryParams.isEmpty() && pathParams.isEmpty()) return existingBody;
+        if (queryParams.isEmpty() && pathParams.isEmpty()) {
+            // No body, as for a GET of an operation without parameters, is a request with no fields.
+            return existingBody == null || existingBody.isBlank() ? "{}" : existingBody;
+        }
         var merged = new LinkedHashMap<String, Object>();
         if (existingBody != null && !existingBody.isBlank()) {
             merged.putAll(MAPPER.readValue(existingBody, new TypeReference<Map<String, Object>>() {}));

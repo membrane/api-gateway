@@ -137,6 +137,12 @@ class Json2SoapTransformerTest {
         assertThrows(JsonProcessingException.class, () -> transformer(citiesDefinitions, "getCity").transform(json));
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"   ", "[{\"name\": \"Berlin\"}]"})
+    void jsonWithoutAnObjectOrAValueIsRejected(String json) {
+        assertThrows(IllegalArgumentException.class, () -> transformer(citiesDefinitions, "getCity").transform(json));
+    }
+
     @Test
     void producesSoap11EnvelopeForCitiesWsdl() throws Exception {
         var transformer = transformer(citiesDefinitions, "getCity");

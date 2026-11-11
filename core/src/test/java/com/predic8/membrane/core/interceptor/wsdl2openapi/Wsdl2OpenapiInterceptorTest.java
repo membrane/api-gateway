@@ -32,6 +32,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.lang.reflect.Field;
@@ -71,6 +72,13 @@ class Wsdl2OpenapiInterceptorTest {
     void bodyIsUntouchedWithoutUrlParameters() throws Exception {
         assertEquals("{\"id\":\"7\"}",
                 Wsdl2OpenapiInterceptor.mergeUrlParamsIntoJson("{\"id\":\"7\"}", Map.of(), Map.of()));
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    void aRequestWithoutBodyOrUrlParametersIsAnEmptyObject(String body) throws Exception {
+        // A GET of an operation without parameters: its SOAP request is an empty element.
+        assertEquals("{}", Wsdl2OpenapiInterceptor.mergeUrlParamsIntoJson(body, Map.of(), Map.of()));
     }
 
     @Test

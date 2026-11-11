@@ -49,7 +49,7 @@ Keep this file in sync when adding, renaming or removing a util class.
 | `util/xml/XMLEncodingUtil` | XML character encoding |
 | `util/xml/NormalizeXMLForJsonUtil` | Normalize XML for JSON conversion |
 | `util/xml/schema/XmlSchemaMapping` | XSD-driven XML ↔ JSON conversion of whole documents (`xml2Json`/`json2Xml` with `xmlSchema`) |
-| `util/xml/schema/XsdToSchema` | XSD declarations → OpenAPI schemas (WSDL message parts: `wsdl2openapi.WsdlPartsToSchema`) |
+| `util/xml/schema/XsdToSchema` | XSD declarations → OpenAPI schemas (WSDL message parts: `interceptor.soap2json.WsdlPartsToSchema`) |
 | `util/xml/schema/Xml2JsonMapper`, `Json2XmlTransformer` | XML element → JSON and JSON → XML element, following an XSD-derived schema |
 | `util/xml/schema/XsdDomUtil`, `XsdContentModel` | XSD DOM traversal: name/type resolution across imports and includes, content models |
 | `util/MapNamespaceContext` | `NamespaceContext` backed by a map (XPath) |

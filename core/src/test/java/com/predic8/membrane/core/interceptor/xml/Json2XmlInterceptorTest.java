@@ -250,6 +250,17 @@ public class Json2XmlInterceptorTest {
     }
 
     @Test
+    void jsonThatCannotBeConvertedWithAnXmlSchemaKeepsItsExplanationInProduction() throws Exception {
+        final var exc = put("/x").json("{\"library\": ").buildExchange();
+        final var interceptor = withSchema("classpath:/xml-schema/library.xsd");
+        interceptor.getRouter().getConfiguration().setProduction(true);
+
+        assertEquals(ABORT, interceptor.handleRequest(exc));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains("The JSON request could not be converted to XML."), body);
+    }
+
+    @Test
     void anUndeclaredRootKeyFromTheBackendIsA500ThatHidesIt() throws Exception {
         final var exc = get("/x").buildExchange();
         exc.setResponse(Response.ok().json("{\"db-host-3\": {}}").build());

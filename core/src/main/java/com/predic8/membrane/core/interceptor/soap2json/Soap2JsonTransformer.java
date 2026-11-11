@@ -99,15 +99,14 @@ public class Soap2JsonTransformer {
 
         Element body = getSoapBody(doc);
         if (body == null) {
-            throw new IllegalArgumentException("No SOAP Body found in response");
+            throw new IllegalArgumentException("No SOAP Body found in the Envelope");
         }
 
-        Element responseElement = getFirstChildElement(body);
-        if (responseElement == null) {
-            throw new IllegalArgumentException("No response element found in SOAP Body");
-        }
+        Element responseElement = getOnlyChildElement(body);
 
-        if ("Fault".equals(responseElement.getLocalName())) {
+        // An element of the message may be named Fault as well; only the SOAP one is a fault.
+        if ("Fault".equals(responseElement.getLocalName())
+                && body.getNamespaceURI().equals(responseElement.getNamespaceURI())) {
             throw buildFaultException(responseElement, faultDetailSchema);
         }
 
@@ -116,19 +115,37 @@ public class Soap2JsonTransformer {
         return mapper.toJson(responseElement, responseSchema);
     }
 
+    /**
+     * The Body of the document's SOAP Envelope, or {@code null} if the Envelope has none. Only a
+     * direct child of the Envelope, in the Envelope's namespace, is the Body.
+     *
+     * @throws IllegalArgumentException if the document is not a SOAP 1.1 or 1.2 Envelope
+     */
     private static Element getSoapBody(Document doc) {
-        Element body = bodyInNamespace(doc, SOAP11_NS);
-        return body != null ? body : bodyInNamespace(doc, SOAP12_NS);
+        final var envelope = doc.getDocumentElement();
+        final var namespace = envelope.getNamespaceURI();
+        if (!"Envelope".equals(envelope.getLocalName()) || !(SOAP11_NS.equals(namespace) || SOAP12_NS.equals(namespace))) {
+            throw new IllegalArgumentException("The document is not a SOAP Envelope");
+        }
+        for (Element child : childElements(envelope)) {
+            if ("Body".equals(child.getLocalName()) && namespace.equals(child.getNamespaceURI())) return child;
+        }
+        return null;
     }
 
-    private static Element bodyInNamespace(Document doc, String soapNamespace) {
-        NodeList bodies = doc.getElementsByTagNameNS(soapNamespace, "Body");
-        return bodies.getLength() > 0 ? (Element) bodies.item(0) : null;
-    }
-
-    private static Element getFirstChildElement(Element parent) {
-        var children = childElements(parent);
-        return children.isEmpty() ? null : children.getFirst();
+    /**
+     * The element the Body carries. Only messages with a single element are supported, so a second
+     * one is rejected rather than dropped.
+     */
+    private static Element getOnlyChildElement(Element body) {
+        final var children = childElements(body);
+        if (children.isEmpty()) {
+            throw new IllegalArgumentException("No element found in the SOAP Body");
+        }
+        if (children.size() > 1) {
+            throw new IllegalArgumentException("The SOAP Body carries %d elements, but only one is supported".formatted(children.size()));
+        }
+        return children.getFirst();
     }
 
     private SoapFaultException buildFaultException(Element fault, Schema<?> faultDetailSchema) {

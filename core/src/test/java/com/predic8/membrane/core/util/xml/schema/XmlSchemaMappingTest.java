@@ -76,6 +76,12 @@ class XmlSchemaMappingTest {
     }
 
     @Test
+    void anArrayUnderTheRootKeyIsRejected() {
+        assertThrows(IllegalArgumentException.class,
+                () -> library.toXml("{\"library\": [{\"book\": {\"title\": \"A\"}}]}"));
+    }
+
+    @Test
     void aSimpleContentRootKeepsItsTypedValueNextToItsAttributes() throws Exception {
         final var json = new ObjectMapper().readTree(library.toJson(new InputSource(new StringReader(
                 "<price currency=\"EUR\">9.99</price>"))));

@@ -32,13 +32,15 @@
 #        "title" : "Operation failed",
 #        "status" : 500,
 #        "details" : {
-#          "errorcode" : "404",
+#          "errorcode" : 404,
 #          "errormessage" : "Do not know Atlantis. Try Bonn, London or New York"
 #        },
 #        ...
 #      }
 #
-#    The SOAP fault of the service becomes a problem details document.
+#    The SOAP fault of the service becomes a problem details document. Its detail appears under
+#    "details" because the WSDL declares errorcode and errormessage as faults of getCity; detail
+#    the WSDL does not declare is not passed on to the client in production.
 
 api:
   port: 2000

@@ -24,6 +24,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.wsdl.parser.WSDLParserException;
 import com.predic8.membrane.core.util.xml.XMLInputSourceUtil;
+import io.swagger.v3.oas.models.media.Schema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -117,7 +118,7 @@ public class Soap2JsonInterceptor extends AbstractInterceptor {
             throw new ConfigurationException("Cannot read the messages of WSDL '%s': %s".formatted(wsdl, e.getMessage()), e);
         }
         log.info("Loaded WSDL from {} for port {}, converting {} message(s)", wsdl, selectedPort.name(),
-                bodySchemas.bodySchemas().size());
+                bodySchemas.requestSchemas().size() + bodySchemas.responseSchemas().size());
     }
 
     @Override
@@ -147,7 +148,7 @@ public class Soap2JsonInterceptor extends AbstractInterceptor {
                         XMLInputSourceUtil.getInputSource(body, msg.getHeader().getCharset()),
                         element -> {
                             bodyElement.set(element);
-                            return schemas.forElement(element);
+                            return flow == REQUEST ? schemas.forRequest(element) : schemas.forResponse(element);
                         },
                         schemas.faultDetailSchema());
             }
@@ -163,7 +164,7 @@ public class Soap2JsonInterceptor extends AbstractInterceptor {
             throw e;
         } catch (SoapFaultException fault) {
             log.debug("SOAP fault in {} flow: [{}] {}", flow, fault.getFaultCode(), fault.getFaultMessage());
-            return flow == REQUEST ? faultInRequest(exc) : faultInResponse(exc, fault);
+            return flow == REQUEST ? faultInRequest(exc) : faultInResponse(exc, fault, schemas.faultDetailSchema());
         } catch (UndeclaredElementException e) {
             return undeclaredElement(exc, flow, e);
         } catch (Exception e) {
@@ -172,8 +173,8 @@ public class Soap2JsonInterceptor extends AbstractInterceptor {
     }
 
     /** A service answering with a fault failed — see {@link SoapFaultProblemDetails#of}. */
-    private Outcome faultInResponse(Exchange exc, SoapFaultException fault) {
-        exc.setResponse(SoapFaultProblemDetails.of(fault, router.getConfiguration().isProduction(), getDisplayName()));
+    private Outcome faultInResponse(Exchange exc, SoapFaultException fault, Schema<?> faultDetailSchema) {
+        exc.setResponse(SoapFaultProblemDetails.of(fault, faultDetailSchema, router.getConfiguration().isProduction(), getDisplayName()));
         return ABORT;
     }
 

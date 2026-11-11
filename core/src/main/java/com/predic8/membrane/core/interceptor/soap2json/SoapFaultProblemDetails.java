@@ -14,6 +14,10 @@
 package com.predic8.membrane.core.interceptor.soap2json;
 
 import com.predic8.membrane.core.http.Response;
+import io.swagger.v3.oas.models.media.Schema;
+
+import java.util.LinkedHashMap;
+import java.util.Set;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.problemDetails;
 
@@ -42,9 +46,14 @@ public final class SoapFaultProblemDetails {
      * because an operator may not want clients to know a legacy service sits behind the gateway, and
      * a faultstring can carry a class name or an internal host name.
      *
-     * @param component the display name of the interceptor reporting the fault
+     * <p>The detail is published only as far as the WSDL declares it: a declared fault is part of the
+     * API, while anything else the backend put into the detail stays internal, like the fault message.
+     *
+     * @param faultDetailSchema the schema of the detail, one property per declared fault; {@code null}
+     *                          declares none
+     * @param component         the display name of the interceptor reporting the fault
      */
-    public static Response of(SoapFaultException fault, boolean production, String component) {
+    public static Response of(SoapFaultException fault, Schema<?> faultDetailSchema, boolean production, String component) {
         final var pd = problemDetails(OPERATION_ERROR_TYPE, production)
                 .component(component)
                 .status(500)
@@ -53,8 +62,18 @@ public final class SoapFaultProblemDetails {
                 .internal("faultCode", fault.getFaultCode())
                 .internal("faultMessage", fault.getFaultMessage());
         if (fault.getSoapDetail() != null) {
-            pd.topLevel(FAULT_DETAILS_FIELD, fault.getSoapDetail());
+            final var declaredFaults = declaredFaults(faultDetailSchema);
+            final var declared = new LinkedHashMap<String, Object>();
+            final var undeclared = new LinkedHashMap<String, Object>();
+            fault.getSoapDetail().forEach((key, value) -> (declaredFaults.contains(key) ? declared : undeclared).put(key, value));
+            if (!declared.isEmpty()) pd.topLevel(FAULT_DETAILS_FIELD, declared);
+            if (!undeclared.isEmpty()) pd.internal("undeclaredDetails", undeclared);
         }
         return pd.build();
+    }
+
+    private static Set<String> declaredFaults(Schema<?> faultDetailSchema) {
+        if (faultDetailSchema == null || faultDetailSchema.getProperties() == null) return Set.of();
+        return faultDetailSchema.getProperties().keySet();
     }
 }

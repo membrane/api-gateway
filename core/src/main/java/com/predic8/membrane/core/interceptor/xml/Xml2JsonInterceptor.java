@@ -217,7 +217,8 @@ public class Xml2JsonInterceptor extends AbstractInterceptor {
         final var production = router.getConfiguration().isProduction();
         (flow == REQUEST ? user(production, getDisplayName()) : internal(production, getDisplayName()))
                 .flow(flow)
-                .detail("The XML %s could not be converted to JSON.".formatted(flowNoun(flow)))
+                // Fixed text the client that sent the request may see; a response error stays hidden.
+                .detail("The XML %s could not be converted to JSON.".formatted(flowNoun(flow)), flow == REQUEST)
                 .internal("reason", reason)
                 .stacktrace(false)
                 .buildAndSetResponse(exc);
@@ -266,10 +267,15 @@ public class Xml2JsonInterceptor extends AbstractInterceptor {
                         .detail("The XML request could not be converted to JSON.", true)
                 : internal(production, getDisplayName())
                         .detail("The XML response could not be converted to JSON.");
+        final var charset = exc.getMessage(flow).getHeader().getCharset();
+        if (flow == REQUEST) {
+            problem.topLevel("charset-from-header", charset);
+        } else {
+            problem.internal("charset-from-header", charset);
+        }
         problem.flow(flow)
                 .internal("reason", msg)
                 .exception(e)
-                .topLevel("charset-from-header", exc.getMessage(flow).getHeader().getCharset())
                 .stacktrace(false)
                 .buildAndSetResponse(exc);
     }

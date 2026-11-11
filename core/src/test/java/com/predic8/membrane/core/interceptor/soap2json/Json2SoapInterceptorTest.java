@@ -20,6 +20,8 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.router.DummyTestRouter;
 import com.predic8.membrane.core.util.ConfigurationException;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static com.predic8.membrane.core.http.Header.SOAP_ACTION;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
@@ -157,6 +159,15 @@ class Json2SoapInterceptorTest {
     @Test
     void invalidJsonInTheRequestIsA400() throws Exception {
         final var exc = requestExchange(APPLICATION_JSON, "{\"articleId\": ");
+
+        assertEquals(ABORT, json2Soap(SHOP_WSDL, "placeOrder").handleRequest(exc));
+        assertEquals(400, exc.getResponse().getStatusCode());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"   ", "[{\"quantity\": 2, \"articleId\": 42}]"})
+    void aRequestWithoutAJsonObjectOrValueIsA400(String body) throws Exception {
+        final var exc = requestExchange(APPLICATION_JSON, body);
 
         assertEquals(ABORT, json2Soap(SHOP_WSDL, "placeOrder").handleRequest(exc));
         assertEquals(400, exc.getResponse().getStatusCode());

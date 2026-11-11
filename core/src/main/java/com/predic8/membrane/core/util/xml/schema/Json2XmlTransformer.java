@@ -96,8 +96,12 @@ public class Json2XmlTransformer {
      * Creates the element, fills it from {@code json} and appends it to {@code parent}.
      *
      * @throws org.w3c.dom.DOMException if a JSON key is not a valid XML name
+     * @throws UnmappableJsonException  if {@code json} is an array or no value at all
      */
     public Element appendTo(Document doc, Node parent, JsonNode json) {
+        // Below the element an array becomes repeated elements; the element itself occurs once.
+        if (json.isMissingNode()) throw new UnmappableJsonException("The body contains no JSON value.");
+        if (json.isArray()) throw new UnmappableJsonException("The JSON must be an object or a single value, not an array.");
         final var created = createRootElement(doc);
         parent.appendChild(created);
         mapJsonToElement(json, created, doc, rootContext);

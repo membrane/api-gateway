@@ -48,7 +48,10 @@ import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.OUT
  * first.
  *
  * @param portName          the name of the port, for error messages
- * @param bodySchemas       the schema of each Body element, by its qualified name
+ * @param requestSchemas    the schema of each element an input message carries, by its qualified name
+ * @param responseSchemas   the schema of each element an output message carries, by its qualified
+ *                          name. Kept apart from the inputs, so that a request cannot carry a
+ *                          response and a response cannot carry a request.
  * @param inputOperations   the operation whose input message carries the element, by the
  *                          element's qualified name. An element that the input of several
  *                          operations carries is missing: its operation cannot be told from the
@@ -58,7 +61,8 @@ import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.OUT
  * @param components        the named types the schemas refer to; see {@link XsdToSchema#getComponents()}
  */
 record SoapBodySchemas(String portName,
-                       Map<QName, Schema<?>> bodySchemas,
+                       Map<QName, Schema<?>> requestSchemas,
+                       Map<QName, Schema<?>> responseSchemas,
                        Map<QName, String> inputOperations,
                        Schema<?> faultDetailSchema,
                        Map<String, Schema<?>> components) {
@@ -71,37 +75,44 @@ record SoapBodySchemas(String portName,
      * @throws ConfigurationException if the port declares no message this class can index
      */
     static SoapBodySchemas of(SelectedPort port, WsdlPartsToSchema xsdToSchema) {
-        final var bodySchemas = new LinkedHashMap<QName, Schema<?>>();
+        final var converted = new LinkedHashMap<QName, Schema<?>>();
+        final var requestSchemas = new LinkedHashMap<QName, Schema<?>>();
+        final var responseSchemas = new LinkedHashMap<QName, Schema<?>>();
         final var inputOperations = new LinkedHashMap<QName, String>();
         final var sharedInputs = new HashSet<QName>();
         final var faults = new LinkedHashMap<String, Operation.Fault>();
         for (final Operation operation : port.operations()) {
             for (final Message message : operation.getMessagesByDirection(INPUT)) {
-                addMessage(message, operation, xsdToSchema, bodySchemas)
+                addMessage(message, operation, xsdToSchema, converted, requestSchemas)
                         .ifPresent(element -> addInputOperation(element, operation, inputOperations, sharedInputs));
             }
             for (final Message message : operation.getMessagesByDirection(OUTPUT)) {
-                addMessage(message, operation, xsdToSchema, bodySchemas);
+                addMessage(message, operation, xsdToSchema, converted, responseSchemas);
             }
             for (final Operation.Fault fault : operation.getFaults()) {
                 final var parts = fault.getMessage().getParts();
                 if (!parts.isEmpty()) faults.putIfAbsent(WsdlPartsToSchema.faultDetailKey(parts), fault);
             }
         }
-        if (bodySchemas.isEmpty()) {
+        if (converted.isEmpty()) {
             throw new ConfigurationException("""
                     Port '%s' declares no document/literal message with a single element part.
                     Only such messages can be converted: RPC-style and multi-part messages are not supported.""".formatted(port.name()));
         }
         final var faultDetailSchema = xsdToSchema.convertFaultDetail(List.copyOf(faults.values()));
         // Copied only now: converting the fault details may still have added components.
-        return new SoapBodySchemas(port.name(), Map.copyOf(bodySchemas), Map.copyOf(inputOperations),
+        return new SoapBodySchemas(port.name(), Map.copyOf(requestSchemas), Map.copyOf(responseSchemas), Map.copyOf(inputOperations),
                 faultDetailSchema, Map.copyOf(xsdToSchema.getComponents()));
     }
 
-    /** Indexes the message; returns its element, or empty if the message cannot be indexed. */
+    /**
+     * Indexes the message into {@code schemas}; returns its element, or empty if the message cannot
+     * be indexed.
+     *
+     * @param converted the schema of every element converted so far, in either direction
+     */
     private static Optional<QName> addMessage(Message message, Operation operation, WsdlPartsToSchema xsdToSchema,
-                                              Map<QName, Schema<?>> bodySchemas) {
+                                              Map<QName, Schema<?>> converted, Map<QName, Schema<?>> schemas) {
         final var parts = message.getParts();
         if (parts.size() != 1 || parts.getFirst().getElementQName() == null) {
             log.debug("Message '{}' of operation '{}' is not a document/literal message with a single element part, skipping",
@@ -109,10 +120,11 @@ record SoapBodySchemas(String portName,
             return Optional.empty();
         }
         final var element = parts.getFirst().getElementQName();
-        // The same element always yields the same schema, so the first message to name it wins.
-        if (!bodySchemas.containsKey(element)) {
-            bodySchemas.put(element, xsdToSchema.convert(element));
+        // The same element always yields the same schema, so it is converted once.
+        if (!converted.containsKey(element)) {
+            converted.put(element, xsdToSchema.convert(element));
         }
+        schemas.put(element, converted.get(element));
         return Optional.of(element);
     }
 
@@ -128,13 +140,28 @@ record SoapBodySchemas(String portName,
     }
 
     /**
-     * The schema of the message whose Body carries {@code element}.
+     * The schema of the input message whose Body carries {@code element}.
      *
-     * @throws UndeclaredElementException if no message of the port carries that element
+     * @throws UndeclaredElementException if no input message of the port carries that element
      */
-    Schema<?> forElement(QName element) throws UndeclaredElementException {
-        final var schema = bodySchemas.get(element);
-        if (schema == null) throw new UndeclaredElementException(element, "any message of port '%s'".formatted(portName));
+    Schema<?> forRequest(QName element) throws UndeclaredElementException {
+        return lookup(requestSchemas, element, "input");
+    }
+
+    /**
+     * The schema of the output message whose Body carries {@code element}.
+     *
+     * @throws UndeclaredElementException if no output message of the port carries that element
+     */
+    Schema<?> forResponse(QName element) throws UndeclaredElementException {
+        return lookup(responseSchemas, element, "output");
+    }
+
+    private Schema<?> lookup(Map<QName, Schema<?>> schemas, QName element, String direction) throws UndeclaredElementException {
+        final var schema = schemas.get(element);
+        if (schema == null) {
+            throw new UndeclaredElementException(element, "any %s message of port '%s'".formatted(direction, portName));
+        }
         return schema;
     }
 

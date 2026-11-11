@@ -195,6 +195,55 @@ class Soap2JsonTransformerTest {
                 "Should throw when SOAP Body has no response element");
     }
 
+    @Test
+    void aBodyOutsideAnEnvelopeIsRejected() {
+        var notSoap = """
+                <order xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soap:Body><getCityResponse xmlns="https://predic8.de/cities"><name>Bonn</name></getCityResponse></soap:Body>
+                </order>
+                """;
+
+        assertThrows(IllegalArgumentException.class, () -> transform(notSoap));
+    }
+
+    @Test
+    void aBodyThatIsNotAChildOfTheEnvelopeIsRejected() {
+        var nested = """
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soap:Header>
+                    <soap:Body><getCityResponse xmlns="https://predic8.de/cities"><name>Bonn</name></getCityResponse></soap:Body>
+                  </soap:Header>
+                </soap:Envelope>
+                """;
+
+        assertThrows(IllegalArgumentException.class, () -> transform(nested));
+    }
+
+    @Test
+    void aBodyWithTwoElementsIsRejected() {
+        var twoElements = """
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soap:Body>
+                    <getCityResponse xmlns="https://predic8.de/cities"><name>Bonn</name></getCityResponse>
+                    <getCityResponse xmlns="https://predic8.de/cities"><name>Berlin</name></getCityResponse>
+                  </soap:Body>
+                </soap:Envelope>
+                """;
+
+        assertThrows(IllegalArgumentException.class, () -> transform(twoElements));
+    }
+
+    @Test
+    void anElementNamedFaultOutsideTheSoapNamespaceIsConverted() throws Exception {
+        var applicationFault = """
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soap:Body><app:Fault xmlns:app="https://example.com/app"><reason>none</reason></app:Fault></soap:Body>
+                </soap:Envelope>
+                """;
+
+        assertEquals("none", mapper.readTree(transform(applicationFault)).get("reason").asText());
+    }
+
     // --- Schema-driven type conversion ---
 
     @Test

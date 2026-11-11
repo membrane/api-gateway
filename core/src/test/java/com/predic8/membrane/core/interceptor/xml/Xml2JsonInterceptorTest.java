@@ -38,6 +38,7 @@ import java.util.List;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Request.get;
+import static java.util.Locale.ROOT;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_16;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -344,7 +345,19 @@ public class Xml2JsonInterceptorTest {
         assertEquals(Outcome.ABORT, heuristicInProduction().handleResponse(exc));
 
         assertEquals(500, exc.getResponse().getStatusCode());
-        assertFalse(exc.getResponse().getBodyAsStringDecoded().contains("db-host-3"),
+        // Case-insensitive: the charset comes back upper-cased.
+        assertFalse(exc.getResponse().getBodyAsStringDecoded().toLowerCase(ROOT).contains("db-host-3"),
                 "what the backend sent must not reach the client: " + exc.getResponse().getBodyAsStringDecoded());
+    }
+
+    @Test
+    void malformedXmlWithAnXmlSchemaKeepsItsExplanationInProduction() throws Exception {
+        final var interceptor = withSchema("classpath:/xml-schema/library.xsd");
+        interceptor.getRouter().getConfiguration().setProduction(true);
+        final var exc = xmlRequest("<library>");
+
+        assertEquals(Outcome.ABORT, interceptor.handleRequest(exc));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains("The XML request could not be converted to JSON."), body);
     }
 }
