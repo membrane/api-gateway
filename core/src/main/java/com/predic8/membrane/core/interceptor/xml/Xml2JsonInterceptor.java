@@ -19,9 +19,14 @@ import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.wsdl2openapi.UndeclaredElementException;
+import com.predic8.membrane.core.interceptor.wsdl2openapi.XmlSchemaMapping;
+import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.xml.XMLEncodingUtil;
+import com.predic8.membrane.core.util.xml.XMLInputSourceUtil;
 import org.apache.commons.io.ByteOrderMark;
 import org.json.XML;
 import org.json.XMLParserConfiguration;
@@ -35,12 +40,14 @@ import java.util.HashSet;
 import java.util.List;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
 import static com.predic8.membrane.core.util.MessageUtil.getContent;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON_UTF8;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.util.text.TextUtil.escapeControlCharsForLog;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.json.XMLParserConfiguration.ORIGINAL;
 
@@ -61,9 +68,10 @@ import static org.json.XMLParserConfiguration.ORIGINAL;
  * encoding is taken from the <code>Content-Type</code> header if present, otherwise read from
  * the XML prolog, and the result is always UTF-8 encoded JSON.</p>
  *
- * <p>For contract-driven integrations
- * that need a fixed output shape, a template, XSLT, or schema-aware mapping gives more control.
- * See tutorials/xml/20-XML-to-JSON.yaml.</p>
+ * <p>Given an XML Schema, the mapping follows the schema instead of the heuristics, so the JSON
+ * has a fixed shape: values are typed as declared, an element that may repeat is always an array,
+ * and a document the schema does not declare is rejected. See tutorials/xml/20-XML-to-JSON.yaml
+ * and tutorials/xml/25-XML-to-JSON-with-XSD.yaml.</p>
  * <pre>
  * xml2Json:
  *   [ keepString: true | false ]                 # default: false
@@ -71,6 +79,9 @@ import static org.json.XMLParserConfiguration.ORIGINAL;
  *   forceList:                                    # 0..*; always render these element names as arrays
  *     - &lt;element-name&gt;
  *     ...
+ *
+ * xml2Json:
+ *   xmlSchema: &lt;url or path&gt;                   # replaces the heuristic settings above
  * </pre>
  * @topic 2. Enterprise Integration Patterns
  * @yaml
@@ -89,12 +100,34 @@ public class Xml2JsonInterceptor extends AbstractInterceptor {
     private boolean keepString = false;
     private boolean convertNilAttributeToNull = true;
     private final List<String> forceList = new ArrayList<>();
+    private String xmlSchema;
     private volatile XMLParserConfiguration xmlParserConfig;
+    /** Built in init() when {@link #xmlSchema} is set; replaces the heuristic mapping. */
+    private volatile XmlSchemaMapping schemaMapping;
 
     @Override
     public void init() {
-        xmlParserConfig = buildParserConfig();
+        if (xmlSchema != null) {
+            rejectHeuristicSettings();
+            schemaMapping = XmlSchemaMapping.load(router, getBeanBaseLocation(), xmlSchema);
+            log.info("Loaded XML Schema {}, converting {} root element(s)", xmlSchema, schemaMapping.size());
+        } else {
+            xmlParserConfig = buildParserConfig();
+        }
         super.init();
+    }
+
+    /** The XML Schema decides types, arrays and nil values; a setting that would be ignored must not look effective. */
+    private void rejectHeuristicSettings() {
+        final var conflicting = new ArrayList<String>();
+        if (keepString) conflicting.add("keepString");
+        if (!convertNilAttributeToNull) conflicting.add("convertNilAttributeToNull");
+        if (!forceList.isEmpty()) conflicting.add("forceList");
+        if (conflicting.isEmpty()) return;
+        throw new ConfigurationException("""
+                xml2Json: %s cannot be combined with xmlSchema.
+                With xmlSchema, the XML Schema decides which values are numbers or booleans, which elements are arrays, and which are null. Remove %s."""
+                .formatted(String.join(", ", conflicting), conflicting.size() == 1 ? "it" : "them"));
     }
 
     @Override
@@ -117,6 +150,10 @@ public class Xml2JsonInterceptor extends AbstractInterceptor {
         if (!msg.isXML()) {
             return CONTINUE;
         }
+        final var mapping = schemaMapping;
+        if (mapping != null) {
+            return convertWithSchema(exc, flow, msg, mapping);
+        }
         try {
             msg.setBodyContent(xml2json(getBodyAsString(msg)));
             msg.getHeader().setContentType(APPLICATION_JSON_UTF8);
@@ -127,6 +164,68 @@ public class Xml2JsonInterceptor extends AbstractInterceptor {
             handleException(exc, flow, e, null);
         }
         return ABORT;
+    }
+
+    private Outcome convertWithSchema(Exchange exc, Flow flow, Message msg, XmlSchemaMapping mapping) {
+        if (msg.isBodyEmpty()) {
+            return CONTINUE;
+        }
+        final byte[] json;
+        try (var body = msg.getBodyAsStreamDecoded()) {
+            json = mapping.toJson(XMLInputSourceUtil.getInputSource(body, msg.getHeader().getCharset()));
+        } catch (ReadingBodyException e) {
+            // FlowController answers a body that could not be read; this is not a conversion error.
+            throw e;
+        } catch (UndeclaredElementException e) {
+            return undeclaredElement(exc, flow, e);
+        } catch (Exception e) {
+            return conversionFailed(exc, flow, e);
+        }
+        msg.setBodyContent(json);
+        msg.getHeader().setContentType(APPLICATION_JSON_UTF8);
+        return CONTINUE;
+    }
+
+    private Outcome undeclaredElement(Exchange exc, Flow flow, UndeclaredElementException e) {
+        final var element = escapeControlCharsForLog(e.getElement().toString());
+        log.info("XML {} not converted: {}", flowNoun(flow), escapeControlCharsForLog(e.getMessage()));
+        final var production = router.getConfiguration().isProduction();
+        if (flow == REQUEST) {
+            // The client sent the element, so naming it tells the client nothing it does not know.
+            user(production, getDisplayName())
+                    .flow(flow)
+                    .title("Document not declared by the XML Schema")
+                    .detail("The document element %s is not declared by the XML Schema.".formatted(element), true)
+                    .stacktrace(false)
+                    .buildAndSetResponse(exc);
+        } else {
+            // The backend is not trusted: what it sent stays internal.
+            internal(production, getDisplayName())
+                    .flow(flow)
+                    .detail("The response of the backend does not match the XML Schema.")
+                    .internal("element", element)
+                    .stacktrace(false)
+                    .buildAndSetResponse(exc);
+        }
+        return ABORT;
+    }
+
+    private Outcome conversionFailed(Exchange exc, Flow flow, Exception e) {
+        final var reason = escapeControlCharsForLog(String.valueOf(e.getMessage()));
+        log.info("Could not convert XML {} to JSON: {}", flowNoun(flow), reason);
+        log.debug("", e);
+        final var production = router.getConfiguration().isProduction();
+        (flow == REQUEST ? user(production, getDisplayName()) : internal(production, getDisplayName()))
+                .flow(flow)
+                .detail("The XML %s could not be converted to JSON.".formatted(flowNoun(flow)))
+                .internal("reason", reason)
+                .stacktrace(false)
+                .buildAndSetResponse(exc);
+        return ABORT;
+    }
+
+    private static String flowNoun(Flow flow) {
+        return flow == REQUEST ? "request" : "response";
     }
 
     private static String getBodyAsString(Message msg) throws IOException {
@@ -159,8 +258,16 @@ public class Xml2JsonInterceptor extends AbstractInterceptor {
             log.info(msg, e);
             log.debug("", e);
         }
-        internal(router.getConfiguration().isProduction(), getDisplayName()).flow(flow).status(400)
-                .detail(msg)
+        final var production = router.getConfiguration().isProduction();
+        // The client sent the XML of a request, so it is told that its XML is the problem. What a
+        // backend sent stays internal.
+        final var problem = flow == REQUEST
+                ? user(production, getDisplayName()).title("Invalid XML")
+                        .detail("The XML request could not be converted to JSON.", true)
+                : internal(production, getDisplayName())
+                        .detail("The XML response could not be converted to JSON.");
+        problem.flow(flow)
+                .internal("reason", msg)
                 .exception(e)
                 .topLevel("charset-from-header", exc.getMessage(flow).getHeader().getCharset())
                 .stacktrace(false)
@@ -232,5 +339,27 @@ public class Xml2JsonInterceptor extends AbstractInterceptor {
     @MCChildElement(allowForeign = true)
     public void setForceList(List<String> forceList) {
         this.forceList.addAll(forceList);
+    }
+
+    public String getXmlSchema() {
+        return xmlSchema;
+    }
+
+    /**
+     * @description An XML Schema (XSD) that drives the mapping instead of the heuristics: a URL or a
+     * file path, relative to the configuration file. Its imports and includes are loaded too.
+     * Values are typed as the schema declares them, an element that may repeat is always an array,
+     * and <code>xsi:nil</code> becomes <code>null</code>. The result has the root element as its single
+     * key, but the structure differs from the heuristic mapping: attributes become
+     * <code>@</code>-prefixed keys, the text of an element with attributes is put under
+     * <code>$value</code>, and keys are local names without a prefix. A document whose root element
+     * the schema does not declare globally is rejected with <code>400</code> in the request flow and
+     * <code>500</code> in the response flow. Cannot be combined with <code>keepString</code>,
+     * <code>convertNilAttributeToNull</code> or <code>forceList</code>.
+     * @example books.xsd
+     */
+    @MCAttribute
+    public void setXmlSchema(String xmlSchema) {
+        this.xmlSchema = xmlSchema;
     }
 }

@@ -16,20 +16,25 @@ package com.predic8.membrane.core.interceptor.wsdl2openapi;
 import javax.xml.namespace.QName;
 
 /**
- * The SOAP Body carries an element that no message of the WSDL port declares, so there is no
- * schema to convert it with. Thrown by {@link SoapBodySchemas#forElement}.
+ * A message carries an element that the WSDL or XSD does not declare, so there is no schema to
+ * convert it with. Thrown by {@link SoapBodySchemas#forElement} for a SOAP Body, and by
+ * {@link XmlSchemaMapping} for a document element or a JSON root key.
  */
-class UndeclaredBodyElementException extends Exception {
+public class UndeclaredElementException extends Exception {
 
     private final QName element;
 
-    UndeclaredBodyElementException(QName element, String portName) {
-        super("The element %s is not declared by any message of port '%s'.".formatted(element, portName));
+    /**
+     * @param declaredBy what was searched for a declaration, completing "is not declared by …",
+     *                   e.g. {@code any message of port 'CityPort'}
+     */
+    UndeclaredElementException(QName element, String declaredBy) {
+        super("The element %s is not declared by %s.".formatted(element, declaredBy));
         this.element = element;
     }
 
-    /** The element the Body carries. */
-    QName getElement() {
+    /** The element the message carries. */
+    public QName getElement() {
         return element;
     }
 }

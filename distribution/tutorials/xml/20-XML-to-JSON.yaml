@@ -37,4 +37,5 @@ api:
 #
 #       The JSON type would then depend on the number of animals in the
 #       message. List every element that can repeat under forceList so clients
-#       always get an array.
+#       always get an array, or let an XML Schema decide (see
+#       25-XML-to-JSON-with-XSD.yaml).

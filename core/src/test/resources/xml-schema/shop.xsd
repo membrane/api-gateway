@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Tests: a namespaced, qualified schema whose types come from an include of the same namespace and
+  whose address element comes from an import of another namespace.
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:tns="https://example.com/shop"
+           xmlns:c="https://example.com/common"
+           targetNamespace="https://example.com/shop"
+           elementFormDefault="qualified">
+
+    <xs:include schemaLocation="shop-types.xsd"/>
+    <xs:import namespace="https://example.com/common" schemaLocation="common.xsd"/>
+
+    <xs:element name="order">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="id" type="xs:long"/>
+                <xs:element name="item" type="tns:ItemType" maxOccurs="unbounded"/>
+                <xs:element ref="c:address"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+</xs:schema>

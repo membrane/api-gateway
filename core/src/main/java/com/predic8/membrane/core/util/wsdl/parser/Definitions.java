@@ -109,36 +109,11 @@ public class Definitions extends WSDLElement {
     }
 
     /**
-     * Builds namespace -> schema-root-element list by BFS over imports and includes.
-     * Uses identity-based dedup. Schemas with a non-null targetNamespace are added to the map;
-     * schemas included without their own targetNamespace are still queued for traversal so their
-     * sub-imports and sub-includes are discovered.
+     * The schema documents of the WSDL's whole import graph, by target namespace — see
+     * {@link Schema#schemasByNamespace}.
      */
     public Map<String, List<Element>> getSchemasByNamespace() {
-        var map = new LinkedHashMap<String, List<Element>>();
-        var queue = new ArrayDeque<>(schemas);
-        var seen = Collections.newSetFromMap(new IdentityHashMap<>());
-        seen.addAll(schemas);
-        while (!queue.isEmpty()) {
-            var schema = queue.poll();
-            var ns = schema.getTargetNamespace();
-            if (ns != null) {
-                map.computeIfAbsent(ns, k -> new ArrayList<>()).add(schema.getSchemaElement());
-            }
-            for (var imp : schema.getImports()) {
-                var imported = imp.getSchema();
-                if (imported != null && imported.getTargetNamespace() != null && seen.add(imported)) {
-                    queue.add(imported);
-                }
-            }
-            for (var inc : schema.getIncludes()) {
-                var included = inc.getSchema();
-                if (included != null && seen.add(included)) {
-                    queue.add(included);
-                }
-            }
-        }
-        return map;
+        return Schema.schemasByNamespace(schemas);
     }
 
     public List<Element> getSchemaElements() {

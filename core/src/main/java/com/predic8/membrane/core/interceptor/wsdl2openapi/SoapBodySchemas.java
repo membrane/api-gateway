@@ -128,11 +128,11 @@ record SoapBodySchemas(String portName,
     /**
      * The schema of the message whose Body carries {@code element}.
      *
-     * @throws UndeclaredBodyElementException if no message of the port carries that element
+     * @throws UndeclaredElementException if no message of the port carries that element
      */
-    Schema<?> forElement(QName element) throws UndeclaredBodyElementException {
+    Schema<?> forElement(QName element) throws UndeclaredElementException {
         final var schema = bodySchemas.get(element);
-        if (schema == null) throw new UndeclaredBodyElementException(element, portName);
+        if (schema == null) throw new UndeclaredElementException(element, "any message of port '%s'".formatted(portName));
         return schema;
     }
 

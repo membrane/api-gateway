@@ -1162,10 +1162,10 @@ class Soap2JsonTransformerTest {
     void aBodyElementTheLookupRejectsIsNotConverted() {
         final var element = new QName("https://predic8.de/cities", "getCityResponse");
         final Soap2JsonTransformer.BodySchema lookup = e -> {
-            throw new UndeclaredBodyElementException(e, "CityPort");
+            throw new UndeclaredElementException(e, "any message of port 'CityPort'");
         };
 
-        final var e = assertThrows(UndeclaredBodyElementException.class, () -> new Soap2JsonTransformer(Map.of())
+        final var e = assertThrows(UndeclaredElementException.class, () -> new Soap2JsonTransformer(Map.of())
                 .transform(new InputSource(new StringReader(CITIES_SOAP11_RESPONSE)), lookup, null));
         assertEquals(element, e.getElement());
     }

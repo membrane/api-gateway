@@ -163,7 +163,7 @@ public class Soap2JsonInterceptor extends AbstractInterceptor {
         } catch (SoapFaultException fault) {
             log.debug("SOAP fault in {} flow: [{}] {}", flow, fault.getFaultCode(), fault.getFaultMessage());
             return flow == REQUEST ? faultInRequest(exc) : faultInResponse(exc, fault);
-        } catch (UndeclaredBodyElementException e) {
+        } catch (UndeclaredElementException e) {
             return undeclaredElement(exc, flow, e);
         } catch (Exception e) {
             return conversionFailed(exc, flow, e);
@@ -213,7 +213,7 @@ public class Soap2JsonInterceptor extends AbstractInterceptor {
         return ABORT;
     }
 
-    private Outcome undeclaredElement(Exchange exc, Flow flow, UndeclaredBodyElementException e) {
+    private Outcome undeclaredElement(Exchange exc, Flow flow, UndeclaredElementException e) {
         final var element = escapeControlCharsForLog(e.getElement().toString());
         log.info("SOAP {} not converted: {}", flowNoun(flow), escapeControlCharsForLog(e.getMessage()));
         if (flow == REQUEST) {

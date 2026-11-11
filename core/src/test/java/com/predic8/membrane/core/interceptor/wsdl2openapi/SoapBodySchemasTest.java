@@ -55,7 +55,7 @@ class SoapBodySchemasTest {
         final var schemas = schemasOf("classpath:/ws/two-operations-with-faults.wsdl");
         final var element = new QName("https://example.com/other", "getArticle");
 
-        final var e = assertThrows(UndeclaredBodyElementException.class, () -> schemas.forElement(element));
+        final var e = assertThrows(UndeclaredElementException.class, () -> schemas.forElement(element));
         assertEquals(element, e.getElement());
     }
 

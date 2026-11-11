@@ -14,10 +14,13 @@
 
 package com.predic8.membrane.core.util.wsdl.parser.schema;
 
+import com.predic8.membrane.core.resolver.Resolver;
 import com.predic8.membrane.core.util.wsdl.parser.*;
 import org.w3c.dom.*;
 
 import java.util.*;
+
+import static com.predic8.membrane.core.util.URIUtil.getNormalizedAbsolutePathOrUri;
 
 public class Schema extends WSDLElement {
 
@@ -32,6 +35,60 @@ public class Schema extends WSDLElement {
         imports = instantiateXSDChildren("import",Import.class);
         includes = instantiateXSDChildren("include",Include.class);
         includes.forEach(i -> include(i.getSchema()));
+    }
+
+    /**
+     * Parses a standalone XML Schema document together with everything it imports and includes.
+     * Locations the document refers to are resolved against {@code location}.
+     *
+     * @throws WSDLParserException if the document is not an {@code xsd:schema}
+     */
+    public static Schema parse(Resolver resolver, String location) throws Exception {
+        final Element root;
+        try (var is = resolver.resolve(location)) {
+            root = WSDLParserUtil.parse(is);
+        }
+        if (!isXSDElementWithName(root, "schema")) {
+            throw new WSDLParserException("The document at %s is not an XML Schema: its root element is {%s}%s."
+                    .formatted(location, root.getNamespaceURI(), root.getLocalName()));
+        }
+        // The document itself counts as visited, so that a schema importing it back does not load it twice.
+        final var visited = new ArrayList<String>();
+        visited.add(getNormalizedAbsolutePathOrUri(location));
+        return new Schema(new WSDLParserContext(null, resolver, location, visited), root);
+    }
+
+    /**
+     * Builds namespace -> schema-root-element list by BFS over imports and includes.
+     * Uses identity-based dedup. Schemas with a non-null targetNamespace are added to the map;
+     * schemas included without their own targetNamespace are still queued for traversal so their
+     * sub-imports and sub-includes are discovered.
+     */
+    public static Map<String, List<Element>> schemasByNamespace(List<Schema> schemas) {
+        var map = new LinkedHashMap<String, List<Element>>();
+        var queue = new ArrayDeque<>(schemas);
+        var seen = Collections.newSetFromMap(new IdentityHashMap<>());
+        seen.addAll(schemas);
+        while (!queue.isEmpty()) {
+            var schema = queue.poll();
+            var ns = schema.getTargetNamespace();
+            if (ns != null) {
+                map.computeIfAbsent(ns, k -> new ArrayList<>()).add(schema.getSchemaElement());
+            }
+            for (var imp : schema.getImports()) {
+                var imported = imp.getSchema();
+                if (imported != null && imported.getTargetNamespace() != null && seen.add(imported)) {
+                    queue.add(imported);
+                }
+            }
+            for (var inc : schema.getIncludes()) {
+                var included = inc.getSchema();
+                if (included != null && seen.add(included)) {
+                    queue.add(included);
+                }
+            }
+        }
+        return map;
     }
 
     public String getTargetNamespace() {
