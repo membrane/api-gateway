@@ -194,6 +194,47 @@ public class HostColonPortTest {
         }
 
         @Test
+        void ipv6WithPort() throws Exception {
+            final var http = parse("http://[::1]:4567/foo");
+            assertFalse(http.useSSL());
+            assertEquals("[::1]", http.host());
+            assertEquals(4567, http.port());
+            assertEquals("[::1]:4567", http.toString());
+
+            final var https = parse("https://[2001:db8::1]:8443/v1?q=a:b");
+            assertTrue(https.useSSL());
+            assertEquals("[2001:db8::1]", https.host());
+            assertEquals(8443, https.port());
+        }
+
+        @Test
+        void ipv6WithDefaultPort() throws Exception {
+            final var http = parse("http://[2001:db8::1]/foo");
+            assertEquals("[2001:db8::1]", http.host());
+            assertEquals(80, http.port());
+
+            final var https = parse("https://[2001:db8::1]");
+            assertEquals("[2001:db8::1]", https.host());
+            assertEquals(443, https.port());
+        }
+
+        @Test
+        void ipv6WithEmbeddedIpv4() throws Exception {
+            final var withPort = parse("https://[::ffff:192.0.2.1]:8443/foo");
+            assertEquals("[::ffff:192.0.2.1]", withPort.host());
+            assertEquals(8443, withPort.port());
+
+            final var withoutPort = parse("http://[64:ff9b::192.0.2.1]#frag");
+            assertEquals("[64:ff9b::192.0.2.1]", withoutPort.host());
+            assertEquals(80, withoutPort.port());
+        }
+
+        @Test
+        void unclosedIpv6Bracket() {
+            assertThrows(MalformedURLException.class, () -> parse("http://[::1:4567/foo"));
+        }
+
+        @Test
         @DisplayName("Test that only 'https' scheme triggers SSL")
         void sslDetection() throws Exception {
             // Only "https" should trigger SSL

@@ -13,15 +13,23 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.ssl;
 
+import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.config.security.TrustStore;
 import com.predic8.membrane.core.router.DummyTestRouter;
 import com.predic8.membrane.core.router.Router;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
+import javax.net.ssl.SNIHostName;
+import javax.net.ssl.SNIServerName;
+import javax.net.ssl.SSLSocket;
+import java.net.ServerSocket;
 import java.security.InvalidParameterException;
 import java.security.KeyStore;
+import java.util.List;
 
 import static com.predic8.membrane.core.transport.ssl.StaticSSLContext.openKeyStore;
 import static org.junit.jupiter.api.Assertions.*;
@@ -108,5 +116,30 @@ class StaticSSLContextTest {
 
         assertThrows(InvalidParameterException.class, () ->
                 openKeyStore(store, "irrelevant".toCharArray(), router.getResolverMap(), router.getConfiguration().getBaseLocation()));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"127.0.0.1", "[::1]", "::1"})
+    void ipLiteralHostGetsNoAutomaticSni(String host) throws Exception {
+        assertEquals(List.of(), serverNames(host, null));
+    }
+
+    @Test
+    void dnsHostGetsAutomaticSni() throws Exception {
+        assertEquals(List.of(new SNIHostName("localhost")), serverNames("localhost", null));
+    }
+
+    @Test
+    void configuredSniIsKeptForIpLiteralHost() throws Exception {
+        assertEquals(List.of(new SNIHostName("api.example.com")), serverNames("127.0.0.1", "api.example.com"));
+    }
+
+    private static List<SNIServerName> serverNames(String host, String sniServerName) throws Exception {
+        try (var server = new ServerSocket(0);
+             var socket = (SSLSocket) new StaticSSLContext(new SSLParser(), javax.net.ssl.SSLContext.getDefault())
+                     .createSocket(host, server.getLocalPort(), 1000, sniServerName, null)) {
+            final var names = socket.getSSLParameters().getServerNames();
+            return names == null ? List.of() : names;
+        }
     }
 }

@@ -71,7 +71,7 @@ Keep this file in sync when adding, renaming or removing a util class.
 |---|---|
 | `util/FileUtil` | Read/write streams, xml/json file detection, slash handling, resolve, directory part |
 | `util/OSUtil` | OS detection, backslash fixing, Windows path detection |
-| `util/NetworkUtil` | IPv4/IPv6 helpers (brackets, host header without port, dotted quad, CIDR prefix match) |
+| `util/NetworkUtil` | IPv4/IPv6 helpers (brackets, host header without port, IP literal detection, dotted quad, CIDR prefix match) |
 | `util/DNSCache` | Cached reverse DNS lookups |
 | `util/SecurityUtils` | Password hash helpers (`crypt`-compatible, salt extraction) |
 | `util/security/BasicAuthenticationUtil` | Parse/create `Authorization: Basic` headers |

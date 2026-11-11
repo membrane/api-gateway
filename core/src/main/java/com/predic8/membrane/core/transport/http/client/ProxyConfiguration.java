@@ -22,13 +22,15 @@ import com.predic8.membrane.core.util.ConfigurationException;
 
 import java.util.Objects;
 
+import static com.predic8.membrane.core.transport.http.client.NoProxyList.parse;
 import static com.predic8.membrane.core.util.security.BasicAuthenticationUtil.createAuthorizationHeader;
 
 /**
  * @description <p>Configuration for an outbound HTTP proxy used by the HTTP client.
  *              </p>
  *              <p>Defines the proxy endpoint, optional authentication, and TLS settings.
- *              When configured, all outgoing requests are routed through the proxy.
+ *              When configured, all outgoing requests are routed through the proxy, except
+ *              those to the hosts listed in <code>noProxy</code>.
  *              </p>
  *              <p>
  *              This element is typically used as a child of <code>httpClientConfig</code>.
@@ -43,6 +45,7 @@ import static com.predic8.membrane.core.util.security.BasicAuthenticationUtil.cr
  *       authentication: true
  *       username: alice
  *       password: secret
+ *       noProxy: localhost, .internal.example.com, 10.0.0.0/8
  * </code></pre>
  */
 @MCElement(name="proxy", component =false, id="proxy-configuration")
@@ -60,6 +63,10 @@ public class ProxyConfiguration {
 
 	private SSLParser sslParser;
 
+	private String noProxy;
+
+	private NoProxyList noProxyList;
+
 	@Override
 	public boolean equals(Object o) {
 		if (this == o) return true;
@@ -70,12 +77,13 @@ public class ProxyConfiguration {
 				&& Objects.equals(host, that.host)
 				&& Objects.equals(username, that.username)
 				&& Objects.equals(password, that.password)
-				&& Objects.equals(sslParser, that.sslParser);
+				&& Objects.equals(sslParser, that.sslParser)
+				&& Objects.equals(noProxy, that.noProxy);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(host, port, authentication, username, password, sslParser);
+		return Objects.hash(host, port, authentication, username, password, sslParser, noProxy);
 	}
 
 	public String getHost() {
@@ -161,6 +169,34 @@ public class ProxyConfiguration {
 	@MCChildElement
 	public void setSslParser(SSLParser sslParser) {
 		this.sslParser = sslParser;
+	}
+
+	public String getNoProxy() {
+		return noProxy;
+	}
+
+	/**
+	 * @description Comma-separated list of hosts that are connected to directly instead of through the proxy,
+	 *              with the semantics of the <code>NO_PROXY</code> environment variable. A host name such as
+	 *              <code>example.com</code>, <code>.example.com</code> or <code>*.example.com</code> matches
+	 *              the domain and all of its subdomains. An IPv4 or IPv6 address, optionally with a CIDR prefix,
+	 *              matches targets given as an IP address. Host names are not resolved for this check.
+	 *              <code>*</code> bypasses the proxy for every host. Ports are not supported.
+	 * @default (not set)
+	 * @example localhost, .internal.example.com, 10.0.0.0/8
+	 */
+	@MCAttribute
+	public void setNoProxy(String noProxy) {
+		final var parsed = noProxy != null ? parse(noProxy) : null;
+		this.noProxy = noProxy;
+		this.noProxyList = parsed;
+	}
+
+	/**
+	 * @return true if requests to the host must not be sent through this proxy
+	 */
+	public boolean isBypassed(String host) {
+		return noProxyList != null && noProxyList.matches(host);
 	}
 
 	/**
