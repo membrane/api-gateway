@@ -66,7 +66,9 @@ public interface As2ReceiverExtension {
      *
      * @param exchange  Exchange whose request was processed by {@link #receive(Exchange)}
      * @param processed true if the backend accepted the payload (status 2xx): the MDN reports <code>processed</code>.
-     *                  false: the MDN reports <code>processed/error: unexpected-processing-error</code>.
+     *                  false if the acceptance cannot be confirmed: the backend answered with another status, could
+     *                  not be reached, or a later interceptor aborted, possibly after the backend accepted the
+     *                  payload. The MDN reports <code>processed/error: unexpected-processing-error</code>.
      */
     void respond(Exchange exchange, boolean processed) throws IOException;
 }

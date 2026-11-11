@@ -50,9 +50,11 @@ import static org.apache.commons.lang3.exception.ExceptionUtils.throwableOfType;
  * <p>The interceptor decrypts, decompresses and verifies incoming messages and forwards the payload, e.g. the EDI
  * document, to the backend with the Content-Type of the payload. When the backend has answered, the interceptor
  * replaces its response with the MDN. The MDN reports the message as processed if the backend answered with a
- * 2xx status, otherwise as failed. A message that fails verification is not forwarded: the sender gets an error
- * MDN, or status 400 or 403 if it did not request an MDN. A message that is too large gets status 413. Only
- * synchronous MDNs in the HTTP response are supported.</p>
+ * 2xx status, otherwise as failed. It also reports the message as failed if an interceptor after the
+ * <code>as2Receiver</code> fails while handling the response, even if the backend accepted the payload. A message
+ * that fails verification is not forwarded: the sender gets an error MDN, or status 400 or 403 if it did not
+ * request an MDN. A message that is too large gets status 413. Only synchronous MDNs in the HTTP response are
+ * supported.</p>
  *
  * <p>Put the interceptor directly into the <code>flow</code> of the API, not into <code>request</code>, otherwise
  * no MDN is sent. Interceptors that change the body must not run before it: the signature covers the exact bytes.</p>
@@ -193,7 +195,8 @@ public class As2ReceiverInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * Called when the backend could not be reached or a later interceptor aborted: the payload was not processed.
+     * Called when the backend could not be reached or a later interceptor aborted. The backend's acceptance cannot be
+     * confirmed then: in the response flow the backend's response has already been replaced by the error response.
      */
     @Override
     public void handleAbort(final Exchange exc) {

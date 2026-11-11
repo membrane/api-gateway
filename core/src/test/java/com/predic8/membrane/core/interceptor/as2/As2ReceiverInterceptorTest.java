@@ -19,6 +19,8 @@ import com.predic8.membrane.core.config.security.Key;
 import com.predic8.membrane.core.config.security.KeyStore;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.ReadingBodyException;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.flow.ReturnInterceptor;
 import com.predic8.membrane.core.proxies.ServiceProxy;
@@ -507,16 +509,37 @@ class As2ReceiverInterceptorTest {
     }
 
     /**
+     * The backend's response is already replaced when handleAbort() runs, so its acceptance cannot be confirmed.
+     */
+    @Test
+    void routerSendsErrorMdnWhenLaterInterceptorFailsOnResponse() throws Exception {
+        assertEquals("MDN processed=false", callThroughRouter(200, new AbstractInterceptor() {
+            @Override
+            public Outcome handleResponse(final Exchange exc) {
+                throw new IllegalStateException("response handling failed");
+            }
+        }));
+        assertEquals(List.of(false), receiver.responses);
+    }
+
+    private String callThroughRouter(final int backendStatus) throws Exception {
+        return callThroughRouter(backendStatus, null);
+    }
+
+    /**
      * @param backendStatus status of the backend, 0 for a backend that is not running
+     * @param after         interceptor placed after the as2Receiver, or null
      * @return body of the response the client gets
      */
-    private String callThroughRouter(final int backendStatus) throws Exception {
+    private String callThroughRouter(final int backendStatus, final Interceptor after) throws Exception {
         final var gatewayPort = freePort();
         final var backendPort = freePort();
         final var router = new TestRouter();
         try {
             final var gateway = new ServiceProxy(new ServiceProxyKey("*", "*", ".*", gatewayPort), "localhost", backendPort);
             gateway.getFlow().add(interceptor());
+            if (after != null)
+                gateway.getFlow().add(after);
             router.add(gateway);
             if (backendStatus != 0) {
                 final var backend = new ServiceProxy(new ServiceProxyKey("*", "*", ".*", backendPort), "", -1);
