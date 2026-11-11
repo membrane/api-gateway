@@ -4,12 +4,15 @@ name: build-and-test-warp
 #   /testit     Linux:           mvn -Pno-internet verify
 #   /testmerge  Linux + Windows: mvn install (all tests, including the distribution example/tutorial ITs;
 #               install, because some example ITs build examples against this build's SNAPSHOT core)
+# Every push to master runs /testmerge (Linux + Windows).
 # Note: issue_comment always runs this file from the default branch.
 # Trust: the test jobs run the PR's code in master's context. They get no secrets and a read-only
 # token, but that code can still write to master's Actions cache. Read a fork PR's diff before
 # commenting /testit or /testmerge on it.
 
 on:
+  push:
+    branches: [ master ]
   issue_comment:
     types: [created]
   workflow_dispatch:
@@ -28,6 +31,7 @@ env:
 jobs:
   parse:
     if: >-
+      github.event_name == 'push' ||
       github.event_name == 'workflow_dispatch' ||
       (github.event.issue.pull_request &&
        (startsWith(github.event.comment.body, '/testit') || startsWith(github.event.comment.body, '/testmerge')))
@@ -74,6 +78,10 @@ jobs:
               *)           mode=testit ;;
             esac
             sha=$(gh api "repos/$REPO/pulls/$PR" --jq .head.sha)
+          elif [ "$EVENT" = "push" ]; then
+            mode=testmerge
+            sha="$SHA"
+            PR=""
           else
             mode="$INPUT_MODE"
             sha="$SHA"
@@ -113,8 +121,9 @@ jobs:
     permissions:
       contents: read
     # A newer command of the same kind on the same PR cancels the older run.
+    # Pushes to master are grouped per commit, so every pushed commit gets its own complete run.
     concurrency:
-      group: build-and-test-warp-${{ needs.parse.outputs.pr || github.ref }}-${{ needs.parse.outputs.mode }}-linux
+      group: build-and-test-warp-${{ needs.parse.outputs.pr || (github.event_name == 'push' && github.sha) || github.ref }}-${{ needs.parse.outputs.mode }}-linux
       cancel-in-progress: true
     steps:
       - uses: actions/checkout@v7
@@ -143,7 +152,7 @@ jobs:
     permissions:
       contents: read
     concurrency:
-      group: build-and-test-warp-${{ needs.parse.outputs.pr || github.ref }}-${{ needs.parse.outputs.mode }}-windows
+      group: build-and-test-warp-${{ needs.parse.outputs.pr || (github.event_name == 'push' && github.sha) || github.ref }}-${{ needs.parse.outputs.mode }}-windows
       cancel-in-progress: true
     steps:
       - uses: actions/checkout@v7

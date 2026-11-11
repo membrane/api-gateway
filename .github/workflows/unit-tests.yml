@@ -3,7 +3,8 @@ name: unit-tests
 # Unit tests only (Surefire, `mvn test`) on free GitHub-hosted runners: on every pull request
 # (the check branch protection sees on the merge commit; also covers forks) and on pushes to the
 # long-lived branches. Feature branches are tested through their PR only, so nothing runs twice.
-# Integration and example tests run on demand with /testit or /testmerge (build-and-test-warp).
+# Integration and example tests run in build-and-test-warp: on every push to master and on
+# demand with /testit or /testmerge.
 
 on:
   push:
