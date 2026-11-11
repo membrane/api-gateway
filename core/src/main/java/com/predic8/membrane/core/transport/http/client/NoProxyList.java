@@ -110,14 +110,14 @@ public final class NoProxyList {
         return domains.stream().anyMatch(domain -> domain.matches(normalized, port));
     }
 
-    // An IPv6 address only takes a port in brackets, e.g. [::1]:8080, as its colons are ambiguous otherwise.
+    // An IPv6 address only takes a port in brackets, e.g. [::1]:8080 or [2001:db8::]/32:8080, as its colons are ambiguous otherwise.
     private static HostAndPort splitPort(String entry, String setting) {
         final int colon;
         if (entry.startsWith("[")) {
             final var end = entry.indexOf(']');
-            if (end == -1 || end == entry.length() - 1 || entry.charAt(end + 1) != ':')
+            colon = end == -1 ? -1 : entry.indexOf(':', end);
+            if (colon == -1)
                 return new HostAndPort(entry, ANY_PORT);
-            colon = end + 1;
         } else {
             colon = entry.indexOf(':');
             if (colon == -1 || colon != entry.lastIndexOf(':'))

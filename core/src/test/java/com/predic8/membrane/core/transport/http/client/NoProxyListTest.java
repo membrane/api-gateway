@@ -117,6 +117,15 @@ class NoProxyListTest {
     }
 
     @Test
+    void ipv6RangeWithPortMatchesOnlyThatPort() {
+        final var list = NoProxyList.parse("[2001:db8::]/32:9000");
+        assertTrue(list.matches("2001:db8::1", 9000));
+        assertTrue(list.matches("[2001:db8:ffff::1]", 9000));
+        assertFalse(list.matches("2001:db8::1", 8080));
+        assertFalse(list.matches("2001:db9::1", 9000));
+    }
+
+    @Test
     void entriesWithAndWithoutPortCombine() {
         final var list = NoProxyList.parse("localhost, internal.example.com:8080");
         assertTrue(list.matches("localhost", 1234));
