@@ -94,7 +94,7 @@ public record SelectedPort(Service service, String name, PortType portType, Bind
         if (portTypes.size() > 1) {
             throw new ConfigurationException("""
                     The WSDL declares no service and several port types: %s.
-                    wsdl2openapi needs a WSDL with a single port type, or a service to select a port from.""".formatted(
+                    Use a WSDL with a single port type, or one with a service to select a port from.""".formatted(
                     portTypes.stream().map(PortType::getName).toList()));
         }
         PortType portType = portTypes.getFirst();
