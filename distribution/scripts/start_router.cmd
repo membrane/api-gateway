@@ -94,9 +94,8 @@ set "VAL=!BARE:~26!"
 if not defined VAL exit /b 0
 if "!VAL:~0,1!"=="\" exit /b 0
 if "!VAL:~0,1!"=="/" exit /b 0
-if "!VAL:~1,1!"==":" exit /b 0
-if /I "!VAL:~0,5!"=="file:" exit /b 0
-if not "!VAL:://=!"=="!VAL!" exit /b 0
+rem Windows file names cannot contain ":", so any colon means a drive path or a URI/resource prefix (file:, classpath:, ...).
+if not "!VAL::=!"=="!VAL!" exit /b 0
 rem Quoted because MEMBRANE_HOME may contain spaces (e.g. C:\Program Files\membrane).
 set "TOK="-Dlog4j.configurationFile=!MEMBRANE_HOME!\!VAL!""
 exit /b 0
