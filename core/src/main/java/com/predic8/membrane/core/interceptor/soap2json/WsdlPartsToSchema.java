@@ -23,8 +23,14 @@ import io.swagger.v3.oas.models.media.ObjectSchema;
 import io.swagger.v3.oas.models.media.Schema;
 
 import javax.xml.namespace.QName;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+
+import static com.predic8.membrane.core.util.xml.schema.XsdDomUtil.qualifiedKey;
 
 /**
  * Converts the parts of WSDL messages, and the faults of an operation, to OpenAPI schemas, on top
@@ -55,22 +61,46 @@ public class WsdlPartsToSchema extends XsdToSchema {
      */
     public Schema<?> convertFaultDetail(List<Operation.Fault> faults) {
         var schema = new ObjectSchema();
-        for (Operation.Fault fault : faults) {
-            List<Part> parts = fault.getMessage().getParts();
-            if (parts.isEmpty()) continue;
-            schema.addProperty(faultDetailKey(parts), convertParts(parts));
-        }
+        faultDetailKeys(faults).forEach((key, parts) -> schema.addProperty(key, convertParts(parts)));
         return schema;
     }
 
     /**
-     * The key a fault's content appears under inside the detail element: the local name of its
-     * wrapping XSD element, or the part name for RPC-style parts that only name a type.
+     * The parts of each fault that carries content, by the key that content appears under inside
+     * the detail element: the local name of its wrapping XSD element, or the part name for
+     * RPC-style parts that only name a type. A fault declared more than once has one key.
+     * <p>
+     * Faults whose elements share a local name across namespaces are each keyed by their qualified
+     * name instead ({@link com.predic8.membrane.core.util.xml.schema.XsdDomUtil#qualifiedKey}), so
+     * that no fault's schema is lost; the XML to JSON mapping looks such a key up first. An element
+     * without namespace keeps the plain local name, the key its unqualified detail element is
+     * looked up under.
      */
-    public static String faultDetailKey(List<Part> parts) {
-        Part part = parts.getFirst();
-        QName elementQName = part.getElementQName();
-        return elementQName != null ? elementQName.getLocalPart() : part.getName();
+    public static Map<String, List<Part>> faultDetailKeys(List<Operation.Fault> faults) {
+        final var withContent = faults.stream()
+                .map(fault -> fault.getMessage().getParts())
+                .filter(parts -> !parts.isEmpty())
+                .toList();
+        final var elementsByLocalName = new HashMap<String, Set<QName>>();
+        for (final var parts : withContent) {
+            final var element = parts.getFirst().getElementQName();
+            if (element != null) elementsByLocalName.computeIfAbsent(element.getLocalPart(), name -> new HashSet<>()).add(element);
+        }
+        final var keys = new LinkedHashMap<String, List<Part>>();
+        for (final var parts : withContent) {
+            keys.putIfAbsent(faultDetailKey(parts.getFirst(), elementsByLocalName), parts);
+        }
+        return keys;
+    }
+
+    private static String faultDetailKey(Part part, Map<String, Set<QName>> elementsByLocalName) {
+        final var element = part.getElementQName();
+        if (element == null) return part.getName();
+        final var shared = elementsByLocalName.get(element.getLocalPart()).size() > 1;
+        if (shared && !element.getNamespaceURI().isEmpty()) {
+            return qualifiedKey(element.getNamespaceURI(), element.getLocalPart());
+        }
+        return element.getLocalPart();
     }
 
     /**

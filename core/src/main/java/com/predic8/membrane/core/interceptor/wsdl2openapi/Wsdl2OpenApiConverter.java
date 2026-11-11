@@ -605,10 +605,8 @@ public class Wsdl2OpenApiConverter {
      * generic error response already covers.
      */
     private static List<DeclaredFault> declaredFaults(Operation wsdlOp) {
-        return wsdlOp.getFaults().stream()
-                .map(fault -> fault.getMessage().getParts())
-                .filter(parts -> !parts.isEmpty())
-                .map(parts -> new DeclaredFault(WsdlPartsToSchema.faultDetailKey(parts), parts))
+        return WsdlPartsToSchema.faultDetailKeys(wsdlOp.getFaults()).entrySet().stream()
+                .map(fault -> new DeclaredFault(fault.getKey(), fault.getValue()))
                 .toList();
     }
 

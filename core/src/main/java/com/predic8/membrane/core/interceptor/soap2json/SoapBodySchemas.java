@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.xml.namespace.QName;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -80,7 +81,7 @@ record SoapBodySchemas(String portName,
         final var responseSchemas = new LinkedHashMap<QName, Schema<?>>();
         final var inputOperations = new LinkedHashMap<QName, String>();
         final var sharedInputs = new HashSet<QName>();
-        final var faults = new LinkedHashMap<String, Operation.Fault>();
+        final var faults = new ArrayList<Operation.Fault>();
         for (final Operation operation : port.operations()) {
             for (final Message message : operation.getMessagesByDirection(INPUT)) {
                 addMessage(message, operation, xsdToSchema, converted, requestSchemas)
@@ -89,17 +90,15 @@ record SoapBodySchemas(String portName,
             for (final Message message : operation.getMessagesByDirection(OUTPUT)) {
                 addMessage(message, operation, xsdToSchema, converted, responseSchemas);
             }
-            for (final Operation.Fault fault : operation.getFaults()) {
-                final var parts = fault.getMessage().getParts();
-                if (!parts.isEmpty()) faults.putIfAbsent(WsdlPartsToSchema.faultDetailKey(parts), fault);
-            }
+            // A fault two operations declare is converted once — see WsdlPartsToSchema.faultDetailKeys.
+            faults.addAll(operation.getFaults());
         }
         if (converted.isEmpty()) {
             throw new ConfigurationException("""
                     Port '%s' declares no document/literal message with a single element part.
                     Only such messages can be converted: RPC-style and multi-part messages are not supported.""".formatted(port.name()));
         }
-        final var faultDetailSchema = xsdToSchema.convertFaultDetail(List.copyOf(faults.values()));
+        final var faultDetailSchema = xsdToSchema.convertFaultDetail(List.copyOf(faults));
         // Copied only now: converting the fault details may still have added components.
         return new SoapBodySchemas(port.name(), Map.copyOf(requestSchemas), Map.copyOf(responseSchemas), Map.copyOf(inputOperations),
                 faultDetailSchema, Map.copyOf(xsdToSchema.getComponents()));

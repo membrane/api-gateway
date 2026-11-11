@@ -684,6 +684,14 @@ class OpenApiGeneratorTest {
         return Definitions.parse(new ResolverMap(), "classpath:/ws/documented.wsdl");
     }
 
+    @Test
+    void faultsSharingALocalNameArePublishedUnderQualifiedKeys() throws Exception {
+        final var yaml = generator(Definitions.parse(new ResolverMap(), "classpath:/ws/fault-name-collision.wsdl"), "/");
+
+        assertTrue(yaml.contains("{https://example.com/common}Error"), yaml);
+        assertTrue(yaml.contains("{https://example.com/billing}Error"), yaml);
+    }
+
     private static String generator(Definitions defs, String basePath) {
         return converter(defs, basePath).generateYaml();
     }

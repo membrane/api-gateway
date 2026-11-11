@@ -66,8 +66,8 @@ public class Soap2JsonTransformer {
      * <p>
      * {@code responseSchema} produces properly typed values (numbers, booleans) rather than always
      * strings; {@code faultDetailSchema} types the content of a SOAP {@code <detail>} element the
-     * same way, its properties being the operation's declared faults keyed by fault element local
-     * name. Either may be {@code null}, which converts that part structurally with every scalar as
+     * same way, its properties being the operation's declared faults keyed as
+     * {@link WsdlPartsToSchema#faultDetailKeys} describes. Either may be {@code null}, which converts that part structurally with every scalar as
      * a string — the only thing possible for untyped or {@code xsd:any} content.
      */
     public String transform(String soapXml, Schema<?> responseSchema, Schema<?> faultDetailSchema) throws Exception {
@@ -176,7 +176,8 @@ public class Soap2JsonTransformer {
 
     /**
      * The SOAP {@code <detail>} content as a map keyed by the local name of each fault element it
-     * wraps, or null if the fault carries no detail. {@code faultDetailSchema} types the values;
+     * wraps, or by its qualified name where {@code faultDetailSchema} has that key, or null if the
+     * fault carries no detail. {@code faultDetailSchema} types the values;
      * without it, every scalar comes out as a string.
      */
     private Map<String, Object> detailMap(Element detailElement, Schema<?> faultDetailSchema) {

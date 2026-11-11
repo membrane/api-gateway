@@ -61,6 +61,15 @@ class SoapBodySchemasTest {
     }
 
     @Test
+    void faultsSharingALocalNameKeepTheirOwnSchemasUnderQualifiedKeys() throws Exception {
+        final var properties = schemasOf("classpath:/ws/fault-name-collision.wsdl").faultDetailSchema().getProperties();
+
+        assertEquals(Set.of("{https://example.com/common}Error", "{https://example.com/billing}Error"), properties.keySet());
+        assertNotNull(properties.get("{https://example.com/common}Error").getProperties().get("code"));
+        assertNotNull(properties.get("{https://example.com/billing}Error").getProperties().get("balance"));
+    }
+
+    @Test
     void anElementNoMessageDeclaresIsRejected() throws Exception {
         final var schemas = schemasOf("classpath:/ws/two-operations-with-faults.wsdl");
         final var element = new QName("https://example.com/other", "getArticle");

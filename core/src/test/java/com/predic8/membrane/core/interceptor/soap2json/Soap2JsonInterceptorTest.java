@@ -192,6 +192,27 @@ class Soap2JsonInterceptorTest {
     }
 
     @Test
+    void aFaultSharingItsLocalNameWithAnotherIsTypedWithItsOwnSchema() throws Exception {
+        final var soap2Json = new Soap2JsonInterceptor();
+        soap2Json.setWsdl("classpath:/ws/fault-name-collision.wsdl");
+        soap2Json.init(new DummyTestRouter());
+        final var exc = responseExchange(TEXT_XML_UTF8, """
+                <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
+                  <s:Body>
+                    <s:Fault>
+                      <faultcode>s:Server</faultcode>
+                      <faultstring>Insufficient funds</faultstring>
+                      <detail><b:Error xmlns:b="https://example.com/billing"><balance>2.5</balance></b:Error></detail>
+                    </s:Fault>
+                  </s:Body>
+                </s:Envelope>""");
+
+        assertEquals(ABORT, soap2Json.handleResponse(exc));
+        final var details = json(exc.getResponse()).get("details");
+        assertTrue(details.get("{https://example.com/billing}Error").get("balance").isNumber(), details.toString());
+    }
+
+    @Test
     void aFaultInTheRequestFlowIsAClientError() throws Exception {
         final var exc = requestExchange(OUT_OF_STOCK_FAULT);
 
