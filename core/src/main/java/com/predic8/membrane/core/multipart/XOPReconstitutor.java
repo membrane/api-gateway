@@ -145,7 +145,8 @@ public class XOPReconstitutor {
 	/**
 	 * Splits the multipart message and indexes parts by Content-ID for XOP lookup.
 	 *
-	 * @throws ReadingBodyException if the package is malformed or uses an unsupported part encoding
+	 * @throws ReadingBodyException if the package is malformed or uses an unsupported part encoding, with a
+	 * {@link XopReassemblyException} as cause, or if reading the body failed
 	 */
 	private HashMap<String, Part> splitById(Message message, String boundary) {
 		HashMap<String, Part> byId = new HashMap<>();
@@ -158,7 +159,11 @@ public class XOPReconstitutor {
 			}
 		} catch (IOException e) {
 			log.info("Could not split XOP package: {}", escapeControlCharsForLog(e.getMessage()));
-			throw new ReadingBodyException(e, message);
+			// A chunked body reports its transport failure as an IOException, too. That is not a broken package.
+			if (message.getBody().hasFailed())
+				throw new ReadingBodyException(e, message);
+			throw new ReadingBodyException(new XopReassemblyException(
+					"XOP package is malformed: %s".formatted(escapeControlCharsForLog(e.getMessage())), e), message);
 		}
 		return byId;
 	}
@@ -214,7 +219,7 @@ public class XOPReconstitutor {
 						final var hrefAttribute = start.getAttributeByName(new QName("href"));
 						if (hrefAttribute == null) {
 							log.info("xop:Include without href attribute.");
-							throw new ReadingBodyException(new IOException("xop:Include without href attribute."), source);
+							throw new ReadingBodyException(new XopReassemblyException("xop:Include without href attribute."), source);
 						}
 						String href = hrefAttribute.getValue();
 

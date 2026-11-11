@@ -30,4 +30,8 @@ public class XopReassemblyException extends IOException {
     public XopReassemblyException(String message) {
         super(message);
     }
+
+    public XopReassemblyException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }
