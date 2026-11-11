@@ -164,6 +164,26 @@ class HttpClientTest {
         }
 
         @Test
+        void proxyCredentialsAreRemovedFromRequestAfterProxiedCall() throws Exception {
+            final var exc = get("http://127.0.0.1:%d/foo".formatted(backendPort)).buildExchange();
+            proxiedClient.call(exc);
+
+            assertEquals(1, proxyRequests.get());
+            assertNull(exc.getRequest().getHeader().getFirstValue(PROXY_AUTHORIZATION));
+        }
+
+        @Test
+        void inboundProxyAuthorizationIsRestoredOnRequestAfterProxiedCall() throws Exception {
+            final var exc = get("http://127.0.0.1:%d/foo".formatted(backendPort))
+                    .header(PROXY_AUTHORIZATION, "Basic aW5ib3VuZA==")
+                    .buildExchange();
+            proxiedClient.call(exc);
+
+            assertEquals(1, proxyRequests.get());
+            assertEquals("Basic aW5ib3VuZA==", exc.getRequest().getHeader().getFirstValue(PROXY_AUTHORIZATION));
+        }
+
+        @Test
         void retryToBypassedHostDropsProxyCredentialsOfProxiedAttempt() throws Exception {
             failFirstProxyRequest = true;
             final var exc = get("/foo").buildExchange();

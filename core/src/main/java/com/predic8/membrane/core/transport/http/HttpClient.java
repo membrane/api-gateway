@@ -70,9 +70,14 @@ public class HttpClient implements AutoCloseable {
         var ph = protocolHandlerFactory.getHandler(exc, exc.getRequest().getHeader().getUpgradeProtocol());
         ph.checkUpgradeRequest(exc);
         // Each attempt starts from the request's own Proxy-Authorization, whatever an earlier attempt set.
+        // Restored afterwards as well, so the proxy credentials do not stay on the exchange.
         final var inboundProxyAuthorization = exc.getRequest().getHeader().getFirstValue(PROXY_AUTHORIZATION);
-        configuration.getRetryHandler().executeWithRetries(exc,
-                (e, target, attempt) -> dispatchCall(e, target, attempt, inboundProxyAuthorization));
+        try {
+            configuration.getRetryHandler().executeWithRetries(exc,
+                    (e, target, attempt) -> dispatchCall(e, target, attempt, inboundProxyAuthorization));
+        } finally {
+            restoreInboundProxyAuthorization(exc, inboundProxyAuthorization);
+        }
         ph.cleanup(exc);
     }
 
