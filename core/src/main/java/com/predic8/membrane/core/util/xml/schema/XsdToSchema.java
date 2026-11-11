@@ -56,7 +56,7 @@ import static java.lang.Boolean.TRUE;
  *   <li>Cross-namespace type references (resolved via the full import graph)</li>
  * </ul>
  *
- * <p>The features above are constraints: they describe which messages are valid, and are enforced
+ * <p>The features above are constraints: they describe which documents are valid, and are enforced
  * wherever the generated schema is validated against.
  *
  * <p>A named {@code xsd:complexType} or {@code xsd:simpleType} is converted once and published as a
@@ -80,7 +80,7 @@ import static java.lang.Boolean.TRUE;
  * {@code decimal}, …). Where that pair does not name the XSD type it came from — {@code xsd:token},
  * the {@code g*} date types, the bounded and unbounded integer types, {@code xsd:decimal} — the
  * type name is carried in an {@code x-xsd-type} extension, so that a tool reading the document can
- * recover it. {@code description} is left to the service's own documentation.
+ * recover it. {@code description} is left to the schema's own {@code xsd:documentation}.
  *
  * <p>{@code xsd:decimal} is emitted as a JSON {@code number} with {@code format: decimal}. JSON
  * {@code number} is arbitrary-precision by specification, but most parsers realize it as a double,
@@ -88,10 +88,10 @@ import static java.lang.Boolean.TRUE;
  * accepted here rather than mapped to {@code type: string}, which would keep the precision but
  * cost every consumer the numeric type and any range facets stated on it.
  *
- * <p>Neither is applied to messages during SOAP/JSON conversion. Supplying a missing value is the
- * SOAP service's own responsibility — and in XSD an element's default only applies to an element
+ * <p>Neither is applied to documents during XML/JSON conversion. Supplying a missing value is the
+ * receiver's own responsibility — and in XSD an element's default only applies to an element
  * that is present but empty, never to an absent one, so filling in omitted fields here would not
- * even match what the service does.
+ * even match what the receiver does.
  */
 public class XsdToSchema {
 
@@ -132,7 +132,7 @@ public class XsdToSchema {
 
     /**
      * The named types reached so far, keyed by component name. Filled as conversion walks the
-     * schemas, so a type no message refers to is not published.
+     * schemas, so a type no converted element refers to is not published.
      */
     private final Map<String, Schema<?>> components = new LinkedHashMap<>();
 
@@ -212,9 +212,9 @@ public class XsdToSchema {
         for (var schemaRoot : roots) {
             Element xsdElement = findXsdChildWithName(schemaRoot, "element", qname.getLocalPart());
             if (xsdElement != null) {
-                // A message's own schema is built inline even where the element names a type: a
-                // request or response body that is nothing but a reference tells a reader nothing,
-                // and the converter reads the body's fields to derive path and query parameters.
+                // A global element's own schema is built inline even where it names a type: a
+                // top-level schema that is nothing but a reference tells a reader nothing, and
+                // callers read its fields, e.g. to derive path and query parameters.
                 return convertElementType(xsdElement, new XsdContext(schemaRoot, visiting), false);
             }
         }
@@ -380,7 +380,7 @@ public class XsdToSchema {
      * can see it. It carries the same typed value as the default, and is skipped along with it when
      * the literal does not fit the type.
      *
-     * <p>Neither is used to fill in a field a message left out: the SOAP service applies its own
+     * <p>Neither is used to fill in a field a document left out: the receiver applies its own
      * defaults, and a gateway that invented payload values would leave the backend unable to tell a
      * client's explicit choice from the gateway's guess.
      */
@@ -526,7 +526,7 @@ public class XsdToSchema {
     /**
      * Maps choice alternatives to optional properties, plus a sibling {@code oneOf} whose branches
      * carry nothing but the {@code required} keys of one alternative each. The properties stay flat
-     * — SOAP/JSON conversion looks types and array shapes up there — while the {@code oneOf} states
+     * — XML/JSON conversion looks types and array shapes up there — while the {@code oneOf} states
      * the constraint the choice actually expresses: a document that names two alternatives satisfies
      * two branches, and one that names none satisfies no branch, so both are rejected.
      *
@@ -884,8 +884,8 @@ public class XsdToSchema {
     }
 
     /**
-     * Resolves a WSDL message part's {@code type=} reference (already resolved to a QName, as
-     * used by RPC-style bindings) to an OpenAPI schema.
+     * Converts a named XSD type — a built-in one or one the schemas declare — to an OpenAPI
+     * schema.
      */
     public Schema<?> convertType(QName qname) {
         return convertType(qname, new HashSet<>());
@@ -943,7 +943,7 @@ public class XsdToSchema {
     /**
      * Records the XSD type a schema came from, for the types whose {@code type}/{@code format} pair
      * does not name them: an {@code x-xsd-type} extension a tool can read, rather than prose in
-     * {@code description} — which belongs to the service's own documentation.
+     * {@code description} — which belongs to the schema's own documentation.
      */
     private static <T extends Schema<?>> T withXsdType(T schema, String xsdType) {
         schema.addExtension(XSD_TYPE_EXTENSION, xsdType);

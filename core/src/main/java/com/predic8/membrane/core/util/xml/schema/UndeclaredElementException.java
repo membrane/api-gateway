@@ -16,9 +16,9 @@ package com.predic8.membrane.core.util.xml.schema;
 import javax.xml.namespace.QName;
 
 /**
- * A message carries an element that the WSDL or XSD does not declare, so there is no schema to
- * convert it with. Thrown by {@code SoapBodySchemas.forElement} for a SOAP Body, and by
- * {@link XmlSchemaMapping} for a document element or a JSON root key.
+ * A document carries an element that the XML Schema does not declare, so there is no schema to
+ * convert it with. Thrown, for example, by {@link XmlSchemaMapping} for a document element or a
+ * JSON root key.
  */
 public class UndeclaredElementException extends Exception {
 
@@ -26,7 +26,7 @@ public class UndeclaredElementException extends Exception {
 
     /**
      * @param declaredBy what was searched for a declaration, completing "is not declared by …",
-     *                   e.g. {@code any message of port 'CityPort'}
+     *                   e.g. {@code XML Schema 'books.xsd' as a global element}
      */
     public UndeclaredElementException(QName element, String declaredBy) {
         super("The element %s is not declared by %s.".formatted(element, declaredBy));

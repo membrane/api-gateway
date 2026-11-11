@@ -250,7 +250,7 @@ public class XsdDomUtil {
      * name derived from their namespace. Names are computed for every declared type up front, so a
      * name never depends on the order in which types are reached during conversion.
      *
-     * <p>{@code reserved} names are treated as already taken, which is how a type the WSDL happens to
+     * <p>{@code reserved} names are treated as already taken, which is how a type the schemas happen to
      * declare cannot silently overwrite a component the converter contributes itself.
      */
     static Map<String, String> buildComponentNames(Map<String, List<Element>> schemasByNamespace, Set<String> reserved) {
@@ -348,7 +348,7 @@ public class XsdDomUtil {
     }
 
     /**
-     * Converts a WSDL operation name to a URL-safe kebab-case path segment.
+     * Converts a name, such as an operation name, to a URL-safe kebab-case path segment.
      * Handles camelCase, PascalCase, snake_case, and mixed forms.
      * Underscores and uppercase letters both act as word separators;
      * consecutive separators are collapsed to a single dash.

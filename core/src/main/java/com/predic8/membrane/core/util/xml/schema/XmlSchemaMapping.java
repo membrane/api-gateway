@@ -31,9 +31,8 @@ import static com.predic8.membrane.core.resolver.ResolverMap.combine;
 import static com.predic8.membrane.core.util.xml.parser.HardenedXmlParser.getInstance;
 
 /**
- * Converts XML documents to JSON and back, typed by the global element declarations of an XML
- * Schema — the mapping soap2Json and json2Soap apply to a SOAP Body, here applied to a whole
- * document.
+ * Converts whole XML documents to JSON and back, typed by the global element declarations of an
+ * XML Schema.
  *
  * <p>The JSON is an object with a single property: the root element, keyed by its local name, or
  * by {@code {namespace}local} where the schemas declare that local name globally in more than one

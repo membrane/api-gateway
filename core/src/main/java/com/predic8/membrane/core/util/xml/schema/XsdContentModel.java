@@ -33,7 +33,7 @@ import static com.predic8.membrane.core.util.xml.schema.XsdDomUtil.*;
  * <p>This is the one traversal of an XSD content model in this package. Both directions of the
  * conversion need the same walk but do different things with it: {@link XsdToSchema} builds the
  * published schema and has to keep an {@code xsd:choice} intact, because a choice constrains which
- * alternatives may appear together, while {@code Json2SoapTransformer} only needs the field order
+ * alternatives may appear together, while {@link Json2XmlTransformer} only needs the field order
  * and flattens a choice like any other particle. Producing the tree once and letting each side walk
  * it keeps that difference the only difference — a particle form handled here is handled for both.
  *

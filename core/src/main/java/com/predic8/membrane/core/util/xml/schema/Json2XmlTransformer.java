@@ -350,7 +350,7 @@ public class Json2XmlTransformer {
     }
 
     /**
-     * The WSDL-derived metadata for the element currently being written: the order its fields are
+     * The schema-derived metadata for the element currently being written: the order its fields are
      * declared in, the namespace each field carries, and the XSD declaration of each child by local
      * name (which is what a nested object needs to derive the same values for itself).
      */

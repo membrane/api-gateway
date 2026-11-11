@@ -211,7 +211,7 @@ public class Xml2JsonMapper {
      * Resolves a child element against the parent's properties. The namespace-qualified key that
      * {@code XsdToSchema.addChoiceFields} uses for same-local-name alternatives is preferred, so
      * that alternatives from different namespaces stay distinct properties and the emitted JSON
-     * matches the published schema — {@code Json2SoapTransformer} strips such keys back to the XML
+     * matches the published schema — {@link Json2XmlTransformer} turns such keys back into the XML
      * local name on the way in. Everything else keeps its plain local name.
      */
     private static ResolvedChild resolveChild(Map<String, Schema<?>> properties, Element childElement) {
