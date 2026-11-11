@@ -130,9 +130,18 @@ class HttpClientTest {
 
         @AfterEach
         void tearDown() {
-            proxiedClient.close();
-            proxy.stop();
-            backend.stop();
+            try {
+                if (proxiedClient != null)
+                    proxiedClient.close();
+            } finally {
+                try {
+                    if (proxy != null)
+                        proxy.stop();
+                } finally {
+                    if (backend != null)
+                        backend.stop();
+                }
+            }
         }
 
         @Test
