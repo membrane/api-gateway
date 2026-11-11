@@ -61,18 +61,25 @@ exit /b %status%
 setlocal EnableDelayedExpansion
 set "REST=!JAVA_OPTS!"
 set "NEW="
+set Q=^"
 :normalize_next
 if not defined REST goto :normalize_done
 if "!REST:~0,1!"==" " (
     set "REST=!REST:~1!"
     goto :normalize_next
 )
-set "REST_IN=!REST!"
-set "REST="
-for /f "eol= tokens=1* delims= " %%A in ("!REST_IN!") do (
-    set "TOK=%%A"
-    set "REST=%%B"
-)
+rem Split only at spaces outside double quotes, so a quoted path containing spaces stays one option.
+set "TOK="
+set "INQ="
+:normalize_char
+if not defined REST goto :normalize_token
+set "C=!REST:~0,1!"
+if not defined INQ if "!C!"==" " goto :normalize_token
+if "!C!"=="!Q!" (if defined INQ (set "INQ=") else set "INQ=1")
+set "TOK=!TOK!!C!"
+set "REST=!REST:~1!"
+goto :normalize_char
+:normalize_token
 set "BARE=!TOK:"=!"
 if "!BARE:~0,26!"=="-Dlog4j.configurationFile=" call :resolve_log4j_path
 if defined NEW (set "NEW=!NEW! !TOK!") else set "NEW=!TOK!"
