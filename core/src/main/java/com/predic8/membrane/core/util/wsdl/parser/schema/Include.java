@@ -17,9 +17,34 @@ package com.predic8.membrane.core.util.wsdl.parser.schema;
 import com.predic8.membrane.core.util.wsdl.parser.*;
 import org.w3c.dom.*;
 
+import static javax.xml.XMLConstants.XMLNS_ATTRIBUTE_NS_URI;
+
 public class Include extends AbstractIncludeImport {
 
     public Include(WSDLParserContext ctx, Node node) {
         super(ctx,node);
+    }
+
+    /**
+     * An included schema without a {@code targetNamespace} takes on the namespace of the schema
+     * including it — a "chameleon" include (XSD 1.0, 4.2.1). Its root gets that
+     * {@code targetNamespace}, and, unless it binds a default namespace of its own, that namespace
+     * as its default, so that its unprefixed references to its own components resolve into it.
+     * The DOM is this include's own, freshly parsed, so rewriting it affects nothing else; a
+     * document already visited is not parsed again, so only its first includer gives it a namespace.
+     * Because the including schema has been adopted the same way before its includes are resolved,
+     * the namespace is passed on through nested includes.
+     */
+    @Override
+    protected Element adopt(Element schemaRoot) {
+        final var namespace = ((Element) element.getParentNode()).getAttribute("targetNamespace");
+        if (namespace.isEmpty() || !schemaRoot.getAttribute("targetNamespace").isEmpty()) return schemaRoot;
+
+        schemaRoot.setAttribute("targetNamespace", namespace);
+        final var defaultNamespace = schemaRoot.lookupNamespaceURI(null);
+        if (defaultNamespace == null || defaultNamespace.isEmpty()) {
+            schemaRoot.setAttributeNS(XMLNS_ATTRIBUTE_NS_URI, "xmlns", namespace);
+        }
+        return schemaRoot;
     }
 }

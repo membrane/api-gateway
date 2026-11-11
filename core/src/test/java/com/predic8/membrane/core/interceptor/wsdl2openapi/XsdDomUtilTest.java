@@ -251,6 +251,31 @@ class XsdDomUtilTest {
     }
 
     @Test
+    void anUnprefixedReferenceIsResolvedInEveryDocumentOfTheReferringNamespace() {
+        final var referring = schema("""
+                <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" targetNamespace="http://example.com/billing">
+                  <xsd:element name="invoice">
+                    <xsd:complexType><xsd:sequence><xsd:group ref="Lines"/></xsd:sequence></xsd:complexType>
+                  </xsd:element>
+                </xsd:schema>
+                """);
+        final var included = schema("""
+                <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" targetNamespace="http://example.com/billing">
+                  <xsd:group name="Lines">
+                    <xsd:sequence><xsd:element name="line" type="xsd:string"/></xsd:sequence>
+                  </xsd:group>
+                </xsd:schema>
+                """);
+
+        final var group = resolveGroupRef(refElement(referring, "group"), referring,
+                Map.of(BILLING, List.of(referring, included)));
+
+        // An xsd:include puts the group into another document of the same namespace.
+        assertTrue(group.isPresent());
+        assertSame(included, group.get().schemaRoot());
+    }
+
+    @Test
     void anUnresolvableGroupReferenceIsEmpty() {
         var schemas = twoSchemas("tns:NoSuchGroup", "ship:label");
         Element billing = schemas.get(BILLING).getFirst();

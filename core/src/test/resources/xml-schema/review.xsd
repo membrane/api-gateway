@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Tests: a namespaced schema that includes a schema without targetNamespace (a "chameleon"
+  include), which in turn includes another one. Both take on this schema's namespace.
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="https://example.com/review">
+
+    <xs:include schemaLocation="review-note.xsd"/>
+
+</xs:schema>

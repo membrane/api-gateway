@@ -323,16 +323,28 @@ class XsdDomUtil {
 
     /**
      * Resolves schema roots for the namespace identified by prefix in context of contextElement.
-     * Falls back to currentSchemaRoot if the prefix or namespace is unknown.
+     * Without a prefix, these are all documents of currentSchemaRoot's own target namespace —
+     * current one first — since an {@code xsd:include} may put the referenced component into
+     * another of them. Falls back to currentSchemaRoot if the prefix or namespace is unknown.
      */
     static List<Element> resolveTargetSchemaRoots(
             String prefix, Element contextElement, Element currentSchemaRoot,
             Map<String, List<Element>> schemasByNamespace) {
-        if (prefix.isEmpty()) return List.of(currentSchemaRoot);
+        if (prefix.isEmpty()) return sameNamespaceRoots(currentSchemaRoot, schemasByNamespace);
         String nsUri = contextElement.lookupNamespaceURI(prefix);
         if (nsUri == null) return List.of(currentSchemaRoot);
         List<Element> roots = schemasByNamespace.get(nsUri);
         return (roots != null && !roots.isEmpty()) ? roots : List.of(currentSchemaRoot);
+    }
+
+    /** The documents sharing currentSchemaRoot's target namespace, with currentSchemaRoot first. */
+    private static List<Element> sameNamespaceRoots(Element currentSchemaRoot, Map<String, List<Element>> schemasByNamespace) {
+        final var roots = new ArrayList<Element>();
+        roots.add(currentSchemaRoot);
+        for (final var root : schemasByNamespace.getOrDefault(currentSchemaRoot.getAttribute("targetNamespace"), List.of())) {
+            if (root != currentSchemaRoot) roots.add(root);
+        }
+        return List.copyOf(roots);
     }
 
     /**

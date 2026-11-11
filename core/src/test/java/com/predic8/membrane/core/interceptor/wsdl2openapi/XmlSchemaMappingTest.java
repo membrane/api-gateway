@@ -30,11 +30,13 @@ class XmlSchemaMappingTest {
 
     private static XmlSchemaMapping notes;
     private static XmlSchemaMapping library;
+    private static XmlSchemaMapping review;
 
     @BeforeAll
     static void load() {
         notes = XmlSchemaMapping.load(new DummyTestRouter(), null, "classpath:/xml-schema/notes-a.xsd");
         library = XmlSchemaMapping.load(new DummyTestRouter(), null, "classpath:/xml-schema/library.xsd");
+        review = XmlSchemaMapping.load(new DummyTestRouter(), null, "classpath:/xml-schema/review.xsd");
     }
 
     @Test
@@ -91,6 +93,31 @@ class XmlSchemaMappingTest {
         final var books = json.get("library").get("book");
         assertEquals("{\"@currency\":\"EUR\",\"$value\":12.5}", books.get(0).get("price").toString());
         assertEquals("{\"$value\":9.99}", books.get(1).get("price").toString());
+    }
+
+    @Test
+    void anElementFromAnIncludeWithoutTargetNamespaceIsDeclaredInTheIncludingNamespace() throws Exception {
+        final var json = new ObjectMapper().readTree(review.toJson(new InputSource(new StringReader("""
+                <note xmlns="https://example.com/review"><text>hello</text><count>3</count></note>"""))));
+
+        assertEquals("{\"note\":{\"text\":\"hello\",\"count\":3}}", json.toString());
+    }
+
+    @Test
+    void anElementFromAnIncludeWithoutTargetNamespaceIsNotDeclaredWithoutNamespace() {
+        assertThrows(UndeclaredElementException.class, () -> review.toJson(new InputSource(new StringReader(
+                "<note><text>hello</text><count>3</count></note>"))));
+    }
+
+    @Test
+    void anElementFromAnIncludeWithoutTargetNamespaceIsWrittenInTheIncludingNamespace() throws Exception {
+        final var xml = new String(review.toXml("{\"note\": {\"text\": \"hi\", \"count\": 1}}"), UTF_8);
+
+        final var factory = DocumentBuilderFactory.newInstance();
+        factory.setNamespaceAware(true);
+        final var root = factory.newDocumentBuilder().parse(new InputSource(new StringReader(xml))).getDocumentElement();
+        assertEquals("https://example.com/review", root.getNamespaceURI(), xml);
+        assertEquals("hi", root.getElementsByTagNameNS("https://example.com/review", "text").item(0).getTextContent(), xml);
     }
 
     @Test
