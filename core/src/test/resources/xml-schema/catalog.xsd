@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Tests: the same schema without targetNamespace (review-note.xsd, which includes
+  review-types.xsd) included from two namespaces — directly here, and by the imported review.xsd.
+  Its declarations exist in both namespaces.
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="https://example.com/catalog">
+
+    <xs:import namespace="https://example.com/review" schemaLocation="review.xsd"/>
+    <xs:include schemaLocation="review-note.xsd"/>
+
+</xs:schema>

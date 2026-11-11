@@ -50,7 +50,7 @@ public class Definitions extends WSDLElement {
     private Set<SOAPVersion> soapVersions = new HashSet<>();
 
     private Definitions(Resolver resolver, String location) throws Exception {
-        super(new WSDLParserContext(null, resolver, location, new ArrayList<>()), read(resolver, location));
+        super(new WSDLParserContext(null, resolver, location, new HashSet<>()), read(resolver, location));
         ctx = ctx.definitions(this);
         parse();
     }

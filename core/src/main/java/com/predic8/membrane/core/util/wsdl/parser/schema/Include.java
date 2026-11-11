@@ -26,18 +26,27 @@ public class Include extends AbstractIncludeImport {
     }
 
     /**
+     * The target namespace of the including schema: an included document either declares that
+     * namespace itself or takes it on, see {@link #adopt}.
+     */
+    @Override
+    protected String namespace() {
+        return ((Element) element.getParentNode()).getAttribute("targetNamespace");
+    }
+
+    /**
      * An included schema without a {@code targetNamespace} takes on the namespace of the schema
      * including it — a "chameleon" include (XSD 1.0, 4.2.1). Its root gets that
      * {@code targetNamespace}, and, unless it binds a default namespace of its own, that namespace
      * as its default, so that its unprefixed references to its own components resolve into it.
-     * The DOM is this include's own, freshly parsed, so rewriting it affects nothing else; a
-     * document already visited is not parsed again, so only its first includer gives it a namespace.
-     * Because the including schema has been adopted the same way before its includes are resolved,
-     * the namespace is passed on through nested includes.
+     * The DOM is this include's own, freshly parsed, so rewriting it affects nothing else. Such a
+     * document is loaded once for every namespace including it (see {@link #namespace()}). Because
+     * the including schema has been adopted the same way before its includes are resolved, the
+     * namespace is passed on through nested includes.
      */
     @Override
     protected Element adopt(Element schemaRoot) {
-        final var namespace = ((Element) element.getParentNode()).getAttribute("targetNamespace");
+        final var namespace = namespace();
         if (namespace.isEmpty() || !schemaRoot.getAttribute("targetNamespace").isEmpty()) return schemaRoot;
 
         schemaRoot.setAttribute("targetNamespace", namespace);

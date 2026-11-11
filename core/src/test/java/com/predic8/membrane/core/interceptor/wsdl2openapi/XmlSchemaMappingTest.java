@@ -18,6 +18,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.router.DummyTestRouter;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.xml.sax.InputSource;
 
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -31,12 +33,14 @@ class XmlSchemaMappingTest {
     private static XmlSchemaMapping notes;
     private static XmlSchemaMapping library;
     private static XmlSchemaMapping review;
+    private static XmlSchemaMapping catalog;
 
     @BeforeAll
     static void load() {
         notes = XmlSchemaMapping.load(new DummyTestRouter(), null, "classpath:/xml-schema/notes-a.xsd");
         library = XmlSchemaMapping.load(new DummyTestRouter(), null, "classpath:/xml-schema/library.xsd");
         review = XmlSchemaMapping.load(new DummyTestRouter(), null, "classpath:/xml-schema/review.xsd");
+        catalog = XmlSchemaMapping.load(new DummyTestRouter(), null, "classpath:/xml-schema/catalog.xsd");
     }
 
     @Test
@@ -118,6 +122,15 @@ class XmlSchemaMappingTest {
         final var root = factory.newDocumentBuilder().parse(new InputSource(new StringReader(xml))).getDocumentElement();
         assertEquals("https://example.com/review", root.getNamespaceURI(), xml);
         assertEquals("hi", root.getElementsByTagNameNS("https://example.com/review", "text").item(0).getTextContent(), xml);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"https://example.com/catalog", "https://example.com/review"})
+    void anIncludeWithoutTargetNamespaceFromTwoNamespacesDeclaresItsElementsInBoth(String namespace) throws Exception {
+        final var json = new ObjectMapper().readTree(catalog.toJson(new InputSource(new StringReader("""
+                <note xmlns="%s"><text>hello</text><count>3</count></note>""".formatted(namespace)))));
+
+        assertEquals("{\"{%s}note\":{\"text\":\"hello\",\"count\":3}}".formatted(namespace), json.toString());
     }
 
     @Test

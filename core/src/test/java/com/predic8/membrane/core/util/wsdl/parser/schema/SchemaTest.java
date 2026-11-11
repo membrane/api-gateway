@@ -52,6 +52,16 @@ class SchemaTest {
     }
 
     @Test
+    void aSchemaWithoutTargetNamespaceIncludedFromTwoNamespacesIsLoadedForEach() throws Exception {
+        final var byNamespace = Schema.schemasByNamespace(List.of(
+                Schema.parse(new ResolverMap(), "classpath:/xml-schema/catalog.xsd")));
+
+        assertEquals(Set.of("https://example.com/catalog", "https://example.com/review"), byNamespace.keySet());
+        assertEquals(3, byNamespace.get("https://example.com/catalog").size(), "catalog.xsd and both nested includes");
+        assertEquals(3, byNamespace.get("https://example.com/review").size(), "review.xsd and both nested includes");
+    }
+
+    @Test
     void aDocumentThatIsNoSchemaIsRejected() {
         final var e = assertThrows(WSDLParserException.class,
                 () -> Schema.parse(new ResolverMap(), "classpath:/ws/hello-soap12.wsdl"));

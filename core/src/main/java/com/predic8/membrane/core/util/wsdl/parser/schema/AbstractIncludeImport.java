@@ -51,8 +51,8 @@ public abstract class AbstractIncludeImport extends WSDLElement {
     protected Schema getSchema(WSDLParserContext ctx) {
         var resolved = resolve(ctx);
 
-        // Check if the schema has already been imported or included
-        if (ctx.visitedLocations().contains(resolved))
+        // Check if the schema has already been imported or included into the same namespace
+        if (!ctx.load(resolved, namespace()))
             return null;
 
         try (var is = ctx.resolver().resolve(resolved)) {
@@ -65,6 +65,12 @@ public abstract class AbstractIncludeImport extends WSDLElement {
             throw logAndFail("read", ctx, e);
         }
     }
+
+    /**
+     * The namespace the declarations of the referenced schema document end up in, known before it
+     * is loaded. Called from the constructor, so an override must not rely on its own fields.
+     */
+    protected abstract String namespace();
 
     /**
      * Adapts the root element of the referenced schema document before it is parsed into a

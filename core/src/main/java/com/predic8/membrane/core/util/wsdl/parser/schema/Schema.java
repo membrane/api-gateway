@@ -16,6 +16,7 @@ package com.predic8.membrane.core.util.wsdl.parser.schema;
 
 import com.predic8.membrane.core.resolver.Resolver;
 import com.predic8.membrane.core.util.wsdl.parser.*;
+import com.predic8.membrane.core.util.wsdl.parser.WSDLParserContext.LoadedSchema;
 import org.w3c.dom.*;
 
 import java.util.*;
@@ -52,10 +53,10 @@ public class Schema extends WSDLElement {
             throw new WSDLParserException("The document at %s is not an XML Schema: its root element is {%s}%s."
                     .formatted(location, root.getNamespaceURI(), root.getLocalName()));
         }
-        // The document itself counts as visited, so that a schema importing it back does not load it twice.
-        final var visited = new ArrayList<String>();
-        visited.add(getNormalizedAbsolutePathOrUri(location));
-        return new Schema(new WSDLParserContext(null, resolver, location, visited), root);
+        // The document itself counts as loaded, so that a schema importing it back does not load it twice.
+        final var loaded = new HashSet<LoadedSchema>();
+        loaded.add(new LoadedSchema(getNormalizedAbsolutePathOrUri(location), root.getAttribute("targetNamespace")));
+        return new Schema(new WSDLParserContext(null, resolver, location, loaded), root);
     }
 
     /**
