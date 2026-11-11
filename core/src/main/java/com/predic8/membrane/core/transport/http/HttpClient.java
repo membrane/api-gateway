@@ -17,6 +17,7 @@ package com.predic8.membrane.core.transport.http;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
+import com.predic8.membrane.core.transport.http.client.SystemProxy;
 import com.predic8.membrane.core.transport.http.client.protocol.ProtocolHandlerFactory;
 import com.predic8.membrane.core.transport.http.streampump.StreamPump;
 import com.predic8.membrane.core.util.TimerManager;
@@ -26,7 +27,9 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.net.MalformedURLException;
+import java.util.function.Supplier;
 
+import static com.predic8.membrane.core.http.Header.PROXY_AUTHORIZATION;
 import static com.predic8.membrane.core.transport.http.client.protocol.Http2ProtocolHandler.UPGRADED_PROTOCOL;
 import static com.predic8.membrane.core.util.HttpUtil.getPathAndQueryString;
 
@@ -60,8 +63,12 @@ public class HttpClient implements AutoCloseable {
     }
 
     public HttpClient(@Nullable HttpClientConfiguration clientConfiguration, @Nullable TimerManager timerManager) {
+        this(clientConfiguration, timerManager, SystemProxy::read);
+    }
+
+    HttpClient(@Nullable HttpClientConfiguration clientConfiguration, @Nullable TimerManager timerManager, Supplier<SystemProxy> systemProxy) {
         configuration = clientConfiguration != null ? clientConfiguration : new HttpClientConfiguration();
-        connectionFactory = new ConnectionFactory(this.configuration, timerManager);
+        connectionFactory = new ConnectionFactory(this.configuration, timerManager, systemProxy);
         protocolHandlerFactory = new ProtocolHandlerFactory(configuration, connectionFactory);
     }
 
@@ -79,9 +86,12 @@ public class HttpClient implements AutoCloseable {
         var outConType = connectionFactory.getConnection(exc, hcp, attempt);
         setRequestURI(exc.getRequest(), target, outConType.con());
 
-        if (configuration.getProxy() != null && configuration.getProxy().isAuthentication() && outConType.sslProvider() == null) {
+        var proxy = outConType.con().getProxyConfiguration();
+        if (proxy != null && proxy.isAuthentication() && outConType.sslProvider() == null) {
             // if we use a proxy for a plain HTTP (=non-HTTPS) request, attach the proxy credentials.
-            exc.getRequest().getHeader().setProxyAuthorization(configuration.getProxy().getCredentials());
+            exc.getRequest().getHeader().setProxyAuthorization(proxy.getCredentials());
+        } else {
+            removeProxyCredentialsOfEarlierAttempt(exc);
         }
 
         protocolHandlerFactory.getHandlerForConnection(exc, outConType).handle(exc, outConType, hcp);
@@ -105,6 +115,20 @@ public class HttpClient implements AutoCloseable {
         if (configuration.isAdjustHostHeader() && (exc.getProxy() == null || exc.getProxy().isTargetAdjustHostHeader())) {
             exc.getRequest().getHeader().setHost(target.toString());
         }
+    }
+
+    // A retry can go direct (noProxy) or through a TLS tunnel after a proxied plain HTTP attempt. Only the credentials
+    // of this client's proxies are removed, any other Proxy-Authorization header that came with the request is kept.
+    private void removeProxyCredentialsOfEarlierAttempt(Exchange exc) {
+        final var header = exc.getRequest().getHeader();
+        for (var field : header.getAllHeaderFields()) {
+            if (field.getHeaderName().hasName(PROXY_AUTHORIZATION) && isCredentialsOfOwnProxy(field.getValue()))
+                header.remove(field);
+        }
+    }
+
+    private boolean isCredentialsOfOwnProxy(String value) {
+        return connectionFactory.getProxies().stream().anyMatch(proxy -> proxy.isAuthentication() && value.equals(proxy.getCredentials()));
     }
 
     private void setAuthorizationHeader(Exchange exc) {
@@ -161,7 +185,7 @@ public class HttpClient implements AutoCloseable {
         }
 
         // Use complete URL with protocol and host. The proxy needs to know where to forward
-        if (configuration.getProxy() != null && !con.isTunneled()) {
+        if (con.getProxyConfiguration() != null && !con.isTunneled()) {
             req.setUri(dest);
             return;
         }
