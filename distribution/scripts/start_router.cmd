@@ -115,6 +115,17 @@ exit /b 0
 rem Absolute paths, UNC paths and URIs are left unchanged, like in start_router.sh.
 rem Windows file names cannot contain ":", so any colon means a drive path or a URI/resource prefix (file:, classpath:, ...).
 :resolve_location
+rem Log4j trims each location, so "a.xml, b.xml" is valid.
+:resolve_trim_start
+if defined LOC if "!LOC:~0,1!"==" " (
+    set "LOC=!LOC:~1!"
+    goto :resolve_trim_start
+)
+:resolve_trim_end
+if defined LOC if "!LOC:~-1!"==" " (
+    set "LOC=!LOC:~0,-1!"
+    goto :resolve_trim_end
+)
 if defined LOC if not "!LOC:~0,1!"=="\" if not "!LOC:~0,1!"=="/" if "!LOC::=!"=="!LOC!" (
     set "LOC=!MEMBRANE_HOME!\!LOC!"
     set "CHANGED=1"
