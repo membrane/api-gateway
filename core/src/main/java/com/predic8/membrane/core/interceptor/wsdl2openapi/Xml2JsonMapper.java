@@ -35,9 +35,11 @@ import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.*;
  * An element marked {@code xsi:nil="true"} becomes JSON {@code null}, matching the
  * {@code nullable} that {@code XsdToSchema} derives from {@code nillable="true"}.
  * An element that has attributes but no child elements becomes an object carrying those attributes
- * plus its own text value under {@code $value}.
+ * plus its own text value under {@code $value}; so does an element whose schema declares
+ * {@code $value}, even when none of its optional attributes is present.
  * A root element that is itself a scalar (no child elements, and the schema names an XSD scalar
- * type rather than an object) is emitted as a bare JSON value, not an empty object.
+ * type rather than an object) is emitted as a bare JSON value, not an empty object; a root of an
+ * {@code xsd:simpleContent} type keeps its typed text value the same way a child element does.
  *
  * <p>Stateless apart from the components it resolves references against, so one instance can
  * serve concurrent requests as long as nobody modifies those schemas.
@@ -56,13 +58,13 @@ class Xml2JsonMapper {
     }
 
     /**
-     * The JSON value of a root element: {@code null} if it is nil, a bare scalar if it is a scalar
-     * root, otherwise a map. {@code schema} may be {@code null}, which converts the element
-     * structurally with every scalar as a string.
+     * The JSON value of a root element: {@code null} if it is nil, its leaf value if it is a scalar
+     * or simpleContent root, otherwise a map. {@code schema} may be {@code null}, which converts
+     * the element structurally with every scalar as a string.
      */
     Object toJson(Element element, Schema<?> schema) {
         if (isNil(element)) return null;
-        if (isScalarRoot(element, schema)) return leafValue(element, schema);
+        if (isScalarRoot(element, schema) || isSimpleContentRoot(element, schema)) return leafValue(element, schema);
         return elementToMap(element, schema);
     }
 
@@ -83,6 +85,16 @@ class Xml2JsonMapper {
         if (resolved == null) return false;
         String type = resolved.getType();
         return type != null && !"object".equals(type) && !"array".equals(type);
+    }
+
+    /**
+     * Whether the root element is of an {@code xsd:simpleContent} type: it has no child elements,
+     * and its schema declares the text value under {@code $value}. Its schema says "object", so
+     * {@link #isScalarRoot} rejects it, but {@link #elementToMap} would drop its text — it gets
+     * the same {@link #leafValue} treatment as a simpleContent child element.
+     */
+    private boolean isSimpleContentRoot(Element element, Schema<?> schema) {
+        return !hasChildElements(element) && propertiesOf(resolve(schema)).containsKey(VALUE_KEY);
     }
 
     Map<String, Object> elementToMap(Element element, Schema<?> schema) {
@@ -119,7 +131,9 @@ class Xml2JsonMapper {
      * A leaf element's text value. An element carrying attributes cannot be represented by that
      * value alone, so it becomes an object holding the attributes plus the value under
      * {@code $value} — the shape {@code XsdToSchema} publishes for an {@code xsd:simpleContent}
-     * type. Without attributes the value stands on its own, as a plain scalar.
+     * type with attributes. When the schema declares {@code $value}, the element is that object
+     * even if none of its optional attributes is present, so that the JSON keeps the declared shape.
+     * Otherwise, without attributes, the value stands on its own, as a plain scalar.
      */
     private Object leafValue(Element element, Schema<?> schema) {
         Schema<?> resolved = resolve(schema);
@@ -132,7 +146,7 @@ class Xml2JsonMapper {
         Object text = convertLeaf(element.getTextContent(),
                 declaredValueSchema != null ? declaredValueSchema : resolved);
 
-        if (attributes.isEmpty()) return text;
+        if (attributes.isEmpty() && declaredValueSchema == null) return text;
         attributes.put(VALUE_KEY, text);
         return attributes;
     }

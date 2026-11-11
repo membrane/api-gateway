@@ -40,7 +40,7 @@ api:
         status: 200
 
 # NOTE: With xmlSchema, attributes become keys starting with "@", and the text
-#       of an element that also has attributes is put under "$value".
+#       of an element whose type declares attributes is put under "$value".
 #
 #       json2Xml takes xmlSchema as well and turns such JSON back into XML.
 #

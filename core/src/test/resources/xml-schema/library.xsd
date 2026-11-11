@@ -1,13 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   Tests: a schema without targetNamespace, referring to its named types without a prefix. Typed
-  values, an attribute, an element that may repeat, simpleContent with an attribute, nillable.
+  values, an attribute, an element that may repeat, simpleContent with an attribute (also as a
+  root element), nillable.
 -->
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
 
     <xs:element name="library" type="LibraryType"/>
 
     <xs:element name="ping" type="xs:string"/>
+
+    <xs:element name="price" type="PriceType"/>
 
     <xs:complexType name="LibraryType">
         <xs:sequence>

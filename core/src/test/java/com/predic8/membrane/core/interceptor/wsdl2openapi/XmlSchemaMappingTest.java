@@ -29,10 +29,12 @@ import static org.junit.jupiter.api.Assertions.*;
 class XmlSchemaMappingTest {
 
     private static XmlSchemaMapping notes;
+    private static XmlSchemaMapping library;
 
     @BeforeAll
     static void load() {
         notes = XmlSchemaMapping.load(new DummyTestRouter(), null, "classpath:/xml-schema/notes-a.xsd");
+        library = XmlSchemaMapping.load(new DummyTestRouter(), null, "classpath:/xml-schema/library.xsd");
     }
 
     @Test
@@ -58,6 +60,37 @@ class XmlSchemaMappingTest {
     @Test
     void theUnqualifiedLocalNameOfAnAmbiguousElementIsUndeclared() {
         assertThrows(UndeclaredElementException.class, () -> notes.toXml("{\"note\": {}}"));
+    }
+
+    @Test
+    void aSimpleContentRootKeepsItsTypedValueNextToItsAttributes() throws Exception {
+        final var json = new ObjectMapper().readTree(library.toJson(new InputSource(new StringReader(
+                "<price currency=\"EUR\">9.99</price>"))));
+
+        assertEquals("{\"price\":{\"@currency\":\"EUR\",\"$value\":9.99}}", json.toString());
+    }
+
+    @Test
+    void aSimpleContentRootWithoutItsOptionalAttributeIsStillAnObject() throws Exception {
+        final var json = new ObjectMapper().readTree(library.toJson(new InputSource(new StringReader(
+                "<price>9.99</price>"))));
+
+        assertEquals("{\"price\":{\"$value\":9.99}}", json.toString());
+    }
+
+    @Test
+    void aSimpleContentChildWithoutItsOptionalAttributeHasTheShapeTheSchemaDeclares() throws Exception {
+        final var json = new ObjectMapper().readTree(library.toJson(new InputSource(new StringReader("""
+                <library>
+                    <book id="1"><title>A</title><author>X</author><pages>10</pages>
+                        <price currency="EUR">12.50</price><available>true</available><note>n</note></book>
+                    <book id="2"><title>B</title><author>Y</author><pages>20</pages>
+                        <price>9.99</price><available>false</available><note>n</note></book>
+                </library>"""))));
+
+        final var books = json.get("library").get("book");
+        assertEquals("{\"@currency\":\"EUR\",\"$value\":12.5}", books.get(0).get("price").toString());
+        assertEquals("{\"$value\":9.99}", books.get(1).get("price").toString());
     }
 
     @Test
