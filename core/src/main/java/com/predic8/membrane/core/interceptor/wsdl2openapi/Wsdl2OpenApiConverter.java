@@ -14,6 +14,8 @@
 
 package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
+import com.predic8.membrane.core.interceptor.soap2json.SelectedPort;
+import com.predic8.membrane.core.interceptor.soap2json.WsdlPartsToSchema;
 import com.predic8.membrane.core.util.xml.schema.XsdDomUtil;
 import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.HttpUtil;
@@ -39,7 +41,9 @@ import java.util.stream.Collectors;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_PROBLEM_JSON;
+import static com.predic8.membrane.core.interceptor.wsdl2openapi.OperationRouter.camelToKebab;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.OperationRouter.extractParamNames;
+import static com.predic8.membrane.core.interceptor.soap2json.SoapFaultProblemDetails.FAULT_DETAILS_FIELD;
 import static com.predic8.membrane.core.util.xml.schema.XsdDomUtil.*;
 import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.OUTPUT;
 
@@ -78,16 +82,6 @@ public class Wsdl2OpenApiConverter {
         if (configured != null) return configured;
         return hasOutput ? 200 : 204;
     }
-
-    /**
-     * Problem details subtype for a failed operation. Deliberately says nothing about SOAP: the
-     * {@code type} URI reaches the client, and an operator may not want to advertise that a legacy
-     * service sits behind the API.
-     */
-    static final String OPERATION_ERROR_TYPE = "operation-error";
-
-    /** The problem details member carrying the content of a fault the operation declares. */
-    static final String FAULT_DETAILS_FIELD = "details";
 
     /** What {@code info.version} says when the plugin is not configured with one. */
     static final String DEFAULT_VERSION = "1.0.0";

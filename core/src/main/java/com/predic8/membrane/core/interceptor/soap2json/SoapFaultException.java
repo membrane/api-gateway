@@ -12,7 +12,7 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.interceptor.wsdl2openapi;
+package com.predic8.membrane.core.interceptor.soap2json;
 
 import java.util.Map;
 
@@ -22,7 +22,7 @@ import java.util.Map;
  * {@code soapDetail} holds the content of the SOAP {@code <detail>}/{@code <Detail>} element (may be null),
  * keyed by the local name of each fault element it contains.
  */
-class SoapFaultException extends Exception {
+public class SoapFaultException extends Exception {
 
     private final String faultCode;
     private final Map<String, Object> soapDetail;
@@ -33,11 +33,11 @@ class SoapFaultException extends Exception {
         this.soapDetail = soapDetail;
     }
 
-    String getFaultCode() {
+    public String getFaultCode() {
         return faultCode;
     }
 
-    String getFaultMessage() {
+    public String getFaultMessage() {
         return getMessage();
     }
 

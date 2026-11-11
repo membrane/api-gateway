@@ -12,7 +12,7 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.interceptor.wsdl2openapi;
+package com.predic8.membrane.core.interceptor.soap2json;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.predic8.membrane.annot.Constants.SoapVersion;
@@ -43,7 +43,7 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static com.predic8.membrane.core.interceptor.wsdl2openapi.Soap2JsonInterceptor.OPERATION_PROPERTY;
+import static com.predic8.membrane.core.interceptor.soap2json.Soap2JsonInterceptor.OPERATION_PROPERTY;
 import static com.predic8.membrane.core.util.SOAPUtil.FaultCode.Client;
 import static com.predic8.membrane.core.util.SOAPUtil.FaultCode.Server;
 import static com.predic8.membrane.core.util.SOAPUtil.createSOAPFaultResponse;

@@ -11,7 +11,7 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.core.interceptor.wsdl2openapi;
+package com.predic8.membrane.core.interceptor.soap2json;
 
 import com.predic8.membrane.core.util.xml.schema.UndeclaredElementException;
 import com.predic8.membrane.core.util.xml.schema.XsdToSchema;

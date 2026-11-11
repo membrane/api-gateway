@@ -11,7 +11,7 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.core.interceptor.wsdl2openapi;
+package com.predic8.membrane.core.interceptor.soap2json;
 
 import com.predic8.membrane.core.router.Router;
 import com.predic8.membrane.core.util.ConfigurationException;
@@ -26,9 +26,9 @@ import static com.predic8.membrane.core.util.wsdl.parser.Definitions.parse;
 
 /**
  * Loads the WSDL an interceptor is configured with and selects the port it works on — the same
- * way, and with the same configuration errors, for every interceptor of this package.
+ * way, and with the same configuration errors, for soap2Json, json2Soap and wsdl2openapi.
  */
-final class WsdlLoader {
+public final class WsdlLoader {
 
     private WsdlLoader() {}
 
@@ -38,7 +38,7 @@ final class WsdlLoader {
      *
      * @throws ConfigurationException if the WSDL cannot be read or parsed
      */
-    static Definitions parseWsdl(Router router, String baseLocation, String wsdl) {
+    public static Definitions parseWsdl(Router router, String baseLocation, String wsdl) {
         try {
             final var resolvedWsdl = combine(router.getConfiguration().getUriFactory(), baseLocation, wsdl);
             return parse(router.getResolverMap(), resolvedWsdl);
@@ -52,7 +52,7 @@ final class WsdlLoader {
      *
      * @throws ConfigurationException if no port, or not exactly one, matches
      */
-    static SelectedPort selectPort(Definitions definitions, String wsdl, String service, String port) {
+    public static SelectedPort selectPort(Definitions definitions, String wsdl, String service, String port) {
         try {
             return SelectedPort.select(definitions, service, port);
         } catch (WSDLParserException e) {
@@ -66,7 +66,7 @@ final class WsdlLoader {
      *
      * @throws ConfigurationException if the binding gives the operation an action that is not a URI
      */
-    static void validateSoapAction(SelectedPort port, String wsdl, String operationName) {
+    public static void validateSoapAction(SelectedPort port, String wsdl, String operationName) {
         final var action = port.soapAction(operationName);
         if (action == null || action.isEmpty()) return;
         try {

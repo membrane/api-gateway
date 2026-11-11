@@ -14,6 +14,13 @@
 
 package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
+import com.predic8.membrane.core.interceptor.soap2json.Soap2JsonTransformer;
+import com.predic8.membrane.core.interceptor.soap2json.Json2SoapTransformer;
+import com.predic8.membrane.core.interceptor.soap2json.SoapFaultException;
+import com.predic8.membrane.core.interceptor.soap2json.SoapFaultProblemDetails;
+import com.predic8.membrane.core.interceptor.soap2json.SelectedPort;
+import com.predic8.membrane.core.interceptor.soap2json.WsdlLoader;
+import com.predic8.membrane.core.interceptor.soap2json.WsdlPartsToSchema;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.annot.MCAttribute;
@@ -53,7 +60,6 @@ import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.OperationRouter.*;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.Wsdl2OpenApiConverter.*;
-import static com.predic8.membrane.core.util.xml.schema.XsdDomUtil.camelToKebab;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisher.PATH;
 import static com.predic8.membrane.core.util.HttpUtil.getMessageForStatusCode;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;

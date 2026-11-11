@@ -12,7 +12,7 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.interceptor.wsdl2openapi;
+package com.predic8.membrane.core.interceptor.soap2json;
 
 import com.predic8.membrane.core.util.xml.schema.XsdToSchema;
 import com.predic8.membrane.core.util.wsdl.parser.Definitions;
@@ -67,7 +67,7 @@ public class WsdlPartsToSchema extends XsdToSchema {
      * The key a fault's content appears under inside the detail element: the local name of its
      * wrapping XSD element, or the part name for RPC-style parts that only name a type.
      */
-    static String faultDetailKey(List<Part> parts) {
+    public static String faultDetailKey(List<Part> parts) {
         Part part = parts.getFirst();
         QName elementQName = part.getElementQName();
         return elementQName != null ? elementQName.getLocalPart() : part.getName();

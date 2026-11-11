@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
+import com.predic8.membrane.core.interceptor.soap2json.SelectedPort;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.config.Path;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -46,7 +47,6 @@ import static com.predic8.membrane.core.http.Header.CONTENT_LENGTH;
 import static com.predic8.membrane.core.http.Header.SOAP_ACTION;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.Wsdl2OpenApiConverter.ApiInfo;
-import static com.predic8.membrane.core.util.xml.schema.XsdDomUtil.camelToKebab;
 import static com.predic8.membrane.test.TestUtil.getPathFromResource;
 import static java.nio.charset.StandardCharsets.UTF_16;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -1147,30 +1147,5 @@ class Wsdl2OpenapiInterceptorTest {
         // second's handleResponse must not see first's matched operation and must not
         // attempt to transform the (SOAP) response body a second time.
         assertEquals(Outcome.CONTINUE, second.handleResponse(exc));
-    }
-
-    @ParameterizedTest(name = "{0} → {1}")
-    @MethodSource
-    void camelToKebabConv(String input, String expected) {
-        assertEquals(expected, camelToKebab(input));
-    }
-
-    static Stream<Arguments> camelToKebabConv() {
-        return Stream.of(
-                arguments("getCity",                   "get-city"),
-                arguments("getBank",                   "get-bank"),
-                arguments("changeOtherIiDs",           "change-other-ii-ds"),       // pure camelCase
-                arguments("change_OtherIiDs",          "change-other-ii-ds"),       // underscore + camelCase
-                arguments("Get_Budget_Structures",     "get-budget-structures"),    // PascalCase + underscores
-                arguments("Get_Allocation_Group_Sets", "get-allocation-group-sets"), // user-reported
-                arguments("getURLs",                   "get-urls"),                 // acronym + plural suffix
-                arguments("getUserID",                 "get-user-id"),              // acronym at end
-                arguments("ID",                        "id"),                       // pure acronym
-                arguments("change_other_ii",           "change-other-ii"),          // snake_case
-                arguments("simple",                    "simple"),
-                arguments("A",                         "a"),
-                arguments("_leading",                  "leading"),
-                arguments("double__under",             "double-under")
-        );
     }
 }

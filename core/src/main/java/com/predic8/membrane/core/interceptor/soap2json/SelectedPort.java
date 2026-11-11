@@ -12,7 +12,7 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.interceptor.wsdl2openapi;
+package com.predic8.membrane.core.interceptor.soap2json;
 
 import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.wsdl.parser.*;
@@ -40,7 +40,7 @@ import static com.predic8.membrane.core.util.wsdl.parser.Definitions.SOAPVersion
  * @param binding  the SOAP binding; {@code null} for a WSDL without a service whose port type has none
  * @param port     the port; {@code null} for a WSDL without a service
  */
-record SelectedPort(Service service, String name, PortType portType, Binding binding, Port port) {
+public record SelectedPort(Service service, String name, PortType portType, Binding binding, Port port) {
 
     /**
      * Selects the port by the configured service and port names, either of which may be
@@ -51,7 +51,7 @@ record SelectedPort(Service service, String name, PortType portType, Binding bin
      *
      * @throws ConfigurationException if no port, or not exactly one, matches
      */
-    static SelectedPort select(Definitions definitions, String serviceName, String portName) {
+    public static SelectedPort select(Definitions definitions, String serviceName, String portName) {
         if (definitions.getServices().isEmpty()) {
             if (serviceName != null || portName != null) {
                 throw new ConfigurationException("The WSDL declares no service, so neither a service nor a port can be selected.");
@@ -145,22 +145,22 @@ record SelectedPort(Service service, String name, PortType portType, Binding bin
      * address element. Read only for the selected port, so that a port nobody selected cannot fail
      * the configuration.
      */
-    String address() {
+    public String address() {
         if (port == null) return null;
         return port.findAddress().map(Address::getLocation).orElse(null);
     }
 
     /** The operations of the port type the port implements, in document order, unnamed ones included. */
-    List<Operation> operations() {
+    public List<Operation> operations() {
         return portType.getOperations();
     }
 
-    Optional<Operation> findOperation(String operationName) {
+    public Optional<Operation> findOperation(String operationName) {
         return portType.findOperation(operationName);
     }
 
     /** The binding's operation of that name; empty if there is no binding, or it does not cover the operation. */
-    Optional<BindingOperation> findBindingOperation(String operationName) {
+    public Optional<BindingOperation> findBindingOperation(String operationName) {
         if (binding == null) return Optional.empty();
         return binding.findBindingOperation(operationName);
     }
@@ -178,7 +178,7 @@ record SelectedPort(Service service, String name, PortType portType, Binding bin
     }
 
     /** SOAP 1.2 announces the action in the media type (RFC 3902), where SOAP 1.1 uses a header. */
-    String requestContentType(String operationName) {
+    public String requestContentType(String operationName) {
         if (soapVersion() != SOAP_12) return TEXT_XML;
         String action = soapAction(operationName);
         return action == null || action.isEmpty() ? APPLICATION_SOAP_XML
@@ -190,7 +190,7 @@ record SelectedPort(Service service, String name, PortType portType, Binding bin
      * string where the WSDL gives no action (WS-I Basic Profile R2744, R2745). {@code null} for
      * SOAP 1.2, which sends no such header.
      */
-    String soapActionHeader(String operationName) {
+    public String soapActionHeader(String operationName) {
         return soapVersion() == SOAP_12 ? null : "\"%s\"".formatted(soapAction(operationName));
     }
 }

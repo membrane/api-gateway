@@ -12,7 +12,7 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.interceptor.wsdl2openapi;
+package com.predic8.membrane.core.interceptor.soap2json;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
@@ -26,7 +26,7 @@ import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static com.predic8.membrane.core.interceptor.wsdl2openapi.Soap2JsonInterceptor.OPERATION_PROPERTY;
+import static com.predic8.membrane.core.interceptor.soap2json.Soap2JsonInterceptor.OPERATION_PROPERTY;
 import static org.junit.jupiter.api.Assertions.*;
 
 class Json2SoapInterceptorTest {

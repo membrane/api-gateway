@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
+import com.predic8.membrane.core.interceptor.soap2json.SelectedPort;
 import com.predic8.membrane.core.resolver.StaticStringResolver;
 import com.predic8.membrane.core.util.wsdl.parser.Definitions;
 import org.junit.jupiter.api.Test;

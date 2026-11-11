@@ -11,19 +11,27 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.core.interceptor.wsdl2openapi;
+package com.predic8.membrane.core.interceptor.soap2json;
 
 import com.predic8.membrane.core.http.Response;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.problemDetails;
-import static com.predic8.membrane.core.interceptor.wsdl2openapi.Wsdl2OpenApiConverter.FAULT_DETAILS_FIELD;
-import static com.predic8.membrane.core.interceptor.wsdl2openapi.Wsdl2OpenApiConverter.OPERATION_ERROR_TYPE;
 
 /**
  * Turns a SOAP fault a service answered with into the problem details document clients receive —
- * the same for every interceptor of this package that calls a SOAP service.
+ * the same for soap2Json and wsdl2openapi.
  */
-final class SoapFaultProblemDetails {
+public final class SoapFaultProblemDetails {
+
+    /**
+     * Problem details subtype for a failed operation. Deliberately says nothing about SOAP: the
+     * {@code type} URI reaches the client, and an operator may not want to advertise that a legacy
+     * service sits behind the API.
+     */
+    private static final String OPERATION_ERROR_TYPE = "operation-error";
+
+    /** The problem details member carrying the content of a fault the operation declares. */
+    public static final String FAULT_DETAILS_FIELD = "details";
 
     private SoapFaultProblemDetails() {}
 
@@ -36,7 +44,7 @@ final class SoapFaultProblemDetails {
      *
      * @param component the display name of the interceptor reporting the fault
      */
-    static Response of(SoapFaultException fault, boolean production, String component) {
+    public static Response of(SoapFaultException fault, boolean production, String component) {
         final var pd = problemDetails(OPERATION_ERROR_TYPE, production)
                 .component(component)
                 .status(500)
