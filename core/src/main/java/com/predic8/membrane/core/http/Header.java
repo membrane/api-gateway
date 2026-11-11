@@ -272,8 +272,10 @@ public class Header {
     /**
      * Parses a header block, as it is handed over by a MIME parser for one part of a multipart
      * message.
+     *
+     * @throws IOException if a line is neither a field nor the continuation of a folded one
      */
-    public Header(String header) {
+    public Header(String header) throws IOException {
         this(unfold(header).stream().map(HeaderField::new).toList());
     }
 
@@ -283,14 +285,16 @@ public class Header {
      * practice, and a continuation line is not a field of its own: it carries no name and no colon.
      * Unfolding drops the line break and keeps the leading whitespace, as the RFC prescribes.
      */
-    private static List<String> unfold(String header) {
+    private static List<String> unfold(String header) throws IOException {
         List<String> fields = new ArrayList<>();
         for (String line : header.split("\r?\n")) {
             if (line.isEmpty())
                 continue;
-            if (!isContinuation(line))
+            if (!isContinuation(line)) {
+                if (line.indexOf(':') < 0)
+                    throw new IOException("Malformed multipart part header: a line has no colon.");
                 fields.add(line);
-            else if (!fields.isEmpty())
+            } else if (!fields.isEmpty())
                 fields.set(fields.size() - 1, fields.getLast() + line);
             // A continuation before any field belongs to nothing and is dropped.
         }
