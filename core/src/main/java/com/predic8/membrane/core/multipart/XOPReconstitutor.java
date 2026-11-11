@@ -17,8 +17,10 @@ package com.predic8.membrane.core.multipart;
 import com.predic8.membrane.core.http.BodyCollectingMessageObserver;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.MessageUtil;
+import com.predic8.membrane.core.util.xml.parser.HardenedStaxInputFactory;
 import jakarta.mail.internet.ContentType;
 import jakarta.mail.internet.ParseException;
 import org.slf4j.Logger;
@@ -36,7 +38,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Writer;
 import java.util.HashMap;
+import java.util.HashSet;
 
+import static com.predic8.membrane.core.util.text.TextUtil.escapeControlCharsForLog;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.commons.codec.binary.Base64.encodeBase64;
 
@@ -51,19 +55,14 @@ public class XOPReconstitutor {
 	private static final Logger log = LoggerFactory.getLogger(XOPReconstitutor.class.getName());
 	private static final String XOP_NAMESPACE_URI = "http://www.w3.org/2004/08/xop/include";
 
-	private final XMLInputFactory xmlInputFactory;
-
-	public XOPReconstitutor() {
-		xmlInputFactory = XMLInputFactory.newInstance();
-		xmlInputFactory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false);
-		xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
-	}
-
 	public InputStream reconstituteIfNecessary(Message message) {
 		try {
 			Message reconstitutedMessage = getReconstitutedMessage(message);
 			if (reconstitutedMessage != null)
 				return reconstitutedMessage.getBodyAsStream();
+		} catch (ReadingBodyException e) {
+			// Invalid input from the sender; already logged where it is detected.
+			log.debug("Falling back to the original body.", e);
 		} catch (Exception e) {
 			log.warn("", e);
 		}
@@ -71,9 +70,7 @@ public class XOPReconstitutor {
 	}
 
 	private XMLEventReader createEventReaderFromStream(InputStream is) throws XMLStreamException {
-		synchronized (xmlInputFactory) {
-			return xmlInputFactory.createXMLEventReader(is);
-		}
+		return HardenedStaxInputFactory.inputFactory().createXMLEventReader(is);
 	}
 
 	/**
@@ -106,12 +103,13 @@ public class XOPReconstitutor {
 		if (startPart == null)
 			return null;
 
-		ContentType innerContentType = new ContentType(startPart.getHeader().getContentType());
-		if (!innerContentType.getPrimaryType().equals("application")
+		ContentType innerContentType = startPartContentType(startPart);
+		if (innerContentType == null
+				|| !innerContentType.getPrimaryType().equals("application")
 				|| !innerContentType.getSubType().equals("xop+xml"))
 			return null;
 
-		byte[] body = fillInXOPParts(startPart.getInputStream(), parts);
+		byte[] body = fillInXOPParts(startPart.getInputStream(), parts, message);
 
 		Message m = new Message(){
 			@Override
@@ -143,20 +141,45 @@ public class XOPReconstitutor {
 		return m;
 	}
 
-	/** Splits the multipart message and indexes parts by Content-ID for XOP lookup. */
-	private HashMap<String, Part> splitById(Message message, String boundary) throws IOException {
+	/**
+	 * Splits the multipart message and indexes parts by Content-ID for XOP lookup.
+	 *
+	 * @throws ReadingBodyException if the package is malformed or uses an unsupported part encoding
+	 */
+	private HashMap<String, Part> splitById(Message message, String boundary) {
 		HashMap<String, Part> byId = new HashMap<>();
-		for (Part part : MultipartUtil.split(message, boundary)) {
-			String id = part.getContentID();
-			if (id != null) {
-				byId.put(id, part);
+		try {
+			for (Part part : MultipartUtil.split(message, boundary)) {
+				String id = part.getContentID();
+				if (id != null) {
+					byId.put(id, part);
+				}
 			}
+		} catch (IOException e) {
+			log.info("Could not split XOP package: {}", escapeControlCharsForLog(e.getMessage()));
+			throw new ReadingBodyException(e, message);
 		}
 		return byId;
 	}
 
+	/**
+	 * @return the Content-Type of the start part, or null if it has none or it cannot be parsed. Such
+	 * a part is not an XOP root part, so the package is left as it is, as for any other type.
+	 */
+	private static ContentType startPartContentType(Part startPart) {
+		final var contentType = startPart.getHeader().getContentType();
+		if (contentType == null)
+			return null;
+		try {
+			return new ContentType(contentType);
+		} catch (ParseException e) {
+			log.debug("Start part of XOP package has an unparsable Content-Type.", e);
+			return null;
+		}
+	}
+
 	private byte[] fillInXOPParts(InputStream inputStream,
-			HashMap<String, Part> parts) throws XMLStreamException, FactoryConfigurationError {
+			HashMap<String, Part> parts, Message source) throws XMLStreamException, FactoryConfigurationError {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		XMLEventWriter writer = XMLOutputFactory.newInstance().createXMLEventWriter(baos);
 
@@ -164,6 +187,7 @@ public class XOPReconstitutor {
 			XMLEventReader parser = createEventReaderFromStream(inputStream);
 
 			boolean xopIncludeOpen = false;
+			final var included = new HashSet<String>();
 
 			while (parser.hasNext()) {
 				XMLEvent event = parser.nextEvent();
@@ -171,14 +195,31 @@ public class XOPReconstitutor {
 				if (event instanceof StartElement start) {
 					if (XOP_NAMESPACE_URI.equals(start.getName().getNamespaceURI()) &&
 							start.getName().getLocalPart().equals("Include")) {
-						String href = start.getAttributeByName(new QName("href")).getValue();
+						final var hrefAttribute = start.getAttributeByName(new QName("href"));
+						if (hrefAttribute == null) {
+							log.info("xop:Include without href attribute.");
+							throw new ReadingBodyException(new IOException("xop:Include without href attribute."), source);
+						}
+						String href = hrefAttribute.getValue();
 
 						if (href.startsWith("cid:"))
 							href = href.substring(4);
 
 						Part p = parts.get("<" + href + ">");
-						if (p == null)
-							throw new RuntimeException("Did not find multipart with id " + href);
+						if (p == null) {
+							log.info("Did not find multipart with id {}.", escapeControlCharsForLog(href));
+							throw new ReadingBodyException(new IOException(
+									"Did not find multipart with id %s.".formatted(href)), source);
+						}
+						// SOAP 1.2 MTOM 4.3.1.1: an extracted part MUST NOT be referenced by more than one
+						// xop:Include. Inlining it again for every reference would let a small package
+						// expand without bound; with distinct references the output stays linear in the input.
+						if (!included.add(href)) {
+							log.info("Multipart with id {} is referenced more than once.", escapeControlCharsForLog(href));
+							// Attribute invalid input to its sender, even when decoded in the opposite flow.
+							throw new ReadingBodyException(new IOException(
+									"Multipart with id %s is referenced more than once.".formatted(href)), source);
+						}
 
 						writer.add(base64CharactersEvent(p.getBody()));
 						xopIncludeOpen = true;
@@ -197,8 +238,8 @@ public class XOPReconstitutor {
 			}
 			writer.flush();
 		} catch (XMLStreamException e) {
-			log.warn("Received not-wellformed XML.");
-			return null;
+			log.info("Start part of XOP package is not well-formed XML: {}", escapeControlCharsForLog(e.getMessage()));
+			throw new ReadingBodyException(new IOException("Start part of XOP package is not well-formed XML."), source);
 		}
 		return baos.toByteArray();
 	}

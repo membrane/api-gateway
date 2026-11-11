@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=https://www.membrane-api.io/v7.8.0.json
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.8.1.json
 #
 # Tutorial: Shadowing Traffic
 #
@@ -35,12 +35,10 @@ api:
   flow:
     - shadowing:
         targets:
-          - target:
-              host: localhost
-              port: 3001
-          - target:
-              host: localhost
-              port: 3002
+          - host: localhost
+            port: 3001
+          - host: localhost
+            port: 3002
   target:
     host: localhost
     port: 3000

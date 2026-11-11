@@ -39,6 +39,7 @@ import static com.predic8.membrane.annot.model.OtherAttributesInfo.ValueType.STR
 import static java.util.Locale.ROOT;
 import static javax.lang.model.element.ElementKind.ENUM;
 import static javax.lang.model.element.ElementKind.ENUM_CONSTANT;
+import static javax.lang.model.element.Modifier.ABSTRACT;
 import static javax.tools.StandardLocation.CLASS_OUTPUT;
 
 /**
@@ -487,6 +488,9 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         }
 
         itemsObjectSchema.type("object").additionalProperties(childSpec.getAnnotation().allowForeign());
+        // The parser binds "{}" to a concrete item type but cannot pick an implementation for an abstract one.
+        if (isAbstractOrInterface(childSpec.getTypeDeclaration()))
+            itemsObjectSchema.minProperties(1);
 
         if (parentElementInfo.getAnnotation().noEnvelope()) {
             setItemsIfArray(parentSchema, itemsObjectSchema);
@@ -628,6 +632,8 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         var childDeclaration = getChildElementDeclarationInfo(main, childSpec);
         if (childDeclaration == null) return false;
 
+        if (isAbstractOrInterface(childSpec.getTypeDeclaration())) return false;
+
         var candidateElementInfos = childDeclaration.getElementInfo().stream()
                 .filter(candidateElementInfo -> !candidateElementInfo.getAnnotation().topLevel())
                 .toList();
@@ -641,6 +647,10 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         if (itemElementInfo.getAnnotation().noEnvelope()) return false;
 
         return hasAnyConfigurableProperty(itemElementInfo, main);
+    }
+
+    private static boolean isAbstractOrInterface(TypeElement type) {
+        return type.getKind().isInterface() || type.getModifiers().contains(ABSTRACT);
     }
 
     private void attachArrayItems(ElementInfo parentElementInfo, AbstractSchema<?> parentSchema, ChildElementInfo childSpec, AbstractSchema<?> arrayItemsSchema) {

@@ -18,6 +18,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.re2j.PatternSyntaxException;
 
 import java.io.IOException;
 import java.nio.file.*;
@@ -36,8 +37,9 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * {@code crs-sqli-rules.json} resource consumed by {@code SqlInjectionProtectionInterceptor} in the core module.
  * <p>
  * Only the {@code @rx} (plain regex) rules are extracted; the two {@code @detectSQLi} (libinjection) rules and
- * the CRS anomaly-scoring machinery are intentionally dropped. Every CRS regex compiles unchanged under
- * {@link java.util.regex.Pattern}. Chained rules whose second condition cannot be represented — i.e. anything
+ * the CRS anomaly-scoring machinery are intentionally dropped. Core matches the rules with RE2/J, which runs in
+ * linear time, so a crafted request cannot make a rule backtrack. Every regex must therefore compile under
+ * {@link com.google.re2j.Pattern} (no lookarounds, no backreferences); the transpiler fails otherwise. Chained rules whose second condition cannot be represented — i.e. anything
  * other than a positive {@code @rx} against the same request content (CRS chains on {@code TX:n} /
  * {@code MATCHED_VARS} with {@code @streq} / {@code !@streq} / {@code !@rx}) — are dropped whole rather than
  * emitted without their constraint.
@@ -132,7 +134,9 @@ public class CrsSqliRuleTranspiler {
         List<ObjectNode> rules = new ArrayList<>();
         ObjectNode pendingChain = null; // a rule awaiting its chained second condition
 
-        Matcher directives = DIRECTIVE.matcher(CONTINUATION.matcher(conf).replaceAll(""));
+        // A Windows checkout (core.autocrlf=true) has CRLF line endings, which CONTINUATION would not join.
+        final var lfConf = conf.replace("\r\n", "\n");
+        Matcher directives = DIRECTIVE.matcher(CONTINUATION.matcher(lfConf).replaceAll(""));
         while (directives.find()) {
             String directive = directives.group();
             Matcher op = OPERATOR.matcher(directive);
@@ -178,10 +182,28 @@ public class CrsSqliRuleTranspiler {
                 rules.add(rule);
         }
 
+        rules.forEach(CrsSqliRuleTranspiler::requireRe2Compatible);
         rules.sort(Comparator.comparing(r -> r.get("id").asText()));
         ArrayNode array = MAPPER.createArrayNode();
         rules.forEach(array::add);
         return array;
+    }
+
+    /**
+     * Core matches with RE2/J to rule out catastrophic backtracking. A CRS regex RE2/J cannot compile must fail
+     * the build instead of failing when the interceptor starts.
+     */
+    private static void requireRe2Compatible(ObjectNode rule) {
+        for (var field : List.of("regex", "requires")) {
+            if (!rule.hasNonNull(field))
+                continue;
+            try {
+                com.google.re2j.Pattern.compile(rule.get(field).asText());
+            } catch (PatternSyntaxException e) {
+                throw new IllegalStateException("Rule %s: %s is not supported by RE2/J: %s".formatted(
+                        rule.get("id").asText(), field, e.getMessage()), e);
+            }
+        }
     }
 
     /**

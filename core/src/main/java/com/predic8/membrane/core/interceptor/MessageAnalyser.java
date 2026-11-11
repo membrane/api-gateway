@@ -18,6 +18,7 @@ import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.multipart.*;
+import com.predic8.membrane.core.util.xml.parser.HardenedStaxInputFactory;
 import org.slf4j.*;
 
 import javax.xml.stream.*;
@@ -52,12 +53,6 @@ public class MessageAnalyser extends AbstractInterceptor {
 	public static final String RESPONSE_SOAP_OPERATION_NS = "MEMResponseSoapOperationNS";
 
 	private static final XOPReconstitutor xopr = new XOPReconstitutor();
-	private static final XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
-
-	static {
-		xmlInputFactory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false);
-		xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
-	}
 
 	private static class ExtractedData {
 		public String rootElementName;
@@ -100,6 +95,7 @@ public class MessageAnalyser extends AbstractInterceptor {
             data = analyse(exc.getRequest());
         } catch (Exception e) {
 			log.error("Could not analyse request.", e);
+			return Outcome.CONTINUE;
         }
 
         if (!data.hasAnyData()) {
@@ -128,6 +124,7 @@ public class MessageAnalyser extends AbstractInterceptor {
             data = analyse(exc.getResponse());
         } catch (Exception e) {
             log.error("Could not analyse response.", e);
+            return Outcome.CONTINUE;
         }
 
         if (!data.hasAnyData()) {
@@ -182,9 +179,7 @@ public class MessageAnalyser extends AbstractInterceptor {
 
 	private XMLStreamReader getReader(Message msg) throws XMLStreamException,
 	FactoryConfigurationError, IOException {
-		synchronized (xmlInputFactory) {
-			return xmlInputFactory.createXMLStreamReader(xopr.reconstituteIfNecessary(msg));
-		}
+		return HardenedStaxInputFactory.inputFactory().createXMLStreamReader(xopr.reconstituteIfNecessary(msg));
 	}
 
 	private void extractRootNameAndNS(XMLStreamReader reader, ExtractedData res)

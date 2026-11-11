@@ -27,7 +27,7 @@
 		<groupId>org.membrane-soa</groupId>
 		<artifactId>service-proxy-parent</artifactId>
 		<relativePath>../pom.xml</relativePath>
-		<version>7.8.1-SNAPSHOT</version>
+		<version>7.8.2-SNAPSHOT</version>
 	</parent>
 
     <dependencies>
@@ -191,7 +191,7 @@
                         </goals>
                         <configuration>
                             <skipTests>false</skipTests>
-                            <test>ApisYamlSchemaValidationTest</test>
+                            <test>ApisYamlSchemaValidationTest,CrsSqliRuleTranspilerTest</test>
                         </configuration>
                     </execution>
                 </executions>
@@ -203,6 +203,7 @@
                         <id>integration-test</id>
                         <goals>
                             <goal>integration-test</goal>
+                            <goal>verify</goal>
                         </goals>
                     </execution>
                 </executions>

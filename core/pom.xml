@@ -23,7 +23,7 @@
         <groupId>org.membrane-soa</groupId>
         <artifactId>service-proxy-parent</artifactId>
         <relativePath>../pom.xml</relativePath>
-        <version>7.8.1-SNAPSHOT</version>
+        <version>7.8.2-SNAPSHOT</version>
     </parent>
 
     <properties>
@@ -38,7 +38,7 @@
             <dependency>
                 <groupId>io.opentelemetry</groupId>
                 <artifactId>opentelemetry-bom</artifactId>
-                <version>1.63.0</version>
+                <version>1.67.0</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -147,7 +147,7 @@
         <dependency>
             <groupId>net.minidev</groupId>
             <artifactId>json-smart</artifactId>
-            <version>2.6.0</version>
+            <version>2.6.1</version>
         </dependency>
         <dependency>
             <groupId>com.google.re2j</groupId>
@@ -157,7 +157,7 @@
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>okhttp-jvm</artifactId>
-            <version>5.3.2</version>
+            <version>5.5.1</version>
         </dependency>
         <dependency>
             <groupId>org.springframework</groupId>
@@ -177,7 +177,7 @@
         <dependency>
             <groupId>org.mozilla</groupId>
             <artifactId>rhino</artifactId>
-            <version>1.9.0</version>
+            <version>1.9.2</version>
         </dependency>
         <dependency>
             <groupId>org.graalvm.sdk</groupId>
@@ -192,7 +192,7 @@
         <dependency>
             <groupId>com.github.spotbugs</groupId>
             <artifactId>spotbugs-annotations</artifactId>
-            <version>4.9.8</version>
+            <version>4.10.5</version>
         </dependency>
         <!-- fallback parser for documents based on older Swagger standards -->
         <dependency>
@@ -206,7 +206,7 @@
         <dependency>
             <groupId>org.bitbucket.b_c</groupId>
             <artifactId>jose4j</artifactId>
-            <version>0.9.6</version>
+            <version>0.9.7</version>
         </dependency>
         <dependency>
             <groupId>fi.solita.clamav</groupId>
@@ -378,7 +378,7 @@
         <dependency>
             <groupId>org.apache.activemq</groupId>
             <artifactId>activemq-broker</artifactId>
-            <version>5.19.7</version>
+            <version>5.19.8</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -470,12 +470,12 @@
                     <execution>
                         <goals>
                             <goal>integration-test</goal>
+                            <goal>verify</goal>
                         </goals>
                     </execution>
                 </executions>
                 <configuration>
-                    <test>**/IntegrationTestsWithInternet.java</test>
-                    <test>**/IntegrationTestsWithoutInternet.java</test>
+                    <test>**/IntegrationTestsWithInternet.java,**/IntegrationTestsWithoutInternet.java</test>
                 </configuration>
             </plugin>
 
@@ -536,6 +536,20 @@
     </build>
 
     <profiles>
+
+        <profile>
+            <id>no-internet</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <configuration>
+                            <test>**/IntegrationTestsWithoutInternet.java</test>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
 
         <profile>
             <id>jenkins</id>

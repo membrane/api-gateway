@@ -28,6 +28,7 @@ import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.function.LongSupplier;
 
+import static com.predic8.membrane.core.interceptor.xmlprotection.DoctypeInspector.containsEntityDeclarations;
 import static com.predic8.membrane.core.interceptor.xmlprotection.DoctypeInspector.containsExternalEntityReferences;
 import static com.predic8.membrane.core.interceptor.xmlprotection.DoctypeInspector.hasExternalSubsetReference;
 import static com.predic8.membrane.core.interceptor.xmlprotection.XMLLimits.UNLIMITED;
@@ -41,6 +42,7 @@ import static com.predic8.membrane.core.interceptor.xmlprotection.XMLProtectionR
  * <li>DTDs are removed, or make the document fail if removal is switched off.</li>
  * <li>A DOCTYPE that points outside the document - an external entity declaration or an external
  *     subset - makes the document fail; the reference itself is never followed.</li>
+ * <li>A DOCTYPE that declares an entity, internal ones included, makes the document fail.</li>
  * <li>Element and attribute name length, attribute count per element, nesting depth and the size of
  *     the document can be limited. Names count as the document spells them,
  *     {@code prefix:localName}.</li>
@@ -309,13 +311,21 @@ public class XMLProtector {
     }
 
     /**
-     * A DOCTYPE is only a danger if it points outside the document. An external subset reference is
-     * tolerated while the DTD is being removed: the reference is never resolved and the DOCTYPE does
-     * not reach the backend, so only the attempt is logged.
+     * A DOCTYPE is a danger if it points outside the document or declares entities. Internal entities
+     * are rejected even while the DTD is being removed: the parser expands references to them in
+     * attribute values before any event reaches this class, so a small document could otherwise
+     * grow into a large one here and in the copy forwarded to the backend. The DTD event comes
+     * before the root element, so rejecting it stops the document before anything is expanded.
+     * <p>
+     * An external subset reference is tolerated while the DTD is being removed: the reference is
+     * never resolved and the DOCTYPE does not reach the backend, so only the attempt is logged.
      */
     private @Nullable Rejected checkDtd(DTD dtd) {
         if (containsExternalEntityReferences(dtd))
             return new Rejected("External entity declaration in DOCTYPE.");
+
+        if (containsEntityDeclarations(dtd))
+            return new Rejected("Entity declaration in DOCTYPE.");
 
         if (!hasExternalSubsetReference(dtd))
             return null;

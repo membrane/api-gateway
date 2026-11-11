@@ -14,14 +14,18 @@
 
 package com.predic8.membrane.core.interceptor.llmgateway.provider.openai;
 
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.predic8.membrane.core.exchange.Exchange;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Set;
 
 import static java.util.Collections.emptyList;
 
 public class OpenAiLLMResponsesRequest extends AbstractOpenAiLLMRequest {
+
+    private static final Set<String> SYSTEM_ROLES = Set.of("system", "developer");
 
     public OpenAiLLMResponsesRequest(Exchange exchange) throws IOException {
         super(exchange);
@@ -40,6 +44,7 @@ public class OpenAiLLMResponsesRequest extends AbstractOpenAiLLMRequest {
 
     @Override
     public void overwriteSystemPrompt(String prompt) {
+        removeSystemPrompt();
         json.put("instructions", prompt);
     }
 
@@ -73,12 +78,19 @@ public class OpenAiLLMResponsesRequest extends AbstractOpenAiLLMRequest {
     }
 
     /**
-     * Removes the {@code "instructions"} field entirely.
+     * Removes the {@code "instructions"} field and the system and developer messages in {@code "input"}, which act as
+     * system prompts as well.
      * Has no effect if no system prompt is present.
      */
     @Override
     public void removeSystemPrompt() {
         json.remove("instructions");
+        if (!(json.get("input") instanceof ArrayNode input))
+            return;
+        for (int i = input.size() - 1; i >= 0; i--) {
+            if (SYSTEM_ROLES.contains(input.get(i).path("role").asText()))
+                input.remove(i);
+        }
     }
 
     @Override

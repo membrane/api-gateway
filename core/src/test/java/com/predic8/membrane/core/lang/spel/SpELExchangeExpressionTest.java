@@ -100,6 +100,12 @@ class SpELExchangeExpressionTest extends AbstractExchangeExpressionTest {
     }
 
     @Test
+    void callBuiltInFunctionWithIntegerForDouble() {
+        assertTrue(evalBool("weight(100)"));
+        assertFalse(evalBool("weight(0)"));
+    }
+
+    @Test
     void listContainsTest() {
         assertTrue(evalBool("property.tags.contains('animal')"));
     }

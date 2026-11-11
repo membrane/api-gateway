@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.interceptor.llmgateway;
 
 import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Outcome;
@@ -125,7 +126,7 @@ public class DefaultPolicies implements Policies {
      * @default (no restriction)
      * @example gpt-5-mini
      */
-    @MCAttribute
+    @MCChildElement(allowForeign = true)
     public void setModels(List<String> models) {
         this.models = models;
     }

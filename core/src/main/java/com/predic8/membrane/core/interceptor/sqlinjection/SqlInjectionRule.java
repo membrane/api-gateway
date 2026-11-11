@@ -14,12 +14,16 @@
 
 package com.predic8.membrane.core.interceptor.sqlinjection;
 
+import com.google.re2j.Pattern;
+
 import java.util.List;
-import java.util.regex.Pattern;
 
 /**
  * A single SQL-injection detection rule transpiled from an OWASP CRS
  * REQUEST-942 {@code @rx} rule.
+ * <p>
+ * The patterns are RE2/J patterns: matching runs in linear time, so crafted input cannot make a rule
+ * backtrack for seconds or hours.
  *
  * @param id             the original CRS rule id, kept for attribution and logging
  * @param paranoiaLevel  CRS paranoia level 1-4; higher = more aggressive, more false positives
