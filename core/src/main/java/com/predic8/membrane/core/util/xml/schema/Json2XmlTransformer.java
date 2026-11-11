@@ -12,7 +12,7 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.interceptor.wsdl2openapi;
+package com.predic8.membrane.core.util.xml.schema;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.w3c.dom.Document;
@@ -29,8 +29,8 @@ import javax.xml.transform.stream.StreamResult;
 import java.io.ByteArrayOutputStream;
 import java.util.*;
 
-import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdContentModel.*;
-import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.*;
+import static com.predic8.membrane.core.util.xml.schema.XsdContentModel.*;
+import static com.predic8.membrane.core.util.xml.schema.XsdDomUtil.*;
 
 /**
  * Transforms JSON to an XML element declared by an XSD, writing the fields in the order the
@@ -47,7 +47,7 @@ import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.*;
  * The schemas are a Xerces DOM, which is not thread-safe even for reads: walking it per request
  * raced on its node-list cache and left the definitions corrupted for later requests.
  */
-class Json2XmlTransformer {
+public class Json2XmlTransformer {
 
     /**
      * Looked up once: {@code newInstance()} scans the classpath for a provider under a JVM-wide
@@ -76,7 +76,7 @@ class Json2XmlTransformer {
      * @param schemasByNamespace the import graph, resolved once by the caller — see
      *                           {@link XsdToSchema#getSchemasByNamespace()}
      */
-    Json2XmlTransformer(QName element, Map<String, List<Element>> schemasByNamespace) {
+    public Json2XmlTransformer(QName element, Map<String, List<Element>> schemasByNamespace) {
         this.element = element;
         this.schemasByNamespace = schemasByNamespace;
         this.contentModel = new XsdContentModel(schemasByNamespace);
@@ -97,14 +97,14 @@ class Json2XmlTransformer {
      *
      * @throws org.w3c.dom.DOMException if a JSON key is not a valid XML name
      */
-    Element appendTo(Document doc, Node parent, JsonNode json) {
+    public Element appendTo(Document doc, Node parent, JsonNode json) {
         final var created = createRootElement(doc);
         parent.appendChild(created);
         mapJsonToElement(json, created, doc, rootContext);
         return created;
     }
 
-    static Document newDocument() throws Exception {
+    public static Document newDocument() throws Exception {
         return DOCUMENT_BUILDER_FACTORY.newDocumentBuilder().newDocument();
     }
 
@@ -450,7 +450,7 @@ class Json2XmlTransformer {
         return namespace != null ? doc.createElementNS(namespace, name) : doc.createElement(name);
     }
 
-    static byte[] documentToBytes(Document doc) throws Exception {
+    public static byte[] documentToBytes(Document doc) throws Exception {
         Transformer transformer = TRANSFORMER_FACTORY.newTransformer();
         transformer.setOutputProperty(OutputKeys.INDENT, "no");
         transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "no");

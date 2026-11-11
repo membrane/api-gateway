@@ -48,6 +48,10 @@ Keep this file in sync when adding, renaming or removing a util class.
 | `util/xml/XMLUtil` | XML operations (parsing, namespaces, XPath) |
 | `util/xml/XMLEncodingUtil` | XML character encoding |
 | `util/xml/NormalizeXMLForJsonUtil` | Normalize XML for JSON conversion |
+| `util/xml/schema/XmlSchemaMapping` | XSD-driven XML ↔ JSON conversion of whole documents (`xml2Json`/`json2Xml` with `xmlSchema`) |
+| `util/xml/schema/XsdToSchema` | XSD declarations → OpenAPI schemas (WSDL message parts: `wsdl2openapi.WsdlPartsToSchema`) |
+| `util/xml/schema/Xml2JsonMapper`, `Json2XmlTransformer` | XML element → JSON and JSON → XML element, following an XSD-derived schema |
+| `util/xml/schema/XsdDomUtil`, `XsdContentModel` | XSD DOM traversal: name/type resolution across imports and includes, content models |
 | `util/MapNamespaceContext` | `NamespaceContext` backed by a map (XPath) |
 | `config/xml/XmlConfig.global`, `localOrGlobal` | The global `xmlConfig` from `components`, or a local one that replaces it (XPath namespaces) |
 | `util/LSInputImpl` | `LSInput` implementation for schema resolvers |

@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
+import com.predic8.membrane.core.util.xml.schema.UndeclaredElementException;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.wsdl.parser.Definitions;
@@ -30,7 +31,7 @@ class SoapBodySchemasTest {
 
     private static SoapBodySchemas schemasOf(String wsdl) throws Exception {
         final var definitions = Definitions.parse(new ResolverMap(), wsdl);
-        return SoapBodySchemas.of(SelectedPort.select(definitions, null, null), new XsdToSchema(definitions, Set.of()));
+        return SoapBodySchemas.of(SelectedPort.select(definitions, null, null), new WsdlPartsToSchema(definitions, Set.of()));
     }
 
     @Test

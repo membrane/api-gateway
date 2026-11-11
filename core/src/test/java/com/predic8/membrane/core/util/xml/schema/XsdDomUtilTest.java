@@ -12,7 +12,7 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.interceptor.wsdl2openapi;
+package com.predic8.membrane.core.util.xml.schema;
 
 import io.swagger.v3.oas.models.media.ObjectSchema;
 import io.swagger.v3.oas.models.media.Schema;
@@ -32,7 +32,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.*;
+import static com.predic8.membrane.core.util.xml.schema.XsdDomUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 

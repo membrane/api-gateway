@@ -37,7 +37,7 @@ import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.Wsdl2OpenApiConverter.ApiInfo;
-import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.componentName;
+import static com.predic8.membrane.core.util.xml.schema.XsdDomUtil.componentName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 

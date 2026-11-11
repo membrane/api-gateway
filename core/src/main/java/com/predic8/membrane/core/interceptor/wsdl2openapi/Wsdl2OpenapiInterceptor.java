@@ -53,7 +53,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.OperationRouter.*;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.Wsdl2OpenApiConverter.*;
-import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.camelToKebab;
+import static com.predic8.membrane.core.util.xml.schema.XsdDomUtil.camelToKebab;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisher.PATH;
 import static com.predic8.membrane.core.util.HttpUtil.getMessageForStatusCode;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
@@ -120,7 +120,7 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
     /** The api this plugin lives in. Set by init(), which rejects anything that is not an APIProxy. */
     private APIProxy apiProxy;
     private Definitions definitions;
-    private XsdToSchema xsdToSchema;
+    private WsdlPartsToSchema xsdToSchema;
     private String basePath;
     private OperationsConfig operations;
     private Map<String, OperationSettings> operationsByName = Map.of();

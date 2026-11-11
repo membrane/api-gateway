@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
+import com.predic8.membrane.core.util.xml.schema.XsdDomUtil;
 import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.HttpUtil;
 import com.predic8.membrane.core.util.wsdl.parser.*;
@@ -39,7 +40,7 @@ import java.util.stream.Collectors;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_PROBLEM_JSON;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.OperationRouter.extractParamNames;
-import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.*;
+import static com.predic8.membrane.core.util.xml.schema.XsdDomUtil.*;
 import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.OUTPUT;
 
 /**
@@ -97,7 +98,7 @@ public class Wsdl2OpenApiConverter {
     private final Definitions definitions;
     private final SelectedPort port;
     private final String basePath;
-    private final XsdToSchema converter;
+    private final WsdlPartsToSchema converter;
     private final Map<String, OperationSettings> operations;
     private final ApiInfo info;
 
@@ -124,7 +125,7 @@ public class Wsdl2OpenApiConverter {
         this.definitions = definitions;
         this.port = port;
         this.basePath = stripTrailingSlash(basePath);
-        this.converter = new XsdToSchema(definitions, Set.of(PROBLEM_DETAILS_SCHEMA));
+        this.converter = new WsdlPartsToSchema(definitions, Set.of(PROBLEM_DETAILS_SCHEMA));
         this.operations = operations;
         this.info = info;
     }
@@ -144,7 +145,7 @@ public class Wsdl2OpenApiConverter {
      * The converter that produced the document's schemas, so a caller converting messages at runtime
      * resolves the same components the document publishes.
      */
-    XsdToSchema getSchemaConverter() {
+    WsdlPartsToSchema getSchemaConverter() {
         return converter;
     }
 
@@ -613,7 +614,7 @@ public class Wsdl2OpenApiConverter {
         return wsdlOp.getFaults().stream()
                 .map(fault -> fault.getMessage().getParts())
                 .filter(parts -> !parts.isEmpty())
-                .map(parts -> new DeclaredFault(XsdToSchema.faultDetailKey(parts), parts))
+                .map(parts -> new DeclaredFault(WsdlPartsToSchema.faultDetailKey(parts), parts))
                 .toList();
     }
 

@@ -14,6 +14,8 @@
 
 package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
+import com.predic8.membrane.core.util.xml.schema.UndeclaredElementException;
+import com.predic8.membrane.core.util.xml.schema.Xml2JsonMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.models.media.Schema;
 import org.w3c.dom.*;
@@ -25,7 +27,7 @@ import java.util.Map;
 
 import static com.predic8.membrane.annot.Constants.SOAP11_NS;
 import static com.predic8.membrane.annot.Constants.SOAP12_NS;
-import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.*;
+import static com.predic8.membrane.core.util.xml.schema.XsdDomUtil.*;
 import static com.predic8.membrane.core.util.xml.parser.HardenedXmlParser.getInstance;
 
 /**

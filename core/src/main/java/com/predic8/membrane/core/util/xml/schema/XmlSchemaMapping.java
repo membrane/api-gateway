@@ -12,7 +12,7 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.interceptor.wsdl2openapi;
+package com.predic8.membrane.core.util.xml.schema;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.router.Router;
@@ -25,8 +25,8 @@ import javax.xml.namespace.QName;
 import java.util.*;
 
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_TRAILING_TOKENS;
-import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.qualifiedKey;
-import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.xsdChildren;
+import static com.predic8.membrane.core.util.xml.schema.XsdDomUtil.qualifiedKey;
+import static com.predic8.membrane.core.util.xml.schema.XsdDomUtil.xsdChildren;
 import static com.predic8.membrane.core.resolver.ResolverMap.combine;
 import static com.predic8.membrane.core.util.xml.parser.HardenedXmlParser.getInstance;
 

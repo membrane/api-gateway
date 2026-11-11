@@ -13,6 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
+import com.predic8.membrane.core.util.xml.schema.UndeclaredElementException;
+import com.predic8.membrane.core.util.xml.schema.XsdToSchema;
 import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.wsdl.parser.Message;
 import com.predic8.membrane.core.util.wsdl.parser.Operation;
@@ -68,7 +70,7 @@ record SoapBodySchemas(String portName,
      *
      * @throws ConfigurationException if the port declares no message this class can index
      */
-    static SoapBodySchemas of(SelectedPort port, XsdToSchema xsdToSchema) {
+    static SoapBodySchemas of(SelectedPort port, WsdlPartsToSchema xsdToSchema) {
         final var bodySchemas = new LinkedHashMap<QName, Schema<?>>();
         final var inputOperations = new LinkedHashMap<QName, String>();
         final var sharedInputs = new HashSet<QName>();
@@ -83,7 +85,7 @@ record SoapBodySchemas(String portName,
             }
             for (final Operation.Fault fault : operation.getFaults()) {
                 final var parts = fault.getMessage().getParts();
-                if (!parts.isEmpty()) faults.putIfAbsent(XsdToSchema.faultDetailKey(parts), fault);
+                if (!parts.isEmpty()) faults.putIfAbsent(WsdlPartsToSchema.faultDetailKey(parts), fault);
             }
         }
         if (bodySchemas.isEmpty()) {
@@ -98,7 +100,7 @@ record SoapBodySchemas(String portName,
     }
 
     /** Indexes the message; returns its element, or empty if the message cannot be indexed. */
-    private static Optional<QName> addMessage(Message message, Operation operation, XsdToSchema xsdToSchema,
+    private static Optional<QName> addMessage(Message message, Operation operation, WsdlPartsToSchema xsdToSchema,
                                               Map<QName, Schema<?>> bodySchemas) {
         final var parts = message.getParts();
         if (parts.size() != 1 || parts.getFirst().getElementQName() == null) {

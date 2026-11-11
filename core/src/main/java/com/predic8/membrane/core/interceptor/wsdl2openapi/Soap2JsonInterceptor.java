@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
+import com.predic8.membrane.core.util.xml.schema.UndeclaredElementException;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.Required;
@@ -111,7 +112,7 @@ public class Soap2JsonInterceptor extends AbstractInterceptor {
         final var definitions = WsdlLoader.parseWsdl(router, getBeanBaseLocation(), wsdl);
         final var selectedPort = WsdlLoader.selectPort(definitions, wsdl, service, port);
         try {
-            bodySchemas = SoapBodySchemas.of(selectedPort, new XsdToSchema(definitions, Set.of()));
+            bodySchemas = SoapBodySchemas.of(selectedPort, new WsdlPartsToSchema(definitions, Set.of()));
         } catch (WSDLParserException e) {
             throw new ConfigurationException("Cannot read the messages of WSDL '%s': %s".formatted(wsdl, e.getMessage()), e);
         }

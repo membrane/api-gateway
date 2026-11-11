@@ -12,7 +12,7 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.interceptor.wsdl2openapi;
+package com.predic8.membrane.core.util.xml.schema;
 
 import io.swagger.v3.oas.models.media.*;
 import org.w3c.dom.Element;
@@ -25,7 +25,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.*;
+import static com.predic8.membrane.core.util.xml.schema.XsdDomUtil.*;
 
 /**
  * Maps an XML element to JSON, typed by the schema {@link XsdToSchema} derived from its XSD
@@ -44,7 +44,7 @@ import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.*;
  * <p>Stateless apart from the components it resolves references against, so one instance can
  * serve concurrent requests as long as nobody modifies those schemas.
  */
-class Xml2JsonMapper {
+public class Xml2JsonMapper {
 
     /**
      * The named types the schemas refer to, keyed by component name — the same map
@@ -53,7 +53,7 @@ class Xml2JsonMapper {
      */
     private final Map<String, Schema<?>> components;
 
-    Xml2JsonMapper(Map<String, Schema<?>> components) {
+    public Xml2JsonMapper(Map<String, Schema<?>> components) {
         this.components = components;
     }
 
@@ -62,7 +62,7 @@ class Xml2JsonMapper {
      * or simpleContent root, otherwise a map. {@code schema} may be {@code null}, which converts
      * the element structurally with every scalar as a string.
      */
-    Object toJson(Element element, Schema<?> schema) {
+    public Object toJson(Element element, Schema<?> schema) {
         if (isNil(element)) return null;
         if (isScalarRoot(element, schema) || isSimpleContentRoot(element, schema)) return leafValue(element, schema);
         return elementToMap(element, schema);
@@ -97,7 +97,7 @@ class Xml2JsonMapper {
         return !hasChildElements(element) && propertiesOf(resolve(schema)).containsKey(VALUE_KEY);
     }
 
-    Map<String, Object> elementToMap(Element element, Schema<?> schema) {
+    public Map<String, Object> elementToMap(Element element, Schema<?> schema) {
         Map<String, Schema<?>> properties = propertiesOf(resolve(schema));
 
         var result = new LinkedHashMap<String, Object>();

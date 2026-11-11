@@ -12,7 +12,7 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.interceptor.wsdl2openapi;
+package com.predic8.membrane.core.util.xml.schema;
 
 import com.predic8.membrane.core.util.wsdl.parser.WSDLParserUtil;
 import io.swagger.v3.oas.models.media.Schema;
@@ -23,24 +23,24 @@ import java.util.*;
 
 import static com.predic8.membrane.annot.Constants.XSD_NS;
 
-/** Static DOM helpers for XSD traversal shared across wsdl2openapi transformers. */
-class XsdDomUtil {
+/** Static DOM helpers for XSD traversal shared by the XSD-based JSON conversions. */
+public class XsdDomUtil {
 
     /** Prefix marking a JSON property that maps to an XML attribute rather than a child element. */
-    static final String ATTRIBUTE_PREFIX = "@";
+    public static final String ATTRIBUTE_PREFIX = "@";
 
     /**
      * The JSON property holding an element's own text value when the element also carries
      * attributes — an XSD {@code simpleContent} type. Without attributes such an element stays a
      * plain scalar and this key is not used.
      */
-    static final String VALUE_KEY = "$value";
+    public static final String VALUE_KEY = "$value";
 
     /** Where a schema reference points: the {@code components/schemas} section of the document. */
     static final String COMPONENTS_SCHEMAS_PREFIX = "#/components/schemas/";
 
     /** The component a reference names, e.g. {@code #/components/schemas/Address} -> {@code Address}. */
-    static String componentName(String ref) {
+    public static String componentName(String ref) {
         return ref.substring(ref.lastIndexOf('/') + 1);
     }
 
@@ -51,7 +51,7 @@ class XsdDomUtil {
      * value's arrayness. A reference {@code components} has no entry for stays as it is, which is
      * what a caller with no components to resolve against sees for every reference.
      */
-    static Schema<?> dereference(Map<String, Schema<?>> components, Schema<?> schema) {
+    public static Schema<?> dereference(Map<String, Schema<?>> components, Schema<?> schema) {
         if (schema == null || schema.get$ref() == null) return schema;
         return components.getOrDefault(componentName(schema.get$ref()), schema);
     }
@@ -70,7 +70,7 @@ class XsdDomUtil {
     }
 
     /** All child elements of {@code parent}, in document order. */
-    static List<Element> childElements(Element parent) {
+    public static List<Element> childElements(Element parent) {
         var result = new ArrayList<Element>();
         NodeList children = parent.getChildNodes();
         for (int i = 0; i < children.getLength(); i++) {
@@ -227,7 +227,7 @@ class XsdDomUtil {
      * Builds a Clark-notation key ({@code "{namespaceURI}localName"}) used to disambiguate
      * xsd:choice alternatives that share a local name across different namespaces.
      */
-    static String qualifiedKey(String namespaceURI, String localName) {
+    public static String qualifiedKey(String namespaceURI, String localName) {
         return "{" + namespaceURI + "}" + localName;
     }
 
@@ -353,7 +353,7 @@ class XsdDomUtil {
      * Underscores and uppercase letters both act as word separators;
      * consecutive separators are collapsed to a single dash.
      */
-    static String camelToKebab(String name) {
+    public static String camelToKebab(String name) {
         var result = new StringBuilder();
         char prev = 0;
         for (int i = 0; i < name.length(); i++) {

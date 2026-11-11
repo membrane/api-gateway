@@ -46,7 +46,7 @@ import static com.predic8.membrane.core.http.Header.CONTENT_LENGTH;
 import static com.predic8.membrane.core.http.Header.SOAP_ACTION;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.Wsdl2OpenApiConverter.ApiInfo;
-import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.camelToKebab;
+import static com.predic8.membrane.core.util.xml.schema.XsdDomUtil.camelToKebab;
 import static com.predic8.membrane.test.TestUtil.getPathFromResource;
 import static java.nio.charset.StandardCharsets.UTF_16;
 import static java.nio.charset.StandardCharsets.UTF_8;

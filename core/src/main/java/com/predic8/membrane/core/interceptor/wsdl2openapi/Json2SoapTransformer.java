@@ -14,6 +14,8 @@
 
 package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
+import com.predic8.membrane.core.util.xml.schema.XsdToSchema;
+import com.predic8.membrane.core.util.xml.schema.Json2XmlTransformer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.util.wsdl.parser.Message;
@@ -31,7 +33,7 @@ import java.util.Map;
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_TRAILING_TOKENS;
 import static com.predic8.membrane.annot.Constants.SOAP11_NS;
 import static com.predic8.membrane.annot.Constants.SOAP12_NS;
-import static com.predic8.membrane.core.interceptor.wsdl2openapi.Json2XmlTransformer.documentToBytes;
+import static com.predic8.membrane.core.util.xml.schema.Json2XmlTransformer.documentToBytes;
 import static com.predic8.membrane.core.util.wsdl.parser.Definitions.SOAPVersion.SOAP_12;
 
 /**
