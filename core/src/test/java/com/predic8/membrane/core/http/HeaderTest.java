@@ -515,6 +515,17 @@ class HeaderTest {
             h.add(CONTENT_LENGTH, value);
             assertThrows(MalformedHeaderException.class, h::getContentLength);
         }
+
+        /**
+         * The message is logged and returned in problem details, and a backend may echo a credential as the value.
+         */
+        @Test
+        void invalidValueIsNotQuotedInMessage() {
+            final var h = new Header();
+            h.add(CONTENT_LENGTH, "secret-token");
+            final var e = assertThrows(MalformedHeaderException.class, h::getContentLength);
+            assertFalse(e.getMessage().contains("secret-token"), e.getMessage());
+        }
     }
 
     @Nested
