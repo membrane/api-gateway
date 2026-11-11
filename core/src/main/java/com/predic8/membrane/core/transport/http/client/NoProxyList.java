@@ -20,6 +20,9 @@ import com.predic8.membrane.core.interceptor.acl.targets.Ipv6Target;
 import com.predic8.membrane.core.interceptor.acl.targets.Target;
 import com.predic8.membrane.core.util.ConfigurationException;
 
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -39,11 +42,13 @@ public final class NoProxyList {
     private final boolean matchAll;
     private final List<String> domains;
     private final List<Target> ipRanges;
+    private final List<Target> ipv4MappedRanges;
 
-    private NoProxyList(boolean matchAll, List<String> domains, List<Target> ipRanges) {
+    private NoProxyList(boolean matchAll, List<String> domains, List<Target> ipRanges, List<Target> ipv4MappedRanges) {
         this.matchAll = matchAll;
         this.domains = List.copyOf(domains);
         this.ipRanges = List.copyOf(ipRanges);
+        this.ipv4MappedRanges = List.copyOf(ipv4MappedRanges);
     }
 
     /**
@@ -54,6 +59,7 @@ public final class NoProxyList {
         var matchAll = false;
         final var domains = new ArrayList<String>();
         final var ipRanges = new ArrayList<Target>();
+        final var ipv4MappedRanges = new ArrayList<Target>();
 
         for (var entry : list.split(",")) {
             entry = entry.trim().toLowerCase(ROOT);
@@ -63,6 +69,11 @@ public final class NoProxyList {
                 matchAll = true;
                 continue;
             }
+            final var ipv4MappedRange = parseIpv4MappedRange(normalize(entry));
+            if (ipv4MappedRange.isPresent()) {
+                ipv4MappedRanges.add(ipv4MappedRange.get());
+                continue;
+            }
             final var ipRange = parseIpRange(normalize(entry));
             if (ipRange.isPresent()) {
                 ipRanges.add(ipRange.get());
@@ -70,7 +81,7 @@ public final class NoProxyList {
             }
             domains.add(toDomain(entry));
         }
-        return new NoProxyList(matchAll, domains, ipRanges);
+        return new NoProxyList(matchAll, domains, ipRanges, ipv4MappedRanges);
     }
 
     public boolean matches(String host) {
@@ -95,6 +106,35 @@ public final class NoProxyList {
         return Optional.empty();
     }
 
+    /**
+     * Java resolves an IPv4-mapped IPv6 literal like <code>::ffff:10.0.0.1</code> to an <code>Inet4Address</code>,
+     * which <code>Ipv6Target</code> rejects. Such an entry becomes an IPv4 range on the embedded address instead.
+     */
+    private static Optional<Target> parseIpv4MappedRange(String entry) {
+        if (!entry.contains(":"))
+            return Optional.empty();
+        final var parts = entry.split("/", 2);
+        if (!(parseIpv6Literal(parts[0]) instanceof Inet4Address ipv4))
+            return Optional.empty();
+        if (parts.length == 2 && !parts[1].matches("\\d{1,3}"))
+            throw invalidEntry(entry);
+        final var cidr = parts.length == 2 ? Integer.parseInt(parts[1]) : 128;
+        // A shorter prefix also covers addresses outside ::ffff:0:0/96, which an IPv4 range cannot express.
+        if (cidr < 96 || cidr > 128)
+            throw invalidEntry(entry);
+        return Optional.of(Ipv4Target.tryCreate("%s/%d".formatted(ipv4.getHostAddress(), cidr - 96))
+                .orElseThrow(() -> invalidEntry(entry)));
+    }
+
+    private static InetAddress parseIpv6Literal(String address) {
+        try {
+            // The brackets make Java parse a literal only, never fall back to a DNS lookup.
+            return InetAddress.getByName("[" + removeBracketsIfPresent(address) + "]");
+        } catch (UnknownHostException e) {
+            return null;
+        }
+    }
+
     private static String toDomain(String entry) {
         // "*.example.com" is the http.nonProxyHosts spelling, ".example.com" the NO_PROXY one. Both mean the same here.
         var domain = entry.startsWith("*.") ? entry.substring(2) : entry;
@@ -111,7 +151,10 @@ public final class NoProxyList {
         } catch (IllegalArgumentException e) {
             return false;
         }
-        return ipRanges.stream().anyMatch(range -> range.peerMatches(address));
+        if (ipRanges.stream().anyMatch(range -> range.peerMatches(address)))
+            return true;
+        // A mapped host parses to an IPv4 address as well, so only its colon tells it apart from a plain IPv4 host.
+        return host.contains(":") && ipv4MappedRanges.stream().anyMatch(range -> range.peerMatches(address));
     }
 
     private static String normalize(String host) {

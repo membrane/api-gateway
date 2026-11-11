@@ -85,6 +85,24 @@ class NoProxyListTest {
         assertFalse(list.matches("127.0.0.1"));
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"::ffff:10.0.0.1", "[::ffff:10.0.0.1]", "::ffff:a00:1", "::ffff:10.0.0.1/128"})
+    void ipv4MappedIpv6Entry(String entry) {
+        final var list = NoProxyList.parse(entry);
+        assertTrue(list.matches("::ffff:10.0.0.1"));
+        assertTrue(list.matches("[::ffff:10.0.0.1]"));
+        assertFalse(list.matches("::ffff:10.0.0.2"));
+        assertFalse(list.matches("10.0.0.1"));
+    }
+
+    @Test
+    void ipv4MappedIpv6Range() {
+        final var list = NoProxyList.parse("::ffff:10.0.0.0/104");
+        assertTrue(list.matches("::ffff:10.1.2.3"));
+        assertFalse(list.matches("::ffff:11.0.0.1"));
+        assertFalse(list.matches("10.1.2.3"));
+    }
+
     @Test
     void ipv4EntryWithTrailingDot() {
         final var list = NoProxyList.parse("127.0.0.1.");
@@ -98,7 +116,7 @@ class NoProxyListTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"300.1.1.1", "10.0.0.0/33", "host:8080", "api.*.example.com", "*foo", ".", "*."})
+    @ValueSource(strings = {"300.1.1.1", "10.0.0.0/33", "host:8080", "::ffff:10.0.0.0/64", "::ffff:10.0.0.0/129", "api.*.example.com", "*foo", ".", "*."})
     void invalidEntriesAreRejected(String entry) {
         assertThrows(ConfigurationException.class, () -> NoProxyList.parse(entry));
     }
