@@ -14,11 +14,14 @@
 
 package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.util.wsdl.parser.Definitions;
 import com.predic8.membrane.core.util.wsdl.parser.Operation;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -126,6 +129,12 @@ class Json2SoapTransformerTest {
 
         final var e = assertThrows(IllegalArgumentException.class, () -> transformer.transform("{}"));
         assertEquals("No output message found for operation: sendMessage", e.getMessage());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"{\"name\": \"Berlin\"} {\"name\": \"Bonn\"}", "{\"name\": \"Berlin\"}]]] garbage"})
+    void jsonWithInputAfterItsValueIsRejected(String json) {
+        assertThrows(JsonProcessingException.class, () -> transformer(citiesDefinitions, "getCity").transform(json));
     }
 
     @Test

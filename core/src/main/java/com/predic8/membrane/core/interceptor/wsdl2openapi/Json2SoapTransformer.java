@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_TRAILING_TOKENS;
 import static com.predic8.membrane.annot.Constants.SOAP11_NS;
 import static com.predic8.membrane.annot.Constants.SOAP12_NS;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.Json2XmlTransformer.documentToBytes;
@@ -44,7 +45,7 @@ import static com.predic8.membrane.core.util.wsdl.parser.Definitions.SOAPVersion
  */
 public class Json2SoapTransformer {
 
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final ObjectMapper MAPPER = new ObjectMapper().enable(FAIL_ON_TRAILING_TOKENS);
 
     private final String operationName;
     private final Direction direction;

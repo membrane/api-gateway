@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.router.DummyTestRouter;
 import org.junit.jupiter.api.BeforeAll;
@@ -66,6 +67,12 @@ class XmlSchemaMappingTest {
     @Test
     void theUnqualifiedLocalNameOfAnAmbiguousElementIsUndeclared() {
         assertThrows(UndeclaredElementException.class, () -> notes.toXml("{\"note\": {}}"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"{\"price\": {\"$value\": 9.99}} {\"price\": {\"$value\": 12}}", "{\"price\": {\"$value\": 9.99}}]]] garbage"})
+    void jsonWithInputAfterItsValueIsRejected(String json) {
+        assertThrows(JsonProcessingException.class, () -> library.toXml(json));
     }
 
     @Test

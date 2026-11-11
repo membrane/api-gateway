@@ -24,6 +24,7 @@ import org.xml.sax.InputSource;
 import javax.xml.namespace.QName;
 import java.util.*;
 
+import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_TRAILING_TOKENS;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.qualifiedKey;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.xsdChildren;
 import static com.predic8.membrane.core.resolver.ResolverMap.combine;
@@ -43,7 +44,7 @@ import static com.predic8.membrane.core.util.xml.parser.HardenedXmlParser.getIns
  */
 public final class XmlSchemaMapping {
 
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final ObjectMapper MAPPER = new ObjectMapper().enable(FAIL_ON_TRAILING_TOKENS);
 
     /** A global element: its JSON key, the schema that types it, and the transformer that writes it. */
     private record Root(QName element, String key, io.swagger.v3.oas.models.media.Schema<?> schema,
