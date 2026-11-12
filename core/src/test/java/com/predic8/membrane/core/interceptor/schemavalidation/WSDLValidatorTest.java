@@ -281,6 +281,38 @@ public class WSDLValidatorTest {
         assertEquals(500, exc.getResponse().getStatusCode());
     }
 
+    /**
+     * A rejected response is the backend's fault, not the client's: SOAP 1.1 section 4.4.1 calls
+     * that a Server fault.
+     */
+    @Test
+    void rejectedSoap11ResponseIsServerFault() throws Exception {
+        final var exc = getResponseExchange(soap11(NOT_IN_SCHEMA));
+        assertEquals(ABORT, createValidator(CITIES_WSDL, null, false).validateMessage(exc, RESPONSE));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains("<faultcode>soap:Server</faultcode>"), body);
+    }
+
+    /**
+     * A rejected response is the backend's fault, not the client's: SOAP 1.2 Part 1 section 5.4.6
+     * calls that a Receiver fault.
+     */
+    @Test
+    void rejectedSoap12ResponseIsReceiverFault() throws Exception {
+        final var exc = getResponseExchange(soap12(NOT_IN_SCHEMA));
+        assertEquals(ABORT, createValidator(HELLO_SOAP12_WSDL, null, false).validateMessage(exc, RESPONSE));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains(">soap:Receiver<"), body);
+    }
+
+    @Test
+    void rejectedSoap12RequestIsSenderFault() throws Exception {
+        final var exc = getRequestExchange(soap12(NOT_IN_SCHEMA));
+        assertEquals(ABORT, createValidator(HELLO_SOAP12_WSDL, null, false).validateMessage(exc, REQUEST));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains(">soap:Sender<"), body);
+    }
+
     @Test
     void twoServicesElementOfProperService() throws Exception {
 

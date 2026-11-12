@@ -51,6 +51,7 @@ import static com.predic8.membrane.annot.Constants.XSD_NS;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.schemavalidation.WSDLMessageElementExtractor.*;
 import static com.predic8.membrane.core.util.SOAPUtil.FaultCode.Client;
+import static com.predic8.membrane.core.util.SOAPUtil.FaultCode.Server;
 import static com.predic8.membrane.core.util.SOAPUtil.*;
 import static com.predic8.membrane.core.util.wsdl.parser.Definitions.SOAPVersion.SOAP_11;
 import static com.predic8.membrane.core.util.wsdl.parser.Definitions.SOAPVersion.SOAP_12;
@@ -525,10 +526,13 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
      * Sends a SOAP fault reporting the rejection. The fault code and reason always identify the
      * rejection; the {@code detail} content is only filled in when the configuration allows the
      * validation details to be disclosed.
+     * <p>
+     * A rejected request is the client's fault: Client (SOAP 1.1) resp. Sender (SOAP 1.2). A
+     * rejected response is the backend's, not the client's: Server resp. Receiver.
      */
     private void setFaultResponse(Exchange exchange, Interceptor.Flow flow, Map<String, Object> detail) {
         final var version = soapVersionOf(exchange);
-        exchange.setResponse(createSOAPFaultResponse(Client, getErrorTitle(),
+        exchange.setResponse(createSOAPFaultResponse(flow == Interceptor.Flow.REQUEST ? Client : Server, getErrorTitle(),
                 errorDetailsPolicy.validationDetails() ? detail : Map.of(), version, faultStatusCode(flow, version)));
     }
 
