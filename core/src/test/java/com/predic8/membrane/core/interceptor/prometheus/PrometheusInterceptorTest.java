@@ -24,6 +24,7 @@ import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.openapi.validators.ValidationErrors.error;
 import static com.predic8.membrane.core.proxies.RuleManager.RuleDefinitionSource.MANUAL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PrometheusInterceptorTest {
@@ -64,6 +65,27 @@ class PrometheusInterceptorTest {
         assertTrue(body.contains("entity=\"e\\\"f\""), body);
         // Every line is a comment or a complete sample: an unescaped newline would split a sample.
         body.lines().forEach(line -> assertTrue(line.startsWith("#") || line.matches(".*[}\\w] -?\\d+(\\.\\d+)?$"), line));
+    }
+
+    @Test
+    void jvmMetricsOnlyWhenEnabled() throws Exception {
+        assertFalse(scrape(false).lines().anyMatch(line -> line.startsWith("jvm_") || line.startsWith("process_") || line.startsWith("# TYPE jvm_") || line.startsWith("# TYPE process_")));
+
+        final var body = scrape(true);
+        assertTrue(body.contains("membrane_info{version="), body);
+        assertTrue(body.contains("# TYPE jvm_memory_used_bytes gauge\n"), body);
+    }
+
+    private static String scrape(boolean jvm) throws Exception {
+        final var router = new TestRouter();
+        router.init();
+        final var interceptor = new PrometheusInterceptor();
+        interceptor.setJvm(jvm);
+        interceptor.init(router);
+
+        final var exc = get("/metrics").buildExchange();
+        interceptor.handleRequest(exc);
+        return exc.getResponse().getBodyAsStringDecoded();
     }
 
     @Test

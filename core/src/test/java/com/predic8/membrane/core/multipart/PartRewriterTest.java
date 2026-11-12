@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.multipart;
 
+import com.predic8.membrane.core.http.CloseTrackingRequest;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Request;
 import org.junit.jupiter.api.Test;
@@ -121,6 +122,24 @@ class PartRewriterTest {
         byte[] injected = ("--" + BOUNDARY + "\r\nContent-Type: text/plain\r\n\r\nsmuggled").getBytes(UTF_8);
 
         assertThrows(IOException.class, () -> PartRewriter.rebuild(message, Map.of(0, injected)));
+    }
+
+    @Test
+    void closesTheDecodedStream() throws Exception {
+        final var request = new CloseTrackingRequest("multipart/form-data; boundary=" + BOUNDARY,
+                "--" + BOUNDARY + "\r\n" + part("data", "application/xml", "<foo/>") + "\r\n--" + BOUNDARY + "--\r\n");
+        PartRewriter.rebuild(request, Map.of());
+        assertTrue(request.allStreamsClosed());
+    }
+
+    @Test
+    void closesTheDecodedStreamWhenRebuildingFails() throws Exception {
+        final var request = new CloseTrackingRequest("multipart/form-data; boundary=" + BOUNDARY,
+                "--" + BOUNDARY + "\r\n" + part("data", "application/xml", "<foo/>") + "\r\n--" + BOUNDARY + "--\r\n");
+        final var injected = ("<foo/>\r\n--" + BOUNDARY + "--").getBytes(UTF_8);
+
+        assertThrows(IOException.class, () -> PartRewriter.rebuild(request, Map.of(0, injected)));
+        assertTrue(request.allStreamsClosed());
     }
 
     /** Reads the rebuilt body back as a message, so it can be split again. */

@@ -177,9 +177,11 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 		if (msg== null || msg.isBodyEmpty()) {
 			return noContent().build();
 		}
-		return ok().contentType(TEXT_HTML_UTF8)
-				.body(formatXML(msg.getBodyAsStreamDecoded(), true))
+		try (final var body = msg.getBodyAsStreamDecoded()) {
+			return ok().contentType(TEXT_HTML_UTF8)
+				.body(formatXML(body, true))
 				.build();
+		}
 	}
 
 	@Mapping("/admin/rest/exchanges/(-?\\d+)/(response|request)/body")

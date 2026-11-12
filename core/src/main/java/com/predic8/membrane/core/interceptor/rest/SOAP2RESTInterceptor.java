@@ -53,7 +53,9 @@ public class SOAP2RESTInterceptor extends SOAPRESTHelper {
 
 		// apply request XSLT
         try {
-            transformAndReplaceBody(exc.getRequest(), requestXSLT, new StreamSource(exc.getRequest().getBodyAsStreamDecoded()), exc.getStringProperties());
+            try (final var body = exc.getRequest().getBodyAsStreamDecoded()) {
+                transformAndReplaceBody(exc.getRequest(), requestXSLT, new StreamSource(body), exc.getStringProperties());
+            }
         } catch (Exception e) {
 			log.error("", e);
 			user(router.getConfiguration().isProduction(),getDisplayName())
