@@ -109,6 +109,14 @@ public class URLParamUtil {
     }
 
     /**
+     * Prepares a URI, e.g. a destination, for a log message at info or above: masks its query values and user info
+     * (see {@link #maskQueryValues(String)}) and escapes control characters.
+     */
+    public static String uriForLog(String uri) {
+        return escapeControlCharsForLog(maskQueryValues(uri));
+    }
+
+    /**
      * @param uri the part of a URI before its query
      */
     private static String maskUserInfo(String uri) {

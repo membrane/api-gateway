@@ -23,6 +23,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -515,6 +516,17 @@ class HeaderTest {
             h.add(CONTENT_LENGTH, value);
             assertThrows(MalformedHeaderException.class, h::getContentLength);
         }
+
+        /**
+         * The message is logged and returned in problem details, and a backend may echo a credential as the value.
+         */
+        @Test
+        void invalidValueIsNotQuotedInMessage() {
+            final var h = new Header();
+            h.add(CONTENT_LENGTH, "secret-token");
+            final var e = assertThrows(MalformedHeaderException.class, h::getContentLength);
+            assertFalse(e.getMessage().contains("secret-token"), e.getMessage());
+        }
     }
 
     @Nested
@@ -653,7 +665,7 @@ class HeaderTest {
     class ParsingABlock {
 
         @Test
-        void fieldsAreReadInOrder() {
+        void fieldsAreReadInOrder() throws IOException {
             Header parsed = new Header("Content-Type: image/png\r\nX-Other: value\r\n\r\n");
 
             assertEquals(2, parsed.getAllHeaderFields().length);
@@ -663,7 +675,7 @@ class HeaderTest {
 
         @Test
         @DisplayName("A folded field is joined back together instead of throwing")
-        void foldedFieldIsUnfolded() {
+        void foldedFieldIsUnfolded() throws IOException {
             Header parsed = new Header("X-Folded: first\r\n\tsecond\r\nX-Other: value\r\n\r\n");
 
             assertEquals(2, parsed.getAllHeaderFields().length);
@@ -672,7 +684,7 @@ class HeaderTest {
         }
 
         @Test
-        void aFoldedFieldCanSpanSeveralLines() {
+        void aFoldedFieldCanSpanSeveralLines() throws IOException {
             Header parsed = new Header("Content-Disposition: form-data;\r\n name=\"logo\";\r\n filename=\"a.png\"\r\n\r\n");
 
             assertEquals(1, parsed.getAllHeaderFields().length);
@@ -682,11 +694,19 @@ class HeaderTest {
 
         @Test
         @DisplayName("A continuation line before any field belongs to nothing and is dropped")
-        void leadingContinuationIsDropped() {
+        void leadingContinuationIsDropped() throws IOException {
             Header parsed = new Header(" orphaned\r\nX-Other: value\r\n\r\n");
 
             assertEquals(1, parsed.getAllHeaderFields().length);
             assertEquals("value", parsed.getFirstValue("X-Other"));
+        }
+
+        @Test
+        @DisplayName("A line that is neither a field nor a continuation is rejected")
+        void lineWithoutColonIsRejected() {
+            final var e = assertThrows(IOException.class, () -> new Header("X-Other: value\r\ngarbage\r\n\r\n"));
+
+            assertEquals("Malformed multipart part header: a line has no colon.", e.getMessage());
         }
     }
 

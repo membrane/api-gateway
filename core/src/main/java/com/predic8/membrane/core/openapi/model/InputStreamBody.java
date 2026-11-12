@@ -38,7 +38,9 @@ public class InputStreamBody implements Body {
 
     @Override
     public String asString() throws IOException {
-        return inputStreamToString(is);
+        try (is) {
+            return inputStreamToString(is);
+        }
     }
 
     @Override
@@ -52,6 +54,8 @@ public class InputStreamBody implements Body {
 
     @Override
     public byte[] asBytes() throws IOException {
-        return is.readAllBytes();
+        try (is) {
+            return is.readAllBytes();
+        }
     }
 }
