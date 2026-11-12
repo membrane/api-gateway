@@ -72,6 +72,18 @@ class LimitInterceptorTest {
     }
 
     @Test
+    void readingAfterTheEndOfTheDecodedStreamReturnsTheEndAgain() throws Exception {
+        // The decoder is closed at the end of input; reading once more must not reach it
+        final var stream = li.new LengthLimitingStream(new CloseTrackingRequest("text/plain", SMALL).getBodyAsStreamDecoded());
+        assertEquals(SMALL, new String(stream.readAllBytes()));
+        assertEquals(-1, stream.read());
+        assertEquals(-1, stream.read(new byte[1]));
+        assertEquals(-1, stream.read(new byte[1], 0, 1));
+        assertEquals(0, stream.skip(1));
+        assertEquals(0, stream.available());
+    }
+
+    @Test
     void streamLargeClosesTheDecodedStream() throws Exception {
         final var request = new CloseTrackingRequest("text/plain", LARGE);
         final var exc = exchangeOf(request);

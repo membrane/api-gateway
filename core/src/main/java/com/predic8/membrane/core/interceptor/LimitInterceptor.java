@@ -124,6 +124,9 @@ public class LimitInterceptor extends AbstractInterceptor {
 
 		private long pos;
 
+		/** Set at the end of input, once the decoder has been closed. */
+		private boolean ended;
+
 		public LengthLimitingStream(InputStream is) {
 			this.is = is;
 		}
@@ -137,6 +140,13 @@ public class LimitInterceptor extends AbstractInterceptor {
 			}
 		}
 
+		/** Releases the decoder. Later reads must still report the end, not reach the closed decoder. */
+		private int end() throws IOException {
+			ended = true;
+			is.close();
+			return -1;
+		}
+
 		private void checkPosition() throws IOException {
 			if (pos > maxBodyLength) {
 				log.info("Message length >= {} exceeded limit {}.",pos,maxBodyLength);
@@ -147,6 +157,8 @@ public class LimitInterceptor extends AbstractInterceptor {
 
 		@Override
 		public int read() throws IOException {
+			if (ended)
+				return -1;
 			int i;
 			try {
 				i = is.read();
@@ -154,10 +166,8 @@ public class LimitInterceptor extends AbstractInterceptor {
 				closeAfterFailure(e);
 				throw e;
 			}
-			if (i == -1) {
-				is.close();
-				return i;
-			}
+			if (i == -1)
+				return end();
 			pos++;
 			checkPosition();
 			return i;
@@ -165,6 +175,8 @@ public class LimitInterceptor extends AbstractInterceptor {
 
 		@Override
 		public int read(byte[] b) throws IOException {
+			if (ended)
+				return -1;
 			int l;
 			try {
 				l = is.read(b);
@@ -172,10 +184,8 @@ public class LimitInterceptor extends AbstractInterceptor {
 				closeAfterFailure(e);
 				throw e;
 			}
-			if (l == -1) {
-				is.close();
-				return l;
-			}
+			if (l == -1)
+				return end();
 			pos += l;
 			checkPosition();
 			return l;
@@ -183,6 +193,8 @@ public class LimitInterceptor extends AbstractInterceptor {
 
 		@Override
 		public int read(byte[] b, int off, int len) throws IOException {
+			if (ended)
+				return -1;
 			int l;
 			try {
 				l = is.read(b, off, len);
@@ -190,10 +202,8 @@ public class LimitInterceptor extends AbstractInterceptor {
 				closeAfterFailure(e);
 				throw e;
 			}
-			if (l == -1) {
-				is.close();
-				return l;
-			}
+			if (l == -1)
+				return end();
 			pos += l;
 			checkPosition();
 			return l;
@@ -201,6 +211,8 @@ public class LimitInterceptor extends AbstractInterceptor {
 
 		@Override
 		public long skip(long n) throws IOException {
+			if (ended)
+				return 0;
 			long l = is.skip(n);
 			if (l == -1) // Is always false
 				return l;
@@ -211,6 +223,8 @@ public class LimitInterceptor extends AbstractInterceptor {
 
 		@Override
 		public int available() throws IOException {
+			if (ended)
+				return 0;
 			return is.available();
 		}
 
