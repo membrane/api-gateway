@@ -109,7 +109,7 @@ class HttpServerHandlerTest {
             }
             // A failing connection afterwards, so the server has handled the first one by the time its line is logged.
             sendClientHelloAndHangUp();
-            log.awaitContainsOrThrow(HANDSHAKE_FAILED, TIMEOUT);
+            log.awaitContainsOrThrow(HANDSHAKE_FAILED + "Remote host terminated the handshake", TIMEOUT);
             assertEquals(1, log.eventsContaining(HANDSHAKE_FAILED).size(), log.getMessages().toString());
         } finally {
             stopCapture(log);
