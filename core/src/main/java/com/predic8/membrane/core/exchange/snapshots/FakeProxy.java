@@ -28,13 +28,38 @@ import java.io.*;
 @JsonDeserialize(using = FakeProxy.Deserializer.class)
 public class FakeProxy extends AbstractProxy {
 
+    /**
+     * Whether the client connected to the proxy with TLS.
+     */
+    private boolean inboundTls;
+
     public FakeProxy(Proxy proxy) {
         this(proxy.getKey().getPort());
         setName(proxy.getName());
+        inboundTls = isInboundTls(proxy);
     }
 
     public FakeProxy(int port) {
         this.key = new FakeKey(port);
+    }
+
+    /**
+     * @return whether clients connect to {@code proxy} with TLS, also for a proxy restored from storage
+     */
+    public static boolean isInboundTls(Proxy proxy) {
+        return switch (proxy) {
+            case SSLableProxy sp -> sp.isInboundSSL();
+            case FakeProxy fp -> fp.inboundTls;
+            case null, default -> false;
+        };
+    }
+
+    public boolean isInboundTls() {
+        return inboundTls;
+    }
+
+    public void setInboundTls(boolean inboundTls) {
+        this.inboundTls = inboundTls;
     }
 
     public static class Serializer extends JsonSerializer<FakeProxy>{
@@ -43,6 +68,8 @@ public class FakeProxy extends AbstractProxy {
             jsonGenerator.writeStartObject();
             jsonGenerator.writeStringField("name",fakeRule.getName());
             jsonGenerator.writeNumberField("port",fakeRule.getKey().getPort());
+            if (fakeRule.inboundTls)
+                jsonGenerator.writeBooleanField("inboundTls", true);
             jsonGenerator.writeEndObject();
         }
     }
@@ -53,6 +80,7 @@ public class FakeProxy extends AbstractProxy {
             JsonNode jsonNode = jsonParser.getCodec().<JsonNode>readTree(jsonParser);
             FakeProxy fp = new FakeProxy(jsonNode.get("port").asInt());
             fp.setName(jsonNode.get("name").asText());
+            fp.setInboundTls(jsonNode.path("inboundTls").asBoolean(false));
             return fp;
         }
     }
