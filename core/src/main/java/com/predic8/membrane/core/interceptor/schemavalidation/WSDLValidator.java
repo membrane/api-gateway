@@ -513,12 +513,12 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
 
     @Override
     protected void setErrorResponse(Exchange exchange, Interceptor.Flow flow, String message) {
-        setFaultResponse(exchange, Map.of("error", message));
+        setFaultResponse(exchange, flow, Map.of("error", message));
     }
 
     @Override
     protected void setErrorResponse(Exchange exchange, Interceptor.Flow flow, List<Exception> exceptions) {
-        setFaultResponse(exchange, Map.of("validation", convertExceptionsToMap(exceptions)));
+        setFaultResponse(exchange, flow, Map.of("validation", convertExceptionsToMap(exceptions)));
     }
 
     /**
@@ -526,9 +526,18 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
      * rejection; the {@code detail} content is only filled in when the configuration allows the
      * validation details to be disclosed.
      */
-    private void setFaultResponse(Exchange exchange, Map<String, Object> detail) {
+    private void setFaultResponse(Exchange exchange, Interceptor.Flow flow, Map<String, Object> detail) {
+        final var version = soapVersionOf(exchange);
         exchange.setResponse(createSOAPFaultResponse(Client, getErrorTitle(),
-                errorDetailsPolicy.validationDetails() ? detail : Map.of(), soapVersionOf(exchange)));
+                errorDetailsPolicy.validationDetails() ? detail : Map.of(), version, faultStatusCode(flow, version)));
+    }
+
+    /**
+     * The SOAP HTTP bindings send a fault with 500 Internal Server Error. SOAP 1.2 sends a fault
+     * with the Sender code with 400 Bad Request instead, which applies to a rejected request.
+     */
+    private static int faultStatusCode(Interceptor.Flow flow, SoapVersion version) {
+        return flow == Interceptor.Flow.REQUEST && version == SOAP12 ? 400 : 500;
     }
 
     /**

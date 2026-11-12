@@ -331,13 +331,7 @@ public class Json2SoapInterceptor extends AbstractInterceptor {
 
     /** Answers the SOAP client with a fault: status 500, as SOAP 1.1 section 6.2 and SOAP 1.2 require. */
     private static Outcome soapFault(Exchange exc, Conversions current, FaultCode code, String faultString) {
-        final var fault = createSOAPFaultResponse(code, faultString, null, current.soapVersion());
-        fault.setStatusCode(500);
-        fault.setStatusMessage("Internal Server Error");
-        if (current.soapVersion() == SoapVersion.SOAP12) {
-            fault.getHeader().setContentType(APPLICATION_SOAP_XML + ";charset=UTF-8");
-        }
-        exc.setResponse(fault);
+        exc.setResponse(createSOAPFaultResponse(code, faultString, null, current.soapVersion(), 500));
         return ABORT;
     }
 

@@ -55,7 +55,7 @@ public class SOAPProxyValidationExampleTest extends AbstractSampleMembraneStartS
 		.then()
 			.log().ifValidationFails()
 			.body(containsString("faultcode"))
-			.statusCode(200); // SOAP: even errors return 200 :-)
+			.statusCode(500);
 		// @formatter:on
     }
 }

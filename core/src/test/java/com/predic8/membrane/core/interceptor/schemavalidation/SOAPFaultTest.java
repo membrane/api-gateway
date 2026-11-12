@@ -76,7 +76,7 @@ public class SOAPFaultTest {
 
 	private Exchange createFaultExchange() {
 		Exchange exc = new Exchange(null);
-		exc.setResponse(SOAPUtil.createSOAPFaultResponse(Server,"secret", Map.of("detail","error"), SOAP11));
+		exc.setResponse(SOAPUtil.createSOAPFaultResponse(Server,"secret", Map.of("detail","error"), SOAP11, 500));
 		return exc;
 	}
 
