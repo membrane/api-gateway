@@ -21,6 +21,7 @@ import com.predic8.membrane.core.transport.http.ConnectTimeoutException;
 import com.predic8.membrane.core.transport.http.HttpClientStatusEventBus;
 import com.predic8.membrane.core.transport.http.HttpClientStatusEventListener;
 import com.predic8.membrane.core.transport.http2.StreamNotProcessedException;
+import org.apache.logging.log4j.Level;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -202,7 +203,9 @@ class RetryHandlerTest {
 
             final var log = captureLog(() -> assertThrows(NoRouteToHostException.class, () -> rh.executeWithRetries(exc, mock)));
 
-            assertTrue(log.contains("No route to /foo?api-key=***: Host is unreachable"), log.getMessages().toString());
+            final var warnings = log.eventsContaining("No route to /foo?api-key=***: Host is unreachable");
+            assertEquals(3, warnings.size(), log.getMessages().toString());
+            assertTrue(warnings.stream().allMatch(event -> event.getLevel() == Level.WARN && event.getThrown() == null), warnings.toString());
             assertFalse(log.contains("Unexpected SocketException"), log.getMessages().toString());
             assertFalse(log.contains("secret"), log.getMessages().toString());
             assertEquals(3, mock.attempts);
