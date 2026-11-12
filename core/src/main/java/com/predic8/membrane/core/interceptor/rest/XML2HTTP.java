@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.rest;
 
+import java.io.IOException;
 import com.predic8.membrane.annot.Constants;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Request;
@@ -52,12 +53,12 @@ public class XML2HTTP {
      */
     public static void unwrapMessageIfNecessary(Message message) {
         if (isXML(message.getHeader().getContentType())) {
-            try {
-                if (message.getBody().getLength() == 0)
-                    return;
+            if (message.getBody().getLength() == 0)
+                return;
 
+            try (final var body = message.getBodyAsStreamDecoded()) {
                 XMLEventReader parser;
-                parser = getXmlEventReader(message);
+                parser = HardenedStaxInputFactory.inputFactory().createXMLEventReader(body);
 
 
                 /* States:
@@ -136,15 +137,13 @@ public class XML2HTTP {
                     message.getHeader().clear();
                 if (!foundBody)
                     message.setBodyContent(new byte[0]);
-            } catch (XMLStreamException | XML2HTTPException e) {
+            } catch (XMLStreamException | XML2HTTPException | IOException e) {
                 log.error("Failed to unwrap XML-HTTP document for message.", e);
             }
         }
     }
 
-    private static XMLEventReader getXmlEventReader(Message message) throws XMLStreamException {
-        return HardenedStaxInputFactory.inputFactory().createXMLEventReader(message.getBodyAsStreamDecoded());
-    }
+
 
     private static String slurpCharacterData(XMLEventReader parser, StartElement sevent) throws XMLStreamException, XML2HTTPException {
         String name = sevent.getName().getLocalPart();

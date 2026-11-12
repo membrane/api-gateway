@@ -13,6 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.rest;
 
+import com.predic8.membrane.core.http.ReadingBodyException;
+import java.io.IOException;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
@@ -116,11 +118,15 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
         if (mapping == null || mapping.getResponseXSLT().isEmpty())
             return CONTINUE;
 
-        if (log.isDebugEnabled())
-            log.debug("response: {}", new String(getTransformer(null).transform(getBodySource(exc), exc.getStringProperties()), UTF_8));
+        if (log.isDebugEnabled()) {
+            try (final var body = exc.getResponse().getBodyAsStreamDecoded()) {
+                log.debug("response: {}", new String(getTransformer(null).transform(new StreamSource(body), exc.getStringProperties()), UTF_8));
+            }
+        }
 
-        exc.getResponse().setBodyContent(getTransformer(mapping.responseXSLT).
-                transform(getBodySource(exc)));
+        try (final var body = exc.getResponse().getBodyAsStreamDecoded()) {
+            exc.getResponse().setBodyContent(getTransformer(mapping.responseXSLT).transform(new StreamSource(body)));
+        }
         Header header = exc.getResponse().getHeader();
         header.removeFields(CONTENT_TYPE);
         header.setContentType(TEXT_XML_UTF8);
@@ -146,7 +152,9 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
         if (!isJson(types.getFirst().toString()))
             return;
 
-        response.setBodyContent(xml2json(response.getBodyAsStreamDecoded(), properties));
+        try (final var body = response.getBodyAsStreamDecoded()) {
+            response.setBodyContent(xml2json(body, properties));
+        }
         setJSONContentType(response.getHeader());
     }
 
@@ -155,9 +163,7 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
                 transform(new StreamSource(xmlResp), properties);
     }
 
-    private StreamSource getBodySource(Exchange exc) {
-        return new StreamSource(exc.getResponse().getBodyAsStreamDecoded());
-    }
+
 
     private Mapping getRESTURL(Exchange exc) {
         return exc.getProperty("mapping", Mapping.class);
@@ -185,7 +191,11 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
 
     private boolean isSOAP12(AbstractExchange exc) {
         // Determine SOAP version per-request; do not cache in instance state
-        return SOAP12_NS.equals(getRootElementNamespace(exc.getRequest().getBodyAsStreamDecoded()));
+        try (final var body = exc.getRequest().getBodyAsStreamDecoded()) {
+            return SOAP12_NS.equals(getRootElementNamespace(body));
+        } catch (IOException e) {
+            throw new ReadingBodyException(e);
+        }
     }
 
     private String getRootElementNamespace(InputStream stream) {

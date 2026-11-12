@@ -24,6 +24,7 @@ import java.util.stream.*;
 import static com.predic8.membrane.core.util.OSUtil.*;
 import static java.lang.System.currentTimeMillis;
 import static java.lang.Thread.*;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * Starts a shell script (Windows batch file or Linux shell script) or
@@ -221,7 +222,18 @@ public class Process2 implements AutoCloseable {
 	public void killScript() {
 		if (inputReader != null) inputReader.interrupt();
 		if (errorReader != null) errorReader.interrupt();
-		getChildrenRecursively(p.toHandle()).forEach(ProcessHandle::destroyForcibly);
+		final var processes = getChildrenRecursively(p.toHandle()).toList();
+		processes.forEach(ProcessHandle::destroyForcibly);
+		// destroyForcibly() only requests termination. On Windows, a process keeps its working directory
+		// and open files locked until it has exited, so deleting the example directory right afterwards fails.
+		try {
+			CompletableFuture.allOf(processes.stream().map(ProcessHandle::onExit).toArray(CompletableFuture[]::new))
+					.get(TIMEOUT, MILLISECONDS);
+		} catch (InterruptedException e) {
+			currentThread().interrupt();
+		} catch (ExecutionException | TimeoutException e) {
+			log.warn("Processes {} did not exit within {} ms after being killed.", processes.stream().map(ProcessHandle::pid).toList(), TIMEOUT);
+		}
 	}
 
 	private static int waitForExit(Process p, long timeout) {
