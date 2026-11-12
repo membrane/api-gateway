@@ -221,6 +221,13 @@ public class HttpEndpointListener extends Thread {
         }
     }
 
+    /**
+     * @return true once the port is being closed, e.g. for a reload or shutdown, after which open connections get closed
+     */
+    boolean isClosed() {
+        return closed;
+    }
+
     void setOpenStatus(Socket socket) {
         openSockets.remove(socket);
 
