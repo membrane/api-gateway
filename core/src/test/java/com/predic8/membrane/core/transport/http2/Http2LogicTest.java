@@ -333,7 +333,10 @@ class Http2LogicTest {
                 arguments("CONNECT without :authority", (Object) fields(":method", "CONNECT")),
                 arguments("CONNECT with :path", (Object) fields(":method", "CONNECT", ":authority", "example.com:443", ":path", "/")),
                 arguments("content-length but no body", (Object) withGet("content-length", "5")),
-                arguments("invalid content-length", (Object) withGet("content-length", "abc"))
+                arguments("invalid content-length", (Object) withGet("content-length", "abc")),
+                // :authority and host must name the same host (RFC 9113 §8.3.1).
+                arguments("host differing from :authority", (Object) withGet("host", "other.example")),
+                arguments("two different host fields", (Object) fields(":method", "GET", ":scheme", "https", ":path", "/", "host", "a.example", "host", "b.example"))
         );
     }
 
@@ -500,6 +503,21 @@ class Http2LogicTest {
 
         assertNotNull(handler.message);
         assertEquals(0, handler.malformedStreamId);
+    }
+
+    /**
+     * A host field that repeats :authority is allowed (RFC 9113 §8.3.1). The request is forwarded with one Host field,
+     * so that the gateway and an HTTP/1.1 backend see the same host.
+     */
+    @Test
+    void hostRepeatingAuthorityGivesOneHostField() throws Exception {
+        final var handler = new RecordingHandler();
+
+        assertThrows(EndOfStreamException.class, () -> createLogic(headersFrame(true, new Encoder(4096), withGet("host", "LOCALHOST")), handler).handle());
+
+        assertNotNull(handler.message);
+        assertEquals(1, handler.message.getHeader().getNumberOf("Host"));
+        assertEquals("localhost", handler.message.getHeader().getHost());
     }
 
     /** Trailers carry no pseudo-headers (RFC 9113 §8.1). The request was already handed over, so its body fails. */
