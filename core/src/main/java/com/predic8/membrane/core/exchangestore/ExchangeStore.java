@@ -70,6 +70,16 @@ public interface ExchangeStore {
 	 */
 	void waitForModification(long lastKnownModification) throws InterruptedException;
 
+	/**
+	 * Like {@link #waitForModification(long)}, but gives up after {@code timeoutMillis}.
+	 * Stores that cannot signal modifications return false immediately.
+	 *
+	 * @return whether the store signalled a modification after {@code lastKnownModification}
+	 */
+	default boolean waitForModification(long lastKnownModification, long timeoutMillis) throws InterruptedException {
+		return false;
+	}
+
     ExchangeQueryResult getFilteredSortedPaged(QueryParameter params, boolean useXForwardedForAsClientAddr) throws Exception;
 
     List<String> getUniqueValuesOf(String field);
