@@ -39,21 +39,24 @@ import java.security.cert.X509Certificate;
  * @param dispositionNotificationTo Disposition-Notification-To header, sent if an MDN is requested
  * @param messageIdDomain           Domain part of generated Message-IDs
  * @param maxPayloadSize            Maximum size of the payload in bytes
+ * @param insecureAllowExpiredCertificates Use certificates outside their validity period. If false, no message is
+ *                                         sent while the own certificate or the certificate of the partner is not
+ *                                         valid, and an MDN is not accepted then.
  */
 public record As2SenderSettings(String as2Id, PrivateKey privateKey, X509Certificate certificate,
                                 String partnerAs2Id, X509Certificate partnerCertificate,
                                 SignatureDigest signatureDigest, Encryption encryption, Compression compression,
                                 Mdn mdn, String subject, String dispositionNotificationTo, String messageIdDomain,
-                                long maxPayloadSize) {
+                                long maxPayloadSize, boolean insecureAllowExpiredCertificates) {
 
     /**
      * Without the private key, which some key implementations print with its secret values.
      */
     @Override
     public String toString() {
-        return "As2SenderSettings[as2Id=%s, certificate=%s, partner=%s, partnerCertificate=%s, signatureDigest=%s, encryption=%s, compression=%s, mdn=%s, maxPayloadSize=%d]"
+        return "As2SenderSettings[as2Id=%s, certificate=%s, partner=%s, partnerCertificate=%s, signatureDigest=%s, encryption=%s, compression=%s, mdn=%s, maxPayloadSize=%d, insecureAllowExpiredCertificates=%s]"
                 .formatted(as2Id, certificate.getSubjectX500Principal(), partnerAs2Id,
                         partnerCertificate.getSubjectX500Principal(), signatureDigest, encryption, compression, mdn,
-                        maxPayloadSize);
+                        maxPayloadSize, insecureAllowExpiredCertificates);
     }
 }

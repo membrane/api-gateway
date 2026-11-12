@@ -33,7 +33,6 @@ import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.as2.As2Keys.checkAs2Id;
-import static com.predic8.membrane.core.interceptor.as2.As2Keys.warnIfExpired;
 import static com.predic8.membrane.core.util.ExtensionLoader.load;
 import static org.apache.commons.lang3.exception.ExceptionUtils.throwableOfType;
 
@@ -75,6 +74,7 @@ import static org.apache.commons.lang3.exception.ExceptionUtils.throwableOfType;
  *   [ dispositionNotificationTo: &lt;address&gt; ]
  *   [ messageIdDomain: &lt;domain&gt; ]
  *   [ maxPayloadSize: &lt;bytes&gt; ]
+ *   [ insecureAllowExpiredCertificates: true | false ]
  * </pre>
  * @yaml
  * <pre><code>
@@ -151,6 +151,7 @@ public class As2SenderInterceptor extends AbstractInterceptor {
     private String dispositionNotificationTo;
     private String messageIdDomain = "as2.local";
     private long maxPayloadSize = 100L * 1024 * 1024;
+    private boolean insecureAllowExpiredCertificates;
 
     /**
      * Written in init(), read-only afterwards.
@@ -172,16 +173,19 @@ public class As2SenderInterceptor extends AbstractInterceptor {
             throw new ConfigurationException("messageIdDomain of as2Sender must be a domain name, e.g. example.com.");
 
         final var keys = new As2Keys("as2Sender", router.getResolverMap(), getBeanBaseLocation());
+        if (insecureAllowExpiredCertificates)
+            log.warn("as2Sender {} accepts expired certificates. MDNs signed with the expired certificate of a partner are still accepted.", as2Id);
         final var ownKey = keys.loadOwnKey(keyStore, key);
-        warnIfExpired(log, "The certificate of as2Sender " + as2Id, ownKey.certificate());
+        keys.checkValidity(log, "The certificate of as2Sender " + as2Id, ownKey.certificate(), insecureAllowExpiredCertificates);
         final var partnerCertificate = keys.loadPartnerCertificate(partner);
-        warnIfExpired(log, "The certificate of partner " + partner.getAs2Id(), partnerCertificate);
+        keys.checkValidity(log, "The certificate of partner " + partner.getAs2Id(), partnerCertificate, insecureAllowExpiredCertificates);
         checkEncryption(partnerCertificate.getPublicKey().getAlgorithm());
 
         final var extension = createSender();
         extension.init(new As2SenderSettings(as2Id, ownKey.privateKey(), ownKey.certificate(), partner.getAs2Id(),
                 partnerCertificate, signatureDigest, encryption, compression, mdn, subject,
-                dispositionNotificationTo != null ? dispositionNotificationTo : as2Id, messageIdDomain, maxPayloadSize));
+                dispositionNotificationTo != null ? dispositionNotificationTo : as2Id, messageIdDomain, maxPayloadSize,
+                insecureAllowExpiredCertificates));
         sender = extension;
     }
 
@@ -433,5 +437,23 @@ public class As2SenderInterceptor extends AbstractInterceptor {
 
     public long getMaxPayloadSize() {
         return maxPayloadSize;
+    }
+
+    /**
+     * @description Whether certificates outside their validity period are used, both the own certificate and that of
+     * the partner. Insecure: MDNs signed with the expired certificate of the partner are still accepted, even though
+     * the partner may no longer protect the key. Use it only for the time a partner needs to renew its certificate.
+     * Otherwise Membrane does not start with such a certificate, and while it runs it sends no messages as soon as a
+     * certificate expires.
+     * @default false
+     * @example true
+     */
+    @MCAttribute
+    public void setInsecureAllowExpiredCertificates(boolean insecureAllowExpiredCertificates) {
+        this.insecureAllowExpiredCertificates = insecureAllowExpiredCertificates;
+    }
+
+    public boolean isInsecureAllowExpiredCertificates() {
+        return insecureAllowExpiredCertificates;
     }
 }

@@ -28,10 +28,14 @@ import java.util.Map;
  * @param requireSigned    Reject unsigned messages
  * @param requireEncrypted Reject unencrypted messages
  * @param maxPayloadSize   Maximum size of the payload in bytes, also the limit for decompression
+ * @param insecureAllowExpiredCertificates Use certificates outside their validity period. If false, messages are
+ *                                         rejected while the own certificate or the certificate of the sending partner
+ *                                         is not valid.
  */
 public record As2ReceiverSettings(String as2Id, PrivateKey privateKey, X509Certificate certificate,
                                   Map<String, X509Certificate> partners, boolean requireSigned,
-                                  boolean requireEncrypted, long maxPayloadSize) {
+                                  boolean requireEncrypted, long maxPayloadSize,
+                                  boolean insecureAllowExpiredCertificates) {
 
     public As2ReceiverSettings {
         partners = Map.copyOf(partners);
@@ -42,7 +46,8 @@ public record As2ReceiverSettings(String as2Id, PrivateKey privateKey, X509Certi
      */
     @Override
     public String toString() {
-        return "As2ReceiverSettings[as2Id=%s, certificate=%s, partners=%s, requireSigned=%s, requireEncrypted=%s, maxPayloadSize=%d]"
-                .formatted(as2Id, certificate.getSubjectX500Principal(), partners.keySet(), requireSigned, requireEncrypted, maxPayloadSize);
+        return "As2ReceiverSettings[as2Id=%s, certificate=%s, partners=%s, requireSigned=%s, requireEncrypted=%s, maxPayloadSize=%d, insecureAllowExpiredCertificates=%s]"
+                .formatted(as2Id, certificate.getSubjectX500Principal(), partners.keySet(), requireSigned, requireEncrypted,
+                        maxPayloadSize, insecureAllowExpiredCertificates);
     }
 }

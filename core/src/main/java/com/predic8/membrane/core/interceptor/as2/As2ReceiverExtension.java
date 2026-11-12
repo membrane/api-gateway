@@ -26,6 +26,10 @@ import java.io.IOException;
  * The interceptor loads keys and certificates and checks the configuration, the extension does the AS2 processing.
  * It decides when an MDN reports success: only after the backend answered with 2xx.
  * <p>
+ * The interceptor checks the validity period of the certificates on startup. A certificate can expire while Membrane
+ * runs, so the extension checks again for each message, unless
+ * {@link As2ReceiverSettings#insecureAllowExpiredCertificates()} is set.
+ * <p>
  * One instance serves all request threads, so the methods are called concurrently. State that
  * {@link #respond(Exchange, boolean)} needs from {@link #receive(Exchange)} has to be kept on the exchange.
  */
@@ -51,8 +55,8 @@ public interface As2ReceiverExtension {
      * <li>RETURN: the message was rejected and the sender requested an MDN. The response is set to the error MDN,
      * sent with status 200.</li>
      * <li>ABORT: the message was rejected and the sender did not request an MDN, or the request is not an AS2
-     * message. The response is set to an error with status 403 if the sender could not be authenticated,
-     * 413 if the message is too large, 400 otherwise.</li>
+     * message. The response is set to an error with status 403 if the sender could not be authenticated, e.g.
+     * because the certificate of the partner has expired, 413 if the message is too large, 400 otherwise.</li>
      * </ul>
      */
     Outcome receive(Exchange exchange) throws IOException;

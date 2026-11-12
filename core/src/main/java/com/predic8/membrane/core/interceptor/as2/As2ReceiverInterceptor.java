@@ -38,7 +38,6 @@ import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.as2.As2Keys.checkAs2Id;
-import static com.predic8.membrane.core.interceptor.as2.As2Keys.warnIfExpired;
 import static com.predic8.membrane.core.util.ExtensionLoader.load;
 import static org.apache.commons.lang3.exception.ExceptionUtils.throwableOfType;
 
@@ -74,6 +73,7 @@ import static org.apache.commons.lang3.exception.ExceptionUtils.throwableOfType;
  *   [ requireSigned: true | false ]
  *   [ requireEncrypted: true | false ]
  *   [ maxPayloadSize: &lt;bytes&gt; ]
+ *   [ insecureAllowExpiredCertificates: true | false ]
  * </pre>
  * @yaml
  * <pre><code>
@@ -112,6 +112,7 @@ public class As2ReceiverInterceptor extends AbstractInterceptor {
     private boolean requireSigned = true;
     private boolean requireEncrypted;
     private long maxPayloadSize = 100L * 1024 * 1024;
+    private boolean insecureAllowExpiredCertificates;
 
     /**
      * Written in init(), read-only afterwards.
@@ -128,15 +129,17 @@ public class As2ReceiverInterceptor extends AbstractInterceptor {
             throw new ConfigurationException("maxPayloadSize of as2Receiver must be greater than 0.");
 
         final var keys = new As2Keys("as2Receiver", router.getResolverMap(), getBeanBaseLocation());
+        if (insecureAllowExpiredCertificates)
+            log.warn("as2Receiver {} accepts expired certificates. A partner whose certificate has expired is still authenticated.", as2Id);
         final var ownKey = keys.loadOwnKey(keyStore, key);
-        checkOwnKey(ownKey);
+        checkOwnKey(keys, ownKey);
         final var partnerCertificates = loadPartners(keys);
         if (!requireSigned)
             log.warn("as2Receiver {} accepts unsigned messages. Their sender is not authenticated: anyone can send them in the name of a partner.", as2Id);
 
         final var extension = createReceiver();
         extension.init(new As2ReceiverSettings(as2Id, ownKey.privateKey(), ownKey.certificate(), partnerCertificates,
-                requireSigned, requireEncrypted, maxPayloadSize));
+                requireSigned, requireEncrypted, maxPayloadSize, insecureAllowExpiredCertificates));
         receiver = extension;
     }
 
@@ -151,13 +154,13 @@ public class As2ReceiverInterceptor extends AbstractInterceptor {
     /**
      * The AS2 library decrypts only with RSA keys.
      */
-    private void checkOwnKey(final OwnKey ownKey) {
+    private void checkOwnKey(final As2Keys keys, final OwnKey ownKey) {
         if (!ownKey.isRsa()) {
             if (requireEncrypted)
                 throw new ConfigurationException("as2Receiver requires encrypted messages, but its key is an EC key. Decryption needs an RSA key.");
             log.warn("The key of as2Receiver {} is an EC key. Partners cannot send encrypted messages: decryption needs an RSA key.", as2Id);
         }
-        warnIfExpired(log, "The certificate of as2Receiver " + as2Id, ownKey.certificate());
+        keys.checkValidity(log, "The certificate of as2Receiver " + as2Id, ownKey.certificate(), insecureAllowExpiredCertificates);
     }
 
     private Map<String, X509Certificate> loadPartners(final As2Keys keys) {
@@ -166,7 +169,7 @@ public class As2ReceiverInterceptor extends AbstractInterceptor {
             final var certificate = keys.loadPartnerCertificate(partner);
             if (certificates.containsKey(partner.getAs2Id()))
                 throw new ConfigurationException("as2Receiver has more than one partner with the AS2 ID %s.".formatted(partner.getAs2Id()));
-            warnIfExpired(log, "The certificate of partner " + partner.getAs2Id(), certificate);
+            keys.checkValidity(log, "The certificate of partner " + partner.getAs2Id(), certificate, insecureAllowExpiredCertificates);
             certificates.put(partner.getAs2Id(), certificate);
         }
         return certificates;
@@ -323,5 +326,23 @@ public class As2ReceiverInterceptor extends AbstractInterceptor {
 
     public long getMaxPayloadSize() {
         return maxPayloadSize;
+    }
+
+    /**
+     * @description Whether certificates outside their validity period are used, both the own certificate and those
+     * of the partners. Insecure: a partner whose certificate has expired is still authenticated, even though the
+     * partner may no longer protect the key. Use it only for the time a partner needs to renew its certificate.
+     * Otherwise Membrane does not start with such a certificate, and while it runs it rejects messages as soon as
+     * a certificate expires.
+     * @default false
+     * @example true
+     */
+    @MCAttribute
+    public void setInsecureAllowExpiredCertificates(boolean insecureAllowExpiredCertificates) {
+        this.insecureAllowExpiredCertificates = insecureAllowExpiredCertificates;
+    }
+
+    public boolean isInsecureAllowExpiredCertificates() {
+        return insecureAllowExpiredCertificates;
     }
 }

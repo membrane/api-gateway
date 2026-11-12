@@ -26,6 +26,10 @@ import java.io.IOException;
  * The interceptor loads keys and certificates and checks the configuration, the extension does the AS2 processing.
  * Membrane's HTTP client sends the AS2 message to the target of the API, the partner.
  * <p>
+ * The interceptor checks the validity period of the certificates on startup. A certificate can expire while Membrane
+ * runs, so the extension checks again for each message and MDN, unless
+ * {@link As2SenderSettings#insecureAllowExpiredCertificates()} is set.
+ * <p>
  * One instance serves all request threads, so the methods are called concurrently. State that
  * {@link #handleResponse(Exchange)} needs from {@link #send(Exchange)} has to be kept on the exchange.
  */
@@ -48,6 +52,7 @@ public interface As2SenderExtension {
      * <li>ABORT: the request cannot be sent. The response is set to an error with status 413 if the payload is too
      * large, 400 otherwise, e.g. without payload or Content-Type.</li>
      * </ul>
+     * If a certificate is not valid, the method throws and nothing is sent; the interceptor answers with status 500.
      */
     Outcome send(Exchange exchange) throws IOException;
 

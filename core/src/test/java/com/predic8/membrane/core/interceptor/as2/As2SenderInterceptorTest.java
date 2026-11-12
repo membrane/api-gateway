@@ -112,10 +112,7 @@ class As2SenderInterceptorTest {
      * Partner ACME with the certificate of a generated key.
      */
     private static As2Partner partnerWith(final Key generated) {
-        final var partner = new As2Partner();
-        partner.setAs2Id("ACME");
-        partner.setCertificate(generated.getCertificates().getFirst());
-        return partner;
+        return As2ReceiverInterceptorTest.partnerWith("ACME", generated);
     }
 
     private static ConfigurationException initFails(final As2SenderInterceptor i) {
@@ -146,6 +143,7 @@ class As2SenderInterceptorTest {
         i.setDispositionNotificationTo("as2@example.com");
         i.setMessageIdDomain("example.com");
         i.setMaxPayloadSize(1000);
+        i.setInsecureAllowExpiredCertificates(true);
         i.init(new DummyTestRouter());
 
         final var s = sender.settings;
@@ -162,6 +160,7 @@ class As2SenderInterceptorTest {
         assertEquals("as2@example.com", s.dispositionNotificationTo());
         assertEquals("example.com", s.messageIdDomain());
         assertEquals(1000, s.maxPayloadSize());
+        assertTrue(s.insecureAllowExpiredCertificates());
     }
 
     @Test
@@ -176,6 +175,7 @@ class As2SenderInterceptorTest {
         assertEquals("MEMBRANE", s.dispositionNotificationTo());
         assertEquals("as2.local", s.messageIdDomain());
         assertEquals(100L * 1024 * 1024, s.maxPayloadSize());
+        assertFalse(s.insecureAllowExpiredCertificates());
     }
 
     @Test
@@ -319,23 +319,42 @@ class As2SenderInterceptorTest {
     }
 
     @Test
-    void warnsAboutExpiredPartnerCertificate() throws Exception {
-        final var events = captureLog(() -> {
-            final var i = interceptor();
-            i.setPartner(partnerWith(generatedKey("RSA", Instant.now().minus(Duration.ofDays(1)))));
-            i.init(new DummyTestRouter());
-        });
-        assertTrue(hasWarning(events, "The certificate of partner ACME expired"));
+    void rejectsExpiredPartnerCertificate() throws Exception {
+        final var i = interceptor();
+        i.setPartner(partnerWith(generatedKey("RSA", Instant.now().minus(Duration.ofDays(1)))));
+        final var message = initFails(i).getMessage();
+        assertTrue(message.contains("The certificate of partner ACME expired on"));
+        assertTrue(message.contains("insecureAllowExpiredCertificates of as2Sender"));
     }
 
     @Test
-    void warnsAboutExpiredOwnCertificate() throws Exception {
+    void rejectsExpiredOwnCertificate() throws Exception {
+        final var i = interceptor();
+        i.setKey(generatedKey("RSA", Instant.now().minus(Duration.ofDays(1))));
+        assertTrue(initFails(i).getMessage().contains("The certificate of as2Sender MEMBRANE expired on"));
+    }
+
+    @Test
+    void rejectsOwnCertificateNotValidYet() throws Exception {
+        final var i = interceptor();
+        // valid from now + 30 days
+        i.setKey(generatedKey("RSA", Instant.now().plus(Duration.ofDays(60))));
+        assertTrue(initFails(i).getMessage().contains("The certificate of as2Sender MEMBRANE is not valid before"));
+    }
+
+    @Test
+    void expiredCertificatesAllowedWithWarning() throws Exception {
         final var events = captureLog(() -> {
             final var i = interceptor();
             i.setKey(generatedKey("RSA", Instant.now().minus(Duration.ofDays(1))));
+            i.setPartner(partnerWith(generatedKey("RSA", Instant.now().minus(Duration.ofDays(1)))));
+            i.setInsecureAllowExpiredCertificates(true);
             i.init(new DummyTestRouter());
         });
-        assertTrue(hasWarning(events, "The certificate of as2Sender MEMBRANE expired"));
+        assertTrue(sender.settings.insecureAllowExpiredCertificates());
+        assertTrue(hasWarning(events, "as2Sender MEMBRANE accepts expired certificates"));
+        assertTrue(hasWarning(events, "The certificate of as2Sender MEMBRANE expired on"));
+        assertTrue(hasWarning(events, "The certificate of partner ACME expired on"));
     }
 
     @Test
@@ -439,6 +458,7 @@ class As2SenderInterceptorTest {
                         dispositionNotificationTo: as2@example.com
                         messageIdDomain: example.com
                         maxPayloadSize: 10485760
+                        insecureAllowExpiredCertificates: true
                   target:
                     url: https://as2.acme.example.com/as2
                 """);
@@ -451,6 +471,7 @@ class As2SenderInterceptorTest {
         assertEquals("as2@example.com", i.getDispositionNotificationTo());
         assertEquals("example.com", i.getMessageIdDomain());
         assertEquals(10485760, i.getMaxPayloadSize());
+        assertTrue(i.isInsecureAllowExpiredCertificates());
     }
 
     @Test

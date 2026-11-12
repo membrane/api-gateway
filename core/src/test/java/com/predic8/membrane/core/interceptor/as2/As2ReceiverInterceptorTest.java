@@ -143,6 +143,13 @@ class As2ReceiverInterceptorTest {
         return p;
     }
 
+    static As2Partner partnerWith(final String as2Id, final Key generated) {
+        final var partner = new As2Partner();
+        partner.setAs2Id(as2Id);
+        partner.setCertificate(generated.getCertificates().getFirst());
+        return partner;
+    }
+
     static KeyStore keyStore(final String alias) {
         final var ks = new KeyStore();
         ks.setLocation("classpath:/alias-keystore.p12");
@@ -170,6 +177,7 @@ class As2ReceiverInterceptorTest {
         i.setRequireSigned(false);
         i.setRequireEncrypted(true);
         i.setMaxPayloadSize(1000);
+        i.setInsecureAllowExpiredCertificates(true);
         i.init(new DummyTestRouter());
 
         final var s = receiver.settings;
@@ -181,6 +189,7 @@ class As2ReceiverInterceptorTest {
         assertFalse(s.requireSigned());
         assertTrue(s.requireEncrypted());
         assertEquals(1000, s.maxPayloadSize());
+        assertTrue(s.insecureAllowExpiredCertificates());
     }
 
     @Test
@@ -189,6 +198,7 @@ class As2ReceiverInterceptorTest {
         assertTrue(receiver.settings.requireSigned());
         assertFalse(receiver.settings.requireEncrypted());
         assertEquals(100L * 1024 * 1024, receiver.settings.maxPayloadSize());
+        assertFalse(receiver.settings.insecureAllowExpiredCertificates());
     }
 
     @Test
@@ -357,13 +367,42 @@ class As2ReceiverInterceptorTest {
     }
 
     @Test
-    void warnsAboutExpiredCertificate() throws Exception {
+    void rejectsExpiredOwnCertificate() throws Exception {
+        final var i = interceptor();
+        i.setKey(generatedKey("RSA", Instant.now().minus(Duration.ofDays(1))));
+        final var message = initFails(i).getMessage();
+        assertTrue(message.contains("The certificate of as2Receiver MEMBRANE expired on"));
+        assertTrue(message.contains("insecureAllowExpiredCertificates"));
+    }
+
+    @Test
+    void rejectsExpiredPartnerCertificate() throws Exception {
+        final var i = interceptor();
+        i.setPartners(List.of(partnerWith("ACME", generatedKey("RSA", Instant.now().minus(Duration.ofDays(1))))));
+        assertTrue(initFails(i).getMessage().contains("The certificate of partner ACME expired on"));
+    }
+
+    @Test
+    void rejectsPartnerCertificateNotValidYet() throws Exception {
+        final var i = interceptor();
+        // valid from now + 30 days
+        i.setPartners(List.of(partnerWith("ACME", generatedKey("RSA", Instant.now().plus(Duration.ofDays(60))))));
+        assertTrue(initFails(i).getMessage().contains("The certificate of partner ACME is not valid before"));
+    }
+
+    @Test
+    void expiredCertificatesAllowedWithWarning() throws Exception {
         final var events = captureLog(() -> {
             final var i = interceptor();
             i.setKey(generatedKey("RSA", Instant.now().minus(Duration.ofDays(1))));
+            i.setPartners(List.of(partnerWith("ACME", generatedKey("RSA", Instant.now().minus(Duration.ofDays(1))))));
+            i.setInsecureAllowExpiredCertificates(true);
             i.init(new DummyTestRouter());
         });
-        assertTrue(hasWarning(events, "The certificate of as2Receiver MEMBRANE expired"));
+        assertTrue(receiver.settings.insecureAllowExpiredCertificates());
+        assertTrue(hasWarning(events, "as2Receiver MEMBRANE accepts expired certificates"));
+        assertTrue(hasWarning(events, "The certificate of as2Receiver MEMBRANE expired on"));
+        assertTrue(hasWarning(events, "The certificate of partner ACME expired on"));
     }
 
     @Test
@@ -482,12 +521,14 @@ class As2ReceiverInterceptorTest {
                               location: globex.pem
                         requireSigned: false
                         maxPayloadSize: 10485760
+                        insecureAllowExpiredCertificates: true
                 """);
         assertEquals("membrane-key.pem", i.getKey().getPrivate().getLocation());
         assertEquals("membrane.pem", i.getKey().getCertificates().getFirst().getLocation());
         assertEquals(List.of("ACME", "GLOBEX"), i.getPartners().stream().map(As2Partner::getAs2Id).toList());
         assertFalse(i.isRequireSigned());
         assertEquals(10485760, i.getMaxPayloadSize());
+        assertTrue(i.isInsecureAllowExpiredCertificates());
     }
 
     @Test

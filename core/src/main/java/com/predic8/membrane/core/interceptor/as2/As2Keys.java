@@ -189,13 +189,31 @@ final class As2Keys {
     }
 
     /**
-     * The AS2 library does not check the validity period, so an expired certificate keeps working. Partners might
-     * reject it, though.
+     * Rejects a certificate outside its validity period, or only warns about it if expired certificates are allowed.
+     * The extension checks again for each message, since a certificate can expire while Membrane runs.
      *
-     * @param log Logger of the interceptor, so that the warning is logged under its name
+     * @param log          Logger of the interceptor, so that the warning is logged under its name
+     * @param what         Names the certificate, e.g. "The certificate of partner ACME"
+     * @param allowExpired Value of insecureAllowExpiredCertificates
      */
-    static void warnIfExpired(final Logger log, final String what, final X509Certificate certificate) {
-        if (certificate.getNotAfter().toInstant().isBefore(Instant.now()))
-            log.warn("{} expired on {}.", what, certificate.getNotAfter().toInstant());
+    void checkValidity(final Logger log, final String what, final X509Certificate certificate, final boolean allowExpired) {
+        final var problem = validityProblem(certificate, Instant.now());
+        if (problem == null)
+            return;
+        if (!allowExpired)
+            throw new ConfigurationException("%s %s. Replace it, or set insecureAllowExpiredCertificates of %s to use it anyway."
+                    .formatted(what, problem, element));
+        log.warn("{} {}.", what, problem);
+    }
+
+    /**
+     * @return why the certificate is not valid at the given time, null if it is valid
+     */
+    private static String validityProblem(final X509Certificate certificate, final Instant time) {
+        if (time.isAfter(certificate.getNotAfter().toInstant()))
+            return "expired on " + certificate.getNotAfter().toInstant();
+        if (time.isBefore(certificate.getNotBefore().toInstant()))
+            return "is not valid before " + certificate.getNotBefore().toInstant();
+        return null;
     }
 }
