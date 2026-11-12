@@ -45,6 +45,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.predic8.membrane.annot.Constants.*;
+import static com.predic8.membrane.core.http.Header.SERVER;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_SOAP_XML;
 import static com.predic8.membrane.core.http.MimeType.TEXT_XML_UTF8;
 import static com.predic8.membrane.core.http.Response.statusCode;
@@ -92,6 +93,7 @@ public class SOAPUtil {
                     ? createSOAP12Fault(code, faultstring, details)
                     : createSOAP11Fault(code, faultstring, details);
             return statusCode(soap12 && code == FaultCode.Client ? 400 : 500)
+                    .header(SERVER, PRODUCT_NAME)
                     .contentType(soap12 ? APPLICATION_SOAP_XML + ";charset=UTF-8" : TEXT_XML_UTF8)
                     .body(xmlNode2String(fault)).build();
         } catch (Exception e) {

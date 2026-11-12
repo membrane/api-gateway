@@ -27,10 +27,12 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.zip.GZIPOutputStream;
 
+import static com.predic8.membrane.annot.Constants.PRODUCT_NAME;
 import static com.predic8.membrane.annot.Constants.SOAP11_NS;
 import static com.predic8.membrane.annot.Constants.SOAP12_NS;
 import static com.predic8.membrane.annot.Constants.SoapVersion.SOAP11;
 import static com.predic8.membrane.annot.Constants.SoapVersion.SOAP12;
+import static com.predic8.membrane.core.http.Header.SERVER;
 import static com.predic8.membrane.core.http.MimeType.TEXT_XML_UTF8;
 import static com.predic8.membrane.core.util.SOAPUtil.FaultCode.Client;
 import static com.predic8.membrane.core.util.SOAPUtil.FaultCode.Server;
@@ -84,6 +86,7 @@ class SOAPUtilTest {
         assertEquals(500, response.getStatusCode());
         assertEquals("Internal Server Error", response.getStatusMessage());
         assertEquals(TEXT_XML_UTF8, response.getHeader().getContentType());
+        assertEquals(PRODUCT_NAME, response.getHeader().getFirstValue(SERVER));
         assertTrue(response.getBodyAsStringDecoded().contains(SOAP11_NS));
     }
 
@@ -102,6 +105,7 @@ class SOAPUtilTest {
         assertEquals(400, response.getStatusCode());
         assertEquals("Bad Request", response.getStatusMessage());
         assertEquals("application/soap+xml;charset=UTF-8", response.getHeader().getContentType());
+        assertEquals(PRODUCT_NAME, response.getHeader().getFirstValue(SERVER));
         assertTrue(response.getBodyAsStringDecoded().contains(SOAP12_NS));
     }
 
