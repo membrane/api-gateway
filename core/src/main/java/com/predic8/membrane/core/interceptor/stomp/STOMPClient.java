@@ -35,6 +35,8 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.gateway;
+import static com.predic8.membrane.core.exchange.Exchange.TUNNELED_WITHOUT_RESPONSE;
+import static java.lang.Boolean.TRUE;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
@@ -160,6 +162,8 @@ public class STOMPClient extends AbstractInterceptor {
 			Connection c = connectionManager.getConnection(this.host, port, connectionConfiguration.getLocalAddr(), sslOutboundProvider, connectionConfiguration.getTimeout());
 			exc.getRequest().writeSTOMP(c.out, false);
 			StreamPump.setupConnectionForwarding(exc, c, "STOMP", getRouter().getStatistics().getStreamPumpStats());
+			// The broker answers the frame through the tunnel
+			exc.setProperty(TUNNELED_WITHOUT_RESPONSE, TRUE);
 		} else {
 			exc.setResponse(Response.badRequest().build());
 		}

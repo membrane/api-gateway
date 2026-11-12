@@ -34,6 +34,7 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.util.HttpUtil.isAbsoluteURI;
+import static com.predic8.membrane.core.util.StompUtil.isSTOMPConnectFrame;
 import static com.predic8.membrane.core.util.URIUtil.containsAmbiguousPathParameters;
 import static com.predic8.membrane.core.util.URIUtil.normalizeRequestTarget;
 import static com.predic8.membrane.core.util.URIUtil.toDecodedDelimiterRoutingPaths;
@@ -213,11 +214,13 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 	 * Other targets like <code>admin</code> or <code>x:/admin</code> are not normalized and do not match the path of
 	 * an API, but the DispatchingInterceptor would still forward them as <code>/admin</code>.
 	 * A CONNECT passes with any target, since the proxy it is routed to decides, see {@link #acceptsConnect(Proxy)}.
+	 * The CONNECT or STOMP frame of STOMP has no target.
 	 */
 	private static boolean isSupportedRequestTarget(Request request) {
 		final var uri = request.getUri();
 		return uri.startsWith("/")
 			   || request.isCONNECTRequest()
+			   || isSTOMPConnectFrame(request)
 			   || (request.isOPTIONSRequest() && "*".equals(uri));
 	}
 

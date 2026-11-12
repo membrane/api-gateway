@@ -585,17 +585,31 @@ class RuleMatchingInterceptorTest {
         assertEquals(400, exc.getResponse().getStatusCode());
     }
 
-    @Test
-    @DisplayName("A STOMP CONNECT frame, which has no request target, is routed to a STOMP proxy")
-    void stompConnectIsAccepted() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {"CONNECT", "STOMP"})
+    @DisplayName("A STOMP CONNECT or STOMP frame, which has no request target, is routed to a STOMP proxy")
+    void stompConnectIsAccepted(String command) throws Exception {
         final var stompProxy = new STOMPProxy();
         stompProxy.init(router);
         router.getRuleManager().addProxy(stompProxy, MANUAL);
-        final var exc = assembleExchange("localhost", "CONNECT", "", "STOMP", 80, "127.0.0.1");
+        final var exc = assembleExchange("localhost", command, "", "STOMP", 80, "127.0.0.1");
 
         assertEquals(CONTINUE, interceptor.handleRequest(exc));
 
         assertSame(stompProxy, exc.getProxy());
+    }
+
+    @Test
+    @DisplayName("A STOMP frame other than CONNECT or STOMP does not open a session at a STOMP proxy")
+    void stompSendIsRejected() throws Exception {
+        final var stompProxy = new STOMPProxy();
+        stompProxy.init(router);
+        router.getRuleManager().addProxy(stompProxy, MANUAL);
+        final var exc = assembleExchange("localhost", "SEND", "", "STOMP", 80, "127.0.0.1");
+
+        assertEquals(ABORT, interceptor.handleRequest(exc));
+
+        assertEquals(400, exc.getResponse().getStatusCode());
     }
 
     @Test
