@@ -38,13 +38,13 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.util.text.TextUtil.escapeControlCharsForLog;
-import static com.predic8.membrane.core.util.text.StringUtil.truncateAfter;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * @description Converts a JSON message body to XML. A body that is not JSON passes through unchanged. The result is
  * UTF-8 encoded, begins with an XML prolog, and the Content-Type is set to <code>application/xml</code>. If the body is
- * not valid JSON the exchange is aborted with a 500 Problem Details. See the tutorial
+ * not valid JSON the exchange is aborted with a Problem Details: <code>400</code> in the request flow and
+ * <code>500</code> in the response flow. See the tutorial
  * tutorials/xml/10-JSON-to-XML.yaml.
  * <p>Given an XML Schema, the document follows the schema instead: the single key of the JSON
  * object names the root element, and the fields are written in the order and namespace the schema
@@ -134,20 +134,16 @@ public class Json2XmlInterceptor extends AbstractInterceptor {
         if (mapping != null)
             return convertWithSchema(exchange, flow, msg, mapping);
 
+        final byte[] xml;
         try {
-            msg.setBodyContent(json2Xml(msg));
+            xml = json2Xml(msg);
+        } catch (ReadingBodyException e) {
+            // FlowController answers a body that could not be read; this is not a conversion error.
+            throw e;
         } catch (Exception e) {
-            internal(router.getConfiguration().isProduction(), getDisplayName())
-                    .title("Error parsing JSON")
-                    .addSubType("validation/json")
-                    .exception(e) // Message contains a meaningful error message
-                    .stacktrace(false)
-                    .internal("flow", flow)
-                    .internal("body", truncateAfter(msg.getBodyAsStringDecoded(), 200))
-                    .buildAndSetResponse(exchange);
-            return Outcome.ABORT;
+            return conversionFailed(exchange, flow, e);
         }
-
+        msg.setBodyContent(xml);
         msg.getHeader().setContentType(APPLICATION_XML);
         return CONTINUE;
     }
