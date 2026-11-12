@@ -34,6 +34,25 @@ public class GoogleLLMRequest extends AbstractModelInputRequest {
 
     public GoogleLLMRequest(Exchange exchange) throws IOException {
         super(exchange);
+        if (json == null)
+            return;
+        useJsonName(json, "system_instruction", "systemInstruction");
+        useJsonName(json, "generation_config", "generationConfig");
+        if (json.get("generationConfig") instanceof ObjectNode generationConfig)
+            useJsonName(generationConfig, "max_output_tokens", "maxOutputTokens");
+    }
+
+    /**
+     * The Gemini API accepts a field by its proto name (snake_case) as well as by its JSON name (lowerCamelCase). The
+     * gateway reads and writes the JSON names, so a field sent by its proto name is renamed. A request with both names
+     * for one field is rejected, as it is not clear which one Gemini uses.
+     */
+    private static void useJsonName(ObjectNode node, String protoName, String jsonName) {
+        if (!node.has(protoName))
+            return;
+        if (node.has(jsonName))
+            throw new IllegalArgumentException("The request contains both %s and %s.".formatted(protoName, jsonName));
+        node.set(jsonName, node.remove(protoName));
     }
 
     @Override

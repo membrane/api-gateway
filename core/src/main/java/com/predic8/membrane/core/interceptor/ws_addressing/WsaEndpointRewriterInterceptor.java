@@ -61,7 +61,9 @@ public class WsaEndpointRewriterInterceptor extends AbstractInterceptor {
 		ByteArrayOutputStream output = new ByteArrayOutputStream();
 		try {
 			// Why is port 2020 hard coded?
-            new WsaEndpointRewriter().rewriteEndpoint(message.getBodyAsStreamDecoded(), output, new Location( protocol, host,  port));
+            try (final var body = message.getBodyAsStreamDecoded()) {
+                new WsaEndpointRewriter().rewriteEndpoint(body, output, new Location(protocol, host, port));
+            }
         } catch (Exception e) {
 			log.error("",e);
 			internal(router.getConfiguration().isProduction(),getDisplayName())

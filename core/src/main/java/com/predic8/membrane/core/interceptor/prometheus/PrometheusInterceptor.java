@@ -62,6 +62,7 @@ import static java.util.stream.Collectors.toList;
  *   <li><code>lb_node_status{node,cluster}</code> — load balancer node health (1 = UP, 0 = DOWN).</li>
  *   <li>Response time histograms per proxy and status code range.</li>
  * </ul>
+ * <p>Basic JVM metrics with Micrometer names are also available.</p>
  * <p>See <a href="https://github.com/membrane/api-gateway/blob/master/distribution/tutorials/operation/50-Prometheus.yaml">tutorials/operation/50-Prometheus.yaml</a>.</p>
  * @topic 4. Monitoring, Logging and Statistics
  * @yaml <pre><code>
@@ -76,6 +77,8 @@ public class PrometheusInterceptor extends AbstractInterceptor {
 
     static final Logger LOG = LoggerFactory.getLogger(PrometheusInterceptor.class);
     static volatile boolean issuedDuplicateRuleNameWarning = false;
+
+    private boolean jvm;
 
     public PrometheusInterceptor() {
         name = "prometheus";
@@ -186,6 +189,8 @@ public class PrometheusInterceptor extends AbstractInterceptor {
         buildLoadBalancerLines(ctx);
         buildDuplicateRuleNameWarning(ctx, issuedDuplicateRuleNameWarning);
         ctx.collect();
+        if (jvm)
+            ctx.sb.append(JvmMetrics.collect());
 
     }
 
@@ -448,6 +453,25 @@ public class PrometheusInterceptor extends AbstractInterceptor {
 
     public String getBuckets() {
         return joinByComma(TimeCollector.getBuckets().stream().map(Object::toString).collect(toList()));
+    }
+
+    /**
+     * @description Also exports basic JVM and process metrics: memory pool usage and maximum, old generation usage
+     * after the last collection, direct and mapped buffer memory, GC pause count and time, live platform threads,
+     * open and maximum file descriptors (not on Windows), process CPU usage, start time and JVM version. Names,
+     * labels and units follow Micrometer (<code>jvm_memory_used_bytes</code>, <code>jvm_gc_pause_seconds</code>,
+     * <code>process_cpu_usage</code>, ...), so Spring Boot dashboards and alerts work at least partially. Leave it
+     * off when the servlet container or an agent already exports JVM metrics.
+     * @default false
+     * @example true
+     */
+    @MCAttribute
+    public void setJvm(boolean jvm) {
+        this.jvm = jvm;
+    }
+
+    public boolean isJvm() {
+        return jvm;
     }
 
     @Override

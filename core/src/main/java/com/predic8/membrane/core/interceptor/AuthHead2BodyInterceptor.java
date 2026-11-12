@@ -48,7 +48,10 @@ public class AuthHead2BodyInterceptor extends AbstractInterceptor {
 	static final String XSI_NS  = "http://www.w3.org/2001/XMLSchema-instance";
 
 	public Outcome handleRequest(AbstractExchange exchange) throws Exception {
-		Document doc = getDocument(exchange.getRequest().getBodyAsStreamDecoded(), exchange.getRequest().getCharsetOrDefault());
+		final Document doc;
+		try (final var body = exchange.getRequest().getBodyAsStreamDecoded()) {
+			doc = getDocument(body, exchange.getRequest().getCharsetOrDefault());
+		}
 		Element header = getAuthorisationHeader(doc);
 
 		if (header == null)
