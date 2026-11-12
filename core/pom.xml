@@ -134,6 +134,12 @@
             <artifactId>jedis</artifactId>
             <version>4.4.8</version>
         </dependency>
+        <!-- Used directly by JsonToXml, Xml2JsonInterceptor and ElasticSearchExchangeStore -->
+        <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+            <version>20231013</version>
+        </dependency>
         <dependency>
             <groupId>com.bornium</groupId>
             <artifactId>oauth2-openid</artifactId>
