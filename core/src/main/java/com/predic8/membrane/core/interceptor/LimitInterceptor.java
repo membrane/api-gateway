@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Objects;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.security;
 import static com.predic8.membrane.core.http.Header.CONTENT_ENCODING;
@@ -176,7 +177,7 @@ public class LimitInterceptor extends AbstractInterceptor {
 		@Override
 		public int read(byte[] b) throws IOException {
 			if (ended)
-				return -1;
+				return b.length == 0 ? 0 : -1;
 			int l;
 			try {
 				l = is.read(b);
@@ -193,8 +194,10 @@ public class LimitInterceptor extends AbstractInterceptor {
 
 		@Override
 		public int read(byte[] b, int off, int len) throws IOException {
-			if (ended)
-				return -1;
+			if (ended) {
+				Objects.checkFromIndexSize(off, len, b.length);
+				return len == 0 ? 0 : -1;
+			}
 			int l;
 			try {
 				l = is.read(b, off, len);

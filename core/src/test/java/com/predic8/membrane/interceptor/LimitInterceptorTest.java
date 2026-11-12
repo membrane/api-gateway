@@ -79,6 +79,9 @@ class LimitInterceptorTest {
         assertEquals(-1, stream.read());
         assertEquals(-1, stream.read(new byte[1]));
         assertEquals(-1, stream.read(new byte[1], 0, 1));
+        assertEquals(0, stream.read(new byte[0]));
+        assertEquals(0, stream.read(new byte[1], 0, 0));
+        assertThrows(IndexOutOfBoundsException.class, () -> stream.read(new byte[1], 1, 1));
         assertEquals(0, stream.skip(1));
         assertEquals(0, stream.available());
     }
