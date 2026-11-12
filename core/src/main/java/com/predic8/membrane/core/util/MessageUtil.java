@@ -116,7 +116,7 @@ public class MessageUtil {
 	 * The cost is that a {@code catch (IOException)} around a read of this stream does not fire.
 	 * Callers that handle a decoding failure themselves have to catch {@link ReadingBodyException}
 	 * too, and describe it with
-	 * {@link com.predic8.membrane.core.exceptions.ProblemDetails#bodyFailure} rather than deciding a
+	 * {@link com.predic8.membrane.core.exceptions.BodyFailureProblems#bodyFailure} rather than deciding a
 	 * status of their own; everything else lets it travel to the flow controller, which does the same.
 	 */
 	private static InputStream associateDecodingFailures(InputStream decoded, Message message) {

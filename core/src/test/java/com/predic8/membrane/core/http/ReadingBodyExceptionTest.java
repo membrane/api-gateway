@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.http;
 
+import com.predic8.membrane.core.multipart.XopReassemblyException;
 import org.junit.jupiter.api.Test;
 
 import javax.net.ssl.SSLException;
@@ -38,6 +39,18 @@ class ReadingBodyExceptionTest {
     @Test
     void decodingFailureNamesTheCoding() {
         assertTrue(new ReadingBodyException(new DecodingException("gzip", new EOFException("Unexpected end of ZLIB input stream"))).exceptionMessageIsSufficient());
+    }
+
+    @Test
+    void xopReassemblyFailureExplainsItself() {
+        assertTrue(new ReadingBodyException(new XopReassemblyException("Did not find multipart with id bin@example.com.")).exceptionMessageIsSufficient());
+    }
+
+    @Test
+    void invalidContentTypeExplainsItselfWithoutBeingAnIoError() {
+        var cause = new InvalidContentTypeException("application/json; charset",
+                new jakarta.mail.internet.ParseException("In parameter list <; charset>, expected '=', got \"null\""));
+        assertTrue(new ReadingBodyException(cause).exceptionMessageIsSufficient());
     }
 
     @Test

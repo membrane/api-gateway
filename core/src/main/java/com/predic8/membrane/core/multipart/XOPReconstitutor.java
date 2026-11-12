@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.multipart;
 
 import com.predic8.membrane.core.http.BodyCollectingMessageObserver;
+import com.predic8.membrane.core.http.InvalidContentTypeException;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.ReadingBodyException;
@@ -81,7 +82,7 @@ public class XOPReconstitutor {
 		if(message == null)
 			return null;
 
-		ContentType contentType = message.getHeader().getContentTypeObject();
+		ContentType contentType = contentType(message);
 		if (contentType == null || contentType.getPrimaryType() == null)
 			return null;
 		if (!contentType.getPrimaryType().equals("multipart")
@@ -144,7 +145,8 @@ public class XOPReconstitutor {
 	/**
 	 * Splits the multipart message and indexes parts by Content-ID for XOP lookup.
 	 *
-	 * @throws ReadingBodyException if the package is malformed or uses an unsupported part encoding
+	 * @throws ReadingBodyException if the package is malformed or uses an unsupported part encoding, with a
+	 * {@link XopReassemblyException} as cause, or if reading the body failed
 	 */
 	private HashMap<String, Part> splitById(Message message, String boundary) {
 		HashMap<String, Part> byId = new HashMap<>();
@@ -157,9 +159,28 @@ public class XOPReconstitutor {
 			}
 		} catch (IOException e) {
 			log.info("Could not split XOP package: {}", escapeControlCharsForLog(e.getMessage()));
-			throw new ReadingBodyException(e, message);
+			// A chunked body reports its transport failure as an IOException, too. That is not a broken package.
+			if (message.getBody().hasFailed())
+				throw new ReadingBodyException(e, message);
+			throw new ReadingBodyException(new XopReassemblyException(
+					"XOP package is malformed: %s".formatted(escapeControlCharsForLog(e.getMessage())), e), message);
 		}
 		return byId;
+	}
+
+	/**
+	 * @return the Content-Type of the message, or null if it has none
+	 * @throws ReadingBodyException if the header cannot be parsed. That is a failure of the message, not
+	 * a sign that it is not XOP: its charset and media type, read from the same header, are unknown.
+	 */
+	private static ContentType contentType(Message message) {
+		try {
+			return message.getHeader().getContentTypeObject();
+		} catch (ParseException e) {
+			final var failure = new InvalidContentTypeException(message.getHeader().getContentType(), e);
+			log.info("{}", failure.getMessage());
+			throw new ReadingBodyException(failure, message);
+		}
 	}
 
 	/**
@@ -198,7 +219,7 @@ public class XOPReconstitutor {
 						final var hrefAttribute = start.getAttributeByName(new QName("href"));
 						if (hrefAttribute == null) {
 							log.info("xop:Include without href attribute.");
-							throw new ReadingBodyException(new IOException("xop:Include without href attribute."), source);
+							throw new ReadingBodyException(new XopReassemblyException("xop:Include without href attribute."), source);
 						}
 						String href = hrefAttribute.getValue();
 
@@ -208,8 +229,8 @@ public class XOPReconstitutor {
 						Part p = parts.get("<" + href + ">");
 						if (p == null) {
 							log.info("Did not find multipart with id {}.", escapeControlCharsForLog(href));
-							throw new ReadingBodyException(new IOException(
-									"Did not find multipart with id %s.".formatted(href)), source);
+							throw new ReadingBodyException(new XopReassemblyException(
+									"Did not find multipart with id %s.".formatted(escapeControlCharsForLog(href))), source);
 						}
 						// SOAP 1.2 MTOM 4.3.1.1: an extracted part MUST NOT be referenced by more than one
 						// xop:Include. Inlining it again for every reference would let a small package
@@ -217,8 +238,8 @@ public class XOPReconstitutor {
 						if (!included.add(href)) {
 							log.info("Multipart with id {} is referenced more than once.", escapeControlCharsForLog(href));
 							// Attribute invalid input to its sender, even when decoded in the opposite flow.
-							throw new ReadingBodyException(new IOException(
-									"Multipart with id %s is referenced more than once.".formatted(href)), source);
+							throw new ReadingBodyException(new XopReassemblyException(
+									"Multipart with id %s is referenced more than once.".formatted(escapeControlCharsForLog(href))), source);
 						}
 
 						writer.add(base64CharactersEvent(p.getBody()));
@@ -239,7 +260,7 @@ public class XOPReconstitutor {
 			writer.flush();
 		} catch (XMLStreamException e) {
 			log.info("Start part of XOP package is not well-formed XML: {}", escapeControlCharsForLog(e.getMessage()));
-			throw new ReadingBodyException(new IOException("Start part of XOP package is not well-formed XML."), source);
+			throw new ReadingBodyException(new XopReassemblyException("Start part of XOP package is not well-formed XML."), source);
 		}
 		return baos.toByteArray();
 	}
