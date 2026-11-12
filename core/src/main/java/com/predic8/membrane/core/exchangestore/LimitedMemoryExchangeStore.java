@@ -312,8 +312,11 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 		return formatter.format(number);
 	}
 
+	/**
+	 * Advances the modification marker on every change, also within the same millisecond.
+	 */
 	private synchronized void modify() {
-		lastModification = System.currentTimeMillis();
+		lastModification = Math.max(lastModification + 1, System.currentTimeMillis());
 		notifyAll();
 	}
 
@@ -336,6 +339,20 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 					log.debug("Still waiting after {} ms without modification (lastKnown={}, lastModification={}).", WAIT_FOR_MODIFICATION_MS, lastKnownModification, lastModification);
 				}
 			}
+		}
+	}
+
+	@Override
+	public boolean waitForModification(long lastKnownModification, long timeoutMillis) throws InterruptedException {
+		final var deadline = System.nanoTime() + timeoutMillis * 1_000_000;
+		synchronized (this) {
+			while (lastKnownModification >= lastModification) {
+				final var remaining = (deadline - System.nanoTime()) / 1_000_000;
+				if (remaining <= 0)
+					return false;
+				wait(remaining);
+			}
+			return true;
 		}
 	}
 

@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.administration;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.administration.v1.*;
 import com.predic8.membrane.core.interceptor.rewrite.*;
 import com.predic8.membrane.core.interceptor.server.*;
 
@@ -38,12 +39,13 @@ import static com.predic8.membrane.core.http.Header.*;
 public class AdminConsoleInterceptor extends AbstractInterceptor {
 
 	private final RewriteInterceptor rewriteInterceptor = new RewriteInterceptor();
+	private final AdminApiV1Interceptor apiV1 = new AdminApiV1Interceptor();
 	private final DynamicAdminPageInterceptor dapi = new DynamicAdminPageInterceptor();
 	private final AdminRESTInterceptor rai = new AdminRESTInterceptor();
 	private final WebServerInterceptor wsi = new WebServerInterceptor();
 
 	// these are the interceptors this interceptor consists of
-	private final List<Interceptor> interceptors = Arrays.asList(new Interceptor[] {rewriteInterceptor, rai, dapi, wsi });
+	private final List<Interceptor> interceptors = Arrays.asList(new Interceptor[] {rewriteInterceptor, apiV1, rai, dapi, wsi });
 
 	private boolean useXForwardedForAsClientAddr = false;
 
@@ -67,6 +69,8 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 	public void init() {
 		super.init();
 		rewriteInterceptor.init(router);
+		apiV1.setUseXForwardedForAsClientAddr(useXForwardedForAsClientAddr);
+		apiV1.init(router);
 		rai.setUseXForwardedForAsClientAddr(useXForwardedForAsClientAddr);
 		rai.init(router);
 		dapi.setUseXForwardedForAsClientAddr(useXForwardedForAsClientAddr);
@@ -84,8 +88,22 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 	 */
 	@MCAttribute
 	public void setReadOnly(boolean readOnly) {
+		apiV1.setReadOnly(readOnly);
 		rai.setReadOnly(readOnly);
 		dapi.setReadOnly(readOnly);
+	}
+
+	public String getInstanceName() {
+		return apiV1.getInstanceName();
+	}
+
+	/**
+	 * @description Name of this Membrane instance in the admin API, for example to tell redundant instances apart.
+	 * @default the host name
+	 */
+	@MCAttribute
+	public void setInstanceName(String instanceName) {
+		apiV1.setInstanceName(instanceName);
 	}
 
 	public boolean isUseXForwardedForAsClientAddr() {

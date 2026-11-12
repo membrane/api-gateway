@@ -138,7 +138,7 @@ public class AbstractExchangeSnapshot {
         exc.setRemoteAddrIp(getRemoteAddrIp());
         exc.setId(getId());
         exc.setProxy(getRule());
-        setServer(getServer());
+        exc.setServer(getServer());
 
         return exc;
     }
