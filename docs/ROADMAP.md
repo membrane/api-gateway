@@ -52,6 +52,13 @@ PRIO 3:
   - Story: the keyword is never read, so arrays are validated as if it were absent. `unevaluatedItems: false` does not reject any items.
   - It applies to the items not evaluated by `prefixItems`, `items` or `contains`, including those of the `allOf`/`anyOf`/`oneOf`/`$ref` subschemas that validated successfully. `ObjectValidator` does the same for `unevaluatedProperties`.
   - Related: #3499 (`prefixItems`).
+- OpenAPI: support `if`/`then`/`else` and `dependentSchemas` (JSON Schema 2020-12, OAS 3.1 and later) (#3481)
+  - Story: `SchemaValidator.validateKeywords` handles `allOf`/`anyOf`/`oneOf`/`not`, but never reads `if`, `then`, `else` or `dependentSchemas`, so a schema that relies on them doesn't enforce them. With `if: {properties: {kind: {const: cat}}, required: [kind]}` and `then: {required: [lives], properties: {lives: {type: integer}}}`, both `{"kind": "cat"}` and `{"kind": "cat", "lives": "wrong"}` are accepted instead of getting a 400. `dependentSchemas: {creditCard: {required: [billingAddress]}}` is never checked either.
+  - Idea, in `SchemaValidator.validateKeywords`:
+    - `if`/`then`/`else`: validate against `if` without reporting its errors. If it is valid, validate against `then`, otherwise against `else`. A missing `then` or `else` accepts. Applies to every type, not only objects.
+    - `dependentSchemas`: for each property the object has, validate the whole object against its subschema.
+  - `ObjectValidator.collectEvaluatedProperties` already reads these keywords for `unevaluatedProperties` and counts a `then`/`else`/`dependentSchemas` subschema only if the object is valid against it. That stays as it is (the spec collects annotations only from valid subschemas), but today a `lives` with a wrong type is reported as *unevaluated* instead of "not an integer". Once the keywords are validated, the error names the real violation. Update the Javadoc there that says no other path validates them.
+  - Related: `dependentRequired` is not validated either.
 - WebServiceExplorerInterceptor
   - Support multiple services, ports, ...
   - Refactor
