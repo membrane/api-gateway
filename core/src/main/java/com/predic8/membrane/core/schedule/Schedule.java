@@ -37,7 +37,8 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * @description Calls the internal API periodically, for example to refresh a token, warm up a cache or send a
  * heartbeat every ten minutes. On every run Membrane sends a GET request to / through the flow and the target of
  * the API, just like a request that came in over HTTP. The first run starts one interval after startup. A run does
- * not start before the previous one has finished, and a run that takes longer than the timeout is interrupted. A
+ * not start before the previous one has finished, and a run that takes longer than the timeout is interrupted. If the
+ * flow ignores the interruption, e.g. a script in an endless loop, the next runs are skipped until it has finished. A
  * failed run is logged and not repeated before the next interval.
  * <p>Every Membrane instance runs its own schedules. If a job should run only once in a cluster, trigger an API
  * from outside instead, for example with a Kubernetes CronJob.</p>
@@ -69,13 +70,14 @@ public class Schedule {
      */
     private ScheduledExecutorService executor;
 
+    /**
+     * The thread of the latest call. Written and read only by the scheduler thread, volatile because starting again
+     * replaces that thread.
+     */
+    private volatile Thread worker;
+
     public synchronized void start(final Router router, final InternalProxy api) {
         final var timeout = getTimeoutDuration();
-        if (interval.toMillis() <= 0)
-            throw new ConfigurationException("schedule: 'interval' must be at least one millisecond, but is %s.".formatted(interval));
-        if (timeout.toMillis() <= 0)
-            throw new ConfigurationException("schedule: 'timeout' must be at least one millisecond, but is %s.".formatted(timeout));
-
         stop();
         executor = Executors.newSingleThreadScheduledExecutor(Thread.ofPlatform().daemon().name("schedule " + api.getName()).factory());
         // Fixed delay: a slow run delays the next one instead of overlapping with it.
@@ -83,6 +85,10 @@ public class Schedule {
         log.info("Calling internal API {} every {}.", api.getName(), interval);
     }
 
+    /**
+     * Interrupts a running call. A call whose flow ignores the interruption keeps running after this method returns,
+     * as Java cannot stop a thread.
+     */
     public synchronized void stop() {
         if (executor != null)
             executor.shutdownNow();
@@ -98,15 +104,21 @@ public class Schedule {
             log.warn("Scheduled call skipped: internal API {} is not active.", api.getName());
             return;
         }
-        final var worker = Thread.ofVirtual().name("schedule call " + api.getName()).start(() -> call(router, api));
+        // Interrupting a call does not guarantee that it ends, e.g. a script in an endless loop ignores it.
+        if (worker != null && worker.isAlive()) {
+            log.warn("Scheduled call of {} skipped: the previous call ignored the interruption and is still running.", api.getName());
+            return;
+        }
+        final var current = Thread.ofVirtual().name("schedule call " + api.getName()).start(() -> call(router, api));
+        worker = current;
         try {
-            if (!worker.join(timeout)) {
+            if (!current.join(timeout)) {
                 log.warn("Scheduled call of {} did not finish within {}. Interrupting it.", api.getName(), timeout);
-                worker.interrupt();
+                current.interrupt();
             }
         } catch (InterruptedException e) {
             // The schedule was stopped.
-            worker.interrupt();
+            current.interrupt();
         }
     }
 
@@ -127,6 +139,11 @@ public class Schedule {
             }
             // Read the body, so the connection to the target goes back to the pool.
             response.discardBody();
+            if (response.getBody().hasFailed()) {
+                log.warn("Scheduled call of {} failed while reading the response body.", api.getName());
+                exc.finishExchange(true, "reading the response body failed");
+                return;
+            }
             final var status = response.getStatusCode();
             if (status >= 400) {
                 log.warn("Scheduled call of {} failed with status {}.", api.getName(), status);
@@ -176,11 +193,19 @@ public class Schedule {
         this.timeout = parse("timeout", timeout);
     }
 
+    /**
+     * Rejects invalid values while the configuration is parsed, so that a reload fails during validation, before the
+     * running configuration is stopped.
+     */
     private static Duration parse(final String attribute, final String duration) {
+        final Duration parsed;
         try {
-            return Duration.parse(duration);
+            parsed = Duration.parse(duration);
         } catch (DateTimeParseException e) {
             throw new ConfigurationException("schedule: '%s' %s is not an ISO 8601 duration like PT10M.".formatted(attribute, duration), e);
         }
+        if (parsed.toMillis() <= 0)
+            throw new ConfigurationException("schedule: '%s' must be at least one millisecond, but is %s.".formatted(attribute, duration));
+        return parsed;
     }
 }

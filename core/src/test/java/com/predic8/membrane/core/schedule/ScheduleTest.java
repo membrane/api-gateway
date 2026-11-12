@@ -15,11 +15,14 @@
 package com.predic8.membrane.core.schedule;
 
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.flow.ReturnInterceptor;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxyKey;
+import com.predic8.membrane.core.proxies.InternalProxy;
+import com.predic8.membrane.core.proxies.Target;
 import com.predic8.membrane.core.router.DefaultRouter;
 import com.predic8.membrane.core.router.TestRouter;
 import com.predic8.membrane.core.router.hotdeploy.YamlRouterReloader;
@@ -29,12 +32,19 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.io.IOException;
+import java.net.ServerSocket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.IntSupplier;
 
+import static com.predic8.membrane.core.exchange.ExchangeState.COMPLETED;
+import static com.predic8.membrane.core.exchange.ExchangeState.FAILED;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static java.nio.charset.StandardCharsets.US_ASCII;
 import static com.predic8.membrane.core.router.YamlRouterBootstrap.loadIntoRouter;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -228,17 +238,133 @@ class ScheduleTest {
 
     @Test
     void intervalMustBePositive() {
-        final var schedule = new Schedule();
-        schedule.setInterval("PT0S");
-        assertThrows(ConfigurationException.class, () -> schedule.start(null, null));
+        assertThrows(ConfigurationException.class, () -> new Schedule().setInterval("PT0S"));
+        assertThrows(ConfigurationException.class, () -> new Schedule().setInterval("PT-1S"));
     }
 
     @Test
     void timeoutMustBePositive() {
+        assertThrows(ConfigurationException.class, () -> new Schedule().setTimeout("PT0S"));
+    }
+
+    @Test
+    void invalidDurationFailsWhileLoading() throws Exception {
+        // Reload validation only loads the configuration, so a check during start() would come after the running
+        // configuration was stopped.
+        final var file = writeConfig(config("interval: PT0S", "http://localhost:3000")).toString();
+        final var router = new DefaultRouter();
+        try {
+            assertThrows(Exception.class, () -> loadIntoRouter(router, file));
+        } finally {
+            router.shutdownRuntimeComponents();
+        }
+    }
+
+    @Test
+    void callIgnoringInterruptionIsNotOverlapped() throws Exception {
+        final var router = new TestRouter();
+        final var api = scheduledApi("PT0.05S", "PT0.1S");
+        api.getFlow().add(new AbstractInterceptor() {
+            @Override
+            public Outcome handleRequest(final Exchange exc) {
+                started.incrementAndGet();
+                maxInFlight.accumulateAndGet(inFlight.incrementAndGet(), Math::max);
+                try {
+                    sleepIgnoringInterruption(500);
+                    exc.setResponse(Response.ok().build());
+                    return RETURN;
+                } finally {
+                    inFlight.decrementAndGet();
+                }
+            }
+        });
+        router.add(api);
+        try {
+            router.start();
+            await(started::get, 2);
+            assertEquals(1, maxInFlight.get());
+        } finally {
+            api.destroy();
+            router.stop();
+        }
+    }
+
+    @Test
+    void failedResponseBodyReadFailsCall() throws Exception {
+        try (final var truncating = new ServerSocket(0)) {
+            Thread.ofVirtual().start(() -> answerWithTruncatedBody(truncating));
+
+            final var router = new TestRouter();
+            final var api = scheduledApi("PT0.1S", "PT5S");
+            final var exchange = new AtomicReference<Exchange>();
+            api.getFlow().add(new AbstractInterceptor() {
+                @Override
+                public Outcome handleRequest(final Exchange exc) {
+                    exchange.compareAndSet(null, exc);
+                    return CONTINUE;
+                }
+            });
+            api.setTarget(new Target("localhost", truncating.getLocalPort()));
+            router.add(api);
+            try {
+                router.start();
+                await(() -> isFinished(exchange.get()) ? 1 : 0, 1);
+                assertEquals(FAILED, exchange.get().getStatus());
+                assertEquals("reading the response body failed", exchange.get().getErrorMessage());
+            } finally {
+                api.destroy();
+                router.stop();
+            }
+        }
+    }
+
+    private static boolean isFinished(final Exchange exc) {
+        return exc != null && (exc.getStatus() == COMPLETED || exc.getStatus() == FAILED);
+    }
+
+    private static InternalProxy scheduledApi(final String interval, final String timeout) {
         final var schedule = new Schedule();
-        schedule.setInterval("PT10M");
-        schedule.setTimeout("PT0S");
-        assertThrows(ConfigurationException.class, () -> schedule.start(null, null));
+        schedule.setInterval(interval);
+        schedule.setTimeout(timeout);
+        final var api = new InternalProxy();
+        api.setName("job");
+        api.setSchedule(schedule);
+        return api;
+    }
+
+    private static void sleepIgnoringInterruption(final long millis) {
+        final var deadline = System.currentTimeMillis() + millis;
+        var interrupted = false;
+        while (System.currentTimeMillis() < deadline) {
+            try {
+                Thread.sleep(Math.max(1, deadline - System.currentTimeMillis()));
+            } catch (InterruptedException e) {
+                interrupted = true;
+            }
+        }
+        if (interrupted)
+            Thread.currentThread().interrupt();
+    }
+
+    /**
+     * Announces a body of 100 bytes, sends 10 and closes the connection.
+     */
+    private static void answerWithTruncatedBody(final ServerSocket server) {
+        try (final var socket = server.accept()) {
+            final var in = socket.getInputStream();
+            // Read the request header up to the empty line.
+            var matched = 0;
+            while (matched < 4) {
+                final var b = in.read();
+                if (b < 0)
+                    return;
+                matched = b == "\r\n\r\n".charAt(matched) ? matched + 1 : (b == '\r' ? 1 : 0);
+            }
+            socket.getOutputStream().write("HTTP/1.1 200 OK\r\nContent-Length: 100\r\n\r\n0123456789".getBytes(US_ASCII));
+            socket.getOutputStream().flush();
+        } catch (IOException ignored) {
+            // The test fails on its own when the call does not get this answer.
+        }
     }
 
     @Test
