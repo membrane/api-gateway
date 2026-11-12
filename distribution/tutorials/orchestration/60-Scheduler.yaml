@@ -1,0 +1,38 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.8.1.json
+#
+# Tutorial: Scheduler
+#
+# Calls an API periodically: a heartbeat to api.predic8.de every 10 seconds.
+#
+# 1.) Start Membrane:
+#     ./membrane.sh -c 60-Scheduler.yaml
+#
+# 2.) Wait 10 seconds and watch the log:
+#     Heartbeat: api.predic8.de answered with 200
+#
+# 3.) Change the target url to http://localhost:9999, save the file and watch the log:
+#     Heartbeat failed with 502
+
+internal:
+  name: heartbeat
+  schedule:
+    interval: PT10S
+    timeout: PT5S
+  flow:
+    - response:
+        - log:
+            message: "Heartbeat: api.predic8.de answered with ${statusCode}"
+    # An unreachable target aborts the flow
+    - abort:
+        - log:
+            message: "Heartbeat failed with ${statusCode}"
+            level: WARN
+  target:
+    url: https://api.predic8.de/shop/v2/
+
+# NOTE: The first call starts one interval after startup. Every Membrane instance runs its
+#       own schedules. To call an API only once in a cluster, trigger it from outside, e.g.
+#       with a Kubernetes CronJob.
+#
+# See also:
+#  - ../advanced/130-Abort-Flow.yaml for abort flows
