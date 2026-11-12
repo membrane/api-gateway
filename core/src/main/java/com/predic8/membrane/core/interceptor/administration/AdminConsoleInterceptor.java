@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.administration;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.administration.v1.*;
 import com.predic8.membrane.core.interceptor.rewrite.*;
 import com.predic8.membrane.core.interceptor.server.*;
 
@@ -38,19 +39,35 @@ import static com.predic8.membrane.core.http.Header.*;
 public class AdminConsoleInterceptor extends AbstractInterceptor {
 
 	private final RewriteInterceptor rewriteInterceptor = new RewriteInterceptor();
+	private final AdminApiV1Interceptor apiV1 = new AdminApiV1Interceptor();
 	private final DynamicAdminPageInterceptor dapi = new DynamicAdminPageInterceptor();
 	private final AdminRESTInterceptor rai = new AdminRESTInterceptor();
 	private final WebServerInterceptor wsi = new WebServerInterceptor();
 
 	// these are the interceptors this interceptor consists of
-	private final List<Interceptor> interceptors = Arrays.asList(new Interceptor[] {rewriteInterceptor, rai, dapi, wsi });
+	private final List<Interceptor> interceptors = Arrays.asList(new Interceptor[] {rewriteInterceptor, apiV1, rai, dapi, wsi });
 
 	private boolean useXForwardedForAsClientAddr = false;
 
+	/**
+	 * The new web UI, packaged separately (module admin-ui). Without it on the classpath only the old UI is served.
+	 */
+	/**
+	 * The UI loads only its own bundled scripts and styles and talks only to this origin. Injected markup can therefore
+	 * neither run script nor send data elsewhere, and other sites cannot frame the console.
+	 */
+	static final String CONSOLE_CSP = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; " +
+			"connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'";
+
+	static final String CONSOLE_INDEX = "/com/predic8/membrane/core/interceptor/administration/docBase/console/index.html";
+
 	public AdminConsoleInterceptor() {
 		name = "administration";
-		rewriteInterceptor.getMappings().add(new RewriteInterceptor.Mapping("^/?$", "/admin", "redirect"));
+		final var hasConsole = AdminConsoleInterceptor.class.getResource(CONSOLE_INDEX) != null;
+		rewriteInterceptor.getMappings().add(new RewriteInterceptor.Mapping("^/?$", hasConsole ? "/console/" : "/admin", "redirect"));
+		rewriteInterceptor.getMappings().add(new RewriteInterceptor.Mapping("^/console$", "/console/", "redirect"));
 		wsi.setDocBase("classpath:/com/predic8/membrane/core/interceptor/administration/docBase");
+		wsi.setIndex("index.html");
 	}
 
 	@Override
@@ -60,13 +77,29 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 		if (exc.getRequest().getHeader().getFirstValue(X_REQUESTED_WITH) != null && exc.getResponse() != null)
 			exc.getResponse().getHeader().add(EXPIRES, "-1");
 
+		// Also when an earlier step changed the destination to a console file.
+		if (exc.getResponse() != null && (isConsolePath(exc.getRequest().getUri())
+				|| exc.getDestinations().stream().anyMatch(AdminConsoleInterceptor::isConsolePath))) {
+			exc.getResponse().getHeader().setValue(CONTENT_SECURITY_POLICY, CONSOLE_CSP);
+			exc.getResponse().getHeader().setValue(X_CONTENT_TYPE_OPTIONS, "nosniff");
+		}
+
 		return result;
+	}
+
+	static boolean isConsolePath(String uri) {
+		if (uri == null)
+			return false;
+		final var path = uri.replaceFirst("^[a-zA-Z][a-zA-Z0-9+.-]*://[^/]*", "");
+		return path.startsWith("/console/");
 	}
 
 	@Override
 	public void init() {
 		super.init();
 		rewriteInterceptor.init(router);
+		apiV1.setUseXForwardedForAsClientAddr(useXForwardedForAsClientAddr);
+		apiV1.init(router);
 		rai.setUseXForwardedForAsClientAddr(useXForwardedForAsClientAddr);
 		rai.init(router);
 		dapi.setUseXForwardedForAsClientAddr(useXForwardedForAsClientAddr);
@@ -84,8 +117,49 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 	 */
 	@MCAttribute
 	public void setReadOnly(boolean readOnly) {
+		apiV1.setReadOnly(readOnly);
 		rai.setReadOnly(readOnly);
 		dapi.setReadOnly(readOnly);
+	}
+
+	public String getInstanceName() {
+		return apiV1.getInstanceName();
+	}
+
+	/**
+	 * @description Name of this Membrane instance in the admin API, for example to tell redundant instances apart.
+	 * @default the host name
+	 */
+	@MCAttribute
+	public void setInstanceName(String instanceName) {
+		apiV1.setInstanceName(instanceName);
+	}
+
+	public String getApiKey() {
+		return apiV1.getApiKey();
+	}
+
+	/**
+	 * @description If set, requests to the admin API (<code>/admin/api/v1</code>) must carry this key in the
+	 * <code>X-Api-Key</code> header. Set it on instances that are included as <code>peers</code> of another admin
+	 * console. The web console under <code>/console/</code> asks for the key and keeps it for the browser tab.
+	 */
+	@MCAttribute
+	public void setApiKey(String apiKey) {
+		apiV1.setApiKey(apiKey);
+	}
+
+	public List<AdminConsolePeer> getPeers() {
+		return apiV1.getPeers();
+	}
+
+	/**
+	 * @description Other Membrane instances to include, for example redundant instances behind a load balancer. The
+	 * console then lists the APIs and calls of all instances together.
+	 */
+	@MCChildElement
+	public void setPeers(List<AdminConsolePeer> peers) {
+		apiV1.setPeers(peers);
 	}
 
 	public boolean isUseXForwardedForAsClientAddr() {
