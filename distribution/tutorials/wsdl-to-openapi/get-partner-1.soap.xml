@@ -1,0 +1,7 @@
+<s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+  <s11:Body>
+    <p:getPartner xmlns:p="http://example.com/partner">
+      <id>1</id>
+    </p:getPartner>
+  </s11:Body>
+</s11:Envelope>

@@ -12,12 +12,16 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.interceptor.wsdl2openapi;
+package com.predic8.membrane.core.interceptor.soap2json;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.util.wsdl.parser.Definitions;
+import com.predic8.membrane.core.util.wsdl.parser.Operation;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -101,6 +105,42 @@ class Json2SoapTransformerTest {
         assertEquals(List.of("street", "city"),
                 getChildElements(shipmentEl).stream().map(Element::getLocalName).toList(),
                 "the referenced element's own sequence must order its children");
+    }
+
+    @Test
+    void anOutputTransformerWritesTheResponseElementInSchemaOrder() throws Exception {
+        final var definitions = Definitions.parse(new ResolverMap(), "classpath:/ws/two-operations-with-faults.wsdl");
+        final var transformer = new Json2SoapTransformer(SelectedPort.select(definitions, null, null), "getArticle",
+                Operation.Direction.OUTPUT, definitions.getSchemasByNamespace());
+
+        final var response = getFirstChildElement(bodyOf(parseXml(transformer.transform(
+                "{\"tag\": [\"a\", \"b\"], \"available\": true, \"price\": 4.5, \"name\": \"Coffee\"}"))));
+
+        assertEquals("getArticleResponse", response.getLocalName());
+        assertEquals("https://example.com/shop", response.getNamespaceURI());
+        assertEquals(List.of("name", "price", "available", "tag", "tag"),
+                getChildElements(response).stream().map(Element::getLocalName).toList());
+    }
+
+    @Test
+    void anOutputTransformerOfAOneWayOperationReportsTheMissingMessage() {
+        final var transformer = new Json2SoapTransformer(SelectedPort.select(qualifiedDefinitions, null, null), "sendMessage",
+                Operation.Direction.OUTPUT, qualifiedDefinitions.getSchemasByNamespace());
+
+        final var e = assertThrows(IllegalArgumentException.class, () -> transformer.transform("{}"));
+        assertEquals("No output message found for operation: sendMessage", e.getMessage());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"{\"name\": \"Berlin\"} {\"name\": \"Bonn\"}", "{\"name\": \"Berlin\"}]]] garbage"})
+    void jsonWithInputAfterItsValueIsRejected(String json) {
+        assertThrows(JsonProcessingException.class, () -> transformer(citiesDefinitions, "getCity").transform(json));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"   ", "[{\"name\": \"Berlin\"}]"})
+    void jsonWithoutAnObjectOrAValueIsRejected(String json) {
+        assertThrows(IllegalArgumentException.class, () -> transformer(citiesDefinitions, "getCity").transform(json));
     }
 
     @Test

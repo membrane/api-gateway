@@ -12,18 +12,14 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.interceptor.wsdl2openapi;
+package com.predic8.membrane.core.util.xml.schema;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.predic8.membrane.core.util.wsdl.parser.Message;
-import com.predic8.membrane.core.util.wsdl.parser.Operation;
-import com.predic8.membrane.core.util.wsdl.parser.Part;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 import javax.xml.namespace.QName;
-import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
@@ -33,28 +29,25 @@ import javax.xml.transform.stream.StreamResult;
 import java.io.ByteArrayOutputStream;
 import java.util.*;
 
-import static com.predic8.membrane.annot.Constants.SOAP11_NS;
-import static com.predic8.membrane.annot.Constants.SOAP12_NS;
-import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdContentModel.*;
-import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.*;
-import static com.predic8.membrane.core.util.wsdl.parser.Definitions.SOAPVersion.SOAP_12;
+import static com.predic8.membrane.core.util.xml.schema.XsdContentModel.*;
+import static com.predic8.membrane.core.util.xml.schema.XsdDomUtil.*;
 
 /**
- * Transforms JSON request to SOAP XML envelope.
+ * Transforms JSON to an XML element declared by an XSD, writing the fields in the order the
+ * element's content model declares them and in the namespace each one carries.
  * JSON keys prefixed with "@" are mapped to XML attributes instead of child elements.
  * A {@code null} value becomes an element marked {@code xsi:nil="true"}, or, for an attribute,
  * no attribute at all.
  * A {@code $value} key supplies the enclosing element's own text, for an element that carries both
  * a value and attributes.
+ * Keys the XSD does not declare are still written, after the declared ones.
  *
- * <p>One instance serves every concurrent exchange of its operation, so everything taken from the
- * WSDL is resolved once, in the constructor, and {@link #transform} only reads the immutable result.
- * The WSDL and its schemas are a Xerces DOM, which is not thread-safe even for reads: walking it
- * per request raced on its node-list cache and left the definitions corrupted for later requests.
+ * <p>One instance serves every concurrent exchange of its element, so everything taken from the
+ * XSD is resolved once, in the constructor, and the transformation only reads the immutable result.
+ * The schemas are a Xerces DOM, which is not thread-safe even for reads: walking it per request
+ * raced on its node-list cache and left the definitions corrupted for later requests.
  */
-public class Json2SoapTransformer {
-
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+public class Json2XmlTransformer {
 
     /**
      * Looked up once: {@code newInstance()} scans the classpath for a provider under a JVM-wide
@@ -69,91 +62,62 @@ public class Json2SoapTransformer {
     private static final DocumentBuilderFactory DOCUMENT_BUILDER_FACTORY = createDocumentBuilderFactory();
     private static final TransformerFactory TRANSFORMER_FACTORY = TransformerFactory.newInstance();
 
-    private final String operationName;
+    private final QName element;
     private final Map<String, List<Element>> schemasByNamespace;
     private final XsdContentModel contentModel;
-    private final boolean soap12;
-    /** The operation's request element, or {@code null} when the WSDL does not define a usable one. */
-    private final RequestElement requestElement;
-    /** Why the operation has no usable request element, reported by every {@link #transform} call. */
-    private final String unusableReason;
-    /** The field metadata of every declaration reachable from the request element. */
+    /** The field metadata of the element itself. */
+    private final FieldContext rootContext;
+    /** The field metadata of every declaration reachable from the element. */
     private final Map<XsdContext, FieldContext> fieldContexts;
 
     /**
-     * @param schemasByNamespace the import graph resolved once by the caller — see
-     *                           {@link XsdToSchema#getSchemasByNamespace()}. One transformer is built
-     *                           per operation, so deriving it here would walk the graph once per
-     *                           operation instead of once per API.
-     * @param port               the port whose port type declares the operation, and whose binding
-     *                           decides the SOAP version of the envelope.
+     * @param element            the element to write. An element the schemas do not declare is
+     *                           written without field metadata: in JSON key order, unqualified.
+     * @param schemasByNamespace the import graph, resolved once by the caller — see
+     *                           {@link XsdToSchema#getSchemasByNamespace()}
      */
-    public Json2SoapTransformer(SelectedPort port, String operationName,
-                                Map<String, List<Element>> schemasByNamespace) {
-        this.operationName = operationName;
+    public Json2XmlTransformer(QName element, Map<String, List<Element>> schemasByNamespace) {
+        this.element = element;
         this.schemasByNamespace = schemasByNamespace;
         this.contentModel = new XsdContentModel(schemasByNamespace);
-        this.soap12 = port.soapVersion() == SOAP_12;
-
-        var contexts = new HashMap<XsdContext, FieldContext>();
-        RequestElement resolved = null;
-        String reason = null;
-        try {
-            resolved = resolveRequestElement(port, contexts);
-        } catch (IllegalArgumentException e) {
-            // Reported per request, as before: one unusable operation must not stop the others.
-            reason = e.getMessage();
-        }
-        this.requestElement = resolved;
-        this.unusableReason = reason;
+        final var contexts = new HashMap<XsdContext, FieldContext>();
+        this.rootContext = resolveFieldContexts(findXsdContext(element), contexts);
         this.fieldContexts = Map.copyOf(contexts);
     }
 
-    public byte[] transform(String jsonBody) throws Exception {
-        JsonNode jsonNode = MAPPER.readTree(jsonBody);
-
-        if (requestElement == null) {
-            throw new IllegalArgumentException(unusableReason);
-        }
-
-        Envelope envelope = createSoapEnvelope();
-        Document doc = envelope.doc();
-
-        Element operationElement = createOperationElement(doc);
-        envelope.body().appendChild(operationElement);
-
-        mapJsonToElement(jsonNode, operationElement, doc, requestElement.fields());
-
+    /** A standalone XML document whose root is the element, filled from {@code json}. */
+    byte[] transform(JsonNode json) throws Exception {
+        final var doc = newDocument();
+        appendTo(doc, doc, json);
         return documentToBytes(doc);
     }
 
-    /** The element a request's SOAP body carries, and the field metadata of its content. */
-    private record RequestElement(String name, String namespace, FieldContext fields) {}
-
     /**
-     * Resolves the operation's request element from the WSDL, collecting the field metadata of every
-     * declaration reachable from it into {@code contexts}.
+     * Creates the element, fills it from {@code json} and appends it to {@code parent}.
      *
-     * @throws IllegalArgumentException if the operation, its input message, or the element of its
-     *                                  first part cannot be found
+     * @throws org.w3c.dom.DOMException if a JSON key is not a valid XML name
+     * @throws UnmappableJsonException  if {@code json} is an array or no value at all
      */
-    private RequestElement resolveRequestElement(SelectedPort port, Map<XsdContext, FieldContext> contexts) {
-        Operation operation = port.findOperation(operationName)
-                .orElseThrow(() -> new IllegalArgumentException("Operation not found: " + operationName));
+    public Element appendTo(Document doc, Node parent, JsonNode json) {
+        // Below the element an array becomes repeated elements; the element itself occurs once.
+        if (json.isMissingNode()) throw new UnmappableJsonException("The body contains no JSON value.");
+        if (json.isArray()) throw new UnmappableJsonException("The JSON must be an object or a single value, not an array.");
+        final var created = createRootElement(doc);
+        parent.appendChild(created);
+        mapJsonToElement(json, created, doc, rootContext);
+        return created;
+    }
 
-        Message inputMessage = operation.getInputMessage()
-                .orElseThrow(() -> new IllegalArgumentException("No input message found for operation: " + operationName));
-        List<Part> parts = inputMessage.getParts();
-        if (parts.isEmpty()) {
-            throw new IllegalArgumentException("Input message has no parts for operation: " + operationName);
-        }
-        Part part = parts.getFirst();
-        String elementName = part.getElementName();
-        if (elementName == null) {
-            throw new IllegalArgumentException("Part has no element name for operation: " + operationName);
-        }
-        return new RequestElement(elementName, part.getElementNamespace(),
-                resolveFieldContexts(findXsdContext(part.getElementQName()), contexts));
+    public static Document newDocument() throws Exception {
+        return DOCUMENT_BUILDER_FACTORY.newDocumentBuilder().newDocument();
+    }
+
+    private Element createRootElement(Document doc) {
+        final var namespace = element.getNamespaceURI();
+        if (namespace.isEmpty()) return doc.createElementNS(null, element.getLocalPart());
+        final var created = doc.createElementNS(namespace, "ns:" + element.getLocalPart());
+        created.setAttribute("xmlns:ns", namespace);
+        return created;
     }
 
     /**
@@ -180,44 +144,10 @@ public class Json2SoapTransformer {
         return context == null ? NO_FIELD_CONTEXT : fieldContexts.get(context);
     }
 
-    /** A freshly created SOAP envelope document, together with its Body element. */
-    private record Envelope(Document doc, Element body) {}
-
     private static DocumentBuilderFactory createDocumentBuilderFactory() {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         factory.setNamespaceAware(true);
         return factory;
-    }
-
-    private Envelope createSoapEnvelope() throws Exception {
-        DocumentBuilder builder = DOCUMENT_BUILDER_FACTORY.newDocumentBuilder();
-        Document doc = builder.newDocument();
-
-        String soapNs = soap12 ? SOAP12_NS : SOAP11_NS;
-        String prefix = soap12 ? "s12" : "s11";
-
-        Element envelope = doc.createElementNS(soapNs, prefix + ":Envelope");
-        envelope.setAttribute("xmlns:" + prefix, soapNs);
-        doc.appendChild(envelope);
-
-        Element body = doc.createElementNS(soapNs, prefix + ":Body");
-        envelope.appendChild(body);
-
-        return new Envelope(doc, body);
-    }
-
-    private Element createOperationElement(Document doc) {
-        String namespace = requestElement.namespace();
-
-        Element opElement = doc.createElementNS(namespace, requestElement.name());
-
-        if (namespace != null && !namespace.isEmpty()) {
-            String prefix = "ns";
-            opElement.setPrefix(prefix);
-            opElement.setAttribute("xmlns:" + prefix, namespace);
-        }
-
-        return opElement;
     }
 
     /**
@@ -424,7 +354,7 @@ public class Json2SoapTransformer {
     }
 
     /**
-     * The WSDL-derived metadata for the element currently being written: the order its fields are
+     * The schema-derived metadata for the element currently being written: the order its fields are
      * declared in, the namespace each field carries, and the XSD declaration of each child by local
      * name (which is what a nested object needs to derive the same values for itself).
      */
@@ -524,7 +454,7 @@ public class Json2SoapTransformer {
         return namespace != null ? doc.createElementNS(namespace, name) : doc.createElement(name);
     }
 
-    private byte[] documentToBytes(Document doc) throws Exception {
+    public static byte[] documentToBytes(Document doc) throws Exception {
         Transformer transformer = TRANSFORMER_FACTORY.newTransformer();
         transformer.setOutputProperty(OutputKeys.INDENT, "no");
         transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "no");
@@ -533,5 +463,4 @@ public class Json2SoapTransformer {
         transformer.transform(new DOMSource(doc), new StreamResult(outputStream));
         return outputStream.toByteArray();
     }
-
 }

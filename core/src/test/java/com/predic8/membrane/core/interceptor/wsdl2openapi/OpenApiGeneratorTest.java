@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
+import com.predic8.membrane.core.interceptor.soap2json.SelectedPort;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.wsdl.parser.Definitions;
@@ -37,7 +38,7 @@ import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.Wsdl2OpenApiConverter.ApiInfo;
-import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.componentName;
+import static com.predic8.membrane.core.util.xml.schema.XsdDomUtil.componentName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
@@ -681,6 +682,14 @@ class OpenApiGeneratorTest {
 
     private static Definitions documentedDefinitions() throws Exception {
         return Definitions.parse(new ResolverMap(), "classpath:/ws/documented.wsdl");
+    }
+
+    @Test
+    void faultsSharingALocalNameArePublishedUnderQualifiedKeys() throws Exception {
+        final var yaml = generator(Definitions.parse(new ResolverMap(), "classpath:/ws/fault-name-collision.wsdl"), "/");
+
+        assertTrue(yaml.contains("{https://example.com/common}Error"), yaml);
+        assertTrue(yaml.contains("{https://example.com/billing}Error"), yaml);
     }
 
     private static String generator(Definitions defs, String basePath) {

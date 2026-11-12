@@ -12,39 +12,39 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.interceptor.wsdl2openapi;
+package com.predic8.membrane.core.util.xml.schema;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.models.media.*;
-import org.w3c.dom.*;
-import org.xml.sax.InputSource;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
 
 import javax.xml.XMLConstants;
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.predic8.membrane.annot.Constants.SOAP11_NS;
-import static com.predic8.membrane.annot.Constants.SOAP12_NS;
-import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.*;
-import static com.predic8.membrane.core.util.xml.parser.HardenedXmlParser.getInstance;
+import static com.predic8.membrane.core.util.xml.schema.XsdDomUtil.*;
 
 /**
- * Transforms SOAP XML response to JSON.
+ * Maps an XML element to JSON, typed by the schema {@link XsdToSchema} derived from its XSD
+ * declaration.
  * XML attributes are mapped to "@"-prefixed properties; xmlns declarations and xml: namespace
  * attributes (e.g. xml:lang) are excluded.
  * An element marked {@code xsi:nil="true"} becomes JSON {@code null}, matching the
  * {@code nullable} that {@code XsdToSchema} derives from {@code nillable="true"}.
  * An element that has attributes but no child elements becomes an object carrying those attributes
- * plus its own text value under {@code $value}.
- * A response element that is itself a scalar (no child elements, and the schema names an XSD
- * scalar type rather than an object) is emitted as a bare JSON value, not an empty object.
+ * plus its own text value under {@code $value}; so does an element whose schema declares
+ * {@code $value}, even when none of its optional attributes is present.
+ * A root element that is itself a scalar (no child elements, and the schema names an XSD scalar
+ * type rather than an object) is emitted as a bare JSON value, not an empty object; a root of an
+ * {@code xsd:simpleContent} type keeps its typed text value the same way a child element does.
+ *
+ * <p>Stateless apart from the components it resolves references against, so one instance can
+ * serve concurrent requests as long as nobody modifies those schemas.
  */
-public class Soap2JsonTransformer {
-
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+public class Xml2JsonMapper {
 
     /**
      * The named types the schemas refer to, keyed by component name — the same map
@@ -53,60 +53,24 @@ public class Soap2JsonTransformer {
      */
     private final Map<String, Schema<?>> components;
 
-    /** Pass an empty map where there are no schemas to resolve against. */
-    public Soap2JsonTransformer(Map<String, Schema<?>> components) {
+    public Xml2JsonMapper(Map<String, Schema<?>> components) {
         this.components = components;
+    }
+
+    /**
+     * The JSON value of a root element: {@code null} if it is nil, its leaf value if it is a scalar
+     * or simpleContent root, otherwise a map. {@code schema} may be {@code null}, which converts
+     * the element structurally with every scalar as a string.
+     */
+    public Object toJson(Element element, Schema<?> schema) {
+        if (isNil(element)) return null;
+        if (isScalarRoot(element, schema) || isSimpleContentRoot(element, schema)) return leafValue(element, schema);
+        return elementToMap(element, schema);
     }
 
     /** The schema a reference points at — see {@link XsdDomUtil#dereference}. */
     private Schema<?> resolve(Schema<?> schema) {
         return dereference(components, schema);
-    }
-
-    /**
-     * Transforms the SOAP response to JSON.
-     * <p>
-     * {@code responseSchema} produces properly typed values (numbers, booleans) rather than always
-     * strings; {@code faultDetailSchema} types the content of a SOAP {@code <detail>} element the
-     * same way, its properties being the operation's declared faults keyed by fault element local
-     * name. Either may be {@code null}, which converts that part structurally with every scalar as
-     * a string — the only thing possible for untyped or {@code xsd:any} content.
-     */
-    public String transform(String soapXml, Schema<?> responseSchema, Schema<?> faultDetailSchema) throws Exception {
-        return MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(
-                toJson(new InputSource(new StringReader(soapXml)), responseSchema, faultDetailSchema));
-    }
-
-    /**
-     * Transforms a SOAP document to UTF-8 JSON. The source decides the input encoding: with
-     * {@link InputSource#setEncoding} it is fixed, otherwise the XML parser detects it from the
-     * byte order mark or the XML declaration. The caller closes the source's stream.
-     */
-    public byte[] transform(InputSource soapXml, Schema<?> responseSchema, Schema<?> faultDetailSchema) throws Exception {
-        return MAPPER.writerWithDefaultPrettyPrinter().writeValueAsBytes(
-                toJson(soapXml, responseSchema, faultDetailSchema));
-    }
-
-    private Object toJson(InputSource soapXml, Schema<?> responseSchema, Schema<?> faultDetailSchema) throws Exception {
-        var doc = getInstance().parse(soapXml);
-
-        Element body = getSoapBody(doc);
-        if (body == null) {
-            throw new IllegalArgumentException("No SOAP Body found in response");
-        }
-
-        Element responseElement = getFirstChildElement(body);
-        if (responseElement == null) {
-            throw new IllegalArgumentException("No response element found in SOAP Body");
-        }
-
-        if ("Fault".equals(responseElement.getLocalName())) {
-            throw buildFaultException(responseElement, faultDetailSchema);
-        }
-
-        if (isNil(responseElement)) return null;
-        if (isScalarRoot(responseElement, responseSchema)) return leafValue(responseElement, responseSchema);
-        return elementToMap(responseElement, responseSchema);
     }
 
     /**
@@ -123,22 +87,17 @@ public class Soap2JsonTransformer {
         return type != null && !"object".equals(type) && !"array".equals(type);
     }
 
-    private static Element getSoapBody(Document doc) {
-        Element body = bodyInNamespace(doc, SOAP11_NS);
-        return body != null ? body : bodyInNamespace(doc, SOAP12_NS);
+    /**
+     * Whether the root element is of an {@code xsd:simpleContent} type: it has no child elements,
+     * and its schema declares the text value under {@code $value}. Its schema says "object", so
+     * {@link #isScalarRoot} rejects it, but {@link #elementToMap} would drop its text — it gets
+     * the same {@link #leafValue} treatment as a simpleContent child element.
+     */
+    private boolean isSimpleContentRoot(Element element, Schema<?> schema) {
+        return !hasChildElements(element) && propertiesOf(resolve(schema)).containsKey(VALUE_KEY);
     }
 
-    private static Element bodyInNamespace(Document doc, String soapNamespace) {
-        NodeList bodies = doc.getElementsByTagNameNS(soapNamespace, "Body");
-        return bodies.getLength() > 0 ? (Element) bodies.item(0) : null;
-    }
-
-    private static Element getFirstChildElement(Element parent) {
-        var children = childElements(parent);
-        return children.isEmpty() ? null : children.getFirst();
-    }
-
-    private Map<String, Object> elementToMap(Element element, Schema<?> schema) {
+    public Map<String, Object> elementToMap(Element element, Schema<?> schema) {
         Map<String, Schema<?>> properties = propertiesOf(resolve(schema));
 
         var result = new LinkedHashMap<String, Object>();
@@ -172,7 +131,9 @@ public class Soap2JsonTransformer {
      * A leaf element's text value. An element carrying attributes cannot be represented by that
      * value alone, so it becomes an object holding the attributes plus the value under
      * {@code $value} — the shape {@code XsdToSchema} publishes for an {@code xsd:simpleContent}
-     * type. Without attributes the value stands on its own, as a plain scalar.
+     * type with attributes. When the schema declares {@code $value}, the element is that object
+     * even if none of its optional attributes is present, so that the JSON keeps the declared shape.
+     * Otherwise, without attributes, the value stands on its own, as a plain scalar.
      */
     private Object leafValue(Element element, Schema<?> schema) {
         Schema<?> resolved = resolve(schema);
@@ -185,7 +146,7 @@ public class Soap2JsonTransformer {
         Object text = convertLeaf(element.getTextContent(),
                 declaredValueSchema != null ? declaredValueSchema : resolved);
 
-        if (attributes.isEmpty()) return text;
+        if (attributes.isEmpty() && declaredValueSchema == null) return text;
         attributes.put(VALUE_KEY, text);
         return attributes;
     }
@@ -250,7 +211,7 @@ public class Soap2JsonTransformer {
      * Resolves a child element against the parent's properties. The namespace-qualified key that
      * {@code XsdToSchema.addChoiceFields} uses for same-local-name alternatives is preferred, so
      * that alternatives from different namespaces stay distinct properties and the emitted JSON
-     * matches the published schema — {@code Json2SoapTransformer} strips such keys back to the XML
+     * matches the published schema — {@link Json2XmlTransformer} turns such keys back into the XML
      * local name on the way in. Everything else keeps its plain local name.
      */
     private static ResolvedChild resolveChild(Map<String, Schema<?>> properties, Element childElement) {
@@ -284,53 +245,6 @@ public class Soap2JsonTransformer {
     private static boolean isTrue(String text) {
         String value = text.trim();
         return "true".equalsIgnoreCase(value) || "1".equals(value);
-    }
-
-    private SoapFaultException buildFaultException(Element fault, Schema<?> faultDetailSchema) {
-        String ns = fault.getNamespaceURI();
-        if (SOAP12_NS.equals(ns)) {
-            return extractSoap12Fault(fault, faultDetailSchema);
-        }
-        return extractSoap11Fault(fault, faultDetailSchema);
-    }
-
-    private SoapFaultException extractSoap11Fault(Element fault, Schema<?> faultDetailSchema) {
-        return new SoapFaultException(
-                childText(fault, "faultcode"),
-                childText(fault, "faultstring"),
-                detailMap(childElement(fault, "detail"), faultDetailSchema)
-        );
-    }
-
-    private SoapFaultException extractSoap12Fault(Element fault, Schema<?> faultDetailSchema) {
-        Element codeEl = childElement(fault, "Code");
-        Element reasonEl = childElement(fault, "Reason");
-        return new SoapFaultException(
-                codeEl != null ? childText(codeEl, "Value") : "",
-                reasonEl != null ? childText(reasonEl, "Text") : "",
-                detailMap(childElement(fault, "Detail"), faultDetailSchema)
-        );
-    }
-
-    /**
-     * The SOAP {@code <detail>} content as a map keyed by the local name of each fault element it
-     * wraps, or null if the fault carries no detail. {@code faultDetailSchema} types the values;
-     * without it, every scalar comes out as a string.
-     */
-    private Map<String, Object> detailMap(Element detailElement, Schema<?> faultDetailSchema) {
-        return detailElement != null ? elementToMap(detailElement, faultDetailSchema) : null;
-    }
-
-    private static String childText(Element parent, String localName) {
-        Element child = childElement(parent, localName);
-        return child != null ? child.getTextContent().trim() : "";
-    }
-
-    private static Element childElement(Element parent, String localName) {
-        for (Element el : childElements(parent)) {
-            if (localName.equals(el.getLocalName())) return el;
-        }
-        return null;
     }
 
     private static boolean hasChildElements(Element element) {

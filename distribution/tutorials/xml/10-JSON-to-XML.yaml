@@ -67,3 +67,5 @@ api:
 #       XSLT stylesheet (see 61-XSLT-Transformation-group.yaml) or a script
 #       that maps the result to the required format. A script can also build
 #       the XML directly from the JSON (see 90-Groovy-Generate-XML.yaml).
+#       If the format is described by an XML Schema, json2Xml can produce it
+#       directly (see 15-JSON-to-XML-with-XSD.yaml).

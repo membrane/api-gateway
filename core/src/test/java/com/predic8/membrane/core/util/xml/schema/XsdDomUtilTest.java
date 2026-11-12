@@ -12,7 +12,7 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.interceptor.wsdl2openapi;
+package com.predic8.membrane.core.util.xml.schema;
 
 import io.swagger.v3.oas.models.media.ObjectSchema;
 import io.swagger.v3.oas.models.media.Schema;
@@ -32,7 +32,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.*;
+import static com.predic8.membrane.core.util.xml.schema.XsdDomUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
@@ -248,6 +248,31 @@ class XsdDomUtilTest {
         assertTrue(group.isPresent());
         assertEquals(SHIPPING, group.get().schemaRoot().getAttribute("targetNamespace"));
         assertEquals("country", firstXsdChild(groupParticle(group.get().definition()), "element").getAttribute("name"));
+    }
+
+    @Test
+    void anUnprefixedReferenceIsResolvedInEveryDocumentOfTheReferringNamespace() {
+        final var referring = schema("""
+                <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" targetNamespace="http://example.com/billing">
+                  <xsd:element name="invoice">
+                    <xsd:complexType><xsd:sequence><xsd:group ref="Lines"/></xsd:sequence></xsd:complexType>
+                  </xsd:element>
+                </xsd:schema>
+                """);
+        final var included = schema("""
+                <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" targetNamespace="http://example.com/billing">
+                  <xsd:group name="Lines">
+                    <xsd:sequence><xsd:element name="line" type="xsd:string"/></xsd:sequence>
+                  </xsd:group>
+                </xsd:schema>
+                """);
+
+        final var group = resolveGroupRef(refElement(referring, "group"), referring,
+                Map.of(BILLING, List.of(referring, included)));
+
+        // An xsd:include puts the group into another document of the same namespace.
+        assertTrue(group.isPresent());
+        assertSame(included, group.get().schemaRoot());
     }
 
     @Test

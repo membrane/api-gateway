@@ -68,4 +68,10 @@ public class Import extends AbstractIncludeImport {
     public String getNamespace() {
         return getAttribute("namespace");
     }
+
+    /** The import's namespace, which the constructor checks the imported schema's targetNamespace against. */
+    @Override
+    protected String namespace() {
+        return getNamespace();
+    }
 }

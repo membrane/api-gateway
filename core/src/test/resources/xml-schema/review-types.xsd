@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Tests: a schema without targetNamespace, included by review-note.xsd, itself included without
+  targetNamespace — the namespace is passed on through both includes.
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+
+    <xs:complexType name="NoteType">
+        <xs:sequence>
+            <xs:element name="text" type="xs:string"/>
+            <xs:element name="count" type="xs:int"/>
+        </xs:sequence>
+    </xs:complexType>
+
+</xs:schema>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Tests: a schema without targetNamespace, included by review.xsd. Its unprefixed reference to
+  NoteType must resolve in the namespace of the including schema.
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+
+    <xs:include schemaLocation="review-types.xsd"/>
+
+    <xs:element name="note" type="NoteType"/>
+
+</xs:schema>

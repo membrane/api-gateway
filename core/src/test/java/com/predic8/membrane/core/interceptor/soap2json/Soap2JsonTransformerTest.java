@@ -12,8 +12,9 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.interceptor.wsdl2openapi;
+package com.predic8.membrane.core.interceptor.soap2json;
 
+import com.predic8.membrane.core.util.xml.schema.UndeclaredElementException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.resolver.ResolverMap;
@@ -23,12 +24,15 @@ import com.predic8.membrane.core.util.xml.parser.XmlParseException;
 import io.swagger.v3.oas.models.media.*;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.xml.sax.InputSource;
 
+import javax.xml.namespace.QName;
+import java.io.StringReader;
 import java.util.Map;
 import java.util.Set;
 
-import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.VALUE_KEY;
-import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.qualifiedKey;
+import static com.predic8.membrane.core.util.xml.schema.XsdDomUtil.VALUE_KEY;
+import static com.predic8.membrane.core.util.xml.schema.XsdDomUtil.qualifiedKey;
 import static org.junit.jupiter.api.Assertions.*;
 
 class Soap2JsonTransformerTest {
@@ -189,6 +193,55 @@ class Soap2JsonTransformerTest {
 
         assertThrows(Exception.class, () -> transform(emptyBody),
                 "Should throw when SOAP Body has no response element");
+    }
+
+    @Test
+    void aBodyOutsideAnEnvelopeIsRejected() {
+        var notSoap = """
+                <order xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soap:Body><getCityResponse xmlns="https://predic8.de/cities"><name>Bonn</name></getCityResponse></soap:Body>
+                </order>
+                """;
+
+        assertThrows(IllegalArgumentException.class, () -> transform(notSoap));
+    }
+
+    @Test
+    void aBodyThatIsNotAChildOfTheEnvelopeIsRejected() {
+        var nested = """
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soap:Header>
+                    <soap:Body><getCityResponse xmlns="https://predic8.de/cities"><name>Bonn</name></getCityResponse></soap:Body>
+                  </soap:Header>
+                </soap:Envelope>
+                """;
+
+        assertThrows(IllegalArgumentException.class, () -> transform(nested));
+    }
+
+    @Test
+    void aBodyWithTwoElementsIsRejected() {
+        var twoElements = """
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soap:Body>
+                    <getCityResponse xmlns="https://predic8.de/cities"><name>Bonn</name></getCityResponse>
+                    <getCityResponse xmlns="https://predic8.de/cities"><name>Berlin</name></getCityResponse>
+                  </soap:Body>
+                </soap:Envelope>
+                """;
+
+        assertThrows(IllegalArgumentException.class, () -> transform(twoElements));
+    }
+
+    @Test
+    void anElementNamedFaultOutsideTheSoapNamespaceIsConverted() throws Exception {
+        var applicationFault = """
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soap:Body><app:Fault xmlns:app="https://example.com/app"><reason>none</reason></app:Fault></soap:Body>
+                </soap:Envelope>
+                """;
+
+        assertEquals("none", mapper.readTree(transform(applicationFault)).get("reason").asText());
     }
 
     // --- Schema-driven type conversion ---
@@ -641,7 +694,7 @@ class Soap2JsonTransformerTest {
     void choiceRefAlternativeTypedCorrectlyFromWsdlDerivedSchema() throws Exception {
         // Build response schema from WSDL: processResult has a choice of a:textResult and b:numericResult.
         // After the addChoiceFields fix, the schema contains both alternatives with correct types.
-        var xsdToSchema = new XsdToSchema(crossNamespaceChoiceDefinitions, Set.of());
+        var xsdToSchema = new WsdlPartsToSchema(crossNamespaceChoiceDefinitions, Set.of());
         var outputMessages = crossNamespaceChoiceDefinitions.getPortTypes().stream()
                 .flatMap(pt -> pt.getOperations().stream())
                 .filter(op -> "processInput".equals(op.getName()))
@@ -678,7 +731,7 @@ class Soap2JsonTransformerTest {
         // key (XsdToSchema.addChoiceFields), so the JSON must use that same key: it is what the
         // published OpenAPI schema advertises, and Json2SoapTransformer strips it back on the
         // request side.
-        var xsdToSchema = new XsdToSchema(crossNamespaceChoiceDefinitions, Set.of());
+        var xsdToSchema = new WsdlPartsToSchema(crossNamespaceChoiceDefinitions, Set.of());
         var outputMessages = crossNamespaceChoiceDefinitions.getPortTypes().stream()
                 .flatMap(pt -> pt.getOperations().stream())
                 .filter(op -> "processAmbiguous".equals(op.getName()))
@@ -713,7 +766,7 @@ class Soap2JsonTransformerTest {
     void bothChoiceAlternativesWithSameLocalNameStayDistinctProperties() throws Exception {
         // Both alternatives present at once: keying by the bare local name would merge them into a
         // single property (and silently type one of them with the other's schema).
-        var xsdToSchema = new XsdToSchema(crossNamespaceChoiceDefinitions, Set.of());
+        var xsdToSchema = new WsdlPartsToSchema(crossNamespaceChoiceDefinitions, Set.of());
         var outputMessages = crossNamespaceChoiceDefinitions.getPortTypes().stream()
                 .flatMap(pt -> pt.getOperations().stream())
                 .filter(op -> "processAmbiguous".equals(op.getName()))
@@ -751,7 +804,7 @@ class Soap2JsonTransformerTest {
         // processAmbiguousList combines both conditions: the alternatives collide on the local name
         // "value" (so they are keyed by namespace) and are maxOccurs="unbounded" (so their schema is
         // an ArraySchema). A single occurrence must still come out as a one-element array.
-        var xsdToSchema = new XsdToSchema(crossNamespaceChoiceDefinitions, Set.of());
+        var xsdToSchema = new WsdlPartsToSchema(crossNamespaceChoiceDefinitions, Set.of());
         var outputMessages = crossNamespaceChoiceDefinitions.getPortTypes().stream()
                 .flatMap(pt -> pt.getOperations().stream())
                 .filter(op -> "processAmbiguousList".equals(op.getName()))
@@ -782,7 +835,7 @@ class Soap2JsonTransformerTest {
 
     @Test
     void wsdlDerivedSchemaConvertsPopulationToNumber() throws Exception {
-        var xsdToSchema = new XsdToSchema(citiesDefinitions, Set.of());
+        var xsdToSchema = new WsdlPartsToSchema(citiesDefinitions, Set.of());
         var outputMessages = citiesDefinitions.getPortTypes().stream()
                 .flatMap(pt -> pt.getOperations().stream())
                 .filter(op -> "getCity".equals(op.getName()))
@@ -1141,5 +1194,29 @@ class Soap2JsonTransformerTest {
         assertEquals("java", tags.get(0).asText());
         assertTrue(tags.get(1).isNull());
         assertEquals("api", tags.get(2).asText());
+    }
+
+    @Test
+    void theBodySchemaIsPickedByTheQualifiedNameOfTheBodyElement() throws Exception {
+        final var population = new ObjectSchema().addProperty("population", new IntegerSchema());
+        final Soap2JsonTransformer.BodySchema lookup = element ->
+                element.equals(new QName("https://predic8.de/cities", "getCityResponse")) ? population : null;
+
+        final var json = new Soap2JsonTransformer(Map.of())
+                .transform(new InputSource(new StringReader(CITIES_SOAP11_RESPONSE)), lookup, null);
+
+        assertTrue(mapper.readTree(json).get("population").isNumber());
+    }
+
+    @Test
+    void aBodyElementTheLookupRejectsIsNotConverted() {
+        final var element = new QName("https://predic8.de/cities", "getCityResponse");
+        final Soap2JsonTransformer.BodySchema lookup = e -> {
+            throw new UndeclaredElementException(e, "any message of port 'CityPort'");
+        };
+
+        final var e = assertThrows(UndeclaredElementException.class, () -> new Soap2JsonTransformer(Map.of())
+                .transform(new InputSource(new StringReader(CITIES_SOAP11_RESPONSE)), lookup, null));
+        assertEquals(element, e.getElement());
     }
 }

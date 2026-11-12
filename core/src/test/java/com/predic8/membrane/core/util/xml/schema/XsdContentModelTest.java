@@ -12,7 +12,7 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.interceptor.wsdl2openapi;
+package com.predic8.membrane.core.util.xml.schema;
 
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Element;
@@ -24,9 +24,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
-import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdContentModel.*;
-import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.findXsdChildWithName;
-import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.firstParticle;
+import static com.predic8.membrane.core.util.xml.schema.XsdContentModel.*;
+import static com.predic8.membrane.core.util.xml.schema.XsdDomUtil.findXsdChildWithName;
+import static com.predic8.membrane.core.util.xml.schema.XsdDomUtil.firstParticle;
 import static org.junit.jupiter.api.Assertions.*;
 
 class XsdContentModelTest {

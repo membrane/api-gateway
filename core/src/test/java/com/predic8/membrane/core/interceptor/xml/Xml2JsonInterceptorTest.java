@@ -22,6 +22,7 @@ import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.router.DefaultRouter;
+import com.predic8.membrane.core.util.ConfigurationException;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -33,9 +34,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
+import java.util.List;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Request.get;
+import static java.util.Locale.ROOT;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_16;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -201,4 +204,160 @@ public class Xml2JsonInterceptorTest {
         return new ByteArrayInputStream(outBytes);
     }
 
+    private static final String LIBRARY = """
+            <library name="City">
+                <book id="7">
+                    <title>Dune</title>
+                    <author>Frank Herbert</author>
+                    <pages>412</pages>
+                    <price currency="EUR">12.50</price>
+                    <available>true</available>
+                    <note xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:nil="true"/>
+                </book>
+            </library>""";
+
+    private static final String ORDER = """
+            <order xmlns="https://example.com/shop" xmlns:c="https://example.com/common">
+                <id>42</id>
+                <item><article>Coffee</article><quantity>2</quantity></item>
+                <c:address><c:city>Bonn</c:city><c:zip>01234</c:zip></c:address>
+            </order>""";
+
+    static Xml2JsonInterceptor withSchema(String xsd) {
+        final var interceptor = new Xml2JsonInterceptor();
+        interceptor.setXmlSchema(xsd);
+        interceptor.init(new DefaultRouter());
+        return interceptor;
+    }
+
+    private static Exchange xmlRequest(String xml) throws Exception {
+        return Request.post("/").contentType(APPLICATION_XML).body(xml).buildExchange();
+    }
+
+    @Test
+    void anXmlSchemaTypesValuesAndMakesARepeatableElementAnArray() throws Exception {
+        final var exc = xmlRequest(LIBRARY);
+
+        assertEquals(Outcome.CONTINUE, withSchema("classpath:/xml-schema/library.xsd").handleRequest(exc));
+
+        final var library = new ObjectMapper().readTree(exc.getRequest().getBodyAsStringDecoded()).get("library");
+        assertEquals("City", library.get("@name").asText());
+        final var book = library.get("book");
+        assertTrue(book.isArray(), "maxOccurs=unbounded is an array even with one book: " + library);
+        final var first = book.get(0);
+        assertTrue(first.get("@id").isInt());
+        assertEquals(7, first.get("@id").asInt());
+        assertTrue(first.get("author").isArray());
+        assertEquals("Frank Herbert", first.get("author").get(0).asText());
+        assertTrue(first.get("pages").isNumber());
+        assertEquals("EUR", first.get("price").get("@currency").asText());
+        assertEquals(12.5, first.get("price").get("$value").asDouble());
+        assertTrue(first.get("available").isBoolean());
+        assertTrue(first.get("note").isNull());
+        assertEquals(APPLICATION_JSON_UTF8, exc.getRequest().getHeader().getContentType());
+    }
+
+    @Test
+    void anXmlSchemaWithIncludesAndImportsConvertsNamespacedDocuments() throws Exception {
+        final var exc = xmlRequest(ORDER);
+
+        assertEquals(Outcome.CONTINUE, withSchema("classpath:/xml-schema/shop.xsd").handleRequest(exc));
+
+        final var order = new ObjectMapper().readTree(exc.getRequest().getBodyAsStringDecoded()).get("order");
+        assertEquals(42, order.get("id").asInt());
+        assertTrue(order.get("item").isArray());
+        assertEquals(2, order.get("item").get(0).get("quantity").asInt());
+        assertEquals("01234", order.get("address").get("zip").asText(), "an xs:string keeps its leading zero");
+    }
+
+    @Test
+    void aDocumentElementTheXmlSchemaDoesNotDeclareIsA400InTheRequest() throws Exception {
+        final var exc = xmlRequest("<magazine/>");
+
+        assertEquals(Outcome.ABORT, withSchema("classpath:/xml-schema/library.xsd").handleRequest(exc));
+
+        assertEquals(400, exc.getResponse().getStatusCode());
+        assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("magazine"));
+    }
+
+    @Test
+    void aDocumentElementTheXmlSchemaDoesNotDeclareIsA500InTheResponseThatHidesIt() throws Exception {
+        final var exc = new Exchange(null);
+        exc.setResponse(Response.ok().contentType(APPLICATION_XML).body("<magazine-at-db-host-3/>").build());
+
+        final var interceptor = withSchema("classpath:/xml-schema/library.xsd");
+        interceptor.getRouter().getConfiguration().setProduction(true);
+
+        assertEquals(Outcome.ABORT, interceptor.handleResponse(exc));
+
+        assertEquals(500, exc.getResponse().getStatusCode());
+        assertFalse(exc.getResponse().getBodyAsStringDecoded().contains("db-host-3"),
+                "what the backend sent must not reach the client");
+    }
+
+    @Test
+    void malformedXmlWithAnXmlSchemaIsA400() throws Exception {
+        final var exc = xmlRequest("<library>");
+
+        assertEquals(Outcome.ABORT, withSchema("classpath:/xml-schema/library.xsd").handleRequest(exc));
+        assertEquals(400, exc.getResponse().getStatusCode());
+    }
+
+    @Test
+    void aHeuristicSettingCannotBeCombinedWithAnXmlSchema() {
+        final var interceptor = new Xml2JsonInterceptor();
+        interceptor.setXmlSchema("classpath:/xml-schema/library.xsd");
+        interceptor.setForceList(List.of("book"));
+
+        final var e = assertThrows(ConfigurationException.class, () -> interceptor.init(new DefaultRouter()));
+        assertTrue(e.getMessage().contains("forceList"), e.getMessage());
+    }
+
+    @Test
+    void anXmlSchemaThatCannotBeReadIsAConfigurationError() {
+        assertThrows(ConfigurationException.class, () -> withSchema("classpath:/xml-schema/missing.xsd"));
+    }
+
+    private static Xml2JsonInterceptor heuristicInProduction() {
+        final var interceptor = new Xml2JsonInterceptor();
+        interceptor.init(new DefaultRouter());
+        interceptor.getRouter().getConfiguration().setProduction(true);
+        return interceptor;
+    }
+
+    @Test
+    void malformedXmlFromTheClientIsAUserError() throws Exception {
+        final var exc = Request.post("/").contentType(TEXT_XML).body("<unclosed>").buildExchange();
+
+        assertEquals(Outcome.ABORT, heuristicInProduction().handleRequest(exc));
+
+        assertEquals(400, exc.getResponse().getStatusCode());
+        final var problem = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(problem.contains("<type>https://membrane-api.io/problems/user</type>"), problem);
+    }
+
+    @Test
+    void malformedXmlFromTheBackendDoesNotReachTheClient() throws Exception {
+        final var exc = new Exchange(null);
+        exc.setRequest(new Request.Builder().get("/").build());
+        exc.setResponse(Response.ok().contentType("text/xml; charset=db-host-3").body("<unclosed-at-db-host-3>").build());
+
+        assertEquals(Outcome.ABORT, heuristicInProduction().handleResponse(exc));
+
+        assertEquals(500, exc.getResponse().getStatusCode());
+        // Case-insensitive: the charset comes back upper-cased.
+        assertFalse(exc.getResponse().getBodyAsStringDecoded().toLowerCase(ROOT).contains("db-host-3"),
+                "what the backend sent must not reach the client: " + exc.getResponse().getBodyAsStringDecoded());
+    }
+
+    @Test
+    void malformedXmlWithAnXmlSchemaKeepsItsExplanationInProduction() throws Exception {
+        final var interceptor = withSchema("classpath:/xml-schema/library.xsd");
+        interceptor.getRouter().getConfiguration().setProduction(true);
+        final var exc = xmlRequest("<library>");
+
+        assertEquals(Outcome.ABORT, interceptor.handleRequest(exc));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains("The XML request could not be converted to JSON."), body);
+    }
 }

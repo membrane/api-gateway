@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Tests: a schema without targetNamespace, referring to its named types without a prefix. Typed
+  values, an attribute, an element that may repeat, simpleContent with an attribute (also as a
+  root element), nillable.
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+    <xs:element name="library" type="LibraryType"/>
+
+    <xs:element name="ping" type="xs:string"/>
+
+    <xs:element name="price" type="PriceType"/>
+
+    <xs:complexType name="LibraryType">
+        <xs:sequence>
+            <xs:element name="book" type="BookType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+        <xs:attribute name="name" type="xs:string"/>
+    </xs:complexType>
+
+    <xs:complexType name="BookType">
+        <xs:sequence>
+            <xs:element name="title" type="xs:string"/>
+            <xs:element name="author" type="xs:string" maxOccurs="unbounded"/>
+            <xs:element name="pages" type="xs:int"/>
+            <xs:element name="price" type="PriceType"/>
+            <xs:element name="available" type="xs:boolean"/>
+            <xs:element name="note" type="xs:string" nillable="true"/>
+        </xs:sequence>
+        <xs:attribute name="id" type="xs:int" use="required"/>
+    </xs:complexType>
+
+    <xs:complexType name="PriceType">
+        <xs:simpleContent>
+            <xs:extension base="xs:decimal">
+                <xs:attribute name="currency" type="xs:string"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+
+</xs:schema>

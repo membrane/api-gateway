@@ -1,0 +1,12 @@
+{
+  "books": {
+    "book": [
+      {
+        "category": "Software Engineering",
+        "author": [ "Frederick P. Brooks Jr." ],
+        "title": "The Mythical Man-Month",
+        "@id": 1
+      }
+    ]
+  }
+}

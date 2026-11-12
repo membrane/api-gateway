@@ -12,12 +12,8 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.interceptor.wsdl2openapi;
+package com.predic8.membrane.core.util.xml.schema;
 
-import com.predic8.membrane.core.util.wsdl.parser.Definitions;
-import com.predic8.membrane.core.util.wsdl.parser.Message;
-import com.predic8.membrane.core.util.wsdl.parser.Operation;
-import com.predic8.membrane.core.util.wsdl.parser.Part;
 import io.swagger.v3.oas.models.media.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,13 +27,13 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.predic8.membrane.annot.Constants.XSD_NS;
-import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdContentModel.*;
-import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.*;
+import static com.predic8.membrane.core.util.xml.schema.XsdContentModel.*;
+import static com.predic8.membrane.core.util.xml.schema.XsdDomUtil.*;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 
 /**
- * Converts XSD type definitions embedded in a WSDL to OpenAPI Schema objects.
+ * Converts XSD type definitions to OpenAPI Schema objects.
  *
  * <p>Handles:
  * <ul>
@@ -60,7 +56,7 @@ import static java.lang.Boolean.TRUE;
  *   <li>Cross-namespace type references (resolved via the full import graph)</li>
  * </ul>
  *
- * <p>The features above are constraints: they describe which messages are valid, and are enforced
+ * <p>The features above are constraints: they describe which documents are valid, and are enforced
  * wherever the generated schema is validated against.
  *
  * <p>A named {@code xsd:complexType} or {@code xsd:simpleType} is converted once and published as a
@@ -84,7 +80,7 @@ import static java.lang.Boolean.TRUE;
  * {@code decimal}, …). Where that pair does not name the XSD type it came from — {@code xsd:token},
  * the {@code g*} date types, the bounded and unbounded integer types, {@code xsd:decimal} — the
  * type name is carried in an {@code x-xsd-type} extension, so that a tool reading the document can
- * recover it. {@code description} is left to the service's own documentation.
+ * recover it. {@code description} is left to the schema's own {@code xsd:documentation}.
  *
  * <p>{@code xsd:decimal} is emitted as a JSON {@code number} with {@code format: decimal}. JSON
  * {@code number} is arbitrary-precision by specification, but most parsers realize it as a double,
@@ -92,10 +88,10 @@ import static java.lang.Boolean.TRUE;
  * accepted here rather than mapped to {@code type: string}, which would keep the precision but
  * cost every consumer the numeric type and any range facets stated on it.
  *
- * <p>Neither is applied to messages during SOAP/JSON conversion. Supplying a missing value is the
- * SOAP service's own responsibility — and in XSD an element's default only applies to an element
+ * <p>Neither is applied to documents during XML/JSON conversion. Supplying a missing value is the
+ * receiver's own responsibility — and in XSD an element's default only applies to an element
  * that is present but empty, never to an absent one, so filling in omitted fields here would not
- * even match what the service does.
+ * even match what the receiver does.
  */
 public class XsdToSchema {
 
@@ -136,33 +132,29 @@ public class XsdToSchema {
 
     /**
      * The named types reached so far, keyed by component name. Filled as conversion walks the
-     * schemas, so a type no message refers to is not published.
+     * schemas, so a type no converted element refers to is not published.
      */
     private final Map<String, Schema<?>> components = new LinkedHashMap<>();
 
-    XsdToSchema(Map<String, List<Element>> schemasByNamespace, Set<String> reservedComponentNames) {
+    public XsdToSchema(Map<String, List<Element>> schemasByNamespace, Set<String> reservedComponentNames) {
         this.schemasByNamespace = schemasByNamespace;
         this.componentNames = buildComponentNames(schemasByNamespace, reservedComponentNames);
         this.contentModel = new XsdContentModel(schemasByNamespace);
-    }
-
-    public XsdToSchema(Definitions definitions, Set<String> reservedComponentNames) {
-        this(definitions.getSchemasByNamespace(), reservedComponentNames);
     }
 
     /**
      * The schemas of the named types reached during conversion, to be published as
      * {@code components/schemas} of the document the references produced here point into.
      */
-    Map<String, Schema<?>> getComponents() {
+    public Map<String, Schema<?>> getComponents() {
         return components;
     }
 
     /**
-     * The schema documents of the WSDL's whole import graph, by target namespace — resolved once
+     * The schema documents of the whole import graph, by target namespace — resolved once
      * here so that the runtime transformers do not each walk the graph again.
      */
-    Map<String, List<Element>> getSchemasByNamespace() {
+    public Map<String, List<Element>> getSchemasByNamespace() {
         return schemasByNamespace;
     }
 
@@ -208,68 +200,6 @@ public class XsdToSchema {
     }
 
     /**
-     * Converts the parts of the first message in the list to an OpenAPI schema.
-     * Returns an empty ObjectSchema if the list is empty or has no usable parts.
-     */
-    public Schema<?> convertMessageParts(List<Message> messages) {
-        if (messages.isEmpty()) return new ObjectSchema();
-        return convertParts(messages.getFirst().getParts(), new HashSet<>());
-    }
-
-    /**
-     * The schema of a SOAP {@code <detail>} element carrying one of the operation's declared faults:
-     * an object with one optional property per fault, keyed by the name the fault element appears
-     * under in the detail. Only one property is ever present in a given response, which is why the
-     * published OpenAPI document turns these properties into a {@code oneOf}.
-     * <p>
-     * Returns an empty ObjectSchema when the operation declares no faults.
-     */
-    public Schema<?> convertFaultDetail(List<Operation.Fault> faults) {
-        var visiting = new HashSet<Element>();
-        var schema = new ObjectSchema();
-        for (Operation.Fault fault : faults) {
-            List<Part> parts = fault.getMessage().getParts();
-            if (parts.isEmpty()) continue;
-            schema.addProperty(faultDetailKey(parts), convertParts(parts, visiting));
-        }
-        return schema;
-    }
-
-    /**
-     * The key a fault's content appears under inside the detail element: the local name of its
-     * wrapping XSD element, or the part name for RPC-style parts that only name a type.
-     */
-    static String faultDetailKey(List<Part> parts) {
-        Part part = parts.getFirst();
-        QName elementQName = part.getElementQName();
-        return elementQName != null ? elementQName.getLocalPart() : part.getName();
-    }
-
-    /**
-     * Converts a list of WSDL message parts to an OpenAPI schema. A single part with a wrapping
-     * XSD element (document/literal wrapped style) is unwrapped to that element's own schema.
-     * Any other case — RPC-style parts (type=), or multiple parts (bare style) — is represented
-     * as an object with one property per part, keyed by the part's name.
-     */
-    public Schema<?> convertParts(List<Part> parts) {
-        return convertParts(parts, new HashSet<>());
-    }
-
-    private Schema<?> convertParts(List<Part> parts, Set<Element> visiting) {
-        if (parts.isEmpty()) return new ObjectSchema();
-        if (parts.size() == 1 && parts.getFirst().getElementQName() != null) {
-            return convert(parts.getFirst().getElementQName(), visiting);
-        }
-        var schema = new ObjectSchema();
-        for (var part : parts) {
-            QName elementQName = part.getElementQName();
-            schema.addProperty(part.getName(),
-                    elementQName != null ? convert(elementQName, visiting) : convertType(part.getTypeQName(), visiting));
-        }
-        return schema;
-    }
-
-    /**
      * Converts the top-level XSD element referenced by the given QName to an OpenAPI schema.
      */
     public Schema<?> convert(QName qname) {
@@ -282,9 +212,9 @@ public class XsdToSchema {
         for (var schemaRoot : roots) {
             Element xsdElement = findXsdChildWithName(schemaRoot, "element", qname.getLocalPart());
             if (xsdElement != null) {
-                // A message's own schema is built inline even where the element names a type: a
-                // request or response body that is nothing but a reference tells a reader nothing,
-                // and the converter reads the body's fields to derive path and query parameters.
+                // A global element's own schema is built inline even where it names a type: a
+                // top-level schema that is nothing but a reference tells a reader nothing, and
+                // callers read its fields, e.g. to derive path and query parameters.
                 return convertElementType(xsdElement, new XsdContext(schemaRoot, visiting), false);
             }
         }
@@ -450,7 +380,7 @@ public class XsdToSchema {
      * can see it. It carries the same typed value as the default, and is skipped along with it when
      * the literal does not fit the type.
      *
-     * <p>Neither is used to fill in a field a message left out: the SOAP service applies its own
+     * <p>Neither is used to fill in a field a document left out: the receiver applies its own
      * defaults, and a gateway that invented payload values would leave the backend unable to tell a
      * client's explicit choice from the gateway's guess.
      */
@@ -596,7 +526,7 @@ public class XsdToSchema {
     /**
      * Maps choice alternatives to optional properties, plus a sibling {@code oneOf} whose branches
      * carry nothing but the {@code required} keys of one alternative each. The properties stay flat
-     * — SOAP/JSON conversion looks types and array shapes up there — while the {@code oneOf} states
+     * — XML/JSON conversion looks types and array shapes up there — while the {@code oneOf} states
      * the constraint the choice actually expresses: a document that names two alternatives satisfies
      * two branches, and one that names none satisfies no branch, so both are rejected.
      *
@@ -954,8 +884,8 @@ public class XsdToSchema {
     }
 
     /**
-     * Resolves a WSDL message part's {@code type=} reference (already resolved to a QName, as
-     * used by RPC-style bindings) to an OpenAPI schema.
+     * Converts a named XSD type — a built-in one or one the schemas declare — to an OpenAPI
+     * schema.
      */
     public Schema<?> convertType(QName qname) {
         return convertType(qname, new HashSet<>());
@@ -1013,7 +943,7 @@ public class XsdToSchema {
     /**
      * Records the XSD type a schema came from, for the types whose {@code type}/{@code format} pair
      * does not name them: an {@code x-xsd-type} extension a tool can read, rather than prose in
-     * {@code description} — which belongs to the service's own documentation.
+     * {@code description} — which belongs to the schema's own documentation.
      */
     private static <T extends Schema<?>> T withXsdType(T schema, String xsdType) {
         schema.addExtension(XSD_TYPE_EXTENSION, xsdType);

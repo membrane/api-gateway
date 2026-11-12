@@ -12,7 +12,7 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.interceptor.wsdl2openapi;
+package com.predic8.membrane.core.util.xml.schema;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.*;
+import static com.predic8.membrane.core.util.xml.schema.XsdDomUtil.*;
 
 /**
  * The content model an XSD particle declares, as an ordered tree: every {@code <xsd:element>} in
@@ -33,7 +33,7 @@ import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.*;
  * <p>This is the one traversal of an XSD content model in this package. Both directions of the
  * conversion need the same walk but do different things with it: {@link XsdToSchema} builds the
  * published schema and has to keep an {@code xsd:choice} intact, because a choice constrains which
- * alternatives may appear together, while {@link Json2SoapTransformer} only needs the field order
+ * alternatives may appear together, while {@link Json2XmlTransformer} only needs the field order
  * and flattens a choice like any other particle. Producing the tree once and letting each side walk
  * it keeps that difference the only difference — a particle form handled here is handled for both.
  *

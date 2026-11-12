@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Tests: two document/literal operations, each with its own fault, an unbounded element and
+  typed scalars. A Fault body does not say which operation failed, so soap2Json types the detail
+  of both faults.
+-->
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:tns="https://example.com/shop"
+                  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                  xmlns:s="http://schemas.xmlsoap.org/wsdl/soap/"
+                  targetNamespace="https://example.com/shop" name="shop">
+    <wsdl:types>
+        <xsd:schema targetNamespace="https://example.com/shop">
+            <xsd:element name="getArticle">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="id" type="xsd:int"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="getArticleResponse">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="name" type="xsd:string"/>
+                        <xsd:element name="price" type="xsd:decimal"/>
+                        <xsd:element name="available" type="xsd:boolean"/>
+                        <xsd:element name="tag" type="xsd:string" minOccurs="0" maxOccurs="unbounded"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="placeOrder">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="articleId" type="xsd:int"/>
+                        <xsd:element name="quantity" type="xsd:int"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="placeOrderResponse">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="orderId" type="xsd:long"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="articleNotFound">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="id" type="xsd:int"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="outOfStock">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="available" type="xsd:int"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+        </xsd:schema>
+    </wsdl:types>
+    <wsdl:message name="GetArticle">
+        <wsdl:part name="parameters" element="tns:getArticle"/>
+    </wsdl:message>
+    <wsdl:message name="GetArticleResponse">
+        <wsdl:part name="parameters" element="tns:getArticleResponse"/>
+    </wsdl:message>
+    <wsdl:message name="PlaceOrder">
+        <wsdl:part name="parameters" element="tns:placeOrder"/>
+    </wsdl:message>
+    <wsdl:message name="PlaceOrderResponse">
+        <wsdl:part name="parameters" element="tns:placeOrderResponse"/>
+    </wsdl:message>
+    <wsdl:message name="ArticleNotFound">
+        <wsdl:part name="fault" element="tns:articleNotFound"/>
+    </wsdl:message>
+    <wsdl:message name="OutOfStock">
+        <wsdl:part name="fault" element="tns:outOfStock"/>
+    </wsdl:message>
+    <wsdl:portType name="ShopPortType">
+        <wsdl:operation name="getArticle">
+            <wsdl:input message="tns:GetArticle"/>
+            <wsdl:output message="tns:GetArticleResponse"/>
+            <wsdl:fault name="ArticleNotFound" message="tns:ArticleNotFound"/>
+        </wsdl:operation>
+        <wsdl:operation name="placeOrder">
+            <wsdl:input message="tns:PlaceOrder"/>
+            <wsdl:output message="tns:PlaceOrderResponse"/>
+            <wsdl:fault name="OutOfStock" message="tns:OutOfStock"/>
+        </wsdl:operation>
+    </wsdl:portType>
+    <wsdl:binding name="ShopBinding" type="tns:ShopPortType">
+        <s:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+        <wsdl:operation name="getArticle">
+            <s:operation soapAction="https://example.com/shop/getArticle"/>
+            <wsdl:input><s:body use="literal"/></wsdl:input>
+            <wsdl:output><s:body use="literal"/></wsdl:output>
+            <wsdl:fault name="ArticleNotFound"><s:fault name="ArticleNotFound" use="literal"/></wsdl:fault>
+        </wsdl:operation>
+        <wsdl:operation name="placeOrder">
+            <s:operation soapAction="https://example.com/shop/placeOrder"/>
+            <wsdl:input><s:body use="literal"/></wsdl:input>
+            <wsdl:output><s:body use="literal"/></wsdl:output>
+            <wsdl:fault name="OutOfStock"><s:fault name="OutOfStock" use="literal"/></wsdl:fault>
+        </wsdl:operation>
+    </wsdl:binding>
+    <wsdl:service name="ShopService">
+        <wsdl:port name="ShopPort" binding="tns:ShopBinding">
+            <s:address location="http://localhost:2001/shop"/>
+        </wsdl:port>
+    </wsdl:service>
+</wsdl:definitions>
