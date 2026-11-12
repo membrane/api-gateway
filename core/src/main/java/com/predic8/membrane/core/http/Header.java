@@ -486,7 +486,7 @@ public class Header {
         Long length = null;
         for (HeaderField field : filterByHeaderName(CONTENT_LENGTH).toList()) {
             for (String token : field.getValue().split(",", -1)) {
-                long value = parseContentLengthValue(token, field.getValue());
+                long value = parseContentLengthValue(token);
                 if (length == null) {
                     length = value;
                 } else if (length != value) {
@@ -497,7 +497,7 @@ public class Header {
         return length == null ? -1 : length;
     }
 
-    private static long parseContentLengthValue(String token, String rawValue) {
+    private static long parseContentLengthValue(String token) {
         String trimmed = token.trim();
         if (!trimmed.isEmpty() && trimmed.chars().allMatch(c -> c >= '0' && c <= '9')) {
             try {
@@ -506,7 +506,9 @@ public class Header {
                 // Falls through: value is all digits but exceeds the long range.
             }
         }
-        throw new MalformedHeaderException("Invalid Content-Length header value: \"" + rawValue + "\".");
+        // The value is not quoted: the message is logged and returned in problem details, and the peer, e.g. an
+        // untrusted backend, may have echoed a credential into the header.
+        throw new MalformedHeaderException("Invalid Content-Length header value.");
     }
 
     public String getContentType() {
