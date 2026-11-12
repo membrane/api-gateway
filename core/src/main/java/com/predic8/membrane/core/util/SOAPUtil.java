@@ -81,17 +81,17 @@ public class SOAPUtil {
 
     /**
      * A SOAP 1.1 fault is sent as text/xml, a SOAP 1.2 fault as application/soap+xml.
-     *
-     * @param statusCode the HTTP status of the response. The SOAP HTTP bindings send a fault with
-     *                   500, except that SOAP 1.2 sends a Sender fault with 400.
+     * <p>
+     * The status follows the SOAP HTTP bindings: 500 for every fault (SOAP 1.1 section 6.2),
+     * except that SOAP 1.2 sends a Sender fault with 400 (SOAP 1.2 Part 2, section 7.5.2.2).
      */
-    public static Response createSOAPFaultResponse(FaultCode code, String faultstring, Map<String,Object> details, SoapVersion version, int statusCode) {
+    public static Response createSOAPFaultResponse(FaultCode code, String faultstring, Map<String,Object> details, SoapVersion version) {
         try {
             final var soap12 = version == SoapVersion.SOAP12;
             Element fault = soap12
                     ? createSOAP12Fault(code, faultstring, details)
                     : createSOAP11Fault(code, faultstring, details);
-            return statusCode(statusCode)
+            return statusCode(soap12 && code == FaultCode.Client ? 400 : 500)
                     .contentType(soap12 ? APPLICATION_SOAP_XML + ";charset=UTF-8" : TEXT_XML_UTF8)
                     .body(xmlNode2String(fault)).build();
         } catch (Exception e) {

@@ -528,20 +528,12 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
      * validation details to be disclosed.
      * <p>
      * A rejected request is the client's fault: Client (SOAP 1.1) resp. Sender (SOAP 1.2). A
-     * rejected response is the backend's, not the client's: Server resp. Receiver.
+     * rejected response is the backend's, not the client's: Server resp. Receiver. The fault code
+     * decides the status, see {@link com.predic8.membrane.core.util.SOAPUtil#createSOAPFaultResponse}.
      */
     private void setFaultResponse(Exchange exchange, Interceptor.Flow flow, Map<String, Object> detail) {
-        final var version = soapVersionOf(exchange);
         exchange.setResponse(createSOAPFaultResponse(flow == Interceptor.Flow.REQUEST ? Client : Server, getErrorTitle(),
-                errorDetailsPolicy.validationDetails() ? detail : Map.of(), version, faultStatusCode(flow, version)));
-    }
-
-    /**
-     * The SOAP HTTP bindings send a fault with 500 Internal Server Error. SOAP 1.2 sends a fault
-     * with the Sender code with 400 Bad Request instead, which applies to a rejected request.
-     */
-    private static int faultStatusCode(Interceptor.Flow flow, SoapVersion version) {
-        return flow == Interceptor.Flow.REQUEST && version == SOAP12 ? 400 : 500;
+                errorDetailsPolicy.validationDetails() ? detail : Map.of(), soapVersionOf(exchange)));
     }
 
     /**
