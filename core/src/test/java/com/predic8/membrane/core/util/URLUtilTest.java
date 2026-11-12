@@ -32,6 +32,46 @@ import static org.junit.jupiter.api.Assertions.*;
 public class URLUtilTest {
 
     @Test
+    void schemeAndAuthority() {
+        assertEquals("", getSchemeAndAuthority(""));
+        assertEquals("", getSchemeAndAuthority("/x//y"));
+        assertEquals("", getSchemeAndAuthority("x/https://y"));
+        assertEquals("", getSchemeAndAuthority("?a=//b"));
+        assertEquals("", getSchemeAndAuthority("1http://y"));
+        assertEquals("//y", getSchemeAndAuthority("//y/z"));
+        assertEquals("\\/y", getSchemeAndAuthority("\\/y?z"));
+        assertEquals("///y", getSchemeAndAuthority("///y#z"));
+        assertEquals("https://y", getSchemeAndAuthority("https://y/z"));
+        assertEquals("https:y", getSchemeAndAuthority("https:y"));
+        assertEquals("https:/", getSchemeAndAuthority("https:/"));
+        assertEquals("https://u@y:1", getSchemeAndAuthority("https://u@y:1/z"));
+        // a backslash ends the host only in a browser, other clients take everything up to '/' as the authority
+        assertEquals("https://y\\@z", getSchemeAndAuthority("https://y\\@z/"));
+    }
+
+    @Test
+    void slash() {
+        assertTrue(isSlash("a/", 1));
+        assertTrue(isSlash("a\\", 1));
+        assertFalse(isSlash("a/", 0));
+        assertFalse(isSlash("a/", 2));
+        assertFalse(isSlash("", 0));
+    }
+
+    @Test
+    void scheme() {
+        assertEquals(6, schemeLength("https://y"));
+        assertEquals(6, schemeLength("https:"));
+        assertEquals(12, schemeLength("a1+b-c.d-e2:x"));
+        assertEquals(0, schemeLength(""));
+        assertEquals(0, schemeLength(":x"));
+        assertEquals(0, schemeLength("1a:x"));
+        assertEquals(0, schemeLength("https"));
+        assertEquals(0, schemeLength("ht_tps:x"));
+        assertEquals(0, schemeLength("/a:b"));
+    }
+
+    @Test
     void authority() {
         assertEquals("a", getAuthority("internal:a"));
         assertEquals("a", getAuthority("internal://a"));
