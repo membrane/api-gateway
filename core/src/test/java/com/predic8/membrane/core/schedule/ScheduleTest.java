@@ -46,6 +46,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static com.predic8.membrane.core.router.YamlRouterBootstrap.loadIntoRouter;
+import static com.predic8.membrane.core.util.ExceptionUtil.getRootCause;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ScheduleTest {
@@ -254,7 +255,9 @@ class ScheduleTest {
         final var file = writeConfig(config("interval: PT0S", "http://localhost:3000")).toString();
         final var router = new DefaultRouter();
         try {
-            assertThrows(Exception.class, () -> loadIntoRouter(router, file));
+            final var e = assertThrows(Exception.class, () -> loadIntoRouter(router, file));
+            final var root = assertInstanceOf(ConfigurationException.class, getRootCause(e));
+            assertTrue(root.getMessage().contains("'interval' must be at least one millisecond"), root::getMessage);
         } finally {
             router.shutdownRuntimeComponents();
         }
