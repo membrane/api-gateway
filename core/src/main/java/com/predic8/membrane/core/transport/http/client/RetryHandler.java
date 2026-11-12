@@ -210,12 +210,6 @@ public class RetryHandler {
 
     private boolean shouldAbortRetries(Exchange exc, Exception e, String dest, int attempt) {
         log.debug("Checking if call should abort immediately. Exception {}", e.getMessage());
-        // The thread was asked to stop, e.g. a scheduled call that timed out. A virtual thread blocked on a socket
-        // closes it when it is interrupted, so the exception is a consequence of the interrupt and not a network problem.
-        if (Thread.currentThread().isInterrupted()) {
-            log.debug("Call to {} was interrupted.", dest);
-            return true;
-        }
         // The request body could not be read, e.g. the client stopped sending or it exceeded a limit. Its
         // failure is recorded, so another attempt would only send the request header fields again.
         if (e instanceof ReadingBodyException rbe && rbe.belongsTo(exc.getRequest())) {

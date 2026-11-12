@@ -182,23 +182,6 @@ class RetryHandlerTest {
             assertEquals(3, mock.attempts);
         }
 
-        /**
-         * An interrupt asks the thread to stop, e.g. when a scheduled call times out. A virtual thread blocked on
-         * a socket closes it when it is interrupted, so the call fails with a SocketException.
-         */
-        @Test
-        void interruptedThreadIsNotRetried() {
-            final var mock = new RetryableExchangeCallMock(new SocketException("Closed by interrupt"));
-            Thread.currentThread().interrupt();
-            try {
-                assertThrows(SocketException.class, () -> rh.executeWithRetries(get("/foo").buildExchange(), mock));
-                assertEquals(1, mock.attempts);
-            } finally {
-                // Clears the flag for the following tests
-                Thread.interrupted();
-            }
-        }
-
         @Test
         void socketExceptionPost() {
             RetryableExchangeCallMock mock = new RetryableExchangeCallMock(new SocketException("Problem!"));

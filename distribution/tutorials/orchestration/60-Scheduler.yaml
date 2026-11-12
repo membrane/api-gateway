@@ -17,7 +17,6 @@ internal:
   name: heartbeat
   schedule:
     interval: PT10S
-    timeout: PT5S
   flow:
     - response:
         - log:

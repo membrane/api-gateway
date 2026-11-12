@@ -37,9 +37,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * @description Calls the internal API periodically, for example to refresh a token, warm up a cache or send a
  * heartbeat every ten minutes. On every run Membrane sends a GET request to / through the flow and the target of
  * the API, just like a request that came in over HTTP. The first run starts one interval after startup. A run does
- * not start before the previous one has finished, and a run that takes longer than the timeout is interrupted. If the
- * flow ignores the interruption, e.g. a script in an endless loop, the next runs are skipped until it has finished. A
- * failed run is logged and not repeated before the next interval.
+ * not start before the previous one has finished. A failed run is logged and not repeated before the next interval.
  * <p>Every Membrane instance runs its own schedules. If a job should run only once in a cluster, trigger an API
  * from outside instead, for example with a Kubernetes CronJob.</p>
  * @yaml
@@ -60,7 +58,6 @@ public class Schedule {
     private static final Logger log = LoggerFactory.getLogger(Schedule.class);
 
     private Duration interval;
-    private Duration timeout;
 
     /**
      * Guarded by this. A retried initialization of the API calls {@link #start} again on a clone that shares this
@@ -70,62 +67,31 @@ public class Schedule {
      */
     private ScheduledExecutorService executor;
 
-    /**
-     * The thread of the latest call. Written and read only by the scheduler thread, volatile because starting again
-     * replaces that thread.
-     */
-    private volatile Thread worker;
-
     public synchronized void start(final Router router, final InternalProxy api) {
-        final var timeout = getTimeoutDuration();
         stop();
         executor = Executors.newSingleThreadScheduledExecutor(Thread.ofPlatform().daemon().name("schedule " + api.getName()).factory());
         // Fixed delay: a slow run delays the next one instead of overlapping with it.
-        executor.scheduleWithFixedDelay(() -> run(router, api, timeout), interval.toMillis(), interval.toMillis(), MILLISECONDS);
+        executor.scheduleWithFixedDelay(() -> run(router, api), interval.toMillis(), interval.toMillis(), MILLISECONDS);
         log.info("Calling internal API {} every {}.", api.getName(), interval);
     }
 
     /**
-     * Interrupts a running call. A call whose flow ignores the interruption keeps running after this method returns,
-     * as Java cannot stop a thread.
+     * Starts no further runs. A run in progress is not interrupted and finishes on its own.
      */
     public synchronized void stop() {
         if (executor != null)
-            executor.shutdownNow();
+            executor.shutdown();
         executor = null;
     }
 
     /**
-     * Runs the call on its own virtual thread, so that it can be interrupted after the timeout. A virtual thread
-     * blocked on a socket closes the socket when it is interrupted, so the call ends with an error response.
+     * Runs on the scheduler thread and catches every exception, so that it is logged and later runs still happen.
      */
-    private void run(final Router router, final InternalProxy api, final Duration timeout) {
+    private void run(final Router router, final InternalProxy api) {
         if (!api.isActive()) {
             log.warn("Scheduled call skipped: internal API {} is not active.", api.getName());
             return;
         }
-        // Interrupting a call does not guarantee that it ends, e.g. a script in an endless loop ignores it.
-        if (worker != null && worker.isAlive()) {
-            log.warn("Scheduled call of {} skipped: the previous call ignored the interruption and is still running.", api.getName());
-            return;
-        }
-        final var current = Thread.ofVirtual().name("schedule call " + api.getName()).start(() -> call(router, api));
-        worker = current;
-        try {
-            if (!current.join(timeout)) {
-                log.warn("Scheduled call of {} did not finish within {}. Interrupting it.", api.getName(), timeout);
-                current.interrupt();
-            }
-        } catch (InterruptedException e) {
-            // The schedule was stopped.
-            current.interrupt();
-        }
-    }
-
-    /**
-     * Catches every exception, so that it is logged.
-     */
-    private void call(final Router router, final InternalProxy api) {
         try {
             final var exc = new Request.Builder().get("/").buildExchange();
             assignRule(exc, api);
@@ -158,10 +124,6 @@ public class Schedule {
         }
     }
 
-    private Duration getTimeoutDuration() {
-        return timeout == null ? interval : timeout;
-    }
-
     public String getInterval() {
         return interval == null ? null : interval.toString();
     }
@@ -176,21 +138,6 @@ public class Schedule {
     @Required
     public void setInterval(String interval) {
         this.interval = parse("interval", interval);
-    }
-
-    public String getTimeout() {
-        return timeout == null ? null : timeout.toString();
-    }
-
-    /**
-     * @description Maximum time a call may take, in the <i>ISO 8601 Duration</i> format. A call that takes longer is
-     * interrupted, e.g. when the target accepts the connection but never answers.
-     * @default the interval
-     * @example PT30S
-     */
-    @MCAttribute
-    public void setTimeout(String timeout) {
-        this.timeout = parse("timeout", timeout);
     }
 
     /**

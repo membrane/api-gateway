@@ -15,7 +15,6 @@
 package com.predic8.membrane.core.schedule;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.flow.ReturnInterceptor;
@@ -43,7 +42,6 @@ import java.util.function.IntSupplier;
 import static com.predic8.membrane.core.exchange.ExchangeState.COMPLETED;
 import static com.predic8.membrane.core.exchange.ExchangeState.FAILED;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static com.predic8.membrane.core.router.YamlRouterBootstrap.loadIntoRouter;
 import static com.predic8.membrane.core.util.ExceptionUtil.getRootCause;
@@ -180,22 +178,9 @@ class ScheduleTest {
     @Test
     void callsDoNotOverlap() throws Exception {
         delayMillis = 300;
-        startGateway(config("""
-                interval: PT0.1S
-                    timeout: PT5S""", "http://localhost:3000"));
+        startGateway(config("http://localhost:3000"));
         await(calls::get, 2);
         assertEquals(1, maxInFlight.get());
-    }
-
-    @Test
-    void timeoutInterruptsHangingCall() throws Exception {
-        delayMillis = 2_000;
-        startGateway(config("""
-                interval: PT0.1S
-                    timeout: PT0.2S""", "http://localhost:3000"));
-        // Without the timeout, the second call would start after the first one ended 2 seconds later.
-        await(started::get, 2);
-        assertEquals(0, calls.get());
     }
 
     @Test
@@ -244,11 +229,6 @@ class ScheduleTest {
     }
 
     @Test
-    void timeoutMustBePositive() {
-        assertThrows(ConfigurationException.class, () -> new Schedule().setTimeout("PT0S"));
-    }
-
-    @Test
     void invalidDurationFailsWhileLoading() throws Exception {
         // Reload validation only loads the configuration, so a check during start() would come after the running
         // configuration was stopped.
@@ -264,41 +244,12 @@ class ScheduleTest {
     }
 
     @Test
-    void callIgnoringInterruptionIsNotOverlapped() throws Exception {
-        final var router = new TestRouter();
-        final var api = scheduledApi("PT0.05S", "PT0.1S");
-        api.getFlow().add(new AbstractInterceptor() {
-            @Override
-            public Outcome handleRequest(final Exchange exc) {
-                started.incrementAndGet();
-                maxInFlight.accumulateAndGet(inFlight.incrementAndGet(), Math::max);
-                try {
-                    sleepIgnoringInterruption(500);
-                    exc.setResponse(Response.ok().build());
-                    return RETURN;
-                } finally {
-                    inFlight.decrementAndGet();
-                }
-            }
-        });
-        router.add(api);
-        try {
-            router.start();
-            await(started::get, 2);
-            assertEquals(1, maxInFlight.get());
-        } finally {
-            api.destroy();
-            router.stop();
-        }
-    }
-
-    @Test
     void failedResponseBodyReadFailsCall() throws Exception {
         try (final var truncating = new ServerSocket(0)) {
             Thread.ofVirtual().start(() -> answerWithTruncatedBody(truncating));
 
             final var router = new TestRouter();
-            final var api = scheduledApi("PT0.1S", "PT5S");
+            final var api = scheduledApi("PT0.1S");
             final var exchange = new AtomicReference<Exchange>();
             api.getFlow().add(new AbstractInterceptor() {
                 @Override
@@ -325,28 +276,13 @@ class ScheduleTest {
         return exc != null && (exc.getStatus() == COMPLETED || exc.getStatus() == FAILED);
     }
 
-    private static InternalProxy scheduledApi(final String interval, final String timeout) {
+    private static InternalProxy scheduledApi(final String interval) {
         final var schedule = new Schedule();
         schedule.setInterval(interval);
-        schedule.setTimeout(timeout);
         final var api = new InternalProxy();
         api.setName("job");
         api.setSchedule(schedule);
         return api;
-    }
-
-    private static void sleepIgnoringInterruption(final long millis) {
-        final var deadline = System.currentTimeMillis() + millis;
-        var interrupted = false;
-        while (System.currentTimeMillis() < deadline) {
-            try {
-                Thread.sleep(Math.max(1, deadline - System.currentTimeMillis()));
-            } catch (InterruptedException e) {
-                interrupted = true;
-            }
-        }
-        if (interrupted)
-            Thread.currentThread().interrupt();
     }
 
     /**
