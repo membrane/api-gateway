@@ -499,6 +499,7 @@ public class RateLimitInterceptorTest {
 
 		Exchange exc = new Request.Builder().buildExchange();
 		exc.getRequest().getHeader().add(X_FORWARDED_FOR, "	134.3.7.8,10.0.0.1");
+		exc.setRemoteAddrIp("10.0.0.1");
 
 		assertEquals("134.3.7.8",interceptor.getClientIp(exc));
 	}
@@ -510,8 +511,73 @@ public class RateLimitInterceptorTest {
 
 		Exchange exc = new Request.Builder().buildExchange();
 		exc.getRequest().getHeader().add(X_FORWARDED_FOR, "	134.3.7.8,10.0.0.1,172.0.0.1");
+		exc.setRemoteAddrIp("172.0.0.1");
 
 		assertEquals("134.3.7.8",interceptor.getClientIp(exc));
+	}
+
+	/**
+	 * A client that connects directly must not choose its address by sending the trusted proxies in X-Forwarded-For.
+	 * The header is shown as the interceptor sees it, with the peer address appended by the gateway.
+	 */
+	@Test
+	void getClientIpTrustedProxyListIgnoresHeaderOfUntrustedPeer() {
+		final var interceptor = new RateLimitInterceptor();
+		interceptor.setTrustedProxyList("10.0.0.1,172.0.0.1");
+		interceptor.setTrustForwardedFor(true);
+
+		final var exc = new Request.Builder().header(X_FORWARDED_FOR, "198.51.100.7, 10.0.0.1, 172.0.0.1, 203.0.113.9").buildExchange();
+		exc.setRemoteAddrIp("203.0.113.9");
+
+		assertEquals("203.0.113.9", interceptor.getClientIp(exc));
+	}
+
+	/**
+	 * Entries left of the first untrusted address were written by the client and are ignored.
+	 */
+	@Test
+	void getClientIpTrustedProxyListUsesFirstUntrustedEntryFromThePeer() {
+		final var interceptor = new RateLimitInterceptor();
+		interceptor.setTrustedProxyList("10.0.0.1");
+		interceptor.setTrustForwardedFor(true);
+
+		final var exc = new Request.Builder().header(X_FORWARDED_FOR, "198.51.100.7, 134.3.7.8, 10.0.0.1").buildExchange();
+		exc.setRemoteAddrIp("10.0.0.1");
+
+		assertEquals("134.3.7.8", interceptor.getClientIp(exc));
+	}
+
+	/**
+	 * The socket reports IPv6 addresses in full form, the configuration may use the compressed one.
+	 */
+	@Test
+	void getClientIpTrustedProxyListComparesAddressesByValue() {
+		final var interceptor = new RateLimitInterceptor();
+		interceptor.setTrustedProxyList("::1, 2001:db8::1");
+		interceptor.setTrustForwardedFor(true);
+
+		final var exc = new Request.Builder().header(X_FORWARDED_FOR, "134.3.7.8, 2001:0db8:0:0:0:0:0:1, 0:0:0:0:0:0:0:1").buildExchange();
+		exc.setRemoteAddrIp("0:0:0:0:0:0:0:1");
+
+		assertEquals("134.3.7.8", interceptor.getClientIp(exc));
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {"fe80::1%no-such-interface", "unknown", "198.51.100.7:4711"})
+	void addressesThatAreNotCanonicalIpLiteralsAreKeptAsTheyAre(String address) {
+		assertEquals(address, RateLimitInterceptor.normalizeAddress(" " + address + " "));
+	}
+
+	@Test
+	void getClientIpTrustedProxyListWithOnlyTrustedAddressesUsesThePeer() {
+		final var interceptor = new RateLimitInterceptor();
+		interceptor.setTrustedProxyList("10.0.0.1,10.0.0.2");
+		interceptor.setTrustForwardedFor(true);
+
+		final var exc = new Request.Builder().header(X_FORWARDED_FOR, "10.0.0.2, 10.0.0.1").buildExchange();
+		exc.setRemoteAddrIp("10.0.0.1");
+
+		assertEquals("10.0.0.1", interceptor.getClientIp(exc));
 	}
 
 	@Test
