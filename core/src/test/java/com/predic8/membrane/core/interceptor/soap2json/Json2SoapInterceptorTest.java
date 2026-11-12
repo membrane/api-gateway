@@ -117,6 +117,18 @@ class Json2SoapInterceptorTest {
         assertFalse(body.contains("db-host-3"), "the backend's text must not reach the client: " + body);
     }
 
+    /** SOAP 1.2 Part 2, section 7.5.2.2: a Sender fault is sent with 400. */
+    @Test
+    void aClientErrorOfTheBackendBecomesASenderFaultWith400InSoap12() throws Exception {
+        final var exc = responseExchange(404, APPLICATION_JSON, "{}", "sayHello");
+
+        assertEquals(ABORT, json2Soap("classpath:/ws/hello-soap12.wsdl", null).handleResponse(exc));
+
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertEquals(400, exc.getResponse().getStatusCode());
+        assertTrue(body.contains("soap:Sender"), body);
+    }
+
     @Test
     void aServerErrorOfTheBackendBecomesAServerFaultEvenWithoutABody() throws Exception {
         final var exc = responseExchange(503, APPLICATION_JSON, "", "getArticle");
