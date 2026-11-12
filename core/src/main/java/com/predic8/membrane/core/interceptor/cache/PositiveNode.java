@@ -41,7 +41,9 @@ class PositiveNode extends Node {
 
 	public PositiveNode(Exchange exchange) throws IOException, ParseException {
 		Response response = exchange.getResponse();
-        content = response.getBodyAsStreamDecoded().readAllBytes();
+        try (final var body = response.getBodyAsStreamDecoded()) {
+            content = body.readAllBytes();
+        }
 		contentType = response.getHeader().getFirstValue(CONTENT_TYPE);
 		lastModified = CacheInterceptor.fromRFC(response.getHeader().getFirstValue(LAST_MODIFIED));
 		inResponseToAccept = exchange.getRequest().getHeader().getNormalizedValue(ACCEPT);

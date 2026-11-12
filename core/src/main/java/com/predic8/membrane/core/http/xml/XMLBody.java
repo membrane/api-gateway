@@ -17,6 +17,7 @@ import com.predic8.membrane.core.config.*;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.util.xml.parser.HardenedStaxInputFactory;
 
+import java.io.IOException;
 import javax.xml.stream.*;
 import javax.xml.stream.events.*;
 
@@ -34,8 +35,14 @@ class XMLBody extends AbstractXmlElement {
 	public void write(XMLStreamWriter out) throws XMLStreamException {
 		out.writeAttribute("type", "xml");
 
-		XMLStreamReader parser = HardenedStaxInputFactory.inputFactory().createXMLStreamReader(msg.getBodyAsStreamDecoded(), charset);
+		try (var in = msg.getBodyAsStreamDecoded()) {
+			write(out, HardenedStaxInputFactory.inputFactory().createXMLStreamReader(in, charset));
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
 
+	private static void write(XMLStreamWriter out, XMLStreamReader parser) throws XMLStreamException {
 		boolean endDoc = false;
 		while (parser.hasNext()) {
 			parser.next();
