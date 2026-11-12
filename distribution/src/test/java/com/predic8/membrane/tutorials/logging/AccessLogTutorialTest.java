@@ -34,7 +34,7 @@ public class AccessLogTutorialTest extends AbstractLoggingTutorialTest {
 
     @Override
     protected Map<String, String> getEnvs() {
-        return Map.of("JAVA_OPTS", "-Dlog4j.configurationFile=tutorials/logging/log4j2-30-access.yaml");
+        return log4jConfigurationEnv("log4j2-30-access.yaml");
     }
 
     @Test

@@ -18,12 +18,26 @@ import com.predic8.membrane.tutorials.AbstractMembraneTutorialTest;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Map;
+
+import static com.predic8.membrane.core.util.OSUtil.isWindows;
 
 public abstract class AbstractLoggingTutorialTest extends AbstractMembraneTutorialTest {
 
     @Override
     protected String getTutorialDir() {
         return "logging";
+    }
+
+    /**
+     * JAVA_OPTS that select the given log4j2 configuration of this tutorial, set the way the tutorial
+     * tells users to: membrane.sh resolves a relative path against MEMBRANE_HOME, membrane.cmd does not,
+     * so on Windows the tutorial uses an absolute, quoted path (%CD%\...).
+     */
+    protected Map<String, String> log4jConfigurationEnv(String fileName) {
+        if (isWindows())
+            return Map.of("JAVA_OPTS", "\"-Dlog4j.configurationFile=%s\"".formatted(baseDir.toPath().resolve(fileName).normalize().toAbsolutePath()));
+        return Map.of("JAVA_OPTS", "-Dlog4j.configurationFile=tutorials/logging/" + fileName);
     }
 
     /**

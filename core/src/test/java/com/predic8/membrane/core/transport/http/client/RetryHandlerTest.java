@@ -21,6 +21,7 @@ import com.predic8.membrane.core.transport.http.ConnectTimeoutException;
 import com.predic8.membrane.core.transport.http.HttpClientStatusEventBus;
 import com.predic8.membrane.core.transport.http.HttpClientStatusEventListener;
 import com.predic8.membrane.core.transport.http2.StreamNotProcessedException;
+import org.apache.logging.log4j.Level;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -31,6 +32,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.ConnectException;
+import java.net.NoRouteToHostException;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
@@ -41,6 +43,7 @@ import java.util.Map;
 import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.http.Request.post;
 import static com.predic8.membrane.core.http.Response.ok;
+import static com.predic8.membrane.test.TestAppender.captureLog;
 import static org.junit.jupiter.api.Assertions.*;
 
 class RetryHandlerTest {
@@ -187,6 +190,25 @@ class RetryHandlerTest {
             RetryableExchangeCallMock mock = new RetryableExchangeCallMock(new SocketException("Problem!"));
             assertThrows(SocketException.class, () -> rh.executeWithRetries(post("/foo").buildExchange(), mock));
             assertEquals(1, mock.attempts);
+        }
+
+        /**
+         * An unreachable host is a known outage, not an unknown condition: a warning with the masked destination,
+         * not the line with a stack trace logged for an unexpected SocketException. GET is still retried.
+         */
+        @Test
+        void noRouteToHostIsLoggedAsWarningWithoutStackTrace() throws Exception {
+            final var mock = new RetryableExchangeCallMock(new NoRouteToHostException("Host is unreachable"));
+            final var exc = get("/foo?api-key=secret").buildExchange();
+
+            final var log = captureLog(() -> assertThrows(NoRouteToHostException.class, () -> rh.executeWithRetries(exc, mock)));
+
+            final var warnings = log.eventsContaining("No route to /foo?api-key=***: Host is unreachable");
+            assertEquals(3, warnings.size(), log.getMessages().toString());
+            assertTrue(warnings.stream().allMatch(event -> event.getLevel() == Level.WARN && event.getThrown() == null), warnings.toString());
+            assertFalse(log.contains("Unexpected SocketException"), log.getMessages().toString());
+            assertFalse(log.contains("secret"), log.getMessages().toString());
+            assertEquals(3, mock.attempts);
         }
 
         /**
