@@ -13,8 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.util.xml;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -26,61 +24,31 @@ import javax.xml.transform.stream.StreamResult;
 import java.io.StringWriter;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 
-import static javax.xml.XMLConstants.*;
 import static javax.xml.transform.OutputKeys.*;
 
 public class XMLUtil {
 
-    private static final Logger log = LoggerFactory.getLogger(XMLUtil.class);
-
-    private static final AtomicBoolean loggedSecureProcessing = new AtomicBoolean();
-    private static final AtomicBoolean loggedExternalAccess = new AtomicBoolean();
-
-
-    // TransformerFactory is not specified as thread-safe and is mutable (features/attributes).
-    // Use one instance per thread and create a fresh Transformer per transform (Transformer is not thread-safe).
-    private static final ThreadLocal<TransformerFactory> SAFE_TRANSFORMER_FACTORY = ThreadLocal.withInitial(() -> {
-        TransformerFactory f = TransformerFactory.newInstance();
-
-        // Best-effort hardening. Some implementations may not support all flags.
-        try {
-            // Enable secure processing (limits entity expansion etc.)
-            f.setFeature(FEATURE_SECURE_PROCESSING, true);
-        } catch (TransformerConfigurationException | TransformerFactoryConfigurationError e) {
-            if (loggedSecureProcessing.compareAndSet(false, true)) {
-                log.warn("Could not enable secure XML processing (FEATURE_SECURE_PROCESSING): {}", e.getMessage());
-            }
-        }
-
-        try {
-            // Disallow access to external DTDs and stylesheets (JAXP 1.5+)
-            f.setAttribute(ACCESS_EXTERNAL_DTD, "");
-            f.setAttribute(ACCESS_EXTERNAL_STYLESHEET, "");
-            f.setAttribute(ACCESS_EXTERNAL_SCHEMA, "");
-        } catch (IllegalArgumentException e) {
-            // Attributes not supported by all implementations
-            if (loggedExternalAccess.compareAndSet(false, true)) {
-                log.warn("Could not disable external XML access (ACCESS_EXTERNAL_DTD/ACCESS_EXTERNAL_STYLESHEET): {}", e.getMessage());
-            }
-        }
-
-        return f;
-    });
+    /**
+     * {@code newDefaultInstance()} pins the JDK's built-in implementation, so the serialized output
+     * does not change when another {@link TransformerFactory} (e.g. Saxon) is on the classpath, and
+     * it skips the classpath provider lookup of {@code newInstance()}.
+     * <p>
+     * {@link TransformerFactory} is not specified as thread-safe, hence one per thread.
+     */
+    private static final ThreadLocal<TransformerFactory> SERIALIZER_FACTORY = ThreadLocal.withInitial(TransformerFactory::newDefaultInstance);
 
     /**
-     * Returns a {@link TransformerFactory} instance with XML hardening enabled on a
-     * best-effort basis.
-     * The returned factory is obtained from a thread-local cache because
-     * {@link TransformerFactory} is mutable and not specified as thread-safe.
-     * A fresh {@link javax.xml.transform.Transformer} must be created for each
-     * transformation.
-     *
-     * @return a thread-local {@link TransformerFactory} with best-effort XML security hardening applied
+     * Returns a new identity {@link Transformer} for serializing a DOM {@link Node}
+     * ({@code DOMSource}) to a {@code StreamResult}. Not thread-safe; create one per serialization
+     * or per thread.
+     * <p>
+     * The factory is deliberately not hardened: an identity transform of an in-memory DOM parses
+     * nothing and loads no stylesheet, and a DOCTYPE or entity reference in the DOM is only written
+     * out, never fetched. Do not use it to transform a {@code StreamSource} or to run a stylesheet.
      */
-    public static TransformerFactory newHardenedBestEffortTransformerFactory() {
-        return SAFE_TRANSFORMER_FACTORY.get();
+    public static Transformer newSerializer() throws TransformerConfigurationException {
+        return SERIALIZER_FACTORY.get().newTransformer();
     }
 
     public static String xmlNode2String(Node node) throws TransformerException {
@@ -88,7 +56,7 @@ public class XMLUtil {
             return "";
         }
 
-        Transformer tf = SAFE_TRANSFORMER_FACTORY.get().newTransformer();
+        Transformer tf = newSerializer();
         tf.setOutputProperty(OMIT_XML_DECLARATION, "yes");
         tf.setOutputProperty(METHOD, "xml");
         tf.setOutputProperty(INDENT, "yes");

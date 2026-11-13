@@ -236,7 +236,7 @@ public class XmlDomBody extends AbstractBody {
      */
     private static byte[] serialize(Document doc) {
         try {
-            Transformer transformer = XMLUtil.newHardenedBestEffortTransformerFactory().newTransformer();
+            Transformer transformer = XMLUtil.newSerializer();
             transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "no");
             transformer.setOutputProperty(OutputKeys.ENCODING, UTF_8.name());
             // Writing to a stream rather than a Writer lets the Transformer apply the encoding

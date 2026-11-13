@@ -45,7 +45,7 @@ Keep this file in sync when adding, renaming or removing a util class.
 | `util/wsdl/parser/*` | Lightweight WSDL model (`Definitions`, `Binding`, `Operation`, `Port`, ...) |
 | `util/json/JsonUtil` | Parse body to `ObjectNode`, set JSON body, scalar → `JsonNode`, escape JSON Pointer segment (RFC 6901) |
 | `util/json/JsonToXml` | JSON → XML conversion |
-| `util/xml/XMLUtil` | XML operations (parsing, namespaces, XPath) |
+| `util/xml/XMLUtil` | XML operations (parsing, namespaces, XPath); `newSerializer()` for DOM → text/bytes (JDK serializer, use instead of `TransformerFactory.newInstance()`) |
 | `util/xml/XMLEncodingUtil` | XML character encoding |
 | `util/xml/NormalizeXMLForJsonUtil` | Normalize XML for JSON conversion |
 | `util/xml/schema/XmlSchemaMapping` | XSD-driven XML ↔ JSON conversion of whole documents (`xml2Json`/`json2Xml` with `xmlSchema`) |
