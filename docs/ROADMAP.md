@@ -38,6 +38,12 @@ PRIO 2:
 - Remove MemoryExchangeStore CG
   - It was used only by Membrane Monitor
 - Tutorial: Replace httpbin and catfact TB
+- Replace the deprecated Jedis API
+  - Story: since the upgrade to Jedis 8.0.2, `JedisPool` and `JedisSentinelPool` (`RedisConnector`) and `Jedis.setex` (`RedisSessionManager`, `RedisOriginalExchangeStore`) are deprecated. They still work, but may be removed in a later major version.
+  - Move to the client API Jedis recommends now (`RedisClient`, and `RedisSentinelClient` for sentinels; `set` with `SetParams.ex` instead of `setex`).
+  - Keep the `redis` attributes as they are: `host`, `port`, `dbNumber`, `user`, `password`, `ssl`, `timeout`, `connectionNumber`, `minIdleConnection`, `useSentinels`, `masterName`.
+  - Check the sentinel case: `getJedisWithDb()` authenticates sentinel connections by hand and calls `select(dbNumber)` on every borrowed connection; the new API may take both in the client configuration.
+  - Test against a real Redis (plain, password, user + password, TLS, sentinel); the unit tests only use a map-backed fake.
 
 PRIO 3:
 - OpenAPI: validate `in: cookie` parameters
@@ -192,9 +198,6 @@ PRIO 3:
   - Story: 7.8 can validate SOAP header blocks (#3582) but leaves it off by default, so an update does not start rejecting messages whose headers passed before. With `bound`, the header blocks the WSDL binds with `soap:header` and `soap:headerfault` are validated against the WSDL's schemas.
   - **Breaking**: a message with an invalid bound header block is rejected. Name `headers: none` in the release notes as the way to keep the old behavior.
   - Change the default of the `headers` field and `@default` of `setHeaders` in `ValidatorInterceptor`, and of the `WSDLValidator` constructors without a `HeaderValidation` parameter.
-- Upgrade jedis from 4.4.8 to the current major version (8.x)
-  - Story: `core` is on jedis 4.4.8, the last 4.x release; 8.0.2 is current. Used by `RedisConnector`, `RedisSessionManager` and `RedisOriginalExchangeStore`; check the API changes across 5.x–8.x and test Redis sessions and the OAuth2 exchange store against a real Redis.
-  - Raise the `org.json:json` version in `core/pom.xml` with it (jedis 8.0.2 needs 20260719). `core` declares org.json directly (#3760), so that declaration wins over the one jedis asks for. If org.json is gone from `core` by then (see "Get rid of old JSON parsers"), drop the declaration instead.
 - To discuss: make the regex engine a swappable component, with RE2/J or a comparable linear-time engine as the default
   - Story: configured regular expressions run on `java.util.regex`, which backtracks. Overlapping quantifiers can take quadratic or worse time on crafted requests (ReDoS). Today the operator has to avoid such patterns, see https://www.membrane-api.io/security/membrane-redos-protection.html.
   - A linear-time engine such as RE2/J (`com.google.re2j`, 114 KB, no dependencies) rules this out whatever the pattern.
