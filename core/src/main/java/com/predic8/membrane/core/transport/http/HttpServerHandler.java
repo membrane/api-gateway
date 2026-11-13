@@ -275,7 +275,9 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
         }
         Connection con = exchange.getTargetConnection();
         exchange.setTargetConnection(null);
-        if (!exchange.canKeepConnectionAlive())
+        // srcReq, not only the exchange's request: the flow may have replaced it, but srcReq was read from this
+        // connection. If its body failed, discardBody() marked it Connection: close, as the rest is still unread.
+        if (!exchange.canKeepConnectionAlive() || !srcReq.isKeepAlive())
             return terminateWithConnection(con);
         if (exchange.getResponse().isRedirect()) {
             return terminateWithConnection(con);

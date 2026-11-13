@@ -141,6 +141,49 @@ public class HttpKeepAliveTest {
 		}
 	}
 
+	/**
+	 * The client's request body fails (invalid chunk size), so its rest is still on the connection. Replacing the
+	 * request in the flow drops the failed body from the exchange, but the connection must still not carry another
+	 * request, or the rest of the body is parsed as one.
+	 */
+	@Test
+	void connectionClosedWhenReplacedRequestHadFailedBody() throws Exception {
+		sp1.getFlow().addFirst(new AbstractInterceptor() {
+			@Override
+			public Outcome handleRequest(Exchange exc) {
+				if (!exc.getRequest().getUri().equals("/foo"))
+					return CONTINUE;
+				try {
+					exc.setRequest(new Request.Builder().post("/replaced").build());
+				} catch (URISyntaxException e) {
+					throw new RuntimeException(e);
+				}
+				return CONTINUE;
+			}
+		});
+
+		try (final var socket = new Socket("localhost", 2003)) {
+			socket.setSoTimeout(5000);
+			final var out = socket.getOutputStream();
+			out.write("""
+					POST /foo HTTP/1.1\r
+					Host: localhost:2003\r
+					Transfer-Encoding: chunked\r
+					\r
+					zz\r
+					POST /smuggled HTTP/1.1\r
+					Host: localhost:2003\r
+					Content-Length: 0\r
+					Connection: close\r
+					\r
+					""".getBytes(US_ASCII));
+			out.flush();
+
+			final var responses = new String(socket.getInputStream().readAllBytes(), US_ASCII);
+			assertEquals(1, countMatches(responses, "HTTP/1.1 "), responses);
+		}
+	}
+
 	@Test
 	public void testTimeoutDefault() throws Exception {
 		HttpClient client = createHttpClient(1000);
