@@ -70,9 +70,10 @@ import static org.w3c.dom.DOMException.INVALID_CHARACTER_ERR;
  * <p>
  * A converted request is sent with POST and carries the SOAPAction header (SOAP 1.1) or the
  * action in the Content-Type (SOAP 1.2) that the WSDL binding declares. A converted response has
- * status 200. A response of the backend with an error status becomes a SOAP Fault with status 500,
+ * status 200. A response of the backend with an error status becomes a SOAP Fault,
  * <code>Client</code> for a 4xx status and <code>Server</code> otherwise; what the backend sent is
- * not passed on. Errors are reported in the format of the client: problem details (RFC 7807) for
+ * not passed on. A fault has status 500, except a <code>Client</code> fault in SOAP 1.2, which has
+ * status 400. Errors are reported in the format of the client: problem details (RFC 7807) for
  * the JSON client in the request flow, a SOAP Fault for the SOAP client in the response flow.
  * Messages without a body pass through unchanged. Only document/literal messages are supported.
  * Placed directly in a flow, it converts in both directions, so it usually goes under
@@ -329,15 +330,9 @@ public class Json2SoapInterceptor extends AbstractInterceptor {
         return ABORT;
     }
 
-    /** Answers the SOAP client with a fault: status 500, as SOAP 1.1 section 6.2 and SOAP 1.2 require. */
+    /** Answers the SOAP client with a fault; its code decides the status, see {@code createSOAPFaultResponse}. */
     private static Outcome soapFault(Exchange exc, Conversions current, FaultCode code, String faultString) {
-        final var fault = createSOAPFaultResponse(code, faultString, null, current.soapVersion());
-        fault.setStatusCode(500);
-        fault.setStatusMessage("Internal Server Error");
-        if (current.soapVersion() == SoapVersion.SOAP12) {
-            fault.getHeader().setContentType(APPLICATION_SOAP_XML + ";charset=UTF-8");
-        }
-        exc.setResponse(fault);
+        exc.setResponse(createSOAPFaultResponse(code, faultString, null, current.soapVersion()));
         return ABORT;
     }
 

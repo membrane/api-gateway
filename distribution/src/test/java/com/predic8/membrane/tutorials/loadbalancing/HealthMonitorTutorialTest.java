@@ -31,7 +31,7 @@ public class HealthMonitorTutorialTest extends AbstractLoadbalancingTutorialTest
 
     @Test
     void flappingNodeIsTakenOutAndPutBack() throws InterruptedException {
-        // The first health check runs 5 seconds after startup, then node 2 switches every 10 seconds.
+        // Health checks run every second, node 2 switches between healthy and unhealthy every 10 seconds.
         awaitNodes(Set.of("Node 1"), "Node 2 was not taken out of service.");
         assertThat(logger.toString(), containsString("Node localhost:3002 health check failed with HTTP 500 status code"));
         awaitNodes(Set.of("Node 1", "Node 2"), "Node 2 was not put back into service.");
