@@ -145,6 +145,10 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
             log.debug("Client connection terminated before first line was read. Line so far: {}", getLineMaskedAndTruncated(e));
         } catch (EOFWhileReadingLineException e) {
             log.debug("Client connection terminated while reading header line: {}", getLineMaskedAndTruncated(e));
+        } catch (UnsupportedTransferCodingException e) {
+            // RFC 9112 §6.1: a transfer coding the server does not understand SHOULD be answered with 501.
+            log.debug("Rejecting request with unsupported transfer coding: {}", e.getMessage());
+            respondWithNotImplementedAndClose(e.getMessage());
         } catch (MalformedHeaderException e) {
             // Invalid message framing (e.g. conflicting Content-Length), RFC 9112 §6.3:
             // respond 400 and close the connection to avoid request smuggling.
@@ -389,6 +393,22 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
             srcOut.flush();
         } catch (Exception e) {
             log.debug("Could not send 400 response for request with invalid framing.", e);
+        }
+    }
+
+    private void respondWithNotImplementedAndClose(String message) {
+        try {
+            final var response = user(getTransport().getRouter().getConfiguration().isProduction(), "http-server-handler")
+                    .status(501)
+                    .title("Not Implemented")
+                    .addSubSee("unsupported-transfer-coding")
+                    .detail(message)
+                    .build();
+            response.getHeader().setConnection(Header.CLOSE);
+            response.write(srcOut, false);
+            srcOut.flush();
+        } catch (Exception e) {
+            log.debug("Could not send 501 response for request with unsupported transfer coding.", e);
         }
     }
 

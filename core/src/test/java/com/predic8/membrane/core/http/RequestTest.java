@@ -402,7 +402,7 @@ public class RequestTest {
      */
     @Test
     void transferEncodingNotEndingInChunkedIsRejected() {
-        assertThrows(MalformedHeaderException.class, () -> readRequest("""
+        assertThrowsExactly(MalformedHeaderException.class, () -> readRequest("""
                 POST /products HTTP/1.1
                 Host: example.com
                 Transfer-Encoding: gzip
@@ -412,7 +412,7 @@ public class RequestTest {
 
     @Test
     void transferEncodingNotEndingInChunkedIsRejectedDespiteContentLength() {
-        assertThrows(MalformedHeaderException.class, () -> readRequest("""
+        assertThrowsExactly(MalformedHeaderException.class, () -> readRequest("""
                 POST /products HTTP/1.1
                 Host: example.com
                 Transfer-Encoding: gzip
@@ -423,7 +423,7 @@ public class RequestTest {
 
     @Test
     void transferEncodingWithChunkedNotFinalIsRejected() {
-        assertThrows(MalformedHeaderException.class, () -> readRequest("""
+        assertThrowsExactly(MalformedHeaderException.class, () -> readRequest("""
                 POST /products HTTP/1.1
                 Host: example.com
                 Transfer-Encoding: chunked, gzip
@@ -434,12 +434,13 @@ public class RequestTest {
     /**
      * The two field lines combine to "gzip, chunked", which ends in "chunked" and is therefore
      * valid chunked framing - exactly like the single-field form in
-     * {@link #transferEncodingEndingInChunkedIsAccepted()}. This used to assert rejection, which
-     * only described what Header.isChunked() did when it read the first field line alone (#3327).
+     * {@link #transferCodingOtherThanChunkedIsRejected()}, so it is rejected for its gzip coding
+     * (#3789), not for its framing. Reading the first field line alone would reject it as
+     * unframed, reading the last one alone would accept it (#3327).
      */
     @Test
-    void transferEncodingEndingInChunkedAcrossSeveralFieldsIsAccepted() throws Exception {
-        assertInstanceOf(ChunkedBody.class, readRequest("""
+    void transferCodingOtherThanChunkedAcrossSeveralFieldsIsRejected() {
+        assertThrowsExactly(UnsupportedTransferCodingException.class, () -> readRequest("""
                 POST /products HTTP/1.1
                 Host: example.com
                 Transfer-Encoding: gzip
@@ -447,7 +448,7 @@ public class RequestTest {
 
                 0
 
-                """).getBody());
+                """));
     }
 
     /**
@@ -458,7 +459,7 @@ public class RequestTest {
      */
     @Test
     void emptyTransferEncodingIsRejected() {
-        assertThrows(MalformedHeaderException.class, () -> readRequest("""
+        assertThrowsExactly(MalformedHeaderException.class, () -> readRequest("""
                 POST /products HTTP/1.1
                 Host: example.com
                 Transfer-Encoding:
@@ -475,7 +476,7 @@ public class RequestTest {
      */
     @Test
     void transferEncodingWithChunkedNotFinalAcrossSeveralFieldsIsRejected() {
-        assertThrows(MalformedHeaderException.class, () -> readRequest("""
+        assertThrowsExactly(MalformedHeaderException.class, () -> readRequest("""
                 POST /products HTTP/1.1
                 Host: example.com
                 Transfer-Encoding: chunked
@@ -491,7 +492,7 @@ public class RequestTest {
      */
     @Test
     void chunkedWithContentLengthIsRejected() {
-        assertThrows(MalformedHeaderException.class, () -> readRequest("""
+        assertThrowsExactly(MalformedHeaderException.class, () -> readRequest("""
                 POST /products HTTP/1.1
                 Host: example.com
                 Transfer-Encoding: chunked
@@ -506,7 +507,7 @@ public class RequestTest {
 
     @Test
     void chunkedAcrossSeveralFieldsWithContentLengthIsRejected() {
-        assertThrows(MalformedHeaderException.class, () -> readRequest("""
+        assertThrowsExactly(MalformedHeaderException.class, () -> readRequest("""
                 POST /products HTTP/1.1
                 Host: example.com
                 Transfer-Encoding: gzip
@@ -518,12 +519,47 @@ public class RequestTest {
                 """));
     }
 
+    /**
+     * Membrane decodes only "chunked": plugins would read the gzip-coded bytes as content (#3789).
+     */
     @Test
-    void transferEncodingEndingInChunkedIsAccepted() throws Exception {
-        assertInstanceOf(ChunkedBody.class, readRequest("""
+    void transferCodingOtherThanChunkedIsRejected() {
+        assertThrowsExactly(UnsupportedTransferCodingException.class, () -> readRequest("""
                 POST /products HTTP/1.1
                 Host: example.com
                 Transfer-Encoding: gzip, chunked
+
+                0
+
+                """));
+    }
+
+    /**
+     * RFC 9112 7.1: a sender must not apply "chunked" more than once. Decoding it once would leave
+     * the inner chunked framing in the content. The request is malformed, not using a coding
+     * Membrane does not understand, so it is not an UnsupportedTransferCodingException (501).
+     */
+    @Test
+    void chunkedAppliedTwiceIsRejected() {
+        assertThrowsExactly(MalformedHeaderException.class, () -> readRequest("""
+                POST /products HTTP/1.1
+                Host: example.com
+                Transfer-Encoding: chunked, chunked
+
+                0
+
+                """));
+    }
+
+    /**
+     * Coding names are case-insensitive and empty list elements are ignored (RFC 9110 5.6.1.2).
+     */
+    @Test
+    void chunkedWithEmptyListElementsIsAccepted() throws Exception {
+        assertInstanceOf(ChunkedBody.class, readRequest("""
+                POST /products HTTP/1.1
+                Host: example.com
+                Transfer-Encoding: , Chunked,
 
                 0
 

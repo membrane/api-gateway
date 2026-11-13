@@ -19,6 +19,7 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.MalformedHeaderException;
 import com.predic8.membrane.core.http.ReadingBodyException;
+import com.predic8.membrane.core.http.UnsupportedTransferCodingException;
 import com.predic8.membrane.core.proxies.AbstractServiceProxy;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
@@ -174,6 +175,17 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
                     .detail(e.getMessage())
                     .internal("proxy", exc.getProxy().getName())
                     .internal("url", exc.getRequest().getUri())
+                    .buildAndSetResponse(exc);
+            return ABORT;
+        } catch (UnsupportedTransferCodingException e) {
+            // The backend response has a transfer coding Membrane does not decode, e.g. "gzip, chunked".
+            log.warn("Backend {} returned a response with an unsupported transfer coding: {}", uriForLog(getDestination(exc)), escapeControlCharsForLog(e.getMessage()));
+            gateway(router.getConfiguration().isProduction(), getDisplayName())
+                    .title("Bad Gateway")
+                    .status(502)
+                    .addSubSee("unsupported-transfer-coding")
+                    .detail(e.getMessage())
+                    .stacktrace(false)
                     .buildAndSetResponse(exc);
             return ABORT;
         } catch (MalformedHeaderException e) {
