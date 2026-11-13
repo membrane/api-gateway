@@ -116,6 +116,37 @@ class MessageUtilTest {
         }
     }
 
+    @Test
+    void zstdBodyIsDecoded() throws Exception {
+        final var compressed = ZstdDecodingInputStreamTest.zstd("payload");
+        for (final var encoding : new String[]{"zstd", "ZSTD"}) {
+            assertArrayEquals("payload".getBytes(UTF_8), MessageUtil.getContent(encodedRequest(compressed, encoding)), encoding);
+            try (final var decoded = MessageUtil.getContentAsStream(encodedRequest(compressed, encoding))) {
+                assertArrayEquals("payload".getBytes(UTF_8), decoded.readAllBytes(), encoding);
+            }
+        }
+    }
+
+    /**
+     * The decoder throws unchecked exceptions for malformed input; they must be reported as a
+     * decoding failure like those of the other codings, so a request gets a 400.
+     */
+    @Test
+    void corruptZstdBodyIsADecodingFailure() throws Exception {
+        final var corrupt = ZstdDecodingInputStreamTest.zstd("payload");
+        corrupt[corrupt.length - 1] ^= 0x01; // content checksum
+        for (Executable decode : new Executable[]{
+                () -> MessageUtil.getContent(encodedRequest(corrupt, "zstd")),
+                () -> MessageUtil.getContentAsStream(encodedRequest(corrupt, "zstd")).readAllBytes()}) {
+            final var e = assertThrows(ReadingBodyException.class, decode);
+            assertEquals("zstd", assertInstanceOf(DecodingException.class, e.getCause()).getContentEncoding());
+        }
+    }
+
+    private static Message encodedRequest(byte[] compressed, String contentEncoding) throws URISyntaxException {
+        return Request.post("/").body(compressed).header("Content-Encoding", contentEncoding).build();
+    }
+
     private static void assertDecodesTo(String expected, byte[] compressed) throws Exception {
         assertArrayEquals(expected.getBytes(UTF_8), MessageUtil.getContent(deflateRequest(compressed)));
         try (final var decoded = MessageUtil.getContentAsStream(deflateRequest(compressed))) {

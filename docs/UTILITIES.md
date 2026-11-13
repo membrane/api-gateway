@@ -38,7 +38,8 @@ Keep this file in sync when adding, renaming or removing a util class.
 
 | Class | Purpose |
 |---|---|
-| `util/MessageUtil` | Message body as stream/bytes, decompression |
+| `util/MessageUtil` | Message body as stream/bytes, decompression (gzip, deflate, br, zstd) |
+| `util/ZstdDecodingInputStream` | Package-private; decodes the zstd content coding for `MessageUtil`, rejecting frames with a window over 8 MB |
 | `util/SOAPUtil` | SOAP detection/analysis (1.1 and 1.2), build SOAP faults, extract fault details and body |
 | `util/SOAPEnvelopeReader` | Package-private; reads a message event by event for `SOAPUtil.analyseSOAPMessage` and `validateSOAPEnvelope` (envelope structure and well-formedness checks) |
 | `util/soap/SoapVersion`, `util/soap/WSDLUtil` | SOAP version constants; rewrite relative WSDL paths |

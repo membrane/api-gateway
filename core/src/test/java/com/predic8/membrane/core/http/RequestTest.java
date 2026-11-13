@@ -628,7 +628,7 @@ public class RequestTest {
         assertFalse(post("/foo").contentType(TEXT_XML).build().isEncoded());
         assertTrue(post("/foo").header("Content-Encoding", "gzip").build().isEncoded());
         // Not one of the codecs MessageUtil can decode, but still not plain bytes.
-        assertTrue(post("/foo").header("Content-Encoding", "zstd").build().isEncoded());
+        assertTrue(post("/foo").header("Content-Encoding", "unknown").build().isEncoded());
         assertTrue(post("/foo").contentType("multipart/related; boundary=b").build().isEncoded());
     }
 

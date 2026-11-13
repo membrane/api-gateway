@@ -125,6 +125,10 @@ PRIO 3:
 - Upgrade baseline to Java 25
   - Bump `javac.source`/`javac.target` from 21 to 25 in the root pom.xml
   - Simplify `Util.createNewThreadPool()`: the reflective lookup of `Executors.newVirtualThreadPerTaskExecutor` and the `--enable-preview` handling are leftovers from the Java 19/20 preview era; call it directly and drop the `-Dmembrane.virtualthreads` fallback (or keep the flag as a plain if).
+- Migrate the zstd decoder from `io.airlift:aircompressor` 2.x to `io.airlift:aircompressor-v3`
+  - Story: aircompressor 2.x decodes `Content-Encoding: zstd` (#3785) through `sun.misc.Unsafe`. From JDK 24 on, the first zstd body prints a "terminally deprecated method in sun.misc.Unsafe" warning on stderr, and a later JDK is to block these calls by default. `--sun-misc-unsafe-memory-access=allow` silences the warning but does not work on Java 21. aircompressor-v3 uses the FFM API instead of Unsafe and needs Java 25.
+  - Needs the Java 25 baseline. Swap the dependency in `core/pom.xml` and the import in `ZstdDecodingInputStream`, and update `LICENSE` and `distribution/router/LICENSE.txt`.
+  - Check that v3 still lacks the window-size check for raw and RLE blocks and the support for skippable frames; if it has them, the frame check in `ZstdDecodingInputStream` can become smaller. Keep the 8 MB limit tests.
 - Evaluate: virtual threads for HTTP/1 client connections
   - Story: HTTP/2 (`Http2ServerHandler`, `Http2Client`) already runs on virtual threads via `Util.createNewThreadPool()`. HTTP/1 connections still go through the `ThreadPoolExecutor` in `HttpTransport` (platform threads, core 20, unbounded max). On Java 21 this was left alone deliberately: a virtual thread blocking inside a `synchronized` block pins its carrier thread, which is risky for connection handling under load. JEP 491 (Java 24) removed monitor pinning, so with a Java 25 baseline that argument is gone.
   - Check whether switching `HttpTransport` to a virtual-thread-per-task executor makes sense. If yes, account for what the pool currently provides:

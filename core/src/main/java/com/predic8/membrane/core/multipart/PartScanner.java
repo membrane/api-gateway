@@ -76,7 +76,7 @@ public class PartScanner {
      * handler could decide anything. Callers that need the reassembled document (schema validation,
      * for example) use {@link XOPReconstitutor} directly.</p>
      *
-     * <p>Content-Encodings (gzip, deflate, brotli) are decoded; the bodies passed to the handler are
+     * <p>Content-Encodings (gzip, deflate, brotli, zstd) are decoded; the bodies passed to the handler are
      * the logical content.</p>
      *
      * @param message     a multipart request or response

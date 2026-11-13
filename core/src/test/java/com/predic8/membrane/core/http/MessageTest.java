@@ -23,7 +23,7 @@ class MessageTest {
 
     @Test
     void isContentEncodingDecodedOnlyForTheCodingsThatAreDecoded() throws Exception {
-        for (final var coding : new String[]{"gzip", "deflate", "br", "GZIP"})
+        for (final var coding : new String[]{"gzip", "deflate", "br", "zstd", "GZIP", "ZSTD"})
             assertTrue(requestWithContentEncoding(coding).isContentEncodingDecoded(), coding);
         for (final var coding : new String[]{"unknown", "identity", "gzip, br"})
             assertFalse(requestWithContentEncoding(coding).isContentEncodingDecoded(), coding);
