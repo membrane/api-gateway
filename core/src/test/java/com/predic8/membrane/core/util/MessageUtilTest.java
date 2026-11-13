@@ -28,6 +28,7 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.zip.Deflater;
+import java.util.zip.GZIPOutputStream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
@@ -116,6 +117,20 @@ class MessageUtilTest {
         }
     }
 
+    /**
+     * RFC 9110 8.4.1.3: a recipient SHOULD consider "x-gzip" to be equivalent to "gzip".
+     */
+    @Test
+    void xGzipBodyIsDecodedLikeGzip() throws Exception {
+        final var compressed = gzip("payload");
+        for (String encoding : new String[]{"gzip", "x-gzip", "X-GZIP"}) {
+            assertArrayEquals("payload".getBytes(UTF_8), MessageUtil.getContent(encodedRequest(compressed, encoding)), encoding);
+            try (final var decoded = MessageUtil.getContentAsStream(encodedRequest(compressed, encoding))) {
+                assertArrayEquals("payload".getBytes(UTF_8), decoded.readAllBytes(), encoding);
+            }
+        }
+    }
+
     private static void assertDecodesTo(String expected, byte[] compressed) throws Exception {
         assertArrayEquals(expected.getBytes(UTF_8), MessageUtil.getContent(deflateRequest(compressed)));
         try (final var decoded = MessageUtil.getContentAsStream(deflateRequest(compressed))) {
@@ -136,6 +151,18 @@ class MessageUtilTest {
 
     private static Message deflateRequest(byte[] compressed) throws URISyntaxException {
         return Request.post("/").body(compressed).header("Content-Encoding", "deflate").build();
+    }
+
+    private static Message encodedRequest(byte[] compressed, String contentEncoding) throws URISyntaxException {
+        return Request.post("/").body(compressed).header("Content-Encoding", contentEncoding).build();
+    }
+
+    private static byte[] gzip(String value) throws IOException {
+        final var compressed = new ByteArrayOutputStream();
+        try (final var gzip = new GZIPOutputStream(compressed)) {
+            gzip.write(value.getBytes(UTF_8));
+        }
+        return compressed.toByteArray();
     }
 
     /** Text the compressor cannot shrink much, so the compressed stream spans many input buffers. */
