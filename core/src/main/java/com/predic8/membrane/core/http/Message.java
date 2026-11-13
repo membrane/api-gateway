@@ -483,6 +483,14 @@ public abstract class Message {
 	}
 
 	/**
+	 * Whether {@link MessageUtil#getContentAsStream(Message)} and {@link MessageUtil#getContent(Message)}
+	 * decode this message's Content-Encoding. For any other coding they return the encoded bytes.
+	 */
+	public boolean isContentEncodingDecoded() {
+		return isGzip() || isDeflate() || isBrotli();
+	}
+
+	/**
 	 * Tries to use the messages header to get the encoding to build a Charset.
 	 * Uses default of TextUtil if not possible
 	 * @return Charset of the message or default charset if not found in header
