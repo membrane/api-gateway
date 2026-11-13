@@ -21,10 +21,10 @@ import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.util.xml.schema.UndeclaredElementException;
-import com.predic8.membrane.core.util.xml.schema.XmlSchemaMapping;
 import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.json.JsonToXml;
+import com.predic8.membrane.core.util.xml.schema.UndeclaredElementException;
+import com.predic8.membrane.core.util.xml.schema.XmlSchemaMapping;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,14 +38,12 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.util.text.TextUtil.escapeControlCharsForLog;
-import static com.predic8.membrane.core.util.text.StringUtil.truncateAfter;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
- * @description Converts a JSON message body to XML. A body that is not JSON passes through unchanged. The result is
+ * @description <p>Converts a JSON message body to XML. A body that is not JSON passes through unchanged. The result is
  * UTF-8 encoded, begins with an XML prolog, and the Content-Type is set to <code>application/xml</code>. If the body is
- * not valid JSON the exchange is aborted with a 500 Problem Details. See the tutorial
- * tutorials/xml/10-JSON-to-XML.yaml.
+ * cannot be converted, the exchange is aborted.</p>
  * <p>Given an XML Schema, the document follows the schema instead: the single key of the JSON
  * object names the root element, and the fields are written in the order and namespace the schema
  * declares.</p>
@@ -67,6 +65,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  *     - json2Xml:
  *         root: order
  * </code></pre>
+ * <p>See the tutorial tutorials/xml/10-JSON-to-XML.yaml.</p>
  */
 @MCElement(name = "json2Xml")
 public class Json2XmlInterceptor extends AbstractInterceptor {
@@ -134,20 +133,16 @@ public class Json2XmlInterceptor extends AbstractInterceptor {
         if (mapping != null)
             return convertWithSchema(exchange, flow, msg, mapping);
 
+        final byte[] xml;
         try {
-            msg.setBodyContent(json2Xml(msg));
+            xml = json2Xml(msg);
+        } catch (ReadingBodyException e) {
+            // FlowController answers a body that could not be read; this is not a conversion error.
+            throw e;
         } catch (Exception e) {
-            internal(router.getConfiguration().isProduction(), getDisplayName())
-                    .title("Error parsing JSON")
-                    .addSubType("validation/json")
-                    .exception(e) // Message contains a meaningful error message
-                    .stacktrace(false)
-                    .internal("flow", flow)
-                    .internal("body", truncateAfter(msg.getBodyAsStringDecoded(), 200))
-                    .buildAndSetResponse(exchange);
-            return Outcome.ABORT;
+            return conversionFailed(exchange, flow, e);
         }
-
+        msg.setBodyContent(xml);
         msg.getHeader().setContentType(APPLICATION_XML);
         return CONTINUE;
     }
