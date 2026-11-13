@@ -132,13 +132,19 @@
         <dependency>
             <groupId>redis.clients</groupId>
             <artifactId>jedis</artifactId>
-            <version>4.4.8</version>
+            <version>8.0.2</version>
+        </dependency>
+        <!-- Used directly by RedisConnector; otherwise resolved through commons-dbcp2 -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-pool2</artifactId>
+            <version>2.13.1</version>
         </dependency>
         <!-- Used directly by JsonToXml, Xml2JsonInterceptor and ElasticSearchExchangeStore -->
         <dependency>
             <groupId>org.json</groupId>
             <artifactId>json</artifactId>
-            <version>20231013</version>
+            <version>20260814</version>
         </dependency>
         <dependency>
             <groupId>com.bornium</groupId>
