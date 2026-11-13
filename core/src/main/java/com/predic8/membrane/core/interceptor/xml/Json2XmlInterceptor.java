@@ -43,7 +43,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 /**
  * @description <p>Converts a JSON message body to XML. A body that is not JSON passes through unchanged. The result is
  * UTF-8 encoded, begins with an XML prolog, and the Content-Type is set to <code>application/xml</code>. If the body is
- * not valid JSON the exchange is aborted.</p>
+ * cannot be converted, the exchange is aborted.</p>
  * <p>Given an XML Schema, the document follows the schema instead: the single key of the JSON
  * object names the root element, and the fields are written in the order and namespace the schema
  * declares.</p>
