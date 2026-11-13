@@ -16,6 +16,7 @@ package com.predic8.membrane.interceptor;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
+import io.airlift.compress.zstd.ZstdOutputStream;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
@@ -142,6 +143,28 @@ class LimitInterceptorTest {
         final var out = new ByteArrayOutputStream();
         try (final var gzip = new GZIPOutputStream(out)) {
             gzip.write(content.getBytes(UTF_8));
+        }
+        return out.toByteArray();
+    }
+
+    @Test
+    void zstdBodyIsLimitedByItsDecodedLength() throws Exception {
+        final var limit = new LimitInterceptor();
+        limit.setMaxBodyLength(1000);
+        final var small = Request.post("/foo").body(zstd("a".repeat(1000))).header("Content-Encoding", "zstd").build();
+        limit.handleRequest(exchangeOf(small));
+        assertNull(small.getHeader().getContentEncoding());
+        assertEquals("a".repeat(1000), new String(small.getBody().getContent(), UTF_8));
+
+        final var large = Request.post("/foo").body(zstd("a".repeat(1001))).header("Content-Encoding", "zstd").build();
+        limit.handleRequest(exchangeOf(large));
+        assertThrows(Exception.class, large::readBody);
+    }
+
+    private static byte[] zstd(String content) throws IOException {
+        final var out = new ByteArrayOutputStream();
+        try (final var zstd = new ZstdOutputStream(out)) {
+            zstd.write(content.getBytes(UTF_8));
         }
         return out.toByteArray();
     }
