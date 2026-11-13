@@ -17,6 +17,7 @@ package com.predic8.membrane.core.transport.http.client;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.transport.http.ConnectTimeoutException;
 import com.predic8.membrane.core.transport.http.EOFWhileReadingFirstLineException;
 import com.predic8.membrane.core.transport.http.NoResponseException;
@@ -36,6 +37,8 @@ import java.util.Set;
 import static com.predic8.membrane.core.transport.http.HttpClientStatusEventBus.reportException;
 import static com.predic8.membrane.core.transport.http.HttpClientStatusEventBus.reportStatusCode;
 import static com.predic8.membrane.core.util.HttpUtil.isIdempotent;
+import static com.predic8.membrane.core.util.URLParamUtil.uriForLog;
+import static com.predic8.membrane.core.util.text.TextUtil.escapeControlCharsForLog;
 import static java.lang.Thread.sleep;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
@@ -209,7 +212,12 @@ public class RetryHandler {
 
     private boolean shouldAbortRetries(Exchange exc, Exception e, String dest, int attempt) {
         log.debug("Checking if call should abort immediately. Exception {}", e.getMessage());
-
+        // The request body could not be read, e.g. the client stopped sending or it exceeded a limit. Its
+        // failure is recorded, so another attempt would only send the request header fields again.
+        if (e instanceof ReadingBodyException rbe && rbe.belongsTo(exc.getRequest())) {
+            log.debug("Request body could not be read: {}", e.getMessage());
+            return true;
+        }
         // switch with throwable is only possible in Java 21 with preview features
         if (e instanceof MalformedURLException || e instanceof URISyntaxException) {
             log.debug("URI {} caused: {}", dest, e);
@@ -252,6 +260,9 @@ public class RetryHandler {
                 log.debug("Connection to {} was aborted externally.", dest);
             } else if (message.contains("reset")) {
                 log.debug("Connection to {} was reset externally.", dest);
+            } else if (e instanceof NoRouteToHostException) {
+                // A known outage (no route, firewall, host down), not an unknown condition: no stack trace.
+                log.warn("No route to {}: {}", uriForLog(dest), escapeControlCharsForLog(e.getMessage()));
             } else {
                 logException(exc, attempt, e);
                 log.info("Unexpected SocketException: {}", e.getMessage(), e); // Unknown condition => log stacktrace
@@ -259,7 +270,7 @@ public class RetryHandler {
             return !isIdempotent(exc.getRequest().getMethod());
         }
         if (e instanceof UnknownHostException) {
-            log.warn("Unknown host: {}", dest); // Could be a configuration error => WARN
+            log.warn("Unknown host: {}", uriForLog(dest)); // Could be a configuration error => WARN
             return !hasMultipleNodes(exc);
         }
         if (e instanceof EOFWhileReadingFirstLineException eofE) {
@@ -275,7 +286,7 @@ public class RetryHandler {
                   return true;
             }
         }
-        log.info("Error while attempting to forward request to {}. Reason: {}", dest, e.getMessage());
+        log.info("Error while attempting to forward request to {}. Reason: {}", uriForLog(dest), escapeControlCharsForLog(e.getMessage()));
         logException(exc, attempt, e);
         return !isIdempotent(exc.getRequest().getMethod()); // If not sure, do not retry for non idempotent methods
     }

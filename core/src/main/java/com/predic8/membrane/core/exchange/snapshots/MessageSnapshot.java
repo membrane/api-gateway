@@ -46,7 +46,7 @@ public class MessageSnapshot {
             header.merge(key, headerField.getValue(), (a, b) -> a + ", " + b);
         });
         if (bodyCopiedCallback == null) {
-            body = IOUtils.toByteArray(new CountingInputStream(msg.getBodyAsStreamDecoded()) {
+            try (final var in = new CountingInputStream(msg.getBodyAsStreamDecoded()) {
                 @Override
                 public int read(byte[] b) throws IOException {
                     if (limit != -1 && getCount() > limit)
@@ -58,7 +58,9 @@ public class MessageSnapshot {
                         }
                     return super.read(b);
                 }
-            });
+            }) {
+                body = IOUtils.toByteArray(in);
+            }
         } else {
             msg.addObserver(new SnapshottingObserver(strategy, limit, bodyCopiedCallback, aes));
         }

@@ -1,0 +1,48 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.8.1.json
+#
+# Tutorial: JSON to XML with an XML Schema
+#
+# Convert JSON into the XML an XML Schema declares, without guessing. Unlike
+# 10-JSON-to-XML.yaml, the XML Schema answers every question the transformation
+# has, i.e. the root element, the order of the elements, which keys are
+# attributes and how arrays are written.
+#
+# 1.) Start Membrane:
+#     ./membrane.sh -c 15-JSON-to-XML-with-XSD.yaml
+#
+# 2.) Convert a book whose keys are in no particular order:
+#     curl -d @one-book.json -H "Content-Type: application/json" http://localhost:2000
+#
+#     The elements follow the order of books.xsd, "@id" becomes an attribute
+#     and the array becomes repeated elements:
+#
+#     <books>
+#       <book id="1">
+#         <title>The Mythical Man-Month</title>
+#         <author>Frederick P. Brooks Jr.</author>
+#         <category>Software Engineering</category>
+#       </book>
+#     </books>
+#
+# 3.) Send JSON whose root books.xsd does not declare:
+#     curl -i -d "{\"magazine\": {}}" -H "Content-Type: application/json" http://localhost:2000
+#
+#     HTTP/1.1 400 Bad Request
+#     ...
+
+api:
+  port: 2000
+  flow:
+    - request:
+        - json2Xml:
+            xmlSchema: books.xsd
+        - beautifier: {}
+    - return:
+        status: 200
+
+# NOTE: The JSON has the shape xml2Json produces with the same XML Schema, so
+#       25-XML-to-JSON-with-XSD.yaml converts the result back.
+#
+# See also:
+#  - 50-XSD-Schema-validation.yaml to validate the XML against books.xsd
+#  - ../wsdl-to-openapi for the same mapping applied to SOAP messages

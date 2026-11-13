@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
+import com.predic8.membrane.core.interceptor.soap2json.SelectedPort;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.config.Path;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -31,6 +32,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.lang.reflect.Field;
@@ -46,7 +48,6 @@ import static com.predic8.membrane.core.http.Header.CONTENT_LENGTH;
 import static com.predic8.membrane.core.http.Header.SOAP_ACTION;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.Wsdl2OpenApiConverter.ApiInfo;
-import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.camelToKebab;
 import static com.predic8.membrane.test.TestUtil.getPathFromResource;
 import static java.nio.charset.StandardCharsets.UTF_16;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -71,6 +72,13 @@ class Wsdl2OpenapiInterceptorTest {
     void bodyIsUntouchedWithoutUrlParameters() throws Exception {
         assertEquals("{\"id\":\"7\"}",
                 Wsdl2OpenapiInterceptor.mergeUrlParamsIntoJson("{\"id\":\"7\"}", Map.of(), Map.of()));
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    void aRequestWithoutBodyOrUrlParametersIsAnEmptyObject(String body) throws Exception {
+        // A GET of an operation without parameters: its SOAP request is an empty element.
+        assertEquals("{}", Wsdl2OpenapiInterceptor.mergeUrlParamsIntoJson(body, Map.of(), Map.of()));
     }
 
     @Test
@@ -796,6 +804,33 @@ class Wsdl2OpenapiInterceptorTest {
         );
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"[{\"name\": \"Bonn\"}]", "{\"name\": "})
+    void aBodyThatIsNoJsonObjectIsAClientError(String body) throws Exception {
+        // An array or broken JSON is the client's mistake, not a failure of the gateway.
+        assertEquals(400, requestResponse(body).getStatusCode());
+    }
+
+    @Test
+    void invalidJsonNextToAPathParameterIsAClientError() throws Exception {
+        // With URL parameters the body is parsed to merge them in, so it fails there instead.
+        var settings = new OperationSettings();
+        settings.setPath("/cities/{name}");
+        settings.setMethod("PUT");
+        var operations = new OperationsConfig();
+        operations.setEntry(Map.of("getCity", settings));
+
+        var interceptor = wsdl2openapi("classpath:/ws/cities.wsdl");
+        interceptor.setOperations(operations);
+        interceptor.init(new DummyTestRouter(), apiProxyWith(interceptor));
+
+        var exc = new Exchange(null);
+        exc.setRequest(new Request.Builder().put("/cities/Berlin").body("{\"name\": ").build());
+
+        assertEquals(Outcome.ABORT, interceptor.handleRequest(exc));
+        assertEquals(400, exc.getResponse().getStatusCode());
+    }
+
     @Test
     void pathParameterWinsOverTheSameFieldInTheBody() throws Exception {
         // The URL selected the resource. A body repeating the field — it is not in the published
@@ -1147,30 +1182,5 @@ class Wsdl2OpenapiInterceptorTest {
         // second's handleResponse must not see first's matched operation and must not
         // attempt to transform the (SOAP) response body a second time.
         assertEquals(Outcome.CONTINUE, second.handleResponse(exc));
-    }
-
-    @ParameterizedTest(name = "{0} → {1}")
-    @MethodSource
-    void camelToKebabConv(String input, String expected) {
-        assertEquals(expected, camelToKebab(input));
-    }
-
-    static Stream<Arguments> camelToKebabConv() {
-        return Stream.of(
-                arguments("getCity",                   "get-city"),
-                arguments("getBank",                   "get-bank"),
-                arguments("changeOtherIiDs",           "change-other-ii-ds"),       // pure camelCase
-                arguments("change_OtherIiDs",          "change-other-ii-ds"),       // underscore + camelCase
-                arguments("Get_Budget_Structures",     "get-budget-structures"),    // PascalCase + underscores
-                arguments("Get_Allocation_Group_Sets", "get-allocation-group-sets"), // user-reported
-                arguments("getURLs",                   "get-urls"),                 // acronym + plural suffix
-                arguments("getUserID",                 "get-user-id"),              // acronym at end
-                arguments("ID",                        "id"),                       // pure acronym
-                arguments("change_other_ii",           "change-other-ii"),          // snake_case
-                arguments("simple",                    "simple"),
-                arguments("A",                         "a"),
-                arguments("_leading",                  "leading"),
-                arguments("double__under",             "double-under")
-        );
     }
 }

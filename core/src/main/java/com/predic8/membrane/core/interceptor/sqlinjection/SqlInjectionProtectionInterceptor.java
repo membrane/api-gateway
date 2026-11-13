@@ -17,6 +17,7 @@ package com.predic8.membrane.core.interceptor.sqlinjection;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.sqlinjection.SqlInjectionProtection.Detection;
@@ -137,6 +138,10 @@ public class SqlInjectionProtectionInterceptor extends AbstractInterceptor {
                     .buildAndSetResponse(exc);
             exc.getResponse().getHeader().add(X_PROTECTION, "Content violates SQL injection security policy");
             return ABORT;
+        } catch (ReadingBodyException e) {
+            // Not a scanner error, e.g. the client stopped sending the body: the flow controller describes
+            // it, see BodyFailureProblems.bodyFailure()
+            throw e;
         } catch (Exception e) {
             log.error("Error inspecting {} for SQL injection", flow, e);
             internal(router.getConfiguration().isProduction(), getDisplayName())

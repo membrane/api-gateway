@@ -345,7 +345,7 @@ public final class SSLExplorer {
 		// What is the handshake type?
 		byte handshakeType = input.get();
 		if (handshakeType != 0x01) {   // 0x01: client_hello message
-			throw new IllegalStateException("Not initial handshaking");
+			throw new SSLProtocolException("Not initial handshaking");
 		}
 
 		// What is the handshake body length?
@@ -503,7 +503,13 @@ public final class SSLExplorer {
 						throw new SSLProtocolException(
 								"Empty HostName in server name indication");
 					}
-					serverName = new SNIHostName(encoded);
+					try {
+						serverName = new SNIHostName(encoded);
+					} catch (IllegalArgumentException e) {
+						// e.g. a trailing dot (RFC 6066 3.); the JDK's own server rejects it the same way.
+						// Message only, no cause: the nested IDN exceptions echo the raw client bytes.
+						throw new SSLProtocolException("Illegal host name in server name indication: " + e.getMessage());
+					}
 					break;
 				default:
 					serverName = new UnknownServerName(code, encoded);

@@ -19,20 +19,34 @@ import com.predic8.membrane.core.resolver.*;
 import java.util.*;
 
 public record WSDLParserContext(Definitions definitions, Resolver resolver, String basePath,
-                                List<String> visitedLocations) {
+                                Set<LoadedSchema> loadedSchemas) {
+
+    /**
+     * A schema document as loaded: where it comes from, and the namespace its declarations end up
+     * in. A document without targetNamespace is loaded once for every namespace that includes it.
+     */
+    public record LoadedSchema(String location, String namespace) {}
 
     public WSDLParserContext definitions(Definitions definitions) {
-        return new WSDLParserContext(definitions, resolver, basePath, visitedLocations);
+        return new WSDLParserContext(definitions, resolver, basePath, loadedSchemas);
     }
 
     public WSDLParserContext basePath(String basePath) {
-        // visitedLocations is not cloned on purpose. It contains the list of all the
-        // Files that are already included or imported.
-        visitedLocations.add(basePath);
-        return new WSDLParserContext(definitions, resolver, basePath, visitedLocations);
+        return new WSDLParserContext(definitions, resolver, basePath, loadedSchemas);
     }
 
     public WSDLParserContext resolver(Resolver resolver) {
-        return new WSDLParserContext(definitions, resolver, basePath, visitedLocations);
+        return new WSDLParserContext(definitions, resolver, basePath, loadedSchemas);
+    }
+
+    /**
+     * Records that the schema document at {@code location} is loaded into {@code namespace}.
+     * {@code loadedSchemas} is shared by all contexts of one parse on purpose: it holds every
+     * document already included or imported, which also stops include and import cycles.
+     *
+     * @return false if that document was already loaded into that namespace
+     */
+    public boolean load(String location, String namespace) {
+        return loadedSchemas.add(new LoadedSchema(location, namespace));
     }
 }

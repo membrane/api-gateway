@@ -13,7 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.util;
 
-import com.predic8.membrane.core.http.Chunk;
 import com.predic8.membrane.core.http.DecodingException;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.ReadingBodyException;
@@ -22,11 +21,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.zip.DataFormatException;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.Inflater;
+import java.util.zip.InflaterInputStream;
 
 public class MessageUtil {
 
@@ -46,7 +43,7 @@ public class MessageUtil {
 				return associateDecodingFailures(new GZIPInputStream(msg.getBodyAsStream()), msg);
 			}
 			if (msg.isDeflate()) {
-				return new ByteArrayInputStream(getDecompressedData(msg.getBody().getContent()));
+				return associateDecodingFailures(inflating(msg.getBodyAsStream()), msg);
 			}
 			if (msg.isBrotli()) {
 				return associateDecodingFailures(new BrotliInputStream(msg.getBodyAsStream()), msg);
@@ -72,7 +69,9 @@ public class MessageUtil {
 				}
 			}
 			if (msg.isDeflate()) {
-				return getDecompressedData(msg.getBody().getContent());
+				try (var decoded = inflating(msg.getBodyAsStream())) {
+					return decoded.readAllBytes();
+				}
 			}
 			if (msg.isBrotli()) {
 				try (var is = msg.getBodyAsStream();
@@ -117,7 +116,7 @@ public class MessageUtil {
 	 * The cost is that a {@code catch (IOException)} around a read of this stream does not fire.
 	 * Callers that handle a decoding failure themselves have to catch {@link ReadingBodyException}
 	 * too, and describe it with
-	 * {@link com.predic8.membrane.core.exceptions.ProblemDetails#bodyFailure} rather than deciding a
+	 * {@link com.predic8.membrane.core.exceptions.BodyFailureProblems#bodyFailure} rather than deciding a
 	 * status of their own; everything else lets it travel to the flow controller, which does the same.
 	 */
 	private static InputStream associateDecodingFailures(InputStream decoded, Message message) {
@@ -157,63 +156,57 @@ public class MessageUtil {
 		return (cmf & 0x0f) == 8 && ((cmf << 8) | flg) % 31 == 0;
 	}
 
-	public static byte[] getDecompressedData(byte[] compressedData) throws IOException {
-		var decompressor = new Inflater(!isZlibWrapped(compressedData));
-		try {
-			decompressor.setInput(compressedData);
+	/**
+	 * Decodes the "deflate" coding while it is read, so a consumer reading through a size limit stops
+	 * the expansion as soon as the limit is reached. Peeks at the first two bytes to choose between
+	 * zlib and raw DEFLATE framing (see {@link #isZlibWrapped(byte[])}).
+	 */
+	private static InputStream inflating(InputStream compressed) throws IOException {
+		final var in = new PushbackInputStream(compressed, 2);
+		final var header = in.readNBytes(2);
+		in.unread(header);
+		return new DeflateInputStream(in, !isZlibWrapped(header));
+	}
 
-			List<Chunk> chunks = new ArrayList<>();
+	/**
+	 * Unlike its superclass, rejects a stream that ends early or asks for a preset dictionary instead of
+	 * reporting the end of the body: a truncated stream would otherwise surface as a JDK message about
+	 * ZLIB, and a dictionary request as a silently empty body. Membrane has no dictionary to supply.
+	 */
+	private static final class DeflateInputStream extends InflaterInputStream {
 
-			while (!decompressor.finished()) {
-				byte[] buf = new byte[1024];
-				int count;
-				try {
-					count = decompressor.inflate(buf);
-				} catch (DataFormatException e) {
-					throw new IOException(e);
-				}
-				// Zero output is valid when the stream has finished (including an empty body).
-				// Otherwise, retrying without new input or a dictionary can loop forever.
-				if (count == 0 && !decompressor.finished()) {
-					// A preset dictionary contains bytes shared by compressor and decoder in advance.
-					// Only a zlib-framed stream can signal this (via the FDICT header bit); Membrane
-					// does not supply one, so reject rather than stall waiting for it.
-					if (decompressor.needsDictionary()) {
-						log.info("Deflate stream requires a preset dictionary.");
-						throw new IOException("Deflate stream requires a preset dictionary.");
-					}
-					// The complete compressed body was supplied, so no more input can arrive.
-					if (decompressor.needsInput()) {
-						log.info("Truncated deflate stream.");
-						throw new IOException("Truncated deflate stream.");
-					}
-					// Reject any other stalled state instead of retrying indefinitely.
-					log.info("Deflate decompression made no progress.");
-					throw new IOException("Deflate decompression made no progress.");
-				}
-				if (buf.length == count) {
-                    chunks.add(new Chunk(buf));
-				} else if (count < buf.length) {
-					byte[] shortContent = new byte[count];
-					System.arraycopy(buf, 0, shortContent, 0, count);
-                    chunks.add(new Chunk(shortContent));
-				}
+		DeflateInputStream(InputStream in, boolean raw) {
+			super(in, new Inflater(raw));
+		}
+
+		@Override
+		public int read(byte[] b, int off, int len) throws IOException {
+			final int n = super.read(b, off, len);
+			if (n == -1 && inf.needsDictionary()) {
+				log.info("Deflate stream requires a preset dictionary.");
+				throw new IOException("Deflate stream requires a preset dictionary.");
 			}
+			return n;
+		}
 
-			log.debug("Number of decompressed chunks: {}", chunks.size());
-			if (!chunks.isEmpty()) {
-
-				var bos = new ByteArrayOutputStream();
-
-				for (Chunk chunk : chunks) {
-					bos.write(chunk.content());
-				}
-				return bos.toByteArray();
+		@Override
+		protected void fill() throws IOException {
+			len = in.read(buf, 0, buf.length);
+			if (len == -1) {
+				log.info("Truncated deflate stream.");
+				throw new IOException("Truncated deflate stream.");
 			}
-			return null;
-		} finally {
-			// Inflater is not AutoCloseable in Java 21, so use finally instead of try-with-resources.
-			decompressor.end();
+			inf.setInput(buf, 0, len);
+		}
+
+		/** The superclass only ends an Inflater it created itself. */
+		@Override
+		public void close() throws IOException {
+			try {
+				super.close();
+			} finally {
+				inf.end();
+			}
 		}
 	}
 }

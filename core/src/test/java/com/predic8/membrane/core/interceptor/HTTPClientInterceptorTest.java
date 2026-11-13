@@ -15,6 +15,8 @@
 package com.predic8.membrane.core.interceptor;
 
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.MalformedHeaderException;
+import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.lang.ExchangeExpression.Language;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
@@ -32,15 +34,20 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.SocketTimeoutException;
 import java.net.URISyntaxException;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.predic8.membrane.core.http.Header.CONNECTION;
 import static com.predic8.membrane.core.http.Header.UPGRADE;
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
+import static com.predic8.membrane.core.util.HttpUtil.readLine;
 import static com.predic8.membrane.core.util.NetworkTestUtil.freePort;
+import static com.predic8.membrane.test.TestAppender.captureLog;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static com.predic8.membrane.core.util.text.SerializationUtil.Serialization.SEGMENT;
 import static com.predic8.membrane.core.util.text.SerializationUtil.Serialization.TEXT;
 import static org.junit.jupiter.api.Assertions.*;
@@ -160,6 +167,27 @@ class HTTPClientInterceptorTest {
     }
 
     /**
+     * The request body could not be read, e.g. the client stopped sending or it exceeded a limit. That is
+     * not a backend problem, so it is left to the flow controller instead of becoming a 500 here.
+     */
+    @Test
+    void requestBodyFailureIsLeftToTheFlowController() throws Exception {
+        final var exc = post("http://example.com/").buildExchange();
+        final var failure = new ReadingBodyException(new IOException("Message body too large."), exc.getRequest());
+        final var hci = new HTTPClientInterceptor(new HttpClient() {
+            @Override
+            public void call(Exchange exc) {
+                throw failure;
+            }
+        });
+        hci.init(router);
+        exc.setProxy(new NullProxy());
+        exc.getDestinations().add("http://example.com/");
+
+        assertSame(failure, assertThrows(ReadingBodyException.class, () -> hci.handleRequest(exc)));
+    }
+
+    /**
      * A refused target, a target that never accepts and one that accepts but stays silent used to be
      * logged and reported alike. They have to stay distinguishable by status, subSee and detail.
      */
@@ -173,6 +201,16 @@ class HTTPClientInterceptorTest {
 
             assertEquals(502, exc.getResponse().getStatusCode());
             assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("connect"));
+        }
+
+        @Test
+        void refusedTargetIsReportedWithMaskedQueryValues() throws Exception {
+            final var exc = new AtomicReference<Exchange>();
+            final var log = captureLog(() -> exc.getAndSet(callTarget("http://localhost:%d/foo?api-key=secret".formatted(freePort()), 0)));
+
+            assertTrue(log.contains("/foo?api-key=*** is not reachable."), log.getMessages().toString());
+            assertFalse(log.contains("secret"), log.getMessages().toString());
+            assertFalse(exc.get().getResponse().getBodyAsStringDecoded().contains("secret"));
         }
 
         @Test
@@ -226,6 +264,64 @@ class HTTPClientInterceptorTest {
 
             hci.handleRequest(exc);
             return exc;
+        }
+    }
+
+    /**
+     * The backend is not trusted: what it sends must neither forge log lines nor get the client's query values
+     * into logs and problem details.
+     */
+    @Nested
+    class untrustedBackend {
+
+        @Test
+        void invalidFramingIsLoggedWithMaskedDestinationAndEscapedReason() throws Exception {
+            final var hci = new HTTPClientInterceptor(new HttpClient() {
+                @Override
+                public void call(Exchange exc) {
+                    throw new MalformedHeaderException("Invalid Content-Length header value: \"1\nforged\".");
+                }
+            });
+            hci.init(router);
+            final var exc = get("http://example.com/foo?api-key=secret").buildExchange();
+            exc.setProxy(new NullProxy());
+            exc.getDestinations().add("http://example.com/foo?api-key=secret");
+
+            final var log = captureLog(() -> hci.handleRequest(exc));
+
+            assertTrue(log.contains("Backend http://example.com/foo?api-key=*** returned a response with invalid framing: Invalid Content-Length header value: \"1\\nforged\"."), log.getMessages().toString());
+            assertFalse(log.contains("secret"), log.getMessages().toString());
+        }
+
+        @Test
+        void echoedRequestLineDoesNotLeakQueryValues() throws Exception {
+            try (final var echo = new ServerSocket(0)) {
+                Thread.ofVirtual().start(() -> {
+                    try (final var socket = echo.accept()) {
+                        final var requestLine = readLine(socket.getInputStream());
+                        socket.getOutputStream().write((requestLine + "\r\n\r\n").getBytes(ISO_8859_1));
+                        socket.getOutputStream().flush();
+                    } catch (IOException ignored) {
+                        // the test fails on the missing response
+                    }
+                });
+                final var config = new HttpClientConfiguration();
+                config.getRetryHandler().setRetries(0);
+                hci.setHttpClientConfig(config);
+                hci.init(router);
+                final var url = "http://localhost:%d/foo?api-key=secret".formatted(echo.getLocalPort());
+                final var exc = get(url).buildExchange();
+                exc.setProxy(new NullProxy());
+                exc.getDestinations().add(url);
+
+                final var log = captureLog(() -> hci.handleRequest(exc));
+
+                final var body = exc.getResponse().getBodyAsStringDecoded();
+                assertTrue(log.contains("Invalid server response: GET /foo?api-key=***"), log.getMessages().toString());
+                assertFalse(log.contains("secret"), log.getMessages().toString());
+                assertTrue(body.contains("Invalid server response"), body);
+                assertFalse(body.contains("secret"), body);
+            }
         }
     }
 

@@ -52,6 +52,13 @@ PRIO 3:
   - Story: the keyword is never read, so arrays are validated as if it were absent. `unevaluatedItems: false` does not reject any items.
   - It applies to the items not evaluated by `prefixItems`, `items` or `contains`, including those of the `allOf`/`anyOf`/`oneOf`/`$ref` subschemas that validated successfully. `ObjectValidator` does the same for `unevaluatedProperties`.
   - Related: #3499 (`prefixItems`).
+- OpenAPI: support `if`/`then`/`else` and `dependentSchemas` (JSON Schema 2020-12, OAS 3.1 and later) (#3481)
+  - Story: `SchemaValidator.validateKeywords` handles `allOf`/`anyOf`/`oneOf`/`not`, but never reads `if`, `then`, `else` or `dependentSchemas`, so a schema that relies on them doesn't enforce them. With `if: {properties: {kind: {const: cat}}, required: [kind]}` and `then: {required: [lives], properties: {lives: {type: integer}}}`, both `{"kind": "cat"}` and `{"kind": "cat", "lives": "wrong"}` are accepted instead of getting a 400. `dependentSchemas: {creditCard: {required: [billingAddress]}}` is never checked either.
+  - Idea, in `SchemaValidator.validateKeywords`:
+    - `if`/`then`/`else`: validate against `if` without reporting its errors. If it is valid, validate against `then`, otherwise against `else`. A missing `then` or `else` accepts. Applies to every type, not only objects.
+    - `dependentSchemas`: for each property the object has, validate the whole object against its subschema.
+  - `ObjectValidator.collectEvaluatedProperties` already reads these keywords for `unevaluatedProperties` and counts a `then`/`else`/`dependentSchemas` subschema only if the object is valid against it. That stays as it is (the spec collects annotations only from valid subschemas), but today a `lives` with a wrong type is reported as *unevaluated* instead of "not an integer". Once the keywords are validated, the error names the real violation. Update the Javadoc there that says no other path validates them.
+  - Related: `dependentRequired` is not validated either.
 - WebServiceExplorerInterceptor
   - Support multiple services, ports, ...
   - Refactor
@@ -185,6 +192,9 @@ PRIO 3:
   - Story: 7.8 can validate SOAP header blocks (#3582) but leaves it off by default, so an update does not start rejecting messages whose headers passed before. With `bound`, the header blocks the WSDL binds with `soap:header` and `soap:headerfault` are validated against the WSDL's schemas.
   - **Breaking**: a message with an invalid bound header block is rejected. Name `headers: none` in the release notes as the way to keep the old behavior.
   - Change the default of the `headers` field and `@default` of `setHeaders` in `ValidatorInterceptor`, and of the `WSDLValidator` constructors without a `HeaderValidation` parameter.
+- Upgrade jedis from 4.4.8 to the current major version (8.x)
+  - Story: `core` is on jedis 4.4.8, the last 4.x release; 8.0.2 is current. Used by `RedisConnector`, `RedisSessionManager` and `RedisOriginalExchangeStore`; check the API changes across 5.x–8.x and test Redis sessions and the OAuth2 exchange store against a real Redis.
+  - Raise the `org.json:json` version in `core/pom.xml` with it (jedis 8.0.2 needs 20260719). `core` declares org.json directly (#3760), so that declaration wins over the one jedis asks for. If org.json is gone from `core` by then (see "Get rid of old JSON parsers"), drop the declaration instead.
 - To discuss: make the regex engine a swappable component, with RE2/J or a comparable linear-time engine as the default
   - Story: configured regular expressions run on `java.util.regex`, which backtracks. Overlapping quantifiers can take quadratic or worse time on crafted requests (ReDoS). Today the operator has to avoid such patterns, see https://www.membrane-api.io/security/membrane-redos-protection.html.
   - A linear-time engine such as RE2/J (`com.google.re2j`, 114 KB, no dependencies) rules this out whatever the pattern.

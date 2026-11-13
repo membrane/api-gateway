@@ -4,6 +4,8 @@ This tutorial focuses on working with XML in Membrane API Gateway, including:
 
 - XPath
 - XML-to-JSON and JSON-to-XML transformations
+  - driven by an XML Schema: [15-JSON-to-XML-with-XSD.yaml](15-JSON-to-XML-with-XSD.yaml),
+    [25-XML-to-JSON-with-XSD.yaml](25-XML-to-JSON-with-XSD.yaml)
 - XML Schema validation and XSLT
 - Reading, manipulating and generating XML with Groovy:
   - [70-Groovy-Read-XML.yaml](70-Groovy-Read-XML.yaml)

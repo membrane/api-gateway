@@ -15,12 +15,17 @@
 package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.OperationRouter.*;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 class OperationRouterTest {
 
@@ -131,5 +136,30 @@ class OperationRouterTest {
         mutable.clear();
 
         assertEquals(1, router.getRoutes().size(), "the router must not be emptied by its caller");
+    }
+
+    @ParameterizedTest(name = "{0} → {1}")
+    @MethodSource
+    void camelToKebabConv(String input, String expected) {
+        assertEquals(expected, camelToKebab(input));
+    }
+
+    static Stream<Arguments> camelToKebabConv() {
+        return Stream.of(
+                arguments("getCity",                   "get-city"),
+                arguments("getBank",                   "get-bank"),
+                arguments("changeOtherIiDs",           "change-other-ii-ds"),       // pure camelCase
+                arguments("change_OtherIiDs",          "change-other-ii-ds"),       // underscore + camelCase
+                arguments("Get_Budget_Structures",     "get-budget-structures"),    // PascalCase + underscores
+                arguments("Get_Allocation_Group_Sets", "get-allocation-group-sets"), // user-reported
+                arguments("getURLs",                   "get-urls"),                 // acronym + plural suffix
+                arguments("getUserID",                 "get-user-id"),              // acronym at end
+                arguments("ID",                        "id"),                       // pure acronym
+                arguments("change_other_ii",           "change-other-ii"),          // snake_case
+                arguments("simple",                    "simple"),
+                arguments("A",                         "a"),
+                arguments("_leading",                  "leading"),
+                arguments("double__under",             "double-under")
+        );
     }
 }

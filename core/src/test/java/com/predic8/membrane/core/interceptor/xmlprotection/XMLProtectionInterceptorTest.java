@@ -135,7 +135,7 @@ class XMLProtectionInterceptorTest {
     /**
      * A body that cannot be read is not this plugin's to answer for, so the exception travels on
      * rather than becoming an XML verdict. Who it is reported to, and as what, is decided centrally
-     * by {@link com.predic8.membrane.core.exceptions.ProblemDetails#bodyFailure} and covered
+     * by {@link com.predic8.membrane.core.exceptions.BodyFailureProblems#bodyFailure} and covered
      * end-to-end - through a router, which this test does not have - in
      * {@code RequestBodyDecodingTest}.
      */

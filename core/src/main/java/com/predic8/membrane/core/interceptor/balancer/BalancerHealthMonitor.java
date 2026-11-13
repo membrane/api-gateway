@@ -65,11 +65,6 @@ public class BalancerHealthMonitor implements ApplicationContextAware, BeanRegis
     private static final Logger log = LoggerFactory.getLogger(BalancerHealthMonitor.class);
     public static final String BALANCER_HEALTH_MONITOR = "balancer-health-monitor";
 
-    /**
-     * Initial delay of 5s
-     */
-    public static final int INITIAL_DELAY = 5000;
-
     private Router router;
     private int interval = 10000;
     private HttpClient client;
@@ -118,7 +113,7 @@ public class BalancerHealthMonitor implements ApplicationContextAware, BeanRegis
     }
 
     private void createScheduler() {
-        router.getTimerManager().schedulePeriodicTask(createTimerTask(healthCheckTask), INITIAL_DELAY, BALANCER_HEALTH_MONITOR);
+        router.getTimerManager().schedulePeriodicTask(createTimerTask(healthCheckTask), interval, BALANCER_HEALTH_MONITOR);
     }
 
     private Status isHealthy(Node node) {
@@ -207,7 +202,7 @@ public class BalancerHealthMonitor implements ApplicationContextAware, BeanRegis
 
     /**
      * @param interval the interval between health checks, in milliseconds
-     * @description Sets the health check interval (in milliseconds).
+     * @description Sets the health check interval (in milliseconds). The first check runs one interval after startup.
      * @example 30000
      * @default 10000
      */
