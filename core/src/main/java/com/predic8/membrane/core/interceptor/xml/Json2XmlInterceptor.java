@@ -21,10 +21,10 @@ import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.util.xml.schema.UndeclaredElementException;
-import com.predic8.membrane.core.util.xml.schema.XmlSchemaMapping;
 import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.json.JsonToXml;
+import com.predic8.membrane.core.util.xml.schema.UndeclaredElementException;
+import com.predic8.membrane.core.util.xml.schema.XmlSchemaMapping;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,11 +41,9 @@ import static com.predic8.membrane.core.util.text.TextUtil.escapeControlCharsFor
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
- * @description Converts a JSON message body to XML. A body that is not JSON passes through unchanged. The result is
+ * @description <p>Converts a JSON message body to XML. A body that is not JSON passes through unchanged. The result is
  * UTF-8 encoded, begins with an XML prolog, and the Content-Type is set to <code>application/xml</code>. If the body is
- * not valid JSON the exchange is aborted with a Problem Details: <code>400</code> in the request flow and
- * <code>500</code> in the response flow. See the tutorial
- * tutorials/xml/10-JSON-to-XML.yaml.
+ * not valid JSON the exchange is aborted.</p>
  * <p>Given an XML Schema, the document follows the schema instead: the single key of the JSON
  * object names the root element, and the fields are written in the order and namespace the schema
  * declares.</p>
@@ -67,6 +65,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  *     - json2Xml:
  *         root: order
  * </code></pre>
+ * <p>See the tutorial tutorials/xml/10-JSON-to-XML.yaml.</p>
  */
 @MCElement(name = "json2Xml")
 public class Json2XmlInterceptor extends AbstractInterceptor {
