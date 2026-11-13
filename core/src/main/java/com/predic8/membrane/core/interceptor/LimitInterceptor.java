@@ -38,7 +38,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
  * If a <code>Content-Length</code> header is already present and exceeds the limit, the message is
  * rejected immediately without reading the body. Otherwise body bytes are counted lazily as they
  * stream through; the limit is applied to the <b>decoded</b> (uncompressed) byte count, so
- * Content-Encoding compression (gzip, brotli, deflate) cannot be used to bypass it.
+ * Content-Encoding compression (gzip, brotli, deflate, zstd) cannot be used to bypass it.
  * When decoding is applied, <code>Content-Encoding</code> and <code>Content-Length</code> are
  * removed from the forwarded message because the decoded size is not known ahead of time.
  * A body with a <code>Content-Encoding</code> that Membrane does not decode is forwarded encoded
