@@ -19,7 +19,6 @@ import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.springframework.beans.factory.InitializingBean;
 
 import redis.clients.jedis.*;
-import redis.clients.jedis.params.GetExParams;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -40,7 +39,6 @@ public class RedisConnector  implements InitializingBean {
     private boolean ssl = false;
     private String user;
     private String password;
-    private GetExParams params;
     private boolean useSentinels = false;
     private String masterName = "mymaster";
 
@@ -67,8 +65,6 @@ public class RedisConnector  implements InitializingBean {
                 pool = new JedisPool(jedisPoolConfig, host, port, ssl);
             }
         }
-
-        params = new GetExParams().ex(getTimeout());
     }
 
 
@@ -110,14 +106,6 @@ public class RedisConnector  implements InitializingBean {
     @MCAttribute
     public void setMinIdleConnection(int minIdleConnection) {
         this.minIdleConnection = minIdleConnection;
-    }
-
-    public GetExParams getParams() {
-        return params;
-    }
-
-    public void setParams(GetExParams params) {
-        this.params = params;
     }
 
     public int getTimeout() {
