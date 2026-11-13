@@ -299,6 +299,7 @@ Avoid expanding unrelated unsupported WSDL features. Use the repository’s targ
   - A hook `writeKeepingCopy()`. The default reads first, as today. `Body` and `ChunkedBody` tee.
   - `Http1ProtocolHandler`: `retries: 0` → `NONE`, idempotent method → `REPLAYABLE`, otherwise → `READABLE`.
   - A tee write that fails partway marks the body as streamed and clears the chunks.
+  - Known interim limitation: for `REPLAYABLE` bodies this loses the retry after a partial failure (master retries, because the body is already complete). `Partial` (below) removes it.
   - HTTP/2 and `XmlDomBody` fall back to read-first.
 - Later: send a partly sent body again. Instead of giving up on it, add a `Partial` `BodyState` between `Unread` and `Read`: the stored chunks are exactly the part taken from the stream so far, and the rest is still in the stream.
   - Sending again: write the stored chunks, then continue from the stream, storing and writing as before.
@@ -315,6 +316,7 @@ Avoid expanding unrelated unsupported WSDL features. Use the repository’s targ
   - Plain and chunked bodies: a successful write followed by a read; a write that fails partway, followed by a second write, by a read and by a discard; a read failure during the write (stays sticky, like `Failed`); observer events fire exactly once.
   - Incremental forwarding: a body source that holds back its second chunk until the first chunk has reached the backend. `wasStreamed()` alone does not prove this, since it is set before anything is written.
   - `Expect: 100-continue` with a streamed body and default retries.
+  - Idempotent request, tee write fails partway, `RetryHandler` retries: with the interim design the failure surfaces, with `Partial` the retry succeeds.
 
 ## Breaking Changes
 
