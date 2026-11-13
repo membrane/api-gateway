@@ -282,6 +282,40 @@ Avoid expanding unrelated unsupported WSDL features. Use the repository’s targ
   - Path normalization and SSRF when combining target and request path (dot segments, `//x` as a network-path reference, encoded slashes `%2F`); checks in the flow (`if`, `openapi` validation, path-based authorization) must see the path that is sent to the backend.
 - **Breaking**: interceptors and Groovy/SpEL scripts that read or write `exc.getDestinations()` in the flow see different values.
 
+### Keep the request body while sending it
+
+- Story: the HTTP/1 client keeps a copy of the request body whenever a retry is possible, which with the default `retries: 2` is always. `AbstractBody.write(out, true)` goes to `writeAlreadyRead()`, which reads the complete body into memory before the first byte goes to the backend. A slow or large upload adds its full transfer time to the latency.
+- Measured locally: a 100 KB POST, sent by the client in 10 chunks 200 ms apart, through a gateway with the default HTTP client to a mock backend (ms from the client's first byte):
+
+  | | streamed | master |
+  |---|---|---|
+  | backend receives headers / first body byte | **58** | 1,837 |
+  | client sends last body byte | 1,831 | 1,834 |
+  | backend receives last body byte | 1,831 | 1,837 |
+
+- Dropping the copy is not an option. #3705 stopped keeping it for POST and PATCH, which was safe for retries: `RetryHandler` repeats a non-idempotent method only after a failure before anything was written (RFC 9110 §9.2.2). But then the request body could no longer be read in the response flow (scripts, templates, expressions): 500 `Cannot read body after it was streamed.` instead of 200. People writing an `apis.yaml` can't be expected to know about streaming, so the request body stays readable by default (#3750, decision 1). The code stays on branch `perf/stream-non-idempotent-request-bodies` (806dddb5c).
+- Idea: keep the chunks while writing ("tee"). Each chunk read from the incoming stream is stored first and then written. The backend gets the first byte right away. Once the transfer is complete, the body is fully in memory, as it is today, so memory use does not change. Bodies written without a copy (responses to the client) stay unbuffered.
+  - `enum BodyRetention { NONE, READABLE, REPLAYABLE }` and `AbstractBody.write(out, BodyRetention)`. The `boolean` overloads become `final` and delegate.
+  - A hook `writeKeepingCopy()`. The default reads first, as today. `Body` and `ChunkedBody` tee.
+  - `Http1ProtocolHandler`: `retries: 0` → `NONE`, idempotent method → `REPLAYABLE`, otherwise → `READABLE`.
+  - A tee write that fails partway marks the body as streamed and clears the chunks.
+  - HTTP/2 and `XmlDomBody` fall back to read-first.
+- Later: send a partly sent body again. Instead of giving up on it, add a `Partial` `BodyState` between `Unread` and `Read`: the stored chunks are exactly the part taken from the stream so far, and the rest is still in the stream.
+  - Sending again: write the stored chunks, then continue from the stream, storing and writing as before.
+  - Reading: append the rest of the stream to the stored chunks.
+  - `write`, `read`, `getContent`, `getContentAsStream`, `getLength` and `discard` have to handle `Partial`. `read()` must no longer clear the chunks first.
+  - `ChunkedBody`'s own half-read mechanism (`bodyObserved` / `bodyComplete`) merges into the new state.
+  - Observers (exchange store, shadowing) must not receive stored chunks a second time when the body is sent again.
+  - A chunked body keeps its trailer when it is sent again.
+  - HTTP/2 (`StreamInfo`, `writeMessageBody`) uses the same mechanism.
+- To decide:
+  - Whether `retries: 0` keeps meaning "no copy" or also keeps one, with streaming without a copy as an explicit opt-out (#3750, decisions 2 and 3).
+  - #3706 wants to read a retained request body completely before the header fields are sent, so that a request over the limit never reaches the backend. Tee sends the header fields first. Choose between "nothing over the limit reaches the backend" and "first byte early" (#3750, decision 4).
+- Tests:
+  - Plain and chunked bodies: a successful write followed by a read; a write that fails partway, followed by a second write, by a read and by a discard; a read failure during the write (stays sticky, like `Failed`); observer events fire exactly once.
+  - Incremental forwarding: a body source that holds back its second chunk until the first chunk has reached the backend. `wasStreamed()` alone does not prove this, since it is set before anything is written.
+  - `Expect: 100-continue` with a streamed body and default retries.
+
 ## Breaking Changes
 
 - `groovy` interceptor: Return string from script does not set a content type of `text/html` anymore. User has to set the content type manually. 
