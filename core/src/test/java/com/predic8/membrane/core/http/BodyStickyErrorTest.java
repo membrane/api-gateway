@@ -118,6 +118,11 @@ class BodyStickyErrorTest {
         request.discardBody();
 
         assertFalse(request.isKeepAlive());
+
+        request.setBodyContent("replacement".getBytes());
+
+        assertFalse(request.getBody().hasFailed());
+        assertFalse(request.isKeepAlive());
     }
 
     @Test
