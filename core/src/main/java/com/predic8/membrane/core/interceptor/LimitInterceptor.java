@@ -41,7 +41,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
  * Content-Encoding compression (gzip, brotli, deflate) cannot be used to bypass it.
  * When decoding is applied, <code>Content-Encoding</code> and <code>Content-Length</code> are
  * removed from the forwarded message because the decoded size is not known ahead of time.
- * A body with any other <code>Content-Encoding</code>, e.g. <code>zstd</code>, is forwarded encoded
+ * A body with a <code>Content-Encoding</code> that Membrane does not decode is forwarded encoded
  * with its <code>Content-Encoding</code>, and the limit applies to its encoded bytes.
  * </p>
  * <p>

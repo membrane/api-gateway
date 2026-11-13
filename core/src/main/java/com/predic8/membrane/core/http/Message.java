@@ -484,8 +484,7 @@ public abstract class Message {
 
 	/**
 	 * Whether {@link MessageUtil#getContentAsStream(Message)} and {@link MessageUtil#getContent(Message)}
-	 * decode this message's Content-Encoding. For any other coding, e.g. <code>zstd</code>, they return
-	 * the encoded bytes.
+	 * decode this message's Content-Encoding. For any other coding they return the encoded bytes.
 	 */
 	public boolean isContentEncodingDecoded() {
 		return isGzip() || isDeflate() || isBrotli();

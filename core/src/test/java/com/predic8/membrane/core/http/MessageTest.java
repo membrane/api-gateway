@@ -25,7 +25,7 @@ class MessageTest {
     void isContentEncodingDecodedOnlyForTheCodingsThatAreDecoded() throws Exception {
         for (final var coding : new String[]{"gzip", "deflate", "br", "GZIP"})
             assertTrue(requestWithContentEncoding(coding).isContentEncodingDecoded(), coding);
-        for (final var coding : new String[]{"zstd", "compress", "identity", "gzip, br"})
+        for (final var coding : new String[]{"unknown", "identity", "gzip, br"})
             assertFalse(requestWithContentEncoding(coding).isContentEncodingDecoded(), coding);
         assertFalse(Request.post("/").body("plain").build().isContentEncodingDecoded());
     }

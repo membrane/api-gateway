@@ -122,16 +122,16 @@ class LimitInterceptorTest {
 
     @Test
     void bodyWithUnsupportedContentEncodingIsForwardedEncoded() throws Exception {
-        final var encoded = new byte[]{0x28, (byte) 0xb5, 0x2f, (byte) 0xfd, 0x01};
-        final var exc = Request.post("/foo").body(encoded).header("Content-Encoding", "zstd").buildExchange();
+        final var encoded = new byte[]{1, 2, 3, 4, 5};
+        final var exc = Request.post("/foo").body(encoded).header("Content-Encoding", "unknown").buildExchange();
         li.handleRequest(exc);
-        assertEquals("zstd", exc.getRequest().getHeader().getContentEncoding());
+        assertEquals("unknown", exc.getRequest().getHeader().getContentEncoding());
         assertArrayEquals(encoded, exc.getRequest().getBody().getContent());
     }
 
     @Test
     void bodyWithUnsupportedContentEncodingIsLimitedByItsEncodedLength() throws Exception {
-        final var request = Request.post("/foo").header("Content-Encoding", "zstd").build();
+        final var request = Request.post("/foo").header("Content-Encoding", "unknown").build();
         request.setBody(new Body(new ByteArrayInputStream(LARGE.getBytes(UTF_8))));
         final var exc = exchangeOf(request);
         li.handleRequest(exc);
