@@ -1,0 +1,45 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.8.1.json
+#
+# Tutorial: Scheduled Call
+#
+# Every 10 seconds, counts the products of the shop at api.predic8.de and sends the number
+# to the API on port 2000.
+#
+# 1.) Start Membrane:
+#     ./membrane.sh -c 70-Schedule-Call.yaml
+#
+# 2.) Wait 10 seconds and watch the log:
+#     Number of products: 19
+
+internal:
+  name: count-products
+  schedule:
+    interval: PT10S
+  flow:
+    - request:
+        - call:
+            url: https://api.predic8.de/shop/v2/products
+        - setBody:
+            value: '{ "products": ${$.meta.count} }'
+            language: jsonpath
+            contentType: application/json
+  target:
+    method: POST
+    url: http://localhost:2000
+
+---
+api:
+  port: 2000
+  name: Product statistics
+  flow:
+    - request:
+        - log:
+            message: "Number of products: ${$.products}"
+            language: jsonpath
+    - return:
+        status: 200
+
+# NOTE: The shop is public and writable, so the number may differ.
+#
+# See also:
+#  - 60-Scheduler.yaml for the basics of the scheduler

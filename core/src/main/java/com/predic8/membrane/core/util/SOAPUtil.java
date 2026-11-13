@@ -45,8 +45,10 @@ import java.util.List;
 import java.util.Map;
 
 import static com.predic8.membrane.annot.Constants.*;
+import static com.predic8.membrane.core.http.Header.SERVER;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_SOAP_XML;
 import static com.predic8.membrane.core.http.MimeType.TEXT_XML_UTF8;
-import static com.predic8.membrane.core.http.Response.ok;
+import static com.predic8.membrane.core.http.Response.statusCode;
 import static com.predic8.membrane.core.util.xml.XMLUtil.mapToXml;
 import static com.predic8.membrane.core.util.xml.XMLUtil.xmlNode2String;
 
@@ -78,12 +80,22 @@ public class SOAPUtil {
 
     public enum FaultCode {Server, Client}
 
+    /**
+     * A SOAP 1.1 fault is sent as text/xml, a SOAP 1.2 fault as application/soap+xml.
+     * <p>
+     * The status follows the SOAP HTTP bindings: 500 for every fault (SOAP 1.1 section 6.2),
+     * except that SOAP 1.2 sends a Sender fault with 400 (SOAP 1.2 Part 2, section 7.5.2.2).
+     */
     public static Response createSOAPFaultResponse(FaultCode code, String faultstring, Map<String,Object> details, SoapVersion version) {
         try {
-            Element fault = version == SoapVersion.SOAP12
+            final var soap12 = version == SoapVersion.SOAP12;
+            Element fault = soap12
                     ? createSOAP12Fault(code, faultstring, details)
                     : createSOAP11Fault(code, faultstring, details);
-            return ok().contentType(TEXT_XML_UTF8).body(xmlNode2String(fault)).build();
+            return statusCode(soap12 && code == FaultCode.Client ? 400 : 500)
+                    .header(SERVER, PRODUCT_NAME)
+                    .contentType(soap12 ? APPLICATION_SOAP_XML + ";charset=UTF-8" : TEXT_XML_UTF8)
+                    .body(xmlNode2String(fault)).build();
         } catch (Exception e) {
             throw new RuntimeException("Should not happen", e);
         }

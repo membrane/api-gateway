@@ -56,7 +56,7 @@ public class CustomErrorHandlingExampleTest extends AbstractSampleMembraneStartS
         .when()
             .post("http://localhost:2000/service")
         .then()
-            .statusCode(200)
+            .statusCode(500)
             .body(
                     containsString("<case>b</case>"),
                     containsString("WSDL validation of REQUEST failed!")
