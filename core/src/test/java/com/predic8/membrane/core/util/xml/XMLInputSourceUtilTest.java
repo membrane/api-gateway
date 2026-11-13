@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.util.xml;
 
+import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.util.xml.parser.HardenedXmlParser;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
@@ -93,6 +94,40 @@ class XMLInputSourceUtilTest {
 
         Document doc = HardenedXmlParser.getInstance().parse(source);
         assertEquals("Österreich", doc.getDocumentElement().getTextContent());
+    }
+
+    /**
+     * The message's charset (here ISO-8859-1) must govern decoding, not the JVM default
+     * charset, so a non-ASCII byte in the body is decoded correctly.
+     */
+    @Test
+    void getInputSourceHonorsTheMessagesCharset() throws Exception {
+        Request req = new Request();
+        req.setBodyContent("""
+                <?xml version="1.0"?>
+                <order><city>Bönnigheim</city></order>""".getBytes(ISO_8859_1));
+        req.getHeader().setContentType("text/xml; charset=ISO-8859-1");
+
+        Document doc = HardenedXmlParser.getInstance().parse(XMLInputSourceUtil.getInputSource(req));
+
+        assertEquals("Bönnigheim", doc.getElementsByTagName("city").item(0).getTextContent());
+    }
+
+    /**
+     * With no charset on the header, the XML declaration (read from the byte stream, not
+     * pre-decoded) still decides.
+     */
+    @Test
+    void getInputSourceFallsBackToTheXmlDeclarationWithoutAHeaderCharset() throws Exception {
+        Request req = new Request();
+        req.setBodyContent("""
+                <?xml version="1.0" encoding="ISO-8859-1"?>
+                <order><city>Bönnigheim</city></order>""".getBytes(ISO_8859_1));
+        req.getHeader().setContentType("text/xml");
+
+        Document doc = HardenedXmlParser.getInstance().parse(XMLInputSourceUtil.getInputSource(req));
+
+        assertEquals("Bönnigheim", doc.getElementsByTagName("city").item(0).getTextContent());
     }
 
     private static class OneByteAtATimeInputStream extends ByteArrayInputStream {

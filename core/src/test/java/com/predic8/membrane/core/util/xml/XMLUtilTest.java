@@ -16,6 +16,7 @@ package com.predic8.membrane.core.util.xml;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Node;
 
+import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.dom.DOMSource;
@@ -29,6 +30,22 @@ import static org.junit.jupiter.api.Assertions.*;
 class XMLUtilTest {
 
     private static final String TRANSFORMER_FACTORY_PROPERTY = "javax.xml.transform.TransformerFactory";
+
+    static final QName JA = new QName("a","a");
+    static final groovy.namespace.QName GA = new groovy.namespace.QName("a","a");
+
+    static final QName PREFIX_A = new QName("ns","local","a");
+    static final QName PREFIX_B = new QName("ns","local","b");
+
+    @Test
+    void groovyToJavaxQName() {
+        assertEquals(JA, XMLUtil.groovyToJavaxQName(GA));
+    }
+
+    @Test
+    void equalsIgnorePrefix() {
+        assertEquals(PREFIX_A, PREFIX_B);
+    }
 
     @Test
     void newSerializerWritesDom() throws Exception {
