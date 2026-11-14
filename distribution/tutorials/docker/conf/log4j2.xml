@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Log4j2 configuration for the Docker tutorial.
+
+    Containers log to the console, where Docker and log collectors pick the lines up.
+    One JSON object per line is easy to parse for Loki, Elasticsearch and others.
+
+    monitorInterval: changes to this file are picked up within 10 seconds, without a restart.
+    LOG_LEVEL: set the log level with an environment variable, e.g. docker run -e LOG_LEVEL=debug
+-->
+<Configuration monitorInterval="10">
+    <Appenders>
+        <Console name="STDOUT" target="SYSTEM_OUT">
+            <JsonTemplateLayout eventTemplateUri="classpath:com/predic8/membrane/core/interceptor/log/logTemplate.json"/>
+        </Console>
+    </Appenders>
+    <Loggers>
+        <Root level="${env:LOG_LEVEL:-info}">
+            <AppenderRef ref="STDOUT"/>
+        </Root>
+    </Loggers>
+</Configuration>

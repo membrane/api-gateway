@@ -48,7 +48,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Every checked-in {@code *.apis.yaml} under {@code examples/} and {@code tutorials/} must
+ * Every checked-in {@code apis.yaml}, {@code apis.yml} and {@code *.apis.yaml} under {@code examples/} and {@code tutorials/} must
  * conform to Membrane's generated JSON schema.
  * <p>
  * Membrane's YAML parser is more permissive than the schema: for example
@@ -89,13 +89,20 @@ class ApisYamlSchemaValidationTest {
                 .flatMap(root -> {
                     try (Stream<Path> paths = Files.walk(root)) {
                         return paths.filter(Files::isRegularFile)
-                                .filter(p -> p.getFileName().toString().endsWith(".apis.yaml"))
+                                .filter(p -> isApisYaml(p.getFileName().toString()))
                                 .map(Path::toString)
                                 .toList().stream();
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
                 });
+    }
+
+    /**
+     * {@code apis.yaml}/{@code apis.yml} as Membrane looks them up by default, or {@code *.apis.yaml}.
+     */
+    private static boolean isApisYaml(String fileName) {
+        return fileName.equals("apis.yaml") || fileName.equals("apis.yml") || fileName.endsWith(".apis.yaml");
     }
 
     @ParameterizedTest

@@ -1,0 +1,17 @@
+# Step 20 of the Docker tutorial, see 20-Docker-Compose.md
+#
+# Start:  docker compose up
+# Stop:   Ctrl+C, then: docker compose down
+services:
+  membrane:
+    image: predic8/membrane:7.8.1
+    ports:
+      - "2000:2000"
+    volumes:
+      # Replaces the conf/ folder of the image, so conf/ here needs its own log4j2.xml
+      - ./conf:/opt/membrane/conf
+    # Variables read by conf/apis.yaml and conf/log4j2.xml, see 40-Environment-Variables.md
+    # environment:
+    #   BACKEND_URL: https://api.predic8.de
+    #   LOG_LEVEL: debug
+    restart: unless-stopped
