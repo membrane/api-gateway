@@ -156,6 +156,9 @@ public class ConsistentVersionNumbers {
 		// in the tree (tutorials/operation/grafana, .../loki) start Prometheus/Grafana,
 		// not Membrane, and are none of this rewriter's business.
 		handleDockerScriptFile(new File(baseDirectory.getAbsolutePath(), "/distribution/router/docker-compose.yml"), versionTransformer);
+		for (final var file : List.of("Dockerfile", "docker-compose.yml", "10-Mount-Configuration.md")) {
+			handleDockerScriptFile(new File(baseDirectory.getAbsolutePath(), "/distribution/tutorials/docker/" + file), versionTransformer);
+		}
 	}
 
 	private static void handleConstants(File file, VersionTransformer versionTransformer) throws Exception {
