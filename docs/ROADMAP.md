@@ -97,6 +97,8 @@ PRIO 3:
 
 ## Membrane 8.0.0 (Java 25)
 
+- Remove Interceptors:
+  - StatisticsCSVInterceptor, StatisticsJDBCInterceptor: They are obsolete; use Prometheus metrics or the access log instead.
 - change all maven packages to membrane-api.io
   - Needs changes at maven central
 - ReplaceInterceptor: TB
@@ -185,7 +187,7 @@ PRIO 3:
   - Story: a `template` whose `location` ends in `.xml` is rendered by Groovy's `XmlTemplateEngine`, which escapes only the template's own text. Values inserted with `${}`, also in attributes, and with `<gsp:expression>` are not escaped. All other templates use the adapted `StreamingTemplateEngine`, which escapes `${}` and `<%= %>` for the content type.
   - Fix: drop `XmlTemplateEngine`. A `.xml` file only sets the content type to `application/xml` (as `.json` does for JSON) and is rendered by `StreamingTemplateEngine` with XML escaping. The output is no longer re-indented (`pretty: true` formats it). Check whether the built-in functions (`xpath()`, `user()`, ...) work in `.xml` files today; only the streaming engine sets the `fn` delegate.
   - Raw XML stays possible as with inline templates: `<% out << x %>`, or a DOM node or node list, e.g. from `xpath()`.
-  - **Breaking**: `<gsp:scriptlet>` and `<gsp:expression>` are no longer processed. If a template declares the `http://groovy.codehaus.org/2005/gsp` namespace, fail at startup with a `ConfigurationException` that shows the rewrite (`<gsp:scriptlet>` → `<% %>`, `<gsp:expression>` → `${}`), so it is never output literally. Values that inserted markup through `${}` are escaped now. Comments are no longer removed. Rewrite `distribution/examples/templating/xml/template.xml`, or drop it with the examples.
+  - **Breaking**: `<gsp:scriptlet>` and `<gsp:expression>` are no longer processed. If a template declares the `http://groovy.codehaus.org/2005/gsp` namespace, fail at startup with a `ConfigurationException` that shows the rewrite (`<gsp:scriptlet>` → `<% %>`, `<gsp:expression>` → `${}`), so it is never output literally. Values that inserted markup through `${}` are escaped now. Comments are no longer removed.
   - Until then, the `template` reference docs say that values in `.xml` files are not escaped.
 - Reorganisation of *Util* classes. Check for duplicates and right place.
 - WSDL validation: change the default of the `validator` attribute `headers` from `none` to `bound`
