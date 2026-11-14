@@ -302,6 +302,24 @@ class RetryHandlerTest {
             assertEquals(200, exc.getResponse().getStatusCode());
         }
 
+        /**
+         * Once every node has sent a malformed response, the retries left would go to a node that
+         * already answered that way, so the last exception is thrown.
+         */
+        @Test
+        void malformedResponseIsNotRetriedOnANodeAgain() throws Exception {
+            final var exc = get("/foo").buildExchange();
+            exc.setDestinations(List.of("http://node1.example.com/", "http://node2.example.com/"));
+            final var destinations = new ArrayList<String>();
+
+            assertThrows(MalformedHeaderException.class, () -> rh.executeWithRetries(exc, (e, dest, attempt) -> {
+                destinations.add(dest);
+                throw new MalformedHeaderException("Conflicting Content-Length");
+            }));
+
+            assertEquals(List.of("http://node1.example.com/", "http://node2.example.com/"), destinations);
+        }
+
         @Test
         void malformedResponseIsNotRetriedForPost() throws Exception {
             final var exc = post("/foo").buildExchange();

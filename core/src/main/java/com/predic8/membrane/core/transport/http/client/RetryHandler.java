@@ -220,11 +220,12 @@ public class RetryHandler {
             return true;
         }
         // The response has invalid framing or a transfer coding Membrane does not decode. The node would
-        // answer the same way again, so only another node is worth a try. The request has been processed,
-        // so that is only safe for an idempotent method.
+        // answer the same way again, so only a node not yet asked is worth a try. Nodes are taken round-robin,
+        // so after attempt #(nodes - 1) every node has been asked. The request has been processed, so a retry
+        // is only safe for an idempotent method.
         if (e instanceof MalformedHeaderException) {
             log.debug("{} sent a malformed response: {}", dest, e.getMessage());
-            return !isIdempotent(exc.getRequest().getMethod()) || !hasMultipleNodes(exc);
+            return !isIdempotent(exc.getRequest().getMethod()) || attempt + 1 >= exc.getDestinations().size();
         }
         // switch with throwable is only possible in Java 21 with preview features
         if (e instanceof MalformedURLException || e instanceof URISyntaxException) {
