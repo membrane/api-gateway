@@ -11,7 +11,7 @@ Have **10 minutes** and want to solve a task with Membrane? These hands-on examp
 
 Groovy and JavaScript scripting is covered by the [scripting tutorials](../tutorials/scripting).
 
-Samples of scripting with JSONPath, XPath and the expression language you can find in the [templating](templating#template---transforming-messages) folders or in the [orchestration tutorials](../tutorials/orchestration).
+Samples of scripting with JSONPath, XPath and the expression language you can find in the [JSON](../tutorials/json), [XML](../tutorials/xml) and [orchestration tutorials](../tutorials/orchestration).
 
 ## [Security](security#samples-for-api-security-with-membrane-api-gateway)
 
@@ -50,23 +50,23 @@ Samples of scripting with JSONPath, XPath and the expression language you can fi
 
 ## [Message Transformation](message-transformation#message-transformation)
 
-* Create dynamic API responses using [templates](templating) (JSON, XML, Text)
+* Create dynamic API responses using [templates](../tutorials/getting-started/110-Template.yaml)
 * Generic JSON to XML and XML to JSON
 * Replacing with Regex
-* Transformation with Javascript
+* Transformation with [JavaScript](../tutorials/transformation/50-JavaScript-JSON-to-JSON-Transformation.yaml)
 
 ## [Legacy Integration for XML and Web Services](web-services-soap#web-services-soap)
 
 ### [XML](xml#xml-examples)
 
-* XML validation and XSLT transformation
+* [XML validation and XSLT transformation](../tutorials/xml)
 * Create XML plugins with DOM or StAX
 
 ### [Web Services with SOAP](web-services-soap#web-services-soap)
 
-* Validation of SOAP messages against WSDL
+* [Validation of SOAP messages against WSDL](../tutorials/soap/40-WSDL-Message-Validation.yaml)
 * REST to SOAP conversion and migration
-* Sample SOAP service for testing
+* [Sample SOAP service for testing](../tutorials/soap/10-Sample-SOAP-Service.yaml)
 * How to mock **SOAP services** 
 * Add SOAP headers
 * SOAP versioning
@@ -90,9 +90,9 @@ Samples of scripting with JSONPath, XPath and the expression language you can fi
 
 * OpenTelemetry & Prometheus
 
-### [Logging](logging#logging-requests-and-responses)
+### [Logging](../tutorials/logging)
 
-* Log into console, CSV or databases
+* Access logs
 * Structured JSON logs
 
 ## [API Testing](api-testing)
