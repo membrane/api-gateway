@@ -15,8 +15,10 @@
 package com.predic8.membrane.core.transport.http.client;
 
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.MalformedHeaderException;
 import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.http.UnsupportedTransferCodingException;
 import com.predic8.membrane.core.transport.http.ConnectTimeoutException;
 import com.predic8.membrane.core.transport.http.HttpClientStatusEventBus;
 import com.predic8.membrane.core.transport.http.HttpClientStatusEventListener;
@@ -262,6 +264,69 @@ class RetryHandlerTest {
             final var mock = new RetryableExchangeCallMock(new ReadingBodyException(new IOException("Connection reset"), ok().build()));
 
             assertThrows(ReadingBodyException.class, () -> rh.executeWithRetries(exc, mock));
+            assertEquals(1, mock.attempts);
+        }
+
+        /**
+         * A response with invalid framing or an unsupported transfer coding is rejected the same way on
+         * every attempt, so the same node is not asked again.
+         */
+        @Test
+        void malformedResponseIsNotRetriedOnOneNode() throws Exception {
+            final var exc = get("/foo").buildExchange();
+            exc.setDestinations(List.of("http://node1.example.com/"));
+            final var mock = new RetryableExchangeCallMock(new UnsupportedTransferCodingException("gzip, chunked"));
+
+            assertThrows(UnsupportedTransferCodingException.class, () -> rh.executeWithRetries(exc, mock));
+            assertEquals(1, mock.attempts);
+        }
+
+        /**
+         * Another node might send a well-formed response, so an idempotent request is sent there.
+         */
+        @Test
+        void malformedResponseIsRetriedOnAnotherNode() throws Exception {
+            final var exc = get("/foo").buildExchange();
+            exc.setDestinations(List.of("http://node1.example.com/", "http://node2.example.com/"));
+            final var destinations = new ArrayList<String>();
+
+            rh.executeWithRetries(exc, (e, dest, attempt) -> {
+                destinations.add(dest);
+                if (attempt == 0)
+                    throw new MalformedHeaderException("Conflicting Content-Length");
+                e.setResponse(ok().build());
+                return false;
+            });
+
+            assertEquals(List.of("http://node1.example.com/", "http://node2.example.com/"), destinations);
+            assertEquals(200, exc.getResponse().getStatusCode());
+        }
+
+        /**
+         * Once every node has sent a malformed response, the retries left would go to a node that
+         * already answered that way, so the last exception is thrown.
+         */
+        @Test
+        void malformedResponseIsNotRetriedOnANodeAgain() throws Exception {
+            final var exc = get("/foo").buildExchange();
+            exc.setDestinations(List.of("http://node1.example.com/", "http://node2.example.com/"));
+            final var destinations = new ArrayList<String>();
+
+            assertThrows(MalformedHeaderException.class, () -> rh.executeWithRetries(exc, (e, dest, attempt) -> {
+                destinations.add(dest);
+                throw new MalformedHeaderException("Conflicting Content-Length");
+            }));
+
+            assertEquals(List.of("http://node1.example.com/", "http://node2.example.com/"), destinations);
+        }
+
+        @Test
+        void malformedResponseIsNotRetriedForPost() throws Exception {
+            final var exc = post("/foo").buildExchange();
+            exc.setDestinations(List.of("http://node1.example.com/", "http://node2.example.com/"));
+            final var mock = new RetryableExchangeCallMock(new MalformedHeaderException("Conflicting Content-Length"));
+
+            assertThrows(MalformedHeaderException.class, () -> rh.executeWithRetries(exc, mock));
             assertEquals(1, mock.attempts);
         }
 

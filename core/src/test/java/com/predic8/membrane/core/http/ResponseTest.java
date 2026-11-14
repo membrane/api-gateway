@@ -647,19 +647,19 @@ public class ResponseTest {
 
     /**
      * The two field lines combine to "gzip, chunked", whose final coding is "chunked", so the
-     * response is chunked-framed. Reading only the first field line makes Membrane frame it as a
-     * plain body and hand the chunk sizes through as content (#3327).
+     * framing is valid and the response is rejected for its gzip coding, which Membrane does not
+     * decode (#3789). Reading only the first field line would reject it as unframed instead (#3327).
      */
     @Test
-    void transferEncodingEndingInChunkedAcrossSeveralFieldsIsChunkedFramed() throws Exception {
-        assertInstanceOf(ChunkedBody.class, readResponse("""
+    void transferCodingOtherThanChunkedAcrossSeveralFieldsIsRejected() {
+        assertThrowsExactly(UnsupportedTransferCodingException.class, () -> readResponse("""
                 HTTP/1.1 200 Ok
                 Transfer-Encoding: gzip
                 Transfer-Encoding: chunked
 
                 0
 
-                """).getBody());
+                """));
     }
 
     /**
@@ -669,7 +669,7 @@ public class ResponseTest {
      */
     @Test
     void emptyTransferEncodingIsRejected() {
-        assertThrows(MalformedHeaderException.class, () -> readResponse("""
+        assertThrowsExactly(MalformedHeaderException.class, () -> readResponse("""
                 HTTP/1.1 200 Ok
                 Transfer-Encoding:
                 Content-Length: 3
@@ -684,7 +684,7 @@ public class ResponseTest {
      */
     @Test
     void chunkedWithContentLengthIsRejected() {
-        assertThrows(MalformedHeaderException.class, () -> readResponse("""
+        assertThrowsExactly(MalformedHeaderException.class, () -> readResponse("""
                 HTTP/1.1 200 Ok
                 Transfer-Encoding: chunked
                 Content-Length: 0
@@ -698,7 +698,7 @@ public class ResponseTest {
 
     @Test
     void chunkedAcrossSeveralFieldsWithContentLengthIsRejected() {
-        assertThrows(MalformedHeaderException.class, () -> readResponse("""
+        assertThrowsExactly(MalformedHeaderException.class, () -> readResponse("""
                 HTTP/1.1 302 Found
                 Location: https://example.com/
                 Transfer-Encoding: gzip

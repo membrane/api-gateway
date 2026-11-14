@@ -17,6 +17,7 @@ package com.predic8.membrane.core.transport.http.client;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.MalformedHeaderException;
 import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.transport.http.ConnectTimeoutException;
 import com.predic8.membrane.core.transport.http.EOFWhileReadingFirstLineException;
@@ -217,6 +218,14 @@ public class RetryHandler {
         if (e instanceof ReadingBodyException rbe && rbe.belongsTo(exc.getRequest())) {
             log.debug("Request body could not be read: {}", e.getMessage());
             return true;
+        }
+        // The response has invalid framing or a transfer coding Membrane does not decode. The node would
+        // answer the same way again, so only a node not yet asked is worth a try. Nodes are taken round-robin,
+        // so after attempt #(nodes - 1) every node has been asked. The request has been processed, so a retry
+        // is only safe for an idempotent method.
+        if (e instanceof MalformedHeaderException) {
+            log.debug("{} sent a malformed response: {}", dest, e.getMessage());
+            return !isIdempotent(exc.getRequest().getMethod()) || attempt + 1 >= exc.getDestinations().size();
         }
         // switch with throwable is only possible in Java 21 with preview features
         if (e instanceof MalformedURLException || e instanceof URISyntaxException) {
