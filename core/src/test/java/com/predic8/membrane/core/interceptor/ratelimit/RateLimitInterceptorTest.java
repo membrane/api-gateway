@@ -21,6 +21,8 @@ import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.router.DummyTestRouter;
 import com.predic8.membrane.core.util.URIFactory;
@@ -33,8 +35,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URISyntaxException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -107,10 +111,11 @@ public class RateLimitInterceptorTest {
 
 		// LazyRateLimit currently shares one reset time across all keys, masking issue #3387.
 		// Keep its real request counting, but distinguish the API-key and remote-IP reset times.
+		final var keyDeadline = LocalDateTime.now().plusSeconds(42);
 		var strategy = new LazyRateLimit(ofMinutes(1), 1) {
 			@Override
-			public String getLimitReset(String key) {
-				return "key:customer-a".equals(key) ? "42" : "0";
+			public LocalDateTime getServiceAvailableAgainTime(String key) {
+				return "key:customer-a".equals(key) ? keyDeadline : LocalDateTime.now();
 			}
 		};
 		var strategyField = RateLimitInterceptor.class.getDeclaredField("strategy");
@@ -127,9 +132,11 @@ public class RateLimitInterceptorTest {
 		assertEquals(429, exc.getResponse().getStatusCode());
 
 		var detail = om.readTree(exc.getResponse().getBodyAsStringDecoded()).get("detail").asText();
+		final var reset = exc.getResponse().getHeader().getFirstValue(X_RATELIMIT_RESET);
 		assertAll(
-				() -> assertEquals("42", exc.getResponse().getHeader().getFirstValue(X_RATELIMIT_RESET)),
-				() -> assertEquals("The quota of the rate limit is exceeded. Try again in 42 seconds.", detail)
+				// 41 if a second has begun since the deadline was set
+				() -> assertTrue(List.of("41", "42").contains(reset), reset),
+				() -> assertEquals("The quota of the rate limit is exceeded. Try again in %s seconds.".formatted(reset), detail)
 		);
 	}
 
@@ -205,6 +212,144 @@ public class RateLimitInterceptorTest {
 		calls.set(0);
 		assertEquals(RETURN, interceptor.handleRequest(exc));
 		assertEquals(1, calls.get());
+	}
+
+	@Test
+	void successfulResponseCarriesRemainingQuota() {
+		final var router = new DummyTestRouter();
+		final var limiter = limiter(router, 3);
+
+		final var first = sendThroughFlow(router, limiter, backend());
+		final var second = sendThroughFlow(router, limiter, backend());
+
+		final var h = second.getResponse().getHeader();
+		assertAll(
+				() -> assertEquals("2", first.getResponse().getHeader().getFirstValue(X_RATELIMIT_REMAINING)),
+				() -> assertEquals("1", h.getFirstValue(X_RATELIMIT_REMAINING)),
+				() -> assertEquals("3", h.getFirstValue(X_RATELIMIT_LIMIT)),
+				() -> assertEquals("PT1M", h.getFirstValue(X_RATELIMIT_DURATION)),
+				() -> assertTrue(parseLong(h.getFirstValue(X_RATELIMIT_RESET)) > 0),
+				() -> assertNull(h.getFirstValue(RETRY_AFTER))
+		);
+	}
+
+	@Test
+	void resetTimeIsCountedDownWhileTheBackendIsCalled() throws Exception {
+		final var router = new DummyTestRouter();
+		final var limiter = limiter(router, 3);
+		final var deadline = LocalDateTime.now().plusSeconds(10);
+		final var strategyField = RateLimitInterceptor.class.getDeclaredField("strategy");
+		strategyField.setAccessible(true);
+		strategyField.set(limiter, new LazyRateLimit(ofMinutes(1), 3) {
+			@Override
+			public LocalDateTime getServiceAvailableAgainTime(String key) {
+				return deadline;
+			}
+		});
+		final var slowBackend = new AbstractInterceptor() {
+			@Override
+			public Outcome handleRequest(Exchange exc) {
+				try {
+					sleep(2000);
+				} catch (InterruptedException e) {
+					throw new RuntimeException(e);
+				}
+				exc.setResponse(Response.ok().build());
+				return RETURN;
+			}
+		};
+
+		final var exc = sendThroughFlow(router, limiter, slowBackend);
+
+		assertTrue(parseLong(exc.getResponse().getHeader().getFirstValue(X_RATELIMIT_RESET)) <= 8);
+	}
+
+	@Test
+	void quotaHeadersReplaceThoseOfTheBackend() {
+		final var router = new DummyTestRouter();
+		final var backend = new AbstractInterceptor() {
+			@Override
+			public Outcome handleRequest(Exchange exc) {
+				exc.setResponse(Response.ok().header(X_RATELIMIT_LIMIT, "1000").build());
+				return RETURN;
+			}
+		};
+
+		final var exc = sendThroughFlow(router, limiter(router, 3), backend);
+
+		assertEquals("3", exc.getResponse().getHeader().getValuesAsString(X_RATELIMIT_LIMIT));
+	}
+
+	@Test
+	void rejectionShowsNoRemainingRequests() {
+		final var interceptor = new RateLimitInterceptor(ofMinutes(1), 1);
+		interceptor.init(new DummyTestRouter());
+
+		final var exc = new Request.Builder().buildExchange();
+		exc.setRemoteAddrIp("192.0.2.1");
+		assertEquals(CONTINUE, interceptor.handleRequest(exc));
+		assertEquals(RETURN, interceptor.handleRequest(exc));
+
+		assertEquals("0", exc.getResponse().getHeader().getFirstValue(X_RATELIMIT_REMAINING));
+	}
+
+	@Test
+	void limiterWithFewestRemainingRequestsIsReported() {
+		final var router = new DummyTestRouter();
+		final var global = limiter(router, 10);
+		final var api = limiter(router, 2);
+
+		final var exc = sendThroughFlow(router, global, api, backend());
+
+		final var h = exc.getResponse().getHeader();
+		assertEquals("2", h.getFirstValue(X_RATELIMIT_LIMIT));
+		assertEquals("1", h.getFirstValue(X_RATELIMIT_REMAINING));
+	}
+
+	@Test
+	void rejectingLimiterIsReportedThroughEarlierLimiters() {
+		final var router = new DummyTestRouter();
+		final var global = limiter(router, 2);
+		final var api = limiter(router, 1);
+
+		sendThroughFlow(router, global, api, backend());
+		// Both limiters have no requests left now, but only the API limiter rejects
+		final var exc = sendThroughFlow(router, global, api, backend());
+
+		final var h = exc.getResponse().getHeader();
+		assertAll(
+				() -> assertEquals(429, exc.getResponse().getStatusCode()),
+				() -> assertEquals("1", h.getFirstValue(X_RATELIMIT_LIMIT)),
+				() -> assertEquals("0", h.getFirstValue(X_RATELIMIT_REMAINING)),
+				() -> assertNotNull(h.getFirstValue(RETRY_AFTER))
+		);
+	}
+
+	private static RateLimitInterceptor limiter(DummyTestRouter router, int requestLimit) {
+		final var limiter = new RateLimitInterceptor(ofMinutes(1), requestLimit);
+		limiter.init(router);
+		return limiter;
+	}
+
+	private static Interceptor backend() {
+		return new AbstractInterceptor() {
+			@Override
+			public Outcome handleRequest(Exchange exc) {
+				exc.setResponse(Response.ok().build());
+				return RETURN;
+			}
+		};
+	}
+
+	/**
+	 * Runs the request and response flow like the gateway does, so a limiter only sees the response if it
+	 * declares the response flow.
+	 */
+	private static Exchange sendThroughFlow(DummyTestRouter router, Interceptor... interceptors) {
+		final var exc = new Request.Builder().buildExchange();
+		exc.setRemoteAddrIp("192.0.2.1");
+		router.getFlowController().invokeRequestHandlers(exc, List.of(interceptors));
+		return exc;
 	}
 
 	@Test
@@ -338,24 +483,11 @@ public class RateLimitInterceptorTest {
 		interceptor.setKeyExpression("properties.jwt.sub");
 		interceptor.init(new DummyTestRouter());
 
-		var exc = new Request.Builder().buildExchange();
-
 		// done by JwtAuthInterceptor
-		var claims = new JwtClaims();
+		final var claims = new JwtClaims();
 		claims.setSubject("fooman");
-		exc.getProperties().put("jwt", claims);
 
-		range(0, interceptor.getRequestLimit())
-				.parallel()
-				.forEach(i -> {
-					try {
-						assertEquals(CONTINUE, interceptor.handleRequest(exc));
-					} catch (Exception e) {
-						throw new RuntimeException(e);
-					}
-				});
-
-		assertEquals(RETURN, interceptor.handleRequest(exc));
+		assertJwtSubjectIsLimited(interceptor, claims);
 	}
 
 	@Test
@@ -364,25 +496,29 @@ public class RateLimitInterceptorTest {
 		interceptor.setKeyExpression("properties.jwt.sub");
 		interceptor.init(new DummyTestRouter());
 
-		var exc = new Request.Builder().buildExchange();
-
 		// done by JwtAuthInterceptor
-		var claims = Map.of(
+		final var claims = Map.of(
 				"sub", "fooman"
 		);
-		exc.getProperties().put("jwt", claims);
 
+		assertJwtSubjectIsLimited(interceptor, claims);
+	}
+
+	/**
+	 * Every request gets its own exchange, as in the gateway. The limiter writes to the exchange.
+	 */
+	private static void assertJwtSubjectIsLimited(RateLimitInterceptor interceptor, Object claims) {
 		range(0, interceptor.getRequestLimit())
 				.parallel()
-				.forEach(i -> {
-					try {
-						assertEquals(CONTINUE, interceptor.handleRequest(exc));
-					} catch (Exception e) {
-						throw new RuntimeException(e);
-					}
-				});
+				.forEach(i -> assertEquals(CONTINUE, interceptor.handleRequest(jwtExchange(claims))));
 
-		assertEquals(RETURN, interceptor.handleRequest(exc));
+		assertEquals(RETURN, interceptor.handleRequest(jwtExchange(claims)));
+	}
+
+	private static Exchange jwtExchange(Object claims) {
+		final var exc = new Request.Builder().buildExchange();
+		exc.getProperties().put("jwt", claims);
+		return exc;
 	}
 
 	@Test

@@ -32,11 +32,15 @@ class LazyRateLimitTest {
     }
 
     @Test
-    void isRequestLimitReached() {
-        IntStream.range(0, limiter.getRequestLimit())
+    void countRequest() {
+        final var counts = IntStream.range(0, limiter.getRequestLimit())
             .parallel()
-            .forEach(i -> assertFalse(limiter.isRequestLimitReached("foo")));
+            .map(i -> limiter.countRequest("foo"))
+            .sorted()
+            .toArray();
 
-        assertTrue(limiter.isRequestLimitReached("foo"));
+        assertArrayEquals(IntStream.rangeClosed(1, requestLimit).toArray(), counts);
+        assertEquals(requestLimit + 1, limiter.countRequest("foo"));
+        assertEquals(1, limiter.countRequest("bar"));
     }
 }

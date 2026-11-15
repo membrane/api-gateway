@@ -33,7 +33,7 @@ public class LazyRateLimit extends RateLimitStrategy {
 	}
 
 	@Override
-	public boolean isRequestLimitReached(String key) {
+	public int countRequest(String key) {
 		synchronized (lock) {
 			if (java.time.LocalDateTime.now().isAfter(nextCleanup)) {
 				requestCounterFromKey.clear();
@@ -41,13 +41,7 @@ public class LazyRateLimit extends RateLimitStrategy {
 			}
 		}
 
-		addRequestEntry(key);
-		return requestCounterFromKey.get(key).get() > requestLimit;
-	}
-
-	private void addRequestEntry(String addr) {
-		requestCounterFromKey.computeIfAbsent(addr, s -> new AtomicInteger());
-		requestCounterFromKey.get(addr).incrementAndGet();
+		return requestCounterFromKey.computeIfAbsent(key, s -> new AtomicInteger()).incrementAndGet();
 	}
 
 	private void incrementNextCleanupTime() {
