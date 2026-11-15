@@ -98,6 +98,51 @@ class ChunkedDecoderTest {
         assertEquals(0, is.available()); // Check that everything is read
     }
 
+    @Test
+    void whitespaceBeforeChunkExtensionIsAccepted() throws IOException {
+        final var decoder = new ChunkedDecoder(stream("3 \t;name=\"quoted value\"\r\nabc\r\n0\r\n\r\n"));
+
+        assertEquals("abc", text(decoder.next()));
+        assertNull(decoder.next());
+    }
+
+    /**
+     * RFC 9112 §7.1: every chunk-size line, chunk data and the last chunk end with CRLF, and the
+     * chunk size is 1*HEXDIG. Any leniency here lets a front proxy and Membrane disagree about
+     * where the body ends.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "1\r\naXX0\r\n\r\n",        // data not followed by CRLF
+            "1\r\na\n0\r\n\r\n",        // data followed by bare LF
+            "1\r\na\r",                 // EOF after the CR following the data
+            "1\na\r\n0\r\n\r\n",        // chunk-size line ends with bare LF
+            "1\rXa\r\n0\r\n\r\n",       // CR in chunk-size line followed by something else than LF
+            "1;ext\na\r\n0\r\n\r\n",    // chunk extension ends with bare LF
+            "1;e\rx\r\na\r\n0\r\n\r\n", // bare CR inside a chunk extension
+            "1;e\u0000x\r\na\r\n0\r\n\r\n", // control character inside a chunk extension
+            "1;ext",                    // EOF inside a chunk extension
+            "+1\r\na\r\n0\r\n\r\n",     // signed chunk size
+            "-0\r\n\r\n",               // signed last chunk
+            " 1\r\na\r\n0\r\n\r\n",     // leading whitespace
+            "1 \r\na\r\n0\r\n\r\n",     // trailing whitespace without chunk extension
+            "1 1\r\na\r\n0\r\n\r\n",    // whitespace inside the chunk size
+            "0",                        // EOF inside the chunk-size line
+            "0\r",                      // EOF after the CR of the chunk-size line
+            "0\r\n",                    // EOF instead of the trailer
+            "0\r\n\r",                  // EOF after the CR of the last line
+            "0\r\n\rX",                 // CR of the last line followed by something else than LF
+            "0\r\n\n",                  // last line is a bare LF
+    })
+    void invalidFramingIsRejected(String raw) {
+        final var decoder = new ChunkedDecoder(stream(raw));
+
+        assertThrows(IOException.class, () -> {
+            //noinspection StatementWithEmptyBody
+            while (decoder.next() != null) ;
+        });
+    }
+
     private static ByteArrayInputStream stream(String raw) {
         return new ByteArrayInputStream(raw.getBytes(US_ASCII));
     }
@@ -128,7 +173,6 @@ class ChunkedDecoderTest {
                     Arguments.of("ff",   255),        // lowercase hex
                     Arguments.of("FF",   255),        // uppercase hex
                     Arguments.of("3d2F", 15663),      // mixed case
-                    Arguments.of("  a  ", 10),        // whitespace trimmed
                     Arguments.of(Integer.toHexString(MEMBRANE_CORE_HTTP_BODY_MAXCHUNKLENGTH_DEFAULT),
                                  MEMBRANE_CORE_HTTP_BODY_MAXCHUNKLENGTH_DEFAULT)  // exactly at limit
             );
@@ -181,7 +225,7 @@ class ChunkedDecoderTest {
         // -- non-hex characters -----------------------------------------------
 
         @ParameterizedTest
-        @ValueSource(strings = {"xyz", "1g", "0x1a", "12 34", "1.0"})
+        @ValueSource(strings = {"xyz", "1g", "0x1a", "12 34", "1.0", "  a  ", "+1", "-0"})
         void nonHexInputIsRejected(String input) {
             assertThrows(IOException.class, () -> parseChunkSize(buf(input)));
         }

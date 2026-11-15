@@ -18,11 +18,14 @@ import com.predic8.membrane.core.util.EndOfStreamException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HexFormat;
 
 import static com.predic8.membrane.annot.Constants.*;
 import static com.predic8.membrane.core.util.ByteUtil.readByteArray;
+import static java.util.HexFormat.isHexDigit;
 
 /**
  * Decodes the framing of a body with "Transfer-Encoding: chunked": chunk sizes, chunk extensions, the
@@ -32,10 +35,12 @@ import static com.predic8.membrane.core.util.ByteUtil.readByteArray;
  * Reads exactly the body from the stream and nothing after it, as the next message on the connection
  * may follow.
  */
-@SuppressWarnings("ResultOfMethodCallIgnored")
 final class ChunkedDecoder {
 
     private static final Logger log = LoggerFactory.getLogger(ChunkedDecoder.class);
+
+    private static final int CR = '\r';
+    private static final int LF = '\n';
 
     /**
      * Maximum hex digits in a chunk-size field. Prevents Long.parseLong from receiving a
@@ -73,8 +78,8 @@ final class ChunkedDecoder {
             return null;
         }
         var chunk = new Chunk(readByteArray(in, chunkSize));
-        in.read(); // CR
-        in.read(); // LF
+        expect(in, CR);
+        expect(in, LF);
         return chunk;
     }
 
@@ -87,10 +92,14 @@ final class ChunkedDecoder {
     }
 
     static Header readTrailer(InputStream in) throws IOException {
-        in.mark(2);
-        if (in.read() == 13) {
-            in.read(); // LF
+        in.mark(1);
+        var c = read(in);
+        if (c == CR) {
+            expect(in, LF);
             return null;
+        }
+        if (c == LF) {
+            throw invalidFraming();
         }
         in.reset();
         try {
@@ -100,24 +109,17 @@ final class ChunkedDecoder {
         }
     }
 
+    /**
+     * Reads a chunk-size line, RFC 9112 §7.1:
+     * <pre><code>chunk-size [ chunk-ext ] CRLF
+     * chunk-size = 1*HEXDIG</code></pre>
+     * The chunk extensions are skipped.
+     */
     static int readChunkSize(InputStream in) throws IOException {
         var buffer = new StringBuilder();
 
         int c;
-        while ((c = in.read()) != -1) {
-            if (c == 13) { // CR — end of chunk-size line
-                in.read(); // consume LF
-                break;
-            }
-
-            // chunk-ext: ignore everything from ';' through the terminating LF
-            if (c == ';') {
-                //noinspection StatementWithEmptyBody
-                while ((c = in.read()) != 10 && c != -1)
-                    ;
-                break; // LF consumed; chunk-size line is done
-            }
-
+        while (isHexDigit(c = read(in))) {
             if (buffer.length() >= MAX_CHUNK_SIZE_HEX_DIGITS) {
                 log.info("Chunk-size {} exceeds limit: {}",buffer.length(), MAX_CHUNK_SIZE_HEX_DIGITS);
                 throw new IOException("Chunk-size exceeds limit");
@@ -125,13 +127,51 @@ final class ChunkedDecoder {
             buffer.append((char) c);
         }
 
+        if (c == ' ' || c == '\t' || c == ';') {
+            c = skipChunkExtensions(in, c);
+        }
+        if (c != CR) {
+            throw invalidFraming();
+        }
+        expect(in, LF);
+
         return parseChunkSize(buffer);
     }
 
+    /**
+     * Skips the chunk extensions up to the CR that ends the chunk-size line:
+     * <pre><code>chunk-ext = *( BWS ";" BWS chunk-ext-name [ BWS "=" BWS chunk-ext-val ] )</code></pre>
+     * Only the characters are checked, not the grammar of names and values, so that no line
+     * terminator other than CRLF is accepted.
+     *
+     * @param c the first character of the chunk extensions
+     * @return the CR that ends the chunk-size line
+     */
+    private static int skipChunkExtensions(InputStream in, int c) throws IOException {
+        // Whitespace (BWS) after the chunk size is only allowed before a chunk extension
+        while (c == ' ' || c == '\t') {
+            c = read(in);
+        }
+        if (c != ';') {
+            throw invalidFraming();
+        }
+        while ((c = read(in)) != CR) {
+            // HTAB, VCHAR, SP and obs-text are the characters of tokens and quoted-strings
+            if (c != '\t' && (c < 0x20 || c == 0x7F)) {
+                throw invalidFraming();
+            }
+        }
+        return c;
+    }
+
     static int parseChunkSize(StringBuilder buffer) throws IOException {
-        var hex = buffer.toString().trim();
+        var hex = buffer.toString();
         if (hex.isEmpty()) {
             throw new IOException("Empty chunk-size field");
+        }
+        if (!hex.chars().allMatch(HexFormat::isHexDigit)) {
+            // Integer.parseInt would also accept a sign
+            throw new IOException("Invalid chunk-size value: %s".formatted(hex));
         }
         try {
             int size = Integer.parseInt(hex, 16);
@@ -142,5 +182,32 @@ final class ChunkedDecoder {
         } catch (NumberFormatException e) {
             throw new IOException("Invalid chunk-size value: %s".formatted(hex), e);
         }
+    }
+
+    private static void expect(InputStream in, int expected) throws IOException {
+        if (read(in) != expected) {
+            throw invalidFraming();
+        }
+    }
+
+    /**
+     * @throws EOFException if the stream ends, as it always ends inside the body
+     */
+    private static int read(InputStream in) throws IOException {
+        var c = in.read();
+        if (c == -1) {
+            throw new EOFException("Stream ended inside a chunked body");
+        }
+        return c;
+    }
+
+    /**
+     * HTTP libraries frame chunks correctly, so invalid framing points to an attack rather than to a
+     * mistake a sender could fix: the exception carries no details, and the attempt is logged at
+     * info like other attack detections.
+     */
+    private static IOException invalidFraming() {
+        log.info("Rejected invalid chunked framing, possibly an HTTP request smuggling attempt.");
+        return new IOException("Invalid chunked framing");
     }
 }
