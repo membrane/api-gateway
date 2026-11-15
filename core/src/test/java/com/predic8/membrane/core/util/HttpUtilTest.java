@@ -150,7 +150,13 @@ public class HttpUtilTest {
 
         @Test
         void lineTooLong() throws IOException {
-            assertEquals(List.of("tooLong:" + "a".repeat(8_092), "rest:" + "a".repeat(908) + "\r\n"), readAll("a".repeat(9_000) + "\r\n"));
+            assertEquals(List.of("tooLong:" + "a".repeat(8_192), "rest:" + "a".repeat(808) + "\r\n"), readAll("a".repeat(9_000) + "\r\n"));
+        }
+
+        @Test
+        void defaultLimitIs8192() throws IOException {
+            assertEquals(8_191, readLine(new ByteArrayInputStream(("a".repeat(8_191) + "\r\n").getBytes(ISO_8859_1))).length());
+            assertThrows(LineTooLongException.class, () -> readLine(new ByteArrayInputStream(("a".repeat(8_192) + "\r\n").getBytes(ISO_8859_1))));
         }
 
         @ParameterizedTest
@@ -161,7 +167,7 @@ public class HttpUtilTest {
         }
 
         private static List<String> readAll(String content) throws IOException {
-            return readAll(content, 8092);
+            return readAll(content, 8192);
         }
 
         /**

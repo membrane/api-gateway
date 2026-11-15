@@ -62,7 +62,7 @@ public class HttpUtil {
 
 	static {
 		String maxLineLength = System.getProperty("membrane.core.http.body.maxlinelength");
-		MAX_LINE_LENGTH = maxLineLength == null ? 8092 : Integer.parseInt(maxLineLength);
+		MAX_LINE_LENGTH = maxLineLength == null ? 8192 : Integer.parseInt(maxLineLength);
 	}
 
 	/**
