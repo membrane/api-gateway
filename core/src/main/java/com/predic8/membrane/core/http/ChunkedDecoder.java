@@ -62,19 +62,28 @@ final class ChunkedDecoder {
     private final InputStream in;
     private Header trailer;
 
+    /**
+     * Set once the last chunk and the trailer have been read; the stream then belongs to the next message.
+     */
+    private boolean done;
+
     ChunkedDecoder(InputStream in) {
         this.in = in;
     }
 
     /**
      * @return the next chunk, with the delimiter after it consumed, or <code>null</code> once the last
-     *         chunk and the trailer have been read
+     *         chunk and the trailer have been read, on this and every later call
      * @throws IOException if reading fails or the framing is invalid
      */
     Chunk next() throws IOException {
+        if (done) {
+            return null;
+        }
         int chunkSize = readChunkSize(in);
         if (chunkSize == 0) {
             trailer = readTrailer(in);
+            done = true;
             return null;
         }
         var chunk = new Chunk(readByteArray(in, chunkSize));

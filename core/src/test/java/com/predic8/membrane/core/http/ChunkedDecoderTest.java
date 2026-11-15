@@ -47,6 +47,19 @@ class ChunkedDecoderTest {
     }
 
     @Test
+    void nextAfterTheEndReadsNothing() throws IOException {
+        final var in = stream("1\r\na\r\n0\r\nX: y\r\n\r\nDELETE /next HTTP/1.1\r\n");
+        final var decoder = new ChunkedDecoder(in);
+
+        assertEquals("a", text(decoder.next()));
+        assertNull(decoder.next());
+        assertNull(decoder.next());
+        assertNull(decoder.next());
+        assertEquals("y", decoder.getTrailer().getFirstValue("X"));
+        assertEquals("DELETE /next HTTP/1.1\r\n", new String(in.readAllBytes(), US_ASCII), "the next message must stay in the stream");
+    }
+
+    @Test
     void chunkExtensionIsIgnored() throws IOException {
         final var decoder = new ChunkedDecoder(stream("3;name=value\r\nabc\r\n0\r\n\r\n"));
 
