@@ -15,18 +15,15 @@
 package com.predic8.membrane.core.http;
 
 import com.predic8.membrane.core.util.ByteUtil;
-import com.predic8.membrane.core.util.EndOfStreamException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.List;
 
 import static com.predic8.membrane.annot.Constants.*;
 import static com.predic8.membrane.core.http.ChunkedBodyTransferer.ZERO;
-import static com.predic8.membrane.core.util.ByteUtil.readByteArray;
 import static java.lang.Long.toHexString;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -37,117 +34,34 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * <p>
  * This class internally reads body chunks piece by piece. When accessing the body using streams, not all chunks
  * might therefore be read immediately.
+ * <p>
+ * The framing is decoded by {@link ChunkedDecoder}; this class decides whether the chunks are retained,
+ * forwarded or dropped.
  */
-@SuppressWarnings("ResultOfMethodCallIgnored")
 public class ChunkedBody extends AbstractBody {
 
     private static final Logger log = LoggerFactory.getLogger(ChunkedBody.class.getName());
 
-    /**
-     * Maximum hex digits in a chunk-size field. Prevents Long.parseLong from receiving a
-     * value that overflows a long (would require >8 digits), with a margin.
-     */
-    private static final int MAX_CHUNK_SIZE_HEX_DIGITS = 8;
-
-    /**
-     * Hard cap on a single chunk in bytes
-     * Without this, a sender can trigger a 2 GiB byte[] allocation with just "7FFFFFFF\r\n"
-     */
-    private static int MAX_CHUNK_BYTES;
-
-    static {
-        var v = System.getProperty(MEMBRANE_CORE_HTTP_BODY_MAXCHUNKLENGTH);
-        MAX_CHUNK_BYTES = v == null ? MEMBRANE_CORE_HTTP_BODY_MAXCHUNKLENGTH_DEFAULT : Integer.parseInt(v);
-    }
-
-    private final InputStream inputStream;
+    private final ChunkedDecoder decoder;
     private long lengthStreamed;
     private Header trailer;
 
     public ChunkedBody(InputStream in) {
-        inputStream = in;
+        decoder = new ChunkedDecoder(in);
     }
 
-    private static List<Chunk> readChunks(InputStream in) throws IOException {
-        List<Chunk> chunks = new ArrayList<>();
-        int chunkSize;
-        while ((chunkSize = readChunkSize(in)) > 0) {
-            chunks.add(new Chunk(readByteArray(in, chunkSize)));
-            //noinspection ResultOfMethodCallIgnored
-            in.read(); // CR
-            //noinspection ResultOfMethodCallIgnored
-            in.read(); // LF
-        }
-        return chunks;
-    }
-
+    /**
+     * Reads the trailer that follows the last chunk.
+     */
     protected static Header readTrailer(InputStream in) throws IOException {
-        in.mark(2);
-        if (in.read() == 13) {
-            in.read(); // LF
-            return null;
-        }
-        in.reset();
-        try {
-            return new Header(in);
-        } catch (EndOfStreamException e) {
-            throw new IOException(e);
-        }
+        return ChunkedDecoder.readTrailer(in);
     }
 
-    private void readChunksAndDrop(InputStream is) throws IOException {
-        int chunkSize;
-        while ((chunkSize = readChunkSize(is)) > 0) {
-            Chunk chunk = new Chunk(readByteArray(is, chunkSize));
-            for (MessageObserver observer : observers)
-                observer.bodyChunk(chunk);
-            is.read(); // CR
-            is.read(); // LF
-        }
-    }
-
+    /**
+     * Reads a chunk-size line, ignoring chunk extensions.
+     */
     public static int readChunkSize(InputStream in) throws IOException {
-        var buffer = new StringBuilder();
-
-        int c;
-        while ((c = in.read()) != -1) {
-            if (c == 13) { // CR — end of chunk-size line
-                in.read(); // consume LF
-                break;
-            }
-
-            // chunk-ext: ignore everything from ';' through the terminating LF
-            if (c == ';') {
-                //noinspection StatementWithEmptyBody
-                while ((c = in.read()) != 10 && c != -1)
-                    ;
-                break; // LF consumed; chunk-size line is done
-            }
-
-            if (buffer.length() >= MAX_CHUNK_SIZE_HEX_DIGITS) {
-                log.info("Chunk-size {} exceeds limit: {}",buffer.length(), MAX_CHUNK_SIZE_HEX_DIGITS);
-                throw new IOException("Chunk-size exceeds limit");
-            }
-            buffer.append((char) c);
-        }
-
-        return parseChunkSize(buffer);
-    }
-
-    static int parseChunkSize(StringBuilder buffer) throws IOException {
-        var hex = buffer.toString().trim();
-        if (hex.isEmpty()) {
-            throw new IOException("Empty chunk-size field");
-        }
-        try {
-            int size = Integer.parseInt(hex, 16);
-            if (size < 0 || size > MAX_CHUNK_BYTES) {
-                throw new IOException("Chunk size %d exceeds limit of %d bytes".formatted(size, MAX_CHUNK_BYTES));
-            }
-            return size;
-        } catch (NumberFormatException e) {
-            throw new IOException("Invalid chunk-size value: %s".formatted(hex), e);
-        }
+        return ChunkedDecoder.readChunkSize(in);
     }
 
     @Override
@@ -177,12 +91,15 @@ public class ChunkedBody extends AbstractBody {
 
     @Override
     protected void readLocal() throws IOException {
-        List<Chunk> chunkList = readChunks(inputStream);
+        // the observers get the chunks only once the whole body has been read
+        final var chunkList = new ArrayList<Chunk>();
+        Chunk chunk;
+        while ((chunk = decoder.next()) != null)
+            chunkList.add(chunk);
         chunks.addAll(chunkList);
-        trailer = readTrailer(inputStream);
-        for (Chunk chunk : chunkList)
-            for (MessageObserver observer : observers)
-                observer.bodyChunk(chunk);
+        trailer = decoder.getTrailer();
+        for (Chunk c : chunkList)
+            notifyChunk(c);
     }
 
     /**
@@ -195,8 +112,10 @@ public class ChunkedBody extends AbstractBody {
 
     @Override
     protected DropOutcome dropContent() throws IOException {
-        readChunksAndDrop(inputStream);
-        trailer = readTrailer(inputStream);
+        Chunk chunk;
+        while ((chunk = decoder.next()) != null)
+            notifyChunk(chunk);
+        trailer = decoder.getTrailer();
         return DropOutcome.DRAINED;
     }
 
@@ -224,16 +143,12 @@ public class ChunkedBody extends AbstractBody {
                     return null;
                 throwIfFailed();
                 try {
-                    int chunkSize = readChunkSize(inputStream);
-                    if (chunkSize > 0) {
-                        Chunk c = new Chunk(readByteArray(inputStream, chunkSize));
-                        inputStream.read(); // CR
-                        inputStream.read(); // LF
-                        for (MessageObserver observer : observers)
-                            observer.bodyChunk(c);
-                        return c;
+                    final var chunk = decoder.next();
+                    if (chunk != null) {
+                        notifyChunk(chunk);
+                        return chunk;
                     }
-                    trailer = readTrailer(inputStream);
+                    trailer = decoder.getTrailer();
 
                     // After the trailer(0 + CRLF + CRLF) is read we mark the body read
                     markAsRead();
@@ -252,24 +167,18 @@ public class ChunkedBody extends AbstractBody {
     @Override
     protected void writeStreamed(AbstractBodyTransferer out) {
         log.debug("writeStreamed");
-        int chunkSize;
         try {
-            while ((chunkSize = readChunkSize(inputStream)) > 0) {
-                Chunk chunk = new Chunk(readByteArray(inputStream, chunkSize));
+            Chunk chunk;
+            while ((chunk = decoder.next()) != null) {
                 try {
                     out.write(chunk);
                 } catch (IOException e) {
                     throw new WritingBodyException(e);
                 }
-                for (MessageObserver observer : observers)
-                    observer.bodyChunk(chunk);
-                //noinspection ResultOfMethodCallIgnored
-                inputStream.read(); // CR
-                //noinspection ResultOfMethodCallIgnored
-                inputStream.read(); // LF
-                lengthStreamed += chunkSize;
+                notifyChunk(chunk);
+                lengthStreamed += chunk.getLength();
             }
-            trailer = readTrailer(inputStream);
+            trailer = decoder.getTrailer();
         } catch (IOException e) { // note that we only want to catch the IOExceptions associated to *reading* the body
             throw fail(e);
         }
@@ -279,6 +188,11 @@ public class ChunkedBody extends AbstractBody {
             throw new WritingBodyException(e);
         }
         markAsRead();
+    }
+
+    private void notifyChunk(Chunk chunk) {
+        for (MessageObserver observer : observers)
+            observer.bodyChunk(chunk);
     }
 
     protected int getRawLength() {

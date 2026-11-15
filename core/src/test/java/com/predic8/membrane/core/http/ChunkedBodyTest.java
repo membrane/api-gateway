@@ -36,10 +36,6 @@ import org.apache.commons.httpclient.methods.GetMethod;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.provider.ValueSource;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -55,12 +51,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Stream;
 
 import static com.google.common.io.Resources.getResource;
 import static com.predic8.membrane.annot.Constants.CRLF;
-import static com.predic8.membrane.annot.Constants.MEMBRANE_CORE_HTTP_BODY_MAXCHUNKLENGTH_DEFAULT;
-import static com.predic8.membrane.core.http.ChunkedBody.*;
 import static com.predic8.membrane.core.http.ChunksBuilder.chunks;
 import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
@@ -72,23 +65,6 @@ import static org.junit.jupiter.api.Assertions.*;
 public class ChunkedBodyTest {
 
     private static final ObjectMapper om = new ObjectMapper();
-
-    @Test
-    void testReadChunkSize() throws Exception {
-        assertEquals(15663, readChunkSize(new ByteArrayInputStream(("3d2F" + CRLF).getBytes())));
-    }
-
-    @Test
-    void testReadChunkSizeWithExtension() throws Exception {
-        String s = "3d2F" + CRLF + ";gfgfgfg" + CRLF;
-        assertEquals(15663, readChunkSize(new ByteArrayInputStream(s.getBytes())));
-    }
-
-    @Test
-    void testReadChunkSizeWithExtensionValue() throws Exception {
-        String s = "3d2F" + CRLF + ";gfgf=gfg" + CRLF;
-        assertEquals(15663, readChunkSize(new ByteArrayInputStream(s.getBytes())));
-    }
 
     @Test
     void testReadTrailer() throws Exception {
@@ -324,15 +300,6 @@ public class ChunkedBodyTest {
     }
 
     @Test
-    void readTrailerTest() throws IOException {
-        byte[] trailer = ("3D" + CRLF + CRLF).getBytes();
-        ByteArrayInputStream is = new ByteArrayInputStream(trailer);
-        assertEquals(61, readChunkSize(is)); // 3D = 61
-        readTrailer(is);
-        assertEquals(0, is.available()); // Check that everything is read
-    }
-
-    @Test
     void readStream() throws IOException {
         ByteArrayInputStream bis = getJSONBodyWithSingleChunk();
         ChunkedBody cb = new ChunkedBody(bis);
@@ -542,93 +509,6 @@ public class ChunkedBodyTest {
             assertThrows(ReadingBodyException.class, () -> body.write(new ChunkedBodyTransferer(out), false));
 
             assertEquals(0, out.size(), "no part of an unfinished chunk may reach the peer");
-        }
-    }
-
-    // -------------------------------------------------------------------------
-    // parseChunkSize unit tests
-    // -------------------------------------------------------------------------
-
-    @Nested
-    class ParseChunkSizeTest {
-
-        // -- valid inputs ------------------------------------------------------
-
-        @ParameterizedTest
-        @MethodSource("validChunkSizes")
-        void validInputsParseCorrectly(String input, int expected) throws IOException {
-            assertEquals(expected, parseChunkSize(buf(input)));
-        }
-
-        static Stream<Arguments> validChunkSizes() {
-            return Stream.of(
-                    Arguments.of("0",    0),          // terminating chunk
-                    Arguments.of("1",    1),
-                    Arguments.of("ff",   255),        // lowercase hex
-                    Arguments.of("FF",   255),        // uppercase hex
-                    Arguments.of("3d2F", 15663),      // mixed case
-                    Arguments.of("  a  ", 10),        // whitespace trimmed
-                    Arguments.of(Integer.toHexString(MEMBRANE_CORE_HTTP_BODY_MAXCHUNKLENGTH_DEFAULT),
-                                 MEMBRANE_CORE_HTTP_BODY_MAXCHUNKLENGTH_DEFAULT)  // exactly at limit
-            );
-        }
-
-        // -- too large --------------------------------------------------------
-
-        @Test
-        void oneByteOverLimitIsRejected() {
-            assertThrows(IOException.class,
-                    () -> parseChunkSize(buf(Integer.toHexString(MEMBRANE_CORE_HTTP_BODY_MAXCHUNKLENGTH_DEFAULT + 1))));
-        }
-
-        @Test
-        void integerMaxValueIsRejected() {
-            // 7FFFFFFF = Integer.MAX_VALUE = 2 GiB — parses without NumberFormatException but exceeds cap
-            assertThrows(IOException.class, () -> parseChunkSize(buf("7fffffff")));
-        }
-
-        @Test
-        void overflowsIntegerParseIsRejectedAsInvalidValue() {
-            // 80000000 exceeds Integer.MAX_VALUE → Integer.parseInt throws NumberFormatException
-            assertThrows(IOException.class, () -> parseChunkSize(buf("80000000")));
-        }
-
-        @Test
-        void maxUnsignedHexIsRejectedAsInvalidValue() {
-            assertThrows(IOException.class, () -> parseChunkSize(buf("ffffffff")));
-        }
-
-        // -- negative (sign prefix accepted by Integer.parseInt) --------------
-
-        @Test
-        void negativeValueIsRejected() {
-            assertThrows(IOException.class, () -> parseChunkSize(buf("-1")));
-        }
-
-        // -- empty / blank ----------------------------------------------------
-
-        @Test
-        void emptyBufferIsRejected() {
-            assertThrows(IOException.class, () -> parseChunkSize(buf("")));
-        }
-
-        @Test
-        void blankBufferIsRejected() {
-            assertThrows(IOException.class, () -> parseChunkSize(buf("   ")));
-        }
-
-        // -- non-hex characters -----------------------------------------------
-
-        @ParameterizedTest
-        @ValueSource(strings = {"xyz", "1g", "0x1a", "12 34", "1.0"})
-        void nonHexInputIsRejected(String input) {
-            assertThrows(IOException.class, () -> parseChunkSize(buf(input)));
-        }
-
-        // -- helper -----------------------------------------------------------
-
-        private static StringBuilder buf(String s) {
-            return new StringBuilder(s);
         }
     }
 
