@@ -67,11 +67,9 @@ public abstract class BodyCollectingMessageObserver implements MessageObserver {
         if (body.isContentRetained()) {
             return body;
         }
-        final var collected = new Body(new BodyInputStream(chunks), storedSize);
-        // The content is in memory anyway. Reading it lets it count towards the estimated heap size
-        // of the message, which exchange stores evict by.
-        collected.read();
-        return collected;
+        // Already read, so that the content, which is in memory anyway, counts towards the estimated
+        // heap size of the message, which exchange stores evict by.
+        return new Body(chunks);
     }
 
     public boolean isTruncated() {

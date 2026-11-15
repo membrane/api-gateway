@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 
 import static com.predic8.membrane.annot.Constants.*;
 
@@ -92,6 +93,19 @@ public class Body extends AbstractBody {
 		chunks.clear();
 		chunks.add(new Chunk(content));
 		markAsRead(); // because we do not have something to read
+	}
+
+	/**
+	 * Creates a body from content already in memory as chunks. The chunks are shared, not copied; later
+	 * changes to the list do not affect the body. The body is read from the start.
+	 *
+	 * @param content the complete body
+	 */
+	Body(List<Chunk> content) {
+		this.inputStream = null;
+		this.length = content.stream().mapToLong(Chunk::getLength).sum();
+		chunks.addAll(content);
+		markAsRead();
 	}
 
 	/**

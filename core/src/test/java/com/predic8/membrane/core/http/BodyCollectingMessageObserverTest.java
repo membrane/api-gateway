@@ -86,6 +86,25 @@ class BodyCollectingMessageObserverTest {
         assertEquals(sizeWithoutBody + CONTENT.length(), snapshot.estimateHeapSize());
     }
 
+    /**
+     * The body rebuilt from the collected chunks shares them instead of copying them, so a snapshot
+     * holds its content in memory once, as counted by the estimated heap size.
+     */
+    @Test
+    void collectedBodySharesCollectedChunks() {
+        final var discarded = body();
+        discarded.discard();
+        final var observer = new CollectingObserver();
+        final var chunk = new Chunk(CONTENT.getBytes(UTF_8));
+        observer.bodyChunk(chunk);
+
+        final var collected = observer.getBody(discarded);
+
+        assertTrue(collected.isRead());
+        assertSame(chunk, collected.chunks.getFirst());
+        assertEquals(CONTENT, new String(collected.getContent(), UTF_8));
+    }
+
     private static Body body() {
         return new Body(new ByteArrayInputStream(CONTENT.getBytes(UTF_8)), CONTENT.length());
     }
