@@ -80,13 +80,13 @@ final class ChunkedDecoder {
         if (done) {
             return null;
         }
-        int chunkSize = readChunkSize(in);
+        final var chunkSize = readChunkSize(in);
         if (chunkSize == 0) {
             trailer = readTrailer(in);
             done = true;
             return null;
         }
-        var chunk = new Chunk(readByteArray(in, chunkSize));
+        final var chunk = new Chunk(readByteArray(in, chunkSize));
         expect(in, CR);
         expect(in, LF);
         return chunk;
@@ -162,7 +162,7 @@ final class ChunkedDecoder {
      * The chunk extensions are skipped.
      */
     static int readChunkSize(InputStream in) throws IOException {
-        var buffer = new StringBuilder();
+        final var buffer = new StringBuilder();
 
         int c;
         while (isHexDigit(c = read(in))) {
@@ -217,7 +217,7 @@ final class ChunkedDecoder {
     }
 
     static int parseChunkSize(StringBuilder buffer) throws IOException {
-        var hex = buffer.toString();
+        final var hex = buffer.toString();
         if (hex.isEmpty()) {
             throw new IOException("Empty chunk-size field");
         }
@@ -227,7 +227,7 @@ final class ChunkedDecoder {
         }
         try {
             int size = Integer.parseInt(hex, 16);
-            if (size < 0 || size > MAX_CHUNK_BYTES) {
+            if (size > MAX_CHUNK_BYTES) {
                 throw new IOException("Chunk size %d exceeds limit of %d bytes".formatted(size, MAX_CHUNK_BYTES));
             }
             return size;
@@ -246,7 +246,7 @@ final class ChunkedDecoder {
      * @throws EOFException if the stream ends, as it always ends inside the body
      */
     private static int read(InputStream in) throws IOException {
-        var c = in.read();
+        final var c = in.read();
         if (c == -1) {
             throw new EOFException("Stream ended inside a chunked body");
         }

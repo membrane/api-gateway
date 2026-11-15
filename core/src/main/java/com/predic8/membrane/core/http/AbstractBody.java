@@ -471,7 +471,6 @@ public abstract class AbstractBody {
 		return retention == Retention.RETAINED;
 	}
 
-
 	public Header getTrailer() {
 		return null;
 	}
