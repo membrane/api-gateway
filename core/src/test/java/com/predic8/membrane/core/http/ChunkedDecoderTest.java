@@ -85,6 +85,24 @@ class ChunkedDecoderTest {
     }
 
     @Test
+    void trailerLineAtTheLimitIsRejected() {
+        assertThrows(IOException.class, () -> readTrailer(stream("X: yz\r\n\r\n"), 5));
+    }
+
+    /**
+     * Like {@link com.predic8.membrane.core.util.HttpUtil#readLine(java.io.InputStream)}, a line length
+     * limit of zero or less means no limit.
+     */
+    @ParameterizedTest
+    @ValueSource(ints = {0, -1})
+    void nonPositiveLineLengthLimitMeansNoLimit(int maxLineLength) throws IOException {
+        final var trailer = readTrailer(stream("X: y\r\n\r\n"), maxLineLength);
+
+        assertNotNull(trailer);
+        assertEquals("y", trailer.getFirstValue("X"));
+    }
+
+    @Test
     void oversizedChunkIsRejected() {
         final var decoder = new ChunkedDecoder(stream("7FFFFFFF\r\n"));
 
@@ -127,8 +145,7 @@ class ChunkedDecoderTest {
 
     /**
      * RFC 9112 §7.1: every chunk-size line, chunk data and the last chunk end with CRLF, and the
-     * chunk size is 1*HEXDIG. Any leniency here lets a front proxy and Membrane disagree about
-     * where the body ends.
+     * chunk size is 1*HEXDIG.
      */
     @ParameterizedTest
     @ValueSource(strings = {

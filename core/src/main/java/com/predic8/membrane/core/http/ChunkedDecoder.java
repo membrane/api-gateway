@@ -99,7 +99,16 @@ final class ChunkedDecoder {
      * @throws IOException if reading fails, a line does not end with CRLF or a field line is malformed
      */
     static Header readTrailer(InputStream in) throws IOException {
-        var line = readTrailerLine(in);
+        return readTrailer(in, MAX_LINE_LENGTH);
+    }
+
+    /**
+     * @param maxLineLength a line of this many chars or more is rejected; zero or less means no limit,
+     *                      as for {@link com.predic8.membrane.core.util.HttpUtil#readLine(InputStream)}
+     * @see #readTrailer(InputStream)
+     */
+    static Header readTrailer(InputStream in, int maxLineLength) throws IOException {
+        var line = readTrailerLine(in, maxLineLength);
         if (line.isEmpty()) {
             return null;
         }
@@ -110,19 +119,18 @@ final class ChunkedDecoder {
             } catch (MalformedHeaderException e) {
                 throw new IOException(e.getMessage(), e);
             }
-        } while (!(line = readTrailerLine(in)).isEmpty());
+        } while (!(line = readTrailerLine(in, maxLineLength)).isEmpty());
         return trailer;
     }
 
     /**
      * Reads a trailer line up to its CRLF. The trailer is not read with {@link com.predic8.membrane.core.util.HttpUtil#readLine(InputStream)}, which
      * accepts a bare LF as RFC 9112 §2.2 allows for the header section. Inside a chunked body every line must end
-     * with CRLF like the chunk-size lines, so that a proxy in front of Membrane cannot end the body at a different
-     * place than Membrane does.
+     * with CRLF like the chunk-size lines, as RFC 9112 §7.1 requires.
      *
      * @return the line without its CRLF
      */
-    private static String readTrailerLine(InputStream in) throws IOException {
+    private static String readTrailerLine(InputStream in, int maxLineLength) throws IOException {
         final var line = new StringBuilder();
         int c;
         while ((c = read(in)) != CR) {
@@ -130,8 +138,8 @@ final class ChunkedDecoder {
                 throw invalidFraming();
             }
             line.append((char) c);
-            if (line.length() >= MAX_LINE_LENGTH) {
-                throw new IOException("Trailer line exceeds the limit of %d characters".formatted(MAX_LINE_LENGTH));
+            if (maxLineLength > 0 && line.length() >= maxLineLength) {
+                throw new IOException("Trailer line exceeds the limit of %d characters".formatted(maxLineLength));
             }
         }
         expect(in, LF);
@@ -231,12 +239,11 @@ final class ChunkedDecoder {
     }
 
     /**
-     * HTTP libraries frame chunks correctly, so invalid framing points to an attack rather than to a
-     * mistake a sender could fix: the exception carries no details, and the attempt is logged at
-     * info like other attack detections.
+     * Correct HTTP implementations never produce invalid framing, so the exception carries no details
+     * and the rejection is logged at info.
      */
     private static IOException invalidFraming() {
-        log.info("Rejected invalid chunked framing, possibly an HTTP request smuggling attempt.");
+        log.info("Rejected invalid chunked framing.");
         return new IOException("Invalid chunked framing");
     }
 }
