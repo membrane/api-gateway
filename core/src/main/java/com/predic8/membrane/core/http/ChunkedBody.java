@@ -154,9 +154,9 @@ public class ChunkedBody extends AbstractBody {
     public void read() {
         throwIfFailed(); // before the drain below: it would re-read the dead stream
         try {
-            if (bodyObserved && !bodyComplete)
+            if (lazyReadStarted && !isRead())
                 ByteUtil.readStream(getContentAsStream());
-            bodyObserved = true;
+            lazyReadStarted = true;
             super.read();
         } catch (IOException e) {
             throw fail(e);
@@ -167,17 +167,12 @@ public class ChunkedBody extends AbstractBody {
     public void write(AbstractBodyTransferer out, boolean retainCopy) {
         throwIfFailed(); // before the drain below: it would re-read the dead stream
         try {
-            if (bodyObserved && !bodyComplete)
+            if (lazyReadStarted && !isRead())
                 ByteUtil.readStream(getContentAsStream());
         } catch (IOException e) {
             throw fail(e);
         }
         super.write(out, retainCopy);
-    }
-
-    @Override
-    protected void onMarkedAsRead() {
-        bodyComplete = true;
     }
 
     @Override
@@ -205,15 +200,18 @@ public class ChunkedBody extends AbstractBody {
         markAsRead();
     }
 
-    boolean bodyObserved = false;
-    boolean bodyComplete = false;
+    /**
+     * Whether reading has started: the observers got <code>bodyRequested</code> and {@link #chunks} may
+     * hold the first part of the body, which a later read must continue instead of starting over.
+     */
+    private boolean lazyReadStarted = false;
 
     public InputStream getContentAsStream() {
         throwIfFailed(); // before chunks.clear() below, which would drop the partially read body
         if (wasStreamed())
             throw new IllegalStateException("Cannot read body after it was streamed.");
-        if (!bodyObserved) {
-            bodyObserved = true;
+        if (!lazyReadStarted) {
+            lazyReadStarted = true;
             for (MessageObserver observer : observers)
                 observer.bodyRequested(this);
             chunks.clear();
@@ -222,7 +220,7 @@ public class ChunkedBody extends AbstractBody {
         return new BodyInputStream(chunks) {
             @Override
             protected Chunk readNextChunk() throws IOException {
-                if (bodyComplete)
+                if (isRead())
                     return null;
                 throwIfFailed();
                 try {

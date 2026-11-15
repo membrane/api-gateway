@@ -242,21 +242,10 @@ public abstract class AbstractBody {
 			case Unread ignored -> state = READ;
 		}
 
-		onMarkedAsRead();
-
 		for (MessageObserver observer : observers)
 			observer.bodyComplete(this);
 
 		observers.clear();
-	}
-
-	/**
-	 * Hook for subclasses that keep their own completion state. Runs only when the body actually
-	 * transitioned to read, so such state can never contradict {@link #isRead()} - in particular it
-	 * stays unset for a body whose read failed.
-	 */
-	protected void onMarkedAsRead() {
-		// no additional state to update
 	}
 
 	/**
