@@ -272,6 +272,20 @@ public class BodyTest {
 	}
 
 	/**
+	 * Writing a discarded body would send nothing after a header that announces its length.
+	 */
+	@Test
+	void discardedBodyCannotBeWritten() {
+		final var body = new Body(new ByteArrayInputStream("content".getBytes(UTF_8)), "content".length());
+		body.discard();
+		final var out = new ByteArrayOutputStream();
+
+		assertThrows(IllegalStateException.class, () -> body.write(new PlainBodyTransferer(out), false));
+		assertThrows(IllegalStateException.class, () -> body.write(new PlainBodyTransferer(out), true));
+		assertEquals(0, out.size());
+	}
+
+	/**
 	 * The bytes after the declared length belong to the next message on the connection; consuming them
 	 * would desync it.
 	 */

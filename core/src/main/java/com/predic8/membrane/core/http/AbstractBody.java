@@ -343,6 +343,9 @@ public abstract class AbstractBody {
 		// never (re-)transmit a body whose read failed: that would send a truncated body
 		if (state instanceof Failed(var cause))
 			throw cause;
+		// nor one that was discarded: nothing or only its start is left, the header may announce more
+		if (retention == Retention.DISCARDED)
+			throw new IllegalStateException("Cannot write body after it was discarded.");
 		try {
 			if (!isRead() && !retainCopy) {
 				if (wasStreamed())

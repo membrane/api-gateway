@@ -399,6 +399,21 @@ public class ChunkedBodyTest {
         assertEquals("first".length(), body.getLength());
     }
 
+    /**
+     * Writing a body discarded after a partial read would send only its start as if it were complete.
+     */
+    @Test
+    void bodyDiscardedAfterAPartialReadCannotBeWritten() throws IOException {
+        final var body = new ChunkedBody(new ByteArrayInputStream(chunks().add("first").add("second").build()));
+        assertEquals('f', body.getContentAsStream().read());
+        body.discard();
+        final var out = new ByteArrayOutputStream();
+
+        assertThrows(IllegalStateException.class, () -> body.write(new ChunkedBodyTransferer(out), false));
+        assertThrows(IllegalStateException.class, () -> body.write(new ChunkedBodyTransferer(out), true));
+        assertEquals(0, out.size());
+    }
+
     @Test
     void readStreamWith2ConcatenatedJSON() throws IOException {
         ByteArrayInputStream bis = createBodyWith2ConcatenatedJSONs();
