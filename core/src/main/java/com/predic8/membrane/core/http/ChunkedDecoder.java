@@ -181,13 +181,19 @@ final class ChunkedDecoder {
      * Only the characters are checked, not the grammar of names and values, so that no line
      * terminator other than CRLF is accepted.
      *
-     * @param c the first character of the chunk extensions
+     * Whitespace after the chunk size that is not followed by a chunk extension is skipped as well.
+     *
+     * @param c the first character of the chunk extensions, or the whitespace in front of them
      * @return the CR that ends the chunk-size line
      */
     private static int skipChunkExtensions(InputStream in, int c) throws IOException {
-        // Whitespace (BWS) after the chunk size is only allowed before a chunk extension
+        // RFC 9112 allows whitespace (BWS) after the chunk size only before a chunk extension. Old servers
+        // pad the chunk size with whitespace before the CR; that is unambiguous, so it is accepted too.
         while (c == ' ' || c == '\t') {
             c = read(in);
+        }
+        if (c == CR) {
+            return c;
         }
         if (c != ';') {
             throw invalidFraming();

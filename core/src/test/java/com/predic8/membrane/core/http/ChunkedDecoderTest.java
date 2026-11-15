@@ -144,6 +144,19 @@ class ChunkedDecoderTest {
     }
 
     /**
+     * Not allowed by RFC 9112, but sent by old servers that pad the chunk size. The chunk is
+     * re-encoded when it is forwarded, so the padding does not reach the next hop.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"3 \r\nabc\r\n0 \t\r\n\r\n", "3\t\r\nabc\r\n0\r\n\r\n"})
+    void whitespaceAfterChunkSizeIsAccepted(String raw) throws IOException {
+        final var decoder = new ChunkedDecoder(stream(raw));
+
+        assertEquals("abc", text(decoder.next()));
+        assertNull(decoder.next());
+    }
+
+    /**
      * RFC 9112 §7.1: every chunk-size line, chunk data and the last chunk end with CRLF, and the
      * chunk size is 1*HEXDIG.
      */
@@ -161,7 +174,6 @@ class ChunkedDecoderTest {
             "+1\r\na\r\n0\r\n\r\n",     // signed chunk size
             "-0\r\n\r\n",               // signed last chunk
             " 1\r\na\r\n0\r\n\r\n",     // leading whitespace
-            "1 \r\na\r\n0\r\n\r\n",     // trailing whitespace without chunk extension
             "1 1\r\na\r\n0\r\n\r\n",    // whitespace inside the chunk size
             "0",                        // EOF inside the chunk-size line
             "0\r",                      // EOF after the CR of the chunk-size line
