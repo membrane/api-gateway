@@ -62,6 +62,30 @@ class BodyCollectingMessageObserverTest {
         assertEquals(CONTENT, observer.collected);
     }
 
+    /**
+     * {@code limitedMemoryExchangeStore} evicts by the estimated heap size, which counts only read
+     * bodies. The content collected from a discarded body is held in memory, so it must be counted.
+     */
+    @Test
+    void snapshotOfDiscardedBodyCountsCollectedContent() {
+        final var request = new Request();
+        request.setBody(body());
+        final Request snapshot = request.createSnapshot(() -> {}, ERROR, -1);
+        final var sizeWithoutBody = snapshot.estimateHeapSize();
+        request.getBody().discard();
+        assertEquals(sizeWithoutBody + CONTENT.length(), snapshot.estimateHeapSize());
+    }
+
+    @Test
+    void snapshotOfStreamedBodyCountsCollectedContent() {
+        final var request = new Request();
+        request.setBody(body());
+        final Request snapshot = request.createSnapshot(() -> {}, ERROR, -1);
+        final var sizeWithoutBody = snapshot.estimateHeapSize();
+        request.getBody().write(new PlainBodyTransferer(new ByteArrayOutputStream()), false);
+        assertEquals(sizeWithoutBody + CONTENT.length(), snapshot.estimateHeapSize());
+    }
+
     private static Body body() {
         return new Body(new ByteArrayInputStream(CONTENT.getBytes(UTF_8)), CONTENT.length());
     }
