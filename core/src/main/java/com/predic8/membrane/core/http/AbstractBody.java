@@ -114,9 +114,11 @@ public abstract class AbstractBody {
 	 * the body was already read, streamed, or has failed.
 	 * <p>
 	 * A body that {@linkplain #dropsContentOnDiscard() drops its content} passes it to the observers
-	 * without retaining it; any other body is read into memory.
+	 * without retaining it; any other body is read into memory. A body that is
+	 * {@linkplain DropOutcome.Abandoned abandoned} instead of drained is marked failed without an
+	 * exception, so that its connection is closed instead of reused.
 	 *
-	 * @throws ReadingBodyException if reading from the stream fails
+	 * @throws ReadingBodyException if reading from the stream fails or the body ends early
 	 */
 	public final void discard() {
 		switch (state) {
@@ -145,10 +147,33 @@ public abstract class AbstractBody {
 		for (MessageObserver observer : observers)
 			observer.bodyRequested(this);
 		try {
-			dropContent();
+			switch (dropContent()) {
+				case DropOutcome.Drained ignored -> markAsRead();
+				case DropOutcome.Abandoned(var reason) -> fail(new IOException(reason));
+			}
 		} catch (IOException e) {
 			throw fail(e);
 		}
+	}
+
+	/**
+	 * How {@link #dropContent()} left the body. A failure to drain it is not an outcome but an
+	 * {@link IOException}.
+	 */
+	protected sealed interface DropOutcome {
+
+		/** Consumed completely: the stream is positioned after the body. */
+		record Drained() implements DropOutcome {}
+
+		/**
+		 * Deliberately not consumed, the stream is left untouched. The body cannot become read, as that
+		 * would let the connection be reused with the body still in it.
+		 *
+		 * @param reason why the body was not drained, recorded as the cause of the failure
+		 */
+		record Abandoned(String reason) implements DropOutcome {}
+
+		DropOutcome DRAINED = new Drained();
 	}
 
 	/**
@@ -160,11 +185,13 @@ public abstract class AbstractBody {
 	}
 
 	/**
-	 * Consumes the rest of the content without retaining it, passing it to the observers, and marks the
-	 * body as read or failed. Called by {@link #discard()} for bodies that
-	 * {@linkplain #dropsContentOnDiscard() drop their content}.
+	 * Consumes the rest of the content without retaining it, passing it to the observers. Called by
+	 * {@link #discard()} for bodies that {@linkplain #dropsContentOnDiscard() drop their content}, which
+	 * marks the body as read or failed according to the outcome.
+	 *
+	 * @throws IOException if reading from the stream fails or the body ends early
 	 */
-	protected void dropContent() throws IOException {
+	protected DropOutcome dropContent() throws IOException {
 		throw new UnsupportedOperationException("%s does not drop its content.".formatted(getClass().getSimpleName()));
 	}
 

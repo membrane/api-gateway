@@ -126,8 +126,8 @@ public class Body extends AbstractBody {
 	 * See {@code skipBodyContent()} for how bodies of unknown length and bodies that end early are handled.
 	 */
 	@Override
-	protected void dropContent() throws IOException {
-		skipBodyContent();
+	protected DropOutcome dropContent() throws IOException {
+		return skipBodyContent();
 	}
 
 	/**
@@ -137,19 +137,19 @@ public class Body extends AbstractBody {
 	 * so reading to its end would mean waiting for that close. Such a close-delimited body (HTTP/1.0
 	 * without a length, {@code Connection: close}, or the "the server will send EOF" fallback, see
 	 * {@code Message.createBody}) leaves no connection to reclaim, even where the headers still say
-	 * keep-alive. So the stream is left untouched and the body is marked failed rather than read, which
+	 * keep-alive. So the stream is left untouched and the body is abandoned rather than read, which
 	 * makes sure the connection is closed instead of reused.
 	 * <p>
 	 * A body of <b>known length</b> is drained, feeding the relevant observers as it goes, and never
 	 * reads beyond the declared length - the bytes after it belong to the next message. If the body ends
-	 * early, whether by EOF or by a read timeout, it is marked failed too: what the message promised is
+	 * early, whether by EOF or by a read timeout, that is a failure too: what the message promised is
 	 * not there, so the connection is out of step and must not be reused.
+	 *
+	 * @throws IOException if reading fails or the body ends before its declared length
 	 */
-	private void skipBodyContent() throws IOException {
-		if (length == -1) {
-			fail(new IOException("Body of unknown length was not drained: it ends with the connection, which therefore cannot be reused."));
-			return;
-		}
+	private DropOutcome skipBodyContent() throws IOException {
+		if (length == -1)
+			return new DropOutcome.Abandoned("Body of unknown length was not drained: it ends with the connection, which therefore cannot be reused.");
 
 		boolean hasRelevantObserver = hasRelevantObservers();
 		chunks.clear();
@@ -168,11 +168,9 @@ public class Body extends AbstractBody {
 			toSkip -= read;
 		}
 
-		if (toSkip > 0) {
-			fail(new EOFException("Body ended %d bytes before the declared length of %d while being discarded.".formatted(toSkip, length)));
-			return;
-		}
-		markAsRead();
+		if (toSkip > 0)
+			throw new EOFException("Body ended %d bytes before the declared length of %d while being discarded.".formatted(toSkip, length));
+		return DropOutcome.DRAINED;
 	}
 
 	/**

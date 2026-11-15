@@ -309,8 +309,10 @@ public class BodyTest {
 	void discardFailsWhenAKnownLengthBodyEndsEarly() {
 		Body body = new Body(new ByteArrayInputStream("four".getBytes(UTF_8)), 10);
 
-		body.discard();
+		final var e = assertThrows(ReadingBodyException.class, body::discard);
 
+		assertInstanceOf(EOFException.class, e.getCause());
+		assertSame(e, body.getObservedException());
 		assertTrue(body.hasFailed());
 		assertFalse(body.isRead());
 	}

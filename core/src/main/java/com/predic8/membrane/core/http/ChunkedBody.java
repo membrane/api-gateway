@@ -194,10 +194,10 @@ public class ChunkedBody extends AbstractBody {
     }
 
     @Override
-    protected void dropContent() throws IOException {
+    protected DropOutcome dropContent() throws IOException {
         readChunksAndDrop(inputStream);
         trailer = readTrailer(inputStream);
-        markAsRead();
+        return DropOutcome.DRAINED;
     }
 
     /**
