@@ -205,14 +205,21 @@ public abstract class AbstractBody {
 	private void requireReadable() {
 		switch (state) {
 			case Failed(var cause) -> throw cause;
-			case Unread ignored -> requireNotStreamed();
-			case Read ignored -> requireNotStreamed();
+			case Unread ignored -> requireContentRetained();
+			case Read ignored -> requireContentRetained();
 		}
 	}
 
-	private void requireNotStreamed() {
-		if (wasStreamed())
-			throw new IllegalStateException("Cannot read body after it was streamed.");
+	/**
+	 * @throws IllegalStateException if the content was streamed or discarded. It is gone, or only its
+	 *         start is left in {@link #chunks}; returning that would pass a truncated body off as complete.
+	 */
+	protected void requireContentRetained() {
+		switch (retention) {
+			case RETAINED -> {}
+			case STREAMED -> throw new IllegalStateException("Cannot read body after it was streamed.");
+			case DISCARDED -> throw new IllegalStateException("Cannot read body after it was discarded.");
+		}
 	}
 
 	/**

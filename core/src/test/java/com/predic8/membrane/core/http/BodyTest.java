@@ -257,6 +257,21 @@ public class BodyTest {
 	}
 
 	/**
+	 * A discarded body did not keep its content, so reading it must fail instead of returning an empty
+	 * body. Its length is what it holds in memory: nothing.
+	 */
+	@Test
+	void contentOfADiscardedBodyCannotBeRead() {
+		final var body = new Body(new ByteArrayInputStream("content".getBytes(UTF_8)), "content".length());
+
+		body.discard();
+
+		assertThrows(IllegalStateException.class, body::getContent);
+		assertThrows(IllegalStateException.class, body::getContentAsStream);
+		assertEquals(0, body.getLength());
+	}
+
+	/**
 	 * The bytes after the declared length belong to the next message on the connection; consuming them
 	 * would desync it.
 	 */

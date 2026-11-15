@@ -113,8 +113,7 @@ public class ChunkedBody extends AbstractBody {
 
     public InputStream getContentAsStream() {
         throwIfFailed(); // before chunks.clear() below, which would drop the partially read body
-        if (wasStreamed())
-            throw new IllegalStateException("Cannot read body after it was streamed.");
+        requireContentRetained();
         if (!lazyReadStarted) {
             lazyReadStarted = true;
             for (MessageObserver observer : observers)

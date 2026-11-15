@@ -374,6 +374,32 @@ public class ChunkedBodyTest {
     }
 
     @Test
+    void contentOfADiscardedBodyCannotBeRead() {
+        final var body = new ChunkedBody(new ByteArrayInputStream(chunks().add("first").add("second").build()));
+
+        body.discard();
+
+        assertThrows(IllegalStateException.class, body::getContent);
+        assertThrows(IllegalStateException.class, body::getContentAsStream);
+        assertEquals(0, body.getLength());
+    }
+
+    /**
+     * The chunks read before the discard are still in memory, but they are only the start of the body.
+     */
+    @Test
+    void contentOfABodyDiscardedAfterAPartialReadCannotBeRead() throws IOException {
+        final var body = new ChunkedBody(new ByteArrayInputStream(chunks().add("first").add("second").build()));
+        assertEquals('f', body.getContentAsStream().read());
+
+        body.discard();
+
+        assertThrows(IllegalStateException.class, body::getContent);
+        assertThrows(IllegalStateException.class, body::getContentAsStream);
+        assertEquals("first".length(), body.getLength());
+    }
+
+    @Test
     void readStreamWith2ConcatenatedJSON() throws IOException {
         ByteArrayInputStream bis = createBodyWith2ConcatenatedJSONs();
         ChunkedBody cb = new ChunkedBody(bis);
