@@ -50,20 +50,6 @@ public class ChunkedBody extends AbstractBody {
         decoder = new ChunkedDecoder(in);
     }
 
-    /**
-     * Reads the trailer that follows the last chunk.
-     */
-    protected static Header readTrailer(InputStream in) throws IOException {
-        return ChunkedDecoder.readTrailer(in);
-    }
-
-    /**
-     * Reads a chunk-size line, ignoring chunk extensions.
-     */
-    public static int readChunkSize(InputStream in) throws IOException {
-        return ChunkedDecoder.readChunkSize(in);
-    }
-
     @Override
     public void read() {
         throwIfFailed(); // before the drain below: it would re-read the dead stream
