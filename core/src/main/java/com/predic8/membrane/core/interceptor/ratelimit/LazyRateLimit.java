@@ -33,26 +33,25 @@ public class LazyRateLimit extends RateLimitStrategy {
 	}
 
 	@Override
-	public int countRequest(String key) {
+	public RequestCount countRequest(String key) {
+		final LocalDateTime resetAt;
 		synchronized (lock) {
 			if (java.time.LocalDateTime.now().isAfter(nextCleanup)) {
 				requestCounterFromKey.clear();
 				incrementNextCleanupTime();
 			}
+			resetAt = nextCleanup;
 		}
 
-		return requestCounterFromKey.computeIfAbsent(key, s -> new AtomicInteger()).incrementAndGet();
+		// If another thread starts a new period meanwhile, the count belongs to the new period and resetAt
+		// to the past one. That reports a reset time of 0, which is right: the counts have just been reset.
+		return new RequestCount(requestCounterFromKey.computeIfAbsent(key, s -> new AtomicInteger()).incrementAndGet(), resetAt);
 	}
 
 	private void incrementNextCleanupTime() {
 		synchronized (lock) {
 			nextCleanup = java.time.LocalDateTime.now().plus(requestLimitDuration);
 		}
-	}
-
-	@Override
-	public LocalDateTime getServiceAvailableAgainTime(String key) {
-		return nextCleanup;
 	}
 
 	@Override

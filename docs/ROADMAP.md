@@ -100,7 +100,7 @@ PRIO 3:
 - `rateLimiter`: shared store for the request counts, with a Redis implementation
   - Story: the counts live in memory in each instance (`LazyRateLimit`). With several Membrane instances behind a load balancer, every instance counts on its own, so a client gets the limit once per instance. Reloading the configuration resets the counts.
   - Idea: an interface for the store, with the in-memory store as the default and a Redis store that uses the existing `RedisConnector`, e.g. `INCR` plus `EXPIRE` per key and period.
-  - `RateLimitStrategy` is an abstract class today; `countRequest(key)` and `getServiceAvailableAgainTime(key)` are what a store has to provide.
+  - `RateLimitStrategy` is an abstract class today; `countRequest(key)`, which returns the count together with the end of its period, is what a store has to provide.
   - To decide: per-key periods (Redis key expiry) instead of the one period for all keys that `LazyRateLimit` uses; what happens when Redis is unreachable (fail open or closed).
   - Related: jedis upgrade (8.0 section).
 

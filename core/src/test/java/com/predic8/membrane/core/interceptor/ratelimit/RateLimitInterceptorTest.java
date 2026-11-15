@@ -51,6 +51,7 @@ import static com.predic8.membrane.core.interceptor.ratelimit.RateLimitIntercept
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.JSONPATH;
 import static java.lang.Long.parseLong;
 import static java.lang.Thread.sleep;
+import static java.time.Duration.ofHours;
 import static java.time.Duration.ofMinutes;
 import static java.time.Duration.ofSeconds;
 import static java.util.stream.IntStream.range;
@@ -114,8 +115,8 @@ public class RateLimitInterceptorTest {
 		final var keyDeadline = LocalDateTime.now().plusSeconds(42);
 		var strategy = new LazyRateLimit(ofMinutes(1), 1) {
 			@Override
-			public LocalDateTime getServiceAvailableAgainTime(String key) {
-				return "key:customer-a".equals(key) ? keyDeadline : LocalDateTime.now();
+			public RequestCount countRequest(String key) {
+				return new RequestCount(super.countRequest(key).count(), "key:customer-a".equals(key) ? keyDeadline : LocalDateTime.now());
 			}
 		};
 		var strategyField = RateLimitInterceptor.class.getDeclaredField("strategy");
@@ -242,8 +243,8 @@ public class RateLimitInterceptorTest {
 		strategyField.setAccessible(true);
 		strategyField.set(limiter, new LazyRateLimit(ofMinutes(1), 3) {
 			@Override
-			public LocalDateTime getServiceAvailableAgainTime(String key) {
-				return deadline;
+			public RequestCount countRequest(String key) {
+				return new RequestCount(super.countRequest(key).count(), deadline);
 			}
 		});
 		final var slowBackend = new AbstractInterceptor() {
@@ -262,6 +263,32 @@ public class RateLimitInterceptorTest {
 		final var exc = sendThroughFlow(router, limiter, slowBackend);
 
 		assertTrue(parseLong(exc.getResponse().getHeader().getFirstValue(X_RATELIMIT_RESET)) <= 8);
+	}
+
+	@Test
+	void resetTimeIsTakenFromThePeriodTheRequestWasCountedIn() throws Exception {
+		final var limiter = new RateLimitInterceptor(ofMinutes(1), 1);
+		limiter.init(new DummyTestRouter());
+		final var strategyField = RateLimitInterceptor.class.getDeclaredField("strategy");
+		strategyField.setAccessible(true);
+		strategyField.set(limiter, new LazyRateLimit(ofMinutes(1), 1) {
+			@Override
+			public RequestCount countRequest(String key) {
+				final var requestCount = super.countRequest(key);
+				// Another thread starts a new, longer period right after the rejected request was counted
+				if (requestCount.count() > 1)
+					setRequestLimitDuration(ofHours(1));
+				return requestCount;
+			}
+		});
+
+		final var exc = new Request.Builder().buildExchange();
+		exc.setRemoteAddrIp("192.0.2.1");
+		limiter.handleRequest(exc);
+		limiter.handleRequest(exc);
+
+		assertEquals(429, exc.getResponse().getStatusCode());
+		assertTrue(parseLong(exc.getResponse().getHeader().getFirstValue(RETRY_AFTER)) <= 60);
 	}
 
 	@Test

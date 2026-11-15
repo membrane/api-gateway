@@ -53,11 +53,16 @@ public abstract class RateLimitStrategy {
 	/**
 	 * Counts a request for the key.
 	 *
-	 * @return number of requests for the key in the current period, including this one
+	 * @return number of requests for the key in the current period, including this one, and the end of that period
 	 */
-	public abstract int countRequest(String key);
+	public abstract RequestCount countRequest(String key);
 
-	public abstract LocalDateTime getServiceAvailableAgainTime(String key);
+	/**
+	 * @param count   number of requests for the key in the period, including the counted one
+	 * @param resetAt end of the period the request was counted in
+	 */
+	public record RequestCount(int count, LocalDateTime resetAt) {
+	}
 
 	public abstract void updateAfterConfigChange();
 }

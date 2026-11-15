@@ -142,9 +142,9 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
                     .buildAndSetResponse(exc);
             return RETURN;
         }
-        final var count = strategy.countRequest(key);
-        final var quota = new Quota(getRequestLimit(), Math.max(0, getRequestLimit() - count), strategy.getServiceAvailableAgainTime(key), strategy.getLimitDurationPeriod());
-        if (count <= getRequestLimit()) {
+        final var requestCount = strategy.countRequest(key);
+        final var quota = new Quota(getRequestLimit(), Math.max(0, getRequestLimit() - requestCount.count()), requestCount.resetAt(), strategy.getLimitDurationPeriod());
+        if (requestCount.count() <= getRequestLimit()) {
             reportIfMostRestrictive(exc, quota);
             return CONTINUE;
         }
