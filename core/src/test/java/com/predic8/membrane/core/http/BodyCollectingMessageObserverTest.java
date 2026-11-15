@@ -63,6 +63,27 @@ class BodyCollectingMessageObserverTest {
     }
 
     /**
+     * A body read part-way through its stream is discarded from where the reading stopped. The observer
+     * gets the chunks read before and the ones dropped by the discard.
+     */
+    @Test
+    void chunkedBodyDiscardedAfterPartialRead() throws IOException {
+        final var first = CONTENT.substring(0, 8);
+        final var second = CONTENT.substring(8);
+        final var in = new ByteArrayInputStream("%x\r\n%s\r\n%x\r\n%s\r\n0\r\n\r\nNEXT".formatted(
+                first.length(), first, second.length(), second).getBytes(UTF_8));
+        final var body = new ChunkedBody(in);
+        final var observer = observe(body);
+
+        assertEquals(CONTENT.charAt(0), body.getContentAsStream().read());
+        assertNull(observer.collected);
+        body.discard();
+
+        assertEquals(CONTENT, observer.collected);
+        assertEquals("NEXT", new String(in.readAllBytes(), UTF_8), "the next message must stay in the stream");
+    }
+
+    /**
      * {@code limitedMemoryExchangeStore} evicts by the estimated heap size, which counts only read
      * bodies. The content collected from a discarded body is held in memory, so it must be counted.
      */
