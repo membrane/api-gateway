@@ -64,7 +64,7 @@ public abstract class BodyCollectingMessageObserver implements MessageObserver {
     }
 
     public AbstractBody getBody(AbstractBody body) {
-        if (!body.wasStreamed()) {
+        if (body.isContentRetained()) {
             return body;
         }
         return new Body(new BodyInputStream(chunks), storedSize);

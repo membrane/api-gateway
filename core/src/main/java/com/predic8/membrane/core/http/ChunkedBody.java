@@ -190,24 +190,18 @@ public class ChunkedBody extends AbstractBody {
                 observer.bodyChunk(chunk);
     }
 
+    /**
+     * @return <code>true</code>: a discarded body is not retained
+     */
     @Override
-    public void discard() {
-        if (isRead())
-            return;
-        if (hasFailed())
-            return; // see AbstractBody.discard(): best-effort, and the stream is already dead
-        if (wasStreamed())
-            return;
+    protected boolean dropsContentOnDiscard() {
+        return true;
+    }
 
-        for (MessageObserver observer : observers)
-            observer.bodyRequested(this);
-
-        try {
-            readChunksAndDrop(inputStream);
-            trailer = readTrailer(inputStream);
-        } catch (IOException e) {
-            throw fail(e);
-        }
+    @Override
+    protected void dropContent() throws IOException {
+        readChunksAndDrop(inputStream);
+        trailer = readTrailer(inputStream);
         markAsRead();
     }
 

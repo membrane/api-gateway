@@ -115,29 +115,20 @@ public class Body extends AbstractBody {
 	}
 
 	/**
-	 * Consumes the body without retaining it, so that the connection can carry the next message. Does
-	 * nothing if the body was already read, streamed, or has failed. See {@code skipBodyContent()} for
-	 * how bodies of unknown length and bodies that end early are handled.
-	 *
-	 * @throws ReadingBodyException if reading from the stream fails
+	 * @return <code>true</code>: a discarded body is not retained
 	 */
-	public void discard() {
-		if (isRead())
-			return;
-		if (hasFailed())
-			return; // see AbstractBody.discard(): best-effort, and the stream is already dead
-		if (wasStreamed())
-			return;
+	@Override
+	protected boolean dropsContentOnDiscard() {
+		return true;
+	}
 
-		for (MessageObserver observer : observers)
-			observer.bodyRequested(this);
-
-        try {
-            skipBodyContent();
-        } catch (IOException e) {
-            throw fail(e);
-        }
-    }
+	/**
+	 * See {@code skipBodyContent()} for how bodies of unknown length and bodies that end early are handled.
+	 */
+	@Override
+	protected void dropContent() throws IOException {
+		skipBodyContent();
+	}
 
 	/**
 	 * Drops the bytes the body still owes, so that the connection can carry the next message.
