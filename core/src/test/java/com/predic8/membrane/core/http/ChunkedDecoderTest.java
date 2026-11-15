@@ -28,6 +28,7 @@ import java.util.stream.Stream;
 import static com.predic8.membrane.annot.Constants.CRLF;
 import static com.predic8.membrane.annot.Constants.MEMBRANE_CORE_HTTP_BODY_MAXCHUNKLENGTH_DEFAULT;
 import static com.predic8.membrane.core.http.ChunkedDecoder.*;
+import static com.predic8.membrane.core.util.HttpUtil.MAX_LINE_LENGTH;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -63,6 +64,24 @@ class ChunkedDecoderTest {
         assertNull(decoder.next());
         assertEquals("42", decoder.getTrailer().getFirstValue("X-Checksum"));
         assertEquals("NEXT", new String(in.readAllBytes(), US_ASCII));
+    }
+
+    @Test
+    void trailerWithSeveralFieldsReadsNothingAfterTheBody() throws IOException {
+        final var in = stream("0\r\nX-A: 1\r\nX-B: 2\r\n\r\nGET /next HTTP/1.1\r\n");
+        final var decoder = new ChunkedDecoder(in);
+
+        assertNull(decoder.next());
+        assertEquals("1", decoder.getTrailer().getFirstValue("X-A"));
+        assertEquals("2", decoder.getTrailer().getFirstValue("X-B"));
+        assertEquals("GET /next HTTP/1.1\r\n", new String(in.readAllBytes(), US_ASCII));
+    }
+
+    @Test
+    void oversizedTrailerLineIsRejected() {
+        final var decoder = new ChunkedDecoder(stream("0\r\nX: " + "a".repeat(MAX_LINE_LENGTH) + "\r\n\r\n"));
+
+        assertThrows(IOException.class, decoder::next);
     }
 
     @Test
@@ -133,6 +152,15 @@ class ChunkedDecoderTest {
             "0\r\n\r",                  // EOF after the CR of the last line
             "0\r\n\rX",                 // CR of the last line followed by something else than LF
             "0\r\n\n",                  // last line is a bare LF
+            "0\r\nX: y\r\n\r",          // EOF after the CR of the line that ends the trailer
+            "0\r\nX: y\r\n\rG",         // CR of the line that ends the trailer followed by something else than LF
+            "0\r\nX: y\r\n\n",          // trailer ends with a bare LF
+            "0\r\nX: y\n\r\n",          // trailer field line ends with a bare LF
+            "0\r\nX: y\n\n",            // trailer with bare LFs only
+            "0\r\nX: y\rZ\r\n\r\n",     // bare CR inside a trailer field line
+            "0\r\nX: y",                // EOF inside a trailer field line
+            "0\r\nX: y\r\n",            // EOF instead of the line that ends the trailer
+            "0\r\nX y\r\n\r\n",         // trailer field line without a colon
     })
     void invalidFramingIsRejected(String raw) {
         final var decoder = new ChunkedDecoder(stream(raw));

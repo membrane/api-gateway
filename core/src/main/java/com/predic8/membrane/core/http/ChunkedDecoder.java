@@ -14,7 +14,6 @@
 
 package com.predic8.membrane.core.http;
 
-import com.predic8.membrane.core.util.EndOfStreamException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,6 +24,7 @@ import java.util.HexFormat;
 
 import static com.predic8.membrane.annot.Constants.*;
 import static com.predic8.membrane.core.util.ByteUtil.readByteArray;
+import static com.predic8.membrane.core.util.HttpUtil.MAX_LINE_LENGTH;
 import static java.util.HexFormat.isHexDigit;
 
 /**
@@ -91,22 +91,51 @@ final class ChunkedDecoder {
         return trailer;
     }
 
+    /**
+     * Reads the trailer section and the empty line that ends the body, RFC 9112 §7.1.2:
+     * <pre><code>trailer-section = *( field-line CRLF )</code></pre>
+     *
+     * @return the trailer, or <code>null</code> if the body has none
+     * @throws IOException if reading fails, a line does not end with CRLF or a field line is malformed
+     */
     static Header readTrailer(InputStream in) throws IOException {
-        in.mark(1);
-        var c = read(in);
-        if (c == CR) {
-            expect(in, LF);
+        var line = readTrailerLine(in);
+        if (line.isEmpty()) {
             return null;
         }
-        if (c == LF) {
-            throw invalidFraming();
+        final var trailer = new Header();
+        do {
+            try {
+                trailer.add(Header.parseFieldLine(line, false));
+            } catch (MalformedHeaderException e) {
+                throw new IOException(e.getMessage(), e);
+            }
+        } while (!(line = readTrailerLine(in)).isEmpty());
+        return trailer;
+    }
+
+    /**
+     * Reads a trailer line up to its CRLF. The trailer is not read with {@link com.predic8.membrane.core.util.HttpUtil#readLine(InputStream)}, which
+     * accepts a bare LF as RFC 9112 §2.2 allows for the header section. Inside a chunked body every line must end
+     * with CRLF like the chunk-size lines, so that a proxy in front of Membrane cannot end the body at a different
+     * place than Membrane does.
+     *
+     * @return the line without its CRLF
+     */
+    private static String readTrailerLine(InputStream in) throws IOException {
+        final var line = new StringBuilder();
+        int c;
+        while ((c = read(in)) != CR) {
+            if (c == LF) {
+                throw invalidFraming();
+            }
+            line.append((char) c);
+            if (line.length() >= MAX_LINE_LENGTH) {
+                throw new IOException("Trailer line exceeds the limit of %d characters".formatted(MAX_LINE_LENGTH));
+            }
         }
-        in.reset();
-        try {
-            return new Header(in);
-        } catch (EndOfStreamException e) {
-            throw new IOException(e);
-        }
+        expect(in, LF);
+        return line.toString();
     }
 
     /**

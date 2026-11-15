@@ -50,7 +50,7 @@ import static org.apache.commons.text.StringEscapeUtils.escapeHtml4;
 public class HttpUtil {
 
 	private static final DateFormat GMT_DATE_FORMAT = createGMTDateFormat();
-	private final static int MAX_LINE_LENGTH;
+	public final static int MAX_LINE_LENGTH;
 
 	static {
 		String maxLineLength = System.getProperty("membrane.core.http.body.maxlinelength");
