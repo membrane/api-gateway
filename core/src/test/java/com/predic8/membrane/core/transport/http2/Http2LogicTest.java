@@ -520,6 +520,20 @@ class Http2LogicTest {
         assertEquals("localhost", handler.message.getHeader().getHost());
     }
 
+    /** Several host fields naming the same host are allowed without :authority too; one Host field is forwarded. */
+    @Test
+    void matchingHostFieldsWithoutAuthorityGiveOneHostField() throws Exception {
+        final var handler = new RecordingHandler();
+
+        assertThrows(EndOfStreamException.class, () -> createLogic(headersFrame(true, new Encoder(4096),
+                fields(":method", "GET", ":scheme", "https", ":path", "/", "host", "example.com", "host", "EXAMPLE.COM")), handler).handle());
+
+        assertNotNull(handler.message);
+        assertEquals(0, handler.malformedStreamId);
+        assertEquals(1, handler.message.getHeader().getNumberOf("Host"));
+        assertEquals("example.com", handler.message.getHeader().getHost());
+    }
+
     /**
      * DATA still in flight for a stream reset because its header block is malformed is dropped, not queued for a body
      * nobody reads. handle() does not start the frame sender, so the reset is never written and the stream stays open.
