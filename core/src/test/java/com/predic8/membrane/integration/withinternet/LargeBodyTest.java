@@ -39,18 +39,22 @@ public class LargeBodyTest {
     private static Router router, router2;
     private static HttpClientConfiguration hcc;
     private static final AtomicReference<Exchange> middleExchange = new AtomicReference<>();
+    private static final AtomicLong bytesReceivedAtBackend = new AtomicLong();
 
     @BeforeAll
     public static void setup() throws Exception {
 
-        // streaming only works for maxRetries = 1
+        // streaming requires retries = 0: a retry would need the body retained in memory
         hcc = new HttpClientConfiguration();
-        hcc.getRetryHandler().setRetries(1);
+        hcc.getRetryHandler().setRetries(0);
 
         ServiceProxy proxy = getProxy(3040, "thomas-bayer.com", 80);
         proxy.getFlow().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
+                // Drain the body without retaining it, counting the bytes that actually arrived.
+                exc.getRequest().getBody().addObserver(new ByteCounter(bytesReceivedAtBackend));
+                exc.getRequest().discardBody();
                 exc.setResponse(ok().body("").build());
                 return RETURN;
             }
@@ -94,6 +98,11 @@ public class LargeBodyTest {
         router2.stop();
     }
 
+    @BeforeEach
+    void resetCounter() {
+        bytesReceivedAtBackend.set(0);
+    }
+
     @Test
     public void large() throws Exception {
         long len = MAX_VALUE + 1L;
@@ -102,8 +111,10 @@ public class LargeBodyTest {
         try (var hc = new HttpClient(hcc)) {
             hc.call(e);
         }
+        assertEquals(200, e.getResponse().getStatusCode());
         assertTrue(e.getRequest().getBody().wasStreamed());
         assertTrue(middleExchange.get().getRequest().getBody().wasStreamed());
+        assertEquals(len, bytesReceivedAtBackend.get());
     }
 
     @Test
@@ -114,8 +125,34 @@ public class LargeBodyTest {
         try (var hc = new HttpClient(hcc)) {
             hc.call(e);
         }
+        assertEquals(200, e.getResponse().getStatusCode());
         assertTrue(e.getRequest().getBody().wasStreamed());
         assertTrue(middleExchange.get().getRequest().getBody().wasStreamed());
+        assertEquals(len, bytesReceivedAtBackend.get());
+    }
+
+    /**
+     * Counts the body bytes passed to the observer without retaining them.
+     */
+    private record ByteCounter(AtomicLong count) implements MessageObserver {
+
+        @Override
+        public void bodyRequested(AbstractBody body) {
+        }
+
+        @Override
+        public void bodyChunk(Chunk chunk) {
+            count.addAndGet(chunk.getLength());
+        }
+
+        @Override
+        public void bodyChunk(byte[] buffer, int offset, int length) {
+            count.addAndGet(length);
+        }
+
+        @Override
+        public void bodyComplete(AbstractBody body) {
+        }
     }
 
     public static class ConstantInputStream extends InputStream {

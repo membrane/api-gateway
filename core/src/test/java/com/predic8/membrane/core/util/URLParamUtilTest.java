@@ -120,6 +120,13 @@ public class URLParamUtilTest {
     }
 
     @Test
+    void uriForLogMasksAndEscapes() {
+        assertEquals("/foo\\n?api-key=***", uriForLog("/foo\n?api-key=secret"));
+        assertEquals("http://***@example.com/foo", uriForLog("http://user:password@example.com/foo"));
+        assertNull(uriForLog(null));
+    }
+
+    @Test
     void unparsableUriIsLoggedWithoutQueryValues() throws Exception {
         final var exc = Request.get("/foo").buildExchange();
         exc.getRequest().setUri("/foo?api-key=secret#a\nb"); // only a line break in the fragment fails the URI pattern

@@ -18,7 +18,7 @@ function getToken{
     $postParams = @{grant_type="password";username=$username;password=$password;client_id=$clientId;client_secret=$clientSecret}
     Write-Host $postParams
     Write-Host
-    return Invoke-WebRequest -Uri $tokenEndpoint -Method POST -Body $postParams | ConvertFrom-Json
+    return Invoke-WebRequest -UseBasicParsing -Uri $tokenEndpoint -Method POST -Body $postParams | ConvertFrom-Json
 }
 
 function sendRequestToTarget($tokenResult){
@@ -28,11 +28,11 @@ function sendRequestToTarget($tokenResult){
     $headers = @{"Authorization"=$tokenResult.token_type + " " + $tokenResult.access_token}
     Write-Host Authorization: $headers["Authorization"]
     Write-Host
-    return Invoke-WebRequest -Uri $target -Headers $headers
+    return Invoke-WebRequest -UseBasicParsing -Uri $target -Headers $headers
 }
 
 $tokenEndpointResult = getToken
 Write-Host "Got Token:" $tokenEndpointResult.access_token
 Write-Host
 $result = sendRequestToTarget  $tokenEndpointResult
-Write-Host "Got": $result.Content
+Write-Host "Got:" $result.Content

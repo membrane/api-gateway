@@ -15,7 +15,6 @@
 package com.predic8.membrane.core.util;
 
 import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonParser;
 import com.predic8.membrane.core.http.Response;
 import jakarta.mail.internet.ParseException;
 import org.slf4j.Logger;
@@ -66,20 +65,21 @@ public class Util {
 		HashMap<String, String> values = new HashMap<>();
 
 		if (g.getHeader().getContentType() != null && g.getHeader().getContentTypeObject().match(APPLICATION_JSON)) {
-			final JsonParser jp = new JsonFactory().createParser(new InputStreamReader(g.getBodyAsStreamDecoded()));
-			String name = null;
-			while (jp.nextToken() != null) {
-				switch (jp.getCurrentToken()) {
-					case FIELD_NAME:
-						name = jp.getCurrentName();
-						break;
-					case VALUE_STRING:
-						values.put(name, jp.getText());
-						break;
-					case VALUE_NUMBER_INT:
-						values.put(name, "" + jp.getLongValue());
-					default:
-						break;
+			try (final var jp = new JsonFactory().createParser(new InputStreamReader(g.getBodyAsStreamDecoded()))) {
+				String name = null;
+				while (jp.nextToken() != null) {
+					switch (jp.getCurrentToken()) {
+						case FIELD_NAME:
+							name = jp.getCurrentName();
+							break;
+						case VALUE_STRING:
+							values.put(name, jp.getText());
+							break;
+						case VALUE_NUMBER_INT:
+							values.put(name, "" + jp.getLongValue());
+						default:
+							break;
+					}
 				}
 			}
 		}

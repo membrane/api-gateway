@@ -2,7 +2,7 @@
 #
 # Tutorial: Prometheus Metrics
 #
-# The prometheus plugin exposes all Membrane metrics in Prometheus format
+# The prometheus interceptor exposes all Membrane metrics in Prometheus format
 # at /metrics so any Prometheus server can scrape them.
 #
 # 1.) Start Membrane:
@@ -29,10 +29,18 @@
 #         curl http://localhost:2000/metrics | findstr membrane_count
 #
 #     You should see one counter per API/status combination, e.g.:
-#       membrane_count{api="Backend A",method="GET",statusCode="200",...} 1.0
-#       membrane_count{api="Backend B",method="GET",statusCode="404",...} 1.0
+#       membrane_count{rule="backend_a",code="200"} 1
+#       membrane_count{rule="backend_b",code="404"} 1
 #
-# 4.) To connect a real Prometheus server use the scrape config in
+# 4.) jvm: true adds JVM metrics with Micrometer names:
+#       Linux/Mac:
+#         curl http://localhost:2000/metrics | grep jvm_memory_used_bytes
+#       Windows:
+#         curl http://localhost:2000/metrics | findstr jvm_memory_used_bytes
+#
+#     jvm_memory_used_bytes{area="heap",id="G1 Old Gen"} 3459832
+#
+# 5.) To connect a real Prometheus server use the scrape config in
 #     prometheus/prometheus.yml.  With Docker:
 #       Linux/Mac:
 #         docker run -p 9090:9090 --add-host=host.docker.internal:host-gateway -v "$(pwd)/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml" prom/prometheus
@@ -50,7 +58,8 @@ api:
   path:
     uri: /metrics
   flow:
-    - prometheus: {}
+    - prometheus:
+        jvm: true
 
 ---
 api:

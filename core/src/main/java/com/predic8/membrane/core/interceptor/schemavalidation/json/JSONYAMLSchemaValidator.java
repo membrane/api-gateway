@@ -16,7 +16,6 @@ package com.predic8.membrane.core.interceptor.schemavalidation.json;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.dataformat.yaml.YAMLParser;
 import com.networknt.schema.*;
 import com.networknt.schema.Error;
 import com.networknt.schema.path.NodePath;
@@ -186,10 +185,11 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
     private @NotNull List<Error> handleMultipleYAMLDocuments(Exchange exc, Flow flow) throws IOException {
         List<Error> assertions;
         assertions = new ArrayList<>();
-        YAMLParser parser = factory.createParser(exc.getMessage(flow).getBodyAsStreamDecoded());
-        while (!parser.isClosed()) {
-            assertions.addAll(schema.validate(yamlObjectMapper.readTree(parser)));
-            parser.nextToken();
+        try (final var parser = factory.createParser(exc.getMessage(flow).getBodyAsStreamDecoded())) {
+            while (!parser.isClosed()) {
+                assertions.addAll(schema.validate(yamlObjectMapper.readTree(parser)));
+                parser.nextToken();
+            }
         }
         return assertions;
     }

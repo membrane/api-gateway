@@ -36,6 +36,7 @@ import org.slf4j.LoggerFactory;
 import java.net.URL;
 import java.util.*;
 
+import static com.predic8.membrane.core.exceptions.BodyFailureProblems.bodyFailure;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.exchange.Exchange.SNI_SERVER_NAME;
 import static com.predic8.membrane.core.http.Header.ALLOW;

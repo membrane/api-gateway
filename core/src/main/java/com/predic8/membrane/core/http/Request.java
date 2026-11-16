@@ -48,6 +48,11 @@ public class Request extends Message {
     private static final char NEXT_LINE = '\u0085';
     private static final Pattern stompPattern = Pattern.compile("^(.+?)$");
 
+    /**
+     * How many empty lines before the request line are ignored, see {@link #readFirstNonEmptyLine(InputStream)}.
+     */
+    private static final int MAX_LEADING_EMPTY_LINES = 10;
+
     public static final String METHOD_GET = "GET";
     public static final String METHOD_QUERY = "QUERY";
     public static final String METHOD_POST = "POST";
@@ -83,7 +88,7 @@ public class Request extends Message {
     @Override
     protected void parseStartLine(InputStream in) throws IOException {
         try {
-            String firstLine = HttpUtil.readLine(in);
+            final var firstLine = readFirstNonEmptyLine(in);
             // readLine() maps each byte to one char and stops at CR and LF, so NEL (0x85) is the only regex line
             // terminator that can remain. The former regex parser dropped or misread the parts around it, and
             // stompPattern still accepts it at the end of the line.
@@ -103,6 +108,19 @@ public class Request extends Message {
                 throw new NoMoreRequestsException(); // happens regularly at the end of a keep-alive connection
             throw new EOFWhileReadingFirstLineException(e.getLineSoFar());
         }
+    }
+
+    /**
+     * Skips up to {@link #MAX_LEADING_EMPTY_LINES} empty lines and returns the line after them. RFC 9112 2.2: a server
+     * should ignore at least one empty line received before the request line. Some clients send a CRLF after a
+     * request body that Content-Length doesn't count, which would otherwise end the keep-alive connection.
+     * After more empty lines, an empty line is returned, which ends the connection as before.
+     */
+    private static String readFirstNonEmptyLine(InputStream in) throws IOException {
+        var line = HttpUtil.readLine(in);
+        for (var skipped = 0; line.isEmpty() && skipped < MAX_LEADING_EMPTY_LINES; skipped++)
+            line = HttpUtil.readLine(in);
+        return line;
     }
 
     /**

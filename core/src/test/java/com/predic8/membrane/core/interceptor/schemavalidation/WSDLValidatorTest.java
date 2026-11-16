@@ -145,7 +145,7 @@ public class WSDLValidatorTest {
         assertEquals(ABORT, createValidator(new ErrorDetailsPolicy(false, false)).validateMessage(exc, REQUEST));
 
         String body = exc.getResponse().getBodyAsStringDecoded();
-        assertEquals(200, exc.getResponse().getStatusCode());
+        assertEquals(500, exc.getResponse().getStatusCode());
         assertTrue(body.contains("<faultcode>soap:Client</faultcode>"), body);
         assertTrue(body.contains("WSDL message validation failed"), body);
         assertFalse(body.contains("cvc-"), "schema error codes must not leak when details are off: " + body);
@@ -235,6 +235,82 @@ public class WSDLValidatorTest {
         String body = exc.getResponse().getBodyAsStringDecoded();
         assertTrue(body.contains(SOAP12_NS), "Expected a SOAP 1.2 fault envelope but got: " + body);
         assertFalse(body.contains(SOAP11_NS), "Expected no SOAP 1.1 envelope but got: " + body);
+        assertTrue(exc.getResponse().getHeader().getContentType().startsWith("application/soap+xml"),
+                exc.getResponse().getHeader().getContentType());
+    }
+
+    private static final String NOT_IN_SCHEMA = """
+            <foo:notInSchema xmlns:foo="http://membrane-api.io/foo"/>
+            """;
+
+    @Test
+    void rejectedSoap11RequestIs500() throws Exception {
+        final var exc = getRequestExchange(soap11(NOT_IN_SCHEMA));
+        assertEquals(ABORT, createValidator(CITIES_WSDL, null, false).validateMessage(exc, REQUEST));
+        assertEquals(500, exc.getResponse().getStatusCode());
+    }
+
+    /**
+     * SOAP 1.2 HTTP binding: a fault with the Sender code is sent with 400 Bad Request.
+     */
+    @Test
+    void rejectedSoap12RequestIs400() throws Exception {
+        final var exc = getRequestExchange(soap12(NOT_IN_SCHEMA));
+        assertEquals(ABORT, createValidator(HELLO_SOAP12_WSDL, null, false).validateMessage(exc, REQUEST));
+        assertEquals(400, exc.getResponse().getStatusCode());
+    }
+
+    @Test
+    void rejectedNonSoapRequestIs500() throws Exception {
+        final var exc = getRequestExchange("<foo/>");
+        assertEquals(ABORT, createValidator(CITIES_WSDL, null, false).validateMessage(exc, REQUEST));
+        assertEquals(500, exc.getResponse().getStatusCode());
+    }
+
+    @Test
+    void rejectedSoap11ResponseIs500() throws Exception {
+        final var exc = getResponseExchange(soap11(NOT_IN_SCHEMA));
+        assertEquals(ABORT, createValidator(CITIES_WSDL, null, false).validateMessage(exc, RESPONSE));
+        assertEquals(500, exc.getResponse().getStatusCode());
+    }
+
+    @Test
+    void rejectedSoap12ResponseIs500() throws Exception {
+        final var exc = getResponseExchange(soap12(NOT_IN_SCHEMA));
+        assertEquals(ABORT, createValidator(HELLO_SOAP12_WSDL, null, false).validateMessage(exc, RESPONSE));
+        assertEquals(500, exc.getResponse().getStatusCode());
+    }
+
+    /**
+     * A rejected response is the backend's fault, not the client's: SOAP 1.1 section 4.4.1 calls
+     * that a Server fault.
+     */
+    @Test
+    void rejectedSoap11ResponseIsServerFault() throws Exception {
+        final var exc = getResponseExchange(soap11(NOT_IN_SCHEMA));
+        assertEquals(ABORT, createValidator(CITIES_WSDL, null, false).validateMessage(exc, RESPONSE));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains("<faultcode>soap:Server</faultcode>"), body);
+    }
+
+    /**
+     * A rejected response is the backend's fault, not the client's: SOAP 1.2 Part 1 section 5.4.6
+     * calls that a Receiver fault.
+     */
+    @Test
+    void rejectedSoap12ResponseIsReceiverFault() throws Exception {
+        final var exc = getResponseExchange(soap12(NOT_IN_SCHEMA));
+        assertEquals(ABORT, createValidator(HELLO_SOAP12_WSDL, null, false).validateMessage(exc, RESPONSE));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains(">soap:Receiver<"), body);
+    }
+
+    @Test
+    void rejectedSoap12RequestIsSenderFault() throws Exception {
+        final var exc = getRequestExchange(soap12(NOT_IN_SCHEMA));
+        assertEquals(ABORT, createValidator(HELLO_SOAP12_WSDL, null, false).validateMessage(exc, REQUEST));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains(">soap:Sender<"), body);
     }
 
     @Test

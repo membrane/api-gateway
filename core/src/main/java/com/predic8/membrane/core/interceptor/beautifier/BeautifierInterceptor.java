@@ -82,7 +82,9 @@ public class BeautifierInterceptor extends AbstractInterceptor {
             // Shortcut not to avoid reading bytes in NullPrettifier
             if (prettifier instanceof NullPrettifier)
                 return CONTINUE;
-            msg.setBodyContent(prettifier.prettify(msg.getBodyAsStreamDecoded(), getCharset(msg, prettifier)));
+            try (final var body = msg.getBodyAsStreamDecoded()) {
+                msg.setBodyContent(prettifier.prettify(body, getCharset(msg, prettifier)));
+            }
         } catch (IOException e) {
             // If it is not possible to beautify, to nothing
             // Cause will be often user input => do not log stacktrace

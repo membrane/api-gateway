@@ -18,7 +18,6 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.Required;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.util.xml.parser.HardenedStaxInputFactory;
 import org.jetbrains.annotations.NotNull;
@@ -49,20 +48,22 @@ public class XMLElementSessionIdExtractor extends AbstractXmlElement implements 
 
         log.debug("searching for sessionid");
 
-        XMLStreamReader reader = getXmlStreamReader(exc.getMessage(flow));
-        try {
-            while (reader.hasNext()) {
-                reader.next();
-                if (isSessionIdElement(reader)) {
-                    log.debug("sessionid element found");
-                    return reader.getElementText();
-                }
-            }
-        } finally {
+        try (final var body = exc.getMessage(flow).getBodyAsStreamDecoded()) {
+            XMLStreamReader reader = HardenedStaxInputFactory.inputFactory().createXMLStreamReader(body);
             try {
-                reader.close();
-            } catch (Exception e) {
-                log.debug("Failed to close XMLStreamReader", e);
+                while (reader.hasNext()) {
+                    reader.next();
+                    if (isSessionIdElement(reader)) {
+                        log.debug("sessionid element found");
+                        return reader.getElementText();
+                    }
+                }
+            } finally {
+                try {
+                    reader.close();
+                } catch (Exception e) {
+                    log.debug("Failed to close XMLStreamReader", e);
+                }
             }
         }
 
@@ -70,9 +71,7 @@ public class XMLElementSessionIdExtractor extends AbstractXmlElement implements 
         return null;
     }
 
-    private @NotNull XMLStreamReader getXmlStreamReader(Message msg) throws XMLStreamException {
-        return HardenedStaxInputFactory.inputFactory().createXMLStreamReader(msg.getBodyAsStreamDecoded());
-    }
+
 
     private boolean isSessionIdElement(XMLStreamReader reader) {
         return reader.isStartElement() &&
