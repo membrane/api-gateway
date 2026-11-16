@@ -32,6 +32,7 @@ import static com.predic8.membrane.annot.Constants.CRLF_BYTES;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.util.ContentTypeDetector.EffectiveContentType.HTML;
 import static com.predic8.membrane.core.util.ContentTypeDetector.detectEffectiveContentType;
+import static com.predic8.membrane.core.util.StringList.parseToList;
 import static com.predic8.membrane.core.util.text.StringUtil.maskNonPrintableCharacters;
 import static com.predic8.membrane.core.util.text.StringUtil.truncateAfter;
 import static com.predic8.membrane.core.util.text.TextUtil.getCharset;
@@ -207,6 +208,29 @@ public abstract class Message {
 	}
 
 	/**
+	 * @return "request" or "response", named in rejection messages
+	 */
+	protected abstract String getMessageType();
+
+	/**
+	 * Rejects a message whose <tt>Transfer-Encoding</tt> or <tt>Content-Length</tt> does not frame its
+	 * body unambiguously, or whose transfer coding Membrane cannot decode. Call before a body is
+	 * selected.
+	 * <p>
+	 * The order matters: a message whose framing is invalid is rejected for that, and only a correctly
+	 * framed message is rejected for its coding, so the peer gets 400 instead of 501 for a smuggling
+	 * attempt.
+	 *
+	 * @throws UnsupportedTransferCodingException if a transfer coding other than <tt>chunked</tt> is present
+	 * @throws MalformedHeaderException if the framing is invalid
+	 */
+	protected void rejectInvalidFraming() throws MalformedHeaderException {
+		rejectIfBodyLengthUndeterminable();
+		rejectIfChunkedWithContentLength();
+		rejectIfTransferCodingUnsupported();
+	}
+
+	/**
 	 * RFC 9112 &sect;6.3: if a <tt>Transfer-Encoding</tt> is present and <tt>chunked</tt> is not the
 	 * final coding, the body length cannot be determined. Falling back to reading until EOF would
 	 * let gateway and backend disagree on where the message ends - the desynchronization that
@@ -217,18 +241,16 @@ public abstract class Message {
 	 * either, so it is rejected as well. That needs {@link Header#getValuesAsString(String)}: it
 	 * tells a present empty field apart from an absent one, which
 	 * {@link Header#getNormalizedValue(String)} reports as null in both cases.
-	 *
-	 * @param messageType "request" or "response", named in the rejection message
 	 */
-	protected void rejectIfBodyLengthUndeterminable(String messageType) throws MalformedHeaderException {
+	private void rejectIfBodyLengthUndeterminable() throws MalformedHeaderException {
 		String transferEncoding = header.getValuesAsString(TRANSFER_ENCODING);
 		if (transferEncoding == null || header.isChunked())
 			return;
 
 		final String maskedTransferEncoding = maskNonPrintableCharacters(truncateAfter(transferEncoding, 80));
-		log.info("Transfer-Encoding \"{}\" does not end in \"chunked\". The body length of the {} cannot be determined; rejecting to prevent a desynchronized connection.", maskedTransferEncoding, messageType);
+		log.info("Transfer-Encoding \"{}\" does not end in \"chunked\". The body length of the {} cannot be determined; rejecting to prevent a desynchronized connection.", maskedTransferEncoding, getMessageType());
 		throw new MalformedHeaderException("Transfer-Encoding \"%s\" does not end in \"chunked\". The body length of the %s cannot be determined; rejecting to prevent a desynchronized connection."
-				.formatted(maskedTransferEncoding, messageType));
+				.formatted(maskedTransferEncoding, getMessageType()));
 	}
 
 	/**
@@ -239,19 +261,54 @@ public abstract class Message {
 	 * the <tt>Content-Length</tt> first, so "Content-Length: 0" would leave the chunked bytes on the
 	 * connection, to be parsed as the next request.
 	 * <p>
-	 * Call after {@link #rejectIfBodyLengthUndeterminable(String)}, so any <tt>Transfer-Encoding</tt>
+	 * Call after {@link #rejectIfBodyLengthUndeterminable()}, so any <tt>Transfer-Encoding</tt>
 	 * left at this point ends in <tt>chunked</tt>.
-	 *
-	 * @param messageType "request" or "response", named in the rejection message
 	 */
-	protected void rejectIfChunkedWithContentLength(String messageType) throws MalformedHeaderException {
+	private void rejectIfChunkedWithContentLength() throws MalformedHeaderException {
 		if (!header.hasContentLength() || !header.isChunked())
 			return;
 
 		String message = "The %s has both Content-Length and Transfer-Encoding. Rejecting to prevent a desynchronized connection."
-				.formatted(messageType);
+				.formatted(getMessageType());
 		log.info(message);
 		throw new MalformedHeaderException(message);
+	}
+
+	/**
+	 * Membrane decodes only the <tt>chunked</tt> transfer coding. Any other coding, e.g.
+	 * <tt>gzip, chunked</tt> (RFC 9112 &sect;7), would be left on the body: plugins would read the
+	 * coded bytes as content, and an HTTP/2 peer, which has no <tt>Transfer-Encoding</tt>
+	 * (RFC 9113 &sect;8.2.2), would get them as content. So such a message is rejected; RFC 9112
+	 * &sect;6.1 says a server SHOULD answer a request with a transfer coding it does not understand
+	 * with 501.
+	 * <p>
+	 * <tt>chunked</tt> applied more than once is a coding Membrane understands but the sender must
+	 * not produce (RFC 9112 &sect;7.1); decoding it once would leave the inner chunked framing in the
+	 * content. It is rejected as malformed.
+	 *
+	 * @throws UnsupportedTransferCodingException if a coding other than <tt>chunked</tt> is present
+	 * @throws MalformedHeaderException if <tt>chunked</tt> is applied more than once
+	 */
+	private void rejectIfTransferCodingUnsupported() throws MalformedHeaderException {
+		final var transferEncoding = header.getNormalizedValue(TRANSFER_ENCODING);
+		if (transferEncoding == null)
+			return;
+
+		final var codings = parseToList(transferEncoding);
+		final var chunkedOnly = codings.stream().allMatch(CHUNKED::equalsIgnoreCase);
+		if (chunkedOnly && codings.size() == 1)
+			return;
+
+		final var maskedTransferEncoding = maskNonPrintableCharacters(truncateAfter(transferEncoding, 80));
+		if (chunkedOnly) {
+			final var message = "The %s has Transfer-Encoding \"%s\", which applies \"chunked\" more than once. Rejecting it."
+					.formatted(getMessageType(), maskedTransferEncoding);
+			log.info(message);
+			throw new MalformedHeaderException(message);
+		}
+		log.info("The {} has Transfer-Encoding \"{}\". Membrane decodes only \"chunked\"; rejecting it.", getMessageType(), maskedTransferEncoding);
+		throw new UnsupportedTransferCodingException("The %s has Transfer-Encoding \"%s\". Membrane decodes only \"chunked\"."
+				.formatted(getMessageType(), maskedTransferEncoding));
 	}
 
 	protected void createBody(InputStream in) throws IOException {
