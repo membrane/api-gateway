@@ -20,6 +20,7 @@ import com.predic8.membrane.core.lang.BodyKind;
 import com.predic8.membrane.core.interceptor.xmlcontentfilter.SimpleXPathParser.ContainerNode;
 import com.predic8.membrane.core.multipart.XOPReconstitutor;
 import com.predic8.membrane.core.util.EndOfStreamException;
+import com.predic8.membrane.core.util.xml.XMLUtil;
 import com.predic8.membrane.core.util.xml.XPathUtil;
 import com.predic8.membrane.core.util.xml.parser.HardenedXmlParser;
 import com.predic8.membrane.core.util.xml.parser.XmlParseException;
@@ -129,7 +130,7 @@ public class XMLContentFilter {
 		Transformer res = t.get();
 		if (res != null)
 			return res;
-		res = TransformerFactory.newInstance().newTransformer();
+		res = XMLUtil.newSerializer();
 		t.set(res);
 		return res;
 	}
