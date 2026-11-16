@@ -28,6 +28,7 @@ import com.predic8.membrane.core.router.DefaultRouter;
 import com.predic8.membrane.core.router.DummyTestRouter;
 import com.predic8.membrane.core.router.Router;
 import com.predic8.membrane.core.router.TestRouter;
+import com.predic8.membrane.core.router.hotdeploy.YamlRouterReloader;
 import com.predic8.membrane.core.util.ConfigurationException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -37,6 +38,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.predic8.membrane.core.exchange.ExchangeState.COMPLETED;
 import static com.predic8.membrane.core.exchange.ExchangeState.FAILED;
@@ -142,7 +144,6 @@ class KafkaConsumerProxyTest {
      */
     private void startRouter(final KafkaConsumerProxy consumer) throws Exception {
         router = new TestRouter();
-        router.getConfiguration().setHotDeploy(false);
         router.add(backend("/ok", 200));
         router.add(backend("/bad", 400));
         router.add(backend("/timeout", 408));
@@ -161,13 +162,8 @@ class KafkaConsumerProxyTest {
         return Request.post("/").body("order").buildExchange();
     }
 
-    /**
-     * kafkaConsumer needs hot deployment off, which is on by default.
-     */
     private static DummyTestRouter dummyRouter() {
-        final var router = new DummyTestRouter();
-        router.getConfiguration().setHotDeploy(false);
-        return router;
+        return new DummyTestRouter();
     }
 
     @Test
@@ -389,19 +385,50 @@ class KafkaConsumerProxyTest {
     }
 
     /**
-     * Removing or replacing an API does not stop its consumer, so changing it by hot deployment would leave the old
-     * consumer running.
+     * Hot deployment of a changed apis.yaml reloads the whole configuration. The reload closes the bean registry,
+     * which calls @PreDestroy of the kafkaConsumer, so its consumer stops before the new configuration starts.
+     * <p>
+     * Without the Kafka extension the API cannot be started, so the YAML is only parsed, and the consumer that
+     * init() would start is put in place by hand.
      */
     @Test
-    void hotDeployFailsOnStartup() {
-        final var router = new DummyTestRouter();
-        final var stub = new StubConsumer();
-        final var consumer = consumer(stub, "http://localhost:2000/ok");
+    void reloadStopsConsumerOfYamlApi(@TempDir final Path dir) throws Exception {
+        final var config = dir.resolve("apis.yaml");
+        Files.writeString(config, """
+                kafkaConsumer:
+                  name: orders-in
+                  bootstrapServers: localhost:9092
+                  topic: orders
+                  groupId: membrane
+                  target:
+                    url: https://orders.example.com/orders
+                """);
+        final var reloadRouter = new DefaultRouter();
+        try {
+            final var reloader = new YamlRouterReloader(reloadRouter, loadIntoRouter(reloadRouter, config.toString()));
+            final var proxy = assertInstanceOf(KafkaConsumerProxy.class, reloadRouter.getRuleManager().getRules().getFirst());
+            final var stub = new StubConsumer();
+            runningConsumer(proxy).set(stub);
 
-        final var e = assertThrows(ConfigurationException.class, () -> consumer.init(router));
+            Files.writeString(config, """
+                    internal:
+                      name: other
+                      target:
+                        url: https://example.com
+                    """);
+            assertTrue(reloader.reload());
 
-        assertTrue(e.getMessage().contains("hotDeploy"), e.getMessage());
-        assertNull(stub.handler);
+            assertTrue(stub.stopped);
+        } finally {
+            reloadRouter.stop();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static AtomicReference<KafkaConsumerComponentExtension> runningConsumer(final KafkaConsumerProxy proxy) throws ReflectiveOperationException {
+        final var field = KafkaConsumerProxy.class.getDeclaredField("consumer");
+        field.setAccessible(true);
+        return (AtomicReference<KafkaConsumerComponentExtension>) field.get(proxy);
     }
 
     /**
@@ -426,9 +453,6 @@ class KafkaConsumerProxyTest {
     void parsesYamlWithFlowAndTarget(@TempDir final Path dir) throws Exception {
         final var config = dir.resolve("apis.yaml");
         Files.writeString(config, """
-                configuration:
-                  hotDeploy: false
-                ---
                 kafkaConsumer:
                   name: orders-in
                   bootstrapServers: localhost:9092
