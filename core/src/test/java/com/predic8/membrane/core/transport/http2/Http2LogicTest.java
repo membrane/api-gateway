@@ -336,7 +336,10 @@ class Http2LogicTest {
                 arguments("invalid content-length", (Object) withGet("content-length", "abc")),
                 // :authority and host must name the same host (RFC 9113 §8.3.1).
                 arguments("host differing from :authority", (Object) withGet("host", "other.example")),
-                arguments("two different host fields", (Object) fields(":method", "GET", ":scheme", "https", ":path", "/", "host", "a.example", "host", "b.example"))
+                arguments("two different host fields", (Object) fields(":method", "GET", ":scheme", "https", ":path", "/", "host", "a.example", "host", "b.example")),
+                arguments("host with a port :authority lacks", (Object) withGet("host", "localhost:8443")),
+                // 443 is not the default port of http.
+                arguments("host with the default port of another scheme", (Object) fields(":method", "GET", ":scheme", "http", ":path", "/", ":authority", "localhost", "host", "localhost:443"))
         );
     }
 
@@ -490,7 +493,11 @@ class Http2LogicTest {
     static Stream<Arguments> wellFormedRequests() {
         return Stream.of(
                 arguments("te: trailers", (Object) withGet("te", "trailers")),
-                arguments("CONNECT", (Object) fields(":method", "CONNECT", ":authority", "example.com:443"))
+                arguments("CONNECT", (Object) fields(":method", "CONNECT", ":authority", "example.com:443")),
+                // The same host, as the scheme's default port may be left out (RFC 3986 §6.2.3).
+                arguments("host with the default port :authority leaves out", (Object) withGet("host", "LOCALHOST:443")),
+                arguments(":authority with the default port host leaves out", (Object) fields(":method", "GET", ":scheme", "http", ":path", "/", ":authority", "localhost:80", "host", "localhost")),
+                arguments("host fields differing only by the default port", (Object) fields(":method", "GET", ":scheme", "https", ":path", "/", "host", "[::1]", "host", "[::1]:443"))
         );
     }
 
