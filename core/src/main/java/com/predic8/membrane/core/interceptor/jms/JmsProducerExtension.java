@@ -30,6 +30,21 @@ import java.util.Map;
 public interface JmsProducerExtension {
 
     /**
+     * Version of this interface. It is increased whenever the interface or the meaning of the properties passed to
+     * {@link #init(Map)} changes incompatibly. An extension reports the version it was built against in
+     * {@link #apiVersion()}.
+     */
+    int API_VERSION = 1;
+
+    /**
+     * Called before {@link #init(Map)}. The interceptor refuses to use the extension unless the returned value
+     * equals {@link #API_VERSION}.
+     *
+     * @return The value of {@link #API_VERSION} the extension was built against.
+     */
+    int apiVersion();
+
+    /**
      * Called once before any call to {@link #send(Exchange, Flow)}.
      *
      * @param properties Connection and producer settings. Unset optional settings are missing from the map.

@@ -53,6 +53,12 @@ class JmsProducerInterceptorTest {
         Flow flow;
         boolean stopped;
         IOException failure;
+        int apiVersion = API_VERSION;
+
+        @Override
+        public int apiVersion() {
+            return apiVersion;
+        }
 
         @Override
         public void init(final Map<String, String> properties) {
@@ -265,6 +271,16 @@ class JmsProducerInterceptorTest {
         i.init(new DummyTestRouter());
         i.destroy();
         assertTrue(producer.stopped);
+    }
+
+    @Test
+    void incompatibleExtensionVersionFailsOnStartup() {
+        producer.apiVersion = JmsProducerExtension.API_VERSION + 1;
+        final var i = interceptor();
+        i.setQueue("orders");
+        final var e = assertThrows(ConfigurationException.class, () -> i.init(new DummyTestRouter()));
+        assertTrue(e.getMessage().contains("API version"));
+        assertNull(producer.properties);
     }
 
     @Test

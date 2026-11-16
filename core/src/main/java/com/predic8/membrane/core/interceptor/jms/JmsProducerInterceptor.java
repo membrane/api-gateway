@@ -101,8 +101,24 @@ public class JmsProducerInterceptor extends AbstractInterceptor {
             throw new ConfigurationException("sendTimeout of jmsProducer must not be negative.");
         // init() can run again, e.g. when the API is re-initialized
         destroy();
-        producer = createProducer();
+        final var created = createProducer();
+        checkApiVersion(created);
+        producer = created;
         producer.init(producerProperties());
+    }
+
+    private static void checkApiVersion(final JmsProducerExtension extension) {
+        int version;
+        try {
+            version = extension.apiVersion();
+        } catch (AbstractMethodError e) {
+            // Extension built before apiVersion() existed
+            version = 0;
+        }
+        if (version != JmsProducerExtension.API_VERSION)
+            throw new ConfigurationException(
+                    "The Membrane JMS Extension has API version %d, but jmsProducer needs version %d. Use a matching version of the extension."
+                            .formatted(version, JmsProducerExtension.API_VERSION));
     }
 
     /**
