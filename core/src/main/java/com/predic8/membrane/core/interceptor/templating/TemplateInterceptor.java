@@ -59,8 +59,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * A <i>.json</i> location always uses <code>application/json</code> instead of the configured <code>contentType</code>.
  * <p>See <a href="https://github.com/membrane/api-gateway/blob/master/distribution/tutorials/getting-started/110-Template.yaml">tutorials/getting-started/110-Template.yaml</a>.</p>
  *
- * When the <code>contentType</code> is a JSON variant (e.g., <code>application/json</code>), the engine automatically escapes all inserted values. For example, in the
- * <a href="https://github.com/membrane/api-gateway/tree/master/distribution/examples/templating/json">JSON templating example</a>, executing
+ * When the <code>contentType</code> is a JSON variant (e.g., <code>application/json</code>), the engine automatically escapes all inserted values. For example, with the
+ * template <code>{ "answer": ${params.answer?[0]} }</code>, executing
  * <code>curl "localhost:2000/?answer=20"</code> returns <code>{ "answer" : "20" }</code>. The quotes surrounding the value 20 are added by the auto-escaping mechanism
  * to ensure the output remains a valid string. This feature significantly mitigates security risks by preventing inadvertent JSON injection attacks.
  *
