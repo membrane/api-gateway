@@ -37,15 +37,10 @@ public interface JmsConsumerExtension {
     int API_VERSION = 1;
 
     /**
-     * Name of the exchange property holding the <code>JMSMessageID</code> of the message.
+     * Name of the exchange property holding the {@link JmsMessageInfo} of the received message, so that a flow reads
+     * e.g. <code>${property.jms.messageId}</code>.
      */
-    String MESSAGE_ID_PROPERTY = "membrane.ext.jms.messageId";
-
-    /**
-     * Name of the exchange property holding the <code>JMSCorrelationID</code> of the message. Not set if the
-     * message has none.
-     */
-    String CORRELATION_ID_PROPERTY = "membrane.ext.jms.correlationId";
+    String JMS_PROPERTY = "jms";
 
     /**
      * What the implementation does with a message after the handler returned.
@@ -71,9 +66,10 @@ public interface JmsConsumerExtension {
          * must look like one: method POST and URI <code>/</code>, so that the path of the target URL is used
          * unchanged.
          *
-         * @param exchange Exchange created from the message: the message body is the request body, the JMS
-         *                 properties of the message are request headers, and the message id and correlation id are
-         *                 in the properties {@link #MESSAGE_ID_PROPERTY} and {@link #CORRELATION_ID_PROPERTY}.
+         * @param exchange Exchange created from the message: the message body is the request body with its
+         *                 Content-Type as the only header. The header fields and properties of the message are in the
+         *                 {@link JmsMessageInfo} in the exchange property {@link #JMS_PROPERTY}. They are not passed
+         *                 as request headers, so the flow decides what reaches the target.
          * @return what to do with the message. Does not throw; an unexpected error is returned as
          * {@link Result#ROLLBACK}.
          */

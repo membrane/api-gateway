@@ -46,7 +46,13 @@ import static com.predic8.membrane.core.util.ExtensionLoader.load;
  * <p>A message is acknowledged when the target answers with a status below 400. Otherwise, e.g. after a server
  * error or an unreachable target, the message is not acknowledged and the broker delivers it again according to its
  * redelivery policy, and finally moves it to its dead-letter queue. A message can be delivered more than once, so the
- * target should handle duplicates.</p>
+ * target should handle duplicates, e.g. by the message id passed in a header.</p>
+ *
+ * <p>The request carries the message body and its Content-Type. The header fields and properties of the message are
+ * not passed to the target. The flow reads them from the exchange property <code>jms</code>, e.g.
+ * <code>${property.jms.messageId}</code>, <code>${property.jms.correlationId}</code>,
+ * <code>${property.jms.deliveryCount}</code> or <code>${property.jms.properties.orderId}</code>, and can pass them on
+ * as headers.</p>
  *
  * <p>Any broker with a Jakarta Messaging (JMS 3) client can be used.</p>
  *
@@ -64,8 +70,8 @@ import static com.predic8.membrane.core.util.ExtensionLoader.load;
  *   queue: orders
  *   flow:
  *     - setHeader:
- *         name: X-Source
- *         value: jms
+ *         name: Idempotency-Key
+ *         value: ${property.jms.messageId}
  *   target:
  *     url: https://orders.example.com/orders
  * </code></pre>
