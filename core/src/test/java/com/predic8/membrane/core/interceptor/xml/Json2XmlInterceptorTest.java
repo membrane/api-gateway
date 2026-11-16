@@ -188,12 +188,23 @@ public class Json2XmlInterceptorTest {
     }
 
     @Test
-    void invalid() throws URISyntaxException {
-        Exchange exc = put("/invalid").json("{").buildExchange();
+    void invalidJsonInTheRequestIsA400() throws URISyntaxException {
+        final var exc = put("/invalid").json("{").buildExchange();
         assertEquals(ABORT,  interceptor.handleRequest(exc));
-        Response res = exc.getResponse();
-        assertEquals(500, res.getStatusCode());
-        assertEquals("Error parsing JSON",     new JsonPath(res.getBodyAsStringDecoded()).get("title"));
+        final var res = exc.getResponse();
+        assertEquals(400, res.getStatusCode());
+        assertEquals("The JSON request could not be converted to XML.", new JsonPath(res.getBodyAsStringDecoded()).get("detail"));
+    }
+
+    @Test
+    void invalidJsonFromTheBackendIsA500ThatHidesIt() throws URISyntaxException {
+        final var exc = get("/invalid").buildExchange();
+        exc.setResponse(Response.ok().json("{\"db-host-3\" 1}").build());
+        interceptor.getRouter().getConfiguration().setProduction(true);
+
+        assertEquals(ABORT, interceptor.handleResponse(exc));
+        assertEquals(500, exc.getResponse().getStatusCode());
+        assertFalse(exc.getResponse().getBodyAsStringDecoded().contains("db-host-3"));
     }
 
     private static String xPath(String body, String expression) throws XPathExpressionException {

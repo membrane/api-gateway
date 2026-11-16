@@ -18,6 +18,7 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.http.Body;
 import com.predic8.membrane.core.util.xml.XMLInputSourceUtil;
+import com.predic8.membrane.core.util.xml.XMLUtil;
 import com.predic8.membrane.core.util.xml.parser.HardenedXmlParser;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -26,7 +27,6 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
 import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.InputStream;
@@ -96,7 +96,7 @@ public class AuthHead2BodyInterceptor extends AbstractInterceptor {
 	}
 
 	private String DOM2String(Document doc) throws Exception {
-		Transformer xformer = TransformerFactory.newInstance().newTransformer();
+		Transformer xformer = XMLUtil.newSerializer();
 		StringWriter writer = new StringWriter();
 		xformer.transform(new DOMSource(doc),new StreamResult(writer));
 		return writer.toString();

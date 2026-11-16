@@ -302,7 +302,11 @@ public class StreamInfo {
                 DataFrame df = removeDataFrame();
                 if (df == null)
                     continue;
-                chunks.add(new Chunk(createByteArray(df)));
+                final var chunk = new Chunk(createByteArray(df));
+                chunks.add(chunk);
+                if (chunk.getLength() > 0)
+                    for (MessageObserver observer : observers)
+                        observer.bodyChunk(chunk);
 
                 if (df.isEndStream())
                     break;
@@ -346,6 +350,8 @@ public class StreamInfo {
                     } catch (IOException e) {
                         throw new WritingBodyException(e);
                     }
+                    for (MessageObserver observer : observers)
+                        observer.bodyChunk(df.getContent(), df.getDataStartIndex(), len);
                     streamedLength += len;
                 }
 

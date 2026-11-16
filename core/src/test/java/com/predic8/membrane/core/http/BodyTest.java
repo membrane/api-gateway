@@ -257,6 +257,35 @@ public class BodyTest {
 	}
 
 	/**
+	 * A discarded body did not keep its content, so reading it must fail instead of returning an empty
+	 * body. Its length is what it holds in memory: nothing.
+	 */
+	@Test
+	void contentOfADiscardedBodyCannotBeRead() {
+		final var body = new Body(new ByteArrayInputStream("content".getBytes(UTF_8)), "content".length());
+
+		body.discard();
+
+		assertThrows(IllegalStateException.class, body::getContent);
+		assertThrows(IllegalStateException.class, body::getContentAsStream);
+		assertEquals(0, body.getLength());
+	}
+
+	/**
+	 * Writing a discarded body would send nothing after a header that announces its length.
+	 */
+	@Test
+	void discardedBodyCannotBeWritten() {
+		final var body = new Body(new ByteArrayInputStream("content".getBytes(UTF_8)), "content".length());
+		body.discard();
+		final var out = new ByteArrayOutputStream();
+
+		assertThrows(IllegalStateException.class, () -> body.write(new PlainBodyTransferer(out), false));
+		assertThrows(IllegalStateException.class, () -> body.write(new PlainBodyTransferer(out), true));
+		assertEquals(0, out.size());
+	}
+
+	/**
 	 * The bytes after the declared length belong to the next message on the connection; consuming them
 	 * would desync it.
 	 */
@@ -309,8 +338,10 @@ public class BodyTest {
 	void discardFailsWhenAKnownLengthBodyEndsEarly() {
 		Body body = new Body(new ByteArrayInputStream("four".getBytes(UTF_8)), 10);
 
-		body.discard();
+		final var e = assertThrows(ReadingBodyException.class, body::discard);
 
+		assertInstanceOf(EOFException.class, e.getCause());
+		assertSame(e, body.getObservedException());
 		assertTrue(body.hasFailed());
 		assertFalse(body.isRead());
 	}
