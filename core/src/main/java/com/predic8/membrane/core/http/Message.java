@@ -470,8 +470,12 @@ public abstract class Message {
 		return header.getContentEncoding() != null || header.isMultipart();
 	}
 
+	/**
+	 * True for "gzip" and, as RFC 9110 8.4.1.3 asks of recipients, its legacy alias "x-gzip".
+	 */
 	public boolean isGzip() {
-		return "gzip".equalsIgnoreCase(header.getContentEncoding());
+		final var contentEncoding = header.getContentEncoding();
+		return "gzip".equalsIgnoreCase(contentEncoding) || "x-gzip".equalsIgnoreCase(contentEncoding);
 	}
 
 	public boolean isDeflate() {
