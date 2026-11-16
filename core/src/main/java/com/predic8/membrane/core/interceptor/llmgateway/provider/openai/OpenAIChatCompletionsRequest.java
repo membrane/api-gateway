@@ -25,7 +25,7 @@ public class OpenAIChatCompletionsRequest extends ChatCompletionsRequest {
     }
 
     @Override
-    public void setMaxOutputTokens(int maxOutputTokens) {
-        json.put("max_completion_tokens", maxOutputTokens);
+    protected String outputLimitField() {
+        return "max_completion_tokens";
     }
 }
