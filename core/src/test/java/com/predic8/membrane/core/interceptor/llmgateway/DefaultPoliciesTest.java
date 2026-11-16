@@ -101,28 +101,30 @@ class DefaultPoliciesTest {
 
     /**
      * Chat Completions has two output limit fields, max_tokens and max_completion_tokens. Neither may exceed the
-     * maximum, whichever one the provider writes the limit to.
+     * maximum, whichever one the provider writes the limit to. A field above the maximum is lowered to exactly the
+     * maximum, and a field the client did not send stays absent (an empty expected value).
      */
     @ParameterizedTest(name = "{0} {1}")
     @CsvSource(delimiter = '|', value = {
-            "chatCompletions | {\"max_completion_tokens\":100000}",
-            "chatCompletions | {\"max_completion_tokens\":50,\"max_tokens\":100000}",
-            "chatCompletions | {\"max_tokens\":50,\"max_completion_tokens\":100000}",
-            "openai          | {\"max_tokens\":100000}",
-            "openai          | {\"max_completion_tokens\":50,\"max_tokens\":100000}",
-            "openai          | {\"max_tokens\":50,\"max_completion_tokens\":100000}",
+            "chatCompletions | {\"max_completion_tokens\":100000}                     |     | 100",
+            "chatCompletions | {\"max_completion_tokens\":50,\"max_tokens\":100000} | 100 | 50",
+            "chatCompletions | {\"max_tokens\":50,\"max_completion_tokens\":100000} | 50  | 100",
+            "openai          | {\"max_tokens\":100000}                                | 100 |",
+            "openai          | {\"max_completion_tokens\":50,\"max_tokens\":100000} | 100 | 50",
+            "openai          | {\"max_tokens\":50,\"max_completion_tokens\":100000} | 50  | 100",
     })
-    void noChatCompletionsOutputLimitFieldExceedsTheMaximum(String provider, String body) throws Exception {
+    void noChatCompletionsOutputLimitFieldExceedsTheMaximum(String provider, String body, String expectedMaxTokens,
+                                                            String expectedMaxCompletionTokens) throws Exception {
         final var policies = policies();
         policies.setMaxOutputTokens(100);
         final var request = chatCompletionsRequest(provider, body);
 
         assertEquals(CONTINUE, policies.handleRequest(request, new Exchange(null)));
 
-        for (final var field : List.of("max_tokens", "max_completion_tokens")) {
-            final var value = request.getJson().path(field);
-            assertTrue(value.isMissingNode() || value.asLong() <= 100, () -> "%s is %s".formatted(field, value));
-        }
+        final var json = request.getJson();
+        assertEquals(expectedMaxTokens, json.has("max_tokens") ? json.get("max_tokens").toString() : null);
+        assertEquals(expectedMaxCompletionTokens,
+                json.has("max_completion_tokens") ? json.get("max_completion_tokens").toString() : null);
     }
 
     /**
