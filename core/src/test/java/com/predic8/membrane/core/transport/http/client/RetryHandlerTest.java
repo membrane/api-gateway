@@ -18,30 +18,44 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.http.ConnectTimeoutException;
+import com.predic8.membrane.core.transport.http.EOFWhileReadingFirstLineException;
 import com.predic8.membrane.core.transport.http.HttpClientStatusEventBus;
 import com.predic8.membrane.core.transport.http.HttpClientStatusEventListener;
+import com.predic8.membrane.core.transport.http.NoResponseException;
 import com.predic8.membrane.core.transport.http2.StreamNotProcessedException;
+import org.apache.logging.log4j.Level;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.ConnectException;
+import java.net.NoRouteToHostException;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
+import static com.predic8.membrane.core.http.Request.METHOD_PATCH;
+import static com.predic8.membrane.core.http.Request.METHOD_POST;
 import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.http.Request.post;
 import static com.predic8.membrane.core.http.Response.ok;
+import static com.predic8.membrane.test.TestAppender.captureLog;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 class RetryHandlerTest {
 
@@ -190,6 +204,25 @@ class RetryHandlerTest {
         }
 
         /**
+         * An unreachable host is a known outage, not an unknown condition: a warning with the masked destination,
+         * not the line with a stack trace logged for an unexpected SocketException. GET is still retried.
+         */
+        @Test
+        void noRouteToHostIsLoggedAsWarningWithoutStackTrace() throws Exception {
+            final var mock = new RetryableExchangeCallMock(new NoRouteToHostException("Host is unreachable"));
+            final var exc = get("/foo?api-key=secret").buildExchange();
+
+            final var log = captureLog(() -> assertThrows(NoRouteToHostException.class, () -> rh.executeWithRetries(exc, mock)));
+
+            final var warnings = log.eventsContaining("No route to /foo?api-key=***: Host is unreachable");
+            assertEquals(3, warnings.size(), log.getMessages().toString());
+            assertTrue(warnings.stream().allMatch(event -> event.getLevel() == Level.WARN && event.getThrown() == null), warnings.toString());
+            assertFalse(log.contains("Unexpected SocketException"), log.getMessages().toString());
+            assertFalse(log.contains("secret"), log.getMessages().toString());
+            assertEquals(3, mock.attempts);
+        }
+
+        /**
          * The backend did not process the request (RFC 9113 §8.7), so sending it again is safe for every method.
          */
         @Test
@@ -315,6 +348,53 @@ class RetryHandlerTest {
             return new ConnectTimeoutException("Connecting to example.com:80 timed out after 10000ms.",
                     new SocketTimeoutException("Connect timed out"));
         }
+    }
+
+    /**
+     * A non-idempotent request must not be repeated once it may have been applied (RFC 9110 §9.2.2).
+     * Each of these failures can happen after the request was written, so retrying a POST or PATCH
+     * could apply it twice. Several nodes are configured because that is where a retry would be most
+     * tempting.
+     */
+    @Nested
+    class NonIdempotentAfterWrite {
+
+        @ParameterizedTest(name = "{0} after {1}")
+        @MethodSource("com.predic8.membrane.core.transport.http.client.RetryHandlerTest#failuresAfterWrite")
+        void isNotRetried(String method, Exception failure) throws Exception {
+            final var mock = new RetryableExchangeCallMock(failure);
+            final var exc = onTwoNodes(method);
+
+            assertThrows(failure.getClass(), () -> rh.executeWithRetries(exc, mock));
+            assertEquals(1, mock.attempts);
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = {METHOD_POST, METHOD_PATCH})
+        void isNotRetriedAfterServerError(String method) throws Exception {
+            rh.setFailOverOn5XX(true);
+            final var mock = new RetryableExchangeCallMock(503);
+
+            rh.executeWithRetries(onTwoNodes(method), mock);
+
+            assertEquals(1, mock.attempts);
+        }
+
+        private static Exchange onTwoNodes(String method) throws URISyntaxException {
+            final var exc = post("/foo").method(method).buildExchange();
+            exc.setDestinations(List.of("http://node1.example.com/", "http://node2.example.com/"));
+            return exc;
+        }
+    }
+
+    static Stream<Arguments> failuresAfterWrite() {
+        return Stream.of(METHOD_POST, METHOD_PATCH).flatMap(method -> Stream.<Exception>of(
+                new SocketTimeoutException("Read timed out"),
+                new SocketException("Connection reset"),
+                new EOFWhileReadingFirstLineException(""),
+                new NoResponseException(new IOException("Connection closed")),
+                new IOException("Unexpected failure")
+        ).map(failure -> arguments(method, failure)));
     }
 
     @Test

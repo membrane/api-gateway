@@ -13,12 +13,14 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.xmlcontentfilter;
 
+import java.io.InputStream;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.lang.BodyKind;
 import com.predic8.membrane.core.interceptor.xmlcontentfilter.SimpleXPathParser.ContainerNode;
 import com.predic8.membrane.core.multipart.XOPReconstitutor;
 import com.predic8.membrane.core.util.EndOfStreamException;
+import com.predic8.membrane.core.util.xml.XMLUtil;
 import com.predic8.membrane.core.util.xml.XPathUtil;
 import com.predic8.membrane.core.util.xml.parser.HardenedXmlParser;
 import com.predic8.membrane.core.util.xml.parser.XmlParseException;
@@ -128,7 +130,7 @@ public class XMLContentFilter {
 		Transformer res = t.get();
 		if (res != null)
 			return res;
-		res = TransformerFactory.newInstance().newTransformer();
+		res = XMLUtil.newSerializer();
 		t.set(res);
 		return res;
 	}
@@ -154,11 +156,16 @@ public class XMLContentFilter {
 				log.warn(e.getMessage());
 			}
 
-            if (elementFinder != null &&
-					!elementFinder.matches(xop != null ? xop.getBodyAsStream() : message.getBodyAsStreamDecoded())) {
-				return;
-			}
-			Document d = HardenedXmlParser.getInstance().parse(new InputSource(xop != null ? xop.getBodyAsStream() : message.getBodyAsStreamDecoded()));
+            if (elementFinder != null) {
+                try (final var body = bodyOf(xop, message)) {
+                    if (!elementFinder.matches(body))
+                        return;
+                }
+            }
+            final Document d;
+            try (final var body = bodyOf(xop, message)) {
+                d = HardenedXmlParser.getInstance().parse(new InputSource(body));
+            }
 			removeElementsIfNecessary(message, xop, d);
 		} catch (XMLStreamException e) {
 			throw new XmlParseException("Could not parse XML document: " + e.getMessage());
@@ -167,6 +174,10 @@ public class XMLContentFilter {
 			log.warn(e.getMessage());
 			throw new RuntimeException(e);
 		}
+	}
+
+	private static InputStream bodyOf(Message xop, Message message) {
+		return xop != null ? xop.getBodyAsStream() : message.getBodyAsStreamDecoded();
 	}
 
 	private static boolean mayBeXml(Message message) {

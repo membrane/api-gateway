@@ -48,6 +48,12 @@ public class Exchange extends AbstractExchange {
     public static final String SNI_SERVER_NAME = "membrane.sni.server.name";
     public static final String WS_ORIGINAL_EXCHANGE = "membrane.ws.original.exchange";
     public static final String SECURITY_SCHEMES = "membrane.security.schemes";
+    /**
+     * Set to {@link Boolean#TRUE} by an interceptor that turns the client connection into a tunnel without sending
+     * an HTTP response, like the stompClient after a CONNECT or STOMP frame. The handler then writes no response,
+     * and the tunnel starts when the exchange is completed.
+     */
+    public static final String TUNNELED_WITHOUT_RESPONSE = "membrane.tunneled.without.response";
 
     private AbstractHttpHandler handler;
 

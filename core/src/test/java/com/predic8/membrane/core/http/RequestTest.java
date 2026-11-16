@@ -635,7 +635,7 @@ public class RequestTest {
     /**
      * Baseline of the current start-line parsing, including its quirks listed in #3378: anything
      * that is not {@code <method> <uri> HTTP/<version>} falls back to STOMP, and an empty line
-     * reads as the end of a keep-alive connection.
+     * followed by the end of the stream reads as the end of a keep-alive connection.
      */
     @Nested
     class ParseStartLine {
@@ -812,6 +812,48 @@ public class RequestTest {
             @Test
             void tabSeparator() throws IOException {
                 assertStartLine("GET\t/foo HTTP/1.1", "GET\t/foo HTTP/1.1", "", "STOMP");
+            }
+        }
+
+        /**
+         * RFC 9112 2.2: a server should ignore at least one empty line received before the request line.
+         */
+        @Nested
+        class LeadingEmptyLines {
+
+            private static final String REQUEST_LINE = "GET /foo HTTP/1.1\r\n";
+
+            @Test
+            void emptyLineIsIgnored() throws IOException {
+                assertParsedAsGetFoo(parse(("\r\n" + REQUEST_LINE).getBytes(UTF_8)));
+            }
+
+            @Test
+            void bareLfIsIgnored() throws IOException {
+                assertParsedAsGetFoo(parse(("\n" + REQUEST_LINE).getBytes(UTF_8)));
+            }
+
+            @Test
+            void tenEmptyLinesAreIgnored() throws IOException {
+                assertParsedAsGetFoo(parse(("\r\n".repeat(10) + REQUEST_LINE).getBytes(UTF_8)));
+            }
+
+            @Test
+            void moreThanTenEmptyLinesEndTheConnection() {
+                assertThrows(NoMoreRequestsException.class, () -> parse(("\r\n".repeat(11) + REQUEST_LINE).getBytes(UTF_8)));
+            }
+
+            @Test
+            void consumesOnlyTheEmptyLinesAndTheStartLine() throws IOException {
+                final var in = new ByteArrayInputStream(("\r\n\r\n" + REQUEST_LINE + "Host: example.com\r\n").getBytes(UTF_8));
+                new Request().parseStartLine(in);
+                assertEquals("Host: example.com\r\n", new String(in.readAllBytes(), UTF_8));
+            }
+
+            private static void assertParsedAsGetFoo(Request req) {
+                assertEquals("GET", req.getMethod());
+                assertEquals("/foo", req.getUri());
+                assertEquals("1.1", req.getVersion());
             }
         }
 
