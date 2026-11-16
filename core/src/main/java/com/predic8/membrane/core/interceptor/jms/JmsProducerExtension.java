@@ -24,8 +24,9 @@ import java.util.Map;
  * Sends messages to a JMS broker. The Membrane JMS Extension provides the implementation;
  * without it the interceptor fails on startup with a ConfigurationException.
  * <p>
- * Settings that are fixed for one jmsProducer are passed to {@link #init(Map)}. Values that can change from
- * message to message are read from the exchange, so the signature of {@link #send(Exchange, Flow)} stays stable.
+ * Settings that are fixed for one jmsProducer are passed to {@link #init(Map)}. Header fields and properties that
+ * can change from message to message are evaluated by the interceptor and passed to
+ * {@link #send(Exchange, Flow, JmsOutgoingMessage)}.
  */
 public interface JmsProducerExtension {
 
@@ -45,7 +46,7 @@ public interface JmsProducerExtension {
     int apiVersion();
 
     /**
-     * Called once before any call to {@link #send(Exchange, Flow)}.
+     * Called once before any call to {@link #send(Exchange, Flow, JmsOutgoingMessage)}.
      *
      * @param properties Connection and producer settings. Unset optional settings are missing from the map.
      *                   <ul>
@@ -57,6 +58,10 @@ public interface JmsProducerExtension {
      *                   <li><code>delivery.mode</code>: PERSISTENT or NON_PERSISTENT</li>
      *                   <li><code>send.timeout</code>: milliseconds a send may take before it fails, 0 for no
      *                   limit</li>
+     *                   <li><code>priority</code>: 0 (lowest) to 9 (highest)</li>
+     *                   <li><code>time.to.live</code>: milliseconds until the message expires, 0 for never</li>
+     *                   <li><code>delivery.delay</code>: milliseconds the broker waits before it delivers the
+     *                   message, 0 for no delay</li>
      *                   </ul>
      */
     void init(Map<String, String> properties);
@@ -67,10 +72,14 @@ public interface JmsProducerExtension {
      * must not share them between concurrent calls without synchronization, e.g. it can use one
      * session and producer per thread or a pool.
      *
-     * @param exchange Exchange whose request or response body is the message body
+     * @param exchange Exchange whose request or response body is the message body. Its Content-Type is sent as
+     *                 the JMS property <code>contentType</code>.
      * @param flow     REQUEST to send the body of the request, RESPONSE to send the body of the response
+     * @param message  Header fields and properties to set on the message
+     * @return The message as sent, with the <code>JMSMessageID</code> and <code>JMSTimestamp</code> the provider
+     * set. Its redelivered flag is false and its delivery count null.
      */
-    void send(Exchange exchange, Flow flow) throws IOException;
+    JmsMessageInfo send(Exchange exchange, Flow flow, JmsOutgoingMessage message) throws IOException;
 
     /**
      * Releases the connections. Called when the router stops.

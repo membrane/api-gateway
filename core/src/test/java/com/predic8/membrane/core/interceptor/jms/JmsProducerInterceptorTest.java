@@ -51,6 +51,8 @@ class JmsProducerInterceptorTest {
         Map<String, String> properties;
         Exchange exchange;
         Flow flow;
+        JmsOutgoingMessage message;
+        final JmsMessageInfo sent = JmsMessageInfo.builder().messageId("ID:sent").build();
         boolean stopped;
         IOException failure;
         int apiVersion = API_VERSION;
@@ -66,11 +68,13 @@ class JmsProducerInterceptorTest {
         }
 
         @Override
-        public void send(final Exchange exc, final Flow flow) throws IOException {
+        public JmsMessageInfo send(final Exchange exc, final Flow flow, final JmsOutgoingMessage message) throws IOException {
             if (failure != null)
                 throw failure;
             this.exchange = exc;
             this.flow = flow;
+            this.message = message;
+            return sent;
         }
 
         @Override
@@ -148,7 +152,135 @@ class JmsProducerInterceptorTest {
                 "factory.brokerURL", "tcp://mq.example.com:61616",
                 "queue", "orders",
                 "delivery.mode", "NON_PERSISTENT",
-                "send.timeout", "10000"), producer.properties);
+                "send.timeout", "10000",
+                "priority", "4",
+                "time.to.live", "0",
+                "delivery.delay", "0"), producer.properties);
+    }
+
+    @Test
+    void passesQualityOfServiceToExtension() {
+        final var i = interceptor();
+        i.setQueue("orders");
+        i.setPriority(9);
+        i.setTimeToLive(60_000);
+        i.setDeliveryDelay(5_000);
+        i.init(new DummyTestRouter());
+        assertEquals("9", producer.properties.get("priority"));
+        assertEquals("60000", producer.properties.get("time.to.live"));
+        assertEquals("5000", producer.properties.get("delivery.delay"));
+    }
+
+    @Test
+    void rejectsInvalidQualityOfService() {
+        assertInitFails(i -> i.setPriority(10), "priority");
+        assertInitFails(i -> i.setPriority(-1), "priority");
+        assertInitFails(i -> i.setTimeToLive(-1), "timeToLive");
+        assertInitFails(i -> i.setDeliveryDelay(-1), "deliveryDelay");
+    }
+
+    @Test
+    void rejectsInvalidPropertyNames() {
+        assertInitFails(i -> i.setProperties(properties(Map.of("order-id", "1"))), "Java identifier");
+        assertInitFails(i -> i.setProperties(properties(Map.of("1st", "1"))), "Java identifier");
+        assertInitFails(i -> i.setProperties(properties(Map.of("JMSXGroupID", "a"))), "must not start with JMS");
+        assertInitFails(i -> i.setProperties(properties(Map.of("between", "a"))), "selector");
+        assertInitFails(i -> i.setProperties(properties(Map.of("contentType", "text/plain"))), "Content-Type");
+    }
+
+    private void assertInitFails(final java.util.function.Consumer<JmsProducerInterceptor> configure, final String messagePart) {
+        final var i = interceptor();
+        i.setQueue("orders");
+        configure.accept(i);
+        final var e = assertThrows(ConfigurationException.class, () -> i.init(new DummyTestRouter()));
+        assertTrue(e.getMessage().contains(messagePart), e.getMessage());
+    }
+
+    private static JmsProducerProperties properties(final Map<String, String> values) {
+        final var properties = new JmsProducerProperties();
+        properties.setProperties(values);
+        return properties;
+    }
+
+    @Test
+    void evaluatesHeaderFieldsAndProperties() throws Exception {
+        final var i = interceptor();
+        i.setQueue("orders");
+        i.setCorrelationId("${header['X-Request-Id']}");
+        i.setType("order-created");
+        i.setReplyTo("topic:replies");
+        final var values = new java.util.LinkedHashMap<String, String>();
+        values.put("orderId", "${json.id}");
+        values.put("label", "order-${json.id}");
+        values.put("express", "${json.express}");
+        values.put("tenant", "acme");
+        i.setProperties(properties(values));
+        i.init(new DummyTestRouter());
+
+        final var exc = post("/orders").header("X-Request-Id", "r-1").json("{\"id\":7,\"express\":true}").buildExchange();
+        assertEquals(CONTINUE, i.handleRequest(exc));
+
+        final var message = producer.message;
+        assertEquals("r-1", message.correlationId());
+        assertEquals("order-created", message.type());
+        assertEquals("replies", message.replyToTopic());
+        assertNull(message.replyToQueue());
+        // A single expression keeps its type, text with an expression becomes a string
+        assertEquals(7, message.properties().get("orderId"));
+        assertEquals("order-7", message.properties().get("label"));
+        assertEquals(true, message.properties().get("express"));
+        assertEquals("acme", message.properties().get("tenant"));
+    }
+
+    @Test
+    void missingValuesAreLeftOut() throws Exception {
+        final var i = interceptor();
+        i.setQueue("orders");
+        i.setCorrelationId("${header['X-Missing']}");
+        i.setReplyTo("replies");
+        i.setProperties(properties(Map.of("orderId", "${header['X-Missing']}")));
+        i.init(new DummyTestRouter());
+
+        assertEquals(CONTINUE, i.handleRequest(post("/orders").body("{}").buildExchange()));
+
+        assertNull(producer.message.correlationId());
+        assertEquals("replies", producer.message.replyToQueue());
+        assertNull(producer.message.replyToTopic());
+        assertTrue(producer.message.properties().isEmpty());
+    }
+
+    @Test
+    void failingExpressionAnswersWith500() throws Exception {
+        final var i = interceptor();
+        i.setQueue("orders");
+        i.setCorrelationId("${unknownFunction()}");
+        i.init(new DummyTestRouter());
+
+        final var exc = post("/orders").body("{}").buildExchange();
+        assertEquals(ABORT, i.handleRequest(exc));
+        assertEquals(500, exc.getResponse().getStatusCode());
+        assertNull(producer.exchange);
+    }
+
+    @Test
+    void sentMessageIsInJmsSent() throws Exception {
+        final var i = interceptor();
+        i.setQueue("orders");
+        i.init(new DummyTestRouter());
+
+        final var exc = post("/orders").body("{}").buildExchange();
+        assertEquals(CONTINUE, i.handleRequest(exc));
+        assertSame(producer.sent, exc.getProperty(JmsProducerInterceptor.JMS_SENT_PROPERTY));
+    }
+
+    @Test
+    void jmsValuesKeepAllowedTypes() {
+        assertEquals(7, JmsProducerInterceptor.toJmsValue(7));
+        assertEquals(7L, JmsProducerInterceptor.toJmsValue(java.math.BigInteger.valueOf(7)));
+        assertEquals(1.5, JmsProducerInterceptor.toJmsValue(new java.math.BigDecimal("1.5")));
+        assertEquals("123456789012345678901234567890", JmsProducerInterceptor.toJmsValue(new java.math.BigInteger("123456789012345678901234567890")));
+        assertEquals("[a, b]", JmsProducerInterceptor.toJmsValue(java.util.List.of("a", "b")));
+        assertNull(JmsProducerInterceptor.toJmsValue(null));
     }
 
     @Test
@@ -344,6 +476,32 @@ class JmsProducerInterceptorTest {
         assertEquals("order-events", i.getTopic());
         assertEquals(ARTEMIS, i.getConnection().getConnectionFactory());
         assertEquals(Map.of("brokerURL", "tcp://mq.example.com:61616"), i.getConnection().getFactoryProperties());
+    }
+
+    @Test
+    void yamlHeaderFieldsAndProperties() throws Exception {
+        final var i = loadProducer("""
+                api:
+                  port: 2000
+                  flow:
+                    - jmsProducer:
+                        jmsConnection:
+                          connectionFactory: %s
+                        queue: orders
+                        correlationId: ${header['X-Request-Id']}
+                        priority: 6
+                        timeToLive: 60000
+                        replyTo: topic:replies
+                        properties:
+                          orderId: ${json.id}
+                          tenant: acme
+                          retries: 3
+                """.formatted(ARTEMIS));
+        assertEquals("${header['X-Request-Id']}", i.getCorrelationId());
+        assertEquals(6, i.getPriority());
+        assertEquals(60_000, i.getTimeToLive());
+        assertEquals("topic:replies", i.getReplyTo());
+        assertEquals(Map.of("orderId", "${json.id}", "tenant", "acme", "retries", "3"), i.getProperties().getProperties());
     }
 
     private JmsProducerInterceptor loadProducer(final String yaml) throws Exception {
