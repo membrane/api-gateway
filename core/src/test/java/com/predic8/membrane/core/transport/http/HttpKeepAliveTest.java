@@ -35,6 +35,8 @@ import static com.predic8.membrane.core.http.Response.ok;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static java.lang.Thread.sleep;
+import static java.nio.charset.StandardCharsets.US_ASCII;
+import static org.apache.commons.lang3.StringUtils.countMatches;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class HttpKeepAliveTest {
@@ -109,6 +111,34 @@ public class HttpKeepAliveTest {
 		assertEquals(200, issueRequest(client));
 
 		assertEquals(1, hashs.size());
+	}
+
+	/**
+	 * RFC 9112 2.2: an empty line before the request line is ignored. Here it is a CRLF after the first body that
+	 * Content-Length doesn't count, so the second request on the connection is still answered.
+	 */
+	@Test
+	void emptyLineBeforeNextRequestIsIgnored() throws Exception {
+		try (final var socket = new Socket("localhost", 2003)) {
+			socket.setSoTimeout(5000);
+			final var out = socket.getOutputStream();
+			out.write("""
+					POST /foo HTTP/1.1\r
+					Host: localhost:2003\r
+					Content-Length: 3\r
+					\r
+					abc\r
+					POST /foo HTTP/1.1\r
+					Host: localhost:2003\r
+					Content-Length: 3\r
+					Connection: close\r
+					\r
+					abc""".getBytes(US_ASCII));
+			out.flush();
+
+			final var responses = new String(socket.getInputStream().readAllBytes(), US_ASCII);
+			assertEquals(2, countMatches(responses, "HTTP/1.1 200 "), responses);
+		}
 	}
 
 	@Test

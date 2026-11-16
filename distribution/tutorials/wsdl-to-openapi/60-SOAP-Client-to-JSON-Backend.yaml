@@ -1,0 +1,98 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.8.1.json
+#
+# Tutorial: SOAP Client to JSON Backend with WSDL
+#
+# Offer a SOAP service whose backend speaks JSON. soap2Json converts the SOAP request to JSON and
+# remembers its operation, json2Soap converts the JSON answer to that operation's SOAP response.
+# Both follow the XML Schema in the WSDL, so nothing about the messages is guessed.
+#
+# 1.) Start Membrane
+#    Linux/Mac:
+#      ./membrane.sh -c 60-SOAP-Client-to-JSON-Backend.yaml
+#    Windows:
+#      membrane.cmd -c 60-SOAP-Client-to-JSON-Backend.yaml
+#
+# 2.) Send a SOAP request for partner 1
+#    curl -d @get-partner-1.soap.xml -H "Content-Type: text/xml" localhost:2000
+#
+#      ...<ns:getPartnerResponse xmlns:ns="http://example.com/partner"><partner><id>1</id><name>Alice</name>...
+#
+# 3.) Look at the log: the backend received {"id" : 1}, with the id as a number
+#
+# 4.) Ask for a partner the backend does not know
+#    curl -d @get-partner-7.soap.xml -H "Content-Type: text/xml" localhost:2000
+#
+#      <faultcode>soap:Client</faultcode>
+#      <faultstring>The service rejected the request.</faultstring>
+#
+#    The backend answers 404, so the SOAP client gets a SOAP fault with status 500.
+
+api:
+  port: 2000
+  name: Partner SOAP Service
+  flow:
+    - request:
+        - soap2Json:
+            wsdl: mocks/partner.wsdl
+    - response:
+        - json2Soap:
+            wsdl: mocks/partner.wsdl
+  target:
+    url: http://localhost:3000
+
+---
+api:
+  port: 3000
+  name: Partner JSON Backend (Mock)
+  flow:
+    - request:
+        - log:
+            label: "****** JSON Request *******"
+        - setProperty:
+            name: id
+            value: ${$.id}
+            language: jsonpath
+    - if:
+        test: property.id != 1
+        flow:
+          - static:
+              contentType: application/json
+              src: '{"title": "Partner not found"}'
+          - return:
+              status: 404
+    # Shaped like getPartnerResponse in the WSDL; the keys may come in any order.
+    - static:
+        contentType: application/json
+        src: |
+          {
+            "partner": {
+              "name": "Alice",
+              "id": 1,
+              "birthDate": "1985-03-15",
+              "kind": "PERSON",
+              "active": true,
+              "creditLimit": 10000,
+              "address": {
+                "street": "Main St",
+                "houseNumber": "1",
+                "postalCode": "12345",
+                "city": "Springfield",
+                "country": "US"
+              }
+            }
+          }
+    - return:
+        status: 200
+
+# NOTE:
+#   The operation travels from soap2Json to json2Soap in the exchange property
+#   membrane.soap.operation. To convert the response of a fixed operation instead, give json2Soap
+#   an operation, e.g. operation: getPartner.
+#
+#   json2Soap writes the elements in the order the XML Schema declares, whatever the order of
+#   the JSON keys. What the backend sends with an error status is not passed on to the SOAP
+#   client.
+#
+# See also:
+#  - 50-JSON-Client-to-SOAP-Service.yaml for the other direction: calling a SOAP service with JSON
+#  - 20-WSDL-to-OpenAPI-REST.yaml for the same partner service as a REST API

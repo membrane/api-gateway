@@ -478,7 +478,7 @@ public class KubernetesClient {
         }
 
         if (fullyReadBody)
-            e.getResponse().getBodyAsStreamDecoded();
+            e.getResponse().getBodyAsStreamDecoded().close();
 
         if (Arrays.contains(expectedHttpCode, e.getResponse().getStatusCode()))
             return;

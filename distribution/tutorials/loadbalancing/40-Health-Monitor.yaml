@@ -92,6 +92,6 @@ api:
         status: 200
 
 # NOTE:
-#   The first check runs 5 seconds after startup.
+#   The first check runs one interval after startup.
 #
 # Reference: https://www.membrane-api.io/docs/current/balancerHealthMonitor.html

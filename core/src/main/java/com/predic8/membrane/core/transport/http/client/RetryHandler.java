@@ -37,6 +37,8 @@ import java.util.Set;
 import static com.predic8.membrane.core.transport.http.HttpClientStatusEventBus.reportException;
 import static com.predic8.membrane.core.transport.http.HttpClientStatusEventBus.reportStatusCode;
 import static com.predic8.membrane.core.util.HttpUtil.isIdempotent;
+import static com.predic8.membrane.core.util.URLParamUtil.uriForLog;
+import static com.predic8.membrane.core.util.text.TextUtil.escapeControlCharsForLog;
 import static java.lang.Thread.sleep;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
@@ -258,6 +260,9 @@ public class RetryHandler {
                 log.debug("Connection to {} was aborted externally.", dest);
             } else if (message.contains("reset")) {
                 log.debug("Connection to {} was reset externally.", dest);
+            } else if (e instanceof NoRouteToHostException) {
+                // A known outage (no route, firewall, host down), not an unknown condition: no stack trace.
+                log.warn("No route to {}: {}", uriForLog(dest), escapeControlCharsForLog(e.getMessage()));
             } else {
                 logException(exc, attempt, e);
                 log.info("Unexpected SocketException: {}", e.getMessage(), e); // Unknown condition => log stacktrace
@@ -265,7 +270,7 @@ public class RetryHandler {
             return !isIdempotent(exc.getRequest().getMethod());
         }
         if (e instanceof UnknownHostException) {
-            log.warn("Unknown host: {}", dest); // Could be a configuration error => WARN
+            log.warn("Unknown host: {}", uriForLog(dest)); // Could be a configuration error => WARN
             return !hasMultipleNodes(exc);
         }
         if (e instanceof EOFWhileReadingFirstLineException eofE) {
@@ -281,7 +286,7 @@ public class RetryHandler {
                   return true;
             }
         }
-        log.info("Error while attempting to forward request to {}. Reason: {}", dest, e.getMessage());
+        log.info("Error while attempting to forward request to {}. Reason: {}", uriForLog(dest), escapeControlCharsForLog(e.getMessage()));
         logException(exc, attempt, e);
         return !isIdempotent(exc.getRequest().getMethod()); // If not sure, do not retry for non idempotent methods
     }

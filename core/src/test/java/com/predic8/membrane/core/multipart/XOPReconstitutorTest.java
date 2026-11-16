@@ -15,16 +15,22 @@
 package com.predic8.membrane.core.multipart;
 
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.ChunkedBody;
 import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.router.DummyTestRouter;
+import org.apache.commons.fileupload.MultipartStream;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
 
@@ -137,6 +143,66 @@ class XOPReconstitutorTest {
     }
 
     // -------------------------------------------------------------------------
+    // Unparsable Content-Type header
+    // -------------------------------------------------------------------------
+
+    private static final String UNPARSABLE_CONTENT_TYPE = "application/json; charset";
+
+    @Test
+    void unparsableContentTypeIsRejected() {
+        final var response = response("{}", UNPARSABLE_CONTENT_TYPE);
+
+        final var e = assertThrows(com.predic8.membrane.core.http.ReadingBodyException.class,
+                () -> reconstitutor.getReconstitutedMessage(response));
+        assertTrue(e.belongsTo(response));
+        assertInstanceOf(com.predic8.membrane.core.http.InvalidContentTypeException.class, e.getCause());
+        assertEquals("Content-Type header could not be parsed: In parameter list <; charset>, expected '=', got \"null\"",
+                e.getCause().getMessage());
+    }
+
+    @Test
+    void unparsableContentTypeFallsBackToOriginalStream() throws IOException {
+        final var response = response("{}", UNPARSABLE_CONTENT_TYPE);
+
+        assertEquals("{}", IOUtils.toString(reconstitutor.reconstituteIfNecessary(response), UTF_8));
+    }
+
+    /**
+     * Decoding the body of a message with an unparsable Content-Type is the sender's error for a
+     * request (400) and the gateway's for a backend response (500), not an internal error for both.
+     */
+    @Test
+    void unparsableContentTypeIsAttributedToTheSourceMessage() throws Exception {
+        final var router = new DummyTestRouter();
+        for (final var requestBody : new boolean[]{true, false}) {
+            final var exc = Request.post("/json").buildExchange();
+            final Message message;
+            if (requestBody) {
+                exc.getRequest().setBodyContent("{}".getBytes(UTF_8));
+                exc.getRequest().getHeader().setContentType(UNPARSABLE_CONTENT_TYPE);
+                message = exc.getRequest();
+            } else {
+                exc.setResponse(response("{}", UNPARSABLE_CONTENT_TYPE));
+                message = exc.getResponse();
+            }
+            final var decoder = new AbstractInterceptor() {
+                @Override
+                public Outcome handleRequest(Exchange exchange) {
+                    try (final var input = message.getBodyAsStreamDecoded()) {
+                        input.readAllBytes();
+                    } catch (IOException e) {
+                        throw new java.io.UncheckedIOException(e);
+                    }
+                    return Outcome.CONTINUE;
+                }
+            };
+            decoder.init(router);
+            assertEquals(Outcome.ABORT, router.getFlowController().invokeRequestHandlers(exc, List.of(decoder)));
+            assertEquals(requestBody ? 400 : 500, exc.getResponse().getStatusCode());
+        }
+    }
+
+    // -------------------------------------------------------------------------
     // Fallback behaviour — reconstituteIfNecessary never throws
     // -------------------------------------------------------------------------
 
@@ -239,40 +305,149 @@ class XOPReconstitutorTest {
         assertFalse(actual.contains("MDEyMzQ1Njc4OQ=="), "referenced part must not be inlined");
     }
 
+    @Test
+    void truncatedPackageIsRejected() {
+        final var body = multipartBody(startPart(), binaryPart());
+        final var response = response(body.substring(0, body.indexOf("0123456789")), contentType("<root@test>"));
+
+        final var e = assertThrows(ReadingBodyException.class, () -> reconstitutor.getReconstitutedMessage(response));
+        assertTrue(e.belongsTo(response));
+        assertInstanceOf(XopReassemblyException.class, e.getCause());
+        assertInstanceOf(MultipartStream.MalformedStreamException.class, e.getCause().getCause());
+    }
+
+    @Test
+    void unsupportedContentTransferEncodingIsRejected() {
+        final var response = response(
+                multipartBody(startPart(), binaryPart().replace("Transfer-Encoding: binary", "Transfer-Encoding: base64")),
+                contentType("<root@test>"));
+
+        final var e = assertThrows(ReadingBodyException.class, () -> reconstitutor.getReconstitutedMessage(response));
+        assertTrue(e.belongsTo(response));
+        assertInstanceOf(XopReassemblyException.class, e.getCause());
+        assertEquals("XOP package is malformed: Content-Transfer-Encoding 'base64' is not supported.", e.getCause().getMessage());
+    }
+
+    @Test
+    void partHeaderLineWithoutColonIsRejected() {
+        final var response = response(multipartBody(startPart(), binaryPartWithHeaderLineWithoutColon()),
+                contentType("<root@test>"));
+
+        final var e = assertThrows(ReadingBodyException.class, () -> reconstitutor.getReconstitutedMessage(response));
+        assertTrue(e.belongsTo(response));
+        assertInstanceOf(XopReassemblyException.class, e.getCause());
+        assertEquals("XOP package is malformed: Malformed multipart part header: a line has no colon.", e.getCause().getMessage());
+    }
+
+    /**
+     * A transport failure of a chunked body also reaches the multipart split as an IOException. It
+     * is not a broken package, so it keeps the plain wrapping.
+     */
+    @Test
+    void chunkedTransportFailureIsNotAnXopFailure() {
+        final var body = multipartBody(startPart(), binaryPart());
+        final var truncated = body.substring(0, body.indexOf("0123456789")).getBytes(UTF_8);
+        final var chunked = new ByteArrayOutputStream();
+        chunked.writeBytes("%x\r\n".formatted(truncated.length).getBytes(UTF_8));
+        chunked.writeBytes(truncated);
+        chunked.writeBytes("\r\n".getBytes(UTF_8)); // the connection ends where the next chunk-size is due
+        final var response = Response.ok().header("Content-Type", contentType("<root@test>")).build();
+        response.getHeader().add("Transfer-Encoding", "chunked");
+        response.setBody(new ChunkedBody(new ByteArrayInputStream(chunked.toByteArray())));
+
+        final var e = assertThrows(ReadingBodyException.class, () -> reconstitutor.getReconstitutedMessage(response));
+        assertTrue(e.belongsTo(response));
+        assertTrue(response.getBody().hasFailed());
+        assertNull(ExceptionUtils.throwableOfType(e, XopReassemblyException.class));
+    }
+
+    @Test
+    void includeWithoutHrefIsRejected() {
+        final var response = response(multipartBody(startPart().replace(" href=\"cid:bin@test\"", ""), binaryPart()),
+                contentType("<root@test>"));
+
+        final var e = assertThrows(ReadingBodyException.class, () -> reconstitutor.getReconstitutedMessage(response));
+        assertTrue(e.belongsTo(response));
+        assertInstanceOf(XopReassemblyException.class, e.getCause());
+        assertEquals("xop:Include without href attribute.", e.getCause().getMessage());
+    }
+
+    @Test
+    void startPartWithoutContentTypeReturnsNull() throws Exception {
+        final var response = response(
+                multipartBody(startPart().replaceFirst("Content-Type: [^\r]*\r\n", ""), binaryPart()),
+                contentType("<root@test>"));
+
+        assertNull(reconstitutor.getReconstitutedMessage(response));
+    }
+
+    @Test
+    void startPartWithUnparsableContentTypeReturnsNull() throws Exception {
+        final var response = response(
+                multipartBody(startPart().replaceFirst("Content-Type: [^\r]*", "Content-Type: application/xop+xml; type"), binaryPart()),
+                contentType("<root@test>"));
+
+        assertNull(reconstitutor.getReconstitutedMessage(response));
+    }
+
+    @Test
+    void duplicateReferencesAreAttributedToTheSourceMessage() throws Exception {
+        final var body = multipartBody(startPart("bin@test", "bin@test"), binaryPart());
+        assertEquals(400, statusAfterDecoding(body, true));
+        assertEquals(500, statusAfterDecoding(body, false));
+    }
+
+    /**
+     * Issue #3692: a package that cannot be reassembled is the sender's fault. A request is answered
+     * with 400, not with the 500 of an internal error.
+     */
+    @Test
+    void malformedRequestPackagesAreAnsweredWith400() throws Exception {
+        final var complete = multipartBody(startPart(), binaryPart());
+        for (final var body : List.of(
+                multipartBody(startPart()), // referenced part is missing
+                complete.substring(0, complete.indexOf("0123456789")), // truncated
+                multipartBody(startPart(), binaryPart().replace("Transfer-Encoding: binary", "Transfer-Encoding: base64")),
+                multipartBody(startPart().replace(" href=\"cid:bin@test\"", ""), binaryPart()),
+                multipartBody(startPart(), binaryPartWithHeaderLineWithoutColon()))) {
+            assertEquals(400, statusAfterDecoding(body, true), body);
+        }
+    }
+
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
 
-    @Test
-    void duplicateReferencesAreAttributedToTheSourceMessage() throws Exception {
+    /**
+     * Lets an interceptor decode the XOP package in the request flow, from the request or from the
+     * response, and returns the status code of the resulting error response.
+     */
+    private static int statusAfterDecoding(String body, boolean requestBody) throws Exception {
         final var router = new DummyTestRouter();
-        final var body = multipartBody(startPart("bin@test", "bin@test"), binaryPart());
-        for (final var requestBody : new boolean[]{true, false}) {
-            final var exc = Request.post("/soap").buildExchange();
-            final Message message;
-            if (requestBody) {
-                exc.getRequest().setBodyContent(body.getBytes(UTF_8));
-                exc.getRequest().getHeader().setContentType(contentType("<root@test>"));
-                message = exc.getRequest();
-            } else {
-                exc.setResponse(response(body, contentType("<root@test>")));
-                message = exc.getResponse();
-            }
-            final var decoder = new AbstractInterceptor() {
-                @Override
-                public Outcome handleRequest(Exchange exchange) {
-                    try (final var input = message.getBodyAsStreamDecoded()) {
-                        input.readAllBytes();
-                    } catch (IOException e) {
-                        throw new java.io.UncheckedIOException(e);
-                    }
-                    return Outcome.CONTINUE;
-                }
-            };
-            decoder.init(router);
-            assertEquals(Outcome.ABORT, router.getFlowController().invokeRequestHandlers(exc, List.of(decoder)));
-            assertEquals(requestBody ? 400 : 500, exc.getResponse().getStatusCode());
+        final var exc = Request.post("/soap").buildExchange();
+        final Message message;
+        if (requestBody) {
+            exc.getRequest().setBodyContent(body.getBytes(UTF_8));
+            exc.getRequest().getHeader().setContentType(contentType("<root@test>"));
+            message = exc.getRequest();
+        } else {
+            exc.setResponse(response(body, contentType("<root@test>")));
+            message = exc.getResponse();
         }
+        final var decoder = new AbstractInterceptor() {
+            @Override
+            public Outcome handleRequest(Exchange exchange) {
+                try (final var input = message.getBodyAsStreamDecoded()) {
+                    input.readAllBytes();
+                } catch (IOException e) {
+                    throw new java.io.UncheckedIOException(e);
+                }
+                return Outcome.CONTINUE;
+            }
+        };
+        decoder.init(router);
+        assertEquals(Outcome.ABORT, router.getFlowController().invokeRequestHandlers(exc, List.of(decoder)));
+        return exc.getResponse().getStatusCode();
     }
 
     /** A complete, well-formed XOP response with one start part and one referenced binary part. */
@@ -305,6 +480,11 @@ class XOPReconstitutorTest {
 
     private static String binaryPart() {
         return binaryPart("bin@test", "0123456789");
+    }
+
+    /** The broken line is the Content-Type, so the part keeps its Content-ID and is still found. */
+    private static String binaryPartWithHeaderLineWithoutColon() {
+        return binaryPart().replace("Content-Type: application/octet-stream", "Content-Type application/octet-stream");
     }
 
     private static String binaryPart(String id, String content) {

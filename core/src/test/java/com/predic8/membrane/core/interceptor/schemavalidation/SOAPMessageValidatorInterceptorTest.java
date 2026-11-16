@@ -56,7 +56,7 @@ public class SOAPMessageValidatorInterceptorTest {
 				.body(getContent("/getBankInvalid.xml"))
 				.buildExchange();
 		assertEquals(ABORT, createValidatorInterceptor(BLZ_SERVICE_WSDL).handleRequest(exc));
-		assertEquals(200, exc.getResponse().getStatusCode());
+		assertEquals(500, exc.getResponse().getStatusCode());
 		String body = exc.getResponse().getBodyAsStringDecoded();
 				System.out.println("body = " + body);
 		assertTrue(body.contains(WSDL_MESSAGE_VALIDATION_FAILED));
@@ -79,7 +79,7 @@ public class SOAPMessageValidatorInterceptorTest {
 				.body(getContent("/validation/articleRequestInvalid.xml"))
 				.buildExchange();
 		assertEquals(ABORT, createValidatorInterceptor(ARTICLE_SERVICE_WSDL).handleRequest(exc));
-		assertEquals(200, exc.getResponse().getStatusCode());
+		assertEquals(500, exc.getResponse().getStatusCode());
 
 		var body = exc.getResponse().getBodyAsStringDecoded();
 		assertTrue(body.contains(WSDL_MESSAGE_VALIDATION_FAILED));

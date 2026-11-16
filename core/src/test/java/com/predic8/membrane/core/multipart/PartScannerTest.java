@@ -209,4 +209,24 @@ class PartScannerTest {
 
         assertThrows(IOException.class, () -> PartScanner.forEachPart(msg, 1024, inspectAll()));
     }
+
+    @Test
+    void partHeaderLineWithoutColonIsRejected() {
+        final var msg = response(multipartBody(
+                "Content-Disposition: form-data; name=\"x\"" + CRLF + "garbage" + CRLF + CRLF + "value"));
+
+        final var e = assertThrows(IOException.class, () -> PartScanner.forEachPart(msg, 1024, inspectAll()));
+
+        assertEquals("Malformed multipart part header: a line has no colon.", e.getMessage());
+    }
+
+    @Test
+    void foldedPartHeaderLineIsAccepted() throws IOException, ParseException {
+        final var handler = inspectAll();
+
+        PartScanner.forEachPart(response(multipartBody(
+                "Content-Disposition: form-data;" + CRLF + " name=\"x\"" + CRLF + CRLF + "value")), 1024, handler);
+
+        assertEquals(List.of("x"), handler.decided);
+    }
 }
