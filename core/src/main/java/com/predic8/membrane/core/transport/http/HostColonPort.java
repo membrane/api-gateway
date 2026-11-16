@@ -20,7 +20,7 @@ import java.util.regex.*;
 
 public record HostColonPort(boolean useSSL, String host, int port) {
 
-    private static final Pattern pattern = Pattern.compile("^(https?)://([^:/#]+)(?::(\\d+))?.*");
+    private static final Pattern pattern = Pattern.compile("^(https?)://(\\[[^]]+]|[^\\[:/#]+)(?::(\\d+))?.*");
 
     /**
      *
