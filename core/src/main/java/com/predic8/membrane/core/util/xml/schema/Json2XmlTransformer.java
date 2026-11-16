@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.util.xml.schema;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.predic8.membrane.core.util.xml.XMLUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -23,7 +24,6 @@ import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.ByteArrayOutputStream;
@@ -51,16 +51,15 @@ public class Json2XmlTransformer {
 
     /**
      * Looked up once: {@code newInstance()} scans the classpath for a provider under a JVM-wide
-     * class-loader lock, which serialized all request threads. Builders and transformers are not
-     * thread-safe and are still created per request.
+     * class-loader lock, which serialized all request threads. Builders are not thread-safe and are
+     * still created per request.
      * <p>
-     * Sharing the factories is safe (deliberately not {@code ThreadLocal}): they are fully
-     * configured here in the static initializer and never modified afterwards; request threads only
-     * call {@code newDocumentBuilder()} / {@code newTransformer()}, which read the configuration.
+     * Sharing the factory is safe (deliberately not {@code ThreadLocal}): it is fully configured
+     * here in the static initializer and never modified afterwards; request threads only call
+     * {@code newDocumentBuilder()}, which reads the configuration.
      * Keep it that way — do not call a factory setter outside this initialization.
      */
     private static final DocumentBuilderFactory DOCUMENT_BUILDER_FACTORY = createDocumentBuilderFactory();
-    private static final TransformerFactory TRANSFORMER_FACTORY = TransformerFactory.newInstance();
 
     private final QName element;
     private final Map<String, List<Element>> schemasByNamespace;
@@ -455,7 +454,7 @@ public class Json2XmlTransformer {
     }
 
     public static byte[] documentToBytes(Document doc) throws Exception {
-        Transformer transformer = TRANSFORMER_FACTORY.newTransformer();
+        Transformer transformer = XMLUtil.newSerializer();
         transformer.setOutputProperty(OutputKeys.INDENT, "no");
         transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "no");
 
